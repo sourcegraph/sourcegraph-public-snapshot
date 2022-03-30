@@ -878,7 +878,7 @@ export async function handleCodeHost({
     /**
      * A stream that emits a boolean that signifies whether any request for
      * the current repository has failed because one of the following reasons.
-     * 1. It is a private repository not synced with Soucegraph Cloud and the latter is the
+     * 1. It is a private repository not synced with Sourcegraph Cloud and the latter is the
      * active Sourcegraph URL.
      * 2. It is a repository not added to the Sourcegraph instance (other than Cloud).
      * If the current state is `true`, we can short circuit subsequent requests.

@@ -54,7 +54,7 @@ const IsProductionVersion = !getExtensionVersion().startsWith('0.0.0')
 
 /**
  * For each tab, we store a flag if we know that we are on:
- * - a private repo not synced with Sourcegraph Cloud when the latter is the active Sourcegrapg URL
+ * - a private repo not synced with Sourcegraph Cloud when the latter is the active Sourcegraph URL
  * - a repo not added to the other than Cloud Sourcegraph instance (+ the extension * points to this instance).
  * The content script notifies the background page if it has experienced this kind of an error
  * by sending `notifyRepoSyncError` message.
@@ -68,22 +68,22 @@ const tabRepoSyncErrorCache = (() => {
          * Update the background page's cache of which tabs have experienced either a
          * private code on Cloud or not synced repo on other than Cloud Sourcegrpah instance error.
          */
-        setTabHasRepoSyncError(tabId: number, sourcegraphURL: string, hasRepoSyncError: boolean): void {
+        setTabHasRepoSyncError(tabId: number, hasRepoSyncError: boolean, sourcegraphURL?: string): void {
+            console.log('cache', [...cache.keys()])
             if (sourcegraphURL) {
-                const record = cache.get(tabId)
+                let record = cache.get(tabId)
 
-                if (record) {
-                    if (hasRepoSyncError) {
-                        record.set(sourcegraphURL, true)
-                    } else {
-                        record.delete(sourcegraphURL)
-                    }
+                if (!record) {
+                    record = new Map()
+                    cache.set(tabId, record)
+                }
 
-                    if (record.size === 0) {
-                        cache.delete(tabId)
-                    }
-                } else if (hasRepoSyncError) {
-                    cache.set(tabId, new Map().set(sourcegraphURL, true))
+                if (hasRepoSyncError) {
+                    record.set(sourcegraphURL, true)
+                } else if (record.size === 0) {
+                    cache.delete(tabId)
+                } else {
+                    record.delete(sourcegraphURL)
                 }
             } else {
                 cache.delete(tabId)
@@ -95,7 +95,7 @@ const tabRepoSyncErrorCache = (() => {
         },
 
         /**
-         * Check whether the backgound page's cache contains data about repo sync error for
+         * Check whether the background page's cache contains data about repo sync error for
          * the given parameters.
          */
         getTabHasRepoSyncError(tabId: number, sourcegraphURL: string): boolean {
@@ -195,7 +195,7 @@ async function main(): Promise<void> {
     browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         if (changeInfo.status === 'loading') {
             // A new URL is loading in the tab, so clear the cached private cloud error flag.
-            tabRepoSyncErrorCache.setTabHasRepoSyncError(tabId, '', false)
+            tabRepoSyncErrorCache.setTabHasRepoSyncError(tabId, false)
             return
         }
 
@@ -215,6 +215,10 @@ async function main(): Promise<void> {
                 })
                 .catch(console.warn)
         }
+    })
+
+    browser.tabs.onRemoved.addListener(tabId => {
+        tabRepoSyncErrorCache.setTabHasRepoSyncError(tabId, false)
     })
 
     const handlers: BackgroundPageApiHandlers = {
@@ -241,7 +245,7 @@ async function main(): Promise<void> {
         async notifyRepoSyncError({ sourcegraphURL, hasRepoSyncError }, sender: browser.runtime.MessageSender) {
             const tabId = sender.tab?.id
             if (tabId !== undefined) {
-                tabRepoSyncErrorCache.setTabHasRepoSyncError(tabId, sourcegraphURL, hasRepoSyncError)
+                tabRepoSyncErrorCache.setTabHasRepoSyncError(tabId, hasRepoSyncError, sourcegraphURL)
             }
             return Promise.resolve()
         },
