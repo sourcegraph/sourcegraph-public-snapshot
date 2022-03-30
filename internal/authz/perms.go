@@ -144,11 +144,12 @@ func (p *UserPermissions) TracingFields() []otlog.Field {
 
 // RepoPermissions declares which users have access to a given repository
 type RepoPermissions struct {
-	RepoID    int32           // The internal database ID of a repository
-	Perm      Perms           // The permission set
-	UserIDs   *roaring.Bitmap // The user IDs
-	UpdatedAt time.Time       // The last updated time
-	SyncedAt  time.Time       // The last repo-centric synced time
+	RepoID         int32              // The internal database ID of a repository
+	Perm           Perms              // The permission set
+	UserIDs        *roaring.Bitmap    // The user IDs
+	PendingUserIDs map[int64]struct{} // The pending user IDs
+	UpdatedAt      time.Time          // The last updated time
+	SyncedAt       time.Time          // The last repo-centric synced time
 }
 
 // Expired returns true if these RepoPermissions have elapsed the given ttl.
@@ -166,6 +167,7 @@ func (p *RepoPermissions) TracingFields() []otlog.Field {
 	if p.UserIDs != nil {
 		fs = append(fs,
 			otlog.Uint64("RepoPermissions.UserIDs.Count", p.UserIDs.GetCardinality()),
+			otlog.Int("RepoPermissions.PendingUserIDs.Count", len(p.PendingUserIDs)),
 			otlog.String("RepoPermissions.UpdatedAt", p.UpdatedAt.String()),
 			otlog.String("RepoPermissions.SyncedAt", p.SyncedAt.String()),
 		)
@@ -180,7 +182,7 @@ func (p *RepoPermissions) TracingFields() []otlog.Field {
 // are used to map this stub user to an actual user when the user is created.
 type UserPendingPermissions struct {
 	// The auto-generated internal database ID.
-	ID int32
+	ID int64
 	// The type of the code host as if it would be used as extsvc.AccountSpec.ServiceType,
 	// e.g. "github", "gitlab", "bitbucketServer" and "sourcegraph".
 	ServiceType string
@@ -207,7 +209,7 @@ type UserPendingPermissions struct {
 // TracingFields returns tracing fields for the opentracing log.
 func (p *UserPendingPermissions) TracingFields() []otlog.Field {
 	fs := []otlog.Field{
-		otlog.Int32("UserPendingPermissions.ID", p.ID),
+		otlog.Int64("UserPendingPermissions.ID", p.ID),
 		otlog.String("UserPendingPermissions.ServiceType", p.ServiceType),
 		otlog.String("UserPendingPermissions.ServiceID", p.ServiceID),
 		otlog.String("UserPendingPermissions.BindID", p.BindID),

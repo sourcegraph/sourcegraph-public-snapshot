@@ -2089,7 +2089,7 @@ Triggers:
  repo_id       | integer                  |           | not null | 
  permission    | text                     |           | not null | 
  updated_at    | timestamp with time zone |           | not null | 
- user_ids_ints | integer[]                |           | not null | '{}'::integer[]
+ user_ids_ints | bigint[]                 |           | not null | '{}'::integer[]
 Indexes:
     "repo_pending_permissions_perm_unique" UNIQUE CONSTRAINT, btree (repo_id, permission)
 
@@ -2381,7 +2381,7 @@ Foreign-key constraints:
 ```
      Column      |           Type           | Collation | Nullable |                       Default                        
 -----------------+--------------------------+-----------+----------+------------------------------------------------------
- id              | integer                  |           | not null | nextval('user_pending_permissions_id_seq'::regclass)
+ id              | bigint                   |           | not null | nextval('user_pending_permissions_id_seq'::regclass)
  bind_id         | text                     |           | not null | 
  permission      | text                     |           | not null | 
  object_type     | text                     |           | not null | 
