@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"reflect"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -2159,8 +2159,8 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		t.Run("returns REENQUEUE operation for failed changesets", func(t *testing.T) {
-			changeset1 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+		t.Run("failed changesets", func(t *testing.T) {
+			changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
 				Repo:             rs[0].ID,
 				PublicationState: btypes.ChangesetPublicationStatePublished,
 				BatchChange:      batchChange.ID,
@@ -2169,7 +2169,7 @@ func TestService(t *testing.T) {
 
 			bulkOperations, err := svc.GetAvailableBulkOperations(ctx, GetAvailableBulkOperationsOpts{
 				Changesets: []int64{
-					changeset1.ID,
+					changeset.ID,
 				},
 				BatchChange: batchChange.ID,
 			})
@@ -2178,8 +2178,189 @@ func TestService(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if have, want := bulkOperations, []string{"REENQUEUE"}; !reflect.DeepEqual(have, want) {
-				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", want, have)
+			expectedBulkOperations := []string{"REENQUEUE"}
+			diff := cmp.Diff(bulkOperations, expectedBulkOperations, cmpopts.SortSlices(func(x, y string) bool {
+				return x < y
+			}))
+			if diff != "" {
+				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
+			}
+		})
+
+		t.Run("archived changesets", func(t *testing.T) {
+			changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+				Repo:             rs[0].ID,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+				BatchChange:      batchChange.ID,
+				IsArchived:       true,
+			})
+
+			// archive the changeset
+			a := changeset.Archive(batchChange.ID)
+			fmt.Println("response from archive ===>", a)
+			err := s.UpdateChangeset(context.Background(), changeset)
+			if err != nil {
+				t.Fatal("error here ", err)
+			}
+
+			fmt.Println(changeset.ArchivedIn(batchChange.ID), "lets if it's archived")
+
+			bulkOperations, err := svc.GetAvailableBulkOperations(ctx, GetAvailableBulkOperationsOpts{
+				Changesets: []int64{
+					changeset.ID,
+				},
+				BatchChange: batchChange.ID,
+			})
+
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			expectedBulkOperations := []string{"COMMENT", "DETACH"}
+			diff := cmp.Diff(bulkOperations, expectedBulkOperations, cmpopts.SortSlices(func(x, y string) bool {
+				return x < y
+			}))
+			if diff != "" {
+				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
+			}
+		})
+
+		t.Run("unpublished changesets", func(t *testing.T) {
+			changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+				Repo:             rs[0].ID,
+				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+				BatchChange:      batchChange.ID,
+			})
+
+			bulkOperations, err := svc.GetAvailableBulkOperations(ctx, GetAvailableBulkOperationsOpts{
+				Changesets: []int64{
+					changeset.ID,
+				},
+				BatchChange: batchChange.ID,
+			})
+
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			expectedBulkOperations := []string{"PUBLISH"}
+			diff := cmp.Diff(bulkOperations, expectedBulkOperations, cmpopts.SortSlices(func(x, y string) bool {
+				return x < y
+			}))
+			if diff != "" {
+				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
+			}
+		})
+
+		t.Run("draft changesets", func(t *testing.T) {
+			changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+				Repo:             rs[0].ID,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+				BatchChange:      batchChange.ID,
+				ExternalState:    btypes.ChangesetExternalStateDraft,
+			})
+
+			bulkOperations, err := svc.GetAvailableBulkOperations(ctx, GetAvailableBulkOperationsOpts{
+				Changesets: []int64{
+					changeset.ID,
+				},
+				BatchChange: batchChange.ID,
+			})
+
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			expectedBulkOperations := []string{"CLOSE", "COMMENT", "PUBLISH"}
+			diff := cmp.Diff(bulkOperations, expectedBulkOperations, cmpopts.SortSlices(func(x, y string) bool {
+				return x < y
+			}))
+			if diff != "" {
+				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
+			}
+		})
+
+		t.Run("open changesets", func(t *testing.T) {
+			changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+				Repo:             rs[0].ID,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+				BatchChange:      batchChange.ID,
+				ExternalState:    btypes.ChangesetExternalStateOpen,
+			})
+
+			bulkOperations, err := svc.GetAvailableBulkOperations(ctx, GetAvailableBulkOperationsOpts{
+				Changesets: []int64{
+					changeset.ID,
+				},
+				BatchChange: batchChange.ID,
+			})
+
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			expectedBulkOperations := []string{"CLOSE", "COMMENT", "MERGE", "PUBLISH"}
+			diff := cmp.Diff(bulkOperations, expectedBulkOperations, cmpopts.SortSlices(func(x, y string) bool {
+				return x < y
+			}))
+			if diff != "" {
+				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
+			}
+		})
+
+		t.Run("closed changesets", func(t *testing.T) {
+			changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+				Repo:             rs[0].ID,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+				BatchChange:      batchChange.ID,
+				ExternalState:    btypes.ChangesetExternalStateClosed,
+			})
+
+			bulkOperations, err := svc.GetAvailableBulkOperations(ctx, GetAvailableBulkOperationsOpts{
+				Changesets: []int64{
+					changeset.ID,
+				},
+				BatchChange: batchChange.ID,
+			})
+
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			expectedBulkOperations := []string{"COMMENT"}
+			diff := cmp.Diff(bulkOperations, expectedBulkOperations, cmpopts.SortSlices(func(x, y string) bool {
+				return x < y
+			}))
+			if diff != "" {
+				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
+			}
+		})
+
+		t.Run("merged changesets", func(t *testing.T) {
+			changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+				Repo:             rs[0].ID,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+				BatchChange:      batchChange.ID,
+				ExternalState:    btypes.ChangesetExternalStateMerged,
+			})
+
+			bulkOperations, err := svc.GetAvailableBulkOperations(ctx, GetAvailableBulkOperationsOpts{
+				Changesets: []int64{
+					changeset.ID,
+				},
+				BatchChange: batchChange.ID,
+			})
+
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			expectedBulkOperations := []string{"CLOSE", "COMMENT"}
+			diff := cmp.Diff(bulkOperations, expectedBulkOperations, cmpopts.SortSlices(func(x, y string) bool {
+				return x < y
+			}))
+			if diff != "" {
+				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
 		})
 	})
@@ -2362,4 +2543,8 @@ func assertNoAuthError(t *testing.T, err error) {
 	if errors.HasType(err, &backend.InsufficientAuthorizationError{}) {
 		t.Fatalf("got auth error")
 	}
+}
+
+func assertEqualStringSlice(t *testing.T, have []string, want []string) {
+
 }

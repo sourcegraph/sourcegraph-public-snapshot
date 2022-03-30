@@ -1482,12 +1482,12 @@ type GetAvailableBulkOperationsOpts struct {
 // on an array of changesets.
 func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvailableBulkOperationsOpts) ([]string, error) {
 	bulkOperationsCounter := map[btypes.ChangesetJobType]int{
-		btypes.ChangesetJobTypePublish:   0,
-		btypes.ChangesetJobTypeComment:   0,
 		btypes.ChangesetJobTypeClose:     0,
+		btypes.ChangesetJobTypeComment:   0,
 		btypes.ChangesetJobTypeDetach:    0,
-		btypes.ChangesetJobTypeReenqueue: 0,
 		btypes.ChangesetJobTypeMerge:     0,
+		btypes.ChangesetJobTypePublish:   0,
+		btypes.ChangesetJobTypeReenqueue: 0,
 	}
 
 	changesets, _, err := s.store.ListChangesets(ctx, store.ListChangesetsOpts{
