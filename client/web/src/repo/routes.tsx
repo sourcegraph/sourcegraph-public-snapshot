@@ -10,6 +10,7 @@ import { RepoRevisionWrapper } from './components/RepoRevision'
 import { RepoContainerRoute } from './RepoContainer'
 import { RepoRevisionContainerRoute } from './RepoRevisionContainer'
 import { RepositoryFileTreePageProps } from './RepositoryFileTreePage'
+import { RepositoryBranchesTab } from './tree/BranchesTab'
 
 const RepositoryDocumentationPage = lazyComponent(
     () => import('./docs/RepositoryDocumentationPage'),
@@ -117,7 +118,6 @@ export const RepoDocs: React.FunctionComponent<any> = ({
     fetchHighlightedFileLineRanges,
     resolvedRev: { commitID },
     match,
-    ...context
 }) => (
     <>
         {/*
@@ -141,13 +141,6 @@ export const RepoDocs: React.FunctionComponent<any> = ({
             pathID={match.params.pathID ? '/' + decodeURIComponent(match.params.pathID) : '/'}
             commitID={commitID}
         />
-        <ActionItemsBar
-            useActionItemsBar={context.useActionItemsBar}
-            location={location}
-            extensionsController={context.extensionsController}
-            platformContext={context.platformContext}
-            telemetryService={context.telemetryService}
-        />
     </>
 )
 
@@ -162,18 +155,19 @@ export const RepoCommits: React.FunctionComponent<any> = ({
             commitID={commitID}
             repoHeaderContributionsLifecycleProps={repoHeaderContributionsLifecycleProps}
         />
-        <ActionItemsBar
-            useActionItemsBar={context.useActionItemsBar}
-            location={context.location}
-            extensionsController={context.extensionsController}
-            platformContext={context.platformContext}
-            telemetryService={context.telemetryService}
-        />
     </>
 )
 
 export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] = [
-    ...['', '/-/:objectType(blob|tree)/:filePath*', '/-/docs/tab/:pathID*', '/-/commits/tab'].map(routePath => ({
+    ...[
+        '',
+        '/-/:objectType(blob|tree)/:filePath*',
+        '/-/docs/tab/:pathID*',
+        '/-/commits/tab',
+        '/-/branch/tab',
+        '/-/tag/tab',
+        '/-/compares/tab/:spec*',
+    ].map(routePath => ({
         path: routePath,
         exact: routePath === '',
         render: (props: RepositoryFileTreePageProps) => <RepositoryFileTreePage {...props} />,
@@ -192,5 +186,36 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             return settings.experimentalFeatures?.apiDocs !== false
         },
         render: RepoDocs,
+    },
+    {
+        path: '/-/branch',
+        render: ({ repo, location, history }) => (
+            <RepositoryBranchesTab repo={repo} location={location} history={history} />
+        ),
+    },
+    {
+        path: '/-/compares',
+        render: context => (
+            <RepoRevisionWrapper>
+                <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
+                    <RepositoryCompareArea {...context} />
+                </RepositoryGitDataContainer>
+                <ActionItemsBar
+                    extensionsController={context.extensionsController}
+                    platformContext={context.platformContext}
+                    useActionItemsBar={context.useActionItemsBar}
+                    location={context.location}
+                    telemetryService={context.telemetryService}
+                />
+            </RepoRevisionWrapper>
+        ),
+    },
+    {
+        path: '/-/tag',
+        render: context => (
+            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
+                <RepositoryReleasesArea {...context} />
+            </RepositoryGitDataContainer>
+        ),
     },
 ]

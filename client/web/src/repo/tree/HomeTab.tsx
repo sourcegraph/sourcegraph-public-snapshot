@@ -176,7 +176,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
     )
 
     return (
-        <div className="container m-0 p-0">
+        <div className="container p-0">
             <div className="row justify-content-center">
                 <div className="col-sm">
                     {richHTML && <RenderedFile dangerousInnerHTML={richHTML} location={props.location} />}

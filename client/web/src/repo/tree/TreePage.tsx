@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from 'react'
+import React, { useMemo, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
@@ -32,6 +32,7 @@ import { fetchTreeEntries } from '../backend'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { RepoCommits, RepoDocs } from '../routes'
 
+import { RepositoryBranchesTab } from './BranchesTab'
 import { HomeTab } from './HomeTab'
 import { TreeNavigation } from './TreeNavigation'
 import { TreeTabList } from './TreeTabList'
@@ -184,6 +185,8 @@ export const TreePage: React.FunctionComponent<Props> = ({
         location,
     }
 
+    const [selectedTab, setSelectedTab] = useState('home')
+
     return (
         <div className={styles.treePage}>
             <Container className={styles.container}>
@@ -228,9 +231,10 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             )}
                         </header>
 
-                        {newRepoPage ? (
-                            <div>
-                                <TreeTabList tree={treeOrError} />
+                        <div>
+                            <TreeTabList tree={treeOrError} selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
+
+                            <section className={classNames('test-tree-entries mb-3', styles.section)}>
                                 <Switch>
                                     <Route path={`${treeOrError.url}/-/docs/tab`}>
                                         <RepoDocs repo={repo} useBreadcrumb={useBreadcrumb} {...props} />
@@ -238,16 +242,16 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                     <Route path={`${treeOrError.url}/-/commits/tab`}>
                                         <RepoCommits repo={repo} useBreadcrumb={useBreadcrumb} {...props} />
                                     </Route>
-                                    <Route>
-                                        <section className={classNames('test-tree-entries mb-3', styles.section)}>
-                                            <HomeTab {...homeTabProps} {...props} repo={repo} />
-                                        </section>
+                                    <Route path={`${treeOrError.url}/-/home/tab`}>
+                                        <HomeTab {...homeTabProps} {...props} repo={repo} />
+                                    </Route>
+                                    <Route path={`${treeOrError.url}/-/branch/tab`}>
+                                        <RepositoryBranchesTab repo={repo} location={location} history={history} />
                                     </Route>
                                 </Switch>
-                            </div>
-                        ) : (
-                            <HomeTab {...homeTabProps} {...props} repo={repo} />
-                        )}
+                                {selectedTab === 'home' && <HomeTab {...homeTabProps} {...props} repo={repo} />}
+                            </section>
+                        </div>
                     </>
                 )}
             </Container>
