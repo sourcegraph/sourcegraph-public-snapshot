@@ -13,53 +13,58 @@ pub fn main() anyerror!void {
 
     const off = try reader.readInt(u32, std.builtin.Endian.Big);
     const sz = try reader.readInt(u32, std.builtin.Endian.Big);
-    std.log.info("off: {d}\nsz: {d}", .{ off, sz });
 
     // Go to TOC
     try file.seekTo(off);
 
-    const sectionCount = try reader.readInt(u32, std.builtin.Endian.Big);
-    std.log.info("section count: {d}", .{sectionCount});
+    var sectionReader = std.io.limitedReader(file.reader(), sz).reader();
 
-    const test_allocator = std.testing.allocator;
+    const sectionCount = try sectionReader.readInt(u32, std.builtin.Endian.Big);
+    if (sectionCount != 0) {
+        // We only support 0
+        return error.EndOfStream;
+    }
 
-    // Section Tag
-    var slen = try reader.readVarInt(u64, std.builtin.Endian.Big, 1);
-    std.log.info("slen: {d}", .{slen});
-    const ArrayList = std.ArrayList;
-    var al = ArrayList(u8).init(test_allocator);
-    reader.readAllArrayList(&al, slen) catch |err| switch (err) {
-        error.StreamTooLong => {},
-        else => {
-            return err;
-        },
-    };
-    std.log.info("tag: {s}", .{al.items});
+    var contentSz: u32 = undefined;
+    var buffer: [1024]u8 = undefined;
+    while(true) {
+        // TODO readVarInt is not a go varint
+        var slen = try sectionReader.readVarInt(u64, std.builtin.Endian.Big, 1);
 
-    // Section Kind (0 = simple section, 1 = compound section)
-    // TODO Why + 1?????
-    try file.seekTo(off + 4 + 8 + slen + 1);
-    const kind = try reader.readVarInt(u64, std.builtin.Endian.Big, 1);
-    std.log.info("kind: {d}", .{kind});
+        // Section Tag
+        var name = buffer[0..slen];
+        try sectionReader.readNoEof(name);
 
-    // Section Tag
-    slen = try reader.readVarInt(u64, std.builtin.Endian.Big, 1);
-    std.log.info("slen: {d}", .{slen});
-    al.clearRetainingCapacity();
-    reader.readAllArrayList(&al, slen) catch |err| switch (err) {
-        error.StreamTooLong => {},
-        else => {
-            return err;
-        },
-    };
-    std.log.info("tag: {s}", .{al.items});
+        // Section Kind (0 = simple section, 1 = compound section)
+        const kind = try reader.readIntBig(u8);
 
-    //var needle = "func";
-    //var buffer: [1024]u8 = undefined;
-    //while (reader.readUntilDelimiterOrEof(&buffer, '\n') catch { return; }) |line| {
-    //    if (std.mem.containsAtLeast(u8, line, 1, needle)) {
-    //        std.log.info("HI: {s}", .{line});
-    //    }
-    //}
+        try sectionReader.skipBytes(4, .{}); // skip offset
+        const sz3 = try reader.readIntBig(u32);
 
+        if (std.mem.eql(u8, name, "fileContents")) {
+            contentSz = sz3;
+            break;
+        }
+
+        switch(kind) {
+            0 => { // simple section
+            },
+            1, 2 => { // compound and lazy section have same shape
+                try sectionReader.skipBytes(8, .{}); // 2 * 2 * sizeof(u32)
+            },
+            else => {
+                return error.EndOfStream;
+            }
+        }
+    }
+
+    try file.seekTo(0);
+    var contentReader = std.io.limitedReader(file.reader(), contentSz).reader();
+
+    var needle = "func";
+    while (contentReader.readUntilDelimiterOrEof(&buffer, '\n') catch { return; }) |line| {
+        if (std.mem.containsAtLeast(u8, line, 1, needle)) {
+            std.log.info("HI: {s}", .{line});
+        }
+    }
 }
