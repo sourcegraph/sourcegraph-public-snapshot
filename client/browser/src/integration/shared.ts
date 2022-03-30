@@ -27,26 +27,20 @@ export async function closeInstallPageTab(browser: puppeteer.Browser): Promise<v
 }
 
 const extractExtensionStyles = async (page: puppeteer.Page): Promise<string> =>
-    page.evaluate(async () => {
-        const styleSheetURLs = [...document.styleSheets]
-            .map(styleSheet => styleSheet.href)
-            .filter(href => href?.startsWith('chrome-extension://'))
-
-        let styles = ''
-
-        for (const url of styleSheetURLs) {
-            if (typeof url === 'string') {
-                styles += await (await fetch(url)).text()
-                styles += '\n'
-            }
-        }
-
-        return styles
-    })
+    page.evaluate(() =>
+        [...document.styleSheets]
+            .filter(styleSheet => styleSheet.href?.startsWith('chrome-extension://'))
+            .reduce(
+                (allRules, styleSheet) =>
+                    allRules.concat(
+                        [...styleSheet.cssRules].reduce((rules, current) => rules.concat(current.cssText), '')
+                    ),
+                ''
+            )
+    )
 
 export const percySnapshot: typeof percySnapshotCommon = async (page, name, options) => {
     const extensionStyles = await extractExtensionStyles(page)
-    const percyCSS = extensionStyles + (options?.percyCSS || '')
 
-    return percySnapshotCommon(page, name, { ...options, percyCSS })
+    return percySnapshotCommon(page, name, { ...options, percyCSS: extensionStyles.concat(options?.percyCSS || '') })
 }
