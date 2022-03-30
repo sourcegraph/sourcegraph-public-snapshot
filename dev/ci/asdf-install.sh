@@ -3,10 +3,8 @@
 # ASDF setup that either does a simple install, or pulls it from cache, geared towards
 # usage in CI.
 # In most cases you should not need to call this script directly.
-
-# TODO remove this when making job the default queue
-# Skip on normal queues because standard agents do not have fresh asdf installs
-if [[ ! "$CI_FEATURE_FLAG_STATELESS_BUILD" == "true" ]]; then
+if [[ ! "$BUILDKITE" == "true" ]]; then
+  # Not-in-buildkite simple install.
   echo "~~~ asdf install"
   asdf install
   echo "done installing"

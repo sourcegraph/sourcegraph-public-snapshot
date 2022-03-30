@@ -3,10 +3,6 @@ package ci
 import "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 
 func withYarnCache() buildkite.StepOpt {
-	if !buildkite.FeatureFlags.StatelessBuild {
-		return buildkite.RawCmd(`echo "skipping yarn cache, not a stateless agent"`)
-	}
-
 	return buildkite.Cache(&buildkite.CacheOptions{
 		ID:          "node_modules",
 		Key:         "cache-node_modules-{{ checksum 'yarn.lock' }}",
