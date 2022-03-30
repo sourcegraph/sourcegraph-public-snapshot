@@ -82,22 +82,20 @@ export interface ServiceConfig {
     pending: boolean
 }
 
-declare const StatusPage: any
-const checkGithubOutage = async (): Promise<true | undefined> =>
-    new Promise(resolve => {
-        const statusPage = new StatusPage.page({ page: 'kctbh9vrtdwd' })
-        statusPage.status({
-            success(data: any) {
-                if (data.status.indicator === 'none') {
-                    resolve(undefined)
-                }
-
-                if (data.status.indicator === 'major' || data.status.indicator === 'partial') {
-                    resolve(true)
-                }
-            },
-        })
+const checkGithubOutage = async (): Promise<boolean> => {
+    let status = ''
+    await fetch('https://www.githubstatus.com/api/v2/status.json', {
+        method: 'GET',
     })
+        .then(response => response.json())
+        .then(response => (status = response.status.indicator))
+
+    if (status === 'major' || status === 'partial') {
+        return true
+    }
+
+    return false
+}
 
 export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageProps> = ({
     owner,
@@ -186,14 +184,14 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     ): Promise<void> {
         const svcs = []
         for (const svc of Object.values(services)) {
-            // When there is a sync error, we check for potential outages by calling GitHub Status API
+            // When there is a sync error, check for potential outages by calling GitHub Status API
             if (svc.displayName === 'GitHub' && svc.lastSyncError !== null) {
                 const outage = await checkGithubOutage()
                 if (outage) {
                     svcs.push(svc.displayName)
                 }
             }
-            // GitLab doesn't have an Status API, so we check if the error contains an Status Code of 500 or 503
+            // GitLab doesn't have a Status API, so check if the error contains a Status Code of 500 or 503
             if (
                 (svc.displayName === 'GitLab' && svc.lastSyncError?.includes('500')) ||
                 svc.lastSyncError?.includes('503')
@@ -443,7 +441,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         <Alert className="my-3" key={servicesDown[0]} variant="warning">
             {servicesDown?.map(svc => (
                 <div key={svc}>
-                    <h4 className="align-middle mb-1">We're having trouble connecting to {svc} </h4>
+                    <h4 className="align-middle mb-1">We’re having trouble connecting to {svc} </h4>
                     <p className="align-middle mb-0">
                         <span className="align-middle">Verify that</span> {svc}
                         <span className="align-middle">
