@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -163,6 +164,15 @@ type EventNotebookMatch struct {
 
 func (e *EventNotebookMatch) eventMatch() {}
 
+type EventNotebookBlockMatch struct {
+	Type MatchType `json:"type"`
+
+	Notebook EventNotebookMatch     `json:"notebook"`
+	Blocks   []result.NotebookBlock `json:"blocks"`
+}
+
+func (e *EventNotebookBlockMatch) eventMatch() {}
+
 // EventFilter is a suggestion for a search filter. Currently has a 1-1
 // correspondance with the SearchFilter graphql type.
 type EventFilter struct {
@@ -202,6 +212,7 @@ const (
 	CommitMatchType
 	PathMatchType
 	NotebookMatchType
+	NotebookBlockMatchType
 )
 
 func (t MatchType) MarshalJSON() ([]byte, error) {
@@ -218,6 +229,8 @@ func (t MatchType) MarshalJSON() ([]byte, error) {
 		return []byte(`"path"`), nil
 	case NotebookMatchType:
 		return []byte(`"notebook"`), nil
+	case NotebookBlockMatchType:
+		return []byte(`"notebook.block"`), nil
 	default:
 		return nil, errors.Errorf("unknown MatchType: %d", t)
 	}
@@ -236,6 +249,8 @@ func (t *MatchType) UnmarshalJSON(b []byte) error {
 		*t = PathMatchType
 	} else if bytes.Equal(b, []byte(`"notebook"`)) {
 		*t = NotebookMatchType
+	} else if bytes.Equal(b, []byte(`"notebook.block"`)) {
+		*t = NotebookBlockMatchType
 	} else {
 		return errors.Errorf("unknown MatchType: %s", b)
 	}

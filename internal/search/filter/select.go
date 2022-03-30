@@ -12,6 +12,7 @@ const (
 	File       = "file"
 	Repository = "repo"
 	Symbol     = "symbol"
+	Notebook   = "notebook"
 )
 
 // SelectPath represents a parsed and validated select value
@@ -73,6 +74,16 @@ var validSelectors = object{
 		"event":          nil,
 		"operator":       nil,
 		"type-parameter": nil,
+	},
+	Notebook: object{
+		"block": object{
+			// enterprise/internal/notebooks/types.go
+			"query":   nil,
+			"md":      nil,
+			"file":    nil,
+			"symbol":  nil,
+			"compute": nil,
+		},
 	},
 }
 

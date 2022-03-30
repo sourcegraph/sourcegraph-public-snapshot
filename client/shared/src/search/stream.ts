@@ -19,7 +19,14 @@ export type SearchEvent =
     | { type: 'error'; data: ErrorLike }
     | { type: 'done'; data: {} }
 
-export type SearchMatch = ContentMatch | RepositoryMatch | CommitMatch | SymbolMatch | PathMatch | NotebookMatch
+export type SearchMatch =
+    | ContentMatch
+    | RepositoryMatch
+    | CommitMatch
+    | SymbolMatch
+    | PathMatch
+    | NotebookMatch
+    | NotebookBlockMatch
 
 export interface PathMatch {
     type: 'path'
@@ -135,6 +142,14 @@ export interface NotebookMatch {
 
     stars?: number
     private: boolean
+}
+
+export interface NotebookBlockMatch {
+    type: 'notebook.block'
+    notebook: NotebookMatch
+    // TODO lots of variants of these types, leave as any for now and massage the data
+    // as needed
+    blocks: any[]
 }
 
 /**

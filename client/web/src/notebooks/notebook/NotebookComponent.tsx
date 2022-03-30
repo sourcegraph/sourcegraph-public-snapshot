@@ -65,6 +65,7 @@ export interface NotebookComponentProps
     >
     exportedFileName: string
     isEmbedded?: boolean
+    noRunButton?: boolean
     onSerializeBlocks: (blocks: Block[]) => void
     onCopyNotebook: (props: Omit<CopyNotebookProps, 'title'>) => Observable<NotebookFields>
 }
@@ -101,6 +102,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
         onSerializeBlocks,
         onCopyNotebook,
         isReadOnly = false,
+        noRunButton,
         extensionsController,
         exportedFileName,
         isEmbedded,
@@ -501,7 +503,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
         return (
             <div className={styles.searchNotebook} ref={nextNotebookElement}>
                 <div className="pb-1">
-                    <Button
+                    {!noRunButton && <Button
                         className="mr-2"
                         variant="primary"
                         size="sm"
@@ -510,7 +512,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                     >
                         <Icon className="mr-1" as={PlayCircleOutlineIcon} />
                         <span>{runningAllBlocks === LOADING ? 'Running...' : 'Run all blocks'}</span>
-                    </Button>
+                    </Button>}
                     {!isEmbedded && (
                         <Button
                             className="mr-2"

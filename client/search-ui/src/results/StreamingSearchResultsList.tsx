@@ -2,13 +2,14 @@ import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
+import { noop } from 'lodash'
 import AlphaSBoxIcon from 'mdi-react/AlphaSBoxIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import FileIcon from 'mdi-react/FileIcon'
 import NotebookIcon from 'mdi-react/NotebookIcon'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import { Observable } from 'rxjs'
+import { NEVER, Observable } from 'rxjs'
 
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
@@ -19,6 +20,7 @@ import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
@@ -34,6 +36,8 @@ import {
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { NotebookComponent } from '@sourcegraph/web/src/notebooks/notebook/NotebookComponent'
+import { Link } from '@sourcegraph/wildcard'
 
 import { NoResultsPage } from './NoResultsPage'
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
@@ -46,7 +50,7 @@ export interface StreamingSearchResultsListProps
         SettingsCascadeProps,
         TelemetryProps,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
-        PlatformContextProps<'requestGraphQL'> {
+        PlatformContextProps<'requestGraphQL' | 'sourcegraphURL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'> {
     isSourcegraphDotCom: boolean
     results?: AggregateStreamingSearchResults
     location: H.Location
@@ -61,7 +65,7 @@ export interface StreamingSearchResultsListProps
     /** Render prop for `<SearchUserNeedsCodeHost>`  */
     renderSearchUserNeedsCodeHost?: (user: AuthenticatedUser) => JSX.Element
 
-    extensionsController?: Pick<ExtensionsController, 'extHostAPI'>
+    extensionsController: Pick<ExtensionsController, 'extHostAPI'| 'executeCommand'>
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 
@@ -152,6 +156,51 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             onSelect={() => logSearchResultClicked(index, 'notebook')}
                         />
                     )
+                case 'notebook.block':
+                    return (
+                        <ResultContainer
+                            icon={NotebookIcon}
+                            title={<Link to={result.notebook.url}>{result.notebook.namespace} / {result.notebook.title}</Link>}
+                            collapsible={false}
+                            defaultExpanded={true}
+                            resultType={result.type}
+                            onResultClicked={noop}
+                            expandedChildren={(
+                                <NotebookComponent
+                                    key={`${result.notebook.id}-blocks`}
+                                    isEmbedded={true}
+                                    noRunButton={true}
+                                    // TODO HACK: DB, component, and GraphQL block types
+                                    // don't align so we need to massage it into a type
+                                    // this component finds acceptable
+                                    blocks={result.blocks.map(b => {
+                                        if (b.queryInput) {
+                                            return { ...b, input: { query: b.queryInput.text }}
+                                        }
+                                        return { ...b, input: b.markdownInput || b.fileInput || b.symbolInput || b.computeInput }
+                                    })}
+                                    authenticatedUser={null}
+                                    globbing={false}
+                                    isReadOnly={true}
+                                    extensionsController={extensionsController}
+                                    hoverifier={hoverifier}
+                                    platformContext={platformContext}
+                                    exportedFileName={result.notebook.title}
+                                    onSerializeBlocks={noop}
+                                    onCopyNotebook={() => NEVER}
+                                    streamSearch={() => NEVER} // TODO make this jump to new search page instead
+                                    isLightTheme={isLightTheme}
+                                    telemetryService={telemetryService}
+                                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                    searchContextsEnabled={searchContextsEnabled}
+                                    settingsCascade={settingsCascade}
+                                    isSourcegraphDotCom={isSourcegraphDotCom}
+                                    showSearchContext={showSearchContext}
+                                />
+                            )}
+                    />
+
+                    )
             }
         },
         [
@@ -165,6 +214,10 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
             extensionsController,
             hoverifier,
             openMatchesInNewTab,
+            isLightTheme,
+            searchContextsEnabled,
+            isSourcegraphDotCom,
+            showSearchContext,
         ]
     )
 
