@@ -48,6 +48,9 @@ func (n *NotebookBlocksMatch) Select(path filter.SelectPath) Match {
 				blocks = append(blocks, b)
 			}
 		}
+		if len(blocks) == 0 {
+			return nil
+		}
 		return &NotebookBlocksMatch{
 			Notebook: n.Notebook,
 			Blocks:   blocks,
