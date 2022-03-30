@@ -21,7 +21,7 @@ var (
 		Name:       "logo",
 		ShortUsage: "sg logo [classic]",
 		ShortHelp:  "Print the sg logo",
-		LongHelp:   "Prints the sg logo in different colors. When the 'classic' argument is passed it prints the logo that's used in install.sh",
+		LongHelp:   "Prints the sg logo in different colors. When the 'classic' argument is passed it prints the classic logo.",
 		FlagSet:    funkyLogoFlagSet,
 		Exec:       logoExec,
 	}

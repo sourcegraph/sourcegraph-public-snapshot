@@ -60,21 +60,19 @@ curl --proto '=https' --tlsv1.2 -sSLf https://install.sg.dev | sh
 
 That will download the latest release of `sg` from [here](https://github.com/sourcegraph/sg/releases), put it in a temporary location and run `sg install` to install it to a permanent location in your `$PATH`.
 
-### Using install script
+### Manually building the binary
 
 > NOTE: **This method requires that Go has already been installed according to the [development quickstart guide](../../setup/quickstart.md).**
 
-Run the following in the root of `sourcegraph/sourcegraph`:
+If you want full control over where the `sg` binary ends up, use this option.
+
+In the root of `sourcegraph/sourcegraph`, run:
 
 ```sh
-./dev/sg/install.sh
+go build -o ~/my/path/sg ./dev/sg
 ```
 
-That builds the `sg` binary and moves it to the standard installation location for Go binaries.
-
-If you don't have a `$GOPATH` set (or don't know what that is), that location is `$HOME/go/bin`. If you do use `$GOPATH` the location is `$GOPATH/bin`.
-
-Make sure that location is in your `$PATH`. (If you use `$GOPATH` then `$GOPATH/bin` needs to be in the `$PATH`)
+Then make sure that `~/my/path` is in your `$PATH`.
 
 > NOTE: **For Linux users:** A command called [sg](https://www.man7.org/linux/man-pages/man1/sg.1.html) is already available at `/usr/bin/sg`. To use the Sourcegraph `sg` CLI, you need to make sure that its location comes first in `PATH`. For example, by prepending `$GOPATH/bin`:
 >
@@ -87,18 +85,6 @@ Make sure that location is in your `$PATH`. (If you use `$GOPATH` then `$GOPATH/
 > Or you may add an alias to your `.bashrc`:
 >
 > `alias sg=$HOME/go/bin/sg`
-
-### Manually building the binary
-
-If you want full control over where the `sg` binary ends up, use this option.
-
-In the root of `sourcegraph/sourcegraph`, run:
-
-```sh
-go build -o ~/my/path/sg ./dev/sg
-```
-
-Then make sure that `~/my/path` is in your `$PATH`.
 
 ## Updates
 
