@@ -28,6 +28,24 @@ var (
 	}
 )
 
+// Problems:
+//
+// 1. `./dev/sg/install.sh` installs `sg` into `$GOBIN`
+// 2. `bootstraph.sh && sg install` puts it into
+//   a) on macOS: `~/.sg/`
+//   b) on Linux: `~/.local/bin/sg`
+// 3. `sg update` (auto-triggered by `sg start`) puts it in `$GOBIN`
+// 4. `which sg` still points to old `sg`
+// 5. endless loop of auto-updates
+//
+//
+// Other problem:
+//
+// 1. ./dev/sg/install.sh` installs `sg` into `$GOBIN`
+// 2. It should instead just build `sg` and call `sg install`
+// BUT:
+// 3. `sg install` is not idempotent
+
 func installExec(ctx context.Context, args []string) error {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {

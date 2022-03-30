@@ -135,23 +135,22 @@ func checkSgVersion(ctx context.Context) error {
 	}
 
 	if *skipAutoUpdatesFlag {
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "------------------------------------------------------------------------------"))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "       HEY! New version of sg available. Run 'sg update' to install it.       "))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "             To see what's new, run 'sg version changelog -next'.             "))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "------------------------------------------------------------------------------"))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "╭──────────────────────────────────────────────────────────────────╮  "))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "│                                                                  │░░"))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "│ HEY! New version of sg available. Run 'sg update' to install it. │░░"))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "│       To see what's new, run 'sg version changelog -next'.       │░░"))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "│                                                                  │░░"))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "╰──────────────────────────────────────────────────────────────────╯░░"))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░"))
 		return nil
 	}
 
 	stdout.Out.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "Auto updating sg ..."))
-	err = updateToPrebuiltSG(ctx)
+	newPath, err := updateToPrebuiltSG(ctx)
 	if err != nil {
 		return err
 	}
-	sgPath, err := os.Executable()
-	if err != nil {
-		return err
-	}
-	return syscall.Exec(sgPath, os.Args, os.Environ())
+	return syscall.Exec(newPath, os.Args, os.Environ())
 }
 
 func loadSecrets() error {
