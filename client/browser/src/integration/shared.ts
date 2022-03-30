@@ -1,6 +1,5 @@
 import puppeteer from 'puppeteer'
 
-import { isDefined } from '@sourcegraph/common'
 import { percySnapshot as percySnapshotCommon } from '@sourcegraph/shared/src/testing/driver'
 
 /**
@@ -29,18 +28,17 @@ export async function closeInstallPageTab(browser: puppeteer.Browser): Promise<v
 
 const extractExtensionStyles = async (page: puppeteer.Page): Promise<string> =>
     page.evaluate(async () => {
-        const styleSheets = [...document.styleSheets]
+        const styleSheetURLs = [...document.styleSheets]
             .map(styleSheet => styleSheet.href)
-            .filter(isDefined)
-            .filter(href => new URL(href).protocol === 'chrome-extension:')
+            .filter(href => href?.startsWith('chrome-extension://'))
 
         let styles = ''
 
-        for (const styleSheet of styleSheets) {
-            const response = await fetch(styleSheet)
-            const css = await response.text()
-            styles += css
-            styles += '\n'
+        for (const url of styleSheetURLs) {
+            if (typeof url === 'string') {
+                styles += await (await fetch(url)).text()
+                styles += '\n'
+            }
         }
 
         return styles
