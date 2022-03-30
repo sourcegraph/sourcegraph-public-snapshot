@@ -310,7 +310,11 @@ type gqlLSIFResponse struct {
 }
 
 func gqlURL(queryName string) (string, error) {
-	u, err := url.Parse("https://sourcegraph.test:3443")
+	ep := os.Getenv("SRC_ENDPOINT")
+	if ep == "" {
+		ep = "https://sourcegraph.test:3443"
+	}
+	u, err := url.Parse(ep)
 	if err != nil {
 		return "", err
 	}
