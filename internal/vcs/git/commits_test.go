@@ -1189,6 +1189,83 @@ func TestCommitDate(t *testing.T) {
 	})
 }
 
+func TestGetCommits(t *testing.T) {
+	t.Parallel()
+	ctx := actor.WithActor(context.Background(), &actor.Actor{
+		UID: 1,
+	})
+	db := database.NewMockDB()
+
+	repo1 := MakeGitRepository(t, getGitCommandsWithFiles("file1", "file2")...)
+	repo2 := MakeGitRepository(t, getGitCommandsWithFiles("file3", "file4")...)
+	repo3 := MakeGitRepository(t, getGitCommandsWithFiles("file5", "file6")...)
+
+	t.Run("basic", func(t *testing.T) {
+		repoCommits := []api.RepoCommit{
+			{Repo: repo1, CommitID: api.CommitID("HEAD")},
+			{Repo: repo1, CommitID: api.CommitID("HEAD~1")},
+			{Repo: repo2, CommitID: api.CommitID("67762ad757dd26cac4145f2b744fd93ad10a48e0")},
+			{Repo: repo2, CommitID: api.CommitID("2b988222e844b570959a493f5b07ec020b89e122")},
+			{Repo: repo3, CommitID: api.CommitID("01bed0a")},
+			{Repo: repo3, CommitID: api.CommitID("unresolvable")},
+			{Repo: api.RepoName("unresolvable"), CommitID: api.CommitID("deadbeef")},
+		}
+
+		commits, err := getCommits(ctx, db, repoCommits, true, nil)
+		if err != nil {
+			t.Fatalf("unexpected error calling getCommits: %s", err)
+		}
+
+		expectedCommits := []*gitdomain.Commit{
+			{
+				ID:        "2ba4dd2b9a27ec125fea7d72e12b9824ead18631",
+				Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: mustParseDate("2006-01-02T15:04:05Z", t)},
+				Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: mustParseDate("2006-01-02T15:04:05Z", t)},
+				Message:   "commit2",
+				Parents:   []api.CommitID{"d38233a79e037d2ab8170b0d0bc0aa438473e6da"},
+			},
+			{
+				ID:        "d38233a79e037d2ab8170b0d0bc0aa438473e6da",
+				Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: mustParseDate("2006-01-02T15:04:05Z", t)},
+				Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: mustParseDate("2006-01-02T15:04:05Z", t)},
+				Message:   "commit1",
+			},
+			{
+				ID:        "67762ad757dd26cac4145f2b744fd93ad10a48e0",
+				Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: mustParseDate("2006-01-02T15:04:05Z", t)},
+				Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: mustParseDate("2006-01-02T15:04:05Z", t)},
+				Message:   "commit2",
+				Parents:   []api.CommitID{"2b988222e844b570959a493f5b07ec020b89e122"},
+			},
+			{
+				ID:        "2b988222e844b570959a493f5b07ec020b89e122",
+				Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: mustParseDate("2006-01-02T15:04:05Z", t)},
+				Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: mustParseDate("2006-01-02T15:04:05Z", t)},
+				Message:   "commit1",
+			},
+			{
+				ID:        "01bed0ae660668c57539cecaacb4c33d77609f43",
+				Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: mustParseDate("2006-01-02T15:04:05Z", t)},
+				Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: mustParseDate("2006-01-02T15:04:05Z", t)},
+				Message:   "commit2",
+				Parents:   []api.CommitID{"d6ce2e76d171569d81c0afdc4573f461cec17d45"},
+			},
+			nil,
+			nil,
+		}
+		if diff := cmp.Diff(expectedCommits, commits); diff != "" {
+			t.Errorf("unexpected commits (-want +got):\n%s", diff)
+		}
+	})
+	t.Run("with sub-repo permissions", func(t *testing.T) {
+		t.Skip()
+
+		// Note: I'm not sure if the sub-repo permissions checker here does anything, or if I'm just
+		// having trouble constructing a test. The repositories I create here do not list files when
+		// BatchLog is invoked, and the file names seem to be required in order to determine perms.
+	})
+}
+
 func testCommits(ctx context.Context, label string, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, wantTotal uint, wantCommits []*gitdomain.Commit, t *testing.T) {
 	t.Helper()
 	db := database.NewMockDB()
