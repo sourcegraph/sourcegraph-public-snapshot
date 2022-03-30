@@ -38,6 +38,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -87,7 +88,8 @@ func NewClient(db database.DB) *ClientImplementor {
 		// Use the binary name for UserAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
-		UserAgent: filepath.Base(os.Args[0]),
+		UserAgent:  filepath.Base(os.Args[0]),
+		operations: getOperations(),
 	}
 }
 
@@ -105,8 +107,9 @@ func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) *ClientImpl
 		// Use the binary name for UserAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
-		UserAgent: filepath.Base(os.Args[0]),
-		db:        db,
+		UserAgent:  filepath.Base(os.Args[0]),
+		db:         db,
+		operations: newOperations(&observation.TestContext),
 	}
 }
 
@@ -134,6 +137,9 @@ type ClientImplementor struct {
 
 	// db is a connection to the database
 	db database.DB
+
+	// operations are used for internal observability
+	operations *operations
 }
 
 //go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/gitserver -i Client -o mock_client.go
