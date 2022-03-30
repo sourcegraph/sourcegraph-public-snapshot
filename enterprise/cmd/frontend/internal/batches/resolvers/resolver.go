@@ -441,6 +441,17 @@ func (r *Resolver) RerunBatchChange(ctx context.Context, args *graphqlbackend.Re
 	fmt.Printf("%#+v\n", bs)
 
 	svc := service.New(r.store)
+
+	bs, err = svc.ExecuteBatchSpec(ctx, service.ExecuteBatchSpecOpts{
+		BatchSpecRandID: bs.RandID,
+		// TODO: args not yet implemented: NoCache, AutoApply
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: wait for execute result?
+
 	// TODO: create changesets and jobs?
 	//csIDs, err := r.store.GetChangeset()
 	//
