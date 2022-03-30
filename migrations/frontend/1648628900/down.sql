@@ -1,8 +1,8 @@
 -- drop view
-DROP VIEW IF EXISTS gitserver_replicator_jobs_with_repo_name;
+DROP VIEW IF EXISTS gitserver_relocator_jobs_with_repo_name;
 
 -- drop the table
-DROP TABLE IF EXISTS gitserver_replicator_jobs;
+DROP TABLE IF EXISTS gitserver_relocator_jobs;
 
 -- create the old table
 CREATE TABLE IF NOT EXISTS gitserver_localclone_jobs (

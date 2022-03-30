@@ -5,7 +5,7 @@ DROP VIEW IF EXISTS gitserver_localclone_jobs_with_repo_name;
 DROP TABLE IF EXISTS gitserver_localclone_jobs;
 
 -- create the new table
-CREATE TABLE IF NOT EXISTS gitserver_replicator_jobs (
+CREATE TABLE IF NOT EXISTS gitserver_relocator_jobs (
     id                  SERIAL PRIMARY KEY,
     state               text DEFAULT 'queued',
     queued_at           timestamptz DEFAULT NOW(),
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS gitserver_replicator_jobs (
 );
 
 -- create the view
-CREATE OR REPLACE VIEW gitserver_replicator_jobs_with_repo_name AS
+CREATE OR REPLACE VIEW gitserver_relocator_jobs_with_repo_name AS
   SELECT glj.*, r.name AS repo_name
-  FROM gitserver_replicator_jobs glj
+  FROM gitserver_relocator_jobs glj
   JOIN repo r ON r.id = glj.repo_id;

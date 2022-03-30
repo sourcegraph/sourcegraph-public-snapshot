@@ -989,11 +989,11 @@ Referenced by:
 
 **rollout**: Rollout only defined when flag_type is rollout. Increments of 0.01%
 
-# Table "public.gitserver_replicator_jobs"
+# Table "public.gitserver_relocator_jobs"
 ```
-      Column       |           Type           | Collation | Nullable |                        Default                        
--------------------+--------------------------+-----------+----------+-------------------------------------------------------
- id                | integer                  |           | not null | nextval('gitserver_replicator_jobs_id_seq'::regclass)
+      Column       |           Type           | Collation | Nullable |                       Default                        
+-------------------+--------------------------+-----------+----------+------------------------------------------------------
+ id                | integer                  |           | not null | nextval('gitserver_relocator_jobs_id_seq'::regclass)
  state             | text                     |           |          | 'queued'::text
  queued_at         | timestamp with time zone |           |          | now()
  failure_message   | text                     |           |          | 
@@ -1010,7 +1010,7 @@ Referenced by:
  dest_hostname     | text                     |           | not null | 
  delete_source     | boolean                  |           | not null | false
 Indexes:
-    "gitserver_replicator_jobs_pkey" PRIMARY KEY, btree (id)
+    "gitserver_relocator_jobs_pkey" PRIMARY KEY, btree (id)
 
 ```
 
@@ -2592,7 +2592,7 @@ Foreign-key constraints:
      JOIN external_service_sync_jobs j ON ((e.id = j.external_service_id)));
 ```
 
-# View "public.gitserver_replicator_jobs_with_repo_name"
+# View "public.gitserver_relocator_jobs_with_repo_name"
 
 ## View query:
 
@@ -2614,7 +2614,7 @@ Foreign-key constraints:
     glj.dest_hostname,
     glj.delete_source,
     r.name AS repo_name
-   FROM (gitserver_replicator_jobs glj
+   FROM (gitserver_relocator_jobs glj
      JOIN repo r ON ((r.id = glj.repo_id)));
 ```
 
