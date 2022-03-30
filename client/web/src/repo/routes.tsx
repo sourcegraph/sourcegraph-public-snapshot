@@ -11,6 +11,7 @@ import { RepoContainerRoute } from './RepoContainer'
 import { RepoRevisionContainerRoute } from './RepoRevisionContainer'
 import { RepositoryFileTreePageProps } from './RepositoryFileTreePage'
 import { RepositoryBranchesTab } from './tree/BranchesTab'
+import { RepositoryTagTab } from './tree/TagTab'
 
 const RepositoryDocumentationPage = lazyComponent(
     () => import('./docs/RepositoryDocumentationPage'),
@@ -29,6 +30,7 @@ const RepositoryBranchesArea = lazyComponent(
     () => import('./branches/RepositoryBranchesArea'),
     'RepositoryBranchesArea'
 )
+
 const RepositoryReleasesArea = lazyComponent(
     () => import('./releases/RepositoryReleasesArea'),
     'RepositoryReleasesArea'
@@ -195,6 +197,12 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
         ),
     },
     {
+        path: '/-/tag',
+        render: ({ repo, location, history }) => (
+            <RepositoryTagTab repo={repo} location={location} history={history}/>
+        ), // TODO: figure out how to pass the properties: match and routePrefix
+    },
+    {
         path: '/-/compares/:spec*',
         render: context => (
             <RepoRevisionWrapper>
@@ -209,14 +217,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                     telemetryService={context.telemetryService}
                 />
             </RepoRevisionWrapper>
-        ),
-    },
-    {
-        path: '/-/tag',
-        render: context => (
-            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
-                <RepositoryReleasesArea {...context} />
-            </RepositoryGitDataContainer>
         ),
     },
     {

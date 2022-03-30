@@ -26,7 +26,7 @@ import { BatchChangesProps } from '../../batches'
 import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
-import { TreePageRepositoryFields } from '../../graphql-operations'
+import { TreePageRepositoryFields  } from '../../graphql-operations'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
@@ -34,6 +34,7 @@ import { RepoCommits, RepoDocs } from '../routes'
 
 import { RepositoryBranchesTab } from './BranchesTab'
 import { HomeTab } from './HomeTab'
+import { RepositoryTagTab } from './TagTab'
 import { TreeNavigation } from './TreeNavigation'
 import { TreeTabList } from './TreeTabList'
 
@@ -247,6 +248,9 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                     </Route>
                                     <Route path={`${treeOrError.url}/-/branch/tab`}>
                                         <RepositoryBranchesTab repo={repo} location={location} history={history} />
+                                    </Route>
+                                    <Route path={`${treeOrError.url}/-/tag/tab`}>
+                                        <RepositoryTagTab repo={repo} location={location} history={history} {...props}/>
                                     </Route>
                                 </Switch>
                                 {selectedTab === 'home' && <HomeTab {...homeTabProps} {...props} repo={repo} />}
