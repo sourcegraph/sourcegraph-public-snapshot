@@ -1,4 +1,5 @@
 // Package security implements a configurable password policy
+// This package may eventually get broken up as other packages are added.
 package security
 
 import (
