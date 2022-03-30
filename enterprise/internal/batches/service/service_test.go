@@ -2396,7 +2396,7 @@ func TestService(t *testing.T) {
 				Repo:             rs[0].ID,
 				PublicationState: btypes.ChangesetPublicationStatePublished,
 				BatchChange:      batchChange.ID,
-				ExternalState:    btypes.ChangesetExternalStateDraft,
+				ExternalState:    btypes.ChangesetExternalStateMerged,
 			})
 
 			bulkOperations, err := svc.GetAvailableBulkOperations(ctx, GetAvailableBulkOperationsOpts{
