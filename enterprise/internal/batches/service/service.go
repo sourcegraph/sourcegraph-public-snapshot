@@ -1478,10 +1478,8 @@ type GetAvailableBulkOperationsOpts struct {
 	Changesets  []int64
 }
 
-// RetryBatchSpecExecution retries all BatchSpecWorkspaceExecutionJobs
-// attached to the given BatchSpec.
-// It only deletes changeset_specs created by workspaces. The imported changeset_specs
-// will not be altered.
+// GetAvailableBulkOperations returns all bulk operations that can be carried out
+// on an array of changesets.
 func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvailableBulkOperationsOpts) ([]string, error) {
 	bulkOperationsCounter := map[btypes.ChangesetJobType]int{
 		btypes.ChangesetJobTypePublish:   0,
