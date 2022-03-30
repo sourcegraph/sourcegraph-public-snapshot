@@ -1,4 +1,3 @@
-import { stack } from '@visx/shape'
 import { Series } from 'd3-shape'
 
 import { Series as ChartSeries } from '../../../types'
@@ -56,26 +55,23 @@ export function getSeriesWithData<Datum>(input: SeriesWithDataInput<Datum>): Lin
     }
 
     const stackedDataMap: Record<string, Datum> = {}
-    const stackedSeriesData = stack<Datum, keyof Datum>({
-        keys: series.map(line => line.dataKey),
-        order: 'ascending',
-    })(data)
+    const stackedSeriesData = generateStackedData(series, data, xAxisKey)
 
     for (const stackedSeries of stackedSeriesData) {
-        for (const point of stackedSeries) {
+        for (const point of stackedSeries.data) {
             // D3-stack api feature. The stacked data has array shape where 0 indexed element
             // is a lower border for the stacked datum and 1 indexed element is a upper boundary
             // for the stacked line.
-            const newStackedValue = point['1']
-            const date = (point.data[xAxisKey] as unknown) as string
+            const newStackedValue = point.upperValue
+            const date = (point.datum[xAxisKey] as unknown) as string
 
             if (!stackedDataMap[date]) {
-                stackedDataMap[date] = { ...point.data }
+                stackedDataMap[date] = { ...point.datum }
             }
 
             stackedDataMap[date] = {
                 ...stackedDataMap[date],
-                [stackedSeries.key]: isValidNumber(point.data[stackedSeries.key]) ? newStackedValue : null,
+                [stackedSeries.key]: isValidNumber(point.datum[stackedSeries.key]) ? newStackedValue : null,
             }
         }
     }
@@ -90,9 +86,90 @@ export function getSeriesWithData<Datum>(input: SeriesWithDataInput<Datum>): Lin
                 // Filter select series data from the datum object and process this points array
                 data: getFilteredSeriesData(stackedDataList, datum => datum[line.dataKey]),
                 originalData: getFilteredSeriesData(data, datum => datum[line.dataKey]),
-                stackedSeries: stackedSeriesData[index] ?? null,
+                stackedSeries: null // stackedSeriesData[index] ?? null,
             }))
     )
+}
+
+interface StackedSeries<Datum> {
+    key: keyof Datum
+    data: StackedSeriesDatum<Datum>[]
+}
+
+interface StackedSeriesDatum<Datum> {
+    datum: Datum
+    lowerValue: number
+    upperValue: number
+    x: Datum[keyof Datum]
+}
+
+function generateStackedData<Datum>(series: ChartSeries<Datum>[], data: Datum[], xAxisKey: keyof Datum): StackedSeries<Datum>[] {
+    if (series.length === 0) {
+        return []
+    }
+
+    const stack: StackedSeries<Datum>[] = []
+
+    // eslint-disable-next-line ban/ban
+    series.forEach(line => {
+
+        const stackedData: StackedSeriesDatum<Datum>[] = []
+
+        for (const [index, datum] of data.entries()) {
+            const value = datum[line.dataKey]
+            const previousValue = findPreviousValueOnStack(stack, datum[xAxisKey], index)
+
+            if (isValidNumber(value)) {
+                stackedData.push({
+                    lowerValue: previousValue,
+                    upperValue: previousValue + value,
+                    datum,
+                    x: datum[xAxisKey]
+                })
+            }
+        }
+
+        stack.push({
+            key: line.dataKey,
+            data: stackedData
+        })
+    })
+
+    return stack
+}
+
+function findPreviousValueOnStack<Datum>(stack: StackedSeries<Datum>[], wantedDate: Datum[keyof Datum], index: number): number {
+
+    // Base case when stack is empty or when we're processing first series
+    if (stack.length === 0) {
+
+        // Previous value for the first series is zero value
+        return 0
+    }
+
+    for (let index = stack.length - 1; index >= 0; index--) {
+        const stackedSeries = stack[index]
+
+        if (stackedSeries) {
+            // Try to find stack value by datum index - if lines has the same points
+            // in same x points it should match in just O(1)
+            const hasExactMatch = stackedSeries.data[index]?.x === wantedDate
+
+            if (hasExactMatch) {
+                return stackedSeries.data[index].upperValue
+            }
+
+            const stackedDatum = stackedSeries
+                .data
+                .find(stackedDatum => stackedDatum.x === wantedDate)
+
+            if (stackedDatum) {
+                return +stackedDatum.upperValue ?? 0
+            }
+        }
+    }
+
+    return 0
 }
 
 /**
