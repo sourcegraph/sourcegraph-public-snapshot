@@ -6,10 +6,10 @@ import { useLocation } from 'react-router'
 
 import { createAggregateError, escapeRevspecForURL } from '@sourcegraph/common'
 import { GitRefType, Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
-import { ConnectionSummary } from '@sourcegraph/web/src/components/FilteredConnection/ui'
 import { useDebounce } from '@sourcegraph/wildcard'
 
+import { useConnection } from '../../components/FilteredConnection/hooks/useConnection'
+import { ConnectionSummary } from '../../components/FilteredConnection/ui'
 import { GitRefFields, RepositoryGitRefsResult, RepositoryGitRefsVariables } from '../../graphql-operations'
 import { GitReferenceNodeProps, REPOSITORY_GIT_REFS } from '../GitReference'
 

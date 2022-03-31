@@ -1,9 +1,6 @@
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
-import {
-    useConnection,
-    UseConnectionResult,
-} from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
 
+import { useConnection, UseConnectionResult } from '../../../../components/FilteredConnection/hooks/useConnection'
 import {
     Scalars,
     PreviewBatchSpecWorkspaceFields,

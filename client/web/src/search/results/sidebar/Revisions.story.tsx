@@ -4,6 +4,7 @@ import { MockedProviderProps } from '@apollo/client/testing'
 import { Meta } from '@storybook/react'
 
 import { RevisionsProps, TabIndex } from '@sourcegraph/search-ui'
+// eslint-disable-next-line no-restricted-imports
 import sidebarStyles from '@sourcegraph/search-ui/src/results/sidebar/SearchSidebar.module.scss'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 

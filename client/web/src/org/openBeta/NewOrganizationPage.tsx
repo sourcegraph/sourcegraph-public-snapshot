@@ -8,11 +8,11 @@ import { RouteComponentProps } from 'react-router'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Page } from '@sourcegraph/web/src/components/Page'
-import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { Alert, AlertLink, Button, Checkbox, Input, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { ORG_NAME_MAX_LENGTH, VALID_ORG_NAME_REGEXP } from '..'
+import { Page } from '../../components/Page'
+import { PageTitle } from '../../components/PageTitle'
 import {
     CreateOrganizationForOpenBetaResult,
     CreateOrganizationForOpenBetaVariables,

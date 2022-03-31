@@ -3,8 +3,9 @@ import React, { useCallback, useState } from 'react'
 import { Shortcut, ModifierKey, Key } from '@slimsag/react-shortcuts'
 import CloseIcon from 'mdi-react/CloseIcon'
 
-import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { Button, Modal, Icon } from '@sourcegraph/wildcard'
+
+import { KeyboardShortcut } from '../keyboardShortcuts'
 
 import { KeyboardShortcutsProps } from './keyboardShortcuts'
 

@@ -15,9 +15,9 @@ import {
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/testing/searchTestHelpers'
-import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
 import { AuthenticatedUser } from '../auth'
+import { WebStory } from '../components/WebStory'
 import { SearchPatternType } from '../graphql-operations'
 import { useExperimentalFeatures } from '../stores'
 import { ThemePreference } from '../stores/themeState'

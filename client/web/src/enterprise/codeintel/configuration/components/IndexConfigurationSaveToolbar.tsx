@@ -1,7 +1,8 @@
 import React from 'react'
 
-import { SaveToolbar, SaveToolbarProps } from '@sourcegraph/web/src/components/SaveToolbar'
 import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+
+import { SaveToolbar, SaveToolbarProps } from '../../../../components/SaveToolbar'
 
 export interface IndexConfigurationSaveToolbarProps {
     loading: boolean

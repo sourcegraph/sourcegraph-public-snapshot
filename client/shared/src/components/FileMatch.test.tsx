@@ -6,10 +6,9 @@ import FileIcon from 'mdi-react/FileIcon'
 import _VisibilitySensor from 'react-visibility-sensor'
 import sinon from 'sinon'
 
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
-
 import { ContentMatch } from '../search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
+import { renderWithBrandedContext } from '../testing'
 import { HIGHLIGHTED_FILE_LINES_REQUEST, NOOP_SETTINGS_CASCADE, RESULT } from '../testing/searchTestHelpers'
 
 import { MockVisibilitySensor } from './CodeExcerpt.test'

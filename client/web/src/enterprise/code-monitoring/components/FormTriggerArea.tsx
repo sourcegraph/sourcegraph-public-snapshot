@@ -7,7 +7,7 @@ import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import RadioboxBlankIcon from 'mdi-react/RadioboxBlankIcon'
 
 import { QueryState } from '@sourcegraph/search'
-import { LazyMonacoQueryInput } from '@sourcegraph/search-ui/src/input/LazyMonacoQueryInput'
+import { LazyMonacoQueryInput } from '@sourcegraph/search-ui'
 import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'

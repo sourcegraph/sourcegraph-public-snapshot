@@ -4,8 +4,9 @@ import { number } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
-import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 import { Container } from '@sourcegraph/wildcard'
+
+import { WebStory } from '../../components/WebStory'
 
 import { SelectedExternalService } from './backend'
 import { buildHeaderMock } from './story/fixtures'

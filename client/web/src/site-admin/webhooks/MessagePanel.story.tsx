@@ -3,7 +3,7 @@ import React from 'react'
 import { number } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 
-import { WebStory } from '@sourcegraph/web/src/components/WebStory'
+import { WebStory } from '../../components/WebStory'
 
 import { MessagePanel } from './MessagePanel'
 import { BODY_JSON, BODY_PLAIN, HEADERS_JSON, HEADERS_PLAIN } from './story/fixtures'

@@ -4,6 +4,7 @@ import classNames from 'classnames'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { FilterLink, RevisionsProps, SyntaxHighlightedSearchQuery, TabIndex } from '@sourcegraph/search-ui'
+// eslint-disable-next-line no-restricted-imports
 import styles from '@sourcegraph/search-ui/src/results/sidebar/SearchSidebarSection.module.scss'
 import { GitRefType } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'

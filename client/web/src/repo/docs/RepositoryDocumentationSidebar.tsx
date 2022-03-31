@@ -6,9 +6,9 @@ import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import FileTreeIcon from 'mdi-react/FileTreeIcon'
 
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Collapsible } from '@sourcegraph/web/src/components/Collapsible'
 import { Button, useLocalStorage, Link, Icon, Panel } from '@sourcegraph/wildcard'
 
+import { Collapsible } from '../../components/Collapsible'
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
 

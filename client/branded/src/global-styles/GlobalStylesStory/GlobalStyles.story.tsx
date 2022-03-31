@@ -11,8 +11,7 @@ import classNames from 'classnames'
 import 'storybook-addon-designs'
 
 import { highlightCodeSafe, registerHighlightContributions } from '@sourcegraph/common'
-import { TextArea, Button, ButtonGroup, Link, Select } from '@sourcegraph/wildcard'
-import { BUTTON_SIZES } from '@sourcegraph/wildcard/src/components/Button/constants'
+import { TextArea, Button, ButtonGroup, Link, Select, BUTTON_SIZES } from '@sourcegraph/wildcard'
 
 import { BrandedStory } from '../../components/BrandedStory'
 import { CodeSnippet } from '../../components/CodeSnippet'

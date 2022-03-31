@@ -3,7 +3,6 @@ import React from 'react'
 import { Redirect } from 'react-router'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
 import { CardBody, Card } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -12,6 +11,7 @@ import { BrandLogo } from '../../components/branding/BrandLogo'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { SourcegraphContext } from '../../jscontext'
 import { submitTrialRequest } from '../../marketing/backend'
+import { PageRoutes } from '../../routes.constants'
 
 import styles from './SiteInitPage.module.scss'
 

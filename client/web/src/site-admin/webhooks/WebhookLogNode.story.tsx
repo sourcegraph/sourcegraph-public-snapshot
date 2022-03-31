@@ -3,8 +3,9 @@ import React from 'react'
 import { storiesOf } from '@storybook/react'
 import classNames from 'classnames'
 
-import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 import { Container } from '@sourcegraph/wildcard'
+
+import { WebStory } from '../../components/WebStory'
 
 import { webhookLogNode } from './story/fixtures'
 import { WebhookLogNode } from './WebhookLogNode'

@@ -16,7 +16,10 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
+import { Container, useObservable } from '@sourcegraph/wildcard'
+
+import { getHover, getDocumentHighlights } from '../../../../backend/features'
+import { useConnection } from '../../../../components/FilteredConnection/hooks/useConnection'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -25,10 +28,7 @@ import {
     ConnectionSummary,
     ShowMoreButton,
     SummaryContainer,
-} from '@sourcegraph/web/src/components/FilteredConnection/ui'
-import { Container, useObservable } from '@sourcegraph/wildcard'
-
-import { getHover, getDocumentHighlights } from '../../../../backend/features'
+} from '../../../../components/FilteredConnection/ui'
 import { WebHoverOverlay } from '../../../../components/shared'
 import {
     ExternalChangesetFields,

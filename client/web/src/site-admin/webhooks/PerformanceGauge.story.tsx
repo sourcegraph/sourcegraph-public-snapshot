@@ -2,7 +2,7 @@ import React from 'react'
 
 import { storiesOf } from '@storybook/react'
 
-import { WebStory } from '@sourcegraph/web/src/components/WebStory'
+import { WebStory } from '../../components/WebStory'
 
 import { PerformanceGauge } from './PerformanceGauge'
 import { StyledPerformanceGauge } from './story/StyledPerformanceGauge'

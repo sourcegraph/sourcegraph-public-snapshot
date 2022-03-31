@@ -7,9 +7,9 @@ import StarOutlineIcon from 'mdi-react/StarOutlineIcon'
 
 import { renderMarkdown, pluralize } from '@sourcegraph/common'
 import { IMarkdownBlock, NotebookBlock } from '@sourcegraph/shared/src/schema'
-import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Link, Badge, Icon } from '@sourcegraph/wildcard'
 
+import { Timestamp } from '../../components/time/Timestamp'
 import { NotebookFields } from '../../graphql-operations'
 import { PageRoutes } from '../../routes.constants'
 

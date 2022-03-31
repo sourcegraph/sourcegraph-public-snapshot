@@ -7,7 +7,6 @@ import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageHeader, CardBody, Card, Link, Container } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -23,6 +22,7 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../../../components/FilteredConnection/ui'
+import { Page } from '../../../components/Page'
 import {
     ListBatchChange,
     Scalars,

@@ -18,7 +18,6 @@ import {
     SettingsUserSubject,
 } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
 import {
     PageHeader,
     Button,
@@ -32,6 +31,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
+import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import {
     BatchChangeFields,

@@ -2,8 +2,7 @@ import React, { useState } from 'react'
 
 import { storiesOf } from '@storybook/react'
 
-import { WebStory } from '@sourcegraph/web/src/components/WebStory'
-
+import { WebStory } from '../../../../components/WebStory'
 import { BatchSpecWorkspaceState } from '../../../../graphql-operations'
 
 import { mockWorkspace } from './WorkspacesList.mock'

@@ -1,6 +1,7 @@
 import React from 'react'
 
-import { UseConnectionResult } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
+import { Connection } from '../../../../components/FilteredConnection'
+import { UseConnectionResult } from '../../../../components/FilteredConnection/hooks/useConnection'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -8,9 +9,7 @@ import {
     SummaryContainer,
     ConnectionSummary,
     ShowMoreButton,
-} from '@sourcegraph/web/src/components/FilteredConnection/ui'
-
-import { Connection } from '../../../../components/FilteredConnection'
+} from '../../../../components/FilteredConnection/ui'
 import { PreviewBatchSpecWorkspaceFields } from '../../../../graphql-operations'
 
 import { WORKSPACES_PER_PAGE_COUNT } from './useWorkspaces'

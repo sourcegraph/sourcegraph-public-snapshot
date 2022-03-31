@@ -4,8 +4,7 @@ import classNames from 'classnames'
 import AccountQuestionIcon from 'mdi-react/AccountQuestionIcon'
 import SourceForkIcon from 'mdi-react/SourceForkIcon'
 
-import { Badge, Icon } from '@sourcegraph/wildcard'
-import { BadgeProps } from '@sourcegraph/wildcard/src/components/Badge'
+import { Badge, Icon, BadgeProps } from '@sourcegraph/wildcard'
 
 export interface ForkTarget {
     pushUser: boolean

@@ -5,8 +5,9 @@ import * as H from 'history'
 
 import { SearchContextMinimalFields } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
-import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Badge, Link } from '@sourcegraph/wildcard'
+
+import { Timestamp } from '../../components/time/Timestamp'
 
 import styles from './SearchContextNode.module.scss'
 

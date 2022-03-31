@@ -3,7 +3,9 @@ import React from 'react'
 import ImportIcon from 'mdi-react/ImportIcon'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { UseConnectionResult } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
+import { Icon } from '@sourcegraph/wildcard'
+
+import { UseConnectionResult } from '../../../../components/FilteredConnection/hooks/useConnection'
 import {
     ConnectionContainer,
     ConnectionList,
@@ -11,8 +13,7 @@ import {
     ConnectionSummary,
     ShowMoreButton,
     SummaryContainer,
-} from '@sourcegraph/web/src/components/FilteredConnection/ui'
-import { Icon } from '@sourcegraph/wildcard'
+} from '../../../../components/FilteredConnection/ui'
 
 import { ImportingChangesetFields } from './useImportingChangesets'
 

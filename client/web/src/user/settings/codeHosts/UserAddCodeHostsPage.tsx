@@ -4,12 +4,12 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike, isDefined, keyExistsIn } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { SelfHostedCta } from '@sourcegraph/web/src/components/SelfHostedCta'
 import { Button, Container, PageHeader, LoadingSpinner, Link, Alert } from '@sourcegraph/wildcard'
 
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import { AddExternalServiceOptions } from '../../../components/externalServices/externalServices'
 import { PageTitle } from '../../../components/PageTitle'
+import { SelfHostedCta } from '../../../components/SelfHostedCta'
 import { useFlagsOverrides } from '../../../featureFlags/featureFlags'
 import {
     ExternalServiceKind,
