@@ -75,10 +75,18 @@ func (c *Client) CommitsExist(ctx context.Context, commits []RepositoryCommit) (
 		return nil, err
 	}
 
+	indexesWithMissingRepos := make([]int, 0, len(commits))
 	repoCommits := make([]api.RepoCommit, 0, len(commits))
-	for _, rc := range commits {
+	for i, rc := range commits {
+		repoName, ok := repositoryNames[rc.RepositoryID]
+		if !ok {
+			indexesWithMissingRepos = append(indexesWithMissingRepos, i)
+			continue
+		}
+
+		// Only add repo/commit pairs that are resolvable to a repo name
 		repoCommits = append(repoCommits, api.RepoCommit{
-			Repo:     repositoryNames[rc.RepositoryID],
+			Repo:     repoName,
 			CommitID: api.CommitID(rc.Commit),
 		})
 	}
@@ -87,16 +95,47 @@ func (c *Client) CommitsExist(ctx context.Context, commits []RepositoryCommit) (
 	if err != nil {
 		return nil, err
 	}
-	if len(exists) != len(commits) {
+	if len(exists) != len(repoCommits) {
 		// Add assertion here so that the blast radius of new or newly discovered errors southbound
 		// from the internal/vcs/git package does not leak into code intelligence. The existing callers
 		// of this method panic when this assertion is not met. Describing the error in more detail here
 		// will not cause destruction outside of the particular user-request in which this assertion
 		// was not true.
-		return nil, errors.Newf("expected slice returned from git.CommitsExist to have len %d, but has len %d", len(commits), len(exists))
+		return nil, errors.Newf("expected slice returned from git.CommitsExist to have len %d, but has len %d", len(repoCommits), len(exists))
 	}
 
-	return exists, nil
+	// Push "false" values for each entry that had an unresolvable repo
+	return pushFalseToSliceAtIndexes(exists, indexesWithMissingRepos)
+}
+
+// pushFalseToSliceAtIndexes returns a copy of the input slice with the value false inserted into each
+// of the indexes. This has the effect of sliding all of the subsequent elements down one index on every
+// insertion.
+//
+// This function assumes that indexes are within the range [0, len(exists)+len(indexes)) and are given
+// in ascending order. See CommitsExists for its exact usage.
+func pushFalseToSliceAtIndexes(exists []bool, indexes []int) ([]bool, error) {
+	padded := make([]bool, 0, len(exists)+len(indexes))
+
+	for _, e := range exists {
+		for len(indexes) != 0 && indexes[0] == len(padded) {
+			indexes = indexes[1:]
+			padded = append(padded, false)
+		}
+
+		padded = append(padded, e)
+	}
+
+	for len(indexes) != 0 {
+		if indexes[0] != len(padded) {
+			return nil, errors.Newf("unexpected assertion broken - expected remaining indices to range from [%d, %d], have %v", len(padded), len(padded)+len(indexes), indexes)
+		}
+
+		indexes = indexes[1:]
+		padded = append(padded, false)
+	}
+
+	return padded, nil
 }
 
 // Head determines the tip commit of the default branch for the given repository. If no HEAD revision exists
