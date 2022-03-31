@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -459,11 +460,36 @@ WHERE gr.repo_size_bytes IS NULL
 
 // UpdateRepoSizes sets repo sizes according to input map. Key is repoID, value is repo_size_bytes.
 func (s *gitserverRepoStore) UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoID]int64) error {
-	values := make([]*sqlf.Query, 0, len(repos))
-	for repo, size := range repos {
-		values = append(values, sqlf.Sprintf("(%s, %s, %s, now())", repo, shardID, size))
+
+	inserter := func(inserter *batch.Inserter) error {
+		for repo, size := range repos {
+			if err := inserter.Insert(ctx, repo, shardID, size, "now()"); err != nil {
+				return err
+			}
+		}
+		return nil
 	}
-	return s.Exec(ctx, sqlf.Sprintf(updateRepoSizesQueryTemplate, sqlf.Join(values, ",")))
+
+	tx, err := s.Store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if err := batch.WithInserterWithReturn(
+		ctx,
+		tx.Handle().DB(),
+		"gitserver_repos",
+		batch.MaxNumPostgresParameters,
+		[]string{"repo_id", "shard_id", "repo_size_bytes", "updated_at"},
+		"ON CONFLICT (repo_id) DO UPDATE SET (repo_size_bytes, shard_id, updated_at) = (EXCLUDED.repo_size_bytes, gitserver_repos.shard_id, now())",
+		nil,
+		nil,
+		inserter,
+	); err != nil {
+		return err
+	}
+	return nil
 }
 
 const updateRepoSizesQueryTemplate = `
