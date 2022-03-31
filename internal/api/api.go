@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/opentracing/opentracing-go/log"
 )
 
 // RepoID is the unique identifier for a repository.
@@ -43,6 +45,13 @@ type RevSpec string
 type RepoCommit struct {
 	Repo     RepoName
 	CommitID CommitID
+}
+
+func (rc RepoCommit) LogFields() []log.Field {
+	return []log.Field{
+		log.String("repo", string(rc.Repo)),
+		log.String("rommitID", string(rc.CommitID)),
+	}
 }
 
 // Repo represents a source code repository.

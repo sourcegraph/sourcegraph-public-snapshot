@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -106,6 +108,13 @@ type BatchLogRequest struct {
 	// Format is the entire `--format=<format>` argument to git log. This value
 	// is expected to be non-empty.
 	Format string `json:"format"`
+}
+
+func (req BatchLogRequest) LogFields() []log.Field {
+	return []log.Field{
+		log.Int("numRepoCommits", len(req.RepoCommits)),
+		log.String("format", req.Format),
+	}
 }
 
 type BatchLogResponse struct {

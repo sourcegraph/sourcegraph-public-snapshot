@@ -13,7 +13,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -344,6 +343,13 @@ type ArchiveOptions struct {
 
 type BatchLogOptions protocol.BatchLogRequest
 
+func (opts BatchLogOptions) LogFields() []log.Field {
+	return []log.Field{
+		log.Int("numRepoCommits", len(opts.RepoCommits)),
+		log.String("Format", opts.Format),
+	}
+}
+
 // Pathspec is a git term for a pattern that matches paths using glob-like syntax.
 // https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefpathspecapathspec
 type Pathspec string
@@ -635,16 +641,13 @@ var deadlineExceededCounter = promauto.NewCounter(prometheus.CounterOpts{
 // and commit pairs. If the invoked callback returns a non-nil error, the operation will begin
 // to abort processing further results.
 func (c *ClientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, callback BatchLogCallback) (err error) {
-	ctx, endObservation := c.operations.batchLog.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("opts.numRepoCommits", len(opts.RepoCommits)),
-		log.String("opts.Format", opts.Format),
-	}})
+	ctx, endObservation := c.operations.batchLog.With(ctx, &err, observation.Args{LogFields: opts.LogFields()})
 	defer endObservation(1, observation.Args{})
 
 	// Make a request to a signle gitserver shard and feed the results to the user-supplied
 	// callback. Invoked multiple times (and concurrently) in the function defined in the
 	// following.
-	performLogRequestToShard := func(addr string, repoCommits []api.RepoCommit) (err error) {
+	performLogRequestToShard := func(ctx context.Context, addr string, repoCommits []api.RepoCommit) (err error) {
 		var numProcessed int
 		repoNames := repoNamesFromRepoCommits(repoCommits)
 
@@ -767,7 +770,7 @@ func (c *ClientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 		g.Go(func() (err error) {
 			defer sem.Release(1)
 
-			return performLogRequestToShard(addr, repoCommits)
+			return performLogRequestToShard(ctx, addr, repoCommits)
 		})
 	}
 
@@ -775,15 +778,17 @@ func (c *ClientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 }
 
 func repoNamesFromRepoCommits(repoCommits []api.RepoCommit) []string {
-	repoNameMap := make(map[api.RepoName]struct{}, len(repoCommits))
+	repoNames := make([]string, 0, len(repoCommits))
+	repoNameSet := make(map[api.RepoName]struct{}, len(repoCommits))
+
 	for _, rc := range repoCommits {
-		repoNameMap[rc.Repo] = struct{}{}
+		if _, ok := repoNameSet[rc.Repo]; ok {
+			continue
+		}
+
+		repoNameSet[rc.Repo] = struct{}{}
+		repoNames = append(repoNames, string(rc.Repo))
 	}
-	repoNames := make([]string, 0, len(repoNameMap))
-	for repoName := range repoNameMap {
-		repoNames = append(repoNames, string(repoName))
-	}
-	sort.Strings(repoNames)
 
 	return repoNames
 }

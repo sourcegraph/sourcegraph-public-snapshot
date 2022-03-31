@@ -1149,11 +1149,12 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 	// Invoked multiple times from the handler defined below.
 	performGitLogCommand := func(ctx context.Context, repoCommit api.RepoCommit, format string) (output string, isRepoCloned bool, err error) {
 		ctx, endObservation := operations.batchLogSingle.With(ctx, &err, observation.Args{
-			LogFields: []log.Field{
-				log.String("repoCommit.Repo", string(repoCommit.Repo)),
-				log.String("repoCommit.CommitID", string(repoCommit.CommitID)),
-				log.String("format", format),
-			},
+			LogFields: append(
+				[]log.Field{
+					log.String("format", format),
+				},
+				repoCommit.LogFields()...,
+			),
 		})
 		defer func() {
 			endObservation(1, observation.Args{LogFields: []log.Field{
@@ -1192,8 +1193,16 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			return http.StatusBadRequest, err
 		}
-		logger.Log(log.Int("req.numRepoCommits", len(req.RepoCommits)))
-		logger.Log(log.String("req.format", req.Format))
+		logger.Log(req.LogFields()...)
+
+		// Validate request parameters
+		if len(req.RepoCommits) == 0 {
+			// Early exit
+			return 0, nil
+		}
+		if !strings.HasPrefix(req.Format, "--format=") {
+			return http.StatusUnprocessableEntity, errors.New("format parameter expected to be of the form `--format=<git log format>`")
+		}
 
 		// Perform requests in each repository in the input batch. We do this synchronously
 		// today so that this endpoint remains simple. If it is determined that performing
