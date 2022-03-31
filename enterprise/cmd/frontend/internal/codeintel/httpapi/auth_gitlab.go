@@ -67,6 +67,8 @@ func enforceAuthViaGitLab(ctx context.Context, query url.Values, repoName string
 	return http.StatusUnauthorized, ErrGitLabUnauthorized
 }
 
+var _ AuthValidator = enforceAuthViaGitLab
+
 func requestGitlabProjects(ctx context.Context, url, token string) (_ []string, nextPage string, _ error) {
 	// Construct request
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
