@@ -249,7 +249,7 @@ export const CODE_INTEL_SEARCH_QUERY = gql`
     ${searchResultsFragment}
 `
 
-export const RESOLVE_REPO_REVISION_QUERY = gql`
+export const RESOLVE_REPO_REVISION_BLOB_QUERY = gql`
     fragment RepoAndRevisionFields on Repository {
         id
         name
@@ -268,6 +268,10 @@ export const RESOLVE_REPO_REVISION_QUERY = gql`
             tree(path: "") {
                 url
             }
+
+            file(path: $filePath) {
+                content
+            }
         }
 
         defaultBranch {
@@ -275,7 +279,7 @@ export const RESOLVE_REPO_REVISION_QUERY = gql`
         }
     }
 
-    query ResolveRepoAndRevision($repoName: String!, $revision: String!) {
+    query ResolveRepoAndRevision($repoName: String!, $revision: String!, $filePath: String!) {
         repositoryRedirect(name: $repoName) {
             __typename
             ... on Repository {

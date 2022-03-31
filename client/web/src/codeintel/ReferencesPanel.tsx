@@ -42,14 +42,12 @@ import {
     Input,
     Icon,
     Badge,
-    useObservable,
     Collapse,
     CollapseHeader,
     CollapsePanel,
 } from '@sourcegraph/wildcard'
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
-import { fetchBlob } from '../repo/blob/backend'
 import { Blob } from '../repo/blob/Blob'
 import { HoverThresholdProps } from '../repo/RepoContainer'
 import { parseBrowserRepoURL } from '../util/url'
@@ -61,7 +59,7 @@ import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
 import { newSettingsGetter } from './settings'
 import { findSearchToken } from './token'
 import { useCodeIntel } from './useCodeIntel'
-import { useRepoAndRevision } from './useRepoAndRevision'
+import { useRepoAndBlob } from './useRepoAndRevision'
 import { isDefined } from './util/helpers'
 
 import styles from './ReferencesPanel.module.scss'
@@ -125,7 +123,7 @@ export const RevisionResolvingReferencesList: React.FunctionComponent<
         revision?: string
     }
 > = props => {
-    const { data, loading, error } = useRepoAndRevision(props.repoName, props.revision)
+    const { data, loading, error } = useRepoAndBlob(props.repoName, props.filePath, props.revision)
     if (loading && !data) {
         return <LoadingCodeIntel />
     }
@@ -147,13 +145,22 @@ export const RevisionResolvingReferencesList: React.FunctionComponent<
         commitID: data.commitID,
     }
 
-    return <FilterableReferencesList {...props} token={token} isFork={data.isFork} isArchived={data.isArchived} />
+    return (
+        <FilterableReferencesList
+            {...props}
+            token={token}
+            isFork={data.isFork}
+            isArchived={data.isArchived}
+            fileContent={data.fileContent}
+        />
+    )
 }
 
 interface ReferencesPanelPropsWithToken extends ReferencesPanelProps {
     token: Token
     isFork: boolean
     isArchived: boolean
+    fileContent: string
 }
 
 const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWithToken> = props => {
@@ -164,19 +171,10 @@ const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWith
         setFilter(undefined)
     }, [props.token])
 
-    const blobInfo = useObservable(
-        fetchBlob({
-            repoName: props.token.repoName,
-            commitID: props.token.commitID,
-            filePath: props.token.filePath,
-            disableTimeout: false,
-        })
-    )
-
     const languageId = getModeFromPath(props.token.filePath)
     const spec = findLanguageSpec(languageId)
     const tokenResult = findSearchToken({
-        text: blobInfo?.content ?? '',
+        text: props.fileContent,
         position: {
             line: props.token.line - 1,
             character: props.token.character - 1,
@@ -185,19 +183,6 @@ const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWith
         blockCommentStyles: spec.commentStyles.map(style => style.block).filter(isDefined),
         identCharPattern: spec.identCharPattern,
     })
-
-    // If the blobInfo observable hasn't emitted yet, we show the loading message
-    if (blobInfo === undefined) {
-        return <LoadingCodeIntel />
-    }
-
-    if (blobInfo === null) {
-        return (
-            <div>
-                <p className="text-danger">Could not load file content</p>
-            </div>
-        )
-    }
 
     if (!tokenResult?.searchToken) {
         return (
@@ -230,7 +215,7 @@ const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWith
                 filter={debouncedFilter}
                 searchToken={tokenResult?.searchToken}
                 spec={spec}
-                fileContent={blobInfo.content}
+                fileContent={props.fileContent}
                 isFork={props.isFork}
                 isArchived={props.isArchived}
             />

@@ -3,28 +3,30 @@ import { useQuery } from '@sourcegraph/http-client'
 
 import { ResolveRepoAndRevisionResult, ResolveRepoAndRevisionVariables } from '../graphql-operations'
 
-import { RESOLVE_REPO_REVISION_QUERY } from './ReferencesPanelQueries'
+import { RESOLVE_REPO_REVISION_BLOB_QUERY as RESOLVE_REPO_REVISION_BLOB_QUERY } from './ReferencesPanelQueries'
 
-interface RepoAndRevision {
+interface RepoAndBlob {
     isFork: boolean
     isArchived: boolean
     revision: string
     commitID: string
+    fileContent: string
 }
-interface UseRepoAndRevisionResult {
+interface UseRepoAndBlobResult {
     loading: boolean
     error?: ErrorLike
 
-    data?: RepoAndRevision
+    data?: RepoAndBlob
 }
 
-export const useRepoAndRevision = (repoName: string, revision?: string): UseRepoAndRevisionResult => {
+export const useRepoAndBlob = (repoName: string, filePath: string, revision?: string): UseRepoAndBlobResult => {
     const { data, loading, error } = useQuery<ResolveRepoAndRevisionResult, ResolveRepoAndRevisionVariables>(
-        RESOLVE_REPO_REVISION_QUERY,
+        RESOLVE_REPO_REVISION_BLOB_QUERY,
         {
             variables: {
                 repoName,
                 revision: revision || '',
+                filePath,
             },
             notifyOnNetworkStatusChange: false,
             fetchPolicy: 'no-cache',
@@ -50,6 +52,10 @@ export const useRepoAndRevision = (repoName: string, revision?: string): UseRepo
         return { loading, error: { message: `revision not found: ${defaultBranch}` } }
     }
 
+    if (!repository.commit.file) {
+        return { loading, error: { message: `file not found: ${filePath}` } }
+    }
+
     return {
         loading: false,
         data: {
@@ -57,6 +63,7 @@ export const useRepoAndRevision = (repoName: string, revision?: string): UseRepo
             isFork: repository.isFork,
             revision: revision ?? defaultBranch,
             commitID: repository.commit.oid,
+            fileContent: repository.commit.file.content,
         },
     }
 }
