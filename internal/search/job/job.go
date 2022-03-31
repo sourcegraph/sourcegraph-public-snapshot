@@ -208,10 +208,8 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 			}
 
 			addJob(true, &structural.StructuralSearch{
-				ZoektArgs:    zoektArgs,
-				SearcherArgs: searcherArgs,
-
-				NotSearcherOnly:  !onlyRunSearcher,
+				ZoektArgs:        zoektArgs,
+				SearcherArgs:     searcherArgs,
 				UseIndex:         b.Index(),
 				ContainsRefGlobs: query.ContainsRefGlobs(q),
 				RepoOpts:         repoOptions,
