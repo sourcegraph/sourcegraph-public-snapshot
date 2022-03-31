@@ -39,7 +39,7 @@ type pullRequestPresenter struct {
 	WebURL        string
 }
 
-func slackSummary(ctx context.Context, teammates team.TeammateResolver, report *DeploymentReport) (string, error) {
+func slackSummary(ctx context.Context, teammates team.TeammateResolver, report *DeploymentReport, traceURL string) (string, error) {
 	presenter := &slackSummaryPresenter{
 		Environment: report.Environment,
 		BuildURL:    report.BuildkiteBuildURL,
@@ -78,6 +78,13 @@ func slackSummary(ctx context.Context, teammates team.TeammateResolver, report *
 	err = tmpl.Execute(&sb, presenter)
 	if err != nil {
 		return "", err
+	}
+
+	if traceURL != "" {
+		_, err = sb.WriteString(fmt.Sprintf("\n<%s|Deployment trace>", traceURL))
+		if err != nil {
+			return "", err
+		}
 	}
 
 	return sb.String(), nil

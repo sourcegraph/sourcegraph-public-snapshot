@@ -5,12 +5,12 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 
 	"github.com/hexops/autogold"
 
 	"github.com/google/go-cmp/cmp"
 
-	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 )
 
@@ -48,8 +48,7 @@ func TestToInsightUniqueIdQuery(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	insightsDB, cleanup := insightsdbtesting.CodeInsightsDB(t)
-	defer cleanup()
+	insightsDB := dbtest.NewInsightsDB(t)
 
 	migrator := migrator{insightStore: store.NewInsightStore(insightsDB)}
 
@@ -155,8 +154,7 @@ func TestCreateSpecialCaseDashboard(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	insightsDB, cleanup := insightsdbtesting.CodeInsightsDB(t)
-	defer cleanup()
+	insightsDB := dbtest.NewInsightsDB(t)
 	migrator := migrator{insightStore: store.NewInsightStore(insightsDB), dashboardStore: store.NewDashboardStore(insightsDB)}
 
 	newView := func(insightId string) {
