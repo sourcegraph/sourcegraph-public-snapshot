@@ -180,6 +180,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
     return (
         <div className="container p-0 m-0 mw-100">
             <div className="row">
+                {/* RENDER README */}
                 <div className="col-sm m-0">
                     {richHTML && <RenderedFile dangerousInnerHTML={richHTML} location={props.location} />}
                     {blobInfoOrError && richHTML && aborted && (
@@ -193,10 +194,39 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                         </div>
                     )}
                 </div>
+                {/* SIDE MENU*/}
                 <div className="col-sm col-lg-4 m-0">
                     <div className="mb-5">
                         <div className={styles.section}>
-                            <h2>Code Intel</h2>
+                            <div className={styles.section}>
+                                <h2>Recent Commits</h2>
+                                <FilteredConnection<
+                                    GitCommitFields,
+                                    Pick<GitCommitNodeProps, 'className' | 'compact' | 'messageSubjectClassName'>
+                                >
+                                    location={props.location}
+                                    className="mt-2"
+                                    listClassName="list-group list-group-flush"
+                                    noun="commit in this tree"
+                                    pluralNoun="commits in this tree"
+                                    queryConnection={queryCommits}
+                                    nodeComponent={GitCommitNode}
+                                    nodeComponentProps={{
+                                        className: classNames('list-group-item', styles.gitCommitNode),
+                                        messageSubjectClassName: undefined,
+                                        compact: true,
+                                    }}
+                                    updateOnChange={`${repo.name}:${revision}:${filePath}:${String(showOlderCommits)}`}
+                                    defaultFirst={7}
+                                    useURLQuery={false}
+                                    hideSearch={true}
+                                    emptyElement={emptyElement}
+                                    totalCountSummaryComponent={TotalCountSummary}
+                                />
+                            </div>
+                            <div className={styles.section}>
+                                <h2>Code Intel</h2>
+                            </div>
                             <div className={styles.item}>
                                 <Badge
                                     variant={codeIntelligenceEnabled ? 'primary' : 'danger'}
@@ -208,46 +238,28 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                                     <div>Precise code intelligence</div>
                                 </div>
                             </div>
+                            <div className="text-right">
+                                <Link
+                                    className="btn btn-sm btn-link"
+                                    to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
+                                >
+                                    Settings
+                                </Link>
+                            </div>
                         </div>
                         <div className={styles.section}>
                             <h2>Batch Changes</h2>
-                            {batchChangesEnabled ? (
-                                <HomeTabBatchChangeBadge repoName={repo.name} />
-                            ) : (
-                                <div className={styles.item}>
-                                    <Badge variant="danger" className={classNames('text-uppercase col-4')}>
-                                        DISABLED
-                                    </Badge>
-                                    <div className="col">Not available</div>
-                                </div>
-                            )}
                         </div>
-                        <div className={styles.section}>
-                            <h2>Recent Commits</h2>
-                            <FilteredConnection<
-                                GitCommitFields,
-                                Pick<GitCommitNodeProps, 'className' | 'compact' | 'messageSubjectClassName'>
-                            >
-                                location={props.location}
-                                className="mt-2"
-                                listClassName="list-group list-group-flush"
-                                noun="commit in this tree"
-                                pluralNoun="commits in this tree"
-                                queryConnection={queryCommits}
-                                nodeComponent={GitCommitNode}
-                                nodeComponentProps={{
-                                    className: classNames('list-group-item', styles.gitCommitNode),
-                                    messageSubjectClassName: undefined,
-                                    compact: true,
-                                }}
-                                updateOnChange={`${repo.name}:${revision}:${filePath}:${String(showOlderCommits)}`}
-                                defaultFirst={7}
-                                useURLQuery={false}
-                                hideSearch={true}
-                                emptyElement={emptyElement}
-                                totalCountSummaryComponent={TotalCountSummary}
-                            />
-                        </div>
+                        {batchChangesEnabled ? (
+                            <HomeTabBatchChangeBadge repoName={repo.name} />
+                        ) : (
+                            <div className={styles.item}>
+                                <Badge variant="danger" className={classNames('text-uppercase col-4')}>
+                                    DISABLED
+                                </Badge>
+                                <div className="col">Not available</div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -301,7 +313,12 @@ export const HomeTabBatchChangeBadge: React.FunctionComponent<HomeTabBatchChange
                         </div>
                     )}
                     <div className="text-right">
-                        <Link to={`/${encodeURIPathComponent(repoName)}/-/batch-changes`}>All batch changes</Link>
+                        <Link
+                            className="btn btn-sm btn-link"
+                            to={`/${encodeURIPathComponent(repoName)}/-/batch-changes`}
+                        >
+                            Create batch change
+                        </Link>
                     </div>
                 </>
             ) : (
@@ -317,7 +334,7 @@ export const HomeTabBatchChangeBadge: React.FunctionComponent<HomeTabBatchChange
                             className="btn btn-sm btn-link"
                             to={`/${encodeURIPathComponent(repoName)}/-/batch-changes`}
                         >
-                            Create batch change
+                            All batch changes
                         </Link>
                     </div>
                 </>
