@@ -5,12 +5,13 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { trimEnd, uniq } from 'lodash'
 import { render } from 'react-dom'
-import { from, noop, Observable } from 'rxjs'
-import { catchError, distinctUntilChanged, map, mapTo } from 'rxjs/operators'
+import { from, noop, Observable, of } from 'rxjs'
+import { catchError, distinctUntilChanged, filter, map, mapTo } from 'rxjs/operators'
 import { Optional } from 'utility-types'
 
-import { asError } from '@sourcegraph/common'
-import { GraphQLResult } from '@sourcegraph/http-client'
+import { asError, isDefined } from '@sourcegraph/common'
+import { gql, GraphQLResult } from '@sourcegraph/http-client'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { setLinkComponent, AnchorLink, useObservable } from '@sourcegraph/wildcard'
 
@@ -38,7 +39,7 @@ interface TabStatus {
     host: string
     protocol: string
     hasPermissions: boolean
-    hasPrivateCloudError: boolean
+    hasRepoSyncError: boolean
 }
 
 assertEnvironment('OPTIONS')
@@ -57,7 +58,7 @@ setLinkComponent(AnchorLink)
 const isOptionFlagKey = (key: string): key is OptionFlagKey =>
     !!optionFlagDefinitions.find(definition => definition.key === key)
 
-const fetchCurrentTabStatus = async (): Promise<TabStatus> => {
+const fetchCurrentTabStatus = async (sourcegraphURL: string): Promise<TabStatus> => {
     const tabs = await browser.tabs.query({ active: true, currentWindow: true })
     if (tabs.length > 1) {
         throw new Error('Querying for the currently active tab returned more than one result')
@@ -69,10 +70,10 @@ const fetchCurrentTabStatus = async (): Promise<TabStatus> => {
     if (!id) {
         throw new Error('Currently active tab has no ID')
     }
-    const hasPrivateCloudError = await background.checkPrivateCloudError(id)
+    const hasRepoSyncError = await background.checkRepoSyncError({ tabId: id, sourcegraphURL })
     const { host, protocol } = new URL(url)
     const hasPermissions = await checkUrlPermissions(url)
-    return { hasPrivateCloudError, host, protocol, hasPermissions }
+    return { hasRepoSyncError, host, protocol, hasPermissions }
 }
 
 // Make GraphQL requests from background page
@@ -140,6 +141,26 @@ function useTelemetryService(sourcegraphUrl: string | undefined): TelemetryServi
     return telemetryService
 }
 
+const fetchCurrentUser = (sourcegraphURL: string): Observable<Pick<GQL.IUser, 'settingsURL' | 'siteAdmin'>> => {
+    const requestGraphQL = createRequestGraphQL(sourcegraphURL)
+
+    return requestGraphQL<GQL.IQuery>({
+        request: gql`
+            query CurrentUser {
+                currentUser {
+                    settingsURL
+                    siteAdmin
+                }
+            }
+        `,
+        variables: {},
+    }).pipe(
+        map(({ data }) => data?.currentUser),
+        filter(isDefined),
+        map(({ settingsURL, siteAdmin }) => ({ settingsURL, siteAdmin }))
+    )
+}
+
 /**
  * Returns unique URLs
  */
@@ -153,15 +174,25 @@ const Options: React.FunctionComponent = () => {
     const previouslyUsedUrls = useObservable(observingPreviouslyUsedUrls)
     const isActivated = useObservable(observingIsActivated)
     const optionFlagsWithValues = useObservable(observingOptionFlagsWithValues)
-    const [currentTabStatus, setCurrentTabStatus] = useState<
-        { status: TabStatus; handler: React.MouseEventHandler } | undefined
-    >()
-
-    useEffect(() => {
-        fetchCurrentTabStatus().then(tabStatus => {
-            setCurrentTabStatus({ status: tabStatus, handler: buildRequestPermissionsHandler(tabStatus) })
-        }, noop)
-    }, [])
+    const currentTabStatus = useObservable(
+        useMemo(
+            () =>
+                sourcegraphUrl
+                    ? from(fetchCurrentTabStatus(sourcegraphUrl)).pipe(
+                          catchError(() => of(undefined)),
+                          filter(isDefined),
+                          map(tabStatus => ({ status: tabStatus, handler: buildRequestPermissionsHandler(tabStatus) }))
+                      )
+                    : of(undefined),
+            [sourcegraphUrl]
+        )
+    )
+    const currentUser = useObservable(
+        useMemo(() => (currentTabStatus?.status.hasRepoSyncError ? fetchCurrentUser(sourcegraphUrl!) : of(undefined)), [
+            currentTabStatus,
+            sourcegraphUrl,
+        ])
+    )
 
     const showSourcegraphCloudAlert = currentTabStatus?.status.host.endsWith('sourcegraph.com')
 
@@ -232,9 +263,8 @@ const Options: React.FunctionComponent = () => {
                     onToggleActivated={handleToggleActivated}
                     optionFlags={optionFlagsWithValues || []}
                     onChangeOptionFlag={handleChangeOptionFlag}
-                    showPrivateRepositoryAlert={
-                        currentTabStatus?.status.hasPrivateCloudError && isDefaultSourcegraphUrl(sourcegraphUrl)
-                    }
+                    hasRepoSyncError={currentTabStatus?.status.hasRepoSyncError}
+                    currentUser={currentUser}
                     showSourcegraphCloudAlert={showSourcegraphCloudAlert}
                     permissionAlert={permissionAlert}
                     requestPermissionsHandler={currentTabStatus?.handler}

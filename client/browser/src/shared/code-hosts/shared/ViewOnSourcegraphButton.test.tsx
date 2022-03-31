@@ -15,11 +15,11 @@ describe('<ViewOnSourcegraphButton />', () => {
                     <ViewOnSourcegraphButton
                         codeHostType="test-codehost"
                         sourcegraphURL="https://test.com"
+                        userSettingsURL="https://sourcegraph.com/users/john.doe/settings/repositories/manage"
                         context={{ rawRepoName: 'test', privateRepository: false }}
                         className="test"
                         repoExistsOrError={true}
                         minimalUI={false}
-                        onPrivateCloudError={noop}
                     />
                 ).asFragment()
             ).toMatchSnapshot()
@@ -31,11 +31,11 @@ describe('<ViewOnSourcegraphButton />', () => {
                     <ViewOnSourcegraphButton
                         codeHostType="test-codehost"
                         sourcegraphURL="https://test.com"
+                        userSettingsURL="https://sourcegraph.com/users/john.doe/settings/repositories/manage"
                         context={{ rawRepoName: 'test', privateRepository: false }}
                         className="test"
                         repoExistsOrError={true}
                         minimalUI={true}
-                        onPrivateCloudError={noop}
                     />
                 ).asFragment()
             ).toMatchSnapshot()
@@ -47,6 +47,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                     <ViewOnSourcegraphButton
                         codeHostType="test-codehost"
                         sourcegraphURL="https://test.com"
+                        userSettingsURL="https://sourcegraph.com/users/john.doe/settings/repositories/manage"
                         context={{
                             rawRepoName: 'test',
                             revision: 'test',
@@ -55,7 +56,6 @@ describe('<ViewOnSourcegraphButton />', () => {
                         className="test"
                         repoExistsOrError={true}
                         minimalUI={false}
-                        onPrivateCloudError={noop}
                     />
                 ).asFragment()
             ).toMatchSnapshot()
@@ -69,6 +69,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                     <ViewOnSourcegraphButton
                         codeHostType="test-codehost"
                         sourcegraphURL="https://sourcegraph.com"
+                        userSettingsURL="https://sourcegraph.com/users/john.doe/settings/repositories/manage"
                         context={{
                             rawRepoName: 'test',
                             revision: 'test',
@@ -78,7 +79,6 @@ describe('<ViewOnSourcegraphButton />', () => {
                         repoExistsOrError={false}
                         onConfigureSourcegraphClick={noop}
                         minimalUI={false}
-                        onPrivateCloudError={noop}
                     />
                 ).asFragment()
             ).toMatchSnapshot()
@@ -90,6 +90,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                     <ViewOnSourcegraphButton
                         codeHostType="test-codehost"
                         sourcegraphURL="https://sourcegraph.test"
+                        userSettingsURL="https://sourcegraph.com/users/john.doe/settings/repositories/manage"
                         context={{
                             rawRepoName: 'test',
                             revision: 'test',
@@ -99,7 +100,6 @@ describe('<ViewOnSourcegraphButton />', () => {
                         repoExistsOrError={false}
                         onConfigureSourcegraphClick={noop}
                         minimalUI={false}
-                        onPrivateCloudError={noop}
                     />
                 ).asFragment()
             ).toMatchSnapshot()
@@ -116,6 +116,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                                 <ViewOnSourcegraphButton
                                     codeHostType="test-codehost"
                                     sourcegraphURL="https://test.com"
+                                    userSettingsURL="https://sourcegraph.com/users/john.doe/settings/repositories/manage"
                                     context={{
                                         rawRepoName: 'test',
                                         revision: 'test',
@@ -125,7 +126,6 @@ describe('<ViewOnSourcegraphButton />', () => {
                                     className="test"
                                     repoExistsOrError={new HTTPStatusError(new Response('', { status: 401 }))}
                                     minimalUI={minimalUI}
-                                    onPrivateCloudError={noop}
                                 />
                             ).asFragment()
                         ).toMatchSnapshot()
@@ -141,6 +141,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                         <ViewOnSourcegraphButton
                             codeHostType="test-codehost"
                             sourcegraphURL="https://test.com"
+                            userSettingsURL="https://sourcegraph.com/users/john.doe/settings/repositories/manage"
                             context={{
                                 rawRepoName: 'test',
                                 revision: 'test',
@@ -150,7 +151,6 @@ describe('<ViewOnSourcegraphButton />', () => {
                             className="test"
                             repoExistsOrError={new Error('Something unknown happened!')}
                             minimalUI={false}
-                            onPrivateCloudError={noop}
                         />
                     ).asFragment()
                 ).toMatchSnapshot()

@@ -88,6 +88,17 @@ describe('GitHub', () => {
                     },
                 },
             }),
+            UserSettingsURL: () => ({
+                currentUser: {
+                    settingsURL: '/users/john.doe/settings',
+                },
+            }),
+            CurrentUser: () => ({
+                currentUser: {
+                    settingsURL: '/users/john.doe/settings',
+                    siteAdmin: false,
+                },
+            }),
         })
 
         // Ensure that the same assets are requested in all environments.
