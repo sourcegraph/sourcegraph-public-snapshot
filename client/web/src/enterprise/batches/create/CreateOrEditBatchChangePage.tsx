@@ -17,6 +17,7 @@ import {
     SettingsOrgSubject,
     SettingsUserSubject,
 } from '@sourcegraph/shared/src/settings/settings'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
 import {
@@ -43,6 +44,7 @@ import {
     Scalars,
     BatchSpecWorkspaceResolutionState,
 } from '../../../graphql-operations'
+import { BatchSpecDownloadLink } from '../BatchSpec'
 
 import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE } from './backend'
 import { DownloadSpecModal } from './DownloadSpecModal'
@@ -271,7 +273,9 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
     )
 
     const [filters, setFilters] = useState<WorkspacePreviewFilters>()
-    const [modal, setModal] = useState(false)
+    const [modal, setModal] = useState<boolean>(false)
+    const [showDownloadSpecModal, setShowDownloadSpecModal] = useTemporarySetting('batches.downloadSpecModal', true)
+
     const workspacesConnection = useWorkspaces(batchSpec.id, filters)
     const importingChangesetsConnection = useImportingChangesets(batchSpec.id)
 
@@ -376,8 +380,6 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
         setModal(true)
     }
 
-    modal && <DownloadSpecModal name={batchChange.name} originalInput={code} isLightTheme={isLightTheme} />
-
     const actionButtons = (
         <>
             <ExecutionOptionsDropdown
@@ -387,10 +389,14 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
                 options={executionOptions}
                 onChangeOptions={setExecutionOptions}
             />
-            {/* <BatchSpecDownloadLink name={batchChange.name} originalInput={code} isLightTheme={isLightTheme}>
-                or download for src-cli
-            </BatchSpecDownloadLink> */}
-            <Button onClick={openDownloadModal}> or download for src-cli</Button>
+
+            {showDownloadSpecModal ? (
+                <Button onClick={openDownloadModal}>or download for src-cli</Button>
+            ) : (
+                <BatchSpecDownloadLink name={batchChange.name} originalInput={code} isLightTheme={isLightTheme}>
+                    or download for src-cli
+                </BatchSpecDownloadLink>
+            )}
         </>
     )
 
@@ -417,6 +423,17 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
                     <EditorFeedbackPanel
                         errors={compact([codeErrors.update, codeErrors.validation, previewError, executeError])}
                     />
+
+                    {modal && showDownloadSpecModal ? (
+                        <DownloadSpecModal
+                            name={batchChange.name}
+                            originalInput={code}
+                            isLightTheme={isLightTheme}
+                            showDownloadSpecModal={showDownloadSpecModal}
+                            setShowDownloadSpecModal={setShowDownloadSpecModal}
+                            setModal={setModal}
+                        />
+                    ) : null}
                 </div>
                 <Panel
                     defaultSize={500}
