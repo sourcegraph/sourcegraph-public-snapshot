@@ -181,11 +181,8 @@ func Main(enterpriseInit EnterpriseInit) {
 	}
 
 	go repos.RunPhabricatorRepositorySyncWorker(ctx, store)
-
-	if !envvar.SourcegraphDotComMode() {
-		// git-server repos purging thread
-		go repos.RunRepositoryPurgeWorker(ctx, db)
-	}
+	// git-server repos purging thread
+	go repos.RunRepositoryPurgeWorker(ctx, db)
 
 	// Git fetches scheduler
 	go repos.RunScheduler(ctx, updateScheduler)
