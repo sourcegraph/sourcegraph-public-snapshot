@@ -6,7 +6,7 @@ import CodeJsonIcon from 'mdi-react/CodeJsonIcon'
 import FolderIcon from 'mdi-react/FolderIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import { Redirect, Route, Switch } from 'react-router-dom'
+import { Redirect, Route, Switch, useRouteMatch } from 'react-router-dom'
 import { EMPTY } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
@@ -238,11 +238,45 @@ export const TreePage: React.FunctionComponent<Props> = ({
     }
 
     const [selectedTab, setSelectedTab] = useState('home')
+    const [showPageTitle, setShowPageTitle] = useState(true)
+    const { path } = useRouteMatch()
+
+    useMemo(() => {
+        if (newRepoPage && treeOrError && !isErrorLike(treeOrError)) {
+            setShowPageTitle(false)
+
+            switch (path) {
+                case `${treeOrError.url}/-/tag/tab`:
+                    setSelectedTab('tags')
+                    break
+                case `${treeOrError.url}/-/docs/tab/:pathID*`:
+                    setSelectedTab('docs')
+                    setShowPageTitle(true)
+                    break
+                case `${treeOrError.url}/-/commits/tab`:
+                    setSelectedTab('commits')
+                    break
+                case `${treeOrError.url}/-/branch/tab`:
+                    setSelectedTab('branch')
+                    break
+                case `${treeOrError.url}/-/contributors/tab`:
+                    setSelectedTab('contributors')
+                    break
+                case `${treeOrError.url}/-/compare/tab/:spec*`:
+                    setSelectedTab('compare')
+                    break
+                case `${treeOrError.url}`:
+                    setSelectedTab('home')
+                    setShowPageTitle(true)
+                    break
+            }
+        }
+    }, [newRepoPage, path, treeOrError])
 
     return (
         <div className={styles.treePage}>
             <Container className={styles.container}>
-                <PageTitle title={getPageTitle()} />
+                {!showPageTitle && <PageTitle title={getPageTitle()} />}
                 {treeOrError === undefined ? (
                     <div>
                         <LoadingSpinner /> Loading files and directories
@@ -343,92 +377,75 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                     <Switch>
                                         <Route
                                             path={`${treeOrError.url}/-/tag/tab`}
-                                            render={routeComponentProps => {
-                                                setSelectedTab('tags')
-                                                return <RepositoryTagTab repo={repo} {...routeComponentProps} />
-                                            }}
+                                            render={routeComponentProps => (
+                                                <RepositoryTagTab repo={repo} {...routeComponentProps} />
+                                            )}
                                         />
                                         <Route
                                             path={`${treeOrError.url}/-/docs/tab`}
-                                            render={routeComponentProps => {
-                                                setSelectedTab('docs')
-                                                return (
-                                                    <RepoDocs
-                                                        repo={repo}
-                                                        useBreadcrumb={useBreadcrumb}
-                                                        {...routeComponentProps}
-                                                        {...props}
-                                                    />
-                                                )
-                                            }}
+                                            render={routeComponentProps => (
+                                                <RepoDocs
+                                                    repo={repo}
+                                                    useBreadcrumb={useBreadcrumb}
+                                                    {...routeComponentProps}
+                                                    {...props}
+                                                />
+                                            )}
                                         />
                                         <Route
                                             path={`${treeOrError.url}/-/commits/tab`}
-                                            render={routeComponentProps => {
-                                                setSelectedTab('commits')
-                                                return (
-                                                    <RepoCommits
-                                                        repo={repo}
-                                                        useBreadcrumb={useBreadcrumb}
-                                                        {...props}
-                                                        {...routeComponentProps}
-                                                    />
-                                                )
-                                            }}
+                                            render={routeComponentProps => (
+                                                <RepoCommits
+                                                    repo={repo}
+                                                    useBreadcrumb={useBreadcrumb}
+                                                    {...props}
+                                                    {...routeComponentProps}
+                                                />
+                                            )}
                                         />
                                         <Route
                                             path={`${treeOrError.url}`}
                                             exact={true}
-                                            render={routeComponentProps => {
-                                                setSelectedTab('home')
-                                                return (
-                                                    <HomeTab
-                                                        {...homeTabProps}
-                                                        {...props}
-                                                        {...routeComponentProps}
-                                                        repo={repo}
-                                                    />
-                                                )
-                                            }}
+                                            render={routeComponentProps => (
+                                                <HomeTab
+                                                    {...homeTabProps}
+                                                    {...props}
+                                                    {...routeComponentProps}
+                                                    repo={repo}
+                                                />
+                                            )}
                                         />
                                         <Route
                                             path={`${treeOrError.url}/-/branch/tab`}
-                                            render={routeComponentProps => {
-                                                setSelectedTab('branch')
-                                                return <RepositoryBranchesTab repo={repo} {...routeComponentProps} />
-                                            }}
+                                            render={routeComponentProps => (
+                                                <RepositoryBranchesTab repo={repo} {...routeComponentProps} />
+                                            )}
                                         />
                                         <Route
                                             path={`${treeOrError.url}/-/contributors/tab`}
-                                            render={routeComponentProps => {
-                                                setSelectedTab('contributors')
-                                                return (
-                                                    <RepositoryStatsContributorsPage
-                                                        {...routeComponentProps}
-                                                        repo={repo}
-                                                        {...props}
-                                                    />
-                                                )
-                                            }}
+                                            render={routeComponentProps => (
+                                                <RepositoryStatsContributorsPage
+                                                    {...routeComponentProps}
+                                                    repo={repo}
+                                                    {...props}
+                                                />
+                                            )}
                                         />
                                         <Route
                                             path={`${treeOrError.url}/-/compare/tab`}
-                                            render={() => {
-                                                setSelectedTab('compare')
-                                                return (
-                                                    <RepoRevisionWrapper>
-                                                        <RepositoryGitDataContainer {...props} repoName={repo.name}>
-                                                            <RepositoryCompareArea
-                                                                repo={repo}
-                                                                match={match}
-                                                                settingsCascade={settingsCascade}
-                                                                useBreadcrumb={useBreadcrumb}
-                                                                {...props}
-                                                            />
-                                                        </RepositoryGitDataContainer>
-                                                    </RepoRevisionWrapper>
-                                                )
-                                            }}
+                                            render={() => (
+                                                <RepoRevisionWrapper>
+                                                    <RepositoryGitDataContainer {...props} repoName={repo.name}>
+                                                        <RepositoryCompareArea
+                                                            repo={repo}
+                                                            match={match}
+                                                            settingsCascade={settingsCascade}
+                                                            useBreadcrumb={useBreadcrumb}
+                                                            {...props}
+                                                        />
+                                                    </RepositoryGitDataContainer>
+                                                </RepoRevisionWrapper>
+                                            )}
                                         />
                                     </Switch>
                                 )}
