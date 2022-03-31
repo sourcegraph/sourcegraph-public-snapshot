@@ -145,6 +145,9 @@ func makeUploadURL(opts uploadRequestOptions) (*url.URL, error) {
 	if opts.SourcegraphInstanceOptions.GitHubToken != "" {
 		qs.Add("github_token", opts.SourcegraphInstanceOptions.GitHubToken)
 	}
+	if opts.SourcegraphInstanceOptions.GitLabToken != "" {
+		qs.Add("gitlab_token", opts.SourcegraphInstanceOptions.GitLabToken)
+	}
 	if opts.UploadRecordOptions.Repo != "" {
 		qs.Add("repository", opts.UploadRecordOptions.Repo)
 	}
