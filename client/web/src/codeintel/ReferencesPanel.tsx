@@ -48,7 +48,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
-import { resolveRevision } from '../repo/backend'
+import { fetchRepository, resolveRevision } from '../repo/backend'
 import { fetchBlob } from '../repo/blob/backend'
 import { Blob } from '../repo/blob/Blob'
 import { HoverThresholdProps } from '../repo/RepoContainer'
@@ -58,6 +58,7 @@ import { findLanguageSpec } from './language-specs/languages'
 import { LanguageSpec } from './language-specs/languagespec'
 import { Location, RepoLocationGroup, LocationGroup } from './location'
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
+import { newSettingsGetter } from './settings'
 import { findSearchToken } from './token'
 import { useCodeIntel } from './useCodeIntel'
 import { isDefined } from './util/helpers'
@@ -169,6 +170,10 @@ const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWith
         })
     )
 
+    const repo = useObservable(
+        useMemo(() => fetchRepository({ repoName: props.token.repoName }), [props.token.repoName])
+    )
+
     const languageId = getModeFromPath(props.token.filePath)
     const spec = findLanguageSpec(languageId)
     const tokenResult = findSearchToken({
@@ -186,10 +191,22 @@ const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWith
     if (blobInfo === undefined) {
         return <LoadingCodeIntel />
     }
+    if (repo === undefined) {
+        return <LoadingCodeIntel />
+    }
+
     if (blobInfo === null) {
         return (
             <div>
                 <p className="text-danger">Could not load file content</p>
+            </div>
+        )
+    }
+
+    if (repo === null) {
+        return (
+            <div>
+                <p className="text-danger">Could not load file repo</p>
             </div>
         )
     }
@@ -226,6 +243,8 @@ const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWith
                 searchToken={tokenResult?.searchToken}
                 spec={spec}
                 fileContent={blobInfo.content}
+                repoIsFork={repo.isFork}
+                repoIsArchived={repo.isArchived}
             />
         </>
     )
@@ -239,8 +258,12 @@ export const ReferencesList: React.FunctionComponent<
         searchToken: string
         spec: LanguageSpec
         fileContent: string
+        repoIsFork: boolean
+        repoIsArchived: boolean
     }
 > = props => {
+    const getSetting = newSettingsGetter(props.settingsCascade)
+
     const {
         data,
         error,
@@ -269,6 +292,9 @@ export const ReferencesList: React.FunctionComponent<
         fileContent: props.fileContent,
         searchToken: props.searchToken,
         spec: props.spec,
+        repoIsFork: props.repoIsFork,
+        repoIsArchived: props.repoIsArchived,
+        getSetting,
     })
 
     // We only show the inline loading message if loading takes longer than
