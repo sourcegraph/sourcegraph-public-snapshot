@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/gobwas/glob"
 
@@ -227,6 +228,7 @@ func (tmplCtx *ChangesetTemplateContext) ToFuncMap() template.FuncMap {
 				"description": tmplCtx.BatchChangeAttributes.Description,
 			}
 		},
+		"now": func() int64 { return time.Now().Unix() },
 		"outputs": func() map[string]interface{} {
 			return tmplCtx.Outputs
 		},
