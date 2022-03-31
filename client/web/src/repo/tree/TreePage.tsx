@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useState } from 'react'
+import React, { useMemo, useEffect, useState, useCallback } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
@@ -8,6 +8,7 @@ import FolderIcon from 'mdi-react/FolderIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { Redirect, Route, Switch } from 'react-router-dom'
+import { Dropdown, DropdownToggle, DropdownItem, DropdownMenu } from 'reactstrap';
 import { EMPTY } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
@@ -247,6 +248,10 @@ export const TreePage: React.FunctionComponent<Props> = ({
     }
 
     const [selectedTab, setSelectedTab] = useState('home')
+    const [isOpen, setIsOpen] = useState(false)
+    const toggleOpen = useCallback(() => {
+        setIsOpen(value => !value)
+    }, [])
 
     return (
         <div className={styles.treePage}>
@@ -298,7 +303,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                             >
                                                 <Icon as={CodeJsonIcon} /> Search Dependencies
                                             </Button>
-                                            {batchChangesEnabled && (
+                                            {/* {!batchChangesEnabled && (
                                                 <Button
                                                     to={`/${encodeURIPathComponent(repo.name)}/-/batch-changes`}
                                                     variant="secondary"
@@ -307,6 +312,27 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                 >
                                                     <Icon as={BrainIcon} /> Batch Changes
                                                 </Button>
+                                            )} */}
+                                            {batchChangesEnabled && (
+                                               <Dropdown className="ml-1"
+                                                isOpen={isOpen}
+                                                data-testid="dropdown"
+                                                toggle={toggleOpen}
+                                               >
+                                                <DropdownToggle
+                                                    className={classNames(
+                                                        styles.button,
+                                                        'dropdown-toggle',
+                                                        'test-tree-page-dropdown',
+                                                    )}
+                                                    >
+                                                    <Icon as={BrainIcon} /> Batch Changes
+                                                </DropdownToggle>
+                                                <DropdownMenu>
+                                                    <DropdownItem href="#/action-1">View all batch changes</DropdownItem>
+                                                    <DropdownItem href="#/action-2">Add repository to batch change</DropdownItem>
+                                                </DropdownMenu>
+                                            </Dropdown>
                                             )}
                                             {repo.viewerCanAdminister && (
                                                 <Button
