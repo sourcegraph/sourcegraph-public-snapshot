@@ -28,6 +28,8 @@ type GitserverRepoStore interface {
 	SetRepoSize(ctx context.Context, name api.RepoName, size int64, shardID string) error
 	IterateWithNonemptyLastError(ctx context.Context, repoFn func(repo types.RepoGitserverStatus) error) error
 	TotalErroredCloudDefaultRepos(ctx context.Context) (int, error)
+	ListReposWithoutSize(ctx context.Context) (map[api.RepoName]api.RepoID, error)
+	UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoID]int64) error
 }
 
 var _ GitserverRepoStore = (*gitserverRepoStore)(nil)
@@ -425,6 +427,55 @@ SET (last_fetched, last_changed, shard_id, updated_at) =
 
 	return errors.Wrap(err, "setting last fetched")
 }
+
+// ListReposWithoutSize returns a map of repo name to repo ID for repos which do not have a repo_size_bytes
+func (s *gitserverRepoStore) ListReposWithoutSize(ctx context.Context) (map[api.RepoName]api.RepoID, error) {
+	rows, err := s.Query(ctx, sqlf.Sprintf(listReposWithoutSizeQuery))
+	if err != nil {
+		return nil, errors.Wrap(err, "fetching repos without size")
+	}
+	defer rows.Close()
+	repos := make(map[api.RepoName]api.RepoID, 0)
+	for rows.Next() {
+		var name string
+		var ID int32
+		if err := rows.Scan(&dbutil.NullString{S: &name}, &dbutil.NullInt32{N: &ID}); err != nil {
+			return nil, errors.Wrap(err, "scanning row")
+		}
+		repos[api.RepoName(name)] = api.RepoID(ID)
+	}
+	return repos, nil
+}
+
+const listReposWithoutSizeQuery = `
+-- source: internal/database/gitserver_repos.go:gitserverRepoStore.ListReposWithoutSize
+SELECT
+	repo.name,
+    repo.id
+FROM repo
+JOIN gitserver_repos gr ON gr.repo_id = repo.id
+WHERE gr.repo_size_bytes IS NULL
+`
+
+// UpdateRepoSizes sets repo sizes according to input map. Key is repoID, value is repo_size_bytes.
+// INSERT clause has shard_id column which is hardcoded to "0" because of not null constraint.
+// In fact shard_id is always "updated" to existing value, that's why "0" is just skipped.
+func (s *gitserverRepoStore) UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoID]int64) error {
+	values := make([]*sqlf.Query, 0, len(repos))
+	for repo, size := range repos {
+		values = append(values, sqlf.Sprintf("(%s, %s, %s, now())", repo, shardID, size))
+	}
+	return s.Exec(ctx, sqlf.Sprintf(updateRepoSizesQueryTemplate, sqlf.Join(values, ",")))
+}
+
+const updateRepoSizesQueryTemplate = `
+-- source: internal/database/gitserver_repos.go:gitserverRepoStore.UpdateRepoSizes
+INSERT INTO gitserver_repos(repo_id, shard_id, repo_size_bytes, updated_at)
+VALUES %s
+ON CONFLICT (repo_id) DO UPDATE
+SET (repo_size_bytes, shard_id, updated_at) =
+    (EXCLUDED.repo_size_bytes, gitserver_repos.shard_id, now())
+`
 
 // sanitizeToUTF8 will remove any null character terminated string. The null character can be
 // represented in one of the following ways in Go:
