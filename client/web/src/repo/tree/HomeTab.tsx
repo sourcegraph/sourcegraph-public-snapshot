@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 
 import classNames from 'classnames'
 import { subYears, formatISO } from 'date-fns'
@@ -6,14 +6,14 @@ import * as H from 'history'
 import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, pluralize, encodeURIPathComponent } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/http-client'
+import { gql, useQuery } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, useObservable, Link, Badge, useEventObservable, Alert } from '@sourcegraph/wildcard'
+import { Button, Link, Badge, useEventObservable, Alert, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { FilteredConnection } from '../../components/FilteredConnection'
-import { queryRepoBatchChangeStats } from '../../enterprise/batches/repo/backend'
-import { GitCommitFields, RepoBatchChangeStats, TreePageRepositoryFields } from '../../graphql-operations'
+import { GetRepoBatchChangesSummaryResult, GetRepoBatchChangesSummaryVariables, GitCommitFields, TreePageRepositoryFields } from '../../graphql-operations'
 import { fetchBlob } from '../blob/backend'
 import { BlobInfo } from '../blob/Blob'
 import { RenderedFile } from '../blob/RenderedFile'
@@ -249,7 +249,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                             </div>
                         </div>
                         <div className={styles.section}>
-                            <h2>Batch changes</h2>
+                          <h2>Batch Changes</h2>
                         </div>
                         {batchChangesEnabled ? (
                             <HomeTabBatchChangeBadge repoName={repo.name} />
@@ -273,73 +273,118 @@ interface HomeTabBatchChangeBadgeProps {
 }
 
 export const HomeTabBatchChangeBadge: React.FunctionComponent<HomeTabBatchChangeBadgeProps> = ({ repoName }) => {
-    const stats: RepoBatchChangeStats | undefined = useObservable(
-        useMemo(() => queryRepoBatchChangeStats({ name: repoName }), [repoName])
+    const { loading, error, data } = useQuery<GetRepoBatchChangesSummaryResult, GetRepoBatchChangesSummaryVariables>(REPO_BATCH_CHANGES_SUMMARY, {
+        variables: { name: repoName }
+    })
+    if (loading) {
+        return <div className={styles.item}><LoadingSpinner /></div>
+    }
+
+    const allBatchChanges = (
+        <div className="text-right">
+            <Link
+                className="btn btn-sm btn-link"
+                to={`/${encodeURIPathComponent(repoName)}/-/batch-changes`}
+            >
+                All batch changes
+            </Link>
+        </div>
     )
-    const hasChangesets = stats?.changesetsStats.total
-    return (
-        <>
-            {hasChangesets && hasChangesets > 0 && stats?.batchChangesDiffStat && stats?.changesetsStats ? (
-                <>
-                    {stats?.changesetsStats.open > 0 && (
-                        <div className={styles.item}>
-                            <Badge variant="success" className={classNames('text-uppercase col-4')}>
-                                OPEN
-                            </Badge>
-                            <div className="col">{stats?.changesetsStats.open} open changesets</div>
-                        </div>
-                    )}
-                    {stats?.changesetsStats.unpublished > 0 && (
-                        <div className={styles.item}>
-                            <Badge variant="secondary" className={classNames('text-uppercase col-4')}>
-                                Unpublished
-                            </Badge>
-                            <div className="col">{stats?.changesetsStats.unpublished} unpublished changesets</div>
-                        </div>
-                    )}
-                    {stats?.changesetsStats.draft > 0 && (
-                        <div className={styles.item}>
-                            <Badge variant="secondary" className={classNames('text-uppercase col-4')}>
-                                draft
-                            </Badge>
-                            <div className="col">{stats?.changesetsStats.draft} draft changesets</div>
-                        </div>
-                    )}
-                    {stats?.changesetsStats.closed > 0 && (
-                        <div className={styles.item}>
-                            <Badge variant="secondary" className={classNames('text-uppercase col-4')}>
-                                CLOSE
-                            </Badge>
-                            <div className="col">{stats?.changesetsStats.closed} closed changesets</div>
-                        </div>
-                    )}
-                    <div className="text-right">
-                        <Link
-                            className="btn btn-sm btn-link"
-                            to={`/${encodeURIPathComponent(repoName)}/-/batch-changes`}
-                        >
-                            Create batch change
-                        </Link>
+
+    if (error || !data?.repository) {
+        return (
+            <>
+            <div className={styles.item}><ErrorMessage error="Failed to load batch changes" /></div>
+            {allBatchChanges}
+            </>
+        )
+    }
+
+    const batchChanges = data?.repository?.batchChanges
+    if (!batchChanges || batchChanges.nodes.length === 0) {
+        return (
+            <>
+                <div className={styles.item}>
+                    <Badge variant="secondary" className={classNames('text-uppercase col-4')}>
+                        None
+                    </Badge>
+                    <div className="d-block col">
+                        <div>No open batch changes for this repository</div>
                     </div>
-                </>
-            ) : (
-                <>
-                    <div className={styles.item}>
-                        <Badge variant="secondary" className={classNames('text-uppercase col-4')}>
-                            Unavailable
-                        </Badge>
-                        <div className="col">No changeset available</div>
-                    </div>
-                    <div className="text-right">
-                        <Link
-                            className="btn btn-sm btn-link"
-                            to={`/${encodeURIPathComponent(repoName)}/-/batch-changes`}
-                        >
-                            All batch changes
-                        </Link>
-                    </div>
-                </>
-            )}
-        </>
-    )
+                </div>
+                {allBatchChanges}
+            </>
+        )
+    }
+
+    const items: React.ReactElement[] = batchChanges.nodes.map(({
+        id,
+        name,
+        namespace: { namespaceName },
+        changesetsStats,
+        url,
+    }) => {
+        const summaries: { value: number, name: string }[] = [
+            {
+                name: 'open',
+                value: changesetsStats.open,
+            },
+            {
+                name: 'merged',
+                value: changesetsStats.open,
+            },
+            {
+                name: 'closed',
+                value: changesetsStats.closed,
+            },
+        ]
+        const summaryTexts = summaries.map(({ value, name }) => `${value} ${name}`)
+
+        return (
+            <div className={styles.item} key={id}>
+                <Badge variant="success" className={classNames('text-uppercase col-2 align-self-center', styles.itemBadge)}>
+                    OPEN
+                </Badge>
+                <div className={classNames('d-block col', styles.itemBatchChangeText)}>
+                    <Link to={url}>{namespaceName} / {name}</Link>
+                    <div>{summaryTexts.join(', ')}</div>
+                </div>
+            </div>
+        )
+    })
+    return <>
+        {items}
+        {allBatchChanges}
+    </>
 }
+
+const REPO_BATCH_CHANGE_FRAGMENT = gql`
+fragment RepoBatchChangeSummary on BatchChange {
+    id
+    state
+    name
+    namespace {
+        namespaceName
+    }
+    url
+    changesetsStats {
+        open
+        merged
+        closed
+    }
+}
+`
+
+const REPO_BATCH_CHANGES_SUMMARY = gql`
+query GetRepoBatchChangesSummary($name: String!) {
+    repository(name: $name) {
+        batchChanges(state: OPEN, first: 10) {
+            nodes {
+                ...RepoBatchChangeSummary
+            }
+        }
+    }
+}
+
+${REPO_BATCH_CHANGE_FRAGMENT}
+`

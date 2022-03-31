@@ -50,3 +50,13 @@
     padding-top: 1rem;
     padding-bottom: 1rem;
 }
+
+.item-badge {
+    height: fit-content;
+}
+
+.item-batch-change-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
