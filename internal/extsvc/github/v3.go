@@ -454,12 +454,11 @@ func (c *V3Client) ListRepositoryTeams(ctx context.Context, owner, repo string, 
 }
 
 // GetRepository gets a repository from GitHub by owner and repository name.
-func (c *V3Client) GetRepository(ctx context.Context, owner, name string) (repo *Repository, err error) {
+func (c *V3Client) GetRepository(ctx context.Context, owner, name string) (*Repository, error) {
 	if GetRepositoryMock != nil {
 		return GetRepositoryMock(ctx, owner, name)
 	}
-	repo, err = c.getRepositoryFromAPI(ctx, owner, name)
-	return repo, err
+	return c.getRepositoryFromAPI(ctx, owner, name)
 
 }
 
