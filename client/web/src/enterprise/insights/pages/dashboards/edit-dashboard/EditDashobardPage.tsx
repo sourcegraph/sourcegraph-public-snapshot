@@ -109,7 +109,7 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
 
     return (
         <CodeInsightsPage className={classNames('col-8', styles.page)}>
-            <PageTitle title="Configure dashboard" />
+            <PageTitle title={`Configure ${dashboard.title} - Code Insights`} />
 
             <PageHeader path={[{ icon: CodeInsightsIcon }, { text: 'Configure dashboard' }]} />
 

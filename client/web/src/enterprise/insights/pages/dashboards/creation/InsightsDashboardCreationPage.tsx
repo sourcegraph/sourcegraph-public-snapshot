@@ -63,7 +63,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
 
     return (
         <CodeInsightsPage className={classNames('col-8', styles.page)}>
-            <PageTitle title="Add new dashboard" />
+            <PageTitle title="Add dashboard - Code Insights" />
 
             <PageHeader path={[{ icon: CodeInsightsIcon }, { text: 'Add new dashboard' }]} />
 
