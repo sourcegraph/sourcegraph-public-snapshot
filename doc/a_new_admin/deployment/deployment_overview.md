@@ -28,7 +28,7 @@ Given this, we have a few recommendations.
 
 - **Single Container** - Finally, if you're just starting out, you can [try Sourcegraph Cloud](https://sourcegraph.com) or [run Sourcegraph locally](../install/docker/index.md).
 
-> NOTE: The Single container option is provided for local proof-of-concepts and not intended for testing or deployed at a pre-production/production level. Some features, such as Code Insights are not available when using this deployemnt type. If you're just starting out, and want the absolute quickest setup time, [try Sourcegraph Cloud](https://sourcegraph.com) or consider a [managed instance](../install/managed.md).
+> NOTE: The Single container option is provided for local proof-of-concepts and not intended for testing or deployed at a pre-production/production level. Some features, such as Code Insights are not available when using this deployemnt type. If you're just starting out, and want the absolute quickest setup time, [try Sourcegraph Cloud](https://sourcegraph.com).
 
 ## External services
 

@@ -47,7 +47,6 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Access management](test.md)
   - [Repository management](test.md)
   - [Monitoring and alerting](test.md)
-  - [Migration](test.md)
 - [Administration](admin/index.md)
   - [Install](admin/install/index.md)
   - [Upgrade](admin/updates/index.md)
