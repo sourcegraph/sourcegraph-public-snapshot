@@ -6,9 +6,8 @@ import _VisibilitySensor from 'react-visibility-sensor'
 import { of } from 'rxjs'
 import sinon from 'sinon'
 
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
-
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
+import { renderWithBrandedContext } from '../testing'
 import {
     RESULT,
     HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,

@@ -7,8 +7,9 @@ import ArrowExpandDownIcon from 'mdi-react/ArrowExpandDownIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 
-import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
 import { Button, Icon } from '@sourcegraph/wildcard'
+
+import { formatRepositoryStarCount } from '../util/stars'
 
 import { SearchResultStar } from './SearchResultStar'
 
