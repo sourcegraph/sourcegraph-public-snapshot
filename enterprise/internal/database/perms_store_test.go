@@ -1015,7 +1015,6 @@ func checkRepoPendingPermsTable(
 		if expects[id] == nil {
 			return errors.Errorf("unexpected row in table: (id: %v) -> (ids: %v)", id, intIDs)
 		}
-		want := fmt.Sprintf("%v", expects[id])
 
 		haveSpecs := make([]extsvc.AccountSpec, 0, len(intIDs))
 		for _, userID := range intIDs {
@@ -1026,11 +1025,23 @@ func checkRepoPendingPermsTable(
 
 			haveSpecs = append(haveSpecs, spec)
 		}
+		wantSpecs := expects[id]
 
-		have := fmt.Sprintf("%v", haveSpecs)
-		if have != want {
-			return errors.Errorf("intIDs - id %d: want %q but got %q", id, want, have)
+		// Verify Specs are the same, the ordering might not be the same but the elements/length are.
+		if len(wantSpecs) != len(haveSpecs) {
+			return errors.Errorf("initIDs - id %d: want %q but got %q", id, wantSpecs, haveSpecs)
 		}
+		wantSpecsSet := map[extsvc.AccountSpec]struct{}{}
+		for _, spec := range wantSpecs {
+			wantSpecsSet[spec] = struct{}{}
+		}
+
+		for _, spec := range haveSpecs {
+			if _, ok := wantSpecsSet[spec]; !ok {
+				return errors.Errorf("initIDs - id %d: want %q but got %q", id, wantSpecs, haveSpecs)
+			}
+		}
+
 		delete(expects, id)
 	}
 
