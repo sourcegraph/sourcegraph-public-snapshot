@@ -50,7 +50,7 @@ type RepoCommit struct {
 func (rc RepoCommit) LogFields() []log.Field {
 	return []log.Field{
 		log.String("repo", string(rc.Repo)),
-		log.String("rommitID", string(rc.CommitID)),
+		log.String("commitID", string(rc.CommitID)),
 	}
 }
 
