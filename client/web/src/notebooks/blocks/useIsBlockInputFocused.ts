@@ -9,7 +9,7 @@ export function isBlockInputFocused(id: string): boolean {
         return false
     }
     const activeTagName = activeElement.tagName.toLowerCase()
-    return activeTagName === 'input' || activeTagName === 'textarea'
+    return activeTagName === 'input' || activeTagName === 'textarea' || activeElement.contentEditable === 'true'
 }
 
 export function useIsBlockInputFocused(id: string): boolean {

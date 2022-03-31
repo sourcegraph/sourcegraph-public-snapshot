@@ -2,6 +2,8 @@ import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
 
+import { Label } from '../../Typography/Label'
+
 import styles from './IconRadioButtons.module.scss'
 
 interface Icon {
@@ -39,7 +41,7 @@ export const IconRadioButtons: React.FunctionComponent<Props> = ({
         <ul className={classNames(className, styles.buttons)}>
             {Object.values(icons).map(({ icon: Icon, name: iconName, value }) => (
                 <li key={iconName} className="d-flex">
-                    <label className={styles.label}>
+                    <Label className={styles.label}>
                         <input
                             disabled={disabled}
                             type="radio"
@@ -65,7 +67,7 @@ export const IconRadioButtons: React.FunctionComponent<Props> = ({
                         >
                             <Icon />
                         </span>
-                    </label>
+                    </Label>
                 </li>
             ))}
         </ul>

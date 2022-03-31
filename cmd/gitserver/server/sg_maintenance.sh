@@ -52,10 +52,7 @@ git reflog expire --all
 # instances. Restricting the memory consumption by setting pack.windowMemory,
 # pack.deltaCacheSize and pack.threads in addition to --geometric=2 seemed to
 # have no effect.
-git repack -d -l -A --write-bitmap-index --window-memory 100m --unpack-unreachable=2.weeks.ago
-
-# Usually run by git gc. Prune all unreachable objects form the object database.
-git prune --expire 2.weeks.ago
+git repack -d -l -A --write-bitmap-index --window-memory 100m --unpack-unreachable=now
 
 # With the --changed-paths option, compute and write information about the
 # paths changed between a commit and its first parent. This operation can take

@@ -2,6 +2,8 @@
 ###################################### READ ME ###########################################
 ### This changelog should always be read on `main` branch. Its contents on version     ###
 ### branches do not necessarily reflect the changes that have gone into that branch.   ###
+### To update the changelog add your changes to the appropriate section under the      ###
+### "Unreleased" heading. ###
 ##########################################################################################
 -->
 
@@ -15,17 +17,19 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
--
+- Add "getting started/quick start checklist for authenticated users" [#32882](https://github.com/sourcegraph/sourcegraph/pull/32882)
 
 ### Changed
 
 - Code Insights: Added locked insights overlays for frozen insights while in limited access mode. Restricted insight editing save change button for frozen insights. [#33062](https://github.com/sourcegraph/sourcegraph/pull/33062)
 - Code Insights: A global dashboard will now be automatically created while in limited access mode to provide consistent visibility for unlocked insights. This dashboard cannot be deleted or modified while in limited access mode. [#32992](https://github.com/sourcegraph/sourcegraph/pull/32992)
+- Update "getting started checklist for visitors" to a new design [TODO:]
+- Update "getting started/quick start checklist for visitors" to a new design [#32882](https://github.com/sourcegraph/sourcegraph/pull/32882)
 
 ### Fixed
 
 - Fixed reading search pattern type from settings [#32989](https://github.com/sourcegraph/sourcegraph/issues/32989)
--
+- Display a tooltip and truncate the title of a search result when content overflows [#32904](https://github.com/sourcegraph/sourcegraph/pull/32904)
 
 ### Removed
 

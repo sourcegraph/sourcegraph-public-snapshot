@@ -6,9 +6,12 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"golang.org/x/sync/semaphore"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/lockfiles"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -18,7 +21,12 @@ var (
 	svcOnce sync.Once
 )
 
-func GetService(db database.DB, lockfilesService LockfilesService, syncer Syncer) *Service {
+var (
+	lockfilesSemaphoreWeight = env.MustGetInt("CODEINTEL_DEPENDENCIES_LOCKFILES_SEMAPHORE_WEIGHT", 64, "The maximum number of concurrent routines parsing lockfile contents.")
+	syncerSemaphoreWeight    = env.MustGetInt("CODEINTEL_DEPENDENCIES_LOCKFILES_SYNCER_WEIGHT", 64, "The maximum number of concurrent routines actively syncing repositories.")
+)
+
+func GetService(db database.DB, syncer Syncer) *Service {
 	svcOnce.Do(func() {
 		observationContext := &observation.Context{
 			Logger:     log15.Root(),
@@ -26,10 +34,15 @@ func GetService(db database.DB, lockfilesService LockfilesService, syncer Syncer
 			Registerer: prometheus.DefaultRegisterer,
 		}
 
+		gitService := lockfiles.NewDefaultGitService(nil, db)
+		lockfilesService := lockfiles.GetService(gitService)
+
 		svc = newService(
 			store.GetStore(db),
 			lockfilesService,
+			semaphore.NewWeighted(int64(lockfilesSemaphoreWeight)),
 			syncer,
+			semaphore.NewWeighted(int64(syncerSemaphoreWeight)),
 			observationContext,
 		)
 	})

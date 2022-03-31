@@ -29,6 +29,7 @@ var (
 		"merge-base":   {"--"},
 		"show-ref":     {"--heads"},
 		"shortlog":     {"-s", "-n", "-e", "--no-merges"},
+		"cat-file":     {},
 
 		// Used in tests to simulate errors with runCommand in handleExec of gitserver.
 		"testcommand": {},

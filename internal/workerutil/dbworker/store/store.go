@@ -343,6 +343,8 @@ func (s *store) With(other basestore.ShareableStore) Store {
 }
 
 // columnNames contain the names of the columns expected to be defined by the target table.
+// Note: adding a new column to this list requires updating the worker documentation
+// https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/background-information/workers.md#database-backed-stores
 var columnNames = []string{
 	"id",
 	"state",
