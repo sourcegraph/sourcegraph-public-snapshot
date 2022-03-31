@@ -353,82 +353,80 @@ export const TreePage: React.FunctionComponent<Props> = ({
 
                         <div>
                             <section className={classNames('test-tree-entries mb-3', styles.section)}>
-                                {treeOrError.isRoot && (
-                                    <Switch>
-                                        <Route
-                                            path={`${treeOrError.url}/-/tag/tab`}
-                                            render={routeComponentProps => (
-                                                <RepositoryTagTab repo={repo} {...routeComponentProps} />
-                                            )}
-                                        />
-                                        <Route
-                                            path={`${treeOrError.url}/-/docs/tab`}
-                                            render={routeComponentProps => (
-                                                <RepoDocs
-                                                    repo={repo}
-                                                    useBreadcrumb={useBreadcrumb}
-                                                    {...routeComponentProps}
-                                                    {...props}
-                                                />
-                                            )}
-                                        />
-                                        <Route
-                                            path={`${treeOrError.url}/-/commits/tab`}
-                                            render={routeComponentProps => (
-                                                <RepoCommits
-                                                    repo={repo}
-                                                    useBreadcrumb={useBreadcrumb}
-                                                    {...props}
-                                                    {...routeComponentProps}
-                                                />
-                                            )}
-                                        />
-                                        <Route
-                                            path={`${treeOrError.url}`}
-                                            exact={true}
-                                            render={routeComponentProps => (
-                                                <HomeTab
-                                                    {...homeTabProps}
-                                                    {...props}
-                                                    {...routeComponentProps}
-                                                    repo={repo}
-                                                />
-                                            )}
-                                        />
-                                        <Route
-                                            path={`${treeOrError.url}/-/branch/tab`}
-                                            render={routeComponentProps => (
-                                                <RepositoryBranchesTab repo={repo} {...routeComponentProps} />
-                                            )}
-                                        />
-                                        <Route
-                                            path={`${treeOrError.url}/-/contributors/tab`}
-                                            render={routeComponentProps => (
-                                                <RepositoryStatsContributorsPage
-                                                    {...routeComponentProps}
-                                                    repo={repo}
-                                                    {...props}
-                                                />
-                                            )}
-                                        />
-                                        <Route
-                                            path={`${treeOrError.url}/-/compare/tab`}
-                                            render={() => (
-                                                <RepoRevisionWrapper>
-                                                    <RepositoryGitDataContainer {...props} repoName={repo.name}>
-                                                        <RepositoryCompareArea
-                                                            repo={repo}
-                                                            match={match}
-                                                            settingsCascade={settingsCascade}
-                                                            useBreadcrumb={useBreadcrumb}
-                                                            {...props}
-                                                        />
-                                                    </RepositoryGitDataContainer>
-                                                </RepoRevisionWrapper>
-                                            )}
-                                        />
-                                    </Switch>
-                                )}
+                                <Switch>
+                                    <Route
+                                        path={`${treeOrError.url}/-/tag/tab`}
+                                        render={routeComponentProps => (
+                                            <RepositoryTagTab repo={repo} {...routeComponentProps} />
+                                        )}
+                                    />
+                                    <Route
+                                        path={`${treeOrError.url}/-/docs/tab`}
+                                        render={routeComponentProps => (
+                                            <RepoDocs
+                                                repo={repo}
+                                                useBreadcrumb={useBreadcrumb}
+                                                {...routeComponentProps}
+                                                {...props}
+                                            />
+                                        )}
+                                    />
+                                    <Route
+                                        path={`${treeOrError.url}/-/commits/tab`}
+                                        render={routeComponentProps => (
+                                            <RepoCommits
+                                                repo={repo}
+                                                useBreadcrumb={useBreadcrumb}
+                                                {...props}
+                                                {...routeComponentProps}
+                                            />
+                                        )}
+                                    />
+                                    <Route
+                                        path={`${treeOrError.url}`}
+                                        exact={true}
+                                        render={routeComponentProps => (
+                                            <HomeTab
+                                                {...homeTabProps}
+                                                {...props}
+                                                {...routeComponentProps}
+                                                repo={repo}
+                                            />
+                                        )}
+                                    />
+                                    <Route
+                                        path={`${treeOrError.url}/-/branch/tab`}
+                                        render={routeComponentProps => (
+                                            <RepositoryBranchesTab repo={repo} {...routeComponentProps} />
+                                        )}
+                                    />
+                                    <Route
+                                        path={`${treeOrError.url}/-/contributors/tab`}
+                                        render={routeComponentProps => (
+                                            <RepositoryStatsContributorsPage
+                                                {...routeComponentProps}
+                                                repo={repo}
+                                                {...props}
+                                            />
+                                        )}
+                                    />
+                                    <Route
+                                        path={`${treeOrError.url}/-/compare/tab`}
+                                        render={() => (
+                                            <RepoRevisionWrapper>
+                                                <RepositoryGitDataContainer {...props} repoName={repo.name}>
+                                                    <RepositoryCompareArea
+                                                        repo={repo}
+                                                        match={match}
+                                                        settingsCascade={settingsCascade}
+                                                        useBreadcrumb={useBreadcrumb}
+                                                        {...props}
+                                                    />
+                                                </RepositoryGitDataContainer>
+                                            </RepoRevisionWrapper>
+                                        )}
+                                    />
+                                </Switch>
                             </section>
                         </div>
                     </div>
