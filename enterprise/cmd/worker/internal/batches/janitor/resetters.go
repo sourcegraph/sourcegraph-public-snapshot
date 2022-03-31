@@ -44,7 +44,7 @@ func NewBatchSpecWorkspaceExecutionWorkerResetter(workerStore dbworkerstore.Stor
 	return resetter
 }
 
-func NewBatchSpecResolutionWorkerResetter(workerStore dbworkerstore.Store, metrics *metrics) *dbworker.Resetter {
+func NewBatchSpecWorkspaceResolutionWorkerResetter(workerStore dbworkerstore.Store, metrics *metrics) *dbworker.Resetter {
 	options := dbworker.ResetterOptions{
 		Name:     "batch_changes_batch_spec_resolution_worker_resetter",
 		Interval: 1 * time.Minute,

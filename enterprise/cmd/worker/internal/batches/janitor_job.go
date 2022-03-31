@@ -79,7 +79,7 @@ func (j *janitorJob) Routines(_ context.Context) ([]goroutine.BackgroundRoutine,
 			workspaceExecutionStore,
 			janitorMetrics,
 		),
-		janitor.NewBatchSpecResolutionWorkerResetter(
+		janitor.NewBatchSpecWorkspaceResolutionWorkerResetter(
 			workspaceResolutionStore,
 			janitorMetrics,
 		),

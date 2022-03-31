@@ -92,7 +92,7 @@ var initBulkOperationWorkerStore = memo.NewMemoizedConstructor(func() (interface
 	return store.NewBulkOperationWorkerStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), observationContext), nil
 })
 
-// InitBatchSpecWorkspaceExecutionWorkerStore initializes and returns a store.BatchSpecWorkspaceExecutionWorkerStore instance for the batc spec workspace execution worker.
+// InitBatchSpecWorkspaceExecutionWorkerStore initializes and returns a store.BatchSpecWorkspaceExecutionWorkerStore instance for the batch spec workspace execution worker.
 func InitBatchSpecWorkspaceExecutionWorkerStore() (store.BatchSpecWorkspaceExecutionWorkerStore, error) {
 	conn, err := initBatchSpecWorkspaceExecutionWorkerStore.Init()
 	if err != nil {
