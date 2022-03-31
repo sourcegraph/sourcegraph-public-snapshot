@@ -717,32 +717,23 @@ func (c *ClientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 		return nil
 	}
 
-	// Find the gitserver shard each of the repositories referenced in the input belong to.
-	// We'll use these maps in the following to construct batches of requests with the correct
-	// mapping of repositories to shards.
-
-	addrsByName := make(map[api.RepoName]string, len(opts.RepoCommits))
-	for _, repoCommit := range opts.RepoCommits {
-		if _, ok := addrsByName[repoCommit.Repo]; ok {
-			// Already set
-			continue
-		}
-
-		addr, err := c.AddrForRepo(ctx, repoCommit.Repo)
-		if err != nil {
-			return err
-		}
-
-		addrsByName[repoCommit.Repo] = addr
-	}
-
 	// Construct batches of requests keyed by the address of the server that will receive the batch.
 	// The results from gitserver will have to be re-interlaced before returning to the client, so we
 	// don't need to be particularly concerned about order here.
 
-	batches := make(map[string][]api.RepoCommit, len(addrsByName))
+	batches := make(map[string][]api.RepoCommit, len(opts.RepoCommits))
+	addrsByName := make(map[api.RepoName]string, len(opts.RepoCommits))
+
 	for _, repoCommit := range opts.RepoCommits {
-		addr := addrsByName[repoCommit.Repo]
+		addr, ok := addrsByName[repoCommit.Repo]
+		if !ok {
+			addr, err = c.AddrForRepo(ctx, repoCommit.Repo)
+			if err != nil {
+				return err
+			}
+
+			addrsByName[repoCommit.Repo] = addr
+		}
 
 		batches[addr] = append(batches[addr], api.RepoCommit{
 			Repo:     repoCommit.Repo,
