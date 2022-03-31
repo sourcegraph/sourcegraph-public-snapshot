@@ -266,7 +266,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                 path={[
                                                     { icon: SourceRepositoryIcon, text: displayRepoName(repo.name) },
                                                 ]}
-                                                className="mb-3 test-tree-page-title"
+                                                className="mb-2 test-tree-page-title"
                                             />
                                             {repo.description && <p>{repo.description}</p>}
                                         </div>
