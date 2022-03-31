@@ -1843,13 +1843,13 @@ func (r *Resolver) AvailableBulkOperations(ctx context.Context, args *graphqlbac
 	}
 
 	changesetIDs := make([]int64, 0, len(args.Changesets))
-	for i, changesetID := range args.Changesets {
+	for _, changesetID := range args.Changesets {
 		unmarshalledChangesetID, err := unmarshalChangesetID(changesetID)
 		if err != nil {
 			return nil, err
 		}
 
-		changesetIDs[i] = unmarshalledChangesetID
+		changesetIDs = append(changesetIDs, unmarshalledChangesetID)
 	}
 
 	svc := service.New(r.store)

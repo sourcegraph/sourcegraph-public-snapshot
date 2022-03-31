@@ -1500,44 +1500,56 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 	}
 
 	for _, changeset := range changesets {
-		if changeset.ArchivedIn(opts.BatchChange) {
-			bulkOperationsCounter[btypes.ChangesetJobTypeComment] += 1
+		isChangesetArchived := changeset.ArchivedIn(opts.BatchChange)
+		isChangesetDraft := changeset.ExternalState == btypes.ChangesetExternalStateDraft
+		isChangesetOpen := changeset.ExternalState == btypes.ChangesetExternalStateOpen
+		isChangesetClosed := changeset.ExternalState == btypes.ChangesetExternalStateClosed
+		isChangesetMerged := changeset.ExternalState == btypes.ChangesetExternalStateMerged
+		isChangesetPublished := changeset.PublicationState == btypes.ChangesetPublicationStateUnpublished
+
+		// can changeset be published
+		isChangesetPublishable := isChangesetPublished || isChangesetDraft || isChangesetOpen
+		isChangesetCommentable := isChangesetOpen || isChangesetDraft || isChangesetMerged || isChangesetClosed
+		isChangesetClosable := isChangesetOpen || isChangesetDraft || isChangesetMerged
+
+		// check what operations this changeset support, most likely from the state
+		// so get the changeset then derive the operations from it's state
+
+		// DETACH
+		if isChangesetArchived {
 			bulkOperationsCounter[btypes.ChangesetJobTypeDetach] += 1
-			continue
 		}
 
-		if changeset.ReconcilerState == btypes.ReconcilerStateFailed {
+		// REENQUEUE
+		if !isChangesetArchived && changeset.ReconcilerState == btypes.ReconcilerStateFailed {
 			bulkOperationsCounter[btypes.ChangesetJobTypeReenqueue] += 1
 			continue
 		}
 
-		if changeset.PublicationState == btypes.ChangesetPublicationStateUnpublished {
+		// PUBLISH
+		if !isChangesetArchived && isChangesetPublishable {
 			bulkOperationsCounter[btypes.ChangesetJobTypePublish] += 1
-			continue
 		}
 
-		// check what operations this changeset support, most likely from the state
-		// so get the changeset then derive the operations from it's state
-		switch changeset.ExternalState {
-		case btypes.ChangesetExternalStateDraft:
+		// CLOSE
+		if !isChangesetArchived && isChangesetClosable {
 			bulkOperationsCounter[btypes.ChangesetJobTypeClose] += 1
-			bulkOperationsCounter[btypes.ChangesetJobTypeComment] += 1
-			bulkOperationsCounter[btypes.ChangesetJobTypePublish] += 1
-		case btypes.ChangesetExternalStateOpen:
-			bulkOperationsCounter[btypes.ChangesetJobTypeClose] += 1
-			bulkOperationsCounter[btypes.ChangesetJobTypeComment] += 1
-			bulkOperationsCounter[btypes.ChangesetJobTypePublish] += 1
+		}
+
+		// MERGE
+		if !isChangesetArchived && isChangesetOpen {
 			bulkOperationsCounter[btypes.ChangesetJobTypeMerge] += 1
-		case btypes.ChangesetExternalStateClosed:
+		}
+
+		// COMMENT
+		if isChangesetArchived || isChangesetCommentable {
 			bulkOperationsCounter[btypes.ChangesetJobTypeComment] += 1
-		case btypes.ChangesetExternalStateMerged:
-			bulkOperationsCounter[btypes.ChangesetJobTypeComment] += 1
-			bulkOperationsCounter[btypes.ChangesetJobTypeClose] += 1
 		}
 	}
 
 	noOfChangesets := len(opts.Changesets)
-	var availableBulkOperations []string
+	availableBulkOperations := make([]string, 0, len(bulkOperationsCounter))
+
 	for jobType, count := range bulkOperationsCounter {
 		// we only want to return bulkoperationType that can be applied
 		// to all given changesets.
