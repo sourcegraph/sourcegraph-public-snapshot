@@ -59,7 +59,7 @@ import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
 import { newSettingsGetter } from './settings'
 import { findSearchToken } from './token'
 import { useCodeIntel } from './useCodeIntel'
-import { useRepoAndBlob } from './useRepoAndRevision'
+import { useRepoAndBlob } from './useRepoAndBlob'
 import { isDefined } from './util/helpers'
 
 import styles from './ReferencesPanel.module.scss'

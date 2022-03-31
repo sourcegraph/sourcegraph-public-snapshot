@@ -250,7 +250,7 @@ export const CODE_INTEL_SEARCH_QUERY = gql`
 `
 
 export const RESOLVE_REPO_REVISION_BLOB_QUERY = gql`
-    fragment RepoAndRevisionFields on Repository {
+    fragment RepoRevisionBlobFields on Repository {
         id
         name
         url
@@ -283,7 +283,7 @@ export const RESOLVE_REPO_REVISION_BLOB_QUERY = gql`
         repositoryRedirect(name: $repoName) {
             __typename
             ... on Repository {
-                ...RepoAndRevisionFields
+                ...RepoRevisionBlobFields
             }
             ... on Redirect {
                 url
