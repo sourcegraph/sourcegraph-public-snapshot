@@ -219,21 +219,11 @@ export const TreePage: React.FunctionComponent<Props> = ({
             )
         ) ?? {}
 
-    const newRepoPage = true
-    // To start using the feature flag bellow, you can go to /api/console and
+    // To start using the feature flag bellow, you can go to /site-admin/feature-flags and
     // create a new featurFlag named 'new-repo-page' and set its value to true.
+    // https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag
 
-    // const newRepoPage = (): boolean => {
-    //     let showPage = false
-    //     const flags = featureFlags.entries()
-    //     for(const [key, value] of flags) {
-    //         if (key.match('new-repo-page') && value) {
-    //             showPage = true
-    //         }
-    //     }
-
-    //     return showPage
-    // }
+    const newRepoPage = featureFlags.get('new-repo-page')
 
     const homeTabProps = {
         repo,
