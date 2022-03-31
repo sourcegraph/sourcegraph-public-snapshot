@@ -2177,7 +2177,7 @@ func TestService(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			expectedBulkOperations := []string{"REENQUEUE"}
+			expectedBulkOperations := []string{"REENQUEUE", "PUBLISH", "CLOSE"}
 			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
@@ -2204,7 +2204,7 @@ func TestService(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			expectedBulkOperations := []string{"COMMENT", "DETACH"}
+			expectedBulkOperations := []string{"DETACH"}
 			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
@@ -2303,7 +2303,7 @@ func TestService(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			expectedBulkOperations := []string{"COMMENT"}
+			expectedBulkOperations := []string{"COMMENT", "PUBLISH"}
 			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
@@ -2328,7 +2328,7 @@ func TestService(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			expectedBulkOperations := []string{"CLOSE", "COMMENT"}
+			expectedBulkOperations := []string{"COMMENT", "PUBLISH"}
 			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
@@ -2412,7 +2412,7 @@ func TestService(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			expectedBulkOperations := []string{"COMMENT"}
+			expectedBulkOperations := []string{"COMMENT", "PUBLISH"}
 			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}

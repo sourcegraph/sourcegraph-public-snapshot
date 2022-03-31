@@ -1505,15 +1505,14 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 		isChangesetOpen := changeset.ExternalState == btypes.ChangesetExternalStateOpen
 		isChangesetClosed := changeset.ExternalState == btypes.ChangesetExternalStateClosed
 		isChangesetMerged := changeset.ExternalState == btypes.ChangesetExternalStateMerged
-		isChangesetPublished := changeset.PublicationState == btypes.ChangesetPublicationStateUnpublished
+		isChangsetJobFailed := changeset.ReconcilerState == btypes.ReconcilerStateFailed
 
 		// can changeset be published
-		isChangesetPublishable := isChangesetPublished || isChangesetDraft || isChangesetOpen
 		isChangesetCommentable := isChangesetOpen || isChangesetDraft || isChangesetMerged || isChangesetClosed
-		isChangesetClosable := isChangesetOpen || isChangesetDraft || isChangesetMerged
+		isChangesetClosable := isChangesetOpen || isChangesetDraft || isChangsetJobFailed
 
 		// check what operations this changeset support, most likely from the state
-		// so get the changeset then derive the operations from it's state
+		// so get the changeset then derive the operations from it's state.
 
 		// DETACH
 		if isChangesetArchived {
@@ -1521,13 +1520,12 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 		}
 
 		// REENQUEUE
-		if !isChangesetArchived && changeset.ReconcilerState == btypes.ReconcilerStateFailed {
+		if !isChangesetArchived && isChangsetJobFailed {
 			bulkOperationsCounter[btypes.ChangesetJobTypeReenqueue] += 1
-			continue
 		}
 
 		// PUBLISH
-		if !isChangesetArchived && isChangesetPublishable {
+		if !isChangesetArchived {
 			bulkOperationsCounter[btypes.ChangesetJobTypePublish] += 1
 		}
 
@@ -1537,12 +1535,12 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 		}
 
 		// MERGE
-		if !isChangesetArchived && isChangesetOpen {
+		if !isChangesetArchived && !isChangsetJobFailed && isChangesetOpen {
 			bulkOperationsCounter[btypes.ChangesetJobTypeMerge] += 1
 		}
 
 		// COMMENT
-		if isChangesetArchived || isChangesetCommentable {
+		if isChangesetCommentable {
 			bulkOperationsCounter[btypes.ChangesetJobTypeComment] += 1
 		}
 	}
