@@ -3,6 +3,7 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -83,6 +84,11 @@ func requestGitlabProjects(ctx context.Context, url, token string) (_ []string, 
 		return nil, "", err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
+		return nil, "", errors.Wrap(errors.Newf("http status %d: %s", resp.StatusCode, body), "gitlab error")
+	}
 
 	var projects []struct {
 		Name string `json:"path_with_namespace"`
