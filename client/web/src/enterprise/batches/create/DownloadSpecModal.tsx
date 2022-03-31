@@ -12,9 +12,18 @@ import styles from './DownloadSpecModal.module.scss'
 export interface DownloadSpecModalProps {
     onCancel: () => void
     onConfirm: () => void
+    name: string
+    originalInput: string
+    isLightTheme: boolean
 }
 
-export const DownloadSpecModal: React.FunctionComponent<DownloadSpecModalProps> = ({ onCancel, onConfirm }) => (
+export const DownloadSpecModal: React.FunctionComponent<DownloadSpecModalProps> = ({
+    onCancel,
+    onConfirm,
+    name,
+    originalInput,
+    isLightTheme,
+}) => (
     <Modal onDismiss={onCancel} aria-labelledby={MODAL_LABEL_ID} className={styles.modal}>
         <>
             <div>
@@ -76,7 +85,7 @@ export const DownloadSpecModal: React.FunctionComponent<DownloadSpecModalProps> 
                         <Button className="mr-2" onClick={onCancel} outline={true} variant="secondary" size="sm">
                             Cancel
                         </Button>
-                        <BatchSpecDownloadLink name={batchChange.name} originalInput={code} isLightTheme={isLightTheme}>
+                        <BatchSpecDownloadLink name={name} originalInput={originalInput} isLightTheme={isLightTheme}>
                             <Button onClick={onConfirm} variant="primary" size="sm">
                                 Download Spec
                             </Button>
