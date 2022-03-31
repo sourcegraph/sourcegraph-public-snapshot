@@ -139,5 +139,7 @@ function getActionEventTitle(action: MonitorTriggerEventWithActions['actions']['
             return 'Slack'
         case 'MonitorWebhook':
             return 'Webhook'
+        case 'MonitorBatchChange':
+            return 'Batch Change'
     }
 }

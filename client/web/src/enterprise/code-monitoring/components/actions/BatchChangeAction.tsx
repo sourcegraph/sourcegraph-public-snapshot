@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import { gql } from '@apollo/client'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery } from '@sourcegraph/http-client'
 import { Alert, ProductStatusBadge, Select } from '@sourcegraph/wildcard'
 
@@ -72,7 +73,9 @@ export const BatchChangeAction: React.FunctionComponent<ActionProps> = ({
     const onSubmit: React.FormEventHandler = useCallback(
         event => {
             event.preventDefault()
-            console.log('onSubmit selected')
+            if (!selectedBatchChange) {
+                return
+            }
             setAction({
                 __typename: 'MonitorBatchChange',
                 id: action ? action.id : '',
@@ -94,8 +97,7 @@ export const BatchChangeAction: React.FunctionComponent<ActionProps> = ({
         setAction(undefined)
     }, [setAction])
 
-    // TODO: Handle errors.
-    const { loading, data } = useQuery<ListBatchChangeAutocompleteResult, ListBatchChangeAutocompleteVariables>(
+    const { loading, data, error } = useQuery<ListBatchChangeAutocompleteResult, ListBatchChangeAutocompleteVariables>(
         LIST_AUTOCOMPLETE,
         {
             variables: {
@@ -103,6 +105,10 @@ export const BatchChangeAction: React.FunctionComponent<ActionProps> = ({
             },
         }
     )
+
+    if (error) {
+        return <ErrorAlert error={error} />
+    }
 
     return (
         <ActionEditor

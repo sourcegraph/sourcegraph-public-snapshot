@@ -82,6 +82,12 @@ export const CODE_MONITOR_EVENTS = gql`
                         ...MonitorActionEvents
                     }
                 }
+                ... on MonitorBatchChange {
+                    __typename
+                    events {
+                        ...MonitorActionEvents
+                    }
+                }
             }
         }
     }
