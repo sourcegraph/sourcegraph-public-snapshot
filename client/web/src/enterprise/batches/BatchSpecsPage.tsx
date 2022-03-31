@@ -4,12 +4,9 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { RouteComponentProps } from 'react-router'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import {
-    FilteredConnection,
-    FilteredConnectionQueryArguments,
-} from '@sourcegraph/web/src/components/FilteredConnection'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
+import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { BatchSpecListFields, Scalars } from '../../graphql-operations'
 

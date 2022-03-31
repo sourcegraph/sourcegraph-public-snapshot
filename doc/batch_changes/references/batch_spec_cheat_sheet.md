@@ -214,3 +214,15 @@ steps:
 Since GitHub expression syntax conflicts with Sourcegraph's own template expression syntax, including the expression again as a quoted string within a template expression means that the inner expression will be output as a string (effectively, "ignoring" the contents of the inner expression). For `run:` fields specifically, to avoid the shell also interpreting the GitHub expression as a variable when executing the script, we need to escape the quoted `$` with two backslashes: firstly for the shell script itself, and secondly to escape the backslash within the template expression string.
 
 To use the literal sequence `${{ }}` in non-`run:` fields of the batch spec that [supports templating](batch_spec_templating.md#fields-with-template-support), quoted strings are normally sufficient: `${{ "${{ leave me alone! }}" }}`
+
+### List what files were modified by the batch change in the changeset
+
+```
+changesetTemplate:
+  title: A batch change
+  body: | 
+    This batch change modifies:
+      ${{ range $index, $file := steps.modified_files }}
+       - ${{ $file }}
+      ${{ end }}
+```

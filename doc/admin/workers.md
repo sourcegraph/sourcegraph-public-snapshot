@@ -25,6 +25,7 @@ This job periodically removes expired and unreachable code intelligence data and
 This job periodically checks for repositories that can be auto-indexed and queues indexing jobs for a remote executor instance to perform. Read how to [enable](../code_intelligence/how-to/enable_auto_indexing.md) and [configure](../code_intelligence/how-to/configure_auto_indexing.md) auto-indexing.
 
 #### `insights-job`
+
 This job contains all of the backgrounds processes for Code Insights. These processes periodically run and execute different tasks for Code Insights:
 1. Commit indexer
 2. Background query executor
@@ -41,10 +42,38 @@ This job periodically removes stale log entries for incoming webhooks.
 This job periodically removes old heartbeat records for inactive executor instances.
 
 #### `codemonitors-job`
+
 This job contains all the background processes for Code Monitors:
 1. Periodically execute searches
 2. Execute actions triggered by searches
 3. Cleanup of old execution logs
+
+#### `batches-janitor`
+
+This job runs the following cleanup tasks related to Batch Changes in the background:
+1. Metrics exporter for executors
+2. Changeset reconciler worker resetter
+3. Bulk operation worker resetter
+4. Batch spec workspace execution resetter
+5. Batch spec resolution worker resetter
+6. Changeset spec expirer
+7. Execution cache entry cleaner
+
+#### `batches-scheduler`
+
+This job runs the Batch Changes changeset scheduler for rollout windows.
+
+#### `batches-reconciler`
+
+This job runs the changeset reconciler that publishes, modifies and closes changesets on the code host.
+
+#### `batches-bulk-processor`
+
+This job executes the bulk operations in the background.
+
+#### `batches-workspace-resolver`
+
+This job runs the workspace resolutions for batch specs. Used for batch changes that are running server-side.
 
 ## Deploying workers
 

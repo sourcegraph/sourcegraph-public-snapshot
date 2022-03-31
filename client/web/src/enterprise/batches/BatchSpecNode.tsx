@@ -13,9 +13,9 @@ import TimerSandIcon from 'mdi-react/TimerSandIcon'
 
 import { BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Button, Link, Icon } from '@sourcegraph/wildcard'
 
+import { Timestamp } from '../../components/time/Timestamp'
 import { BatchSpecListFields, Scalars } from '../../graphql-operations'
 
 import { BatchSpec } from './BatchSpec'

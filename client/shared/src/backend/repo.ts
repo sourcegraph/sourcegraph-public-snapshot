@@ -3,10 +3,10 @@ import { map } from 'rxjs/operators'
 
 import { memoizeObservable } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { RepoSpec } from '@sourcegraph/shared/src/util/url'
 
 import { PlatformContext } from '../platform/context'
 import * as GQL from '../schema'
+import { RepoSpec } from '../util/url'
 
 import { CloneInProgressError, RepoNotFoundError } from './errors'
 

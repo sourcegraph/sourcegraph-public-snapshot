@@ -6,8 +6,8 @@ import { Meta, Story } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
-import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
+import { WebStory } from '../../../../components/WebStory'
 import {
     CodeIntelligenceConfigurationPoliciesResult,
     IndexConfigurationResult,

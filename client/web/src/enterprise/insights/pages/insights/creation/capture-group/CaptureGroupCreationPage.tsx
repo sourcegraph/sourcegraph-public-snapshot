@@ -60,7 +60,7 @@ export const CaptureGroupCreationPage: React.FunctionComponent<CaptureGroupCreat
 
     return (
         <CodeInsightsPage>
-            <PageTitle title="Create new capture group code insight" />
+            <PageTitle title="Create insight - Code Insights" />
 
             <PageHeader
                 className="mb-5"

@@ -356,6 +356,12 @@ func TestCleanupOldLocks(t *testing.T) {
 		"github.com/foo/freshpacked/.git/HEAD",
 		"github.com/foo/freshpacked/.git/packed-refs.lock",
 
+		"github.com/foo/freshcommitgraphlock/.git/HEAD",
+		"github.com/foo/freshcommitgraphlock/.git/objects/info/commit-graph.lock",
+
+		"github.com/foo/stalecommitgraphlock/.git/HEAD",
+		"github.com/foo/stalecommitgraphlock/.git/objects/info/commit-graph.lock",
+
 		"github.com/foo/staleconfiglock/.git/HEAD",
 		"github.com/foo/staleconfiglock/.git/config.lock",
 
@@ -378,6 +384,7 @@ func TestCleanupOldLocks(t *testing.T) {
 	chtime("github.com/foo/staleconfiglock/.git/config.lock", time.Hour)
 	chtime("github.com/foo/stalepacked/.git/packed-refs.lock", 2*time.Hour)
 	chtime("github.com/foo/refslock/.git/refs/heads/stale.lock", 2*time.Hour)
+	chtime("github.com/foo/stalecommitgraphlock/.git/objects/info/commit-graph.lock", 2*time.Hour)
 
 	s := &Server{ReposDir: root}
 	s.Handler() // Handler as a side-effect sets up Server
@@ -396,6 +403,14 @@ func TestCleanupOldLocks(t *testing.T) {
 		"github.com/foo/freshpacked/.git/HEAD",
 		"github.com/foo/freshpacked/.git/packed-refs.lock",
 		"github.com/foo/freshpacked/.git/info/attributes",
+
+		"github.com/foo/freshcommitgraphlock/.git/HEAD",
+		"github.com/foo/freshcommitgraphlock/.git/objects/info/commit-graph.lock",
+		"github.com/foo/freshcommitgraphlock/.git/info/attributes",
+
+		"github.com/foo/stalecommitgraphlock/.git/HEAD",
+		"github.com/foo/stalecommitgraphlock/.git/info/attributes",
+		"github.com/foo/stalecommitgraphlock/.git/objects/info",
 
 		"github.com/foo/staleconfiglock/.git/HEAD",
 		"github.com/foo/staleconfiglock/.git/info/attributes",
