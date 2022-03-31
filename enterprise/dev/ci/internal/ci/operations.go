@@ -224,7 +224,6 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
 			bk.Env("BROWSER", browser),
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
-			bk.Env("PERCY_ON", "true"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
 			bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
 			bk.Cmd("git-lfs fetch"),
