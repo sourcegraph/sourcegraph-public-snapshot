@@ -1,14 +1,5 @@
 // @ts-check
 
-const fs = require('fs')
-const path = require('path')
-
-const restrictedImportsClientPackages = fs
-  .readdirSync(path.join(__dirname, 'client'), { withFileTypes: true })
-  // Ignored shared and branded packages here
-  .filter(dirent => dirent.isDirectory() && !['shared', 'branded'].includes(dirent.name))
-  .map(({ name }) => name)
-
 const config = {
   extends: '@sourcegraph/eslint-config',
   env: {
@@ -88,27 +79,16 @@ const config = {
 
 See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-source for more information.`,
           },
-          ...restrictedImportsClientPackages.map(package => ({
-            group:
-              package === 'web'
-                ? /**
-                   * Tried this but doesn't work
-                   * [
-                   *  @sourcegraph/*\/*
-                   *  !@sourcegraph/branded/*
-                   *  !@sourcegraph/shared/*
-                   *  !@sourcegraph/web/src/SourcegraphWebApp.scss
-                   * ]
-                   * however smaller groupings worked
-                   * [
-                   *   '@sourcegraph/web/*\/*',
-                   *   '!@sourcegraph/web/src/SourcegraphWebApp.scss'
-                   * ]
-                   */
-                  ['@sourcegraph/web/*/*', '!@sourcegraph/web/src/SourcegraphWebApp.scss']
-                : [`@sourcegraph/${package}/*`],
-            message: `Imports from "${package}" package internal are banned`,
-          })),
+          {
+            group: [
+              '@sourcegraph/*/src/*',
+              '!@sourcegraph/branded/src/*',
+              '!@sourcegraph/shared/src/*',
+              '!@sourcegraph/web/src/SourcegraphWebApp.scss',
+            ],
+            message:
+              'Imports from package internals are banned. Add relevant export to the entry point of the package to import it from the outside world.',
+          },
         ],
       },
     ],
