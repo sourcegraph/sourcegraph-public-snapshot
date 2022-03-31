@@ -184,6 +184,9 @@ func TestParsePRNumberInMergeCommit(t *testing.T) {
 		{name: "Merge commit with revert", message: `Revert "Support diffing for unrelated commits. (#32015)" (#32737)`, want: 32737},
 		{name: "Normal commit", message: `YOLO I commit on main without PR`, want: 0},
 		{name: "Merge commit", message: `batches: Properly quote name in YAML (#32951)`, want: 32951},
+		{name: "Merge commit with additional desc", message: `Fix repopendingperms tests (#33247)
+
+* Fix repopendingperms tests`, want: 33247},
 	}
 
 	for _, test := range tests {
