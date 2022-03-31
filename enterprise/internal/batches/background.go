@@ -7,7 +7,6 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -46,11 +45,7 @@ func InitBackgroundJobs(
 
 	syncRegistry := syncer.NewSyncRegistry(ctx, bstore, cf, observationContext)
 
-	routines := background.Routines(ctx, bstore, cf, observationContext, db)
-
-	routines = append(routines, syncRegistry)
-
-	go goroutine.MonitorBackgroundRoutines(ctx, routines...)
+	go goroutine.MonitorBackgroundRoutines(ctx, syncRegistry)
 
 	return syncRegistry
 }

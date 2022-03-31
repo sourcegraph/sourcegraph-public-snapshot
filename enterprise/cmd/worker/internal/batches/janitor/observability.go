@@ -1,4 +1,4 @@
-package background
+package janitor
 
 import (
 	"fmt"
@@ -6,32 +6,21 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 )
 
-type batchChangesMetrics struct {
-	reconcilerWorkerMetrics            workerutil.WorkerMetrics
-	bulkProcessorWorkerMetrics         workerutil.WorkerMetrics
-	reconcilerWorkerResetterMetrics    dbworker.ResetterMetrics
-	bulkProcessorWorkerResetterMetrics dbworker.ResetterMetrics
-
-	batchSpecResolutionWorkerMetrics         workerutil.WorkerMetrics
-	batchSpecResolutionWorkerResetterMetrics dbworker.ResetterMetrics
-
+type metrics struct {
+	reconcilerWorkerResetterMetrics                  dbworker.ResetterMetrics
+	bulkProcessorWorkerResetterMetrics               dbworker.ResetterMetrics
+	batchSpecResolutionWorkerResetterMetrics         dbworker.ResetterMetrics
 	batchSpecWorkspaceExecutionWorkerResetterMetrics dbworker.ResetterMetrics
 }
 
-func newMetrics(observationContext *observation.Context) batchChangesMetrics {
-	return batchChangesMetrics{
-		reconcilerWorkerMetrics:            workerutil.NewMetrics(observationContext, "batch_changes_reconciler"),
-		bulkProcessorWorkerMetrics:         workerutil.NewMetrics(observationContext, "batch_changes_bulk_processor"),
-		reconcilerWorkerResetterMetrics:    makeResetterMetrics(observationContext, "batch_changes_reconciler"),
-		bulkProcessorWorkerResetterMetrics: makeResetterMetrics(observationContext, "batch_changes_bulk_processor"),
-
-		batchSpecResolutionWorkerMetrics:         workerutil.NewMetrics(observationContext, "batch_changes_batch_spec_resolution_worker"),
-		batchSpecResolutionWorkerResetterMetrics: makeResetterMetrics(observationContext, "batch_changes_batch_spec_resolution_worker_resetter"),
-
+func NewMetrics(observationContext *observation.Context) *metrics {
+	return &metrics{
+		reconcilerWorkerResetterMetrics:                  makeResetterMetrics(observationContext, "batch_changes_reconciler"),
+		bulkProcessorWorkerResetterMetrics:               makeResetterMetrics(observationContext, "batch_changes_bulk_processor"),
+		batchSpecResolutionWorkerResetterMetrics:         makeResetterMetrics(observationContext, "batch_changes_batch_spec_resolution_worker_resetter"),
 		batchSpecWorkspaceExecutionWorkerResetterMetrics: makeResetterMetrics(observationContext, "batch_spec_workspace_execution_worker_resetter"),
 	}
 }

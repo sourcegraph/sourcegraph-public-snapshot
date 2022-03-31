@@ -1,4 +1,4 @@
-package background
+package janitor
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 
 const specExpireInteral = 2 * time.Minute
 
-func newSpecExpireJob(ctx context.Context, cstore *store.Store) goroutine.BackgroundRoutine {
+func NewSpecExpirer(ctx context.Context, cstore *store.Store) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
 		specExpireInteral,

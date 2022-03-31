@@ -1,4 +1,4 @@
-package janitor
+package batches
 
 import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executorqueue"

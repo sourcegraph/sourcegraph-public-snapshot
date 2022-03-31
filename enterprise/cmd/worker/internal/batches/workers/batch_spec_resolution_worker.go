@@ -1,22 +1,23 @@
-package background
+package workers
 
 import (
 	"context"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-// newBatchSpecResolutionWorker creates a dbworker.newWorker that fetches BatchSpecResolutionJobs
+// NewBatchSpecResolutionWorker creates a dbworker.newWorker that fetches BatchSpecResolutionJobs
 // specs and passes them to the batchSpecWorkspaceCreator.
-func newBatchSpecResolutionWorker(
+func NewBatchSpecResolutionWorker(
 	ctx context.Context,
 	s *store.Store,
 	workerStore dbworkerstore.Store,
-	metrics batchChangesMetrics,
+	observationContext *observation.Context,
 ) *workerutil.Worker {
 	e := &batchSpecWorkspaceCreator{store: s}
 
@@ -25,20 +26,9 @@ func newBatchSpecResolutionWorker(
 		NumHandlers:       5,
 		Interval:          1 * time.Second,
 		HeartbeatInterval: 15 * time.Second,
-		Metrics:           metrics.batchSpecResolutionWorkerMetrics,
+		Metrics:           workerutil.NewMetrics(observationContext, "batch_changes_batch_spec_resolution_worker"),
 	}
 
 	worker := dbworker.NewWorker(ctx, workerStore, e.HandlerFunc(), options)
 	return worker
-}
-
-func newBatchSpecResolutionWorkerResetter(workerStore dbworkerstore.Store, metrics batchChangesMetrics) *dbworker.Resetter {
-	options := dbworker.ResetterOptions{
-		Name:     "batch_changes_batch_spec_resolution_worker_resetter",
-		Interval: 1 * time.Minute,
-		Metrics:  metrics.batchSpecResolutionWorkerResetterMetrics,
-	}
-
-	resetter := dbworker.NewResetter(workerStore, options)
-	return resetter
 }
