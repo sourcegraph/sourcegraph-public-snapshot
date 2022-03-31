@@ -3,7 +3,6 @@ package definitions
 import (
 	"time"
 
-	"github.com/grafana-tools/sdk"
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
@@ -44,9 +43,7 @@ func GitServer() *monitoring.Container {
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
 								Unit(monitoring.Bytes).
-								With(func(o monitoring.Observable, p *sdk.Panel) {
-									p.GraphPanel.Legend.RightSide = true
-								}),
+								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner: monitoring.ObservableOwnerRepoManagement,
 							Interpretation: `
 						`,
@@ -57,9 +54,7 @@ func GitServer() *monitoring.Container {
 							Query:       "go_goroutines{app=\"gitserver\", instance=~`${shard:regex}`}",
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{instance}}").
-								With(func(o monitoring.Observable, p *sdk.Panel) {
-									p.GraphPanel.Legend.RightSide = true
-								}),
+								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner: monitoring.ObservableOwnerRepoManagement,
 							Interpretation: `
 						`,
@@ -67,16 +62,13 @@ func GitServer() *monitoring.Container {
 					},
 					{
 						{
-
 							Name:        "cpu_throttling_time",
 							Description: "container CPU throttling time %",
 							Query:       "sum by (container_label_io_kubernetes_pod_name) ((rate(container_cpu_cfs_throttled_periods_total{container_label_io_kubernetes_container_name=\"gitserver\", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m]) / rate(container_cpu_cfs_periods_total{container_label_io_kubernetes_container_name=\"gitserver\", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m])) * 100)",
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
 								Unit(monitoring.Percentage).
-								With(func(o monitoring.Observable, p *sdk.Panel) {
-									p.GraphPanel.Legend.RightSide = true
-								}),
+								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner: monitoring.ObservableOwnerRepoManagement,
 							Interpretation: `
 						`,
@@ -86,9 +78,8 @@ func GitServer() *monitoring.Container {
 							Description: "cpu usage seconds",
 							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_cpu_usage_seconds_total{container_label_io_kubernetes_container_name=\"gitserver\", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m]))",
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").With(func(o monitoring.Observable, p *sdk.Panel) {
-								p.GraphPanel.Legend.RightSide = true
-							}),
+							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
+								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner: monitoring.ObservableOwnerRepoManagement,
 							Interpretation: `
 						`,
@@ -103,9 +94,7 @@ func GitServer() *monitoring.Container {
 							Critical:    monitoring.Alert().LessOrEqual(15),
 							Panel: monitoring.Panel().LegendFormat("{{instance}}").
 								Unit(monitoring.Percentage).
-								With(func(o monitoring.Observable, p *sdk.Panel) {
-									p.GraphPanel.Legend.RightSide = true
-								}),
+								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner: monitoring.ObservableOwnerRepoManagement,
 							PossibleSolutions: `
 								- **Provision more disk space:** Sourcegraph will begin deleting least-used repository clones at 10% disk space remaining which may result in decreased performance, users having to wait for repositories to clone, etc.
@@ -120,9 +109,7 @@ func GitServer() *monitoring.Container {
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
 								Unit(monitoring.ReadsPerSecond).
-								With(func(o monitoring.Observable, p *sdk.Panel) {
-									p.GraphPanel.Legend.RightSide = true
-								}),
+								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner: monitoring.ObservableOwnerRepoManagement,
 							Interpretation: `
 						`,
@@ -134,9 +121,7 @@ func GitServer() *monitoring.Container {
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
 								Unit(monitoring.WritesPerSecond).
-								With(func(o monitoring.Observable, p *sdk.Panel) {
-									p.GraphPanel.Legend.RightSide = true
-								}),
+								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner: monitoring.ObservableOwnerRepoManagement,
 							Interpretation: `
 						`,
@@ -150,9 +135,7 @@ func GitServer() *monitoring.Container {
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
 								Unit(monitoring.ReadsPerSecond).
-								With(func(o monitoring.Observable, p *sdk.Panel) {
-									p.GraphPanel.Legend.RightSide = true
-								}),
+								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner: monitoring.ObservableOwnerRepoManagement,
 							Interpretation: `
 						`,
@@ -164,9 +147,7 @@ func GitServer() *monitoring.Container {
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
 								Unit(monitoring.WritesPerSecond).
-								With(func(o monitoring.Observable, p *sdk.Panel) {
-									p.GraphPanel.Legend.RightSide = true
-								}),
+								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner: monitoring.ObservableOwnerRepoManagement,
 							Interpretation: `
 						`,
@@ -180,9 +161,7 @@ func GitServer() *monitoring.Container {
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
 								Unit(monitoring.ReadsPerSecond).
-								With(func(o monitoring.Observable, p *sdk.Panel) {
-									p.GraphPanel.Legend.RightSide = true
-								}),
+								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner: monitoring.ObservableOwnerRepoManagement,
 							Interpretation: `
 						`,
@@ -194,9 +173,7 @@ func GitServer() *monitoring.Container {
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
 								Unit(monitoring.WritesPerSecond).
-								With(func(o monitoring.Observable, p *sdk.Panel) {
-									p.GraphPanel.Legend.RightSide = true
-								}),
+								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner: monitoring.ObservableOwnerRepoManagement,
 							Interpretation: `
 						`,
@@ -210,9 +187,7 @@ func GitServer() *monitoring.Container {
 							Warning:     monitoring.Alert().GreaterOrEqual(50).For(2 * time.Minute),
 							Critical:    monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
 							Panel: monitoring.Panel().LegendFormat("{{instance}} {{cmd}}").
-								With(func(o monitoring.Observable, p *sdk.Panel) {
-									p.GraphPanel.Legend.RightSide = true
-								}),
+								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner: monitoring.ObservableOwnerRepoManagement,
 							Interpretation: `
 								A high value signals load.
@@ -230,9 +205,7 @@ func GitServer() *monitoring.Container {
 							NoAlert:        true,
 							Interpretation: "per second rate per command across all instances",
 							Panel: monitoring.Panel().LegendFormat("{{cmd}}").
-								With(func(o monitoring.Observable, p *sdk.Panel) {
-									p.GraphPanel.Legend.RightSide = true
-								}),
+								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner: monitoring.ObservableOwnerRepoManagement,
 						},
 					},
