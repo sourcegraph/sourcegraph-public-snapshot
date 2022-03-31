@@ -33,8 +33,8 @@ const NavMenuSection = forwardRef(
         <div {...otherAttributes} ref={reference}>
             {hideDivider && <MenuDivider />}
             {headerContent && <MenuHeader as={headerAs}>{headerContent}</MenuHeader>}
-            {navItems.map((navItem, key) => (
-                <NavMenuItem key={key} {...navItem} />
+            {navItems.map(({ key, ...rest }) => (
+                <NavMenuItem key={key} {...rest} />
             ))}
         </div>
     )
@@ -56,18 +56,18 @@ const NavMenuContent = forwardRef(({ sections = [], position, children, ...rest 
 interface NavItemProps extends Omit<MenuItemProps, 'children' | 'onSelect'> {
     prefixIcon?: React.ComponentType<MdiReactIconProps>
     suffixIcon?: React.ComponentType<MdiReactIconProps>
-    itemContent: string | ReactNode
+    content: string | ReactNode
     itemAs?: any
     to?: string | H.LocationDescriptor<any>
     onSelect?: () => void
-    key?: number | string
+    key: number | string
 }
 
-const NavMenuItem = forwardRef(({ itemContent, prefixIcon, suffixIcon, onSelect, to, itemAs, ...rest }, reference) => {
-    const content = (
+const NavMenuItem = forwardRef(({ content, prefixIcon, suffixIcon, onSelect, to, itemAs, ...rest }, reference) => {
+    const contentWithIcon = (
         <>
             {prefixIcon && <Icon as={prefixIcon} className="mr-1" />}
-            {itemContent}
+            {content}
             {suffixIcon && <Icon as={suffixIcon} className="ml-1" />}
         </>
     )
@@ -75,28 +75,29 @@ const NavMenuItem = forwardRef(({ itemContent, prefixIcon, suffixIcon, onSelect,
     if (onSelect) {
         return (
             <MenuItem as={itemAs} onSelect={onSelect} ref={reference} {...rest}>
-                {content}
+                {contentWithIcon}
             </MenuItem>
         )
     }
     if (to) {
         return (
             <MenuLink as={itemAs || Link} to={to} {...rest}>
-                {content}
+                {contentWithIcon}
             </MenuLink>
         )
     }
 
     return (
         <MenuText as={itemAs || MenuItem} {...rest}>
-            {content}
+            {contentWithIcon}
         </MenuText>
     )
 }) as ForwardReferenceComponent<'div', NavItemProps>
 
-type TriggerContent = string | ReactNode | ((isOpen: boolean) => string | ReactNode)
+type TriggerContent = { text: string } | { node: ReactNode } | { trigger: (isOpen: boolean) => string | ReactNode }
+
 interface NavMenuTriggerProps extends ButtonProps {
-    content?: TriggerContent
+    triggerContent: TriggerContent
 }
 export interface NavMenuProps {
     navTrigger: NavMenuTriggerProps
@@ -104,21 +105,24 @@ export interface NavMenuProps {
     position?: Position
 }
 
-export const NavMenu = forwardRef(({ navTrigger, sections, position }, reference) => {
-    const { content, ...otherTriggerProps } = navTrigger
-
-    const renderTiggerContent = (triggerContent: TriggerContent, isOpen: boolean): ReactNode => {
-        if (typeof triggerContent === 'function') {
-            return triggerContent(isOpen)
-        }
-        return <>{content}</>
+const renderTiggerContent = (triggerContent: TriggerContent, isOpen: boolean): ReactNode => {
+    if ('trigger' in triggerContent) {
+        return triggerContent.trigger(isOpen)
     }
+    if ('node' in triggerContent) {
+        return triggerContent.node
+    }
+    return <>{triggerContent.text}</>
+}
+
+export const NavMenu = forwardRef(({ navTrigger, sections, position }, reference) => {
+    const { triggerContent, ...otherTriggerProps } = navTrigger
 
     return (
         <Menu ref={reference}>
             {({ isOpen }) => (
                 <>
-                    <MenuButton {...otherTriggerProps}>{renderTiggerContent(content, isOpen)}</MenuButton>
+                    <MenuButton {...otherTriggerProps}>{renderTiggerContent(triggerContent, isOpen)}</MenuButton>
                     <NavMenuContent sections={sections} position={position} />
                 </>
             )}

@@ -18,16 +18,19 @@ describe('<NavMenu />', () => {
                 headerContent: <> Signed in as @ralph</>,
                 navItems: [
                     {
-                        itemContent: 'Settings',
+                        content: 'Settings',
                         to: '/users/ralph/settings/organizations',
+                        key: 1,
                     },
                     {
-                        itemContent: 'Your repositories',
+                        content: 'Your repositories',
                         to: '/users/ralph/settings/repositories',
+                        key: 2,
                     },
                     {
-                        itemContent: 'Saved searches',
+                        content: 'Saved searches',
                         to: '/users/ralph/searches',
+                        key: 3,
                     },
                 ],
             },
@@ -35,12 +38,12 @@ describe('<NavMenu />', () => {
                 headerContent: 'Your organizations',
                 navItems: [
                     {
-                        itemContent: 'Sourcegraph',
+                        content: 'Sourcegraph',
                         to: '/users/ralph/settings/organizations',
                         key: 'sourcegraph-123456',
                     },
                     {
-                        itemContent: 'Gitstart',
+                        content: 'Gitstart',
                         to: '/users/ralph/settings/repositories',
                         key: 'gitstart-123456',
                     },
@@ -49,33 +52,37 @@ describe('<NavMenu />', () => {
             {
                 navItems: [
                     {
-                        itemContent: 'Keyboard shortcuts',
+                        content: 'Keyboard shortcuts',
                         onSelect,
+                        key: 4,
                     },
                     {
-                        itemContent: 'Help',
+                        content: 'Help',
                         disabled: true,
                         onSelect,
+                        key: 5,
                     },
                 ],
             },
             {
                 navItems: [
                     {
-                        itemContent: 'About Sourcegraph',
+                        content: 'About Sourcegraph',
                         itemAs: AnchorLink,
                         to: 'https://about.sourcegraph.com',
+                        key: 6,
                     },
                     {
-                        itemContent: 'Browser Extension',
+                        content: 'Browser Extension',
                         itemAs: AnchorLink,
                         to: 'https://docs.sourcegraph.com/integration/browser_extension',
+                        key: 7,
                     },
                 ],
             },
         ]
 
-        render(<NavMenu navTrigger={{ content: 'menu trigger' }} sections={menuNavItems} />)
+        render(<NavMenu navTrigger={{ triggerContent: { text: 'menu trigger' } }} sections={menuNavItems} />)
         const button = screen.getByRole('button', { name: 'menu trigger' })
         expect(button).toBeVisible()
         userEvent.click(button)
@@ -88,8 +95,8 @@ describe('<NavMenu />', () => {
                 expect(screen.getByText(headerContent)).toBeVisible()
             }
 
-            for (const { itemContent } of navItems) {
-                expect(screen.getByText(itemContent as string)).toBeVisible()
+            for (const { content } of navItems) {
+                expect(screen.getByText(content as string)).toBeVisible()
             }
         }
     })
