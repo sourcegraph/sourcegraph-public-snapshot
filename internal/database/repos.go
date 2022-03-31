@@ -1137,7 +1137,7 @@ FROM repo
 %s
 WHERE
 	(
-		repo.stars >= %s
+		(repo.stars >= %s AND NOT COALESCE(fork, false) AND NOT archived)
 		OR
 		lower(repo.name) ~ '^(src\.fedoraproject\.org|maven|npm|jdk)'
 		OR
