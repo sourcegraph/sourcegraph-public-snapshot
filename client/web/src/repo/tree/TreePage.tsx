@@ -8,7 +8,6 @@ import FolderIcon from 'mdi-react/FolderIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { Redirect, Route, Switch } from 'react-router-dom'
-import { Button } from 'reactstrap'
 import { EMPTY } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
@@ -26,7 +25,16 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { toURIWithPath, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { Container, PageHeader, LoadingSpinner, useObservable, Link, Icon } from '@sourcegraph/wildcard'
+import {
+    Container,
+    PageHeader,
+    LoadingSpinner,
+    useObservable,
+    Link,
+    Icon,
+    ButtonGroup,
+    Button,
+} from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
 import { BatchChangesProps } from '../../batches'
@@ -271,7 +279,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                             />
                                             {repo.description && <p>{repo.description}</p>}
                                         </div>
-                                        <div>
+                                        <ButtonGroup>
                                             {codeIntelligenceEnabled && (
                                                 <Button
                                                     to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
@@ -310,7 +318,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                     <Icon as={SettingsIcon} />
                                                 </Button>
                                             )}
-                                        </div>
+                                        </ButtonGroup>
                                     </div>
                                     {!newRepoPage && (
                                         <TreeNavigation
@@ -337,7 +345,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
 
                         <div>
                             <section className={classNames('test-tree-entries mb-3', styles.section)}>
-                                {treeOrError.isRoot ? (
+                                {treeOrError.isRoot && (
                                     <Switch>
                                         <Route
                                             path={`${treeOrError.url}/-/tag/tab`}
@@ -436,7 +444,8 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                             }}
                                         />
                                     </Switch>
-                                ) : (
+                                )}
+                                {!treeOrError.isRoot && (
                                     <div className={styles.section}>
                                         <h2>Files and directories</h2>
                                         <TreeEntriesSection

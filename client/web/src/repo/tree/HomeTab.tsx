@@ -178,9 +178,9 @@ export const HomeTab: React.FunctionComponent<Props> = ({
     )
 
     return (
-        <div className="container p-0">
-            <div className="row justify-content-center">
-                <div className="col-sm">
+        <div className="container p-0 m-0 mw-100">
+            <div className="row">
+                <div className="col-sm m-0">
                     {richHTML && <RenderedFile dangerousInnerHTML={richHTML} location={props.location} />}
                     {blobInfoOrError && richHTML && aborted && (
                         <div>
@@ -193,34 +193,32 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                         </div>
                     )}
                 </div>
-                <div className="col-md col-lg-4 ml-1">
+                <div className="col-sm col-lg-4 m-0">
                     <div className="mb-5">
                         <div className={styles.section}>
                             <h2>Code Intel</h2>
                             <div className={styles.item}>
                                 <Badge
                                     variant={codeIntelligenceEnabled ? 'primary' : 'danger'}
-                                    className={classNames('text-uppercase')}
+                                    className={classNames('text-uppercase col-4')}
                                 >
                                     {codeIntelligenceEnabled ? 'AVAILABLE' : 'DISABLED'}
                                 </Badge>
-                                {codeIntelligenceEnabled && (
-                                    <div className="d-block">
-                                        <div>Precise code intelligence</div>
-                                    </div>
-                                )}
+                                <div className="d-block col">
+                                    <div>Precise code intelligence</div>
+                                </div>
                             </div>
                         </div>
                         <div className={styles.section}>
                             <h2>Batch Changes</h2>
                             {batchChangesEnabled ? (
-                                <HomePageBatchChangeSection repoName={repo.name} />
+                                <HomeTabBatchChangeBadge repoName={repo.name} />
                             ) : (
                                 <div className={styles.item}>
-                                    <Badge variant="danger" className={classNames('text-uppercase')}>
+                                    <Badge variant="danger" className={classNames('text-uppercase col-4')}>
                                         DISABLED
                                     </Badge>
-                                    <div>Not available</div>
+                                    <div className="col">Not available</div>
                                 </div>
                             )}
                         </div>
@@ -257,11 +255,11 @@ export const HomeTab: React.FunctionComponent<Props> = ({
     )
 }
 
-interface HomePageBatchChangeSectionProps {
+interface HomeTabBatchChangeBadgeProps {
     repoName: string
 }
 
-export const HomePageBatchChangeSection: React.FunctionComponent<HomePageBatchChangeSectionProps> = ({ repoName }) => {
+export const HomeTabBatchChangeBadge: React.FunctionComponent<HomeTabBatchChangeBadgeProps> = ({ repoName }) => {
     const stats: RepoBatchChangeStats | undefined = useObservable(
         useMemo(() => queryRepoBatchChangeStats({ name: repoName }), [repoName])
     )
@@ -272,26 +270,34 @@ export const HomePageBatchChangeSection: React.FunctionComponent<HomePageBatchCh
                 <>
                     {stats?.changesetsStats.open > 0 && (
                         <div className={styles.item}>
-                            <Badge variant="success" className={classNames('text-uppercase')}>
+                            <Badge variant="success" className={classNames('text-uppercase col-4')}>
                                 OPEN
                             </Badge>
-                            <div>{stats?.changesetsStats.open} open</div>
+                            <div className="col">{stats?.changesetsStats.open} open changesets</div>
                         </div>
                     )}
                     {stats?.changesetsStats.unpublished > 0 && (
                         <div className={styles.item}>
-                            <Badge variant="secondary" className={classNames('text-uppercase')}>
+                            <Badge variant="secondary" className={classNames('text-uppercase col-4')}>
                                 Unpublished
                             </Badge>
-                            <div>{stats?.changesetsStats.unpublished} draft</div>
+                            <div className="col">{stats?.changesetsStats.unpublished} unpublished changesets</div>
+                        </div>
+                    )}
+                    {stats?.changesetsStats.draft > 0 && (
+                        <div className={styles.item}>
+                            <Badge variant="secondary" className={classNames('text-uppercase col-4')}>
+                                draft
+                            </Badge>
+                            <div className="col">{stats?.changesetsStats.draft} draft changesets</div>
                         </div>
                     )}
                     {stats?.changesetsStats.closed > 0 && (
                         <div className={styles.item}>
-                            <Badge variant="secondary" className={classNames('text-uppercase')}>
+                            <Badge variant="secondary" className={classNames('text-uppercase col-4')}>
                                 CLOSE
                             </Badge>
-                            <div>{stats?.changesetsStats.closed} closed</div>
+                            <div className="col">{stats?.changesetsStats.closed} closed changesets</div>
                         </div>
                     )}
                     <div className="text-right">
@@ -301,10 +307,10 @@ export const HomePageBatchChangeSection: React.FunctionComponent<HomePageBatchCh
             ) : (
                 <>
                     <div className={styles.item}>
-                        <Badge variant="danger" className={classNames('text-uppercase')}>
+                        <Badge variant="secondary" className={classNames('text-uppercase col-4')}>
                             Unavailable
                         </Badge>
-                        <div>No changeset avaialble</div>
+                        <div className="col">No changeset available</div>
                     </div>
                     <div className="text-right">
                         <Link
