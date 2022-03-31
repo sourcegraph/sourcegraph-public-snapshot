@@ -19,4 +19,4 @@ Sourcegraph Cloud is a newly-released cloud version of Sourcegraph, which can be
 
 Sourcegraph Cloud offers the same core Code Search experience for private and public code as Sourcegraph self-hosted, but it does not support enterprise features such as user management, SAML integration, and batch changes. It is intended for personal use.
 
-Sourcegraph Cloud is a great choice for individuals who would like to search their own repositories without deploying Sourcegraph themselves. It also allows individuals to easily access our index of over 1 million open source repositories.
+Sourcegraph Cloud is a great choice for individuals or small organizations who would like to search their own repositories without deploying Sourcegraph themselves. It also allows individuals to easily access our index of over 1 million open source repositories. [Sourcegraph Cloud for Teams](https://about.sourcegraph.com/cloud-beta/) is in private beta today. [Join our waitlist](https://share.hsforms.com/14OQ3RoPpQTOXvZlUpgx6-A1n7ku?utm_medium=direct-traffic&utm_source=docs&utm_content=cloud-product-beta-teams) to get access today!
