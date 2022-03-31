@@ -300,12 +300,13 @@ export const HomeTabBatchChangeBadge: React.FunctionComponent<HomeTabBatchChange
         )
     }
 
+    const badgeClassNames = classNames('text-uppercase col-2 align-self-center', styles.itemBadge)
     const batchChanges = data?.repository?.batchChanges
     if (!batchChanges || batchChanges.nodes.length === 0) {
         return (
             <>
                 <div className={styles.item}>
-                    <Badge variant="secondary" className={classNames('text-uppercase col-4')}>
+                    <Badge variant="secondary" className={badgeClassNames}>
                         None
                     </Badge>
                     <div className="d-block col">
@@ -342,7 +343,7 @@ export const HomeTabBatchChangeBadge: React.FunctionComponent<HomeTabBatchChange
 
         return (
             <div className={styles.item} key={id}>
-                <Badge variant="success" className={classNames('text-uppercase col-2 align-self-center', styles.itemBadge)}>
+                <Badge variant="success" className={badgeClassNames}>
                     OPEN
                 </Badge>
                 <div className={classNames('d-block col', styles.itemBatchChangeText)}>
