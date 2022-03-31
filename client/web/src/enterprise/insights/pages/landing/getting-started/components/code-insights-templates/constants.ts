@@ -877,7 +877,282 @@ const GO_STATIC_CHECK_S1004: Template = {
     },
 }
 
-GO_STATIC_CHECK_S1039, GO_STATIC_CHECK_S1038, GO_STATIC_CHECK_S1037, GO_STATIC_CHECK_S1036, GO_STATIC_CHECK_S1035, GO_STATIC_CHECK_S1032, GO_STATIC_CHECK_S1029, GO_STATIC_CHECK_S1028, GO_STATIC_CHECK_S1025, GO_STATIC_CHECK_S1023, GO_STATIC_CHECK_S1024, GO_STATIC_CHECK_S1020, GO_STATIC_CHECK_S1019, GO_STATIC_CHECK_S1018, GO_STATIC_CHECK_S1017, GO_STATIC_CHECK_S1012, GO_STATIC_CHECK_S1010, GO_STATIC_CHECK_S1006, GO_STATIC_CHECK_S1005, GO_STATIC_CHECK_S1004
+const GO_STATIC_CHECK_S1005: Template = {
+    type: InsightType.SearchBased,
+    title: 'Drop unnecessary use of the blank identifier',
+    description: '',
+    templateValues: {
+        title: 'Drop unnecessary use of the blank identifier',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1005',
+                query: 'for :[1:e], :[~_] := range or for :[1:e], :[~_] = range or for :[~_] = range or for :[~_], :[~_] = range patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1006: Template = {
+    type: InsightType.SearchBased,
+    title: 'Use for { ... } for infinite loops',
+    description: '',
+    templateValues: {
+        title: 'Use for { ... } for infinite loops',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1006',
+                query: 'for true {:[x]} patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1010: Template = {
+    type: InsightType.SearchBased,
+    title: 'Omit default slice index',
+    description: '',
+    templateValues: {
+        title: 'Omit default slice index',
+        allRepos: true,
+        series: [
+            {
+                name: 'S10010',
+                query: ':[s.][:len(:[s])] patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1012: Template = {
+    type: InsightType.SearchBased,
+    title: 'Replace time.Now().Sub(x) with time.Since(x)',
+    description: '',
+    templateValues: {
+        title: 'Replace time.Now().Sub(x) with time.Since(x)',
+        allRepos: true,
+        series: [
+            {
+                name: 'S10012',
+                query: 'time.Now().Sub(:[x]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+        ],
+    },
+}
+
+// const GO_STATIC_CHECK_S1017: skipped
+// const GO_STATIC_CHECK_S1018: skipped
+
+const GO_STATIC_CHECK_S1019: Template = {
+    type: InsightType.SearchBased,
+    title: 'Simplify make call by omitting redundant arguments',
+    description: '',
+    templateValues: {
+        title: 'Simplify make call by omitting redundant arguments',
+        allRepos: true,
+        series: [
+            {
+                name: 'S10019',
+                query: 'make(chan int, 0) or make(map[:[[1]]]:[[1]], 0) or make(:[1], :[2], :[2]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1020: Template = {
+    type: InsightType.SearchBased,
+    title: 'Omit redundant nil check in type assertion',
+    description: '',
+    templateValues: {
+        title: 'Omit redundant nil check in type assertion',
+        allRepos: true,
+        series: [
+            {
+                name: 'S10020',
+                query: 'if :[_.], ok := :[i.].(:[T]); :[i.] != nil && ok {:[body]} or if :[_.], ok := :[i.].(:[T]); ok && :[i.] != nil {:[body]} or if :[i.] != nil {  if :[_.], ok := :[i.].(:[T]); ok {:[body]}} patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1023: Template = {
+    type: InsightType.SearchBased,
+    title: 'Omit redundant control flow',
+    description: '',
+    templateValues: {
+        title: 'Omit redundant control flow',
+        allRepos: true,
+        series: [
+            {
+                name: 'S10023',
+                query: 'func() {:[body] return } or func :[fn.](:[args]) {:[body] return } patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1024: Template = {
+    type: InsightType.SearchBased,
+    title: 'Replace x.Sub(time.Now()) with time.Until(x)',
+    description: '',
+    templateValues: {
+        title: 'Replace x.Sub(time.Now()) with time.Until(x)',
+        allRepos: true,
+        series: [
+            {
+                name: 'S10024',
+                query: ':[x.].Sub(time.Now()) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1025: Template = {
+    type: InsightType.SearchBased,
+    title: 'Don’t use fmt.Sprintf("%s", x) unnecessarily',
+    description: '',
+    templateValues: {
+        title: 'Don’t use fmt.Sprintf("%s", x) unnecessarily',
+        allRepos: true,
+        series: [
+            {
+                name: 'S10025',
+                query: 'fmt.Println("%s", ":[s]") patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1028: Template = {
+    type: InsightType.SearchBased,
+    title: 'Simplify error construction with fmt.Errorf',
+    description: '',
+    templateValues: {
+        title: 'Simplify error construction with fmt.Errorf',
+        allRepos: true,
+        series: [
+            {
+                name: 'S10028',
+                query: 'errors.New(fmt.Sprintf(:[1])) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1029: Template = {
+    type: InsightType.SearchBased,
+    title: 'Range over the string directly',
+    description: '',
+    templateValues: {
+        title: 'Range over the string directly',
+        allRepos: true,
+        series: [
+            {
+                name: 'S10029',
+                query: 'for :[~_], :[r.] := range []rune(:[s.]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1032: Template = {
+    type: InsightType.SearchBased,
+    title: 'Use sort.Ints(x), sort.Float64s(x), and sort.Strings(x)',
+    description: '',
+    templateValues: {
+        title: 'Use sort.Ints(x), sort.Float64s(x), and sort.Strings(x)',
+        allRepos: true,
+        series: [
+            {
+                name: 'S10032',
+                query: 'sort.Sort(sort.Float64Slice(:[1])) or sort.Sort(sort.StringSlice(:[1])) or sort.Sort(sort.IntSlice(:[1])) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1035: Template = {
+    type: InsightType.SearchBased,
+    title: 'Redundant call to net/http.CanonicalHeaderKey in method call on net/http.Header',
+    description: '',
+    templateValues: {
+        title: 'Redundant call to net/http.CanonicalHeaderKey in method call on net/http.Header',
+        allRepos: true,
+        series: [
+            {
+                name: 'S10035',
+                query: 'headers.Set(http.CanonicalHeaderKey(:[1])) or headers.Get(http.CanonicalHeaderKey(:[1])) or headers.Del(http.CanonicalHeaderKey(:[1])) or headers.Add(http.CanonicalHeaderKey(:[1]), :[1]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+        ],
+    },
+}
+
+// const GO_STATIC_CHECK_S1036: skipped
+
+const GO_STATIC_CHECK_S1037: Template = {
+    type: InsightType.SearchBased,
+    title: 'Redundant call to net/http.CanonicalHeaderKey in method call on net/http.Header',
+    description: '',
+    templateValues: {
+        title: 'Redundant call to net/http.CanonicalHeaderKey in method call on net/http.Header',
+        allRepos: true,
+        series: [
+            {
+                name: 'S10035',
+                query: 'headers.Set(http.CanonicalHeaderKey(:[1])) or headers.Get(http.CanonicalHeaderKey(:[1])) or headers.Del(http.CanonicalHeaderKey(:[1])) or headers.Add(http.CanonicalHeaderKey(:[1]), :[1]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1038: Template = {
+    type: InsightType.SearchBased,
+    title: 'Unnecessarily complex way of printing formatted string',
+    description: '',
+    templateValues: {
+        title: 'Unnecessarily complex way of printing formatted string',
+        allRepos: true,
+        series: [
+            {
+                name: 'S10038',
+                query: 'select {	case <-time.After(:[t]):} patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1039: Template = {
+    type: InsightType.SearchBased,
+    title: 'Unnecessary use of fmt.Sprint',
+    description: '',
+    templateValues: {
+        title: 'Unnecessary use of fmt.Sprint',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1039',
+                query: 'fmt.Sprintf("%s", ":[s]") patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+        ],
+    },
+}
 
 export const TEMPLATE_SECTIONS: TemplateSection[] = [
     {
@@ -961,7 +1236,28 @@ export const TEMPLATE_SECTIONS: TemplateSection[] = [
     },
     {
         title: 'Go code checker',
-        templates: [GO_STATIC_CHECK_SA6005, GO_STATIC_CHECK_S1003, GO_STATIC_CHECK_S1002, GO_STATIC_CHECK_S1039, GO_STATIC_CHECK_S1038, GO_STATIC_CHECK_S1037, GO_STATIC_CHECK_S1036, GO_STATIC_CHECK_S1035, GO_STATIC_CHECK_S1032, GO_STATIC_CHECK_S1029, GO_STATIC_CHECK_S1028, GO_STATIC_CHECK_S1025, GO_STATIC_CHECK_S1023, GO_STATIC_CHECK_S1024, GO_STATIC_CHECK_S1020, GO_STATIC_CHECK_S1019, GO_STATIC_CHECK_S1018, GO_STATIC_CHECK_S1017, GO_STATIC_CHECK_S1012, GO_STATIC_CHECK_S1010, GO_STATIC_CHECK_S1006, GO_STATIC_CHECK_S1005, GO_STATIC_CHECK_S1004],
+        templates: [
+            GO_STATIC_CHECK_SA6005,
+            GO_STATIC_CHECK_S1002,
+            GO_STATIC_CHECK_S1003,
+            GO_STATIC_CHECK_S1004,
+            GO_STATIC_CHECK_S1005,
+            GO_STATIC_CHECK_S1006,
+            GO_STATIC_CHECK_S1010,
+            GO_STATIC_CHECK_S1012,
+            GO_STATIC_CHECK_S1019,
+            GO_STATIC_CHECK_S1020,
+            GO_STATIC_CHECK_S1023,
+            GO_STATIC_CHECK_S1024,
+            GO_STATIC_CHECK_S1025,
+            GO_STATIC_CHECK_S1028,
+            GO_STATIC_CHECK_S1029,
+            GO_STATIC_CHECK_S1032,
+            GO_STATIC_CHECK_S1035,
+            GO_STATIC_CHECK_S1037,
+            GO_STATIC_CHECK_S1038,
+            GO_STATIC_CHECK_S1039,
+        ],
     },
     {
         title: 'Other',
