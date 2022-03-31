@@ -3,11 +3,11 @@ import React, { FormEventHandler, RefObject, useMemo } from 'react'
 import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, useObservable } from '@sourcegraph/wildcard'
+import { Button, Input, useObservable } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'
 import { CodeInsightDashboardsVisibility } from '../../../../../../components/creation-ui-kit'
-import { FormInput } from '../../../../../../components/form/form-input/FormInput'
+import { getDefaultInputProps } from '../../../../../../components/form/getDefaultInputProps'
 import { useFieldAPI } from '../../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
 import { RepositoryField } from '../../../../../../components/form/repositories-field/RepositoryField'
@@ -77,41 +77,34 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
             onSubmit={handleSubmit}
             onReset={onFormReset}
         >
-            <FormInput
+            <Input
                 as={RepositoryField}
                 required={true}
                 autoFocus={true}
-                title="Repository"
-                description="This insight is limited to one repository. You can set up multiple language usage charts for analyzing other repositories."
+                label="Repository"
+                message="This insight is limited to one repository. You can set up multiple language usage charts for analyzing other repositories."
                 placeholder="Example: github.com/sourcegraph/sourcegraph"
-                loading={repository.meta.validState === 'CHECKING'}
-                valid={repository.meta.touched && repository.meta.validState === 'VALID'}
-                error={repository.meta.touched && repository.meta.error}
-                {...repository.input}
+                {...getDefaultInputProps(repository)}
                 className="mb-0"
             />
 
-            <FormInput
+            <Input
                 required={true}
-                title="Title"
-                description="Shown as the title for your insight."
+                label="Title"
+                message="Shown as the title for your insight."
                 placeholder="Example: Language Usage in RepositoryName"
-                valid={title.meta.touched && title.meta.validState === 'VALID'}
-                error={title.meta.touched && title.meta.error}
-                {...title.input}
+                {...getDefaultInputProps(title)}
                 className="mb-0 mt-4"
             />
 
-            <FormInput
+            <Input
                 required={true}
                 min={1}
                 max={100}
                 type="number"
-                title="Threshold of ‘Other’ category"
-                description="Languages with usage lower than the threshold are grouped into an 'other' category."
-                valid={threshold.meta.touched && threshold.meta.validState === 'VALID'}
-                error={threshold.meta.touched && threshold.meta.error}
-                {...threshold.input}
+                label="Threshold of ‘Other’ category"
+                message="Languages with usage lower than the threshold are grouped into an 'other' category."
+                {...getDefaultInputProps(threshold)}
                 className="mb-0 mt-4"
                 inputClassName={styles.formThresholdInput}
                 inputSymbol={<span className={styles.formThresholdInputSymbol}>%</span>}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"sort"
 	"strconv"
@@ -170,9 +171,15 @@ func (dn *DeploymentNotifier) getNewCommits(ctx context.Context, oldCommit strin
 	return nil, errors.Newf("commit %s not found in the last %d commits", oldCommit, maxCommitsPageCount*commitsPerPage)
 }
 
+// parsePRNumberInMergeCommit extracts the pull request number from a merge commit.
+// Merge commits can either be a single line in which case they'll end with the pull request number,
+// or multiple lines if they include a description (mostly because of squashed commits being automatically
+// added by GitHub if the author does not remove them). In that case, the pull request number is the
+// the last one on the first line.
 func parsePRNumberInMergeCommit(message string) int {
-	mergeCommitMessageRegexp := regexp.MustCompile(`\(#(\d+)\)$`)
-	matches := mergeCommitMessageRegexp.FindStringSubmatch(message)
+	mergeCommitMessageRegexp := regexp.MustCompile(`\(#(\d+)\)$`) // $ ensures we're always getting the last (#XXXXX), in case of reverts.
+	firstLine := strings.Split(message, "\n")[0]
+	matches := mergeCommitMessageRegexp.FindStringSubmatch(firstLine)
 	if len(matches) > 1 {
 		num, err := strconv.Atoi(matches[1])
 		if err != nil {
@@ -230,7 +237,7 @@ var commentTemplate = `### Deployment status
 {{- end }}
 `
 
-func renderComment(report *DeploymentReport) (string, error) {
+func renderComment(report *DeploymentReport, traceURL string) (string, error) {
 	tmpl, err := template.New("deployment-status-comment").Parse(commentTemplate)
 	if err != nil {
 		return "", err
@@ -239,6 +246,12 @@ func renderComment(report *DeploymentReport) (string, error) {
 	err = tmpl.Execute(&sb, report)
 	if err != nil {
 		return "", err
+	}
+	if traceURL != "" {
+		_, err = sb.WriteString(fmt.Sprintf("\n[Deployment trace](%s)", traceURL))
+		if err != nil {
+			return "", err
+		}
 	}
 	return sb.String(), nil
 }

@@ -18,7 +18,7 @@ export enum InputStatus {
     valid = 'valid',
 }
 
-interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     /** text label of input. */
     label?: ReactNode
     /** Description block shown below the input. */

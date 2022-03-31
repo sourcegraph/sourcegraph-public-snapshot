@@ -21,7 +21,7 @@ type DBDashboardStore struct {
 	Now func() time.Time
 }
 
-// NewDashboardStore returns a new DBDashboardStore backed by the given Timescale db.
+// NewDashboardStore returns a new DBDashboardStore backed by the given Postgres db.
 func NewDashboardStore(db dbutil.DB) *DBDashboardStore {
 	return &DBDashboardStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), Now: time.Now}
 }

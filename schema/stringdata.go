@@ -34,6 +34,10 @@ var GitLabSchemaJSON string
 //go:embed gitolite.schema.json
 var GitoliteSchemaJSON string
 
+// GoModulesSchemaJSON is the content of the file "go-modules.schema.json".
+//go:embed go-modules.schema.json
+var GoModulesSchemaJSON string
+
 // JVMPackagesSchemaJSON is the content of the file "jvm-packages.schema.json".
 //go:embed jvm-packages.schema.json
 var JVMPackagesSchemaJSON string

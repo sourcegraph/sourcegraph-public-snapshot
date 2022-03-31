@@ -4,10 +4,10 @@ import * as H from 'history'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { DiffStat } from '@sourcegraph/web/src/components/diff/DiffStat'
 import { PageHeader, useObservable } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
+import { DiffStat } from '../../../components/diff/DiffStat'
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
 import { RepositoryFields, RepoBatchChangeStats } from '../../../graphql-operations'

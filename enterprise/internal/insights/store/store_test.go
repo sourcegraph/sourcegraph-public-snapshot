@@ -17,7 +17,6 @@ import (
 
 	"github.com/hexops/autogold"
 
-	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
@@ -29,12 +28,11 @@ func TestSeriesPoints(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-	defer cleanup()
+	insightsDB := dbtest.NewInsightsDB(t)
 
 	postgres := dbtest.NewDB(t)
 	permStore := NewInsightPermissionStore(postgres)
-	store := NewWithClock(timescale, permStore, clock)
+	store := NewWithClock(insightsDB, permStore, clock)
 
 	// Confirm we get no results initially.
 	points, err := store.SeriesPoints(ctx, SeriesPointsOpts{})
@@ -44,7 +42,7 @@ func TestSeriesPoints(t *testing.T) {
 	autogold.Want("SeriesPoints", []SeriesPoint{}).Equal(t, points)
 
 	// Insert some fake data.
-	_, err = timescale.Exec(`
+	_, err = insightsDB.Exec(`
 INSERT INTO repo_names(name) VALUES ('github.com/gorilla/mux-original');
 INSERT INTO repo_names(name) VALUES ('github.com/gorilla/mux-renamed');
 INSERT INTO metadata(metadata) VALUES ('{"hello": "world", "languages": ["Go", "Python", "Java"]}');
@@ -139,11 +137,10 @@ func TestCountData(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-	defer cleanup()
+	insightsDB := dbtest.NewInsightsDB(t)
 	postgres := dbtest.NewDB(t)
 	permStore := NewInsightPermissionStore(postgres)
-	store := NewWithClock(timescale, permStore, clock)
+	store := NewWithClock(insightsDB, permStore, clock)
 
 	timeValue := func(s string) time.Time {
 		v, err := time.Parse(time.RFC3339, s)
@@ -237,11 +234,10 @@ func TestRecordSeriesPoints(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-	defer cleanup()
+	insightsDB := dbtest.NewInsightsDB(t)
 	postgres := dbtest.NewDB(t)
 	permStore := NewInsightPermissionStore(postgres)
-	store := NewWithClock(timescale, permStore, clock)
+	store := NewWithClock(insightsDB, permStore, clock)
 
 	optionalString := func(v string) *string { return &v }
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
@@ -341,11 +337,10 @@ func TestRecordSeriesPointsSnapshotOnly(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-	defer cleanup()
+	insightsDB := dbtest.NewInsightsDB(t)
 	postgres := dbtest.NewDB(t)
 	permStore := NewInsightPermissionStore(postgres)
-	store := NewWithClock(timescale, permStore, clock)
+	store := NewWithClock(insightsDB, permStore, clock)
 
 	optionalString := func(v string) *string { return &v }
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
@@ -407,11 +402,10 @@ func TestRecordSeriesPointsRecordingOnly(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-	defer cleanup()
+	insightsDB := dbtest.NewInsightsDB(t)
 	postgres := dbtest.NewDB(t)
 	permStore := NewInsightPermissionStore(postgres)
-	store := NewWithClock(timescale, permStore, clock)
+	store := NewWithClock(insightsDB, permStore, clock)
 
 	optionalString := func(v string) *string { return &v }
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
@@ -473,11 +467,10 @@ func TestDeleteSnapshots(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-	defer cleanup()
+	insightsDB := dbtest.NewInsightsDB(t)
 	postgres := dbtest.NewDB(t)
 	permStore := NewInsightPermissionStore(postgres)
-	store := NewWithClock(timescale, permStore, clock)
+	store := NewWithClock(insightsDB, permStore, clock)
 
 	optionalString := func(v string) *string { return &v }
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
@@ -555,8 +548,7 @@ func TestDelete(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsdb, cleanup := insightsdbtesting.TimescaleDB(t)
-	defer cleanup()
+	insightsdb := dbtest.NewInsightsDB(t)
 
 	repoName := "reallygreatrepo"
 	repoId := api.RepoID(5)

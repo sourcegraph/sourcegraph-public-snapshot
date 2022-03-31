@@ -34,7 +34,7 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 	insightsStore := store.New(insightsDB, insightPermStore)
 
 	// Create a base store to be used for storing worker state. We store this in the main app Postgres
-	// DB, not the TimescaleDB (which we use only for storing insights data.)
+	// DB, not the insights DB (which we use only for storing insights data.)
 	workerBaseStore := basestore.NewWithDB(mainAppDB, sql.TxOptions{})
 
 	// Create basic metrics for recording information about background jobs.
@@ -89,7 +89,7 @@ func GetBackgroundQueryRunnerJob(ctx context.Context, mainAppDB *sql.DB, insight
 	insightsStore := store.New(insightsDB, insightPermStore)
 
 	// Create a base store to be used for storing worker state. We store this in the main app Postgres
-	// DB, not the TimescaleDB (which we use only for storing insights data.)
+	// DB, not the insights DB (which we use only for storing insights data.)
 	workerBaseStore := basestore.NewWithDB(mainAppDB, sql.TxOptions{})
 
 	// Create basic metrics for recording information about background jobs.
@@ -104,7 +104,7 @@ func GetBackgroundQueryRunnerJob(ctx context.Context, mainAppDB *sql.DB, insight
 
 	return []goroutine.BackgroundRoutine{
 		// Register the query-runner worker and resetter, which executes search queries and records
-		// results to TimescaleDB.
+		// results to the insights DB.
 		queryrunner.NewWorker(ctx, workerStore, insightsStore, queryRunnerWorkerMetrics),
 		queryrunner.NewResetter(ctx, workerStore, queryRunnerResetterMetrics),
 		queryrunner.NewCleaner(ctx, workerBaseStore, observationContext),
