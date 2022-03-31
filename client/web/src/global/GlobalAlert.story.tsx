@@ -3,8 +3,9 @@ import React from 'react'
 import { Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import { AlertType } from '@sourcegraph/web/src/graphql-operations'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+
+import { AlertType } from '../graphql-operations'
 
 import { GlobalAlert } from './GlobalAlert'
 

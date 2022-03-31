@@ -5,8 +5,8 @@ import { addMinutes, formatRFC3339 } from 'date-fns'
 import { of } from 'rxjs'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
-import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
+import { WebStory } from '../../components/WebStory'
 import { WebhookLogFields, WebhookLogsVariables } from '../../graphql-operations'
 
 import { queryWebhookLogs, SelectedExternalService } from './backend'

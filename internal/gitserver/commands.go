@@ -1,16 +1,15 @@
-package git
+package gitserver
 
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"net/mail"
 	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -22,19 +21,7 @@ type ShortLogOptions struct {
 	Path  string // compute stats for commits that touch this path
 }
 
-// A PersonCount is a contributor to a repository.
-type PersonCount struct {
-	Name  string
-	Email string
-	Count int32
-}
-
-func (p *PersonCount) String() string {
-	return fmt.Sprintf("%d %s <%s>", p.Count, p.Name, p.Email)
-}
-
-// ShortLog returns the per-author commit statistics of the repo.
-func ShortLog(ctx context.Context, db database.DB, repo api.RepoName, opt ShortLogOptions) ([]*PersonCount, error) {
+func (c *ClientImplementor) ShortLog(ctx context.Context, repo api.RepoName, opt ShortLogOptions) ([]*gitdomain.PersonCount, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: ShortLog")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
@@ -55,7 +42,7 @@ func ShortLog(ctx context.Context, db database.DB, repo api.RepoName, opt ShortL
 	if opt.Path != "" {
 		args = append(args, opt.Path)
 	}
-	cmd := gitserver.NewClient(db).Command("git", args...)
+	cmd := c.Command("git", args...)
 	cmd.Repo = repo
 	out, err := cmd.Output(ctx)
 	if err != nil {
@@ -64,13 +51,17 @@ func ShortLog(ctx context.Context, db database.DB, repo api.RepoName, opt ShortL
 	return parseShortLog(out)
 }
 
-func parseShortLog(out []byte) ([]*PersonCount, error) {
+// logEntryPattern is the regexp pattern that matches entries in the output of the `git shortlog
+// -sne` command.
+var logEntryPattern = lazyregexp.New(`^\s*([0-9]+)\s+(.*)$`)
+
+func parseShortLog(out []byte) ([]*gitdomain.PersonCount, error) {
 	out = bytes.TrimSpace(out)
 	if len(out) == 0 {
 		return nil, nil
 	}
 	lines := bytes.Split(out, []byte{'\n'})
-	results := make([]*PersonCount, len(lines))
+	results := make([]*gitdomain.PersonCount, len(lines))
 	for i, line := range lines {
 		// example line: "1125\tJane Doe <jane@sourcegraph.com>"
 		match := logEntryPattern.FindSubmatch(line)
@@ -86,7 +77,7 @@ func parseShortLog(out []byte) ([]*PersonCount, error) {
 		if err != nil || addr == nil {
 			addr = &mail.Address{Name: string(match[2])}
 		}
-		results[i] = &PersonCount{
+		results[i] = &gitdomain.PersonCount{
 			Count: int32(count),
 			Name:  addr.Name,
 			Email: addr.Address,
@@ -118,4 +109,13 @@ func lenientParseAddress(address string) (*mail.Address, error) {
 		}, nil
 	}
 	return addr, err
+}
+
+// checkSpecArgSafety returns a non-nil err if spec begins with a "-", which
+// could cause it to be interpreted as a git command line argument.
+func checkSpecArgSafety(spec string) error {
+	if strings.HasPrefix(spec, "-") {
+		return errors.Errorf("invalid git revision spec %q (begins with '-')", spec)
+	}
+	return nil
 }

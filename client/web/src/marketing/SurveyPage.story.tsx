@@ -2,8 +2,9 @@ import React from 'react'
 
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
-import { MockedStoryProvider } from '@sourcegraph/storybook/src/apollo/MockedStoryProvider'
-import { WebStory } from '@sourcegraph/web/src/components/WebStory'
+import { MockedStoryProvider } from '@sourcegraph/storybook'
+
+import { WebStory } from '../components/WebStory'
 
 import { SurveyPage } from './SurveyPage'
 import { submitSurveyMock } from './SurveyPage.mocks'
