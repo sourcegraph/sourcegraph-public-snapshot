@@ -4,6 +4,7 @@ import (
 	"context"
 
 	zoektstreamer "github.com/google/zoekt"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
@@ -75,7 +76,6 @@ func (p *repoPagerJob) Run(ctx context.Context, db database.DB, stream streaming
 			search.TextRequest,
 			p.useIndex,
 			p.containsRefGlobs,
-			zoekt.MissingRepoRevStatus(stream),
 		)
 		if err != nil {
 			return err

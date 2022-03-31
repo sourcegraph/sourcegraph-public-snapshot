@@ -298,12 +298,6 @@ The term _secret_ refers to authentication credentials like passwords, API keys,
 - use an environment variable name with one of the following suffixes to ensure it gets redacted in the logs: `*_PASSWORD, *_SECRET, *_TOKEN, *_ACCESS_KEY, *_SECRET_KEY, *_CREDENTIALS`
 - while environment variables can be assigned when declaring steps, they should never be used for secrets, because they won't get redacted, even if they match one of the above patterns.
 
-#### Feature flags
-
-Enabling a feature flag on the CI pipeline is achieved by setting environment variables `CI_FEATURE_FLAGS_*` to `true`.
-
-- `CI_FEATURE_FLAG_STATELESS`: schedule the build on stateless agents instead of normal agents (this forces a `main-dry-run` run type).
-
 ## GitHub Actions
 
 ### `buildchecker`

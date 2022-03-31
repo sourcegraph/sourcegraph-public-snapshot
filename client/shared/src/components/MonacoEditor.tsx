@@ -6,8 +6,8 @@ import * as monaco from 'monaco-editor'
 import { Subscription, Subject } from 'rxjs'
 import { map, distinctUntilChanged } from 'rxjs/operators'
 
-import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { KeyboardShortcut } from '../keyboardShortcuts'
+import { ThemeProps } from '../theme'
 
 const SOURCEGRAPH_LIGHT = 'sourcegraph-light'
 const SOURCEGRAPH_DARK = 'sourcegraph-dark'

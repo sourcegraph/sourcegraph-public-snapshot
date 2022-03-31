@@ -1,6 +1,6 @@
 # Sourcegraph Cloud
 
-[Sourcegraph Cloud](https://sourcegraph.com/search) lets you search across your code from GitHub.com or GitLab.com, and across any open-source project on GitHub.com or Gitlab.com. Sourcegraph Cloud is in Public Beta, allowing any individual to sign-up, connect personal repositories, and search across personal code. 
+[Sourcegraph Cloud](https://sourcegraph.com/search) lets you search across your code from GitHub.com or GitLab.com, and across any open-source project on GitHub.com or Gitlab.com. Sourcegraph Cloud is in beta, allowing any individual to sign-up, connect personal repositories, and search across personal code. If you are interested in onboarding your organization to Sourcegraph Cloud, [join our waitlist](https://share.hsforms.com/14OQ3RoPpQTOXvZlUpgx6-A1n7ku?utm_medium=direct-traffic&utm_source=docs&utm_content=cloud-product-beta-teams).
 
 Note that you can search across a maximum of 2,000 repositories at once using Sourcegraph Cloud. To search across more than 2,000 repositories at once or to search code hosted in an on-prem environment, [run your own Sourcegraph instance](../../../admin/install/index.md).
 
@@ -14,7 +14,7 @@ Note that you can search across a maximum of 2,000 repositories at once using So
 
 ### What is Sourcegraph Cloud?
 
-Sourcegraph Cloud is a Software-as-a-Service version of Sourcegraph. This means that we handle hosting and updating Sourcegraph so you can focus on what matters: searching your code. Sourcegraph Cloud is available in Public Beta for any individual user to [sign up for free](https://sourcegraph.com/sign-up).
+Sourcegraph Cloud is a Software-as-a-Service version of Sourcegraph. This means that we handle hosting and updating Sourcegraph so you can focus on what matters: searching your code. Sourcegraph Cloud is available in beta for any individual user to [sign up for free](https://sourcegraph.com/sign-up).
 
 ### Limitations
 
@@ -24,13 +24,12 @@ Sourcegraph Cloud is a Software-as-a-Service version of Sourcegraph. This means 
 
 ### Who is Sourcegraph Cloud for / why should I use this over Sourcegraph self-hosted?
 
-Sourcegraph Cloud is designed for individual developers to connect and search personal code stored on Github.com or Gitlab.com. While our self-hosted product provides an incredible experience for enterprises, we've heard feedback that individual developers want a simple way to search personal code. 
+Sourcegraph Cloud is designed allow developers to connect and search personal code stored on Github.com or Gitlab.com. While our self-hosted product provides an incredible experience for enterprises, we've heard feedback that developers want a way to utilize the benefits of Sourcegraph without hosting. 
 
 [A local Sourcegraph instance](../../../admin/install/index.md) is a better fit for you if:
 
 - You have source code stored on-premises
-- You would like to create an organization for teammates who need to share code
-- You are interested in enterprise solutions such as [Batch Changes](https://about.sourcegraph.com/batch-changes/) to make large-scale code 
+- You are interested in enterprise solutions such as [Batch Changes](https://about.sourcegraph.com/batch-changes/) to make large-scale code changes or [Code Insights](https://about.sourcegraph.com/code-insights/) to visualize code changes over time. 
 - You require more robust admin and user management tooling
 
 Learn more about [how to run your own Sourcegraph instance](../../../admin/install/index.md).
@@ -57,7 +56,7 @@ It's easy to share Sourcegraph with your team. Each team member must [sign up fo
 
 ### How do I use Sourcegraph Cloud for my organization?
 
-Sourcegraph Cloud only supports individual use today. This means that anyone can sign up for Sourcegraph.com, connect public or private repositories hosted on Github.com or Gitlab.com, and leverage the powerful code search of Sourcegraph. To create and manage an organization with Sourcegraph with team-oriented functionality, get started with the [self-hosted deployment](../../../admin/install/index.md).
+Organizational support on Sourcegraph Cloud is currently in private-beta. To gain access to this functionality, please [join our waitlist](https://share.hsforms.com/14OQ3RoPpQTOXvZlUpgx6-A1n7ku?utm_medium=direct-traffic&utm_source=docs&utm_content=cloud-product-beta-teams) and we'll get in touch if you are a good fit. 
 
 ### What if my code is not hosted on Github.com or Gitlab.com?
 
