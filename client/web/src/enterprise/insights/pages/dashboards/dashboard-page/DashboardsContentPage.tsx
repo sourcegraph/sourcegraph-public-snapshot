@@ -6,6 +6,7 @@ import { Redirect } from 'react-router-dom'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
+import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
 import { ALL_INSIGHTS_DASHBOARD } from '../../../core/constants'
 
@@ -42,5 +43,12 @@ export const DashboardsContentPage: React.FunctionComponent<DashboardsContentPag
         )
     }
 
-    return <DashboardsContent telemetryService={telemetryService} dashboardID={dashboardID} dashboards={dashboards} />
+    const currentDashboard = dashboards.find(dashboard => dashboard.id === dashboardID)
+
+    return (
+        <>
+            <PageTitle title={`${currentDashboard?.title || ''} - Code Insights`} />
+            <DashboardsContent telemetryService={telemetryService} dashboardID={dashboardID} dashboards={dashboards} />
+        </>
+    )
 }
