@@ -315,9 +315,9 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 		}
 	}
 
-	if resultTypes.Has(result.TypeNotebook) {
-		// TODO
-		log15.Info("Notebook search yay")
+	if enabled := jargs.SearchInputs.Features.GetBoolOr("notebook-search-job", false); enabled &&
+		resultTypes.Has(result.TypeNotebook) {
+		log15.Debug("notebook-search-job enabled yay!") // TODO
 		addJob(true, &notebook.SearchJob{
 			Query: b,
 		})
