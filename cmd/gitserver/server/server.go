@@ -1202,8 +1202,8 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 
 		results := make([]protocol.BatchLogResult, 0, len(req.RepoCommits))
 		for _, repoCommit := range req.RepoCommits {
-			output, ok, err := performGitLogCommand(ctx, repoCommit, req.Format)
-			if err == nil && !ok {
+			output, isRepoCloned, err := performGitLogCommand(ctx, repoCommit, req.Format)
+			if err == nil && !isRepoCloned {
 				err = errors.Newf("repo not found")
 			}
 			var errMessage string
