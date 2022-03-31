@@ -42,7 +42,8 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
     const editUrl = dashboard?.id
         ? `/insights/edit/${insightID}?dashboardId=${dashboard.id}`
         : `/insights/edit/${insightID}`
-
+    const quickFixUrl = '/batch-changes/create'
+    const showQuickFix = insight.title.includes('[gofix]')
     const withinVirtualDashboard = !!dashboard && isVirtualDashboard(dashboard)
 
     return (
@@ -87,6 +88,15 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
                                 />
                                 <span>Start Y Axis at 0</span>
                             </MenuItem>
+                        )}
+                        {showQuickFix  && (
+                            <MenuLink
+                                as={Link}
+                                className={styles.item}
+                                to={quickFixUrl}
+                                >
+                                Quick fix
+                            </MenuLink>
                         )}
 
                         {dashboard && (
