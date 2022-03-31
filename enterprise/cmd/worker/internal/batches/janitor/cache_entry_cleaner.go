@@ -1,4 +1,4 @@
-package background
+package janitor
 
 import (
 	"context"
@@ -17,7 +17,7 @@ var maxCacheEntriesSize = env.MustGetInt(
 
 const cacheCleanInterval = 1 * time.Hour
 
-func newCacheEntryCleanerJob(ctx context.Context, s *store.Store) goroutine.BackgroundRoutine {
+func NewCacheEntryCleaner(ctx context.Context, s *store.Store) goroutine.BackgroundRoutine {
 	maxSizeByte := int64(maxCacheEntriesSize * 1024 * 1024)
 
 	return goroutine.NewPeriodicGoroutine(
