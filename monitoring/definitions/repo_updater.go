@@ -211,7 +211,7 @@ func RepoUpdater() *monitoring.Container {
 							Query:       `max(src_repoupdater_stale_repos)`,
 							Warning:     monitoring.Alert().GreaterOrEqual(1).For(25 * time.Minute),
 							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerCoreApplication,
+							Owner:       monitoring.ObservableOwnerRepoManagement,
 							PossibleSolutions: `
 								Check repo-updater logs for errors.
 								Check for rows in gitserver_repos where LastError is not an empty string.

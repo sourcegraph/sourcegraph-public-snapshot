@@ -86,7 +86,7 @@ func Postgres() *monitoring.Container {
 							DataMustExist: false, // not deployed on docker-compose
 							Query:         "pg_exporter_last_scrape_error",
 							Panel:         monitoring.Panel().LegendFormat("{{app}}"),
-							Warning:       monitoring.Alert().GreaterOrEqual(1, nil).For(5 * time.Minute),
+							Warning:       monitoring.Alert().GreaterOrEqual(1).For(5 * time.Minute),
 
 							PossibleSolutions: `
 								- Ensure the Postgres exporter can access the Postgres database. Also, check the Postgres exporter logs for errors.
