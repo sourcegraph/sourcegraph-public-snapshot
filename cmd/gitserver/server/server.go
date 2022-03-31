@@ -1198,6 +1198,8 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 		// Validate request parameters
 		if len(req.RepoCommits) == 0 {
 			// Early exit
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(protocol.BatchLogResponse{Results: []protocol.BatchLogResult{}})
 			return 0, nil
 		}
 		if !strings.HasPrefix(req.Format, "--format=") {
