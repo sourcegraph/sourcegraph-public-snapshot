@@ -697,7 +697,7 @@ func (c *ClientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 		for _, result := range response.Results {
 			var err error
 			if result.CommandError != "" {
-				err = errors.Newf(result.CommandError)
+				err = errors.New(result.CommandError)
 			}
 
 			rawResult := RawBatchLogResult{
