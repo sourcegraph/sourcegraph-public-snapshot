@@ -95,9 +95,12 @@ export const TreeTabList: React.FunctionComponent<TreeTabList> = ({ tree, select
                             className={classNames('nav-link text-content bg-transparent', isActive && 'active')}
                             onClick={() => setSelectedTab(tab)}
                         >
-                            <span className="d-inline-flex" data-tab-content={title}>
-                                {icon} {title}
-                            </span>
+                            <div>
+                            {icon}
+                                <span className="d-inline-flex ml-1" data-tab-content={title}>
+                                {title}
+                                </span>
+                            </div>
                         </Link>
                     </div>
                 ))}
