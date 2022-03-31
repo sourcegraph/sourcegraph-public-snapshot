@@ -33,6 +33,7 @@ import {
     Icon,
     ButtonGroup,
     Button,
+    Badge,
 } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
@@ -41,7 +42,7 @@ import { BatchChangesIcon } from '../../batches/icons'
 import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
-import { ActionItemsBar, ActionItemsBarProps } from '../../extensions/components/ActionItemsBar'
+import { ActionItemsBarProps } from '../../extensions/components/ActionItemsBar'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { RepositoryFields } from '../../graphql-operations'
 import { basename } from '../../util/path'
@@ -278,10 +279,14 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                     )}$) `
                                                 )}`}
                                                 variant="secondary"
+                                                outline={true}
                                                 as={Link}
                                                 className="ml-1"
                                             >
-                                                <Icon as={CodeJsonIcon} /> Search Dependencies
+                                                <Icon as={CodeJsonIcon} /> Search Dependencies{' '}
+                                                <Badge variant="info" className={classNames('text-uppercase')}>
+                                                    NEW
+                                                </Badge>
                                             </Button>
 
                                             {batchChangesEnabled &&(
@@ -299,6 +304,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                 <Button
                                                     to={`/${encodeURIPathComponent(repo.name)}/-/settings`}
                                                     variant="secondary"
+                                                    outline={true}
                                                     as={Link}
                                                     className="ml-1"
                                                 >
@@ -419,13 +425,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                                 {...props}
                                                             />
                                                         </RepositoryGitDataContainer>
-                                                        <ActionItemsBar
-                                                            extensionsController={props.extensionsController}
-                                                            platformContext={props.platformContext}
-                                                            useActionItemsBar={useActionItemsBar}
-                                                            location={props.location}
-                                                            telemetryService={props.telemetryService}
-                                                        />
                                                     </RepoRevisionWrapper>
                                                 )
                                             }}
