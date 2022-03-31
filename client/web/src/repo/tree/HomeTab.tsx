@@ -223,7 +223,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                             )}
                         </div>
                         <div className={styles.section}>
-                            <h2>Changes</h2>
+                            <h2>Recent Commits</h2>
                             <FilteredConnection<
                                 GitCommitFields,
                                 Pick<GitCommitNodeProps, 'className' | 'compact' | 'messageSubjectClassName'>
