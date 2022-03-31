@@ -220,6 +220,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 		pipeline.AddStep(
 			fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
 			withYarnCache(),
+			bk.Env("PERCY_ON", "true"),
 			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
 			bk.Env("BROWSER", browser),
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
