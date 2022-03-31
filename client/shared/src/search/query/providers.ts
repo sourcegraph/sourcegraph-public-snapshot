@@ -1,6 +1,6 @@
 import * as Monaco from 'monaco-editor'
 import { Observable, fromEventPattern, of } from 'rxjs'
-import { map, takeUntil, switchMap, delay } from 'rxjs/operators'
+import { map, takeUntil } from 'rxjs/operators'
 
 import { SearchPatternType } from '../../graphql-operations'
 import { SearchMatch } from '../stream'
@@ -88,25 +88,35 @@ export function getSuggestionQuery(tokens: Token[], tokenAtColumn: Token, sugges
     return ''
 }
 
-function debouncedFetch(
-    fetchSuggestions: (query: string) => Observable<SearchMatch[]>
-): (query: string, isAborted: () => boolean) => Promise<SearchMatch[]> {
-    return (query, isAborted) =>
-        of(query)
-            .pipe(
-                // We use a delay here to implement a custom debounce. In the
-                // next step we check if the current completion request was
-                // cancelled in the meantime (`context.aborted`).
-                // This prevents us from needlessly running multiple suggestion
-                // queries.
-                delay(200),
-                switchMap(query => (isAborted() ? Promise.resolve([]) : fetchSuggestions(query)))
-            )
-            .toPromise()
-}
-
 function getTokenAtColumn(tokens: Token[], column: number): Token | null {
     return tokens.find(({ range }) => range.start + 1 <= column && range.end + 1 >= column) ?? null
+}
+
+export function createCancelableFetchSuggestions(
+    fetchSuggestions: (query: string) => Observable<SearchMatch[]>
+): (query: string, onAbort: (hander: () => void) => void) => Promise<SearchMatch[]> {
+    return (query, onAbort) => {
+        if (!query) {
+            // Don't fetch suggestions if the query is empty. This would result
+            // in arbitrary result types being returned, which is unexpected.
+            return Promise.resolve([])
+        }
+        const matches = fetchSuggestions(query)
+        return matches
+            .pipe(
+                takeUntil(
+                    // By listeing to the abort event of the autocompletion we
+                    // can close the conntection to server early.
+                    new Observable(subscriber => {
+                        onAbort(() => {
+                            subscriber.next(null)
+                            subscriber.complete()
+                        })
+                    })
+                )
+            )
+            .toPromise()
+    }
 }
 
 /**
@@ -123,7 +133,7 @@ export function getProviders(
         isSourcegraphDotCom?: boolean
     }
 ): SearchFieldProviders {
-    const debouncedFetchSuggestions = debouncedFetch(fetchSuggestions)
+    const cancelableFetch = createCancelableFetchSuggestions(fetchSuggestions)
 
     return {
         tokens: {
@@ -168,15 +178,10 @@ export function getProviders(
                 return getCompletionItems(
                     tokenAtColumn,
                     position,
-                    async (token, type) => {
-                        if (tokenAtColumn) {
-                            const query = getSuggestionQuery(scanned.term, token, type)
-                            return query
-                                ? debouncedFetchSuggestions(query, () => cancellationToken.isCancellationRequested)
-                                : []
-                        }
-                        return []
-                    },
+                    async (token, type) =>
+                        cancelableFetch(getSuggestionQuery(scanned.term, token, type), listener =>
+                            cancellationToken.onCancellationRequested(listener)
+                        ),
                     options
                 )
             },
