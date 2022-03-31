@@ -33,7 +33,7 @@ const extractExtensionStyles = async (page: puppeteer.Page): Promise<string> =>
             .reduce(
                 (styleSheetRules, styleSheet) =>
                     styleSheetRules.concat(
-                        [...styleSheet.cssRules].reduce((rules, current) => rules.concat(current.cssText), '')
+                        [...styleSheet.cssRules].reduce((rules, rule) => rules.concat(rule.cssText), '')
                     ),
                 ''
             )
