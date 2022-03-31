@@ -88,7 +88,7 @@ func DiffT(ctx context.Context, db database.DB, opts DiffOptions) ([]byte, error
 	}
 
 	cmd := gitserver.NewClient(db).Command("git",
-		"-c", "diff.external=difft",
+		"-c", "diff.external=difft --color=always",
 		"diff",
 		"--find-renames",
 		"--full-index",
