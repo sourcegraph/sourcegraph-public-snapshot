@@ -819,7 +819,8 @@ const GO_STATIC_CHECK_SA6005: Template = {
         series: [
             {
                 name: 'SA6005',
-                query: 'if strings.ToLower(:[1]) == strings.ToLower(:[2]) or if strings.ToUpper(:[1]) == strings.ToUpper(:[2]) or if strings.ToLower(:[1]) != strings.ToLower(:[2]) or if strings.ToUpper(:[1]) != strings.ToUpper(:[2]) patternType:structural archived:no',
+                query:
+                    'if strings.ToLower(:[1]) == strings.ToLower(:[2]) or if strings.ToUpper(:[1]) == strings.ToUpper(:[2]) or if strings.ToLower(:[1]) != strings.ToLower(:[2]) or if strings.ToUpper(:[1]) != strings.ToUpper(:[2]) patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
         ],
@@ -836,7 +837,8 @@ const GO_STATIC_CHECK_S1003: Template = {
         series: [
             {
                 name: 'S1003',
-                query: 'strings.Index(:[1], :[2]) < 0  or strings.Index(:[1], :[2]) == -1 or strings.Index(:[1], :[2]) != -1 or strings.Index(:[1], :[2]) >= 0 or strings.Index(:[1], :[2]) > -1 or strings.IndexAny(:[1], :[2]) < 0 or strings.IndexAny(:[1], :[2]) == -1 or strings.IndexAny(:[1], :[2]) != -1 or strings.IndexAny(:[1], :[2]) >= 0 or strings.IndexAny(:[1], :[2]) > -1 or strings.IndexRune(:[1], :[2]) < 0 or strings.IndexRune(:[1], :[2]) == -1 or strings.IndexRune(:[1], :[2]) != -1 or strings.IndexRune(:[1], :[2]) >= 0 or strings.IndexRune(:[1], :[2]) > -1 patternType:structural archived:no',
+                query:
+                    'strings.Index(:[1], :[2]) < 0  or strings.Index(:[1], :[2]) == -1 or strings.Index(:[1], :[2]) != -1 or strings.Index(:[1], :[2]) >= 0 or strings.Index(:[1], :[2]) > -1 or strings.IndexAny(:[1], :[2]) < 0 or strings.IndexAny(:[1], :[2]) == -1 or strings.IndexAny(:[1], :[2]) != -1 or strings.IndexAny(:[1], :[2]) >= 0 or strings.IndexAny(:[1], :[2]) > -1 or strings.IndexRune(:[1], :[2]) < 0 or strings.IndexRune(:[1], :[2]) == -1 or strings.IndexRune(:[1], :[2]) != -1 or strings.IndexRune(:[1], :[2]) >= 0 or strings.IndexRune(:[1], :[2]) > -1 patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
         ],
@@ -871,7 +873,8 @@ const GO_STATIC_CHECK_S1004: Template = {
         series: [
             {
                 name: 'S1004',
-                query: 'bytes.Compare(:[1], :[2]) != 0 or bytes.Compare(:[1], :[2]) == 0 patternType:structural archived:no',
+                query:
+                    'bytes.Compare(:[1], :[2]) != 0 or bytes.Compare(:[1], :[2]) == 0 patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
         ],
@@ -888,7 +891,8 @@ const GO_STATIC_CHECK_S1005: Template = {
         series: [
             {
                 name: 'S1005',
-                query: 'for :[1:e], :[~_] := range or for :[1:e], :[~_] = range or for :[~_] = range or for :[~_], :[~_] = range patternType:structural archived:no',
+                query:
+                    'for :[1:e], :[~_] := range or for :[1:e], :[~_] = range or for :[~_] = range or for :[~_], :[~_] = range patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
         ],
@@ -959,7 +963,8 @@ const GO_STATIC_CHECK_S1019: Template = {
         series: [
             {
                 name: 'S10019',
-                query: 'make(chan int, 0) or make(map[:[[1]]]:[[1]], 0) or make(:[1], :[2], :[2]) patternType:structural archived:no',
+                query:
+                    'make(chan int, 0) or make(map[:[[1]]]:[[1]], 0) or make(:[1], :[2], :[2]) patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
         ],
@@ -976,7 +981,8 @@ const GO_STATIC_CHECK_S1020: Template = {
         series: [
             {
                 name: 'S10020',
-                query: 'if :[_.], ok := :[i.].(:[T]); :[i.] != nil && ok {:[body]} or if :[_.], ok := :[i.].(:[T]); ok && :[i.] != nil {:[body]} or if :[i.] != nil {  if :[_.], ok := :[i.].(:[T]); ok {:[body]}} patternType:structural archived:no',
+                query:
+                    'if :[_.], ok := :[i.].(:[T]); :[i.] != nil && ok {:[body]} or if :[_.], ok := :[i.].(:[T]); ok && :[i.] != nil {:[body]} or if :[i.] != nil {  if :[_.], ok := :[i.].(:[T]); ok {:[body]}} patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
         ],
@@ -993,7 +999,8 @@ const GO_STATIC_CHECK_S1023: Template = {
         series: [
             {
                 name: 'S10023',
-                query: 'func() {:[body] return } or func :[fn.](:[args]) {:[body] return } patternType:structural archived:no',
+                query:
+                    'func() {:[body] return } or func :[fn.](:[args]) {:[body] return } patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
         ],
@@ -1078,7 +1085,8 @@ const GO_STATIC_CHECK_S1032: Template = {
         series: [
             {
                 name: 'S10032',
-                query: 'sort.Sort(sort.Float64Slice(:[1])) or sort.Sort(sort.StringSlice(:[1])) or sort.Sort(sort.IntSlice(:[1])) patternType:structural archived:no',
+                query:
+                    'sort.Sort(sort.Float64Slice(:[1])) or sort.Sort(sort.StringSlice(:[1])) or sort.Sort(sort.IntSlice(:[1])) patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
         ],
@@ -1095,7 +1103,8 @@ const GO_STATIC_CHECK_S1035: Template = {
         series: [
             {
                 name: 'S10035',
-                query: 'headers.Set(http.CanonicalHeaderKey(:[1])) or headers.Get(http.CanonicalHeaderKey(:[1])) or headers.Del(http.CanonicalHeaderKey(:[1])) or headers.Add(http.CanonicalHeaderKey(:[1]), :[1]) patternType:structural archived:no',
+                query:
+                    'headers.Set(http.CanonicalHeaderKey(:[1])) or headers.Get(http.CanonicalHeaderKey(:[1])) or headers.Del(http.CanonicalHeaderKey(:[1])) or headers.Add(http.CanonicalHeaderKey(:[1]), :[1]) patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
         ],
@@ -1114,7 +1123,8 @@ const GO_STATIC_CHECK_S1037: Template = {
         series: [
             {
                 name: 'S10035',
-                query: 'headers.Set(http.CanonicalHeaderKey(:[1])) or headers.Get(http.CanonicalHeaderKey(:[1])) or headers.Del(http.CanonicalHeaderKey(:[1])) or headers.Add(http.CanonicalHeaderKey(:[1]), :[1]) patternType:structural archived:no',
+                query:
+                    'headers.Set(http.CanonicalHeaderKey(:[1])) or headers.Get(http.CanonicalHeaderKey(:[1])) or headers.Del(http.CanonicalHeaderKey(:[1])) or headers.Add(http.CanonicalHeaderKey(:[1]), :[1]) patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
         ],
@@ -1265,4 +1275,3 @@ export const TEMPLATE_SECTIONS: TemplateSection[] = [
         templates: [TS_VS_GO, IOS_APP_SCREENS, ADOPTING_NEW_API, PROBLEMATIC_API_BY_TEAM, DATA_FETCHING_GQL],
     },
 ]
-

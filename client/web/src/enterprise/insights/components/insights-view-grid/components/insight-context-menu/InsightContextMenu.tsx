@@ -89,12 +89,8 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
                                 <span>Start Y Axis at 0</span>
                             </MenuItem>
                         )}
-                        {showQuickFix  && (
-                            <MenuLink
-                                as={Link}
-                                className={styles.item}
-                                to={quickFixUrl}
-                                >
+                        {showQuickFix && (
+                            <MenuLink as={Link} className={styles.item} to={quickFixUrl}>
                                 Quick fix
                             </MenuLink>
                         )}
