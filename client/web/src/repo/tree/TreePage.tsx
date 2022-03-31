@@ -291,7 +291,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                 </Button>
                                             )}
                                             <Button
-                                                to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
+                                                to={`/search?q=${encodeURIPathComponent(`context:global count:all repo:dependencies(${repo.name.replaceAll('.', '\\.')}$) `)}`}
                                                 variant="secondary"
                                                 as={Link}
                                                 className="ml-1"
