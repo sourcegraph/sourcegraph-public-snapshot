@@ -3,7 +3,9 @@ package notebook
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 
+	"github.com/grafana/regexp"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -94,7 +96,6 @@ func scanNotebookMatches(rows *sql.Rows) ([]*result.NotebookMatch, error) {
 }
 
 func makeQueryConds(query string, includeBlocks bool) *sqlf.Query {
-	// emulate other search types by replacing space with wildcards.
 	ilikeQuery := "%" + query + "%"
 
 	conds := []*sqlf.Query{
@@ -124,5 +125,36 @@ func (s *notebooksSearchStore) SearchNotebooks(ctx context.Context, query string
 		return nil, err
 	}
 	defer rows.Close()
-	return scanNotebookMatches(rows)
+	notebooks, err := scanNotebookMatches(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO HACK post-filtering of blocks. Maybe this is okay because a notebook is
+	// unlikely to have too many blocks, and we already know there is a match in here
+	// because of `notebooks.blocks_tsvector`.
+	if searchBlocks {
+		searchRe, err := regexp.Compile("(?i).*(" + query + ").*")
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range notebooks {
+			var matchBlocks result.NotebookBlocks
+			for _, block := range n.Blocks {
+				// TODO this yolo marshals the entire block for search. If we had more
+				// concrete types we can query specific fields, or emulate
+				// `notebooks.blocks_tsvector` which takes all text-type fields.
+				b, err := json.Marshal(block)
+				if err != nil {
+					continue
+				}
+				if searchRe.Match(b) {
+					matchBlocks = append(matchBlocks, block)
+				}
+			}
+			n.Blocks = matchBlocks
+		}
+	}
+
+	return notebooks, nil
 }
