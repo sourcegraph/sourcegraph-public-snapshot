@@ -1,5 +1,7 @@
 # Who can see your code on Sourcegraph Cloud
 
+Note: [Sourcegraph Cloud for Teams](https://about.sourcegraph.com/cloud-beta/) is in private beta today. [Join our waitlist](https://share.hsforms.com/14OQ3RoPpQTOXvZlUpgx6-A1n7ku?utm_medium=direct-traffic&utm_source=docs&utm_content=cloud-product-beta-teams) to get access today!
+
 Sourcegraph Cloud protects your private code using repository permissions from GitHub.com and GitLab.com to determine who can see repositories you've [added to Sourcegraph Cloud](../how-to/adding_repositories_to_cloud.md).
 
 ## Public repositories

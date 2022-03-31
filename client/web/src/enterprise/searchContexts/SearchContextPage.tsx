@@ -15,10 +15,11 @@ import { Scalars, SearchPatternType } from '@sourcegraph/shared/src/graphql-oper
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/schema'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Page } from '@sourcegraph/web/src/components/Page'
-import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Badge, Container, PageHeader, LoadingSpinner, useObservable, Button, Link, Alert } from '@sourcegraph/wildcard'
+
+import { Page } from '../../components/Page'
+import { PageTitle } from '../../components/PageTitle'
+import { Timestamp } from '../../components/time/Timestamp'
 
 import styles from './SearchContextPage.module.scss'
 
