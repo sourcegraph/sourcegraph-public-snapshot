@@ -599,6 +599,13 @@ func getCommits(ctx context.Context, db database.DB, repoCommits []api.RepoCommi
 		// Enforce sub-repository permissions
 		filteredCommits, err := filterCommits(ctx, wrappedCommits, repoCommit.Repo, checker)
 		if err != nil {
+			// Note that we don't check ignoreErrors on this condition. When we
+			// ignore errors it's to hide an issue with a single git log request on a
+			// single shard, which could return an error if that repo is missing, the
+			// supplied commit does not exist in the clone, or if the repo is malformed.
+			//
+			// We don't want to hide unrelated infrastructure errors caused by this
+			// method call.
 			return errors.Wrap(err, "filterCommits")
 		}
 		if len(filteredCommits) == 0 {
