@@ -439,7 +439,7 @@ func (s *gitserverRepoStore) ListReposWithoutSize(ctx context.Context) (map[api.
 	for rows.Next() {
 		var name string
 		var ID int32
-		if err := rows.Scan(&dbutil.NullString{S: &name}, &dbutil.NullInt32{N: &ID}); err != nil {
+		if err := rows.Scan(&name, &ID); err != nil {
 			return nil, errors.Wrap(err, "scanning row")
 		}
 		repos[api.RepoName(name)] = api.RepoID(ID)
@@ -458,8 +458,6 @@ WHERE gr.repo_size_bytes IS NULL
 `
 
 // UpdateRepoSizes sets repo sizes according to input map. Key is repoID, value is repo_size_bytes.
-// INSERT clause has shard_id column which is hardcoded to "0" because of not null constraint.
-// In fact shard_id is always "updated" to existing value, that's why "0" is just skipped.
 func (s *gitserverRepoStore) UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoID]int64) error {
 	values := make([]*sqlf.Query, 0, len(repos))
 	for repo, size := range repos {
