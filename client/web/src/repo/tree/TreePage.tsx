@@ -289,10 +289,11 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                 </Badge>
                                             </Button>
 
-                                            {batchChangesEnabled &&(
+                                            {batchChangesEnabled && (
                                                 <Button
                                                     to="/batch-changes"
                                                     variant="secondary"
+                                                    outline={true}
                                                     as={Link}
                                                     className="ml-1"
                                                 >
