@@ -809,6 +809,76 @@ const DATA_FETCHING_GQL: Template = {
     },
 }
 
+const GO_STATIC_CHECK_SA6005: Template = {
+    type: InsightType.SearchBased,
+    title: 'Inefficient string comparison with strings.ToLower or strings.ToUpper',
+    description: '',
+    templateValues: {
+        title: 'Inefficient string comparison with strings.ToLower or strings.ToUpper',
+        allRepos: true,
+        series: [
+            {
+                name: 'SA6005',
+                query: 'if strings.ToLower(:[1]) == strings.ToLower(:[2]) or if strings.ToUpper(:[1]) == strings.ToUpper(:[2]) or if strings.ToLower(:[1]) != strings.ToLower(:[2]) or if strings.ToUpper(:[1]) != strings.ToUpper(:[2]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1003: Template = {
+    type: InsightType.SearchBased,
+    title: 'Replace call to strings.Index with strings.Contains',
+    description: '',
+    templateValues: {
+        title: 'Replace call to strings.Index with strings.Contains',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1003',
+                query: 'strings.Index(:[1], :[2]) < 0  or strings.Index(:[1], :[2]) == -1 or strings.Index(:[1], :[2]) != -1 or strings.Index(:[1], :[2]) >= 0 or strings.Index(:[1], :[2]) > -1 or strings.IndexAny(:[1], :[2]) < 0 or strings.IndexAny(:[1], :[2]) == -1 or strings.IndexAny(:[1], :[2]) != -1 or strings.IndexAny(:[1], :[2]) >= 0 or strings.IndexAny(:[1], :[2]) > -1 or strings.IndexRune(:[1], :[2]) < 0 or strings.IndexRune(:[1], :[2]) == -1 or strings.IndexRune(:[1], :[2]) != -1 or strings.IndexRune(:[1], :[2]) >= 0 or strings.IndexRune(:[1], :[2]) > -1 patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1002: Template = {
+    type: InsightType.SearchBased,
+    title: 'Omit comparison with boolean constant',
+    description: '',
+    templateValues: {
+        title: 'Omit comparison with boolean constant',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1002',
+                query: 'if :[1:e] == false or if :[1:e] == true patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1004: Template = {
+    type: InsightType.SearchBased,
+    title: 'Replace call to bytes.Compare with bytes.Equal',
+    description: '',
+    templateValues: {
+        title: 'Replace call to bytes.Compare with bytes.Equal',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1004',
+                query: 'bytes.Compare(:[1], :[2]) != 0 or bytes.Compare(:[1], :[2]) == 0 patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+        ],
+    },
+}
+
+GO_STATIC_CHECK_S1039, GO_STATIC_CHECK_S1038, GO_STATIC_CHECK_S1037, GO_STATIC_CHECK_S1036, GO_STATIC_CHECK_S1035, GO_STATIC_CHECK_S1032, GO_STATIC_CHECK_S1029, GO_STATIC_CHECK_S1028, GO_STATIC_CHECK_S1025, GO_STATIC_CHECK_S1023, GO_STATIC_CHECK_S1024, GO_STATIC_CHECK_S1020, GO_STATIC_CHECK_S1019, GO_STATIC_CHECK_S1018, GO_STATIC_CHECK_S1017, GO_STATIC_CHECK_S1012, GO_STATIC_CHECK_S1010, GO_STATIC_CHECK_S1006, GO_STATIC_CHECK_S1005, GO_STATIC_CHECK_S1004
+
 export const TEMPLATE_SECTIONS: TemplateSection[] = [
     {
         title: 'Popular',
@@ -890,7 +960,12 @@ export const TEMPLATE_SECTIONS: TemplateSection[] = [
         ],
     },
     {
+        title: 'Go code checker',
+        templates: [GO_STATIC_CHECK_SA6005, GO_STATIC_CHECK_S1003, GO_STATIC_CHECK_S1002, GO_STATIC_CHECK_S1039, GO_STATIC_CHECK_S1038, GO_STATIC_CHECK_S1037, GO_STATIC_CHECK_S1036, GO_STATIC_CHECK_S1035, GO_STATIC_CHECK_S1032, GO_STATIC_CHECK_S1029, GO_STATIC_CHECK_S1028, GO_STATIC_CHECK_S1025, GO_STATIC_CHECK_S1023, GO_STATIC_CHECK_S1024, GO_STATIC_CHECK_S1020, GO_STATIC_CHECK_S1019, GO_STATIC_CHECK_S1018, GO_STATIC_CHECK_S1017, GO_STATIC_CHECK_S1012, GO_STATIC_CHECK_S1010, GO_STATIC_CHECK_S1006, GO_STATIC_CHECK_S1005, GO_STATIC_CHECK_S1004],
+    },
+    {
         title: 'Other',
         templates: [TS_VS_GO, IOS_APP_SCREENS, ADOPTING_NEW_API, PROBLEMATIC_API_BY_TEAM, DATA_FETCHING_GQL],
     },
 ]
+
