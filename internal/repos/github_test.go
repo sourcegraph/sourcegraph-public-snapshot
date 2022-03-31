@@ -574,7 +574,7 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 		Kind: extsvc.KindGitHub,
 		Config: marshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
-			Token: os.Getenv("GITHUB_TOKEN"),
+			Token: os.Getenv("GH_TOKEN"),
 		}),
 	}
 
@@ -622,7 +622,7 @@ func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
 		Kind: extsvc.KindGitHub,
 		Config: marshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
-			Token: os.Getenv("GITHUB_TOKEN"),
+			Token: os.Getenv("GH_TOKEN"),
 		}),
 	}
 
@@ -734,7 +734,7 @@ func TestRepositoryQuery_Do(t *testing.T) {
 			}
 
 			apiURL, _ := url.Parse("https://api.github.com")
-			token := &auth.OAuthBearerToken{Token: os.Getenv("GITHUB_TOKEN")}
+			token := &auth.OAuthBearerToken{Token: os.Getenv("GH_TOKEN")}
 
 			q := repositoryQuery{
 				Query:    tc.query,
