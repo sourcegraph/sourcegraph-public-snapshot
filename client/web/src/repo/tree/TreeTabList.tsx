@@ -85,8 +85,8 @@ export const TreeTabList: React.FunctionComponent<TreeTabList> = ({ tree, select
     )
 
     return (
-        <div className="mb-4">
-            <div className="nav nav-tabs">
+        <div className="d-flex mb-4">
+            <div className="nav nav-tabs justify-content-between">
                 {tabs.map(({ tab, title, isActive, logName, icon, url }) => (
                     <div className="nav-item" key={`repo-${tab}-tab`}>
                         <Link

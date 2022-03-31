@@ -2,13 +2,17 @@ import React, { useMemo, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
+import BrainIcon from 'mdi-react/BrainIcon'
+import CodeJsonIcon from 'mdi-react/CodeJsonIcon'
 import FolderIcon from 'mdi-react/FolderIcon'
+import SettingsIcon from 'mdi-react/SettingsIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { Redirect, Route, Switch } from 'react-router-dom'
+import { Button } from 'reactstrap'
 import { catchError } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, encodeURIPathComponent, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { SearchContextProps } from '@sourcegraph/search'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
@@ -20,7 +24,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { toURIWithPath, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { Container, PageHeader, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, useObservable, Link, Icon } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
 import { CodeIntelligenceProps } from '../../codeintel'
@@ -232,15 +236,61 @@ export const TreePage: React.FunctionComponent<Props> = ({
                         <ErrorAlert error={treeOrError} />
                     )
                 ) : (
-                    <>
+                    <div className={classNames(styles.header)}>
                         <header className="mb-3">
                             {treeOrError.isRoot ? (
                                 <>
-                                    <PageHeader
-                                        path={[{ icon: SourceRepositoryIcon, text: displayRepoName(repo.name) }]}
-                                        className="mb-3 test-tree-page-title"
-                                    />
-                                    {repo.description && <p>{repo.description}</p>}
+                                    <div className="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <PageHeader
+                                                path={[
+                                                    { icon: SourceRepositoryIcon, text: displayRepoName(repo.name) },
+                                                ]}
+                                                className="mb-3 test-tree-page-title"
+                                            />
+                                            {repo.description && <p>{repo.description}</p>}
+                                        </div>
+                                        <div>
+                                            {codeIntelligenceEnabled && (
+                                                <Button
+                                                    to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
+                                                    variant="secondary"
+                                                    as={Link}
+                                                    className="ml-1"
+                                                >
+                                                    <Icon as={BrainIcon} /> Code Intelligence
+                                                </Button>
+                                            )}
+                                            <Button
+                                                to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
+                                                variant="secondary"
+                                                as={Link}
+                                                className="ml-1"
+                                            >
+                                                <Icon as={CodeJsonIcon} /> Search Dependencies
+                                            </Button>
+                                            {batchChangesEnabled && (
+                                                <Button
+                                                    to={`/${encodeURIPathComponent(repo.name)}/-/batch-changes`}
+                                                    variant="secondary"
+                                                    as={Link}
+                                                    className="ml-1"
+                                                >
+                                                    <Icon as={BrainIcon} /> Batch Changes
+                                                </Button>
+                                            )}
+                                            {repo.viewerCanAdminister && (
+                                                <Button
+                                                    to={`/${encodeURIPathComponent(repo.name)}/-/settings`}
+                                                    variant="secondary"
+                                                    as={Link}
+                                                    className="ml-1"
+                                                >
+                                                    <Icon as={SettingsIcon} />
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </div>
                                     {!newRepoPage && (
                                         <TreeNavigation
                                             batchChangesEnabled={batchChangesEnabled}
@@ -250,6 +300,11 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                             tree={treeOrError}
                                         />
                                     )}
+                                    <TreeTabList
+                                        tree={treeOrError}
+                                        selectedTab={selectedTab}
+                                        setSelectedTab={setSelectedTab}
+                                    />
                                 </>
                             ) : (
                                 <PageHeader
@@ -260,8 +315,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
                         </header>
 
                         <div>
-                            <TreeTabList tree={treeOrError} selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
-
                             <section className={classNames('test-tree-entries mb-3', styles.section)}>
                                 <Switch>
                                     <Route
@@ -363,7 +416,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                 </Switch>
                             </section>
                         </div>
-                    </>
+                    </div>
                 )}
             </Container>
         </div>
