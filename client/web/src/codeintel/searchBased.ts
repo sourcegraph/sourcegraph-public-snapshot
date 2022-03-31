@@ -77,6 +77,7 @@ const excludelist = new Set(['thrift', 'proto', 'graphql'])
  *
  * @param includeFork Whether or not the include forked repositories regardless of settings.
  * @param includeArchived Whether or not the include archived repositories regardless of settings.
+ * @param getSetting Used to query user settings for code intel configuration.
  */
 export function repositoryKindTerms(
     includeFork: boolean,

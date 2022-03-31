@@ -254,20 +254,12 @@ export const RESOLVE_REPO_REVISION_BLOB_QUERY = gql`
         id
         name
         url
+
         isFork
         isArchived
 
-        mirrorInfo {
-            cloneInProgress
-            cloneProgress
-            cloned
-        }
-
         commit(rev: $revision) {
             oid
-            tree(path: "") {
-                url
-            }
 
             file(path: $filePath) {
                 content
