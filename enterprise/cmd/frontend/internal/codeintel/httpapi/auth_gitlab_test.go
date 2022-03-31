@@ -11,13 +11,6 @@ import (
 	"github.com/tomnomnom/linkheader"
 )
 
-// link: <https://gitlab.com/api/v4/projects?id_after=34949794&imported=false&membership=true&min_access_level=30&order_by=id&owned=false&page=1&pagination=keyset&per_page=1&repository_checksum_failed=false&simple=true&sort=asc&starred=false&statistics=false&wiki_checksum_failed=false&with_custom_attributes=false&with_issues_enabled=false&with_merge_requests_enabled=false>; rel="next"
-
-// link: <https://gitlab.com/api/v4/projects?id_after=34949798&imported=false&membership=true&min_access_level=30&order_by=id&owned=false&page=1&pagination=keyset&per_page=1&repository_checksum_failed=false&simple=true&sort=asc&starred=false&statistics=false&wiki_checksum_failed=false&with_custom_attributes=false&with_issues_enabled=false&with_merge_requests_enabled=false>; rel="next"
-
-// []
-// No link header
-
 func TestEnforceAuthViaGitLab(t *testing.T) {
 	type testCase struct {
 		description        string
