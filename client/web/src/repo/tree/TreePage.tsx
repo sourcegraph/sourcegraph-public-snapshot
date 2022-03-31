@@ -9,12 +9,14 @@ import SettingsIcon from 'mdi-react/SettingsIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { Redirect, Route, Switch } from 'react-router-dom'
 import { Button } from 'reactstrap'
+import { EMPTY } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, encodeURIPathComponent, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { SearchContextProps } from '@sourcegraph/search'
+import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -26,6 +28,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { toURIWithPath, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { Container, PageHeader, LoadingSpinner, useObservable, Link, Icon } from '@sourcegraph/wildcard'
 
+import { getFileDecorations } from '../../backend/features'
 import { BatchChangesProps } from '../../batches'
 import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
@@ -46,6 +49,7 @@ import { RepositoryStatsContributorsPage } from '../stats/RepositoryStatsContrib
 import { RepositoryBranchesTab } from './BranchesTab'
 import { HomeTab } from './HomeTab'
 import { RepositoryTagTab } from './TagTab'
+import { TreeEntriesSection } from './TreeEntriesSection'
 import { TreeNavigation } from './TreeNavigation'
 import { TreeTabList } from './TreeTabList'
 
@@ -190,6 +194,23 @@ export const TreePage: React.FunctionComponent<Props> = ({
         return `${repoString}`
     }
 
+    const fileDecorationsByPath =
+        useObservable<FileDecorationsByPath>(
+            useMemo(
+                () =>
+                    treeOrError && !isErrorLike(treeOrError)
+                        ? getFileDecorations({
+                              files: treeOrError.entries,
+                              extensionsController: props.extensionsController,
+                              repoName: repo.name,
+                              commitID,
+                              parentNodeUri: treeOrError.url,
+                          })
+                        : EMPTY,
+                [treeOrError, repo.name, commitID, props.extensionsController]
+            )
+        ) ?? {}
+
     const newRepoPage = true
     // To start using the feature flag bellow, you can go to /api/console and
     // create a new featurFlag named 'new-repo-page' and set its value to true.
@@ -316,104 +337,116 @@ export const TreePage: React.FunctionComponent<Props> = ({
 
                         <div>
                             <section className={classNames('test-tree-entries mb-3', styles.section)}>
-                                <Switch>
-                                    <Route
-                                        path={`${treeOrError.url}/-/tag/tab`}
-                                        render={routeComponentProps => {
-                                            setSelectedTab('tags')
-                                            return <RepositoryTagTab repo={repo} {...routeComponentProps} {...props} />
-                                        }}
-                                    />
-                                    <Route
-                                        path={`${treeOrError.url}/-/docs/tab`}
-                                        render={routeComponentProps => {
-                                            setSelectedTab('docs')
-                                            return (
-                                                <RepoDocs
-                                                    repo={repo}
-                                                    useBreadcrumb={useBreadcrumb}
-                                                    {...routeComponentProps}
-                                                    {...props}
-                                                />
-                                            )
-                                        }}
-                                    />
-                                    <Route
-                                        path={`${treeOrError.url}/-/commits/tab`}
-                                        render={routeComponentProps => {
-                                            setSelectedTab('commits')
-                                            return (
-                                                <RepoCommits
-                                                    repo={repo}
-                                                    useBreadcrumb={useBreadcrumb}
-                                                    {...props}
-                                                    {...routeComponentProps}
-                                                />
-                                            )
-                                        }}
-                                    />
-                                    <Route
-                                        path={`${treeOrError.url}`}
-                                        exact={true}
-                                        render={routeComponentProps => {
-                                            setSelectedTab('home')
-                                            return (
-                                                <HomeTab
-                                                    {...homeTabProps}
-                                                    {...props}
-                                                    {...routeComponentProps}
-                                                    repo={repo}
-                                                />
-                                            )
-                                        }}
-                                    />
-                                    <Route
-                                        path={`${treeOrError.url}/-/branch/tab`}
-                                        render={routeComponentProps => {
-                                            setSelectedTab('branch')
-                                            return <RepositoryBranchesTab repo={repo} {...routeComponentProps} />
-                                        }}
-                                    />
-                                    <Route
-                                        path={`${treeOrError.url}/-/contributors/tab`}
-                                        render={routeComponentProps => {
-                                            setSelectedTab('contributors')
-                                            return (
-                                                <RepositoryStatsContributorsPage
-                                                    {...routeComponentProps}
-                                                    repo={repo}
-                                                    {...props}
-                                                />
-                                            )
-                                        }}
-                                    />
-                                    <Route
-                                        path={`${treeOrError.url}/-/compare/tab`}
-                                        render={() => {
-                                            setSelectedTab('compare')
-                                            return (
-                                                <RepoRevisionWrapper>
-                                                    <RepositoryGitDataContainer {...props} repoName={repo.name}>
-                                                        <RepositoryCompareArea
-                                                            repo={repo}
-                                                            match={match}
-                                                            settingsCascade={settingsCascade}
-                                                            useBreadcrumb={useBreadcrumb}
-                                                            {...props}
-                                                        />
-                                                    </RepositoryGitDataContainer>
-                                                    <ActionItemsBar
-                                                        extensionsController={props.extensionsController}
-                                                        platformContext={props.platformContext}
-                                                        useActionItemsBar={useActionItemsBar}
-                                                        location={props.location}
-                                                        telemetryService={props.telemetryService}
+                                {treeOrError.isRoot ? (
+                                    <Switch>
+                                        <Route
+                                            path={`${treeOrError.url}/-/tag/tab`}
+                                            render={routeComponentProps => {
+                                                setSelectedTab('tags')
+                                                return <RepositoryTagTab repo={repo} {...routeComponentProps} />
+                                            }}
+                                        />
+                                        <Route
+                                            path={`${treeOrError.url}/-/docs/tab`}
+                                            render={routeComponentProps => {
+                                                setSelectedTab('docs')
+                                                return (
+                                                    <RepoDocs
+                                                        repo={repo}
+                                                        useBreadcrumb={useBreadcrumb}
+                                                        {...routeComponentProps}
+                                                        {...props}
                                                     />
-                                                </RepoRevisionWrapper>
-                                            )
-                                        }}
-                                    />
-                                </Switch>
+                                                )
+                                            }}
+                                        />
+                                        <Route
+                                            path={`${treeOrError.url}/-/commits/tab`}
+                                            render={routeComponentProps => {
+                                                setSelectedTab('commits')
+                                                return (
+                                                    <RepoCommits
+                                                        repo={repo}
+                                                        useBreadcrumb={useBreadcrumb}
+                                                        {...props}
+                                                        {...routeComponentProps}
+                                                    />
+                                                )
+                                            }}
+                                        />
+                                        <Route
+                                            path={`${treeOrError.url}`}
+                                            exact={true}
+                                            render={routeComponentProps => {
+                                                setSelectedTab('home')
+                                                return (
+                                                    <HomeTab
+                                                        {...homeTabProps}
+                                                        {...props}
+                                                        {...routeComponentProps}
+                                                        repo={repo}
+                                                    />
+                                                )
+                                            }}
+                                        />
+                                        <Route
+                                            path={`${treeOrError.url}/-/branch/tab`}
+                                            render={routeComponentProps => {
+                                                setSelectedTab('branch')
+                                                return <RepositoryBranchesTab repo={repo} {...routeComponentProps} />
+                                            }}
+                                        />
+                                        <Route
+                                            path={`${treeOrError.url}/-/contributors/tab`}
+                                            render={routeComponentProps => {
+                                                setSelectedTab('contributors')
+                                                return (
+                                                    <RepositoryStatsContributorsPage
+                                                        {...routeComponentProps}
+                                                        repo={repo}
+                                                        {...props}
+                                                    />
+                                                )
+                                            }}
+                                        />
+                                        <Route
+                                            path={`${treeOrError.url}/-/compare/tab`}
+                                            render={() => {
+                                                setSelectedTab('compare')
+                                                return (
+                                                    <RepoRevisionWrapper>
+                                                        <RepositoryGitDataContainer {...props} repoName={repo.name}>
+                                                            <RepositoryCompareArea
+                                                                repo={repo}
+                                                                match={match}
+                                                                settingsCascade={settingsCascade}
+                                                                useBreadcrumb={useBreadcrumb}
+                                                                {...props}
+                                                            />
+                                                        </RepositoryGitDataContainer>
+                                                        <ActionItemsBar
+                                                            extensionsController={props.extensionsController}
+                                                            platformContext={props.platformContext}
+                                                            useActionItemsBar={useActionItemsBar}
+                                                            location={props.location}
+                                                            telemetryService={props.telemetryService}
+                                                        />
+                                                    </RepoRevisionWrapper>
+                                                )
+                                            }}
+                                        />
+                                    </Switch>
+                                ) : (
+                                    <div className={styles.section}>
+                                        <h2>Files and directories</h2>
+                                        <TreeEntriesSection
+                                            parentPath={filePath}
+                                            entries={treeOrError.entries}
+                                            fileDecorationsByPath={fileDecorationsByPath}
+                                            isLightTheme={props.isLightTheme}
+                                        />
+                                    </div>
+                                )}
                             </section>
                         </div>
                     </div>

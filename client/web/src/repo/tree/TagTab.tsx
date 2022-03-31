@@ -1,15 +1,14 @@
 import React from 'react'
 
-import { RouteComponentProps } from 'react-router'
+import H from 'history'
 
 import { RepositoryFields } from '../../graphql-operations'
 import { RepositoryReleasesTagsPage } from '../releases/RepositoryReleasesTagsPage'
-import { RepoContainerContext } from '../RepoContainer'
 
-interface Props
-    extends RouteComponentProps<{}>,
-        Pick<RepoContainerContext, 'repo' | 'routePrefix' | 'repoHeaderContributionsLifecycleProps'> { // TODO: do we need these props?
+interface Props {
     repo: RepositoryFields
+    history: H.History
+    location: H.Location
 }
 
 /**

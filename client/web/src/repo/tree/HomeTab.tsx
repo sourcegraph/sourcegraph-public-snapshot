@@ -55,6 +55,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
     ...props
 }) => {
     const [richHTML, setRichHTML] = useState('')
+    const [aborted, setAborted] = useState(false)
     const [nextFetchWithDisabledTimeout, blobInfoOrError] = useEventObservable<
         void,
         (BlobInfo & { richHTML: string; aborted: boolean }) | null | ErrorLike
@@ -80,6 +81,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                         // Replace html with lsif generated HTML, if available
                         if (blob.richHTML) {
                             setRichHTML(blob.richHTML)
+                            setAborted(blob.highlight.aborted)
                         }
 
                         const blobInfo: BlobInfo & { richHTML: string; aborted: boolean } = {
@@ -180,7 +182,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
             <div className="row justify-content-center">
                 <div className="col-sm">
                     {richHTML && <RenderedFile dangerousInnerHTML={richHTML} location={props.location} />}
-                    {blobInfoOrError && !blobInfoOrError?.richHTML && blobInfoOrError?.aborted && (
+                    {blobInfoOrError && richHTML && aborted && (
                         <div>
                             <Alert variant="info">
                                 Syntax-highlighting this file took too long. &nbsp;
