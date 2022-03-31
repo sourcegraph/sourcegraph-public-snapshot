@@ -249,7 +249,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                             </div>
                         </div>
                         <div className={styles.section}>
-                          <h2>Batch Changes</h2>
+                          <h2>Batch changes</h2>
                         </div>
                         {batchChangesEnabled ? (
                             <HomeTabBatchChangeBadge repoName={repo.name} />

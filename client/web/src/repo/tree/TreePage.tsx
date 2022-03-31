@@ -317,7 +317,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                 as={Link}
                                                 className="ml-1"
                                             >
-                                                <Icon as={CodeJsonIcon} /> Search Dependencies{' '}
+                                                <Icon as={CodeJsonIcon} /> Search dependencies{' '}
                                                 <Badge variant="info" className={classNames('text-uppercase')}>
                                                     NEW
                                                 </Badge>
