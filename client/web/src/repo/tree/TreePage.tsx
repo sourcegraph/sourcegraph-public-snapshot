@@ -37,6 +37,7 @@ import {
 
 import { getFileDecorations } from '../../backend/features'
 import { BatchChangesProps } from '../../batches'
+import { BatchChangesIcon } from '../../batches/icons'
 import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
@@ -292,6 +293,18 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                             >
                                                 <Icon as={CodeJsonIcon} /> Search Dependencies
                                             </Button>
+
+                                            {!batchChangesEnabled &&(
+                                                <Button
+                                                    to="/batch-changes"
+                                                    variant="secondary"
+                                                    as={Link}
+                                                    className="ml-1"
+                                                >
+                                                    <Icon as={BatchChangesIcon} /> Create batch change
+                                                </Button>
+                                            )}
+
                                             {repo.viewerCanAdminister && (
                                                 <Button
                                                     to={`/${encodeURIPathComponent(repo.name)}/-/settings`}
