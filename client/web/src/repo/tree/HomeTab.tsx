@@ -243,7 +243,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                                     className="btn btn-sm btn-link"
                                     to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
                                 >
-                                    Manage code intelligence
+                                    {codeIntelligenceEnabled ? 'Setup for this repository' : 'Manage code intelligence'}
                                 </Link>
                             </div>
                         </div>
