@@ -274,7 +274,7 @@ func (s *Server) cleanupRepos() {
 	}
 
 	performGitPrune := func(dir GitDir) (done bool, err error) {
-		return false, pruneIfNeeded(dir)
+		return false, pruneIfNeeded(dir, looseObjectsLimit)
 	}
 
 	type cleanupFn struct {
@@ -826,8 +826,8 @@ func sgMaintenance(dir GitDir) (err error) {
 
 // We run git-prune only if there are enough loose objects. This approach is
 // adapted from https://gitlab.com/gitlab-org/gitaly.
-func pruneIfNeeded(dir GitDir) (err error) {
-	needed, err := tooManyLooseObjects(dir, looseObjectsLimit)
+func pruneIfNeeded(dir GitDir, limit int) (err error) {
+	needed, err := tooManyLooseObjects(dir, limit)
 	defer func() {
 		pruneStatus.WithLabelValues(strconv.FormatBool(err == nil), strconv.FormatBool(!needed)).Inc()
 	}()
@@ -843,7 +843,7 @@ func pruneIfNeeded(dir GitDir) (err error) {
 	// unreachable, loose objects count towards the threshold that triggers a
 	// repack. In the worst case, IE all loose objects are unreachable, we would
 	// continuously trigger repacks until the loose objects expire.
-	cmd := exec.Command("git", "-c", "prune", "--expire", "now")
+	cmd := exec.Command("git", "prune", "--expire", "now")
 	dir.Set(cmd)
 	err = cmd.Run()
 	if err != nil {

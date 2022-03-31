@@ -558,6 +558,13 @@ extend type GitBlob {
     Provides info on the level of code-intel support for this git blob.
     """
     codeIntelSupport: CodeIntelSupport!
+
+    """
+    Provides code intelligence within the file.
+
+    Experimental: This API is likely to change in the future.
+    """
+    localCodeIntel: JSONValue
 }
 
 """

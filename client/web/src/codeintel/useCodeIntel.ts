@@ -32,6 +32,7 @@ import {
     USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY,
 } from './ReferencesPanelQueries'
 import { definitionQuery, referencesQuery } from './searchBased'
+import { sortByProximity } from './sort'
 
 interface CodeIntelData {
     references: {
@@ -111,6 +112,7 @@ export const useCodeIntel = ({
         fetchPolicy: 'no-cache',
         onCompleted: result => {
             const newReferences = searchResultsToLocations(result).map(buildSearchBasedLocation)
+            const sorted = sortByProximity(newReferences, location.pathname)
 
             const previousData = codeIntelData
             if (!previousData) {
@@ -119,7 +121,7 @@ export const useCodeIntel = ({
                     definitions: { endCursor: null, nodes: [] },
                     references: {
                         endCursor: null,
-                        nodes: newReferences,
+                        nodes: sorted,
                     },
                 })
             } else {
@@ -128,7 +130,7 @@ export const useCodeIntel = ({
                     definitions: previousData.definitions,
                     references: {
                         endCursor: null,
-                        nodes: newReferences,
+                        nodes: sorted,
                     },
                 })
             }
@@ -142,8 +144,9 @@ export const useCodeIntel = ({
         fetchPolicy: 'no-cache',
         onCompleted: result => {
             const newDefinitions = searchResultsToLocations(result).map(buildSearchBasedLocation)
+            const sorted = sortByProximity(newDefinitions, location.pathname)
             // Definitions are filtered based on the LanguageSpec
-            const filteredDefinitions = filterDefinitions(newDefinitions)
+            const filteredDefinitions = filterDefinitions(sorted)
 
             const previousData = codeIntelData
             if (!previousData) {
