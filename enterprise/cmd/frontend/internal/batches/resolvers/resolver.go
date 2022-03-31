@@ -1463,7 +1463,6 @@ func (r *Resolver) PublishChangesets(ctx context.Context, args *graphqlbackend.P
 	}
 
 	return r.bulkOperationByIDString(ctx, bulkGroupID)
-
 }
 
 func (r *Resolver) BatchSpecs(ctx context.Context, args *graphqlbackend.ListBatchSpecArgs) (_ graphqlbackend.BatchSpecConnectionResolver, err error) {
@@ -1821,6 +1820,49 @@ func (r *Resolver) DeleteBatchSpec(ctx context.Context, args *graphqlbackend.Del
 	}
 	// TODO(ssbc): not implemented
 	return nil, errors.New("not implemented yet")
+}
+
+func (r *Resolver) AvailableBulkOperations(ctx context.Context, args *graphqlbackend.AvailableBulkOperationsArgs) (availableBulkOperations []string, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.AvailableBulkOperations", fmt.Sprintf("BatchChange: %q, len(Changesets): %d", args.BatchChange, len(args.Changesets)))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	if len(args.Changesets) == 0 {
+		return nil, errors.New("no changesets provided")
+	}
+
+	unmarshalledBatchChangeID, err := unmarshalBatchChangeID(args.BatchChange)
+	if err != nil {
+		return nil, err
+	}
+
+	changesetIDs := make([]int64, 0, len(args.Changesets))
+	for _, changesetID := range args.Changesets {
+		unmarshalledChangesetID, err := unmarshalChangesetID(changesetID)
+		if err != nil {
+			return nil, err
+		}
+
+		changesetIDs = append(changesetIDs, unmarshalledChangesetID)
+	}
+
+	svc := service.New(r.store)
+	availableBulkOperations, err = svc.GetAvailableBulkOperations(ctx, service.GetAvailableBulkOperationsOpts{
+		BatchChange: unmarshalledBatchChangeID,
+		Changesets:  changesetIDs,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return availableBulkOperations, nil
 }
 
 func parseBatchChangeStates(ss *[]string) ([]btypes.BatchChangeState, error) {
