@@ -18,7 +18,6 @@ interface Props
 export const RepositoryTagTab: React.FunctionComponent<Props> = ({ repo, history, location }) => (
     <div className="repository-graph-area">
         <div className="container">
-            { console.log( 'here ....')}
             <div className="container-inner">
                 <RepositoryReleasesTagsPage repo={repo} history={history} location={location} />
             </div>

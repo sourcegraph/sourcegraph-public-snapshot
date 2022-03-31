@@ -228,7 +228,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                 match={match}
                 routePrefix={routePrefix}
             />
-        ), // TODO: figure out how to pass the properties: match and routePrefix
+        ),
     },
     {
         path: '/-/compare/:spec*',

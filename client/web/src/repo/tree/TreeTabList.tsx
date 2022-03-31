@@ -87,12 +87,12 @@ export const TreeTabList: React.FunctionComponent<TreeTabList> = ({ tree, select
     return (
         <div className="d-flex mb-4">
             <div className="nav nav-tabs justify-content-between">
-                {tabs.map(({ tab, title, isActive, logName, icon, url }) => (
+                {tabs.map(({ tab, title, isActive, icon, url }) => (
                     <div className="nav-item" key={`repo-${tab}-tab`}>
                         <Link
                             to={url}
                             role="button"
-                            className={classNames('nav-link text-content', isActive && 'active')}
+                            className={classNames('nav-link text-content bg-transparent', isActive && 'active')}
                             onClick={() => setSelectedTab(tab)}
                         >
                             <span className="d-inline-flex" data-tab-content={title}>
