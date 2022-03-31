@@ -3,10 +3,10 @@ import React, { useCallback, useState } from 'react'
 import classNames from 'classnames'
 
 import { pluralize } from '@sourcegraph/common'
-import { DismissibleAlert } from '@sourcegraph/web/src/components/DismissibleAlert'
 import { Button, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { authenticatedUser } from '../../../auth'
+import { DismissibleAlert } from '../../../components/DismissibleAlert'
 import { BatchChangeFields } from '../../../graphql-operations'
 import { CodeHost } from '../CodeHost'
 

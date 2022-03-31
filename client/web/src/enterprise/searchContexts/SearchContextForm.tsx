@@ -8,8 +8,7 @@ import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { QueryState, SearchContextProps } from '@sourcegraph/search'
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
-import { LazyMonacoQueryInput } from '@sourcegraph/search-ui/src/input/LazyMonacoQueryInput'
+import { SyntaxHighlightedSearchQuery, LazyMonacoQueryInput } from '@sourcegraph/search-ui'
 import {
     Scalars,
     SearchContextInput,
@@ -20,7 +19,6 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ISearchContext, ISearchContextRepositoryRevisionsInput } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ALLOW_NAVIGATION, AwayPrompt } from '@sourcegraph/web/src/components/AwayPrompt'
 import {
     Container,
     Button,
@@ -33,6 +31,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { ALLOW_NAVIGATION, AwayPrompt } from '../../components/AwayPrompt'
 import { useExperimentalFeatures } from '../../stores'
 
 import { fetchRepositoriesByNames } from './backend'
