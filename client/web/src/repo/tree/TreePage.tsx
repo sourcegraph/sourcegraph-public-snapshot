@@ -284,7 +284,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                 <Icon as={CodeJsonIcon} /> Search Dependencies
                                             </Button>
 
-                                            {!batchChangesEnabled &&(
+                                            {batchChangesEnabled &&(
                                                 <Button
                                                     to="/batch-changes"
                                                     variant="secondary"
