@@ -214,44 +214,46 @@ const RepoSyncErrorAlert: React.FunctionComponent<{
                 <Icon className="mr-2" as={isDefaultURL ? LockIcon : BlockHelperIcon} />
                 {isDefaultURL ? 'Private repository' : 'Repository not found'}
             </h4>
-            {isDefaultURL ? (
-                <p>
-                    <Link
-                        to={
-                            createURLWithUTM(
-                                new URL(`${currentUser.settingsURL!}/repositories/manage`, sourcegraphUrl),
-                                {
+            <p className="mb-0">
+                {isDefaultURL ? (
+                    <>
+                        <Link
+                            to={
+                                createURLWithUTM(
+                                    new URL(`${currentUser.settingsURL!}/repositories/manage`, sourcegraphUrl),
+                                    {
+                                        utm_source: getPlatformName(),
+                                        utm_campaign: 'sync-private-repo-with-cloud',
+                                    }
+                                ).href
+                            }
+                            {...NEW_TAB_LINK_PROPS}
+                            className={styles.link}
+                        >
+                            Add your repository to Sourcegraph
+                        </Link>{' '}
+                        to use this extension for private repositories.
+                    </>
+                ) : currentUser.siteAdmin ? (
+                    <>
+                        <Link
+                            to={
+                                createURLWithUTM(new URL('admin/repo/add', 'https://docs.sourcegraph.com/'), {
                                     utm_source: getPlatformName(),
-                                    utm_campaign: 'sync-private-repo-with-cloud',
-                                }
-                            ).href
-                        }
-                        {...NEW_TAB_LINK_PROPS}
-                        className={styles.link}
-                    >
-                        Add your repository to Sourcegraph
-                    </Link>{' '}
-                    to use this extension for private repositories.
-                </p>
-            ) : currentUser.siteAdmin ? (
-                <p>
-                    <Link
-                        to={
-                            createURLWithUTM(new URL('admin/repo/add', 'https://docs.sourcegraph.com/'), {
-                                utm_source: getPlatformName(),
-                                utm_campaign: 'add-repo-to-instance',
-                            }).href
-                        }
-                        {...NEW_TAB_LINK_PROPS}
-                        className={styles.link}
-                    >
-                        Add your repository to Sourcegraph
-                    </Link>{' '}
-                    to use this extension.
-                </p>
-            ) : (
-                <p>Contact your admin to add this repository to Sourcegraph.</p>
-            )}
+                                    utm_campaign: 'add-repo-to-instance',
+                                }).href
+                            }
+                            {...NEW_TAB_LINK_PROPS}
+                            className={styles.link}
+                        >
+                            Add your repository to Sourcegraph
+                        </Link>{' '}
+                        to use this extension.
+                    </>
+                ) : (
+                    <>Contact your admin to add this repository to Sourcegraph.</>
+                )}
+            </p>
         </section>
     )
 }
