@@ -12,6 +12,7 @@ import { MemoryRouter, useHistory, useLocation } from 'react-router'
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import {
     addLineRangeQueryParameter,
+    ErrorLike,
     formatSearchParameters,
     lprToRange,
     toPositionOrRangeQueryParameter,
@@ -48,7 +49,6 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
-import { fetchRepository, resolveRevision } from '../repo/backend'
 import { fetchBlob } from '../repo/blob/backend'
 import { Blob } from '../repo/blob/Blob'
 import { HoverThresholdProps } from '../repo/RepoContainer'
@@ -61,6 +61,7 @@ import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
 import { newSettingsGetter } from './settings'
 import { findSearchToken } from './token'
 import { useCodeIntel } from './useCodeIntel'
+import { useRepoAndRevision } from './useRepoAndRevision'
 import { isDefined } from './util/helpers'
 
 import styles from './ReferencesPanel.module.scss'
@@ -100,10 +101,7 @@ const ReferencesPanel: React.FunctionComponent<ReferencesPanelProps> = props => 
 
     const { hash, pathname, search } = location
     const { line, character } = parseQueryAndHash(search, hash)
-    const { filePath, repoName, ...parsedURL } = parseBrowserRepoURL(pathname)
-
-    const revision = parsedURL.revision
-    const commitID = parsedURL.commitID
+    const { filePath, repoName, revision } = parseBrowserRepoURL(pathname)
 
     // If we don't have enough information in the URL, we can't render the panel
     if (!(line && character && filePath)) {
@@ -115,11 +113,7 @@ const ReferencesPanel: React.FunctionComponent<ReferencesPanelProps> = props => 
 
     const token = { repoName, line, character, filePath }
 
-    if (commitID === undefined || revision === undefined) {
-        return <RevisionResolvingReferencesList {...props} {...token} jumpToFirst={jumpToFirst} />
-    }
-
-    return <FilterableReferencesList {...props} token={{ ...token, revision, commitID }} jumpToFirst={jumpToFirst} />
+    return <RevisionResolvingReferencesList {...props} {...token} revision={revision} jumpToFirst={jumpToFirst} />
 }
 
 export const RevisionResolvingReferencesList: React.FunctionComponent<
@@ -131,10 +125,24 @@ export const RevisionResolvingReferencesList: React.FunctionComponent<
         revision?: string
     }
 > = props => {
-    const resolvedRevision = useObservable(useMemo(() => resolveRevision(props), [props]))
+    const { data, loading, error } = useRepoAndRevision(props.repoName, props.revision)
+    if (loading && !data) {
+        return <LoadingCodeIntel />
+    }
 
-    if (!resolvedRevision) {
-        return null
+    if (error && !data) {
+        return <LoadingCodeIntelFailed error={error} />
+    }
+
+    if (data?.repositoryRedirect?.__typename !== 'Repository') {
+        return <>Nothing found</>
+    }
+
+    const repository = data.repositoryRedirect
+    const defaultBranch = repository.defaultBranch?.abbrevName || 'HEAD'
+
+    if (!repository.commit) {
+        return <LoadingCodeIntelFailed error={{ message: `revision not found: ${defaultBranch}` }} />
     }
 
     const token = {
@@ -142,15 +150,24 @@ export const RevisionResolvingReferencesList: React.FunctionComponent<
         line: props.line,
         character: props.character,
         filePath: props.filePath,
-        revision: props.revision || resolvedRevision.defaultBranch,
-        commitID: resolvedRevision.commitID,
+        revision: props.revision ?? defaultBranch,
+        commitID: repository.commit?.oid,
     }
 
-    return <FilterableReferencesList {...props} token={token} />
+    return (
+        <FilterableReferencesList
+            {...props}
+            token={token}
+            isFork={repository.isFork}
+            isArchived={repository.isArchived}
+        />
+    )
 }
 
 interface ReferencesPanelPropsWithToken extends ReferencesPanelProps {
     token: Token
+    isFork: boolean
+    isArchived: boolean
 }
 
 const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWithToken> = props => {
@@ -170,10 +187,6 @@ const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWith
         })
     )
 
-    const repo = useObservable(
-        useMemo(() => fetchRepository({ repoName: props.token.repoName }), [props.token.repoName])
-    )
-
     const languageId = getModeFromPath(props.token.filePath)
     const spec = findLanguageSpec(languageId)
     const tokenResult = findSearchToken({
@@ -191,22 +204,11 @@ const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWith
     if (blobInfo === undefined) {
         return <LoadingCodeIntel />
     }
-    if (repo === undefined) {
-        return <LoadingCodeIntel />
-    }
 
     if (blobInfo === null) {
         return (
             <div>
                 <p className="text-danger">Could not load file content</p>
-            </div>
-        )
-    }
-
-    if (repo === null) {
-        return (
-            <div>
-                <p className="text-danger">Could not load file repo</p>
             </div>
         )
     }
@@ -243,8 +245,8 @@ const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWith
                 searchToken={tokenResult?.searchToken}
                 spec={spec}
                 fileContent={blobInfo.content}
-                repoIsFork={repo.isFork}
-                repoIsArchived={repo.isArchived}
+                isFork={props.isFork}
+                isArchived={props.isArchived}
             />
         </>
     )
@@ -258,8 +260,6 @@ export const ReferencesList: React.FunctionComponent<
         searchToken: string
         spec: LanguageSpec
         fileContent: string
-        repoIsFork: boolean
-        repoIsArchived: boolean
     }
 > = props => {
     const getSetting = newSettingsGetter(props.settingsCascade)
@@ -292,8 +292,8 @@ export const ReferencesList: React.FunctionComponent<
         fileContent: props.fileContent,
         searchToken: props.searchToken,
         spec: props.spec,
-        repoIsFork: props.repoIsFork,
-        repoIsArchived: props.repoIsArchived,
+        repoIsFork: props.isFork,
+        repoIsArchived: props.isArchived,
         getSetting,
     })
 
@@ -379,12 +379,7 @@ export const ReferencesList: React.FunctionComponent<
 
     // If we received an error before we had received any data
     if (error && !data) {
-        return (
-            <div>
-                <p className="text-danger">Loading code intel failed:</p>
-                <pre>{error.message}</pre>
-            </div>
-        )
+        return <LoadingCodeIntelFailed error={error} />
     }
 
     // If there weren't any errors and we just didn't receive any data
@@ -858,6 +853,15 @@ const LoadingCodeIntel: React.FunctionComponent<{}> = () => (
         <p className="text-muted text-center">
             <i>Loading code intel ...</i>
         </p>
+    </>
+)
+
+const LoadingCodeIntelFailed: React.FunctionComponent<{ error: ErrorLike }> = props => (
+    <>
+        <div>
+            <p className="text-danger">Loading code intel failed:</p>
+            <pre>{props.error.message}</pre>
+        </div>
     </>
 )
 
