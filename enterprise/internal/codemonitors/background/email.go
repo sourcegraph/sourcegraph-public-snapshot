@@ -11,6 +11,7 @@ import (
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -41,25 +42,29 @@ var (
 )
 
 var newSearchResultsEmailTemplates = txemail.MustValidate(txtypes.Templates{
-	Subject: `{{ if .IsTest }}Test: {{ end }}{{.Priority}}Sourcegraph code monitor {{.Description}} detected {{.NumberOfResults}} new {{.ResultPluralized}}`,
+	Subject: `{{ if .IsTest }}Test: {{ end }}{{.Priority}}Sourcegraph code monitor {{.Description}} detected {{.TotalCount}} new {{.ResultPluralized}}`,
 	Text:    textTemplate,
 	HTML:    htmlTemplate,
 })
 
 type TemplateDataNewSearchResults struct {
-	Priority         string
-	CodeMonitorURL   string
-	SearchURL        string
-	Description      string
-	NumberOfResults  int
-	ResultPluralized string
-	IsTest           bool
+	Priority                  string
+	CodeMonitorURL            string
+	SearchURL                 string
+	Description               string
+	IncludeResults            bool
+	TruncatedResults          []*DisplayResult
+	TotalCount                int
+	TruncatedCount            int
+	ResultPluralized          string
+	TruncatedResultPluralized string
+	DisplayMoreLink           bool
+	IsTest                    bool
 }
 
 func NewTemplateDataForNewSearchResults(args actionArgs, email *edb.EmailAction) (d *TemplateDataNewSearchResults, err error) {
 	var (
-		priority         string
-		resultPluralized string
+		priority string
 	)
 
 	searchURL := getSearchURL(args.ExternalURL, args.Query, utmSourceEmail)
@@ -71,29 +76,46 @@ func NewTemplateDataForNewSearchResults(args actionArgs, email *edb.EmailAction)
 		priority = ""
 	}
 
-	if len(args.Results) == 1 {
-		resultPluralized = "result"
-	} else {
-		resultPluralized = "results"
+	truncatedResults, totalCount, truncatedCount := truncateResults(args.Results, 5)
+
+	displayResults := make([]*DisplayResult, len(truncatedResults))
+	for i, result := range truncatedResults {
+		displayResults[i] = toDisplayResult(result, args.ExternalURL)
 	}
 
 	return &TemplateDataNewSearchResults{
-		Priority:         priority,
-		CodeMonitorURL:   codeMonitorURL,
-		SearchURL:        searchURL,
-		Description:      args.MonitorDescription,
-		NumberOfResults:  len(args.Results),
-		ResultPluralized: resultPluralized,
+		Priority:                  priority,
+		CodeMonitorURL:            codeMonitorURL,
+		SearchURL:                 searchURL,
+		Description:               args.MonitorDescription,
+		IncludeResults:            args.IncludeResults,
+		TruncatedResults:          displayResults,
+		TotalCount:                totalCount,
+		TruncatedCount:            truncatedCount,
+		ResultPluralized:          pluralize("result", totalCount),
+		TruncatedResultPluralized: pluralize("result", truncatedCount),
+		DisplayMoreLink:           args.IncludeResults && truncatedCount > 0,
 	}, nil
 }
 
-func NewTestTemplateDataForNewSearchResults(ctx context.Context, monitorDescription string) *TemplateDataNewSearchResults {
+func NewTestTemplateDataForNewSearchResults(monitorDescription string) *TemplateDataNewSearchResults {
 	return &TemplateDataNewSearchResults{
-		Priority:         "",
-		Description:      monitorDescription,
-		NumberOfResults:  1,
-		IsTest:           true,
-		ResultPluralized: "result",
+		IsTest:                    true,
+		Priority:                  "",
+		Description:               monitorDescription,
+		TotalCount:                1,
+		TruncatedCount:            0,
+		ResultPluralized:          "result",
+		TruncatedResultPluralized: "results",
+		IncludeResults:            true,
+		TruncatedResults: []*DisplayResult{{
+			ResultType: "Test",
+			RepoName:   "testorg/testrepo",
+			CommitID:   "0000000",
+			CommitURL:  "",
+			Content:    "This is a test\nfor a code monitoring result.",
+		}},
+		DisplayMoreLink: false,
 	}
 }
 
@@ -159,4 +181,42 @@ func sourcegraphURL(externalURL *url.URL, path, query, utmSource string) string 
 	q.Set("utm_source", utmSource)
 	u.RawQuery = q.Encode()
 	return u.String()
+}
+
+// Only works for simple plurals (eg. result/results)
+func pluralize(word string, count int) string {
+	if count == 1 {
+		return word
+	}
+	return word + "s"
+}
+
+type DisplayResult struct {
+	ResultType string
+	CommitURL  string
+	RepoName   string
+	CommitID   string
+	Content    string
+}
+
+func toDisplayResult(result *result.CommitMatch, externalURL *url.URL) *DisplayResult {
+	resultType := "Message"
+	if result.DiffPreview != nil {
+		resultType = "Diff"
+	}
+
+	var content string
+	if result.DiffPreview != nil {
+		content = truncateString(result.DiffPreview.Content, 10)
+	} else {
+		content = truncateString(result.MessagePreview.Content, 10)
+	}
+
+	return &DisplayResult{
+		ResultType: resultType,
+		CommitURL:  getCommitURL(externalURL, string(result.Repo.Name), string(result.Commit.ID), utmSourceEmail),
+		RepoName:   string(result.Repo.Name),
+		CommitID:   result.Commit.ID.Short(),
+		Content:    content,
+	}
 }

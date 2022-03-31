@@ -200,7 +200,6 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-
 			err := s.GrantPendingPermissions(ctx, test.args)
 			if err != nil {
 				t.Fatal(err)

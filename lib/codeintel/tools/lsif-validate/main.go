@@ -1,11 +1,10 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 )
-
-const version = "0.1.0"
 
 func main() {
 	if err := mainErr(); err != nil {
@@ -15,7 +14,10 @@ func main() {
 }
 
 func mainErr() error {
-	if err := parseArgs(os.Args[1:]); err != nil {
+	flag.Parse()
+
+	indexFile, err := os.OpenFile(*indexFilePath, os.O_RDONLY, 0)
+	if err != nil {
 		return err
 	}
 	defer indexFile.Close()

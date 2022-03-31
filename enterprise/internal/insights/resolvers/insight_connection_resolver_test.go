@@ -13,7 +13,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -32,8 +31,7 @@ func TestResolver_InsightConnection(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-	defer cleanup()
+	insightsDB := dbtest.NewInsightsDB(t)
 
 	testSetup := func(t *testing.T) (context.Context, graphqlbackend.InsightConnectionResolver) {
 		// Setup the GraphQL resolver.
@@ -42,7 +40,7 @@ func TestResolver_InsightConnection(t *testing.T) {
 		clock := func() time.Time { return now }
 
 		postgres := dbtest.NewDB(t)
-		resolver := newWithClock(timescale, postgres, clock)
+		resolver := newWithClock(insightsDB, postgres, clock)
 
 		insightMetadataStore := store.NewMockInsightMetadataStore()
 		insightMetadataStore.GetMappedFunc.SetDefaultReturn([]types.Insight{
@@ -123,8 +121,7 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-	defer cleanup()
+	insightsDB := dbtest.NewInsightsDB(t)
 	postgres := dbtest.NewDB(t)
 
 	now := time.Now().UTC().Truncate(time.Microsecond)
@@ -188,14 +185,14 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 	}
 
 	for i := 0; i < 3; i++ {
-		_, err = timescale.Exec(`INSERT INTO repo_names (name) VALUES ($1);`, fmt.Sprint("ignore-me-", i))
+		_, err = insightsDB.Exec(`INSERT INTO repo_names (name) VALUES ($1);`, fmt.Sprint("ignore-me-", i))
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
 
 	// Create some timeseries data, one row in each repository
-	_, err = timescale.Exec(`
+	_, err = insightsDB.Exec(`
 		INSERT INTO series_points (series_id, "time", "value", metadata_id, repo_id, repo_name_id, original_repo_name_id)
 		VALUES
 			('s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E', $1, 5.0, null, 1, 3, 3),
@@ -207,7 +204,7 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 
 	setUpTest := func(ctx context.Context, t *testing.T) graphqlbackend.InsightConnectionResolver {
 
-		resolver := newWithClock(timescale, postgres, clock)
+		resolver := newWithClock(insightsDB, postgres, clock)
 		insightMetadataStore := store.NewMockInsightMetadataStore()
 		insightMetadataStore.GetMappedFunc.SetDefaultReturn([]types.Insight{
 			{

@@ -6,6 +6,7 @@ import { useLocation } from 'react-router-dom'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, Link } from '@sourcegraph/wildcard'
 
+import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
 import { CodeInsightsPage } from '../../../../components/code-insights-page/CodeInsightsPage'
 
@@ -53,6 +54,7 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
 
     return (
         <CodeInsightsPage className={styles.container}>
+            <PageTitle title="Create insight - Code Insights" />
             <PageHeader
                 path={[{ icon: CodeInsightsIcon }, { text: 'Create new code insight' }]}
                 description={

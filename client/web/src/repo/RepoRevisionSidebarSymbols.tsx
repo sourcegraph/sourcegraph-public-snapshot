@@ -9,7 +9,9 @@ import { NavLink, useLocation } from 'react-router-dom'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
+import { useDebounce } from '@sourcegraph/wildcard'
+
+import { useConnection } from '../components/FilteredConnection/hooks/useConnection'
 import {
     ConnectionForm,
     ConnectionList,
@@ -19,9 +21,7 @@ import {
     ConnectionError,
     SummaryContainer,
     ShowMoreButton,
-} from '@sourcegraph/web/src/components/FilteredConnection/ui'
-import { useDebounce } from '@sourcegraph/wildcard'
-
+} from '../components/FilteredConnection/ui'
 import { Scalars, SymbolNodeFields, SymbolsResult, SymbolsVariables } from '../graphql-operations'
 import { parseBrowserRepoURL } from '../util/url'
 

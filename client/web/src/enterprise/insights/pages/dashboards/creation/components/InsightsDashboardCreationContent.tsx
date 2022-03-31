@@ -3,10 +3,11 @@ import React, { ReactNode, useContext } from 'react'
 import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Input } from '@sourcegraph/wildcard'
 
 import { FormGroup } from '../../../../components/form/form-group/FormGroup'
-import { FormInput } from '../../../../components/form/form-input/FormInput'
 import { FormRadioInput } from '../../../../components/form/form-radio-input/FormRadioInput'
+import { getDefaultInputProps } from '../../../../components/form/getDefaultInputProps'
 import { useField } from '../../../../components/form/hooks/useField'
 import { FORM_ERROR, FormAPI, SubmissionErrors, useForm } from '../../../../components/form/hooks/useForm'
 import { createRequiredValidator } from '../../../../components/form/validators'
@@ -71,15 +72,13 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
     return (
         // eslint-disable-next-line react/forbid-elements
         <form noValidate={true} ref={ref} onSubmit={handleSubmit}>
-            <FormInput
+            <Input
                 required={true}
                 autoFocus={true}
-                title="Name"
+                label="Name"
                 placeholder="Example: My personal code insights dashboard"
-                description="Shown as the title for your dashboard"
-                valid={name.meta.touched && name.meta.validState === 'VALID'}
-                error={name.meta.touched && name.meta.error}
-                {...name.input}
+                message="Shown as the title for your dashboard"
+                {...getDefaultInputProps(name)}
             />
 
             <FormGroup name="visibility" title="Visibility" contentClassName="d-flex flex-column" className="mb-0 mt-4">

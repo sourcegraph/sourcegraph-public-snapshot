@@ -9,13 +9,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 
 	"github.com/keegancsmith/sqlf"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
-	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -28,12 +28,11 @@ func TestPerformPurge(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-	defer cleanup()
+	insightsDB := dbtest.NewInsightsDB(t)
 	postgres := dbtest.NewDB(t)
 	permStore := store.NewInsightPermissionStore(postgres)
-	timeseriesStore := store.NewWithClock(timescale, permStore, clock)
-	insightStore := store.NewInsightStore(timescale)
+	timeseriesStore := store.NewWithClock(insightsDB, permStore, clock)
+	insightStore := store.NewInsightStore(insightsDB)
 	workerBaseStore := basestore.NewWithDB(postgres, sql.TxOptions{})
 
 	getTimeSeriesCountForSeries := func(ctx context.Context, seriesId string) int {
@@ -164,7 +163,7 @@ func TestPerformPurge(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = performPurge(ctx, postgres, timescale, time.Now())
+	err = performPurge(ctx, postgres, insightsDB, time.Now())
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -5,9 +5,9 @@ import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import { tap } from 'rxjs/operators'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { DismissibleAlert } from '@sourcegraph/web/src/components/DismissibleAlert'
 import { Container } from '@sourcegraph/wildcard'
 
+import { DismissibleAlert } from '../../../../components/DismissibleAlert'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { BatchSpecApplyPreviewVariables, ChangesetApplyPreviewFields, Scalars } from '../../../../graphql-operations'
 import { MultiSelectContext } from '../../MultiSelectContext'
