@@ -7,14 +7,12 @@ import FolderIcon from 'mdi-react/FolderIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { Redirect, Route, Switch, useRouteMatch } from 'react-router-dom'
-import { EMPTY } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, encodeURIPathComponent, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { SearchContextProps } from '@sourcegraph/search'
-import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -36,7 +34,6 @@ import {
     Badge,
 } from '@sourcegraph/wildcard'
 
-import { getFileDecorations } from '../../backend/features'
 import { BatchChangesProps } from '../../batches'
 import { BatchChangesIcon } from '../../batches/icons'
 import { CodeIntelligenceProps } from '../../codeintel'
@@ -58,7 +55,6 @@ import { RepositoryStatsContributorsPage } from '../stats/RepositoryStatsContrib
 import { RepositoryBranchesTab } from './BranchesTab'
 import { HomeTab } from './HomeTab'
 import { RepositoryTagTab } from './TagTab'
-import { TreeEntriesSection } from './TreeEntriesSection'
 import { TreeNavigation } from './TreeNavigation'
 import { TreeTabList } from './TreeTabList'
 
@@ -202,23 +198,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
         }
         return `${repoString}`
     }
-
-    const fileDecorationsByPath =
-        useObservable<FileDecorationsByPath>(
-            useMemo(
-                () =>
-                    treeOrError && !isErrorLike(treeOrError)
-                        ? getFileDecorations({
-                              files: treeOrError.entries,
-                              extensionsController: props.extensionsController,
-                              repoName: repo.name,
-                              commitID,
-                              parentNodeUri: treeOrError.url,
-                          })
-                        : EMPTY,
-                [treeOrError, repo.name, commitID, props.extensionsController]
-            )
-        ) ?? {}
 
     // To start using the feature flag bellow, you can go to /site-admin/feature-flags and
     // create a new featurFlag named 'new-repo-page' and set its value to true.
@@ -449,17 +428,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                             )}
                                         />
                                     </Switch>
-                                )}
-                                {!treeOrError.isRoot && (
-                                    <div className={styles.section}>
-                                        <h2>Files and directories</h2>
-                                        <TreeEntriesSection
-                                            parentPath={filePath}
-                                            entries={treeOrError.entries}
-                                            fileDecorationsByPath={fileDecorationsByPath}
-                                            isLightTheme={props.isLightTheme}
-                                        />
-                                    </div>
                                 )}
                             </section>
                         </div>

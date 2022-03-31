@@ -13,7 +13,12 @@ import * as GQL from '@sourcegraph/shared/src/schema'
 import { Button, Link, Badge, useEventObservable, Alert, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { FilteredConnection } from '../../components/FilteredConnection'
-import { GetRepoBatchChangesSummaryResult, GetRepoBatchChangesSummaryVariables, GitCommitFields, TreePageRepositoryFields } from '../../graphql-operations'
+import {
+    GetRepoBatchChangesSummaryResult,
+    GetRepoBatchChangesSummaryVariables,
+    GitCommitFields,
+    TreePageRepositoryFields,
+} from '../../graphql-operations'
 import { fetchBlob } from '../blob/backend'
 import { BlobInfo } from '../blob/Blob'
 import { RenderedFile } from '../blob/RenderedFile'
@@ -54,7 +59,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
     batchChangesEnabled,
     ...props
 }) => {
-    const [richHTML, setRichHTML] = useState('')
+    const [richHTML, setRichHTML] = useState<string | null>('loading')
     const [aborted, setAborted] = useState(false)
     const [nextFetchWithDisabledTimeout, blobInfoOrError] = useEventObservable<
         void,
@@ -69,19 +74,22 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                         fetchBlob({
                             repoName: repo.name,
                             commitID,
-                            filePath: 'README.md',
+                            filePath: `${filePath}/README.md`,
                             disableTimeout,
                         })
                     ),
                     map(blob => {
                         if (blob === null) {
+                            setRichHTML(null)
                             return blob
                         }
 
                         // Replace html with lsif generated HTML, if available
                         if (blob.richHTML) {
                             setRichHTML(blob.richHTML)
-                            setAborted(blob.highlight.aborted)
+                            setAborted(blob.highlight.aborted || false)
+                        } else {
+                            setRichHTML(null)
                         }
 
                         const blobInfo: BlobInfo & { richHTML: string; aborted: boolean } = {
@@ -90,7 +98,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                             repoName: repo.name,
                             revision,
                             commitID,
-                            filePath: 'README.md',
+                            filePath: `${filePath}/README.md`,
                             mode: '',
                             // Properties used in `BlobPage` but not `Blob`
                             richHTML: blob.richHTML,
@@ -100,7 +108,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                     }),
                     catchError((error): [ErrorLike] => [asError(error)])
                 ),
-            [repo.name, commitID, revision]
+            [repo.name, commitID, filePath, revision]
         )
     )
 
@@ -177,56 +185,92 @@ export const HomeTab: React.FunctionComponent<Props> = ({
         </div>
     )
 
+    const RecentCommits: React.FunctionComponent = () => (
+        <div>
+            <h2>Recent Commits</h2>
+            <FilteredConnection<
+                GitCommitFields,
+                Pick<GitCommitNodeProps, 'className' | 'compact' | 'messageSubjectClassName'>
+            >
+                location={props.location}
+                className="mt-2"
+                listClassName="list-group list-group-flush"
+                noun="commit in this tree"
+                pluralNoun="commits in this tree"
+                queryConnection={queryCommits}
+                nodeComponent={GitCommitNode}
+                nodeComponentProps={{
+                    className: classNames('list-group-item', styles.gitCommitNode),
+                    messageSubjectClassName: undefined,
+                    compact: true,
+                }}
+                updateOnChange={`${repo.name}:${revision}:${filePath}:${String(showOlderCommits)}`}
+                defaultFirst={7}
+                useURLQuery={false}
+                hideSearch={true}
+                emptyElement={emptyElement}
+                totalCountSummaryComponent={TotalCountSummary}
+            />
+        </div>
+    )
+
+    const ReadmeFile: React.FunctionComponent = () => (
+        <div>
+            {richHTML && richHTML !== 'loading' && (
+                <RenderedFile dangerousInnerHTML={richHTML} location={props.location} />
+            )}
+            {!richHTML && richHTML !== 'loading' && (
+                <div className="text-center">
+                    <img src="https://i.ibb.co/tztztYB/eric.png" alt="loser" className="mb-3 w-50" />
+                    <h2>No README available, loser.</h2>
+                </div>
+            )}
+            {blobInfoOrError && richHTML && aborted && (
+                <div>
+                    <Alert variant="info">
+                        Syntax-highlighting this file took too long. &nbsp;
+                        <Button onClick={onExtendTimeoutClick} variant="primary" size="sm">
+                            Try again
+                        </Button>
+                    </Alert>
+                </div>
+            )}
+        </div>
+    )
+
+    // Only render recent commits and readme for non-root directory
+    if (filePath) {
+        return (
+            <div className="container mw-100">
+                <RecentCommits />
+                <h2 className="mt-5">README.md</h2>
+                {richHTML && richHTML !== 'loading' && (
+                    <RenderedFile dangerousInnerHTML={richHTML} location={props.location} />
+                )}
+                {!richHTML && richHTML !== 'loading' && (
+                    <div className="text-center">
+                        <img src="https://i.ibb.co/tztztYB/eric.png" alt="loser" className="mb-3 w-50" />
+                        <h2>No README available, loser.</h2>
+                    </div>
+                )}
+            </div>
+        )
+    }
+
     return (
-        <div className="container p-0 m-0 mw-100">
+        <div className="container mw-100">
             <div className="row">
                 {/* RENDER README */}
                 <div className="col-sm m-0">
-                    {richHTML && <RenderedFile dangerousInnerHTML={richHTML} location={props.location} />}
-                    {blobInfoOrError && richHTML && aborted && (
-                        <div>
-                            <Alert variant="info">
-                                Syntax-highlighting this file took too long. &nbsp;
-                                <Button onClick={onExtendTimeoutClick} variant="primary" size="sm">
-                                    Try again
-                                </Button>
-                            </Alert>
-                        </div>
-                    )}
+                    <ReadmeFile />
                 </div>
                 {/* SIDE MENU*/}
                 <div className="col-sm col-lg-4 m-0">
                     <div className="mb-5">
                         <div className={styles.section}>
-                            <div className={styles.section}>
-                                <h2>Recent commits</h2>
-                                <FilteredConnection<
-                                    GitCommitFields,
-                                    Pick<GitCommitNodeProps, 'className' | 'compact' | 'messageSubjectClassName'>
-                                >
-                                    location={props.location}
-                                    className="mt-2"
-                                    listClassName="list-group list-group-flush"
-                                    noun="commit in this tree"
-                                    pluralNoun="commits in this tree"
-                                    queryConnection={queryCommits}
-                                    nodeComponent={GitCommitNode}
-                                    nodeComponentProps={{
-                                        className: classNames('list-group-item', styles.gitCommitNode),
-                                        messageSubjectClassName: undefined,
-                                        compact: true,
-                                    }}
-                                    updateOnChange={`${repo.name}:${revision}:${filePath}:${String(showOlderCommits)}`}
-                                    defaultFirst={7}
-                                    useURLQuery={false}
-                                    hideSearch={true}
-                                    emptyElement={emptyElement}
-                                    totalCountSummaryComponent={TotalCountSummary}
-                                />
-                            </div>
-                            <div className={styles.section}>
-                                <h2>Code intelligence</h2>
-                            </div>
+                            <RecentCommits />
+                            {/* CODE-INTEL */}
+                            <h2 className="mt-3">Code Intel</h2>
                             <div className={styles.item}>
                                 <Badge
                                     variant={codeIntelligenceEnabled ? 'secondary' : 'danger'}
@@ -243,23 +287,24 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                                     className="btn btn-sm btn-link mr-0 pr-0"
                                     to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
                                 >
-                                    {codeIntelligenceEnabled ? 'Set up for this repository' : 'Manage code intelligence'}
+                                    {codeIntelligenceEnabled
+                                        ? 'Set up for this repository'
+                                        : 'Manage code intelligence'}
                                 </Link>
                             </div>
+                            {/* BATCH CHANGES */}
+                            <h2 className="mt-3">Batch Changes</h2>
+                            {batchChangesEnabled ? (
+                                <HomeTabBatchChangeBadge repoName={repo.name} />
+                            ) : (
+                                <div className={styles.item}>
+                                    <Badge variant="danger" className={classNames('text-uppercase col-4')}>
+                                        DISABLED
+                                    </Badge>
+                                    <div className="col">Not available</div>
+                                </div>
+                            )}
                         </div>
-                        <div className={styles.section}>
-                          <h2>Batch changes</h2>
-                        </div>
-                        {batchChangesEnabled ? (
-                            <HomeTabBatchChangeBadge repoName={repo.name} />
-                        ) : (
-                            <div className={styles.item}>
-                                <Badge variant="danger" className={classNames('text-uppercase')} >
-                                    DISABLED
-                                </Badge>
-                                <div className="col">Not available</div>
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>
@@ -272,19 +317,23 @@ interface HomeTabBatchChangeBadgeProps {
 }
 
 export const HomeTabBatchChangeBadge: React.FunctionComponent<HomeTabBatchChangeBadgeProps> = ({ repoName }) => {
-    const { loading, error, data } = useQuery<GetRepoBatchChangesSummaryResult, GetRepoBatchChangesSummaryVariables>(REPO_BATCH_CHANGES_SUMMARY, {
-        variables: { name: repoName }
-    })
+    const { loading, error, data } = useQuery<GetRepoBatchChangesSummaryResult, GetRepoBatchChangesSummaryVariables>(
+        REPO_BATCH_CHANGES_SUMMARY,
+        {
+            variables: { name: repoName },
+        }
+    )
     if (loading) {
-        return <div className={styles.item}><LoadingSpinner /></div>
+        return (
+            <div className={styles.item}>
+                <LoadingSpinner />
+            </div>
+        )
     }
 
     const allBatchChanges = (
         <div className="text-right">
-            <Link
-                className="btn btn-sm btn-link"
-                to={`/${encodeURIPathComponent(repoName)}/-/batch-changes`}
-            >
+            <Link className="btn btn-sm btn-link" to={`/${encodeURIPathComponent(repoName)}/-/batch-changes`}>
                 All batch changes
             </Link>
         </div>
@@ -293,8 +342,10 @@ export const HomeTabBatchChangeBadge: React.FunctionComponent<HomeTabBatchChange
     if (error || !data?.repository) {
         return (
             <>
-            <div className={styles.item}><ErrorMessage error="Failed to load batch changes" /></div>
-            {allBatchChanges}
+                <div className={styles.item}>
+                    <ErrorMessage error="Failed to load batch changes" />
+                </div>
+                {allBatchChanges}
             </>
         )
     }
@@ -317,74 +368,74 @@ export const HomeTabBatchChangeBadge: React.FunctionComponent<HomeTabBatchChange
         )
     }
 
-    const items: React.ReactElement[] = batchChanges.nodes.map(({
-        id,
-        name,
-        namespace: { namespaceName },
-        changesetsStats,
-        url,
-    }) => {
-        const summaries: { value: number, name: string }[] = [
-            {
-                name: 'open',
-                value: changesetsStats.open,
-            },
-            {
-                name: 'merged',
-                value: changesetsStats.open,
-            },
-            {
-                name: 'closed',
-                value: changesetsStats.closed,
-            },
-        ]
-        const summaryTexts = summaries.map(({ value, name }) => `${value} ${name}`)
+    const items: React.ReactElement[] = batchChanges.nodes.map(
+        ({ id, name, namespace: { namespaceName }, changesetsStats, url }) => {
+            const summaries: { value: number; name: string }[] = [
+                {
+                    name: 'open',
+                    value: changesetsStats.open,
+                },
+                {
+                    name: 'merged',
+                    value: changesetsStats.open,
+                },
+                {
+                    name: 'closed',
+                    value: changesetsStats.closed,
+                },
+            ]
+            const summaryTexts = summaries.map(({ value, name }) => `${value} ${name}`)
 
-        return (
-            <div className={styles.item} key={id}>
-                <Badge variant="success" className={badgeClassNames}>
-                    OPEN
-                </Badge>
-                <div className={classNames('d-block col', styles.itemBatchChangeText)}>
-                    <Link to={url}>{namespaceName} / {name}</Link>
-                    <div>{summaryTexts.join(', ')}</div>
+            return (
+                <div className={styles.item} key={id}>
+                    <Badge variant="success" className={badgeClassNames}>
+                        OPEN
+                    </Badge>
+                    <div className={classNames('d-block col', styles.itemBatchChangeText)}>
+                        <Link to={url}>
+                            {namespaceName} / {name}
+                        </Link>
+                        <div>{summaryTexts.join(', ')}</div>
+                    </div>
                 </div>
-            </div>
-        )
-    })
-    return <>
-        {items}
-        {allBatchChanges}
-    </>
+            )
+        }
+    )
+    return (
+        <>
+            {items}
+            {allBatchChanges}
+        </>
+    )
 }
 
 const REPO_BATCH_CHANGE_FRAGMENT = gql`
-fragment RepoBatchChangeSummary on BatchChange {
-    id
-    state
-    name
-    namespace {
-        namespaceName
+    fragment RepoBatchChangeSummary on BatchChange {
+        id
+        state
+        name
+        namespace {
+            namespaceName
+        }
+        url
+        changesetsStats {
+            open
+            merged
+            closed
+        }
     }
-    url
-    changesetsStats {
-        open
-        merged
-        closed
-    }
-}
 `
 
 const REPO_BATCH_CHANGES_SUMMARY = gql`
-query GetRepoBatchChangesSummary($name: String!) {
-    repository(name: $name) {
-        batchChanges(state: OPEN, first: 10) {
-            nodes {
-                ...RepoBatchChangeSummary
+    query GetRepoBatchChangesSummary($name: String!) {
+        repository(name: $name) {
+            batchChanges(state: OPEN, first: 10) {
+                nodes {
+                    ...RepoBatchChangeSummary
+                }
             }
         }
     }
-}
 
-${REPO_BATCH_CHANGE_FRAGMENT}
+    ${REPO_BATCH_CHANGE_FRAGMENT}
 `
