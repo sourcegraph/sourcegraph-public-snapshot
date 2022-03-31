@@ -229,10 +229,10 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                             </div>
                             <div className={styles.item}>
                                 <Badge
-                                    variant={codeIntelligenceEnabled ? 'primary' : 'danger'}
+                                    variant={codeIntelligenceEnabled ? 'secondary' : 'danger'}
                                     className={classNames('text-uppercase col-4')}
                                 >
-                                    {codeIntelligenceEnabled ? 'AVAILABLE' : 'DISABLED'}
+                                    {codeIntelligenceEnabled ? 'CONFIGURABLE' : 'DISABLED'}
                                 </Badge>
                                 <div className="d-block col">
                                     <div>Precise code intelligence</div>
@@ -243,7 +243,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                                     className="btn btn-sm btn-link"
                                     to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
                                 >
-                                    Settings
+                                    Manage code intelligence
                                 </Link>
                             </div>
                         </div>
