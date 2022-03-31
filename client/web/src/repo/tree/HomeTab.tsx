@@ -230,7 +230,8 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                             <div className={styles.item}>
                                 <Badge
                                     variant={codeIntelligenceEnabled ? 'secondary' : 'danger'}
-                                    className={classNames('text-uppercase col-4 ml-2')}
+                                    className={classNames('text-uppercase ml-2')}
+                                    as="div"
                                 >
                                     {codeIntelligenceEnabled ? 'CONFIGURABLE' : 'DISABLED'}
                                 </Badge>
@@ -254,9 +255,9 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                             <HomeTabBatchChangeBadge repoName={repo.name} />
                         ) : (
                             <div className={styles.item}>
-                                <Badge variant="danger" className={classNames('text-uppercase col-4')}>
-                                    DISABLED
-                                </Badge>
+                                    <Badge variant="danger" className={classNames('text-uppercase ml-2')} as="div" >
+                                        DISABLED
+                                    </Badge>
                                 <div className="col">Not available</div>
                             </div>
                         )}
