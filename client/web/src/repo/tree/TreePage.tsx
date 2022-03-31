@@ -348,7 +348,13 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                             )}
                                         </ButtonGroup>
                                     </div>
-                                    {!newRepoPage && (
+                                    {newRepoPage ? (
+                                        <TreeTabList
+                                            tree={treeOrError}
+                                            selectedTab={selectedTab}
+                                            setSelectedTab={setSelectedTab}
+                                        />
+                                    ) : (
                                         <TreeNavigation
                                             batchChangesEnabled={batchChangesEnabled}
                                             codeIntelligenceEnabled={codeIntelligenceEnabled}
@@ -357,11 +363,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                             tree={treeOrError}
                                         />
                                     )}
-                                    <TreeTabList
-                                        tree={treeOrError}
-                                        selectedTab={selectedTab}
-                                        setSelectedTab={setSelectedTab}
-                                    />
                                 </>
                             ) : (
                                 <PageHeader
