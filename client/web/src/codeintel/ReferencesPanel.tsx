@@ -134,15 +134,8 @@ export const RevisionResolvingReferencesList: React.FunctionComponent<
         return <LoadingCodeIntelFailed error={error} />
     }
 
-    if (data?.repositoryRedirect?.__typename !== 'Repository') {
+    if (!data) {
         return <>Nothing found</>
-    }
-
-    const repository = data.repositoryRedirect
-    const defaultBranch = repository.defaultBranch?.abbrevName || 'HEAD'
-
-    if (!repository.commit) {
-        return <LoadingCodeIntelFailed error={{ message: `revision not found: ${defaultBranch}` }} />
     }
 
     const token = {
@@ -150,18 +143,11 @@ export const RevisionResolvingReferencesList: React.FunctionComponent<
         line: props.line,
         character: props.character,
         filePath: props.filePath,
-        revision: props.revision ?? defaultBranch,
-        commitID: repository.commit?.oid,
+        revision: data.revision,
+        commitID: data.commitID,
     }
 
-    return (
-        <FilterableReferencesList
-            {...props}
-            token={token}
-            isFork={repository.isFork}
-            isArchived={repository.isArchived}
-        />
-    )
+    return <FilterableReferencesList {...props} token={token} isFork={data.isFork} isArchived={data.isArchived} />
 }
 
 interface ReferencesPanelPropsWithToken extends ReferencesPanelProps {
