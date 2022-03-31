@@ -199,7 +199,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                     <div className="mb-5">
                         <div className={styles.section}>
                             <div className={styles.section}>
-                                <h2>Recent Commits</h2>
+                                <h2>Recent commits</h2>
                                 <FilteredConnection<
                                     GitCommitFields,
                                     Pick<GitCommitNodeProps, 'className' | 'compact' | 'messageSubjectClassName'>
@@ -225,12 +225,12 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                                 />
                             </div>
                             <div className={styles.section}>
-                                <h2>Code Intel</h2>
+                                <h2>Code intelligence</h2>
                             </div>
                             <div className={styles.item}>
                                 <Badge
                                     variant={codeIntelligenceEnabled ? 'secondary' : 'danger'}
-                                    className={classNames('text-uppercase col-4')}
+                                    className={classNames('text-uppercase col-4 ml-2')}
                                 >
                                     {codeIntelligenceEnabled ? 'CONFIGURABLE' : 'DISABLED'}
                                 </Badge>
@@ -240,15 +240,15 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                             </div>
                             <div className="text-right">
                                 <Link
-                                    className="btn btn-sm btn-link"
+                                    className="btn btn-sm btn-link mr-0 pr-0"
                                     to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
                                 >
-                                    {codeIntelligenceEnabled ? 'Setup for this repository' : 'Manage code intelligence'}
+                                    {codeIntelligenceEnabled ? 'Set up for this repository' : 'Manage code intelligence'}
                                 </Link>
                             </div>
                         </div>
                         <div className={styles.section}>
-                            <h2>Batch Changes</h2>
+                            <h2>Batch changes</h2>
                         </div>
                         {batchChangesEnabled ? (
                             <HomeTabBatchChangeBadge repoName={repo.name} />
