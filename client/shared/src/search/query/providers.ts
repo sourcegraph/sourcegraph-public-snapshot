@@ -42,36 +42,67 @@ const MAX_SUGGESTION_COUNT = 50
 const REPO_SUGGESTION_FILTERS = [FilterType.fork, FilterType.visibility, FilterType.archived]
 const FILE_SUGGESTION_FILTERS = [...REPO_SUGGESTION_FILTERS, FilterType.repo, FilterType.rev, FilterType.lang]
 
-export function getSuggestionQuery(tokens: Token[], tokenAtColumn: Token, disablePatternSuggestions?: boolean): string {
+export function getSuggestionQuery(tokens: Token[], tokenAtColumn: Token, suggestionType: SearchMatch['type']): string {
     const hasAndOrOperators = tokens.some(
         token => token.type === 'keyword' && (token.kind === KeywordKind.Or || token.kind === KeywordKind.And)
     )
 
-    if (isFilterType(tokenAtColumn, FilterType.repo) && tokenAtColumn.value) {
-        const depsPredicateMatch = tokenAtColumn.value.value.match(REPO_DEPS_PREDICATE_REGEX)
-        const repoValue = depsPredicateMatch ? depsPredicateMatch[2] : tokenAtColumn.value.value
-        const relevantFilters =
-            !hasAndOrOperators && !depsPredicateMatch ? serializeFilters(tokens, REPO_SUGGESTION_FILTERS) : ''
-        return `${relevantFilters} repo:${repoValue} type:repo count:${MAX_SUGGESTION_COUNT}`.trimStart()
+    let tokenValue = ''
+
+    switch (tokenAtColumn.type) {
+        case 'filter':
+            tokenValue = tokenAtColumn.value?.value ?? ''
+            break
+        case 'pattern':
+            tokenValue = tokenAtColumn.value
+            break
     }
 
-    // For the cases below, we are not handling queries with and/or operators. This is because we would need to figure out
-    // for each filter which filters from the surrounding expression apply to it. For example, if we have a query: `repo:x file:y z OR repo:xx file:yy`
-    // and we want to get suggestions for the `file:yy` filter. We would only want to include file suggestions from the `xx` repo and not the `x` repo, because it
-    // is a part of a different expression.
-    if (hasAndOrOperators) {
-        return ''
-    }
-    if (isFilterType(tokenAtColumn, FilterType.file) && tokenAtColumn.value) {
-        const relevantFilters = serializeFilters(tokens, FILE_SUGGESTION_FILTERS)
-        return `${relevantFilters} file:${tokenAtColumn.value.value} type:path count:${MAX_SUGGESTION_COUNT}`.trimStart()
-    }
-    if (tokenAtColumn.type === 'pattern' && tokenAtColumn.value && !disablePatternSuggestions) {
-        const relevantFilters = serializeFilters(tokens, [...FILE_SUGGESTION_FILTERS, FilterType.file])
-        return `${relevantFilters} ${tokenAtColumn.value} type:symbol count:${MAX_SUGGESTION_COUNT}`.trimStart()
+    if (tokenValue) {
+        if (suggestionType === 'repo') {
+            const depsPredicateMatch = tokenValue.match(REPO_DEPS_PREDICATE_REGEX)
+            const repoValue = depsPredicateMatch ? depsPredicateMatch[2] : tokenValue
+            const relevantFilters =
+                !hasAndOrOperators && !depsPredicateMatch ? serializeFilters(tokens, REPO_SUGGESTION_FILTERS) : ''
+            return `${relevantFilters} repo:${repoValue} type:repo count:${MAX_SUGGESTION_COUNT}`.trimStart()
+        }
+
+        // For the cases below, we are not handling queries with and/or operators. This is because we would need to figure out
+        // for each filter which filters from the surrounding expression apply to it. For example, if we have a query: `repo:x file:y z OR repo:xx file:yy`
+        // and we want to get suggestions for the `file:yy` filter. We would only want to include file suggestions from the `xx` repo and not the `x` repo, because it
+        // is a part of a different expression.
+        if (hasAndOrOperators) {
+            return ''
+        }
+
+        if (suggestionType === 'path') {
+            const relevantFilters = serializeFilters(tokens, FILE_SUGGESTION_FILTERS)
+            return `${relevantFilters} file:${tokenValue} type:path count:${MAX_SUGGESTION_COUNT}`.trimStart()
+        }
+        if (suggestionType === 'symbol') {
+            const relevantFilters = serializeFilters(tokens, [...FILE_SUGGESTION_FILTERS, FilterType.file])
+            return `${relevantFilters} ${tokenValue} type:symbol count:${MAX_SUGGESTION_COUNT}`.trimStart()
+        }
     }
 
     return ''
+}
+
+function debouncedFetch(
+    fetchSuggestions: (query: string) => Observable<SearchMatch[]>
+): (query: string, isAborted: () => boolean) => Promise<SearchMatch[]> {
+    return (query, isAborted) =>
+        of(query)
+            .pipe(
+                // We use a delay here to implement a custom debounce. In the
+                // next step we check if the current completion request was
+                // cancelled in the meantime (`context.aborted`).
+                // This prevents us from needlessly running multiple suggestion
+                // queries.
+                delay(200),
+                switchMap(query => (isAborted() ? Promise.resolve([]) : fetchSuggestions(query)))
+            )
+            .toPromise()
 }
 
 function getTokenAtColumn(tokens: Token[], column: number): Token | null {
@@ -92,6 +123,8 @@ export function getProviders(
         isSourcegraphDotCom?: boolean
     }
 ): SearchFieldProviders {
+    const debouncedFetchSuggestions = debouncedFetch(fetchSuggestions)
+
     return {
         tokens: {
             getInitialState: () => SCANNER_STATE,
@@ -121,7 +154,7 @@ export function getProviders(
         completion: {
             // An explicit list of trigger characters is needed for the Monaco editor to show completions.
             triggerCharacters: [...printable, ...latin1Alpha],
-            provideCompletionItems: (textModel, position, context, cancellationToken) => {
+            provideCompletionItems: (textModel, position, _context, cancellationToken) => {
                 const scanned = scanSearchQuery(
                     textModel.getValue(),
                     options.interpretComments ?? false,
@@ -131,29 +164,21 @@ export function getProviders(
                     return null
                 }
                 const tokenAtColumn = getTokenAtColumn(scanned.term, position.column)
-                if (!tokenAtColumn) {
-                    return null
-                }
 
-                return of(getSuggestionQuery(scanned.term, tokenAtColumn, options.disablePatternSuggestions))
-                    .pipe(
-                        // We use a delay here to implement a custom debounce. In the next step we check if the current
-                        // completion request was cancelled in the meantime (`token.isCancellationRequested`).
-                        // This prevents us from needlessly running multiple suggestion queries.
-                        delay(200),
-                        switchMap(query =>
-                            cancellationToken.isCancellationRequested
-                                ? Promise.resolve(null)
-                                : getCompletionItems(
-                                      tokenAtColumn,
-                                      position,
-                                      fetchSuggestions(query),
-                                      options.globbing,
-                                      options.isSourcegraphDotCom
-                                  )
-                        )
-                    )
-                    .toPromise()
+                return getCompletionItems(
+                    tokenAtColumn,
+                    position,
+                    async (token, type) => {
+                        if (tokenAtColumn) {
+                            const query = getSuggestionQuery(scanned.term, token, type)
+                            return query
+                                ? debouncedFetchSuggestions(query, () => cancellationToken.isCancellationRequested)
+                                : []
+                        }
+                        return []
+                    },
+                    options
+                )
             },
         },
     }
