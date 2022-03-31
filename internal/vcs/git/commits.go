@@ -595,6 +595,12 @@ func getCommits(ctx context.Context, db database.DB, repoCommits []api.RepoCommi
 			}
 			return errors.Wrap(err, "parseCommitLogOutput")
 		}
+		if len(wrappedCommits) > 1 {
+			// Check this prior to filtering commits so that we still log an issue
+			// if the user happens to have access one but not the other; a rev being
+			// ambiguous here should be a visible issue regardless of permissions.
+			return errors.Errorf("git log: expected 1 commit, got %d", len(commits))
+		}
 
 		// Enforce sub-repository permissions
 		filteredCommits, err := filterCommits(ctx, wrappedCommits, repoCommit.Repo, checker)
