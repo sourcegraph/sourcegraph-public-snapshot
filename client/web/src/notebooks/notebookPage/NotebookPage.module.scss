@@ -1,3 +1,5 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .search-notebook-page {
     background: var(--color-bg-1);
     overflow: auto;
@@ -13,4 +15,32 @@
     font-size: 1rem !important;
     width: 1rem !important;
     height: 1rem !important;
+}
+
+.cols {
+    display: flex;
+}
+
+.side-col {
+    flex: 1;
+
+    @media (--lg-breakpoint-down) {
+        display: none;
+    }
+}
+
+.outline-container {
+    position: sticky;
+    top: 0.25rem;
+    height: 100%;
+}
+
+.center-col {
+    flex: 1;
+    min-width: #{$viewport-xl};
+
+    @media (--lg-breakpoint-down) {
+        min-width: unset;
+        width: 100%;
+    }
 }

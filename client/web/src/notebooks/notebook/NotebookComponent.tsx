@@ -43,6 +43,7 @@ import { NotebookSymbolBlock } from '../blocks/symbol/NotebookSymbolBlock'
 
 import { NotebookBlockSeparator } from './NotebookBlockSeparator'
 import { NotebookCommandPaletteInput } from './NotebookCommandPaletteInput'
+import { NotebookOutline } from './NotebookOutline'
 import { focusBlock, useNotebookEventHandlers } from './useNotebookEventHandlers'
 
 import { Notebook, CopyNotebookProps } from '.'
@@ -124,6 +125,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
             [initialBlocks, fetchHighlightedFileLineRanges, extensionsController.extHostAPI]
         )
 
+        const notebookElement = useRef<HTMLDivElement | null>(null)
         const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null)
         const [blocks, setBlocks] = useState<Block[]>(notebook.getBlocks())
         const commandPaletteInputReference = useRef<HTMLInputElement>(null)
@@ -348,11 +350,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
 
         // Element reference subjects passed to `hoverifier`
         const notebookElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
-        const nextNotebookElement = useCallback(
-            (blockElement: HTMLElement | null) => notebookElements.next(blockElement),
-            [notebookElements]
-        )
-
+        useEffect(() => notebookElements.next(notebookElement.current), [notebookElement, notebookElements])
         const hoverOverlayElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
         const nextOverlayElement = useCallback(
             (overlayElement: HTMLElement | null) => hoverOverlayElements.next(overlayElement),
@@ -499,7 +497,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
         }
 
         return (
-            <div className={styles.searchNotebook} ref={nextNotebookElement}>
+            <div className={styles.searchNotebook} ref={notebookElement}>
                 <div className="pb-1">
                     <Button
                         className="mr-2"
@@ -551,6 +549,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                         onFocusPreviousBlock={onFocusLastBlock}
                     />
                 )}
+                <NotebookOutline notebookElement={notebookElement.current} blocks={blocks} />
                 {hoverState.hoverOverlayProps && (
                     <WebHoverOverlay
                         {...hoverState.hoverOverlayProps}

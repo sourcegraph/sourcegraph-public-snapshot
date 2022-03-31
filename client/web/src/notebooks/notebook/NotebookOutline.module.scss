@@ -1,0 +1,30 @@
+.outline {
+    position: absolute;
+    padding-right: 2rem;
+    width: 100%;
+    max-width: 30rem;
+    height: 90vh;
+    overflow: auto;
+}
+
+.heading {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--text-muted);
+
+    &:global(.heading-1) {
+        font-weight: 500;
+        font-size: 0.875rem;
+
+        &:not(:first-child) {
+            padding-top: 0.75rem;
+        }
+    }
+
+    &:global(.heading-2) {
+        font-size: 0.75rem;
+        padding-left: 1rem;
+        padding-bottom: 0.25rem;
+    }
+}
