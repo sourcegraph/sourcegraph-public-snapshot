@@ -1,15 +1,17 @@
-package git
+package gitserver
 
 import (
 	"reflect"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 func TestParseShortLog(t *testing.T) {
 	tests := []struct {
 		name    string
 		input   string // in the format of `git shortlog -sne`
-		want    []*PersonCount
+		want    []*gitdomain.PersonCount
 		wantErr error
 	}{
 		{
@@ -18,7 +20,7 @@ func TestParseShortLog(t *testing.T) {
   1125	Jane Doe <jane@sourcegraph.com>
    390	Bot Of Doom <bot@doombot.com>
 `,
-			want: []*PersonCount{
+			want: []*gitdomain.PersonCount{
 				{
 					Name:  "Jane Doe",
 					Email: "jane@sourcegraph.com",
@@ -36,7 +38,7 @@ func TestParseShortLog(t *testing.T) {
 			input: `  1125	jane@sourcegraph.com <jane@sourcegraph.com>
    390	Bot Of Doom <bot@doombot.com>
 `,
-			want: []*PersonCount{
+			want: []*gitdomain.PersonCount{
 				{
 					Name:  "jane@sourcegraph.com",
 					Email: "jane@sourcegraph.com",

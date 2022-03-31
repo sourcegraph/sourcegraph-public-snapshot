@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -49,10 +48,6 @@ type CommitsOptions struct {
 	// When true return the names of the files changed in the commit
 	NameOnly bool
 }
-
-// logEntryPattern is the regexp pattern that matches entries in the output of the `git shortlog
-// -sne` command.
-var logEntryPattern = lazyregexp.New(`^\s*([0-9]+)\s+(.*)$`)
 
 var recordGetCommitQueries = os.Getenv("RECORD_GET_COMMIT_QUERIES") == "1"
 
