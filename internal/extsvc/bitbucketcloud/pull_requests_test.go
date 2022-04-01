@@ -162,6 +162,49 @@ func TestClient_CreatePullRequest_SameOrigin(t *testing.T) {
 	})
 }
 
+func TestClient_DeclinePullRequest(t *testing.T) {
+	// WHEN UPDATING: this test expects a PR in
+	// https://bitbucket.org/sourcegraph-testing/src-cli/ to be open. Note that
+	// PRs cannot be reopened after being declined, so we can't use a stable ID
+	// here — this must use a PR that is open and can be safely declined, such
+	// as one created in the CreatePullRequest tests above. Update the ID below
+	// with such a PR before updating!
+
+	var id int64 = 2
+	ctx := context.Background()
+
+	c, save := newTestClient(t)
+	defer save()
+
+	repo := &Repo{
+		FullName: "sourcegraph-testing/src-cli",
+	}
+
+	t.Run("not found", func(t *testing.T) {
+		pr, err := c.DeclinePullRequest(ctx, repo, 0)
+		assert.Nil(t, pr)
+		assert.NotNil(t, err)
+		assert.True(t, errcode.IsNotFound(err))
+	})
+
+	t.Run("found", func(t *testing.T) {
+		pr, err := c.DeclinePullRequest(ctx, repo, id)
+		assert.Nil(t, err)
+		assert.NotNil(t, pr)
+		assertGolden(t, pr)
+	})
+
+	t.Run("already declined", func(t *testing.T) {
+		// Given the above behaviour around CreatePullRequest being able to be
+		// called multiple times with no apparent effect, one might expect that
+		// you could do the same with declined pull requests. One cannot:
+		// repeated invocations of DeclinePullRequest for the same ID will fail.
+		pr, err := c.DeclinePullRequest(ctx, repo, id)
+		assert.Nil(t, pr)
+		assert.NotNil(t, err)
+	})
+}
+
 func TestClient_GetPullRequest(t *testing.T) {
 	// WHEN UPDATING: this test expects
 	// https://bitbucket.org/sourcegraph-testing/src-cli/pull-requests/1/always-open-pr
