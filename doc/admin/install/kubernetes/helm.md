@@ -1,11 +1,35 @@
-# Sourcegraph Helm Chart
+# Using Helm
 
 ## Requirements
 
 * [Helm 3 CLI](https://helm.sh/docs/intro/install/)
 * Kubernetes 1.19 or greater
 
+<div class="cta-group">
+<!--<a class="btn btn-primary" href="#installation">★ ...</a>-->
+<a class="btn" href="#configuration">Configuration</a>
+<a class="btn" href="#configure-sourcegraph-on-elastic-kubernetes-service-eks">Google GKE</a>
+<a class="btn" href="#configure-sourcegraph-on-azure-managed-kubernetes-service-aks">Azure AKS</a>
+<a class="btn" href="#configure-sourcegraph-on-other-cloud-providers-or-on-prem">Other cloud providers or on-prem</a>
+<a class="btn" href="#upgrading-sourcegraph">Upgrading</a>
+</div>
+
+## High level overview of how to use Helm with Sourcegraph
+
+1. Prepare any required customizations
+   - Sourcegraph can be deployed using Helm with no customizations to the default [values.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/values.yaml) but there are a range of [supported options](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph#configuration-options). 
+   - It's worth reviewing these and preparing them ahead of anything else, using the guidance in [Configuration](#configuration).
+1. Review the changes
+   - There are [three mechanisms](#reviewing-changes) that can be used to review any customizations made, this is an optional step, but may be useful the first time you deploy Sourcegraph, for peace of mind.
+1. Select your deployment method and follow the guidance:
+   - [Google GKE](#configure-sourcegraph-on-elastic-kubernetes-service-eks)
+   - [Azure AKS](#configure-sourcegraph-on-azure-managed-kubernetes-service-aks)
+   - [Other cloud providers or on-prem](#configure-sourcegraph-on-other-cloud-providers-or-on-prem)
+
+
 ## Quickstart
+
+> ℹ️ This quickstart guide is useful to those already familiar with Helm who have a good unstanding of how to use Helm in the environment they want to deploy into, and just who want to quickly deploy Sourcegraph with Helm with defalt configuration.
 
 To use the Helm chart, add the Sourcegraph helm repository:
 
@@ -186,11 +210,11 @@ Your account should have sufficient access equivalent to the `cluster-admin` Clu
 
 #### Steps
 
-> [Container-native load balancing] is only available on VPC-native cluster. For legacy clusters, [learn more](https://cloud.google.com/kubernetes-engine/docs/how-to/load-balance-ingress).
+**1** – Create or update your override file (see [configuration](#configuration) for more information on override files) with the below values. We recommend configuring Ingress to use [Container-native load balancing] to expose Sourcegraph publicly on a domain of your choosing and setting the Storage Class to use [Compute Engine persistent disk].
 
-Create an override file with the following values. We configure Ingress to use [Container-native load balancing] to expose Sourcegraph publicly on a domain of your choosing and Storage Class to use [Compute Engine persistent disk].
+> ℹ️ [Container-native load balancing] is only available on VPC-native cluster. For legacy clusters, [learn more](https://cloud.google.com/kubernetes-engine/docs/how-to/load-balance-ingress).
 
-[override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/gcp/override.yaml)
+Values to include in your `override.yaml` (for an example file see [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/gcp/override.yaml))
 ```yaml
 frontend:
   serviceType: ClusterIP
@@ -213,7 +237,7 @@ storageClass:
   reclaimPolicy: Retain
 ```
 
-Install the chart
+**2** – Install the chart
 
 ```sh
 helm upgrade --install --values ./override.yaml --version 0.7.0 sourcegraph sourcegraph/sourcegraph
@@ -245,10 +269,9 @@ It will take around 10 minutes for the load balancer to be fully ready, you may 
 kubectl describe ingress sourcegraph-frontend
 ```
 
-Upon obtaining the allocated IP address of the load balancer, you should create an A record for the `sourcegraph.company.com` domain. Finally, it is recommended to enable TLS and you may consider using [Google-managed certificate](https://cloud.google.com/kubernetes-engine/docs/how-to/managed-certs) in GKE.
+**3** – Upon obtaining the allocated IP address of the load balancer, you should create an A record for the `sourcegraph.company.com` domain. Finally, it is recommended to enable TLS and you may consider using [Google-managed certificate](https://cloud.google.com/kubernetes-engine/docs/how-to/managed-certs) in GKE or your own certificate.
 
-Upon creating the Google-managed certificate, you may add the following annotations to Ingress.
-
+If using a GKE manage certificate, add the following annotations to Ingress:
 ```yaml
 frontend:
   ingress:
@@ -258,6 +281,11 @@ frontend:
       # if you reserve a static IP, uncomment below and update ADDRESS_NAME
       # also, make changes to your DNS record accordingly
       # kubernetes.io/ingress.global-static-ip-name: ADDRESS_NAME
+```
+
+If using another certificate, add the following to Ingress:
+```
+TODO
 ```
 
 ### Configure Sourcegraph on Elastic Kubernetes Service (EKS)
