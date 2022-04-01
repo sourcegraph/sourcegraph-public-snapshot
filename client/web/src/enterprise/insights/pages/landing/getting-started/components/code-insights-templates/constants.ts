@@ -842,7 +842,6 @@ const GO_STATIC_CHECK_S1003: Template = {
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
         ],
-        quickFix: true,
     },
 }
 
