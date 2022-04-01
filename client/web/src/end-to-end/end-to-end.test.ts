@@ -651,10 +651,10 @@ describe('e2e test suite', () => {
                         )
                     })
                 })
-
+                // TODO re-enable once flake is identified @frontend-platform team
                 describe('find references', () => {
-                    test('opens widget and fetches local references', async function () {
-                        this.timeout(120000)
+                    test.skip('opens widget and fetches local references', async () => {
+                        // this.timeout(120000)
 
                         await driver.page.goto(
                             sourcegraphBaseUrl +
