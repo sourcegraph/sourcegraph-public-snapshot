@@ -15,7 +15,7 @@ import (
 // If the argument pageToken.Next is not empty, it will be used directly as the URL to make
 // the request. The PageToken it returns may also contain the URL to the next page for
 // succeeding requests if any.
-func (c *Client) Repos(ctx context.Context, pageToken *PageToken, accountName string) ([]*Repo, *PageToken, error) {
+func (c *client) Repos(ctx context.Context, pageToken *PageToken, accountName string) ([]*Repo, *PageToken, error) {
 	var repos []*Repo
 	var next *PageToken
 	var err error
@@ -27,7 +27,7 @@ func (c *Client) Repos(ctx context.Context, pageToken *PageToken, accountName st
 	return repos, next, err
 }
 
-func (c *Client) NewRepos(accountName string) (*ResultSet[Repo], error) {
+func (c *client) NewRepos(accountName string) (*ResultSet[Repo], error) {
 	u, err := url.Parse(fmt.Sprintf("/2.0/repositories/%s", accountName))
 	if err != nil {
 		return nil, err

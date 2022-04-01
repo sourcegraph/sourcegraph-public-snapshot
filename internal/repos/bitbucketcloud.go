@@ -25,7 +25,7 @@ type BitbucketCloudSource struct {
 	svc     *types.ExternalService
 	config  *schema.BitbucketCloudConnection
 	exclude excludeFunc
-	client  *bitbucketcloud.Client
+	client  bitbucketcloud.Client
 }
 
 // NewBitbucketCloudSource returns a new BitbucketCloudSource from the given external service.

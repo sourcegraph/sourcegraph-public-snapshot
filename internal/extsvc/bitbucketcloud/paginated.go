@@ -9,14 +9,14 @@ import (
 )
 
 type ResultSet[T any] struct {
-	client    *Client
+	client    *client
 	mu        sync.Mutex
 	initial   *url.URL
 	pageToken *PageToken
 	nodes     []T
 }
 
-func newResultSet[T any](c *Client, initial *url.URL) *ResultSet[T] {
+func newResultSet[T any](c *client, initial *url.URL) *ResultSet[T] {
 	return &ResultSet[T]{
 		client:  c,
 		initial: initial,

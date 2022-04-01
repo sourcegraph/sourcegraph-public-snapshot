@@ -31,7 +31,7 @@ var _ json.Marshaler = &CreatePullRequestOpts{}
 // Invoking CreatePullRequest with the same repo and options will succeed: the
 // same PR will be returned each time, and will be updated accordingly on
 // Bitbucket with any changed information in the options.
-func (c *Client) CreatePullRequest(ctx context.Context, repo *Repo, opts CreatePullRequestOpts) (*PullRequest, error) {
+func (c *client) CreatePullRequest(ctx context.Context, repo *Repo, opts CreatePullRequestOpts) (*PullRequest, error) {
 	data, err := json.Marshal(&opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshalling request")
@@ -53,7 +53,7 @@ func (c *Client) CreatePullRequest(ctx context.Context, repo *Repo, opts CreateP
 // DeclinePullRequest declines (closes without merging) a pull request.
 //
 // Invoking DeclinePullRequest on an already declined PR will error.
-func (c *Client) DeclinePullRequest(ctx context.Context, repo *Repo, id int64) (*PullRequest, error) {
+func (c *client) DeclinePullRequest(ctx context.Context, repo *Repo, id int64) (*PullRequest, error) {
 	req, err := http.NewRequest("POST", fmt.Sprintf("/2.0/repositories/%s/pullrequests/%d/decline", repo.FullName, id), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating request")
@@ -68,7 +68,7 @@ func (c *Client) DeclinePullRequest(ctx context.Context, repo *Repo, id int64) (
 }
 
 // GetPullRequest retrieves a single pull request.
-func (c *Client) GetPullRequest(ctx context.Context, repo *Repo, id int64) (*PullRequest, error) {
+func (c *client) GetPullRequest(ctx context.Context, repo *Repo, id int64) (*PullRequest, error) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("/2.0/repositories/%s/pullrequests/%d", repo.FullName, id), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating request")
@@ -83,7 +83,7 @@ func (c *Client) GetPullRequest(ctx context.Context, repo *Repo, id int64) (*Pul
 }
 
 // GetPullRequestStatuses retrieves the statuses for a pull request.
-func (c *Client) GetPullRequestStatuses(repo *Repo, id int64) (*ResultSet[PullRequestStatus], error) {
+func (c *client) GetPullRequestStatuses(repo *Repo, id int64) (*ResultSet[PullRequestStatus], error) {
 	u, err := url.Parse(fmt.Sprintf("/2.0/repositories/%s/pullrequests/%d/statuses", repo.FullName, id))
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing URL")

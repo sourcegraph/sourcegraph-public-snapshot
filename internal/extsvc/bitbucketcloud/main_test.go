@@ -41,7 +41,7 @@ func assertGolden(t testing.TB, expected interface{}) {
 
 // newTestClient returns a bitbucketcloud.Client that records its interactions
 // to testdata/vcr/.
-func newTestClient(t testing.TB) (*Client, func()) {
+func newTestClient(t testing.TB) (Client, func()) {
 	t.Helper()
 
 	cassette := filepath.Join("testdata/vcr/", normalize(t.Name()))

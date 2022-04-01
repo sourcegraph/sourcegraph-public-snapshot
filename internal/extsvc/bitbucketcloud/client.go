@@ -44,8 +44,23 @@ const (
 	RateLimitMaxBurstRequests  = 500
 )
 
-// Client access a Bitbucket Cloud via the REST API 2.0.
-type Client struct {
+// Client accesses Bitbucket Cloud via the REST API 2.0.
+type Client interface {
+	Authenticator() auth.Authenticator
+	WithAuthenticator(a auth.Authenticator) Client
+
+	Ping(ctx context.Context) error
+
+	CreatePullRequest(ctx context.Context, repo *Repo, opts CreatePullRequestOpts) (*PullRequest, error)
+	DeclinePullRequest(ctx context.Context, repo *Repo, id int64) (*PullRequest, error)
+	GetPullRequest(ctx context.Context, repo *Repo, id int64) (*PullRequest, error)
+	GetPullRequestStatuses(repo *Repo, id int64) (*ResultSet[PullRequestStatus], error)
+
+	Repos(ctx context.Context, pageToken *PageToken, accountName string) ([]*Repo, *PageToken, error)
+	NewRepos(accountName string) (*ResultSet[Repo], error)
+}
+
+type client struct {
 	// HTTP Client used to communicate with the API
 	httpClient httpcli.Doer
 
@@ -64,7 +79,7 @@ type Client struct {
 // NewClient creates a new Bitbucket Cloud API client from the given external
 // service configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
-func NewClient(config *schema.BitbucketCloudConnection, httpClient httpcli.Doer) (*Client, error) {
+func NewClient(config *schema.BitbucketCloudConnection, httpClient httpcli.Doer) (Client, error) {
 	if httpClient == nil {
 		httpClient = httpcli.ExternalDoer
 	}
@@ -90,7 +105,7 @@ func NewClient(config *schema.BitbucketCloudConnection, httpClient httpcli.Doer)
 	defaultLimiter := rate.NewLimiter(rateLimitRequestsPerSecond, RateLimitMaxBurstRequests)
 	l := ratelimit.DefaultRegistry.GetOrSet(apiURL.String(), defaultLimiter)
 
-	return &Client{
+	return &client{
 		httpClient: httpClient,
 		URL:        extsvc.NormalizeBaseURL(apiURL),
 		Auth: &auth.BasicAuth{
@@ -101,6 +116,10 @@ func NewClient(config *schema.BitbucketCloudConnection, httpClient httpcli.Doer)
 	}, nil
 }
 
+func (c *client) Authenticator() auth.Authenticator {
+	return c.Auth
+}
+
 // WithAuthenticator returns a new Client that uses the same configuration,
 // HTTPClient, and RateLimiter as the current Client, except authenticated with
 // the given authenticator instance.
@@ -108,8 +127,8 @@ func NewClient(config *schema.BitbucketCloudConnection, httpClient httpcli.Doer)
 // Note that using an unsupported Authenticator implementation may result in
 // unexpected behaviour, or (more likely) errors. At present, only BasicAuth is
 // supported.
-func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
-	return &Client{
+func (c *client) WithAuthenticator(a auth.Authenticator) Client {
+	return &client{
 		httpClient: c.httpClient,
 		URL:        c.URL,
 		Auth:       a,
@@ -119,7 +138,7 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
 
 // Ping makes a request to the API root, thereby validating that the current
 // authenticator is valid.
-func (c *Client) Ping(ctx context.Context) error {
+func (c *client) Ping(ctx context.Context) error {
 	// This relies on an implementation detail: Bitbucket Cloud doesn't have an
 	// API endpoint at /2.0/, but does the authentication check before returning
 	// the 404, so we can distinguish based on the response code.
@@ -138,7 +157,7 @@ func (c *Client) Ping(ctx context.Context) error {
 	return nil
 }
 
-func (c *Client) page(ctx context.Context, path string, qry url.Values, token *PageToken, results interface{}) (*PageToken, error) {
+func (c *client) page(ctx context.Context, path string, qry url.Values, token *PageToken, results interface{}) (*PageToken, error) {
 	if qry == nil {
 		qry = make(url.Values)
 	}
@@ -156,7 +175,7 @@ func (c *Client) page(ctx context.Context, path string, qry url.Values, token *P
 // API 2.0 pagination renders the full link of next page in the response.
 // See more at https://developer.atlassian.com/bitbucket/api/2/reference/meta/pagination
 // However, for the very first request, use method page instead.
-func (c *Client) reqPage(ctx context.Context, url string, results interface{}) (*PageToken, error) {
+func (c *client) reqPage(ctx context.Context, url string, results interface{}) (*PageToken, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -178,7 +197,7 @@ func (c *Client) reqPage(ctx context.Context, url string, results interface{}) (
 	return &next, nil
 }
 
-func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) error {
+func (c *client) do(ctx context.Context, req *http.Request, result interface{}) error {
 	req.URL = c.URL.ResolveReference(req.URL)
 
 	// If the request doesn't expect a body, then including a content-type can
