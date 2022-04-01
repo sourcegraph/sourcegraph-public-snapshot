@@ -24,9 +24,11 @@ type CreatePullRequestOpts struct {
 	DestinationBranch *string
 }
 
+var _ json.Marshaler = &CreatePullRequestOpts{}
+
 // CreatePullRequest opens a new pull request.
 func (c *Client) CreatePullRequest(ctx context.Context, repo *Repo, opts CreatePullRequestOpts) (*PullRequest, error) {
-	data, err := json.Marshal(opts)
+	data, err := json.Marshal(&opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshalling request")
 	}
@@ -179,7 +181,7 @@ func (opts *CreatePullRequestOpts) MarshalJSON() ([]byte, error) {
 
 	type source struct {
 		Branch     branch      `json:"branch"`
-		Repository *repository `json:"repository"`
+		Repository *repository `json:"repository,omitempty"`
 	}
 
 	type request struct {
@@ -207,5 +209,5 @@ func (opts *CreatePullRequestOpts) MarshalJSON() ([]byte, error) {
 		}
 	}
 
-	return json.Marshal(req)
+	return json.Marshal(&req)
 }

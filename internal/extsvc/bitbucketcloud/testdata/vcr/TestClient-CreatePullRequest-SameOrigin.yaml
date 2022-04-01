@@ -1,0 +1,284 @@
+---
+version: 1
+interactions:
+- request:
+    body: '{"title":"Sourcegraph test branch-00","description":"This is a PR created
+      by the Sourcegraph test suite.","source":{"branch":{"name":"branch-00"}},"destination":{"branch":{"name":"this-branch-should-never-exist"}}}'
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests
+    method: POST
+  response:
+    body: '{"type": "error", "error": {"fields": {"destination": ["branch not found:
+      this-branch-should-never-exist"]}, "message": "destination: branch not found:
+      this-branch-should-never-exist"}}'
+    headers:
+      Cache-Control:
+      - no-cache, no-store, must-revalidate, max-age=0
+      Content-Length:
+      - "185"
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 01 Apr 2022 21:49:29 GMT
+      Expires:
+      - Fri, 01 Apr 2022 21:49:29 GMT
+      Server:
+      - nginx
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Vary:
+      - Authorization, Origin
+      X-Accepted-Oauth-Scopes:
+      - pullrequest:write
+      X-B3-Traceid:
+      - 90ccc3bfe4a16526
+      X-Credential-Type:
+      - apppassword
+      X-Dc-Location:
+      - Micros
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Oauth-Scopes:
+      - pipeline, pullrequest:write, account
+      X-Render-Time:
+      - "0.111296892166"
+      X-Request-Count:
+      - "1638"
+      X-Served-By:
+      - 6852441d030b
+      X-Static-Version:
+      - 8429279cb147
+      X-Usage-Input-Ops:
+      - "0"
+      X-Usage-Output-Ops:
+      - "0"
+      X-Usage-System-Time:
+      - "0.000000"
+      X-Usage-User-Time:
+      - "0.099335"
+      X-Version:
+      - 8429279cb147
+      X-View-Name:
+      - bitbucket.apps.pullrequests.api.v20.handlers.RepositoryPullRequestsHandler
+    status: 400 Bad Request
+    code: 400
+    duration: ""
+- request:
+    body: '{"title":"Sourcegraph test branch-00","description":"This is a PR created
+      by the Sourcegraph test suite.","source":{"branch":{"name":"branch-00"}},"destination":{"branch":{"name":"master"}}}'
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests
+    method: POST
+  response:
+    body: '{"rendered": {"description": {"raw": "This is a PR created by the Sourcegraph
+      test suite.", "markup": "markdown", "html": "<p>This is a PR created by the
+      Sourcegraph test suite.</p>", "type": "rendered"}, "title": {"raw": "Sourcegraph
+      test branch-00", "markup": "markdown", "html": "<p>Sourcegraph test branch-00</p>",
+      "type": "rendered"}}, "type": "pullrequest", "description": "This is a PR created
+      by the Sourcegraph test suite.", "links": {"decline": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/2/decline"},
+      "diffstat": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/diffstat/sourcegraph-testing/src-cli:b4087d003ddc%0D12fba599d6b6?from_pullrequest_id=2"},
+      "commits": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/2/commits"},
+      "self": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/2"},
+      "comments": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/2/comments"},
+      "merge": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/2/merge"},
+      "html": {"href": "https://bitbucket.org/sourcegraph-testing/src-cli/pull-requests/2"},
+      "activity": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/2/activity"},
+      "request-changes": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/2/request-changes"},
+      "diff": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/diff/sourcegraph-testing/src-cli:b4087d003ddc%0D12fba599d6b6?from_pullrequest_id=2"},
+      "approve": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/2/approve"},
+      "statuses": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/2/statuses"}},
+      "title": "Sourcegraph test branch-00", "close_source_branch": false, "reviewers":
+      [], "id": 2, "destination": {"commit": {"hash": "12fba599d6b6", "type": "commit",
+      "links": {"self": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/commit/12fba599d6b6"},
+      "html": {"href": "https://bitbucket.org/sourcegraph-testing/src-cli/commits/12fba599d6b6"}}},
+      "repository": {"links": {"self": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli"},
+      "html": {"href": "https://bitbucket.org/sourcegraph-testing/src-cli"}, "avatar":
+      {"href": "https://bytebucket.org/ravatar/%7Bb090a669-ac7b-44cd-9610-02d027cb39f3%7D?ts=default"}},
+      "type": "repository", "name": "src-cli", "full_name": "sourcegraph-testing/src-cli",
+      "uuid": "{b090a669-ac7b-44cd-9610-02d027cb39f3}"}, "branch": {"name": "master"}},
+      "created_on": "2022-04-01T21:49:29.957136+00:00", "summary": {"raw": "This is
+      a PR created by the Sourcegraph test suite.", "markup": "markdown", "html":
+      "<p>This is a PR created by the Sourcegraph test suite.</p>", "type": "rendered"},
+      "source": {"commit": {"hash": "b4087d003ddc", "type": "commit", "links": {"self":
+      {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/commit/b4087d003ddc"},
+      "html": {"href": "https://bitbucket.org/sourcegraph-testing/src-cli/commits/b4087d003ddc"}}},
+      "repository": {"links": {"self": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli"},
+      "html": {"href": "https://bitbucket.org/sourcegraph-testing/src-cli"}, "avatar":
+      {"href": "https://bytebucket.org/ravatar/%7Bb090a669-ac7b-44cd-9610-02d027cb39f3%7D?ts=default"}},
+      "type": "repository", "name": "src-cli", "full_name": "sourcegraph-testing/src-cli",
+      "uuid": "{b090a669-ac7b-44cd-9610-02d027cb39f3}"}, "branch": {"name": "branch-00"}},
+      "comment_count": 0, "state": "OPEN", "task_count": 0, "participants": [], "reason":
+      "", "updated_on": "2022-04-01T21:49:30.347598+00:00", "author": {"display_name":
+      "Sourcegraph Testing", "uuid": "{4b85b785-1433-4092-8512-20302f4a03be}", "links":
+      {"self": {"href": "https://api.bitbucket.org/2.0/users/%7B4b85b785-1433-4092-8512-20302f4a03be%7D"},
+      "html": {"href": "https://bitbucket.org/%7B4b85b785-1433-4092-8512-20302f4a03be%7D/"},
+      "avatar": {"href": "https://secure.gravatar.com/avatar/f964dc31564db8243e952bdaeabbe884?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FST-2.png"}},
+      "type": "user", "nickname": "Sourcegraph Testing", "account_id": "623316f53fbb880068413f6b"},
+      "merge_commit": null, "closed_by": null}'
+    headers:
+      Cache-Control:
+      - no-cache, no-store, must-revalidate, max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 01 Apr 2022 21:49:30 GMT
+      Expires:
+      - Fri, 01 Apr 2022 21:49:30 GMT
+      Location:
+      - https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/2
+      Server:
+      - nginx
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Vary:
+      - Authorization, Origin
+      - Accept-Encoding
+      X-Accepted-Oauth-Scopes:
+      - pullrequest:write
+      X-B3-Traceid:
+      - 48541fa02d9ec8e7
+      X-Credential-Type:
+      - apppassword
+      X-Dc-Location:
+      - Micros
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Oauth-Scopes:
+      - pipeline, pullrequest:write, account
+      X-Render-Time:
+      - "0.563438892365"
+      X-Request-Count:
+      - "3739"
+      X-Served-By:
+      - c3a76babb818
+      X-Static-Version:
+      - 8429279cb147
+      X-Usage-Input-Ops:
+      - "3312"
+      X-Usage-Output-Ops:
+      - "184"
+      X-Usage-System-Time:
+      - "0.062678"
+      X-Usage-User-Time:
+      - "0.190616"
+      X-Version:
+      - 8429279cb147
+      X-View-Name:
+      - bitbucket.apps.pullrequests.api.v20.handlers.RepositoryPullRequestsHandler
+    status: 201 Created
+    code: 201
+    duration: ""
+- request:
+    body: '{"title":"Sourcegraph test branch-00","description":"This is a PR created
+      by the Sourcegraph test suite.","source":{"branch":{"name":"branch-00"}},"destination":{"branch":{"name":"master"}}}'
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests
+    method: POST
+  response:
+    body: '{"rendered": {"description": {"raw": "This is a PR created by the Sourcegraph
+      test suite.", "markup": "markdown", "html": "<p>This is a PR created by the
+      Sourcegraph test suite.</p>", "type": "rendered"}, "title": {"raw": "Sourcegraph
+      test branch-00", "markup": "markdown", "html": "<p>Sourcegraph test branch-00</p>",
+      "type": "rendered"}}, "type": "pullrequest", "description": "This is a PR created
+      by the Sourcegraph test suite.", "links": {"decline": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/2/decline"},
+      "diffstat": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/diffstat/sourcegraph-testing/src-cli:b4087d003ddc%0D12fba599d6b6?from_pullrequest_id=2"},
+      "commits": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/2/commits"},
+      "self": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/2"},
+      "comments": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/2/comments"},
+      "merge": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/2/merge"},
+      "html": {"href": "https://bitbucket.org/sourcegraph-testing/src-cli/pull-requests/2"},
+      "activity": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/2/activity"},
+      "request-changes": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/2/request-changes"},
+      "diff": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/diff/sourcegraph-testing/src-cli:b4087d003ddc%0D12fba599d6b6?from_pullrequest_id=2"},
+      "approve": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/2/approve"},
+      "statuses": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/2/statuses"}},
+      "title": "Sourcegraph test branch-00", "close_source_branch": false, "reviewers":
+      [], "id": 2, "destination": {"commit": {"hash": "12fba599d6b6", "type": "commit",
+      "links": {"self": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/commit/12fba599d6b6"},
+      "html": {"href": "https://bitbucket.org/sourcegraph-testing/src-cli/commits/12fba599d6b6"}}},
+      "repository": {"links": {"self": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli"},
+      "html": {"href": "https://bitbucket.org/sourcegraph-testing/src-cli"}, "avatar":
+      {"href": "https://bytebucket.org/ravatar/%7Bb090a669-ac7b-44cd-9610-02d027cb39f3%7D?ts=default"}},
+      "type": "repository", "name": "src-cli", "full_name": "sourcegraph-testing/src-cli",
+      "uuid": "{b090a669-ac7b-44cd-9610-02d027cb39f3}"}, "branch": {"name": "master"}},
+      "created_on": "2022-04-01T21:49:29.957136+00:00", "summary": {"raw": "This is
+      a PR created by the Sourcegraph test suite.", "markup": "markdown", "html":
+      "<p>This is a PR created by the Sourcegraph test suite.</p>", "type": "rendered"},
+      "source": {"commit": {"hash": "b4087d003ddc", "type": "commit", "links": {"self":
+      {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/commit/b4087d003ddc"},
+      "html": {"href": "https://bitbucket.org/sourcegraph-testing/src-cli/commits/b4087d003ddc"}}},
+      "repository": {"links": {"self": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli"},
+      "html": {"href": "https://bitbucket.org/sourcegraph-testing/src-cli"}, "avatar":
+      {"href": "https://bytebucket.org/ravatar/%7Bb090a669-ac7b-44cd-9610-02d027cb39f3%7D?ts=default"}},
+      "type": "repository", "name": "src-cli", "full_name": "sourcegraph-testing/src-cli",
+      "uuid": "{b090a669-ac7b-44cd-9610-02d027cb39f3}"}, "branch": {"name": "branch-00"}},
+      "comment_count": 0, "state": "OPEN", "task_count": 0, "participants": [], "reason":
+      "", "updated_on": "2022-04-01T21:49:30.807955+00:00", "author": {"display_name":
+      "Sourcegraph Testing", "uuid": "{4b85b785-1433-4092-8512-20302f4a03be}", "links":
+      {"self": {"href": "https://api.bitbucket.org/2.0/users/%7B4b85b785-1433-4092-8512-20302f4a03be%7D"},
+      "html": {"href": "https://bitbucket.org/%7B4b85b785-1433-4092-8512-20302f4a03be%7D/"},
+      "avatar": {"href": "https://secure.gravatar.com/avatar/f964dc31564db8243e952bdaeabbe884?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FST-2.png"}},
+      "type": "user", "nickname": "Sourcegraph Testing", "account_id": "623316f53fbb880068413f6b"},
+      "merge_commit": null, "closed_by": null}'
+    headers:
+      Cache-Control:
+      - no-cache, no-store, must-revalidate, max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 01 Apr 2022 21:49:30 GMT
+      Expires:
+      - Fri, 01 Apr 2022 21:49:30 GMT
+      Location:
+      - https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/2
+      Server:
+      - nginx
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Vary:
+      - Authorization, Origin
+      - Accept-Encoding
+      X-Accepted-Oauth-Scopes:
+      - pullrequest:write
+      X-B3-Traceid:
+      - b302786586d4a578
+      X-Credential-Type:
+      - apppassword
+      X-Dc-Location:
+      - Micros
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Oauth-Scopes:
+      - pipeline, pullrequest:write, account
+      X-Render-Time:
+      - "0.320319890976"
+      X-Request-Count:
+      - "1173"
+      X-Served-By:
+      - 6b91640a2e28
+      X-Static-Version:
+      - 8429279cb147
+      X-Usage-Input-Ops:
+      - "1088"
+      X-Usage-Output-Ops:
+      - "0"
+      X-Usage-System-Time:
+      - "0.009458"
+      X-Usage-User-Time:
+      - "0.115191"
+      X-Version:
+      - 8429279cb147
+      X-View-Name:
+      - bitbucket.apps.pullrequests.api.v20.handlers.RepositoryPullRequestsHandler
+    status: 201 Created
+    code: 201
+    duration: ""
