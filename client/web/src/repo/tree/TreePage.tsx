@@ -304,7 +304,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
 
                                             {batchChangesEnabled && (
                                                 <Button
-                                                    to="/batch-changes"
+                                                    to="/batch-changes/create"
                                                     variant="secondary"
                                                     outline={true}
                                                     as={Link}
