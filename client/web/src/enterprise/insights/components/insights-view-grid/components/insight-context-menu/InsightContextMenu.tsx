@@ -6,7 +6,7 @@ import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 
 import { Link, Menu, MenuButton, MenuDivider, MenuItem, MenuLink, MenuList, Position } from '@sourcegraph/wildcard'
 
-import { Insight, InsightDashboard, isVirtualDashboard } from '../../../../core'
+import { Insight, InsightDashboard, InsightType, isVirtualDashboard } from '../../../../core/types'
 import { useUiFeatures } from '../../../../hooks/use-ui-features'
 
 import styles from './InsightContextMenu.module.scss'
@@ -42,8 +42,10 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
     const editUrl = dashboard?.id
         ? `/insights/edit/${insightID}?dashboardId=${dashboard.id}`
         : `/insights/edit/${insightID}`
-    const quickFixUrl = '/batch-changes/create'
     const showQuickFix = insight.title.includes('[gofix]')
+    const quickFixUrl =
+        insight.type === InsightType.SearchBased ? `/batch-changes/create/${insight.series[0]?.name}` : undefined
+
     const withinVirtualDashboard = !!dashboard && isVirtualDashboard(dashboard)
 
     return (
@@ -89,7 +91,8 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
                                 <span>Start Y Axis at 0</span>
                             </MenuItem>
                         )}
-                        {showQuickFix && (
+
+                        {quickFixUrl && showQuickFix && (
                             <MenuLink as={Link} className={styles.item} to={quickFixUrl}>
                                 Quick fix
                             </MenuLink>
