@@ -163,6 +163,10 @@ func (s BitbucketCloudSource) ReopenChangeset(ctx context.Context, cs *Changeset
 	// It will, however, allow a pull request to be recreated. So we're going to
 	// do something a bit different to the other external services, and just
 	// recreate the changeset wholesale.
+	//
+	// If the PR hasn't been declined, this will also work fine: Bitbucket will
+	// return the same PR in that case when we try to create it, so this is
+	// still (effectively) a no-op, as required by the interface.
 	_, err := s.CreateChangeset(ctx, cs)
 	return err
 }
