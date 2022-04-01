@@ -238,6 +238,8 @@ storageClass:
 
 > ℹ️ [Container-native load balancing] is only available on VPC-native cluster. For legacy clusters, [learn more](https://cloud.google.com/kubernetes-engine/docs/how-to/load-balance-ingress).
 
+> ℹ️ Optionally, you can review the changes using one of [three mechanisms](#reviewing-changes) that can be used to assess the customizations made. This is not required, but may be useful the first time you deploy Sourcegraph, for peace of mind.
+
 **2** – Install the chart
 
 ```sh
