@@ -283,42 +283,43 @@ func toRawMessage(val string) json.RawMessage {
 }
 
 type pingPayload struct {
-	RemoteIP                 string          `json:"remote_ip"`
-	RemoteSiteVersion        string          `json:"remote_site_version"`
-	RemoteSiteID             string          `json:"remote_site_id"`
-	LicenseKey               string          `json:"license_key"`
-	HasUpdate                string          `json:"has_update"`
-	UniqueUsersToday         string          `json:"unique_users_today"`
-	SiteActivity             json.RawMessage `json:"site_activity"`
-	BatchChangesUsage        json.RawMessage `json:"batch_changes_usage"`
-	CodeIntelUsage           json.RawMessage `json:"code_intel_usage"`
-	NewCodeIntelUsage        json.RawMessage `json:"new_code_intel_usage"`
-	SearchUsage              json.RawMessage `json:"search_usage"`
-	GrowthStatistics         json.RawMessage `json:"growth_statistics"`
-	CTAUsage                 json.RawMessage `json:"cta_usage"`
-	SavedSearches            json.RawMessage `json:"saved_searches"`
-	HomepagePanels           json.RawMessage `json:"homepage_panels"`
-	RetentionStatistics      json.RawMessage `json:"retention_statistics"`
-	Repositories             json.RawMessage `json:"repositories"`
-	SearchOnboarding         json.RawMessage `json:"search_onboarding"`
-	DependencyVersions       json.RawMessage `json:"dependency_versions"`
-	ExtensionsUsage          json.RawMessage `json:"extensions_usage"`
-	CodeInsightsUsage        json.RawMessage `json:"code_insights_usage"`
-	CodeMonitoringUsage      json.RawMessage `json:"code_monitoring_usage"`
-	CodeHostVersions         json.RawMessage `json:"code_host_versions"`
-	CodeHostIntegrationUsage json.RawMessage `json:"code_host_integration_usage"`
-	IDEExtensionsUsage       json.RawMessage `json:"ide_extensions_usage"`
-	InstallerEmail           string          `json:"installer_email"`
-	AuthProviders            string          `json:"auth_providers"`
-	ExtServices              string          `json:"ext_services"`
-	BuiltinSignupAllowed     string          `json:"builtin_signup_allowed"`
-	DeployType               string          `json:"deploy_type"`
-	TotalUserAccounts        string          `json:"total_user_accounts"`
-	HasExternalURL           string          `json:"has_external_url"`
-	HasRepos                 string          `json:"has_repos"`
-	EverSearched             string          `json:"ever_searched"`
-	EverFindRefs             string          `json:"ever_find_refs"`
-	Timestamp                string          `json:"timestamp"`
+	RemoteIP                      string          `json:"remote_ip"`
+	RemoteSiteVersion             string          `json:"remote_site_version"`
+	RemoteSiteID                  string          `json:"remote_site_id"`
+	LicenseKey                    string          `json:"license_key"`
+	HasUpdate                     string          `json:"has_update"`
+	UniqueUsersToday              string          `json:"unique_users_today"`
+	SiteActivity                  json.RawMessage `json:"site_activity"`
+	BatchChangesUsage             json.RawMessage `json:"batch_changes_usage"`
+	CodeIntelUsage                json.RawMessage `json:"code_intel_usage"`
+	NewCodeIntelUsage             json.RawMessage `json:"new_code_intel_usage"`
+	SearchUsage                   json.RawMessage `json:"search_usage"`
+	GrowthStatistics              json.RawMessage `json:"growth_statistics"`
+	CTAUsage                      json.RawMessage `json:"cta_usage"`
+	SavedSearches                 json.RawMessage `json:"saved_searches"`
+	HomepagePanels                json.RawMessage `json:"homepage_panels"`
+	RetentionStatistics           json.RawMessage `json:"retention_statistics"`
+	Repositories                  json.RawMessage `json:"repositories"`
+	SearchOnboarding              json.RawMessage `json:"search_onboarding"`
+	DependencyVersions            json.RawMessage `json:"dependency_versions"`
+	ExtensionsUsage               json.RawMessage `json:"extensions_usage"`
+	CodeInsightsUsage             json.RawMessage `json:"code_insights_usage"`
+	CodeInsightsCriticalTelemetry json.RawMessage `json:"code_insights_critical_telemetry"`
+	CodeMonitoringUsage           json.RawMessage `json:"code_monitoring_usage"`
+	CodeHostVersions              json.RawMessage `json:"code_host_versions"`
+	CodeHostIntegrationUsage      json.RawMessage `json:"code_host_integration_usage"`
+	IDEExtensionsUsage            json.RawMessage `json:"ide_extensions_usage"`
+	InstallerEmail                string          `json:"installer_email"`
+	AuthProviders                 string          `json:"auth_providers"`
+	ExtServices                   string          `json:"ext_services"`
+	BuiltinSignupAllowed          string          `json:"builtin_signup_allowed"`
+	DeployType                    string          `json:"deploy_type"`
+	TotalUserAccounts             string          `json:"total_user_accounts"`
+	HasExternalURL                string          `json:"has_external_url"`
+	HasRepos                      string          `json:"has_repos"`
+	EverSearched                  string          `json:"ever_searched"`
+	EverFindRefs                  string          `json:"ever_find_refs"`
+	Timestamp                     string          `json:"timestamp"`
 }
 
 func logPing(r *http.Request, pr *pingRequest, hasUpdate bool) {
@@ -370,41 +371,42 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 	}
 
 	return json.Marshal(&pingPayload{
-		RemoteIP:                 clientAddr,
-		RemoteSiteVersion:        pr.ClientVersionString,
-		RemoteSiteID:             pr.ClientSiteID,
-		LicenseKey:               pr.LicenseKey,
-		HasUpdate:                strconv.FormatBool(hasUpdate),
-		UniqueUsersToday:         strconv.FormatInt(int64(pr.UniqueUsers), 10),
-		SiteActivity:             pr.Activity,          // no change in schema
-		BatchChangesUsage:        pr.BatchChangesUsage, // no change in schema
-		NewCodeIntelUsage:        codeIntelUsage,
-		SearchUsage:              searchUsage,
-		GrowthStatistics:         pr.GrowthStatistics,
-		CTAUsage:                 pr.CTAUsage,
-		SavedSearches:            pr.SavedSearches,
-		HomepagePanels:           pr.HomepagePanels,
-		RetentionStatistics:      pr.RetentionStatistics,
-		Repositories:             pr.Repositories,
-		SearchOnboarding:         pr.SearchOnboarding,
-		InstallerEmail:           pr.InitialAdminEmail,
-		DependencyVersions:       pr.DependencyVersions,
-		ExtensionsUsage:          pr.ExtensionsUsage,
-		CodeInsightsUsage:        pr.CodeInsightsUsage,
-		CodeMonitoringUsage:      pr.CodeMonitoringUsage,
-		CodeHostVersions:         pr.CodeHostVersions,
-		CodeHostIntegrationUsage: pr.CodeHostIntegrationUsage,
-		IDEExtensionsUsage:       pr.IDEExtensionsUsage,
-		AuthProviders:            strings.Join(pr.AuthProviders, ","),
-		ExtServices:              strings.Join(pr.ExternalServices, ","),
-		BuiltinSignupAllowed:     strconv.FormatBool(pr.BuiltinSignupAllowed),
-		DeployType:               pr.DeployType,
-		TotalUserAccounts:        strconv.FormatInt(int64(pr.TotalUsers), 10),
-		HasExternalURL:           strconv.FormatBool(pr.HasExtURL),
-		HasRepos:                 strconv.FormatBool(pr.HasRepos),
-		EverSearched:             strconv.FormatBool(pr.EverSearched),
-		EverFindRefs:             strconv.FormatBool(pr.EverFindRefs),
-		Timestamp:                now.UTC().Format(time.RFC3339),
+		RemoteIP:                      clientAddr,
+		RemoteSiteVersion:             pr.ClientVersionString,
+		RemoteSiteID:                  pr.ClientSiteID,
+		LicenseKey:                    pr.LicenseKey,
+		HasUpdate:                     strconv.FormatBool(hasUpdate),
+		UniqueUsersToday:              strconv.FormatInt(int64(pr.UniqueUsers), 10),
+		SiteActivity:                  pr.Activity,          // no change in schema
+		BatchChangesUsage:             pr.BatchChangesUsage, // no change in schema
+		NewCodeIntelUsage:             codeIntelUsage,
+		SearchUsage:                   searchUsage,
+		GrowthStatistics:              pr.GrowthStatistics,
+		CTAUsage:                      pr.CTAUsage,
+		SavedSearches:                 pr.SavedSearches,
+		HomepagePanels:                pr.HomepagePanels,
+		RetentionStatistics:           pr.RetentionStatistics,
+		Repositories:                  pr.Repositories,
+		SearchOnboarding:              pr.SearchOnboarding,
+		InstallerEmail:                pr.InitialAdminEmail,
+		DependencyVersions:            pr.DependencyVersions,
+		ExtensionsUsage:               pr.ExtensionsUsage,
+		CodeInsightsUsage:             pr.CodeInsightsUsage,
+		CodeInsightsCriticalTelemetry: pr.CodeInsightsCriticalTelemetry,
+		CodeMonitoringUsage:           pr.CodeMonitoringUsage,
+		CodeHostVersions:              pr.CodeHostVersions,
+		CodeHostIntegrationUsage:      pr.CodeHostIntegrationUsage,
+		IDEExtensionsUsage:            pr.IDEExtensionsUsage,
+		AuthProviders:                 strings.Join(pr.AuthProviders, ","),
+		ExtServices:                   strings.Join(pr.ExternalServices, ","),
+		BuiltinSignupAllowed:          strconv.FormatBool(pr.BuiltinSignupAllowed),
+		DeployType:                    pr.DeployType,
+		TotalUserAccounts:             strconv.FormatInt(int64(pr.TotalUsers), 10),
+		HasExternalURL:                strconv.FormatBool(pr.HasExtURL),
+		HasRepos:                      strconv.FormatBool(pr.HasRepos),
+		EverSearched:                  strconv.FormatBool(pr.EverSearched),
+		EverFindRefs:                  strconv.FormatBool(pr.EverFindRefs),
+		Timestamp:                     now.UTC().Format(time.RFC3339),
 	})
 }
 
