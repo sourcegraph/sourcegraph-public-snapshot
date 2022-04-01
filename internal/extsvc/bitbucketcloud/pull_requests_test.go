@@ -9,6 +9,80 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
+func TestClient_CreatePullRequest_Fork(t *testing.T) {
+	// WHEN UPDATING: this test requires a new branch in a fork of
+	// https://bitbucket.org/sourcegraph-testing/src-cli/src/master/ to open a
+	// pull request. The simplest way to accomplish this is to do the following,
+	// replacing XX with the next number after the branch currently in this
+	// test, and FORK with the user and repo src-cli was forked to:
+	//
+	// $ cd /tmp
+	// $ git clone git@bitbucket.org:FORK.git
+	// $ cd src-cli
+	// $ git checkout -b branch-fork-XX
+	// $ git commit --allow-empty -m "new branch"
+	// $ git push origin branch-fork-XX
+	//
+	// Then update this test with the new branch number, and run the test suite
+	// with the appropriate -update flag.
+
+	branch := "branch-fork-00"
+	fork := "aharvey-sg/src-cli-testing"
+	ctx := context.Background()
+
+	c, save := newTestClient(t)
+	defer save()
+
+	repo := &Repo{
+		FullName: "sourcegraph-testing/src-cli",
+	}
+	commonOpts := CreatePullRequestOpts{
+		Title:        "Sourcegraph test " + branch,
+		Description:  "This is a PR created by the Sourcegraph test suite.",
+		SourceBranch: branch,
+		SourceRepo: &Repo{
+			FullName: fork,
+		},
+	}
+
+	t.Run("invalid destination branch", func(t *testing.T) {
+		opts := commonOpts
+		dest := "this-branch-should-never-exist"
+		opts.DestinationBranch = &dest
+
+		pr, err := c.CreatePullRequest(ctx, repo, opts)
+		assert.Nil(t, pr)
+		assert.NotNil(t, err)
+	})
+
+	var id int64
+	t.Run("valid, omitted destination branch", func(t *testing.T) {
+		opts := commonOpts
+
+		pr, err := c.CreatePullRequest(ctx, repo, opts)
+		assert.Nil(t, err)
+		assert.NotNil(t, pr)
+		assertGolden(t, pr)
+		id = pr.ID
+	})
+
+	t.Run("recreated", func(t *testing.T) {
+		// Bitbucket has the interesting behaviour that creating the same PR
+		// multiple times succeeds, but without actually changing the PR. Let's
+		// ensure that's still the case.
+		opts := commonOpts
+
+		pr, err := c.CreatePullRequest(ctx, repo, opts)
+		assert.Nil(t, err)
+		assert.NotNil(t, pr)
+		assertGolden(t, pr)
+
+		// As an extra sanity check, let's check the ID against the previous
+		// creation.
+		assert.Equal(t, id, pr.ID)
+	})
+}
+
 func TestClient_CreatePullRequest_SameOrigin(t *testing.T) {
 	// WHEN UPDATING: this test requires a new branch in
 	// https://bitbucket.org/sourcegraph-testing/src-cli/src/master/ to open a
