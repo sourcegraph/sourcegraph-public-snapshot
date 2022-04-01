@@ -29,8 +29,8 @@ let
   pkgs = import
     (fetchTarball {
       url =
-        "https://github.com/NixOS/nixpkgs/archive/350731a856a1d901b0d26f6c9892785a63f48e17.tar.gz";
-      sha256 = "1pbr62q57pcbfr9pnkr02p134ljrachp704j4f9qa86i08njfy0j";
+        "https://github.com/NixOS/nixpkgs/archive/a5d12145047970d663764ce95bf1e459e734a014.tar.gz";
+      sha256 = "1rbnmbc3mvk5in86wx6hla54d7kkmgn6pz0zwigcchhmi2dv76h3";
     })
     { overlays = [ ctags-overlay ]; };
   # pkgs.universal-ctags installs the binary as "ctags", not "universal-ctags"
