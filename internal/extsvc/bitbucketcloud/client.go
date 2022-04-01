@@ -203,7 +203,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		return errors.WithStack(&httpError{
 			URL:        req.URL,
 			StatusCode: resp.StatusCode,
-			Body:       bs,
+			Body:       string(bs),
 		})
 	}
 
@@ -242,7 +242,7 @@ func (t *PageToken) Values() url.Values {
 type httpError struct {
 	StatusCode int
 	URL        *url.URL
-	Body       []byte
+	Body       string
 }
 
 func (e *httpError) Error() string {
