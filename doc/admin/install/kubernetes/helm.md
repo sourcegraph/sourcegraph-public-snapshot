@@ -210,11 +210,10 @@ Your account should have sufficient access equivalent to the `cluster-admin` Clu
 
 #### Steps
 
-**1** – Create or update your override file (see [configuration](#configuration) for more information on override files) with the below values. We recommend configuring Ingress to use [Container-native load balancing] to expose Sourcegraph publicly on a domain of your choosing and setting the Storage Class to use [Compute Engine persistent disk].
+**1** – Create your override file and add in any configuration override settings you need - see [configuration](#configuration) for more information on override files and the options what configurations can be changed.
 
-> ℹ️ [Container-native load balancing] is only available on VPC-native cluster. For legacy clusters, [learn more](https://cloud.google.com/kubernetes-engine/docs/how-to/load-balance-ingress).
+Add into your overide file the below values to configure both your ingress hostname and your storage class. We recommend configuring Ingress to use [Container-native load balancing] to expose Sourcegraph publicly on a domain of your choosing and setting the Storage Class to use [Compute Engine persistent disk]. (For an example file see [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/gcp/override.yaml))
 
-Values to include in your `override.yaml` (for an example file see [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/gcp/override.yaml))
 ```yaml
 frontend:
   serviceType: ClusterIP
@@ -236,6 +235,8 @@ storageClass:
   volumeBindingMode: WaitForFirstConsumer
   reclaimPolicy: Retain
 ```
+
+> ℹ️ [Container-native load balancing] is only available on VPC-native cluster. For legacy clusters, [learn more](https://cloud.google.com/kubernetes-engine/docs/how-to/load-balance-ingress).
 
 **2** – Install the chart
 
