@@ -130,26 +130,27 @@ func (s BitbucketCloudSource) CreateChangeset(ctx context.Context, cs *Changeset
 // Bitbucket Server).
 func (s BitbucketCloudSource) CloseChangeset(ctx context.Context, cs *Changeset) error {
 	repo := cs.TargetRepo.Metadata.(*bitbucketcloud.Repo)
-	pr := cs.Metadata.(*bitbucketcloud.PullRequest)
-	pr, err := s.client.DeclinePullRequest(ctx, repo, pr.ID)
+	pr := cs.Metadata.(*bbcs.AnnotatedPullRequest)
+	updated, err := s.client.DeclinePullRequest(ctx, repo, pr.ID)
 	if err != nil {
 		return errors.Wrap(err, "declining pull request")
 	}
 
-	return s.setChangesetMetadata(ctx, repo, pr, cs)
+	return s.setChangesetMetadata(ctx, repo, updated, cs)
 }
 
 // UpdateChangeset can update Changesets.
 func (s BitbucketCloudSource) UpdateChangeset(ctx context.Context, cs *Changeset) error {
 	opts := s.changesetToPullRequestInput(cs)
 	targetRepo := cs.TargetRepo.Metadata.(*bitbucketcloud.Repo)
+	pr := cs.Metadata.(*bbcs.AnnotatedPullRequest)
 
-	pr, err := s.client.UpdatePullRequest(ctx, targetRepo, cs.Metadata.(*bitbucketcloud.PullRequest).ID, opts)
+	updated, err := s.client.UpdatePullRequest(ctx, targetRepo, pr.ID, opts)
 	if err != nil {
 		return errors.Wrap(err, "updating pull request")
 	}
 
-	return s.setChangesetMetadata(ctx, targetRepo, pr, cs)
+	return s.setChangesetMetadata(ctx, targetRepo, updated, cs)
 }
 
 // ReopenChangeset will reopen the Changeset on the source, if it's closed.
