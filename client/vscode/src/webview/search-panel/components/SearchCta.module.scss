@@ -7,11 +7,18 @@
     padding: 0.25rem;
     flex-direction: row !important;
     align-items: center !important;
+    position: relative;
 
     @media (--sm-breakpoint-down) {
         padding-top: 1rem;
         padding-bottom: 1rem;
     }
+}
+
+.dismiss {
+    position: absolute;
+    top: 4px;
+    right: 4px;
 }
 
 .content-container {
@@ -30,6 +37,7 @@
 .btn {
     margin-right: 1rem;
     font-size: var(--vscode-font-size) !important;
+    border: none;
     background-color: var(--vscode-button-background) !important;
     color: var(--vscode-button-foreground) !important;
 }
