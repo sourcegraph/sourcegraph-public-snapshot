@@ -577,9 +577,11 @@ A new version of Sourcegraph is released every month (with patch releases in bet
 
 ### Upgrading
 
-1. Review [Helm Changelog] and [Sourcegraph Changelog] and select a helm chart version compatible with your current Sourcegraph version. You can only upgrade one minor version of Sourcegraph at a time.
+1. Review [Helm Changelog] and [Sourcegraph Changelog] and select a helm chart version compatible with your current Sourcegraph version. 
 
-1. Update the repo list of charts to retrieve the updated list of versions:
+> ⚠️ You can only upgrade one minor version of Sourcegraph at a time.
+
+1. Update your copy of the Sourcegraph Helm repo to ensure you have all the latest versions:
 
    ```bash
       helm repo update sourcegraph
