@@ -288,7 +288,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     },
     [FilterType.type]: {
         description: 'Limit results to the specified type.',
-        discreteValues: () => ['diff', 'commit', 'symbol', 'repo', 'path', 'file'].map(value => ({ label: value })),
+        discreteValues: () => ['diff', 'commit', 'symbol', 'repo', 'path', 'file', 'notebook'].map(value => ({ label: value })),
     },
     [FilterType.visibility]: {
         discreteValues: () => ['any', 'private', 'public'].map(value => ({ label: value })),

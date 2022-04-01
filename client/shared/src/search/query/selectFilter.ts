@@ -51,6 +51,15 @@ export const SELECTORS: Access[] = [
         name: 'commit',
         fields: [{ name: 'diff', fields: [{ name: 'added' }, { name: 'removed' }] }],
     },
+    {
+        name: 'notebook',
+        fields: [
+            {
+                name: 'block',
+                fields: [{ name: 'md' }, { name: 'query' }, { name: 'compute' }, { name: 'file' }, { name: 'symbol' }],
+            },
+        ],
+    },
 ]
 
 /**
