@@ -158,8 +158,16 @@ func (s BitbucketCloudSource) UpdateChangeset(_ context.Context, _ *Changeset) e
 
 // ReopenChangeset will reopen the Changeset on the source, if it's closed.
 // If not, it's a noop.
-func (s BitbucketCloudSource) ReopenChangeset(_ context.Context, _ *Changeset) error {
-	panic("not implemented") // TODO: Implement
+func (s BitbucketCloudSource) ReopenChangeset(ctx context.Context, cs *Changeset) error {
+	// Bitbucket Cloud is a bit special, and can't reopen a declined PR under
+	// any circumstances. (See https://jira.atlassian.com/browse/BCLOUD-4954 for
+	// more details.)
+	//
+	// It will, however, allow a pull request to be recreated. So we're going to
+	// do something a bit different to the other external services, and just
+	// recreate the changeset wholesale.
+	_, err := s.CreateChangeset(ctx, cs)
+	return err
 }
 
 // CreateComment posts a comment on the Changeset.
