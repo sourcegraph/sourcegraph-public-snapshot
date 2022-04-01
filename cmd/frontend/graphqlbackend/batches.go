@@ -628,6 +628,7 @@ type BatchChangeResolver interface {
 	CurrentSpec(ctx context.Context) (BatchSpecResolver, error)
 	BulkOperations(ctx context.Context, args *ListBatchChangeBulkOperationArgs) (BulkOperationConnectionResolver, error)
 	BatchSpecs(ctx context.Context, args *ListBatchSpecArgs) (BatchSpecConnectionResolver, error)
+	CodeMonitor(ctx context.Context) (MonitorResolver, error)
 }
 
 type BatchChangesConnectionResolver interface {

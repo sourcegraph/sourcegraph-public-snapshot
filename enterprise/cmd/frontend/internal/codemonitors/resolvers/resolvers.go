@@ -115,6 +115,15 @@ func (r *Resolver) MonitorByID(ctx context.Context, id graphql.ID) (graphqlbacke
 	}, nil
 }
 
+func init() {
+	batchesresolvers.NewCodeMonitorResolver = func(db edb.EnterpriseDB, m *edb.Monitor) graphqlbackend.MonitorResolver {
+		return &monitor{
+			Resolver: &Resolver{db: db},
+			Monitor:  m,
+		}
+	}
+}
+
 func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.CreateCodeMonitorArgs) (graphqlbackend.MonitorResolver, error) {
 	if err := r.isAllowedToCreate(ctx, args.Monitor.Namespace); err != nil {
 		return nil, err

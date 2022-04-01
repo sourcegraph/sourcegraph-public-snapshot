@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -355,4 +356,22 @@ func (r *batchChangeResolver) BatchSpecs(
 	}
 
 	return &batchSpecConnectionResolver{store: r.store, opts: opts}, nil
+}
+
+var NewCodeMonitorResolver func(edb.EnterpriseDB, *edb.Monitor) graphqlbackend.MonitorResolver
+
+func (r *batchChangeResolver) CodeMonitor(ctx context.Context) (graphqlbackend.MonitorResolver, error) {
+	db := edb.NewEnterpriseDB(r.store.DatabaseDB())
+	actions, err := db.CodeMonitors().ListBatchChangeActions(ctx, edb.ListActionsOpts{BatchChangeID: &r.batchChange.ID})
+	if err != nil {
+		return nil, err
+	}
+	if len(actions) == 0 {
+		return nil, nil
+	}
+	monitor, err := db.CodeMonitors().GetMonitor(ctx, actions[0].Monitor)
+	if err != nil {
+		return nil, err
+	}
+	return NewCodeMonitorResolver(db, monitor), nil
 }

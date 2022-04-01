@@ -589,8 +589,8 @@ func (fx *applyPreviewTestFixture) DefaultPublicationStates() []map[string]inter
 	}
 }
 
-func (fx *applyPreviewTestFixture) DefaultUiPublicationStates() service.UiPublicationStates {
-	ups := service.UiPublicationStates{}
+func (fx *applyPreviewTestFixture) DefaultUiPublicationStates() btypes.UiPublicationStates {
+	ups := btypes.UiPublicationStates{}
 
 	for spec, state := range map[*btypes.ChangesetSpec]interface{}{
 		fx.specToBePublished:   true,

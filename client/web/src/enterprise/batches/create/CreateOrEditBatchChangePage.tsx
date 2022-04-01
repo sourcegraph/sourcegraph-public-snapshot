@@ -189,7 +189,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
                             label="Batch change name"
                             value={nameInput}
                             onChange={onNameChange}
-                            pattern={String(NAME_PATTERN)}
+                            pattern="^[\w.-]+$"
                             required={true}
                             status={isNameValid === undefined ? undefined : isNameValid ? 'valid' : 'error'}
                         />

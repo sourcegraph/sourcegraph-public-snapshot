@@ -173,6 +173,11 @@ const batchChangeFragment = gql`
                 hasNextPage
             }
         }
+
+        codeMonitor {
+            id
+            description
+        }
     }
 
     fragment ActiveBulkOperationsConnectionFields on BulkOperationConnection {

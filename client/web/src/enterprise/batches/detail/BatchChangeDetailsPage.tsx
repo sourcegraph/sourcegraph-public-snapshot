@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo } from 'react'
 
 import { subDays, startOfDay } from 'date-fns'
+import AccountCowboyHatIcon from 'mdi-react/AccountCowboyHatIcon'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
@@ -8,7 +9,7 @@ import { useQuery } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { PageHeader, LoadingSpinner, Alert } from '@sourcegraph/wildcard'
+import { PageHeader, LoadingSpinner, Alert, Link, Icon } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { HeroPage } from '../../../components/HeroPage'
@@ -150,6 +151,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 total={batchChange.changesetsStats.total}
                 className="mb-3"
             />
+            <CodeMonitorAlert codeMonitor={batchChange.codeMonitor} />
             <ChangesetsArchivedNotice history={history} location={location} />
             <WebhookAlert batchChange={batchChange} />
             <BatchChangeStatsCard
@@ -161,5 +163,27 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
             <Description description={batchChange.description} />
             <BatchChangeDetailsTabs batchChange={batchChange} refetchBatchChange={refetch} {...props} />
         </>
+    )
+}
+
+const CodeMonitorAlert: React.FunctionComponent<{ codeMonitor: { id: Scalars['ID']; description: string } | null }> = ({
+    codeMonitor,
+}) => {
+    if (codeMonitor === null) {
+        return null
+    }
+
+    return (
+        <Alert variant="info">
+            <div className="d-flex align-items-end">
+                <h1 className="m-0">
+                    <Icon as={AccountCowboyHatIcon} />
+                </h1>
+                <div className="flex-grow-1">
+                    This batch change is monitored by a code monitor{' '}
+                    <Link to={`/code-monitoring/${codeMonitor.id}`}>{codeMonitor.description}</Link>.
+                </div>
+            </div>
+        </Alert>
     )
 }

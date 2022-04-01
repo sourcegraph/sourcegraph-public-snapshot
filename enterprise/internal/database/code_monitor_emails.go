@@ -136,6 +136,8 @@ type ListActionsOpts struct {
 	// References cm_monitors(id)
 	MonitorID *int64
 
+	BatchChangeID *int64
+
 	// First, if set, limits the number of actions returned
 	// to the first n.
 	First *int
@@ -148,6 +150,9 @@ func (o ListActionsOpts) Conds() *sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if o.MonitorID != nil {
 		conds = append(conds, sqlf.Sprintf("monitor = %s", *o.MonitorID))
+	}
+	if o.BatchChangeID != nil {
+		conds = append(conds, sqlf.Sprintf("batch_change_id = %s", *o.BatchChangeID))
 	}
 	if o.After != nil {
 		conds = append(conds, sqlf.Sprintf("id > %s", *o.After))

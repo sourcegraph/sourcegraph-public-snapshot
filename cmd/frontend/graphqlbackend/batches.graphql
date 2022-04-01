@@ -2319,6 +2319,11 @@ type BatchChange implements Node {
     description: String
 
     """
+    The code monitor attached to this batch change. Null, if not set.
+    """
+    codeMonitor: Monitor
+
+    """
     The state of the batch change.
     """
     state: BatchChangeState!
