@@ -550,7 +550,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                 <div>
                     <NotebookBlockSeparator isReadOnly={isReadOnly} index={blocks.length} onAddBlock={onAddBlock} />
                     <NotebookInsightsBlock
-                        id="aW5zaWdodF92aWV3OiIyNzJFbWU4TmVVZjRocGlLVVhSUkJlN3NDVUIi"
+                        id="aW5zaWdodF92aWV3OiIyNzRFOVJvM3hsWjdPWjBaT3NCZUZQNTdRNVAi"
                         telemetryService={telemetryService}
                     />
                 </div>

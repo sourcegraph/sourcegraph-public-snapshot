@@ -26,6 +26,7 @@ import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { render as renderLsifHtml } from '../../lsif/html'
+import { NotebookInsightsBlock } from '../../notebooks/blocks/insights/NotebooksInightsBlock'
 import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
 import { SearchStreamingProps } from '../../search'
 import { useSearchStack, useExperimentalFeatures } from '../../stores'
@@ -343,6 +344,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                     onCopyNotebook={onCopyNotebook}
                     showSearchContext={showSearchContext}
                     exportedFileName={basename(blobInfoOrError.filePath)}
+                    NotebookInsightsBlock={NotebookInsightsBlock}
                 />
             )}
             {!isSearchNotebook && blobInfoOrError.richHTML && renderMode === 'rendered' && (
