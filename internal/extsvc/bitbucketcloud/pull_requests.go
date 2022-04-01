@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type CreatePullRequestOpts struct {
+type PullRequestInput struct {
 	Title        string
 	Description  string
 	SourceBranch string
@@ -24,14 +24,14 @@ type CreatePullRequestOpts struct {
 	DestinationBranch *string
 }
 
-var _ json.Marshaler = &CreatePullRequestOpts{}
+var _ json.Marshaler = &PullRequestInput{}
 
 // CreatePullRequest opens a new pull request.
 //
 // Invoking CreatePullRequest with the same repo and options will succeed: the
 // same PR will be returned each time, and will be updated accordingly on
 // Bitbucket with any changed information in the options.
-func (c *Client) CreatePullRequest(ctx context.Context, repo *Repo, opts CreatePullRequestOpts) (*PullRequest, error) {
+func (c *Client) CreatePullRequest(ctx context.Context, repo *Repo, opts PullRequestInput) (*PullRequest, error) {
 	data, err := json.Marshal(&opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshalling request")
@@ -90,6 +90,26 @@ func (c *Client) GetPullRequestStatuses(repo *Repo, id int64) (*ResultSet[PullRe
 	}
 
 	return newResultSet[PullRequestStatus](c, u), nil
+}
+
+// UpdatePullRequest updates a pull request.
+func (c *Client) UpdatePullRequest(ctx context.Context, repo *Repo, id int64, opts PullRequestInput) (*PullRequest, error) {
+	data, err := json.Marshal(&opts)
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling request")
+	}
+
+	req, err := http.NewRequest("PUT", fmt.Sprintf("/2.0/repositories/%s/pullrequests/%d", repo.FullName, id), bytes.NewBuffer(data))
+	if err != nil {
+		return nil, errors.Wrap(err, "creating request")
+	}
+
+	var updated PullRequest
+	if err := c.do(ctx, req, &updated); err != nil {
+		return nil, errors.Wrap(err, "sending request")
+	}
+
+	return &updated, nil
 }
 
 // PullRequest represents a single pull request, as returned by the API.
@@ -176,7 +196,7 @@ const (
 	PullRequestStatusStateStopped    PullRequestStatusState = "STOPPED"
 )
 
-func (opts *CreatePullRequestOpts) MarshalJSON() ([]byte, error) {
+func (opts *PullRequestInput) MarshalJSON() ([]byte, error) {
 	type branch struct {
 		Name string `json:"name"`
 	}
