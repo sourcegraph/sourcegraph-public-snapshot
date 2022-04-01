@@ -43,6 +43,12 @@ Install the Sourcegraph chart using default values:
 helm install --version 0.7.0 sourcegraph sourcegraph/sourcegraph
 ```
 
+Sourcegraph should now be available via the address set. Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account. 
+
+Now the deployment is complete, more information on configuring the Sourcegraph application can be found here:
+[Configuring Sourcegraph](../../config)
+
+
 ## Configuration
 
 The Sourcegraph Helm chart is highly customizable to support a wide range of environments. We highly recommend that customizations be applied using an override file, which allows customizations to persist through upgrades without needing to manage merge conflicts. 
@@ -295,6 +301,14 @@ If using another certificate, add the following to Ingress:
 ```
 TODO
 ```
+**5** – Validate the deployment
+Sourcegraph should now be available via the address set. 
+Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account. 
+
+**6** – Further configuration
+
+Now the deployment is complete, more information on configuring the Sourcegraph application can be found here:
+[Configuring Sourcegraph](../../config)
 
 ### Configure Sourcegraph on Elastic Kubernetes Service (EKS)
 
@@ -363,6 +377,15 @@ frontend:
       # ARN of the AWS-managed TLS certificate
       alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-west-2:xxxxx:certificate/xxxxxxx
 ```
+
+**4** – Validate the deployment
+Sourcegraph should now be available via the address set. 
+Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account. 
+
+**5** – Further configuration
+
+Now the deployment is complete, more information on configuring the Sourcegraph application can be found here:
+[Configuring Sourcegraph](../../config)
 
 #### References
 
@@ -439,6 +462,15 @@ frontend:
       # Name of the Azure-managed TLS certificate
       appgw.ingress.kubernetes.io/appgw-ssl-certificate: azure-key-vault-managed-ssl-cert
 ```
+
+**4** – Validate the deployment
+Sourcegraph should now be available via the address set. 
+Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account. 
+
+**5** – Further configuration
+
+Now the deployment is complete, more information on configuring the Sourcegraph application can be found here:
+[Configuring Sourcegraph](../../config)
 
 #### References
 
@@ -558,6 +590,15 @@ frontend:
     # replace with your actual domain
     host: sourcegraph.company.com
 ```
+
+**4** – Validate the deployment
+Sourcegraph should now be available via the address set. 
+Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account. 
+
+**5** – Further configuration
+
+Now the deployment is complete, more information on configuring the Sourcegraph application can be found here:
+[Configuring Sourcegraph](../../config)
 
 ## Advanced configuration
 
