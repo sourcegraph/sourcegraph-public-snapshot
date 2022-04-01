@@ -293,8 +293,8 @@ on:
 
 steps:
     - run: comby -config /tmp/rule.toml -f .go -i -exclude-dir vendor,.
-    container: comby/comby
-    files:
+      container: comby/comby
+      files:
         /tmp/rule.toml: |
             [S1003_01]
             match='strings.IndexRune(:[1], :[2]) > -1'
