@@ -220,13 +220,11 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
     },
     {
         path: '/-/tag',
-        render: ({ repo, location, history, match, routePrefix }) => (
+        render: ({ repo, location, history }) => (
             <RepositoryTagTab
                 repo={repo}
                 location={location}
                 history={history}
-                match={match}
-                routePrefix={routePrefix}
             />
         ),
     },
