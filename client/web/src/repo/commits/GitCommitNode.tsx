@@ -28,6 +28,9 @@ export interface GitCommitNodeProps {
     /** Display in a single line (more compactly). */
     compact?: boolean
 
+    /** Display in sidebar mode. */
+    sidebar?: boolean
+
     /** Expand the commit message body. */
     expandCommitMessageBody?: boolean
 
@@ -59,6 +62,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
     afterElement,
     className,
     compact,
+    sidebar,
     expandCommitMessageBody,
     hideExpandCommitMessageBody,
     messageSubjectClassName,
@@ -94,29 +98,24 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
             className={classNames('flex-grow-1', styles.message, compact && styles.messageSmall)}
             data-testid="git-commit-node-message"
         >
-            {messageSubjectClassName !== undefined && (
-                <Link
-                    to={node.canonicalURL}
-                    className={classNames(messageSubjectClassName, styles.messageSubject)}
-                    title={node.message}
-                    data-testid="git-commit-node-message-subject"
+            <Link
+                to={node.canonicalURL}
+                className={classNames(messageSubjectClassName, styles.messageSubject)}
+                title={node.message}
+                data-testid="git-commit-node-message-subject"
+            >
+                {node.subject}
+            </Link>
+            {node.body && !hideExpandCommitMessageBody && !expandCommitMessageBody && (
+                <Button
+                    className={styles.messageToggle}
+                    onClick={toggleShowCommitMessageBody}
+                    variant="secondary"
+                    size="sm"
                 >
-                    {node.subject}
-                </Link>
+                    <Icon as={DotsHorizontalIcon} />
+                </Button>
             )}
-            {node.body &&
-                !hideExpandCommitMessageBody &&
-                !expandCommitMessageBody &&
-                messageSubjectClassName !== undefined && (
-                    <Button
-                        className={styles.messageToggle}
-                        onClick={toggleShowCommitMessageBody}
-                        variant="secondary"
-                        size="sm"
-                    >
-                        <Icon as={DotsHorizontalIcon} />
-                    </Button>
-                )}
             {compact && (
                 <small className={classNames('text-muted', styles.messageTimestamp)}>
                     <Timestamp
@@ -138,10 +137,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
 
     const bylineElement = (
         <GitCommitNodeByline
-            className={classNames(
-                'd-flex text-muted',
-                messageSubjectClassName === undefined ? styles.author : styles.byline
-            )}
+            className={classNames(styles.byline, sidebar ? 'd-flex text-muted w-50' : 'd-flex text-muted')}
             avatarClassName={compact ? undefined : styles.signatureUserAvatar}
             author={node.author}
             committer={node.committer}
@@ -232,6 +228,25 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
             {node.abbreviatedOID}
         </code>
     )
+
+    if (sidebar) {
+        return (
+            <div key={node.id} className={classNames(styles.gitCommitNode, styles.gitCommitNodeCompact, className)}>
+                <div className="w-100 d-flex justify-content-between align-items-center flex-wrap-reverse">
+                    {bylineElement}
+                    <small className={classNames('text-muted', styles.messageTimestamp)}>
+                        <Timestamp
+                            noAbout={true}
+                            preferAbsolute={preferAbsoluteTimestamps}
+                            date={node.committer ? node.committer.date : node.author.date}
+                        />
+                    </small>
+                    <Link to={node.canonicalURL}>{oidElement}</Link>
+                </div>
+            </div>
+        )
+    }
+
     return (
         <div
             key={node.id}

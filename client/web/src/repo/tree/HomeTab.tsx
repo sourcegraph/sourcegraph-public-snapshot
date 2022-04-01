@@ -189,15 +189,27 @@ export const HomeTab: React.FunctionComponent<Props> = ({
         </div>
     )
 
-    const RecentCommits: React.FunctionComponent = () => (
+    interface RecentCommitsProps {
+        isSidebar: boolean
+    }
+
+    const RecentCommits: React.FunctionComponent<RecentCommitsProps> = ({ isSidebar }) => (
         <div className="mb-3">
             <h2>Recent commits</h2>
             <FilteredConnection<
                 GitCommitFields,
-                Pick<GitCommitNodeProps, 'className' | 'compact' | 'messageSubjectClassName'>
+                Pick<
+                    GitCommitNodeProps,
+                    | 'className'
+                    | 'compact'
+                    | 'messageSubjectClassName'
+                    | 'expandCommitMessageBody'
+                    | 'hideExpandCommitMessageBody'
+                    | 'sidebar'
+                >
             >
                 location={props.location}
-                className="mt-2"
+                className="mt-2 p0 m-0"
                 listClassName="list-group list-group-flush"
                 noun="commit in this tree"
                 pluralNoun="commits in this tree"
@@ -206,8 +218,11 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                 showMoreClassName="px-0"
                 nodeComponentProps={{
                     className: classNames('list-group-item', styles.gitCommitNode),
-                    messageSubjectClassName: undefined,
-                    compact: true,
+                    messageSubjectClassName: isSidebar ? 'd-none' : styles.gitCommitNodeMessageSubject,
+                    compact: isSidebar,
+                    expandCommitMessageBody: !isSidebar,
+                    hideExpandCommitMessageBody: isSidebar,
+                    sidebar: isSidebar,
                 }}
                 updateOnChange={`${repo.name}:${revision}:${filePath}:${String(showOlderCommits)}`}
                 defaultFirst={7}
@@ -247,7 +262,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
     if (filePath) {
         return (
             <div className="container mw-100">
-                <RecentCommits />
+                <RecentCommits isSidebar={false} />
                 <h2 className="mt-5">README.md</h2>
                 {richHTML && richHTML !== 'loading' && (
                     <RenderedFile dangerousInnerHTML={richHTML} location={props.location} />
@@ -272,7 +287,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                 {/* SIDE MENU*/}
                 <div className="col-sm col-lg-4 m-0">
                     <div className={styles.section}>
-                        <RecentCommits />
+                        <RecentCommits isSidebar={true} />
                         {/* CODE-INTEL */}
                         <div className="mb-3">
                             <h2>Code intel</h2>
