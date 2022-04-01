@@ -94,8 +94,7 @@ const configFields: ConfigFields = {
     },
     gitHubDotComToken: {
         envVar: 'GH_TOKEN',
-        description:
-            'A Github personal token with access to private repos used for e2e tests.',
+        description: 'A Github personal token with access to private repos used for e2e tests.',
     },
     gitHubToken: {
         envVar: 'GITHUB_TOKEN',
