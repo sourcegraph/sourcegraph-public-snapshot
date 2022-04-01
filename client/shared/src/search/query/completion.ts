@@ -34,12 +34,11 @@ export const COMPLETION_ITEM_SELECTED: Monaco.languages.Command = {
 export const createFilterSuggestions = (
     filter: FilterType[]
 ): { label: string; insertText: string; filterText: string; detail: string }[] =>
-    filter.flatMap(label => {
-        const filterType = label as FilterType
+    filter.flatMap(filterType => {
         const completionItem = {
-            label,
-            insertText: `${label}:`,
-            filterText: label,
+            label: filterType,
+            insertText: `${filterType}:`,
+            filterText: filterType,
             detail: '',
         }
         if (isNegatableFilter(filterType)) {
@@ -50,9 +49,9 @@ export const createFilterSuggestions = (
                 },
                 {
                     ...completionItem,
-                    label: `-${label}`,
-                    insertText: `-${label}:`,
-                    filterText: `-${label}`,
+                    label: `-${filterType}`,
+                    insertText: `-${filterType}:`,
+                    filterText: `-${filterType}`,
                     detail: FILTERS[filterType].description(true),
                 },
             ]

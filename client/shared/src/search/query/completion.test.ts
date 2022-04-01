@@ -15,6 +15,8 @@ const toSuccess = (result: ScanResult<Token[]>): Token[] => (result as ScanSucce
 
 const getToken = (query: string, tokenIndex: number): Token => toSuccess(scanSearchQuery(query))[tokenIndex]
 
+// Using async as a short way to create functions that return promises
+/* eslint-disable @typescript-eslint/require-await */
 describe('getCompletionItems()', () => {
     test('returns only static filter type completions when the token matches a known filter', async () => {
         expect(
