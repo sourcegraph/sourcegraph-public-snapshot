@@ -203,14 +203,14 @@ You need to have a GKE cluster (>=1.19) with the following addons enabled:
 
 > Alternatively, you may consider using your custom Ingress Controller and disable `HTTP Load Balancing` add-on, [learn more](https://cloud.google.com/kubernetes-engine/docs/how-to/custom-ingress-controller).
 
-- [x] HTTP Load Balancing
-- [x] Compute Engine persistent disk CSI Driver
+- HTTP Load Balancing
+- Compute Engine persistent disk CSI Driver
 
 Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
 
 #### Steps
 
-**1** – Create your override file and add in any configuration override settings you need - see [configuration](#configuration) for more information on override files and the options what configurations can be changed.
+**1** – Create your override file and add in any configuration override settings you need - see [configuration](#configuration) for more information on override files and the options around what can be conifgured.
 
 Add into your overide file the below values to configure both your ingress hostname and your storage class. We recommend configuring Ingress to use [Container-native load balancing] to expose Sourcegraph publicly on a domain of your choosing and setting the Storage Class to use [Compute Engine persistent disk]. (For an example file see [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/gcp/override.yaml))
 
@@ -299,14 +299,16 @@ You need to have a EKS cluster (>=1.19) with the following addons enabled:
 
 > You may consider deploying your own Ingress Controller instead of ALB Ingress Controller, [learn more](https://kubernetes.github.io/ingress-nginx/)
 
-- [x] [AWS Load Balancer Controller]
-- [x] [AWS EBS CSI driver]
+- [AWS Load Balancer Controller](https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html)
+- [AWS EBS CSI driver](https://docs.aws.amazon.com/eks/latest/userguide/managing-ebs-csi.html)
 
 Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
 
 #### Steps
 
-Create an override file with the following values. We configure Ingress to use [AWS Load Balancer Controller] to expose Sourcegraph publicly on a domain of your choosing and Storage Class to use [AWS EBS CSI driver].
+**1** – Create your override file and add in any configuration override settings you need - see [configuration](#configuration) for more information on override files and the options around what can be conifgured.
+
+We recommend adding the following values into your override file to configure Ingress to use [AWS Load Balancer Controller] to expose Sourcegraph publicly on a domain of your choosing, and to configure the Storage Class to use [AWS EBS CSI driver].
 
 [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/aws/override.yaml)
 ```yaml
@@ -327,8 +329,9 @@ storageClass:
   volumeBindingMode: WaitForFirstConsumer
   reclaimPolicy: Retain
 ```
+> ℹ️ Optionally, you can review the changes using one of [three mechanisms](#reviewing-changes) that can be used to assess the customizations made. This is not required, but may be useful the first time you deploy Sourcegraph, for peace of mind.
 
-Install the chart
+**2** – Install the chart
 
 ```sh
 helm upgrade --install --values ./override.yaml --version 0.7.0 sourcegraph sourcegraph/sourcegraph
@@ -340,7 +343,7 @@ It will take some time for the load balancer to be fully ready, you may check on
 kubectl describe ingress sourcegraph-frontend
 ```
 
-Upon obtaining the allocated address of the load balancer, you should create a DNS record for the `sourcegraph.company.com` domain that resolves to the load balancer address.
+**3** – Upon obtaining the allocated address of the load balancer, you should create a DNS record for the `sourcegraph.company.com` domain that resolves to the load balancer address.
 
 It is recommended to enable TLS and configure certificate properly on your load balancer. You may consider using [AWS-managed certificate](https://docs.aws.amazon.com/acm/latest/userguide/acm-overview.html) and add the following annotations to Ingress.
 
@@ -366,14 +369,16 @@ You need to have a AKS cluster (>=1.19) with the following addons enabled:
 
 > You may consider using your custom Ingress Controller instead of Application Gateway, [learn more](https://docs.microsoft.com/en-us/azure/aks/ingress-basic)
 
-- [x] [Azure Application Gateway Ingress Controller](https://docs.microsoft.com/en-us/azure/application-gateway/ingress-controller-install-new)
-- [x] [Azure Disk CSI driver](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers)
+- [Azure Application Gateway Ingress Controller](https://docs.microsoft.com/en-us/azure/application-gateway/ingress-controller-install-new)
+- [Azure Disk CSI driver](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers)
 
 Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
 
 #### Steps
 
-Create an override file with the following values. We configure Ingress to use [Application Gateway](https://azure.microsoft.com/en-us/services/application-gateway) to expose Sourcegraph publicly on a domain of your choosing and Storage Class to use [Azure Disk CSI driver](https://docs.microsoft.com/en-us/azure/aks/azure-disk-csi).
+**1** – Create your override file and add in any configuration override settings you need - see [configuration](#configuration) for more information on override files and the options around what can be conifgured.
+
+Add into your overide file the below values to configure both your ingress hostname and your storage class. We recommend configuring Ingress to use [Application Gateway](https://azure.microsoft.com/en-us/services/application-gateway) to expose Sourcegraph publicly on a domain of your choosing and Storage Class to use [Azure Disk CSI driver](https://docs.microsoft.com/en-us/azure/aks/azure-disk-csi).
 
 [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/azure/override.yaml)
 ```yaml
@@ -397,7 +402,9 @@ storageClass:
     storageaccounttype: Premium_LRS # This configures SSDs (recommended). A Premium VM is required.
 ```
 
-Install the chart
+> ℹ️ Optionally, you can review the changes using one of [three mechanisms](#reviewing-changes) that can be used to assess the customizations made. This is not required, but may be useful the first time you deploy Sourcegraph, for peace of mind.
+
+**2** – Install the chart
 
 ```sh
 helm upgrade --install --values ./override.yaml --version 0.7.0 sourcegraph sourcegraph/sourcegraph
@@ -409,7 +416,7 @@ It will take some time for the load balancer to be fully ready, you may check on
 kubectl describe ingress sourcegraph-frontend
 ```
 
-Upon obtaining the allocated address of the load balancer, you should create a DNS record for the `sourcegraph.company.com` domain that resolves to the load balancer address.
+**3** – Upon obtaining the allocated address of the load balancer, you should create a DNS record for the `sourcegraph.company.com` domain that resolves to the load balancer address.
 
 It is recommended to enable TLS and configure certificate properly on your load balancer. You may consider using an [Azure-managed certificate](https://azure.github.io/application-gateway-kubernetes-ingress/features/appgw-ssl-certificate/) and add the following annotations to Ingress.
 
@@ -442,7 +449,11 @@ Your account should have sufficient access equivalent to the `cluster-admin` Clu
 
 #### Steps
 
+**1** – Create your override file and add in any configuration override settings you need - see [configuration](#configuration) for more information on override files and the options around what can be conifgured.
+
 Read <https://kubernetes.io/docs/concepts/storage/storage-classes/> to configure the `storageClass.provisioner` and `storageClass.parameters` fields for your cloud provider or consult documentation of the storage solution in your on-prem environment.
+
+The following will need to be included in your `override.yaml`, once adapted to your environment.
 
 ```yaml
 frontend:
@@ -464,19 +475,20 @@ storageClass:
     key1: value1
 ```
 
-Install the chart
+> ℹ️ Optionally, you can review the changes using one of [three mechanisms](#reviewing-changes) that can be used to assess the customizations made. This is not required, but may be useful the first time you deploy Sourcegraph, for peace of mind.
+
+**2** – Install the chart
 
 ```sh
 helm upgrade --install --values ./override.yaml --version 0.7.0 sourcegraph sourcegraph/sourcegraph
 ```
-
-Depending how your Ingress Controller work, you may be able to check on status and obtain the public address of your Ingress.
+It may take some time before your ingress is up and ready to proceed. Depending how your Ingress Controller works, you may be able to check on status and obtain the public address of your Ingress.
 
 ```sh
 kubectl describe ingress sourcegraph-frontend
 ```
 
-You should create a DNS record for the `sourcegraph.company.com` domain that resolves to the Ingress public address.
+**3** – You should create a DNS record for the `sourcegraph.company.com` domain that resolves to the Ingress public address.
 
 It is recommended to enable TLS and configure certificate properly on your Ingress. You may utilize managed certificate solution provided by Cloud providers.
 
