@@ -492,15 +492,6 @@ func (s *gitserverRepoStore) UpdateRepoSizes(ctx context.Context, shardID string
 	return nil
 }
 
-const updateRepoSizesQueryTemplate = `
--- source: internal/database/gitserver_repos.go:gitserverRepoStore.UpdateRepoSizes
-INSERT INTO gitserver_repos(repo_id, shard_id, repo_size_bytes, updated_at)
-VALUES %s
-ON CONFLICT (repo_id) DO UPDATE
-SET (repo_size_bytes, shard_id, updated_at) =
-    (EXCLUDED.repo_size_bytes, gitserver_repos.shard_id, now())
-`
-
 // sanitizeToUTF8 will remove any null character terminated string. The null character can be
 // represented in one of the following ways in Go:
 //
