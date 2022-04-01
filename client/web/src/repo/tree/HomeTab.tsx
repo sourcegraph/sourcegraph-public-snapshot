@@ -270,38 +270,42 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                     <div className={styles.section}>
                         <RecentCommits />
                         {/* CODE-INTEL */}
-                        <h2 className="mt-3">Code intel</h2>
-                        <div className={styles.item}>
-                            <Badge
-                                variant={codeIntelligenceEnabled ? 'secondary' : 'danger'}
-                                className={classNames('text-uppercase', styles.itemBadge)}
-                            >
-                                {codeIntelligenceEnabled ? 'CONFIGURABLE' : 'DISABLED'}
-                            </Badge>
-                            <div className="d-block col">
-                                <div>Precise code intelligence</div>
+                        <div className="mb-3">
+                            <h2>Code intel</h2>
+                            <div className={styles.item}>
+                                <Badge
+                                    variant={codeIntelligenceEnabled ? 'secondary' : 'danger'}
+                                    className={classNames('text-uppercase', styles.itemBadge)}
+                                >
+                                    {codeIntelligenceEnabled ? 'CONFIGURABLE' : 'DISABLED'}
+                                </Badge>
+                                <div className="d-block col">
+                                    <div>Precise code intelligence</div>
+                                </div>
                             </div>
-                        </div>
-                        <div className="text-right">
-                            <Link
-                                className="btn btn-sm btn-link mr-0 pr-0"
-                                to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
-                            >
-                                {codeIntelligenceEnabled ? 'Set up for this repository' : 'Manage code intelligence'}
-                            </Link>
+                            <div className="text-right">
+                                <Link
+                                    className="btn btn-sm btn-link mr-0 pr-0"
+                                    to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
+                                >
+                                    {codeIntelligenceEnabled ? 'Set up for this repository' : 'Manage code intelligence'}
+                                </Link>
+                            </div>
                         </div>
                         {/* BATCH CHANGES */}
-                        <h2 className="mt-3">Batch changes</h2>
-                        {batchChangesEnabled ? (
-                            <HomeTabBatchChangeBadge repoName={repo.name} />
-                        ) : (
-                            <div className={styles.item}>
-                                <Badge variant="danger" className={classNames('text-uppercase col-4')}>
-                                    DISABLED
-                                </Badge>
-                                <div className="col">Not available</div>
-                            </div>
-                        )}
+                        <div>
+                            <h2>Batch changes</h2>
+                            {batchChangesEnabled ? (
+                                <HomeTabBatchChangeBadge repoName={repo.name} />
+                            ) : (
+                                <div className={styles.item}>
+                                    <Badge variant="danger" className={classNames('text-uppercase col-4')}>
+                                        DISABLED
+                                    </Badge>
+                                    <div className="col">Not available</div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -352,13 +356,9 @@ export const HomeTabBatchChangeBadge: React.FunctionComponent<HomeTabBatchChange
     if (!batchChanges || batchChanges.nodes.length === 0) {
         return (
             <>
-                <div className={styles.item}>
-                    <Badge variant="secondary" className={badgeClassNames}>
-                        None
-                    </Badge>
-                    <div className="d-block col">
-                        <div>No open batch changes for this repository</div>
-                    </div>
+                <div className={classNames(styles.item, 'flex-column')}>
+                    <div className="mb-1">No open batch changes for this repository</div>
+                    <Link to="/batch-changes/create" >Create a batch change</Link>
                 </div>
                 {allBatchChanges}
             </>
@@ -374,7 +374,7 @@ export const HomeTabBatchChangeBadge: React.FunctionComponent<HomeTabBatchChange
                 },
                 {
                     name: 'merged',
-                    value: changesetsStats.open,
+                    value: changesetsStats.merged,
                 },
                 {
                     name: 'closed',
