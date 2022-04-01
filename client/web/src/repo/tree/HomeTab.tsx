@@ -218,7 +218,11 @@ export const HomeTab: React.FunctionComponent<Props> = ({
     const ReadmeFile: React.FunctionComponent = () => (
         <div>
             {richHTML && richHTML !== 'loading' && (
-                <RenderedFile dangerousInnerHTML={richHTML} location={props.location} />
+                <RenderedFile
+                    className="pt-0 pl-3"
+                    dangerousInnerHTML={richHTML}
+                    location={props.location}
+                />
             )}
             {!richHTML && richHTML !== 'loading' && (
                 <div className="text-center">
@@ -262,7 +266,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
         <div className="container mw-100">
             <div className="row">
                 {/* RENDER README */}
-                <div className="col-sm m-0">
+                <div className="col-sm m-0 pl-0 pt-0">
                     <ReadmeFile />
                 </div>
                 {/* SIDE MENU*/}

@@ -346,7 +346,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             ) : (
                                 <PageHeader
                                     path={[{ icon: FolderIcon, text: filePath }]}
-                                    className="mb-3 test-tree-page-title"
+                                    className="mb-3 mr-2 test-tree-page-title"
                                 />
                             )}
                         </header>
