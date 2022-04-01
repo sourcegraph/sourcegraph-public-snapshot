@@ -979,7 +979,7 @@ const GO_STATIC_CHECK_S1020: Template = {
         allRepos: true,
         series: [
             {
-                name: 'S10020',
+                name: 'S1020',
                 query:
                     'if :[_.], ok := :[i.].(:[T]); :[i.] != nil && ok {:[body]} or if :[_.], ok := :[i.].(:[T]); ok && :[i.] != nil {:[body]} or if :[i.] != nil {  if :[_.], ok := :[i.].(:[T]); ok {:[body]}} patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
@@ -997,7 +997,7 @@ const GO_STATIC_CHECK_S1023: Template = {
         allRepos: true,
         series: [
             {
-                name: 'S10023',
+                name: 'S1023',
                 query:
                     'func() {:[body] return } or func :[fn.](:[args]) {:[body] return } patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
@@ -1015,7 +1015,7 @@ const GO_STATIC_CHECK_S1024: Template = {
         allRepos: true,
         series: [
             {
-                name: 'S10024',
+                name: 'S1024',
                 query: ':[x.].Sub(time.Now()) patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
@@ -1032,7 +1032,7 @@ const GO_STATIC_CHECK_S1025: Template = {
         allRepos: true,
         series: [
             {
-                name: 'S10025',
+                name: 'S1025',
                 query: 'fmt.Println("%s", ":[s]") patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
@@ -1049,7 +1049,7 @@ const GO_STATIC_CHECK_S1028: Template = {
         allRepos: true,
         series: [
             {
-                name: 'S10028',
+                name: 'S1028',
                 query: 'errors.New(fmt.Sprintf(:[1])) patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
@@ -1066,7 +1066,7 @@ const GO_STATIC_CHECK_S1029: Template = {
         allRepos: true,
         series: [
             {
-                name: 'S10029',
+                name: 'S1029',
                 query: 'for :[~_], :[r.] := range []rune(:[s.]) patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
@@ -1083,7 +1083,7 @@ const GO_STATIC_CHECK_S1032: Template = {
         allRepos: true,
         series: [
             {
-                name: 'S10032',
+                name: 'S1032',
                 query:
                     'sort.Sort(sort.Float64Slice(:[1])) or sort.Sort(sort.StringSlice(:[1])) or sort.Sort(sort.IntSlice(:[1])) patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
@@ -1101,7 +1101,7 @@ const GO_STATIC_CHECK_S1035: Template = {
         allRepos: true,
         series: [
             {
-                name: 'S10035',
+                name: 'S1035',
                 query:
                     'headers.Set(http.CanonicalHeaderKey(:[1])) or headers.Get(http.CanonicalHeaderKey(:[1])) or headers.Del(http.CanonicalHeaderKey(:[1])) or headers.Add(http.CanonicalHeaderKey(:[1]), :[1]) patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
@@ -1121,7 +1121,7 @@ const GO_STATIC_CHECK_S1037: Template = {
         allRepos: true,
         series: [
             {
-                name: 'S10035',
+                name: 'S1035',
                 query:
                     'headers.Set(http.CanonicalHeaderKey(:[1])) or headers.Get(http.CanonicalHeaderKey(:[1])) or headers.Del(http.CanonicalHeaderKey(:[1])) or headers.Add(http.CanonicalHeaderKey(:[1]), :[1]) patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
@@ -1139,7 +1139,7 @@ const GO_STATIC_CHECK_S1038: Template = {
         allRepos: true,
         series: [
             {
-                name: 'S10038',
+                name: 'S1038',
                 query: 'select {	case <-time.After(:[t]):} patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
