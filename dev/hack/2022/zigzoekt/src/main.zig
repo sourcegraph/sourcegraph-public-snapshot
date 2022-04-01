@@ -94,10 +94,32 @@ fn search(shard_path: []const u8, needle: []const u8, writer: anytype) !void {
     }
 }
 
-pub fn main() anyerror!void {
+test "search" {
+    var out = std.ArrayList(u8).init(std.testing.allocator);
+    defer out.deinit();
+
     try search(
         "github.com%2Fkeegancsmith%2Fsqlf_v16.00000.zoekt",
-        "func",
+        "oracle",
+        out.writer(),
+    );
+
+    try std.testing.expectEqualStrings(
+        \\var OracleBindVar = oracleBindVar{}
+        \\type oracleBindVar struct{}
+        \\func (d oracleBindVar) BindVar(i int) string {
+        \\
+    , out.items);
+}
+
+pub fn main() anyerror!void {
+    if (std.os.argv.len < 3) {
+        try std.io.getStdErr().writer().print("USAGE: {s} shard needle\n", .{std.os.argv[0]});
+        std.os.exit(1);
+    }
+    try search(
+        std.mem.span(std.os.argv[1]),
+        std.mem.span(std.os.argv[2]),
         std.io.getStdOut().writer(),
     );
 }
