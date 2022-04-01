@@ -22,7 +22,7 @@ import (
 // TODO what is a good home for this?
 
 type NotebooksSearchStore interface {
-	SearchNotebooks(ctx context.Context, query string, searchBlocks bool) ([]*result.NotebookMatch, error)
+	SearchNotebooks(ctx context.Context, job *SearchJob) ([]*result.NotebookMatch, error)
 }
 
 type notebooksSearchStore struct {
@@ -95,30 +95,47 @@ func scanNotebookMatches(rows *sql.Rows) ([]*result.NotebookMatch, error) {
 	return notebooks, nil
 }
 
-func makeQueryConds(query string, includeBlocks bool) *sqlf.Query {
-	ilikeQuery := "%" + query + "%"
+func makeQueryConds(job *SearchJob) *sqlf.Query {
+	conds := []*sqlf.Query{}
 
-	conds := []*sqlf.Query{
-		sqlf.Sprintf("CONCAT(users.username, orgs.name, notebooks.title) ILIKE %s",
-			ilikeQuery),
+	const concatTitleQuery = "CONCAT(users.username, orgs.name, notebooks.title)"
+
+	// TODO NotebookIncludePatternString should be treated as an AND
+	if job.PatternString != "" || job.NotebookIncludePatternString != "" {
+		titleQuery := "%((" + job.PatternString + ")|(" + job.NotebookIncludePatternString + "))%"
+		conds = append(conds, sqlf.Sprintf("%s ILIKE %s",
+			concatTitleQuery, titleQuery))
 	}
-	if includeBlocks {
+
+	if len(job.NotebookExcludePatternString) > 0 {
+		// TODO this doesn't work because we join everything with an OR later
+		titleQuery := "%" + job.NotebookExcludePatternString + "%"
+		conds = append(conds, sqlf.Sprintf("%s NOT ILIKE %s",
+			concatTitleQuery, titleQuery))
+	}
+
+	if len(job.PatternString) > 0 {
 		// TODO this mirrors the GraphQL API implementation but does not allow us to
 		// filter the blocks. we could potentially hack around this by doing the filtering
 		// of blocks post-query by marshalling notebook blocks.
 		conds = append(conds, sqlf.Sprintf("notebooks.blocks_tsvector @@ to_tsquery('english', %s)",
-			toPostgresTextSearchQuery(query)))
+			toPostgresTextSearchQuery(job.PatternString)))
+	}
+
+	if len(conds) == 0 {
+		// If no conditions are present, append a catch-all condition to avoid a SQL syntax error
+		conds = append(conds, sqlf.Sprintf("1 = 1"))
 	}
 
 	return sqlf.Join(conds, "\n OR")
 }
 
-func (s *notebooksSearchStore) SearchNotebooks(ctx context.Context, query string, searchBlocks bool) ([]*result.NotebookMatch, error) {
+func (s *notebooksSearchStore) SearchNotebooks(ctx context.Context, job *SearchJob) ([]*result.NotebookMatch, error) {
 	rows, err := s.Query(ctx,
 		sqlf.Sprintf(
 			searchNotebooksFmtStr,
 			notebooksPermissionsCondition(ctx),
-			makeQueryConds(query, true),
+			makeQueryConds(job),
 		),
 	)
 	if err != nil {
@@ -133,8 +150,8 @@ func (s *notebooksSearchStore) SearchNotebooks(ctx context.Context, query string
 	// TODO HACK post-filtering of blocks. Maybe this is okay because a notebook is
 	// unlikely to have too many blocks, and we already know there is a match in here
 	// because of `notebooks.blocks_tsvector`.
-	if searchBlocks {
-		searchRe, err := regexp.Compile("(?i).*(" + query + ").*")
+	if len(job.PatternString) > 0 {
+		searchRe, err := regexp.Compile("(?i).*(" + job.PatternString + ").*")
 		if err != nil {
 			return nil, err
 		}

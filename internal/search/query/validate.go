@@ -292,6 +292,9 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	case
 		FieldSelect:
 		return satisfies(isSingular, isNotNegated, isValidSelect)
+	case
+		FieldNotebook:
+		return satisfies(isSingular)
 	default:
 		return isUnrecognizedField()
 	}

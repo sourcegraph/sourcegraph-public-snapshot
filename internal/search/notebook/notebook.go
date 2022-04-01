@@ -5,14 +5,18 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type SearchJob struct {
-	Query query.Basic
+	// Search notebook "full names" and blocks
+	PatternString string
+	// Search notebook "full names"
+	NotebookIncludePatternString string
+	// Exclude notebook "full names"
+	NotebookExcludePatternString string
 }
 
 func (*SearchJob) Name() string {
@@ -26,7 +30,7 @@ func (s *SearchJob) Run(ctx context.Context, db database.DB, stream streaming.Se
 	// - search only "full name" on 'notebook:' filter
 	// - account for search pattern types
 	// - actually filter blocks (we return all right now)
-	notebooks, err := store.SearchNotebooks(ctx, s.Query.PatternString(), true)
+	notebooks, err := store.SearchNotebooks(ctx, s)
 	if err != nil {
 		return nil, errors.Wrap(err, "NotebookSearch")
 	}

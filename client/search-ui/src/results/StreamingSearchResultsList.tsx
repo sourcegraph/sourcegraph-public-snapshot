@@ -166,37 +166,40 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             resultType={result.type}
                             onResultClicked={noop}
                             expandedChildren={(
-                                <NotebookComponent
-                                    key={`${result.notebook.id}-blocks`}
-                                    isEmbedded={true}
-                                    noRunButton={true}
-                                    // TODO HACK: DB, component, and GraphQL block types
-                                    // don't align so we need to massage it into a type
-                                    // this component finds acceptable
-                                    blocks={result.blocks.map(b => {
-                                        if (b.queryInput) {
-                                            return { ...b, input: { query: b.queryInput.text }}
-                                        }
-                                        return { ...b, input: b.markdownInput || b.fileInput || b.symbolInput || b.computeInput }
-                                    })}
-                                    authenticatedUser={null}
-                                    globbing={false}
-                                    isReadOnly={true}
-                                    extensionsController={extensionsController}
-                                    hoverifier={hoverifier}
-                                    platformContext={platformContext}
-                                    exportedFileName={result.notebook.title}
-                                    onSerializeBlocks={noop}
-                                    onCopyNotebook={() => NEVER}
-                                    streamSearch={() => NEVER} // TODO make this jump to new search page instead
-                                    isLightTheme={isLightTheme}
-                                    telemetryService={telemetryService}
-                                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                                    searchContextsEnabled={searchContextsEnabled}
-                                    settingsCascade={settingsCascade}
-                                    isSourcegraphDotCom={isSourcegraphDotCom}
-                                    showSearchContext={showSearchContext}
-                                />
+                                <div className={styles.notebookBlockResult}>
+                                    <NotebookComponent
+                                        key={`${result.notebook.id}-blocks`}
+                                        isEmbedded={true}
+                                        noRunButton={true}
+                                        // TODO HACK: DB, component, and GraphQL block types
+                                        // don't align so we need to massage it into a type
+                                        // this component finds acceptable
+                                        blocks={result.blocks.map(b => {
+                                            if (b.queryInput) {
+                                                return { ...b, input: { query: b.queryInput.text }}
+                                            }
+                                            return { ...b, input: b.markdownInput || b.fileInput || b.symbolInput || b.computeInput }
+                                        })}
+                                        authenticatedUser={null}
+                                        globbing={false}
+                                        isReadOnly={true}
+                                        extensionsController={extensionsController}
+                                        hoverifier={hoverifier}
+                                        platformContext={platformContext}
+                                        exportedFileName={result.notebook.title}
+                                        onSerializeBlocks={noop}
+                                        onCopyNotebook={() => NEVER}
+                                        streamSearch={() => NEVER} // TODO make this jump to new search page instead
+                                        isLightTheme={isLightTheme}
+                                        telemetryService={telemetryService}
+                                        fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                        searchContextsEnabled={searchContextsEnabled}
+                                        settingsCascade={settingsCascade}
+                                        isSourcegraphDotCom={isSourcegraphDotCom}
+                                        showSearchContext={showSearchContext}
+                                    />
+                                </div>
+
                             )}
                     />
 

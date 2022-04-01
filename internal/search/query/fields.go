@@ -71,6 +71,7 @@ var allFields = map[string]struct{}{
 	FieldRev:                empty,
 	"revision":              empty,
 	FieldSelect:             empty,
+	FieldNotebook:           empty,
 }
 
 var aliases = map[string]string{

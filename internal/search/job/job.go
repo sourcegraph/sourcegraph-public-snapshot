@@ -1,6 +1,7 @@
 package job
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -323,12 +324,18 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 		}
 	}
 
-	if enabled := jargs.SearchInputs.Features.GetBoolOr("notebook-search-job", false); enabled &&
+	// TODO feature flag off by default
+	if enabled := jargs.SearchInputs.Features.GetBoolOr("notebook-search-job", true); enabled &&
 		resultTypes.Has(result.TypeNotebook) {
-		log15.Debug("notebook-search-job enabled yay!") // TODO
-		addJob(true, &notebook.SearchJob{
-			Query: b,
-		})
+		includeNotebook, excludeNotebook := q.StringValue(query.FieldNotebook)
+		// includeContent, excludeContent := q.StringValue(query.FieldContent)
+		notebookSearchJob := &notebook.SearchJob{
+			PatternString:                b.PatternString(),
+			NotebookIncludePatternString: includeNotebook,
+			NotebookExcludePatternString: excludeNotebook,
+		}
+		addJob(true, notebookSearchJob)
+		log15.Debug("notebook-search-job enabled yay!", "job", fmt.Sprintf("%+v", notebookSearchJob)) // TODO
 	}
 
 	addJob(true, &searchrepos.ComputeExcludedRepos{
