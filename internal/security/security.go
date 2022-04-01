@@ -53,18 +53,18 @@ func validatePasswordUsingPolicy(passwd string) error {
 	for _, c := range passwd {
 		switch {
 		case unicode.IsNumber(c):
-				numbers = true
-				letters++
+			numbers = true
+			letters++
 		case unicode.IsUpper(c):
-				upperCase = true
-				letters++
+			upperCase = true
+			letters++
 		case unicode.IsPunct(c) || unicode.IsSymbol(c):
-				special++
-				letters++
+			special++
+			letters++
 		case unicode.IsLetter(c) || c == ' ':
-				letters++
+			letters++
 		default:
-				//ignore
+			//ignore
 		}
 	}
 	// Check for blank password
