@@ -151,23 +151,20 @@ export const HomeTab: React.FunctionComponent<Props> = ({
     )
 
     const emptyElement = showOlderCommits ? (
-        <>No commits in this tree.</>
+        <div className="w-100">No commits in this tree.</div>
     ) : (
-        <div className="test-tree-page-no-recent-commits">
+        <div className="test-tree-page-no-recent-commits w-100">
             <p className="mb-2">No commits in this tree in the past year.</p>
-            <Button
-                className="test-tree-page-show-all-commits"
-                onClick={onShowOlderCommitsClicked}
-                variant="secondary"
-                size="sm"
-            >
-                Show all commits
-            </Button>
+            <div className="float-right">
+                <Button onClick={onShowOlderCommitsClicked} variant="link" size="sm" className="float-right p-0">
+                    Show older commits
+                </Button>
+            </div>
         </div>
     )
 
     const TotalCountSummary: React.FunctionComponent<{ totalCount: number }> = ({ totalCount }) => (
-        <div className="mt-2">
+        <div className="mt-2 w-100">
             {showOlderCommits ? (
                 <>
                     {totalCount} total {pluralize('commit', totalCount)} in this tree.
@@ -177,16 +174,23 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                     <p className="mb-2">
                         {totalCount} {pluralize('commit', totalCount)} in this tree in the past year.
                     </p>
-                    <Button onClick={onShowOlderCommitsClicked} variant="secondary" size="sm">
-                        Show all commits
-                    </Button>
+                    <div className="float-right">
+                        <Button
+                            onClick={onShowOlderCommitsClicked}
+                            variant="link"
+                            size="sm"
+                            className="float-right p-0"
+                        >
+                            Show all commits
+                        </Button>
+                    </div>
                 </>
             )}
         </div>
     )
 
     const RecentCommits: React.FunctionComponent = () => (
-        <div>
+        <div className="mb-3">
             <h2>Recent commits</h2>
             <FilteredConnection<
                 GitCommitFields,
@@ -275,11 +279,11 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                             <div className={styles.item}>
                                 <Badge
                                     variant={codeIntelligenceEnabled ? 'secondary' : 'danger'}
-                                    className={classNames('text-uppercase', styles.itemBadge)}
+                                    className={classNames('text-uppercase col-4', styles.itemBadge)}
                                 >
                                     {codeIntelligenceEnabled ? 'CONFIGURABLE' : 'DISABLED'}
                                 </Badge>
-                                <div className="d-block col">
+                                <div className="col">
                                     <div>Precise code intelligence</div>
                                 </div>
                             </div>
@@ -295,16 +299,29 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                             </div>
                         </div>
                         {/* BATCH CHANGES */}
-                        <div>
+                        <div className="mb-3">
                             <h2>Batch changes</h2>
                             {batchChangesEnabled ? (
                                 <HomeTabBatchChangeBadge repoName={repo.name} />
                             ) : (
-                                <div className={styles.item}>
-                                    <Badge variant="danger" className={classNames('text-uppercase col-4')}>
-                                        DISABLED
-                                    </Badge>
-                                    <div className="col">Not available</div>
+                                <div>
+                                    <div className={styles.item}>
+                                        <Badge
+                                            variant="danger"
+                                            className={classNames('text-uppercase col-4', styles.itemBadge)}
+                                        >
+                                            DISABLED
+                                        </Badge>
+                                        <div className="col">Not available</div>
+                                    </div>
+                                    <div className="text-right">
+                                        <Link
+                                            className="btn btn-sm btn-link mr-0 pr-0"
+                                            to="https://docs.sourcegraph.com/batch_changes"
+                                        >
+                                            Learn more
+                                        </Link>
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -337,7 +354,7 @@ export const HomeTabBatchChangeBadge: React.FunctionComponent<HomeTabBatchChange
     const allBatchChanges = (
         <div className="text-right">
             <Link className="btn btn-sm btn-link" to={`/${encodeURIPathComponent(repoName)}/-/batch-changes`}>
-                All batch changes
+                View all batch changes
             </Link>
         </div>
     )

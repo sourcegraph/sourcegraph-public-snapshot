@@ -83,6 +83,7 @@ interface Props
     globbing: boolean
     useActionItemsBar: ActionItemsBarProps['useActionItemsBar']
     match: RepositoryFileTreePageProps['match']
+    isSourcegraphDotCom: boolean
 }
 
 export const treePageRepositoryFragment = gql`
@@ -107,6 +108,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
     useActionItemsBar,
     match,
     featureFlags,
+    isSourcegraphDotCom,
     ...props
 }) => {
     useEffect(() => {
@@ -279,7 +281,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             </Badge>
                         </Button>
 
-                        {batchChangesEnabled && (
+                        {!isSourcegraphDotCom && batchChangesEnabled && (
                             <Button
                                 to="/batch-changes/create"
                                 variant="secondary"

@@ -2,14 +2,13 @@ import React, { useCallback, useState } from 'react'
 
 import * as H from 'history'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import { NavLink } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike, asError, ErrorLike } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Card, CardHeader, Icon, Link, LoadingSpinner, useEventObservable } from '@sourcegraph/wildcard'
+import { Button, Card, CardHeader, Icon, LoadingSpinner, useEventObservable } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
@@ -21,6 +20,11 @@ interface Props {
     repo: TreePageRepositoryFields
     location?: H.Location
     history?: H.History
+}
+
+interface OverviewTabProps {
+    repo: TreePageRepositoryFields
+    setShowAll: (spec: boolean) => void
 }
 
 interface Data {
@@ -39,31 +43,32 @@ export const RepositoryBranchesTab: React.FunctionComponent<Props> = ({ repo, hi
         <div className="repository-branches-area container">
             <ul className="nav my-3">
                 <li className="nav-item">
-                    <NavLink
-                        to="#"
+                    <Button
                         onClick={() => setShowAll(false)}
-                        className="nav-link"
-                        exact={true}
-                        activeClassName="font-weight-bold"
+                        type="button"
+                        variant="link"
+                        outline={!showAll}
+                        disabled={!showAll}
                     >
                         Overview
-                    </NavLink>
+                    </Button>
                 </li>
                 <li className="nav-item">
-                    <NavLink
+                    <Button
                         onClick={() => setShowAll(true)}
-                        className="nav-link"
-                        activeClassName="font-weight-bold"
-                        to="#"
+                        type="button"
+                        variant="link"
+                        outline={showAll}
+                        disabled={showAll}
                     >
                         All branches
-                    </NavLink>
+                    </Button>
                 </li>
             </ul>
             {showAll ? (
                 <RepositoryBranchesAllTab repo={repo} location={location} history={history} />
             ) : (
-                <RepositoryBranchesOverviewTab repo={repo} location={location} history={history} />
+                <RepositoryBranchesOverviewTab repo={repo} setShowAll={setShowAll} />
             )}
         </div>
     )
@@ -92,7 +97,7 @@ export const RepositoryBranchesAllTab: React.FunctionComponent<Props> = ({ repo,
     )
 }
 
-export const RepositoryBranchesOverviewTab: React.FunctionComponent<Props> = ({ repo, history, location }) => {
+export const RepositoryBranchesOverviewTab: React.FunctionComponent<OverviewTabProps> = ({ repo, setShowAll }) => {
     const [branches, setBranches] = useState<Data | undefined>(undefined)
 
     useEventObservable<void, Data | null | ErrorLike>(
@@ -144,13 +149,15 @@ export const RepositoryBranchesOverviewTab: React.FunctionComponent<Props> = ({ 
                                     <GitReferenceNode key={index} node={gitReference} />
                                 ))}
                                 {branches.hasMoreActiveBranches && (
-                                    <Link
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        onClick={() => setShowAll(true)}
                                         className="list-group-item list-group-item-action py-2 d-flex"
-                                        to={`/${repo.name}/-/branches/all`}
                                     >
                                         View more branches
                                         <Icon as={ChevronRightIcon} />
-                                    </Link>
+                                    </Button>
                                 )}
                             </div>
                         </Card>

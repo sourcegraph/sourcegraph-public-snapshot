@@ -140,6 +140,7 @@ export const RepositoryFileTreePage: React.FunctionComponent<RepositoryFileTreeP
                                 repo={repo}
                                 match={match}
                                 useActionItemsBar={context.useActionItemsBar}
+                                isSourcegraphDotCom={context.isSourcegraphDotCom}
                             />
                         )}
                     </ErrorBoundary>
