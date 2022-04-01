@@ -243,7 +243,7 @@ storageClass:
 helm upgrade --install --values ./override.yaml --version 0.7.0 sourcegraph sourcegraph/sourcegraph
 ```
 
-You need to deploy the [BackendConfig] CRD to properly expose Sourcegraph publicly. The [BackendConfig] CR should be deployed in the same namespace where the Sourcegraph chart is installed.
+**3** – You need to deploy the [BackendConfig] CRD to properly expose Sourcegraph publicly. The [BackendConfig] CR should be deployed in the same namespace where the Sourcegraph chart is installed.
 
 [sourcegraph-frontend.BackendConfig.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/michael/improve-gcp-example/charts/sourcegraph/examples/gcp/sourcegraph-frontend.BackendConfig.yaml)
 ```yaml
@@ -263,13 +263,13 @@ spec:
 kubectl apply -f sourcegraph-frontend.BackendConfig.yaml
 ```
 
-It will take around 10 minutes for the load balancer to be fully ready, you may check on the status and obtain the load balancer IP:
+It will take around 10 minutes for the load balancer to be fully ready, you may check on the status and obtain the load balancer IP using the following command:
 
 ```sh
 kubectl describe ingress sourcegraph-frontend
 ```
 
-**3** – Upon obtaining the allocated IP address of the load balancer, you should create an A record for the `sourcegraph.company.com` domain. Finally, it is recommended to enable TLS and you may consider using [Google-managed certificate](https://cloud.google.com/kubernetes-engine/docs/how-to/managed-certs) in GKE or your own certificate.
+**4** – Upon obtaining the allocated IP address of the load balancer, you should create an A record for the `sourcegraph.company.com` domain. Finally, it is recommended to enable TLS and you may consider using [Google-managed certificate](https://cloud.google.com/kubernetes-engine/docs/how-to/managed-certs) in GKE or your own certificate.
 
 If using a GKE manage certificate, add the following annotations to Ingress:
 ```yaml
