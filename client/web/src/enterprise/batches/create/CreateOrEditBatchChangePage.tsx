@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { ApolloQueryResult } from '@apollo/client'
 import classNames from 'classnames'
@@ -6,7 +6,7 @@ import { compact, noop } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import LockIcon from 'mdi-react/LockIcon'
-import { useHistory } from 'react-router'
+import { useHistory, useLocation } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -19,6 +19,7 @@ import {
 } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
 import {
     PageHeader,
     Button,
@@ -32,7 +33,6 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
-import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import {
     BatchChangeFields,
@@ -43,10 +43,12 @@ import {
     CreateEmptyBatchChangeResult,
     Scalars,
     BatchSpecWorkspaceResolutionState,
+    CreateBatchSpecFromRawVariables,
+    CreateBatchSpecFromRawResult,
 } from '../../../graphql-operations'
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
-import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE } from './backend'
+import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE, CREATE_BATCH_SPEC_FROM_RAW } from './backend'
 import { DownloadSpecModal } from './DownloadSpecModal'
 import { EditorFeedbackPanel } from './editor/EditorFeedbackPanel'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
@@ -136,10 +138,20 @@ interface CreatePageProps extends SettingsCascadeProps<Settings> {
 }
 
 const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, settingsCascade }) => {
-    const [createEmptyBatchChange, { loading, error }] = useMutation<
+    const [template, setTemplate] = useState<string | undefined>()
+    const location = useLocation()
+
+    const [createEmptyBatchChange, { loading: batchChangeLoading, error: batchChangeError }] = useMutation<
         CreateEmptyBatchChangeResult,
         CreateEmptyBatchChangeVariables
     >(CREATE_EMPTY_BATCH_CHANGE)
+    const [createBatchSpecFromRaw, { loading: batchSpecLoading, error: batchSpecError }] = useMutation<
+        CreateBatchSpecFromRawResult,
+        CreateBatchSpecFromRawVariables
+    >(CREATE_BATCH_SPEC_FROM_RAW)
+
+    const loading = batchChangeLoading || batchSpecLoading
+    const error = batchChangeError || batchSpecError
 
     const { namespaces, defaultSelectedNamespace } = useNamespaces(settingsCascade, namespaceID)
 
@@ -150,6 +162,16 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
 
     const [nameInput, setNameInput] = useState('')
     const [isNameValid, setIsNameValid] = useState<boolean>()
+
+    useEffect(() => {
+        const parameters = new URLSearchParams(location.search)
+        if (parameters.has('kind')) {
+            switch (parameters.get('kind')) {
+                case 'replaceSymbol':
+                    setTemplate(renameSymbolTemplate(nameInput))
+            }
+        }
+    }, [location.search, nameInput])
 
     const onNameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setNameInput(event.target.value)
@@ -162,6 +184,13 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
         createEmptyBatchChange({
             variables: { namespace: selectedNamespace.id, name: nameInput },
         })
+            .then(args =>
+                args.data?.createEmptyBatchChange.id && template
+                    ? createBatchSpecFromRaw({
+                          variables: { namespace: selectedNamespace.id, spec: template, noCache: false },
+                      }).then(() => Promise.resolve(args))
+                    : Promise.resolve(args)
+            )
             .then(({ data }) => (data ? history.push(`${data.createEmptyBatchChange.url}/edit`) : noop()))
             // We destructure and surface the error from `useMutation` instead.
             .catch(noop)
@@ -191,7 +220,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
                             label="Batch change name"
                             value={nameInput}
                             onChange={onNameChange}
-                            pattern={String(NAME_PATTERN)}
+                            // pattern={String(NAME_PATTERN)}
                             required={true}
                             status={isNameValid === undefined ? undefined : isNameValid ? 'valid' : 'error'}
                         />
@@ -250,6 +279,29 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
             </div>
         </div>
     )
+}
+
+function renameSymbolTemplate(name: string): string {
+    return `name: ${name}
+description: Renames the symbol "foo" to "bar"
+
+on:
+    - repository: github.com/hashicorp/errwrap
+
+steps:
+    - run: renamer -repoPath=/work -repoName=github.com/hashicorp/errwrap -rev=7b00e5db719c64d14dd0caaacbd13e76254d02c0 -filePath=errwrap.go -line=162 -character=6 -replacement=BatchYeah
+      container: eseliger/renamer:0.0.1
+      env:
+        SRC_ENDPOINT: https://k8s.sgdev.org
+        SRC_ACCESS_TOKEN: 494bf58148bc74c0370c685e3bd033b6152653f4
+
+changesetTemplate:
+    title: Hello World
+    body: My first batch change!
+    branch: hello-world
+    commit:
+        message: Append Hello World to all README.md files
+`
 }
 
 const INVALID_BATCH_SPEC_TOOLTIP = "There's a problem with your batch spec."
