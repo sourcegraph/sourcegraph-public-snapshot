@@ -84,16 +84,6 @@ func Init(
 	return nil
 }
 
-func checkIfOrgCanInstallGitHubApp(ctx context.Context, db database.DB, orgID int32) error {
-	enabled, err := db.FeatureFlags().GetOrgFeatureFlag(ctx, orgID, "github-app-cloud")
-	if err != nil {
-		return err
-	} else if !enabled {
-		return errors.New("Sourcegraph Cloud GitHub App setup is not enabled for the organization")
-	}
-	return nil
-}
-
 type githubClient interface {
 	GetAppInstallation(ctx context.Context, installationID int64) (*gogithub.Installation, error)
 }
@@ -227,13 +217,6 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 		)
 		if err != nil {
 			responseServerError("Failed to list organization code host connections", err)
-			return
-		}
-
-		err = checkIfOrgCanInstallGitHubApp(r.Context(), db, orgID)
-		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
-			_, _ = w.Write([]byte(err.Error()))
 			return
 		}
 
