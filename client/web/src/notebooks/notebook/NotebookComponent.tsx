@@ -503,16 +503,18 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
         return (
             <div className={styles.searchNotebook} ref={nextNotebookElement}>
                 <div className="pb-1">
-                    {!noRunButton && <Button
-                        className="mr-2"
-                        variant="primary"
-                        size="sm"
-                        onClick={runAllBlocks}
-                        disabled={blocks.length === 0 || runningAllBlocks === LOADING}
-                    >
-                        <Icon className="mr-1" as={PlayCircleOutlineIcon} />
-                        <span>{runningAllBlocks === LOADING ? 'Running...' : 'Run all blocks'}</span>
-                    </Button>}
+                    {!noRunButton && (
+                        <Button
+                            className="mr-2"
+                            variant="primary"
+                            size="sm"
+                            onClick={runAllBlocks}
+                            disabled={blocks.length === 0 || runningAllBlocks === LOADING}
+                        >
+                            <Icon className="mr-1" as={PlayCircleOutlineIcon} />
+                            <span>{runningAllBlocks === LOADING ? 'Running...' : 'Run all blocks'}</span>
+                        </Button>
+                    )}
                     {!isEmbedded && (
                         <Button
                             className="mr-2"

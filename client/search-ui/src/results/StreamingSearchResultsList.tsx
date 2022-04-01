@@ -65,7 +65,7 @@ export interface StreamingSearchResultsListProps
     /** Render prop for `<SearchUserNeedsCodeHost>`  */
     renderSearchUserNeedsCodeHost?: (user: AuthenticatedUser) => JSX.Element
 
-    extensionsController: Pick<ExtensionsController, 'extHostAPI'| 'executeCommand'>
+    extensionsController: Pick<ExtensionsController, 'extHostAPI' | 'executeCommand'>
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 
@@ -160,12 +160,16 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                     return (
                         <ResultContainer
                             icon={NotebookIcon}
-                            title={<Link to={result.notebook.url}>{result.notebook.namespace} / {result.notebook.title}</Link>}
+                            title={
+                                <Link to={result.notebook.url}>
+                                    {result.notebook.namespace} / {result.notebook.title}
+                                </Link>
+                            }
                             collapsible={false}
                             defaultExpanded={true}
                             resultType={result.type}
                             onResultClicked={noop}
-                            expandedChildren={(
+                            expandedChildren={
                                 <div className={styles.notebookBlockResult}>
                                     <NotebookComponent
                                         key={`${result.notebook.id}-blocks`}
@@ -176,9 +180,13 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                                         // this component finds acceptable
                                         blocks={result.blocks.map(b => {
                                             if (b.queryInput) {
-                                                return { ...b, input: { query: b.queryInput.text }}
+                                                return { ...b, input: { query: b.queryInput.text } }
                                             }
-                                            return { ...b, input: b.markdownInput || b.fileInput || b.symbolInput || b.computeInput }
+                                            return {
+                                                ...b,
+                                                input:
+                                                    b.markdownInput || b.fileInput || b.symbolInput || b.computeInput,
+                                            }
                                         })}
                                         authenticatedUser={null}
                                         globbing={false}
@@ -199,10 +207,8 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                                         showSearchContext={showSearchContext}
                                     />
                                 </div>
-
-                            )}
-                    />
-
+                            }
+                        />
                     )
             }
         },

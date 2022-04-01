@@ -53,7 +53,9 @@ export const SearchResult: React.FunctionComponent<Props> = ({
     const [titleReference, truncated, checkTruncation] = useIsTruncated()
 
     const renderTitle = (): JSX.Element => {
-        const formattedRepositoryStarCount = formatRepositoryStarCount(result.type === 'notebook' ? result.stars : result.repoStars)
+        const formattedRepositoryStarCount = formatRepositoryStarCount(
+            result.type === 'notebook' ? result.stars : result.repoStars
+        )
         return (
             <div className={styles.title}>
                 <RepoIcon repoName={repoName} className="text-muted flex-shrink-0" />
@@ -81,9 +83,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({
                     {result.type === 'repo' && (
                         <Link to={getRepoMatchUrl(result)}>{displayRepoName(getRepoMatchLabel(result))}</Link>
                     )}
-                    {result.type === 'notebook' && (
-                        <Link to={result.url}>{repoName}</Link>
-                    )}
+                    {result.type === 'notebook' && <Link to={result.url}>{repoName}</Link>}
                 </span>
                 <span className={styles.spacer} />
                 {result.type === 'commit' && (
