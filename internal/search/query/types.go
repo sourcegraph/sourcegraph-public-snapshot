@@ -226,6 +226,16 @@ func (b Basic) PatternString() string {
 	return ""
 }
 
+func (b Basic) IsEmptyPattern() bool {
+	if b.Pattern == nil {
+		return true
+	}
+	if p, ok := b.Pattern.(Pattern); ok {
+		return p.Value == ""
+	}
+	return false
+}
+
 // IncludeExcludeValues partitions multiple values of a field into positive
 // (include) and negated (exclude) values.
 func (b Basic) IncludeExcludeValues(field string) (include, exclude []string) {
@@ -286,6 +296,14 @@ func (q Q) StringValue(field string) (value, negatedValue string) {
 		}
 	})
 	return value, negatedValue
+}
+
+func (q Q) Index() YesNoOnly {
+	v := q.yesNoOnlyValue(FieldIndex)
+	if v == nil {
+		return Yes
+	}
+	return *v
 }
 
 func (q Q) Values(field string) []*Value {

@@ -56,7 +56,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 		return nil, err
 	}
 	types, _ := q.StringValues(query.FieldType)
-	resultTypes := search.ComputeResultTypes(types, b.PatternString(), jargs.SearchInputs.PatternType)
+	resultTypes := search.ComputeResultTypes(types, b, jargs.SearchInputs.PatternType)
 	patternInfo := search.ToTextPatternInfo(b, resultTypes, jargs.SearchInputs.Protocol)
 
 	// searcher to use full deadline if timeout: set or we are streaming.
@@ -167,7 +167,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 				addJob(required, &repoPagerJob{
 					child:            NewParallelJob(symbolSearchJobs...),
 					repoOptions:      repoOptions,
-					useIndex:         b.Index(),
+					useIndex:         q.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(q),
 					zoekt:            jargs.Zoekt,
 				})
@@ -514,7 +514,7 @@ func jobMode(b query.Basic, resultTypes result.Types, st query.SearchType, onSou
 
 	hasGlobalSearchResultType := resultTypes.Has(result.TypeFile | result.TypePath | result.TypeSymbol)
 	isIndexedSearch := b.Index() != query.No
-	noPattern := b.PatternString() == ""
+	noPattern := b.IsEmptyPattern()
 	noFile := !b.Exists(query.FieldFile)
 	noLang := !b.Exists(query.FieldLang)
 	isEmpty := noPattern && noFile && noLang
@@ -636,6 +636,14 @@ func ToEvaluateJob(args *Args, q query.Basic, db database.DB) (Job, error) {
 		job, err = ToSearchJob(args, query.ToNodes(q.Parameters), db)
 	} else {
 		job, err = toPatternExpressionJob(args, q, db)
+		if err != nil {
+			return nil, err
+		}
+		if _, ok := q.Pattern.(query.Pattern); !ok {
+			// This pattern is not an atomic Pattern, but an
+			// expression. Optimize the expression for backends.
+			job, err = optimizeJobs(job, args, q.ToParseTree(), db)
+		}
 	}
 	if err != nil {
 		return nil, err
@@ -647,6 +655,112 @@ func ToEvaluateJob(args *Args, q query.Basic, db database.DB) (Job, error) {
 	}
 
 	return NewTimeoutJob(timeout, NewLimitJob(maxResults, job)), nil
+}
+
+// optimizeJobs optimizes a baseJob query. It does this by calling ToSearchJob
+// with a query that has a more expressive shape (and/or/not expressions) and
+// converts them directly to native queries for a backed. Currently that backend
+// is Zoekt. It removes unoptimized Zoekt jobs from the baseJob and repalces it
+// with the optimized ones.
+func optimizeJobs(baseJob Job, jargs *Args, q query.Q, db database.DB) (Job, error) {
+	candidateOptimizedJobs, err := ToSearchJob(jargs, q, db)
+	if err != nil {
+		return nil, err
+	}
+
+	var optimizedJobs []Job
+	collector := Mapper{
+		MapJob: func(currentJob Job) Job {
+			switch currentJob.(type) {
+			case
+				*zoektutil.GlobalSearch,
+				*symbol.RepoUniverseSymbolSearch,
+				*zoektutil.ZoektRepoSubsetSearch,
+				*zoektutil.ZoektSymbolSearch:
+				optimizedJobs = append(optimizedJobs, currentJob)
+				return currentJob
+			default:
+				return currentJob
+			}
+		},
+	}
+
+	collector.Map(candidateOptimizedJobs)
+
+	// We've created optimized jobs. Now let's remove any unoptimized ones
+	// in the job expression tree. We trim off any jobs corresponding to
+	// optimized ones (if we created an optimized global zoekt jobs, we
+	// delete all global zoekt jobs created by the default strategy).
+
+	exists := func(name string) bool {
+		for _, j := range optimizedJobs {
+			if name == j.Name() {
+				return true
+			}
+		}
+		return false
+	}
+
+	trimmer := Mapper{
+		MapJob: func(currentJob Job) Job {
+			switch currentJob.(type) {
+			case *zoektutil.GlobalSearch:
+				if exists("ZoektGlobalSearch") {
+					return &noopJob{}
+				}
+				return currentJob
+
+			case *zoektutil.ZoektRepoSubsetSearch:
+				if exists("ZoektRepoSubset") {
+					return &noopJob{}
+				}
+				return currentJob
+
+			case *zoektutil.ZoektSymbolSearch:
+				if exists("ZoektSymbolSearch") {
+					return &noopJob{}
+				}
+				return currentJob
+
+			case *symbol.RepoUniverseSymbolSearch:
+				if exists("RepoUniverseSymbolSearch") {
+					return &noopJob{}
+				}
+				return currentJob
+
+			default:
+				return currentJob
+			}
+		},
+	}
+
+	trimmedJob := trimmer.Map(baseJob)
+
+	// wrap the optimized jobs that require repo pager
+	for i, job := range optimizedJobs {
+		switch job.(type) {
+		case
+			*zoektutil.ZoektRepoSubsetSearch,
+			*zoektutil.ZoektSymbolSearch:
+			optimizedJobs[i] = &repoPagerJob{
+				child:            job,
+				repoOptions:      toRepoOptions(q, jargs.SearchInputs.UserSettings),
+				useIndex:         q.Index(),
+				containsRefGlobs: query.ContainsRefGlobs(q),
+				zoekt:            jargs.Zoekt,
+			}
+		}
+	}
+
+	optimizedJob := NewParallelJob(optimizedJobs...)
+
+	// wrap optimized jobs in the permissions checker
+	checker := authz.DefaultSubRepoPermsChecker
+	if authz.SubRepoEnabled(checker) {
+		optimizedJob = NewFilterJob(optimizedJob)
+	}
+
+	return NewParallelJob(optimizedJob, trimmedJob), nil
 }
 
 // FromExpandedPlan takes a query plan that has had all predicates expanded,

@@ -363,9 +363,9 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *Features, 
 
 // ComputeResultTypes returns result types based three inputs: `type:...` in the query,
 // the `pattern`, and top-level `searchType` (coming from a GQL value).
-func ComputeResultTypes(types []string, pattern string, searchType query.SearchType) result.Types {
+func ComputeResultTypes(types []string, b query.Basic, searchType query.SearchType) result.Types {
 	var rts result.Types
-	if searchType == query.SearchTypeStructural && pattern != "" {
+	if searchType == query.SearchTypeStructural && !b.IsEmptyPattern() {
 		rts = result.TypeStructural
 	} else {
 		if len(types) == 0 {
