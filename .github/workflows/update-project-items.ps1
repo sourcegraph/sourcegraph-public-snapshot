@@ -95,7 +95,7 @@ switch ($github.event_name) {
                 Send-SlackMessage -Uri $SlackWebhookUri
 
         } else {
-            if ($github.event.issue.labels.labels -notcontains $TeamLabel) {
+            if ($github.event.issue.labels -notcontains $TeamLabel) {
                 Write-Information "Closed / re-opened issue labeled with non-team label ($($github.event.label.name)), exiting."
                 return
             }
