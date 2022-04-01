@@ -392,6 +392,17 @@ func GitServer() *monitoring.Container {
 					},
 					{
 						{
+							Name:           "janitor_job_failures",
+							Description:    "failures over 5m (by job)",
+							Query:          `sum by (job_name) (rate(src_gitserver_janitor_job_duration_seconds_count{success="false"}[5m]))`,
+							NoAlert:        true,
+							Panel:          monitoring.Panel().LegendFormat("{{job_name}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Interpretation: "the rate of failures over 5m (by job)",
+						},
+					},
+					{
+						{
 							Name:           "repos_removed",
 							Description:    "repositories removed due to disk pressure",
 							Query:          "sum by (instance) (rate(src_gitserver_repos_removed_disk_pressure[5m]))",
@@ -399,6 +410,28 @@ func GitServer() *monitoring.Container {
 							Panel:          monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
 							Owner:          monitoring.ObservableOwnerCoreApplication,
 							Interpretation: "Repositories removed due to disk pressure",
+						},
+					},
+					{
+						{
+							Name:           "sg_maintenance_reason",
+							Description:    "successful sg maintenance jobs over 1h (by reason)",
+							Query:          `sum by (reason) (rate(src_gitserver_maintenance_status{success="true"}[1h]))`,
+							NoAlert:        true,
+							Panel:          monitoring.Panel().LegendFormat("{{reason}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Interpretation: "the rate of successful sg maintenance jobs and the reason why they were triggered",
+						},
+					},
+					{
+						{
+							Name:           "git_prune_skipped",
+							Description:    "successful git prune jobs over 1h",
+							Query:          `sum by (skipped) (rate(src_gitserver_prune_status{success="true"}[1h]))`,
+							NoAlert:        true,
+							Panel:          monitoring.Panel().LegendFormat("skipped={{skipped}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Interpretation: "the rate of successful git prune jobs over 1h and whether they were skipped",
 						},
 					},
 				},
