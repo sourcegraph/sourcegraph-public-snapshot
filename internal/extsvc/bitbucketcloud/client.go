@@ -160,7 +160,13 @@ func (c *Client) reqPage(ctx context.Context, url string, results interface{}) (
 
 func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) error {
 	req.URL = c.URL.ResolveReference(req.URL)
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+
+	// If the request doesn't expect a body, then including a content-type can
+	// actually cause errors on the Bitbucket side. So we need to pick apart the
+	// request just a touch to figure out if we should add the header.
+	if req.Body != nil {
+		req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	}
 
 	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx),
 		req.WithContext(ctx),
