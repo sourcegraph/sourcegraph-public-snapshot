@@ -79,7 +79,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 		zoekt:          jargs.Zoekt,
 	}
 
-	repoUniverseSearch, skipRepoSubsetSearch, onlyRunSearcher := jobMode(b, resultTypes, jargs.SearchInputs.PatternType, jargs.SearchInputs.OnSourcegraphDotCom)
+	repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, resultTypes, jargs.SearchInputs.PatternType, jargs.SearchInputs.OnSourcegraphDotCom)
 
 	var requiredJobs, optionalJobs []Job
 	addJob := func(required bool, job Job) {
@@ -97,8 +97,10 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 		// of the above logic should be used to create search jobs
 		// across all of Sourcegraph.
 
-		if repoUniverseSearch {
-			if resultTypes.Has(result.TypeFile | result.TypePath) {
+		// Create Text Search Jobs
+		if resultTypes.Has(result.TypeFile | result.TypePath) {
+			// Create Global Text Search jobs.
+			if repoUniverseSearch {
 				job, err := builder.newZoektGlobalSearch(search.TextRequest)
 				if err != nil {
 					return nil, err
@@ -106,65 +108,71 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 				addJob(true, job)
 			}
 
-			if resultTypes.Has(result.TypeSymbol) {
+			// Create Text Search jobs over repo set.
+			if !skipRepoSubsetSearch {
+				var textSearchJobs []Job
+				if runZoektOverRepos {
+					job, err := builder.newZoektSearch(search.TextRequest)
+					if err != nil {
+						return nil, err
+					}
+					textSearchJobs = append(textSearchJobs, job)
+				}
+
+				textSearchJobs = append(textSearchJobs, &searcher.Searcher{
+					PatternInfo:     patternInfo,
+					Indexed:         false,
+					SearcherURLs:    jargs.SearcherURLs,
+					UseFullDeadline: useFullDeadline,
+				})
+
+				addJob(true, &repoPagerJob{
+					child:            NewParallelJob(textSearchJobs...),
+					repoOptions:      repoOptions,
+					useIndex:         b.Index(),
+					containsRefGlobs: query.ContainsRefGlobs(q),
+					zoekt:            jargs.Zoekt,
+				})
+			}
+		}
+
+		// Create Symbol Search Jobs
+		if resultTypes.Has(result.TypeSymbol) {
+			// Create Global Symbol Search jobs.
+			if repoUniverseSearch {
 				job, err := builder.newZoektGlobalSearch(search.SymbolRequest)
 				if err != nil {
 					return nil, err
 				}
 				addJob(true, job)
 			}
-		}
 
-		if resultTypes.Has(result.TypeFile|result.TypePath) && !skipRepoSubsetSearch {
-			var textSearchJobs []Job
-			if !onlyRunSearcher {
-				job, err := builder.newZoektSearch(search.TextRequest)
-				if err != nil {
-					return nil, err
+			// Create Symbol Search jobs over repo set.
+			if !skipRepoSubsetSearch {
+				var symbolSearchJobs []Job
+
+				if runZoektOverRepos {
+					job, err := builder.newZoektSearch(search.SymbolRequest)
+					if err != nil {
+						return nil, err
+					}
+					symbolSearchJobs = append(symbolSearchJobs, job)
 				}
-				textSearchJobs = append(textSearchJobs, job)
+
+				symbolSearchJobs = append(symbolSearchJobs, &searcher.SymbolSearcher{
+					PatternInfo: patternInfo,
+					Limit:       maxResults,
+				})
+
+				required := useFullDeadline || resultTypes.Without(result.TypeSymbol) == 0
+				addJob(required, &repoPagerJob{
+					child:            NewParallelJob(symbolSearchJobs...),
+					repoOptions:      repoOptions,
+					useIndex:         b.Index(),
+					containsRefGlobs: query.ContainsRefGlobs(q),
+					zoekt:            jargs.Zoekt,
+				})
 			}
-
-			textSearchJobs = append(textSearchJobs, &searcher.Searcher{
-				PatternInfo:     patternInfo,
-				Indexed:         false,
-				SearcherURLs:    jargs.SearcherURLs,
-				UseFullDeadline: useFullDeadline,
-			})
-
-			addJob(true, &repoPagerJob{
-				child:            NewParallelJob(textSearchJobs...),
-				repoOptions:      repoOptions,
-				useIndex:         b.Index(),
-				containsRefGlobs: query.ContainsRefGlobs(q),
-				zoekt:            jargs.Zoekt,
-			})
-		}
-
-		if resultTypes.Has(result.TypeSymbol) && b.PatternString() != "" && !skipRepoSubsetSearch {
-			var symbolSearchJobs []Job
-
-			if !onlyRunSearcher {
-				job, err := builder.newZoektSearch(search.SymbolRequest)
-				if err != nil {
-					return nil, err
-				}
-				symbolSearchJobs = append(symbolSearchJobs, job)
-			}
-
-			symbolSearchJobs = append(symbolSearchJobs, &searcher.SymbolSearcher{
-				PatternInfo: patternInfo,
-				Limit:       maxResults,
-			})
-
-			required := useFullDeadline || resultTypes.Without(result.TypeSymbol) == 0
-			addJob(required, &repoPagerJob{
-				child:            NewParallelJob(symbolSearchJobs...),
-				repoOptions:      repoOptions,
-				useIndex:         b.Index(),
-				containsRefGlobs: query.ContainsRefGlobs(q),
-				zoekt:            jargs.Zoekt,
-			})
 		}
 
 		if resultTypes.Has(result.TypeCommit) || resultTypes.Has(result.TypeDiff) {
@@ -488,7 +496,7 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (Job, error) 
 	return nil, errors.Errorf("attempt to create unrecognized zoekt search with value %v", typ)
 }
 
-func jobMode(b query.Basic, resultTypes result.Types, st query.SearchType, onSourcegraphDotCom bool) (repoUniverseSearch, skipRepoSubsetSearch, onlyRunSearcher bool) {
+func jobMode(b query.Basic, resultTypes result.Types, st query.SearchType, onSourcegraphDotCom bool) (repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos bool) {
 	isGlobalSearch := func() bool {
 		if st == query.SearchTypeStructural {
 			return false
@@ -529,13 +537,20 @@ func jobMode(b query.Basic, resultTypes result.Types, st query.SearchType, onSou
 	// is always 0, meaning that we should not create jobs to run
 	// unindexed searcher.
 	skipRepoSubsetSearch = isEmpty || (repoUniverseSearch && onSourcegraphDotCom)
-	// onlyRunSearcher is a value that controls whether to run unindexed
-	// search if a query triggers repoUniverseSearch. We want to run
-	// searcher on unindexed repos when we run a repoUniverseSearch, but
-	// only on instances where we are NOT on sourcegraph.com.
-	onlyRunSearcher = repoUniverseSearch && !onSourcegraphDotCom
 
-	return repoUniverseSearch, skipRepoSubsetSearch, onlyRunSearcher
+	// runZoektOverRepos controls whether we run Zoekt over a set of
+	// resolved repositories. Because Zoekt can run natively run over all
+	// repositories (AKA global search), we can sometimes skip searching
+	// over resolved repos.
+	//
+	// The decision to run over a set of repos is as follows:
+	// (1) When we don't run global search, run Zoekt over repositories (we have to, otherwise
+	// we'd be skipping indexed search entirely).
+	// (2) If on Sourcegraph.com, resolve repos unconditionally (we run both global search
+	// and search over resolved repos, and return results from either job).
+	runZoektOverRepos = !repoUniverseSearch || onSourcegraphDotCom
+
+	return repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos
 }
 
 func toFeatures(flags featureflag.FlagSet) search.Features {
