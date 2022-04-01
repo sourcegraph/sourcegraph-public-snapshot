@@ -989,12 +989,13 @@ Referenced by:
 
 **rollout**: Rollout only defined when flag_type is rollout. Increments of 0.01%
 
-# Table "public.gitserver_localclone_jobs"
+# Table "public.gitserver_relocator_jobs"
 ```
-      Column       |           Type           | Collation | Nullable |                        Default                        
--------------------+--------------------------+-----------+----------+-------------------------------------------------------
- id                | integer                  |           | not null | nextval('gitserver_localclone_jobs_id_seq'::regclass)
+      Column       |           Type           | Collation | Nullable |                       Default                        
+-------------------+--------------------------+-----------+----------+------------------------------------------------------
+ id                | integer                  |           | not null | nextval('gitserver_relocator_jobs_id_seq'::regclass)
  state             | text                     |           |          | 'queued'::text
+ queued_at         | timestamp with time zone |           |          | now()
  failure_message   | text                     |           |          | 
  started_at        | timestamp with time zone |           |          | 
  finished_at       | timestamp with time zone |           |          | 
@@ -1008,9 +1009,8 @@ Referenced by:
  source_hostname   | text                     |           | not null | 
  dest_hostname     | text                     |           | not null | 
  delete_source     | boolean                  |           | not null | false
- queued_at         | timestamp with time zone |           |          | now()
 Indexes:
-    "gitserver_localclone_jobs_pkey" PRIMARY KEY, btree (id)
+    "gitserver_relocator_jobs_pkey" PRIMARY KEY, btree (id)
 
 ```
 
@@ -2089,7 +2089,7 @@ Triggers:
  repo_id       | integer                  |           | not null | 
  permission    | text                     |           | not null | 
  updated_at    | timestamp with time zone |           | not null | 
- user_ids_ints | integer[]                |           | not null | '{}'::integer[]
+ user_ids_ints | bigint[]                 |           | not null | '{}'::integer[]
 Indexes:
     "repo_pending_permissions_perm_unique" UNIQUE CONSTRAINT, btree (repo_id, permission)
 
@@ -2381,7 +2381,7 @@ Foreign-key constraints:
 ```
      Column      |           Type           | Collation | Nullable |                       Default                        
 -----------------+--------------------------+-----------+----------+------------------------------------------------------
- id              | integer                  |           | not null | nextval('user_pending_permissions_id_seq'::regclass)
+ id              | bigint                   |           | not null | nextval('user_pending_permissions_id_seq'::regclass)
  bind_id         | text                     |           | not null | 
  permission      | text                     |           | not null | 
  object_type     | text                     |           | not null | 
@@ -2592,13 +2592,14 @@ Foreign-key constraints:
      JOIN external_service_sync_jobs j ON ((e.id = j.external_service_id)));
 ```
 
-# View "public.gitserver_localclone_jobs_with_repo_name"
+# View "public.gitserver_relocator_jobs_with_repo_name"
 
 ## View query:
 
 ```sql
  SELECT glj.id,
     glj.state,
+    glj.queued_at,
     glj.failure_message,
     glj.started_at,
     glj.finished_at,
@@ -2612,9 +2613,8 @@ Foreign-key constraints:
     glj.source_hostname,
     glj.dest_hostname,
     glj.delete_source,
-    glj.queued_at,
     r.name AS repo_name
-   FROM (gitserver_localclone_jobs glj
+   FROM (gitserver_relocator_jobs glj
      JOIN repo r ON ((r.id = glj.repo_id)));
 ```
 

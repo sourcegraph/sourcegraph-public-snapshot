@@ -5,7 +5,9 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
 import { BrowserRouter } from 'react-router-dom'
 
+// eslint-disable-next-line no-restricted-imports
 import browserExtensionStyles from '@sourcegraph/browser/src/app.scss'
+// eslint-disable-next-line no-restricted-imports
 import bitbucketCodeHostStyles from '@sourcegraph/browser/src/shared/code-hosts/bitbucket/codeHost.module.scss'
 import { registerHighlightContributions } from '@sourcegraph/common'
 

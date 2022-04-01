@@ -6,7 +6,9 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     class="pt-2 w-100 streamingSkippedItem streamingSkippedItemWarn"
   >
     <button
+      aria-expanded="true"
       class="btn btnOutlineDanger button p-2 w-100 bg-transparent border-0"
+      role="button"
       type="button"
     >
       <h4
@@ -62,7 +64,9 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     class="pt-2 w-100 streamingSkippedItem streamingSkippedItemWarn"
   >
     <button
+      aria-expanded="false"
       class="btn btnOutlineDanger button p-2 w-100 bg-transparent border-0"
+      role="button"
       type="button"
     >
       <h4
@@ -118,7 +122,9 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     class="pt-2 w-100 streamingSkippedItem"
   >
     <button
+      aria-expanded="false"
       class="btn btnOutlinePrimary button p-2 w-100 bg-transparent border-0"
+      role="button"
       type="button"
     >
       <h4
@@ -174,7 +180,9 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     class="pt-2 w-100 streamingSkippedItem"
   >
     <button
+      aria-expanded="false"
       class="btn btnOutlinePrimary button p-2 w-100 bg-transparent border-0"
+      role="button"
       type="button"
     >
       <h4
@@ -230,7 +238,9 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     class="pt-2 w-100 streamingSkippedItem"
   >
     <button
+      aria-expanded="false"
       class="btn btnOutlinePrimary button p-2 w-100 bg-transparent border-0"
+      role="button"
       type="button"
     >
       <h4

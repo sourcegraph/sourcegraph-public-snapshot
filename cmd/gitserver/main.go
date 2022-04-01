@@ -207,6 +207,7 @@ func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
 		Retries:             10,
 		MaxChanges:          -1,
 		IncludeBinaries:     false,
+		FsyncEnable:         false,
 	}
 
 	if conn.FusionClient == nil {
@@ -237,6 +238,7 @@ func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
 		fc.MaxChanges = conn.FusionClient.MaxChanges
 	}
 	fc.IncludeBinaries = conn.FusionClient.IncludeBinaries
+	fc.FsyncEnable = conn.FusionClient.FsyncEnable
 
 	return fc
 }

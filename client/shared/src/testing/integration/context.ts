@@ -15,6 +15,7 @@ import { first, timeoutWith } from 'rxjs/operators'
 
 import { asError, keyExistsIn } from '@sourcegraph/common'
 import { ErrorGraphQLResult, SuccessGraphQLResult } from '@sourcegraph/http-client'
+// eslint-disable-next-line no-restricted-imports
 import { SourcegraphContext } from '@sourcegraph/web/src/jscontext'
 
 import { recordCoverage } from '../coverage'

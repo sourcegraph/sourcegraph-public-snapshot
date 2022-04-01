@@ -67,7 +67,18 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 
 	features := toFeatures(jargs.SearchInputs.Features)
 	repoOptions := toRepoOptions(q, jargs.SearchInputs.UserSettings)
-	repoUniverseSearch, skipRepoSubsetSearch, onlyRunSearcher := jobMode(b, resultTypes, jargs.SearchInputs.PatternType, jargs.SearchInputs.OnSourcegraphDotCom)
+
+	builder := &jobBuilder{
+		query:          b,
+		resultTypes:    resultTypes,
+		repoOptions:    repoOptions,
+		features:       &features,
+		fileMatchLimit: fileMatchLimit,
+		selector:       selector,
+		zoekt:          jargs.Zoekt,
+	}
+
+	repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, resultTypes, jargs.SearchInputs.PatternType, jargs.SearchInputs.OnSourcegraphDotCom)
 
 	var requiredJobs, optionalJobs []Job
 	addJob := func(required bool, job Job) {
@@ -85,130 +96,82 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 		// of the above logic should be used to create search jobs
 		// across all of Sourcegraph.
 
-		if repoUniverseSearch {
-			defaultScope, err := zoektutil.DefaultGlobalQueryScope(repoOptions)
-			if err != nil {
-				return nil, err
-			}
-			includePrivate := repoOptions.Visibility == query.Private || repoOptions.Visibility == query.Any
-
-			if resultTypes.Has(result.TypeFile | result.TypePath) {
-				typ := search.TextRequest
-				zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &features, typ)
+		// Create Text Search Jobs
+		if resultTypes.Has(result.TypeFile | result.TypePath) {
+			// Create Global Text Search jobs.
+			if repoUniverseSearch {
+				job, err := builder.newZoektGlobalSearch(search.TextRequest)
 				if err != nil {
 					return nil, err
 				}
+				addJob(true, job)
+			}
 
-				globalZoektQuery := zoektutil.NewGlobalZoektQuery(zoektQuery, defaultScope, includePrivate)
-
-				zoektArgs := &search.ZoektParameters{
-					// TODO(rvantonder): the Query value is set when the global zoekt query is
-					// enriched with private repository data in the search job's Run method, and
-					// is therefore set to `nil` below.
-					// Ideally, The ZoektParameters type should not expose this field for Universe text
-					// searches at all, and will be removed once jobs are fully migrated.
-					Query:          nil,
-					Typ:            typ,
-					FileMatchLimit: fileMatchLimit,
-					Select:         selector,
-					Zoekt:          jargs.Zoekt,
+			// Create Text Search jobs over repo set.
+			if !skipRepoSubsetSearch {
+				var textSearchJobs []Job
+				if runZoektOverRepos {
+					job, err := builder.newZoektSearch(search.TextRequest)
+					if err != nil {
+						return nil, err
+					}
+					textSearchJobs = append(textSearchJobs, job)
 				}
 
-				addJob(true, &zoektutil.GlobalSearch{
-					GlobalZoektQuery: globalZoektQuery,
-					ZoektArgs:        zoektArgs,
-
-					RepoOptions: repoOptions,
+				textSearchJobs = append(textSearchJobs, &searcher.Searcher{
+					PatternInfo:     patternInfo,
+					Indexed:         false,
+					SearcherURLs:    jargs.SearcherURLs,
+					UseFullDeadline: useFullDeadline,
 				})
-			}
 
-			if resultTypes.Has(result.TypeSymbol) {
-				typ := search.SymbolRequest
-				zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &features, typ)
-				if err != nil {
-					return nil, err
-				}
-				globalZoektQuery := zoektutil.NewGlobalZoektQuery(zoektQuery, defaultScope, includePrivate)
-
-				zoektArgs := &search.ZoektParameters{
-					Query:          nil,
-					Typ:            typ,
-					FileMatchLimit: fileMatchLimit,
-					Select:         selector,
-					Zoekt:          jargs.Zoekt,
-				}
-
-				addJob(true, &symbol.RepoUniverseSymbolSearch{
-					GlobalZoektQuery: globalZoektQuery,
-					ZoektArgs:        zoektArgs,
-					RepoOptions:      repoOptions,
+				addJob(true, &repoPagerJob{
+					child:            NewParallelJob(textSearchJobs...),
+					repoOptions:      repoOptions,
+					useIndex:         b.Index(),
+					containsRefGlobs: query.ContainsRefGlobs(q),
+					zoekt:            jargs.Zoekt,
 				})
 			}
 		}
 
-		if resultTypes.Has(result.TypeFile|result.TypePath) && !skipRepoSubsetSearch {
-			var textSearchJobs []Job
-			typ := search.TextRequest
-			if !onlyRunSearcher {
-				zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &features, typ)
+		// Create Symbol Search Jobs
+		if resultTypes.Has(result.TypeSymbol) {
+			// Create Global Symbol Search jobs.
+			if repoUniverseSearch {
+				job, err := builder.newZoektGlobalSearch(search.SymbolRequest)
 				if err != nil {
 					return nil, err
 				}
-				textSearchJobs = append(textSearchJobs, &zoektutil.ZoektRepoSubsetSearch{
-					Query:          zoektQuery,
-					Typ:            typ,
-					FileMatchLimit: fileMatchLimit,
-					Select:         selector,
-					Zoekt:          jargs.Zoekt,
-				})
+				addJob(true, job)
 			}
 
-			textSearchJobs = append(textSearchJobs, &searcher.Searcher{
-				PatternInfo:     patternInfo,
-				Indexed:         false,
-				SearcherURLs:    jargs.SearcherURLs,
-				UseFullDeadline: useFullDeadline,
-			})
+			// Create Symbol Search jobs over repo set.
+			if !skipRepoSubsetSearch {
+				var symbolSearchJobs []Job
 
-			addJob(true, &repoPagerJob{
-				child:            NewParallelJob(textSearchJobs...),
-				repoOptions:      repoOptions,
-				useIndex:         b.Index(),
-				containsRefGlobs: query.ContainsRefGlobs(q),
-				zoekt:            jargs.Zoekt,
-			})
-		}
-
-		if resultTypes.Has(result.TypeSymbol) && b.PatternString() != "" && !skipRepoSubsetSearch {
-			var symbolSearchJobs []Job
-			typ := search.SymbolRequest
-
-			if !onlyRunSearcher {
-				zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &features, typ)
-				if err != nil {
-					return nil, err
+				if runZoektOverRepos {
+					job, err := builder.newZoektSearch(search.SymbolRequest)
+					if err != nil {
+						return nil, err
+					}
+					symbolSearchJobs = append(symbolSearchJobs, job)
 				}
-				symbolSearchJobs = append(symbolSearchJobs, &zoektutil.ZoektSymbolSearch{
-					Query:          zoektQuery,
-					FileMatchLimit: fileMatchLimit,
-					Select:         selector,
-					Zoekt:          jargs.Zoekt,
+
+				symbolSearchJobs = append(symbolSearchJobs, &searcher.SymbolSearcher{
+					PatternInfo: patternInfo,
+					Limit:       maxResults,
+				})
+
+				required := useFullDeadline || resultTypes.Without(result.TypeSymbol) == 0
+				addJob(required, &repoPagerJob{
+					child:            NewParallelJob(symbolSearchJobs...),
+					repoOptions:      repoOptions,
+					useIndex:         b.Index(),
+					containsRefGlobs: query.ContainsRefGlobs(q),
+					zoekt:            jargs.Zoekt,
 				})
 			}
-
-			symbolSearchJobs = append(symbolSearchJobs, &searcher.SymbolSearcher{
-				PatternInfo: patternInfo,
-				Limit:       maxResults,
-			})
-
-			required := useFullDeadline || resultTypes.Without(result.TypeSymbol) == 0
-			addJob(required, &repoPagerJob{
-				child:            NewParallelJob(symbolSearchJobs...),
-				repoOptions:      repoOptions,
-				useIndex:         b.Index(),
-				containsRefGlobs: query.ContainsRefGlobs(q),
-				zoekt:            jargs.Zoekt,
-			})
 		}
 
 		if resultTypes.Has(result.TypeCommit) || resultTypes.Has(result.TypeDiff) {
@@ -253,10 +216,8 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 			}
 
 			addJob(true, &structural.StructuralSearch{
-				ZoektArgs:    zoektArgs,
-				SearcherArgs: searcherArgs,
-
-				NotSearcherOnly:  !onlyRunSearcher,
+				ZoektArgs:        zoektArgs,
+				SearcherArgs:     searcherArgs,
 				UseIndex:         b.Index(),
 				ContainsRefGlobs: query.ContainsRefGlobs(q),
 				RepoOpts:         repoOptions,
@@ -432,7 +393,101 @@ func toRepoOptions(q query.Q, userSettings *schema.Settings) search.RepoOptions 
 	}
 }
 
-func jobMode(b query.Basic, resultTypes result.Types, st query.SearchType, onSourcegraphDotCom bool) (repoUniverseSearch, skipRepoSubsetSearch, onlyRunSearcher bool) {
+// jobBuilder represents computed static values that are backend agnostic: we
+// generally need to compute these values before we're able to create (or build)
+// multiple specific jobs. If you want to add new fields or state to run a
+// search, ask yourself: is this value specific to a backend like Zoekt,
+// searcher, or gitserver, or a new backend? If yes, then that new field does
+// not belong in this builder type, and your new field should probably be
+// computed either using values in this builder, or obtained from the outside
+// world where you construct your specific search job.
+//
+// If you _may_ need the value available to start a search across differnt
+// backends, then this builder type _may_ be the right place for it to live.
+// If in doubt, ask the search team.
+type jobBuilder struct {
+	query          query.Basic
+	resultTypes    result.Types
+	repoOptions    search.RepoOptions
+	features       *search.Features
+	fileMatchLimit int32
+	selector       filter.SelectPath
+
+	// Just a handle to a Zoekt client, which we always want around.
+	zoekt zoekt.Streamer
+}
+
+func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (Job, error) {
+	zoektQuery, err := search.QueryToZoektQuery(b.query, b.resultTypes, b.features, typ)
+	if err != nil {
+		return nil, err
+	}
+
+	defaultScope, err := zoektutil.DefaultGlobalQueryScope(b.repoOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	includePrivate := b.repoOptions.Visibility == query.Private || b.repoOptions.Visibility == query.Any
+	globalZoektQuery := zoektutil.NewGlobalZoektQuery(zoektQuery, defaultScope, includePrivate)
+
+	zoektArgs := &search.ZoektParameters{
+		// TODO(rvantonder): the Query value is set when the global zoekt query is
+		// enriched with private repository data in the search job's Run method, and
+		// is therefore set to `nil` below.
+		// Ideally, The ZoektParameters type should not expose this field for Universe text
+		// searches at all, and will be removed once jobs are fully migrated.
+		Query:          nil,
+		Typ:            typ,
+		FileMatchLimit: b.fileMatchLimit,
+		Select:         b.selector,
+		Zoekt:          b.zoekt,
+	}
+
+	switch typ {
+	case search.SymbolRequest:
+		return &symbol.RepoUniverseSymbolSearch{
+			GlobalZoektQuery: globalZoektQuery,
+			ZoektArgs:        zoektArgs,
+			RepoOptions:      b.repoOptions,
+		}, nil
+	case search.TextRequest:
+		return &zoektutil.GlobalSearch{
+			GlobalZoektQuery: globalZoektQuery,
+			ZoektArgs:        zoektArgs,
+			RepoOptions:      b.repoOptions,
+		}, nil
+	}
+	return nil, errors.Errorf("attempt to create unrecognized zoekt global search with value %v", typ)
+}
+
+func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (Job, error) {
+	zoektQuery, err := search.QueryToZoektQuery(b.query, b.resultTypes, b.features, typ)
+	if err != nil {
+		return nil, err
+	}
+
+	switch typ {
+	case search.SymbolRequest:
+		return &zoektutil.ZoektSymbolSearch{
+			Query:          zoektQuery,
+			FileMatchLimit: b.fileMatchLimit,
+			Select:         b.selector,
+			Zoekt:          b.zoekt,
+		}, nil
+	case search.TextRequest:
+		return &zoektutil.ZoektRepoSubsetSearch{
+			Query:          zoektQuery,
+			Typ:            typ,
+			FileMatchLimit: b.fileMatchLimit,
+			Select:         b.selector,
+			Zoekt:          b.zoekt,
+		}, nil
+	}
+	return nil, errors.Errorf("attempt to create unrecognized zoekt search with value %v", typ)
+}
+
+func jobMode(b query.Basic, resultTypes result.Types, st query.SearchType, onSourcegraphDotCom bool) (repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos bool) {
 	isGlobalSearch := func() bool {
 		if st == query.SearchTypeStructural {
 			return false
@@ -473,13 +528,20 @@ func jobMode(b query.Basic, resultTypes result.Types, st query.SearchType, onSou
 	// is always 0, meaning that we should not create jobs to run
 	// unindexed searcher.
 	skipRepoSubsetSearch = isEmpty || (repoUniverseSearch && onSourcegraphDotCom)
-	// onlyRunSearcher is a value that controls whether to run unindexed
-	// search if a query triggers repoUniverseSearch. We want to run
-	// searcher on unindexed repos when we run a repoUniverseSearch, but
-	// only on instances where we are NOT on sourcegraph.com.
-	onlyRunSearcher = repoUniverseSearch && !onSourcegraphDotCom
 
-	return repoUniverseSearch, skipRepoSubsetSearch, onlyRunSearcher
+	// runZoektOverRepos controls whether we run Zoekt over a set of
+	// resolved repositories. Because Zoekt can run natively run over all
+	// repositories (AKA global search), we can sometimes skip searching
+	// over resolved repos.
+	//
+	// The decision to run over a set of repos is as follows:
+	// (1) When we don't run global search, run Zoekt over repositories (we have to, otherwise
+	// we'd be skipping indexed search entirely).
+	// (2) If on Sourcegraph.com, resolve repos unconditionally (we run both global search
+	// and search over resolved repos, and return results from either job).
+	runZoektOverRepos = !repoUniverseSearch || onSourcegraphDotCom
+
+	return repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos
 }
 
 func toFeatures(flags featureflag.FlagSet) search.Features {

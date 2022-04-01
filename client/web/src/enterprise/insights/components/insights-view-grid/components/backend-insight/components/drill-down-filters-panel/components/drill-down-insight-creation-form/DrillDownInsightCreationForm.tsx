@@ -3,10 +3,10 @@ import React from 'react'
 import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Input } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../../components/LoaderButton'
-import { FormInput } from '../../../../../../../form/form-input/FormInput'
+import { getDefaultInputProps } from '../../../../../../../form/getDefaultInputProps'
 import { useAsyncInsightTitleValidator } from '../../../../../../../form/hooks/use-async-insight-title-validator'
 import { useField } from '../../../../../../../form/hooks/useField'
 import { FORM_ERROR, SubmissionResult, useForm } from '../../../../../../../form/hooks/useForm'
@@ -52,15 +52,13 @@ export const DrillDownInsightCreationForm: React.FunctionComponent<DrillDownInsi
         <form ref={ref} onSubmit={handleSubmit} noValidate={true} className={classNames(className, 'p-3')}>
             <h3 className="mb-3">Save as new view</h3>
 
-            <FormInput
-                title="Name"
+            <Input
+                label="Name"
                 autoFocus={true}
                 required={true}
-                description="Shown as the title for your insight"
+                message="Shown as the title for your insight"
                 placeholder="Example: Migration to React function components"
-                valid={insightName.meta.touched && insightName.meta.validState === 'VALID'}
-                error={insightName.meta.touched && insightName.meta.error}
-                {...insightName.input}
+                {...getDefaultInputProps(insightName)}
             />
 
             <footer className="mt-4 d-flex flex-wrap align-items-center">
