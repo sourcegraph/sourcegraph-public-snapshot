@@ -4,9 +4,9 @@ package security
 
 import (
 	"errors"
+	"fmt"
 	"unicode"
 	"unicode/utf8"
-	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -38,9 +38,9 @@ func validatePasswordUsingDefaultMethod(passwd string) error {
 	if pwLen < minPasswordRunes ||
 		pwLen > maxPasswordRunes {
 		return errcode.NewPresentationError(fmt.Sprintf("Your password may not be less than %d or be more than %d characters.", minPasswordRunes, maxPasswordRunes))
-		}
+	}
 
-	return nil 
+	return nil
 }
 
 // This validates the password using the Password Policy configured
@@ -49,7 +49,7 @@ func validatePasswordUsingPolicy(passwd string) error {
 	numbers := false
 	upperCase := false
 	special := 0;
-	
+
 	for _, c := range passwd {
 			switch {
 			case unicode.IsNumber(c):
@@ -71,9 +71,10 @@ func validatePasswordUsingPolicy(passwd string) error {
 	if letters == 0 {
 		return errors.New("password empty")
 	}
-	// Get a reference to the password policy 
+
+	// Get a reference to the password policy
 	policy := conf.ExperimentalFeatures().PasswordPolicy
-	
+
 	// Minimum Length Check
 	if letters < policy.MinimumLength {
 		return errcode.NewPresentationError(fmt.Sprintf("Your password may not be less than %d characters.", policy.MinimumLength))
