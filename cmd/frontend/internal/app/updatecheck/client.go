@@ -375,26 +375,27 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 	}
 
 	r := &pingRequest{
-		ClientSiteID:             siteid.Get(),
-		DeployType:               deploy.Type(),
-		ClientVersionString:      version.Version(),
-		LicenseKey:               conf.Get().LicenseKey,
-		CodeIntelUsage:           []byte("{}"),
-		NewCodeIntelUsage:        []byte("{}"),
-		SearchUsage:              []byte("{}"),
-		BatchChangesUsage:        []byte("{}"),
-		GrowthStatistics:         []byte("{}"),
-		CTAUsage:                 []byte("{}"),
-		SavedSearches:            []byte("{}"),
-		HomepagePanels:           []byte("{}"),
-		Repositories:             []byte("{}"),
-		RetentionStatistics:      []byte("{}"),
-		SearchOnboarding:         []byte("{}"),
-		ExtensionsUsage:          []byte("{}"),
-		CodeInsightsUsage:        []byte("{}"),
-		CodeMonitoringUsage:      []byte("{}"),
-		CodeHostIntegrationUsage: []byte("{}"),
-		IDEExtensionsUsage:       []byte("{}"),
+		ClientSiteID:                  siteid.Get(),
+		DeployType:                    deploy.Type(),
+		ClientVersionString:           version.Version(),
+		LicenseKey:                    conf.Get().LicenseKey,
+		CodeIntelUsage:                []byte("{}"),
+		NewCodeIntelUsage:             []byte("{}"),
+		SearchUsage:                   []byte("{}"),
+		BatchChangesUsage:             []byte("{}"),
+		GrowthStatistics:              []byte("{}"),
+		CTAUsage:                      []byte("{}"),
+		SavedSearches:                 []byte("{}"),
+		HomepagePanels:                []byte("{}"),
+		Repositories:                  []byte("{}"),
+		RetentionStatistics:           []byte("{}"),
+		SearchOnboarding:              []byte("{}"),
+		ExtensionsUsage:               []byte("{}"),
+		CodeInsightsUsage:             []byte("{}"),
+		CodeInsightsCriticalTelemetry: []byte("{}"),
+		CodeMonitoringUsage:           []byte("{}"),
+		CodeHostIntegrationUsage:      []byte("{}"),
+		IDEExtensionsUsage:            []byte("{}"),
 	}
 
 	totalUsers, err := getTotalUsersCount(ctx, db)
@@ -507,7 +508,7 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 
 		r.CodeHostIntegrationUsage, err = getAndMarshalCodeHostIntegrationUsageJSON(ctx, db)
 		if err != nil {
-			logFunc("telemetry: updatecheck.getAndMarshalCodeMonitoringUsageJSON failed", "error", err)
+			logFunc("telemetry: updatecheck.getAndMarshalCodeHostIntegrationUsageJSON failed", "error", err)
 		}
 
 		r.IDEExtensionsUsage, err = getAndMarshalIDEExtensionsUsageJSON(ctx, db)
