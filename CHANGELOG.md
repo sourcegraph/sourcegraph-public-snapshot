@@ -30,6 +30,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Fixed reading search pattern type from settings [#32989](https://github.com/sourcegraph/sourcegraph/issues/32989)
 - Display a tooltip and truncate the title of a search result when content overflows [#32904](https://github.com/sourcegraph/sourcegraph/pull/32904)
+- Fail to log extension activation event will no longer block extension from activating [#33300][https://github.com/sourcegraph/sourcegraph/pull/33300]
 
 ### Removed
 
