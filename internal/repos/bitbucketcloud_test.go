@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	bbtest "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud/testing"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
@@ -48,7 +49,7 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 				"/sourcegraph-testing/sourcegraph",
 			}),
 			conf: &schema.BitbucketCloudConnection{
-				Username:    bitbucketcloud.GetenvTestBitbucketCloudUsername(),
+				Username:    bbtest.GetenvTestBitbucketCloudUsername(),
 				AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
 			},
 			err: "<nil>",
@@ -62,7 +63,7 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 				"/sourcegraph-testing/sourcegraph",
 			}),
 			conf: &schema.BitbucketCloudConnection{
-				Username:    bitbucketcloud.GetenvTestBitbucketCloudUsername(),
+				Username:    bbtest.GetenvTestBitbucketCloudUsername(),
 				AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
 				Teams: []string{
 					"sglocal",
