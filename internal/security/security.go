@@ -48,7 +48,7 @@ func validatePasswordUsingPolicy(passwd string) error {
 	letters := 0
 	numbers := false
 	upperCase := false
-	special := 0;
+	special := 0
 
 	for _, c := range passwd {
 			switch {
