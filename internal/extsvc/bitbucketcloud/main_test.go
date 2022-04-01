@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"testing"
 
+	bbtest "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud/testing"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -21,14 +22,6 @@ func update(name string) bool {
 		return false
 	}
 	return regexp.MustCompile(*updateRegex).MatchString(name)
-}
-
-func GetenvTestBitbucketCloudUsername() string {
-	username := os.Getenv("BITBUCKET_CLOUD_USERNAME")
-	if username == "" {
-		username = "sourcegraph-testing"
-	}
-	return username
 }
 
 // assertGolden wraps testutil.AssertGolden to ensure that golden fixtures are
@@ -64,7 +57,7 @@ func newTestClient(t testing.TB) (*Client, func()) {
 
 	cli, err := NewClient("urn", &schema.BitbucketCloudConnection{
 		ApiURL:      "https://api.bitbucket.org",
-		Username:    GetenvTestBitbucketCloudUsername(),
+		Username:    bbtest.GetenvTestBitbucketCloudUsername(),
 		AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
 	}, hc)
 	if err != nil {
