@@ -96,9 +96,9 @@ export const TreeTabList: React.FunctionComponent<TreeTabList> = ({ tree, select
                             onClick={() => setSelectedTab(tab)}
                         >
                             <div>
-                            {icon}
+                                {icon}
                                 <span className="d-inline-flex ml-1" data-tab-content={title}>
-                                {title}
+                                    {title}
                                 </span>
                             </div>
                         </Link>

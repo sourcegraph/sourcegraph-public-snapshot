@@ -218,11 +218,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
     const ReadmeFile: React.FunctionComponent = () => (
         <div>
             {richHTML && richHTML !== 'loading' && (
-                <RenderedFile
-                    className="pt-0 pl-3"
-                    dangerousInnerHTML={richHTML}
-                    location={props.location}
-                />
+                <RenderedFile className="pt-0 pl-3" dangerousInnerHTML={richHTML} location={props.location} />
             )}
             {!richHTML && richHTML !== 'loading' && (
                 <div className="text-center">
@@ -292,7 +288,9 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                                     className="btn btn-sm btn-link mr-0 pr-0"
                                     to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
                                 >
-                                    {codeIntelligenceEnabled ? 'Set up for this repository' : 'Manage code intelligence'}
+                                    {codeIntelligenceEnabled
+                                        ? 'Set up for this repository'
+                                        : 'Manage code intelligence'}
                                 </Link>
                             </div>
                         </div>
@@ -362,7 +360,7 @@ export const HomeTabBatchChangeBadge: React.FunctionComponent<HomeTabBatchChange
             <>
                 <div className={classNames(styles.item, 'flex-column')}>
                     <div className="mb-1">No open batch changes for this repository</div>
-                    <Link to="/batch-changes/create" >Create a batch change</Link>
+                    <Link to="/batch-changes/create">Create a batch change</Link>
                 </div>
                 {allBatchChanges}
             </>
