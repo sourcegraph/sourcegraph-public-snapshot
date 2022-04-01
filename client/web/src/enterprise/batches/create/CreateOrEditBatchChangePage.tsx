@@ -285,91 +285,89 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
 
 function goCheckerS1003Template(name: string): string{
     return `name: ${name}
-    description: |
-      This batch change uses [Comby](https://comby.dev) to replace calls to strings.Index with strings.Contains.
-    on:
-      - repositoriesMatchingQuery: strings.Index(:[1], :[2]) < 0  or strings.Index(:[1], :[2]) == -1 or strings.Index(:[1], :[2]) != -1 or strings.Index(:[1], :[2]) >= 0 or strings.Index(:[1], :[2]) > -1 or strings.IndexAny(:[1], :[2]) < 0 or strings.IndexAny(:[1], :[2]) == -1 or strings.IndexAny(:[1], :[2]) != -1 or strings.IndexAny(:[1], :[2]) >= 0 or strings.IndexAny(:[1], :[2]) > -1 or strings.IndexRune(:[1], :[2]) < 0 or strings.IndexRune(:[1], :[2]) == -1 or strings.IndexRune(:[1], :[2]) != -1 or strings.IndexRune(:[1], :[2]) >= 0 or strings.IndexRune(:[1], :[2]) > -1 patternType:structural archived:no count:1
+description: |
+    This batch change uses [Comby](https://comby.dev) to replace calls to strings.Index with strings.Contains.
+on:
+    - repositoriesMatchingQuery: strings.Index(:[1], :[2]) < 0  or strings.Index(:[1], :[2]) == -1 or strings.Index(:[1], :[2]) != -1 or strings.Index(:[1], :[2]) >= 0 or strings.Index(:[1], :[2]) > -1 or strings.IndexAny(:[1], :[2]) < 0 or strings.IndexAny(:[1], :[2]) == -1 or strings.IndexAny(:[1], :[2]) != -1 or strings.IndexAny(:[1], :[2]) >= 0 or strings.IndexAny(:[1], :[2]) > -1 or strings.IndexRune(:[1], :[2]) < 0 or strings.IndexRune(:[1], :[2]) == -1 or strings.IndexRune(:[1], :[2]) != -1 or strings.IndexRune(:[1], :[2]) >= 0 or strings.IndexRune(:[1], :[2]) > -1 patternType:structural archived:no count:1
 
-    steps:
-      - run: comby -config /tmp/rule.toml -f .go -i -exclude-dir vendor,.
-        container: comby/comby
-        files:
-          /tmp/rule.toml: |
-            [S1003_01]
-            match='strings.IndexRune(:[1], :[2]) > -1'
-            rewrite='strings.ContainsRune(:[1], :[2])'
+steps:
+    - run: comby -config /tmp/rule.toml -f .go -i -exclude-dir vendor,.
+    container: comby/comby
+    files:
+        /tmp/rule.toml: |
+        [S1003_01]
+        match='strings.IndexRune(:[1], :[2]) > -1'
+        rewrite='strings.ContainsRune(:[1], :[2])'
 
-            [S1003_02]
-            match='strings.IndexRune(:[1], :[2]) >= 0'
-            rewrite='strings.ContainsRune(:[1], :[2])'
+        [S1003_02]
+        match='strings.IndexRune(:[1], :[2]) >= 0'
+        rewrite='strings.ContainsRune(:[1], :[2])'
 
-            [S1003_03]
-            match='strings.IndexRune(:[1], :[2]) != -1'
-            rewrite='strings.ContainsRune(:[1], :[2])'
+        [S1003_03]
+        match='strings.IndexRune(:[1], :[2]) != -1'
+        rewrite='strings.ContainsRune(:[1], :[2])'
 
-            [S1003_04]
-            match='strings.IndexRune(:[1], :[2]) == -1'
-            rewrite='!strings.ContainsRune(:[1], :[2])'
+        [S1003_04]
+        match='strings.IndexRune(:[1], :[2]) == -1'
+        rewrite='!strings.ContainsRune(:[1], :[2])'
 
-            [S1003_05]
-            match='strings.IndexRune(:[1], :[2]) < 0'
-            rewrite='!strings.ContainsRune(:[1], :[2])'
+        [S1003_05]
+        match='strings.IndexRune(:[1], :[2]) < 0'
+        rewrite='!strings.ContainsRune(:[1], :[2])'
 
-            [S1003_06]
-            match='strings.IndexAny(:[1], :[2]) > -1'
-            rewrite='strings.ContainsAny(:[1], :[2])'
+        [S1003_06]
+        match='strings.IndexAny(:[1], :[2]) > -1'
+        rewrite='strings.ContainsAny(:[1], :[2])'
 
-            [S1003_07]
-            match='strings.IndexAny(:[1], :[2]) >= 0'
-            rewrite='strings.ContainsAny(:[1], :[2])'
+        [S1003_07]
+        match='strings.IndexAny(:[1], :[2]) >= 0'
+        rewrite='strings.ContainsAny(:[1], :[2])'
 
-            [S1003_08]
-            match='strings.IndexAny(:[1], :[2]) != -1'
-            rewrite='strings.ContainsAny(:[1], :[2])'
+        [S1003_08]
+        match='strings.IndexAny(:[1], :[2]) != -1'
+        rewrite='strings.ContainsAny(:[1], :[2])'
 
-            [S1003_09]
-            match='strings.IndexAny(:[1], :[2]) == -1'
-            rewrite='!strings.ContainsAny(:[1], :[2])'
+        [S1003_09]
+        match='strings.IndexAny(:[1], :[2]) == -1'
+        rewrite='!strings.ContainsAny(:[1], :[2])'
 
-            [S1003_10]
-            match='strings.IndexAny(:[1], :[2]) < 0'
-            rewrite='!strings.ContainsAny(:[1], :[2])'
+        [S1003_10]
+        match='strings.IndexAny(:[1], :[2]) < 0'
+        rewrite='!strings.ContainsAny(:[1], :[2])'
 
-            [S1003_11]
-            match='strings.Index(:[1], :[2]) > -1'
-            rewrite='strings.Contains(:[1], :[2])'
+        [S1003_11]
+        match='strings.Index(:[1], :[2]) > -1'
+        rewrite='strings.Contains(:[1], :[2])'
 
-            [S1003_12]
-            match='strings.Index(:[1], :[2]) >= 0'
-            rewrite='strings.Contains(:[1], :[2])'
+        [S1003_12]
+        match='strings.Index(:[1], :[2]) >= 0'
+        rewrite='strings.Contains(:[1], :[2])'
 
-            [S1003_13]
-            match='strings.Index(:[1], :[2]) != -1'
-            rewrite='strings.Contains(:[1], :[2])'
+        [S1003_13]
+        match='strings.Index(:[1], :[2]) != -1'
+        rewrite='strings.Contains(:[1], :[2])'
 
-            [S1003_14]
-            match='strings.Index(:[1], :[2]) == -1'
-            rewrite='!strings.Contains(:[1], :[2])'
+        [S1003_14]
+        match='strings.Index(:[1], :[2]) == -1'
+        rewrite='!strings.Contains(:[1], :[2])'
 
-            [S1003_15]
-            match='strings.Index(:[1], :[2]) < 0'
-            rewrite='!strings.Contains(:[1], :[2])'
-      - run: |
-          results="\${{ join repository.search_result_paths "\n" }}"
-          for result in $results;
-          do
-            echo "Rewriting \${result}"
-            gofmt -w "\${result}"
-          done;
-        container: golang
-
-    changesetTemplate:
-      title: Replace calls to strings.Index with strings.Contains.
-      body: This batch change uses [Comby](https://comby.dev) to replace calls to strings.Index with strings.Contains.
-      branch: batches/\${{batch_change.name}}
-      commit:
-        message: Replace calls to strings.Index with strings.Contains.
-
+        [S1003_15]
+        match='strings.Index(:[1], :[2]) < 0'
+        rewrite='!strings.Contains(:[1], :[2])'
+    - run: |
+        results="\${{ join repository.search_result_paths "\n" }}"
+        for result in $results;
+        do
+        echo "Rewriting \${result}"
+        gofmt -w "${result}"
+        done;
+    container: golang
+changesetTemplate:
+    title: Replace calls to strings.Index with strings.Contains.
+    body: This batch change uses [Comby](https://comby.dev) to replace calls to strings.Index with strings.Contains.
+    branch: batches/\${{batch_change.name}}
+    commit:
+    message: Replace calls to strings.Index with strings.Contains.
 `
 }
 
