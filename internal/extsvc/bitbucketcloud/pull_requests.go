@@ -27,6 +27,10 @@ type CreatePullRequestOpts struct {
 var _ json.Marshaler = &CreatePullRequestOpts{}
 
 // CreatePullRequest opens a new pull request.
+//
+// Invoking CreatePullRequest with the same repo and options will succeed: the
+// same PR will be returned each time, and will be updated accordingly on
+// Bitbucket with any changed information in the options.
 func (c *Client) CreatePullRequest(ctx context.Context, repo *Repo, opts CreatePullRequestOpts) (*PullRequest, error) {
 	data, err := json.Marshal(&opts)
 	if err != nil {
@@ -47,6 +51,8 @@ func (c *Client) CreatePullRequest(ctx context.Context, repo *Repo, opts CreateP
 }
 
 // DeclinePullRequest declines (closes without merging) a pull request.
+//
+// Invoking DeclinePullRequest on an already declined PR will error.
 func (c *Client) DeclinePullRequest(ctx context.Context, repo *Repo, id int64) (*PullRequest, error) {
 	req, err := http.NewRequest("POST", fmt.Sprintf("/2.0/repositories/%s/pullrequests/%d/decline", repo.FullName, id), nil)
 	if err != nil {
