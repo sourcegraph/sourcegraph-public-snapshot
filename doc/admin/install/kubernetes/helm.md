@@ -547,11 +547,13 @@ frontend:
 
 ## Advanced configuration
 
+The Helm chart is new and still under active development, and our values.yaml (and therefore customization available via an override file) may not cover every need. Equally, some changes are enviroment or customer specific, and so will never be part of the default Sourcegraph Helm chart.
+
+The following guidance for using Kustomize with Helm and Helm Subcharts cover both these scenarios.
+
+If in doubt, or if you feel something ought to be added to the stock Sourcegraph Helm chart, please contact [support@sourcegraph.com](mailto:support@sourcegraph.com) or your Customer Engineer directly to discuss.
+
 ### Integrate Kustomize with Helm chart
-
-The Helm chart is new and still under active development, and we may not cover all of your use cases.
-
-Please contact [support@sourcegraph.com](mailto:support@sourcegraph.com) or your Customer Engineer directly to discuss your specific need.
 
 For advanced users who are looking for a temporary workaround, we __recommend__ applying [Kustomize](https://kustomize.io) on the rendered manifests from our chart. Please __do not__ maintain your own fork of our chart, this may impact our ability to support you if you run into issues.
 
