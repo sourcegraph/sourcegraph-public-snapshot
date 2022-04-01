@@ -4,7 +4,7 @@
 #
 # An alias for this command, './tr', is set up in .buildkite/post-checkout
 
-BUILDEVENT_APIKEY="$CI_BUILDEVENT_API_KEY"
+BUILDEVENT_APIKEY="$CI_HONEYCOMB_API_KEY"
 BUILDEVENT_DATASET="$CI_BUILDEVENT_DATASET"
 export BUILDEVENT_APIKEY
 export BUILDEVENT_DATASET

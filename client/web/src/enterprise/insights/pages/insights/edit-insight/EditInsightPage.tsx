@@ -60,7 +60,7 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
 
     return (
         <CodeInsightsPage>
-            <PageTitle title="Edit code insight" />
+            <PageTitle title="Edit insight - Code Insights" />
 
             <PageHeader
                 className="mb-3"
