@@ -187,7 +187,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
 
     const RecentCommits: React.FunctionComponent = () => (
         <div>
-            <h2>Recent Commits</h2>
+            <h2>Recent commits</h2>
             <FilteredConnection<
                 GitCommitFields,
                 Pick<GitCommitNodeProps, 'className' | 'compact' | 'messageSubjectClassName'>
@@ -270,7 +270,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                     <div className={styles.section}>
                         <RecentCommits />
                         {/* CODE-INTEL */}
-                        <h2 className="mt-3">Code Intel</h2>
+                        <h2 className="mt-3">Code intel</h2>
                         <div className={styles.item}>
                             <Badge
                                 variant={codeIntelligenceEnabled ? 'secondary' : 'danger'}
@@ -291,7 +291,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                             </Link>
                         </div>
                         {/* BATCH CHANGES */}
-                        <h2 className="mt-3">Batch Changes</h2>
+                        <h2 className="mt-3">Batch changes</h2>
                         {batchChangesEnabled ? (
                             <HomeTabBatchChangeBadge repoName={repo.name} />
                         ) : (
