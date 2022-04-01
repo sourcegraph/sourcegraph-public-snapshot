@@ -180,13 +180,13 @@ func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- S
 		// ⚠️ Careful, ctags lines are 1-indexed!
 		line := e.Line - 1
 		if line < 0 || line >= len(lines) {
-			log15.Warn("ctags returned an invalid line number", "path", parseRequest.Path, "line", e.Line, "len(lines)", len(lines), "symbol", e.Name)
+			log15.Warn("Invalid line number", "entry", e)
 			continue
 		}
 
 		character := strings.Index(lines[line], e.Name)
 		if character == -1 {
-			// Could not find the symbol in the line. ctags doesn't always return the right line.
+			log15.Warn("Could not find symbol on line", "symbol", e.Name, "line", line)
 			character = 0
 		}
 
