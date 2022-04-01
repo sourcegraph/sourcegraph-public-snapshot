@@ -98,7 +98,6 @@ export interface BackgroundPageApi {
     notifyRepoSyncError(payload: { sourcegraphURL: string; hasRepoSyncError: boolean }): Promise<void>
     checkRepoSyncError(payload: { tabId: number; sourcegraphURL: string }): Promise<boolean>
     fetchCache: typeof fetchCache
-    getCookie: typeof browser.cookies.get
 }
 
 /**
