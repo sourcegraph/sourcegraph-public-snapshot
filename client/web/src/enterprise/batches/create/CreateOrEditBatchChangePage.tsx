@@ -44,8 +44,8 @@ import {
     Scalars,
     BatchSpecWorkspaceResolutionState,
 } from '../../../graphql-operations'
-import { BatchSpecDownloadLink } from '../BatchSpec'
 
+import { BatchSpecDownloadLink } from '../BatchSpec'
 import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE } from './backend'
 import { DownloadSpecModal } from './DownloadSpecModal'
 import { EditorFeedbackPanel } from './editor/EditorFeedbackPanel'
@@ -376,10 +376,6 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
         resolutionState,
     ])
 
-    const openDownloadModal = () => {
-        setModal(true)
-    }
-
     const actionButtons = (
         <>
             <ExecutionOptionsDropdown
@@ -391,7 +387,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
             />
 
             {showDownloadSpecModal ? (
-                <Button onClick={openDownloadModal}>or download for src-cli</Button>
+                <Button onClick={() => setModal(true)}>or download for src-cli</Button>
             ) : (
                 <BatchSpecDownloadLink name={batchChange.name} originalInput={code} isLightTheme={isLightTheme}>
                     or download for src-cli

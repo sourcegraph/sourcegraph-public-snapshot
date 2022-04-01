@@ -10,30 +10,31 @@ import { BatchSpecDownloadLink } from '../BatchSpec'
 import styles from './DownloadSpecModal.module.scss'
 
 export interface DownloadSpecModalProps {
-    onCancel: () => void
-    onConfirm: () => void
     name: string
     originalInput: string
     isLightTheme: boolean
-    showDownloadSpecModal: () => void
-    setShowDownloadSpecModal: () => void
-    setModal: () => void
+    showDownloadSpecModal: boolean
+    setShowDownloadSpecModal: (condition: boolean) => void
+    setModal: (condition: boolean) => void
 }
 
 export const DownloadSpecModal: React.FunctionComponent<DownloadSpecModalProps> = ({
-    onCancel,
-    onConfirm,
     name,
     originalInput,
     isLightTheme,
     setModal,
-    showDownloadSpecModal,
     setShowDownloadSpecModal,
 }) => {
     console.log('test')
 
     return (
-        <Modal onDismiss={onCancel} aria-labelledby={MODAL_LABEL_ID} className={styles.modal}>
+        <Modal
+            onDismiss={() => {
+                setModal(false)
+            }}
+            aria-labelledby={MODAL_LABEL_ID}
+            className={styles.modal}
+        >
             <>
                 <div>
                     <div>
@@ -112,7 +113,13 @@ export const DownloadSpecModal: React.FunctionComponent<DownloadSpecModalProps> 
                                 originalInput={originalInput}
                                 isLightTheme={isLightTheme}
                             >
-                                <Button onClick={onConfirm} variant="primary" size="sm">
+                                <Button
+                                    variant="primary"
+                                    size="sm"
+                                    onClick={() => {
+                                        setModal(false)
+                                    }}
+                                >
                                     Download Spec
                                 </Button>
                             </BatchSpecDownloadLink>
