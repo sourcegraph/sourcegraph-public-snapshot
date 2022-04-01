@@ -639,6 +639,8 @@ type ExternalIdentity struct {
 type FusionClient struct {
 	// Enabled description: Enable the p4-fusion client for cloning and fetching repos
 	Enabled bool `json:"enabled"`
+	// FsyncEnable description:  Enable fsync() while writing objects to disk to ensure they get written to permanent storage immediately instead of being cached. This is to mitigate data loss in events of hardware failure.
+	FsyncEnable bool `json:"fsyncEnable,omitempty"`
 	// IncludeBinaries description: Whether to include binary files
 	IncludeBinaries bool `json:"includeBinaries,omitempty"`
 	// LookAhead description: How many CLs in the future, at most, shall we keep downloaded by the time it is to commit them
