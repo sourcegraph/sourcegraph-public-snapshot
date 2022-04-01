@@ -106,19 +106,7 @@ func (s BitbucketCloudSource) LoadChangeset(ctx context.Context, cs *Changeset) 
 // CreateChangeset will create the Changeset on the source. If it already
 // exists, *Changeset will be populated and the return value will be true.
 func (s BitbucketCloudSource) CreateChangeset(ctx context.Context, cs *Changeset) (bool, error) {
-	destBranch := git.AbbreviateRef(cs.BaseRef)
-	opts := bitbucketcloud.PullRequestInput{
-		Title:             cs.Title,
-		Description:       cs.Body,
-		SourceBranch:      git.AbbreviateRef(cs.HeadRef),
-		DestinationBranch: &destBranch,
-	}
-
-	// If we're forking, then we need to set the source repository as well.
-	if cs.RemoteRepo != cs.TargetRepo {
-		opts.SourceRepo = cs.RemoteRepo.Metadata.(*bitbucketcloud.Repo)
-	}
-
+	opts := s.changesetToPullRequestInput(cs)
 	targetRepo := cs.TargetRepo.Metadata.(*bitbucketcloud.Repo)
 
 	pr, err := s.client.CreatePullRequest(ctx, targetRepo, opts)
@@ -152,8 +140,16 @@ func (s BitbucketCloudSource) CloseChangeset(ctx context.Context, cs *Changeset)
 }
 
 // UpdateChangeset can update Changesets.
-func (s BitbucketCloudSource) UpdateChangeset(_ context.Context, _ *Changeset) error {
-	panic("not implemented") // TODO: Implement
+func (s BitbucketCloudSource) UpdateChangeset(ctx context.Context, cs *Changeset) error {
+	opts := s.changesetToPullRequestInput(cs)
+	targetRepo := cs.TargetRepo.Metadata.(*bitbucketcloud.Repo)
+
+	pr, err := s.client.UpdatePullRequest(ctx, targetRepo, cs.Metadata.(*bitbucketcloud.PullRequest).ID, opts)
+	if err != nil {
+		return errors.Wrap(err, "updating pull request")
+	}
+
+	return s.setChangesetMetadata(ctx, targetRepo, pr, cs)
 }
 
 // ReopenChangeset will reopen the Changeset on the source, if it's closed.
@@ -224,4 +220,21 @@ func (s BitbucketCloudSource) setChangesetMetadata(ctx context.Context, repo *bi
 	}
 
 	return nil
+}
+
+func (s BitbucketCloudSource) changesetToPullRequestInput(cs *Changeset) bitbucketcloud.PullRequestInput {
+	destBranch := git.AbbreviateRef(cs.BaseRef)
+	opts := bitbucketcloud.PullRequestInput{
+		Title:             cs.Title,
+		Description:       cs.Body,
+		SourceBranch:      git.AbbreviateRef(cs.HeadRef),
+		DestinationBranch: &destBranch,
+	}
+
+	// If we're forking, then we need to set the source repository as well.
+	if cs.RemoteRepo != cs.TargetRepo {
+		opts.SourceRepo = cs.RemoteRepo.Metadata.(*bitbucketcloud.Repo)
+	}
+
+	return opts
 }
