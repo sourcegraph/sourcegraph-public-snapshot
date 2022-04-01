@@ -1,6 +1,6 @@
 import * as Monaco from 'monaco-editor'
 import { Observable, fromEventPattern, of } from 'rxjs'
-import { map, takeUntil } from 'rxjs/operators'
+import { map, delay, takeUntil, switchMap } from 'rxjs/operators'
 
 import { SearchPatternType } from '../../graphql-operations'
 import { SearchMatch } from '../stream'
@@ -101,19 +101,30 @@ export function createCancelableFetchSuggestions(
             // in arbitrary result types being returned, which is unexpected.
             return Promise.resolve([])
         }
-        const matches = fetchSuggestions(query)
-        return matches
+
+        let aborted = false
+
+        // By listeing to the abort event of the autocompletion we
+        // can close the connection to server early and don't have to download
+        // data sent by the server.
+        const abort = new Observable(subscriber => {
+            onAbort(() => {
+                aborted = true
+                subscriber.next(null)
+                subscriber.complete()
+            })
+        })
+
+        return of(query)
             .pipe(
-                takeUntil(
-                    // By listeing to the abort event of the autocompletion we
-                    // can close the conntection to server early.
-                    new Observable(subscriber => {
-                        onAbort(() => {
-                            subscriber.next(null)
-                            subscriber.complete()
-                        })
-                    })
-                )
+                // We use a delay here to implement a custom debounce. In the
+                // next step we check if the current completion request was
+                // cancelled in the meantime.
+                // This prevents us from needlessly running multiple suggestion
+                // queries.
+                delay(200),
+                switchMap(query => (aborted ? Promise.resolve([]) : fetchSuggestions(query))),
+                takeUntil(abort)
             )
             .toPromise()
     }
