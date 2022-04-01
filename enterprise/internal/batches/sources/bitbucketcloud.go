@@ -107,7 +107,7 @@ func (s BitbucketCloudSource) LoadChangeset(ctx context.Context, cs *Changeset) 
 // exists, *Changeset will be populated and the return value will be true.
 func (s BitbucketCloudSource) CreateChangeset(ctx context.Context, cs *Changeset) (bool, error) {
 	destBranch := git.AbbreviateRef(cs.BaseRef)
-	opts := bitbucketcloud.CreatePullRequestOpts{
+	opts := bitbucketcloud.PullRequestInput{
 		Title:             cs.Title,
 		Description:       cs.Body,
 		SourceBranch:      git.AbbreviateRef(cs.HeadRef),

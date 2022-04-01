@@ -3,6 +3,7 @@ package bitbucketcloud
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -36,7 +37,7 @@ func TestClient_CreatePullRequest_Fork(t *testing.T) {
 	repo := &Repo{
 		FullName: "sourcegraph-testing/src-cli",
 	}
-	commonOpts := CreatePullRequestOpts{
+	commonOpts := PullRequestInput{
 		Title:        "Sourcegraph test " + branch,
 		Description:  "This is a PR created by the Sourcegraph test suite.",
 		SourceBranch: branch,
@@ -110,7 +111,7 @@ func TestClient_CreatePullRequest_SameOrigin(t *testing.T) {
 	repo := &Repo{
 		FullName: "sourcegraph-testing/src-cli",
 	}
-	commonOpts := CreatePullRequestOpts{
+	commonOpts := PullRequestInput{
 		Title:        "Sourcegraph test " + branch,
 		Description:  "This is a PR created by the Sourcegraph test suite.",
 		SourceBranch: branch,
@@ -231,5 +232,43 @@ func TestClient_GetPullRequest(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, pr)
 		assertGolden(t, pr)
+	})
+}
+
+func TestClient_UpdatePullRequest(t *testing.T) {
+	// WHEN UPDATING: this test expects
+	// https://bitbucket.org/sourcegraph-testing/src-cli/pull-requests/1/always-open-pr
+	// to be open.
+
+	ctx := context.Background()
+
+	c, save := newTestClient(t)
+	defer save()
+
+	repo := &Repo{
+		FullName: "sourcegraph-testing/src-cli",
+	}
+
+	t.Run("not found", func(t *testing.T) {
+		pr, err := c.UpdatePullRequest(ctx, repo, 0, PullRequestInput{})
+		assert.Nil(t, pr)
+		assert.NotNil(t, err)
+		assert.True(t, errcode.IsNotFound(err))
+	})
+
+	t.Run("found", func(t *testing.T) {
+		pr, err := c.GetPullRequest(ctx, repo, 1)
+		assert.Nil(t, err)
+
+		updated, err := c.UpdatePullRequest(ctx, repo, 1, PullRequestInput{
+			Title:             pr.Title,
+			Description:       "This PR is _always_ open.\n\nUpdated by the Sourcegraph test suite at " + time.Now().Format(time.RFC3339),
+			SourceBranch:      pr.Source.Branch.Name,
+			SourceRepo:        &pr.Source.Repo,
+			DestinationBranch: &pr.Destination.Branch.Name,
+		})
+		assert.Nil(t, err)
+		assert.NotNil(t, updated)
+		assertGolden(t, updated)
 	})
 }
