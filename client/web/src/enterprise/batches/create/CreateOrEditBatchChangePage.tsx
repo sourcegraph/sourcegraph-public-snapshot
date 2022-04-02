@@ -137,6 +137,14 @@ interface CreatePageProps extends SettingsCascadeProps<Settings> {
     namespaceID?: Scalars['ID']
 }
 
+function getTitle():string {
+    const parameters = new URLSearchParams(location.search)
+    if (parameters.has('title')) {
+        return `Create batch change for ${parameters.get('title') ?? ''}`
+    }
+    return 'Create batch change'
+}
+
 const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, settingsCascade }) => {
     const [template, setTemplate] = useState<string | undefined>()
     const location = useLocation()
@@ -262,7 +270,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
             <div className="container col-8 my-4">
                 <PageTitle title="Create new batch change" />
                 <PageHeader
-                    path={[{ icon: BatchChangesIcon, to: '.' }, { text: 'Create batch change' }]}
+                    path={[{ icon: BatchChangesIcon, to: '.' }, { text: getTitle() }]}
                     className="flex-1 pb-2"
                     description="Run custom code over hundreds of repositories and manage the resulting changesets."
                     annotation={
