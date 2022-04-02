@@ -163,6 +163,38 @@ func TestClient_CreatePullRequest_SameOrigin(t *testing.T) {
 	})
 }
 
+func TestClient_CreatePullRequestComment(t *testing.T) {
+	// WHEN UPDATING: this test expects
+	// https://bitbucket.org/sourcegraph-testing/src-cli/pull-requests/1/always-open-pr
+	// to be open.
+
+	ctx := context.Background()
+
+	c, save := newTestClient(t)
+	defer save()
+
+	repo := &Repo{
+		FullName: "sourcegraph-testing/src-cli",
+	}
+	input := CommentInput{
+		Content: "A test comment created at " + time.Now().Format(time.RFC822),
+	}
+
+	t.Run("not found", func(t *testing.T) {
+		pr, err := c.CreatePullRequestComment(ctx, repo, 0, input)
+		assert.Nil(t, pr)
+		assert.NotNil(t, err)
+		assert.True(t, errcode.IsNotFound(err))
+	})
+
+	t.Run("found", func(t *testing.T) {
+		comment, err := c.CreatePullRequestComment(ctx, repo, 1, input)
+		assert.Nil(t, err)
+		assert.NotNil(t, comment)
+		assertGolden(t, comment)
+	})
+}
+
 func TestClient_DeclinePullRequest(t *testing.T) {
 	// WHEN UPDATING: this test expects a PR in
 	// https://bitbucket.org/sourcegraph-testing/src-cli/ to be open. Note that

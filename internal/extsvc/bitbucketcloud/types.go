@@ -31,6 +31,12 @@ type Participant struct {
 	ParticipatedOn time.Time        `json:"participated_on"`
 }
 
+type RenderedMarkup struct {
+	Raw    string `json:"raw"`
+	Markup string `json:"markup"`
+	HTML   string `json:"html"`
+}
+
 type User struct {
 	Account
 	IsStaff   bool   `json:"is_staff"`
