@@ -19,7 +19,7 @@ var _ graphqlbackend.RepositoryConnectionResolver = &repositoryConnectionResolve
 // repositoryConnectionResolver resolves a list of repositories from the roaring bitmap with pagination.
 type repositoryConnectionResolver struct {
 	db  database.DB
-	ids []int32
+	ids []int32 //sorted slice of IDs
 
 	first int32
 	after *string
