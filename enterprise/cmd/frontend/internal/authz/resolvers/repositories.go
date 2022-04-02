@@ -36,7 +36,6 @@ type repositoryConnectionResolver struct {
 // the database.
 func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Repo, *graphqlutil.PageInfo, error) {
 	r.once.Do(func() {
-		// Create the bitmap iterator and advance to the next value of r.after.
 		var afterID api.RepoID
 		if r.after != nil {
 			afterID, r.err = graphqlbackend.UnmarshalRepositoryID(graphql.ID(*r.after))
@@ -64,10 +63,10 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			return
 		}
 
-		// No more user IDs to paginate through.
+		// No more repo IDs to paginate through.
 		if idsSize <= int32(afterID)+r.first {
 			r.pageInfo = graphqlutil.HasNextPage(false)
-		} else { // Additional user IDs to paginate through.
+		} else { // Additional repo IDs to paginate through.
 			endCursor := string(graphqlbackend.MarshalRepositoryID(repoIDs[len(repoIDs)-1]))
 			r.pageInfo = graphqlutil.NextPageCursor(endCursor)
 		}

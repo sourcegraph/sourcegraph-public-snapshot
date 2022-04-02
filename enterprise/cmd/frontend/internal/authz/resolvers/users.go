@@ -36,7 +36,6 @@ type userConnectionResolver struct {
 // the database.
 func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, *graphqlutil.PageInfo, error) {
 	r.once.Do(func() {
-		// Create the bitmap iterator and advance to the next value of r.after.
 		var afterID api.RepoID
 		if r.after != nil {
 			afterID, r.err = graphqlbackend.UnmarshalRepositoryID(graphql.ID(*r.after))
