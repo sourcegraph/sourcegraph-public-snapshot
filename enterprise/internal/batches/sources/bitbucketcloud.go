@@ -172,8 +172,14 @@ func (s BitbucketCloudSource) ReopenChangeset(ctx context.Context, cs *Changeset
 }
 
 // CreateComment posts a comment on the Changeset.
-func (s BitbucketCloudSource) CreateComment(_ context.Context, _ *Changeset, _ string) error {
-	panic("not implemented") // TODO: Implement
+func (s BitbucketCloudSource) CreateComment(ctx context.Context, cs *Changeset, comment string) error {
+	repo := cs.TargetRepo.Metadata.(*bitbucketcloud.Repo)
+	pr := cs.Metadata.(*bbcs.AnnotatedPullRequest)
+
+	_, err := s.client.CreatePullRequestComment(ctx, repo, pr.ID, bitbucketcloud.CommentInput{
+		Content: comment,
+	})
+	return err
 }
 
 // MergeChangeset merges a Changeset on the code host, if in a mergeable state.
