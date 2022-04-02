@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"sort"
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
@@ -233,9 +234,9 @@ func (s *permsStore) LoadUserPermissions(ctx context.Context, p *authz.UserPermi
 	}
 
 	// Since this is the Permissions table and not pending permissions we still use bitmaps here
-	p.IDs = roaring.NewBitmap()
+	p.IDs = map[int32]struct{}{}
 	for _, id := range vals.ids {
-		p.IDs.Add(uint32(id))
+		p.IDs[int32(id)] = struct{}{}
 	}
 
 	p.UpdatedAt = vals.updatedAt
@@ -270,9 +271,9 @@ func (s *permsStore) LoadRepoPermissions(ctx context.Context, p *authz.RepoPermi
 		return err
 	}
 	// Since this is the Permissions table and not pending permissions we still use bitmaps here
-	p.UserIDs = roaring.NewBitmap()
+	p.UserIDs = map[int32]struct{}{}
 	for _, id := range vals.ids {
-		p.UserIDs.Add(uint32(id))
+		p.UserIDs[int32(id)] = struct{}{}
 	}
 	p.UpdatedAt = vals.updatedAt
 	p.SyncedAt = vals.syncedAt
@@ -307,39 +308,51 @@ func (s *permsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 	defer func() { err = txs.Done(err) }()
 
 	// Retrieve currently stored object IDs of this user.
-	var oldIDs *roaring.Bitmap
+	oldIDs := map[int32]struct{}{}
 	vals, err := txs.load(ctx, loadUserPermissionsQuery(p, "FOR UPDATE"))
 	if err != nil {
-		if err == authz.ErrPermsNotFound {
-			oldIDs = roaring.NewBitmap()
-		} else {
+		if err != authz.ErrPermsNotFound {
 			return errors.Wrap(err, "load user permissions")
 		}
 	} else {
-		oldIDs = roaring.NewBitmap()
 		for _, id := range vals.ids {
-			oldIDs.Add(uint32(id))
+			oldIDs[int32(id)] = struct{}{}
 		}
 	}
 
 	if p.IDs == nil {
-		p.IDs = roaring.NewBitmap()
+		p.IDs = map[int32]struct{}{}
 	}
 
 	// Compute differences between the old and new sets.
-	added := roaring.AndNot(p.IDs, oldIDs)
-	removed := roaring.AndNot(oldIDs, p.IDs)
+	var added []uint32
+	for id := range p.IDs {
+		if _, ok := oldIDs[id]; !ok {
+			added = append(added, uint32(id))
+		}
+	}
+
+	var removed []uint32
+	for id := range oldIDs {
+		if _, ok := p.IDs[id]; !ok {
+			removed = append(removed, uint32(id))
+		}
+	}
+
+	// Iterating over maps doesn't guarantee order so we sort the slices to avoid doing unnecessary DB updates.
+	sort.Slice(added, func(i, j int) bool { return added[i] < added[j] })
+	sort.Slice(removed, func(i, j int) bool { return removed[i] < removed[j] })
 
 	updatedAt := txs.clock()
-	if !added.IsEmpty() || !removed.IsEmpty() {
+	if len(added) != 0 || len(removed) != 0 {
 		var (
-			allAdded   = added.ToArray()
-			allRemoved = removed.ToArray()
-
+			allAdded    = added
+			allRemoved  = removed
 			addQueue    = allAdded
 			removeQueue = allRemoved
 			hasNextPage = true
 		)
+
 		for hasNextPage {
 			var page *upsertRepoPermissionsPage
 			page, addQueue, removeQueue, hasNextPage = newUpsertRepoPermissionsPage(addQueue, removeQueue)
@@ -390,12 +403,17 @@ DO UPDATE SET
 		return nil, ErrPermsSyncedAtNotSet
 	}
 
+	idsArray := make([]int32, 0, len(p.IDs))
+
+	for id := range p.IDs {
+		idsArray = append(idsArray, id)
+	}
 	return sqlf.Sprintf(
 		format,
 		p.UserID,
 		p.Perm.String(),
 		p.Type,
-		pq.Array(p.IDs.ToArray()),
+		pq.Array(idsArray),
 		p.UpdatedAt.UTC(),
 		p.SyncedAt.UTC(),
 	), nil
@@ -417,32 +435,45 @@ func (s *permsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermis
 	}
 
 	// Retrieve currently stored user IDs of this repository.
-	var oldIDs *roaring.Bitmap
+	oldIDs := map[int32]struct{}{}
 	vals, err := txs.load(ctx, loadRepoPermissionsQuery(p, "FOR UPDATE"))
 	if err != nil {
-		if err == authz.ErrPermsNotFound {
-			oldIDs = roaring.NewBitmap()
-		} else {
+		if err != authz.ErrPermsNotFound {
 			return errors.Wrap(err, "load repo permissions")
 		}
 	} else {
-		oldIDs = roaring.NewBitmap()
 		for _, id := range vals.ids {
-			oldIDs.Add(uint32(id))
+			oldIDs[int32(id)] = struct{}{}
 		}
 	}
 
 	if p.UserIDs == nil {
-		p.UserIDs = roaring.NewBitmap()
+		p.UserIDs = map[int32]struct{}{}
 	}
 
 	// Compute differences between the old and new sets.
-	added := roaring.AndNot(p.UserIDs, oldIDs)
-	removed := roaring.AndNot(oldIDs, p.UserIDs)
+	var added []uint32
+
+	for id := range p.UserIDs {
+		if _, ok := oldIDs[id]; !ok {
+			added = append(added, uint32(id))
+		}
+	}
+
+	var removed []uint32
+
+	for id := range oldIDs {
+		if _, ok := p.UserIDs[id]; !ok {
+			removed = append(removed, uint32(id))
+		}
+	}
+	// Iterating over maps doesn't guarantee order, so we sort the slices to avoid doing unnecessary DB updates.
+	sort.Slice(added, func(i, j int) bool { return added[i] < added[j] })
+	sort.Slice(removed, func(i, j int) bool { return removed[i] < removed[j] })
 
 	updatedAt := txs.clock()
-	if !added.IsEmpty() || !removed.IsEmpty() {
-		if q, err := upsertUserPermissionsBatchQuery(added.ToArray(), removed.ToArray(), []uint32{uint32(p.RepoID)}, p.Perm, authz.PermRepos, updatedAt); err != nil {
+	if len(added) != 0 || len(removed) != 0 {
+		if q, err := upsertUserPermissionsBatchQuery(added, removed, []uint32{uint32(p.RepoID)}, p.Perm, authz.PermRepos, updatedAt); err != nil {
 			return err
 		} else if err = txs.execute(ctx, q); err != nil {
 			return errors.Wrap(err, "execute upsert user permissions batch query")
@@ -545,11 +576,16 @@ DO UPDATE SET
 		return nil, ErrPermsSyncedAtNotSet
 	}
 
+	userIDs := make([]int32, 0, len(p.UserIDs))
+	for id := range p.UserIDs {
+		userIDs = append(userIDs, id)
+	}
+
 	return sqlf.Sprintf(
 		format,
 		p.RepoID,
 		p.Perm.String(),
-		pq.Array(p.UserIDs.ToArray()),
+		pq.Array(userIDs),
 		p.UpdatedAt.UTC(),
 		p.SyncedAt.UTC(),
 	), nil
@@ -620,9 +656,9 @@ func (s *permsStore) LoadUserPendingPermissions(ctx context.Context, p *authz.Us
 		return err
 	}
 	p.ID = vals.id
-	p.IDs = roaring.NewBitmap()
+	p.IDs = map[int32]struct{}{}
 	for _, id := range vals.ids {
-		p.IDs.Add(uint32(id))
+		p.IDs[int32(id)] = struct{}{}
 	}
 
 	p.UpdatedAt = vals.updatedAt
@@ -668,7 +704,7 @@ func (s *permsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 	var q *sqlf.Query
 
 	p.PendingUserIDs = map[int64]struct{}{}
-	p.UserIDs = roaring.NewBitmap()
+	p.UserIDs = map[int32]struct{}{}
 
 	// Insert rows for AccountIDs without one in the "user_pending_permissions"
 	// table. The insert does not store any permission data but uses auto-increment
@@ -736,7 +772,7 @@ func (s *permsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 		return errors.Wrap(err, "load repo pending permissions")
 	}
 
-	oldIDs := make(map[int64]struct{})
+	oldIDs := map[int64]struct{}{}
 	if vals != nil && vals.ids != nil {
 		for _, id := range vals.ids {
 			oldIDs[id] = struct{}{}
@@ -980,13 +1016,14 @@ func (s *permsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 		return errors.Wrap(err, "load user pending permissions")
 	}
 	p.ID = vals.id
-	p.IDs = roaring.NewBitmap()
+	p.IDs = map[int32]struct{}{}
+	var allRepoIDs []uint32
 	// these correspond to repo IDs which are guaranteed to be in int32 range
 	for _, id := range vals.ids {
-		p.IDs.Add(uint32(id))
+		p.IDs[int32(id)] = struct{}{}
+		allRepoIDs = append(allRepoIDs, uint32(id))
 	}
 	// NOTE: We currently only have "repos" type, so avoid unnecessary type checking for now.
-	allRepoIDs := p.IDs.ToArray()
 	if len(allRepoIDs) == 0 {
 		return nil
 	}
@@ -1314,7 +1351,6 @@ func (s *permsStore) load(ctx context.Context, q *sqlf.Query) (*permsLoadValues,
 	if err = rows.Scan(&id, pq.Array(&ids), &updatedAt, &dbutil.NullTime{Time: &syncedAt}); err != nil {
 		return nil, err
 	}
-
 	if err = rows.Close(); err != nil {
 		return nil, err
 	}

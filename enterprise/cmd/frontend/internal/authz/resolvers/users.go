@@ -4,7 +4,6 @@ import (
 	"context"
 	"sync"
 
-	"github.com/RoaringBitmap/roaring"
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -19,7 +18,7 @@ var _ graphqlbackend.UserConnectionResolver = &userConnectionResolver{}
 
 // userConnectionResolver resolves a list of user from the roaring bitmap with pagination.
 type userConnectionResolver struct {
-	ids *roaring.Bitmap
+	ids []int32 //sorted slice of IDs
 	db  database.DB
 
 	first int32
@@ -45,14 +44,19 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, *g
 				return
 			}
 		}
-		iter := r.ids.Iterator()
-		iter.AdvanceIfNeeded(uint32(afterID) + 1) // Plus 1 since r.after should be excluded.
 
 		userIDs := make([]int32, 0, r.first)
-		for iter.HasNext() {
-			userIDs = append(userIDs, int32(iter.Next()))
-			if len(userIDs) >= int(r.first) {
-				break
+		idsSize := int32(len(r.ids))
+
+		// Generate a slice of user IDs ranging from index after+1 to: after+first or until the end of the slice, whichever is less.
+		if idsSize >= int32(afterID)+1 {
+			count := int32(1)
+			for _, id := range r.ids[afterID:] {
+				if count > r.first {
+					break
+				}
+				userIDs = append(userIDs, id)
+				count++
 			}
 		}
 
@@ -63,11 +67,12 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, *g
 			return
 		}
 
-		if iter.HasNext() {
+		// No more user IDs to paginate through.
+		if idsSize <= int32(afterID)+r.first {
+			r.pageInfo = graphqlutil.HasNextPage(false)
+		} else { // Additional user IDs to paginate through.
 			endCursor := string(graphqlbackend.MarshalUserID(userIDs[len(userIDs)-1]))
 			r.pageInfo = graphqlutil.NextPageCursor(endCursor)
-		} else {
-			r.pageInfo = graphqlutil.HasNextPage(false)
 		}
 	})
 	return r.users, r.pageInfo, r.err
@@ -96,7 +101,7 @@ func (r *userConnectionResolver) TotalCount(ctx context.Context) (int32, error) 
 		return -1, err
 	}
 
-	return int32(r.ids.GetCardinality()), nil
+	return int32(len(r.ids)), nil
 }
 
 func (r *userConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {

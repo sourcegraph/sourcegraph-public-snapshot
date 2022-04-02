@@ -151,8 +151,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			wantIDs := []uint32{1}
-			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+			wantIDs := []int32{1}
+			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 		})
@@ -232,8 +232,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			wantIDs := []uint32{1}
-			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+			wantIDs := []int32{1}
+			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 
@@ -246,7 +246,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 		})
@@ -339,8 +339,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			wantIDs := []uint32{1}
-			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+			wantIDs := []int32{1}
+			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 		})
@@ -423,8 +423,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			wantIDs := []uint32{1}
-			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+			wantIDs := []int32{1}
+			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 
@@ -437,7 +437,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 		})

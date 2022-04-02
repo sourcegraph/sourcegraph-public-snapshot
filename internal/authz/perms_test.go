@@ -3,7 +3,6 @@ package authz
 import (
 	"testing"
 
-	"github.com/RoaringBitmap/roaring"
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -78,10 +77,12 @@ func BenchmarkPermsString(b *testing.B) {
 	}
 }
 
-func bitmap(ids ...uint32) *roaring.Bitmap {
-	bm := roaring.NewBitmap()
-	bm.AddMany(ids)
-	return bm
+func mapSet(ids ...int32) map[int32]struct{} {
+	ms := map[int32]struct{}{}
+	for _, id := range ids {
+		ms[id] = struct{}{}
+	}
+	return ms
 }
 
 func TestUserPermissions_AuthorizedRepos(t *testing.T) {
@@ -97,7 +98,7 @@ func TestUserPermissions_AuthorizedRepos(t *testing.T) {
 			p: &UserPermissions{
 				Perm: Read,
 				Type: "",
-				IDs:  bitmap(),
+				IDs:  mapSet(),
 			},
 			expPerms: []RepoPerms{},
 		},
@@ -117,7 +118,7 @@ func TestUserPermissions_AuthorizedRepos(t *testing.T) {
 			p: &UserPermissions{
 				Perm: Read,
 				Type: PermRepos,
-				IDs:  bitmap(),
+				IDs:  mapSet(),
 			},
 			expPerms: []RepoPerms{},
 		},
@@ -131,7 +132,7 @@ func TestUserPermissions_AuthorizedRepos(t *testing.T) {
 			p: &UserPermissions{
 				Perm: Read,
 				Type: PermRepos,
-				IDs:  bitmap(1),
+				IDs:  mapSet(1),
 			},
 			expPerms: []RepoPerms{
 				{Repo: &types.Repo{ID: 1}, Perms: Read},
@@ -146,7 +147,7 @@ func TestUserPermissions_AuthorizedRepos(t *testing.T) {
 			p: &UserPermissions{
 				Perm: Read,
 				Type: PermRepos,
-				IDs:  bitmap(1, 2, 3, 4),
+				IDs:  mapSet(1, 2, 3, 4),
 			},
 			expPerms: []RepoPerms{
 				{Repo: &types.Repo{ID: 1}, Perms: Read},
@@ -163,7 +164,7 @@ func TestUserPermissions_AuthorizedRepos(t *testing.T) {
 			p: &UserPermissions{
 				Perm: Read,
 				Type: PermRepos,
-				IDs:  bitmap(1, 2),
+				IDs:  mapSet(1, 2),
 			},
 			expPerms: []RepoPerms{
 				{Repo: &types.Repo{ID: 1}, Perms: Read},
@@ -180,7 +181,7 @@ func TestUserPermissions_AuthorizedRepos(t *testing.T) {
 			p: &UserPermissions{
 				Perm: Read,
 				Type: PermRepos,
-				IDs:  bitmap(1, 3, 5, 7),
+				IDs:  mapSet(1, 3, 5, 7),
 			},
 			expPerms: []RepoPerms{
 				{Repo: &types.Repo{ID: 1}, Perms: Read},

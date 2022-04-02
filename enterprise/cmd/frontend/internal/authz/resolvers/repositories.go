@@ -4,7 +4,6 @@ import (
 	"context"
 	"sync"
 
-	"github.com/RoaringBitmap/roaring"
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -20,7 +19,7 @@ var _ graphqlbackend.RepositoryConnectionResolver = &repositoryConnectionResolve
 // repositoryConnectionResolver resolves a list of repositories from the roaring bitmap with pagination.
 type repositoryConnectionResolver struct {
 	db  database.DB
-	ids *roaring.Bitmap
+	ids []int32
 
 	first int32
 	after *string
@@ -45,29 +44,32 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 				return
 			}
 		}
-		iter := r.ids.Iterator()
-		iter.AdvanceIfNeeded(uint32(afterID) + 1) // Plus 1 since r.after should be excluded.
-
 		repoIDs := make([]api.RepoID, 0, r.first)
-		for iter.HasNext() {
-			repoIDs = append(repoIDs, api.RepoID(iter.Next()))
-			if len(repoIDs) >= int(r.first) {
-				break
+		idsSize := int32(len(r.ids))
+
+		// Generate a slice of repo IDs ranging from index after+1 to: after+first or until the end of the slice, whichever is less.
+		if idsSize >= int32(afterID)+1 {
+			count := int32(1)
+			for _, id := range r.ids[afterID:] {
+				if count > r.first {
+					break
+				}
+				repoIDs = append(repoIDs, api.RepoID(id))
+				count++
 			}
 		}
 
-		// TODO(asdine): GetByIDs now returns the complete repo information rather that only a subset.
-		// Ensure this doesn't have an impact on performance and switch to using ListMinimalRepos if needed.
 		r.repos, r.err = r.db.Repos().GetByIDs(ctx, repoIDs...)
 		if r.err != nil {
 			return
 		}
 
-		if iter.HasNext() {
+		// No more user IDs to paginate through.
+		if idsSize <= int32(afterID)+r.first {
+			r.pageInfo = graphqlutil.HasNextPage(false)
+		} else { // Additional user IDs to paginate through.
 			endCursor := string(graphqlbackend.MarshalRepositoryID(repoIDs[len(repoIDs)-1]))
 			r.pageInfo = graphqlutil.NextPageCursor(endCursor)
-		} else {
-			r.pageInfo = graphqlutil.HasNextPage(false)
 		}
 	})
 	return r.repos, r.pageInfo, r.err
@@ -96,7 +98,7 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *gra
 		return nil, err
 	}
 
-	count := int32(r.ids.GetCardinality())
+	count := int32(len(r.ids))
 	return &count, nil
 }
 

@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/RoaringBitmap/roaring"
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -625,13 +624,15 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		UserID: user.ID,
 		Perm:   authz.Read, // Note: We currently only support read for repository permissions.
 		Type:   authz.PermRepos,
-		IDs:    roaring.NewBitmap(),
+		IDs:    map[int32]struct{}{},
 	}
 	for i := range repoIDs {
-		p.IDs.Add(uint32(repoIDs[i]))
+		p.IDs[int32(repoIDs[i])] = struct{}{}
 	}
-	p.IDs.AddMany(externalAccountsRepoIDs)
-	p.IDs.AddMany(externalServicesRepoIDs)
+	externalRepoIds := append(externalAccountsRepoIDs, externalServicesRepoIDs...)
+	for i := range externalRepoIds {
+		p.IDs[int32(externalRepoIds[i])] = struct{}{}
+	}
 
 	err = s.permsStore.SetUserPermissions(ctx, p)
 	if err != nil {
@@ -640,7 +641,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 
 	log15.Debug("PermsSyncer.syncUserPerms.synced",
 		"userID", user.ID,
-		"count", p.IDs.GetCardinality(),
+		"count", len(p.IDs),
 		"fetchOpts.invalidateCaches", fetchOpts.InvalidateCaches,
 	)
 
@@ -793,15 +794,15 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	p := &authz.RepoPermissions{
 		RepoID:  int32(repoID),
 		Perm:    authz.Read, // Note: We currently only support read for repository permissions.
-		UserIDs: roaring.NewBitmap(),
+		UserIDs: map[int32]struct{}{},
 	}
 
 	for i := range userIDs {
-		p.UserIDs.Add(uint32(userIDs[i]))
+		p.UserIDs[userIDs[i]] = struct{}{}
 	}
 	for aid, uid := range accountIDsToUserIDs {
 		// Add existing user to permissions
-		p.UserIDs.Add(uint32(uid))
+		p.UserIDs[uid] = struct{}{}
 
 		// Remove existing user from the set of pending users
 		delete(pendingAccountIDsSet, aid)
@@ -837,7 +838,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	log15.Debug("PermsSyncer.syncRepoPerms.synced",
 		"repoID", repo.ID,
 		"name", repo.Name,
-		"count", p.UserIDs.GetCardinality(),
+		"count", len(p.UserIDs),
 		"fetchOpts.invalidateCaches", fetchOpts.InvalidateCaches,
 	)
 	return nil

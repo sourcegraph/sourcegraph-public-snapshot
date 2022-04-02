@@ -156,8 +156,8 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	perms := edb.NewMockPermsStore()
 	perms.ListExternalAccountsFunc.SetDefaultReturn([]*extsvc.Account{&extAccount}, nil)
 	perms.SetUserPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPermissions) error {
-		wantIDs := []uint32{1, 2, 3, 4, 5}
-		assert.Equal(t, wantIDs, p.IDs.ToArray())
+		wantIDs := []int32{1, 2, 3, 4, 5}
+		assert.Equal(t, wantIDs, p.GenerateSortedIDsSlice())
 		return nil
 	})
 	perms.UserIsMemberOfOrgHasCodeHostConnectionFunc.SetDefaultReturn(true, nil)
@@ -253,7 +253,7 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 	perms.ListExternalAccountsFunc.SetDefaultReturn([]*extsvc.Account{&extAccount}, nil)
 	perms.SetUserPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPermissions) error {
 		assert.Equal(t, int32(1), p.UserID)
-		assert.Equal(t, []uint32{1}, p.IDs.ToArray())
+		assert.Equal(t, []int32{1}, p.GenerateSortedIDsSlice())
 		return nil
 	})
 	perms.UserIsMemberOfOrgHasCodeHostConnectionFunc.SetDefaultReturn(true, nil)
@@ -650,7 +650,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]int32{"user": 1}, nil)
 		perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) error {
 			assert.Equal(t, int32(1), p.RepoID)
-			assert.Equal(t, []uint32{1}, p.UserIDs.ToArray())
+			assert.Equal(t, []int32{1}, p.GenerateSortedIDsSlice())
 			return nil
 		})
 
@@ -685,7 +685,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]int32{"user": 1}, nil)
 		perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) error {
 			assert.Equal(t, int32(1), p.RepoID)
-			assert.Equal(t, []uint32{1}, p.UserIDs.ToArray())
+			assert.Equal(t, []int32{1}, p.GenerateSortedIDsSlice())
 			return nil
 		})
 
@@ -734,7 +734,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]int32{"user": 1}, nil)
 	perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) error {
 		assert.Equal(t, int32(1), p.RepoID)
-		assert.Equal(t, []uint32{1}, p.UserIDs.ToArray())
+		assert.Equal(t, []int32{1}, p.GenerateSortedIDsSlice())
 		return nil
 	})
 	perms.SetRepoPendingPermissionsFunc.SetDefaultHook(func(_ context.Context, accounts *extsvc.Accounts, _ *authz.RepoPermissions) error {

@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/RoaringBitmap/roaring"
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/gqltesting"
@@ -69,7 +68,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 		mockVerifiedEmails []*database.UserEmail
 		mockUsers          []*types.User
 		gqlTests           func(database.DB) []*gqltesting.Test
-		expUserIDs         []uint32
+		expUserIDs         map[int32]struct{}
 		expAccounts        *extsvc.Accounts
 	}{{
 		name: "set permissions via email",
@@ -107,7 +106,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 			},
 			}
 		},
-		expUserIDs: []uint32{1},
+		expUserIDs: map[int32]struct{}{1: {}},
 		expAccounts: &extsvc.Accounts{
 			ServiceType: authz.SourcegraphServiceType,
 			ServiceID:   authz.SourcegraphServiceID,
@@ -148,7 +147,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 					`,
 			}}
 		},
-		expUserIDs: []uint32{1},
+		expUserIDs: map[int32]struct{}{1: {}},
 		expAccounts: &extsvc.Accounts{
 			ServiceType: authz.SourcegraphServiceType,
 			ServiceID:   authz.SourcegraphServiceID,
@@ -175,7 +174,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 			perms.TransactFunc.SetDefaultReturn(perms, nil)
 			perms.DoneFunc.SetDefaultReturn(nil)
 			perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) error {
-				ids := p.UserIDs.ToArray()
+				ids := p.UserIDs
 				if diff := cmp.Diff(test.expUserIDs, ids); diff != "" {
 					return errors.Errorf("p.UserIDs: %v", diff)
 				}
@@ -364,13 +363,11 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 
 	perms := edb.NewStrictMockPermsStore()
 	perms.LoadUserPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPermissions) error {
-		p.IDs = roaring.NewBitmap()
-		p.IDs.Add(1)
+		p.IDs = map[int32]struct{}{1: {}}
 		return nil
 	})
 	perms.LoadUserPendingPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPendingPermissions) error {
-		p.IDs = roaring.NewBitmap()
-		p.IDs.Add(2)
+		p.IDs = map[int32]struct{}{2: {}}
 		return nil
 	})
 
@@ -603,8 +600,7 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 
 	perms := edb.NewStrictMockPermsStore()
 	perms.LoadRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) error {
-		p.UserIDs = roaring.NewBitmap()
-		p.UserIDs.Add(1)
+		p.UserIDs = map[int32]struct{}{1: {}}
 		return nil
 	})
 
