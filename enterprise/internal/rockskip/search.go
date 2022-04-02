@@ -244,13 +244,13 @@ func (s *Service) querySymbols(ctx context.Context, args types.SearchArgs, repoI
 		for _, symbol := range allSymbols {
 			if isMatch(symbol.Name) {
 				if symbol.Line < 0 || symbol.Line >= len(lines) {
-					log15.Warn("symbol.Line out of range, skipping", "symbol", symbol, "lines", len(lines))
+					log15.Warn("ctags returned an invalid line number", "path", path, "line", symbol.Line, "len(lines)", len(lines), "symbol", symbol.Name)
 					continue
 				}
 
 				character := strings.Index(lines[symbol.Line], symbol.Name)
 				if character == -1 {
-					log15.Warn("symbol.Name not found in line, setting to 0", "path", path, "symbol", symbol.Name, "line", lines[symbol.Line])
+					// Could not find the symbol in the line. ctags doesn't always return the right line.
 					character = 0
 				}
 
