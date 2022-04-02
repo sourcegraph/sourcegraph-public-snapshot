@@ -112,6 +112,28 @@ func (c *Client) UpdatePullRequest(ctx context.Context, repo *Repo, id int64, op
 	return &updated, nil
 }
 
+// CreatePullRequestComment adds a comment to a pull request.
+//
+// The comment content is expected to be valid Markdown.
+func (c *Client) CreatePullRequestComment(ctx context.Context, repo *Repo, id int64, input CommentInput) (*Comment, error) {
+	data, err := json.Marshal(&input)
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling request")
+	}
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("/2.0/repositories/%s/pullrequests/%d/comments", repo.FullName, id), bytes.NewBuffer(data))
+	if err != nil {
+		return nil, errors.Wrap(err, "creating request")
+	}
+
+	var comment Comment
+	if err := c.do(ctx, req, &comment); err != nil {
+		return nil, errors.Wrap(err, "sending request")
+	}
+
+	return &comment, nil
+}
+
 // PullRequest represents a single pull request, as returned by the API.
 type PullRequest struct {
 	Links             Links                     `json:"links"`
@@ -155,12 +177,6 @@ type RenderedPullRequestMarkup struct {
 	Title       RenderedMarkup `json:"title"`
 	Description RenderedMarkup `json:"description"`
 	Reason      RenderedMarkup `json:"reason"`
-}
-
-type RenderedMarkup struct {
-	Raw    string `json:"raw"`
-	Markup string `json:"markup"`
-	HTML   string `json:"html"`
 }
 
 type PullRequestStatus struct {
