@@ -22,5 +22,4 @@ export const background: BackgroundPageApi = {
     notifyRepoSyncError: messageSender('notifyRepoSyncError'),
     checkRepoSyncError: messageSender('checkRepoSyncError'),
     fetchCache: messageSender('fetchCache'),
-    getCookie: messageSender('getCookie'),
 }
