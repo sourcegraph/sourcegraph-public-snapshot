@@ -95,6 +95,11 @@ switch ($github.event_name) {
                 Send-SlackMessage -Uri $SlackWebhookUri
 
         } else {
+            if ($github.event.issue.labels | Where-Object { $_.name -eq  $TeamLabel }) {
+                Write-Information "Closed / re-opened issue labeled without team label $TeamLabel, exiting."
+                return
+            }
+
             # If issue was closed or reopened, update Status column
             $status = if ($github.event.action -eq 'closed') { 'Done' } else { 'In Progress' }
 
