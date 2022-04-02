@@ -4,8 +4,18 @@ import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
 
-import { Badge, Button, useLocalStorage, Link, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
-import { BADGE_VARIANTS } from '@sourcegraph/wildcard/src/components/Badge/constants'
+import {
+    Badge,
+    BADGE_VARIANTS,
+    Button,
+    useLocalStorage,
+    Link,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    Tabs,
+} from '@sourcegraph/wildcard'
 
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
