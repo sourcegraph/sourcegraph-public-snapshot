@@ -44,6 +44,7 @@ import {
     Scalars,
     BatchSpecWorkspaceResolutionState,
 } from '../../../graphql-operations'
+import { BatchSpecDownloadLink } from '../BatchSpec'
 
 import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE } from './backend'
 import { DownloadSpecModal } from './DownloadSpecModal'
@@ -388,17 +389,15 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
                 onChangeOptions={setExecutionOptions}
             />
 
-            {/* {showDownloadSpecModal ? (
-                <Button className={styles.downloadLink} variant="link" onClick={() => setIsDownloadSpecModalOpen(true)}>or download for src-cli</Button>
+            {downloadSpecModalDismissed ? (
+                <Button className={styles.downloadLink} variant="link" onClick={() => setIsDownloadSpecModalOpen(true)}>
+                    or download for src-cli
+                </Button>
             ) : (
                 <BatchSpecDownloadLink name={batchChange.name} originalInput={code} isLightTheme={isLightTheme}>
                     or download for src-cli
                 </BatchSpecDownloadLink>
-            )} */}
-
-            <Button className={styles.downloadLink} variant="link" onClick={() => setIsDownloadSpecModalOpen(true)}>
-                or download for src-cli
-            </Button>
+            )}
         </>
     )
 
@@ -424,17 +423,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
                         errors={compact([codeErrors.update, codeErrors.validation, previewError, executeError])}
                     />
 
-                    {/* {isDownloadSpecModalOpen && showDownloadSpecModal ? (
-                        <DownloadSpecModal
-                            name={batchChange.name}
-                            originalInput={code}
-                            isLightTheme={isLightTheme}                      
-                            setDownloadSpecModalDismissed={setDownloadSpecModalDismissed}
-                            setIsDownloadSpecModalOpen={setIsDownloadSpecModalOpen}
-                        />
-                    ) : null} */}
-
-                    {isDownloadSpecModalOpen ? (
+                    {isDownloadSpecModalOpen && isDownloadSpecModalOpen ? (
                         <DownloadSpecModal
                             name={batchChange.name}
                             originalInput={code}
