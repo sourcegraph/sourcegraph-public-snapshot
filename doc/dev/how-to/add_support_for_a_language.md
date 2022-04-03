@@ -16,7 +16,7 @@ To support symbol search and the symbols sidebar:
 
 #### Development
 
-You can validate your changes to the `.ctag.d` definitions by observing the symbol search and symbol sidebar behaviors in a local Sourcegraph. Link your Sourcegraph instance and your local clone of go-ctags by adding the following to the `go.mod` file in [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph).
+You can validate your changes to the `.ctags.d` definitions by observing the symbol search and symbol sidebar behaviors in a local Sourcegraph. Link your Sourcegraph instance and your local clone of go-ctags by adding the following to the `go.mod` file in [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph).
 
 ```
 replace github.com/sourcegraph/go-ctags => /path/to/my/clone/of/sourcegraph/go-ctags
