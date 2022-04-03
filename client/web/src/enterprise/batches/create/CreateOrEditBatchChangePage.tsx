@@ -423,7 +423,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
                         errors={compact([codeErrors.update, codeErrors.validation, previewError, executeError])}
                     />
 
-                    {isDownloadSpecModalOpen && isDownloadSpecModalOpen ? (
+                    {isDownloadSpecModalOpen && !downloadSpecModalDismissed ? (
                         <DownloadSpecModal
                             name={batchChange.name}
                             originalInput={code}
