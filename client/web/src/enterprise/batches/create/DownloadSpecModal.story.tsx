@@ -11,5 +11,19 @@ const { add } = storiesOf('web/batches/create/DownloadSpecModal', module).addDec
 ))
 
 add('Download Spec Modal', () => (
-    <WebStory>{props => <DownloadSpecModal onCancel={() => {}} onConfirm={() => {}} {...props} />}</WebStory>
+    <WebStory>
+        {props => (
+            <DownloadSpecModal
+                name=""
+                originalInput=""
+                setIsDownloadSpecModalOpen={function (condition: boolean): void {
+                    throw new Error('Function not implemented.')
+                }}
+                setDownloadSpecModalDismissed={function (condition: boolean): void {
+                    throw new Error('Function not implemented.')
+                }}
+                {...props}
+            />
+        )}
+    </WebStory>
 ))

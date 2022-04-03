@@ -1,11 +1,12 @@
 import React from 'react'
 
+import VisuallyHidden from '@reach/visually-hidden'
 import CloseIcon from 'mdi-react/CloseIcon'
 
 import { Button, Link, Modal } from '@sourcegraph/wildcard'
 
 import { CodeSnippet } from '../../../../../branded/src/components/CodeSnippet'
-import { BatchSpecDownloadLink } from '../BatchSpec'
+import { BatchSpecDownloadLink, getFileName } from '../BatchSpec'
 
 import styles from './DownloadSpecModal.module.scss'
 
@@ -13,122 +14,109 @@ export interface DownloadSpecModalProps {
     name: string
     originalInput: string
     isLightTheme: boolean
-    showDownloadSpecModal: boolean
-    setShowDownloadSpecModal: (condition: boolean) => void
-    setModal: (condition: boolean) => void
+    setIsDownloadSpecModalOpen: (condition: boolean) => void
+    setDownloadSpecModalDismissed: (condition: boolean) => void
 }
 
 export const DownloadSpecModal: React.FunctionComponent<DownloadSpecModalProps> = ({
     name,
     originalInput,
     isLightTheme,
-    setModal,
-    setShowDownloadSpecModal,
-}) => {
-    console.log('test')
+    setIsDownloadSpecModalOpen,
+    setDownloadSpecModalDismissed,
+}) => (
+    <Modal
+        onDismiss={() => {
+            setIsDownloadSpecModalOpen(false)
+        }}
+        aria-labelledby={MODAL_LABEL_ID}
+        className={styles.modal}
+    >
+        <>
+            <div>
+                <h3 id={MODAL_LABEL_ID}>Download specification for src-cli</h3>
+                <Button
+                    className={styles.close}
+                    onClick={() => {
+                        setIsDownloadSpecModalOpen(false)
+                    }}
+                >
+                    <VisuallyHidden>
+                        <CloseIcon className={styles.icon} />
+                    </VisuallyHidden>
+                </Button>
+            </div>
 
-    return (
-        <Modal
-            onDismiss={() => {
-                setModal(false)
-            }}
-            aria-labelledby={MODAL_LABEL_ID}
-            className={styles.modal}
-        >
-            <>
-                <div>
-                    <div>
-                        <h4 id={MODAL_LABEL_ID}>Download specification for src-cli</h4>
-                        <Button
-                            className={styles.close}
-                            onClick={() => {
-                                setModal(false)
-                            }}
-                        >
-                            <CloseIcon className={styles.icon} />
-                        </Button>
-                    </div>
-
-                    <div className={styles.container}>
-                        <div className={styles.left}>
-                            <p>
-                                Use the{' '}
-                                <Link
-                                    to="https://docs.sourcegraph.com/cli
+            <div className={styles.container}>
+                <div className={styles.left}>
+                    <p>
+                        Use the{' '}
+                        <Link
+                            to="https://docs.sourcegraph.com/cli
 "
-                                >
-                                    Sourcegraph CLI (src){' '}
-                                </Link>
-                                to run this batch change locally.
-                            </p>
+                        >
+                            Sourcegraph CLI (src){' '}
+                        </Link>
+                        to run this batch change locally.
+                    </p>
 
-                            <CodeSnippet
-                                code="src batch preview -f Hello world"
-                                language="bash"
-                                className={styles.codeSnippet}
-                            />
+                    <CodeSnippet
+                        code={`src batch preview -f ${getFileName(name)}`}
+                        language="bash"
+                        className={styles.codeSnippet}
+                    />
 
-                            <span>
-                                Follow the URL printed in your terminal to see the preview and (when you're ready)
-                                create the batch change.
-                            </span>
-                        </div>
-                        <div className={styles.right}>
-                            <div className={styles.rightContent}>
-                                <p>About src-cli </p>
-                                <p>
-                                    src cli is a command line interface to Sourcegraph. Its batch command allows to run
-                                    batch specification files using Docker.
-                                </p>
-                                <Link to="/">Download src-cli</Link>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="d-flex justify-content-between">
-                        <div>
-                            <Button
-                                className={styles.button}
-                                onClick={() => setShowDownloadSpecModal(false)}
-                                outline={true}
-                                variant="secondary"
-                                size="sm"
-                            >
-                                Don't show this again
-                            </Button>
-                        </div>
-                        <div>
-                            <Button
-                                className="mr-2"
-                                outline={true}
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => {
-                                    setModal(false)
-                                }}
-                            >
-                                Cancel
-                            </Button>
-                            <BatchSpecDownloadLink
-                                name={name}
-                                originalInput={originalInput}
-                                isLightTheme={isLightTheme}
-                            >
-                                <Button
-                                    variant="primary"
-                                    size="sm"
-                                    onClick={() => {
-                                        setModal(false)
-                                    }}
-                                >
-                                    Download Spec
-                                </Button>
-                            </BatchSpecDownloadLink>
-                        </div>
+                    <p className="p-0 m-0">
+                        {' '}
+                        Follow the URL printed in your terminal to see the preview and (when you're ready) create the
+                        batch change.
+                    </p>
+                </div>
+                <div className={styles.right}>
+                    <div className={styles.rightContent}>
+                        <h4>About src-cli </h4>
+                        <p>
+                            src cli is a command line interface to Sourcegraph. Its{' '}
+                            <span className={styles.mono}>batch</span> command allows to run batch specification files
+                            using Docker.
+                        </p>
+                        <Link to="https://docs.sourcegraph.com/cli">Download src-cli</Link>
                     </div>
                 </div>
-            </>
-        </Modal>
-    )
-}
+            </div>
+            <div className="d-flex justify-content-between">
+                <Button
+                    className={styles.dontShowAgainButton}
+                    onClick={() => setDownloadSpecModalDismissed(true)}
+                    variant="link"
+                >
+                    Don't show this again
+                </Button>
+                <div>
+                    <Button
+                        className="mr-2"
+                        outline={true}
+                        variant="secondary"
+                        onClick={() => {
+                            setIsDownloadSpecModalOpen(false)
+                        }}
+                    >
+                        Cancel
+                    </Button>
+                    <BatchSpecDownloadLink name={name} originalInput={originalInput} isLightTheme={isLightTheme}>
+                        <Button
+                            variant="primary"
+                            onClick={() => {
+                                setIsDownloadSpecModalOpen(false)
+                            }}
+                        >
+                            Download spec
+                        </Button>
+                    </BatchSpecDownloadLink>
+                </div>
+            </div>
+        </>
+    </Modal>
+)
 
 const MODAL_LABEL_ID = 'download-spec-modal'

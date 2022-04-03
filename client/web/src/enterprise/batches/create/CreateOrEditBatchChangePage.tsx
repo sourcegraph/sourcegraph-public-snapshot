@@ -45,7 +45,6 @@ import {
     BatchSpecWorkspaceResolutionState,
 } from '../../../graphql-operations'
 
-import { BatchSpecDownloadLink } from '../BatchSpec'
 import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE } from './backend'
 import { DownloadSpecModal } from './DownloadSpecModal'
 import { EditorFeedbackPanel } from './editor/EditorFeedbackPanel'
@@ -273,8 +272,11 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
     )
 
     const [filters, setFilters] = useState<WorkspacePreviewFilters>()
-    const [modal, setModal] = useState<boolean>(false)
-    const [showDownloadSpecModal, setShowDownloadSpecModal] = useTemporarySetting('batches.downloadSpecModal', true)
+    const [isDownloadSpecModalOpen, setIsDownloadSpecModalOpen] = useState<boolean>(false)
+    const [downloadSpecModalDismissed, setDownloadSpecModalDismissed] = useTemporarySetting(
+        'batches.downloadSpecModalDismissed',
+        false
+    )
 
     const workspacesConnection = useWorkspaces(batchSpec.id, filters)
     const importingChangesetsConnection = useImportingChangesets(batchSpec.id)
@@ -386,13 +388,17 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
                 onChangeOptions={setExecutionOptions}
             />
 
-            {showDownloadSpecModal ? (
-                <Button onClick={() => setModal(true)}>or download for src-cli</Button>
+            {/* {showDownloadSpecModal ? (
+                <Button className={styles.downloadLink} variant="link" onClick={() => setIsDownloadSpecModalOpen(true)}>or download for src-cli</Button>
             ) : (
                 <BatchSpecDownloadLink name={batchChange.name} originalInput={code} isLightTheme={isLightTheme}>
                     or download for src-cli
                 </BatchSpecDownloadLink>
-            )}
+            )} */}
+
+            <Button className={styles.downloadLink} variant="link" onClick={() => setIsDownloadSpecModalOpen(true)}>
+                or download for src-cli
+            </Button>
         </>
     )
 
@@ -418,14 +424,23 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
                         errors={compact([codeErrors.update, codeErrors.validation, previewError, executeError])}
                     />
 
-                    {modal && showDownloadSpecModal ? (
+                    {/* {isDownloadSpecModalOpen && showDownloadSpecModal ? (
+                        <DownloadSpecModal
+                            name={batchChange.name}
+                            originalInput={code}
+                            isLightTheme={isLightTheme}                      
+                            setDownloadSpecModalDismissed={setDownloadSpecModalDismissed}
+                            setIsDownloadSpecModalOpen={setIsDownloadSpecModalOpen}
+                        />
+                    ) : null} */}
+
+                    {isDownloadSpecModalOpen ? (
                         <DownloadSpecModal
                             name={batchChange.name}
                             originalInput={code}
                             isLightTheme={isLightTheme}
-                            showDownloadSpecModal={showDownloadSpecModal}
-                            setShowDownloadSpecModal={setShowDownloadSpecModal}
-                            setModal={setModal}
+                            setDownloadSpecModalDismissed={setDownloadSpecModalDismissed}
+                            setIsDownloadSpecModalOpen={setIsDownloadSpecModalOpen}
                         />
                     ) : null}
                 </div>

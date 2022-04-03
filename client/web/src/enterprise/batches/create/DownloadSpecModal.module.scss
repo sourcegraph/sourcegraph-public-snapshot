@@ -1,17 +1,17 @@
 .modal {
-    width: 40%;
-    font-size: smaller;
+    font-size: small;
+    width: 45rem;
 }
 
 .left {
     width: 70%;
-    padding-top: 10px;
-    padding-right: 10px;
+    padding-top: 1rem;
+    padding-right: 1rem;
 }
 
 .right {
     width: 30%;
-    padding-left: 10px;
+    padding-left: 1rem;
 }
 
 .close {
@@ -33,22 +33,25 @@
 .container {
     display: flex;
     justify-content: space-around;
-    padding-bottom: 25px;
+    padding-bottom: 2rem;
 }
 
-.rightContent {
+.right-content {
     background-color: var(--body-bg);
     border: 1px solid var(--border-color);
-    padding: 8px;
+    padding: 1rem;
 }
 
-.codeSnippet {
+.code-snippet {
     background-color: var(--color-bg-2);
 }
 
-.button {
-    border: none;
+.dont-show-again-button {
     padding: 0;
     color: var(--blue);
     font-weight: normal;
+}
+
+.mono {
+    font-family: 'Courier New', Courier, monospace;
 }
