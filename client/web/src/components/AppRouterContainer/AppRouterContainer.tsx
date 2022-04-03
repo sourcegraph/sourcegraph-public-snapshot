@@ -14,10 +14,11 @@ export const AppRouterContainer: React.FunctionComponent<AppRouterContainerProps
 }) => (
     <ElementScroller scrollKey="app-router-container">
         {/*
-            Data Layout data attribute is used to get access to the main layout scroll element (the div element below).
+            - Data Layout data attribute is used to get access to the main layout scroll element (the div element below).
             from child levels in order to handle or react on this container scroll or other important events.
+            - `role="main"` to fix rule: "landmark-one-main" (Document should have one main landmark)
          */}
-        <div data-layout={true} className={classNames(styles.appRouterContainer, className)} {...rest}>
+        <div role="main" data-layout={true} className={classNames(styles.appRouterContainer, className)} {...rest}>
             {children}
         </div>
     </ElementScroller>

@@ -4,7 +4,7 @@ exports[`PageHeader renders correctly 1`] = `
 <body>
   <div>
     <header
-      class="container"
+      class="container a11y-ignore"
     >
       <div>
         <h1

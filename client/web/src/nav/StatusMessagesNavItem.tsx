@@ -475,7 +475,12 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
 
         return (
             <Popover isOpen={this.state.isOpen} onOpenChange={event => this.setState({ isOpen: event.isOpen })}>
-                <PopoverTrigger className="nav-link py-0 px-0 percy-hide chromatic-ignore" as={Button} variant="link">
+                <PopoverTrigger
+                    className="nav-link py-0 px-0 percy-hide chromatic-ignore"
+                    as={Button}
+                    variant="link"
+                    aria-label={this.state.isOpen ? 'Hide tasks status message' : 'Show tasks status message'}
+                >
                     {this.renderIcon()}
                 </PopoverTrigger>
 

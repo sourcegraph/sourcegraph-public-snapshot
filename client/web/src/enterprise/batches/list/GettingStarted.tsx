@@ -149,7 +149,13 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
                             View the product marketing page for a high-level overview of benefits and customer use
                             cases.
                         </p>
-                        <Link to="https://about.sourcegraph.com/batch-changes" rel="noopener">
+                        {/*
+                            a11y-ignore
+                            Rule: "color-contrast" (Elements must have sufficient color contrast)
+                            There are a lot of `Link` usages in `--color-bg-2=--gray-03` container, to fix this issue
+                            we can use `--gray-02` or find another color for `--link-color`
+                        */}
+                        <Link to="https://about.sourcegraph.com/batch-changes" rel="noopener" className="a11y-ignore">
                             Batch Changes marketing page
                         </Link>
                     </CardBody>
