@@ -56,24 +56,24 @@ interface SignUpFormProps extends FeatureFlagProps {
 
 const preventDefault = (event: React.FormEvent): void => event.preventDefault()
 
-export function getPasswordRequirements() {
+export function getPasswordRequirements(): string {
     let requirements = ''
-    let passwordPolicyRef = window.context.experimentalFeatures.passwordPolicy
+    const passwordPolicyReference = window.context.experimentalFeatures.passwordPolicy
 
-    if (passwordPolicyRef && passwordPolicyRef.enabled === true) {
+    if (passwordPolicyReference && passwordPolicyReference.enabled === true) {
         console.log('Using enhanced password policy.')
 
-        if (passwordPolicyRef.minimumLength && passwordPolicyRef.minimumLength > 0) {
+        if (passwordPolicyReference.minimumLength && passwordPolicyReference.minimumLength > 0) {
             requirements +=
-                'Your password must include at least ' + passwordPolicyRef.minimumLength.toString() + ' characters'
+                'Your password must include at least ' + passwordPolicyReference.minimumLength.toString() + ' characters'
         }
-        if (passwordPolicyRef.numberOfSpecialCharacters && passwordPolicyRef.numberOfSpecialCharacters > 0) {
-            requirements += ', ' + passwordPolicyRef.numberOfSpecialCharacters.toString() + ' special characters'
+        if (passwordPolicyReference.numberOfSpecialCharacters && passwordPolicyReference.numberOfSpecialCharacters > 0) {
+            requirements += ', ' + passwordPolicyReference.numberOfSpecialCharacters.toString() + ' special characters'
         }
-        if (passwordPolicyRef.requireAtLeastOneNumber && passwordPolicyRef.requireAtLeastOneNumber === true) {
+        if (passwordPolicyReference.requireAtLeastOneNumber && passwordPolicyReference.requireAtLeastOneNumber === true) {
             requirements += ', at least one number'
         }
-        if (passwordPolicyRef.requireUpperandLowerCase && passwordPolicyRef.requireUpperandLowerCase === true) {
+        if (passwordPolicyReference.requireUpperandLowerCase && passwordPolicyReference.requireUpperandLowerCase === true) {
             requirements += ', at least one uppercase letter'
         }
     } else {
@@ -168,22 +168,22 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
         []
     )
 
-    const getPasswordRequirements = () => {
+    const getPasswordRequirements = (): JSX.Element => {
         let requirements = ''
-        let passwordPolicyRef = window.context.experimentalFeatures.passwordPolicy
+        const passwordPolicyReference = window.context.experimentalFeatures.passwordPolicy
 
-        if (passwordPolicyRef && passwordPolicyRef.enabled === true) {
-            if (passwordPolicyRef.minimumLength && passwordPolicyRef.minimumLength > 0) {
+        if (passwordPolicyReference && passwordPolicyReference.enabled === true) {
+            if (passwordPolicyReference.minimumLength && passwordPolicyReference.minimumLength > 0) {
                 requirements +=
-                    'Your password must include at least ' + passwordPolicyRef.minimumLength.toString() + ' characters'
+                    'Your password must include at least ' + passwordPolicyReference.minimumLength.toString() + ' characters'
             }
-            if (passwordPolicyRef.numberOfSpecialCharacters && passwordPolicyRef.numberOfSpecialCharacters > 0) {
-                requirements += ', ' + passwordPolicyRef.numberOfSpecialCharacters.toString() + ' special characters'
+            if (passwordPolicyReference.numberOfSpecialCharacters && passwordPolicyReference.numberOfSpecialCharacters > 0) {
+                requirements += ', ' + passwordPolicyReference.numberOfSpecialCharacters.toString() + ' special characters'
             }
-            if (passwordPolicyRef.requireAtLeastOneNumber && passwordPolicyRef.requireAtLeastOneNumber === true) {
+            if (passwordPolicyReference.requireAtLeastOneNumber && passwordPolicyReference.requireAtLeastOneNumber === true) {
                 requirements += ', at least one number'
             }
-            if (passwordPolicyRef.requireUpperandLowerCase && passwordPolicyRef.requireUpperandLowerCase === true) {
+            if (passwordPolicyReference.requireUpperandLowerCase && passwordPolicyReference.requireUpperandLowerCase === true) {
                 requirements += ', at least one uppercase letter'
             }
         } else {
