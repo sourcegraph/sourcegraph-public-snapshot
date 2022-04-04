@@ -246,10 +246,8 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 	// Chunk web integration tests to save time via parallel execution.
 	chunkedTestFiles := getChunkedWebIntegrationFileNames(chunkSize)
 
-	browsers := []string{"chrome"}
-
 	// Percy finalize step should be executed after all integration tests.
-	puppeteerFinalizeDependencies := make([]bk.StepOpt, len(chunkedTestFiles) + len(browsers))
+	puppeteerFinalizeDependencies := make([]bk.StepOpt, len(chunkedTestFiles))
 
 	// Add pipeline step for each chunk of web integrations files.
 	for i, chunkTestFiles := range chunkedTestFiles {
@@ -269,14 +267,15 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 	}
 
 	// Browser extension integration tests
-	for _, browser := range browsers {
+	for _, browser := range []string{"chrome"} {
 		stepKey := fmt.Sprintf("puppeteer:browser:%s", browser)
-		puppeteerFinalizeDependencies[len(puppeteerFinalizeDependencies)] = bk.DependsOn(stepKey)
+		puppeteerFinalizeDependencies = append(puppeteerFinalizeDependencies, bk.DependsOn(stepKey))
 
 		pipeline.AddStep(
 			fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
 			withYarnCache(),
 			bk.Key(stepKey),
+			bk.DependsOn(prepStepKey),
 			bk.Env("PERCY_ON", "true"),
 			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
 			bk.Env("BROWSER", browser),
