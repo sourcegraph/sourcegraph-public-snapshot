@@ -167,28 +167,28 @@ func TestUsers_Password_Policy(t *testing.T) {
 
 	// Numeric Check
 	pwTest1 := "abcdefghijklm!@AWS"
-	result1 := Test_validatePasswordUsingPolicy(pwTest1)
+	result1 := validatePasswordUsingPolicy(pwTest1)
 	if result1 {
 		t.Fatal("Number found check failed.")
 	}
 
 	// Mixed case check
 	pwTest2 := "abcdefghijklm!@1ass"
-	result2 := Test_validatePasswordUsingPolicy(pwTest2)
+	result2 := validatePasswordUsingPolicy(pwTest2)
 	if result2 {
 		t.Fatal("Mixed case check failed.")
 	}
 
 	// Special Character Check
 	pwTest3 := "abcdefghijklmQWS1ass"
-	result3 := Test_validatePasswordUsingPolicy(pwTest3)
+	result3 := validatePasswordUsingPolicy(pwTest3)
 	if result3 {
 		t.Fatal("Special character check failed.")
 	}
 
 	// Min Character Check
 	pwTest4 := "abcde1@W"
-	result4 := Test_validatePasswordUsingPolicy(pwTest4)
+	result4 := validatePasswordUsingPolicy(pwTest4)
 	if result4 {
 		t.Fatal("Min character check failed.")
 	}
