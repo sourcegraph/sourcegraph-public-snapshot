@@ -47,14 +47,18 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 
 			// Find the index of afterID in the ids slice, if r.after exists, and we can't find it in the ids slice, don't bother paginating
 			skipSearch = true
-			for _, id := range r.ids {
+			for idx, id := range r.ids {
 				if id == int32(afterID) {
-					skipSearch = false
+					// Only paginate if the index of the afterID isn't the last id of the slice.
+					if afterIDIdx < len(r.ids)-1 {
+						afterIDIdx = idx + 1 // set the start index to the next element
+						skipSearch = false
+					}
 					break
 				}
-				afterIDIdx++
 			}
 		}
+
 		repoIDs := make([]api.RepoID, 0, r.first)
 		idsSize := int32(len(r.ids))
 

@@ -47,12 +47,15 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, *g
 
 			// Find the index of afterID in the ids slice, if afterID exists, and we can't find it in the loop, don't bother paginating
 			skipSearch = true
-			for _, id := range r.ids {
+			for idx, id := range r.ids {
 				if id == int32(afterID) {
-					skipSearch = false
+					// Only paginate if the index of the afterID isn't the last id of the slice.
+					if afterIDIdx < len(r.ids)-1 {
+						afterIDIdx = idx + 1 // set the start index to the next element
+						skipSearch = false
+					}
 					break
 				}
-				afterIDIdx++
 			}
 		}
 
