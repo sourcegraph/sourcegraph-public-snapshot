@@ -40,7 +40,7 @@ interface StandardDatum {
 
 const getXValue = (datum: { x: number }) => new Date(datum.x)
 
-export const PlainChart = () => {
+const PlainChart = () => {
     const DATA: StandardDatum[] = [
         {
             x: 1588965700286 - 4 * 24 * 60 * 60 * 1000,
@@ -113,7 +113,7 @@ export const PlainChart = () => {
     return <LineChart width={400} height={400} data={DATA} series={SERIES} getXValue={getXValue} />
 }
 
-export const PlainStackedChart = () => {
+const PlainStackedChart = () => {
     const [active, setActive] = useState(false)
     const DATA: StandardDatum[] = [
         {
@@ -516,7 +516,7 @@ const WithDataMissingValues = () => {
     )
 }
 
-export const StackedWithDataMissingValues = () => {
+const StackedWithDataMissingValues = () => {
     const DATA_WITH_STEP: DatumWithMissingData[] = [
         { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: null, b: null, c: null },
         { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: null, b: null, c: null },
