@@ -94,8 +94,14 @@ func (r *LSIFUploadsWithRepositoryNamespaceResolver) Root() string {
 	return r.uploadsSummary.Root
 }
 
-func (r *LSIFUploadsWithRepositoryNamespaceResolver) Indexer() string {
-	return r.uploadsSummary.Indexer
+func (r *LSIFUploadsWithRepositoryNamespaceResolver) Indexer() gql.CodeIntelIndexerResolver {
+	for _, indexer := range allIndexers {
+		if indexer.Name() == r.uploadsSummary.Indexer {
+			return indexer
+		}
+	}
+
+	return &codeIntelIndexerResolver{name: r.uploadsSummary.Indexer}
 }
 
 func (r *LSIFUploadsWithRepositoryNamespaceResolver) Uploads() []gql.LSIFUploadResolver {
@@ -121,8 +127,12 @@ func (r *LSIFIndexesWithRepositoryNamespaceResolver) Root() string {
 	return r.indexesSummary.Root
 }
 
-func (r *LSIFIndexesWithRepositoryNamespaceResolver) Indexer() string {
-	return r.indexesSummary.Indexer
+func (r *LSIFIndexesWithRepositoryNamespaceResolver) Indexer() gql.CodeIntelIndexerResolver {
+	if idx, ok := imageToIndexer[r.indexesSummary.Indexer]; ok {
+		return idx
+	}
+
+	return &codeIntelIndexerResolver{name: r.indexesSummary.Indexer}
 }
 
 func (r *LSIFIndexesWithRepositoryNamespaceResolver) Indexes() []gql.LSIFIndexResolver {

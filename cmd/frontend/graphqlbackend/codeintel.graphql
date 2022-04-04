@@ -613,7 +613,7 @@ type LSIFUploadsWithRepositoryNamespace {
     """
     The indexer used to produce the each upload in the associated connection.
     """
-    indexer: String!
+    indexer: CodeIntelIndexer!
 
     """
     A list of uploads.
@@ -633,7 +633,7 @@ type LSIFIndexesithRepositoryNamespace {
     """
     The configured indexer of each index in the associated connection.
     """
-    indexer: String!
+    indexer: CodeIntelIndexer!
 
     """
     A list of indexes.

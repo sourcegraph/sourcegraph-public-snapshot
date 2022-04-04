@@ -306,13 +306,13 @@ type CodeIntelRepositorySummaryResolver interface {
 
 type LSIFUploadsWithRepositoryNamespaceResolver interface {
 	Root() string
-	Indexer() string
+	Indexer() CodeIntelIndexerResolver
 	Uploads() []LSIFUploadResolver
 }
 
 type LSIFIndexesWithRepositoryNamespaceResolver interface {
 	Root() string
-	Indexer() string
+	Indexer() CodeIntelIndexerResolver
 	Indexes() []LSIFIndexResolver
 }
 
