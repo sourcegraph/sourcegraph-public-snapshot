@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useCallback, useState } from 'react'
 
 import { Meta, Story } from '@storybook/react'
 import { ParentSize } from '@visx/responsive'
@@ -8,7 +8,7 @@ import { Series } from '../../types'
 
 import { LineChart, LegendList, LegendItem, getLineColor } from '.'
 
-export const StoryConfig: Meta = {
+const StoryConfig: Meta = {
     title: 'web/charts/line',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
 }
@@ -16,7 +16,7 @@ export const StoryConfig: Meta = {
 export default StoryConfig
 
 export const LineChartsVitrina: Story = () => (
-    <div className="d-flex flex-wrap">
+    <div className="d-flex flex-wrap" style={{ gap: 20 }}>
         <PlainChart />
         <PlainStackedChart />
         <WithLegendExample />
@@ -35,10 +35,13 @@ interface StandardDatum {
     bLink: string
     c: number | null
     cLink: string
-    x: number | null
+    x: number
 }
 
-const PlainChart = () => {
+const getXValue = (datum: { x: number }) => new Date(datum.x)
+
+export const PlainChart = () => {
+    const [active, setActive] = useState(false)
     const DATA: StandardDatum[] = [
         {
             x: 1588965700286 - 4 * 24 * 60 * 60 * 1000,
@@ -108,10 +111,16 @@ const PlainChart = () => {
         },
     ]
 
-    return <LineChart width={400} height={400} data={DATA} series={SERIES} xAxisKey="x" />
+    return (
+        <>
+            <button onClick={() => setActive(!active)}>Active state</button>
+            {active && <LineChart width={400} height={400} data={DATA} series={SERIES} getXValue={getXValue} />}
+        </>
+    )
 }
 
 export const PlainStackedChart = () => {
+    const [active, setActive] = useState(false)
     const DATA: StandardDatum[] = [
         {
             x: 1588965700286 - 4 * 24 * 60 * 60 * 1000,
@@ -181,7 +190,20 @@ export const PlainStackedChart = () => {
         },
     ]
 
-    return <LineChart width={400} height={400} data={DATA} series={SERIES} xAxisKey="x" stacked={true} />
+    return (
+        <>
+            <button onClick={() => setActive(!active)}>Active state</button>
+            <LineChart
+                width={400}
+                height={400}
+                data={DATA}
+                series={SERIES}
+                stacked={true}
+                zeroYAxisMin={active}
+                getXValue={getXValue}
+            />
+        </>
+    )
 }
 
 const WithLegendExample = () => {
@@ -258,7 +280,13 @@ const WithLegendExample = () => {
         <div className="d-flex flex-column" style={{ width: 400, height: 400 }}>
             <ParentSize className="flex-1">
                 {({ width, height }) => (
-                    <LineChart<StandardDatum> width={width} height={height} data={DATA} series={SERIES} xAxisKey="x" />
+                    <LineChart<StandardDatum>
+                        width={width}
+                        height={height}
+                        data={DATA}
+                        series={SERIES}
+                        getXValue={getXValue}
+                    />
                 )}
             </ParentSize>
             <LegendList>
@@ -321,6 +349,8 @@ const WithHugeData = () => {
         { name: 'Revert', dataKey: 'series1', color: 'var(--oc-orange-7)' },
     ]
 
+    const getXValue = useCallback<(datum: HugeDataDatum) => Date>(datum => new Date(datum.dateTime), [])
+
     return (
         <div style={{ width: 400, height: 400 }}>
             <ParentSize>
@@ -330,7 +360,7 @@ const WithHugeData = () => {
                         height={height}
                         data={DATA}
                         series={SERIES}
-                        xAxisKey="dateTime"
+                        getXValue={getXValue}
                     />
                 )}
             </ParentSize>
@@ -361,7 +391,13 @@ const WithZeroOneData = () => {
         <div style={{ width: 400, height: 400 }}>
             <ParentSize>
                 {({ width, height }) => (
-                    <LineChart<ZeroOneDatum> width={width} height={height} data={DATA} series={SERIES} xAxisKey="x" />
+                    <LineChart<ZeroOneDatum>
+                        width={width}
+                        height={height}
+                        data={DATA}
+                        series={SERIES}
+                        getXValue={getXValue}
+                    />
                 )}
             </ParentSize>
         </div>
@@ -416,6 +452,8 @@ const WithDataSteps = () => {
         },
     ]
 
+    const getXValue = useCallback<(datum: StepDatum) => Date>(datum => new Date(datum.dateTime), [])
+
     return (
         <div style={{ width: 400, height: 400 }}>
             <ParentSize>
@@ -425,7 +463,7 @@ const WithDataSteps = () => {
                         height={height}
                         data={DATA_WITH_STEP}
                         series={SERIES}
-                        xAxisKey="dateTime"
+                        getXValue={getXValue}
                     />
                 )}
             </ParentSize>
@@ -473,7 +511,7 @@ const WithDataMissingValues = () => {
                         height={height}
                         data={DATA_WITH_STEP}
                         series={SERIES}
-                        xAxisKey="x"
+                        getXValue={getXValue}
                     />
                 )}
             </ParentSize>
@@ -481,15 +519,19 @@ const WithDataMissingValues = () => {
     )
 }
 
-const StackedWithDataMissingValues = () => {
+export const StackedWithDataMissingValues = () => {
+    const [active, setActive] = useState(false)
     const DATA_WITH_STEP: DatumWithMissingData[] = [
         { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: null, b: null, c: null },
         { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: null, b: null, c: null },
         { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 94, b: null, c: null },
         { x: 1588965700286 - 1.5 * 24 * 60 * 60 * 1000, a: 134, b: null, c: 200 },
+        { x: 1588965700286 - 1.4 * 24 * 60 * 60 * 1000, a: null, b: 150, c: null },
         { x: 1588965700286 - 1.3 * 24 * 60 * 60 * 1000, a: null, b: 150, c: 150 },
         { x: 1588965700286 - 24 * 60 * 60 * 1000, a: 134, b: 190, c: 190 },
         { x: 1588965700286, a: 123, b: 170, c: 170 },
+        { x: 1588965700286 + 24 * 60 * 60 * 1000, a: null, b: 200, c: null },
+        { x: 1588965700286 + 1.3 * 24 * 60 * 60 * 1000, a: null, b: 180, c: null },
     ]
 
     const SERIES: Series<DatumWithMissingData>[] = [
@@ -498,32 +540,36 @@ const StackedWithDataMissingValues = () => {
             name: 'A metric',
             color: 'var(--blue)',
         },
-        // {
-        //     dataKey: 'b',
-        //     name: 'B metric',
-        //     color: 'var(--warning)',
-        // },
-        // {
-        //     dataKey: 'c',
-        //     name: 'C metric',
-        //     color: 'var(--purple)',
-        // },
+        {
+            dataKey: 'c',
+            name: 'C metric',
+            color: 'var(--purple)',
+        },
+        {
+            dataKey: 'b',
+            name: 'B metric',
+            color: 'var(--warning)',
+        },
     ]
 
     return (
-        <div style={{ width: 400, height: 400 }}>
-            <ParentSize>
-                {({ width, height }) => (
-                    <LineChart<DatumWithMissingData>
-                        width={width}
-                        height={height}
-                        data={DATA_WITH_STEP}
-                        series={SERIES}
-                        xAxisKey="x"
-                        stacked={true}
-                    />
-                )}
-            </ParentSize>
-        </div>
+        <>
+            <button onClick={() => setActive(!active)}>Active state</button>
+            <div style={{ width: 400, height: 400 }}>
+                <ParentSize>
+                    {({ width, height }) => (
+                        <LineChart<DatumWithMissingData>
+                            width={width}
+                            height={height}
+                            data={DATA_WITH_STEP}
+                            series={SERIES}
+                            stacked={true}
+                            zeroYAxisMin={active}
+                            getXValue={getXValue}
+                        />
+                    )}
+                </ParentSize>
+            </div>
+        </>
     )
 }
