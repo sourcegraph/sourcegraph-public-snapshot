@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -23,7 +22,7 @@ type GitserverClient interface {
 	RefDescriptions(ctx context.Context, repositoryID int, gitOjbs ...string) (map[string][]gitdomain.RefDescription, error)
 	CommitsUniqueToBranch(ctx context.Context, repositoryID int, branchName string, isDefaultBranch bool, maxAge *time.Time) (map[string]time.Time, error)
 	CommitsExist(ctx context.Context, commits []gitserver.RepositoryCommit) ([]bool, error)
-	CommitGraph(ctx context.Context, repositoryID int, options git.CommitGraphOptions) (*gitdomain.CommitGraph, error)
+	CommitGraph(ctx context.Context, repositoryID int, options gitdomain.CommitGraphOptions) (*gitdomain.CommitGraph, error)
 	ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error)
 }
 

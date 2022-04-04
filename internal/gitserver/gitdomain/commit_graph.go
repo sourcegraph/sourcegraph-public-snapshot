@@ -1,6 +1,11 @@
 package gitdomain
 
-import "strings"
+import (
+	"strings"
+	"time"
+
+	"github.com/opentracing/opentracing-go/log"
+)
 
 type CommitGraph struct {
 	graph map[string][]string
@@ -56,5 +61,32 @@ func ParseCommitGraph(lines []string) *CommitGraph {
 	return &CommitGraph{
 		graph: graph,
 		order: append(prefix, order...),
+	}
+}
+
+type CommitGraphOptions struct {
+	Commit  string
+	AllRefs bool
+	Limit   int
+	Since   *time.Time
+} // please update LogFields if you add a field here
+
+var unixEpoch = stableTimeRepr(time.Unix(0, 0))
+
+func stableTimeRepr(t time.Time) string {
+	s, _ := t.MarshalText()
+	return string(s)
+}
+
+func (opts *CommitGraphOptions) LogFields() []log.Field {
+	since := unixEpoch
+	if opts.Since != nil {
+		since = stableTimeRepr(*opts.Since)
+	}
+	return []log.Field{
+		log.String("commit", opts.Commit),
+		log.Int("limit", opts.Limit),
+		log.Bool("allrefs", opts.AllRefs),
+		log.String("since", since),
 	}
 }

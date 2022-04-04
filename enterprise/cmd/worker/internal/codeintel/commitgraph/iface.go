@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type DBStore interface {
@@ -28,5 +27,5 @@ type Locker interface {
 
 type GitserverClient interface {
 	RefDescriptions(ctx context.Context, repositoryID int, gitOjbs ...string) (map[string][]gitdomain.RefDescription, error)
-	CommitGraph(ctx context.Context, repositoryID int, options git.CommitGraphOptions) (*gitdomain.CommitGraph, error)
+	CommitGraph(ctx context.Context, repositoryID int, options gitdomain.CommitGraphOptions) (*gitdomain.CommitGraph, error)
 }
