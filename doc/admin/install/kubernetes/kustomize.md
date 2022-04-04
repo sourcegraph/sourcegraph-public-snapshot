@@ -1,8 +1,5 @@
 # Kustomize
 
-## About Kustomize
-
-
 Sourcegraph supports the use of [Kustomize](https://kustomize.io) to modify and customize our Kubernetes manifests. Kustomize is a template-free way to customize configuration with a simple configuration file.
 
 Some benefits of using Kustomize to generate manifests instead of modifying the base directly include:
@@ -40,14 +37,10 @@ Overlays can:
 
 Overlays can be used in one of two ways:
 
-- With `kubectl`: Starting with `kubectl` client version 1.14 `kubectl` can handle `kustomization.yaml` files directly.
-When using `kubectl` there is no intermediate step that generates actual manifest files. Instead the combined resources from the
-overlays and the base are directly sent to the cluster. This is done with the `kubectl apply -k` command. The argument to the
-command is a directory containing a `kustomization.yaml` file.
+- With `kubectl`: Starting with `kubectl` client version 1.14 `kubectl` can handle `kustomization.yaml` files directly. When using `kubectl` there is no intermediate step that generates actual manifest files. Instead the combined resources from the overlays and the base are directly sent to the cluster. This is done with the `kubectl apply -k` command. The argument to the command is a directory containing a `kustomization.yaml` file.
 - With`kustomize`: This generates manifest files that are then applied in the conventional way using `kubectl apply -f`.
 
-The overlays provided in our [overlays directory](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays) rely on the `kustomize` tool and the `overlay-generate-cluster.sh` script in the
-`root` directory to generate the manifests. There are two reasons why it was set up like this:
+The overlays provided in our [overlays directory](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays) rely on the `kustomize` tool and the `overlay-generate-cluster.sh` script in the `root` directory to generate the manifests. There are two reasons why it was set up like this:
 
 - It avoids having to put a `kustomization.yaml` file in the `base` directory and forcing users that don't use overlays
   to deal with it (unfortunately `kubectl apply -f` doesn't work if a `kustomization.yaml` file is in the directory).
