@@ -89,6 +89,7 @@ The store relies on a jobs table _specific to your worker_ to exist with the fol
 | `id`                | integer                  | The job's primary key |
 | `state`             | text                     | The job's current status (one of `queued`, `processing`, `errored`, or `failed`) |
 | `failure_message`   | text                     | Updated with the text of the error returned from the handle hook |
+| `queued_at`         | timestamp with time zone | Time when the job was added to the table
 | `started_at`        | timestamp with time zone | Updated when the job is dequeued for processing |
 | `finished_at`       | timestamp with time zone | Updated when the handler finishes processing the job (successfully or unsuccessfully) |
 | `process_after`     | timestamp with time zone | Controls the time after which the job is visible for processing |
@@ -149,6 +150,7 @@ CREATE TABLE example_jobs (
   id                SERIAL PRIMARY KEY,
   state             text DEFAULT 'queued',
   failure_message   text,
+  queued_at         timestamp with time zone DEFAULT NOW(),
   started_at        timestamp with time zone,
   finished_at       timestamp with time zone,
   process_after     timestamp with time zone,
@@ -188,6 +190,7 @@ type ExampleJob struct {
 	ID              int
 	State           string
 	FailureMessage  *string
+	QueuedAt        time.Time
 	StartedAt       *time.Time
 	FinishedAt      *time.Time
 	ProcessAfter    *time.Time
@@ -205,6 +208,7 @@ var exampleJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("j.id"),
 	sqlf.Sprintf("j.state"),
 	sqlf.Sprintf("j.failure_message"),
+	sqlf.Sprintf("j.queued_at"),
 	sqlf.Sprintf("j.started_at"),
 	sqlf.Sprintf("j.finished_at"),
 	sqlf.Sprintf("j.process_after"),
@@ -243,6 +247,7 @@ func scanFirstExampleJob(rows *sql.Rows, queryErr error) (_ workerutil.Record, e
 			&job.ID,
 			&job.State,
 			&job.FailureMessage,
+			&job.QueuedAt,
 			&job.StartedAt,
 			&job.FinishedAt,
 			&job.ProcessAfter,

@@ -495,6 +495,8 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 		r.Metadata = new(jvmpackages.Metadata)
 	case extsvc.TypeNpmPackages:
 		r.Metadata = new(npmpackages.Metadata)
+	case extsvc.TypeGoModules:
+		r.Metadata = &struct{}{}
 	default:
 		log15.Warn("scanRepo - unknown service type", "typ", typ)
 		return nil
@@ -1135,7 +1137,7 @@ FROM repo
 %s
 WHERE
 	(
-		repo.stars >= %s
+		(repo.stars >= %s AND NOT COALESCE(fork, false) AND NOT archived)
 		OR
 		lower(repo.name) ~ '^(src\.fedoraproject\.org|maven|npm|jdk)'
 		OR

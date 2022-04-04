@@ -8,11 +8,11 @@ import { RouteComponentProps } from 'react-router'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Page } from '@sourcegraph/web/src/components/Page'
-import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { Alert, AlertLink, Button, Checkbox, Input, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { ORG_NAME_MAX_LENGTH, VALID_ORG_NAME_REGEXP } from '..'
+import { Page } from '../../components/Page'
+import { PageTitle } from '../../components/PageTitle'
 import {
     CreateOrganizationForOpenBetaResult,
     CreateOrganizationForOpenBetaVariables,
@@ -184,7 +184,7 @@ export const NewOrgOpenBetaPage: React.FunctionComponent<Props> = ({
                 eventLogger.log('NewOrganizationCreateSucceeded', { openBetaId }, { openBetaId })
                 if (result?.data?.createOrganization) {
                     localStorage.removeItem(OPEN_BETA_ID_KEY)
-                    history.push(result.data.createOrganization.settingsURL as string)
+                    history.push(`/organizations/${orgId}/getstarted`)
                 }
             } catch {
                 eventLogger.log('NewOrganizationCreateFailed', { openBetaId }, { openBetaId })
@@ -278,8 +278,9 @@ export const NewOrgOpenBetaPage: React.FunctionComponent<Props> = ({
                         onChange={onTermsAcceptedChange}
                         label={
                             <span className={styles.cbLabel}>
-                                I accept the <Link to="/">terms of service</Link> for participating in the Sourcegraph
-                                Cloud for small teams open beta.
+                                I accept the{' '}
+                                <Link to="https://about.sourcegraph.com/terms-cloud">terms of service</Link> for
+                                participating in the Sourcegraph Cloud for small teams open beta.
                             </span>
                         }
                     />

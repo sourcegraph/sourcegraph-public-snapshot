@@ -110,7 +110,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
             setCollapsedSections(openSections => {
                 const newSettings: TemporarySettings['search.collapsedSidebarSections'] = {
                     ...openSections,
-                    [id]: open,
+                    [id]: !open,
                 }
                 return newSettings
             })

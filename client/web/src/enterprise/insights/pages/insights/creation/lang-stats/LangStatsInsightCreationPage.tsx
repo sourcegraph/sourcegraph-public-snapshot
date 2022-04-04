@@ -98,7 +98,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
 
     return (
         <CodeInsightsPage className={classNames(styles.creationPage, 'col-10')}>
-            <PageTitle title="Create new code insight" />
+            <PageTitle title="Create insight - Code Insights" />
 
             <PageHeader
                 className="mb-5"

@@ -7,10 +7,10 @@ import PlusIcon from 'mdi-react/PlusIcon'
 
 import { SearchContextProps } from '@sourcegraph/search'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageHeader, Link, Button, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { Page } from '../../components/Page'
 
 import { SearchContextsListTab } from './SearchContextsListTab'
 

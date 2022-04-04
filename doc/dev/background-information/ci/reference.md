@@ -21,6 +21,7 @@ The default run type.
 
 - Pipeline for `Client` changes:
   - **Pipeline setup**: Trigger async
+  - Client PR preview
   - **Linters and static analysis**: Prettier, Misc linters, Yarn deduplicate lint
   - **Client checks**: Puppeteer tests prep, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests finalize, Upload Storybook to Chromatic, Test (all), Build, Enterprise build, Test (client/web), Puppeteer tests for chrome extension, Test (client/browser), ESLint, Build TS, Stylelint
   - Upload build trace

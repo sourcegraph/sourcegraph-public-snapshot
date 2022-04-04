@@ -8,14 +8,6 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike, repeatUntil } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { queryExternalServices } from '@sourcegraph/web/src/components/externalServices/backend'
-import {
-    FilteredConnectionFilter,
-    FilteredConnectionQueryArguments,
-    Connection,
-} from '@sourcegraph/web/src/components/FilteredConnection'
-import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { SelfHostedCtaLink } from '@sourcegraph/web/src/components/SelfHostedCtaLink'
 import {
     Container,
     PageHeader,
@@ -30,6 +22,14 @@ import {
 
 import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
+import { queryExternalServices } from '../../../components/externalServices/backend'
+import {
+    FilteredConnectionFilter,
+    FilteredConnectionQueryArguments,
+    Connection,
+} from '../../../components/FilteredConnection'
+import { PageTitle } from '../../../components/PageTitle'
+import { SelfHostedCtaLink } from '../../../components/SelfHostedCtaLink'
 import {
     SiteAdminRepositoryFields,
     ExternalServicesResult,

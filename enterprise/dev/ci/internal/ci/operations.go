@@ -523,7 +523,6 @@ func codeIntelQA(candidateTag string) operations.Operation {
 func serverE2E(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":chromium: Sourcegraph E2E",
-			bk.Agent("queue", bk.AgentQueueBaremetal),
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
@@ -541,7 +540,6 @@ func serverE2E(candidateTag string) operations.Operation {
 func serverQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::chromium: Sourcegraph QA",
-			bk.Agent("queue", bk.AgentQueueBaremetal),
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
@@ -561,7 +559,6 @@ func serverQA(candidateTag string) operations.Operation {
 func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::arrow_double_up: Sourcegraph Upgrade",
-			bk.Agent("queue", bk.AgentQueueBaremetal),
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
@@ -813,5 +810,14 @@ func uploadBuildeventTrace() operations.Operation {
 		p.AddStep(":arrow_heading_up: Upload build trace",
 			bk.Cmd("./enterprise/dev/ci/scripts/upload-buildevent-report.sh"),
 		)
+	}
+}
+
+// Request render.com to create client preview app for current PR
+// Preview is deleted from render.com in GitHub Action when PR is closed
+func prPreview() operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(":globe_with_meridians: Client PR preview",
+			bk.Cmd("dev/ci/render-pr-preview.sh"))
 	}
 }

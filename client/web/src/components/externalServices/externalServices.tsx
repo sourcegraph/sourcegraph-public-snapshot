@@ -7,6 +7,7 @@ import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitIcon from 'mdi-react/GitIcon'
 import GitLabIcon from 'mdi-react/GitlabIcon'
+import LanguageGoIcon from 'mdi-react/LanguageGoIcon'
 import LanguageJavaIcon from 'mdi-react/LanguageJavaIcon'
 import NpmIcon from 'mdi-react/NpmIcon'
 
@@ -19,6 +20,7 @@ import bitbucketServerSchemaJSON from '../../../../../schema/bitbucket_server.sc
 import githubSchemaJSON from '../../../../../schema/github.schema.json'
 import gitlabSchemaJSON from '../../../../../schema/gitlab.schema.json'
 import gitoliteSchemaJSON from '../../../../../schema/gitolite.schema.json'
+import goModulesSchemaJSON from '../../../../../schema/go-modules.schema.json'
 import jvmPackagesSchemaJSON from '../../../../../schema/jvm-packages.schema.json'
 import npmPackagesSchemaJSON from '../../../../../schema/npm-packages.schema.json'
 import otherExternalServiceSchemaJSON from '../../../../../schema/other_external_service.schema.json'
@@ -1274,6 +1276,37 @@ const NPM_PACKAGES: AddExternalServiceOptions = {
     editorActions: [],
 }
 
+const GO_MODULES = {
+    kind: ExternalServiceKind.GOMODULES,
+    title: 'Go Dependencies',
+    icon: LanguageGoIcon,
+    jsonSchema: goModulesSchemaJSON,
+    defaultDisplayName: 'Go Dependencies',
+    defaultConfig: `{
+  "urls": ["https://proxy.golang.org"],
+  "dependencies": []
+}`,
+    instructions: (
+        <div>
+            <ol>
+                <li>
+                    In the configuration below, set <Field>urls</Field> to the Go module proxies you want to sync
+                    dependency repositories from. For example, <code>"https://user:pass@athens.mycompany.com"</code> or{' '}
+                    <code>"https://proxy.golang.org"</code>. A module will be synced from the first proxy that has it,
+                    trying the next when it's not found.
+                </li>
+                <li>
+                    In the configuration below, set <Field>dependencies</Field> to the list of packages that you want to
+                    manually add. For example, <code>"cloud.google.com/go/kms@v1.1.0"</code>.
+                </li>
+            </ol>
+            <p>⚠️ go module repositories are visible by all users of the Sourcegraph instance.</p>
+            <p>⚠️ It is only possible to register one go modules code host per Sourcegraph instance.</p>
+        </div>
+    ),
+    editorActions: [],
+}
+
 export const codeHostExternalServices: Record<string, AddExternalServiceOptions> = {
     github: GITHUB_DOTCOM,
     ghe: GITHUB_ENTERPRISE,
@@ -1285,6 +1318,7 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     srcservegit: SRC_SERVE_GIT,
     gitolite: GITOLITE,
     git: GENERIC_GIT,
+    goModules: GO_MODULES,
     ...(window.context?.experimentalFeatures?.perforce === 'enabled' ? { perforce: PERFORCE } : {}),
     ...(window.context?.experimentalFeatures?.jvmPackages === 'disabled' ? {} : { jvmPackages: JVM_PACKAGES }),
     ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
@@ -1310,6 +1344,7 @@ export const defaultExternalServices: Record<ExternalServiceKind, AddExternalSer
     [ExternalServiceKind.OTHER]: GENERIC_GIT,
     [ExternalServiceKind.AWSCODECOMMIT]: AWS_CODE_COMMIT,
     [ExternalServiceKind.PERFORCE]: PERFORCE,
+    [ExternalServiceKind.GOMODULES]: GO_MODULES,
     [ExternalServiceKind.JVMPACKAGES]: JVM_PACKAGES,
     [ExternalServiceKind.PAGURE]: PAGURE,
     [ExternalServiceKind.NPMPACKAGES]: NPM_PACKAGES,
