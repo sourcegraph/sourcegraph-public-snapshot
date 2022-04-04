@@ -390,13 +390,13 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
             />
 
             {downloadSpecModalDismissed ? (
-                <Button className={styles.downloadLink} variant="link" onClick={() => setIsDownloadSpecModalOpen(true)}>
-                    or download for src-cli
-                </Button>
-            ) : (
                 <BatchSpecDownloadLink name={batchChange.name} originalInput={code} isLightTheme={isLightTheme}>
                     or download for src-cli
                 </BatchSpecDownloadLink>
+            ) : (
+                <Button className={styles.downloadLink} variant="link" onClick={() => setIsDownloadSpecModalOpen(true)}>
+                    or download for src-cli
+                </Button>
             )}
         </>
     )
