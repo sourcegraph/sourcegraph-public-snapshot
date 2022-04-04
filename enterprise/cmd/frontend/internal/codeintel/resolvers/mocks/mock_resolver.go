@@ -90,6 +90,9 @@ type MockResolver struct {
 	// object controlling the behavior of the method
 	// QueueAutoIndexJobsForRepo.
 	QueueAutoIndexJobsForRepoFunc *ResolverQueueAutoIndexJobsForRepoFunc
+	// RepositorySummaryFunc is an instance of a mock function object
+	// controlling the behavior of the method RepositorySummary.
+	RepositorySummaryFunc *ResolverRepositorySummaryFunc
 	// RetentionPolicyOverviewFunc is an instance of a mock function object
 	// controlling the behavior of the method RetentionPolicyOverview.
 	RetentionPolicyOverviewFunc *ResolverRetentionPolicyOverviewFunc
@@ -216,6 +219,11 @@ func NewMockResolver() *MockResolver {
 		QueueAutoIndexJobsForRepoFunc: &ResolverQueueAutoIndexJobsForRepoFunc{
 			defaultHook: func(context.Context, int, string, string) ([]dbstore.Index, error) {
 				return nil, nil
+			},
+		},
+		RepositorySummaryFunc: &ResolverRepositorySummaryFunc{
+			defaultHook: func(context.Context, int) (resolvers.RepositorySummary, error) {
+				return resolvers.RepositorySummary{}, nil
 			},
 		},
 		RetentionPolicyOverviewFunc: &ResolverRetentionPolicyOverviewFunc{
@@ -355,6 +363,11 @@ func NewStrictMockResolver() *MockResolver {
 				panic("unexpected invocation of MockResolver.QueueAutoIndexJobsForRepo")
 			},
 		},
+		RepositorySummaryFunc: &ResolverRepositorySummaryFunc{
+			defaultHook: func(context.Context, int) (resolvers.RepositorySummary, error) {
+				panic("unexpected invocation of MockResolver.RepositorySummary")
+			},
+		},
 		RetentionPolicyOverviewFunc: &ResolverRetentionPolicyOverviewFunc{
 			defaultHook: func(context.Context, dbstore.Upload, bool, int, int64, string, time.Time) ([]resolvers.RetentionPolicyMatchCandidate, int, error) {
 				panic("unexpected invocation of MockResolver.RetentionPolicyOverview")
@@ -449,6 +462,9 @@ func NewMockResolverFrom(i resolvers.Resolver) *MockResolver {
 		},
 		QueueAutoIndexJobsForRepoFunc: &ResolverQueueAutoIndexJobsForRepoFunc{
 			defaultHook: i.QueueAutoIndexJobsForRepo,
+		},
+		RepositorySummaryFunc: &ResolverRepositorySummaryFunc{
+			defaultHook: i.RepositorySummary,
 		},
 		RetentionPolicyOverviewFunc: &ResolverRetentionPolicyOverviewFunc{
 			defaultHook: i.RetentionPolicyOverview,
@@ -2806,6 +2822,114 @@ func (c ResolverQueueAutoIndexJobsForRepoFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ResolverQueueAutoIndexJobsForRepoFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ResolverRepositorySummaryFunc describes the behavior when the
+// RepositorySummary method of the parent MockResolver instance is invoked.
+type ResolverRepositorySummaryFunc struct {
+	defaultHook func(context.Context, int) (resolvers.RepositorySummary, error)
+	hooks       []func(context.Context, int) (resolvers.RepositorySummary, error)
+	history     []ResolverRepositorySummaryFuncCall
+	mutex       sync.Mutex
+}
+
+// RepositorySummary delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockResolver) RepositorySummary(v0 context.Context, v1 int) (resolvers.RepositorySummary, error) {
+	r0, r1 := m.RepositorySummaryFunc.nextHook()(v0, v1)
+	m.RepositorySummaryFunc.appendCall(ResolverRepositorySummaryFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the RepositorySummary
+// method of the parent MockResolver instance is invoked and the hook queue
+// is empty.
+func (f *ResolverRepositorySummaryFunc) SetDefaultHook(hook func(context.Context, int) (resolvers.RepositorySummary, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepositorySummary method of the parent MockResolver instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *ResolverRepositorySummaryFunc) PushHook(hook func(context.Context, int) (resolvers.RepositorySummary, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ResolverRepositorySummaryFunc) SetDefaultReturn(r0 resolvers.RepositorySummary, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) (resolvers.RepositorySummary, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ResolverRepositorySummaryFunc) PushReturn(r0 resolvers.RepositorySummary, r1 error) {
+	f.PushHook(func(context.Context, int) (resolvers.RepositorySummary, error) {
+		return r0, r1
+	})
+}
+
+func (f *ResolverRepositorySummaryFunc) nextHook() func(context.Context, int) (resolvers.RepositorySummary, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ResolverRepositorySummaryFunc) appendCall(r0 ResolverRepositorySummaryFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ResolverRepositorySummaryFuncCall objects
+// describing the invocations of this function.
+func (f *ResolverRepositorySummaryFunc) History() []ResolverRepositorySummaryFuncCall {
+	f.mutex.Lock()
+	history := make([]ResolverRepositorySummaryFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ResolverRepositorySummaryFuncCall is an object that describes an
+// invocation of method RepositorySummary on an instance of MockResolver.
+type ResolverRepositorySummaryFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 resolvers.RepositorySummary
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ResolverRepositorySummaryFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ResolverRepositorySummaryFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
