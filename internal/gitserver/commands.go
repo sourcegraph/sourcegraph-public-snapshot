@@ -3,9 +3,12 @@ package gitserver
 import (
 	"bytes"
 	"context"
+	"io"
 	"net/mail"
 	"strconv"
 	"strings"
+
+	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -13,6 +16,75 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+type DiffOptions struct {
+	Repo api.RepoName
+
+	// These fields must be valid <commit> inputs as defined by gitrevisions(7).
+	Base string
+	Head string
+
+	// RangeType to be used for computing the diff: one of ".." or "..." (or unset: "").
+	// For a nice visual explanation of ".." vs "...", see https://stackoverflow.com/a/46345364/2682729
+	RangeType string
+}
+
+// Diff returns an iterator that can be used to access the diff between two
+// commits on a per-file basis. The iterator must be closed with Close when no
+// longer required.
+func (c *ClientImplementor) Diff(ctx context.Context, opts DiffOptions) (*DiffFileIterator, error) {
+	// Rare case: the base is the empty tree, in which case we must use ..
+	// instead of ... as the latter only works for commits.
+	if opts.Base == DevNullSHA {
+		opts.RangeType = ".."
+	} else if opts.RangeType != ".." {
+		opts.RangeType = "..."
+	}
+
+	rangeSpec := opts.Base + opts.RangeType + opts.Head
+	if strings.HasPrefix(rangeSpec, "-") || strings.HasPrefix(rangeSpec, ".") {
+		// We don't want to allow user input to add `git diff` command line
+		// flags or refer to a file.
+		return nil, errors.Errorf("invalid diff range argument: %q", rangeSpec)
+	}
+
+	rdr, err := c.execReader(ctx, opts.Repo, []string{
+		"diff",
+		"--find-renames",
+		// TODO(eseliger): Enable once we have support for copy detection in go-diff
+		// and actually expose a `isCopy` field in the api, otherwise this
+		// information is thrown away anyways.
+		// "--find-copies",
+		"--full-index",
+		"--inter-hunk-context=3",
+		"--no-prefix",
+		rangeSpec,
+		"--",
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "executing git diff")
+	}
+
+	return &DiffFileIterator{
+		rdr:  rdr,
+		mfdr: diff.NewMultiFileDiffReader(rdr),
+	}, nil
+}
+
+type DiffFileIterator struct {
+	rdr  io.ReadCloser
+	mfdr *diff.MultiFileDiffReader
+}
+
+func (i *DiffFileIterator) Close() error {
+	return i.rdr.Close()
+}
+
+// Next returns the next file diff. If no more diffs are available, the diff
+// will be nil and the error will be io.EOF.
+func (i *DiffFileIterator) Next() (*diff.FileDiff, error) {
+	return i.mfdr.ReadFile()
+}
 
 // ShortLogOptions contains options for (Repository).ShortLog.
 type ShortLogOptions struct {
@@ -49,6 +121,28 @@ func (c *ClientImplementor) ShortLog(ctx context.Context, repo api.RepoName, opt
 		return nil, errors.Errorf("exec `git shortlog -s -n -e` failed: %v", err)
 	}
 	return parseShortLog(out)
+}
+
+// execReader executes an arbitrary `git` command (`git [args...]`) and returns a
+// reader connected to its stdout.
+//
+// execReader should NOT be exported. We want to limit direct git calls to this
+// package.
+func (c *ClientImplementor) execReader(ctx context.Context, repo api.RepoName, args []string) (io.ReadCloser, error) {
+	if Mocks.ExecReader != nil {
+		return Mocks.ExecReader(args)
+	}
+
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: ExecReader")
+	span.SetTag("args", args)
+	defer span.Finish()
+
+	if !gitdomain.IsAllowedGitCmd(args) {
+		return nil, errors.Errorf("command failed: %v is not a allowed git command", args)
+	}
+	cmd := c.Command("git", args...)
+	cmd.Repo = repo
+	return StdoutReader(ctx, cmd)
 }
 
 // logEntryPattern is the regexp pattern that matches entries in the output of the `git shortlog
@@ -119,3 +213,8 @@ func checkSpecArgSafety(spec string) error {
 	}
 	return nil
 }
+
+// DevNullSHA 4b825dc642cb6eb9a060e54bf8d69288fbee4904 is `git hash-object -t
+// tree /dev/null`, which is used as the base when computing the `git diff` of
+// the root commit.
+const DevNullSHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"

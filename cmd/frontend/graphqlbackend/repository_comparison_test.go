@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -81,13 +82,13 @@ func TestRepositoryComparison(t *testing.T) {
 	}
 	t.Cleanup(func() { git.Mocks.ResolveRevision = nil })
 
-	git.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
+	gitserver.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
 		if len(args) < 1 && args[0] != "diff" {
 			t.Fatalf("gitserver.ExecReader received wrong args: %v", args)
 		}
 		return io.NopCloser(strings.NewReader(testDiff + testCopyDiff)), nil
 	}
-	t.Cleanup(func() { git.Mocks.ExecReader = nil })
+	t.Cleanup(func() { gitserver.Mocks.ExecReader = nil })
 
 	git.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
 		if string(a) != wantBaseRevision || string(b) != wantHeadRevision {
