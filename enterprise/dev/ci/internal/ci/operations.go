@@ -73,7 +73,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 			clientChromaticTests(opts.ChromaticShouldAutoAccept),
 			frontendTests,     // ~4.5m
 			addWebApp,         // ~5.5m
-			generateSnapshots,
+			// generateSnapshots,
 			addBrowserExt,     // ~4.5m
 			addClientLinters)) // ~9m
 	}
@@ -214,24 +214,24 @@ func addWebApp(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
-func generateSnapshots(pipeline *bk.Pipeline) {
-	pipeline.AddStep(
-		fmt.Sprintf("Record browser integration tests"),
-		// withYarnCache(),
-		// bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
-		// bk.Env("BROWSER", browser),
-		// bk.Env("LOG_BROWSER_CONSOLE", "true"),
-		// bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
-		// bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
-		// bk.Cmd("git-lfs fetch"),
-		// bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		// bk.Cmd("yarn --cwd client/browser -s run build"),
-		bk.Cmd("yarn --cwd client/browser run record-integration"),
-		// bk.Cmd("yarn nyc report -r json"),
-		// bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
-		// bk.ArtifactPaths("./puppeteer/*.png"),
-	)
-}
+// func generateSnapshots(pipeline *bk.Pipeline) {
+// 	pipeline.AddStep(
+// 		fmt.Sprintf("Record browser integration tests"),
+// 		// withYarnCache(),
+// 		// bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
+// 		// bk.Env("BROWSER", browser),
+// 		// bk.Env("LOG_BROWSER_CONSOLE", "true"),
+// 		// bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
+// 		// bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
+// 		// bk.Cmd("git-lfs fetch"),
+// 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+// 		bk.Cmd("yarn --cwd client/browser -s run build"),
+// 		bk.Cmd("yarn --cwd client/browser run record-integration"),
+// 		// bk.Cmd("yarn nyc report -r json"),
+// 		// bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
+// 		// bk.ArtifactPaths("./puppeteer/*.png"),
+// 	)
+// }
 
 // Builds and tests the browser extension.
 func addBrowserExt(pipeline *bk.Pipeline) {
@@ -245,12 +245,13 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
 			bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
-			bk.Cmd("git status"),
-			bk.Cmd("git-lfs fetch"),
-			bk.Cmd("git status"),
+			// bk.Cmd("git-lfs fetch"),
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("yarn --cwd client/browser -s run build"),
+			bk.Cmd("git status"),
+			bk.Cmd("yarn --cwd client/browser run record-integration"),
 			bk.Cmd("yarn run cover-browser-integration"),
+			bk.Cmd("git status"),
 			bk.Cmd("yarn nyc report -r json"),
 			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
 			bk.ArtifactPaths("./puppeteer/*.png"),
