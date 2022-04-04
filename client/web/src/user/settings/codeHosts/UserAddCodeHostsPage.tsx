@@ -2,7 +2,6 @@ import React, { useCallback, useState, useEffect } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike, isDefined, keyExistsIn } from '@sourcegraph/common'
-import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Container, PageHeader, LoadingSpinner, Link, Alert } from '@sourcegraph/wildcard'
 
@@ -14,11 +13,8 @@ import { useFlagsOverrides } from '../../../featureFlags/featureFlags'
 import {
     ExternalServiceKind,
     ListExternalServiceFields,
-    OrgFeatureFlagValueResult,
-    OrgFeatureFlagValueVariables,
 } from '../../../graphql-operations'
 import { AuthProvider, SourcegraphContext } from '../../../jscontext'
-import { GET_ORG_FEATURE_FLAG_VALUE, GITHUB_APP_FEATURE_FLAG_NAME } from '../../../org/backend'
 import { useCodeHostScopeContext } from '../../../site/CodeHostScopeAlerts/CodeHostScopeProvider'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
@@ -123,30 +119,15 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         setIssUpdateModalOpen(!isUpdateModalOpen)
     }, [isUpdateModalOpen])
     const [servicesDown, setServicesDown] = useState<string[]>()
-
-    const { data, loading } = useQuery<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
-        GET_ORG_FEATURE_FLAG_VALUE,
-        {
-            variables: { orgID: owner.id, flagName: GITHUB_APP_FEATURE_FLAG_NAME },
-            // Cache this data but always re-request it in the background when we revisit
-            // this page to pick up newer changes.
-            fetchPolicy: 'cache-and-network',
-            skip: !(owner.type === 'org'),
-        }
-    )
-
-    const useGitHubApp = data?.organizationFeatureFlagValue || false
+    const useGitHubApp = false
 
     const flagsOverridesResult = useFlagsOverrides()
-    const isGitHubAppEnabled = flagsOverridesResult.data
-        ?.filter(orgFlag => orgFlag.flagName === GITHUB_APP_FEATURE_FLAG_NAME)
-        .some(orgFlag => orgFlag.value)
     const isGitHubAppLoading = flagsOverridesResult.loading
 
     // If we have a GitHub or GitLab services, check whether we need to prompt the user to
     // update their scope
     const isGitHubTokenUpdateRequired = scopes.github
-        ? !isGitHubAppEnabled && githubRepoScopeRequired(owner.tags, scopes.github)
+        ? githubRepoScopeRequired(owner.tags, scopes.github)
         : false
     const isGitLabTokenUpdateRequired = scopes.gitlab ? gitlabAPIScopeRequired(owner.tags, scopes.gitlab) : false
 
@@ -487,7 +468,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             if (authProvider) {
                 eventLogger.log('ConnectUserCodeHostClicked', { kind }, { kind })
 
-                if (kind !== ExternalServiceKind.GITHUB || !isGitHubAppEnabled) {
+                if (kind !== ExternalServiceKind.GITHUB) {
                     defaultNavigateToAuthProvider(kind)
                 } else if (owner.type === 'org') {
                     const secondRedirectURI = `/.auth/github/install-github-app?state=${encodeURIComponent(owner.id)}`
@@ -516,7 +497,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 }
             }
         },
-        [authProvidersByKind, defaultNavigateToAuthProvider, isGitHubAppEnabled, owner, refetchServices]
+        [authProvidersByKind, defaultNavigateToAuthProvider, owner, refetchServices]
     )
 
     return (
@@ -560,7 +541,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                         name={defaultDisplayName}
                                         isTokenUpdateRequired={
                                             isTokenUpdateRequired[kind] &&
-                                            !(kind === ExternalServiceKind.GITHUB && isGitHubAppEnabled)
+                                            !(kind === ExternalServiceKind.GITHUB)
                                         }
                                         navigateToAuthProvider={navigateToAuthProvider}
                                         icon={icon}
