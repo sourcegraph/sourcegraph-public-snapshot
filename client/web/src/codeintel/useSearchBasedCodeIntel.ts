@@ -20,8 +20,10 @@ import { CODE_INTEL_SEARCH_QUERY } from './ReferencesPanelQueries'
 import { definitionQuery, isSourcegraphDotCom, referencesQuery, searchWithFallback } from './searchBased'
 import { SettingsGetter } from './settings'
 import { sortByProximity } from './sort'
+import { isDefined } from './util/helpers'
 
 type LocationHandler = (locations: Location[]) => void
+
 interface UseSearchBasedCodeIntelResult {
     fetch: (onReferences: LocationHandler, onDefinitions: LocationHandler) => void
     loading: boolean
@@ -46,8 +48,10 @@ interface UseSearchBasedCodeIntelOptions {
 
 export const useSearchBasedCodeIntel = (options: UseSearchBasedCodeIntelOptions): UseSearchBasedCodeIntelResult => {
     const [loadingReferences, setLoadingReferences] = useState(false)
+    const [referencesError, setReferencesError] = useState<ErrorLike | undefined>()
+
     const [loadingDefinitions, setLoadingDefinitions] = useState(false)
-    const [error, setError] = useState()
+    const [definitionsError, setDefinitionsError] = useState<ErrorLike | undefined>()
 
     const fetch = useCallback(
         (onReferences: LocationHandler, onDefinitions: LocationHandler) => {
@@ -60,7 +64,7 @@ export const useSearchBasedCodeIntel = (options: UseSearchBasedCodeIntelOptions)
                     setLoadingReferences(false)
                 })
                 .catch(error => {
-                    setError(error)
+                    setReferencesError(error)
                     setLoadingReferences(false)
                 })
 
@@ -70,14 +74,15 @@ export const useSearchBasedCodeIntel = (options: UseSearchBasedCodeIntelOptions)
                     setLoadingDefinitions(false)
                 })
                 .catch(error => {
-                    setError(error)
+                    setDefinitionsError(error)
                     setLoadingDefinitions(false)
                 })
         },
         [options]
     )
 
-    return { fetch, loading: loadingReferences || loadingDefinitions, error }
+    const errors = [definitionsError, referencesError].filter(isDefined)
+    return { fetch, loading: loadingReferences || loadingDefinitions, error: createAggregateError(errors) }
 }
 
 // searchBasedReferences is 90% copy&paste from code-intel-extension's
