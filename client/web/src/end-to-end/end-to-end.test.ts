@@ -10,7 +10,7 @@ import { createDriverForTest, Driver, percySnapshot } from '@sourcegraph/shared/
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
 
-const { gitHubToken, sourcegraphBaseUrl } = getConfig('gitHubToken', 'sourcegraphBaseUrl')
+const { gitHubDotComToken, sourcegraphBaseUrl } = getConfig('gitHubDotComToken', 'sourcegraphBaseUrl')
 
 describe('e2e test suite', () => {
     let driver: Driver
@@ -51,7 +51,7 @@ describe('e2e test suite', () => {
             displayName: 'test-test-github',
             config: JSON.stringify({
                 url: 'https://github.com',
-                token: gitHubToken,
+                token: gitHubDotComToken,
                 repos: clonedRepoSlugs.concat(alwaysCloningRepoSlugs),
             }),
             ensureRepos: clonedRepoSlugs.map(slug => `github.com/${slug}`),
