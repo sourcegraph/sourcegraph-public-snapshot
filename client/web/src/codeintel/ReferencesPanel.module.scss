@@ -35,7 +35,12 @@
 }
 
 .references {
+    $references-token-height: 2rem;
     $references-filter-height: 2rem;
+
+    &--token {
+        height: $references-token-height;
+    }
 
     &--filter {
         height: $references-filter-height;
@@ -44,7 +49,7 @@
     &--list {
         display: flex;
         // Ensure list spans entire height of panel, and that the scrollable area does not include the filter height
-        height: calc(100% - #{$references-filter-height});
+        height: calc(100% - #{$references-filter-height + $references-token-height});
     }
 
     // Left side of the panel: hover & list of references/definition/...
@@ -63,6 +68,6 @@
     // Code needs to be smaller than 100% so it scrolls correctly
     &--side-blob-code {
         // Subtract the space taken up by the filename
-        height: calc(100% - #{$references-filter-height});
+        height: calc(100% - #{$references-filter-height + $references-token-height});
     }
 }
