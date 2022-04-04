@@ -97,7 +97,7 @@ func TestUsers_ValidUsernames(t *testing.T) {
 }
 
 // This validates the password using the Paassord Policy configured
-func Test_validatePasswordUsingPolicy(passwd string) bool {
+func validatePasswordUsingPolicy(passwd string) bool {
 	const maxPasswordRunes = 256
 	letters := 0
 	numbers := false
