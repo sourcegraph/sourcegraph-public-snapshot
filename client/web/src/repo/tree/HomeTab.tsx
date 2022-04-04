@@ -332,7 +332,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                                     <div className="text-right">
                                         <Link
                                             className="btn btn-sm btn-link mr-0 pr-0"
-                                            to="https://docs.sourcegraph.com/batch_changes"
+                                            to="/help/batch_changes"
                                         >
                                             Learn more
                                         </Link>
