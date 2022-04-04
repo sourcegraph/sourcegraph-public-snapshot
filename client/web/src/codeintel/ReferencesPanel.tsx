@@ -204,7 +204,7 @@ const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWith
 
     return (
         <>
-            <CardHeader>
+            <CardHeader className={styles.referencesToken}>
                 <code>{tokenResult.searchToken}</code>{' '}
                 <span className="text-muted ml-2">
                     <code>
