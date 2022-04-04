@@ -551,7 +551,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                         onDidAdd={addNewService}
                                         onDidRemove={removeService(kind)}
                                         onDidError={handleError}
-                                        loading={kind === ExternalServiceKind.GITHUB && loading && isGitHubAppLoading}
+                                        loading={kind === ExternalServiceKind.GITHUB && isGitHubAppLoading}
                                         useGitHubApp={kind === ExternalServiceKind.GITHUB && useGitHubApp}
                                         reloadComponent={refetchServices}
                                     />
