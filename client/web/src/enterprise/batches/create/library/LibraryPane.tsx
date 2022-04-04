@@ -4,7 +4,7 @@ import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import ChevronDoubleRightIcon from 'mdi-react/ChevronDoubleRightIcon'
 import { animated, useSpring } from 'react-spring'
 
-import { Button, useLocalStorage, Icon } from '@sourcegraph/wildcard'
+import { Button, useLocalStorage, Icon, Link } from '@sourcegraph/wildcard'
 
 import { Scalars } from '../../../../graphql-operations'
 import { insertNameIntoLibraryItem } from '../yaml-util'
@@ -134,6 +134,11 @@ export const LibraryPane: React.FunctionComponent<LibraryPaneProps> = ({ name, o
                                 </button>
                             </li>
                         ))}
+                        <li className={styles.libraryItem} key="examples-repo">
+                            <Link to="https://github.com/sourcegraph/batch-change-examples" className="last-item">
+                                View more examples
+                            </Link>
+                        </li>
                     </ul>
                 </animated.div>
             </animated.div>
