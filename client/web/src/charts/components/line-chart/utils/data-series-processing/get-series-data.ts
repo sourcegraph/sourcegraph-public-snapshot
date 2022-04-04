@@ -39,16 +39,14 @@ export function getSeriesData<Datum>(input: Input<Datum>): SeriesWithData<Datum>
                     const lineData = data.map<StandardSeriesDatum<Datum>>(datum => ({
                         datum,
                         x: getXValue(datum),
-                        y: isValidNumber(+datum[line.dataKey]) ? +datum[line.dataKey] : null,
+                        y: isValidNumber(datum[line.dataKey]) ? +datum[line.dataKey] : null,
                     }))
-
-                    // Filter select series data from the datum object and process this points array
-                    const filteredData = getFilteredSeriesData(lineData) as StandardSeriesDatum<Datum>[]
 
                     return {
                         ...line,
                         type: SeriesType.Independent,
-                        data: filteredData,
+                        // Filter select series data from the datum object and process this points array
+                        data: getFilteredSeriesData(lineData) as StandardSeriesDatum<Datum>[],
                     }
                 })
         )

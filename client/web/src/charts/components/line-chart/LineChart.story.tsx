@@ -41,7 +41,6 @@ interface StandardDatum {
 const getXValue = (datum: { x: number }) => new Date(datum.x)
 
 export const PlainChart = () => {
-    const [active, setActive] = useState(false)
     const DATA: StandardDatum[] = [
         {
             x: 1588965700286 - 4 * 24 * 60 * 60 * 1000,
@@ -111,12 +110,7 @@ export const PlainChart = () => {
         },
     ]
 
-    return (
-        <>
-            <button onClick={() => setActive(!active)}>Active state</button>
-            {active && <LineChart width={400} height={400} data={DATA} series={SERIES} getXValue={getXValue} />}
-        </>
-    )
+    return <LineChart width={400} height={400} data={DATA} series={SERIES} getXValue={getXValue} />
 }
 
 export const PlainStackedChart = () => {
@@ -191,8 +185,10 @@ export const PlainStackedChart = () => {
     ]
 
     return (
-        <>
-            <button onClick={() => setActive(!active)}>Active state</button>
+        <section>
+            <button className="d-block" onClick={() => setActive(!active)}>
+                Toggle zero Y axis state
+            </button>
             <LineChart
                 width={400}
                 height={400}
@@ -202,7 +198,7 @@ export const PlainStackedChart = () => {
                 zeroYAxisMin={active}
                 getXValue={getXValue}
             />
-        </>
+        </section>
     )
 }
 
@@ -512,6 +508,7 @@ const WithDataMissingValues = () => {
                         data={DATA_WITH_STEP}
                         series={SERIES}
                         getXValue={getXValue}
+                        zeroYAxisMin={true}
                     />
                 )}
             </ParentSize>
@@ -520,7 +517,6 @@ const WithDataMissingValues = () => {
 }
 
 export const StackedWithDataMissingValues = () => {
-    const [active, setActive] = useState(false)
     const DATA_WITH_STEP: DatumWithMissingData[] = [
         { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: null, b: null, c: null },
         { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: null, b: null, c: null },
@@ -553,23 +549,19 @@ export const StackedWithDataMissingValues = () => {
     ]
 
     return (
-        <>
-            <button onClick={() => setActive(!active)}>Active state</button>
-            <div style={{ width: 400, height: 400 }}>
-                <ParentSize>
-                    {({ width, height }) => (
-                        <LineChart<DatumWithMissingData>
-                            width={width}
-                            height={height}
-                            data={DATA_WITH_STEP}
-                            series={SERIES}
-                            stacked={true}
-                            zeroYAxisMin={active}
-                            getXValue={getXValue}
-                        />
-                    )}
-                </ParentSize>
-            </div>
-        </>
+        <div style={{ width: 400, height: 400 }}>
+            <ParentSize>
+                {({ width, height }) => (
+                    <LineChart<DatumWithMissingData>
+                        width={width}
+                        height={height}
+                        data={DATA_WITH_STEP}
+                        series={SERIES}
+                        stacked={true}
+                        getXValue={getXValue}
+                    />
+                )}
+            </ParentSize>
+        </div>
     )
 }
