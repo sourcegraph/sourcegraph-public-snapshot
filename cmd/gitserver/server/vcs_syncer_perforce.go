@@ -69,6 +69,7 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.U
 			"--refresh", strconv.Itoa(s.FusionConfig.Refresh),
 			"--maxChanges", strconv.Itoa(s.FusionConfig.MaxChanges),
 			"--includeBinaries", strconv.FormatBool(s.FusionConfig.IncludeBinaries),
+			"--fsyncEnable", strconv.FormatBool(s.FusionConfig.FsyncEnable),
 		)
 	} else {
 		// Example: git p4 clone --bare --max-changes 1000 //Sourcegraph/@all /tmp/clone-584194180/.git
@@ -113,6 +114,7 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 			"--refresh", strconv.Itoa(s.FusionConfig.Refresh),
 			"--maxChanges", strconv.Itoa(s.FusionConfig.MaxChanges),
 			"--includeBinaries", strconv.FormatBool(s.FusionConfig.IncludeBinaries),
+			"--fsyncEnable", strconv.FormatBool(s.FusionConfig.FsyncEnable),
 		)
 	} else {
 		cmd = exec.CommandContext(ctx, "git", args...)
@@ -275,4 +277,8 @@ type FusionConfig struct {
 	MaxChanges int
 	// IncludeBinaries sets whether to include binary files
 	IncludeBinaries bool
+	// FsyncEnable enables fsync() while writing objects to disk to ensure they get
+	// written to permanent storage immediately instead of being cached. This is to
+	// mitigate data loss in events of hardware failure.
+	FsyncEnable bool
 }

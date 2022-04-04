@@ -207,18 +207,21 @@ func WithNodePtr(other Node, newNode *sitter.Node) *Node {
 	}
 }
 
+var unrecognizedFileExtensionError = errors.New("unrecognized file extension")
+var unsupportedLanguageError = errors.New("unsupported language")
+
 // Parses a file and returns info about it.
 func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCommitPath) (*Node, error) {
 	ext := strings.TrimPrefix(filepath.Ext(repoCommitPath.Path), ".")
 
 	langName, ok := extToLang[ext]
 	if !ok {
-		return nil, errors.Newf("unrecognized file extension %s", ext)
+		return nil, unrecognizedFileExtensionError
 	}
 
 	langSpec, ok := langToLangSpec[langName]
 	if !ok {
-		return nil, errors.Newf("unsupported language %s", langName)
+		return nil, unsupportedLanguageError
 	}
 
 	s.parser.SetLanguage(langSpec.language)
