@@ -152,6 +152,9 @@ func (c *SiteConfigSubscriber) Handler() http.Handler {
 }
 
 func (c *SiteConfigSubscriber) Subscribe(ctx context.Context) {
+	// Initialize conf package
+	conf.Init()
+
 	// Load initial alerts configuration
 	siteConfig := newSubscribedSiteConfig(conf.Get().SiteConfiguration)
 	diffs := siteConfig.Diff(c.config)
@@ -160,9 +163,6 @@ func (c *SiteConfigSubscriber) Subscribe(ctx context.Context) {
 	} else {
 		c.log.Debug("no relevant configuration to init")
 	}
-
-	// Initialize conf package
-	conf.Init()
 
 	// Watch for future changes
 	conf.Watch(func() {
