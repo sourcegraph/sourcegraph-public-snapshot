@@ -287,6 +287,14 @@ func getRemoteURLFunc(
 			return "", err
 		}
 
+		if svc.CloudDefault && r.Private {
+			// We won't be able to use this remote URL, so we should skip it. This can happen
+			// if a repo moves from being public to private while belonging to both a cloud
+			// default external service and another external service with a token that has
+			// access to the private repo.
+			continue
+		}
+
 		dotcomConfig := conf.SiteConfig().Dotcom
 		if envvar.SourcegraphDotComMode() &&
 			repos.IsGitHubAppCloudEnabled(dotcomConfig) &&
