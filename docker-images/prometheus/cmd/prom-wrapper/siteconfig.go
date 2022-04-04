@@ -161,6 +161,9 @@ func (c *SiteConfigSubscriber) Subscribe(ctx context.Context) {
 		c.log.Debug("no relevant configuration to init")
 	}
 
+	// Initialize conf package
+	conf.Init()
+
 	// Watch for future changes
 	conf.Watch(func() {
 		c.mux.RLock()
