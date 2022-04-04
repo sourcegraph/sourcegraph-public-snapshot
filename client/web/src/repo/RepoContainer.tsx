@@ -384,7 +384,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         useActionItemsBar,
     }
     return (
-        <div className={classNames('w-100 d-flex flex-column', styles.repoContainer)}>
+        <div className={classNames('w-100 d-flex flex-column overflow-hidden', styles.repoContainer)}>
             <RepoHeader
                 actionButtons={props.repoHeaderActionButtons}
                 useActionItemsToggle={useActionItemsToggle}
@@ -435,6 +435,11 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                         '/-/tree',
                         '/-/commits',
                         '/-/docs',
+                        '/-/branch',
+                        '/-/contributors',
+                        '/-/compare',
+                        '/-/tag',
+                        '/-/home',
                     ].map(routePath => (
                         <Route
                             path={`${repoMatchURL}${routePath}`}
