@@ -479,7 +479,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     className="nav-link py-0 px-0 percy-hide chromatic-ignore"
                     as={Button}
                     variant="link"
-                    aria-label={this.state.isOpen ? 'Hide tasks status message' : 'Show tasks status message'}
+                    aria-label={this.state.isOpen ? 'Hide status messages' : 'Show status messages'}
                 >
                     {this.renderIcon()}
                 </PopoverTrigger>

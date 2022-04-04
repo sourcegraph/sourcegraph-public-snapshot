@@ -20,10 +20,8 @@ export const MenuButton = React.forwardRef(({ children, id, ...props }, referenc
     // Document has active elements with the same id attribute: menu-button--menu
     const uniqueMenuId = useMemo(() => id ?? uniqueId('menu-button-'), [id])
 
-    // aria-controls="" to fix "aria-valid-attr-value" since current version of
-    // Popover removes contents from DOM, it causes `aria-controls="menu-*"` invalid
-    // since `menu-*` doesn't exit on DOM
-
+    // We unset aria-controls as it causes accessibility issues if the Menu is not yet rendered in the DOM.
+    // aria-controls has low support across screen readers so this shouldn't be an issue: https://github.com/w3c/aria/issues/995
     return (
         <ReachMenuButton ref={reference} as={PopoverTriggerButton} id={uniqueMenuId} {...props} aria-controls="">
             {children}

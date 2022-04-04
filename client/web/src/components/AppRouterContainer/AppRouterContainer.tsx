@@ -18,8 +18,8 @@ export const AppRouterContainer: React.FunctionComponent<AppRouterContainerProps
             from child levels in order to handle or react on this container scroll or other important events.
             - `role="main"` to fix rule: "landmark-one-main" (Document should have one main landmark)
          */}
-        <div role="main" data-layout={true} className={classNames(styles.appRouterContainer, className)} {...rest}>
+        <main data-layout={true} className={classNames(styles.appRouterContainer, className)} {...rest}>
             {children}
-        </div>
+        </main>
     </ElementScroller>
 )
