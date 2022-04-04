@@ -8,6 +8,7 @@ import (
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -57,8 +58,16 @@ type Resolver interface {
 	UploadConnectionResolver(opts store.GetUploadsOptions) *UploadsResolver
 	IndexConnectionResolver(opts store.GetIndexesOptions) *IndexesResolver
 	QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (QueryResolver, error)
+	RepositorySummary(ctx context.Context, repositoryID int) (RepositorySummary, error)
 
 	ExecutorResolver() executor.Resolver
+}
+
+type RepositorySummary struct {
+	RecentUploads           []dbstore.UploadsWithRepositoryNamespace
+	RecentIndexes           []dbstore.IndexesWithRepositoryNamespace
+	LastUploadRetentionScan *time.Time
+	LastIndexScan           *time.Time
 }
 
 type resolver struct {
@@ -322,4 +331,33 @@ func (r *resolver) SupportedByCtags(ctx context.Context, filepath string, repoNa
 	}
 
 	return false, "", nil
+}
+
+func (r *resolver) RepositorySummary(ctx context.Context, repositoryID int) (RepositorySummary, error) {
+	recentUploads, err := r.dbStore.RecentUploadsSummary(ctx, repositoryID)
+	if err != nil {
+		return RepositorySummary{}, err
+	}
+
+	recentIndexes, err := r.dbStore.RecentIndexesSummary(ctx, repositoryID)
+	if err != nil {
+		return RepositorySummary{}, err
+	}
+
+	lastUploadRetentionScan, err := r.dbStore.LastUploadRetentionScanForRepository(ctx, repositoryID)
+	if err != nil {
+		return RepositorySummary{}, err
+	}
+
+	lastIndexScan, err := r.dbStore.LastIndexScanForRepository(ctx, repositoryID)
+	if err != nil {
+		return RepositorySummary{}, err
+	}
+
+	return RepositorySummary{
+		RecentUploads:           recentUploads,
+		RecentIndexes:           recentIndexes,
+		LastUploadRetentionScan: lastUploadRetentionScan,
+		LastIndexScan:           lastIndexScan,
+	}, nil
 }

@@ -496,6 +496,11 @@ extend type Repository {
     ): LSIFIndexConnection!
 
     """
+    Provides a summary of the most reecent upload and index status.
+    """
+    codeIntelSummary: CodeIntelRepositorySummary!
+
+    """
     The set of git objects that match the given git object type and glob pattern.
     This resolver is used by the UI to preview what names match a code intelligence
     policy in a given repository.
@@ -565,6 +570,75 @@ extend type GitBlob {
     Experimental: This API is likely to change in the future.
     """
     localCodeIntel: JSONValue
+}
+
+"""
+A summary of the most reecent upload and index status.
+"""
+type CodeIntelRepositorySummary {
+    """
+    A list of recent uploads for a specific repository. This list contains processing,
+    recently queued, and the most recently processed uploads for each distinct indexer
+    and root.
+    """
+    recentUploads: [LSIFUploadsWithRepositoryNamespace!]!
+
+    """
+    A list of recent indexes for a specific repository. This list contains processing,
+    recently queued, and the most recently processed indexes for each distinct indexer
+    and root.
+    """
+    recentIndexes: [LSIFIndexesithRepositoryNamespace!]!
+
+    """
+    The last time uploads of this repository were checked against data retention policies.
+    """
+    lastUploadRetentionScan: DateTime
+
+    """
+    The last time this repository was considered for auto-indexing job scheduling.
+    """
+    lastIndexScan: DateTime
+}
+
+"""
+A group of uploads that share the same root and indexer values.
+"""
+type LSIFUploadsWithRepositoryNamespace {
+    """
+    The root of all uploads in the associated connection.
+    """
+    root: String!
+
+    """
+    The indexer used to produce the each upload in the associated connection.
+    """
+    indexer: CodeIntelIndexer!
+
+    """
+    A list of uploads.
+    """
+    uploads: [LSIFUpload!]!
+}
+
+"""
+A group of indexes that share the same root and indexer values.
+"""
+type LSIFIndexesithRepositoryNamespace {
+    """
+    The root of all indexes in the associated connection.
+    """
+    root: String!
+
+    """
+    The configured indexer of each index in the associated connection.
+    """
+    indexer: CodeIntelIndexer!
+
+    """
+    A list of indexes.
+    """
+    indexes: [LSIFIndex!]!
 }
 
 """
