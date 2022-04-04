@@ -1553,7 +1553,7 @@ func TestLastUploadRetentionScanForRepository(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error querying last upload retention scan: %s", err)
 	}
-	if ts == nil || !(*ts).Equal(expected) {
+	if ts == nil || !ts.Equal(expected) {
 		t.Fatalf("unexpected timestamp for repository. want=%s have=%s", expected, ts)
 	}
 }

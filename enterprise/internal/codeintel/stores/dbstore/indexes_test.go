@@ -585,7 +585,7 @@ func TestLastIndexScanForRepository(t *testing.T) {
 		t.Fatalf("unexpected error querying last index scan: %s", err)
 	}
 
-	if ts == nil || !(*ts).Equal(expected) {
+	if ts == nil || !ts.Equal(expected) {
 		t.Fatalf("unexpected timestamp for repository. want=%s have=%s", expected, ts)
 	}
 }
