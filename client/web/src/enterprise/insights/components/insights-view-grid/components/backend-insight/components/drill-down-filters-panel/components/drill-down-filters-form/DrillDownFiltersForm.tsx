@@ -20,6 +20,7 @@ import styles from './DrillDownFiltersForm.module.scss'
 export interface DrillDownFiltersFormValues {
     includeRepoRegexp: string
     excludeRepoRegexp: string
+    includeCaptureValues: string
 }
 
 export const hasActiveFilters = (filters?: DrillDownFiltersFormValues): boolean => {
@@ -92,6 +93,12 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
         validators: { sync: validRegexp },
     })
 
+    const includeCaptures = useField({
+        name: 'includeCaptureValues',
+        formApi: formAPI,
+        validators: { sync: validRegexp },
+    })
+
     const hasFiltersChanged = !isEqual(originalFiltersValue, values)
     const hasAppliedFilters = hasActiveFilters(originalFiltersValue)
 
@@ -148,6 +155,20 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
                     spellCheck={false}
                     className="mb-2"
                     {...getDefaultInputProps(excludeRegex)}
+                />
+
+                <Input
+                    as={DrillDownRegExpInput}
+                    prefix="capture:"
+                    label={
+                        <LabelWithReset onReset={() => excludeRegex.input.onChange('')}>
+                            Include capture values
+                        </LabelWithReset>
+                    }
+                    placeholder="asdf"
+                    spellCheck={false}
+                    className="mb-2"
+                    {...getDefaultInputProps(includeCaptures)}
                 />
             </fieldset>
 

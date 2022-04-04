@@ -49,8 +49,22 @@ type Insight struct {
 }
 
 type InsightViewFilters struct {
-	IncludeRepoRegex *string
-	ExcludeRepoRegex *string
+	IncludeRepoRegex     *string
+	ExcludeRepoRegex     *string
+	IncludeCaptureValues *[]string
+	ExcludeCaptureValues *[]string
+}
+
+func (f InsightViewFilters) ShouldDisplayCapture(arg string) bool {
+	if f.IncludeCaptureValues == nil {
+		return true
+	}
+	for _, v := range *f.IncludeCaptureValues {
+		if v == arg {
+			return true
+		}
+	}
+	return false
 }
 
 // InsightViewSeriesMetadata contains metadata about a viewable insight series such as render properties.

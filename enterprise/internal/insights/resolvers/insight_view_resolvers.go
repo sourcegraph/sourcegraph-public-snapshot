@@ -261,6 +261,9 @@ func expandCaptureGroupSeriesJustInTime(ctx context.Context, definition types.In
 
 	var resolvers []graphqlbackend.InsightSeriesResolver
 	for i := range generatedSeries {
+		if !filters.ShouldDisplayCapture(generatedSeries[i].Label) {
+			continue
+		}
 		resolvers = append(resolvers, &dynamicInsightSeriesResolver{generated: &generatedSeries[i]})
 	}
 
@@ -806,8 +809,9 @@ func (d *InsightViewQueryConnectionResolver) Nodes(ctx context.Context) ([]graph
 		resolver := &insightViewResolver{view: &views[i], baseInsightResolver: d.baseInsightResolver}
 		if d.args.Filters != nil {
 			resolver.overrideFilters = &types.InsightViewFilters{
-				IncludeRepoRegex: d.args.Filters.IncludeRepoRegex,
-				ExcludeRepoRegex: d.args.Filters.ExcludeRepoRegex,
+				IncludeRepoRegex:     d.args.Filters.IncludeRepoRegex,
+				ExcludeRepoRegex:     d.args.Filters.ExcludeRepoRegex,
+				IncludeCaptureValues: d.args.Filters.IncludeCaptureValues,
 			}
 		}
 		resolvers = append(resolvers, resolver)
