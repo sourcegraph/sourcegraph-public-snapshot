@@ -37,7 +37,7 @@ describe('GitHub', () => {
             directory: __dirname,
         })
 
-        mockUrls(['https://api.github.com/_private/browser/*', 'https://collector.github.com/*path'])
+        mockUrls(['https://api.github.com/_private/browser/*', 'https://collector.github.com/*path', 'https://github.com/favicon.ico'])
 
         testContext.server.any('https://api.github.com/repos/*').intercept((request, response) => {
             response
@@ -243,10 +243,6 @@ describe('GitHub', () => {
                 response.sendStatus(200)
                 hasRedirectedToDefinition = true
             })
-
-        testContext.server.get('https://github.com/favicon.ico').intercept((request, response) => {
-            response.sendStatus(200)
-        })
 
         const openPageAndGetToken = async () => {
             await driver.page.goto(
