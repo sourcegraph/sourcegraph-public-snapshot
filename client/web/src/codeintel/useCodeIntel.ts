@@ -359,7 +359,7 @@ const getLsifData = ({
     }
 }
 
-function searchResultsToLocations(result: CodeIntelSearchResult): LocationFields[] {
+export function searchResultsToLocations(result: CodeIntelSearchResult): LocationFields[] {
     if (!result || !result.search) {
         return []
     }
