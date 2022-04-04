@@ -59,6 +59,7 @@ var (
 			dbCommand,
 			migrationCommand,
 			ciCommand,
+			generateCommand,
 
 			// Dev environment
 			doctorCommand,
