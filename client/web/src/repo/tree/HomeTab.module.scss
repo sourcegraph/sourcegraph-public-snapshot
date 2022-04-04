@@ -1,4 +1,4 @@
-.tree-page {
+.home-page {
     // For the other sub-pages in the RepoArea, we use a child selector to add the
     // border and radius to the sub-page containers. Since we use the Container
     // component here, we already have a pair of borders and had duplicate borders
@@ -10,11 +10,6 @@
     :global(.batch-change-badge) {
         top: 0;
     }
-}
-
-.header {
-    width: 100%;
-    max-width: var(--media-xl);
 }
 
 .git-commit-node {
@@ -38,6 +33,30 @@
 }
 
 .section {
+    flex-direction: row;
     width: 100%;
     max-width: var(--media-xl);
+    margin-bottom: 1rem;
+}
+
+.item {
+    flex-direction: row;
+    margin-bottom: 0.25rem;
+    width: 100%;
+    display: flex;
+    border: 1px solid var(--border-color-2);
+    border-radius: 3px !important;
+    padding: 1rem;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+.item-badge {
+    height: fit-content;
+}
+
+.item-batch-change-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
