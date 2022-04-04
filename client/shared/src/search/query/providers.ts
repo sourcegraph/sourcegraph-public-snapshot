@@ -115,18 +115,25 @@ export function createCancelableFetchSuggestions(
             })
         })
 
-        return of(query)
-            .pipe(
-                // We use a delay here to implement a custom debounce. In the
-                // next step we check if the current completion request was
-                // cancelled in the meantime.
-                // This prevents us from needlessly running multiple suggestion
-                // queries.
-                delay(200),
-                switchMap(query => (aborted ? Promise.resolve([]) : fetchSuggestions(query))),
-                takeUntil(abort)
-            )
-            .toPromise()
+        return (
+            of(query)
+                .pipe(
+                    // We use a delay here to implement a custom debounce. In the
+                    // next step we check if the current completion request was
+                    // cancelled in the meantime.
+                    // This prevents us from needlessly running multiple suggestion
+                    // queries.
+                    delay(200),
+                    switchMap(query => (aborted ? Promise.resolve([]) : fetchSuggestions(query))),
+                    takeUntil(abort)
+                )
+                // toPromise may return undefined if the observable completes before
+                // a value was emitted . The return type was fixed in newer versions
+                // (and the method was actually deprecated).
+                // See https://rxjs.dev/deprecations/to-promise
+                .toPromise()
+                .then(result => result ?? [])
+        )
     }
 }
 
