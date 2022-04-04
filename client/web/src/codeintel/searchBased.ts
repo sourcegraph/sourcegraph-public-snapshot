@@ -2,6 +2,7 @@ import { extname } from 'path'
 
 import escapeRegExp from 'lodash/escapeRegExp'
 
+import { raceWithDelayOffset } from './promise'
 import { SettingsGetter } from './settings'
 
 export function definitionQuery({
@@ -94,4 +95,135 @@ export function repositoryKindTerms(
     }
 
     return additionalTerms
+}
+/** Returns a regular expression matching the given repository. */
+function makeRepositoryPattern(repo: string): string {
+    return `^${repo.replace(/ /g, '\\ ')}$`
+}
+
+/** The time in ms to delay between unindexed search request and the fallback indexed search request. */
+const DEFAULT_UNINDEXED_SEARCH_TIMEOUT_MS = 5000
+
+/**
+ * Invoke the given search function by modifying the query with a term that will
+ * only look in the current git tree by appending a repo filter with the repo name
+ * and the current commit or, if `negateRepoFilter` is set, outside of current git
+ * tree.
+ *
+ * This is likely to timeout on large repos or organizations with monorepos if the
+ * current commit is not an indexed commit. Instead of waiting for a timeout, we
+ * will start a second index-only search of the HEAD commit for the same repo after
+ * a short delay.
+ *
+ * This function returns the set of results that resolve first.
+ *
+ * @param search The search function.
+ * @param args The arguments to the search function.
+ * @param negateRepoFilter Whether to look only inside or outside the given repo.
+ */
+export function searchWithFallback<
+    P extends {
+        repo: string
+        isFork: boolean
+        isArchived: boolean
+        commit: string
+        queryTerms: string[]
+    },
+    R
+>(search: (args: P) => Promise<R>, args: P, negateRepoFilter = false, getSetting: SettingsGetter): Promise<R> {
+    if (getSetting<boolean>('basicCodeIntel.indexOnly', false)) {
+        return searchIndexed(search, args, negateRepoFilter, getSetting)
+    }
+
+    return raceWithDelayOffset(
+        searchUnindexed(search, args, negateRepoFilter, getSetting),
+        () => searchIndexed(search, args, negateRepoFilter, getSetting),
+        getSetting<number>('basicCodeIntel.unindexedSearchTimeout', DEFAULT_UNINDEXED_SEARCH_TIMEOUT_MS)
+    )
+}
+
+/**
+ * Invoke the given search function as an indexed-only (fast, imprecise) search.
+ *
+ * @param search The search function.
+ * @param args The arguments to the search function.
+ * @param negateRepoFilter Whether to look only inside or outside the given repo.
+ */
+function searchIndexed<
+    P extends {
+        repo: string
+        isFork: boolean
+        isArchived: boolean
+        commit: string
+        queryTerms: string[]
+    },
+    R
+>(search: (args: P) => Promise<R>, args: P, negateRepoFilter = false, getSetting: SettingsGetter): Promise<R> {
+    const { repo, isFork, isArchived, queryTerms } = args
+
+    // Create a copy of the args so that concurrent calls to other
+    // search methods do not have their query terms unintentionally
+    // modified.
+    const queryTermsCopy = [...queryTerms]
+
+    // Unlike unindexed search, we can't supply a commit as that particular
+    // commit may not be indexed. We force index and look inside/outside
+    // the repo at _whatever_ commit happens to be indexed at the time.
+    queryTermsCopy.push((negateRepoFilter ? '-' : '') + `repo:${makeRepositoryPattern(repo)}`)
+    queryTermsCopy.push('index:only')
+
+    // If we're a fork, search in forks _for the same repo_. Otherwise,
+    // search in forks only if it's set in the settings. This is also
+    // symmetric for archived repositories.
+    queryTermsCopy.push(
+        ...repositoryKindTerms(isFork && !negateRepoFilter, isArchived && !negateRepoFilter, getSetting)
+    )
+
+    return search({ ...args, queryTerms: queryTermsCopy })
+}
+
+/**
+ * Invoke the given search function as an unindexed (slow, precise) search.
+ *
+ * @param search The search function.
+ * @param args The arguments to the search function.
+ * @param negateRepoFilter Whether to look only inside or outside the given repo.
+ */
+function searchUnindexed<
+    P extends {
+        repo: string
+        isFork: boolean
+        isArchived: boolean
+        commit: string
+        queryTerms: string[]
+    },
+    R
+>(search: (args: P) => Promise<R>, args: P, negateRepoFilter = false, getSetting: SettingsGetter): Promise<R> {
+    const { repo, isFork, isArchived, commit, queryTerms } = args
+
+    // Create a copy of the args so that concurrent calls to other
+    // search methods do not have their query terms unintentionally
+    // modified.
+    const queryTermsCopy = [...queryTerms]
+
+    if (!negateRepoFilter) {
+        // Look in this commit only
+        queryTermsCopy.push(`repo:${makeRepositoryPattern(repo)}@${commit}`)
+    } else {
+        // Look outside the repo (not outside the commit)
+        queryTermsCopy.push(`-repo:${makeRepositoryPattern(repo)}`)
+    }
+
+    // If we're a fork, search in forks _for the same repo_. Otherwise,
+    // search in forks only if it's set in the settings. This is also
+    // symmetric for archived repositories.
+    queryTermsCopy.push(
+        ...repositoryKindTerms(isFork && !negateRepoFilter, isArchived && !negateRepoFilter, getSetting)
+    )
+
+    return search({ ...args, queryTerms: queryTermsCopy })
+}
+
+export function isSourcegraphDotCom(): boolean {
+    return window.context?.sourcegraphDotComMode
 }
