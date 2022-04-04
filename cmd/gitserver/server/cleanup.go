@@ -15,6 +15,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -99,6 +100,9 @@ var (
 
 const reposStatsName = "repos-stats.json"
 
+// Used for setRepoSizes function to run only during the first run of janitor
+var setRepoSizesOnce sync.Once
+
 // cleanupRepos walks the repos directory and performs maintenance tasks:
 //
 // 1. Compute the amount of space used by the repo
@@ -111,6 +115,7 @@ const reposStatsName = "repos-stats.json"
 // 8. Remove repos based on disk pressure.
 // 9. Perform sg-maintenance
 // 10. Git prune
+// 11. Only during first run: Set sizes of repos which don't have it in a database.
 func (s *Server) cleanupRepos() {
 	janitorRunning.Set(1)
 	defer janitorRunning.Set(0)
@@ -122,8 +127,11 @@ func (s *Server) cleanupRepos() {
 		UpdatedAt: time.Now(),
 	}
 
+	repoToSize := make(map[api.RepoName]int64)
 	computeStats := func(dir GitDir) (done bool, err error) {
-		stats.GitDirBytes += dirSize(dir.Path("."))
+		size := dirSize(dir.Path("."))
+		stats.GitDirBytes += size
+		repoToSize[s.name(dir)] = size
 		return false, nil
 	}
 
@@ -370,6 +378,15 @@ func (s *Server) cleanupRepos() {
 		log15.Error("cleanup: failed to write periodic stats", "error", err)
 	}
 
+	// Repo sizes are set only once during the first janitor run.
+	// There is no need for a second run because all repo sizes will be set until this moment
+	setRepoSizesOnce.Do(func() {
+		err = s.setRepoSizes(context.Background(), repoToSize)
+		if err != nil {
+			log15.Error("cleanup: setting repo sizes", "error", err)
+		}
+	})
+
 	if s.DiskSizer == nil {
 		s.DiskSizer = &StatDiskSizer{}
 	}
@@ -380,6 +397,37 @@ func (s *Server) cleanupRepos() {
 	if err := s.freeUpSpace(b); err != nil {
 		log15.Error("cleanup: error freeing up space", "error", err)
 	}
+}
+
+// setRepoSizes uses calculated sizes of repos to update database entries of repos with repo_size_bytes = NULL
+func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]int64) error {
+	db := s.DB
+	gitserverRepos := db.GitserverRepos()
+	// getting all the repos without size
+	reposWithoutSize, err := gitserverRepos.ListReposWithoutSize(ctx)
+	if err != nil {
+		return err
+	}
+	if len(reposWithoutSize) == 0 {
+		log15.Info("cleanup: all repos have their sizes")
+		return nil
+	}
+
+	// preparing a mapping of repoID to its size which should be inserted
+	reposToUpdate := make(map[api.RepoID]int64)
+	for repoName, repoID := range reposWithoutSize {
+		if size, exists := repoToSize[repoName]; exists {
+			reposToUpdate[repoID] = size
+		}
+	}
+
+	// updating repos
+	err = gitserverRepos.UpdateRepoSizes(ctx, s.Hostname, reposToUpdate)
+	if err != nil {
+		return err
+	}
+	log15.Info(fmt.Sprintf("cleanup: %v repos had their sizes updated", len(reposToUpdate)))
+	return nil
 }
 
 // DiskSizer gets information about disk size and free space.

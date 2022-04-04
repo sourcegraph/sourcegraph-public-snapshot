@@ -61,7 +61,28 @@ func TestCleanup_computeStats(t *testing.T) {
 	// the correct file in the correct place.
 	s := &Server{ReposDir: root}
 	s.Handler() // Handler as a side-effect sets up Server
+	db := dbtest.NewDB(t)
+	s.DB = database.NewDB(db)
+
+	if _, err := db.Exec(`
+insert into repo(id, name) values (1, 'a'), (2, 'b/d'), (3, 'c');
+insert into gitserver_repos(repo_id, shard_id) values (1, 1), (2, 1);
+insert into gitserver_repos(repo_id, shard_id, repo_size_bytes) values (3, 1, 228);
+`); err != nil {
+		t.Fatalf("unexpected error while inserting test data: %s", err)
+	}
+
 	s.cleanupRepos()
+
+	for i := 1; i <= 3; i++ {
+		repo, err := s.DB.GitserverRepos().GetByID(context.Background(), 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if repo.RepoSizeBytes == 0 {
+			t.Fatal("repo_size_bytes is not updated")
+		}
+	}
 
 	// we hardcode the name here so the tests break if someone changes the
 	// value of reposStatsName. We don't want it to change without good reason
@@ -1131,5 +1152,62 @@ func TestPruneIfNeeded(t *testing.T) {
 	limit := -1 // always run prune
 	if err := pruneIfNeeded(gitDir, limit); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestCleanup_setRepoSizes(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	root, err := os.MkdirTemp("", "gitserver-test-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(root)
+
+	for _, name := range []string{"a", "b", "c"} {
+		p := path.Join(root, name, ".git")
+		if err := os.MkdirAll(p, 0755); err != nil {
+			t.Fatal(err)
+		}
+		cmd := exec.Command("git", "--bare", "init", p)
+		if err := cmd.Run(); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// We run cleanupRepos because we want to test as a side-effect it creates
+	// the correct file in the correct place.
+	s := &Server{ReposDir: root}
+	s.Handler() // Handler as a side-effect sets up Server
+	db := dbtest.NewDB(t)
+	s.DB = database.NewDB(db)
+
+	// inserting info about repos to DB. Repo with ID = 1 already has its size
+	if _, err := db.Exec(`
+insert into repo(id, name) values (1, 'a'), (2, 'b'), (3, 'c');
+insert into gitserver_repos(repo_id, shard_id) values (2, 1), (3, 1);
+insert into gitserver_repos(repo_id, shard_id, repo_size_bytes) values (1, 1, 228);
+`); err != nil {
+		t.Fatalf("unexpected error while inserting test data: %s", err)
+	}
+
+	s.cleanupRepos()
+
+	for i := 1; i <= 3; i++ {
+		repo, err := s.DB.GitserverRepos().GetByID(context.Background(), 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if repo.RepoSizeBytes == 0 {
+			t.Fatal("repo_size_bytes is not updated")
+		}
+		if i == 1 && repo.RepoSizeBytes != 228 {
+			t.Fatal("existing repo_size_bytes has been updated")
+		}
+		if repo.ShardID != "1" {
+			t.Fatal("shard_id has been corrupted")
+		}
 	}
 }
