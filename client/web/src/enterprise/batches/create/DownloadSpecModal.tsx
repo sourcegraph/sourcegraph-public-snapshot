@@ -41,9 +41,8 @@ export const DownloadSpecModal: React.FunctionComponent<DownloadSpecModalProps> 
                         setIsDownloadSpecModalOpen(false)
                     }}
                 >
-                    <VisuallyHidden>
-                        <CloseIcon className={styles.icon} />
-                    </VisuallyHidden>
+                    <VisuallyHidden>Close</VisuallyHidden>
+                    <CloseIcon className={styles.icon} />
                 </Button>
             </div>
 
