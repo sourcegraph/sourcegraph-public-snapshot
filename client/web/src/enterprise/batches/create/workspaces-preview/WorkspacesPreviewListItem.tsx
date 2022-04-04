@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
+import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 
 import { Button, Icon } from '@sourcegraph/wildcard'
