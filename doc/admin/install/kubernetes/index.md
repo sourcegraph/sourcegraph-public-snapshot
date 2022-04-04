@@ -1,7 +1,7 @@
 # Sourcegraph with Kubernetes
 
 <p class="lead">
-Deploying Sourcegraph on Kubernetes is for organizations that need highly scalable andavailable code search and code intelligence.
+Deploying Sourcegraph on Kubernetes is for organizations that need highly scalable and available code search and code intelligence.
 </p>
 
 <div class="cta-group">
@@ -16,7 +16,7 @@ Deploying Sourcegraph on Kubernetes is for organizations that need highly scalab
 Our Kubernetes support has the following requirements:
 - [Sourcegraph Enterprise license](configure.md#add-license-key). _You can run through these instructions without one, but you must obtain a license for instances of more than 10 users_
 - Minimum Kubernetes version: [v1.19](https://kubernetes.io/blog/2020/08/26/kubernetes-release-1.19-accentuate-the-paw-sitive/) and [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) v1.19 or later (check kubectl docs for backward and forward compatibility with Kubernetes versions)
-- Support for Persistent Volumes
+- Support for Persistent Volumes (SSDs recommended)
 
 We also recommend some familiarity with the following Kubernetes concepts before proceeding:
 - [Kubernetes Objects](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/)

@@ -2,13 +2,12 @@
 
 ## About Kustomize
 
-### About Kustomize
 
 Sourcegraph supports the use of [Kustomize](https://kustomize.io) to modify and customize our Kubernetes manifests. Kustomize is a template-free way to customize configuration with a simple configuration file.
 
 Some benefits of using Kustomize to generate manifests instead of modifying the base directly include:
 
-- Reduce the odds of encountering a merge conflict when [upgrading](update.md) - they allow you to separate your unique changes from the upstream base files Sourcegraph provides.
+- Reduce the odds of encountering a merge conflict when [updating Sourcegraph](update.md) - they allow you to separate your unique changes from the upstream base files Sourcegraph provides.
 - Better enable Sourcegraph to support you if you run into issues, because how your deployment varies from our [reference deployment](#reference-repository) is encapsulated in a small set of files.
 
 ## Using Kustomize
@@ -125,7 +124,7 @@ This overlay adds a namespace declaration to all the manifests.
 
 By default Sourcegraph is configured to use a storage class called `sourcegraph`. If you wish to use an alternate name, you can use this overlay to change all `storageClass` references in the manifests. 
 
-You need to create the storageclass if it doesn't exist yet. See [these docs](#configure-a-storage-class) for more instructions.
+You need to create the storageclass if it doesn't exist yet. See [these docs](./configure.md#configure-a-storage-class) for more instructions.
 
 1. To use it, update the following two files, `replace-storageclass-name-pvc.yaml` and `replace-storageclass-name-sts.yaml` in the `deploy-sourcegraph/overlays/storageclass` directory with your storageclass name.
 
@@ -234,7 +233,7 @@ minikube stop
 
 ### Custom overlays
 
-To create your own [overlays](#overlays), first [set up your deployment reference repository to enable customizations](#getting-started).
+To create your own [overlays](#overlays), first [set up your deployment reference repository to enable customizations](./configure.md#getting-started).
 
 Then, within the `overlays` directory of the [reference repository](./index.md#reference-repository), create a new directory for your overlay along with a `kustomization.yaml`.
 
@@ -272,4 +271,4 @@ To avoid complications with reference cycles an overlay can only reference resou
 Learn more in the [`kustomization` documentation](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/).
 You can also explore how our [provided overlays](#provided-overlays) use patches, for reference: [`deploy-sourcegraph` usage of patches](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/deploy-sourcegraph%24+lang:YAML+patches:+:%5B_%5D+OR+patchesStrategicMerge:+:%5B_%5D+OR+patchesJson6902:+:%5B_%5D+count:999&patternType=structural).
 
-Once you have created your overlays, refer to our [overlays guide](#overlays).
+Once you have created your overlays, refer to our [overlays guide](#generating-manifests) to generate and apply your changes.

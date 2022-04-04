@@ -64,7 +64,7 @@ Some of the following instructions require cluster access. Ensure you can [acces
 
 ### Customizations
 
-To make customizations to the Sourcegraph deployment such as resources, replicas or other changes, we recommend using [Kustomize](./index.md#kustomize) and [overlays](./index.md#overlays).
+To make customizations to the Sourcegraph deployment such as resources, replicas or other changes, we recommend using [Kustomize](kustomize.md).
 
 This means that you define your customizations as patches, and generate a manifest from our provided manifests to [apply](./operations.md#applying-manifests).
 
