@@ -15,6 +15,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -86,7 +87,7 @@ var (
 	jobTimer = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name: "src_gitserver_janitor_job_duration_seconds",
 		Help: "Duration of the individual jobs within the gitserver janitor background job",
-	}, []string{"job_name"})
+	}, []string{"success", "job_name"})
 	maintenanceStatus = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_gitserver_maintenance_status",
 		Help: "whether the maintenance run was a success (true/false) and the reason why a cleanup was needed",
@@ -98,6 +99,9 @@ var (
 )
 
 const reposStatsName = "repos-stats.json"
+
+// Used for setRepoSizes function to run only during the first run of janitor
+var setRepoSizesOnce sync.Once
 
 // cleanupRepos walks the repos directory and performs maintenance tasks:
 //
@@ -111,6 +115,7 @@ const reposStatsName = "repos-stats.json"
 // 8. Remove repos based on disk pressure.
 // 9. Perform sg-maintenance
 // 10. Git prune
+// 11. Only during first run: Set sizes of repos which don't have it in a database.
 func (s *Server) cleanupRepos() {
 	janitorRunning.Set(1)
 	defer janitorRunning.Set(0)
@@ -122,8 +127,11 @@ func (s *Server) cleanupRepos() {
 		UpdatedAt: time.Now(),
 	}
 
+	repoToSize := make(map[api.RepoName]int64)
 	computeStats := func(dir GitDir) (done bool, err error) {
-		stats.GitDirBytes += dirSize(dir.Path("."))
+		size := dirSize(dir.Path("."))
+		stats.GitDirBytes += size
+		repoToSize[s.name(dir)] = size
 		return false, nil
 	}
 
@@ -232,23 +240,21 @@ func (s *Server) cleanupRepos() {
 		return true, nil
 	}
 
-	removeStaleLocks := func(dir GitDir) (done bool, err error) {
-		gitDir := string(dir)
-
+	removeStaleLocks := func(gitDir GitDir) (done bool, err error) {
 		// if removing a lock fails, we still want to try the other locks.
 		var multi error
 
 		// config.lock should be held for a very short amount of time.
-		if err := removeFileOlderThan(filepath.Join(gitDir, "config.lock"), time.Minute); err != nil {
+		if err := removeFileOlderThan(gitDir.Path("config.lock"), time.Minute); err != nil {
 			multi = errors.Append(multi, err)
 		}
 		// packed-refs can be held for quite a while, so we are conservative
 		// with the age.
-		if err := removeFileOlderThan(filepath.Join(gitDir, "packed-refs.lock"), time.Hour); err != nil {
+		if err := removeFileOlderThan(gitDir.Path("packed-refs.lock"), time.Hour); err != nil {
 			multi = errors.Append(multi, err)
 		}
 		// we use the same conservative age for locks inside of refs
-		if err := bestEffortWalk(filepath.Join(gitDir, "refs"), func(path string, fi fs.FileInfo) error {
+		if err := bestEffortWalk(gitDir.Path("refs"), func(path string, fi fs.FileInfo) error {
 			if fi.IsDir() {
 				return nil
 			}
@@ -259,6 +265,14 @@ func (s *Server) cleanupRepos() {
 
 			return removeFileOlderThan(path, time.Hour)
 		}); err != nil {
+			multi = errors.Append(multi, err)
+		}
+		// We have seen that, occasionally, commit-graph.locks prevent a git repack from
+		// succeeding. Benchmarks on our dogfood cluster have shown that a commit-graph
+		// call for a 5GB bare repository takes less than 1 min. The lock is only held
+		// during a short period during this time. A 1-hour grace period is very
+		// conservative.
+		if err := removeFileOlderThan(gitDir.Path("objects", "info", "commit-graph.lock"), time.Hour); err != nil {
 			multi = errors.Append(multi, err)
 		}
 
@@ -347,7 +361,7 @@ func (s *Server) cleanupRepos() {
 			if err != nil {
 				log15.Error("error running cleanup command", "name", cfn.Name, "repo", gitDir, "error", err)
 			}
-			jobTimer.WithLabelValues(cfn.Name).Observe(time.Since(start).Seconds())
+			jobTimer.WithLabelValues(strconv.FormatBool(err == nil), cfn.Name).Observe(time.Since(start).Seconds())
 			if done {
 				break
 			}
@@ -364,6 +378,15 @@ func (s *Server) cleanupRepos() {
 		log15.Error("cleanup: failed to write periodic stats", "error", err)
 	}
 
+	// Repo sizes are set only once during the first janitor run.
+	// There is no need for a second run because all repo sizes will be set until this moment
+	setRepoSizesOnce.Do(func() {
+		err = s.setRepoSizes(context.Background(), repoToSize)
+		if err != nil {
+			log15.Error("cleanup: setting repo sizes", "error", err)
+		}
+	})
+
 	if s.DiskSizer == nil {
 		s.DiskSizer = &StatDiskSizer{}
 	}
@@ -374,6 +397,37 @@ func (s *Server) cleanupRepos() {
 	if err := s.freeUpSpace(b); err != nil {
 		log15.Error("cleanup: error freeing up space", "error", err)
 	}
+}
+
+// setRepoSizes uses calculated sizes of repos to update database entries of repos with repo_size_bytes = NULL
+func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]int64) error {
+	db := s.DB
+	gitserverRepos := db.GitserverRepos()
+	// getting all the repos without size
+	reposWithoutSize, err := gitserverRepos.ListReposWithoutSize(ctx)
+	if err != nil {
+		return err
+	}
+	if len(reposWithoutSize) == 0 {
+		log15.Info("cleanup: all repos have their sizes")
+		return nil
+	}
+
+	// preparing a mapping of repoID to its size which should be inserted
+	reposToUpdate := make(map[api.RepoID]int64)
+	for repoName, repoID := range reposWithoutSize {
+		if size, exists := repoToSize[repoName]; exists {
+			reposToUpdate[repoID] = size
+		}
+	}
+
+	// updating repos
+	err = gitserverRepos.UpdateRepoSizes(ctx, s.Hostname, reposToUpdate)
+	if err != nil {
+		return err
+	}
+	log15.Info(fmt.Sprintf("cleanup: %v repos had their sizes updated", len(reposToUpdate)))
+	return nil
 }
 
 // DiskSizer gets information about disk size and free space.

@@ -56,6 +56,10 @@ type DBStore interface {
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) error
 	RepoIDsByGlobPatterns(ctx context.Context, patterns []string, limit, offset int) ([]int, int, error)
 	CommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error)
+	RecentUploadsSummary(ctx context.Context, repositoryID int) ([]dbstore.UploadsWithRepositoryNamespace, error)
+	RecentIndexesSummary(ctx context.Context, repositoryID int) ([]dbstore.IndexesWithRepositoryNamespace, error)
+	LastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error)
+	LastIndexScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error)
 }
 
 type LSIFStore interface {

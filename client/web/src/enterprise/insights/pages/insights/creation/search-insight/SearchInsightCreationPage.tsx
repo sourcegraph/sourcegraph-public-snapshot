@@ -93,7 +93,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
 
     return (
         <CodeInsightsPage className={styles.creationPage}>
-            <PageTitle title="Create new code insight" />
+            <PageTitle title="Create insight - Code Insights" />
 
             {loading && (
                 // loading state for 1 click creation insight values resolve operation

@@ -72,7 +72,7 @@ export const DownloadSpecModal: React.FunctionComponent<DownloadSpecModalProps> 
                     </p>
                 </div>
                 <div className={styles.right}>
-                    <div className={styles.rightContent}>
+                    <div>
                         <h4>About src-cli </h4>
                         <p>
                             src cli is a command line interface to Sourcegraph. Its{' '}

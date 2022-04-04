@@ -12,6 +12,9 @@
 .right {
     width: 30%;
     padding-left: 1rem;
+    background-color: var(--body-bg);
+    border: 1px solid var(--border-color);
+    padding: 1rem;
 }
 
 .close {
@@ -34,12 +37,6 @@
     display: flex;
     justify-content: space-around;
     padding-bottom: 2rem;
-}
-
-.right-content {
-    background-color: var(--body-bg);
-    border: 1px solid var(--border-color);
-    padding: 1rem;
 }
 
 .code-snippet {

@@ -152,10 +152,8 @@ func runStructuralSearch(ctx context.Context, args *search.SearcherParameters, r
 }
 
 type StructuralSearch struct {
-	ZoektArgs    *search.ZoektParameters
-	SearcherArgs *search.SearcherParameters
-
-	NotSearcherOnly  bool
+	ZoektArgs        *search.ZoektParameters
+	SearcherArgs     *search.SearcherParameters
 	UseIndex         query.YesNoOnly
 	ContainsRefGlobs bool
 
@@ -181,10 +179,8 @@ func (s *StructuralSearch) Run(ctx context.Context, db database.DB, stream strea
 		}
 
 		repoSet := []repoData{UnindexedList(unindexed)}
-		if s.NotSearcherOnly {
-			if indexed != nil {
-				repoSet = append(repoSet, IndexedMap(indexed.RepoRevs))
-			}
+		if indexed != nil {
+			repoSet = append(repoSet, IndexedMap(indexed.RepoRevs))
 		}
 		return runStructuralSearch(ctx, s.SearcherArgs, repoSet, stream)
 	})

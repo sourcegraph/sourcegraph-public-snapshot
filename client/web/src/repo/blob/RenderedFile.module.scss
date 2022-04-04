@@ -7,4 +7,10 @@
 
 .container {
     max-width: 50rem;
+
+    h1 {
+        // workaround for svg in Sourcegraph README h1 not rendering with a size. also
+        // maybe intentional, to get the h1 ruler all the way across?
+        width: 100%;
+    }
 }
