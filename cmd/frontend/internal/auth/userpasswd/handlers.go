@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type credentials struct {
@@ -220,7 +221,7 @@ func handleSignUp(db database.DB, w http.ResponseWriter, r *http.Request, failIf
 func checkEmailFormat(email string) error {
 	// Max email length is 320 chars https://datatracker.ietf.org/doc/html/rfc3696#section-3
 	if len(email) > 320 {
-		return fmt.Errorf("maximum email length is 320, got %d", len(email))
+		return errors.Newf("maximum email length is 320, got %d", len(email))
 	}
 	if _, err := mail.ParseAddress(email); err != nil {
 		return err

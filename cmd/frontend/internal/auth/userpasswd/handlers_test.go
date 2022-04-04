@@ -2,11 +2,11 @@ package userpasswd
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestCheckEmailAbuse(t *testing.T) {
@@ -79,8 +79,8 @@ func TestCheckEmailFormat(t *testing.T) {
 		code  int
 	}{
 		"valid":   {email: "foo@bar.pl", err: nil},
-		"invalid": {email: "foo@", err: fmt.Errorf("mail: no angle-addr")},
-		"toolong": {email: "a012345678901234567890123456789012345678901234567890123456789@0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789.comeeeeqwqwwe", err: fmt.Errorf("maximum email length is 320, got 326")}} {
+		"invalid": {email: "foo@", err: errors.Newf("mail: no angle-addr")},
+		"toolong": {email: "a012345678901234567890123456789012345678901234567890123456789@0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789.comeeeeqwqwwe", err: errors.Newf("maximum email length is 320, got 326")}} {
 		t.Run(name, func(t *testing.T) {
 			err := checkEmailFormat(test.email)
 			if test.err == nil {
