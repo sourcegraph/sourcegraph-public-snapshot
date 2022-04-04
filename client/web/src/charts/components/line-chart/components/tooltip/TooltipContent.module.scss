@@ -21,10 +21,13 @@
 
 .legend-text {
     flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 1rem;
 }
 
-.legend-value {
-    margin-left: 1rem;
+.legend-stacked-value {
+    font-weight: bold;
 }
 
 .mark {
