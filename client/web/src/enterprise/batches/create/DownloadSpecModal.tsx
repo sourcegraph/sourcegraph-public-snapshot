@@ -1,6 +1,6 @@
 import React from 'react'
 
-import VisuallyHidden from '@reach/visually-hidden'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import CloseIcon from 'mdi-react/CloseIcon'
 
 import { Button, Link, Modal } from '@sourcegraph/wildcard'
