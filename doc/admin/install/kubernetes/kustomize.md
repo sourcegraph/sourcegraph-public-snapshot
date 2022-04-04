@@ -8,7 +8,7 @@ Sourcegraph supports the use of [Kustomize](https://kustomize.io) to modify and 
 Some benefits of using Kustomize to generate manifests instead of modifying the base directly include:
 
 - Reduce the odds of encountering a merge conflict when [updating Sourcegraph](update.md) - they allow you to separate your unique changes from the upstream base files Sourcegraph provides.
-- Better enable Sourcegraph to support you if you run into issues, because how your deployment varies from our [reference deployment](#reference-repository) is encapsulated in a small set of files.
+- Better enable Sourcegraph to support you if you run into issues, because how your deployment varies from our defaults is encapsulated in a small set of files.
 
 ## Using Kustomize
 
@@ -29,16 +29,15 @@ See the [overlays guide](#overlays) to learn about the [overlays we provide](#pr
 
 ## Overlays
 
-### About Overlays
-
 An [*overlay*](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/#bases-and-overlays) specifies customizations for a base directory of Kubernetes manifests, in this case the `base/` directory in the [reference repository](#reference-repository). 
 
 Overlays can:
 - Be used for example to change the number of replicas, change a namespace, add a label, etc
 - Refer to other overlays that eventually refer to the base (forming a directed acyclic graph with the base as the root)
 
-Overlays can be used in one of two ways:
+### Using overlays
 
+Overlays can be used in one of two ways:
 - With `kubectl`: Starting with `kubectl` client version 1.14 `kubectl` can handle `kustomization.yaml` files directly.
 When using `kubectl` there is no intermediate step that generates actual manifest files. Instead the combined resources from the
 overlays and the base are directly sent to the cluster. This is done with the `kubectl apply -k` command. The argument to the
@@ -56,12 +55,10 @@ The overlays provided in our [overlays directory](https://github.com/sourcegraph
 ### Generating Manifests
 
 To generate Kubernetes manifests from an overlay, run the `overlay-generate-cluster.sh` with two arguments:
-
 - the name of the overlay
 - and a path to an output directory where the generated manifests will be
 
 For example:
-
 ```sh
 #                overlay directory name    output directory
 #                                 |             |
@@ -75,7 +72,6 @@ kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
 ```
 
 We recommend that you:
-
 - [Update the `./overlay-generate-cluster` script](./operations.md#applying-manifests) to apply the generated manifests from the `generated-cluster` directory with something like the above snippet
 - Commit your overlays changes separately - see our [customization guide](#customizations) for more details.
 
