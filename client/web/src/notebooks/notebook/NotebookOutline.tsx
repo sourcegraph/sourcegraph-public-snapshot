@@ -1,12 +1,13 @@
-import React, { useState, useMemo } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
-// We're using marked import here to access the type definition, not to render markdown.
+// We're using marked import here to access the `marked` package type definitions.
 // eslint-disable-next-line no-restricted-imports
-import { marked } from 'marked'
+import { marked, Slugger } from 'marked'
 import ReactDOM from 'react-dom'
 
 import { markdownLexer } from '@sourcegraph/common'
+import { Link } from '@sourcegraph/wildcard'
 
 import { Block, MarkdownBlock } from '..'
 
@@ -17,65 +18,109 @@ interface NotebookOutlineProps {
     blocks: Block[]
 }
 
-const OUTLINE_MIN_WIDTH = 200
-const OUTLINE_MAX_WIDTH = 400
-
-// TODO: Hide on Blob page
 export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = React.memo(
     ({ notebookElement, blocks }) => {
-        const [availableWidth, setAvailableWidth] = useState(0)
-
-        // const measureAvailableWidth = useCallback(() => {
-        //     if (!notebookElement) {
-        //         return
-        //     }
-        //     const notebookRectangle = notebookElement.getBoundingClientRect()
-        //     setAvailableWidth(notebookRectangle.left)
-        // }, [notebookElement, setAvailableWidth])
-
-        // useEffect(() => measureAvailableWidth(), [measureAvailableWidth])
-
-        // useEffect(() => {
-        //     const onResize = (): void => {
-        //         window.requestAnimationFrame(measureAvailableWidth)
-        //     }
-        //     window.addEventListener('resize', onResize)
-        //     return () => window.removeEventListener('resize', onResize)
-        // }, [measureAvailableWidth])
+        const scrollableContainer = useRef<HTMLDivElement>(null)
+        const [visibleHeadings, setVisibleHeadings] = useState<string[]>([])
 
         const headings = useMemo(
             () =>
                 blocks
                     .filter((block): block is MarkdownBlock => block.type === 'md')
-                    .flatMap(block => markdownLexer(block.input.text))
-                    .filter((token): token is marked.Tokens.Heading => token.type === 'heading' && token.depth <= 2),
+                    .flatMap(block => {
+                        const slugger = new Slugger()
+                        return markdownLexer(block.input.text)
+                            .filter(
+                                (token): token is marked.Tokens.Heading => token.type === 'heading' && token.depth <= 2
+                            )
+                            .map(token => ({
+                                text: token.text,
+                                id: `${slugger.slug(token.text)}-${block.id}`,
+                                depth: token.depth,
+                            }))
+                    }),
             [blocks]
         )
 
-        // if (availableWidth < OUTLINE_MIN_WIDTH) {
-        //     return null
-        // }
+        useEffect(() => {
+            if (!notebookElement) {
+                return
+            }
+
+            const observeHeadings = (): void => {
+                for (const element of notebookElement.querySelectorAll('h1, h2')) {
+                    intersectionObserver.unobserve(element)
+                    intersectionObserver.observe(element)
+                }
+            }
+
+            const scrollToOutlineHeading = (id: string): void =>
+                document
+                    .querySelector(`[data-id="${id}"]`)
+                    ?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' })
+
+            const visibleHeadingsSet = new Set<string>()
+
+            const processIntersectionEntries = (entries: IntersectionObserverEntry[]): void => {
+                let hasScrolled = false
+                // TODO: Improve
+                for (const entry of entries) {
+                    const headingId = entry.target.id
+                    if (entry.isIntersecting) {
+                        visibleHeadingsSet.add(headingId)
+                        if (!hasScrolled) {
+                            scrollToOutlineHeading(headingId)
+                            hasScrolled = true
+                        }
+                    } else {
+                        visibleHeadingsSet.delete(headingId)
+                    }
+                }
+                setVisibleHeadings([...visibleHeadingsSet])
+            }
+
+            const intersectionCallback = (entries: IntersectionObserverEntry[]): number =>
+                window.requestAnimationFrame(() => processIntersectionEntries(entries))
+
+            const intersectionObserver = new IntersectionObserver(intersectionCallback)
+            observeHeadings()
+
+            const mutationObserver = new MutationObserver(observeHeadings)
+            mutationObserver.observe(notebookElement, { childList: true, subtree: true })
+
+            return () => {
+                intersectionObserver.disconnect()
+                mutationObserver.disconnect()
+            }
+        }, [notebookElement, scrollableContainer, setVisibleHeadings])
+
         const outlineContainer = document.querySelector<HTMLDivElement>('[data-notebook-outline-container]')
         if (!outlineContainer) {
             return null
         }
 
         return ReactDOM.createPortal(
-            <div
-                className={styles.outline}
-                // eslint-disable-next-line react/forbid-dom-props
-                // style={{ /* left: `-${availableWidth}px`,*/ width: `${Math.min(OUTLINE_MAX_WIDTH, availableWidth)}px` }}
-            >
-                {headings.map((heading, index) => (
-                    <div
-                        // We have to use the index in case of duplicate headings
-                        // eslint-disable-next-line react/no-array-index-key
-                        key={`${heading.text}_${index}`}
-                        className={classNames(styles.heading, `heading-${heading.depth}`)}
-                    >
-                        {heading.text}
-                    </div>
-                ))}
+            <div className={styles.outline}>
+                <div>Outline</div>
+                <div className={styles.scrollableContainer} ref={scrollableContainer}>
+                    {headings.map(heading => (
+                        <div
+                            key={heading.id}
+                            data-id={heading.id}
+                            className={classNames(styles.heading, `heading-${heading.depth}`)}
+                        >
+                            <Link
+                                className={classNames(
+                                    styles.headingLink,
+                                    visibleHeadings.includes(heading.id) && styles.visible
+                                )}
+                                to={`#${heading.id}`}
+                            >
+                                {heading.text}
+                            </Link>
+                        </div>
+                    ))}
+                </div>
             </div>,
             outlineContainer
         )

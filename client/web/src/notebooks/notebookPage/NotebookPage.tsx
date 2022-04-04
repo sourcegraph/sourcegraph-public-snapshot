@@ -177,7 +177,7 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
     )
 
     return (
-        <div className={classNames('w-100 p-2', styles.searchNotebookPage)}>
+        <div className={classNames('w-100', styles.searchNotebookPage)}>
             <PageTitle title={notebookTitle || 'Notebook'} />
             <div className={styles.cols}>
                 <div className={styles.sideCol} />
@@ -185,6 +185,7 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
                     {isNotebookLoaded(notebookOrError) && (
                         <>
                             <PageHeader
+                                className="mt-2"
                                 annotation={
                                     <FeedbackBadge status="beta" feedback={{ mailto: 'support@sourcegraph.com' }} />
                                 }

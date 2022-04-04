@@ -1,30 +1,46 @@
 .outline {
     position: absolute;
-    padding-right: 2rem;
+    padding: 0.5rem 1rem 1rem 0.5rem;
     width: 100%;
     max-width: 30rem;
-    height: 90vh;
-    overflow: auto;
+    // Subtract the height of the navbar
+    height: calc(100vh - 3rem);
+}
+
+.scrollable-container {
+    position: relative;
+    height: 100%;
+    overflow: hidden;
+
+    &:hover {
+        overflow: auto;
+    }
 }
 
 .heading {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    color: var(--text-muted);
-
     &:global(.heading-1) {
         font-weight: 500;
-        font-size: 0.875rem;
+        font-size: 1rem;
 
         &:not(:first-child) {
-            padding-top: 0.75rem;
+            padding-top: 0.25rem;
         }
     }
 
     &:global(.heading-2) {
-        font-size: 0.75rem;
+        font-size: 0.875rem;
         padding-left: 1rem;
         padding-bottom: 0.25rem;
     }
+}
+
+.heading-link {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--text-muted);
+}
+
+.visible {
+    color: red;
 }
