@@ -49,7 +49,6 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
 
             const observeHeadings = (): void => {
                 for (const element of notebookElement.querySelectorAll('h1, h2')) {
-                    intersectionObserver.unobserve(element)
                     intersectionObserver.observe(element)
                 }
             }
