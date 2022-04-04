@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { ApolloError, QueryResult } from '@apollo/client'
+import { QueryResult } from '@apollo/client'
 
 import {
     appendLineRangeQueryParameter,
     appendSubtreeQueryParameter,
     toPositionOrRangeQueryParameter,
+    ErrorLike,
 } from '@sourcegraph/common'
 import { dataOrThrowErrors, useLazyQuery, useQuery } from '@sourcegraph/http-client'
 
@@ -31,9 +32,10 @@ import {
     CODE_INTEL_SEARCH_QUERY,
     USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY,
 } from './ReferencesPanelQueries'
-import { definitionQuery, referencesQuery, repositoryKindTerms } from './searchBased'
+import { definitionQuery, repositoryKindTerms } from './searchBased'
 import { SettingsGetter } from './settings'
 import { sortByProximity } from './sort'
+import { useSearchBasedCodeIntel } from './useSearchBasedCodeIntel'
 
 interface CodeIntelData {
     references: {
@@ -52,7 +54,7 @@ interface CodeIntelData {
 
 export interface UseCodeIntelResult {
     data?: CodeIntelData
-    error?: ApolloError
+    error?: ErrorLike
     loading: boolean
 
     referencesHasNextPage: boolean
@@ -112,36 +114,42 @@ export const useCodeIntel = ({
         variables.firstImplementations,
     ])
 
-    const [fetchSearchBasedReferences, fetchSearchBasedReferencesResult] = useLazyQuery<
-        CodeIntelSearchResult,
-        CodeIntelSearchVariables
-    >(CODE_INTEL_SEARCH_QUERY, {
-        fetchPolicy: 'no-cache',
-        onCompleted: result => {
-            const newReferences = searchResultsToLocations(result).map(buildSearchBasedLocation)
-            const sorted = sortByProximity(newReferences, location.pathname)
+    const handleSearchBasedReferences = (references: Location[]): void => {
+        const previousData = codeIntelData
+        if (!previousData) {
+            setCodeIntelData({
+                implementations: { endCursor: null, nodes: [] },
+                definitions: { endCursor: null, nodes: [] },
+                references: {
+                    endCursor: null,
+                    nodes: references,
+                },
+            })
+        } else {
+            setCodeIntelData({
+                implementations: previousData.implementations,
+                definitions: previousData.definitions,
+                references: {
+                    endCursor: null,
+                    nodes: references,
+                },
+            })
+        }
+    }
 
-            const previousData = codeIntelData
-            if (!previousData) {
-                setCodeIntelData({
-                    implementations: { endCursor: null, nodes: [] },
-                    definitions: { endCursor: null, nodes: [] },
-                    references: {
-                        endCursor: null,
-                        nodes: sorted,
-                    },
-                })
-            } else {
-                setCodeIntelData({
-                    implementations: previousData.implementations,
-                    definitions: previousData.definitions,
-                    references: {
-                        endCursor: null,
-                        nodes: sorted,
-                    },
-                })
-            }
-        },
+    const {
+        loading: searchBasedReferencesLoading,
+        error: searchBasedReferencesError,
+        fetch: fetchSearchBasedReferences,
+    } = useSearchBasedCodeIntel({
+        repo: variables.repository,
+        commit: variables.commit,
+        path: variables.path,
+        searchToken,
+        spec,
+        isFork: repoIsFork,
+        isArchived: repoIsArchived,
+        getSetting,
     })
 
     const [fetchSearchBasedDefinitions, fetchSearchBasedDefinitionsResult] = useLazyQuery<
@@ -178,16 +186,6 @@ export const useCodeIntel = ({
         },
     })
 
-    const fetchSearchBasedReferencesForToken = useCallback(
-        (searchToken: string) => {
-            const terms = referencesQuery({ searchToken, path: variables.path, fileExts: spec.fileExts })
-            terms.push(...repositoryKindTerms(repoIsFork, repoIsArchived, getSetting))
-            const query = terms.join(' ')
-            return fetchSearchBasedReferences({ variables: { query } })
-        },
-        [fetchSearchBasedReferences, variables.path, spec.fileExts, repoIsFork, repoIsArchived, getSetting]
-    )
-
     const fetchSearchBasedDefinitionsForToken = useCallback(
         (searchToken: string) => {
             const terms = definitionQuery({ searchToken, path: variables.path, fileExts: spec.fileExts })
@@ -220,7 +218,7 @@ export const useCodeIntel = ({
                     // eslint-disable-next-line @typescript-eslint/no-floating-promises
                     fetchSearchBasedDefinitionsForToken(searchToken)
                     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-                    fetchSearchBasedReferencesForToken(searchToken)
+                    fetchSearchBasedReferences(handleSearchBasedReferences)
                 }
             }
         },
@@ -307,10 +305,9 @@ export const useCodeIntel = ({
 
     const combinedLoading =
         loading ||
-        (fellBackToSearchBased.current &&
-            (fetchSearchBasedReferencesResult.loading || fetchSearchBasedDefinitionsResult.loading))
+        (fellBackToSearchBased.current && (searchBasedReferencesLoading || fetchSearchBasedDefinitionsResult.loading))
 
-    const combinedError = error || fetchSearchBasedReferencesResult.error || fetchSearchBasedDefinitionsResult.error
+    const combinedError = error || searchBasedReferencesError || fetchSearchBasedDefinitionsResult.error
 
     return {
         data: codeIntelData,
