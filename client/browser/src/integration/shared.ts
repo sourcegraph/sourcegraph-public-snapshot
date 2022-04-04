@@ -26,7 +26,7 @@ export async function closeInstallPageTab(browser: puppeteer.Browser): Promise<v
     }
 }
 
-const extractExtensionStyles = async (page: puppeteer.Page): Promise<string> =>
+const extractExtensionStyles = (page: puppeteer.Page): Promise<string> =>
     page.evaluate(() =>
         [...document.styleSheets]
             .filter(styleSheet => styleSheet.href?.startsWith('chrome-extension://'))
