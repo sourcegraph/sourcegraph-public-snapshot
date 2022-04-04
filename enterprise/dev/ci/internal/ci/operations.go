@@ -226,7 +226,7 @@ func generateSnapshots(pipeline *bk.Pipeline) {
 		// bk.Cmd("git-lfs fetch"),
 		// bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		// bk.Cmd("yarn --cwd client/browser -s run build"),
-		bk.Cmd("yarn run --cwd client/browser record-integration"),
+		bk.Cmd("yarn --cwd client/browser run record-integration"),
 		// bk.Cmd("yarn nyc report -r json"),
 		// bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
 		// bk.ArtifactPaths("./puppeteer/*.png"),
