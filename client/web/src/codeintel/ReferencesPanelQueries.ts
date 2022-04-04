@@ -95,8 +95,8 @@ export const USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY = gql`
         }
     }
 
-    ${gitBlobLsifDataQueryFragment}
     ${codeIntelFragments}
+    ${gitBlobLsifDataQueryFragment}
 `
 
 export const LOAD_ADDITIONAL_REFERENCES_QUERY = gql`
@@ -247,4 +247,39 @@ export const CODE_INTEL_SEARCH_QUERY = gql`
         }
     }
     ${searchResultsFragment}
+`
+
+export const RESOLVE_REPO_REVISION_BLOB_QUERY = gql`
+    fragment RepoRevisionBlobFields on Repository {
+        id
+        name
+        url
+
+        isFork
+        isArchived
+
+        commit(rev: $revision) {
+            oid
+
+            file(path: $filePath) {
+                content
+            }
+        }
+
+        defaultBranch {
+            abbrevName
+        }
+    }
+
+    query ResolveRepoAndRevision($repoName: String!, $revision: String!, $filePath: String!) {
+        repositoryRedirect(name: $repoName) {
+            __typename
+            ... on Repository {
+                ...RepoRevisionBlobFields
+            }
+            ... on Redirect {
+                url
+            }
+        }
+    }
 `

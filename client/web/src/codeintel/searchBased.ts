@@ -2,6 +2,8 @@ import { extname } from 'path'
 
 import escapeRegExp from 'lodash/escapeRegExp'
 
+import { SettingsGetter } from './settings'
+
 export function definitionQuery({
     searchToken,
     path,
@@ -69,3 +71,27 @@ function fileExtensionTerm(path: string, includelist: string[]): string {
 }
 
 const excludelist = new Set(['thrift', 'proto', 'graphql'])
+
+/**
+ * Returns fork and archived terms that should be supplied with the query.
+ *
+ * @param includeFork Whether or not the include forked repositories regardless of settings.
+ * @param includeArchived Whether or not the include archived repositories regardless of settings.
+ * @param getSetting Used to query user settings for code intel configuration.
+ */
+export function repositoryKindTerms(
+    includeFork: boolean,
+    includeArchived: boolean,
+    getSetting: SettingsGetter
+): string[] {
+    const additionalTerms = []
+    if (includeFork || getSetting('basicCodeIntel.includeForks', false)) {
+        additionalTerms.push('fork:yes')
+    }
+
+    if (includeArchived || getSetting('basicCodeIntel.includeArchives', false)) {
+        additionalTerms.push('archived:yes')
+    }
+
+    return additionalTerms
+}

@@ -31,7 +31,8 @@ import {
     CODE_INTEL_SEARCH_QUERY,
     USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY,
 } from './ReferencesPanelQueries'
-import { definitionQuery, referencesQuery } from './searchBased'
+import { definitionQuery, referencesQuery, repositoryKindTerms } from './searchBased'
+import { SettingsGetter } from './settings'
 import { sortByProximity } from './sort'
 
 interface CodeIntelData {
@@ -68,6 +69,9 @@ interface UseCodeIntelParameters {
     searchToken: string
     spec: LanguageSpec
     fileContent: string
+    repoIsFork: boolean
+    repoIsArchived: boolean
+    getSetting: SettingsGetter
 }
 
 export const useCodeIntel = ({
@@ -75,6 +79,9 @@ export const useCodeIntel = ({
     searchToken,
     spec,
     fileContent,
+    repoIsFork,
+    repoIsArchived,
+    getSetting,
 }: UseCodeIntelParameters): UseCodeIntelResult => {
     const [codeIntelData, setCodeIntelData] = useState<CodeIntelData>()
     const filterDefinitions = useCallback(
@@ -174,18 +181,21 @@ export const useCodeIntel = ({
     const fetchSearchBasedReferencesForToken = useCallback(
         (searchToken: string) => {
             const terms = referencesQuery({ searchToken, path: variables.path, fileExts: spec.fileExts })
+            terms.push(...repositoryKindTerms(repoIsFork, repoIsArchived, getSetting))
             const query = terms.join(' ')
             return fetchSearchBasedReferences({ variables: { query } })
         },
-        [fetchSearchBasedReferences, variables.path, spec.fileExts]
+        [fetchSearchBasedReferences, variables.path, spec.fileExts, repoIsFork, repoIsArchived, getSetting]
     )
 
     const fetchSearchBasedDefinitionsForToken = useCallback(
         (searchToken: string) => {
-            const query = definitionQuery({ searchToken, path: variables.path, fileExts: spec.fileExts }).join(' ')
+            const terms = definitionQuery({ searchToken, path: variables.path, fileExts: spec.fileExts })
+            terms.push(...repositoryKindTerms(repoIsFork, repoIsArchived, getSetting))
+            const query = terms.join(' ')
             return fetchSearchBasedDefinitions({ variables: { query } })
         },
-        [fetchSearchBasedDefinitions, variables.path, spec.fileExts]
+        [fetchSearchBasedDefinitions, variables.path, spec.fileExts, repoIsFork, repoIsArchived, getSetting]
     )
 
     const { error, loading } = useQuery<
