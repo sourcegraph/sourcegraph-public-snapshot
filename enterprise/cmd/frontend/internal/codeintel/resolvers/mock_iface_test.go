@@ -94,9 +94,23 @@ type MockDBStore struct {
 	// HasRepositoryFunc is an instance of a mock function object
 	// controlling the behavior of the method HasRepository.
 	HasRepositoryFunc *DBStoreHasRepositoryFunc
+	// LastIndexScanForRepositoryFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// LastIndexScanForRepository.
+	LastIndexScanForRepositoryFunc *DBStoreLastIndexScanForRepositoryFunc
+	// LastUploadRetentionScanForRepositoryFunc is an instance of a mock
+	// function object controlling the behavior of the method
+	// LastUploadRetentionScanForRepository.
+	LastUploadRetentionScanForRepositoryFunc *DBStoreLastUploadRetentionScanForRepositoryFunc
 	// MarkRepositoryAsDirtyFunc is an instance of a mock function object
 	// controlling the behavior of the method MarkRepositoryAsDirty.
 	MarkRepositoryAsDirtyFunc *DBStoreMarkRepositoryAsDirtyFunc
+	// RecentIndexesSummaryFunc is an instance of a mock function object
+	// controlling the behavior of the method RecentIndexesSummary.
+	RecentIndexesSummaryFunc *DBStoreRecentIndexesSummaryFunc
+	// RecentUploadsSummaryFunc is an instance of a mock function object
+	// controlling the behavior of the method RecentUploadsSummary.
+	RecentUploadsSummaryFunc *DBStoreRecentUploadsSummaryFunc
 	// ReferenceIDsAndFiltersFunc is an instance of a mock function object
 	// controlling the behavior of the method ReferenceIDsAndFilters.
 	ReferenceIDsAndFiltersFunc *DBStoreReferenceIDsAndFiltersFunc
@@ -228,9 +242,29 @@ func NewMockDBStore() *MockDBStore {
 				return false, nil
 			},
 		},
+		LastIndexScanForRepositoryFunc: &DBStoreLastIndexScanForRepositoryFunc{
+			defaultHook: func(context.Context, int) (*time.Time, error) {
+				return nil, nil
+			},
+		},
+		LastUploadRetentionScanForRepositoryFunc: &DBStoreLastUploadRetentionScanForRepositoryFunc{
+			defaultHook: func(context.Context, int) (*time.Time, error) {
+				return nil, nil
+			},
+		},
 		MarkRepositoryAsDirtyFunc: &DBStoreMarkRepositoryAsDirtyFunc{
 			defaultHook: func(context.Context, int) error {
 				return nil
+			},
+		},
+		RecentIndexesSummaryFunc: &DBStoreRecentIndexesSummaryFunc{
+			defaultHook: func(context.Context, int) ([]dbstore.IndexesWithRepositoryNamespace, error) {
+				return nil, nil
+			},
+		},
+		RecentUploadsSummaryFunc: &DBStoreRecentUploadsSummaryFunc{
+			defaultHook: func(context.Context, int) ([]dbstore.UploadsWithRepositoryNamespace, error) {
+				return nil, nil
 			},
 		},
 		ReferenceIDsAndFiltersFunc: &DBStoreReferenceIDsAndFiltersFunc{
@@ -375,9 +409,29 @@ func NewStrictMockDBStore() *MockDBStore {
 				panic("unexpected invocation of MockDBStore.HasRepository")
 			},
 		},
+		LastIndexScanForRepositoryFunc: &DBStoreLastIndexScanForRepositoryFunc{
+			defaultHook: func(context.Context, int) (*time.Time, error) {
+				panic("unexpected invocation of MockDBStore.LastIndexScanForRepository")
+			},
+		},
+		LastUploadRetentionScanForRepositoryFunc: &DBStoreLastUploadRetentionScanForRepositoryFunc{
+			defaultHook: func(context.Context, int) (*time.Time, error) {
+				panic("unexpected invocation of MockDBStore.LastUploadRetentionScanForRepository")
+			},
+		},
 		MarkRepositoryAsDirtyFunc: &DBStoreMarkRepositoryAsDirtyFunc{
 			defaultHook: func(context.Context, int) error {
 				panic("unexpected invocation of MockDBStore.MarkRepositoryAsDirty")
+			},
+		},
+		RecentIndexesSummaryFunc: &DBStoreRecentIndexesSummaryFunc{
+			defaultHook: func(context.Context, int) ([]dbstore.IndexesWithRepositoryNamespace, error) {
+				panic("unexpected invocation of MockDBStore.RecentIndexesSummary")
+			},
+		},
+		RecentUploadsSummaryFunc: &DBStoreRecentUploadsSummaryFunc{
+			defaultHook: func(context.Context, int) ([]dbstore.UploadsWithRepositoryNamespace, error) {
+				panic("unexpected invocation of MockDBStore.RecentUploadsSummary")
 			},
 		},
 		ReferenceIDsAndFiltersFunc: &DBStoreReferenceIDsAndFiltersFunc{
@@ -480,8 +534,20 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		HasRepositoryFunc: &DBStoreHasRepositoryFunc{
 			defaultHook: i.HasRepository,
 		},
+		LastIndexScanForRepositoryFunc: &DBStoreLastIndexScanForRepositoryFunc{
+			defaultHook: i.LastIndexScanForRepository,
+		},
+		LastUploadRetentionScanForRepositoryFunc: &DBStoreLastUploadRetentionScanForRepositoryFunc{
+			defaultHook: i.LastUploadRetentionScanForRepository,
+		},
 		MarkRepositoryAsDirtyFunc: &DBStoreMarkRepositoryAsDirtyFunc{
 			defaultHook: i.MarkRepositoryAsDirty,
+		},
+		RecentIndexesSummaryFunc: &DBStoreRecentIndexesSummaryFunc{
+			defaultHook: i.RecentIndexesSummary,
+		},
+		RecentUploadsSummaryFunc: &DBStoreRecentUploadsSummaryFunc{
+			defaultHook: i.RecentUploadsSummary,
 		},
 		ReferenceIDsAndFiltersFunc: &DBStoreReferenceIDsAndFiltersFunc{
 			defaultHook: i.ReferenceIDsAndFilters,
@@ -2867,6 +2933,230 @@ func (c DBStoreHasRepositoryFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// DBStoreLastIndexScanForRepositoryFunc describes the behavior when the
+// LastIndexScanForRepository method of the parent MockDBStore instance is
+// invoked.
+type DBStoreLastIndexScanForRepositoryFunc struct {
+	defaultHook func(context.Context, int) (*time.Time, error)
+	hooks       []func(context.Context, int) (*time.Time, error)
+	history     []DBStoreLastIndexScanForRepositoryFuncCall
+	mutex       sync.Mutex
+}
+
+// LastIndexScanForRepository delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockDBStore) LastIndexScanForRepository(v0 context.Context, v1 int) (*time.Time, error) {
+	r0, r1 := m.LastIndexScanForRepositoryFunc.nextHook()(v0, v1)
+	m.LastIndexScanForRepositoryFunc.appendCall(DBStoreLastIndexScanForRepositoryFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// LastIndexScanForRepository method of the parent MockDBStore instance is
+// invoked and the hook queue is empty.
+func (f *DBStoreLastIndexScanForRepositoryFunc) SetDefaultHook(hook func(context.Context, int) (*time.Time, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// LastIndexScanForRepository method of the parent MockDBStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *DBStoreLastIndexScanForRepositoryFunc) PushHook(hook func(context.Context, int) (*time.Time, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBStoreLastIndexScanForRepositoryFunc) SetDefaultReturn(r0 *time.Time, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) (*time.Time, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBStoreLastIndexScanForRepositoryFunc) PushReturn(r0 *time.Time, r1 error) {
+	f.PushHook(func(context.Context, int) (*time.Time, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBStoreLastIndexScanForRepositoryFunc) nextHook() func(context.Context, int) (*time.Time, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBStoreLastIndexScanForRepositoryFunc) appendCall(r0 DBStoreLastIndexScanForRepositoryFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBStoreLastIndexScanForRepositoryFuncCall
+// objects describing the invocations of this function.
+func (f *DBStoreLastIndexScanForRepositoryFunc) History() []DBStoreLastIndexScanForRepositoryFuncCall {
+	f.mutex.Lock()
+	history := make([]DBStoreLastIndexScanForRepositoryFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBStoreLastIndexScanForRepositoryFuncCall is an object that describes an
+// invocation of method LastIndexScanForRepository on an instance of
+// MockDBStore.
+type DBStoreLastIndexScanForRepositoryFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *time.Time
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBStoreLastIndexScanForRepositoryFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBStoreLastIndexScanForRepositoryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// DBStoreLastUploadRetentionScanForRepositoryFunc describes the behavior
+// when the LastUploadRetentionScanForRepository method of the parent
+// MockDBStore instance is invoked.
+type DBStoreLastUploadRetentionScanForRepositoryFunc struct {
+	defaultHook func(context.Context, int) (*time.Time, error)
+	hooks       []func(context.Context, int) (*time.Time, error)
+	history     []DBStoreLastUploadRetentionScanForRepositoryFuncCall
+	mutex       sync.Mutex
+}
+
+// LastUploadRetentionScanForRepository delegates to the next hook function
+// in the queue and stores the parameter and result values of this
+// invocation.
+func (m *MockDBStore) LastUploadRetentionScanForRepository(v0 context.Context, v1 int) (*time.Time, error) {
+	r0, r1 := m.LastUploadRetentionScanForRepositoryFunc.nextHook()(v0, v1)
+	m.LastUploadRetentionScanForRepositoryFunc.appendCall(DBStoreLastUploadRetentionScanForRepositoryFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// LastUploadRetentionScanForRepository method of the parent MockDBStore
+// instance is invoked and the hook queue is empty.
+func (f *DBStoreLastUploadRetentionScanForRepositoryFunc) SetDefaultHook(hook func(context.Context, int) (*time.Time, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// LastUploadRetentionScanForRepository method of the parent MockDBStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *DBStoreLastUploadRetentionScanForRepositoryFunc) PushHook(hook func(context.Context, int) (*time.Time, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBStoreLastUploadRetentionScanForRepositoryFunc) SetDefaultReturn(r0 *time.Time, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) (*time.Time, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBStoreLastUploadRetentionScanForRepositoryFunc) PushReturn(r0 *time.Time, r1 error) {
+	f.PushHook(func(context.Context, int) (*time.Time, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBStoreLastUploadRetentionScanForRepositoryFunc) nextHook() func(context.Context, int) (*time.Time, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBStoreLastUploadRetentionScanForRepositoryFunc) appendCall(r0 DBStoreLastUploadRetentionScanForRepositoryFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// DBStoreLastUploadRetentionScanForRepositoryFuncCall objects describing
+// the invocations of this function.
+func (f *DBStoreLastUploadRetentionScanForRepositoryFunc) History() []DBStoreLastUploadRetentionScanForRepositoryFuncCall {
+	f.mutex.Lock()
+	history := make([]DBStoreLastUploadRetentionScanForRepositoryFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBStoreLastUploadRetentionScanForRepositoryFuncCall is an object that
+// describes an invocation of method LastUploadRetentionScanForRepository on
+// an instance of MockDBStore.
+type DBStoreLastUploadRetentionScanForRepositoryFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *time.Time
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBStoreLastUploadRetentionScanForRepositoryFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBStoreLastUploadRetentionScanForRepositoryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // DBStoreMarkRepositoryAsDirtyFunc describes the behavior when the
 // MarkRepositoryAsDirty method of the parent MockDBStore instance is
 // invoked.
@@ -2971,6 +3261,224 @@ func (c DBStoreMarkRepositoryAsDirtyFuncCall) Args() []interface{} {
 // invocation.
 func (c DBStoreMarkRepositoryAsDirtyFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// DBStoreRecentIndexesSummaryFunc describes the behavior when the
+// RecentIndexesSummary method of the parent MockDBStore instance is
+// invoked.
+type DBStoreRecentIndexesSummaryFunc struct {
+	defaultHook func(context.Context, int) ([]dbstore.IndexesWithRepositoryNamespace, error)
+	hooks       []func(context.Context, int) ([]dbstore.IndexesWithRepositoryNamespace, error)
+	history     []DBStoreRecentIndexesSummaryFuncCall
+	mutex       sync.Mutex
+}
+
+// RecentIndexesSummary delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDBStore) RecentIndexesSummary(v0 context.Context, v1 int) ([]dbstore.IndexesWithRepositoryNamespace, error) {
+	r0, r1 := m.RecentIndexesSummaryFunc.nextHook()(v0, v1)
+	m.RecentIndexesSummaryFunc.appendCall(DBStoreRecentIndexesSummaryFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the RecentIndexesSummary
+// method of the parent MockDBStore instance is invoked and the hook queue
+// is empty.
+func (f *DBStoreRecentIndexesSummaryFunc) SetDefaultHook(hook func(context.Context, int) ([]dbstore.IndexesWithRepositoryNamespace, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RecentIndexesSummary method of the parent MockDBStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *DBStoreRecentIndexesSummaryFunc) PushHook(hook func(context.Context, int) ([]dbstore.IndexesWithRepositoryNamespace, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBStoreRecentIndexesSummaryFunc) SetDefaultReturn(r0 []dbstore.IndexesWithRepositoryNamespace, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) ([]dbstore.IndexesWithRepositoryNamespace, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBStoreRecentIndexesSummaryFunc) PushReturn(r0 []dbstore.IndexesWithRepositoryNamespace, r1 error) {
+	f.PushHook(func(context.Context, int) ([]dbstore.IndexesWithRepositoryNamespace, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBStoreRecentIndexesSummaryFunc) nextHook() func(context.Context, int) ([]dbstore.IndexesWithRepositoryNamespace, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBStoreRecentIndexesSummaryFunc) appendCall(r0 DBStoreRecentIndexesSummaryFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBStoreRecentIndexesSummaryFuncCall objects
+// describing the invocations of this function.
+func (f *DBStoreRecentIndexesSummaryFunc) History() []DBStoreRecentIndexesSummaryFuncCall {
+	f.mutex.Lock()
+	history := make([]DBStoreRecentIndexesSummaryFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBStoreRecentIndexesSummaryFuncCall is an object that describes an
+// invocation of method RecentIndexesSummary on an instance of MockDBStore.
+type DBStoreRecentIndexesSummaryFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []dbstore.IndexesWithRepositoryNamespace
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBStoreRecentIndexesSummaryFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBStoreRecentIndexesSummaryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// DBStoreRecentUploadsSummaryFunc describes the behavior when the
+// RecentUploadsSummary method of the parent MockDBStore instance is
+// invoked.
+type DBStoreRecentUploadsSummaryFunc struct {
+	defaultHook func(context.Context, int) ([]dbstore.UploadsWithRepositoryNamespace, error)
+	hooks       []func(context.Context, int) ([]dbstore.UploadsWithRepositoryNamespace, error)
+	history     []DBStoreRecentUploadsSummaryFuncCall
+	mutex       sync.Mutex
+}
+
+// RecentUploadsSummary delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDBStore) RecentUploadsSummary(v0 context.Context, v1 int) ([]dbstore.UploadsWithRepositoryNamespace, error) {
+	r0, r1 := m.RecentUploadsSummaryFunc.nextHook()(v0, v1)
+	m.RecentUploadsSummaryFunc.appendCall(DBStoreRecentUploadsSummaryFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the RecentUploadsSummary
+// method of the parent MockDBStore instance is invoked and the hook queue
+// is empty.
+func (f *DBStoreRecentUploadsSummaryFunc) SetDefaultHook(hook func(context.Context, int) ([]dbstore.UploadsWithRepositoryNamespace, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RecentUploadsSummary method of the parent MockDBStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *DBStoreRecentUploadsSummaryFunc) PushHook(hook func(context.Context, int) ([]dbstore.UploadsWithRepositoryNamespace, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBStoreRecentUploadsSummaryFunc) SetDefaultReturn(r0 []dbstore.UploadsWithRepositoryNamespace, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) ([]dbstore.UploadsWithRepositoryNamespace, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBStoreRecentUploadsSummaryFunc) PushReturn(r0 []dbstore.UploadsWithRepositoryNamespace, r1 error) {
+	f.PushHook(func(context.Context, int) ([]dbstore.UploadsWithRepositoryNamespace, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBStoreRecentUploadsSummaryFunc) nextHook() func(context.Context, int) ([]dbstore.UploadsWithRepositoryNamespace, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBStoreRecentUploadsSummaryFunc) appendCall(r0 DBStoreRecentUploadsSummaryFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBStoreRecentUploadsSummaryFuncCall objects
+// describing the invocations of this function.
+func (f *DBStoreRecentUploadsSummaryFunc) History() []DBStoreRecentUploadsSummaryFuncCall {
+	f.mutex.Lock()
+	history := make([]DBStoreRecentUploadsSummaryFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBStoreRecentUploadsSummaryFuncCall is an object that describes an
+// invocation of method RecentUploadsSummary on an instance of MockDBStore.
+type DBStoreRecentUploadsSummaryFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []dbstore.UploadsWithRepositoryNamespace
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBStoreRecentUploadsSummaryFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBStoreRecentUploadsSummaryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // DBStoreReferenceIDsAndFiltersFunc describes the behavior when the
