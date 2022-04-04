@@ -215,27 +215,6 @@ func addWebApp(pipeline *bk.Pipeline) {
 
 // Builds and tests the browser extension.
 func addBrowserExt(pipeline *bk.Pipeline) {
-	// Browser extension integration tests
-	for _, browser := range []string{"chrome"} {
-		pipeline.AddStep(
-			fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
-			withYarnCache(),
-			bk.Env("PERCY_ON", "true"),
-			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
-			bk.Env("BROWSER", browser),
-			bk.Env("LOG_BROWSER_CONSOLE", "true"),
-			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
-			bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
-			bk.Cmd("git-lfs fetch"),
-			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("yarn --cwd client/browser -s run build"),
-			bk.Cmd("yarn run cover-browser-integration"),
-			bk.Cmd("yarn nyc report -r json"),
-			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
-			bk.ArtifactPaths("./puppeteer/*.png"),
-		)
-	}
-
 	// Browser extension unit tests
 	pipeline.AddStep(":jest::chrome: Test (client/browser)",
 		withYarnCache(),
@@ -284,6 +263,27 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 			bk.Env("PERCY_ON", "true"),
 			bk.Cmd(fmt.Sprintf(`dev/ci/yarn-web-integration.sh "%s"`, chunkTestFiles)),
 			bk.ArtifactPaths("./puppeteer/*.png"))
+	}
+
+	// Browser extension integration tests
+	for _, browser := range []string{"chrome"} {
+		pipeline.AddStep(
+			fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
+			withYarnCache(),
+			bk.Env("PERCY_ON", "true"),
+			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
+			bk.Env("BROWSER", browser),
+			bk.Env("LOG_BROWSER_CONSOLE", "true"),
+			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
+			bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
+			bk.Cmd("git-lfs fetch"),
+			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("yarn --cwd client/browser -s run build"),
+			bk.Cmd("yarn run cover-browser-integration"),
+			bk.Cmd("yarn nyc report -r json"),
+			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
+			bk.ArtifactPaths("./puppeteer/*.png"),
+		)
 	}
 
 	finalizeSteps := []bk.StepOpt{
