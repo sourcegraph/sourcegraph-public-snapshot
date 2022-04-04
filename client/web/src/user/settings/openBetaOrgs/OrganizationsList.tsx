@@ -117,7 +117,7 @@ export const OrganizationsListPage: React.FunctionComponent<OrganizationsListPro
                 <Container className={styles.noOrgContainer}>
                     <div className="d-flex flex-0 flex-column justify-content-center align-items-center">
                         <h3 className="mb-1">Start searching with your team on Sourcegraph</h3>
-                        <div>Product copy here that needs to be written still, this is a placeholder.</div>
+                        <div>Level up your team with powerful code search across your organization’s code.</div>
                         <ButtonLink
                             variant="primary"
                             to="/organizations/joinopenbeta"
