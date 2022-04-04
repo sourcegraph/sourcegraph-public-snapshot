@@ -289,6 +289,12 @@ describe('util/url', () => {
                 '/github.com/gorilla/mux/-/blob/mux.go?L1:1#tab=references'
             )
         })
+
+        test('formats url with symbols in filePath', () => {
+            expect(toPrettyBlobURL({ ...context, filePath: '.shellrc/zshrc.d/functions/gdk.sh##class.Work' })).toBe(
+                '/github.com/gorilla/mux/-/blob/.shellrc/zshrc.d/functions/gdk.sh%23%23class.Work'
+            )
+        })
     })
 
     describe('toAbsoluteBlobURL', () => {
