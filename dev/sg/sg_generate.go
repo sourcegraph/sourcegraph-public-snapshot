@@ -7,20 +7,16 @@ import (
 	"time"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate/gogen"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 var (
-	stdOut                = stdout.Out
-	generateFlagSet       = flag.NewFlagSet("sg generate", flag.ExitOnError)
-	generateGoFlagSet     = flag.NewFlagSet("sg generate go", flag.ExitOnError)
-	generateGoVerboseFlag = generateGoFlagSet.Bool("v", false, "Display output from go generate")
-	generateGoQuietFlag   = generateGoFlagSet.Bool("q", false, "Suppress all output but errors from go generate")
+	stdOut          = stdout.Out
+	generateFlagSet = flag.NewFlagSet("sg generate", flag.ExitOnError)
 
 	generateCommand = &ffcli.Command{
 		Name:       "generate",
@@ -47,15 +43,6 @@ var (
 )
 
 type generateTargets []generate.Target
-
-var allGenerateTargets = generateTargets{
-	{
-		Name:    "go",
-		Help:    "Run go generate [packages...] on the codebase",
-		FlagSet: generateGoFlagSet,
-		Runner:  generateGoRunner,
-	},
-}
 
 func runGenerateScriptAndReport(ctx context.Context, runner generate.Runner, args []string) error {
 	_, err := root.RepositoryRoot()
@@ -90,17 +77,4 @@ func (gt generateTargets) Commands() (cmds []*ffcli.Command) {
 			Exec:       execFactory(c)})
 	}
 	return cmds
-}
-
-func generateGoRunner(ctx context.Context, args []string) *generate.Report {
-	if *generateGoVerboseFlag && *generateGoQuietFlag {
-		return &generate.Report{Err: errors.Errorf("-q and -v flags are exclusive")}
-	}
-	if *generateGoVerboseFlag {
-		return gogen.Generate(ctx, args, gogen.VerboseOutput)
-	} else if *generateGoQuietFlag {
-		return gogen.Generate(ctx, args, gogen.QuietOutput)
-	} else {
-		return gogen.Generate(ctx, args, gogen.NormalOutput)
-	}
 }

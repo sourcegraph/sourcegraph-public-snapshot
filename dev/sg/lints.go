@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/docker"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate/gogen"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate/golang"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/lint"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -140,7 +140,7 @@ func lintDockerfiles() lint.Runner {
 
 func lintGoGenerate(ctx context.Context) *lint.Report {
 	start := time.Now()
-	report := gogen.Generate(ctx, nil, gogen.QuietOutput)
+	report := golang.Generate(ctx, nil, golang.QuietOutput)
 	if report.Err != nil {
 		return &lint.Report{
 			Header:   "Go generate check",
