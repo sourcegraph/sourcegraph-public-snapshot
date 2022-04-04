@@ -229,8 +229,8 @@ type index struct {
 	IsExclusion          bool
 	IsDeferrable         bool
 	IndexDefinition      string
-	ConstraintDefinition string
 	ConstraintType       string
+	ConstraintDefinition string
 }
 
 func scanIndexes(rows *sql.Rows, queryErr error) (_ []index, err error) {
@@ -256,8 +256,8 @@ func scanIndexes(rows *sql.Rows, queryErr error) (_ []index, err error) {
 			&dbutil.NullBool{B: &index.IsExclusion},
 			&dbutil.NullBool{B: &index.IsDeferrable},
 			&index.IndexDefinition,
-			&dbutil.NullString{S: &index.ConstraintDefinition},
 			&dbutil.NullString{S: &index.ConstraintType},
+			&dbutil.NullString{S: &index.ConstraintDefinition},
 		); err != nil {
 			return nil, err
 		}

@@ -1,11 +1,10 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import { Collapse } from 'reactstrap'
 
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Collapse, CollapseHeader, CollapsePanel, Icon } from '@sourcegraph/wildcard'
 
 import { FilterLink, FilterLinkProps } from './FilterLink'
 
@@ -90,42 +89,51 @@ export const SearchSidebarSection: React.FunctionComponent<{
             body = children
         }
 
-        const [collapsed, setCollapsed] = useState(startCollapsed)
+        const [isOpened, setOpened] = useState(!startCollapsed)
+        const handleOpenChange = useCallback(
+            isOpen => {
+                if (onToggle) {
+                    onToggle(sectionId, isOpen)
+                }
+
+                setOpened(isOpen)
+            },
+            [onToggle, sectionId]
+        )
+
         return visible ? (
             <div className={classNames(styles.sidebarSection, className)}>
-                <Button
-                    className={styles.sidebarSectionCollapseButton}
-                    onClick={() =>
-                        setCollapsed(collapsed => {
-                            if (onToggle) {
-                                onToggle(sectionId, !collapsed)
-                            }
-                            return !collapsed
-                        })
-                    }
-                    aria-label={collapsed ? 'Expand' : 'Collapse'}
-                    outline={true}
-                    variant="secondary"
-                >
-                    <h5 className="flex-grow-1">{header}</h5>
-                    <Icon className="mr-1" as={collapsed ? ChevronLeftIcon : ChevronDownIcon} />
-                </Button>
+                <Collapse isOpen={isOpened} onOpenChange={handleOpenChange}>
+                    <CollapseHeader
+                        as={Button}
+                        className={styles.sidebarSectionCollapseButton}
+                        aria-label={isOpened ? 'Collapse' : 'Expand'}
+                        outline={true}
+                        variant="secondary"
+                    >
+                        <h5 className="flex-grow-1">{header}</h5>
+                        <Icon className="mr-1" as={isOpened ? ChevronDownIcon : ChevronLeftIcon} />
+                    </CollapseHeader>
 
-                <Collapse isOpen={!collapsed}>
-                    <div className={classNames('pb-4', !searchVisible && 'border-top')}>
-                        {searchVisible && (
-                            <input
-                                type="search"
-                                placeholder="Find..."
-                                aria-label="Find filters"
-                                value={filter}
-                                onChange={event => setFilter(event.currentTarget.value)}
-                                data-testid="sidebar-section-search-box"
-                                className={classNames('form-control form-control-sm', styles.sidebarSectionSearchBox)}
-                            />
-                        )}
-                        {body}
-                    </div>
+                    <CollapsePanel>
+                        <div className={classNames('pb-4', !searchVisible && 'border-top')}>
+                            {searchVisible && (
+                                <input
+                                    type="search"
+                                    placeholder="Find..."
+                                    aria-label="Find filters"
+                                    value={filter}
+                                    onChange={event => setFilter(event.currentTarget.value)}
+                                    data-testid="sidebar-section-search-box"
+                                    className={classNames(
+                                        'form-control form-control-sm',
+                                        styles.sidebarSectionSearchBox
+                                    )}
+                                />
+                            )}
+                            {body}
+                        </div>
+                    </CollapsePanel>
                 </Collapse>
             </div>
         ) : null

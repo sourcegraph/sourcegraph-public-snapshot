@@ -6,14 +6,14 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
-import { Collapse, FormGroup, Input, Label } from 'reactstrap'
+import { FormGroup, Input, Label } from 'reactstrap'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { renderMarkdown } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { Skipped } from '@sourcegraph/shared/src/search/stream'
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Collapse, CollapseHeader, CollapsePanel, Icon } from '@sourcegraph/wildcard'
 
 import { StreamingProgressProps } from './StreamingProgress'
 
@@ -38,10 +38,6 @@ const sortBySeverity = (a: Skipped, b: Skipped): number => {
 }
 
 const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; startOpen: boolean }> = ({ skipped, startOpen }) => {
-    const [isOpen, setIsOpen] = useState(startOpen)
-
-    const toggleIsOpen = useCallback(() => setIsOpen(oldValue => !oldValue), [])
-
     // Reactstrap is preventing default behavior on all non-DropdownItem elements inside a Dropdown,
     // so we need to stop propagation to allow normal behavior (e.g. enter and space to activate buttons)
     // See Reactstrap bug: https://github.com/reactstrap/reactstrap/issues/2099
@@ -59,39 +55,45 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; startOpen: boo
                 skipped.severity !== 'info' && styles.streamingSkippedItemWarn
             )}
         >
-            <Button
-                className={classNames(styles.button, 'p-2 w-100 bg-transparent border-0')}
-                onClick={toggleIsOpen}
-                onKeyDown={onKeyDown}
-                disabled={!skipped.message}
-                outline={true}
-                variant={skipped.severity !== 'info' ? 'danger' : 'primary'}
-            >
-                <h4 className="d-flex align-items-center mb-0 w-100">
-                    <Icon
-                        className={classNames(styles.icon, 'flex-shrink-0')}
-                        as={skipped.severity === 'info' ? InformationOutlineIcon : AlertCircleIcon}
-                    />
+            <Collapse openByDefault={startOpen}>
+                {({ isOpen }) => (
+                    <>
+                        <CollapseHeader
+                            className={classNames(styles.button, 'p-2 w-100 bg-transparent border-0')}
+                            onKeyDown={onKeyDown}
+                            disabled={!skipped.message}
+                            as={Button}
+                            outline={true}
+                            variant={skipped.severity !== 'info' ? 'danger' : 'primary'}
+                        >
+                            <h4 className="d-flex align-items-center mb-0 w-100">
+                                <Icon
+                                    className={classNames(styles.icon, 'flex-shrink-0')}
+                                    as={skipped.severity === 'info' ? InformationOutlineIcon : AlertCircleIcon}
+                                />
 
-                    <span className="flex-grow-1 text-left">{skipped.title}</span>
+                                <span className="flex-grow-1 text-left">{skipped.title}</span>
 
-                    {skipped.message && (
-                        <Icon
-                            className={classNames('flex-shrink-0', styles.chevron)}
-                            as={isOpen ? ChevronDownIcon : ChevronLeftIcon}
-                        />
-                    )}
-                </h4>
-            </Button>
+                                {skipped.message && (
+                                    <Icon
+                                        className={classNames('flex-shrink-0', styles.chevron)}
+                                        as={isOpen ? ChevronDownIcon : ChevronLeftIcon}
+                                    />
+                                )}
+                            </h4>
+                        </CollapseHeader>
 
-            {skipped.message && (
-                <Collapse isOpen={isOpen}>
-                    <Markdown
-                        className={classNames(styles.message, styles.markdown, 'text-left py-1')}
-                        dangerousInnerHTML={renderMarkdown(skipped.message)}
-                    />
-                </Collapse>
-            )}
+                        {skipped.message && (
+                            <CollapsePanel>
+                                <Markdown
+                                    className={classNames(styles.message, styles.markdown, 'text-left py-1')}
+                                    dangerousInnerHTML={renderMarkdown(skipped.message)}
+                                />
+                            </CollapsePanel>
+                        )}
+                    </>
+                )}
+            </Collapse>
             <div className={classNames(styles.bottomBorderSpacer, 'mt-2')} />
         </div>
     )

@@ -432,7 +432,6 @@ func RunRepoSubsetTextSearch(
 		search.TextRequest,
 		query.Yes,
 		query.ContainsRefGlobs(q),
-		zoektutil.MissingRepoRevStatus(agg),
 	)
 	if err != nil {
 		return nil, streaming.Stats{}, err
@@ -441,8 +440,23 @@ func RunRepoSubsetTextSearch(
 	g, ctx := errgroup.WithContext(ctx)
 
 	if notSearcherOnly {
+		b, err := query.ToBasicQuery(q)
+		if err != nil {
+			return nil, streaming.Stats{}, err
+		}
+
+		types, _ := q.StringValues(query.FieldType)
+		var resultTypes result.Types
+		if len(types) == 0 {
+			resultTypes = result.TypeFile | result.TypePath | result.TypeRepo
+		} else {
+			for _, t := range types {
+				resultTypes = resultTypes.With(result.TypeFromString[t])
+			}
+		}
+
 		typ := search.TextRequest
-		zoektQuery, err := search.QueryToZoektQuery(patternInfo, nil, typ)
+		zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, nil, typ)
 		if err != nil {
 			return nil, streaming.Stats{}, err
 		}

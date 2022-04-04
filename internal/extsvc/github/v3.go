@@ -906,3 +906,17 @@ func (c *V3Client) CreateAppInstallationAccessToken(ctx context.Context, install
 	}
 	return &token, nil
 }
+
+// GetUserInstallations returns a list of GitHub App installations the user has access to
+//
+// API docs: https://docs.github.com/en/rest/reference/apps#list-app-installations-accessible-to-the-user-access-token
+func (c *V3Client) GetUserInstallations(ctx context.Context) ([]github.Installation, error) {
+	var resultStruct struct {
+		Installations []github.Installation `json:"installations,omitempty"`
+	}
+	if _, err := c.get(ctx, "user/installations", &resultStruct); err != nil {
+		return nil, err
+	}
+
+	return resultStruct.Installations, nil
+}

@@ -44,7 +44,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                   title="github.com"
                 >
                   <svg
-                    class="mdi-icon iconInline text-muted"
+                    class="mdi-icon iconInline text-muted flex-shrink-0"
                     fill="currentColor"
                     height="24"
                     viewBox="0 0 24 24"
@@ -56,7 +56,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                   </svg>
                 </span>
                 <div
-                  class="ml-1"
+                  class="ml-1 flex-shrink-past-contents text-truncate"
                 >
                   <a
                     class="anchorLink"
@@ -266,7 +266,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   title="github.com"
                 >
                   <svg
-                    class="mdi-icon iconInline text-muted"
+                    class="mdi-icon iconInline text-muted flex-shrink-0"
                     fill="currentColor"
                     height="24"
                     viewBox="0 0 24 24"
@@ -278,7 +278,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   </svg>
                 </span>
                 <div
-                  class="ml-1"
+                  class="ml-1 flex-shrink-past-contents text-truncate"
                 >
                   <a
                     class="anchorLink"
@@ -444,7 +444,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                   title="github.com"
                 >
                   <svg
-                    class="mdi-icon iconInline text-muted"
+                    class="mdi-icon iconInline text-muted flex-shrink-0"
                     fill="currentColor"
                     height="24"
                     viewBox="0 0 24 24"
@@ -456,7 +456,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                   </svg>
                 </span>
                 <div
-                  class="ml-1"
+                  class="ml-1 flex-shrink-past-contents text-truncate"
                 >
                   <a
                     class="anchorLink"

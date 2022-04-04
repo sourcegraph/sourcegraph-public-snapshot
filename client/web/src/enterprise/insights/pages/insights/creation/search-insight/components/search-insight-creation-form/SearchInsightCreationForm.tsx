@@ -1,7 +1,7 @@
 import React, { FormEventHandler, RefObject, useMemo } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Link, useObservable } from '@sourcegraph/wildcard'
+import { Button, Input, Link, useObservable } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'
 import {
@@ -9,11 +9,12 @@ import {
     CodeInsightTimeStepPicker,
 } from '../../../../../../components/creation-ui-kit'
 import { FormGroup } from '../../../../../../components/form/form-group/FormGroup'
-import { FormInput } from '../../../../../../components/form/form-input/FormInput'
+import { getDefaultInputProps } from '../../../../../../components/form/getDefaultInputProps'
 import { useFieldAPI } from '../../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
 import { RepositoriesField } from '../../../../../../components/form/repositories-field/RepositoriesField'
 import { LimitedAccessLabel } from '../../../../../../components/limited-access-label/LimitedAccessLabel'
+import { Insight } from '../../../../../../core/types'
 import { useUiFeatures } from '../../../../../../hooks/use-ui-features'
 import { CreateInsightFormFields, EditableDataSeries } from '../../types'
 import { FormSeries } from '../form-series/FormSeries'
@@ -38,6 +39,7 @@ interface CreationSearchInsightFormProps {
     series: useFieldAPI<CreateInsightFormFields['series']>
     step: useFieldAPI<CreateInsightFormFields['step']>
     stepValue: useFieldAPI<CreateInsightFormFields['stepValue']>
+    insight?: Insight
 
     onCancel: () => void
 
@@ -80,6 +82,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
         className,
         isFormClearActive,
         dashboardReferenceCount,
+        insight,
         onCancel,
         onSeriesLiveChange,
         onEditSeriesRequest,
@@ -90,13 +93,16 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
     } = props
 
     const isEditMode = mode === 'edit'
-    const { licensed, insight } = useUiFeatures()
+    const { licensed, insight: insightFeatures } = useUiFeatures()
 
     const creationPermission = useObservable(
-        useMemo(() => (isEditMode ? insight.getEditPermissions() : insight.getCreationPermissions()), [
-            insight,
-            isEditMode,
-        ])
+        useMemo(
+            () =>
+                isEditMode && insight
+                    ? insightFeatures.getEditPermissions(insight)
+                    : insightFeatures.getCreationPermissions(),
+            [insightFeatures, isEditMode, insight]
+        )
     )
 
     return (
@@ -107,20 +113,17 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                 title="Targeted repositories"
                 subtitle="Create a list of repositories to run your search over"
             >
-                <FormInput
+                <Input
                     as={RepositoriesField}
                     autoFocus={true}
                     required={true}
-                    title="Repositories"
-                    description="Separate repositories with commas"
+                    label="Repositories"
+                    message="Separate repositories with commas"
                     placeholder={
                         allReposMode.input.value ? 'All repositories' : 'Example: github.com/sourcegraph/sourcegraph'
                     }
-                    loading={repositories.meta.validState === 'CHECKING'}
-                    valid={repositories.meta.touched && repositories.meta.validState === 'VALID'}
-                    error={repositories.meta.touched && repositories.meta.error}
-                    {...repositories.input}
                     className="mb-0 d-flex flex-column"
+                    {...getDefaultInputProps(repositories)}
                 />
 
                 <label className="d-flex flex-wrap align-items-center mb-2 mt-3 font-weight-normal">
@@ -172,15 +175,13 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
             <hr className="my-4 w-100" />
 
             <FormGroup name="chart settings group" title="Chart settings">
-                <FormInput
-                    title="Title"
+                <Input
+                    label="Title"
                     required={true}
-                    description="Shown as the title for your insight"
+                    message="Shown as the title for your insight"
                     placeholder="Example: Migration to React function components"
-                    valid={title.meta.touched && title.meta.validState === 'VALID'}
-                    error={title.meta.touched && title.meta.error}
-                    {...title.input}
                     className="d-flex flex-column"
+                    {...getDefaultInputProps(title)}
                 />
 
                 <CodeInsightTimeStepPicker
@@ -200,8 +201,8 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
 
             <hr className="my-4 w-100" />
 
-            {!licensed && !isEditMode && (
-                <LimitedAccessLabel message="Unlock Code Insights to create unlimited insights" className="my-3" />
+            {!licensed && (
+                <LimitedAccessLabel message="Unlock Code Insights to create unlimited insights" className="mb-3" />
             )}
 
             <div className="d-flex flex-wrap align-items-center">

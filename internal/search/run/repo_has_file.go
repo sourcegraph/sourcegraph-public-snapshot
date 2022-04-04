@@ -4,6 +4,8 @@ import (
 	"context"
 	"math"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -12,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"golang.org/x/sync/errgroup"
 )
 
 var MockReposContainingPath func() ([]*result.FileMatch, error)
@@ -56,7 +57,6 @@ func (s *RepoSearch) reposContainingPath(ctx context.Context, repos []*search.Re
 		search.TextRequest,
 		newArgs.PatternInfo.Index,
 		query.ContainsRefGlobs(newArgs.Query),
-		func([]*search.RepositoryRevisions) {},
 	)
 	if err != nil {
 		return nil, err
@@ -74,7 +74,22 @@ func (s *RepoSearch) reposContainingPath(ctx context.Context, repos []*search.Re
 
 	if newArgs.Mode != search.SearcherOnly {
 		typ := search.TextRequest
-		zoektQuery, err := search.QueryToZoektQuery(newArgs.PatternInfo, &newArgs.Features, typ)
+
+		b, err := query.ToBasicQuery(q)
+		if err != nil {
+			return nil, err
+		}
+
+		types, _ := q.StringValues(query.FieldType)
+		var resultTypes result.Types
+		if len(types) == 0 {
+			resultTypes = result.TypeFile | result.TypePath | result.TypeRepo
+		} else {
+			for _, t := range types {
+				resultTypes = resultTypes.With(result.TypeFromString[t])
+			}
+		}
+		zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &newArgs.Features, typ)
 		if err != nil {
 			return nil, err
 		}

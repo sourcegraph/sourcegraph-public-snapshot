@@ -4,10 +4,9 @@ import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Input, Link } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
-import { FormInput } from '../../../../../../../components/form/form-input/FormInput'
 import { useCheckboxes } from '../../../../../../../components/form/hooks/useCheckboxes'
 import { useField } from '../../../../../../../components/form/hooks/useField'
 import { SubmissionErrors, useForm, FORM_ERROR } from '../../../../../../../components/form/hooks/useForm'
@@ -53,9 +52,9 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
     return (
         // eslint-disable-next-line react/forbid-elements
         <form ref={ref} onSubmit={handleSubmit}>
-            <FormInput
+            <Input
                 autoFocus={true}
-                description={
+                message={
                     <span className="">
                         Don't see an insight? Check the insight's visibility settings or{' '}
                         <Link to={`/insights/create?dashboardId=${dashboardID}`}>create a new insight</Link>

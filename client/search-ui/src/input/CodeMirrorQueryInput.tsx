@@ -10,16 +10,7 @@ import {
     startCompletion,
 } from '@codemirror/autocomplete'
 import { RangeSetBuilder } from '@codemirror/rangeset'
-import {
-    EditorSelection,
-    EditorState,
-    EditorStateConfig,
-    Extension,
-    Facet,
-    StateEffect,
-    StateField,
-    Prec,
-} from '@codemirror/state'
+import { EditorSelection, EditorState, Extension, Facet, StateEffect, StateField, Prec } from '@codemirror/state'
 import { hoverTooltip, TooltipView } from '@codemirror/tooltip'
 import { EditorView, ViewUpdate, keymap, Decoration, placeholder as placeholderExtension } from '@codemirror/view'
 import { Shortcut } from '@slimsag/react-shortcuts'
@@ -30,6 +21,7 @@ import { delay, map, switchMap } from 'rxjs/operators'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { QueryChangeSource, SearchPatternType, SearchPatternTypeProps } from '@sourcegraph/search'
+import { useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { getCompletionItems } from '@sourcegraph/shared/src/search/query/completion'
 import { decorate, DecoratedToken } from '@sourcegraph/shared/src/search/query/decoratedToken'
@@ -275,10 +267,11 @@ const CodeMirrorQueryInput: React.FunctionComponent<CodeMirrorQueryInputProps> =
                 () => [
                     EditorView.darkTheme.of(isLightTheme === false),
                     queryParsingOptions,
-                    parsedQueryFieldExtension,
+                    computeParsedQuery,
+                    computeDecoratedTokens,
                     tokenHighlight,
                     queryDiagnostic,
-                    tokenInfo,
+                    tokenInfo(),
                     highlightFocusedFilter,
                     ...extensions,
                 ],
@@ -303,58 +296,6 @@ const CodeMirrorQueryInput: React.FunctionComponent<CodeMirrorQueryInputProps> =
         return <div ref={setContainer} className={classNames(styles.root, className)} id="monaco-query-input" />
     }
 )
-
-/**
- * Hook for rendering and updating a CodeMirror instance.
- */
-function useCodeMirror(
-    container: HTMLDivElement | null,
-    value: string,
-    extensions: EditorStateConfig['extensions'] = []
-): EditorView | undefined {
-    const [view, setView] = useState<EditorView>()
-
-    useEffect(() => {
-        if (container) {
-            const view = new EditorView({
-                state: EditorState.create({ doc: value ?? '', extensions }),
-                parent: container,
-            })
-            setView(view)
-            return () => {
-                setView(undefined)
-                view.destroy()
-            }
-        }
-        return
-        // Extensions and value are updated via transactions below
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [container])
-
-    // Update editor value if necessary
-    useEffect(() => {
-        const currentValue = view?.state.doc.toString() ?? ''
-        if (view && currentValue !== value) {
-            view.dispatch({
-                changes: { from: 0, to: currentValue.length, insert: value ?? '' },
-            })
-        }
-        // View is not provided because this should only be triggered after the view
-        // was created.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [value])
-
-    useEffect(() => {
-        if (view) {
-            view.dispatch({ effects: StateEffect.reconfigure.of(extensions) })
-        }
-        // View is not provided because this should only be triggered after the view
-        // was created.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [extensions])
-
-    return view
-}
 
 // The remainder of the file defines all the extensions that provide the query
 // editor behavior. Here is also a brief overview over CodeMirror's architecture
@@ -494,13 +435,13 @@ interface ParsedQuery {
 // current input (obviously) and the selected pattern type. It gets recomputed
 // whenever one of those values changes.
 // The parsed query is used for syntax highlighting and hover information.
-const parsedQueryField = Facet.define<ParsedQuery, ParsedQuery>({
+const parsedQuery = Facet.define<ParsedQuery, ParsedQuery>({
     combine(input) {
         // There will always only be one extension which parses this query
         return input[0] ?? { patternType: SearchPatternType.literal, tokens: [] }
     },
 })
-const parsedQueryFieldExtension = parsedQueryField.compute(['doc', queryParsingOptions], state => {
+const computeParsedQuery = parsedQuery.compute(['doc', queryParsingOptions], state => {
     const { patternType, interpretComments } = state.field(queryParsingOptions)
     // Looks like Text overwrites toString somehow
     // eslint-disable-next-line @typescript-eslint/no-base-to-string
@@ -510,22 +451,24 @@ const parsedQueryFieldExtension = parsedQueryField.compute(['doc', queryParsingO
         tokens: result.type === 'success' ? result.term : [],
     }
 })
+const decoratedTokens = Facet.define<DecoratedToken[], DecoratedToken[]>({
+    combine(input) {
+        return input[0] ?? []
+    },
+})
+const computeDecoratedTokens = decoratedTokens.compute([parsedQuery], state =>
+    state.facet(parsedQuery).tokens.flatMap(decorate)
+)
 
 // This provides syntax highlighting. This is a custom solution so that we an
 // use our existing query parser (instead of using codemirrors language
 // support). That's not to say that we couldn't properly intergate with
 // codemirror's language system with more effort.
-const tokenHighlight = EditorView.decorations.compute([parsedQueryField], state => {
-    const query = state.facet(parsedQueryField)
+const tokenHighlight = EditorView.decorations.compute([decoratedTokens], state => {
+    const tokens = state.facet(decoratedTokens)
     const builder = new RangeSetBuilder<Decoration>()
-    for (const token of query.tokens) {
-        for (const decoratedToken of decorate(token)) {
-            builder.add(
-                decoratedToken.range.start,
-                decoratedToken.range.end + (decoratedToken.type === 'field' ? 1 : 0),
-                decoratedToDecoration(decoratedToken)
-            )
-        }
+    for (const token of tokens) {
+        builder.add(token.range.start, token.range.end + (token.type === 'field' ? 1 : 0), decoratedToDecoration(token))
     }
     return builder.finish()
 })
@@ -533,14 +476,14 @@ const tokenHighlight = EditorView.decorations.compute([parsedQueryField], state 
 // Determines whether the cursor is over a filter and if yes, decorates that
 // filter.
 const highlightFocusedFilter = EditorView.decorations.compute(
-    ['selection', EditorView.editable, parsedQueryField],
+    ['selection', EditorView.editable, parsedQuery],
     state => {
         // No need to highlight anything if the input is "disabled"
         if (!state.facet(EditorView.editable)) {
             return Decoration.none
         }
 
-        const query = state.facet(parsedQueryField)
+        const query = state.facet(parsedQuery)
         const position = state.selection.main.head
         const focusedFilter = query.tokens.find(
             (token): token is Filter =>
@@ -552,67 +495,135 @@ const highlightFocusedFilter = EditorView.decorations.compute(
     }
 )
 
-// Tooltip information. This doesn't highlight the current token (yet).
-const tokenInfo = hoverTooltip(
-    (view, position) => {
-        const tokensAtCursor = view.state
-            .facet(parsedQueryField)
-            .tokens?.flatMap(decorate)
-            .filter(token => isTokenInRange(position, token))
-        if (tokensAtCursor?.length === 0) {
+// Tooltip information.
+function tokenInfo(): Extension[] {
+    const setHighlighedToken = StateEffect.define<DecoratedToken | null>()
+    const highlightedToken = StateField.define<DecoratedToken | null>({
+        create() {
             return null
-        }
-        const values: string[] = []
-        let range: { start: number; end: number } | undefined
+        },
+        update(value, transaction) {
+            const effect = transaction.effects.find((effect): effect is StateEffect<DecoratedToken | null> =>
+                effect.is(setHighlighedToken)
+            )
+            return effect ? effect.value : value
+        },
+        provide(field) {
+            return EditorView.decorations.from(field, token =>
+                token
+                    ? Decoration.set([
+                          focusedFilterDeco.range(
+                              token.range.start,
+                              token.range.end + (token.type === 'field' ? 1 : 0)
+                          ),
+                      ])
+                    : Decoration.none
+            )
+        },
+    })
 
-        // Copied and adapated from getHoverResult (hover.ts)
-        tokensAtCursor.map(token => {
-            switch (token.type) {
-                case 'field': {
-                    const resolvedFilter = resolveFilter(token.value)
-                    if (resolvedFilter) {
-                        values.push(
-                            'negated' in resolvedFilter
-                                ? resolvedFilter.definition.description(resolvedFilter.negated)
-                                : resolvedFilter.definition.description
-                        )
-                        // Add 3 to end of range to include the ':'.
-                        // (there seems to be a bug with computing the correct
-                        // range end)
-                        range = { start: token.range.start, end: token.range.end + 3 }
+    return [
+        highlightedToken,
+        // Highlights the hovered token
+        EditorView.domEventHandlers({
+            mousemove(event, view) {
+                const position = view.posAtCoords(event)
+                let token: DecoratedToken | null = null
+
+                if (position) {
+                    const tokenAtCursor = view.state
+                        .facet(decoratedTokens)
+                        .find(token => isTokenInRange(position, token))
+
+                    // These are the tokens we show hover information for
+                    switch (tokenAtCursor?.type) {
+                        case 'field':
+                        case 'pattern':
+                        case 'metaRevision':
+                        case 'metaRepoRevisionSeparator':
+                        case 'metaSelector':
+                        case 'metaRegexp':
+                        case 'metaStructural':
+                        case 'metaPredicate':
+                            token = tokenAtCursor ?? null
+                            break
                     }
-                    break
                 }
-                case 'pattern':
-                case 'metaRevision':
-                case 'metaRepoRevisionSeparator':
-                case 'metaSelector':
-                    values.push(toHover(token))
-                    range = token.range
-                    break
-                case 'metaRegexp':
-                case 'metaStructural':
-                case 'metaPredicate':
-                    values.push(toHover(token))
-                    range = token.groupRange ? token.groupRange : token.range
-                    break
-            }
-        })
-        if (range) {
-            return {
-                pos: range.start,
-                end: range.end,
-                create(): TooltipView {
-                    const dom = document.createElement('div')
-                    dom.innerHTML = renderMarkdown(values.join(''))
-                    return { dom }
-                },
-            }
-        }
-        return null
-    },
-    { hoverTime: 100 }
-)
+
+                if (token !== view.state.field(highlightedToken)) {
+                    view.dispatch({ effects: [setHighlighedToken.of(token)] })
+                }
+            },
+            mouseleave(_event, view) {
+                if (view.state.field(highlightedToken)) {
+                    view.dispatch({ effects: [setHighlighedToken.of(null)] })
+                }
+            },
+        }),
+        // Shows information about the hovered token
+        hoverTooltip(
+            (view, position) => {
+                const tokensAtCursor = view.state
+                    .facet(decoratedTokens)
+                    .filter(token => isTokenInRange(position, token))
+
+                if (tokensAtCursor?.length === 0) {
+                    return null
+                }
+
+                const values: string[] = []
+                let range: { start: number; end: number } | undefined
+
+                // Copied and adapated from getHoverResult (hover.ts)
+                tokensAtCursor.map(token => {
+                    switch (token.type) {
+                        case 'field': {
+                            const resolvedFilter = resolveFilter(token.value)
+                            if (resolvedFilter) {
+                                values.push(
+                                    'negated' in resolvedFilter
+                                        ? resolvedFilter.definition.description(resolvedFilter.negated)
+                                        : resolvedFilter.definition.description
+                                )
+                                // Add 3 to end of range to include the ':'.
+                                // (there seems to be a bug with computing the correct
+                                // range end)
+                                range = { start: token.range.start, end: token.range.end + 3 }
+                            }
+                            break
+                        }
+                        case 'pattern':
+                        case 'metaRevision':
+                        case 'metaRepoRevisionSeparator':
+                        case 'metaSelector':
+                            values.push(toHover(token))
+                            range = token.range
+                            break
+                        case 'metaRegexp':
+                        case 'metaStructural':
+                        case 'metaPredicate':
+                            values.push(toHover(token))
+                            range = token.groupRange ? token.groupRange : token.range
+                            break
+                    }
+                })
+                if (range) {
+                    return {
+                        pos: range.start,
+                        end: range.end,
+                        create(): TooltipView {
+                            const dom = document.createElement('div')
+                            dom.innerHTML = renderMarkdown(values.join(''))
+                            return { dom }
+                        },
+                    }
+                }
+                return null
+            },
+            { hoverTime: 100 }
+        ),
+    ]
+}
 
 // Hooks query diagnostics into the editor.
 // The facet stores the diagnostics data which is used by the text decoration
@@ -628,8 +639,8 @@ const diagnosticDecos: { [key in MarkerSeverity]: Decoration } = {
 }
 const queryDiagnostic: Extension[] = [
     // Compute diagnostics when query changes
-    diagnostics.compute([parsedQueryField], state => {
-        const query = state.facet(parsedQueryField)
+    diagnostics.compute([parsedQuery], state => {
+        const query = state.facet(parsedQuery)
         return query.tokens.length > 0 ? getDiagnostics(query.tokens, query.patternType) : []
     }),
     // Generate diagnostic markers
@@ -687,7 +698,7 @@ const autocomplete = (
         }
         // Show the completion list again if a filter was completed
         if (update.transactions.some(transaction => transaction.isUserEvent('input.complete'))) {
-            const query = update.state.facet(parsedQueryField)
+            const query = update.state.facet(parsedQuery)
             const token = query.tokens.find(token => isTokenInRange(update.state.selection.main.anchor - 1, token))
             if (token) {
                 startCompletion(update.view)
@@ -698,7 +709,7 @@ const autocomplete = (
         defaultKeymap: false,
         override: [
             context => {
-                const query = context.state.facet(parsedQueryField)
+                const query = context.state.facet(parsedQuery)
                 const token = query.tokens.find(token => isTokenInRange(context.pos - 1, token))
                 if (!token) {
                     return null

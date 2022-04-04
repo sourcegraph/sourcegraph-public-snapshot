@@ -1,6 +1,9 @@
 package types
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // CodeIntelAggregatedEvent represents the total events and unique users within
 // the current week for a single event. The events are split again by language id
@@ -91,4 +94,50 @@ type OldCodeIntelEventCategoryStatistics struct {
 type OldCodeIntelEventStatistics struct {
 	UsersCount  int32
 	EventsCount *int32
+}
+
+type RepoCommitPath struct {
+	Repo   string `json:"repo"`
+	Commit string `json:"commit"`
+	Path   string `json:"path"`
+}
+
+type LocalCodeIntelPayload struct {
+	Symbols []Symbol `json:"symbols"`
+}
+
+type RepoCommitPathRange struct {
+	RepoCommitPath
+	Range
+}
+
+type RepoCommitPathPoint struct {
+	RepoCommitPath
+	Point
+}
+
+type Point struct {
+	Row    int `json:"row"`
+	Column int `json:"column"`
+}
+
+type Symbol struct {
+	Name  string  `json:"name"`
+	Hover string  `json:"hover,omitempty"`
+	Def   Range   `json:"def,omitempty"`
+	Refs  []Range `json:"refs,omitempty"`
+}
+
+func (s Symbol) String() string {
+	return fmt.Sprintf("Symbol{Hover: %q, Def: %s, Refs: %+v", s.Hover, s.Def, s.Refs)
+}
+
+type Range struct {
+	Row    int `json:"row"`
+	Column int `json:"column"`
+	Length int `json:"length"`
+}
+
+func (r Range) String() string {
+	return fmt.Sprintf("%d:%d:%d", r.Row, r.Column, r.Length)
 }

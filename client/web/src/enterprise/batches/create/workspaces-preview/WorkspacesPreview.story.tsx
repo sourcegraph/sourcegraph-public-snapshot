@@ -5,9 +5,9 @@ import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { BatchSpecWorkspaceResolutionState } from '@sourcegraph/shared/src/graphql-operations'
-import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
 import { UseConnectionResult } from '../../../../components/FilteredConnection/hooks/useConnection'
+import { WebStory } from '../../../../components/WebStory'
 import { PreviewBatchSpecWorkspaceFields } from '../../../../graphql-operations'
 
 import { ImportingChangesetFields } from './useImportingChangesets'

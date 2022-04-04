@@ -19,7 +19,7 @@ import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { toMonacoRange } from '@sourcegraph/shared/src/search/query/monaco'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { IEditor } from './LazyMonacoQueryInput'
@@ -73,6 +73,7 @@ export interface MonacoQueryInputProps
     onCompletionItemSelected?: () => void
     onSuggestionsInitialized?: (actions: { trigger: () => void }) => void
     onEditorCreated?: (editor: IEditor) => void
+    fetchStreamSuggestions?: typeof defaultFetchStreamSuggestions // Alternate implementation is used in the VS Code extension.
     autoFocus?: boolean
     keyboardShortcutForFocus?: KeyboardShortcut
     onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
@@ -160,6 +161,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     onSubmit = noop,
     onSuggestionsInitialized,
     onCompletionItemSelected,
+    fetchStreamSuggestions = defaultFetchStreamSuggestions,
     autoFocus,
     selectedSearchContextSpec,
     patternType,
@@ -203,7 +205,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
 
     const fetchSuggestionsWithContext = useCallback(
         (query: string) => fetchStreamSuggestions(appendContextFilter(query, selectedSearchContextSpec)),
-        [selectedSearchContextSpec]
+        [selectedSearchContextSpec, fetchStreamSuggestions]
     )
 
     const sourcegraphSearchLanguageId = useQueryIntelligence(fetchSuggestionsWithContext, {

@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -17,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -47,10 +48,6 @@ type CommitsOptions struct {
 	// When true return the names of the files changed in the commit
 	NameOnly bool
 }
-
-// logEntryPattern is the regexp pattern that matches entries in the output of the `git shortlog
-// -sne` command.
-var logEntryPattern = lazyregexp.New(`^\s*([0-9]+)\s+(.*)$`)
 
 var recordGetCommitQueries = os.Getenv("RECORD_GET_COMMIT_QUERIES") == "1"
 
@@ -854,6 +851,26 @@ type CommitGraphOptions struct {
 	AllRefs bool
 	Limit   int
 	Since   *time.Time
+} // please update LogFields if you add a field here
+
+func stableTimeRepr(t time.Time) string {
+	s, _ := t.MarshalText()
+	return string(s)
+}
+
+var unixEpoch = stableTimeRepr(time.Unix(0, 0))
+
+func (opts *CommitGraphOptions) LogFields() []log.Field {
+	since := unixEpoch
+	if opts.Since != nil {
+		since = stableTimeRepr(*opts.Since)
+	}
+	return []log.Field{
+		log.String("commit", opts.Commit),
+		log.Int("limit", opts.Limit),
+		log.Bool("allrefs", opts.AllRefs),
+		log.String("since", since),
+	}
 }
 
 // CommitGraph returns the commit graph for the given repository as a mapping

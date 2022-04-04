@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-# Description: Code Insights TimescaleDB.
+# Description: Code Insights Postgres DB.
 
 set -euf -o pipefail
 pushd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
 
 if [ -n "${DISABLE_CODE_INSIGHTS:-}" ]; then
-  echo Not starting Code Insights TimescaleDB since DISABLE_CODE_INSIGHTS is set.
+  echo Not starting Code Insights DB since DISABLE_CODE_INSIGHTS is set.
   exit 0
 fi
 
@@ -28,9 +28,6 @@ docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
 LOGS="${HOME}/.sourcegraph-dev/logs/codeinsights-db"
 mkdir -p "${LOGS}"
 
-# Now for the actual logging. TimescaleDB's output gets sent to stdout and stderr.
-# We want to capture that output, but because it's fairly noisy, don't want to
-# display it in the normal case.
 LOG_FILE="${LOGS}/codeinsights-db.log"
 
 # Quickly build image
@@ -59,7 +56,9 @@ docker run --rm \
   --name=${CONTAINER} \
   --cpus=1 \
   --memory=1g \
+  -e POSTGRES_DB=postgres \
   -e POSTGRES_PASSWORD=password \
+  -e POSTGRES_USER=postgres \
   -p 0.0.0.0:${PORT}:5432 \
   -v "${DISK}":/var/lib/postgresql/data \
   ${IMAGE} >"${LOG_FILE}" 2>&1 || finish

@@ -7,11 +7,11 @@ import { RouteComponentProps } from 'react-router'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { MarketingBlock } from '@sourcegraph/web/src/components/MarketingBlock'
-import { Page } from '@sourcegraph/web/src/components/Page'
-import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { Badge, Button, Checkbox, Input, Link, LoadingSpinner, PageHeader, RadioButton } from '@sourcegraph/wildcard'
 
+import { MarketingBlock } from '../../components/MarketingBlock'
+import { Page } from '../../components/Page'
+import { PageTitle } from '../../components/PageTitle'
 import { SendJoinBetaStatsResult, SendJoinBetaStatsVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
@@ -168,20 +168,25 @@ export const JoinOpenBetaPage: React.FunctionComponent<Props> = ({ authenticated
             <PageTitle title="Join Sourcegraph Open Beta" />
             <PageHeader
                 path={[{ text: 'Join the open beta for Sourcegraph Cloud for small teams' }]}
-                className="mb-3"
+                className="mb-3 mt-4"
                 description={
                     <span className="text-muted">
                         Get access to Sourcegraph Cloud for small teams and start searching across your code today.
                     </span>
                 }
             />
-            <MarketingBlock>
+            <MarketingBlock contentClassName={styles.marketingContent}>
                 <h3 className="pr-3">
-                    <Badge variant="info">BETA</Badge>
+                    <Badge variant="info" small={true}>
+                        BETA
+                    </Badge>
                 </h3>
                 <div>
                     Sourcegraph Cloud for small teams is in open beta. During this time, it’s free to use for 30 days.{' '}
-                    <Link to="https://sourcegraph.com/betalimits">Learn more about beta limitations</Link>.
+                    <Link to="https://docs.sourcegraph.com/cloud/organizations/beta-operations">
+                        Learn more about beta limitations
+                    </Link>
+                    .
                 </div>
             </MarketingBlock>
             <h3 className="mt-4 mb-4">To get started, please tell us about your organization:</h3>
@@ -192,7 +197,7 @@ export const JoinOpenBetaPage: React.FunctionComponent<Props> = ({ authenticated
 
                     <div className="mt-2">
                         {CompanyDevsSize.map(item => (
-                            <div className="mb-2" key={item.replace(/\s/g, '_')}>
+                            <div className={classNames('mb-2', styles.inputContainer)} key={item.replace(/\s/g, '_')}>
                                 <RadioButton
                                     id={`cEmp_${item.replace(/\s/g, '_')}`}
                                     name="company_employees_band"
@@ -221,7 +226,7 @@ export const JoinOpenBetaPage: React.FunctionComponent<Props> = ({ authenticated
                     </span>
                     <div>
                         {CompanyRepos.map(item => (
-                            <div className="mb-2" key={item.replace(/\s/g, '_')}>
+                            <div className={classNames('mb-2', styles.inputContainer)} key={item.replace(/\s/g, '_')}>
                                 <Checkbox
                                     id={`cRepo_${item.replace(/\s/g, '_')}`}
                                     name="company_code_repo"
@@ -266,7 +271,7 @@ export const JoinOpenBetaPage: React.FunctionComponent<Props> = ({ authenticated
                     </span>
                     <div>
                         {SgUsagePlan.map(item => (
-                            <div className="mb-2" key={item.replace(/\s/g, '_')}>
+                            <div className={classNames('mb-2', styles.inputContainer)} key={item.replace(/\s/g, '_')}>
                                 <Checkbox
                                     id={`sgPlan_${item.replace(/\s/g, '_')}`}
                                     name="sg_usage_plan"
@@ -295,10 +300,10 @@ export const JoinOpenBetaPage: React.FunctionComponent<Props> = ({ authenticated
                     </div>
                 )}
                 <div className={classNames('form-group d-flex justify-content-end', styles.buttonsRow)}>
-                    <Button disabled={loading} variant="secondary" size="sm" onClick={onCancelClick}>
+                    <Button disabled={loading} variant="secondary" onClick={onCancelClick}>
                         Cancel
                     </Button>
-                    <Button type="submit" disabled={loading || !isValidForm} variant="primary" size="sm">
+                    <Button type="submit" disabled={loading || !isValidForm} variant="primary">
                         {loading && <LoadingSpinner />}
                         Continue
                     </Button>

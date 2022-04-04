@@ -3,14 +3,14 @@ import React, { ReactElement, useMemo } from 'react'
 import { AxisScale } from '@visx/axis/lib/types'
 import { PatternLines } from '@visx/pattern'
 
-import { LineChartSeries } from '../types'
+import { Series } from '../../../types'
 import { isValidNumber } from '../utils'
 
 const PATTERN_ID = 'xy-chart-pattern'
 
 export interface NonActiveBackgroundProps<Datum> {
     data: Datum[]
-    series: LineChartSeries<Datum>[]
+    series: Series<Datum>[]
     xAxisKey: keyof Datum
     xScale: AxisScale
     width: number
@@ -41,7 +41,7 @@ export function NonActiveBackground<Datum>(props: NonActiveBackgroundProps<Datum
     const { data, series, xAxisKey, xScale, top, left, width, height } = props
 
     const backgroundWidth = useMemo(() => {
-        // For non active background's width we need to find first non nullable element
+        // For non-active background's width we need to find first non nullable element
         const firstNonNullablePoints: (Datum | undefined)[] = series.map(line =>
             data.find(datum => isValidNumber(datum[line.dataKey]))
         )

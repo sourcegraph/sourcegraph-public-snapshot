@@ -6,8 +6,8 @@ import FileUploadIcon from 'mdi-react/FileUploadIcon'
 import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
 
 import { LSIFUploadState } from '@sourcegraph/shared/src/graphql-operations'
-import { Timeline, TimelineStage } from '@sourcegraph/web/src/components/Timeline'
 
+import { Timeline, TimelineStage } from '../../../../components/Timeline'
 import { LsifUploadFields } from '../../../../graphql-operations'
 
 export interface CodeIntelUploadTimelineProps {
