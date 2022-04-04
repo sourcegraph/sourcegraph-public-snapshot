@@ -10,10 +10,7 @@ import { AddExternalServiceOptions } from '../../../components/externalServices/
 import { PageTitle } from '../../../components/PageTitle'
 import { SelfHostedCta } from '../../../components/SelfHostedCta'
 import { useFlagsOverrides } from '../../../featureFlags/featureFlags'
-import {
-    ExternalServiceKind,
-    ListExternalServiceFields,
-} from '../../../graphql-operations'
+import { ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 import { AuthProvider, SourcegraphContext } from '../../../jscontext'
 import { useCodeHostScopeContext } from '../../../site/CodeHostScopeAlerts/CodeHostScopeProvider'
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -126,9 +123,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
     // If we have a GitHub or GitLab services, check whether we need to prompt the user to
     // update their scope
-    const isGitHubTokenUpdateRequired = scopes.github
-        ? githubRepoScopeRequired(owner.tags, scopes.github)
-        : false
+    const isGitHubTokenUpdateRequired = scopes.github ? githubRepoScopeRequired(owner.tags, scopes.github) : false
     const isGitLabTokenUpdateRequired = scopes.gitlab ? gitlabAPIScopeRequired(owner.tags, scopes.gitlab) : false
 
     const isTokenUpdateRequired: Partial<Record<ExternalServiceKind, boolean | undefined>> = {
@@ -540,8 +535,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                         kind={kind}
                                         name={defaultDisplayName}
                                         isTokenUpdateRequired={
-                                            isTokenUpdateRequired[kind] &&
-                                            !(kind === ExternalServiceKind.GITHUB)
+                                            isTokenUpdateRequired[kind] && !(kind === ExternalServiceKind.GITHUB)
                                         }
                                         navigateToAuthProvider={navigateToAuthProvider}
                                         icon={icon}
