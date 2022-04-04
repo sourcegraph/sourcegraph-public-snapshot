@@ -7,10 +7,10 @@ import { animated, useSpring } from 'react-spring'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { UseConnectionResult } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
 import { Button, useAccordion, useStopwatch, Icon } from '@sourcegraph/wildcard'
 
 import { Connection } from '../../../../components/FilteredConnection'
+import { UseConnectionResult } from '../../../../components/FilteredConnection/hooks/useConnection'
 import { BatchSpecWorkspaceResolutionState, PreviewBatchSpecWorkspaceFields } from '../../../../graphql-operations'
 import { Header as WorkspacesListHeader } from '../../workspaces-list'
 import { ResolutionState } from '../useWorkspacesPreview'

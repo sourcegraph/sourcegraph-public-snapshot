@@ -86,7 +86,7 @@ var (
 	jobTimer = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name: "src_gitserver_janitor_job_duration_seconds",
 		Help: "Duration of the individual jobs within the gitserver janitor background job",
-	}, []string{"job_name"})
+	}, []string{"success", "job_name"})
 	maintenanceStatus = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_gitserver_maintenance_status",
 		Help: "whether the maintenance run was a success (true/false) and the reason why a cleanup was needed",
@@ -232,23 +232,21 @@ func (s *Server) cleanupRepos() {
 		return true, nil
 	}
 
-	removeStaleLocks := func(dir GitDir) (done bool, err error) {
-		gitDir := string(dir)
-
+	removeStaleLocks := func(gitDir GitDir) (done bool, err error) {
 		// if removing a lock fails, we still want to try the other locks.
 		var multi error
 
 		// config.lock should be held for a very short amount of time.
-		if err := removeFileOlderThan(filepath.Join(gitDir, "config.lock"), time.Minute); err != nil {
+		if err := removeFileOlderThan(gitDir.Path("config.lock"), time.Minute); err != nil {
 			multi = errors.Append(multi, err)
 		}
 		// packed-refs can be held for quite a while, so we are conservative
 		// with the age.
-		if err := removeFileOlderThan(filepath.Join(gitDir, "packed-refs.lock"), time.Hour); err != nil {
+		if err := removeFileOlderThan(gitDir.Path("packed-refs.lock"), time.Hour); err != nil {
 			multi = errors.Append(multi, err)
 		}
 		// we use the same conservative age for locks inside of refs
-		if err := bestEffortWalk(filepath.Join(gitDir, "refs"), func(path string, fi fs.FileInfo) error {
+		if err := bestEffortWalk(gitDir.Path("refs"), func(path string, fi fs.FileInfo) error {
 			if fi.IsDir() {
 				return nil
 			}
@@ -259,6 +257,14 @@ func (s *Server) cleanupRepos() {
 
 			return removeFileOlderThan(path, time.Hour)
 		}); err != nil {
+			multi = errors.Append(multi, err)
+		}
+		// We have seen that, occasionally, commit-graph.locks prevent a git repack from
+		// succeeding. Benchmarks on our dogfood cluster have shown that a commit-graph
+		// call for a 5GB bare repository takes less than 1 min. The lock is only held
+		// during a short period during this time. A 1-hour grace period is very
+		// conservative.
+		if err := removeFileOlderThan(gitDir.Path("objects", "info", "commit-graph.lock"), time.Hour); err != nil {
 			multi = errors.Append(multi, err)
 		}
 
@@ -274,7 +280,7 @@ func (s *Server) cleanupRepos() {
 	}
 
 	performGitPrune := func(dir GitDir) (done bool, err error) {
-		return false, pruneIfNeeded(dir)
+		return false, pruneIfNeeded(dir, looseObjectsLimit)
 	}
 
 	type cleanupFn struct {
@@ -347,7 +353,7 @@ func (s *Server) cleanupRepos() {
 			if err != nil {
 				log15.Error("error running cleanup command", "name", cfn.Name, "repo", gitDir, "error", err)
 			}
-			jobTimer.WithLabelValues(cfn.Name).Observe(time.Since(start).Seconds())
+			jobTimer.WithLabelValues(strconv.FormatBool(err == nil), cfn.Name).Observe(time.Since(start).Seconds())
 			if done {
 				break
 			}
@@ -826,8 +832,8 @@ func sgMaintenance(dir GitDir) (err error) {
 
 // We run git-prune only if there are enough loose objects. This approach is
 // adapted from https://gitlab.com/gitlab-org/gitaly.
-func pruneIfNeeded(dir GitDir) (err error) {
-	needed, err := tooManyLooseObjects(dir, looseObjectsLimit)
+func pruneIfNeeded(dir GitDir, limit int) (err error) {
+	needed, err := tooManyLooseObjects(dir, limit)
 	defer func() {
 		pruneStatus.WithLabelValues(strconv.FormatBool(err == nil), strconv.FormatBool(!needed)).Inc()
 	}()
@@ -843,7 +849,7 @@ func pruneIfNeeded(dir GitDir) (err error) {
 	// unreachable, loose objects count towards the threshold that triggers a
 	// repack. In the worst case, IE all loose objects are unreachable, we would
 	// continuously trigger repacks until the loose objects expire.
-	cmd := exec.Command("git", "-c", "prune", "--expire", "now")
+	cmd := exec.Command("git", "prune", "--expire", "now")
 	dir.Set(cmd)
 	err = cmd.Run()
 	if err != nil {
