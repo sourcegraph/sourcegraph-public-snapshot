@@ -1,11 +1,12 @@
-import { ApolloError } from '@apollo/client'
-import classNames from 'classnames'
 import React, { useEffect, useState } from 'react'
 
+import { ApolloError } from '@apollo/client'
+import classNames from 'classnames'
+
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
 import { Link, Alert } from '@sourcegraph/wildcard'
 
+import { PageRoutes } from '../../../routes.constants'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { LogoAscii } from '../../LogoAscii'
 import { getPostSignUpEvent } from '../../PostSignUpPage'

@@ -174,6 +174,7 @@ type InsightViewResolver interface {
 	Presentation(ctx context.Context) (InsightPresentation, error)
 	DataSeriesDefinitions(ctx context.Context) ([]InsightDataSeriesDefinition, error)
 	DashboardReferenceCount(ctx context.Context) (int32, error)
+	IsFrozen(ctx context.Context) (bool, error)
 }
 
 type InsightDataSeriesDefinition interface {
@@ -285,9 +286,10 @@ type CreateLineChartSearchInsightArgs struct {
 }
 
 type CreateLineChartSearchInsightInput struct {
-	DataSeries []LineChartSearchInsightDataSeriesInput
-	Options    LineChartOptionsInput
-	Dashboards *[]graphql.ID
+	DataSeries   []LineChartSearchInsightDataSeriesInput
+	Options      LineChartOptionsInput
+	Dashboards   *[]graphql.ID
+	ViewControls *InsightViewControlsInput
 }
 
 type UpdateLineChartSearchInsightArgs struct {

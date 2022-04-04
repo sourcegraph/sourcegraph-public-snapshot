@@ -60,21 +60,19 @@ curl --proto '=https' --tlsv1.2 -sSLf https://install.sg.dev | sh
 
 That will download the latest release of `sg` from [here](https://github.com/sourcegraph/sg/releases), put it in a temporary location and run `sg install` to install it to a permanent location in your `$PATH`.
 
-### Using install script
+### Manually building the binary
 
 > NOTE: **This method requires that Go has already been installed according to the [development quickstart guide](../../setup/quickstart.md).**
 
-Run the following in the root of `sourcegraph/sourcegraph`:
+If you want full control over where the `sg` binary ends up, use this option.
+
+In the root of `sourcegraph/sourcegraph`, run:
 
 ```sh
-./dev/sg/install.sh
+go build -o ~/my/path/sg ./dev/sg
 ```
 
-That builds the `sg` binary and moves it to the standard installation location for Go binaries.
-
-If you don't have a `$GOPATH` set (or don't know what that is), that location is `$HOME/go/bin`. If you do use `$GOPATH` the location is `$GOPATH/bin`.
-
-Make sure that location is in your `$PATH`. (If you use `$GOPATH` then `$GOPATH/bin` needs to be in the `$PATH`)
+Then make sure that `~/my/path` is in your `$PATH`.
 
 > NOTE: **For Linux users:** A command called [sg](https://www.man7.org/linux/man-pages/man1/sg.1.html) is already available at `/usr/bin/sg`. To use the Sourcegraph `sg` CLI, you need to make sure that its location comes first in `PATH`. For example, by prepending `$GOPATH/bin`:
 >
@@ -88,26 +86,23 @@ Make sure that location is in your `$PATH`. (If you use `$GOPATH` then `$GOPATH/
 >
 > `alias sg=$HOME/go/bin/sg`
 
-### Manually building the binary
-
-If you want full control over where the `sg` binary ends up, use this option.
-
-In the root of `sourcegraph/sourcegraph`, run:
-
-```sh
-go build -o ~/my/path/sg ./dev/sg
-```
-
-Then make sure that `~/my/path` is in your `$PATH`.
-
 ## Updates
 
-Once set up, `sg` will automatically check for updates and let you know when there are changes.
-To update `sg`, run:
+Once set up, `sg` will automatically check for updates and update itself if a change is detected in your local copy of `origin/main`.
+
+To force a manual update of `sg`, run:
 
 ```sh
 sg update
 ```
+
+In order to temporarily turn off automatic updates, run your commands with the `-skip-auto-update` flag: 
+
+```sh
+sg -skip-auto-update [cmds ...]
+```
+
+On the next command run, if a new version is detected, `sg` will auto update before running.
 
 > NOTE: This feature requires that Go has already been installed according to the [development quickstart guide](../../setup/quickstart.md).
 
@@ -317,6 +312,13 @@ sg db reset-redis
 sg db add-user -name=foo
 ```
 
+### `sg update` - Update sg itself
+
+```bash 
+# Manually update sg
+sg update
+```
+
 ## Configuration
 
 Default `sg` behaviour is configured through the [`sg.config.yaml` file in the root of the `sourcegraph/sourcegraph` repository](https://github.com/sourcegraph/sourcegraph/blob/main/sg.config.yaml). Take a look at that file to see which commands are run in which environment, how these commands set setup, what environment variables they use, and more.
@@ -411,6 +413,16 @@ The `-config` can be anything you want, of course.
 Have questions or need help? Feel free to [open a discussion](https://github.com/sourcegraph/sourcegraph/discussions/categories/developer-experience)! Sourcegraph teammates can also leave a message in [#dev-experience](https://sourcegraph.slack.com/archives/C01N83PS4TU).
 
 > NOTE: For Sourcegraph teammates, we have a weekly [`sg` hack hour](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/dev-experience#sg-hack-hour) you can hop in to if you're interested in contributing!
+
+## Dockerized sg
+
+A `sourcegraph/sg` Docker image is available: 
+
+```
+# ... 
+COPY --from us.gcr.io/sourcegraph-dev/sg:insiders /usr/local/bin/sg ./sg
+# ...
+```
 
 ### Development tips
 

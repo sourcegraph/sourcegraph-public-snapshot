@@ -1,6 +1,5 @@
 import React from 'react'
 
-import { UseConnectionResult } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -11,6 +10,7 @@ import {
 } from '@sourcegraph/web/src/components/FilteredConnection/ui'
 
 import { Connection } from '../../../../components/FilteredConnection'
+import { UseConnectionResult } from '../../../../components/FilteredConnection/hooks/useConnection'
 import {
     PreviewHiddenBatchSpecWorkspaceFields,
     PreviewVisibleBatchSpecWorkspaceFields,
@@ -66,14 +66,8 @@ export const WorkspacesPreviewList: React.FunctionComponent<WorkspacesPreviewLis
         <ConnectionContainer className="w-100">
             {error && <ConnectionError errors={[error]} />}
             <ConnectionList className="list-group list-group-flush w-100">
-                {connectionOrCached?.nodes?.map((node, index) => (
-                    <WorkspacesPreviewListItem
-                        key={node.id}
-                        item={node}
-                        isStale={isStale}
-                        exclude={excludeRepo}
-                        variant={index % 2 === 0 ? 'light' : 'dark'}
-                    />
+                {connectionOrCached?.nodes?.map(node => (
+                    <WorkspacesPreviewListItem key={node.id} item={node} isStale={isStale} exclude={excludeRepo} />
                 ))}
             </ConnectionList>
             {connectionOrCached && (

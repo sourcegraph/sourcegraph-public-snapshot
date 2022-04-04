@@ -1,20 +1,31 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import ArchiveIcon from 'mdi-react/ArchiveIcon'
 import LockIcon from 'mdi-react/LockIcon'
 import SourceForkIcon from 'mdi-react/SourceForkIcon'
-import React from 'react'
 
-import { renderMarkdown } from '@sourcegraph/common'
 import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIcon'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
 import { SearchResultStar } from '@sourcegraph/shared/src/components/SearchResultStar'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { CommitMatch, getMatchTitle, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
+import {
+    CommitMatch,
+    getCommitMatchUrl,
+    getRepoMatchLabel,
+    getRepoMatchUrl,
+    getRepositoryUrl,
+    RepositoryMatch,
+} from '@sourcegraph/shared/src/search/stream'
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
+// eslint-disable-next-line no-restricted-imports
+import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
+import { Link, Icon, useIsTruncated } from '@sourcegraph/wildcard'
 
 import { CommitSearchResultMatch } from './CommitSearchResultMatch'
+
 import styles from './SearchResult.module.scss'
 
 interface Props extends PlatformContextProps<'requestGraphQL'> {
@@ -33,24 +44,51 @@ export const SearchResult: React.FunctionComponent<Props> = ({
     onSelect,
     openInNewTab,
 }) => {
+    /**
+     * Use the custom hook useIsTruncated to check if overflow: ellipsis is activated for the element
+     * We want to do it on mouse enter as browser window size might change after the element has been
+     * loaded initially
+     */
+    const [titleReference, truncated, checkTruncation] = useIsTruncated()
+
     const renderTitle = (): JSX.Element => {
         const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
         return (
             <div className={styles.title}>
-                <RepoIcon repoName={repoName} className="icon-inline text-muted flex-shrink-0" />
-                <Markdown
+                <RepoIcon repoName={repoName} className="text-muted flex-shrink-0" />
+                <span
+                    onMouseEnter={checkTruncation}
                     className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"
-                    dangerousInnerHTML={renderMarkdown(getMatchTitle(result))}
-                />
+                    ref={titleReference}
+                    data-tooltip={
+                        (truncated && result.type === 'repo' && displayRepoName(getRepoMatchLabel(result))) ||
+                        (truncated &&
+                            result.type === 'commit' &&
+                            `${result.authorName}: ${result.message.split('\n', 1)[0]}`) ||
+                        null
+                    }
+                >
+                    {result.type === 'commit' && (
+                        <>
+                            <Link to={getRepositoryUrl(result.repository)}>{displayRepoName(result.repository)}</Link>
+                            {' › '}
+                            <Link to={getCommitMatchUrl(result)}>{result.authorName}</Link>
+                            {': '}
+                            <Link to={getCommitMatchUrl(result)}>{result.message.split('\n', 1)[0]}</Link>
+                        </>
+                    )}
+                    {result.type === 'repo' && (
+                        <Link to={getRepoMatchUrl(result)}>{displayRepoName(getRepoMatchLabel(result))}</Link>
+                    )}
+                </span>
                 <span className={styles.spacer} />
-                {result.type === 'commit' && result.detail && (
-                    <>
-                        <Markdown className="flex-shrink-0" dangerousInnerHTML={renderMarkdown(result.detail)} />
-                    </>
+                {result.type === 'commit' && (
+                    <Link to={getCommitMatchUrl(result)}>
+                        <code className={styles.commitOid}>{result.oid.slice(0, 7)}</code>{' '}
+                        <Timestamp date={result.authorDate} noAbout={true} strict={true} />
+                    </Link>
                 )}
-                {result.type === 'commit' && result.detail && formattedRepositoryStarCount && (
-                    <div className={styles.divider} />
-                )}
+                {result.type === 'commit' && formattedRepositoryStarCount && <div className={styles.divider} />}
                 {formattedRepositoryStarCount && (
                     <>
                         <SearchResultStar />
@@ -75,8 +113,9 @@ export const SearchResult: React.FunctionComponent<Props> = ({
                                 <>
                                     <div className={styles.divider} />
                                     <div>
-                                        <SourceForkIcon
-                                            className={classNames('icon-inline flex-shrink-0 text-muted', styles.icon)}
+                                        <Icon
+                                            className={classNames('flex-shrink-0 text-muted', styles.icon)}
+                                            as={SourceForkIcon}
                                         />
                                     </div>
                                     <div>
@@ -88,8 +127,9 @@ export const SearchResult: React.FunctionComponent<Props> = ({
                                 <>
                                     <div className={styles.divider} />
                                     <div>
-                                        <ArchiveIcon
-                                            className={classNames('icon-inline flex-shrink-0 text-muted', styles.icon)}
+                                        <Icon
+                                            className={classNames('flex-shrink-0 text-muted', styles.icon)}
+                                            as={ArchiveIcon}
                                         />
                                     </div>
                                     <div>
@@ -101,8 +141,9 @@ export const SearchResult: React.FunctionComponent<Props> = ({
                                 <>
                                     <div className={styles.divider} />
                                     <div>
-                                        <LockIcon
-                                            className={classNames('icon-inline flex-shrink-0 text-muted', styles.icon)}
+                                        <Icon
+                                            className={classNames('flex-shrink-0 text-muted', styles.icon)}
+                                            as={LockIcon}
                                         />
                                     </div>
                                     <div>

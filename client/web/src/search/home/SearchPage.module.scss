@@ -45,7 +45,9 @@
         min-width: var(--max-homepage-container-width);
     }
 
-    @media (--lg-breakpoint-up) and (--lg-breakpoint-down) {
+    // We do not use our custom media queries below since they do not compile
+    // properly on production when chained via `and` (see #33109).
+    @media (min-width: #{$viewport-lg}) and (max-width: #{$viewport-xl - .02}) {
         width: 100%;
     }
 

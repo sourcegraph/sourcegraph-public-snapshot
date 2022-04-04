@@ -1,31 +1,33 @@
-import classNames from 'classnames'
 import React, { FunctionComponent, useState, useEffect, useCallback, useRef } from 'react'
+
+import classNames from 'classnames'
 import { useLocation, useHistory } from 'react-router'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
-import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
-import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
 import { Alert, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
+import { BrandLogo } from '../components/branding/BrandLogo'
+import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { SourcegraphContext } from '../jscontext'
+import { PageRoutes } from '../routes.constants'
 import { eventLogger } from '../tracking/eventLogger'
 import { SelectAffiliatedRepos } from '../user/settings/repositories/SelectAffiliatedRepos'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../util'
 
-import styles from './PostSignUpPage.module.scss'
 import { getReturnTo } from './SignInSignUpCommon'
-import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 import { Steps, Step, StepList, StepPanels, StepPanel } from './Steps'
 import { useExternalServices } from './useExternalServices'
 import { CodeHostsConnection } from './welcome/CodeHostsConnection'
 import { Footer } from './welcome/Footer'
 import { InviteCollaborators } from './welcome/InviteCollaborators/InviteCollaborators'
 import { TeamsBeta } from './welcome/TeamsBeta'
+
+import styles from './PostSignUpPage.module.scss'
+import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 
 interface PostSignUpPage {
     authenticatedUser: AuthenticatedUser

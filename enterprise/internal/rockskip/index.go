@@ -4,14 +4,15 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/inconshreveable/log15"
 	"k8s.io/utils/lru"
 
-	"github.com/inconshreveable/log15"
-
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (s *Service) Index(ctx context.Context, repo, givenCommit string) (err error) {
+func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit string) (err error) {
 	threadStatus := s.status.NewThreadStatus(fmt.Sprintf("indexing %s@%s", repo, givenCommit))
 	defer threadStatus.End()
 
@@ -44,7 +45,7 @@ func (s *Service) Index(ctx context.Context, repo, givenCommit string) (err erro
 
 	missingCount := 0
 	tasklog.Start("RevList")
-	err = s.git.RevListEach(repo, givenCommit, func(commitHash string) (shouldContinue bool, err error) {
+	err = s.git.RevListEach(repo, db, givenCommit, func(commitHash string) (shouldContinue bool, err error) {
 		defer tasklog.Continue("RevList")
 
 		tasklog.Start("GetCommitByHash")
@@ -77,7 +78,7 @@ func (s *Service) Index(ctx context.Context, repo, givenCommit string) (err erro
 
 	tasklog.Start("Log")
 	entriesIndexed := 0
-	err = s.git.LogReverseEach(repo, givenCommit, missingCount, func(entry LogEntry) error {
+	err = s.git.LogReverseEach(repo, db, givenCommit, missingCount, func(entry git.LogEntry) error {
 		defer tasklog.Continue("Log")
 
 		threadStatus.SetProgress(entriesIndexed, missingCount)
@@ -119,10 +120,10 @@ func (s *Service) Index(ctx context.Context, repo, givenCommit string) (err erro
 		deletedPaths := []string{}
 		addedPaths := []string{}
 		for _, pathStatus := range entry.PathStatuses {
-			if pathStatus.Status == DeletedAMD || pathStatus.Status == ModifiedAMD {
+			if pathStatus.Status == git.DeletedAMD || pathStatus.Status == git.ModifiedAMD {
 				deletedPaths = append(deletedPaths, pathStatus.Path)
 			}
-			if pathStatus.Status == AddedAMD || pathStatus.Status == ModifiedAMD {
+			if pathStatus.Status == git.AddedAMD || pathStatus.Status == git.ModifiedAMD {
 				addedPaths = append(addedPaths, pathStatus.Path)
 			}
 		}
@@ -195,11 +196,11 @@ func (s *Service) Index(ctx context.Context, repo, givenCommit string) (err erro
 		addedSymbols := map[string]map[string]struct{}{}
 		for _, pathStatus := range entry.PathStatuses {
 			switch pathStatus.Status {
-			case DeletedAMD:
+			case git.DeletedAMD:
 				deletedSymbols[pathStatus.Path] = symbolsFromDeletedFiles[pathStatus.Path]
-			case AddedAMD:
+			case git.AddedAMD:
 				addedSymbols[pathStatus.Path] = symbolsFromAddedFiles[pathStatus.Path]
-			case ModifiedAMD:
+			case git.ModifiedAMD:
 				deletedSymbols[pathStatus.Path] = map[string]struct{}{}
 				addedSymbols[pathStatus.Path] = map[string]struct{}{}
 				for name := range symbolsFromDeletedFiles[pathStatus.Path] {

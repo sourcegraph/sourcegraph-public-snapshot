@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { Button, ButtonProps } from '@sourcegraph/wildcard'
 
@@ -66,14 +67,14 @@ const BlockMenuActionComponent: React.FunctionComponent<BlockMenuActionComponent
     )
 }
 
-interface NotebookBlockMenuProps {
+export interface NotebookBlockMenuProps {
     id: string
     mainAction?: BlockMenuButtonAction
     actions: BlockMenuAction[]
 }
 
 export const NotebookBlockMenu: React.FunctionComponent<NotebookBlockMenuProps> = ({ id, mainAction, actions }) => (
-    <div className={styles.blockMenu} role="menu">
+    <div className={classNames('block-menu', styles.blockMenu)} role="menu">
         {mainAction && (
             <div className={classNames(actions.length > 0 && styles.mainActionButtonWrapper)}>
                 <BlockMenuActionComponent variant="primary" className="w-100" id={id} {...mainAction} />

@@ -1,7 +1,8 @@
+import React, { useMemo } from 'react'
+
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import InformationIcon from 'mdi-react/InformationIcon'
-import React, { useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
@@ -9,7 +10,7 @@ import { asError, isErrorLike } from '@sourcegraph/common'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { RepositoryFields } from '../../graphql-operations'
 
@@ -72,14 +73,14 @@ export const DocumentationExamplesList: React.FunctionComponent<Props> = ({
             )}
             {referencesLocations !== LOADING && isErrorLike(referencesLocations) && (
                 <span className="ml-2">
-                    <AlertCircleIcon className="icon-inline" /> Error: {referencesLocations}
+                    <Icon as={AlertCircleIcon} /> Error: {referencesLocations}
                 </span>
             )}
             {referencesLocations !== LOADING &&
                 !isErrorLike(referencesLocations) &&
                 referencesLocations.nodes.length === 0 && (
                     <span className="ml-2">
-                        <InformationIcon className="icon-inline" /> None found
+                        <Icon as={InformationIcon} /> None found
                     </span>
                 )}
         </div>

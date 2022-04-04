@@ -10,12 +10,12 @@ export const diffSearchStreamEvents: SearchEvent[] = [
         data: [
             {
                 type: 'commit',
-                label:
-                    '[sourcegraph/sourcegraph-lightstep](/gitlab.sgdev.org/sourcegraph/sourcegraph-lightstep) › [Quinn Slack](/gitlab.sgdev.org/sourcegraph/sourcegraph-lightstep/-/commit/65dba23797be9e0ce1941f92c5385a7856bc5a42): [build: set up test deps and scripts](/gitlab.sgdev.org/sourcegraph/sourcegraph-lightstep/-/commit/65dba23797be9e0ce1941f92c5385a7856bc5a42)',
+                oid: '65dba23797be9e0ce1941f92c5385a7856bc5a42',
+                message: 'build: set up test deps and scripts\n',
+                authorName: 'Quinn Slack',
+                authorDate: '2019-10-29T20:59:15Z',
                 url:
                     '/gitlab.sgdev.org/sourcegraph/sourcegraph-lightstep/-/commit/65dba23797be9e0ce1941f92c5385a7856bc5a42',
-                detail:
-                    '[`65dba23` 2 years ago](/gitlab.sgdev.org/sourcegraph/sourcegraph-lightstep/-/commit/65dba23797be9e0ce1941f92c5385a7856bc5a42)',
                 repository: 'gitlab.sgdev.org/sourcegraph/sourcegraph-lightstep',
                 content:
                     '```diff\nmocha.opts mocha.opts\n@@ -0,0 +3,2 @@\n+--timeout 200\n+src/**/*.test.ts\n\\ No newline at end of file\npackage.json package.json\n@@ -50,0 +54,3 @@\n+    "exclude": [\n+      "**/*.test.ts"\n+    ],\n@@ -54,1 +64,2 @@\n-    "serve": "parcel serve --no-hmr --out-file dist/extension.js src/extension.ts",\n+    "test": "TS_NODE_COMPILER_OPTIONS=\'{\\"module\\":\\"commonjs\\"}\' mocha --require ts-node/register --require source-map-support/register --opts mocha.opts",\n+    "cover": "TS_NODE_COMPILER_OPTIONS=\'{\\"module\\":\\"commonjs\\"}\' nyc --require ts-node/register --require source-map-support/register --all mocha --opts mocha.opts --timeout 10000",\n@@ -57,2 +70,2 @@\n-    "sourcegraph:prepublish": "parcel build src/extension.ts"\n+    "sourcegraph:prepublish": "yarn typecheck && yarn test && yarn build"\n   },\nyarn.lock yarn.lock\n@@ -3736,0 +4204,3 @@ number-is-nan@^1.0.0:\n+    spawn-wrap "^1.4.2"\n+    test-exclude "^5.1.0"\n+    uuid "^3.3.2"\n@@ -5550,1 +6166,5 @@ terser@^3.7.3, terser@^3.8.1:\n \n+test-exclude@^5.1.0:\n+  version "5.1.0"\n+  resolved "https://registry.yarnpkg.com/test-exclude/-/test-exclude-5.1.0.tgz#6ba6b25179d2d38724824661323b73e03c0c1de1"\n+  integrity sha512-gwf0S2fFsANC55fSeSqpb8BYk6w3FDvwZxfNjeF6FRgvFa43r+7wRiA/Q0IxoRU37wB/LE8IQ4221BsNucTaCA==\n```',
@@ -48,12 +48,12 @@ export const commitSearchStreamEvents: SearchEvent[] = [
         data: [
             {
                 type: 'commit',
-                label:
-                    '[sourcegraph/sourcegraph-sentry](/gitlab.sgdev.org/sourcegraph/sourcegraph-sentry) › [Vanesa](/gitlab.sgdev.org/sourcegraph/sourcegraph-sentry/-/commit/7e69ceb49adc30cb46bbe50335e1a371a0f2f6b1): [add more tests, use the Sourcegraph stubs api and improve repo matching. (#13)](/gitlab.sgdev.org/sourcegraph/sourcegraph-sentry/-/commit/7e69ceb49adc30cb46bbe50335e1a371a0f2f6b1)',
+                oid: '7e69ceb49adc30cb46bbe50335e1a371a0f2f6b1',
+                message: 'add more tests, use the Sourcegraph stubs api and improve repo matching. (#13)',
+                authorName: 'Vanesa',
+                authorDate: '2019-10-29T20:59:15Z',
                 url:
                     '/gitlab.sgdev.org/sourcegraph/sourcegraph-sentry/-/commit/7e69ceb49adc30cb46bbe50335e1a371a0f2f6b1',
-                detail:
-                    '[`7e69ceb` 2 years ago](/gitlab.sgdev.org/sourcegraph/sourcegraph-sentry/-/commit/7e69ceb49adc30cb46bbe50335e1a371a0f2f6b1)',
                 repository: 'gitlab.sgdev.org/sourcegraph/sourcegraph-sentry',
                 content:
                     '```COMMIT_EDITMSG\nadd more tests, use the Sourcegraph stubs api and improve repo matching. (#13)\n\n* add more tests, refactor to use extension api stubs\r\n* improve repo matching\r\nCo-Authored-By: Felix Becker <felix.b@outlook.com>\n```',

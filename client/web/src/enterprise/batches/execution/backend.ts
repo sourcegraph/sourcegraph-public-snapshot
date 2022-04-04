@@ -67,7 +67,7 @@ const batchSpecWorkspaceFieldsFragment = gql`
             url
         }
         branch {
-            abbrevName
+            displayName
         }
         path
         stages {
@@ -411,7 +411,7 @@ const BATCH_SPEC_WORKSPACES = gql`
             url
         }
         branch {
-            abbrevName
+            displayName
         }
         path
     }

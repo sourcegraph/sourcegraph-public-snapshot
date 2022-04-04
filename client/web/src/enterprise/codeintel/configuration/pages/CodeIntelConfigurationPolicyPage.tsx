@@ -1,16 +1,17 @@
+import React, { FunctionComponent, useCallback, useEffect, useState } from 'react'
+
 import { ApolloError } from '@apollo/client'
 import * as H from 'history'
 import DeleteIcon from 'mdi-react/DeleteIcon'
-import React, { FunctionComponent, useCallback, useEffect, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { Button, Container, LoadingSpinner, PageHeader, Alert } from '@sourcegraph/wildcard'
+import { Button, Container, LoadingSpinner, PageHeader, Alert, Icon } from '@sourcegraph/wildcard'
 
+import { PageTitle } from '../../../../components/PageTitle'
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'
 import { BranchTargetSettings } from '../components/BranchTargetSettings'
 import { FlashMessage } from '../components/FlashMessage'
@@ -146,7 +147,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                         >
                             {!isDeleting && (
                                 <>
-                                    <DeleteIcon className="icon-inline" /> Delete policy
+                                    <Icon as={DeleteIcon} /> Delete policy
                                 </>
                             )}
                             {isDeleting && (

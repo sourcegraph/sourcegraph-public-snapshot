@@ -28,7 +28,7 @@ If you require 100% confidence in accuracy for a definition or reference results
 
 ## Why does it sometimes time out?
 
-The [symbol search performance](./features.md#symbol-search-behavior-and-performance) section describes query paths and performance.
+The [symbol search performance](./features.md#symbol-search-behavior-and-performance) section describes query paths and performance. Consider using [Rockskip](rockskip.md) if you're experiencing frequent timeouts.
 
 ## What configuration settings can I apply?
 
@@ -44,5 +44,8 @@ The symbols container recognizes these environment variables:
 - `REQUEST_BUFFER_SIZE`: defaults to `8192`, maximum size of buffered parser request channel
 - `PROCESSING_TIMEOUT`: defaults to `2h`, maximum time to spend processing a repository
 - `MAX_TOTAL_PATHS_LENGTH`: defaults to `100000`, maximum sum of lengths of all paths in a single call to git archive
+- `USE_ROCKSKIP`: defaults to `false`, enables [Rockskip](rockskip.md) for fast symbol searches and search-based code intelligence on big repositories specified in `ROCKSKIP_REPOS`
+- `ROCKSKIP_REPOS`: no default, in combination with `USE_ROCKSKIP=true` this specifies a comma separated list of repositories to index using [Rockskip](rockskip.md) (e.g. `github.com/torvalds/linux,github.com/pallets/flask`)
+- `MAX_CONCURRENTLY_INDEXING`: defaults to `4`, maximum number of repositories being indexed at a time by [Rockskip](rockskip.md) (also limits ctags processes)
 
 The defaults come from [`config.go`](https://github.com/sourcegraph/sourcegraph/blob/eea895ae1a8acef08370a5cc6f24bdc7c66cb4ed/cmd/symbols/config.go#L42-L59).

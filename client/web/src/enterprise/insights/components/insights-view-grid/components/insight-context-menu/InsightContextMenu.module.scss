@@ -1,29 +1,5 @@
-.panel[data-reach-menu-items] {
-    font-size: inherit;
-    overflow: hidden;
-    padding: 0.25rem 0;
-
-    // class .dropdown-menu brings position absolute and breaks
-    // Menu positioning in portal because of it we reset position
-    position: static;
-    // The .dropdown-menu is hidden by default
-    display: block;
-}
-
 .button {
-    // Change the icon color on hover/focus state
-    &:hover,
-    &:focus {
-        .button-icon {
-            fill: var(--body-color);
-        }
-    }
-
-    + [data-reach-menu-popover] {
-        right: 5px;
-        top: 2.5rem; // base height + y-padding + margin-bottom from InsightCard.module.scss
-        z-index: 2;
-    }
+    cursor: pointer;
 }
 
 .button-icon {
@@ -35,16 +11,5 @@
 }
 
 .item[data-reach-menu-item] {
-    display: block;
-    padding: 0.25rem 0.75rem;
     text-align: right;
-    width: 100%;
-    border-radius: 0;
-    transition: unset;
-    font-weight: unset;
-
-    &[data-selected] {
-        background-color: var(--link-color);
-        color: var(--light-text);
-    }
 }

@@ -1,16 +1,17 @@
 /**
  * This file contains utility functions for the search onboarding tour.
  */
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual } from 'lodash'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import Shepherd from 'shepherd.js'
 import Tour from 'shepherd.js/src/types/tour'
 
 import { isMacPlatform } from '@sourcegraph/common'
 import { QueryState } from '@sourcegraph/search'
-import { MonacoQueryInputProps } from '@sourcegraph/search-ui/src/input/MonacoQueryInput'
+import { MonacoQueryInputProps } from '@sourcegraph/search-ui'
 import { ALL_LANGUAGES } from '@sourcegraph/shared/src/search/query/languageFilter'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Token } from '@sourcegraph/shared/src/search/query/token'
@@ -20,8 +21,9 @@ import { Button } from '@sourcegraph/wildcard'
 import { eventLogger } from '../../tracking/eventLogger'
 import { renderBrandedToString } from '../render-branded-to-string'
 
-import styles from './SearchOnboardingTour.module.scss'
 import { defaultPopperModifiers, defaultTourOptions } from './tour-options'
+
+import styles from './SearchOnboardingTour.module.scss'
 
 const tourOptions: Shepherd.Tour.TourOptions = {
     ...defaultTourOptions,

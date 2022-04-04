@@ -70,11 +70,24 @@ export function overrideInsightsGraphQLApi(props: OverrideGraphQLExtensionsProps
         HasAvailableCodeInsight: () => ({
             insightViews: {
                 __typename: 'InsightViewConnection',
-                pageInfo: { __typename: 'PageInfo', hasNextPage: true },
+                nodes: [{ id: '001' }],
             },
         }),
         IsCodeInsightsLicensed: () => ({ __typename: 'Query', enterpriseLicenseHasFeature: true }),
         InsightsDashboards: () => ({
+            currentUser: {
+                __typename: 'User',
+                id: testUserID,
+                organizations: {
+                    nodes: [
+                        {
+                            id: 'Org_test_id',
+                            name: 'test organization',
+                            displayName: 'Test organization',
+                        },
+                    ],
+                },
+            },
             insightsDashboards: {
                 __typename: 'InsightsDashboardConnection',
                 nodes: [],

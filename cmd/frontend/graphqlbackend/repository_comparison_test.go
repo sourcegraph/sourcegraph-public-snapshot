@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -20,9 +21,43 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsiftyped"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+func TestRepositoryComparisonNoMergeBase(t *testing.T) {
+	ctx := context.Background()
+	db := database.NewDB(nil)
+
+	wantBaseRevision := "ba5e"
+	wantHeadRevision := "1ead"
+
+	repo := &types.Repo{
+		ID:        api.RepoID(1),
+		Name:      api.RepoName("test"),
+		CreatedAt: time.Now(),
+	}
+
+	t.Cleanup(git.ResetMocks)
+	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+		if spec != wantBaseRevision && spec != wantHeadRevision {
+			t.Fatalf("ResolveRevision received wrong spec: %s", spec)
+		}
+		return api.CommitID(spec), nil
+	}
+	git.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
+		return "", errors.Errorf("merge base doesn't exist!")
+	}
+
+	input := &RepositoryComparisonInput{Base: &wantBaseRevision, Head: &wantHeadRevision}
+	repoResolver := NewRepositoryResolver(db, repo)
+
+	// There shouldn't be any error even when there is no merge base.
+	comp, err := NewRepositoryComparison(ctx, db, repoResolver, input)
+	require.Nil(t, err)
+	require.Equal(t, wantBaseRevision, comp.baseRevspec)
+	require.Equal(t, wantHeadRevision, comp.headRevspec)
+	require.Equal(t, "..", comp.rangeType)
+}
 
 func TestRepositoryComparison(t *testing.T) {
 	ctx := context.Background()
@@ -719,14 +754,16 @@ func TestFileDiffHighlighter(t *testing.T) {
 </span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#657b83;">new2
 </span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span style="color:#657b83;">new3</span></div></td></tr></tbody></table>`
 
-	highlight.Mocks.Code = func(p highlight.Params) (template.HTML, *lsiftyped.Document, bool, error) {
+	highlight.Mocks.Code = func(p highlight.Params) (*highlight.HighlightedCode, bool, error) {
 		switch p.Filepath {
 		case file1.path:
-			return template.HTML(highlightedOld), nil, false, nil
+			response := highlight.NewHighlightedCodeWithHTML(template.HTML(highlightedOld))
+			return &response, false, nil
 		case file2.path:
-			return template.HTML(highlightedNew), nil, false, nil
+			response := highlight.NewHighlightedCodeWithHTML(template.HTML(highlightedNew))
+			return &response, false, nil
 		default:
-			return "", nil, false, errors.Errorf("unknown file: %s", p.Filepath)
+			return nil, false, errors.Errorf("unknown file: %s", p.Filepath)
 		}
 	}
 	t.Cleanup(highlight.ResetMocks)

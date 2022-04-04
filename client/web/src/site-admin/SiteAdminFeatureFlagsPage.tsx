@@ -1,22 +1,95 @@
-import classNames from 'classnames'
 import React, { useCallback, useMemo } from 'react'
-import { RouteComponentProps } from 'react-router'
-import { catchError, map } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import classNames from 'classnames'
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import { RouteComponentProps, useHistory } from 'react-router'
+import { of, Observable, forkJoin } from 'rxjs'
+import { catchError, map, mergeMap } from 'rxjs/operators'
+
+import { asError, ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
+import { aggregateStreamingSearch, ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, PageHeader, Container } from '@sourcegraph/wildcard'
+import { Link, PageHeader, Container, Button } from '@sourcegraph/wildcard'
 
-import { Collapsible } from '../components/Collapsible'
 import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { FeatureFlagFields } from '../graphql-operations'
+import { FeatureFlagFields, SearchPatternType, SearchVersion } from '../graphql-operations'
 
 import { fetchFeatureFlags as defaultFetchFeatureFlags } from './backend'
+
 import styles from './SiteAdminFeatureFlagsPage.module.scss'
 
-export interface SiteAdminFeatureFlagsPageProps extends RouteComponentProps<{}>, TelemetryProps {
+interface SiteAdminFeatureFlagsPageProps extends RouteComponentProps<{}>, TelemetryProps {
     fetchFeatureFlags?: typeof defaultFetchFeatureFlags
+    productVersion?: string
+}
+
+/**
+ * Reference indicates a potential usage of a feature flag.
+ */
+export interface Reference {
+    /**
+     * File where the reference occurred in.
+     */
+    file: string
+    /**
+     * Partial URL to the results, starting with '/search'
+     */
+    searchURL: string
+}
+
+/**
+ * Denotes the feature flag itself, along with potential references to the feature flag.
+ */
+export type FeatureFlagAndReferences = FeatureFlagFields & {
+    references: Reference[]
+}
+
+/**
+ * Tries to parse a commit or tag out of the product version. Falls back to 'main' if
+ * nothing useful is inferred.
+ *
+ * @param productVersion e.g. from window.context
+ * @returns git ref
+ */
+export function parseProductReference(productVersion: string): string {
+    // Look for format 135331_2022-03-04_2bb6927bb028, where last segment is commit
+    const parts = productVersion.split('_')
+    if (parts.length === 3) {
+        return parts.pop() || 'main'
+    }
+    // Special case for dev tag
+    if (productVersion === '0.0.0') {
+        return 'main'
+    }
+    // Otherwise assume product version is probably a tag
+    return productVersion
+}
+
+/**
+ * Finds references to this flag in `github.com/sourcegraph/sourcegraph@productGitVersion`.
+ * Will only work if this Sourcegraph instance has the Sourcegraph repository - if not,
+ * returns an empty reference set.
+ */
+export function getFeatureFlagReferences(flagName: string, productGitVersion: string): Observable<Reference[]> {
+    const repoQuery = `repo:^github.com/sourcegraph/sourcegraph$@${productGitVersion}`
+    const flagQuery = `('${flagName}' OR "${flagName}")`
+    const referencesQuery = `${repoQuery} (${flagQuery} AND (lang:TypeScript OR lang:Go)) count:25`
+    return aggregateStreamingSearch(of(referencesQuery), {
+        caseSensitive: true,
+        patternType: SearchPatternType.literal,
+        version: SearchVersion.V2,
+        trace: undefined,
+    }).pipe(
+        map(({ results }) =>
+            results
+                .filter((match): match is ContentMatch => match.type === 'content')
+                .map(content => ({
+                    file: content.path,
+                    searchURL: `/search?q=${encodeURIComponent(`${repoQuery} ${flagQuery} file:${content.path}`)}`,
+                }))
+        )
+    )
 }
 
 const filters: FilteredConnectionFilter[] = [
@@ -49,12 +122,41 @@ const filters: FilteredConnectionFilter[] = [
 
 export const SiteAdminFeatureFlagsPage: React.FunctionComponent<SiteAdminFeatureFlagsPageProps> = ({
     fetchFeatureFlags = defaultFetchFeatureFlags,
-    telemetryService,
+    productVersion = window.context.version,
     ...props
 }) => {
+    const history = useHistory()
+
+    // Try to parse out a git rev based on the product version, otherwise just fall back
+    // to main.
+    const productGitVersion = parseProductReference(productVersion)
+
+    // Fetch feature flags
     const featureFlagsOrErrorsObservable = useMemo(
-        () => fetchFeatureFlags().pipe(catchError((error): [ErrorLike] => [asError(error)])),
-        [fetchFeatureFlags]
+        () =>
+            fetchFeatureFlags().pipe(
+                // T => Observable<T[]>
+                map(flags =>
+                    // Observable<T>[] => Observable<T[]>
+                    forkJoin(
+                        flags.map(flag =>
+                            getFeatureFlagReferences(flag.name, productGitVersion).pipe(
+                                map(
+                                    (references): FeatureFlagAndReferences => ({
+                                        ...flag,
+                                        references,
+                                    })
+                                )
+                            )
+                        )
+                    )
+                ),
+                // Observable<T[]> => T[]
+                mergeMap(flags => flags),
+                // T[] => (T | ErrorLike)[]
+                catchError((error): [ErrorLike] => [asError(error)])
+            ),
+        [fetchFeatureFlags, productGitVersion]
     )
 
     const queryFeatureFlags = useCallback(
@@ -81,6 +183,7 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<SiteAdminFeature
     return (
         <>
             <PageTitle title="Feature flags - Admin" />
+
             <PageHeader
                 headingElement="h2"
                 path={[
@@ -93,10 +196,7 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<SiteAdminFeature
                         <p>
                             Feature flags, as opposed to experimental features, are intended to be strictly short-lived.
                             They are designed to be useful for A/B testing, and the values of all active feature flags
-                            are added to every event log for the purpose of analytics.
-                        </p>
-                        <p>
-                            To learn more, refer to{' '}
+                            are added to every event log for the purpose of analytics. To learn more, refer to{' '}
                             <Link target="_blank" rel="noopener noreferrer" to="/help/dev/how-to/use_feature_flags">
                                 How to use feature flags
                             </Link>
@@ -105,10 +205,15 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<SiteAdminFeature
                     </>
                 }
                 className="mb-3"
+                actions={
+                    <Button variant="primary" onClick={() => history.push('./feature-flags/configuration/new')}>
+                        Create feature flag
+                    </Button>
+                }
             />
 
             <Container>
-                <FilteredConnection<FeatureFlagFields, {}>
+                <FilteredConnection<FeatureFlagAndReferences, {}>
                     listComponent="div"
                     listClassName={classNames('mb-3', styles.flagsGrid)}
                     noun="feature flag"
@@ -125,81 +230,62 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<SiteAdminFeature
 }
 
 interface FeatureFlagNodeProps {
-    node: FeatureFlagFields
+    node: FeatureFlagAndReferences
 }
 
-const FeatureFlagNode: React.FunctionComponent<FeatureFlagNodeProps> = ({ node }) => (
-    <React.Fragment key={node.name}>
-        <span className={styles.separator} />
-
-        <div className={classNames('d-flex flex-column', styles.information)}>
-            <div>
-                <h3>{node.name}</h3>
-
-                <p className="m-0">
-                    <span className="text-muted">{node.__typename}</span>
-                </p>
-            </div>
-        </div>
-
-        <span className={classNames('d-none d-md-inline', styles.progress)}>
-            <div className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center">
+const FeatureFlagNode: React.FunctionComponent<FeatureFlagNodeProps> = ({ node }) => {
+    const { name, overrides, references } = node
+    const hasOverridesOrReferences = overrides.length > 0 || references.length > 0
+    return (
+        <React.Fragment key={name}>
+            <div className={classNames('d-flex flex-column', styles.information)}>
                 <div>
-                    {node.__typename === 'FeatureFlagBoolean' && <code>{JSON.stringify(node.value)}</code>}
-                    {node.__typename === 'FeatureFlagRollout' && node.rolloutBasisPoints}
-                </div>
+                    <h3 className={classNames(!hasOverridesOrReferences && 'm-0')}>{name}</h3>
 
-                {node.__typename === 'FeatureFlagRollout' && (
-                    <div>
-                        <meter
-                            min={0}
-                            max={1}
-                            optimum={1}
-                            value={node.rolloutBasisPoints / (100 * 100)}
-                            data-tooltip={`${Math.floor(node.rolloutBasisPoints / 100)}%`}
-                            aria-label="rollout progress"
-                            data-placement="bottom"
-                        />
-                    </div>
-                )}
-            </div>
-        </span>
-
-        {/*
-            TODO: move into individual feature flag page as part of
-            https://github.com/sourcegraph/sourcegraph/issues/32232
-        */}
-        {node.overrides.length > 0 && (
-            <Collapsible
-                title={
-                    <strong>
-                        {node.overrides.length} {node.overrides.length > 1 ? 'overrides' : 'override'}
-                    </strong>
-                }
-                className="p-0 font-weight-normal"
-                titleClassName="flex-grow-1"
-                buttonClassName="mb-0"
-                defaultExpanded={false}
-            >
-                <div className={classNames('pt-2', styles.nodeGrid)}>
-                    {node.overrides.map(override => (
-                        <React.Fragment key={override.id}>
-                            <div className="py-1 pr-2">
-                                <code>{JSON.stringify(override.value)}</code>
-                            </div>
-
-                            <span className={classNames('py-1 pl-2', styles.nodeGridCode)}>
-                                {/*
-                                        TODO: querying for namespace connection seems to
-                                        error out often, so just present the ID for now.
-                                        https://github.com/sourcegraph/sourcegraph/issues/32238
-                                    */}
-                                <code>{override.id}</code>
+                    {hasOverridesOrReferences && (
+                        <p className="m-0">
+                            <span className="text-muted">
+                                {overrides.length > 0 &&
+                                    `${overrides.length} ${overrides.length !== 1 ? 'overrides' : 'override'}`}
+                                {overrides.length > 0 && references.length > 0 && ', '}
+                                {references.length > 0 &&
+                                    `${references.length} ${pluralize('reference', references.length)}`}
                             </span>
-                        </React.Fragment>
-                    ))}
+                        </p>
+                    )}
                 </div>
-            </Collapsible>
-        )}
-    </React.Fragment>
-)
+            </div>
+
+            <span className={classNames('d-none d-md-inline', styles.progress)}>
+                <div className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center">
+                    <div>
+                        {node.__typename === 'FeatureFlagBoolean' && <code>{JSON.stringify(node.value)}</code>}
+                        {node.__typename === 'FeatureFlagRollout' && node.rolloutBasisPoints}
+                    </div>
+
+                    {node.__typename === 'FeatureFlagRollout' && (
+                        <div>
+                            <meter
+                                min={0}
+                                max={1}
+                                optimum={1}
+                                value={node.rolloutBasisPoints / (100 * 100)}
+                                data-tooltip={`${Math.floor(node.rolloutBasisPoints / 100) || 0}%`}
+                                aria-label="rollout progress"
+                                data-placement="bottom"
+                            />
+                        </div>
+                    )}
+                </div>
+            </span>
+
+            <span className={classNames(styles.button, 'd-none d-md-inline')}>
+                <Link to={`./feature-flags/configuration/${node.name}`} className="p-0">
+                    <ChevronRightIcon />
+                </Link>
+            </span>
+
+            <span className={styles.separator} />
+        </React.Fragment>
+    )
+}

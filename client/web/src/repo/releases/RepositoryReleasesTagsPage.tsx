@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React, { useCallback, useEffect } from 'react'
+
+import * as H from 'history'
 import { Observable } from 'rxjs'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'

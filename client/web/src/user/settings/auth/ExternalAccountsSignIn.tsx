@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
@@ -8,8 +9,9 @@ import { defaultExternalServices } from '../../../components/externalServices/ex
 import { AuthProvider } from '../../../jscontext'
 
 import { ExternalAccount } from './ExternalAccount'
-import styles from './ExternalAccountsSignIn.module.scss'
 import { ExternalAccountsByType, AuthProvidersByType } from './UserSettingsSecurityPage'
+
+import styles from './ExternalAccountsSignIn.module.scss'
 
 type ServiceType = AuthProvider['serviceType']
 

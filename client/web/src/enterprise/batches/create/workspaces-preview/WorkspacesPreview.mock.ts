@@ -51,7 +51,6 @@ export const mockWorkspace = (
     branch: {
         __typename: 'GitRef',
         id: 'main-branch-id',
-        abbrevName: 'main',
         displayName: 'main',
         ...fields?.branch,
         target: {

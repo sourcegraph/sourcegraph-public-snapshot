@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React from 'react'
+
+import * as H from 'history'
 import { combineLatest, merge, Observable, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, first, map, scan, startWith, switchMap, tap } from 'rxjs/operators'
 import { Subtract } from 'utility-types'
@@ -11,11 +12,11 @@ import {
     ActivationStep,
 } from '@sourcegraph/shared/src/components/activation/Activation'
 import { UserEvent } from '@sourcegraph/shared/src/graphql-operations'
-import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
 import { Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { queryGraphQL } from '../backend/graphql'
+import { PageRoutes } from '../routes.constants'
 import { logUserEvent, logEvent } from '../user/settings/backend'
 
 /**

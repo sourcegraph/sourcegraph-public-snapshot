@@ -124,8 +124,7 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 }
 
 func TestExternalServicesStore_ValidateConfig(t *testing.T) {
-	// Can't currently run in parallel because of global mocks
-	db := dbtest.NewDB(t)
+	t.Parallel()
 
 	tests := []struct {
 		name            string
@@ -133,7 +132,7 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 		config          string
 		namespaceUserID int32
 		namespaceOrgID  int32
-		setup           func(t *testing.T)
+		listFunc        func(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error)
 		wantErr         string
 	}{
 		{
@@ -170,36 +169,10 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			name:   "no conflicting rate limit",
 			kind:   extsvc.KindGitHub,
 			config: `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "rateLimit": {"enabled": true, "requestsPerHour": 5000}}`,
-			setup: func(t *testing.T) {
-				t.Cleanup(func() {
-					Mocks.ExternalServices.List = nil
-				})
-				Mocks.ExternalServices.List = func(opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
-					return nil, nil
-				}
+			listFunc: func(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
+				return nil, nil
 			},
 			wantErr: "<nil>",
-		},
-		{
-			name:   "conflicting rate limit",
-			kind:   extsvc.KindGitHub,
-			config: `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "rateLimit": {"enabled": true, "requestsPerHour": 5000}}`,
-			setup: func(t *testing.T) {
-				t.Cleanup(func() {
-					Mocks.ExternalServices.List = nil
-				})
-				Mocks.ExternalServices.List = func(opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
-					return []*types.ExternalService{
-						{
-							ID:          1,
-							Kind:        extsvc.KindGitHub,
-							DisplayName: "GITHUB 1",
-							Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "rateLimit": {"enabled": true, "requestsPerHour": 5000}}`,
-						},
-					}, nil
-				}
-			},
-			wantErr: "existing external service, \"GITHUB 1\", already has a rate limit set",
 		},
 		{
 			name:            "prevent code hosts that are not allowed",
@@ -248,20 +221,15 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			kind:            extsvc.KindGitHub,
 			config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 			namespaceUserID: 1,
-			setup: func(t *testing.T) {
-				t.Cleanup(func() {
-					Mocks.ExternalServices.List = nil
-				})
-				Mocks.ExternalServices.List = func(opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
-					return []*types.ExternalService{
-						{
-							ID:          1,
-							Kind:        extsvc.KindGitHub,
-							DisplayName: "GITHUB 1",
-							Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-						},
-					}, nil
-				}
+			listFunc: func(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
+				return []*types.ExternalService{
+					{
+						ID:          1,
+						Kind:        extsvc.KindGitHub,
+						DisplayName: "GITHUB 1",
+						Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+					},
+				}, nil
 			},
 			wantErr: `existing external service, "GITHUB 1", of same kind already added`,
 		},
@@ -270,20 +238,15 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			kind:           extsvc.KindGitHub,
 			config:         `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 			namespaceOrgID: 1,
-			setup: func(t *testing.T) {
-				t.Cleanup(func() {
-					Mocks.ExternalServices.List = nil
-				})
-				Mocks.ExternalServices.List = func(opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
-					return []*types.ExternalService{
-						{
-							ID:          1,
-							Kind:        extsvc.KindGitHub,
-							DisplayName: "GITHUB 1",
-							Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-						},
-					}, nil
-				}
+			listFunc: func(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
+				return []*types.ExternalService{
+					{
+						ID:          1,
+						Kind:        extsvc.KindGitHub,
+						DisplayName: "GITHUB 1",
+						Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+					},
+				}, nil
 			},
 			wantErr: `existing external service, "GITHUB 1", of same kind already added`,
 		},
@@ -302,11 +265,11 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			if test.setup != nil {
-				test.setup(t)
+			ess := NewMockExternalServiceStore()
+			if test.listFunc != nil {
+				ess.ListFunc.SetDefaultHook(test.listFunc)
 			}
-
-			_, err := ExternalServices(db).ValidateConfig(context.Background(), ValidateExternalServiceConfigOptions{
+			_, err := ValidateExternalServiceConfig(context.Background(), ess, ValidateExternalServiceConfigOptions{
 				Kind:            test.kind,
 				Config:          test.config,
 				NamespaceUserID: test.namespaceUserID,
@@ -1095,15 +1058,26 @@ func TestGetAffiliatedSyncErrors(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	createService := func(u *types.User, name string) *types.ExternalService {
+	org1, err := Orgs(db).Create(ctx, "ACME", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	createService := func(u *types.User, o *types.Org, name string) *types.ExternalService {
 		svc := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: name,
 			Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 		}
+
 		if u != nil {
 			svc.NamespaceUserID = u.ID
 		}
+
+		if o != nil {
+			svc.NamespaceOrgID = o.ID
+		}
+
 		err = ExternalServices(db).Create(ctx, confGet, svc)
 		if err != nil {
 			t.Fatal(err)
@@ -1121,9 +1095,9 @@ func TestGetAffiliatedSyncErrors(t *testing.T) {
 		return errorCount
 	}
 
-	siteLevel := createService(nil, "GITHUB #1")
-	adminOwned := createService(admin, "GITHUB #2")
-	userOwned := createService(user2, "GITHUB #3")
+	siteLevel := createService(nil, nil, "GITHUB #1")
+	adminOwned := createService(admin, nil, "GITHUB #2")
+	userOwned := createService(user2, nil, "GITHUB #3")
 
 	// Listing errors now should return an empty map as none have been added yet
 	results, err := ExternalServices(db).GetAffiliatedSyncErrors(ctx, admin)
@@ -1232,6 +1206,36 @@ VALUES ($1,'errored', now(), $2)
 	failure = results[userOwned.ID]
 	if failure != failure3 {
 		t.Fatalf("Want %q, got %q", failure3, failure)
+	}
+
+	// Add a failure to org service
+	orgOwned := createService(nil, org1, "GITHUB Org owned")
+
+	_, err = db.Exec(`
+INSERT INTO external_service_sync_jobs (external_service_id, state, finished_at, failure_message)
+VALUES ($1,'errored', now(), $2)
+`, orgOwned.ID, "org failure")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Assert that site-admin should only get errors for site level external services
+	// or self owned external services.
+	results, err = ExternalServices(db).GetAffiliatedSyncErrors(ctx, admin)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %v", results)
+	}
+
+	if _, ok := results[siteLevel.ID]; !ok {
+		t.Fatalf("expected admin to only get errors for site level external services and self-owned, got %+v", results)
+	}
+
+	if _, ok := results[adminOwned.ID]; !ok {
+		t.Fatalf("expected admin to only get errors for site level external services and self-owned, got %+v", results)
 	}
 }
 

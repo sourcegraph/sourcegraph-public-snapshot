@@ -1,8 +1,9 @@
-import { withKnobs } from '@storybook/addon-knobs'
-import { Meta, Story } from '@storybook/react'
 import React from 'react'
 
-import { WebStory } from '@sourcegraph/web/src/components/WebStory'
+import { withKnobs } from '@storybook/addon-knobs'
+import { Meta, Story } from '@storybook/react'
+
+import { WebStory } from '../../../../components/WebStory'
 
 import {
     CodeIntelRepositoryIndexConfigurationPage,

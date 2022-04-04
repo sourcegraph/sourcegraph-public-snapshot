@@ -1,14 +1,16 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import { omit } from 'lodash'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import React from 'react'
 import useResizeObserver from 'use-resize-observer'
 
 import { createAggregateError } from '@sourcegraph/common'
 
 import { useOffsetPagination, useDebounce } from '../../hooks'
 import { Button } from '../Button'
+import { Icon } from '../Icon'
 
 import styles from './PageSelector.module.scss'
 
@@ -87,13 +89,9 @@ export const PageSelector: React.FunctionComponent<PageSelectorProps> = props =>
                         return (
                             <li key={key}>
                                 <PageButton {...omit(page, 'type')}>
-                                    {page.type === 'previous' && (
-                                        <ChevronLeftIcon className="icon-inline" aria-hidden={true} />
-                                    )}
+                                    {page.type === 'previous' && <Icon as={ChevronLeftIcon} aria-hidden={true} />}
                                     <span className={classNames(shouldShrink && 'd-none')}>{page.content}</span>
-                                    {page.type === 'next' && (
-                                        <ChevronRightIcon className="icon-inline" aria-hidden={true} />
-                                    )}
+                                    {page.type === 'next' && <Icon as={ChevronRightIcon} aria-hidden={true} />}
                                 </PageButton>
                             </li>
                         )

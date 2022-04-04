@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { boolean } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import React from 'react'
 
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 

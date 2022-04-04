@@ -352,7 +352,6 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/repo-clone-progress", s.handleRepoCloneProgress)
 	mux.HandleFunc("/delete", s.handleRepoDelete)
 	mux.HandleFunc("/repo-update", s.handleRepoUpdate)
-	mux.HandleFunc("/getGitolitePhabricatorMetadata", s.handleGetGitolitePhabricatorMetadata)
 	mux.HandleFunc("/create-commit-from-patch", s.handleCreateCommitFromPatch)
 	mux.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -399,14 +398,19 @@ func (s *Server) Janitor(interval time.Duration) {
 func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int) {
 	var previousAddrs string
 	for {
-		addrs := conf.Get().ServiceConnections().GitServers
+		cfg := conf.Get()
+		addrs := cfg.ServiceConnectionConfig.GitServers
 		// We turn addrs into a string here for easy comparison and storage of previous
 		// addresses since we'd need to take a copy of the slice anyway.
 		currentAddrs := strings.Join(addrs, ",")
 		fullSync := currentAddrs != previousAddrs
 		previousAddrs = currentAddrs
 
-		if err := s.syncRepoState(addrs, batchSize, perSecond, fullSync); err != nil {
+		gitServerAddrs := gitserver.GitServerAddresses{
+			Addresses:     addrs,
+			PinnedServers: cfg.ExperimentalFeatures.GitServerPinnedRepos,
+		}
+		if err := s.syncRepoState(gitServerAddrs, batchSize, perSecond, fullSync); err != nil {
 			log15.Error("Syncing repo state", "error ", err)
 		}
 
@@ -508,8 +512,9 @@ var (
 	}, []string{"success"})
 )
 
-func (s *Server) syncRepoState(addrs []string, batchSize, perSecond int, fullSync bool) error {
+func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batchSize, perSecond int, fullSync bool) error {
 	log15.Info("starting syncRepoState", "fullSync", fullSync)
+	addrs := gitServerAddrs.Addresses
 
 	// When fullSync is true we'll scan all repos in the database and ensure we set
 	// their clone state and assign any that belong to this shard with the correct
@@ -577,7 +582,11 @@ func (s *Server) syncRepoState(addrs []string, batchSize, perSecond int, fullSyn
 	err := store.IterateRepoGitserverStatus(ctx, options, func(repo types.RepoGitserverStatus) error {
 		repoSyncStateCounter.WithLabelValues("check").Inc()
 		// Ensure we're only dealing with repos we are responsible for
-		if addr := gitserver.AddrForRepo(repo.Name, addrs); !s.hostnameMatch(addr) {
+		addr, err := gitserver.AddrForRepo(ctx, s.DB, repo.Name, gitServerAddrs)
+		if err != nil {
+			return err
+		}
+		if !s.hostnameMatch(addr) {
 			repoSyncStateCounter.WithLabelValues("other_shard").Inc()
 			return nil
 		}
@@ -806,13 +815,13 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 		// succeed.
 		resp.CloneInProgress = true
 
-		// We do not need to check if req.MigrateFrom is non-zero here since that has no effect on
+		// We do not need to check if req.CloneFromShard is non-zero here since that has no effect on
 		// the code path at this point. Since the repo is already not cloned at this point, either
 		// this request was received for a repo migration or a regular clone - for both of which we
 		// want to go ahead and clone the repo. The responsibility of figuring out where to clone
 		// the repo from (upstream URL of the external service or the gitserver instance) lies with
 		// the implementation details of cloneRepo.
-		_, err := s.cloneRepo(ctx, req.Repo, &cloneOptions{Block: true, MigrateFrom: req.MigrateFrom})
+		_, err := s.cloneRepo(ctx, req.Repo, &cloneOptions{Block: true, CloneFromShard: req.CloneFromShard})
 		if err != nil {
 			log15.Warn("error cloning repo", "repo", req.Repo, "err", err)
 			resp.Error = err.Error()
@@ -861,11 +870,11 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 	var (
-		q       = r.URL.Query()
-		treeish = q.Get("treeish")
-		repo    = q.Get("repo")
-		format  = q.Get("format")
-		paths   = q["path"]
+		q         = r.URL.Query()
+		treeish   = q.Get("treeish")
+		repo      = q.Get("repo")
+		format    = q.Get("format")
+		pathspecs = q["path"]
 	)
 
 	if err := checkSpecArgSafety(treeish); err != nil {
@@ -904,7 +913,7 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req.Args = append(req.Args, treeish, "--")
-	req.Args = append(req.Args, paths...)
+	req.Args = append(req.Args, pathspecs...)
 
 	s.exec(w, r, req)
 }
@@ -1589,6 +1598,15 @@ func (s *Server) setCloneStatusNonFatal(ctx context.Context, name api.RepoName, 
 	}
 }
 
+// setRepoSize calculates the size of the repo and stores it in the database.
+func (s *Server) setRepoSize(ctx context.Context, name api.RepoName) error {
+	if s.DB == nil {
+		return nil
+	}
+
+	return database.GitserverRepos(s.DB).SetRepoSize(ctx, name, dirSize(s.dir(name).Path(".")), s.Hostname)
+}
+
 // setGitAttributes writes our global gitattributes to
 // gitDir/info/attributes. This will override .gitattributes inside of
 // repositories. It is used to unset attributes such as export-ignore.
@@ -1626,13 +1644,10 @@ type cloneOptions struct {
 	// Overwrite will overwrite the existing clone.
 	Overwrite bool
 
-	// MigrateFrom is the name of the gitserver instance which is the current owner of the
+	// CloneFromShard is the hostname of the gitserver instance which is the current owner of the
 	// repository. If this is a non-zero string, then gitserver will attempt to clone the repo from
-	// the current gitserver instance instead of the upstream repo URL of the external service.
-	//
-	// Once migration is complete for all repos in Sourcegraph, there is no need for this attribute
-	// and it should be removed.
-	MigrateFrom string
+	// that gitserver instance instead of the upstream repo URL of the external service.
+	CloneFromShard string
 }
 
 // cloneRepo performs a clone operation for the given repository. It is
@@ -1655,8 +1670,18 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		return "", errors.Wrap(err, "get VCS syncer")
 	}
 
-	// We may be attempting to clone a private repo so we need an internal actor.
-	remoteURL, err := s.getRemoteURL(actor.WithInternalActor(ctx), repo)
+	var remoteURL *vcs.URL
+	if opts != nil && opts.CloneFromShard != "" {
+		// are we cloning from the same gitserver instance?
+		if s.hostnameMatch(strings.TrimPrefix(opts.CloneFromShard, "http://")) {
+			return "", errors.Errorf("cannot clone from the same gitserver instance")
+		}
+
+		remoteURL, err = vcs.ParseURL(filepath.Join(opts.CloneFromShard, "git", string(repo)))
+	} else {
+		// We may be attempting to clone a private repo so we need an internal actor.
+		remoteURL, err = s.getRemoteURL(actor.WithInternalActor(ctx), repo)
+	}
 	if err != nil {
 		return "", err
 	}
@@ -1839,6 +1864,11 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 	// disk state.
 	if err := s.setLastFetched(ctx, repo); err != nil {
 		log15.Warn("failed setting last fetch in DB", "repo", repo, "error", err)
+	}
+
+	// Successfully updated, best-effort calculation of the repo size.
+	if err := s.setRepoSize(ctx, repo); err != nil {
+		log15.Warn("failed setting repo size", "repo", repo, "error", err)
 	}
 
 	log15.Info("repo cloned", "repo", repo)
@@ -2171,6 +2201,11 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
 		log15.Warn("failed setting last fetch in DB", "repo", repo, "error", err)
 	}
 
+	// Successfully updated, best-effort calculation of the repo size.
+	if err := s.setRepoSize(ctx, repo); err != nil {
+		log15.Warn("failed setting repo size", "repo", repo, "error", err)
+	}
+
 	return nil
 }
 
@@ -2239,7 +2274,7 @@ func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoNam
 	if err != nil {
 		return errors.Wrap(err, "get remote show command")
 	}
-	cmd.Dir = string(dir)
+	dir.Set(cmd)
 	output, err := runWithRemoteOpts(ctx, cmd, nil)
 	if err != nil {
 		log15.Error("Failed to fetch remote info", "repo", repo, "error", err, "output", string(output))
@@ -2256,11 +2291,11 @@ func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoNam
 
 	// check if branch pointed to by HEAD exists
 	cmd = exec.CommandContext(ctx, "git", "rev-parse", headBranch, "--")
-	cmd.Dir = string(dir)
+	dir.Set(cmd)
 	if err := cmd.Run(); err != nil {
 		// branch does not exist, pick first branch
 		cmd := exec.CommandContext(ctx, "git", "branch")
-		cmd.Dir = string(dir)
+		dir.Set(cmd)
 		list, err := cmd.Output()
 		if err != nil {
 			log15.Error("Failed to list branches", "repo", repo, "error", err, "output", string(output))
@@ -2275,7 +2310,7 @@ func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoNam
 
 	// set HEAD
 	cmd = exec.CommandContext(ctx, "git", "symbolic-ref", "HEAD", "refs/heads/"+headBranch)
-	cmd.Dir = string(dir)
+	dir.Set(cmd)
 	if output, err := cmd.CombinedOutput(); err != nil {
 		log15.Error("Failed to set HEAD", "repo", repo, "error", err, "output", string(output))
 		return errors.Wrap(err, "Failed to set HEAD")
@@ -2414,7 +2449,7 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev stri
 		rev = rev + "^0"
 	}
 	cmd := exec.Command("git", "rev-parse", rev, "--")
-	cmd.Dir = string(repoDir)
+	repoDir.Set(cmd)
 	if err := cmd.Run(); err == nil {
 		return false
 	}

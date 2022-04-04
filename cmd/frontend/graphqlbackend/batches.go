@@ -283,6 +283,7 @@ type BatchChangesResolver interface {
 	RepoDiffStat(ctx context.Context, repo *graphql.ID) (*DiffStat, error)
 
 	BatchSpecs(cx context.Context, args *ListBatchSpecArgs) (BatchSpecConnectionResolver, error)
+	AvailableBulkOperations(ctx context.Context, args *AvailableBulkOperationsArgs) ([]string, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
 }
@@ -558,6 +559,8 @@ type ListChangesetsArgs struct {
 	ExternalState *string
 	// State is a value of type *btypes.ChangesetState.
 	State *string
+	// onlyClosable indicates the user only wants open and draft changesets to be returned
+	OnlyClosable *bool
 	// ReviewState is a value of type *btypes.ChangesetReviewState.
 	ReviewState *string
 	// CheckState is a value of type *btypes.ChangesetCheckState.
@@ -572,6 +575,11 @@ type ListChangesetsArgs struct {
 type ListBatchSpecArgs struct {
 	First int32
 	After *string
+}
+
+type AvailableBulkOperationsArgs struct {
+	BatchChange graphql.ID
+	Changesets  []graphql.ID
 }
 
 type ListWorkspacesArgs struct {

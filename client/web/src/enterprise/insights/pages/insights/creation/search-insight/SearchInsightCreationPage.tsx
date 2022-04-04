@@ -1,27 +1,28 @@
-import classNames from 'classnames'
 import React, { useCallback, useEffect } from 'react'
 
 import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, Link } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Link, PageHeader } from '@sourcegraph/wildcard'
 
-import { Page } from '../../../../../../components/Page'
 import { PageTitle } from '../../../../../../components/PageTitle'
+import { CodeInsightsIcon } from '../../../../../../insights/Icons'
+import { CodeInsightsPage } from '../../../../components/code-insights-page/CodeInsightsPage'
 import { FORM_ERROR, FormChangeEvent } from '../../../../components/form/hooks/useForm'
-import { SearchBasedInsight } from '../../../../core/types'
+import { MinimalSearchBasedInsightData } from '../../../../core/backend/code-insights-backend-types'
 import { CodeInsightTrackType } from '../../../../pings'
 
 import {
     SearchInsightCreationContent,
     SearchInsightCreationContentProps,
 } from './components/search-insight-creation-content/SearchInsightCreationContent'
-import styles from './SearchInsightCreationPage.module.scss'
 import { CreateInsightFormFields } from './types'
 import { getSanitizedSearchInsight } from './utils/insight-sanitizer'
 import { useSearchInsightInitialValues } from './utils/use-initial-values'
 
+import styles from './SearchInsightCreationPage.module.scss'
+
 export interface InsightCreateEvent {
-    insight: SearchBasedInsight
+    insight: MinimalSearchBasedInsightData
 }
 
 export interface SearchInsightCreationPageProps extends TelemetryProps {
@@ -36,7 +37,7 @@ export interface SearchInsightCreationPageProps extends TelemetryProps {
     /**
      * Whenever insight was created and all operations after creation were completed.
      */
-    onSuccessfulCreation: (insight: SearchBasedInsight) => void
+    onSuccessfulCreation: (insight: MinimalSearchBasedInsightData) => void
 
     /**
      * Whenever the user click on cancel button
@@ -91,8 +92,8 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
     }, [telemetryService, setLocalStorageFormValues, onCancel])
 
     return (
-        <Page className={classNames(styles.creationPage)}>
-            <PageTitle title="Create new code insight" />
+        <CodeInsightsPage className={styles.creationPage}>
+            <PageTitle title="Create insight - Code Insights" />
 
             {loading && (
                 // loading state for 1 click creation insight values resolve operation
@@ -102,21 +103,23 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
             )}
 
             {
-                // If we have query in URL we should be sure that we have initial values
+                // If we have a query in URL we should be sure that we have initial values
                 // from URL query based insight. If we don't have query in URl we can render
                 // page without resolving URL query based insight values.
                 !loading && (
                     <>
-                        <header className="mb-5">
-                            <h2>Create new code insight</h2>
-
-                            <p className="text-muted">
-                                Search-based code insights analyze your code based on any search query.{' '}
-                                <Link to="/help/code_insights" target="_blank" rel="noopener">
-                                    Learn more.
-                                </Link>
-                            </p>
-                        </header>
+                        <PageHeader
+                            className="mb-5"
+                            path={[{ icon: CodeInsightsIcon }, { text: 'Create new code insight' }]}
+                            description={
+                                <span className="text-muted">
+                                    Search-based code insights analyze your code based on any search query.{' '}
+                                    <Link to="/help/code_insights" target="_blank" rel="noopener">
+                                        Learn more.
+                                    </Link>
+                                </span>
+                            }
+                        />
 
                         <SearchInsightCreationContent
                             className="pb-5"
@@ -129,6 +132,6 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
                     </>
                 )
             }
-        </Page>
+        </CodeInsightsPage>
     )
 }

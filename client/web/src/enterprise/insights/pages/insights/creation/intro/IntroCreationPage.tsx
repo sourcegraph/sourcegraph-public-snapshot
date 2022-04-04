@@ -1,13 +1,14 @@
-import classNames from 'classnames'
 import React, { useEffect } from 'react'
+
 import { useHistory } from 'react-router'
 import { useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, Link } from '@sourcegraph/wildcard'
 
-import { Page } from '../../../../../../components/Page'
+import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
+import { CodeInsightsPage } from '../../../../components/code-insights-page/CodeInsightsPage'
 
 import {
     CaptureGroupInsightCard,
@@ -15,6 +16,7 @@ import {
     LangStatsInsightCard,
     SearchInsightCard,
 } from './cards/InsightCards'
+
 import styles from './IntroCreationPage.module.scss'
 
 interface IntroCreationPageProps extends TelemetryProps {}
@@ -51,7 +53,8 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
     }, [telemetryService])
 
     return (
-        <Page className={classNames('container pb-5', styles.container)}>
+        <CodeInsightsPage className={styles.container}>
+            <PageTitle title="Create insight - Code Insights" />
             <PageHeader
                 path={[{ icon: CodeInsightsIcon }, { text: 'Create new code insight' }]}
                 description={
@@ -87,6 +90,6 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
 
                 <ExtensionInsightsCard data-testid="explore-extensions" onClick={handleExploreExtensionsClick} />
             </div>
-        </Page>
+        </CodeInsightsPage>
     )
 }

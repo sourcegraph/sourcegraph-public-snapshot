@@ -17,6 +17,7 @@ import (
 var testSchemas = []string{
 	"frontend",
 	"codeintel",
+	"codeinsights",
 }
 
 func TestMigrations(t *testing.T) {

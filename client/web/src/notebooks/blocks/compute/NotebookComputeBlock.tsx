@@ -1,86 +1,133 @@
-import classNames from 'classnames'
-import React, { useRef } from 'react'
+import React from 'react'
 
+import ElmComponent from 'react-elm-components'
+
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { BlockProps, ComputeBlock } from '../..'
-import { NotebookBlockMenu } from '../menu/NotebookBlockMenu'
+import { BlockInput, BlockProps, ComputeBlock } from '../..'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
-import blockStyles from '../NotebookBlock.module.scss'
-import { useBlockSelection } from '../useBlockSelection'
-import { useBlockShortcuts } from '../useBlockShortcuts'
+import { NotebookBlock } from '../NotebookBlock'
+
+import { Elm } from './component/src/Main.elm'
 
 import styles from './NotebookComputeBlock.module.scss'
 
-interface ComputeBlockProps extends BlockProps, ComputeBlock, ThemeProps {
-    isMacPlatform: boolean
+interface ComputeBlockProps extends BlockProps<ComputeBlock>, ThemeProps {
+    platformContext: Pick<PlatformContext, 'sourcegraphURL'>
 }
 
-export const NotebookComputeBlock: React.FunctionComponent<ComputeBlockProps> = ({
-    id,
-    input,
-    output,
-    isSelected,
-    isLightTheme,
-    isMacPlatform,
-    isReadOnly,
-    onRunBlock,
-    onSelectBlock,
-    ...props
-}) => {
-    const isInputFocused = false
-    const blockElement = useRef<HTMLDivElement>(null)
+interface ElmEvent {
+    data: string
+    eventType?: string
+    id?: string
+}
 
-    const { onSelect } = useBlockSelection({
+interface ExperimentalOptions {}
+
+interface ComputeInput {
+    computeQueries: string[]
+    experimentalOptions: ExperimentalOptions
+}
+
+interface Ports {
+    receiveEvent: { send: (event: ElmEvent) => void }
+    openStream: { subscribe: (callback: (args: string[]) => void) => void }
+    emitInput: { subscribe: (callback: (input: ComputeInput) => void) => void }
+}
+
+const updateBlockInput = (id: string, onBlockInputChange: (id: string, blockInput: BlockInput) => void) => (
+    blockInput: BlockInput
+): void => {
+    onBlockInputChange(id, blockInput)
+}
+
+const setupPorts = (updateBlockInputWithID: (blockInput: BlockInput) => void) => (ports: Ports): void => {
+    const sources: { [key: string]: EventSource } = {}
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    function sendEventToElm(event: any): void {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        const elmEvent = { data: event.data, eventType: event.type || null, id: event.id || null }
+        ports.receiveEvent.send(elmEvent)
+    }
+
+    function newEventSource(address: string): EventSource {
+        sources[address] = new EventSource(address)
+        return sources[address]
+    }
+
+    function deleteAllEventSources(): void {
+        for (const [key] of Object.entries(sources)) {
+            deleteEventSource(key)
+        }
+    }
+
+    function deleteEventSource(address: string): void {
+        sources[address].close()
+        delete sources[address]
+    }
+
+    ports.openStream.subscribe((args: string[]) => {
+        deleteAllEventSources() // Close any open streams if we receive a request to open a new stream before seeing 'done'.
+        console.log(`stream: ${args[0]}`)
+        const address = args[0]
+
+        const eventSource = newEventSource(address)
+        eventSource.addEventListener('error', () => {
+            console.log('EventSource failed')
+        })
+        eventSource.addEventListener('results', sendEventToElm)
+        eventSource.addEventListener('alert', sendEventToElm)
+        eventSource.addEventListener('error', sendEventToElm)
+        eventSource.addEventListener('done', () => {
+            deleteEventSource(address)
+            // Note: 'done:true' is sent in progress too. But we want a 'done' for the entire stream in case we don't see it.
+            sendEventToElm({ type: 'done', data: '' })
+        })
+    })
+
+    ports.emitInput.subscribe((computeInput: ComputeInput) => {
+        updateBlockInputWithID({ type: 'compute', input: JSON.stringify(computeInput) })
+    })
+}
+
+export const NotebookComputeBlock: React.FunctionComponent<ComputeBlockProps> = React.memo(
+    ({
         id,
-        blockElement: blockElement.current,
+        input,
+        output,
         isSelected,
-        isInputFocused,
-        onSelectBlock,
-        ...props,
-    })
-
-    const { onKeyDown } = useBlockShortcuts({
-        id,
-        isMacPlatform,
-        onEnterBlock: () => {},
-        ...props,
-        onRunBlock: () => {},
-    })
-
-    const modifierKeyLabel = isMacPlatform ? '⌘' : 'Ctrl'
-    const commonMenuActions = useCommonBlockMenuActions({
-        modifierKeyLabel,
-        isInputFocused,
+        isLightTheme,
+        platformContext,
         isReadOnly,
-        isMacPlatform,
-        ...props,
-    })
-
-    const blockMenu = isSelected && !isReadOnly && <NotebookBlockMenu id={id} actions={commonMenuActions} />
-
-    return (
-        <div className={classNames('block-wrapper', blockStyles.blockWrapper)} data-block-id={id}>
-            {/* See the explanation for the disable above. */}
-            {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
-            <div
-                className={classNames(
-                    blockStyles.block,
-                    styles.input,
-                    (isInputFocused || isSelected) && blockStyles.selected
-                )}
-                onClick={onSelect}
-                onFocus={onSelect}
-                onKeyDown={onKeyDown}
-                // A tabIndex is necessary to make the block focusable.
-                // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
-                tabIndex={0}
+        onBlockInputChange,
+        onRunBlock,
+        ...props
+    }) => {
+        const commonMenuActions = useCommonBlockMenuActions({ id, isReadOnly, ...props })
+        return (
+            <NotebookBlock
+                className={styles.input}
+                id={id}
                 aria-label="Notebook compute block"
-                ref={blockElement}
+                isSelected={isSelected}
+                isReadOnly={isReadOnly}
+                actions={isSelected ? commonMenuActions : []}
+                {...props}
             >
-                <div className="elm" />
-            </div>
-            {blockMenu}
-        </div>
-    )
-}
+                <div className="elm">
+                    <ElmComponent
+                        src={Elm.Main}
+                        ports={setupPorts(updateBlockInput(id, onBlockInputChange))}
+                        flags={{
+                            sourcegraphURL: platformContext.sourcegraphURL,
+                            isLightTheme,
+                            computeInput: input === '' ? null : (JSON.parse(input) as ComputeInput),
+                        }}
+                    />
+                </div>
+            </NotebookBlock>
+        )
+    }
+)

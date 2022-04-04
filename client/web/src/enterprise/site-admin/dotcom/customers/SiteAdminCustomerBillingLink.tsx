@@ -1,13 +1,14 @@
+import React, { useCallback } from 'react'
+
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
-import React, { useCallback } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, useEventObservable, Link } from '@sourcegraph/wildcard'
+import { Button, useEventObservable, Link, Icon } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../../backend/graphql'
 import { Scalars, SetCustomerBillingResult, SetCustomerBillingVariables } from '../../../../graphql-operations'
@@ -65,11 +66,11 @@ export const SiteAdminCustomerBillingLink: React.FunctionComponent<Props> = ({ c
             <div className="d-flex align-items-center">
                 {customer.urlForSiteAdminBilling && (
                     <Link to={customer.urlForSiteAdminBilling} className="mr-2 d-flex align-items-center">
-                        View customer account <ExternalLinkIcon className="icon-inline ml-1" />
+                        View customer account <Icon className="ml-1" as={ExternalLinkIcon} />
                     </Link>
                 )}
                 {isErrorLike(update) && (
-                    <AlertCircleIcon className="icon-inline text-danger mr-2" data-tooltip={update.message} />
+                    <Icon className="text-danger mr-2" data-tooltip={update.message} as={AlertCircleIcon} />
                 )}
                 <Button
                     onClick={customerHasLinkedBilling ? onUnlinkBillingClick : onLinkBillingClick}

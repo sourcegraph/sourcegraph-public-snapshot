@@ -49,7 +49,7 @@ func sitemapXmlGz(w http.ResponseWriter, r *http.Request) {
 }
 
 func favicon(w http.ResponseWriter, r *http.Request) {
-	url := assetsutil.URL("/img/favicon.png")
+	url := assetsutil.URL("/img/sourcegraph-mark.svg")
 
 	// Add query parameter for cache busting.
 	query := url.Query()

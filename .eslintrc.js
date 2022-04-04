@@ -55,6 +55,11 @@ const config = {
             message: 'Use the <Link /> component from @sourcegraph/wildcard instead.',
           },
           {
+            name: 'reactstrap',
+            importNames: ['Form'],
+            message: 'Use the <Form /> component from @sourcegraph/branded package instead',
+          },
+          {
             name: '@sourcegraph/wildcard',
             importNames: ['Tooltip'],
             message:
@@ -73,6 +78,16 @@ const config = {
             message: `The OSS product may not pull in any code from the enterprise codebase, to stay a 100% open-source program.
 
 See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-source for more information.`,
+          },
+          {
+            group: [
+              '@sourcegraph/*/src/*',
+              '!@sourcegraph/branded/src/*',
+              '!@sourcegraph/shared/src/*',
+              '!@sourcegraph/web/src/SourcegraphWebApp.scss',
+            ],
+            message:
+              'Imports from package internals are banned. Add relevant export to the entry point of the package to import it from the outside world.',
           },
         ],
       },
@@ -108,6 +123,10 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
           {
             className: 'badge',
             message: 'Use the <Badge /> component from @sourcegraph/wildcard instead.',
+          },
+          {
+            className: 'icon-inline',
+            message: 'Use the <Icon /> component from @sourcegraph/wildcard instead.',
           },
         ],
       },

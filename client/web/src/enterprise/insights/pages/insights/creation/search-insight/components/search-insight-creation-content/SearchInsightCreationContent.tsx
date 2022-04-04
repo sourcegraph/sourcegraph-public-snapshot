@@ -1,9 +1,11 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 import { noop } from 'rxjs'
 
 import { styles } from '../../../../../../components/creation-ui-kit'
 import { FormChangeEvent, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
+import { Insight } from '../../../../../../core/types'
 import { CreateInsightFormFields } from '../../types'
 import { SearchInsightLivePreview } from '../live-preview-chart/SearchInsightLivePreview'
 import { SearchInsightCreationForm } from '../search-insight-creation-form/SearchInsightCreationForm'
@@ -18,6 +20,7 @@ export interface SearchInsightCreationContentProps {
     initialValue?: Partial<CreateInsightFormFields>
     className?: string
     dataTestId?: string
+    insight?: Insight
 
     onSubmit: (values: CreateInsightFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
     onCancel?: () => void
@@ -27,7 +30,16 @@ export interface SearchInsightCreationContentProps {
 }
 
 export const SearchInsightCreationContent: React.FunctionComponent<SearchInsightCreationContentProps> = props => {
-    const { mode = 'creation', initialValue, className, dataTestId, onSubmit, onCancel = noop, onChange = noop } = props
+    const {
+        mode = 'creation',
+        initialValue,
+        className,
+        dataTestId,
+        insight,
+        onSubmit,
+        onCancel = noop,
+        onChange = noop,
+    } = props
 
     const {
         form: { values, formAPI, ref, handleSubmit },
@@ -89,6 +101,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
                 stepValue={stepValue}
                 isFormClearActive={hasFilledValue}
                 dashboardReferenceCount={initialValue?.dashboardReferenceCount}
+                insight={insight}
                 onSeriesLiveChange={listen}
                 onCancel={onCancel}
                 onEditSeriesRequest={editRequest}

@@ -10,9 +10,10 @@ import { LoaderButton } from '../../../components/LoaderButton'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 
-import styles from './AddCodeHostConnectionModal.module.scss'
 import { EncryptedDataIcon } from './components/EncryptedDataIcon'
 import { getMachineUserFragment } from './modalHints'
+
+import styles from './AddCodeHostConnectionModal.module.scss'
 
 interface CodeHostConfig {
     url: string

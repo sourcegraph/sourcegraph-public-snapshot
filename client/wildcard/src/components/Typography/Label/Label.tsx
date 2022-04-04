@@ -1,10 +1,11 @@
-import classNames from 'classnames'
 import React from 'react'
 
+import classNames from 'classnames'
+
 import { ForwardReferenceComponent } from '../../../types'
-import typographyStyles from '../Typography.module.scss'
 import { getAlignmentStyle, getFontWeightStyle, getModeStyle, TypographyProps } from '../utils'
 
+import typographyStyles from '../Typography.module.scss'
 import styles from './Label.module.scss'
 
 interface LabelProps extends React.HTMLAttributes<HTMLLabelElement>, TypographyProps {
@@ -14,25 +15,37 @@ interface LabelProps extends React.HTMLAttributes<HTMLLabelElement>, TypographyP
     isUppercase?: boolean
 }
 
-export const Label = React.forwardRef(
-    (
-        { children, as: Component = 'label', size, weight, alignment, mode, isUnderline, isUppercase, className },
-        reference
-    ) => (
+export const Label = React.forwardRef((props, reference) => {
+    const {
+        children,
+        as: Component = 'label',
+        size,
+        weight,
+        alignment,
+        mode,
+        isUnderline,
+        isUppercase,
+        className,
+        ...rest
+    } = props
+
+    return (
         <Component
+            ref={reference}
             className={classNames(
-                isUnderline && styles.underline,
-                isUppercase && styles.uppercase,
+                styles.label,
+                isUnderline && styles.labelUnderline,
+                isUppercase && styles.labelUppercase,
                 size === 'small' && typographyStyles.small,
                 weight && getFontWeightStyle({ weight }),
                 alignment && getAlignmentStyle({ alignment }),
                 mode && getModeStyle({ mode }),
-                mode === 'single-line' && styles.singleLine,
+                mode === 'single-line' && styles.labelSingleLine,
                 className
             )}
-            ref={reference}
+            {...rest}
         >
             {children}
         </Component>
     )
-) as ForwardReferenceComponent<'label', LabelProps>
+}) as ForwardReferenceComponent<'label', LabelProps>

@@ -1,6 +1,6 @@
-import { useApolloClient } from '@apollo/client'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo } from 'react'
+
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { RouteComponentProps, Switch, Route, useRouteMatch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 
@@ -15,7 +15,6 @@ import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../components/HeroPage'
 
 import { CodeInsightsBackendContext } from './core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from './core/backend/gql-api/code-insights-gql-backend'
 import { GaConfirmationModal } from './modals/GaConfirmationModal'
 import {
     CodeInsightsRootPage,
@@ -53,12 +52,8 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
     const { telemetryService, authenticatedUser } = props
 
     const match = useRouteMatch()
-    const apolloClient = useApolloClient()
-
-    const gqlApi = useMemo(() => new CodeInsightsGqlBackend(apolloClient), [apolloClient])
-
     return (
-        <CodeInsightsBackendContext.Provider value={gqlApi}>
+        <>
             <Route path="*" component={GaConfirmationModal} />
 
             <Switch>
@@ -112,7 +107,7 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
 
                 <Route component={NotFoundPage} key="hardcoded-key" />
             </Switch>
-        </CodeInsightsBackendContext.Provider>
+        </>
     )
 })
 
@@ -120,7 +115,7 @@ const CodeInsightsRedirect: React.FunctionComponent = () => {
     const { hasInsights } = useContext(CodeInsightsBackendContext)
 
     const match = useRouteMatch()
-    const isThereAvailableInsights = useObservable(useMemo(() => hasInsights(), [hasInsights]))
+    const isThereAvailableInsights = useObservable(useMemo(() => hasInsights(1), [hasInsights]))
 
     if (isThereAvailableInsights === undefined) {
         return <LoadingSpinner />

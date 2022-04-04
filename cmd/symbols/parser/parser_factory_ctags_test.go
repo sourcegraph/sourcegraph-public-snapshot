@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/sourcegraph/go-ctags"
 
@@ -153,7 +152,7 @@ interface Node {
 			t.Error(err)
 		}
 
-		if d := cmp.Diff(tc.want, got, cmpopts.IgnoreFields(ctags.Entry{}, "Pattern")); d != "" {
+		if d := cmp.Diff(tc.want, got); d != "" {
 			t.Errorf("%s mismatch (-want +got):\n%s", tc.path, d)
 		}
 	}

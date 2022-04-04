@@ -1,12 +1,13 @@
-import * as H from 'history'
 import React, { FunctionComponent, useEffect } from 'react'
+
+import * as H from 'history'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
+import { PageTitle } from '../../../../components/PageTitle'
 import { CodeIntelConfigurationPageHeader } from '../components/CodeIntelConfigurationPageHeader'
 import { ConfigurationEditor } from '../components/ConfigurationEditor'
 

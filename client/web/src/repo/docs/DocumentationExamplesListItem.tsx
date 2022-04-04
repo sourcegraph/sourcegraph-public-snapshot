@@ -1,6 +1,7 @@
+import React, { useMemo } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
 
@@ -16,8 +17,9 @@ import { Timestamp } from '../../components/time/Timestamp'
 import { RepositoryFields } from '../../graphql-operations'
 import { PersonLink } from '../../person/PersonLink'
 
-import styles from './DocumentationExamplesListItem.module.scss'
 import { fetchDocumentationBlame } from './graphql'
+
+import styles from './DocumentationExamplesListItem.module.scss'
 
 interface Props extends SettingsCascadeProps {
     location: H.Location
@@ -42,7 +44,7 @@ export const DocumentationExamplesListItem: React.FunctionComponent<Props> = ({
     ...props
 }) => {
     const fetchHighlightedFileRangeLines = React.useCallback(
-        (isFirst, startLine, endLine) =>
+        () =>
             fetchHighlightedFileLineRanges(
                 {
                     repoName: item.resource.repository.name,
@@ -87,10 +89,7 @@ export const DocumentationExamplesListItem: React.FunctionComponent<Props> = ({
     return (
         <div className={classNames('mt-2', styles.documentationExamplesListItem)}>
             <div className="p-2">
-                <RepoIcon
-                    repoName={item.resource.repository.name}
-                    className="icon-inline text-muted flex-shrink-0 mr-2"
-                />
+                <RepoIcon repoName={item.resource.repository.name} className="text-muted flex-shrink-0 mr-2" />
                 <RepoFileLink
                     repoName={item.resource.repository.name}
                     repoURL={item.resource.repository.url}

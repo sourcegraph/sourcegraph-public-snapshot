@@ -6,14 +6,16 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     class="pt-2 w-100 streamingSkippedItem streamingSkippedItemWarn"
   >
     <button
+      aria-expanded="true"
       class="btn btnOutlineDanger button p-2 w-100 bg-transparent border-0"
+      role="button"
       type="button"
     >
       <h4
         class="d-flex align-items-center mb-0 w-100"
       >
         <svg
-          class="mdi-icon icon-inline icon flex-shrink-0"
+          class="mdi-icon iconInline icon flex-shrink-0"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -29,7 +31,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           Error loading results
         </span>
         <svg
-          class="mdi-icon icon-inline flex-shrink-0 chevron"
+          class="mdi-icon iconInline flex-shrink-0 chevron"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -62,14 +64,16 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     class="pt-2 w-100 streamingSkippedItem streamingSkippedItemWarn"
   >
     <button
+      aria-expanded="false"
       class="btn btnOutlineDanger button p-2 w-100 bg-transparent border-0"
+      role="button"
       type="button"
     >
       <h4
         class="d-flex align-items-center mb-0 w-100"
       >
         <svg
-          class="mdi-icon icon-inline icon flex-shrink-0"
+          class="mdi-icon iconInline icon flex-shrink-0"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -85,7 +89,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           Search timed out
         </span>
         <svg
-          class="mdi-icon icon-inline flex-shrink-0 chevron"
+          class="mdi-icon iconInline flex-shrink-0 chevron"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -118,14 +122,16 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     class="pt-2 w-100 streamingSkippedItem"
   >
     <button
+      aria-expanded="false"
       class="btn btnOutlinePrimary button p-2 w-100 bg-transparent border-0"
+      role="button"
       type="button"
     >
       <h4
         class="d-flex align-items-center mb-0 w-100"
       >
         <svg
-          class="mdi-icon icon-inline icon flex-shrink-0"
+          class="mdi-icon iconInline icon flex-shrink-0"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -141,7 +147,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           10k forked repositories excluded
         </span>
         <svg
-          class="mdi-icon icon-inline flex-shrink-0 chevron"
+          class="mdi-icon iconInline flex-shrink-0 chevron"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -174,14 +180,16 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     class="pt-2 w-100 streamingSkippedItem"
   >
     <button
+      aria-expanded="false"
       class="btn btnOutlinePrimary button p-2 w-100 bg-transparent border-0"
+      role="button"
       type="button"
     >
       <h4
         class="d-flex align-items-center mb-0 w-100"
       >
         <svg
-          class="mdi-icon icon-inline icon flex-shrink-0"
+          class="mdi-icon iconInline icon flex-shrink-0"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -197,7 +205,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           60k archived repositories excluded
         </span>
         <svg
-          class="mdi-icon icon-inline flex-shrink-0 chevron"
+          class="mdi-icon iconInline flex-shrink-0 chevron"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -230,14 +238,16 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     class="pt-2 w-100 streamingSkippedItem"
   >
     <button
+      aria-expanded="false"
       class="btn btnOutlinePrimary button p-2 w-100 bg-transparent border-0"
+      role="button"
       type="button"
     >
       <h4
         class="d-flex align-items-center mb-0 w-100"
       >
         <svg
-          class="mdi-icon icon-inline icon flex-shrink-0"
+          class="mdi-icon iconInline icon flex-shrink-0"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -253,7 +263,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           1 archived
         </span>
         <svg
-          class="mdi-icon icon-inline flex-shrink-0 chevron"
+          class="mdi-icon iconInline flex-shrink-0 chevron"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -404,7 +414,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       type="submit"
     >
       <svg
-        class="mdi-icon icon-inline mr-1"
+        class="mdi-icon iconInline mr-1"
         fill="currentColor"
         height="24"
         viewBox="0 0 24 24"

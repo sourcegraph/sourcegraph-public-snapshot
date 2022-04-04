@@ -1,7 +1,8 @@
+import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
+
 import { useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
-import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { takeWhile } from 'rxjs/operators'
@@ -10,15 +11,15 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { LSIFUploadState } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Button, Container, PageHeader, LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
+
+import { AuthenticatedUser } from '../../../../auth'
+import { Collapsible } from '../../../../components/Collapsible'
 import {
     Connection,
     FilteredConnection,
     FilteredConnectionQueryArguments,
-} from '@sourcegraph/web/src/components/FilteredConnection'
-import { Button, Container, PageHeader, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
-
-import { AuthenticatedUser } from '../../../../auth'
-import { Collapsible } from '../../../../components/Collapsible'
+} from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
 import { LsifUploadFields, LsifUploadConnectionFields } from '../../../../graphql-operations'
 import { CodeIntelStateBanner, CodeIntelStateBannerProps } from '../../shared/components/CodeIntelStateBanner'
@@ -215,9 +216,8 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                         />
                         {uploadOrError.isLatestForRepo && (
                             <div>
-                                <InformationOutlineIcon className="icon-inline" /> This upload can answer queries for
-                                the tip of the default branch and are targets of cross-repository find reference
-                                operations.
+                                <Icon as={InformationOutlineIcon} /> This upload can answer queries for the tip of the
+                                default branch and are targets of cross-repository find reference operations.
                             </div>
                         )}
                     </Container>

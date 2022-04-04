@@ -1,14 +1,15 @@
+import React, { useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { useState } from 'react'
 import { useLocation } from 'react-router'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
-import { ConnectionSummary } from '@sourcegraph/web/src/components/FilteredConnection/ui'
 import { Badge, useDebounce } from '@sourcegraph/wildcard'
 
+import { useConnection } from '../../components/FilteredConnection/hooks/useConnection'
+import { ConnectionSummary } from '../../components/FilteredConnection/ui'
 import {
     GitCommitAncestorFields,
     RepositoryGitCommitResult,
@@ -16,8 +17,9 @@ import {
 } from '../../graphql-operations'
 
 import { ConnectionPopoverNode, ConnectionPopoverNodeLink } from './components'
-import styles from './RevisionsPopoverCommits.module.scss'
 import { RevisionsPopoverTab } from './RevisionsPopoverTab'
+
+import styles from './RevisionsPopoverCommits.module.scss'
 
 export const REPOSITORY_GIT_COMMIT = gql`
     query RepositoryGitCommit($repo: ID!, $first: Int, $revision: String!, $query: String) {

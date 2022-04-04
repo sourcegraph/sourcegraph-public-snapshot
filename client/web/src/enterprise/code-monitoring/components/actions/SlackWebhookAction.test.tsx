@@ -1,7 +1,8 @@
+import React from 'react'
+
 import { MockedResponse } from '@apollo/client/testing'
 import { render } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import React from 'react'
 import sinon from 'sinon'
 
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
@@ -11,6 +12,8 @@ import { mockAuthenticatedUser } from '../../testing/util'
 import { ActionProps, MonitorAction } from '../FormActionArea'
 
 import { SEND_TEST_SLACK_WEBHOOK, SlackWebhookAction } from './SlackWebhookAction'
+
+const SLACK_URL = 'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX'
 
 describe('SlackWebhookAction', () => {
     const props: ActionProps = {
@@ -33,7 +36,7 @@ describe('SlackWebhookAction', () => {
 
         expect(getByTestId('submit-action-slack-webhook')).toBeDisabled()
 
-        userEvent.type(getByTestId('slack-webhook-url'), 'https://example.com')
+        userEvent.type(getByTestId('slack-webhook-url'), SLACK_URL)
         expect(getByTestId('submit-action-slack-webhook')).toBeEnabled()
 
         userEvent.click(getByTestId('submit-action-slack-webhook'))
@@ -43,7 +46,7 @@ describe('SlackWebhookAction', () => {
             enabled: true,
             includeResults: false,
             id: '',
-            url: 'https://example.com',
+            url: SLACK_URL,
         })
     })
 
@@ -59,7 +62,7 @@ describe('SlackWebhookAction', () => {
                         enabled: true,
                         includeResults: false,
                         id: '1',
-                        url: 'https://example.com',
+                        url: SLACK_URL,
                     }}
                 />
             </MockedTestProvider>
@@ -71,7 +74,7 @@ describe('SlackWebhookAction', () => {
         userEvent.clear(getByTestId('slack-webhook-url'))
         expect(getByTestId('submit-action-slack-webhook')).toBeDisabled()
 
-        userEvent.type(getByTestId('slack-webhook-url'), 'https://example2.com')
+        userEvent.type(getByTestId('slack-webhook-url'), SLACK_URL)
         expect(getByTestId('submit-action-slack-webhook')).toBeEnabled()
 
         userEvent.click(getByTestId('submit-action-slack-webhook'))
@@ -81,7 +84,7 @@ describe('SlackWebhookAction', () => {
             enabled: true,
             includeResults: false,
             id: '1',
-            url: 'https://example2.com',
+            url: SLACK_URL,
         })
     })
 
@@ -96,7 +99,7 @@ describe('SlackWebhookAction', () => {
                         enabled: true,
                         includeResults: false,
                         id: '2',
-                        url: 'https://example.com',
+                        url: SLACK_URL,
                     }}
                     setAction={setActionSpy}
                 />
@@ -120,7 +123,7 @@ describe('SlackWebhookAction', () => {
                         enabled: false,
                         includeResults: false,
                         id: '5',
-                        url: 'https://example.com',
+                        url: SLACK_URL,
                     }}
                     setAction={setActionSpy}
                 />
@@ -136,7 +139,7 @@ describe('SlackWebhookAction', () => {
             enabled: true,
             includeResults: false,
             id: '5',
-            url: 'https://example.com',
+            url: SLACK_URL,
         })
 
         setActionSpy.resetHistory()
@@ -148,8 +151,43 @@ describe('SlackWebhookAction', () => {
             enabled: false,
             includeResults: false,
             id: '5',
-            url: 'https://example.com',
+            url: SLACK_URL,
         })
+    })
+
+    test('open, edit, cancel, open again', () => {
+        const setActionSpy = sinon.spy()
+        const { getByTestId } = render(
+            <MockedTestProvider>
+                <SlackWebhookAction
+                    {...props}
+                    action={{
+                        __typename: 'MonitorSlackWebhook',
+                        enabled: true,
+                        includeResults: false,
+                        id: '5',
+                        url: 'https://example.com',
+                    }}
+                    setAction={setActionSpy}
+                />
+            </MockedTestProvider>
+        )
+
+        userEvent.click(getByTestId('form-action-toggle-slack-webhook'))
+
+        expect(getByTestId('enable-action-toggle-expanded-slack-webhook')).toBeChecked()
+        userEvent.click(getByTestId('enable-action-toggle-expanded-slack-webhook'))
+        expect(getByTestId('enable-action-toggle-expanded-slack-webhook')).not.toBeChecked()
+
+        userEvent.type(getByTestId('slack-webhook-url'), 'https://example2.com')
+
+        userEvent.click(getByTestId('cancel-action-slack-webhook'))
+
+        userEvent.click(getByTestId('form-action-toggle-slack-webhook'))
+        expect(getByTestId('slack-webhook-url')).toHaveValue('https://example.com')
+        expect(getByTestId('enable-action-toggle-expanded-slack-webhook')).toBeChecked()
+
+        sinon.assert.notCalled(setActionSpy)
     })
 
     describe('Send test message', () => {
@@ -158,7 +196,7 @@ describe('SlackWebhookAction', () => {
             enabled: false,
             includeResults: false,
             id: '5',
-            url: 'https://example.com',
+            url: SLACK_URL,
         }
 
         const mockedVars: SendTestSlackWebhookVariables = {

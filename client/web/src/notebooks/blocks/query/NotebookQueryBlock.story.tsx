@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
-import React from 'react'
 import { of } from 'rxjs'
 
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
@@ -50,13 +51,11 @@ add('default', () => (
                 {...noopBlockCallbacks}
                 authenticatedUser={null}
                 id="query-block-1"
-                input="query"
-                type="query"
+                input={{ query: 'query' }}
                 output={of(streamingSearchResult)}
                 isSelected={false}
                 isReadOnly={false}
                 isOtherBlockSelected={false}
-                isMacPlatform={true}
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
                 sourcegraphSearchLanguageId="sourcegraphSearch"
@@ -77,13 +76,11 @@ add('selected', () => (
                 {...props}
                 {...noopBlockCallbacks}
                 id="query-block-1"
-                input="query"
-                type="query"
+                input={{ query: 'query' }}
                 output={of(streamingSearchResult)}
                 isSelected={true}
                 isOtherBlockSelected={false}
                 isReadOnly={false}
-                isMacPlatform={true}
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
                 sourcegraphSearchLanguageId="sourcegraphSearch"
@@ -105,13 +102,11 @@ add('read-only selected', () => (
                 {...props}
                 {...noopBlockCallbacks}
                 id="query-block-1"
-                input="query"
-                type="query"
+                input={{ query: 'query' }}
                 output={of(streamingSearchResult)}
                 isSelected={true}
                 isReadOnly={true}
                 isOtherBlockSelected={false}
-                isMacPlatform={true}
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
                 sourcegraphSearchLanguageId="sourcegraphSearch"

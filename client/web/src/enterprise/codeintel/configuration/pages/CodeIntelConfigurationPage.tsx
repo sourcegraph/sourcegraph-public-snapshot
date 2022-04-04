@@ -1,22 +1,23 @@
+import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
+
 import { useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { Subject } from 'rxjs'
 
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Container, PageHeader, Link } from '@sourcegraph/wildcard'
+
+import { AuthenticatedUser } from '../../../../auth'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
     FilteredConnectionQueryArguments,
-} from '@sourcegraph/web/src/components/FilteredConnection'
-import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { Container, PageHeader, Link } from '@sourcegraph/wildcard'
-
-import { AuthenticatedUser } from '../../../../auth'
+} from '../../../../components/FilteredConnection'
+import { PageTitle } from '../../../../components/PageTitle'
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'
 import { CodeIntelConfigurationPageHeader } from '../components/CodeIntelConfigurationPageHeader'
 import { EmptyPoliciesList } from '../components/EmptyPoliciesList'

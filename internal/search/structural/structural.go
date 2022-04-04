@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -16,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -152,22 +152,17 @@ func runStructuralSearch(ctx context.Context, args *search.SearcherParameters, r
 }
 
 type StructuralSearch struct {
-	ZoektArgs    *search.ZoektParameters
-	SearcherArgs *search.SearcherParameters
-
-	NotSearcherOnly  bool
+	ZoektArgs        *search.ZoektParameters
+	SearcherArgs     *search.SearcherParameters
 	UseIndex         query.YesNoOnly
 	ContainsRefGlobs bool
 
 	RepoOpts search.RepoOptions
 }
 
-func (s *StructuralSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
-	tr, ctx := trace.New(ctx, "StructuralSearch", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+func (s *StructuralSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
+	_, ctx, stream, finish := jobutil.StartSpan(ctx, stream, s)
+	defer func() { finish(alert, err) }()
 
 	repos := &searchrepos.Resolver{DB: db, Opts: s.RepoOpts}
 	return nil, repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
@@ -178,17 +173,14 @@ func (s *StructuralSearch) Run(ctx context.Context, db database.DB, stream strea
 			search.TextRequest,
 			s.UseIndex,
 			s.ContainsRefGlobs,
-			zoektutil.MissingRepoRevStatus(stream),
 		)
 		if err != nil {
 			return err
 		}
 
 		repoSet := []repoData{UnindexedList(unindexed)}
-		if s.NotSearcherOnly {
-			if indexed != nil {
-				repoSet = append(repoSet, IndexedMap(indexed.RepoRevs))
-			}
+		if indexed != nil {
+			repoSet = append(repoSet, IndexedMap(indexed.RepoRevs))
 		}
 		return runStructuralSearch(ctx, s.SearcherArgs, repoSet, stream)
 	})

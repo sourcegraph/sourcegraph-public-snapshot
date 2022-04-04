@@ -460,7 +460,9 @@ type GitserverRepo struct {
 	LastFetched time.Time
 	// The last time a fetch updated the repository.
 	LastChanged time.Time
-	UpdatedAt   time.Time
+	// Size of the repository in bytes.
+	RepoSizeBytes int64
+	UpdatedAt     time.Time
 }
 
 // ExternalService is a connection to an external service.
@@ -912,6 +914,7 @@ type SearchUsagePeriod struct {
 	RepoContainsFile        *SearchCountStatistics
 	RepoContainsContent     *SearchCountStatistics
 	RepoContainsCommitAfter *SearchCountStatistics
+	RepoDependencies        *SearchCountStatistics
 	CountAll                *SearchCountStatistics
 	NonGlobalContext        *SearchCountStatistics
 	OnlyPatterns            *SearchCountStatistics
@@ -1043,6 +1046,47 @@ type GrowthStatistics struct {
 	ResurrectedUsers int32
 	ChurnedUsers     int32
 	RetainedUsers    int32
+}
+
+// IDEExtensionsUsage represents the daily, weekly and monthly numbers
+// of search performed and user state events from all IDE extensions,
+// and all inbound traffic from the extension to Sourcegraph instance
+type IDEExtensionsUsage struct {
+	IDEs []*IDEExtensionsUsageStatistics
+}
+
+// Usage statistics from each IDE extension
+type IDEExtensionsUsageStatistics struct {
+	IdeKind string
+	Month   IDEExtensionsUsageRegularPeriod
+	Week    IDEExtensionsUsageRegularPeriod
+	Day     IDEExtensionsUsageDailyPeriod
+}
+
+// Monthly and Weekly usage from each IDE extension
+type IDEExtensionsUsageRegularPeriod struct {
+	StartTime         time.Time
+	SearchesPerformed IDEExtensionsUsageSearchesPerformed
+}
+
+// Daily usage from each IDE extension
+type IDEExtensionsUsageDailyPeriod struct {
+	StartTime         time.Time
+	SearchesPerformed IDEExtensionsUsageSearchesPerformed
+	UserState         IDEExtensionsUsageUserState
+	RedirectsCount    int32
+}
+
+// Count of unique users who performed searches & total searches performed
+type IDEExtensionsUsageSearchesPerformed struct {
+	UniquesCount int32
+	TotalCount   int32
+}
+
+// Count of unique users who installed & uninstalled each extension
+type IDEExtensionsUsageUserState struct {
+	Installs   int32
+	Uninstalls int32
 }
 
 // CodeHostIntegrationUsage represents the daily, weekly and monthly
@@ -1192,6 +1236,9 @@ type CodeInsightsUsageStatistics struct {
 	InsightTimeIntervals                    []InsightTimeIntervalPing
 	InsightOrgVisible                       []OrgVisibleInsightPing
 	InsightTotalCounts                      InsightTotalCounts
+	TotalOrgsWithDashboard                  *int32
+	TotalDashboardCount                     *int32
+	InsightsPerDashboard                    InsightsPerDashboardPing
 }
 
 type CodeInsightsCriticalTelemetry struct {
@@ -1253,6 +1300,14 @@ type InsightTotalCounts struct {
 	ViewCounts       []InsightViewsCountPing
 	SeriesCounts     []InsightSeriesCountPing
 	ViewSeriesCounts []InsightViewSeriesCountPing
+}
+
+type InsightsPerDashboardPing struct {
+	Avg    float32
+	Max    int
+	Min    int
+	StdDev float32
+	Median float32
 }
 
 type CodeMonitoringUsageStatistics struct {

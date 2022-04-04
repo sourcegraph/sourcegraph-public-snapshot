@@ -1,10 +1,21 @@
-import classNames from 'classnames'
 import React, { useEffect } from 'react'
+
+import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
 
-import { Badge, Button, useLocalStorage, Link, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
-import { BADGE_VARIANTS } from '@sourcegraph/wildcard/src/components/Badge/constants'
+import {
+    Badge,
+    BADGE_VARIANTS,
+    Button,
+    useLocalStorage,
+    Link,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    Tabs,
+} from '@sourcegraph/wildcard'
 
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
@@ -23,8 +34,9 @@ import {
 import { eventLogger } from '../tracking/eventLogger'
 import { userURL } from '../user'
 
-import styles from './SiteAdminSurveyResponsesPage.module.scss'
 import { USER_ACTIVITY_FILTERS } from './SiteAdminUsageStatisticsPage'
+
+import styles from './SiteAdminSurveyResponsesPage.module.scss'
 
 interface SurveyResponseNodeProps {
     /**

@@ -1,20 +1,22 @@
 import React from 'react'
+
 import { useHistory, useLocation } from 'react-router'
 import { Observable } from 'rxjs'
 
 import { ErrorLike } from '@sourcegraph/common'
+import { Container } from '@sourcegraph/wildcard'
+
 import {
     FilteredConnection,
     FilteredConnectionFilter,
     FilteredConnectionQueryArguments,
     Connection,
-} from '@sourcegraph/web/src/components/FilteredConnection'
-import { Container } from '@sourcegraph/wildcard'
-
+} from '../../../components/FilteredConnection'
 import { SiteAdminRepositoryFields, UserRepositoriesResult, Maybe } from '../../../graphql-operations'
 
-import styles from './RepositoriesList.module.scss'
 import { RepositoryNode } from './RepositoryNode'
+
+import styles from './RepositoriesList.module.scss'
 
 interface Props {
     queryRepos: (

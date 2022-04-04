@@ -1,5 +1,6 @@
-import { Meta } from '@storybook/react'
 import React, { useCallback } from 'react'
+
+import { Meta } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
@@ -52,7 +53,7 @@ export const Simple = () => {
             />
             <Input
                 value={selected}
-                title="Input loading"
+                label="Input loading"
                 onChange={handleChange}
                 message="random message"
                 status="loading"
@@ -62,7 +63,7 @@ export const Simple = () => {
                 value={selected}
                 label="Input error"
                 onChange={handleChange}
-                message="a message with error"
+                error="a message with error"
                 status="error"
                 placeholder="error status input"
             />

@@ -31,7 +31,7 @@ body.theme-dark .markdown-body ul li:before {
 
 <div class="cta-group">
 <a class="btn btn-primary" href="quickstart">★ Quickstart with <code>sg</code></a>
-<a class="btn" href="#how-tos">How-tos</a>
+<a class="btn" href="../how-to">How-tos</a>
 <a class="btn" href="#troubleshooting">Troubleshooting</a>
 </div>
 

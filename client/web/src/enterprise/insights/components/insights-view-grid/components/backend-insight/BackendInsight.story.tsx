@@ -1,5 +1,6 @@
-import { Meta, Story } from '@storybook/react'
 import React from 'react'
+
+import { Meta, Story } from '@storybook/react'
 import { of, throwError } from 'rxjs'
 import { delay } from 'rxjs/operators'
 
@@ -15,7 +16,7 @@ import {
     InsightType,
     isCaptureGroupInsight,
 } from '../../../../core/types'
-import { SearchBackendBasedInsight } from '../../../../core/types/insight/search-insight'
+import { SearchBackendBasedInsight } from '../../../../core/types/insight/types/search-insight'
 
 import { BackendInsightView } from './BackendInsight'
 
@@ -29,13 +30,13 @@ export default defaultStory
 const INSIGHT_CONFIGURATION_MOCK: SearchBackendBasedInsight = {
     title: 'Mock Backend Insight',
     series: [],
-    visibility: '',
-    type: InsightExecutionType.Backend,
-    viewType: InsightType.SearchBased,
+    executionType: InsightExecutionType.Backend,
+    type: InsightType.SearchBased,
     id: 'searchInsights.insight.mock_backend_insight_id',
     step: { weeks: 2 },
     filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
     dashboardReferenceCount: 0,
+    isFrozen: false,
 }
 
 const mockInsightAPI = ({

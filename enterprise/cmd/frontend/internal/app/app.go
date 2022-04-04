@@ -2,7 +2,12 @@ package app
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
+	"crypto/x509"
 	"encoding/base64"
+	"encoding/pem"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -17,6 +22,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -69,7 +76,7 @@ func Init(
 	if err != nil {
 		return errors.Wrap(err, "parse github.com")
 	}
-	client := github.NewV3Client(apiURL, auther, nil)
+	client := github.NewV3Client(extsvc.URNGitHubAppCloud, apiURL, auther, nil)
 
 	enterpriseServices.NewGitHubAppCloudSetupHandler = func() http.Handler {
 		return newGitHubAppCloudSetupHandler(db, apiURL, client)
@@ -91,6 +98,53 @@ type githubClient interface {
 	GetAppInstallation(ctx context.Context, installationID int64) (*gogithub.Installation, error)
 }
 
+func isSetupActionValid(setupAction string) bool {
+	for _, a := range []string{"install", "request"} {
+		if setupAction == a {
+			return true
+		}
+	}
+
+	return false
+}
+
+// DescryptWithPrivatekey decrypts a message using a provided private key byte string in PEM format.
+func DecryptWithPrivateKey(encodedMsg string, privateKey []byte) (string, error) {
+	block, _ := pem.Decode(privateKey)
+
+	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		return "", errors.Wrap(err, "parse private key")
+	}
+
+	hash := sha256.New()
+	plaintext, err := rsa.DecryptOAEP(hash, rand.Reader, key, []byte(encodedMsg), nil)
+	if err != nil {
+		return "", errors.Wrap(err, "decrypt message")
+	}
+
+	return string(plaintext), nil
+}
+
+// EncryptWithPrivatekey encrypts a message using a provided private key byte string in PEM format.
+// The public key used for encryption is derived from the provided private key.
+func EncryptWithPrivateKey(msg string, privateKey []byte) ([]byte, error) {
+	block, _ := pem.Decode(privateKey)
+
+	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		return nil, errors.Wrap(err, "parse private key")
+	}
+
+	hash := sha256.New()
+	ciphertext, err := rsa.EncryptOAEP(hash, rand.Reader, &key.PublicKey, []byte(msg), nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "encrypt message")
+	}
+
+	return ciphertext, nil
+}
+
 func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githubClient) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !envvar.SourcegraphDotComMode() {
@@ -99,32 +153,56 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 			return
 		}
 
+		setupAction := r.URL.Query().Get("setup_action")
+
+		if !isSetupActionValid(setupAction) {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(fmt.Sprintf("Invalid setup action '%s'", setupAction)))
+			return
+		}
+
+		a := actor.FromContext(r.Context())
+		if !a.IsAuthenticated() {
+			if setupAction == "install" {
+				dotcomConfig := conf.SiteConfig().Dotcom
+
+				privateKey, err := base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
+				if err != nil {
+					log15.Error("Error while decoding privatekey.", "error", err)
+					w.WriteHeader(http.StatusBadRequest)
+					_, _ = w.Write([]byte(`Error while decoding encryption key`))
+					return
+				}
+
+				installationID := r.URL.Query().Get("installation_id")
+				encryptedInstallationID, err := EncryptWithPrivateKey(installationID, privateKey)
+				if err != nil {
+					log15.Error("Error while encrypting installation ID.", "error", err)
+					w.WriteHeader(http.StatusBadRequest)
+					_, _ = w.Write([]byte(`Error while encrypting installation ID`))
+					return
+				}
+				base64InstallationID := base64.StdEncoding.EncodeToString(encryptedInstallationID)
+				http.Redirect(w, r, "/install-github-app-success?installation_id="+url.QueryEscape(base64InstallationID), http.StatusFound)
+				return
+			}
+
+			if setupAction == "request" {
+				http.Redirect(w, r, "/install-github-app-request", http.StatusFound)
+				return
+			}
+		}
+
 		state := r.URL.Query().Get("state")
+		if state == "" && setupAction == "install" {
+			http.Redirect(w, r, "/settings", http.StatusFound)
+			return
+		}
+
 		orgID, err := graphqlbackend.UnmarshalOrgID(graphql.ID(state))
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = w.Write([]byte(`The "state" is not a valid graphql.ID of an organization`))
-			return
-		}
-
-		err = checkIfOrgCanInstallGitHubApp(r.Context(), db, orgID)
-		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
-			_, _ = w.Write([]byte(err.Error()))
-			return
-		}
-
-		installationID, err := strconv.ParseInt(r.URL.Query().Get("installation_id"), 10, 64)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte(`The "installation_id" is not a valid integer`))
-			return
-		}
-
-		err = backend.CheckOrgAccess(r.Context(), db, orgID)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte("the authenticated user does not belong to the organization requested"))
 			return
 		}
 
@@ -152,19 +230,24 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 			return
 		}
 
-		ins, err := client.GetAppInstallation(r.Context(), installationID)
+		err = checkIfOrgCanInstallGitHubApp(r.Context(), db, orgID)
 		if err != nil {
-			responseServerError(`Failed to get the installation information using the "installation_id"`, err)
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = w.Write([]byte(err.Error()))
 			return
 		}
 
-		displayName := "GitHub"
-		if ins.Account.Login != nil {
-			displayName = fmt.Sprintf("GitHub (%s)", *ins.Account.Login)
+		err = backend.CheckOrgAccess(r.Context(), db, orgID)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte("the authenticated user does not belong to the organization requested"))
+			return
 		}
-		now := time.Now()
 
 		var svc *types.ExternalService
+		displayName := "GitHub"
+		now := time.Now()
+
 		if len(svcs) == 0 {
 			svc = &types.ExternalService{
 				Kind:        extsvc.KindGitHub,
@@ -172,10 +255,9 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 				Config: fmt.Sprintf(`
 {
   "url": "%s",
-  "githubAppInstallationID": "%d",
   "repos": []
 }
-`, apiURL.String(), installationID),
+`, apiURL.String()),
 				NamespaceOrgID: org.ID,
 				CreatedAt:      now,
 				UpdatedAt:      now,
@@ -184,16 +266,54 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 			// We have an existing github service, update it
 			svc = svcs[0]
 			svc.DisplayName = displayName
-			newConfig, err := jsonc.Edit(svc.Config, strconv.FormatInt(installationID, 10), "githubAppInstallationID")
+		} else {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte("Multiple code host connections of same kind found"))
+			return
+		}
+
+		if setupAction == "request" {
+			newConfig, err := jsonc.Edit(svc.Config, true, "pending")
 			if err != nil {
 				responseServerError("Failed to edit config", err)
 				return
 			}
 			svc.Config = newConfig
+		} else if setupAction == "install" {
+			installationID, err := strconv.ParseInt(r.URL.Query().Get("installation_id"), 10, 64)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				_, _ = w.Write([]byte(`The "installation_id" is not a valid integer`))
+				return
+			}
+
+			ins, err := client.GetAppInstallation(r.Context(), installationID)
+			if err != nil {
+				responseServerError(`Failed to get the installation information using the "installation_id"`, err)
+				return
+			}
+
+			if ins.Account.Login != nil {
+				displayName = fmt.Sprintf("GitHub (%s)", *ins.Account.Login)
+			}
+
+			svc.DisplayName = displayName
+			newConfig, err := jsonc.Edit(svc.Config, strconv.FormatInt(installationID, 10), "githubAppInstallationID")
+			if err != nil {
+				responseServerError("Failed to edit config", err)
+				return
+			}
+			newConfig, err = jsonc.Edit(newConfig, false, "pending")
+			if err != nil {
+				responseServerError("Failed to edit config", err)
+			}
+			svc.Config = newConfig
 			svc.UpdatedAt = now
-		} else {
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte("Multiple code host connections of same kind found"))
+		}
+
+		err = db.ExternalServices().Upsert(r.Context(), svc)
+		if err != nil {
+			responseServerError("Failed to upsert code host connection", err)
 			return
 		}
 

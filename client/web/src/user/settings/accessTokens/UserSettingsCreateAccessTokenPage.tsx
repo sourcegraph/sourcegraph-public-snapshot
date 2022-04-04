@@ -1,5 +1,6 @@
-import AddIcon from 'mdi-react/AddIcon'
 import React, { useCallback, useMemo, useState } from 'react'
+
+import AddIcon from 'mdi-react/AddIcon'
 import { RouteComponentProps } from 'react-router'
 import { concat, Observable, Subject } from 'rxjs'
 import { catchError, concatMap, map, tap } from 'rxjs/operators'
@@ -9,7 +10,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, PageHeader, LoadingSpinner, Button, useObservable, Link } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Button, useObservable, Link, Icon } from '@sourcegraph/wildcard'
 
 import { AccessTokenScopes } from '../../../auth/accessToken'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -194,8 +195,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<Props> =
                         className="test-create-access-token-submit"
                         variant="primary"
                     >
-                        {creationOrError === 'loading' ? <LoadingSpinner /> : <AddIcon className="icon-inline" />}{' '}
-                        Generate token
+                        {creationOrError === 'loading' ? <LoadingSpinner /> : <Icon as={AddIcon} />} Generate token
                     </Button>
                     <Button
                         className="ml-2 test-create-access-token-cancel"

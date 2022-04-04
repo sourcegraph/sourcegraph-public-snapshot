@@ -1,3 +1,5 @@
+import { SymbolKind } from '@sourcegraph/shared/src/schema'
+
 import { convertMarkdownToBlocks } from './convertMarkdownToBlocks'
 
 describe('convertMarkdownToBlocks', () => {
@@ -14,7 +16,7 @@ describe('convertMarkdownToBlocks', () => {
 * L2
 
 Paragraph`
-        expect(convertMarkdownToBlocks(markdown)).toStrictEqual([{ type: 'md', input: markdown }])
+        expect(convertMarkdownToBlocks(markdown)).toStrictEqual([{ type: 'md', input: { text: markdown } }])
     })
 
     it('should handle a single file link', () => {
@@ -66,13 +68,16 @@ https://sourcegraph.com/github.com/sourcegraph/sourcegraph@feature/-/blob/client
 
 https://example.com/a/b
 
+### Symbol block
+
+https://sourcegraph.com/github.com/sourcegraph/sourcegraph@branch/-/blob/client/web/index.ts?L1:1-1:3#symbolName=func+a&symbolContainerName=class&symbolKind=FUNCTION&lineContext=3
 `
 
         expect(convertMarkdownToBlocks(markdown)).toStrictEqual([
-            { type: 'md', input: '# Title\n\n' },
-            { type: 'query', input: 'my query' },
-            { type: 'md', input: '## Second title\n\nParagraph with list:\n\n* 1\n* 2\n* 3\n\n' },
-            { type: 'query', input: 'my second query' },
+            { type: 'md', input: { text: '# Title\n\n' } },
+            { type: 'query', input: { query: 'my query' } },
+            { type: 'md', input: { text: '## Second title\n\nParagraph with list:\n\n* 1\n* 2\n* 3\n\n' } },
+            { type: 'query', input: { query: 'my second query' } },
             {
                 type: 'file',
                 input: {
@@ -84,8 +89,10 @@ https://example.com/a/b
             },
             {
                 type: 'md',
-                input:
-                    '## Second title v2\n\nLink to a file is inside text https://sourcegraph.com/github.com/sourcegraph/sourcegraph@feature/-/blob/client/web/index.ts\n\n',
+                input: {
+                    text:
+                        '## Second title v2\n\nLink to a file is inside text https://sourcegraph.com/github.com/sourcegraph/sourcegraph@feature/-/blob/client/web/index.ts\n\n',
+                },
             },
             {
                 type: 'file',
@@ -111,7 +118,19 @@ https://example.com/a/b
                     },
                 },
             },
-            { type: 'md', input: '### Third title\n\nhttps://example.com/a/b\n\n' },
+            { type: 'md', input: { text: '### Third title\n\nhttps://example.com/a/b\n\n### Symbol block\n\n' } },
+            {
+                type: 'symbol',
+                input: {
+                    repositoryName: 'github.com/sourcegraph/sourcegraph',
+                    revision: 'branch',
+                    filePath: 'client/web/index.ts',
+                    symbolName: 'func a',
+                    symbolContainerName: 'class',
+                    symbolKind: SymbolKind.FUNCTION,
+                    lineContext: 3,
+                },
+            },
         ])
     })
 })

@@ -1,12 +1,13 @@
+import * as React from 'react'
+
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 import * as monaco from 'monaco-editor'
-import * as React from 'react'
 import { Subscription, Subject } from 'rxjs'
 import { map, distinctUntilChanged } from 'rxjs/operators'
 
-import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { KeyboardShortcut } from '../keyboardShortcuts'
+import { ThemeProps } from '../theme'
 
 const SOURCEGRAPH_LIGHT = 'sourcegraph-light'
 const SOURCEGRAPH_DARK = 'sourcegraph-dark'

@@ -69,10 +69,14 @@ type MockResolver struct {
 	// IndexConnectionResolverFunc is an instance of a mock function object
 	// controlling the behavior of the method IndexConnectionResolver.
 	IndexConnectionResolverFunc *ResolverIndexConnectionResolverFunc
-	// InferredIndexConfigurationFunc is an instance of a mock function
+	// InferedIndexConfigurationFunc is an instance of a mock function
 	// object controlling the behavior of the method
-	// InferredIndexConfiguration.
-	InferredIndexConfigurationFunc *ResolverInferredIndexConfigurationFunc
+	// InferedIndexConfiguration.
+	InferedIndexConfigurationFunc *ResolverInferedIndexConfigurationFunc
+	// InferedIndexConfigurationHintsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// InferedIndexConfigurationHints.
+	InferedIndexConfigurationHintsFunc *ResolverInferedIndexConfigurationHintsFunc
 	// PreviewGitObjectFilterFunc is an instance of a mock function object
 	// controlling the behavior of the method PreviewGitObjectFilter.
 	PreviewGitObjectFilterFunc *ResolverPreviewGitObjectFilterFunc
@@ -184,9 +188,14 @@ func NewMockResolver() *MockResolver {
 				return nil
 			},
 		},
-		InferredIndexConfigurationFunc: &ResolverInferredIndexConfigurationFunc{
-			defaultHook: func(context.Context, int) (*config.IndexConfiguration, bool, error) {
+		InferedIndexConfigurationFunc: &ResolverInferedIndexConfigurationFunc{
+			defaultHook: func(context.Context, int, string) (*config.IndexConfiguration, bool, error) {
 				return nil, false, nil
+			},
+		},
+		InferedIndexConfigurationHintsFunc: &ResolverInferedIndexConfigurationHintsFunc{
+			defaultHook: func(context.Context, int, string) ([]config.IndexJobHint, error) {
+				return nil, nil
 			},
 		},
 		PreviewGitObjectFilterFunc: &ResolverPreviewGitObjectFilterFunc{
@@ -316,9 +325,14 @@ func NewStrictMockResolver() *MockResolver {
 				panic("unexpected invocation of MockResolver.IndexConnectionResolver")
 			},
 		},
-		InferredIndexConfigurationFunc: &ResolverInferredIndexConfigurationFunc{
-			defaultHook: func(context.Context, int) (*config.IndexConfiguration, bool, error) {
-				panic("unexpected invocation of MockResolver.InferredIndexConfiguration")
+		InferedIndexConfigurationFunc: &ResolverInferedIndexConfigurationFunc{
+			defaultHook: func(context.Context, int, string) (*config.IndexConfiguration, bool, error) {
+				panic("unexpected invocation of MockResolver.InferedIndexConfiguration")
+			},
+		},
+		InferedIndexConfigurationHintsFunc: &ResolverInferedIndexConfigurationHintsFunc{
+			defaultHook: func(context.Context, int, string) ([]config.IndexJobHint, error) {
+				panic("unexpected invocation of MockResolver.InferedIndexConfigurationHints")
 			},
 		},
 		PreviewGitObjectFilterFunc: &ResolverPreviewGitObjectFilterFunc{
@@ -418,8 +432,11 @@ func NewMockResolverFrom(i resolvers.Resolver) *MockResolver {
 		IndexConnectionResolverFunc: &ResolverIndexConnectionResolverFunc{
 			defaultHook: i.IndexConnectionResolver,
 		},
-		InferredIndexConfigurationFunc: &ResolverInferredIndexConfigurationFunc{
-			defaultHook: i.InferredIndexConfiguration,
+		InferedIndexConfigurationFunc: &ResolverInferedIndexConfigurationFunc{
+			defaultHook: i.InferedIndexConfiguration,
+		},
+		InferedIndexConfigurationHintsFunc: &ResolverInferedIndexConfigurationHintsFunc{
+			defaultHook: i.InferedIndexConfigurationHints,
 		},
 		PreviewGitObjectFilterFunc: &ResolverPreviewGitObjectFilterFunc{
 			defaultHook: i.PreviewGitObjectFilter,
@@ -2096,37 +2113,37 @@ func (c ResolverIndexConnectionResolverFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// ResolverInferredIndexConfigurationFunc describes the behavior when the
-// InferredIndexConfiguration method of the parent MockResolver instance is
+// ResolverInferedIndexConfigurationFunc describes the behavior when the
+// InferedIndexConfiguration method of the parent MockResolver instance is
 // invoked.
-type ResolverInferredIndexConfigurationFunc struct {
-	defaultHook func(context.Context, int) (*config.IndexConfiguration, bool, error)
-	hooks       []func(context.Context, int) (*config.IndexConfiguration, bool, error)
-	history     []ResolverInferredIndexConfigurationFuncCall
+type ResolverInferedIndexConfigurationFunc struct {
+	defaultHook func(context.Context, int, string) (*config.IndexConfiguration, bool, error)
+	hooks       []func(context.Context, int, string) (*config.IndexConfiguration, bool, error)
+	history     []ResolverInferedIndexConfigurationFuncCall
 	mutex       sync.Mutex
 }
 
-// InferredIndexConfiguration delegates to the next hook function in the
+// InferedIndexConfiguration delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockResolver) InferredIndexConfiguration(v0 context.Context, v1 int) (*config.IndexConfiguration, bool, error) {
-	r0, r1, r2 := m.InferredIndexConfigurationFunc.nextHook()(v0, v1)
-	m.InferredIndexConfigurationFunc.appendCall(ResolverInferredIndexConfigurationFuncCall{v0, v1, r0, r1, r2})
+func (m *MockResolver) InferedIndexConfiguration(v0 context.Context, v1 int, v2 string) (*config.IndexConfiguration, bool, error) {
+	r0, r1, r2 := m.InferedIndexConfigurationFunc.nextHook()(v0, v1, v2)
+	m.InferedIndexConfigurationFunc.appendCall(ResolverInferedIndexConfigurationFuncCall{v0, v1, v2, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the
-// InferredIndexConfiguration method of the parent MockResolver instance is
+// InferedIndexConfiguration method of the parent MockResolver instance is
 // invoked and the hook queue is empty.
-func (f *ResolverInferredIndexConfigurationFunc) SetDefaultHook(hook func(context.Context, int) (*config.IndexConfiguration, bool, error)) {
+func (f *ResolverInferedIndexConfigurationFunc) SetDefaultHook(hook func(context.Context, int, string) (*config.IndexConfiguration, bool, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// InferredIndexConfiguration method of the parent MockResolver instance
+// InferedIndexConfiguration method of the parent MockResolver instance
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *ResolverInferredIndexConfigurationFunc) PushHook(hook func(context.Context, int) (*config.IndexConfiguration, bool, error)) {
+func (f *ResolverInferedIndexConfigurationFunc) PushHook(hook func(context.Context, int, string) (*config.IndexConfiguration, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2134,20 +2151,20 @@ func (f *ResolverInferredIndexConfigurationFunc) PushHook(hook func(context.Cont
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ResolverInferredIndexConfigurationFunc) SetDefaultReturn(r0 *config.IndexConfiguration, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, int) (*config.IndexConfiguration, bool, error) {
+func (f *ResolverInferedIndexConfigurationFunc) SetDefaultReturn(r0 *config.IndexConfiguration, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int, string) (*config.IndexConfiguration, bool, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ResolverInferredIndexConfigurationFunc) PushReturn(r0 *config.IndexConfiguration, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, int) (*config.IndexConfiguration, bool, error) {
+func (f *ResolverInferedIndexConfigurationFunc) PushReturn(r0 *config.IndexConfiguration, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int, string) (*config.IndexConfiguration, bool, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *ResolverInferredIndexConfigurationFunc) nextHook() func(context.Context, int) (*config.IndexConfiguration, bool, error) {
+func (f *ResolverInferedIndexConfigurationFunc) nextHook() func(context.Context, int, string) (*config.IndexConfiguration, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2160,33 +2177,36 @@ func (f *ResolverInferredIndexConfigurationFunc) nextHook() func(context.Context
 	return hook
 }
 
-func (f *ResolverInferredIndexConfigurationFunc) appendCall(r0 ResolverInferredIndexConfigurationFuncCall) {
+func (f *ResolverInferedIndexConfigurationFunc) appendCall(r0 ResolverInferedIndexConfigurationFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of ResolverInferredIndexConfigurationFuncCall
+// History returns a sequence of ResolverInferedIndexConfigurationFuncCall
 // objects describing the invocations of this function.
-func (f *ResolverInferredIndexConfigurationFunc) History() []ResolverInferredIndexConfigurationFuncCall {
+func (f *ResolverInferedIndexConfigurationFunc) History() []ResolverInferedIndexConfigurationFuncCall {
 	f.mutex.Lock()
-	history := make([]ResolverInferredIndexConfigurationFuncCall, len(f.history))
+	history := make([]ResolverInferedIndexConfigurationFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// ResolverInferredIndexConfigurationFuncCall is an object that describes an
-// invocation of method InferredIndexConfiguration on an instance of
+// ResolverInferedIndexConfigurationFuncCall is an object that describes an
+// invocation of method InferedIndexConfiguration on an instance of
 // MockResolver.
-type ResolverInferredIndexConfigurationFuncCall struct {
+type ResolverInferedIndexConfigurationFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *config.IndexConfiguration
@@ -2200,14 +2220,129 @@ type ResolverInferredIndexConfigurationFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c ResolverInferredIndexConfigurationFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+func (c ResolverInferedIndexConfigurationFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c ResolverInferredIndexConfigurationFuncCall) Results() []interface{} {
+func (c ResolverInferedIndexConfigurationFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// ResolverInferedIndexConfigurationHintsFunc describes the behavior when
+// the InferedIndexConfigurationHints method of the parent MockResolver
+// instance is invoked.
+type ResolverInferedIndexConfigurationHintsFunc struct {
+	defaultHook func(context.Context, int, string) ([]config.IndexJobHint, error)
+	hooks       []func(context.Context, int, string) ([]config.IndexJobHint, error)
+	history     []ResolverInferedIndexConfigurationHintsFuncCall
+	mutex       sync.Mutex
+}
+
+// InferedIndexConfigurationHints delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockResolver) InferedIndexConfigurationHints(v0 context.Context, v1 int, v2 string) ([]config.IndexJobHint, error) {
+	r0, r1 := m.InferedIndexConfigurationHintsFunc.nextHook()(v0, v1, v2)
+	m.InferedIndexConfigurationHintsFunc.appendCall(ResolverInferedIndexConfigurationHintsFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// InferedIndexConfigurationHints method of the parent MockResolver instance
+// is invoked and the hook queue is empty.
+func (f *ResolverInferedIndexConfigurationHintsFunc) SetDefaultHook(hook func(context.Context, int, string) ([]config.IndexJobHint, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// InferedIndexConfigurationHints method of the parent MockResolver instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ResolverInferedIndexConfigurationHintsFunc) PushHook(hook func(context.Context, int, string) ([]config.IndexJobHint, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ResolverInferedIndexConfigurationHintsFunc) SetDefaultReturn(r0 []config.IndexJobHint, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string) ([]config.IndexJobHint, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ResolverInferedIndexConfigurationHintsFunc) PushReturn(r0 []config.IndexJobHint, r1 error) {
+	f.PushHook(func(context.Context, int, string) ([]config.IndexJobHint, error) {
+		return r0, r1
+	})
+}
+
+func (f *ResolverInferedIndexConfigurationHintsFunc) nextHook() func(context.Context, int, string) ([]config.IndexJobHint, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ResolverInferedIndexConfigurationHintsFunc) appendCall(r0 ResolverInferedIndexConfigurationHintsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ResolverInferedIndexConfigurationHintsFuncCall objects describing the
+// invocations of this function.
+func (f *ResolverInferedIndexConfigurationHintsFunc) History() []ResolverInferedIndexConfigurationHintsFuncCall {
+	f.mutex.Lock()
+	history := make([]ResolverInferedIndexConfigurationHintsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ResolverInferedIndexConfigurationHintsFuncCall is an object that
+// describes an invocation of method InferedIndexConfigurationHints on an
+// instance of MockResolver.
+type ResolverInferedIndexConfigurationHintsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []config.IndexJobHint
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ResolverInferedIndexConfigurationHintsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ResolverInferedIndexConfigurationHintsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // ResolverPreviewGitObjectFilterFunc describes the behavior when the
