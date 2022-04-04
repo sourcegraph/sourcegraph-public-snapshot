@@ -75,20 +75,27 @@ func (c *Client) CommitsExist(ctx context.Context, commits []RepositoryCommit) (
 		return nil, err
 	}
 
-	indexesWithMissingRepos := make([]int, 0, len(commits))
+	// Build the batch request to send to gitserver. Because we only add repo/commit
+	// pairs that are resolvable to a repo name, we may skip some of the inputs here.
+	// We track the indexes we're sending to gitserver so we can spread the response
+	// back to the correct indexes the caller is expecting. Anything not resolvable
+	// to a repository name will implicity have a false value in the returned slice.
+
 	repoCommits := make([]api.RepoCommit, 0, len(commits))
+	originalIndexes := make([]int, 0, len(commits))
+
 	for i, rc := range commits {
 		repoName, ok := repositoryNames[rc.RepositoryID]
 		if !ok {
-			indexesWithMissingRepos = append(indexesWithMissingRepos, i)
 			continue
 		}
 
-		// Only add repo/commit pairs that are resolvable to a repo name
 		repoCommits = append(repoCommits, api.RepoCommit{
 			Repo:     repoName,
 			CommitID: api.CommitID(rc.Commit),
 		})
+
+		originalIndexes = append(originalIndexes, i)
 	}
 
 	exists, err := git.CommitsExist(ctx, c.db, repoCommits, authz.DefaultSubRepoPermsChecker)
@@ -104,38 +111,15 @@ func (c *Client) CommitsExist(ctx context.Context, commits []RepositoryCommit) (
 		return nil, errors.Newf("expected slice returned from git.CommitsExist to have len %d, but has len %d", len(repoCommits), len(exists))
 	}
 
-	// Push "false" values for each entry that had an unresolvable repo
-	return pushFalseToSliceAtIndexes(exists, indexesWithMissingRepos)
-}
-
-// pushFalseToSliceAtIndexes returns a copy of the input slice with the value false inserted into each
-// of the indexes. This has the effect of sliding all of the subsequent elements down one index on every
-// insertion.
-//
-// This function assumes that indexes are within the range [0, len(exists)+len(indexes)) and are given
-// in ascending order. See CommitsExists for its exact usage.
-func pushFalseToSliceAtIndexes(exists []bool, indexes []int) ([]bool, error) {
-	padded := make([]bool, 0, len(exists)+len(indexes))
-
-	for _, e := range exists {
-		for len(indexes) != 0 && indexes[0] == len(padded) {
-			indexes = indexes[1:]
-			padded = append(padded, false)
-		}
-
-		padded = append(padded, e)
+	// Spread the response back to the correct indexes the caller is expecting. Each value in the
+	// response from gitserver belongs to some index in the original commits slice. We re-map these
+	// values and leave all other values implicitly false (these repo name were not resolvable).
+	out := make([]bool, 0, len(commits))
+	for i, e := range exists {
+		out[originalIndexes[i]] = e
 	}
 
-	for len(indexes) != 0 {
-		if indexes[0] != len(padded) {
-			return nil, errors.Newf("unexpected assertion broken - expected remaining indices to range from [%d, %d], have %v", len(padded), len(padded)+len(indexes), indexes)
-		}
-
-		indexes = indexes[1:]
-		padded = append(padded, false)
-	}
-
-	return padded, nil
+	return out, nil
 }
 
 // Head determines the tip commit of the default branch for the given repository. If no HEAD revision exists
