@@ -96,20 +96,22 @@ func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) (*[]gql.
 	}
 
 	for _, hint := range hints {
-		var confidence preciseSupportInferenceConfidence
-		switch hint.HintConfidence {
-		case config.HintConfidenceLanguageSupport:
-			confidence = languageSupport
-		case config.HintConfidenceProjectStructureSupported:
-			confidence = projectStructureSupported
-		default:
-			continue
+		if hint.Root == r.path {
+			var confidence preciseSupportInferenceConfidence
+			switch hint.HintConfidence {
+			case config.HintConfidenceLanguageSupport:
+				confidence = languageSupport
+			case config.HintConfidenceProjectStructureSupported:
+				confidence = projectStructureSupported
+			default:
+				continue
+			}
+			resolvers = append(resolvers, &codeIntelTreePreciseCoverageResolver{
+				confidence: confidence,
+				// expected that job hints don't include a tag in the indexer name
+				indexer: imageToIndexer[hint.Indexer],
+			})
 		}
-		resolvers = append(resolvers, &codeIntelTreePreciseCoverageResolver{
-			confidence: confidence,
-			// expected that job hints don't include a tag in the indexer name
-			indexer: imageToIndexer[hint.Indexer],
-		})
 	}
 
 	return &resolvers, nil
