@@ -117,7 +117,9 @@ Follow these instructions:
 
 The most common problem is:
 
-### No code intelligence or buttons ("View repository", "View file", etc.) are displayed on the code host
+### No code intelligence or buttons ("View file", "View diff") are displayed on the code host
+
+Note there used to be a "View repository" button on the repository page, but has been removed. This is not a malfunction. Continue if there is no button being displayed on the file/diff specific page.
 
 ![Browser extension not working on code host](https://sourcegraphstatic.com/BrowserExtensionNotWorkingCodeHost.gif)
 
