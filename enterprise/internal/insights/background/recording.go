@@ -3,6 +3,9 @@ package background
 import (
 	"context"
 	"database/sql"
+	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -27,6 +30,38 @@ func NewInsightRecorder(insightsDB dbutil.DB, mainDB dbutil.DB) *InsightRecorder
 		_, err := queryrunner.EnqueueJob(ctx, basestore.NewWithDB(mainDB, sql.TxOptions{}), job)
 		return err
 	}}
+}
+
+type ManualRecordingArgs struct {
+	Time     time.Time
+	Value    float64
+	RepoId   api.RepoID
+	RepoName api.RepoName
+}
+
+func (i *InsightRecorder) ManualRecording(ctx context.Context, seriesId string, args ManualRecordingArgs) error {
+	insightStore := store.NewInsightStore(i.insightsDB)
+	timeSeriesStore := store.New(i.insightsDB, store.NewInsightPermissionStore(i.mainDB))
+
+	seriesList, err := insightStore.GetDataSeries(ctx, store.GetDataSeriesArgs{SeriesID: seriesId})
+	if err != nil {
+		return errors.Wrap(err, "GetDataSeries")
+	} else if len(seriesList) == 0 {
+		return errors.Newf("unable to load missing series, series_id: %s", seriesId)
+	}
+
+	rn := string(args.RepoName)
+	return timeSeriesStore.RecordSeriesPoint(ctx, store.RecordSeriesPointArgs{
+		SeriesID: seriesId,
+		Point: store.SeriesPoint{
+			SeriesID: seriesId,
+			Time:     args.Time,
+			Value:    args.Value,
+		},
+		RepoName:    &rn,
+		RepoID:      &args.RepoId,
+		PersistMode: store.RecordMode,
+	})
 }
 
 func (i *InsightRecorder) EnqueueGlobalRecording(ctx context.Context, seriesId string) error {

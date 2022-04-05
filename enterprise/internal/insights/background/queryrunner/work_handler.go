@@ -328,6 +328,7 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 		types.SearchCompute: r.computeHandler,
 		types.SearchStream:  r.searchStreamHandler,
 		types.Search:        r.searchHandler,
+		types.CodeMonitor:   noopHandler,
 	}
 
 	executableHandler, ok := handlersByType[series.GenerationMethod]
@@ -335,6 +336,10 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 		return errors.Newf("unable to handle record for series_id: %s and generation_method: %s", series.SeriesID, series.GenerationMethod)
 	}
 	return executableHandler(ctx, job, series, recordTime)
+}
+
+func noopHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) (err error) {
+	return
 }
 
 func ToRecording(record *Job, value float64, recordTime time.Time, repoName string, repoID api.RepoID, capture *string) []store.RecordSeriesPointArgs {

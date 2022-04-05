@@ -5,6 +5,12 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/service"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -20,12 +26,13 @@ import (
 )
 
 // NewResolver returns a new Resolver that uses the given database
-func NewResolver(db edb.EnterpriseDB) graphqlbackend.CodeMonitorsResolver {
-	return &Resolver{db: db}
+func NewResolver(db edb.EnterpriseDB, insightsDB dbutil.DB) graphqlbackend.CodeMonitorsResolver {
+	return &Resolver{db: db, insightsDB: insightsDB}
 }
 
 type Resolver struct {
-	db edb.EnterpriseDB
+	db         edb.EnterpriseDB
+	insightsDB dbutil.DB
 }
 
 func (r *Resolver) Now() time.Time {
@@ -165,6 +172,11 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 	err = tx.createActions(ctx, m.ID, args.Actions)
 	if err != nil {
 		return nil, err
+	}
+
+	insightErr := service.CreateCodeMonitorInsight(ctx, r.insightsDB, m)
+	if insightErr != nil {
+		log15.Error("error creating code monitor insight womp womp", "error", insightErr)
 	}
 
 	return &monitor{

@@ -6,6 +6,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/service"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 
@@ -26,7 +32,7 @@ const (
 	eventRetentionInDays int = 7
 )
 
-func newTriggerQueryRunner(ctx context.Context, db edb.EnterpriseDB, metrics codeMonitorsMetrics) *workerutil.Worker {
+func newTriggerQueryRunner(ctx context.Context, db edb.EnterpriseDB, metrics codeMonitorsMetrics, insightsDB dbutil.DB) *workerutil.Worker {
 	options := workerutil.WorkerOptions{
 		Name:              "code_monitors_trigger_jobs_worker",
 		NumHandlers:       1,
@@ -34,7 +40,7 @@ func newTriggerQueryRunner(ctx context.Context, db edb.EnterpriseDB, metrics cod
 		HeartbeatInterval: 15 * time.Second,
 		Metrics:           metrics.workerMetrics,
 	}
-	worker := dbworker.NewWorker(ctx, createDBWorkerStoreForTriggerJobs(db), &queryRunner{db: db}, options)
+	worker := dbworker.NewWorker(ctx, createDBWorkerStoreForTriggerJobs(db), &queryRunner{db: db, insightsDB: insightsDB}, options)
 	return worker
 }
 
@@ -136,7 +142,8 @@ func createDBWorkerStoreForActionJobs(s edb.CodeMonitorStore) dbworkerstore.Stor
 }
 
 type queryRunner struct {
-	db edb.EnterpriseDB
+	db         edb.EnterpriseDB
+	insightsDB dbutil.DB
 }
 
 func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err error) {
@@ -184,6 +191,7 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 		query = newQueryWithAfterFilter(q)
 	}
 	results, searchErr := codemonitors.Search(ctx, r.db, query, m.ID, settings)
+	log15.Info("monitoring query", "query", query)
 
 	// Log next_run and latest_result to table cm_queries.
 	newLatestResult := latestResultTime(q.LatestResult, results, searchErr)
@@ -198,13 +206,50 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 		return errors.Wrap(err, "UpdateTriggerJobWithResults")
 	}
 
+	log15.Info("monitoring monitoring")
 	if len(results) > 0 {
+		log15.Info("results found")
 		_, err := s.EnqueueActionJobsForMonitor(ctx, m.ID, triggerJob.ID)
 		if err != nil {
 			return errors.Wrap(err, "store.EnqueueActionJobsForQuery")
 		}
+
+		recorder := background.NewInsightRecorder(r.insightsDB, r.db.Handle().DB())
+
+		t := time.Now()
+		grouped := tabulateByRepo(results)
+		for _, rr := range grouped {
+			err = recorder.ManualRecording(ctx, service.CodeMonitorInsightSeriesID(m), background.ManualRecordingArgs{
+				Time:     t,
+				Value:    float64(rr.count),
+				RepoId:   rr.repoId,
+				RepoName: rr.repoName,
+			})
+			if err != nil {
+				log15.Error("error manually writing recording", "err", err.Error())
+			}
+		}
+
 	}
 	return nil
+}
+
+type repoResult struct {
+	repoName api.RepoName
+	repoId   api.RepoID
+	count    int
+}
+
+func tabulateByRepo(results []*result.CommitMatch) map[api.RepoName]repoResult {
+	byRepo := make(map[api.RepoName]repoResult)
+	for _, match := range results {
+		v := byRepo[match.Repo.Name]
+		v.count += match.ResultCount()
+		v.repoName = match.Repo.Name
+		v.repoId = match.Repo.ID
+		byRepo[match.Repo.Name] = v
+	}
+	return byRepo
 }
 
 type actionRunner struct {
