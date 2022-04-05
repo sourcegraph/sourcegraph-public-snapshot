@@ -19,7 +19,7 @@ const maxPasswordRunes = 256
 // Validate Password: Validates that a password meets the required criteria
 func ValidatePassword(passwd string) error {
 
-	if conf.ExperimentalFeatures().PasswordPolicy.Enabled {
+	if policy := conf.ExperimentalFeatures().PasswordPolicy; policy != nil && policy.Enabled {
 		return validatePasswordUsingPolicy(passwd)
 	}
 	return validatePasswordUsingDefaultMethod(passwd)
