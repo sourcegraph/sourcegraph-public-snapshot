@@ -46,7 +46,7 @@ helm install --version 0.7.0 sourcegraph sourcegraph/sourcegraph
 Sourcegraph should now be available via the address set. Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account. 
 
 Now the deployment is complete, more information on configuring the Sourcegraph application can be found here:
-[Configuring Sourcegraph](../../config)
+[Configuring Sourcegraph](../../config/index.md)
 
 
 ## Configuration
@@ -308,7 +308,7 @@ Browsing to the url should now provide access to the Sourcegraph UI to create th
 **6** – Further configuration
 
 Now the deployment is complete, more information on configuring the Sourcegraph application can be found here:
-[Configuring Sourcegraph](../../config)
+[Configuring Sourcegraph](../../config/index.md)
 
 ### Configure Sourcegraph on Elastic Kubernetes Service (EKS)
 
@@ -385,7 +385,7 @@ Browsing to the url should now provide access to the Sourcegraph UI to create th
 **5** – Further configuration
 
 Now the deployment is complete, more information on configuring the Sourcegraph application can be found here:
-[Configuring Sourcegraph](../../config)
+[Configuring Sourcegraph](../../config/index.md)
 
 #### References
 
@@ -470,7 +470,7 @@ Browsing to the url should now provide access to the Sourcegraph UI to create th
 **5** – Further configuration
 
 Now the deployment is complete, more information on configuring the Sourcegraph application can be found here:
-[Configuring Sourcegraph](../../config)
+[Configuring Sourcegraph](../../config/index.md)
 
 #### References
 
@@ -598,7 +598,7 @@ Browsing to the url should now provide access to the Sourcegraph UI to create th
 **5** – Further configuration
 
 Now the deployment is complete, more information on configuring the Sourcegraph application can be found here:
-[Configuring Sourcegraph](../../config)
+[Configuring Sourcegraph](../../config/index.md)
 
 ## Advanced configuration
 
