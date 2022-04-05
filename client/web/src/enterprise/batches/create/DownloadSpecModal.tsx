@@ -32,85 +32,76 @@ export const DownloadSpecModal: React.FunctionComponent<DownloadSpecModalProps> 
         aria-labelledby={MODAL_LABEL_ID}
         className={styles.modal}
     >
-        <>
+        <div>
+            <h3 id={MODAL_LABEL_ID}>Download spec for src-cli</h3>
+            <Button
+                className={styles.close}
+                onClick={() => {
+                    setIsDownloadSpecModalOpen(false)
+                }}
+            >
+                <VisuallyHidden>Close</VisuallyHidden>
+                <CloseIcon className={styles.icon} />
+            </Button>
+        </div>
+
+        <div className={styles.container}>
+            <div className={styles.left}>
+                <p>
+                    Use the <Link to="https://docs.sourcegraph.com/cli">Sourcegraph CLI (src) </Link>
+                    to run this batch change locally.
+                </p>
+
+                <CodeSnippet
+                    code={`src batch preview -f ${getFileName(name)}`}
+                    language="bash"
+                    className={styles.codeSnippet}
+                />
+
+                <p className="p-0 m-0">
+                    Follow the URL printed in your terminal to see the preview and (when you're ready) create the batch
+                    change.
+                </p>
+            </div>
+            <div className={styles.right}>
+                <div>
+                    <h4>About src-cli </h4>
+                    <p>
+                        src cli is a command line interface to Sourcegraph. Its{' '}
+                        <span className="text-monospace">batch</span> command allows to run batch specification files
+                        using Docker.
+                    </p>
+                    <Link to="https://docs.sourcegraph.com/cli">Download src-cli</Link>
+                </div>
+            </div>
+        </div>
+        <div className="d-flex justify-content-between">
+            <Button className="p-0" onClick={() => setDownloadSpecModalDismissed(true)} variant="link">
+                Don't show this again
+            </Button>
             <div>
-                <h3 id={MODAL_LABEL_ID}>Download specification for src-cli</h3>
                 <Button
-                    className={styles.close}
+                    className="mr-2"
+                    outline={true}
+                    variant="secondary"
                     onClick={() => {
                         setIsDownloadSpecModalOpen(false)
                     }}
                 >
-                    <VisuallyHidden>Close</VisuallyHidden>
-                    <CloseIcon className={styles.icon} />
+                    Cancel
                 </Button>
-            </div>
-
-            <div className={styles.container}>
-                <div className={styles.left}>
-                    <p>
-                        Use the{' '}
-                        <Link
-                            to="https://docs.sourcegraph.com/cli
-"
-                        >
-                            Sourcegraph CLI (src){' '}
-                        </Link>
-                        to run this batch change locally.
-                    </p>
-
-                    <CodeSnippet
-                        code={`src batch preview -f ${getFileName(name)}`}
-                        language="bash"
-                        className={styles.codeSnippet}
-                    />
-
-                    <p className="p-0 m-0">
-                        {' '}
-                        Follow the URL printed in your terminal to see the preview and (when you're ready) create the
-                        batch change.
-                    </p>
-                </div>
-                <div className={styles.right}>
-                    <div>
-                        <h4>About src-cli </h4>
-                        <p>
-                            src cli is a command line interface to Sourcegraph. Its{' '}
-                            <span className="text-monospace">batch</span> command allows to run batch specification
-                            files using Docker.
-                        </p>
-                        <Link to="https://docs.sourcegraph.com/cli">Download src-cli</Link>
-                    </div>
-                </div>
-            </div>
-            <div className="d-flex justify-content-between">
-                <Button className="p-0" onClick={() => setDownloadSpecModalDismissed(true)} variant="link">
-                    Don't show this again
-                </Button>
-                <div>
+                <BatchSpecDownloadLink name={name} originalInput={originalInput} isLightTheme={isLightTheme}>
                     <Button
-                        className="mr-2"
-                        outline={true}
-                        variant="secondary"
+                        variant="primary"
                         onClick={() => {
                             setIsDownloadSpecModalOpen(false)
                         }}
                     >
-                        Cancel
+                        Download spec
                     </Button>
-                    <BatchSpecDownloadLink name={name} originalInput={originalInput} isLightTheme={isLightTheme}>
-                        <Button
-                            variant="primary"
-                            onClick={() => {
-                                setIsDownloadSpecModalOpen(false)
-                            }}
-                        >
-                            Download spec
-                        </Button>
-                    </BatchSpecDownloadLink>
-                </div>
+                </BatchSpecDownloadLink>
             </div>
-        </>
+        </div>
     </Modal>
 )
 
