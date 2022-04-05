@@ -4,7 +4,8 @@ This guide gives specific instructions for troubleshooting code intelligence in 
 
 ## When are issues related to code-intelligence?
 
-If the [LSIF indexer](/indexers) is one that we build and maintain.
+
+Issues are related to Sourcegraph code intelligence when the [LSIF indexer](./indexers.md) is one that we build and maintain.
 
 A customer issue should **definitely** be routed to code intelligence if any of the following are true.
 
@@ -18,11 +19,11 @@ A customer issue should **possibly** be routed to code intelligence if any of th
 
 A customer issue should **not** be routed to code intelligence if any of the following are true.
 
-- If the indexer is listed in [LSIF.dev](https://lsif.dev/) and _it is not_ one that we maintain. In that case, share the status of the relevant indexer with the customer, along with who created and maintains it.
+- The indexer is listed in [LSIF.dev](https://lsif.dev/) and _it is not_ one that we maintain. Instead, flag the indexers status and maintainer of the relevant indexer with the customer, and suggest they reach out directly
 
 ## Gathering evidence
 
-Before bringing a code intelligence issue to the engineering team, the site-admin, customer engineer or support engineer should first double check the current status is `ready` for the specific LSIF Indexer in question at [LSIF.dev](https://lsif.dev/). Next, gather the following details keeping in mind that not all of these details will be necessary for all classes of errors.
+Before bringing a code intelligence issue to the engineering team, the site-admin or customer engineer should gather the following details. Not all of these details will be necessary for all classes of errors.
 
 #### Sourcegraph instance details
 
