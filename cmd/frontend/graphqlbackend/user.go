@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -461,6 +462,11 @@ func (r *UserResolver) ViewerCanChangeUsername(ctx context.Context) bool {
 	return viewerCanChangeUsername(ctx, r.db, r.user.ID)
 }
 
+// ViewerNeedsCodeHostUpgrade returns true if one of organisations that viewer is a member of has updated their code-host connection (and the user-owned one needs to be updated)
+func (r *UserResolver) ViewerNeedsCodeHostUpgrade(ctx context.Context) bool {
+	return viewerNeedsCodeHostUpgrade(ctx, r.db, r.user.ID)
+}
+
 func (r *UserResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
 	id := r.ID()
 	args.Namespace = &id
@@ -533,6 +539,76 @@ func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositor
 func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error) {
 	args.UserID = &r.user.ID
 	return EnterpriseResolvers.batchChangesResolver.BatchChangesCodeHosts(ctx, args)
+}
+
+func viewerNeedsCodeHostUpgrade(ctx context.Context, db database.DB, userID int32) bool {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
+		return false
+	}
+	if !envvar.SourcegraphDotComMode() {
+		return false
+
+	}
+
+	overrides, err := db.FeatureFlags().GetOrgOverridesForUser(ctx, userID)
+	if err != nil {
+		return false
+	}
+	potentialUpgradeOrgs := map[int32]struct{}{}
+	for _, override := range overrides {
+		if override.FlagName == "github-app-cloud" {
+			if override.Value == true {
+				potentialUpgradeOrgs[*override.OrgID] = struct{}{}
+			}
+		}
+	}
+	if len(potentialUpgradeOrgs) == 0 {
+		return false
+	}
+	orgs, err := db.OrgMembers().GetByUserID(ctx, userID)
+	if err != nil {
+		return false
+	}
+	if len(orgs) == 0 {
+		return false
+	}
+	queryFor := []int32{}
+	for _, o := range orgs {
+		if _, ok := potentialUpgradeOrgs[o.OrgID]; ok {
+			queryFor = append(queryFor, o.OrgID)
+		}
+	}
+	if len(queryFor) == 0 {
+		return false
+	}
+	orgServices := []*types.ExternalService{}
+	for _, orgID := range queryFor {
+		s, err := db.ExternalServices().List(ctx, database.ExternalServicesListOptions{Kinds: []string{extsvc.KindGitHub}, NamespaceOrgID: orgID})
+		if err != nil {
+			return false
+		}
+		orgServices = append(orgServices, s...)
+	}
+	if len(orgServices) == 0 {
+		return false
+	}
+	userServices, err := db.ExternalServices().List(ctx, database.ExternalServicesListOptions{Kinds: []string{extsvc.KindGitHub}, NamespaceUserID: userID})
+	if err != nil {
+		return false
+	}
+	if len(userServices) == 0 {
+		return false
+	}
+	for _, os := range orgServices {
+		for _, us := range userServices {
+			if os.Kind == extsvc.KindGitHub && us.Kind == extsvc.KindGitHub {
+				if os.CreatedAt.After(us.UpdatedAt) {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 func viewerCanChangeUsername(ctx context.Context, db database.DB, userID int32) bool {

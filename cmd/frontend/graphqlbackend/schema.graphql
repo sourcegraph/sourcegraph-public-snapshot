@@ -4766,6 +4766,7 @@ type User implements Node & SettingsSubject & Namespace {
     repositories this user has access to, and is derived from recent commit history of those.
     """
     invitableCollaborators: [Person!]!
+    viewerNeedsCodeHostUpgrade: Boolean!
 }
 
 """
