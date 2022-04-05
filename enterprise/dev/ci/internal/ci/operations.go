@@ -58,9 +58,6 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	if diff.Has(changed.Dockerfiles) {
 		linterOps.Append(addDockerfileLint)
 	}
-	if diff.Has(changed.Terraform) {
-		linterOps.Append(addTerraformScan)
-	}
 	if diff.Has(changed.Docs) {
 		linterOps.Append(addDocs)
 	}
