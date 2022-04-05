@@ -5,5 +5,5 @@ import { RepositoryMenuContent } from './RepositoryMenu'
  */
 export interface CodeIntelligenceProps {
     codeIntelligenceEnabled: boolean
-    RepositoryMenuContent: typeof RepositoryMenuContent
+    repositoryMenuContent: typeof RepositoryMenuContent
 }

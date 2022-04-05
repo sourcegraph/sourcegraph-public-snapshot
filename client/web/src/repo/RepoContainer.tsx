@@ -447,7 +447,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                 repoName={repoName}
                                 revision={rawRevision || 'HEAD'}
                                 filePath={filePath || ''}
-                                Content={props.RepositoryMenuContent}
+                                content={props.repositoryMenuContent}
                             />
                         ) : (
                             <></>

@@ -14,10 +14,10 @@ export type RepositoryMenuContentProps = SettingsCascadeProps & {
 }
 
 export type RepositoryMenuProps = RepositoryMenuContentProps & {
-    Content: typeof RepositoryMenuContent
+    content: typeof RepositoryMenuContent
 }
 
-export const RepositoryMenu: React.FunctionComponent<RepositoryMenuProps> = ({ Content, ...props }) => (
+export const RepositoryMenu: React.FunctionComponent<RepositoryMenuProps> = ({ content: Content, ...props }) => (
     <Menu className="btn-icon">
         <>
             <MenuButton className="text-decoration-none">

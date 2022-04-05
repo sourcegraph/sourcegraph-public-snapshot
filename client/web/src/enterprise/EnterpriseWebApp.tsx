@@ -48,7 +48,7 @@ export const EnterpriseWebApp: React.FunctionComponent = () => (
         routes={enterpriseRoutes}
         keyboardShortcuts={KEYBOARD_SHORTCUTS}
         codeIntelligenceEnabled={true}
-        RepositoryMenuContent={RepositoryMenuContent}
+        repositoryMenuContent={RepositoryMenuContent}
         codeInsightsEnabled={true}
         batchChangesEnabled={window.context.batchChangesEnabled}
         searchContextsEnabled={true}
