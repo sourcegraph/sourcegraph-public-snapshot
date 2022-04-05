@@ -279,7 +279,7 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
                             onClick={cancelExecution}
                             disabled={isCanceling === true}
                             outline={true}
-                            variant="secondary"
+                            variant="danger"
                         >
                             {isCanceling !== true && <>Cancel</>}
                             {isCanceling === true && (
