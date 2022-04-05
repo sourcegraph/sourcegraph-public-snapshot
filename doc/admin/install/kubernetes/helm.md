@@ -18,8 +18,7 @@
 ## High level overview of how to use Helm with Sourcegraph
 
 1. Prepare any required customizations
-   - Sourcegraph can be deployed using Helm with no customizations to the default [values.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/values.yaml) but there are a range of [supported options](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph#configuration-options). 
-   - It's worth reviewing these and preparing them ahead of anything else, using the guidance in [Configuration](#configuration).
+   - Most environment are likely to need changes from the defaults - use the guidance in [Configuration](#configuration).
 1. Review the changes
    - There are [three mechanisms](#reviewing-changes) that can be used to review any customizations made, this is an optional step, but may be useful the first time you deploy Sourcegraph, for peace of mind.
 1. Select your deployment method and follow the guidance:
@@ -226,6 +225,7 @@ helm repo add sourcegraph https://sourcegraph.github.io/deploy-sourcegraph-helm/
 
 Add into your overide file the below values to configure both your ingress hostname and your storage class. We recommend configuring Ingress to use [Container-native load balancing] to expose Sourcegraph publicly on a domain of your choosing and setting the Storage Class to use [Compute Engine persistent disk]. (For an example file see [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/gcp/override.yaml))
 
+[override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/gcp/override.yaml)
 ```yaml
 frontend:
   serviceType: ClusterIP
