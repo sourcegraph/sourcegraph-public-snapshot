@@ -4,7 +4,7 @@ import { LineChartContent } from 'sourcegraph'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { InsightDataSeries, SearchPatternType } from '../../../../../graphql-operations'
-import { sortSeriesByName } from '../../../../../insights/utils/sort-series-by-name'
+import { semanticSort } from '../../../../../insights/utils/semantic-sort'
 import { PageRoutes } from '../../../../../routes.constants'
 import { InsightFilters, SearchBasedInsightSeries } from '../../types'
 
@@ -79,7 +79,7 @@ export function createLineChartContent(
                         })
                 ),
             }))
-            .sort(sortSeriesByName),
+            .sort((a, b) => semanticSort(a.name, b.name)),
         xAxis: {
             dataKey: 'dateTime',
             scale: 'time',
