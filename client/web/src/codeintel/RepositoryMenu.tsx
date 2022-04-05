@@ -33,10 +33,10 @@ export const RepositoryMenu: React.FunctionComponent<RepositoryMenuProps> = ({ c
     </Menu>
 )
 
-export const RepositoryMenuContent: React.FunctionComponent<RepositoryMenuContentProps> = React.memo(() => (
+export const RepositoryMenuContent: React.FunctionComponent<RepositoryMenuContentProps> = () => (
     <div className="px-2 py-1">
         <h2>Unimplemented</h2>
 
         <p className="text-muted">Unimplemented (OSS version).</p>
     </div>
-))
+)

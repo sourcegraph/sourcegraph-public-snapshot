@@ -4,7 +4,7 @@ import { isErrorLike } from '@sourcegraph/common'
 
 import { RepositoryMenuContentProps } from '../../codeintel/RepositoryMenu'
 
-export const RepositoryMenuContent: React.FunctionComponent<RepositoryMenuContentProps> = React.memo(props => {
+export const RepositoryMenuContent: React.FunctionComponent<RepositoryMenuContentProps> = props => {
     const forNerds =
         !isErrorLike(props.settingsCascade.final) &&
         props.settingsCascade.final?.experimentalFeatures?.codeIntelRepositoryBadge?.forNerds
@@ -20,4 +20,4 @@ export const RepositoryMenuContent: React.FunctionComponent<RepositoryMenuConten
             {forNerds && <div className="px-2 py-1">NERD DATA</div>}
         </>
     )
-})
+}
