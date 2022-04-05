@@ -5,9 +5,13 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { RepositoryMenuContentProps } from '../../codeintel/RepositoryMenu'
 
-import { useCodeIntelStatus } from './useCodeIntelStatus'
+import { useCodeIntelStatus as defaultUseCodeIntelStatus } from './useCodeIntelStatus'
 
-export const RepositoryMenuContent: React.FunctionComponent<RepositoryMenuContentProps> = props => {
+export const RepositoryMenuContent: React.FunctionComponent<
+    RepositoryMenuContentProps & {
+        useCodeIntelStatus?: typeof defaultUseCodeIntelStatus
+    }
+> = ({ useCodeIntelStatus = defaultUseCodeIntelStatus, ...props }) => {
     const { data, loading, error } = useCodeIntelStatus({
         variables: {
             repository: props.repoName,

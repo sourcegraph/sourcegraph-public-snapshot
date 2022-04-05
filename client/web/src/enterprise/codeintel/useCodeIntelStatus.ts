@@ -113,11 +113,11 @@ const codeIntelStatusQuery = gql`
     ${searchBasedCodeIntelSupportFieldsFragment}
 `
 
-interface UseCodeIntelStatusParameters {
+export interface UseCodeIntelStatusParameters {
     variables: CodeIntelStatusVariables
 }
 
-interface UseCodeIntelStatusResult {
+export interface UseCodeIntelStatusResult {
     data?: {
         preciseSupport?: PreciseSupportFields[]
         searchBasedSupport?: SearchBasedCodeIntelSupportFields[]
