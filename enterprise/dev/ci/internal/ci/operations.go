@@ -58,9 +58,6 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	if diff.Has(changed.Dockerfiles) {
 		linterOps.Append(addDockerfileLint)
 	}
-	if diff.Has(changed.Terraform) {
-		linterOps.Append(addTerraformScan)
-	}
 	if diff.Has(changed.Docs) {
 		linterOps.Append(addDocs)
 	}
@@ -126,11 +123,11 @@ func addDocs(pipeline *bk.Pipeline) {
 }
 
 // Adds the terraform scanner step.  This executes very quickly ~6s
-func addTerraformScan(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":lock: Checkov Terraform scanning",
-		bk.Cmd("dev/ci/ci-checkov.sh"),
-		bk.SoftFail(222))
-}
+// func addTerraformScan(pipeline *bk.Pipeline) {
+//	pipeline.AddStep(":lock: Checkov Terraform scanning",
+//		bk.Cmd("dev/ci/ci-checkov.sh"),
+//		bk.SoftFail(222))
+//}
 
 // Adds the static check test step.
 func addCheck(pipeline *bk.Pipeline) {
@@ -523,7 +520,6 @@ func codeIntelQA(candidateTag string) operations.Operation {
 func serverE2E(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":chromium: Sourcegraph E2E",
-			bk.Agent("queue", bk.AgentQueueBaremetal),
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
@@ -541,7 +537,6 @@ func serverE2E(candidateTag string) operations.Operation {
 func serverQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::chromium: Sourcegraph QA",
-			bk.Agent("queue", bk.AgentQueueBaremetal),
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
@@ -561,7 +556,6 @@ func serverQA(candidateTag string) operations.Operation {
 func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::arrow_double_up: Sourcegraph Upgrade",
-			bk.Agent("queue", bk.AgentQueueBaremetal),
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),

@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -28,6 +29,8 @@ type GitserverRepoStore interface {
 	SetRepoSize(ctx context.Context, name api.RepoName, size int64, shardID string) error
 	IterateWithNonemptyLastError(ctx context.Context, repoFn func(repo types.RepoGitserverStatus) error) error
 	TotalErroredCloudDefaultRepos(ctx context.Context) (int, error)
+	ListReposWithoutSize(ctx context.Context) (map[api.RepoName]api.RepoID, error)
+	UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoID]int64) error
 }
 
 var _ GitserverRepoStore = (*gitserverRepoStore)(nil)
@@ -424,6 +427,69 @@ SET (last_fetched, last_changed, shard_id, updated_at) =
 `, data.LastFetched, data.LastChanged, data.ShardID, name))
 
 	return errors.Wrap(err, "setting last fetched")
+}
+
+// ListReposWithoutSize returns a map of repo name to repo ID for repos which do not have a repo_size_bytes
+func (s *gitserverRepoStore) ListReposWithoutSize(ctx context.Context) (map[api.RepoName]api.RepoID, error) {
+	rows, err := s.Query(ctx, sqlf.Sprintf(listReposWithoutSizeQuery))
+	if err != nil {
+		return nil, errors.Wrap(err, "fetching repos without size")
+	}
+	defer rows.Close()
+	repos := make(map[api.RepoName]api.RepoID, 0)
+	for rows.Next() {
+		var name string
+		var ID int32
+		if err := rows.Scan(&name, &ID); err != nil {
+			return nil, errors.Wrap(err, "scanning row")
+		}
+		repos[api.RepoName(name)] = api.RepoID(ID)
+	}
+	return repos, nil
+}
+
+const listReposWithoutSizeQuery = `
+-- source: internal/database/gitserver_repos.go:gitserverRepoStore.ListReposWithoutSize
+SELECT
+	repo.name,
+    repo.id
+FROM repo
+JOIN gitserver_repos gr ON gr.repo_id = repo.id
+WHERE gr.repo_size_bytes IS NULL
+`
+
+// UpdateRepoSizes sets repo sizes according to input map. Key is repoID, value is repo_size_bytes.
+func (s *gitserverRepoStore) UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoID]int64) error {
+
+	inserter := func(inserter *batch.Inserter) error {
+		for repo, size := range repos {
+			if err := inserter.Insert(ctx, repo, shardID, size, "now()"); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	tx, err := s.Store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if err := batch.WithInserterWithReturn(
+		ctx,
+		tx.Handle().DB(),
+		"gitserver_repos",
+		batch.MaxNumPostgresParameters,
+		[]string{"repo_id", "shard_id", "repo_size_bytes", "updated_at"},
+		"ON CONFLICT (repo_id) DO UPDATE SET (repo_size_bytes, shard_id, updated_at) = (EXCLUDED.repo_size_bytes, gitserver_repos.shard_id, now())",
+		nil,
+		nil,
+		inserter,
+	); err != nil {
+		return err
+	}
+	return nil
 }
 
 // sanitizeToUTF8 will remove any null character terminated string. The null character can be

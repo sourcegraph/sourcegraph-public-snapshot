@@ -24,7 +24,7 @@ set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")"/../../../..
 
-echo "--- :go: Building sg"
+echo "~~~ :go: Building sg"
 (
   set -x
   pushd dev/sg
@@ -32,7 +32,7 @@ echo "--- :go: Building sg"
   popd
 )
 
-echo "--- :file_cabinet: Uploading logs"
+echo "~~~ :file_cabinet: Uploading logs"
 
 # Because we are running this script in the buildkite post-exit hook, the state of the job is still "running".
 # Passing --state="" just overrides the default. It's not set to any specific state because this script caller

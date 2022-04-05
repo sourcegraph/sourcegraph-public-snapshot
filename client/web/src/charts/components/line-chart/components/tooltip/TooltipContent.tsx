@@ -4,7 +4,7 @@ import { isDefined } from '@sourcegraph/common'
 
 import { DEFAULT_FALLBACK_COLOR } from '../../../../constants'
 import { Series } from '../../../../types'
-import { Point as DataPoint } from '../../types'
+import { Point } from '../../types'
 import { isValidNumber, formatYTick } from '../../utils'
 
 import { getListWindow } from './utils/get-list-window'
@@ -17,10 +17,12 @@ export function getLineStroke<Datum>(line: Series<Datum>): string {
 
 const MAX_ITEMS_IN_TOOLTIP = 10
 
+export type MinimumPointInfo<Datum> = Pick<Point<Datum>, 'datum' | 'seriesKey' | 'value' | 'time'>
+
 export interface TooltipContentProps<Datum> {
     series: Series<Datum>[]
-    activePoint: DataPoint<Datum>
-    xAxisKey: keyof Datum
+    activePoint: MinimumPointInfo<Datum>
+    stacked: boolean
 }
 
 /**
@@ -28,27 +30,25 @@ export interface TooltipContentProps<Datum> {
  * It consists of title - datetime for current x point and list of all nearest y points.
  */
 export function TooltipContent<Datum>(props: TooltipContentProps<Datum>): ReactElement | null {
-    const { activePoint, series, xAxisKey } = props
-    const { datum, originalDatum } = activePoint
+    const { activePoint, series, stacked } = props
 
     const lines = useMemo(() => {
         if (!activePoint) {
             return { window: [], leftRemaining: 0, rightRemaining: 0 }
         }
 
-        const sortedSeries = [...series]
+        const sortedSeries = series
             .map(line => {
-                const value = datum[line.dataKey]
-                const selfValue = originalDatum[line.dataKey]
+                const value = activePoint.datum[line.dataKey]
 
-                if (!isValidNumber(value) || !isValidNumber(selfValue)) {
+                if (!isValidNumber(value)) {
                     return
                 }
 
-                return { ...line, value, selfValue }
+                return { ...line, value }
             })
             .filter(isDefined)
-            .sort((lineA, lineB) => lineB.value - lineA.value)
+            .sort((lineA, lineB) => (!stacked ? lineB.value - lineA.value : -1))
 
         // Find index of hovered point
         const hoveredSeriesIndex = sortedSeries.findIndex(line => line.dataKey === activePoint.seriesKey)
@@ -57,41 +57,35 @@ export function TooltipContent<Datum>(props: TooltipContentProps<Datum>): ReactE
         const centerIndex = hoveredSeriesIndex !== -1 ? hoveredSeriesIndex : Math.floor(sortedSeries.length / 2)
 
         return getListWindow(sortedSeries, centerIndex, MAX_ITEMS_IN_TOOLTIP)
-    }, [activePoint, series, datum, originalDatum])
-
-    const dateString = new Date(+datum[xAxisKey]).toDateString()
+    }, [activePoint, series, stacked])
 
     return (
         <>
-            <h3>{dateString}</h3>
+            <h3>{activePoint.time.toDateString()}</h3>
 
             <ul className={styles.tooltipList}>
                 {lines.leftRemaining > 0 && <li className={styles.item}>... and {lines.leftRemaining} more</li>}
                 {lines.window.map(line => {
-                    // In stacked mode each line and datum has its original selfValue
-                    // and stacked value which is sum of all data items of lines below
-                    const selfValue = formatYTick(line.selfValue)
-                    const stackedValue = formatYTick(line.value)
-                    const datumKey = activePoint.seriesKey
-                    const backgroundColor = datumKey === line.dataKey ? 'var(--secondary-2)' : ''
+                    const value = formatYTick(line.value)
+                    const isActiveLine = activePoint.seriesKey === line.dataKey
+                    const stackedValue = isActiveLine && stacked ? formatYTick(activePoint.value) : null
+                    const backgroundColor = isActiveLine ? 'var(--secondary-2)' : ''
 
                     /* eslint-disable react/forbid-dom-props */
                     return (
                         <li key={line.dataKey as string} className={styles.item} style={{ backgroundColor }}>
                             <div style={{ backgroundColor: getLineStroke(line) }} className={styles.mark} />
 
-                            <span className={styles.legendText}>{line?.name ?? 'unknown series'}</span>
+                            <span className={styles.legendText}>{line.name}</span>
 
-                            <span className={styles.legendValue}>
-                                {selfValue !== stackedValue ? (
-                                    selfValue === null || Number.isNaN(selfValue) ? (
-                                        '–'
-                                    ) : (
-                                        <span className="font-weight-bold">{selfValue}</span>
-                                    )
-                                ) : null}{' '}
-                                {stackedValue === null || Number.isNaN(stackedValue) ? '–' : stackedValue}
-                            </span>
+                            {stackedValue && (
+                                <span className={styles.legendStackedValue}>
+                                    {stackedValue}
+                                    {'\u00A0—\u00A0'}
+                                </span>
+                            )}
+
+                            <span>{value}</span>
                         </li>
                     )
                 })}
