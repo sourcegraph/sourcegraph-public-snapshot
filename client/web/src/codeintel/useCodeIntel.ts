@@ -75,6 +75,10 @@ interface UseCodeIntelParameters {
     getSetting: SettingsGetter
 }
 
+const dropDefinitions = (definitions: Location[]): void => {
+    console.info(`dropping ${definitions.length} search-based definitions`)
+}
+
 export const useCodeIntel = ({
     variables,
     searchToken,
@@ -84,6 +88,9 @@ export const useCodeIntel = ({
     isArchived,
     getSetting,
 }: UseCodeIntelParameters): UseCodeIntelResult => {
+    const shouldMixPreciseAndSearchBasedReferences = (): boolean =>
+        getSetting<boolean>('codeIntel.mixPreciseAndSearchBasedReferences', false)
+
     const [codeIntelData, setCodeIntelData] = useState<CodeIntelData>()
 
     const setReferences = (references: Location[]): void => {
@@ -94,6 +101,30 @@ export const useCodeIntel = ({
                 nodes: references,
             },
         }))
+    }
+
+    const deduplicateAndAddReferences = (searchBasedReferences: Location[]): void => {
+        setCodeIntelData(previousData => {
+            const previous = previousData || EMPTY_CODE_INTEL_DATA
+
+            const lsifFiles = new Set(previous.references.nodes.map(location => location.file))
+
+            // Filter out any search results that occur in the same file as LSIF results. These
+            // results are definitely incorrect and will pollute the ordering of precise and fuzzy
+            // results in the references pane.
+            const searchResults = searchBasedReferences.filter(location => !lsifFiles.has(location.file))
+            if (searchResults.length === 0) {
+                return previous
+            }
+
+            return {
+                ...previous,
+                references: {
+                    endCursor: previous.references.endCursor,
+                    nodes: [...previous.references.nodes, ...searchResults],
+                },
+            }
+        })
     }
 
     const setDefinitions = (definitions: Location[]): void => {
@@ -154,6 +185,11 @@ export const useCodeIntel = ({
                 const lsifData = result ? getLsifData({ data: result }) : undefined
                 if (lsifData) {
                     setCodeIntelData(lsifData)
+
+                    if (shouldMixPreciseAndSearchBasedReferences()) {
+                        // TODO: We don't need to request definitions here
+                        fetchSearchBasedCodeIntel(deduplicateAndAddReferences, dropDefinitions)
+                    }
                 } else {
                     console.info('No LSIF data. Falling back to search-based code intelligence.')
                     fellBackToSearchBased.current = true

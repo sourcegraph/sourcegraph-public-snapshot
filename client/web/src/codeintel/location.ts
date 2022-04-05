@@ -44,3 +44,26 @@ const buildLocation = (node: LocationFields, precise: boolean): Location => {
     location.lines = location.content.split(/\r?\n/)
     return location
 }
+
+export type LocationGroupQuality = 'PRECISE' | 'SEARCH-BASED' | 'MIXED'
+
+export const locationGroupQuality = (locations: Location[]): LocationGroupQuality => {
+    let hasPrecise = false
+    let hasSearchBased = false
+
+    for (const location of locations) {
+        if (location.precise) {
+            hasPrecise = true
+        } else {
+            hasSearchBased = true
+        }
+    }
+
+    if (hasPrecise && hasSearchBased) {
+        return 'MIXED'
+    }
+    if (hasPrecise) {
+        return 'PRECISE'
+    }
+    return 'SEARCH-BASED'
+}

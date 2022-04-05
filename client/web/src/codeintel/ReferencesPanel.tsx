@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
-import { capitalize, find } from 'lodash'
+import { capitalize } from 'lodash'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
@@ -54,7 +54,7 @@ import { parseBrowserRepoURL } from '../util/url'
 
 import { findLanguageSpec } from './language-specs/languages'
 import { LanguageSpec } from './language-specs/languagespec'
-import { Location, RepoLocationGroup, LocationGroup } from './location'
+import { Location, RepoLocationGroup, LocationGroup, locationGroupQuality } from './location'
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
 import { newSettingsGetter } from './settings'
 import { findSearchToken } from './token'
@@ -684,12 +684,8 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<{
     getLineContent: (location: Location) => string
     filter: string | undefined
 }> = ({ repoLocationGroup, setActiveLocation, getLineContent, activeLocation, filter }) => {
-    const allSearchBased = useMemo(
-        () =>
-            find(
-                repoLocationGroup.referenceGroups.flatMap(reference => reference.locations),
-                location => !location.precise
-            ) !== undefined,
+    const quality = useMemo(
+        () => locationGroupQuality(repoLocationGroup.referenceGroups.flatMap(reference => reference.locations)),
         [repoLocationGroup]
     )
 
@@ -715,7 +711,11 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<{
                             </Link>
 
                             <Badge pill={true} small={true} variant="secondary" className="ml-2">
-                                {allSearchBased ? 'SEARCH-BASED' : 'PRECISE'}
+                                {quality === 'MIXED'
+                                    ? 'PRECISE AND SEARCH-BASED'
+                                    : quality === 'SEARCH-BASED'
+                                    ? 'SEARCH-BASED'
+                                    : 'PRECISE'}
                             </Badge>
                         </span>
                     </CollapseHeader>
