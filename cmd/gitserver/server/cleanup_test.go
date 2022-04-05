@@ -1218,3 +1218,55 @@ insert into gitserver_repos(repo_id, shard_id, repo_size_bytes) values (1, 1, 22
 		}
 	}
 }
+
+func TestSGMLogFile(t *testing.T) {
+	dir := GitDir(t.TempDir())
+	cmd := exec.Command("git", "--bare", "init")
+	dir.Set(cmd)
+	if err := cmd.Run(); err != nil {
+		t.Fatal(err)
+	}
+
+	mustHaveLogFile := func(t *testing.T) {
+		t.Helper()
+		content, err := os.ReadFile(dir.Path(sgmLog))
+		if err != nil {
+			t.Fatalf("%s should have been set: %s", sgmLog, err)
+		}
+		if len(content) == 0 {
+			t.Fatal("log file should have contained command output")
+		}
+	}
+
+	// failed run => log file
+	if err := sgMaintenance(dir, exec.Command("git", "apple")); err == nil {
+		t.Fatal("sgMaintenance should have returned an error")
+	}
+	mustHaveLogFile(t)
+
+	// fresh log file => skip execution
+	cmd = sgmCmd()
+	if err := sgMaintenance(dir, cmd); err != nil {
+		t.Fatalf("unexpected error %s", err)
+	}
+	mustHaveLogFile(t)
+	if cmd.ProcessState != nil {
+		t.Fatal("command should NOT have run")
+	}
+
+	// backdate sgmLog file => sgMaintenance ignores log file
+	old := time.Now().Add(-2 * time.Hour * time.Duration(sgmLogExpire))
+	if err := os.Chtimes(dir.Path(sgmLog), old, old); err != nil {
+		t.Fatal(err)
+	}
+	cmd = sgmCmd()
+	if err := sgMaintenance(dir, cmd); err != nil {
+		t.Fatalf("unexpected error %s", err)
+	}
+	if cmd.ProcessState == nil {
+		t.Fatal("command should have run")
+	}
+	if _, err := os.Stat(dir.Path(sgmLog)); err == nil {
+		t.Fatalf("%s should have been removed", sgmLog)
+	}
+}

@@ -41,10 +41,15 @@ const (
 	// repoTTLGC is how often we should re-clone a repository once it is
 	// reporting git gc issues.
 	repoTTLGC = time.Hour * 24 * 2
-
+	// repoTTLSGM is how often we should re-clone a repository once it is
+	// reporting issues with sg maintenance.
+	repoTTLSGM = time.Hour * 24 * 2
 	// gitConfigMaybeCorrupt is a key we add to git config to signal that a repo may be
 	// corrupt on disk.
 	gitConfigMaybeCorrupt = "sourcegraph.maybeCorruptRepo"
+	// The name of the log file placed by sg maintenance in case it encountered an
+	// error.
+	sgmLog = "sgm.log"
 )
 
 // EnableGCAuto is a temporary flag that allows us to control whether or not
@@ -61,6 +66,11 @@ var autoPackLimit, _ = strconv.Atoi(env.Get("SRC_GIT_AUTO_PACK_LIMIT", "50", "th
 // limit of 1024, which corresponds to an average of 4 loose objects per folder.
 // We can tune this parameter once we gain more experience.
 var looseObjectsLimit, _ = strconv.Atoi(env.Get("SRC_GIT_LOOSE_OBJECTS_LIMIT", "1024", "the maximum number of loose objects we tolerate before we trigger a repack"))
+
+// A failed sg maintenance run will place a log file in the git directory.
+// Subsequent sg maintenance runs are skipped unless the log file is old. Based
+// on how https://github.com/git/git handles the gc.log file.
+var sgmLogExpire, _ = strconv.Atoi(env.Get("SRC_GIT_LOG_FILE_EXPIRY", "24", "the number of hours after which sg maintenance runs even if a log file is present"))
 
 // sg maintenance and git gc must not be enabled at the same time. However, both
 // might be disabled at the same time, hence we need both SRC_ENABLE_GC_AUTO and
@@ -207,6 +217,11 @@ func (s *Server) cleanupRepos() {
 				reason = fmt.Sprintf("git gc %s", string(bytes.TrimSpace(gclog)))
 			}
 		}
+		if time.Since(recloneTime) > repoTTLSGM+jitterDuration(string(dir), repoTTLSGM/4) {
+			if sgmLog, err := os.ReadFile(dir.Path(sgmLog)); err == nil && len(sgmLog) > 0 {
+				reason = fmt.Sprintf("sg maintenance %s", string(bytes.TrimSpace(sgmLog)))
+			}
+		}
 
 		// We believe converting a Perforce depot to a Git repository is generally a
 		// very expensive operation, therefore we do not try to re-clone/redo the
@@ -284,7 +299,7 @@ func (s *Server) cleanupRepos() {
 	}
 
 	performSGMaintenance := func(dir GitDir) (done bool, err error) {
-		return false, sgMaintenance(dir)
+		return false, sgMaintenance(dir, sgmCmd())
 	}
 
 	performGitPrune := func(dir GitDir) (done bool, err error) {
@@ -856,10 +871,25 @@ func gitGC(dir GitDir) error {
 	return nil
 }
 
+func sgmCmd() *exec.Cmd {
+	cmd := exec.Command("sh")
+	cmd.Stdin = strings.NewReader(sgMaintenanceScript)
+	return cmd
+}
+
 // sgMaintenance runs a set of git cleanup tasks in dir. This must not be run
-// concurrently with git gc. sgMaintenance will check the state of the
-// repository to avoid running the cleanup tasks if possible.
-func sgMaintenance(dir GitDir) (err error) {
+// concurrently with git gc. sgMaintenance will check the state of the repository
+// to avoid running the cleanup tasks if possible. If a sgmLog file is present in
+// dir, sgMaintenance will not run unless the file is old.
+func sgMaintenance(dir GitDir, cmd *exec.Cmd) (err error) {
+	// Don't run if sgmLog file is younger than sgmLogExpire hours. There is no need
+	// to report an error, because the error has already been logged in a previous
+	// run.
+	if fi, err := os.Stat(dir.Path(sgmLog)); err == nil {
+		if fi.ModTime().After(time.Now().Add(-time.Hour * time.Duration(sgmLogExpire))) {
+			return nil
+		}
+	}
 	needed, reason, err := needsMaintenance(dir)
 	defer func() {
 		maintenanceStatus.WithLabelValues(strconv.FormatBool(err == nil), reason).Inc()
@@ -871,16 +901,17 @@ func sgMaintenance(dir GitDir) (err error) {
 		return nil
 	}
 
-	cmd := exec.Command("sh")
 	dir.Set(cmd)
-
-	cmd.Stdin = strings.NewReader(sgMaintenanceScript)
-
 	b, err := cmd.CombinedOutput()
 	if err != nil {
+		if err := os.WriteFile(dir.Path(sgmLog), b, 0666); err != nil {
+			log15.Debug(fmt.Sprintf("cloud not write %s", sgmLog), "err", err)
+		}
 		log15.Debug("sg maintenance", "dir", dir, "out", string(b))
 		return errors.Wrapf(wrapCmdError(cmd, err), "failed to run sg maintenance")
 	}
+	// Remove the log file after a successful run.
+	_ = os.Remove(dir.Path(sgmLog))
 	return nil
 }
 
