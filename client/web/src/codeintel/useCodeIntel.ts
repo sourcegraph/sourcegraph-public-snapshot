@@ -75,10 +75,6 @@ interface UseCodeIntelParameters {
     getSetting: SettingsGetter
 }
 
-const dropDefinitions = (definitions: Location[]): void => {
-    console.info(`dropping ${definitions.length} search-based definitions`)
-}
-
 export const useCodeIntel = ({
     variables,
     searchToken,
@@ -158,6 +154,7 @@ export const useCodeIntel = ({
         loading: searchBasedLoading,
         error: searchBasedError,
         fetch: fetchSearchBasedCodeIntel,
+        fetchReferences: fetchSearchBasedReferences,
     } = useSearchBasedCodeIntel({
         repo: variables.repository,
         commit: variables.commit,
@@ -187,8 +184,7 @@ export const useCodeIntel = ({
                     setCodeIntelData(lsifData)
 
                     if (shouldMixPreciseAndSearchBasedReferences()) {
-                        // TODO: We don't need to request definitions here
-                        fetchSearchBasedCodeIntel(deduplicateAndAddReferences, dropDefinitions)
+                        fetchSearchBasedReferences(deduplicateAndAddReferences)
                     }
                 } else {
                     console.info('No LSIF data. Falling back to search-based code intelligence.')

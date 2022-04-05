@@ -26,6 +26,7 @@ type LocationHandler = (locations: Location[]) => void
 
 interface UseSearchBasedCodeIntelResult {
     fetch: (onReferences: LocationHandler, onDefinitions: LocationHandler) => void
+    fetchReferences: (onReferences: LocationHandler) => void
     loading: boolean
     error?: ErrorLike
 }
@@ -53,10 +54,9 @@ export const useSearchBasedCodeIntel = (options: UseSearchBasedCodeIntelOptions)
     const [loadingDefinitions, setLoadingDefinitions] = useState(false)
     const [definitionsError, setDefinitionsError] = useState<ErrorLike | undefined>()
 
-    const fetch = useCallback(
-        (onReferences: LocationHandler, onDefinitions: LocationHandler) => {
+    const fetchReferences = useCallback(
+        (onReferences: LocationHandler) => {
             setLoadingReferences(true)
-            setLoadingDefinitions(true)
 
             searchBasedReferences(options)
                 .then(references => {
@@ -67,7 +67,15 @@ export const useSearchBasedCodeIntel = (options: UseSearchBasedCodeIntelOptions)
                     setReferencesError(error)
                     setLoadingReferences(false)
                 })
+        },
+        [options]
+    )
 
+    const fetch = useCallback(
+        (onReferences: LocationHandler, onDefinitions: LocationHandler) => {
+            fetchReferences(onReferences)
+
+            setLoadingDefinitions(true)
             searchBasedDefinitions(options)
                 .then(definitions => {
                     onDefinitions(definitions)
@@ -78,11 +86,16 @@ export const useSearchBasedCodeIntel = (options: UseSearchBasedCodeIntelOptions)
                     setLoadingDefinitions(false)
                 })
         },
-        [options]
+        [options, fetchReferences]
     )
 
     const errors = [definitionsError, referencesError].filter(isDefined)
-    return { fetch, loading: loadingReferences || loadingDefinitions, error: createAggregateError(errors) }
+    return {
+        fetch,
+        fetchReferences,
+        loading: loadingReferences || loadingDefinitions,
+        error: createAggregateError(errors),
+    }
 }
 
 // searchBasedReferences is 90% copy&paste from code-intel-extension's
