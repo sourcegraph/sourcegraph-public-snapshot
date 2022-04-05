@@ -134,12 +134,10 @@ export const LibraryPane: React.FunctionComponent<LibraryPaneProps> = ({ name, o
                                 </button>
                             </li>
                         ))}
-                        <li className={styles.libraryItem} key="examples-repo">
-                            <Link to="https://github.com/sourcegraph/batch-change-examples" className="last-item">
-                                View more examples
-                            </Link>
-                        </li>
                     </ul>
+                    <p className={styles.lastItem}>
+                        <Link to="https://github.com/sourcegraph/batch-change-examples">View more examples</Link>
+                    </p>
                 </animated.div>
             </animated.div>
         </>
