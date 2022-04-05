@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"embed"
 	_ "embed"
 	"strings"
 	"time"
@@ -9,8 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-//go:embed queries.txt
-var queriesRaw []byte
+//go:embed queries_*.txt
+var queriesFS embed.FS
 
 type Config struct {
 	Groups []*QueryGroupConfig
@@ -42,7 +43,17 @@ const (
 	Stream
 )
 
-func loadQueries() (_ *Config, err error) {
+func loadQueries(env string) (_ *Config, err error) {
+	if env == "" {
+		env = "cloud"
+	}
+	path := "queries_" + env + ".txt"
+
+	queriesRaw, err := queriesFS.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
 	var queries []*QueryConfig
 	var current QueryConfig
 	add := func() {
