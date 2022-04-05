@@ -119,10 +119,10 @@ func TestResolverTo(t *testing.T) {
 		}
 		treeEntry := &GitTreeEntryResolver{db: db, stat: treeStat}
 		if _, isBlob := treeEntry.ToGitBlob(); isBlob {
-			t.Errorf("expected treeEntry to be blob, but is blob")
+			t.Errorf("expected treeEntry to be tree, but is blob")
 		}
 		if _, isTree := treeEntry.ToGitTree(); !isTree {
-			t.Errorf("expected treeEntry to be blob")
+			t.Errorf("expected treeEntry to be tree")
 		}
 	})
 }
