@@ -587,18 +587,18 @@ const StepStateIcon: React.FunctionComponent<StepStateIconProps> = ({ step }) =>
         return <Icon className="text-muted" data-tooltip="The step has been skipped" as={LinkVariantRemoveIcon} />
     }
     if (!step.startedAt) {
-        return <Icon className="text-muted" data-tooltip="Waiting to be processed" as={TimerSandIcon} />
+        return <Icon className="text-muted" data-tooltip="This step is waiting to be processed" as={TimerSandIcon} />
     }
     if (!step.finishedAt) {
-        return <Icon className="text-muted" data-tooltip="Currently running" as={LoadingSpinner} />
+        return <Icon className="text-muted" data-tooltip="This step is currently running" as={LoadingSpinner} />
     }
     if (step.exitCode === 0) {
-        return <Icon className="text-success" data-tooltip="Ran successfully" as={CheckCircleIcon} />
+        return <Icon className="text-success" data-tooltip="This step ran successfully" as={CheckBoldIcon} />
     }
     return (
         <Icon
             className="text-danger"
-            data-tooltip={`Step failed with exit code ${String(step.exitCode)}`}
+            data-tooltip={`This step failed with exit code ${String(step.exitCode)}`}
             as={AlertCircleIcon}
         />
     )
