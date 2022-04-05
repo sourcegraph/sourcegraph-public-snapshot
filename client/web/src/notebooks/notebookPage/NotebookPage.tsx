@@ -185,7 +185,7 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
                     {isNotebookLoaded(notebookOrError) && (
                         <>
                             <PageHeader
-                                className="mt-2"
+                                className="mt-3"
                                 annotation={
                                     <FeedbackBadge status="beta" feedback={{ mailto: 'support@sourcegraph.com' }} />
                                 }

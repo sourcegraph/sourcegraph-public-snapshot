@@ -18,6 +18,11 @@
 }
 
 .heading {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--text-muted);
+
     &:global(.heading-1) {
         font-weight: 500;
         font-size: 1rem;
@@ -35,10 +40,7 @@
 }
 
 .heading-link {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    color: var(--text-muted);
+    color: inherit;
 }
 
 .visible {

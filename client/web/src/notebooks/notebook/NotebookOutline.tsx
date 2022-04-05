@@ -106,15 +106,13 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
                         <div
                             key={heading.id}
                             data-id={heading.id}
-                            className={classNames(styles.heading, `heading-${heading.depth}`)}
+                            className={classNames(
+                                styles.heading,
+                                `heading-${heading.depth}`,
+                                visibleHeadings.includes(heading.id) && styles.visible
+                            )}
                         >
-                            <Link
-                                className={classNames(
-                                    styles.headingLink,
-                                    visibleHeadings.includes(heading.id) && styles.visible
-                                )}
-                                to={`#${heading.id}`}
-                            >
+                            <Link className={classNames(styles.headingLink)} to={`#${heading.id}`}>
                                 {heading.text}
                             </Link>
                         </div>
