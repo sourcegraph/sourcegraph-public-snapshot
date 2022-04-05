@@ -35,11 +35,11 @@ import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transf
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
 import { MonacoQueryInputProps } from './MonacoQueryInput'
 
 import styles from './CodeMirrorQueryInput.module.scss'
-import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
 const replacePattern = /[\n\r↵]/g
 

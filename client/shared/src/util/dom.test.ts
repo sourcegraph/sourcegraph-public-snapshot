@@ -28,7 +28,7 @@ describe('isInputElement', () => {
         parent.contentEditable = ''
 
         const element = document.createElement('span')
-        parent.appendChild(element)
+        parent.append(element)
 
         expect(isInputElement(element)).toBe(true)
     })
