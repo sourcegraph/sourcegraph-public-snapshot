@@ -245,7 +245,6 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 
 	// Chunk web integration tests to save time via parallel execution.
 	chunkedTestFiles := getChunkedWebIntegrationFileNames(chunkSize)
-
 	// Percy finalize step should be executed after all integration tests.
 	puppeteerFinalizeDependencies := make([]bk.StepOpt, len(chunkedTestFiles))
 
