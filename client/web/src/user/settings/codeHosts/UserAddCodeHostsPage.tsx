@@ -116,7 +116,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         setIssUpdateModalOpen(!isUpdateModalOpen)
     }, [isUpdateModalOpen])
     const [servicesDown, setServicesDown] = useState<string[]>()
-    const useGitHubApp = false
+    const useGitHubApp = true
 
     const flagsOverridesResult = useFlagsOverrides()
     const isGitHubAppLoading = flagsOverridesResult.loading
