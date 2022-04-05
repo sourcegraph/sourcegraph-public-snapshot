@@ -71,18 +71,19 @@ type CommitGraphOptions struct {
 	Since   *time.Time
 } // please update LogFields if you add a field here
 
-var unixEpoch = stableTimeRepr(time.Unix(0, 0))
-
 func stableTimeRepr(t time.Time) string {
 	s, _ := t.MarshalText()
 	return string(s)
 }
 
 func (opts *CommitGraphOptions) LogFields() []log.Field {
-	since := unixEpoch
+	var since string
 	if opts.Since != nil {
 		since = stableTimeRepr(*opts.Since)
+	} else {
+		since = stableTimeRepr(time.Unix(0, 0))
 	}
+
 	return []log.Field{
 		log.String("commit", opts.Commit),
 		log.Int("limit", opts.Limit),
