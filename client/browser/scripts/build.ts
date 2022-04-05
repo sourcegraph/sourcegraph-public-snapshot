@@ -4,6 +4,7 @@ import webpack from 'webpack'
 
 import { config } from '../config/webpack/production.config'
 
+import { buildNpm } from './build-npm'
 import * as tasks from './tasks'
 
 const buildChrome = tasks.buildChrome('prod')
@@ -16,7 +17,7 @@ const compiler = webpack(config)
 
 signale.await('Webpack compilation')
 
-compiler.run((error, stats) => {
+compiler.run(async (error, stats) => {
     console.log(stats?.toString(tasks.WEBPACK_STATS_OPTIONS))
 
     if (stats?.hasErrors()) {
@@ -32,6 +33,7 @@ compiler.run((error, stats) => {
     } else {
         signale.debug('Skipping Safari build because Xcode tools were not found (xcrun, xcodebuild)')
     }
+    await buildNpm()
     tasks.copyIntegrationAssets()
     signale.success('Build done')
 })
