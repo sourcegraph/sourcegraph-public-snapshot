@@ -7,6 +7,8 @@ import { InsightDataSeries, SearchPatternType } from '../../../../../graphql-ope
 import { PageRoutes } from '../../../../../routes.constants'
 import { InsightFilters, SearchBasedInsightSeries } from '../../types'
 
+import { sortSeriesByName } from './sort-series-by-name'
+
 export interface SeriesDataset {
     dateTime: number
     [seriesKey: string]: number
@@ -40,37 +42,45 @@ export function createLineChartContent(
     return {
         chart: 'line',
         data: getDataPoints(series),
-        series: series.map(line => ({
-            name: definitionMap[line.seriesId]?.name ?? line.label,
-            dataKey: line.seriesId,
-            stroke: definitionMap[line.seriesId]?.stroke,
-            linkURLs: Object.fromEntries(
-                [...line.points]
-                    .sort((a, b) => Date.parse(a.dateTime) - Date.parse(b.dateTime))
-                    .map((point, index, points) => {
-                        const previousPoint = points[index - 1]
-                        const date = Date.parse(point.dateTime)
+        series: series
+            .map(line => ({
+                name: definitionMap[line.seriesId]?.name ?? line.label,
+                dataKey: line.seriesId,
+                stroke: definitionMap[line.seriesId]?.stroke,
+                linkURLs: Object.fromEntries(
+                    [...line.points]
+                        .sort((a, b) => Date.parse(a.dateTime) - Date.parse(b.dateTime))
+                        .map((point, index, points) => {
+                            const previousPoint = points[index - 1]
+                            const date = Date.parse(point.dateTime)
 
-                        // Use formatISO instead of toISOString(), because toISOString() always outputs UTC.
-                        // They mark the same point in time, but using the user's timezone makes the date string
-                        // easier to read (else the date component may be off by one day)
-                        const after = previousPoint ? formatISO(Date.parse(previousPoint.dateTime)) : ''
-                        const before = formatISO(date)
+                            // Use formatISO instead of toISOString(), because toISOString() always outputs UTC.
+                            // They mark the same point in time, but using the user's timezone makes the date string
+                            // easier to read (else the date component may be off by one day)
+                            const after = previousPoint ? formatISO(Date.parse(previousPoint.dateTime)) : ''
+                            const before = formatISO(date)
 
-                        const includeRepoFilter = includeRepoRegexp ? `repo:${includeRepoRegexp}` : ''
-                        const excludeRepoFilter = excludeRepoRegexp ? `-repo:${excludeRepoRegexp}` : ''
+                            const includeRepoFilter = includeRepoRegexp ? `repo:${includeRepoRegexp}` : ''
+                            const excludeRepoFilter = excludeRepoRegexp ? `-repo:${excludeRepoRegexp}` : ''
 
-                        const repoFilter = `${includeRepoFilter} ${excludeRepoFilter}`
-                        const afterFilter = after ? `after:${after}` : ''
-                        const beforeFilter = `before:${before}`
-                        const dateFilters = `${afterFilter} ${beforeFilter}`
-                        const diffQuery = `${repoFilter} type:diff ${dateFilters} ${definitionMap[line.seriesId].query}`
-                        const searchQueryParameter = buildSearchURLQuery(diffQuery, SearchPatternType.literal, false)
+                            const repoFilter = `${includeRepoFilter} ${excludeRepoFilter}`
+                            const afterFilter = after ? `after:${after}` : ''
+                            const beforeFilter = `before:${before}`
+                            const dateFilters = `${afterFilter} ${beforeFilter}`
+                            const diffQuery = `${repoFilter} type:diff ${dateFilters} ${
+                                definitionMap[line.seriesId].query
+                            }`
+                            const searchQueryParameter = buildSearchURLQuery(
+                                diffQuery,
+                                SearchPatternType.literal,
+                                false
+                            )
 
-                        return [date, `${window.location.origin}${PageRoutes.Search}?${searchQueryParameter}`]
-                    })
-            ),
-        })),
+                            return [date, `${window.location.origin}${PageRoutes.Search}?${searchQueryParameter}`]
+                        })
+                ),
+            }))
+            .sort(sortSeriesByName),
         xAxis: {
             dataKey: 'dateTime',
             scale: 'time',

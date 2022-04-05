@@ -1,8 +1,5 @@
 import { LineChartContent } from 'sourcegraph'
 
-// eslint-disable-next-line no-restricted-imports
-import { sortSeriesByName } from '../../enterprise/insights/core/backend/utils/sort-series-by-name'
-
 export const LINE_CHART_CONTENT_MOCK: LineChartContent<any, string> = {
     chart: 'line',
     data: [
@@ -70,7 +67,7 @@ export const LINE_CHART_TESTS_CASES_EXAMPLE: LineChartContent<any, string> = {
             name: 'React Testing Library',
             stroke: 'var(--red)',
         },
-    ].sort(sortSeriesByName),
+    ],
     xAxis: {
         dataKey: 'x',
         scale: 'time',

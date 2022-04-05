@@ -1,10 +1,17 @@
+import semver from 'semver'
 import { LineChartSeries } from 'sourcegraph'
 
 import { SeriesDataset } from './create-line-chart-content'
 
-export function sortSeriesByName(
-    seriesA: LineChartSeries<SeriesDataset>,
-    seriesB: LineChartSeries<SeriesDataset>
-): number {
-    return (seriesA.name && seriesB.name && seriesA.name.localeCompare(seriesB.name)) || 0
+export type SortSeriesByNameParameter = Pick<LineChartSeries<SeriesDataset>, 'name'>
+
+export function sortSeriesByName(seriesA: SortSeriesByNameParameter, seriesB: SortSeriesByNameParameter): number {
+    if (!seriesA.name || !seriesB.name) {
+        return 0
+    }
+
+    if (semver.valid(seriesA.name) && semver.valid(seriesB.name)) {
+        return semver.gt(seriesA.name, seriesB.name) ? 1 : -1
+    }
+    return seriesA.name.localeCompare(seriesB.name) || 0
 }
