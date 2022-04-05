@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"errors"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -9,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -18,7 +18,7 @@ var _ graphqlbackend.UserConnectionResolver = &userConnectionResolver{}
 
 // userConnectionResolver resolves a list of user from the roaring bitmap with pagination.
 type userConnectionResolver struct {
-	ids []int32 //sorted slice of IDs
+	ids []int32 // sorted slice of user IDs
 	db  database.DB
 
 	first int32
@@ -34,58 +34,62 @@ type userConnectionResolver struct {
 // 🚨 SECURITY: It is the caller's responsibility to ensure the current authenticated user
 // is the site admin because this method computes data from all available information in
 // the database.
+// This function takes returns a pagination of the user IDs
+// r.ids - the full slice of sorted user IDs
+// r.after - (optional) the user ID to start the paging after (does not include the after ID itself)
+// r.first - the # of user IDs to return
 func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, *graphqlutil.PageInfo, error) {
 	r.once.Do(func() {
-		var afterID api.RepoID
-		afterIDIdx := 0
-		skipSearch := false
-		if r.after != nil {
-			afterID, r.err = graphqlbackend.UnmarshalRepositoryID(graphql.ID(*r.after))
-			if r.err != nil {
+		var idSubset []int32
+		found := false
+		if r.after == nil {
+			idSubset = r.ids
+		} else {
+			afterID, err := graphqlbackend.UnmarshalRepositoryID(graphql.ID(*r.after))
+			if err != nil {
+				r.err = err
 				return
 			}
-
-			// Find the index of afterID in the ids slice, if afterID exists, and we can't find it in the loop, don't bother paginating
-			skipSearch = true
 			for idx, id := range r.ids {
 				if id == int32(afterID) {
-					// Only paginate if the index of the afterID isn't the last id of the slice.
-					if afterIDIdx < len(r.ids)-1 {
-						afterIDIdx = idx + 1 // set the start index to the next element
-						skipSearch = false
+					found = true
+					if idx < len(r.ids)-1 {
+						idSubset = r.ids[idx+1:]
 					}
 					break
 				}
 			}
-		}
-
-		userIDs := make([]int32, 0, r.first)
-		idsSize := int32(len(r.ids))
-
-		if !skipSearch {
-			// Generate a slice of user IDs ranging from index afterIDIdx+1 to: afterIDIdx+first or until the end of the slice, whichever is less.
-			count := int32(1)
-			for _, id := range r.ids[afterIDIdx:] {
-				if count > r.first {
-					break
+			if len(idSubset) == 0 {
+				if !found {
+					// r.after is set, but the after id does not exist in the slice of ids
+					r.err = errors.New("after id set, but does not exist")
+					return
+				} else {
+					// r.after is set, but it's the last id, nothing to return
+					r.users = []*types.User{}
+					r.pageInfo = graphqlutil.HasNextPage(false)
+					return
 				}
-				userIDs = append(userIDs, id)
-				count++
+
 			}
+		}
+		// If we have more ids than we need, trim them
+		if int32(len(idSubset)) > r.first {
+			idSubset = idSubset[:r.first]
 		}
 
 		r.users, r.err = r.db.Users().List(ctx, &database.UsersListOptions{
-			UserIDs: userIDs,
+			UserIDs: idSubset,
 		})
 		if r.err != nil {
 			return
 		}
 
 		// No more user IDs to paginate through.
-		if idsSize <= int32(afterIDIdx)+r.first {
+		if idSubset[len(idSubset)-1] == r.ids[len(r.ids)-1] {
 			r.pageInfo = graphqlutil.HasNextPage(false)
 		} else { // Additional user IDs to paginate through.
-			endCursor := string(graphqlbackend.MarshalUserID(userIDs[len(userIDs)-1]))
+			endCursor := string(graphqlbackend.MarshalUserID(idSubset[len(idSubset)-1]))
 			r.pageInfo = graphqlutil.NextPageCursor(endCursor)
 		}
 	})

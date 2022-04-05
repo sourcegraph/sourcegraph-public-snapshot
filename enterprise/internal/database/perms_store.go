@@ -7,7 +7,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/RoaringBitmap/roaring"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -1225,13 +1224,8 @@ AND service_id = %s
 			return nil, err
 		}
 
-		bm := roaring.NewBitmap()
-		for _, id := range ids {
-			bm.Add(uint32(id))
-		}
-
 		// This user has no pending permissions, only has an empty record
-		if bm.IsEmpty() {
+		if len(ids) == 0 {
 			continue
 		}
 		bindIDs = append(bindIDs, bindID)
@@ -1317,8 +1311,9 @@ type permsLoadValues struct {
 }
 
 // load is a generic method that scans three values from one database table row, these values must have
-// types and be scanned in the order of int32 (id), []byte (ids), time.Time (updatedAt) and nullable
-// time.Time (syncedAt). In addition, it unmarshalles the []byte into a *roaring.Bitmap.
+// types and be scanned in the order of int64 (id), []int64 (ids), time.Time (updatedAt) and nullable
+// time.Time (syncedAt). The id/ids can be smaller than int 64 (i.e. int32) but they will be scanned
+// as int64 and can be cast down after
 func (s *permsStore) load(ctx context.Context, q *sqlf.Query) (*permsLoadValues, error) {
 	var err error
 	ctx, save := s.observe(ctx, "load", "")

@@ -2,6 +2,8 @@ package resolvers
 
 import (
 	"context"
+	"errors"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -9,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -19,7 +20,7 @@ var _ graphqlbackend.RepositoryConnectionResolver = &repositoryConnectionResolve
 // repositoryConnectionResolver resolves a list of repositories from the roaring bitmap with pagination.
 type repositoryConnectionResolver struct {
 	db  database.DB
-	ids []int32 //sorted slice of IDs
+	ids []int32 //sorted slice of repo IDs
 
 	first int32
 	after *string
@@ -34,44 +35,52 @@ type repositoryConnectionResolver struct {
 // 🚨 SECURITY: It is the caller's responsibility to ensure the current authenticated user
 // is the site admin because this method computes data from all available information in
 // the database.
+// This function takes returns a pagination of the repo IDs
+// r.ids - the full slice of sorted repo IDs
+// r.after - (optional) the repo ID to start the paging after (does not include the after ID itself)
+// r.first - the # of repo IDs to return
 func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Repo, *graphqlutil.PageInfo, error) {
 	r.once.Do(func() {
-		var afterID api.RepoID
-		afterIDIdx := 0
-		skipSearch := false
-		if r.after != nil {
-			afterID, r.err = graphqlbackend.UnmarshalRepositoryID(graphql.ID(*r.after))
-			if r.err != nil {
+		var idSubset []int32
+		found := false
+		if r.after == nil {
+			idSubset = r.ids
+		} else {
+			afterID, err := graphqlbackend.UnmarshalRepositoryID(graphql.ID(*r.after))
+			if err != nil {
+				r.err = err
 				return
 			}
-
-			// Find the index of afterID in the ids slice, if r.after exists, and we can't find it in the ids slice, don't bother paginating
-			skipSearch = true
 			for idx, id := range r.ids {
 				if id == int32(afterID) {
-					// Only paginate if the index of the afterID isn't the last id of the slice.
-					if afterIDIdx < len(r.ids)-1 {
-						afterIDIdx = idx + 1 // set the start index to the next element
-						skipSearch = false
+					found = true
+					if idx < len(r.ids)-1 {
+						idSubset = r.ids[idx+1:]
 					}
 					break
 				}
 			}
+			if len(idSubset) == 0 {
+				if !found {
+					// r.after is set, but the after id does not exist in the slice of ids
+					r.err = errors.New("after id set, but does not exist")
+					return
+				} else {
+					// r.after is set, but it's the last id, nothing to return
+					r.repos = []*types.Repo{}
+					r.pageInfo = graphqlutil.HasNextPage(false)
+					return
+				}
+			}
+		}
+		// If we have more ids than we need, trim them
+		if int32(len(idSubset)) > r.first {
+			idSubset = idSubset[:r.first]
 		}
 
-		repoIDs := make([]api.RepoID, 0, r.first)
-		idsSize := int32(len(r.ids))
-
-		if !skipSearch {
-			// Generate a slice of repo IDs ranging from index afterIDIdx+1 to: afterIDIdx+first or until the end of the slice, whichever is less.
-			count := int32(1)
-			for _, id := range r.ids[afterIDIdx:] {
-				if count > r.first {
-					break
-				}
-				repoIDs = append(repoIDs, api.RepoID(id))
-				count++
-			}
+		repoIDs := make([]api.RepoID, len(idSubset))
+		for i := range idSubset {
+			repoIDs[i] = api.RepoID(idSubset[i])
 		}
 
 		r.repos, r.err = r.db.Repos().GetByIDs(ctx, repoIDs...)
@@ -79,8 +88,8 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			return
 		}
 
-		// No more repo IDs to paginate through.
-		if idsSize <= int32(afterIDIdx)+r.first {
+		// The last id in this page is the last id in r.ids, no more pages
+		if int32(repoIDs[len(repoIDs)-1]) == r.ids[len(r.ids)-1] {
 			r.pageInfo = graphqlutil.HasNextPage(false)
 		} else { // Additional repo IDs to paginate through.
 			endCursor := string(graphqlbackend.MarshalRepositoryID(repoIDs[len(repoIDs)-1]))

@@ -367,7 +367,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 		return nil
 	})
 	perms.LoadUserPendingPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPendingPermissions) error {
-		p.IDs = map[int32]struct{}{2: {}}
+		p.IDs = map[int32]struct{}{2: {}, 3: {}, 4: {}, 5: {}}
 		return nil
 	})
 
@@ -456,7 +456,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 				{
 					"authorizedUserRepositories": {
 						"nodes": [
-							{"id":"UmVwb3NpdG9yeToy"}
+							{"id":"UmVwb3NpdG9yeToy"},{"id":"UmVwb3NpdG9yeToz"},{"id":"UmVwb3NpdG9yeTo0"},{"id":"UmVwb3NpdG9yeTo1"}
 						]
     				}
 				}
@@ -484,8 +484,93 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 				{
 					"authorizedUserRepositories": {
 						"nodes": [
-							{"id":"UmVwb3NpdG9yeToy"}
+							{"id":"UmVwb3NpdG9yeToy"},{"id":"UmVwb3NpdG9yeToz"},{"id":"UmVwb3NpdG9yeTo0"},{"id":"UmVwb3NpdG9yeTo1"}
 						]
+    				}
+				}
+			`,
+				},
+			},
+		},
+		{
+			name: "check pending authorized repos via username with pagination, page 1",
+			gqlTests: []*gqltesting.Test{
+				{
+					Schema: mustParseGraphQLSchema(t, db),
+					Query: `
+				{
+					authorizedUserRepositories(
+						first: 2,
+						after: "UmVwb3NpdG9yeToy",
+						username: "bob") {
+						nodes {
+							id
+						}
+					}
+				}
+			`,
+					ExpectedResult: `
+				{
+					"authorizedUserRepositories": {
+						"nodes": [
+							{"id":"UmVwb3NpdG9yeToz"},{"id":"UmVwb3NpdG9yeTo0"}
+						]
+    				}
+				}
+			`,
+				},
+			},
+		},
+		{
+			name: "check pending authorized repos via username with pagination, page 2",
+			gqlTests: []*gqltesting.Test{
+				{
+					Schema: mustParseGraphQLSchema(t, db),
+					Query: `
+				{
+					authorizedUserRepositories(
+						first: 2,
+						after: "UmVwb3NpdG9yeTo0",
+						username: "bob") {
+						nodes {
+							id
+						}
+					}
+				}
+			`,
+					ExpectedResult: `
+				{
+					"authorizedUserRepositories": {
+						"nodes": [
+							{"id":"UmVwb3NpdG9yeTo1"}
+						]
+    				}
+				}
+			`,
+				},
+			},
+		},
+		{
+			name: "check pending authorized repos via username given no IDs after, after ID, return empty",
+			gqlTests: []*gqltesting.Test{
+				{
+					Schema: mustParseGraphQLSchema(t, db),
+					Query: `
+						{
+							authorizedUserRepositories(
+								first: 2,
+								after: "UmVwb3NpdG9yeTo1",
+								username: "bob") {
+								nodes {
+									id
+								}
+							}
+						}
+					`,
+					ExpectedResult: `
+				{
+					"authorizedUserRepositories": {
+						"nodes": []
     				}
 				}
 			`,
@@ -600,7 +685,7 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 
 	perms := edb.NewStrictMockPermsStore()
 	perms.LoadRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) error {
-		p.UserIDs = map[int32]struct{}{1: {}}
+		p.UserIDs = map[int32]struct{}{1: {}, 2: {}, 3: {}, 4: {}, 5: {}}
 		return nil
 	})
 
@@ -634,8 +719,102 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 					"repository": {
 						"authorizedUsers": {
 							"nodes":[
-								{"id":"VXNlcjox"}
+								{"id":"VXNlcjox"},{"id":"VXNlcjoy"},{"id":"VXNlcjoz"},{"id":"VXNlcjo0"},{"id":"VXNlcjo1"}
 							]
+						}
+    				}
+				}
+			`,
+				},
+			},
+		},
+		{
+			name: "get authorized users with pagination, page 1",
+			gqlTests: []*gqltesting.Test{
+				{
+					Schema: mustParseGraphQLSchema(t, db),
+					Query: `
+{
+					repository(name: "github.com/owner/repo") {
+						authorizedUsers(
+							first: 2,
+							after: "VXNlcjox") {
+							nodes {
+								id
+							}
+						}
+					}
+				}
+			`,
+					ExpectedResult: `
+				{
+					"repository": {
+						"authorizedUsers": {
+							"nodes":[
+								{"id":"VXNlcjoy"},{"id":"VXNlcjoz"}
+							]
+						}
+    				}
+				}
+			`,
+				},
+			},
+		},
+		{
+			name: "get authorized users with pagination, page 2",
+			gqlTests: []*gqltesting.Test{
+				{
+					Schema: mustParseGraphQLSchema(t, db),
+					Query: `
+{
+					repository(name: "github.com/owner/repo") {
+						authorizedUsers(
+							first: 2,
+							after: "VXNlcjoz") {
+							nodes {
+								id
+							}
+						}
+					}
+				}
+			`,
+					ExpectedResult: `
+				{
+					"repository": {
+						"authorizedUsers": {
+							"nodes":[
+								{"id":"VXNlcjo0"},{"id":"VXNlcjo1"}
+							]
+						}
+    				}
+				}
+			`,
+				},
+			},
+		},
+		{
+			name: "get authorized users given no IDs after, after ID, return empty",
+			gqlTests: []*gqltesting.Test{
+				{
+					Schema: mustParseGraphQLSchema(t, db),
+					Query: `
+{
+					repository(name: "github.com/owner/repo") {
+						authorizedUsers(
+							first: 2,
+							after: "VXNlcjo1") {
+							nodes {
+								id
+							}
+						}
+					}
+				}
+			`,
+					ExpectedResult: `
+				{
+					"repository": {
+						"authorizedUsers": {
+							"nodes":[]
 						}
     				}
 				}
