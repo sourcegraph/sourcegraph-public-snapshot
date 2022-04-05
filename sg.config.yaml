@@ -525,7 +525,7 @@ commands:
         -e POSTGRES_DATABASE=postgres \
         -e POSTGRES_USER=postgres \
         -p 0.0.0.0:$PORT:5432 \
-        -v $DISK:/var/lib/postgresql/data \
+        -v $DISK:/data/pgdata-12 \
         $IMAGE >$LOG_FILE 2>&1
     install: |
       mkdir -p $LOGS
