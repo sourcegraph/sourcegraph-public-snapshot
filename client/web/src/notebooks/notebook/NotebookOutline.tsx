@@ -43,6 +43,28 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
             [blocks]
         )
 
+        const headingsOrder = useMemo(
+            () =>
+                headings.reduce((accumulator, current, index) => {
+                    accumulator.set(current.id, index)
+                    return accumulator
+                }, new Map<string, number>()),
+
+            [headings]
+        )
+
+        const highlightedHeading = useMemo(() => {
+            if (visibleHeadings.length === 0) {
+                return null
+            }
+            // Find the first visible heading to highlight.
+            return visibleHeadings.reduce((accumulator, current) => {
+                const currentIndex = headingsOrder.get(current) ?? -1
+                const accumulatorIndex = headingsOrder.get(accumulator) ?? -1
+                return currentIndex < accumulatorIndex ? current : accumulator
+            }, visibleHeadings[0])
+        }, [headingsOrder, visibleHeadings])
+
         useEffect(() => {
             const observeHeadings = (): void => {
                 for (const element of notebookElement.querySelectorAll('h1, h2')) {
@@ -50,24 +72,12 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
                 }
             }
 
-            const scrollToOutlineHeading = (id: string): void =>
-                document
-                    .querySelector(`[data-id="${id}"]`)
-                    ?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' })
-
             const visibleHeadingsSet = new Set<string>()
-
             const processIntersectionEntries = (entries: IntersectionObserverEntry[]): void => {
-                let hasScrolled = false
-                // TODO: Improve
                 for (const entry of entries) {
                     const headingId = entry.target.id
                     if (entry.isIntersecting) {
                         visibleHeadingsSet.add(headingId)
-                        if (!hasScrolled) {
-                            // scrollToOutlineHeading(headingId)
-                            hasScrolled = true
-                        }
                     } else {
                         visibleHeadingsSet.delete(headingId)
                     }
@@ -75,12 +85,16 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
                 setVisibleHeadings([...visibleHeadingsSet])
             }
 
+            // We use the requestAnimationFrame callback to avoid processing on the main thread.
             const intersectionCallback = (entries: IntersectionObserverEntry[]): number =>
                 window.requestAnimationFrame(() => processIntersectionEntries(entries))
 
+            // We use the IntersectionObserver to keep track of the headings that
+            // are currently in the viewport.
             const intersectionObserver = new IntersectionObserver(intersectionCallback)
             observeHeadings()
 
+            // On every notebook mutation, observe the rendered headings again.
             const mutationObserver = new MutationObserver(observeHeadings)
             mutationObserver.observe(notebookElement, { childList: true, subtree: true })
 
@@ -88,7 +102,20 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
                 intersectionObserver.disconnect()
                 mutationObserver.disconnect()
             }
-        }, [notebookElement, scrollableContainer, setVisibleHeadings])
+        }, [notebookElement, setVisibleHeadings])
+
+        useEffect(() => {
+            if (!highlightedHeading || !scrollableContainer.current) {
+                return
+            }
+            const heading = scrollableContainer.current.querySelector<HTMLElement>(`[data-id="${highlightedHeading}"]`)
+            if (!heading) {
+                return
+            }
+            // Scroll to the highlighted heading in the outline.
+            const top = heading.offsetTop > scrollableContainer.current.offsetHeight ? heading.offsetTop : 0
+            scrollableContainer.current.scrollTo({ top, behavior: 'smooth' })
+        }, [highlightedHeading])
 
         return ReactDOM.createPortal(
             <div className={styles.outline}>
@@ -101,7 +128,7 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
                             className={classNames(
                                 styles.heading,
                                 `heading-${heading.depth}`,
-                                visibleHeadings.includes(heading.id) && styles.visible
+                                highlightedHeading === heading.id && styles.highlight
                             )}
                         >
                             <Link className={classNames(styles.headingLink)} to={`#${heading.id}`}>

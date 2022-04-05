@@ -1,17 +1,17 @@
 .outline {
     position: absolute;
-    padding: 0.5rem 1rem 1rem 0.5rem;
+    padding: 0.5rem 1rem 1rem 1rem;
     width: 100%;
     max-width: 20rem;
     height: 100%;
-    background-color: var(--subtle-bg);
+    background-color: var(--subtle-bg-2);
     border-right: 1px solid var(--border-color);
 }
 
 .title {
     font-weight: 600;
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
 }
 
 .scrollable-container {
@@ -29,10 +29,10 @@
     white-space: nowrap;
     text-overflow: ellipsis;
     color: var(--text-muted);
+    font-size: 0.875rem;
 
     &:global(.heading-1) {
-        font-weight: 500;
-        font-size: 1rem;
+        font-weight: 600;
 
         &:not(:first-child) {
             padding-top: 0.25rem;
@@ -40,16 +40,19 @@
     }
 
     &:global(.heading-2) {
-        font-size: 0.875rem;
-        padding-left: 1rem;
-        padding-bottom: 0.25rem;
+        font-weight: 400;
+        padding: 0.25rem 0 0 1rem;
     }
 }
 
 .heading-link {
     color: inherit;
+
+    &:hover {
+        color: inherit;
+    }
 }
 
-.visible {
-    color: red;
+.highlight {
+    color: var(--primary);
 }
