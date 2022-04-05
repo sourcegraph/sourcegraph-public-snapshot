@@ -9,7 +9,7 @@ import { useCodeIntelStatus as defaultUseCodeIntelStatus } from './useCodeIntelS
 
 export const RepositoryMenuContent: React.FunctionComponent<
     RepositoryMenuContentProps & {
-        useCodeIntelStatus: typeof defaultUseCodeIntelStatus
+        useCodeIntelStatus?: typeof defaultUseCodeIntelStatus
     }
 > = ({ useCodeIntelStatus = defaultUseCodeIntelStatus, ...props }) => {
     const { data, loading, error } = useCodeIntelStatus({
