@@ -1,4 +1,4 @@
-import { getDatumValue, SeriesWithData } from './data-series-processing'
+import { getDatumValue, isDatumWithValidNumber, SeriesWithData } from './data-series-processing'
 
 interface MinMaxBoundariesInput<D> {
     dataSeries: SeriesWithData<D>[]
@@ -29,8 +29,10 @@ export function getMinMaxBoundaries<D>(props: MinMaxBoundariesInput<D>): Boundar
             minX = Math.min(+data.x, minX ?? +data.x)
             maxX = Math.max(+data.x, maxX ?? +data.x)
 
-            minY = Math.min(getDatumValue(data), minY ?? getDatumValue(data))
-            maxY = Math.max(getDatumValue(data), maxY ?? getDatumValue(data))
+            if (isDatumWithValidNumber(data)) {
+                minY = Math.min(getDatumValue(data), minY ?? getDatumValue(data))
+                maxY = Math.max(getDatumValue(data), maxY ?? getDatumValue(data))
+            }
         }
     }
 
