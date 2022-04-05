@@ -16,7 +16,7 @@ A customer issue should **possibly** be routed to code intelligence if any of th
 
 ## Gathering evidence
 
-Before bringing a code intelligence issue to the engineering team, the site-admin or customer engineer should gather the following details. Not all of these details will be necessary for all classes of errors.
+Before bringing a code intelligence issue to the engineering team, the site-admin, customer engineer or support engineer should first double check the current status is `ready` for the specific LSIF Indexer in question at https://lsif.dev/. Next, gather the following details keeping in mind that not all of these details will be necessary for all classes of errors.
 
 #### Sourcegraph instance details
 
