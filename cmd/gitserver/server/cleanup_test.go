@@ -416,34 +416,42 @@ func TestCleanupOldLocks(t *testing.T) {
 
 		"github.com/foo/empty/.git/HEAD",
 		"github.com/foo/empty/.git/info/attributes",
+		"github.com/foo/empty/.git/sgm.log",
 
 		"github.com/foo/freshconfiglock/.git/HEAD",
 		"github.com/foo/freshconfiglock/.git/config.lock",
 		"github.com/foo/freshconfiglock/.git/info/attributes",
+		"github.com/foo/freshconfiglock/.git/sgm.log",
 
 		"github.com/foo/freshpacked/.git/HEAD",
 		"github.com/foo/freshpacked/.git/packed-refs.lock",
 		"github.com/foo/freshpacked/.git/info/attributes",
+		"github.com/foo/freshpacked/.git/sgm.log",
 
 		"github.com/foo/freshcommitgraphlock/.git/HEAD",
 		"github.com/foo/freshcommitgraphlock/.git/objects/info/commit-graph.lock",
 		"github.com/foo/freshcommitgraphlock/.git/info/attributes",
+		"github.com/foo/freshcommitgraphlock/.git/sgm.log",
 
 		"github.com/foo/stalecommitgraphlock/.git/HEAD",
 		"github.com/foo/stalecommitgraphlock/.git/info/attributes",
 		"github.com/foo/stalecommitgraphlock/.git/objects/info",
+		"github.com/foo/stalecommitgraphlock/.git/sgm.log",
 
 		"github.com/foo/staleconfiglock/.git/HEAD",
 		"github.com/foo/staleconfiglock/.git/info/attributes",
+		"github.com/foo/staleconfiglock/.git/sgm.log",
 
 		"github.com/foo/stalepacked/.git/HEAD",
 		"github.com/foo/stalepacked/.git/info/attributes",
+		"github.com/foo/stalepacked/.git/sgm.log",
 
 		"github.com/foo/refslock/.git/HEAD",
 		"github.com/foo/refslock/.git/refs/heads/fresh",
 		"github.com/foo/refslock/.git/refs/heads/fresh.lock",
 		"github.com/foo/refslock/.git/refs/heads/stale",
 		"github.com/foo/refslock/.git/info/attributes",
+		"github.com/foo/refslock/.git/sgm.log",
 	)
 }
 
