@@ -8,10 +8,10 @@
 <div class="cta-group">
 <!--<a class="btn btn-primary" href="#installation">★ ...</a>-->
 <a class="btn" href="#configuration">Configuration</a>
-- <a class="btn" href="#configure-sourcegraph-on-google-kubernetes-engine-gke">Google GKE</a>
+<a class="btn" href="#configure-sourcegraph-on-google-kubernetes-engine-gke">Google GKE</a>
 <a class="btn" href="#configure-sourcegraph-on-elastic-kubernetes-service-eks">AWS EKS</a>
 <a class="btn" href="#configure-sourcegraph-on-azure-managed-kubernetes-service-aks">Azure AKS</a>
-<a class="btn" href="#configure-sourcegraph-on-other-cloud-providers-or-on-prem">Other cloud providers or on-prem</a>
+<a class="btn" href="#configure-sourcegraph-on-other-cloud-providers-or-on-prem">Other or on-prem</a>
 <a class="btn" href="#upgrading-sourcegraph">Upgrading</a>
 </div>
 
