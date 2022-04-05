@@ -1,11 +1,36 @@
-# Sourcegraph Helm Chart
+# Using Helm
 
 ## Requirements
 
 * [Helm 3 CLI](https://helm.sh/docs/intro/install/)
 * Kubernetes 1.19 or greater
 
+<div class="cta-group">
+<!--<a class="btn btn-primary" href="#installation">★ ...</a>-->
+<a class="btn" href="#configuration">Configuration</a>
+- <a class="btn" href="#configure-sourcegraph-on-google-kubernetes-engine-gke">Google GKE</a>
+<a class="btn" href="#configure-sourcegraph-on-elastic-kubernetes-service-eks">AWS EKS</a>
+<a class="btn" href="#configure-sourcegraph-on-azure-managed-kubernetes-service-aks">Azure AKS</a>
+<a class="btn" href="#configure-sourcegraph-on-other-cloud-providers-or-on-prem">Other cloud providers or on-prem</a>
+<a class="btn" href="#upgrading-sourcegraph">Upgrading</a>
+</div>
+
+## High level overview of how to use Helm with Sourcegraph
+
+1. Prepare any required customizations
+   - Most environment are likely to need changes from the defaults - use the guidance in [Configuration](#configuration).
+1. Review the changes
+   - There are [three mechanisms](#reviewing-changes) that can be used to review any customizations made, this is an optional step, but may be useful the first time you deploy Sourcegraph, for peace of mind.
+1. Select your deployment method and follow the guidance:
+   - [Google GKE](#configure-sourcegraph-on-google-kubernetes-engine-gke)
+   - [AWS EKS](#configure-sourcegraph-on-elastic-kubernetes-service-eks)
+   - [Azure AKS](#configure-sourcegraph-on-azure-managed-kubernetes-service-aks)
+   - [Other cloud providers or on-prem](#configure-sourcegraph-on-other-cloud-providers-or-on-prem)
+
+
 ## Quickstart
+
+> ℹ️ This quickstart guide is useful to those already familiar with Helm who have a good understanding of how to use Helm in the environment they want to deploy into, and just who want to quickly deploy Sourcegraph with Helm with default configuration. If this doesn't cover what you need to know, see the links above for platform specific guides.
 
 To use the Helm chart, add the Sourcegraph helm repository:
 
@@ -19,22 +44,32 @@ Install the Sourcegraph chart using default values:
 helm install --version 0.7.0 sourcegraph sourcegraph/sourcegraph
 ```
 
+Sourcegraph should now be available via the address set. Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account. 
+
+Now the deployment is complete, more information on configuring the Sourcegraph application can be found here:
+[Configuring Sourcegraph](../../config/index.md)
+
+
 ## Configuration
 
-The Sourcegraph chart is highly customizable to support a wide range of environments. Please review the default values from [values.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/values.yaml) and all [supported options](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph#configuration-options). Customizations can be applied using an override file. Using an override file allows customizations to persist through upgrades without needing to manage merge conflicts.
+The Sourcegraph Helm chart is highly customizable to support a wide range of environments. We highly recommend that customizations be applied using an override file, which allows customizations to persist through upgrades without needing to manage merge conflicts. 
 
-To customize configuration settings with an override file, create an empty yaml file (e.g. `override.yaml`) to get started.
+The default configuration values can be viewed in the [values.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/values.yaml) file along with all [supported options](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph#configuration-options). 
+
+To customize configuration settings with an override file, create an empty yaml file (e.g. `override.yaml`) to get started. 
+
+(The configuration override file can be created in advance of deployment!)
+
+It's recommended that the override file be maintained in a version control system such as GitHub, but for testing this can be created on the machine from which the Helm deployment commands will be run.
 
 > WARNING: __DO NOT__ copy the [default values file](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/values.yaml) as a boilerplate for your override file. You risk having outdated values during upgrades.
 
 Example overrides can be found in the [examples](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples) folder. Please take a look at our examples before providing your own configuration and consider using them as boilerplates.
 
-Provide the override file to helm:
-
+Providing the override file to Helm is done with the inclusion of the values flag and the name of the file:
 ```sh
 helm upgrade --install --values ./override.yaml --version 0.7.0 sourcegraph sourcegraph/sourcegraph
 ```
-
 When making configuration changes, it's recommended to review the changes that will be applied - see [Reviewing Changes](#reviewing-changes) for more details.
 
 ### Using external PostgreSQL databases
@@ -175,20 +210,20 @@ This section is aimed at providing high-level guidance on deploying Sourcegraph 
 
 #### Prerequisites
 
-You need to have a GKE cluster (>=1.19) with the following addons enabled:
+1. You need to have a GKE cluster (>=1.19) with the `HTTP Load Balancing` addon enabled. Alternatively, you can use your own choice of Ingress Controller and disable the `HTTP Load Balancing` add-on, [learn more](https://cloud.google.com/kubernetes-engine/docs/how-to/custom-ingress-controller).
+1. Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
+1. Connect to your cluster (via either the console or the command line using `gcloud`) and ensure the cluster is up and running by running: `kubectl get nodes` (several `ready` nodes should be listed)
+1. Have the Helm CLI installed and run the following command to link to the Sourcegraph helm repository
 
-> Alternatively, you may consider using your custom Ingress Controller and disable `HTTP Load Balancing` add-on, [learn more](https://cloud.google.com/kubernetes-engine/docs/how-to/custom-ingress-controller).
-
-- [x] HTTP Load Balancing
-- [x] Compute Engine persistent disk CSI Driver
-
-Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
+```sh
+helm repo add sourcegraph https://sourcegraph.github.io/deploy-sourcegraph-helm/
+```
 
 #### Steps
 
-> [Container-native load balancing] is only available on VPC-native cluster. For legacy clusters, [learn more](https://cloud.google.com/kubernetes-engine/docs/how-to/load-balance-ingress).
+**1** – Create your override file and add in any configuration override settings you need - see [configuration](#configuration) for more information on override files and the options around what can be conifgured.
 
-Create an override file with the following values. We configure Ingress to use [Container-native load balancing] to expose Sourcegraph publicly on a domain of your choosing and Storage Class to use [Compute Engine persistent disk].
+Add into your overide file the below values to configure both your ingress hostname and your storage class. We recommend configuring Ingress to use [Container-native load balancing] to expose Sourcegraph publicly on a domain of your choosing and setting the Storage Class to use [Compute Engine persistent disk]. (For an example file see [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/gcp/override.yaml))
 
 [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/gcp/override.yaml)
 ```yaml
@@ -197,12 +232,13 @@ frontend:
   ingress:
     enabled: true
     annotations:
-      kubernetes.io/ingress.class: null
-    ingressClassName: gce
-    host: sourcegraph.company.com # Replace with your actual domain
+      kubernetes.io/ingress.class: gce
+# To enable HTTPS using a self-managed certificate
+#    tlsSecret: example-secret
+#    host: sourcegraph.example.com
   serviceAnnotations:
     cloud.google.com/neg: '{"ingress": true}'
-    # reference the `BackendConfig` CR we will be configuring at a later step
+    # Reference the `BackendConfig` CR created below
     beta.cloud.google.com/backend-config: '{"default": "sourcegraph-frontend"}'
 
 storageClass:
@@ -211,44 +247,41 @@ storageClass:
   provisioner: pd.csi.storage.gke.io
   volumeBindingMode: WaitForFirstConsumer
   reclaimPolicy: Retain
+
+extraResources:
+  - apiVersion: cloud.google.com/v1
+    kind: BackendConfig
+    metadata:
+      name: sourcegraph-frontend
+    spec:
+      healthCheck:
+        checkIntervalSec: 5
+        timeoutSec: 5
+        requestPath: /ready
+        port: 6060 # we use a custom port to perform healthcheck
 ```
 
-Install the chart
+The override file includes a [BackendConfig] CRD. This is necessary to instruct GCP load balancer how to perform healthcheck on our deployment.
+
+> ℹ️ [Container-native load balancing] is only available on VPC-native cluster. For legacy clusters, [learn more](https://cloud.google.com/kubernetes-engine/docs/how-to/load-balance-ingress).
+
+> ℹ️ Optionally, you can review the changes using one of [three mechanisms](#reviewing-changes) that can be used to assess the customizations made. This is not required, but may be useful the first time you deploy Sourcegraph, for peace of mind.
+
+**2** – Install the chart
 
 ```sh
 helm upgrade --install --values ./override.yaml --version 0.7.0 sourcegraph sourcegraph/sourcegraph
 ```
 
-You need to deploy the [BackendConfig] CRD to properly expose Sourcegraph publicly. The [BackendConfig] CR should be deployed in the same namespace where the Sourcegraph chart is installed.
-
-[sourcegraph-frontend.BackendConfig.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/michael/improve-gcp-example/charts/sourcegraph/examples/gcp/sourcegraph-frontend.BackendConfig.yaml)
-```yaml
-apiVersion: cloud.google.com/v1
-kind: BackendConfig
-metadata:
-  name: sourcegraph-frontend
-spec:
-  healthCheck:
-    checkIntervalSec: 5
-    timeoutSec: 5
-    requestPath: /ready
-    port: 6060 # we use a custom port to perform healthcheck
-```
-
-```sh
-kubectl apply -f sourcegraph-frontend.BackendConfig.yaml
-```
-
-It will take around 10 minutes for the load balancer to be fully ready, you may check on the status and obtain the load balancer IP:
+It will take around 10 minutes for the load balancer to be fully ready, you may check on the status and obtain the load balancer IP using the following command:
 
 ```sh
 kubectl describe ingress sourcegraph-frontend
 ```
 
-Upon obtaining the allocated IP address of the load balancer, you should create an A record for the `sourcegraph.company.com` domain. Finally, it is recommended to enable TLS and you may consider using [Google-managed certificate](https://cloud.google.com/kubernetes-engine/docs/how-to/managed-certs) in GKE.
+**3** – Upon obtaining the allocated IP address of the load balancer, you should create an A record for the `sourcegraph.company.com` domain. Finally, it is recommended to enable TLS and you may consider using [Google-managed certificate](https://cloud.google.com/kubernetes-engine/docs/how-to/managed-certs) in GKE or your own certificate.
 
-Upon creating the Google-managed certificate, you may add the following annotations to Ingress.
-
+If using a GKE manage certificate, add the following annotations to Ingress:
 ```yaml
 frontend:
   ingress:
@@ -260,22 +293,70 @@ frontend:
       # kubernetes.io/ingress.global-static-ip-name: ADDRESS_NAME
 ```
 
+If using your own certificate, you can do so with [TLS Secrets](https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets).
+
+`sourcegraph-frontend-tls.Secret.yaml` 
+```yaml 
+apiVersion: v1 
+kind: Secret 
+metadata: 
+  name: sourcegraph-frontend-tls 
+type: kubernetes.io/tls 
+data: 
+  # the data is abbreviated in this example 
+  tls.crt: | 
+    MIIC2DCCAcCgAwIBAgIBATANBgkqh ... 
+  tls.key: | 
+    MIIEpgIBAAKCAQEA7yn3bRHQ5FHMQ ... 
+``` 
+
+```sh 
+kubectl apply -f ./sourcegraph-frontend-tls.Secret.yaml 
+``` 
+	  
+Add the following values to your override file. 
+	  
+```yaml 
+frontend: 
+  ingress: 
+    enabled: true 
+    annotations: 
+      kubernetes.io/ingress.class: gce 
+    tlsSecret: sourcegraph-frontend-tls # reference the created TLS Secret 
+    # replace with your actual domain 
+    host: sourcegraph.company.com 
+``` 
+
+**5** – Validate the deployment
+Sourcegraph should now be available via the address set. 
+Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account. 
+
+**6** – Further configuration
+
+Now the deployment is complete, more information on configuring the Sourcegraph application can be found here:
+[Configuring Sourcegraph](../../config/index.md)
+
 ### Configure Sourcegraph on Elastic Kubernetes Service (EKS)
 
 #### Prerequisites
 
-You need to have a EKS cluster (>=1.19) with the following addons enabled:
-
+1. You need to have a EKS cluster (>=1.19) with the following addons enabled:
+   - [AWS Load Balancer Controller](https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html)
+   - [AWS EBS CSI driver](https://docs.aws.amazon.com/eks/latest/userguide/managing-ebs-csi.html)
 > You may consider deploying your own Ingress Controller instead of ALB Ingress Controller, [learn more](https://kubernetes.github.io/ingress-nginx/)
+1. Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
+1. Connect to your cluster (via either the console or the command line using `eksctl`) and ensure the cluster is up and running by running: `kubectl get nodes` (several `ready` nodes should be listed)
+1. Have the Helm CLI installed and run the following command to link to the Sourcegraph helm repository
 
-- [x] [AWS Load Balancer Controller]
-- [x] [AWS EBS CSI driver]
-
-Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
+```sh
+helm repo add sourcegraph https://sourcegraph.github.io/deploy-sourcegraph-helm/
+```
 
 #### Steps
 
-Create an override file with the following values. We configure Ingress to use [AWS Load Balancer Controller] to expose Sourcegraph publicly on a domain of your choosing and Storage Class to use [AWS EBS CSI driver].
+**1** – Create your override file and add in any configuration override settings you need - see [configuration](#configuration) for more information on override files and the options around what can be conifgured.
+
+We recommend adding the following values into your override file to configure Ingress to use [AWS Load Balancer Controller] to expose Sourcegraph publicly on a domain of your choosing, and to configure the Storage Class to use [AWS EBS CSI driver].
 
 [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/aws/override.yaml)
 ```yaml
@@ -296,8 +377,9 @@ storageClass:
   volumeBindingMode: WaitForFirstConsumer
   reclaimPolicy: Retain
 ```
+> ℹ️ Optionally, you can review the changes using one of [three mechanisms](#reviewing-changes) that can be used to assess the customizations made. This is not required, but may be useful the first time you deploy Sourcegraph, for peace of mind.
 
-Install the chart
+**2** – Install the chart
 
 ```sh
 helm upgrade --install --values ./override.yaml --version 0.7.0 sourcegraph sourcegraph/sourcegraph
@@ -309,7 +391,7 @@ It will take some time for the load balancer to be fully ready, you may check on
 kubectl describe ingress sourcegraph-frontend
 ```
 
-Upon obtaining the allocated address of the load balancer, you should create a DNS record for the `sourcegraph.company.com` domain that resolves to the load balancer address.
+**3** – Upon obtaining the allocated address of the load balancer, you should create a DNS record for the `sourcegraph.company.com` domain that resolves to the load balancer address.
 
 It is recommended to enable TLS and configure certificate properly on your load balancer. You may consider using [AWS-managed certificate](https://docs.aws.amazon.com/acm/latest/userguide/acm-overview.html) and add the following annotations to Ingress.
 
@@ -322,6 +404,15 @@ frontend:
       alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-west-2:xxxxx:certificate/xxxxxxx
 ```
 
+**4** – Validate the deployment
+Sourcegraph should now be available via the address set. 
+Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account. 
+
+**5** – Further configuration
+
+Now the deployment is complete, more information on configuring the Sourcegraph application can be found here:
+[Configuring Sourcegraph](../../config/index.md)
+
 #### References
 
 - [Enable TLS with AWS-managed certificate](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.2/guide/ingress/annotations/#ssl)
@@ -331,18 +422,23 @@ frontend:
 
 #### Prerequisites
 
-You need to have a AKS cluster (>=1.19) with the following addons enabled:
-
+1. You need to have a AKS cluster (>=1.19) with the following addons enabled:
+   - [Azure Application Gateway Ingress Controller](https://docs.microsoft.com/en-us/azure/application-gateway/ingress-controller-install-new)
+   - [Azure Disk CSI driver](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers)
 > You may consider using your custom Ingress Controller instead of Application Gateway, [learn more](https://docs.microsoft.com/en-us/azure/aks/ingress-basic)
+2. Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
+3. Connect to your cluster (via either the console or the command line using the Azure CLI) and ensure the cluster is up and running by running: `kubectl get nodes` (several `ready` nodes should be listed)
+4. Have the Helm CLI installed and run the following command to link to the Sourcegraph helm repository
 
-- [x] [Azure Application Gateway Ingress Controller](https://docs.microsoft.com/en-us/azure/application-gateway/ingress-controller-install-new)
-- [x] [Azure Disk CSI driver](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers)
-
-Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
+```sh
+helm repo add sourcegraph https://sourcegraph.github.io/deploy-sourcegraph-helm/
+```
 
 #### Steps
 
-Create an override file with the following values. We configure Ingress to use [Application Gateway](https://azure.microsoft.com/en-us/services/application-gateway) to expose Sourcegraph publicly on a domain of your choosing and Storage Class to use [Azure Disk CSI driver](https://docs.microsoft.com/en-us/azure/aks/azure-disk-csi).
+**1** – Create your override file and add in any configuration override settings you need - see [configuration](#configuration) for more information on override files and the options around what can be conifgured.
+
+Add into your override file the below values to configure both your ingress hostname and your storage class. We recommend configuring Ingress to use [Application Gateway](https://azure.microsoft.com/en-us/services/application-gateway) to expose Sourcegraph publicly on a domain of your choosing and Storage Class to use [Azure Disk CSI driver](https://docs.microsoft.com/en-us/azure/aks/azure-disk-csi).
 
 [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/azure/override.yaml)
 ```yaml
@@ -366,7 +462,9 @@ storageClass:
     storageaccounttype: Premium_LRS # This configures SSDs (recommended). A Premium VM is required.
 ```
 
-Install the chart
+> ℹ️ Optionally, you can review the changes using one of [three mechanisms](#reviewing-changes) that can be used to assess the customizations made. This is not required, but may be useful the first time you deploy Sourcegraph, for peace of mind.
+
+**2** – Install the chart
 
 ```sh
 helm upgrade --install --values ./override.yaml --version 0.7.0 sourcegraph sourcegraph/sourcegraph
@@ -378,7 +476,7 @@ It will take some time for the load balancer to be fully ready, you may check on
 kubectl describe ingress sourcegraph-frontend
 ```
 
-Upon obtaining the allocated address of the load balancer, you should create a DNS record for the `sourcegraph.company.com` domain that resolves to the load balancer address.
+**3** – Upon obtaining the allocated address of the load balancer, you should create a DNS record for the `sourcegraph.company.com` domain that resolves to the load balancer address.
 
 It is recommended to enable TLS and configure certificate properly on your load balancer. You may consider using an [Azure-managed certificate](https://azure.github.io/application-gateway-kubernetes-ingress/features/appgw-ssl-certificate/) and add the following annotations to Ingress.
 
@@ -391,6 +489,15 @@ frontend:
       appgw.ingress.kubernetes.io/appgw-ssl-certificate: azure-key-vault-managed-ssl-cert
 ```
 
+**4** – Validate the deployment
+Sourcegraph should now be available via the address set. 
+Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account. 
+
+**5** – Further configuration
+
+Now the deployment is complete, more information on configuring the Sourcegraph application can be found here:
+[Configuring Sourcegraph](../../config/index.md)
+
 #### References
 
 - [Expose an AKS service over HTTP or HTTPS using Application Gateway](https://docs.microsoft.com/en-us/azure/application-gateway/ingress-controller-expose-service-over-http-https)
@@ -402,16 +509,23 @@ frontend:
 
 #### Prerequisites
 
-You need to have a Kubernetes cluster (>=1.19) with the following components installed:
-
-- [x] Ingress Controller, e.g. Cloud providers-native solution, [NGINX Ingress Controller]
-- [x] Block Storage CSI driver
-
-Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
+1. You need to have a Kubernetes cluster (>=1.19) with the following components installed:
+   - [x] Ingress Controller, e.g. Cloud providers-native solution, [NGINX Ingress Controller]
+   - [x] Block Storage CSI driver
+2. Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
+3. Connect to your cluster (via either the console or the command line using the relevant CLI tool) and ensure the cluster is up and running by running: `kubectl get nodes` (several `ready` nodes should be listed)
+4. Have the Helm CLI installed and run the following command to link to the Sourcegraph helm repository
+```sh
+helm repo add sourcegraph https://sourcegraph.github.io/deploy-sourcegraph-helm/
+```
 
 #### Steps
 
+**1** – Create your override file and add in any configuration override settings you need - see [configuration](#configuration) for more information on override files and the options around what can be conifgured.
+
 Read <https://kubernetes.io/docs/concepts/storage/storage-classes/> to configure the `storageClass.provisioner` and `storageClass.parameters` fields for your cloud provider or consult documentation of the storage solution in your on-prem environment.
+
+The following will need to be included in your `override.yaml`, once adapted to your environment.
 
 ```yaml
 frontend:
@@ -433,19 +547,20 @@ storageClass:
     key1: value1
 ```
 
-Install the chart
+> ℹ️ Optionally, you can review the changes using one of [three mechanisms](#reviewing-changes) that can be used to assess the customizations made. This is not required, but may be useful the first time you deploy Sourcegraph, for peace of mind.
+
+**2** – Install the chart
 
 ```sh
 helm upgrade --install --values ./override.yaml --version 0.7.0 sourcegraph sourcegraph/sourcegraph
 ```
-
-Depending how your Ingress Controller work, you may be able to check on status and obtain the public address of your Ingress.
+It may take some time before your ingress is up and ready to proceed. Depending how your Ingress Controller works, you may be able to check on status and obtain the public address of your Ingress.
 
 ```sh
 kubectl describe ingress sourcegraph-frontend
 ```
 
-You should create a DNS record for the `sourcegraph.company.com` domain that resolves to the Ingress public address.
+**3** – You should create a DNS record for the `sourcegraph.company.com` domain that resolves to the Ingress public address.
 
 It is recommended to enable TLS and configure certificate properly on your Ingress. You may utilize managed certificate solution provided by Cloud providers.
 
@@ -502,13 +617,24 @@ frontend:
     host: sourcegraph.company.com
 ```
 
+**4** – Validate the deployment
+Sourcegraph should now be available via the address set. 
+Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account. 
+
+**5** – Further configuration
+
+Now the deployment is complete, more information on configuring the Sourcegraph application can be found here:
+[Configuring Sourcegraph](../../config/index.md)
+
 ## Advanced configuration
 
+The Helm chart is new and still under active development, and our values.yaml (and therefore customization available via an override file) may not cover every need. Equally, some changes are enviroment or customer specific, and so will never be part of the default Sourcegraph Helm chart.
+
+The following guidance for using Kustomize with Helm and Helm Subcharts cover both these scenarios.
+
+If in doubt, or if you feel something ought to be added to the stock Sourcegraph Helm chart, please contact [support@sourcegraph.com](mailto:support@sourcegraph.com) or your Customer Engineer directly to discuss.
+
 ### Integrate Kustomize with Helm chart
-
-The Helm chart is new and still under active development, and we may not cover all of your use cases.
-
-Please contact [support@sourcegraph.com](mailto:support@sourcegraph.com) or your Customer Engineer directly to discuss your specific need.
 
 For advanced users who are looking for a temporary workaround, we __recommend__ applying [Kustomize](https://kustomize.io) on the rendered manifests from our chart. Please __do not__ maintain your own fork of our chart, this may impact our ability to support you if you run into issues.
 
@@ -532,9 +658,11 @@ A new version of Sourcegraph is released every month (with patch releases in bet
 
 ### Upgrading
 
-1. Review [Helm Changelog] and [Sourcegraph Changelog] and select a helm chart version compatible with your current Sourcegraph version. You can only upgrade one minor version of Sourcegraph at a time.
+1. Review [Helm Changelog] and [Sourcegraph Changelog] and select a helm chart version compatible with your current Sourcegraph version. 
 
-1. Update the repo list of charts to retrieve the updated list of versions:
+> ⚠️ You can only upgrade one minor version of Sourcegraph at a time.
+
+1. Update your copy of the Sourcegraph Helm repo to ensure you have all the latest versions:
 
    ```bash
       helm repo update sourcegraph
