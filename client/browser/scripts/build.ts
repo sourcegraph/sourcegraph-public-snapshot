@@ -33,8 +33,8 @@ compiler.run(async (error, stats) => {
     } else {
         signale.debug('Skipping Safari build because Xcode tools were not found (xcrun, xcodebuild)')
     }
-    await buildNpm()
     tasks.copyIntegrationAssets()
+    await buildNpm()
     signale.success('Build done')
 })
 

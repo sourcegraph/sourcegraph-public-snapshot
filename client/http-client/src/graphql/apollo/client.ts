@@ -73,7 +73,7 @@ export const getGraphQLClient = once(
                 createHttpLink({
                     uri: ({ operationName }) => `${uri}?${operationName}`,
                     headers,
-                    credentials: 'include',
+                    credentials,
                 }),
             ]),
         })
