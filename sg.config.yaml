@@ -102,7 +102,7 @@ env:
   DISABLE_CNCF: notonmybox
 
   # Code Insights uses a separate database to architecturally isolate the component from the rest of Sourcegraph.
-  CODEINSIGHTS_PGDATASOURCE: postgres://postgres:password@127.0.0.1:5435/postgres
+  CODEINSIGHTS_PGDATASOURCE: postgres://$PGUSER:$PGPASSWORD@$PGHOST:$PGPORT/$PGDATABASE
   DB_STARTUP_TIMEOUT: 120s # codeinsights-db needs more time to start in some instances.
   DISABLE_CODE_INSIGHTS_HISTORICAL: true
   DISABLE_CODE_INSIGHTS: true
@@ -514,31 +514,6 @@ commands:
       IMAGE: sourcegraph/minio
       CONTAINER: minio
 
-  codeinsights-db:
-    cmd: |
-      docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
-      docker run --rm \
-        --name=${CONTAINER} \
-        --cpus=1 \
-        --memory=1g \
-        -e POSTGRES_PASSWORD=password \
-        -e POSTGRES_DATABASE=postgres \
-        -e POSTGRES_USER=postgres \
-        -p 0.0.0.0:$PORT:5432 \
-        -v $DISK:/var/lib/postgresql/data \
-        $IMAGE >$LOG_FILE 2>&1
-    install: |
-      mkdir -p $LOGS
-      mkdir -p $DISK
-      CACHE=true ./docker-images/codeinsights-db/build.sh >$LOG_FILE 2>&1
-    env:
-      LOGS: $HOME/.sourcegraph-dev/logs/codeinsights-db
-      LOG_FILE: $HOME/.sourcegraph-dev/logs/codeinsights-db/codeinsights-db.log
-      DISK: $HOME/.sourcegraph-dev/data/codeinsights-db
-      IMAGE: sourcegraph/codeinsights-db:dev
-      CONTAINER: codeinsights-db
-      PORT: 5435
-
   redis-postgres:
     # Add the following overwrites to your sg.config.overwrite.yaml to use the docker-compose
     # database:
@@ -833,7 +808,6 @@ commandsets:
       - zoekt-indexserver-1
       - zoekt-webserver-0
       - zoekt-webserver-1
-      - codeinsights-db
     env:
       DISABLE_CODE_INSIGHTS_HISTORICAL: false
       DISABLE_CODE_INSIGHTS: false
