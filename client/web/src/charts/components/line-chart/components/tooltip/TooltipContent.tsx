@@ -32,8 +32,6 @@ export interface TooltipContentProps<Datum> {
 export function TooltipContent<Datum>(props: TooltipContentProps<Datum>): ReactElement | null {
     const { activePoint, series, stacked } = props
 
-    console.log(props)
-
     const lines = useMemo(() => {
         if (!activePoint) {
             return { window: [], leftRemaining: 0, rightRemaining: 0 }
