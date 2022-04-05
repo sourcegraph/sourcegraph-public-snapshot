@@ -1,10 +1,12 @@
 import { isErrorLike } from '@sourcegraph/common'
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 
-export type SettingsGetter = (setting: string, defaultValue: boolean) => boolean
+export type SettingsGetter = <T>(setting: string, defaultValue: T) => T
 
-export function newSettingsGetter(settingsCascade: SettingsCascadeOrError<Settings>): SettingsGetter {
-    return (setting: string, defaultValue: boolean) =>
-        (settingsCascade.final && !isErrorLike(settingsCascade.final) && (settingsCascade.final[setting] as boolean)) ??
+export function newSettingsGetter<T>(settingsCascade: SettingsCascadeOrError<Settings>): SettingsGetter {
+    return <T>(setting: string, defaultValue: T): T =>
+        (settingsCascade.final &&
+            !isErrorLike(settingsCascade.final) &&
+            (settingsCascade.final[setting] as T | undefined)) ||
         defaultValue
 }
