@@ -251,23 +251,23 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
             {workspacesStats && (
                 <>
                     <div className={styles.workspacesStat}>
-                        <AlertCircleIcon className="text-danger" />
+                        <Icon as={AlertCircleIcon} className="text-danger" />
                         {workspacesStats.errored} {pluralize('error', workspacesStats.errored)}
                     </div>
                     <div className={styles.workspacesStat}>
-                        <CheckBoldIcon className="text-success" />
+                        <Icon as={CheckBoldIcon} className="text-success" />
                         {workspacesStats.completed} complete
                     </div>
                     <div className={styles.workspacesStat}>
-                        <TimerSandIcon />
+                        <Icon as={TimerSandIcon} />
                         {workspacesStats.processing} working
                     </div>
                     <div className={styles.workspacesStat}>
-                        <TimelineClockOutlineIcon />
+                        <Icon as={TimelineClockOutlineIcon} />
                         {workspacesStats.queued} queued{' '}
                     </div>
                     <div className={styles.workspacesStat}>
-                        <CircleOffOutlineIcon />
+                        <Icon as={CircleOffOutlineIcon} />
                         {workspacesStats.ignored} ignored{' '}
                     </div>
                 </>
@@ -329,6 +329,7 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
                             </Button>
                         )}
                 </ButtonGroup>
+                {/* TODO: Move me out to main page */}
                 {isErrorLike(isCanceling) && <ErrorAlert error={isCanceling} />}
                 {isErrorLike(isRetrying) && <ErrorAlert error={isRetrying} />}
             </span>
