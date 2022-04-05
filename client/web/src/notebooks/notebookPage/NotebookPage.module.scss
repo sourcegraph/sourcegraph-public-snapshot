@@ -17,36 +17,35 @@
     height: 1rem !important;
 }
 
-.cols {
+.columns {
     display: flex;
 }
 
-.side-col {
+.side-column {
     flex: 2;
-
-    @media (max-width: 1520px) {
-        flex: 1;
-    }
 
     @media (--lg-breakpoint-down) {
         display: none;
     }
 }
 
-.outline-container {
-    display: block;
+.right-column {
+    // Reduce the size of the right column if screen size is max calc($viewport-xl + 20rem) = 1520px,
+    // to give more space to the outline and the notebook.
+    @media (max-width: 1520px) {
+        flex: 1;
+    }
+}
+
+.left-column {
     position: sticky;
     top: 0;
     // Subtract the height of the navbar
     height: calc(100vh - 2.5rem);
-    flex: 2;
-
-    @media (--lg-breakpoint-down) {
-        display: none;
-    }
+    margin-right: 1rem;
 }
 
-.center-col {
+.center-column {
     flex: 3;
     min-width: #{$viewport-lg};
     max-width: #{$viewport-xl};

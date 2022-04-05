@@ -179,9 +179,9 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
     return (
         <div className={classNames('w-100', styles.searchNotebookPage)}>
             <PageTitle title={notebookTitle || 'Notebook'} />
-            <div className={styles.cols}>
-                <div className={classNames(styles.outlineContainer)} data-notebook-outline-container="" />
-                <div className={styles.centerCol}>
+            <div className={styles.columns}>
+                <div className={classNames(styles.sideColumn, styles.leftColumn)} data-notebook-outline-container="" />
+                <div className={styles.centerColumn}>
                     {isNotebookLoaded(notebookOrError) && (
                         <>
                             <PageHeader
@@ -303,7 +303,7 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
                         )}
                     </>
                 </div>
-                <div className={styles.sideCol} />
+                <div className={classNames(styles.sideColumn, styles.rightColumn)} />
             </div>
         </div>
     )
