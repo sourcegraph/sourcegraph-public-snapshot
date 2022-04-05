@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -224,8 +225,8 @@ func computeRepositoryComparisonDiff(cmp *RepositoryComparisonResolver) ComputeD
 				base = string(cmp.base.OID())
 			}
 
-			var iter *git.DiffFileIterator
-			iter, err = git.Diff(ctx, cmp.db, git.DiffOptions{
+			var iter *gitserver.DiffFileIterator
+			iter, err = gitserver.NewClient(cmp.db).Diff(ctx, gitserver.DiffOptions{
 				Repo:      cmp.repo.RepoName(),
 				Base:      base,
 				Head:      string(cmp.head.OID()),
