@@ -184,20 +184,9 @@ describe('getCompletionItems()', () => {
 
     test('returns suggestions on whitespace', async () => {
         expect(
-            (
-                await getCompletionItems(
-                    getToken('a ', 1),
-                    { column: 3 },
-                    async () =>
-                        [
-                            {
-                                type: 'repo',
-                                repository: 'github.com/sourcegraph/jsonrpc2',
-                            },
-                        ] as SearchMatch[],
-                    {}
-                )
-            )?.suggestions.map(({ label }) => label)
+            (await getCompletionItems(getToken('a ', 1), { column: 3 }, async () => [], {}))?.suggestions.map(
+                ({ label }) => label
+            )
         ).toStrictEqual([
             'after',
             'archived',
@@ -230,7 +219,6 @@ describe('getCompletionItems()', () => {
             'timeout',
             'type',
             'visibility',
-            'github.com/sourcegraph/jsonrpc2',
         ])
     })
 
