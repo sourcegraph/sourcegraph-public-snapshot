@@ -492,66 +492,56 @@ const WorkspaceStep: React.FunctionComponent<WorkspaceStepProps> = ({
                                 <Tab key="command-container">Commands / container</Tab>
                             </TabList>
                             <TabPanels>
-                                <TabPanel key="logs">
-                                    <div className="p-2">
-                                        {!step.startedAt && <p className="text-muted mb-0">Step not started yet</p>}
-                                        {step.startedAt && outputLines && <LogOutput text={outputLines.join('\n')} />}
-                                    </div>
+                                <TabPanel className="pt-2" key="logs">
+                                    {!step.startedAt && <p className="text-muted mb-0">Step not started yet</p>}
+                                    {step.startedAt && outputLines && <LogOutput text={outputLines.join('\n')} />}
                                 </TabPanel>
-                                <TabPanel key="output-variables">
-                                    <div className="p-2">
-                                        {!step.startedAt && <p className="text-muted mb-0">Step not started yet</p>}
-                                        {step.outputVariables?.length === 0 && (
-                                            <p className="text-muted mb-0">No output variables specified</p>
-                                        )}
-                                        <ul className="mb-0">
-                                            {step.outputVariables?.map(variable => (
-                                                <li key={variable.name}>
-                                                    {variable.name}: {variable.value}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
+                                <TabPanel className="pt-2" key="output-variables">
+                                    {!step.startedAt && <p className="text-muted mb-0">Step not started yet</p>}
+                                    {step.outputVariables?.length === 0 && (
+                                        <p className="text-muted mb-0">No output variables specified</p>
+                                    )}
+                                    <ul className="mb-0">
+                                        {step.outputVariables?.map(variable => (
+                                            <li key={variable.name}>
+                                                {variable.name}: {variable.value}
+                                            </li>
+                                        ))}
+                                    </ul>
                                 </TabPanel>
-                                <TabPanel key="diff">
-                                    <div className="p-2">
-                                        {!step.startedAt && <p className="text-muted mb-0">Step not started yet</p>}
-                                        {step.startedAt && (
-                                            <WorkspaceStepFileDiffConnection
-                                                isLightTheme={isLightTheme}
-                                                step={step.number}
-                                                workspaceID={workspaceID}
-                                            />
-                                        )}
-                                    </div>
+                                <TabPanel className="pt-2" key="diff">
+                                    {!step.startedAt && <p className="text-muted mb-0">Step not started yet</p>}
+                                    {step.startedAt && (
+                                        <WorkspaceStepFileDiffConnection
+                                            isLightTheme={isLightTheme}
+                                            step={step.number}
+                                            workspaceID={workspaceID}
+                                        />
+                                    )}
                                 </TabPanel>
-                                <TabPanel key="files-env">
-                                    <div className="p-2">
-                                        {step.environment.length === 0 && (
-                                            <p className="text-muted mb-0">No environment variables specified</p>
-                                        )}
-                                        <ul className="mb-0">
-                                            {step.environment.map(variable => (
-                                                <li key={variable.name}>
-                                                    {variable.name}: {variable.value}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
+                                <TabPanel className="pt-2" key="files-env">
+                                    {step.environment.length === 0 && (
+                                        <p className="text-muted mb-0">No environment variables specified</p>
+                                    )}
+                                    <ul className="mb-0">
+                                        {step.environment.map(variable => (
+                                            <li key={variable.name}>
+                                                {variable.name}: {variable.value}
+                                            </li>
+                                        ))}
+                                    </ul>
                                 </TabPanel>
-                                <TabPanel key="command-container">
-                                    <div className="p-2 pb-0">
-                                        {step.ifCondition !== null && (
-                                            <>
-                                                <h4>If condition</h4>
-                                                <LogOutput text={step.ifCondition} className="mb-2" />
-                                            </>
-                                        )}
-                                        <h4>Command</h4>
-                                        <LogOutput text={step.run} className="mb-2" />
-                                        <h4>Container</h4>
-                                        <p className="text-monospace mb-0">{step.container}</p>
-                                    </div>
+                                <TabPanel className="pt-2" key="command-container">
+                                    {step.ifCondition !== null && (
+                                        <>
+                                            <h4>If condition</h4>
+                                            <LogOutput text={step.ifCondition} className="mb-2" />
+                                        </>
+                                    )}
+                                    <h4>Command</h4>
+                                    <LogOutput text={step.run} className="mb-2" />
+                                    <h4>Container</h4>
+                                    <p className="text-monospace mb-0">{step.container}</p>
                                 </TabPanel>
                             </TabPanels>
                         </Tabs>
