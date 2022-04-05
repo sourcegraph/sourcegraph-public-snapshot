@@ -111,6 +111,7 @@ const (
 	SearchStream  GenerationMethod = "search-stream"
 	SearchCompute GenerationMethod = "search-compute"
 	LanguageStats GenerationMethod = "language-stats"
+	CodeMonitor   GenerationMethod = "code-monitor"
 )
 
 type DirtyQuery struct {
