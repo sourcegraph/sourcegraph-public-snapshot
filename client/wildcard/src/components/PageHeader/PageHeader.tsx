@@ -51,13 +51,8 @@ export const PageHeader: React.FunctionComponent<Props> = ({
         return null
     }
 
-    /// a11y-ignore
-    /// Rule: "landmark-banner-is-top-level" (Banner landmark should not be contained in another landmark)
-    // We should think about stop using `header` here since we couldn't make it be be top-level
-    // with current usages
-
     return (
-        <header className={classNames(styles.container, className, 'a11y-ignore')}>
+        <div className={classNames(styles.container, className)}>
             <div>
                 {annotation && <small className={styles.annotation}>{annotation}</small>}
                 <HeadingX className={styles.heading}>
@@ -75,6 +70,6 @@ export const PageHeader: React.FunctionComponent<Props> = ({
                 {description && <p className={styles.description}>{description}</p>}
             </div>
             {actions && <div className={styles.actions}>{actions}</div>}
-        </header>
+        </div>
     )
 }
