@@ -6,16 +6,16 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { Subject } from 'rxjs'
 
-import { Collapsible } from '@sourcegraph/web/src/components/Collapsible'
+import { Badge, Container, Link, PageHeader, Icon } from '@sourcegraph/wildcard'
+
+import { Collapsible } from '../../components/Collapsible'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
     FilteredConnectionQueryArguments,
-} from '@sourcegraph/web/src/components/FilteredConnection'
-import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Badge, Container, Link, PageHeader, Icon } from '@sourcegraph/wildcard'
-
+} from '../../components/FilteredConnection'
+import { PageTitle } from '../../components/PageTitle'
+import { Timestamp } from '../../components/time/Timestamp'
 import { ExecutorFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
@@ -86,7 +86,7 @@ export const ExecutorsListPage: FunctionComponent<ExecutorsListPageProps> = ({
                     </Link>{' '}
                     and{' '}
                     <Link to="/help/batch_changes/explanations/server_side" rel="noopener">
-                        server-side Batch Changes
+                        running batch changes server-side
                     </Link>
                     . In order to use those features,{' '}
                     <Link to="/help/admin/deploy_executors" rel="noopener">

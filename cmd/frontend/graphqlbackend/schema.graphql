@@ -2283,6 +2283,7 @@ enum ExternalServiceKind {
     GITHUB
     GITLAB
     GITOLITE
+    GOMODULES
     JVMPACKAGES
     NPMPACKAGES
     OTHER
@@ -5091,6 +5092,10 @@ type Org implements Node & SettingsSubject & Namespace {
     Whether the viewer is a member of this organization.
     """
     viewerIsMember: Boolean!
+    """
+    Whether the viewer needs to update their code host connection.
+    """
+    viewerNeedsCodeHostUpdate: Boolean!
     """
     The URL to the organization.
     """

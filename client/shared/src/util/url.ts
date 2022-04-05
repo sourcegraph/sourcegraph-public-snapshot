@@ -440,9 +440,10 @@ export function toPrettyBlobURL(
         toPositionOrRangeQueryParameter(target)
     )
     const searchQuery = [...searchParameters].length > 0 ? `?${formatSearchParameters(searchParameters)}` : ''
-    return `/${encodeRepoRevision({ repoName: target.repoName, revision: target.revision })}/-/blob/${
-        target.filePath
-    }${searchQuery}${toViewStateHash(target.viewState)}`
+    return `/${encodeRepoRevision({
+        repoName: target.repoName,
+        revision: target.revision,
+    })}/-/blob/${encodeURIPathComponent(target.filePath)}${searchQuery}${toViewStateHash(target.viewState)}`
 }
 
 /**

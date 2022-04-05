@@ -25,13 +25,15 @@ type CodeIntelResolver interface {
 	CommitGraph(ctx context.Context, id graphql.ID) (CodeIntelligenceCommitGraphResolver, error)
 	QueueAutoIndexJobsForRepo(ctx context.Context, args *QueueAutoIndexJobsForRepoArgs) ([]LSIFIndexResolver, error)
 	GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error)
-	GitBlobCodeIntelInfo(ctx context.Context, args *GitBlobCodeIntelInfoArgs) (CodeIntelSupportResolver, error)
+	GitBlobCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (GitBlobCodeIntelSupportResolver, error)
+	GitTreeCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (GitTreeCodeIntelSupportResolver, error)
 
 	CodeIntelligenceConfigurationPolicies(ctx context.Context, args *CodeIntelligenceConfigurationPoliciesArgs) (CodeIntelligenceConfigurationPolicyConnectionResolver, error)
 	CreateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *CreateCodeIntelligenceConfigurationPolicyArgs) (CodeIntelligenceConfigurationPolicyResolver, error)
 	UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *UpdateCodeIntelligenceConfigurationPolicyArgs) (*EmptyResponse, error)
 	DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context, args *DeleteCodeIntelligenceConfigurationPolicyArgs) (*EmptyResponse, error)
 
+	RepositorySummary(ctx context.Context, id graphql.ID) (CodeIntelRepositorySummaryResolver, error)
 	IndexConfiguration(ctx context.Context, id graphql.ID) (IndexConfigurationResolver, error) // TODO - rename ...ForRepo
 	UpdateRepositoryIndexConfiguration(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (*EmptyResponse, error)
 	PreviewRepositoryFilter(ctx context.Context, args *PreviewRepositoryFilterArgs) (RepositoryFilterPreviewResolver, error)
@@ -295,6 +297,25 @@ type DeleteCodeIntelligenceConfigurationPolicyArgs struct {
 	Policy graphql.ID
 }
 
+type CodeIntelRepositorySummaryResolver interface {
+	RecentUploads() []LSIFUploadsWithRepositoryNamespaceResolver
+	RecentIndexes() []LSIFIndexesWithRepositoryNamespaceResolver
+	LastUploadRetentionScan() *DateTime
+	LastIndexScan() *DateTime
+}
+
+type LSIFUploadsWithRepositoryNamespaceResolver interface {
+	Root() string
+	Indexer() CodeIntelIndexerResolver
+	Uploads() []LSIFUploadResolver
+}
+
+type LSIFIndexesWithRepositoryNamespaceResolver interface {
+	Root() string
+	Indexer() CodeIntelIndexerResolver
+	Indexes() []LSIFIndexResolver
+}
+
 type IndexConfigurationResolver interface {
 	Configuration(ctx context.Context) (*string, error)
 	InferredConfiguration(ctx context.Context) (*string, error)
@@ -363,22 +384,33 @@ type CodeIntelligenceRetentionPolicyMatchResolver interface {
 	ProtectingCommits() *[]string
 }
 
-type GitBlobCodeIntelInfoArgs struct {
-	Repo api.RepoName
-	Path string
+type GitTreeEntryCodeIntelInfoArgs struct {
+	Repo   *types.Repo
+	Path   string
+	Commit string
 }
 
-type GitBlobCodeIntelInfoResolver interface {
-	Support(context.Context) CodeIntelSupportResolver
-	LSIFUploads(context.Context) (LSIFUploadConnectionResolver, error)
+type GitTreeCodeIntelSupportResolver interface {
+	SearchBasedSupport(context.Context) (*[]GitTreeSearchBasedCoverage, error)
+	PreciseSupport(context.Context) (*[]GitTreePreciseCoverage, error)
 }
 
-type CodeIntelSupportResolver interface {
-	SearchBasedSupport(context.Context) (SearchBasedCodeIntelSupportResolver, error)
-	PreciseSupport(context.Context) (PreciseCodeIntelSupportResolver, error)
+type GitTreeSearchBasedCoverage interface {
+	CoveredPaths() []string
+	Support() SearchBasedSupportResolver
 }
 
-type PreciseCodeIntelSupportResolver interface {
+type GitTreePreciseCoverage interface {
+	Support() PreciseSupportResolver
+	Confidence() string
+}
+
+type GitBlobCodeIntelSupportResolver interface {
+	SearchBasedSupport(context.Context) (SearchBasedSupportResolver, error)
+	PreciseSupport(context.Context) (PreciseSupportResolver, error)
+}
+
+type PreciseSupportResolver interface {
 	SupportLevel() string
 	Indexers() *[]CodeIntelIndexerResolver
 }
@@ -388,7 +420,7 @@ type CodeIntelIndexerResolver interface {
 	URL() string
 }
 
-type SearchBasedCodeIntelSupportResolver interface {
+type SearchBasedSupportResolver interface {
 	SupportLevel() string
 	Language() *string
 }

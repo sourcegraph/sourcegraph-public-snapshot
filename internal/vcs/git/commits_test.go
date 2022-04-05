@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -34,7 +35,7 @@ func TestRepository_GetCommit(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})
-
+	db := database.NewMockDB()
 	gitCommands := []string{
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m bar --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
@@ -67,7 +68,7 @@ func TestRepository_GetCommit(t *testing.T) {
 				resolveRevisionOptions := ResolveRevisionOptions{
 					NoEnsureRevision: test.noEnsureRevision,
 				}
-				commit, err := GetCommit(ctx, test.repo, test.id, resolveRevisionOptions, checker)
+				commit, err := GetCommit(ctx, db, test.repo, test.id, resolveRevisionOptions, checker)
 				if err != nil {
 					if test.revisionNotFoundError {
 						if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
@@ -84,7 +85,7 @@ func TestRepository_GetCommit(t *testing.T) {
 				}
 
 				// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-				if _, err := GetCommit(ctx, test.repo, NonExistentCommitID, resolveRevisionOptions, checker); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+				if _, err := GetCommit(ctx, db, test.repo, NonExistentCommitID, resolveRevisionOptions, checker); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 					t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
 				}
 
@@ -147,6 +148,8 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})
+
+	db := database.NewMockDB()
 
 	testCases := []struct {
 		label                 string
@@ -226,7 +229,7 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 				}
 
 				repo := MakeGitRepository(t, gitCommands...)
-				got, err := HasCommitAfter(ctx, repo, tc.after, tc.revspec, nil)
+				got, err := HasCommitAfter(ctx, db, repo, tc.after, tc.revspec, nil)
 				if err != nil || got != tc.want {
 					t.Errorf("got %t hascommitafter, want %t", got, tc.want)
 				}
@@ -246,7 +249,7 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 				// Case where user can't view commit 2, but can view commits 0 and 1. In each test case the result should match the case where no sub-repo perms enabled
 				checker := getTestSubRepoPermsChecker("file2")
 				repo := MakeGitRepository(t, gitCommands...)
-				got, err := HasCommitAfter(ctx, repo, tc.after, tc.revspec, checker)
+				got, err := HasCommitAfter(ctx, db, repo, tc.after, tc.revspec, checker)
 				if err != nil {
 					t.Errorf("got error: %s", err)
 				}
@@ -257,7 +260,7 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 				// Case where user can't view commit 1 or commit 2, which will mean in some cases since HasCommitAfter will be false due to those commits not being visible.
 				checker = getTestSubRepoPermsChecker("file1", "file2")
 				repo = MakeGitRepository(t, gitCommands...)
-				got, err = HasCommitAfter(ctx, repo, tc.after, tc.revspec, checker)
+				got, err = HasCommitAfter(ctx, db, repo, tc.after, tc.revspec, checker)
 				if err != nil {
 					t.Errorf("got error: %s", err)
 				}
@@ -274,6 +277,8 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})
+
+	db := database.NewMockDB()
 
 	testCases := []struct {
 		commitDates []string
@@ -304,7 +309,7 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 			}
 
 			repo := MakeGitRepository(t, gitCommands...)
-			gotCommit, err := FirstEverCommit(ctx, repo, nil)
+			gotCommit, err := FirstEverCommit(ctx, db, repo, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -329,12 +334,12 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 
 			repo := MakeGitRepository(t, gitCommands...)
 			// Try to get first commit when user doesn't have permission to view
-			_, err := FirstEverCommit(ctx, repo, checkerWithoutAccessFirstCommit)
+			_, err := FirstEverCommit(ctx, db, repo, checkerWithoutAccessFirstCommit)
 			if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 				t.Errorf("expected a RevisionNotFoundError since the user does not have access to view this commit, got :%s", err)
 			}
 			// Try to get first commit when user does have permission to view, should succeed
-			gotCommit, err := FirstEverCommit(ctx, repo, checkerWithAccessFirstCommit)
+			gotCommit, err := FirstEverCommit(ctx, db, repo, checkerWithAccessFirstCommit)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -347,7 +352,7 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 				UID:      1,
 				Internal: true,
 			})
-			gotCommit, err = FirstEverCommit(newCtx, repo, checkerWithoutAccessFirstCommit)
+			gotCommit, err = FirstEverCommit(newCtx, db, repo, checkerWithoutAccessFirstCommit)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -369,7 +374,7 @@ func TestHead(t *testing.T) {
 		repo := MakeGitRepository(t, gitCommands...)
 		ctx := context.Background()
 
-		head, exists, err := Head(ctx, repo, nil)
+		head, exists, err := Head(ctx, database.NewMockDB(), repo, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -383,6 +388,7 @@ func TestHead(t *testing.T) {
 	})
 
 	t.Run("with sub-repo permissions", func(t *testing.T) {
+		db := database.NewMockDB()
 		gitCommands := []string{
 			"touch file",
 			"git add file",
@@ -394,7 +400,7 @@ func TestHead(t *testing.T) {
 		})
 		checker := getTestSubRepoPermsChecker("file")
 		// call Head() when user doesn't have access to view the commit
-		_, exists, err := Head(ctx, repo, checker)
+		_, exists, err := Head(ctx, db, repo, checker)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -403,7 +409,7 @@ func TestHead(t *testing.T) {
 		}
 		readAllChecker := getTestSubRepoPermsChecker()
 		// call Head() when user has access to view the commit; should return expected commit
-		head, exists, err := Head(ctx, repo, readAllChecker)
+		head, exists, err := Head(ctx, db, repo, readAllChecker)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -422,12 +428,12 @@ func TestCommitExists(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})
-
+	db := database.NewMockDB()
 	testCommitExists := func(label string, gitCommands []string, commitID, nonExistentCommitID api.CommitID, checker authz.SubRepoPermissionChecker) {
 		t.Run(label, func(t *testing.T) {
 			repo := MakeGitRepository(t, gitCommands...)
 
-			exists, err := CommitExists(ctx, repo, commitID, checker)
+			exists, err := CommitExists(ctx, db, repo, commitID, checker)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -435,7 +441,7 @@ func TestCommitExists(t *testing.T) {
 				t.Fatal("Should exist")
 			}
 
-			exists, err = CommitExists(ctx, repo, nonExistentCommitID, checker)
+			exists, err = CommitExists(ctx, db, repo, nonExistentCommitID, checker)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -504,7 +510,7 @@ func TestRepository_Commits(t *testing.T) {
 				testCommits(ctx, label, test.repo, CommitsOptions{Range: string(test.id)}, checker, test.wantTotal, test.wantCommits, t)
 
 				// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-				if _, err := Commits(ctx, test.repo, CommitsOptions{Range: string(NonExistentCommitID)}, nil); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+				if _, err := Commits(ctx, database.NewMockDB(), test.repo, CommitsOptions{Range: string(NonExistentCommitID)}, nil); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 					t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
 				}
 			})
@@ -584,7 +590,7 @@ func TestCommits_SubRepoPerms(t *testing.T) {
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
 			checker := getTestSubRepoPermsChecker(test.noAccessPaths...)
-			commits, err := Commits(ctx, test.repo, test.opt, checker)
+			commits, err := Commits(ctx, database.NewMockDB(), test.repo, test.opt, checker)
 			if err != nil {
 				t.Errorf("%s: Commits(): %s", label, err)
 				return
@@ -678,7 +684,7 @@ func TestCommits_SubRepoPerms_ReturnNCommits(t *testing.T) {
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
 			checker := getTestSubRepoPermsChecker(test.noAccessPaths...)
-			commits, err := Commits(ctx, test.repo, test.opt, checker)
+			commits, err := Commits(ctx, database.NewMockDB(), test.repo, test.opt, checker)
 			if err != nil {
 				t.Errorf("%s: Commits(): %s", label, err)
 				return
@@ -1045,7 +1051,7 @@ func TestFilterRefDescriptions(t *testing.T) {
 	}
 
 	checker := getTestSubRepoPermsChecker("file3")
-	filtered := filterRefDescriptions(ctx, repo, refDescriptions, checker)
+	filtered := filterRefDescriptions(ctx, database.NewMockDB(), repo, refDescriptions, checker)
 	expectedRefDescriptions := map[string][]gitdomain.RefDescription{
 		"d38233a79e037d2ab8170b0d0bc0aa438473e6da": {},
 		"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": {},
@@ -1061,6 +1067,7 @@ func TestRefDescriptions(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})
+	db := database.NewMockDB()
 	gitCommands := append(getGitCommandsWithFiles("file1", "file2"), "git checkout -b my-other-branch")
 	gitCommands = append(gitCommands, getGitCommandsWithFiles("file1-b2", "file2-b2")...)
 	gitCommands = append(gitCommands, "git checkout -b my-branch-no-access")
@@ -1072,7 +1079,7 @@ func TestRefDescriptions(t *testing.T) {
 	}
 
 	t.Run("basic", func(t *testing.T) {
-		refDescriptions, err := RefDescriptions(ctx, repo, nil)
+		refDescriptions, err := RefDescriptions(ctx, db, repo, nil)
 		if err != nil {
 			t.Errorf("err calling RefDescriptions: %s", err)
 		}
@@ -1088,7 +1095,7 @@ func TestRefDescriptions(t *testing.T) {
 
 	t.Run("with sub-repo enabled", func(t *testing.T) {
 		checker := getTestSubRepoPermsChecker("file-with-no-access")
-		refDescriptions, err := RefDescriptions(ctx, repo, checker)
+		refDescriptions, err := RefDescriptions(ctx, db, repo, checker)
 		if err != nil {
 			t.Errorf("err calling RefDescriptions: %s", err)
 		}
@@ -1107,12 +1114,13 @@ func TestCommitsUniqueToBranch(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})
+	db := database.NewMockDB()
 	gitCommands := append([]string{"git checkout -b my-branch"}, getGitCommandsWithFiles("file1", "file2")...)
 	gitCommands = append(gitCommands, getGitCommandsWithFiles("file3", "file-with-no-access")...)
 	repo := MakeGitRepository(t, gitCommands...)
 
 	t.Run("basic", func(t *testing.T) {
-		commits, err := CommitsUniqueToBranch(ctx, repo, "my-branch", true, &time.Time{}, nil)
+		commits, err := CommitsUniqueToBranch(ctx, db, repo, "my-branch", true, &time.Time{}, nil)
 		if err != nil {
 			t.Errorf("err calling RefDescriptions: %s", err)
 		}
@@ -1129,7 +1137,7 @@ func TestCommitsUniqueToBranch(t *testing.T) {
 
 	t.Run("with sub-repo enabled", func(t *testing.T) {
 		checker := getTestSubRepoPermsChecker("file-with-no-access")
-		commits, err := CommitsUniqueToBranch(ctx, repo, "my-branch", true, &time.Time{}, checker)
+		commits, err := CommitsUniqueToBranch(ctx, db, repo, "my-branch", true, &time.Time{}, checker)
 		if err != nil {
 			t.Errorf("err calling RefDescriptions: %s", err)
 		}
@@ -1149,11 +1157,12 @@ func TestCommitDate(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})
+	db := database.NewMockDB()
 	gitCommands := getGitCommandsWithFiles("file1", "file2")
 	repo := MakeGitRepository(t, gitCommands...)
 
 	t.Run("basic", func(t *testing.T) {
-		_, date, commitExists, err := CommitDate(ctx, repo, "d38233a79e037d2ab8170b0d0bc0aa438473e6da", nil)
+		_, date, commitExists, err := CommitDate(ctx, db, repo, "d38233a79e037d2ab8170b0d0bc0aa438473e6da", nil)
 		if err != nil {
 			t.Errorf("error fetching CommitDate: %s", err)
 		}
@@ -1167,7 +1176,7 @@ func TestCommitDate(t *testing.T) {
 
 	t.Run("with sub-repo permissions enabled", func(t *testing.T) {
 		checker := getTestSubRepoPermsChecker("file1")
-		_, date, commitExists, err := CommitDate(ctx, repo, "d38233a79e037d2ab8170b0d0bc0aa438473e6da", checker)
+		_, date, commitExists, err := CommitDate(ctx, db, repo, "d38233a79e037d2ab8170b0d0bc0aa438473e6da", checker)
 		if err != nil {
 			t.Errorf("error fetching CommitDate: %s", err)
 		}
@@ -1182,13 +1191,14 @@ func TestCommitDate(t *testing.T) {
 
 func testCommits(ctx context.Context, label string, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, wantTotal uint, wantCommits []*gitdomain.Commit, t *testing.T) {
 	t.Helper()
-	commits, err := Commits(ctx, repo, opt, checker)
+	db := database.NewMockDB()
+	commits, err := Commits(ctx, db, repo, opt, checker)
 	if err != nil {
 		t.Errorf("%s: Commits(): %s", label, err)
 		return
 	}
 
-	total, err := commitCount(ctx, repo, opt)
+	total, err := commitCount(ctx, db, repo, opt)
 	if err != nil {
 		t.Errorf("%s: commitCount(): %s", label, err)
 		return

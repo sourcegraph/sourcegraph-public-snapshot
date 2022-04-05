@@ -10,7 +10,7 @@ import { retry } from '@sourcegraph/shared/src/testing/utils'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 
 import { BrowserIntegrationTestContext, createBrowserIntegrationTestContext } from './context'
-import { closeInstallPageTab } from './shared'
+import { closeInstallPageTab, percySnapshot } from './shared'
 
 describe('GitHub', () => {
     let driver: Driver
@@ -86,6 +86,17 @@ describe('GitHub', () => {
                                 'package jsonrpc2\n\n// CallOption is an option that can be provided to (*Conn).Call to\n// configure custom behavior. See Meta.\ntype CallOption interface {\n\tapply(r *Request) error\n}\n\ntype callOptionFunc func(r *Request) error\n\nfunc (c callOptionFunc) apply(r *Request) error { return c(r) }\n\n// Meta returns a call option which attaches the given meta object to\n// the JSON-RPC 2.0 request (this is a Sourcegraph extension to JSON\n// RPC 2.0 for carrying metadata).\nfunc Meta(meta interface{}) CallOption {\n\treturn callOptionFunc(func(r *Request) error {\n\t\treturn r.SetMeta(meta)\n\t})\n}\n\n// PickID returns a call option which sets the ID on a request. Care must be\n// taken to ensure there are no conflicts with any previously picked ID, nor\n// with the default sequence ID.\nfunc PickID(id ID) CallOption {\n\treturn callOptionFunc(func(r *Request) error {\n\t\tr.ID = id\n\t\treturn nil\n\t})\n}\n',
                         },
                     },
+                },
+            }),
+            UserSettingsURL: () => ({
+                currentUser: {
+                    settingsURL: '/users/john.doe/settings',
+                },
+            }),
+            CurrentUser: () => ({
+                currentUser: {
+                    settingsURL: '/users/john.doe/settings',
+                    siteAdmin: false,
                 },
             }),
         })
@@ -274,6 +285,8 @@ describe('GitHub', () => {
                 timeout: 6000,
             },
         })
+
+        await percySnapshot(driver.page, 'Browser extension: GitHub - blob view with code intel popup')
 
         // 2. Check that token click does not do anything by default
         await token.click()

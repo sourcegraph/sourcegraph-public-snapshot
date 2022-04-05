@@ -21,18 +21,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
-	"github.com/sourcegraph/sourcegraph/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 var (
@@ -41,6 +43,17 @@ var (
 )
 
 const port = "3181"
+
+func ensureFrontendDB() database.DB {
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+		return serviceConnections.PostgresDSN
+	})
+	sqlDB, err := connections.EnsureNewFrontendDB(dsn, "searcher", &observation.TestContext)
+	if err != nil {
+		log.Fatalf("Failed to connect to frontend database: %s", err)
+	}
+	return database.NewDB(sqlDB)
+}
 
 func main() {
 	env.Lock()
@@ -68,14 +81,21 @@ func main() {
 		cacheSizeBytes = i * 1000 * 1000
 	}
 
+	db := ensureFrontendDB()
+	git := gitserver.NewClient(db)
+
 	service := &search.Service{
-		Store: &store.Store{
+		Store: &search.Store{
 			FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
-				return git.ArchiveReader(ctx, repo, gitserver.ArchiveOptions{Treeish: string(commit), Format: git.ArchiveFormatTar})
+				return git.Archive(ctx, repo, gitserver.ArchiveOptions{
+					Treeish: string(commit),
+					Format:  "tar",
+				})
 			},
 			FilterTar:         search.NewFilter,
 			Path:              filepath.Join(cacheDir, "searcher-archives"),
 			MaxCacheSizeBytes: cacheSizeBytes,
+			DB:                db,
 		},
 		Log: log15.Root(),
 	}

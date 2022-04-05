@@ -8,46 +8,28 @@ import { voronoi } from '@visx/voronoi'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 
+import { SeriesLikeChart } from '../../types'
+
 import { AxisBottom, AxisLeft, Tooltip, TooltipContent, NonActiveBackground, PointGlyph } from './components'
+import { StackedArea } from './components/stacked-area/StackedArea'
 import { useChartEventHandlers } from './hooks/event-listeners'
-import { LineChartSeries, Point } from './types'
+import { Point } from './types'
 import {
-    isValidNumber,
-    getSeriesWithData,
+    getDatumValue,
+    isDatumWithValidNumber,
+    getSeriesData,
     generatePointsField,
     getChartContentSizes,
     getMinMaxBoundaries,
-    getStackedAreaPaths,
 } from './utils'
+import { SeriesDatum } from './utils/data-series-processing/types'
 
 import styles from './LineChart.module.scss'
 
-export interface LineChartContentProps<D> {
+export interface LineChartContentProps<Datum> extends SeriesLikeChart<Datum> {
     width: number
     height: number
-
-    /** An array of data objects, with one element for each step on the X axis. */
-    data: D[]
-
-    /** The series (lines) of the chart. */
-    series: LineChartSeries<D>[]
-
-    /**
-     * The key in each data object for the X value this line should be
-     * calculated from.
-     */
-    xAxisKey: keyof D
-
-    /**
-     * Whether a chart component should stack data based on x value for each series
-     */
-    stacked?: boolean
-
-    /**
-     * Callback runs whenever a point-zone (zone around point) and point itself
-     * on the chart is clicked.
-     */
-    onDatumClick?: (event: React.MouseEvent) => void
+    zeroYAxisMin?: boolean
 }
 
 /**
@@ -60,8 +42,9 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
         height: outerHeight,
         data,
         series,
-        xAxisKey,
         stacked = false,
+        zeroYAxisMin = false,
+        getXValue,
         onDatumClick = noop,
     } = props
 
@@ -84,16 +67,16 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
         [outerWidth, outerHeight, yAxisReference]
     )
 
-    const dataSeries = useMemo(() => getSeriesWithData({ data, series, stacked, xAxisKey }), [
+    const dataSeries = useMemo(() => getSeriesData({ data, series, stacked, getXValue }), [
         data,
         series,
         stacked,
-        xAxisKey,
+        getXValue,
     ])
 
-    const { minX, maxX, minY, maxY } = useMemo(() => getMinMaxBoundaries({ dataSeries, xAxisKey }), [
+    const { minX, maxX, minY, maxY } = useMemo(() => getMinMaxBoundaries({ dataSeries, zeroYAxisMin }), [
         dataSeries,
-        xAxisKey,
+        zeroYAxisMin,
     ])
 
     const xScale = useMemo(
@@ -113,13 +96,14 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
                 domain: [minY, maxY],
                 range: [height, margin.top],
                 nice: true,
+                clamp: true,
             }),
         [minY, maxY, margin.top, height]
     )
 
-    const points = useMemo(() => generatePointsField({ dataSeries, xAxisKey, yScale, xScale }), [
+    const points = useMemo(() => generatePointsField({ dataSeries, getXValue, yScale, xScale }), [
         dataSeries,
-        xAxisKey,
+        getXValue,
         yScale,
         xScale,
     ])
@@ -173,37 +157,25 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
             <NonActiveBackground
                 data={data}
                 series={series}
-                xAxisKey={xAxisKey}
                 width={width}
                 height={height}
                 top={margin.top}
                 left={margin.left}
+                getXValue={getXValue}
                 xScale={xScale}
             />
 
             <Group top={margin.top}>
-                {stacked && (
-                    <Group>
-                        {getStackedAreaPaths({ data, dataSeries, xScale, yScale, xKey: xAxisKey }).map(line => (
-                            <path
-                                key={`stack-${line.dataKey as string}`}
-                                d={line.path}
-                                stroke="transparent"
-                                opacity={0.5}
-                                fill={line.color}
-                            />
-                        ))}
-                    </Group>
-                )}
+                {stacked && <StackedArea dataSeries={dataSeries} xScale={xScale} yScale={yScale} />}
 
                 {dataSeries.map(line => (
                     <LinePath
                         key={line.dataKey as string}
-                        data={line.data}
+                        data={line.data as SeriesDatum<D>[]}
                         curve={curveLinear}
-                        defined={datum => isValidNumber(datum[line.dataKey])}
-                        x={datum => xScale(+datum[xAxisKey])}
-                        y={datum => yScale(+datum[line.dataKey])}
+                        defined={isDatumWithValidNumber}
+                        x={data => xScale(data.x)}
+                        y={data => yScale(getDatumValue(data))}
                         stroke={line.color}
                         strokeWidth={2}
                         strokeLinecap="round"
@@ -227,7 +199,7 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
 
             {activePoint && (
                 <Tooltip>
-                    <TooltipContent series={series} xAxisKey={xAxisKey} activePoint={activePoint} />
+                    <TooltipContent series={series} activePoint={activePoint} stacked={stacked} />
                 </Tooltip>
             )}
         </svg>

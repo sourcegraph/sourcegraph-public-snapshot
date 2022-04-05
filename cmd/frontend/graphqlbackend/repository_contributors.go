@@ -6,7 +6,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 type repositoryContributorsArgs struct {
@@ -36,13 +37,14 @@ type repositoryContributorConnectionResolver struct {
 
 	// cache result because it is used by multiple fields
 	once    sync.Once
-	results []*git.PersonCount
+	results []*gitdomain.PersonCount
 	err     error
 }
 
-func (r *repositoryContributorConnectionResolver) compute(ctx context.Context) ([]*git.PersonCount, error) {
+func (r *repositoryContributorConnectionResolver) compute(ctx context.Context) ([]*gitdomain.PersonCount, error) {
 	r.once.Do(func() {
-		var opt git.ShortLogOptions
+		client := gitserver.NewClient(r.db)
+		var opt gitserver.ShortLogOptions
 		if r.args.RevisionRange != nil {
 			opt.Range = *r.args.RevisionRange
 		}
@@ -52,7 +54,7 @@ func (r *repositoryContributorConnectionResolver) compute(ctx context.Context) (
 		if r.args.After != nil {
 			opt.After = *r.args.After
 		}
-		r.results, r.err = git.ShortLog(ctx, r.repo.RepoName(), opt)
+		r.results, r.err = client.ShortLog(ctx, r.repo.RepoName(), opt)
 	})
 	return r.results, r.err
 }

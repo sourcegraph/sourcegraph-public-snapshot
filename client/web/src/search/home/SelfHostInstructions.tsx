@@ -7,8 +7,9 @@ import DownloadIcon from 'mdi-react/DownloadIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { MarketingBlock } from '@sourcegraph/web/src/components/MarketingBlock'
 import { Button, Link, Icon } from '@sourcegraph/wildcard'
+
+import { MarketingBlock } from '../../components/MarketingBlock'
 
 import styles from './SelfHostInstructions.module.scss'
 
@@ -73,7 +74,7 @@ export const SelfHostInstructions: React.FunctionComponent<TelemetryProps> = ({ 
                         aria-label="Copy Docker command to clipboard"
                         variant="link"
                     >
-                        <ContentCopyIcon className="icon-inline" />
+                        <Icon as={ContentCopyIcon} />
                     </Button>
                     <code className={styles.codeBlock}>{dockerCommand}</code>
                 </MarketingBlock>

@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/pings"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 
@@ -33,7 +34,7 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 	insightsStore := store.New(insightsDB, insightPermStore)
 
 	// Create a base store to be used for storing worker state. We store this in the main app Postgres
-	// DB, not the TimescaleDB (which we use only for storing insights data.)
+	// DB, not the insights DB (which we use only for storing insights data.)
 	workerBaseStore := basestore.NewWithDB(mainAppDB, sql.TxOptions{})
 
 	// Create basic metrics for recording information about background jobs.
@@ -55,7 +56,7 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 	}
 
 	// todo(insights) add setting to disable this indexer
-	routines = append(routines, compression.NewCommitIndexerWorker(ctx, mainAppDB, insightsDB, observationContext))
+	routines = append(routines, compression.NewCommitIndexerWorker(ctx, database.NewDB(mainAppDB), insightsDB, observationContext))
 
 	// Register the background goroutine which discovers historical gaps in data and enqueues
 	// work to fill them - if not disabled.
@@ -75,13 +76,8 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 		routines,
 		pings.NewInsightsPingEmitterJob(ctx, mainAppDB, insightsDB),
 		NewInsightsDataPrunerJob(ctx, mainAppDB, insightsDB),
+		NewLicenseCheckJob(ctx, mainAppDB, insightsDB),
 	)
-
-	// I suspect the linter doesn't like this not being used when I delete it. So let's try this.
-	enableLicenseCheck := false
-	if enableLicenseCheck {
-		routines = append(routines, NewLicenseCheckJob(ctx, mainAppDB, insightsDB))
-	}
 
 	return routines
 }
@@ -93,7 +89,7 @@ func GetBackgroundQueryRunnerJob(ctx context.Context, mainAppDB *sql.DB, insight
 	insightsStore := store.New(insightsDB, insightPermStore)
 
 	// Create a base store to be used for storing worker state. We store this in the main app Postgres
-	// DB, not the TimescaleDB (which we use only for storing insights data.)
+	// DB, not the insights DB (which we use only for storing insights data.)
 	workerBaseStore := basestore.NewWithDB(mainAppDB, sql.TxOptions{})
 
 	// Create basic metrics for recording information about background jobs.
@@ -108,7 +104,7 @@ func GetBackgroundQueryRunnerJob(ctx context.Context, mainAppDB *sql.DB, insight
 
 	return []goroutine.BackgroundRoutine{
 		// Register the query-runner worker and resetter, which executes search queries and records
-		// results to TimescaleDB.
+		// results to the insights DB.
 		queryrunner.NewWorker(ctx, workerStore, insightsStore, queryRunnerWorkerMetrics),
 		queryrunner.NewResetter(ctx, workerStore, queryRunnerResetterMetrics),
 		queryrunner.NewCleaner(ctx, workerBaseStore, observationContext),

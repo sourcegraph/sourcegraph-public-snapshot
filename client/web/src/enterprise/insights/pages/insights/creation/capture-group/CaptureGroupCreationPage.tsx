@@ -60,13 +60,13 @@ export const CaptureGroupCreationPage: React.FunctionComponent<CaptureGroupCreat
 
     return (
         <CodeInsightsPage>
-            <PageTitle title="Create new capture group code insight" />
+            <PageTitle title="Create insight - Code Insights" />
 
             <PageHeader
-                className="mb-3"
+                className="mb-5"
                 path={[{ icon: CodeInsightsIcon }, { text: 'Create new capture group insight' }]}
                 description={
-                    <p className="text-muted">
+                    <span className="text-muted">
                         Capture group code insights analyze your code based on generated data series queries.{' '}
                         <Link
                             to="/help/code_insights/explanations/automatically_generated_data_series"
@@ -75,7 +75,7 @@ export const CaptureGroupCreationPage: React.FunctionComponent<CaptureGroupCreat
                         >
                             Learn more.
                         </Link>
-                    </p>
+                    </span>
                 }
             />
 

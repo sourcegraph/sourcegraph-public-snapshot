@@ -11,15 +11,15 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { LSIFUploadState } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import {
-    Connection,
-    FilteredConnection,
-    FilteredConnectionQueryArguments,
-} from '@sourcegraph/web/src/components/FilteredConnection'
 import { Button, Container, PageHeader, LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { Collapsible } from '../../../../components/Collapsible'
+import {
+    Connection,
+    FilteredConnection,
+    FilteredConnectionQueryArguments,
+} from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
 import { LsifUploadFields, LsifUploadConnectionFields } from '../../../../graphql-operations'
 import { CodeIntelStateBanner, CodeIntelStateBannerProps } from '../../shared/components/CodeIntelStateBanner'

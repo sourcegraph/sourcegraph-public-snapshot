@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -318,7 +319,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 			continue
 		}
 
-		if err := s.waitForRateLimit(ctx, provider.ServiceID(), 1, "user"); err != nil {
+		if err := s.waitForRateLimit(ctx, provider.URN(), 1, "user"); err != nil {
 			return nil, nil, errors.Wrap(err, "wait for rate limiter")
 		}
 
@@ -470,7 +471,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalServices(ctx context.Context, use
 
 	var repoSpecs, includeContainsSpecs, excludeContainsSpecs []api.ExternalRepoSpec
 	for _, svc := range svcs {
-		provider, err := eauthz.ProviderFromExternalService(s.db.ExternalServices(), conf.Get().SiteConfiguration, svc)
+		provider, err := eauthz.ProviderFromExternalService(s.db.ExternalServices(), conf.Get().SiteConfiguration, svc, s.db)
 		if err != nil {
 			return nil, errors.Wrapf(err, "new provider from external service %d", svc.ID)
 		}
@@ -493,7 +494,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalServices(ctx context.Context, use
 			return nil, errors.Errorf("empty token from external service %d", svc.ID)
 		}
 
-		if err := s.waitForRateLimit(ctx, provider.ServiceID(), 1, "user"); err != nil {
+		if err := s.waitForRateLimit(ctx, provider.URN(), 1, "user"); err != nil {
 			return nil, errors.Wrap(err, "wait for rate limiter")
 		}
 
@@ -720,7 +721,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	pendingAccountIDsSet := make(map[string]struct{})
 	accountIDsToUserIDs := make(map[string]int32) // Account ID -> User ID
 	if provider != nil {
-		if err := s.waitForRateLimit(ctx, provider.ServiceID(), 1, "repo"); err != nil {
+		if err := s.waitForRateLimit(ctx, provider.URN(), 1, "repo"); err != nil {
 			return errors.Wrap(err, "wait for rate limiter")
 		}
 
@@ -846,12 +847,12 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 // an error if n exceeds the limiter's burst size, the context is canceled, or the
 // expected wait time exceeds the context's deadline. The burst limit is ignored if
 // the rate limit is Inf.
-func (s *PermsSyncer) waitForRateLimit(ctx context.Context, serviceID string, n int, syncType string) error {
+func (s *PermsSyncer) waitForRateLimit(ctx context.Context, urn string, n int, syncType string) error {
 	if s.rateLimiterRegistry == nil {
 		return nil
 	}
 
-	rl := s.rateLimiterRegistry.Get(serviceID)
+	rl := s.rateLimiterRegistry.Get(urn)
 	began := time.Now()
 	if err := rl.WaitN(ctx, n); err != nil {
 		metricsRateLimiterWaitDuration.WithLabelValues(syncType, strconv.FormatBool(false)).Observe(time.Since(began).Seconds())
@@ -869,8 +870,11 @@ func (s *PermsSyncer) syncPerms(ctx context.Context, request *syncRequest) error
 	var err error
 	switch request.Type {
 	case requestTypeUser:
+		// Ensure the job field is recorded when monitoring external API calls
+		ctx = metrics.ContextWithTask(ctx, "SyncUserPerms")
 		err = s.syncUserPerms(ctx, request.ID, request.NoPerms, request.Options)
 	case requestTypeRepo:
+		ctx = metrics.ContextWithTask(ctx, "SyncRepoPerms")
 		err = s.syncRepoPerms(ctx, api.RepoID(request.ID), request.NoPerms, request.Options)
 	default:
 		err = errors.Errorf("unexpected request type: %v", request.Type)

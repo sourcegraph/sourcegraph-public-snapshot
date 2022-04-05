@@ -381,6 +381,19 @@
           "description": "Enable filtering of all exec commands on gitserver based on a pre-defined allowlist",
           "type": "boolean",
           "default": true
+        },
+        "gitServerPinnedRepos": {
+          "description": "List of repositories pinned to specific gitserver instances. The specified repositories will remain at their pinned servers on scaling the cluster. If the specified pinned server differs from the current server that stores the repository, then it must be re-cloned to the specified server.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "examples": [
+            {
+              "github.com/foo/bar": "gitserverHostname",
+              "github.com/foo/bar2": "gitserverHostname2"
+            }
+          ]
         }
       },
       "examples": [

@@ -5,10 +5,10 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import { noop } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, Link, useObservable, useDebounce, Icon } from '@sourcegraph/wildcard'
+import { Button, Card, Link, useObservable, useDebounce, Icon, Input } from '@sourcegraph/wildcard'
 
 import * as View from '../../../../../../../views'
-import { FormInput } from '../../../../../components/form/form-input/FormInput'
+import { getDefaultInputProps } from '../../../../../components/form/getDefaultInputProps'
 import { useField } from '../../../../../components/form/hooks/useField'
 import { useForm } from '../../../../../components/form/hooks/useForm'
 import { InsightQueryInput } from '../../../../../components/form/query-input/InsightQueryInput'
@@ -139,28 +139,23 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
                     )}
                 </SearchInsightLivePreview>
 
-                <FormInput
-                    title="Data series search query"
+                <Input
+                    label="Data series search query"
                     required={true}
                     as={InsightQueryInput}
                     repositories={repositories.input.value}
                     patternType={getQueryPatternTypeFilter(query.input.value)}
                     placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
-                    valid={query.meta.touched && query.meta.validState === 'VALID'}
-                    error={query.meta.touched && query.meta.error}
+                    {...getDefaultInputProps(query)}
                     className="mt-3 mb-0"
-                    {...query.input}
                 />
 
-                <FormInput
+                <Input
                     as={RepositoriesField}
                     required={true}
-                    title="Repositories"
+                    label="Repositories"
                     placeholder="Example: github.com/sourcegraph/sourcegraph"
-                    loading={repositories.meta.validState === 'CHECKING'}
-                    valid={repositories.meta.touched && repositories.meta.validState === 'VALID'}
-                    error={repositories.meta.touched && repositories.meta.error}
-                    {...repositories.input}
+                    {...getDefaultInputProps(repositories)}
                     className="mt-3 mb-0"
                 />
             </form>

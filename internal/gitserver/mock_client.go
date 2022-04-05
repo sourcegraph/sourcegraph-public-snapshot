@@ -59,6 +59,9 @@ type MockClient struct {
 	// RemoveFunc is an instance of a mock function object controlling the
 	// behavior of the method Remove.
 	RemoveFunc *ClientRemoveFunc
+	// RemoveFromFunc is an instance of a mock function object controlling
+	// the behavior of the method RemoveFrom.
+	RemoveFromFunc *ClientRemoveFromFunc
 	// RendezvousAddrForRepoFunc is an instance of a mock function object
 	// controlling the behavior of the method RendezvousAddrForRepo.
 	RendezvousAddrForRepoFunc *ClientRendezvousAddrForRepoFunc
@@ -90,8 +93,8 @@ type MockClient struct {
 func NewMockClient() *MockClient {
 	return &MockClient{
 		AddrForRepoFunc: &ClientAddrForRepoFunc{
-			defaultHook: func(api.RepoName) string {
-				return ""
+			defaultHook: func(context.Context, api.RepoName) (string, error) {
+				return "", nil
 			},
 		},
 		AddrsFunc: &ClientAddrsFunc{
@@ -105,8 +108,8 @@ func NewMockClient() *MockClient {
 			},
 		},
 		ArchiveURLFunc: &ClientArchiveURLFunc{
-			defaultHook: func(api.RepoName, ArchiveOptions) *url.URL {
-				return nil
+			defaultHook: func(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error) {
+				return nil, nil
 			},
 		},
 		CommandFunc: &ClientCommandFunc{
@@ -154,6 +157,11 @@ func NewMockClient() *MockClient {
 				return nil
 			},
 		},
+		RemoveFromFunc: &ClientRemoveFromFunc{
+			defaultHook: func(context.Context, api.RepoName, string) error {
+				return nil
+			},
+		},
 		RendezvousAddrForRepoFunc: &ClientRendezvousAddrForRepoFunc{
 			defaultHook: func(api.RepoName) string {
 				return ""
@@ -175,7 +183,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		RequestRepoMigrateFunc: &ClientRequestRepoMigrateFunc{
-			defaultHook: func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
+			defaultHook: func(context.Context, api.RepoName, string, string) (*protocol.RepoUpdateResponse, error) {
 				return nil, nil
 			},
 		},
@@ -202,7 +210,7 @@ func NewMockClient() *MockClient {
 func NewStrictMockClient() *MockClient {
 	return &MockClient{
 		AddrForRepoFunc: &ClientAddrForRepoFunc{
-			defaultHook: func(api.RepoName) string {
+			defaultHook: func(context.Context, api.RepoName) (string, error) {
 				panic("unexpected invocation of MockClient.AddrForRepo")
 			},
 		},
@@ -217,7 +225,7 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		ArchiveURLFunc: &ClientArchiveURLFunc{
-			defaultHook: func(api.RepoName, ArchiveOptions) *url.URL {
+			defaultHook: func(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error) {
 				panic("unexpected invocation of MockClient.ArchiveURL")
 			},
 		},
@@ -266,6 +274,11 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.Remove")
 			},
 		},
+		RemoveFromFunc: &ClientRemoveFromFunc{
+			defaultHook: func(context.Context, api.RepoName, string) error {
+				panic("unexpected invocation of MockClient.RemoveFrom")
+			},
+		},
 		RendezvousAddrForRepoFunc: &ClientRendezvousAddrForRepoFunc{
 			defaultHook: func(api.RepoName) string {
 				panic("unexpected invocation of MockClient.RendezvousAddrForRepo")
@@ -287,7 +300,7 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		RequestRepoMigrateFunc: &ClientRequestRepoMigrateFunc{
-			defaultHook: func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
+			defaultHook: func(context.Context, api.RepoName, string, string) (*protocol.RepoUpdateResponse, error) {
 				panic("unexpected invocation of MockClient.RequestRepoMigrate")
 			},
 		},
@@ -352,6 +365,9 @@ func NewMockClientFrom(i Client) *MockClient {
 		RemoveFunc: &ClientRemoveFunc{
 			defaultHook: i.Remove,
 		},
+		RemoveFromFunc: &ClientRemoveFromFunc{
+			defaultHook: i.RemoveFrom,
+		},
 		RendezvousAddrForRepoFunc: &ClientRendezvousAddrForRepoFunc{
 			defaultHook: i.RendezvousAddrForRepo,
 		},
@@ -382,23 +398,23 @@ func NewMockClientFrom(i Client) *MockClient {
 // ClientAddrForRepoFunc describes the behavior when the AddrForRepo method
 // of the parent MockClient instance is invoked.
 type ClientAddrForRepoFunc struct {
-	defaultHook func(api.RepoName) string
-	hooks       []func(api.RepoName) string
+	defaultHook func(context.Context, api.RepoName) (string, error)
+	hooks       []func(context.Context, api.RepoName) (string, error)
 	history     []ClientAddrForRepoFuncCall
 	mutex       sync.Mutex
 }
 
 // AddrForRepo delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockClient) AddrForRepo(v0 api.RepoName) string {
-	r0 := m.AddrForRepoFunc.nextHook()(v0)
-	m.AddrForRepoFunc.appendCall(ClientAddrForRepoFuncCall{v0, r0})
-	return r0
+func (m *MockClient) AddrForRepo(v0 context.Context, v1 api.RepoName) (string, error) {
+	r0, r1 := m.AddrForRepoFunc.nextHook()(v0, v1)
+	m.AddrForRepoFunc.appendCall(ClientAddrForRepoFuncCall{v0, v1, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the AddrForRepo method
 // of the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientAddrForRepoFunc) SetDefaultHook(hook func(api.RepoName) string) {
+func (f *ClientAddrForRepoFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (string, error)) {
 	f.defaultHook = hook
 }
 
@@ -406,7 +422,7 @@ func (f *ClientAddrForRepoFunc) SetDefaultHook(hook func(api.RepoName) string) {
 // AddrForRepo method of the parent MockClient instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ClientAddrForRepoFunc) PushHook(hook func(api.RepoName) string) {
+func (f *ClientAddrForRepoFunc) PushHook(hook func(context.Context, api.RepoName) (string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -414,20 +430,20 @@ func (f *ClientAddrForRepoFunc) PushHook(hook func(api.RepoName) string) {
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ClientAddrForRepoFunc) SetDefaultReturn(r0 string) {
-	f.SetDefaultHook(func(api.RepoName) string {
-		return r0
+func (f *ClientAddrForRepoFunc) SetDefaultReturn(r0 string, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName) (string, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientAddrForRepoFunc) PushReturn(r0 string) {
-	f.PushHook(func(api.RepoName) string {
-		return r0
+func (f *ClientAddrForRepoFunc) PushReturn(r0 string, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName) (string, error) {
+		return r0, r1
 	})
 }
 
-func (f *ClientAddrForRepoFunc) nextHook() func(api.RepoName) string {
+func (f *ClientAddrForRepoFunc) nextHook() func(context.Context, api.RepoName) (string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -462,22 +478,28 @@ func (f *ClientAddrForRepoFunc) History() []ClientAddrForRepoFuncCall {
 type ClientAddrForRepoFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 api.RepoName
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ClientAddrForRepoFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientAddrForRepoFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // ClientAddrsFunc describes the behavior when the Addrs method of the
@@ -691,23 +713,23 @@ func (c ClientArchiveFuncCall) Results() []interface{} {
 // ClientArchiveURLFunc describes the behavior when the ArchiveURL method of
 // the parent MockClient instance is invoked.
 type ClientArchiveURLFunc struct {
-	defaultHook func(api.RepoName, ArchiveOptions) *url.URL
-	hooks       []func(api.RepoName, ArchiveOptions) *url.URL
+	defaultHook func(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error)
+	hooks       []func(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error)
 	history     []ClientArchiveURLFuncCall
 	mutex       sync.Mutex
 }
 
 // ArchiveURL delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockClient) ArchiveURL(v0 api.RepoName, v1 ArchiveOptions) *url.URL {
-	r0 := m.ArchiveURLFunc.nextHook()(v0, v1)
-	m.ArchiveURLFunc.appendCall(ClientArchiveURLFuncCall{v0, v1, r0})
-	return r0
+func (m *MockClient) ArchiveURL(v0 context.Context, v1 api.RepoName, v2 ArchiveOptions) (*url.URL, error) {
+	r0, r1 := m.ArchiveURLFunc.nextHook()(v0, v1, v2)
+	m.ArchiveURLFunc.appendCall(ClientArchiveURLFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the ArchiveURL method of
 // the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientArchiveURLFunc) SetDefaultHook(hook func(api.RepoName, ArchiveOptions) *url.URL) {
+func (f *ClientArchiveURLFunc) SetDefaultHook(hook func(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error)) {
 	f.defaultHook = hook
 }
 
@@ -715,7 +737,7 @@ func (f *ClientArchiveURLFunc) SetDefaultHook(hook func(api.RepoName, ArchiveOpt
 // ArchiveURL method of the parent MockClient instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ClientArchiveURLFunc) PushHook(hook func(api.RepoName, ArchiveOptions) *url.URL) {
+func (f *ClientArchiveURLFunc) PushHook(hook func(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -723,20 +745,20 @@ func (f *ClientArchiveURLFunc) PushHook(hook func(api.RepoName, ArchiveOptions) 
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ClientArchiveURLFunc) SetDefaultReturn(r0 *url.URL) {
-	f.SetDefaultHook(func(api.RepoName, ArchiveOptions) *url.URL {
-		return r0
+func (f *ClientArchiveURLFunc) SetDefaultReturn(r0 *url.URL, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientArchiveURLFunc) PushReturn(r0 *url.URL) {
-	f.PushHook(func(api.RepoName, ArchiveOptions) *url.URL {
-		return r0
+func (f *ClientArchiveURLFunc) PushReturn(r0 *url.URL, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error) {
+		return r0, r1
 	})
 }
 
-func (f *ClientArchiveURLFunc) nextHook() func(api.RepoName, ArchiveOptions) *url.URL {
+func (f *ClientArchiveURLFunc) nextHook() func(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -771,25 +793,31 @@ func (f *ClientArchiveURLFunc) History() []ClientArchiveURLFuncCall {
 type ClientArchiveURLFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 api.RepoName
+	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 ArchiveOptions
+	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 ArchiveOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *url.URL
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ClientArchiveURLFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientArchiveURLFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // ClientCommandFunc describes the behavior when the Command method of the
@@ -1775,6 +1803,113 @@ func (c ClientRemoveFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// ClientRemoveFromFunc describes the behavior when the RemoveFrom method of
+// the parent MockClient instance is invoked.
+type ClientRemoveFromFunc struct {
+	defaultHook func(context.Context, api.RepoName, string) error
+	hooks       []func(context.Context, api.RepoName, string) error
+	history     []ClientRemoveFromFuncCall
+	mutex       sync.Mutex
+}
+
+// RemoveFrom delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockClient) RemoveFrom(v0 context.Context, v1 api.RepoName, v2 string) error {
+	r0 := m.RemoveFromFunc.nextHook()(v0, v1, v2)
+	m.RemoveFromFunc.appendCall(ClientRemoveFromFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RemoveFrom method of
+// the parent MockClient instance is invoked and the hook queue is empty.
+func (f *ClientRemoveFromFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RemoveFrom method of the parent MockClient instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ClientRemoveFromFunc) PushHook(hook func(context.Context, api.RepoName, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientRemoveFromFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientRemoveFromFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, api.RepoName, string) error {
+		return r0
+	})
+}
+
+func (f *ClientRemoveFromFunc) nextHook() func(context.Context, api.RepoName, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientRemoveFromFunc) appendCall(r0 ClientRemoveFromFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientRemoveFromFuncCall objects describing
+// the invocations of this function.
+func (f *ClientRemoveFromFunc) History() []ClientRemoveFromFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientRemoveFromFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientRemoveFromFuncCall is an object that describes an invocation of
+// method RemoveFrom on an instance of MockClient.
+type ClientRemoveFromFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientRemoveFromFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientRemoveFromFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // ClientRendezvousAddrForRepoFunc describes the behavior when the
 // RendezvousAddrForRepo method of the parent MockClient instance is
 // invoked.
@@ -2214,24 +2349,24 @@ func (c ClientReposStatsFuncCall) Results() []interface{} {
 // ClientRequestRepoMigrateFunc describes the behavior when the
 // RequestRepoMigrate method of the parent MockClient instance is invoked.
 type ClientRequestRepoMigrateFunc struct {
-	defaultHook func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)
-	hooks       []func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)
+	defaultHook func(context.Context, api.RepoName, string, string) (*protocol.RepoUpdateResponse, error)
+	hooks       []func(context.Context, api.RepoName, string, string) (*protocol.RepoUpdateResponse, error)
 	history     []ClientRequestRepoMigrateFuncCall
 	mutex       sync.Mutex
 }
 
 // RequestRepoMigrate delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockClient) RequestRepoMigrate(v0 context.Context, v1 api.RepoName) (*protocol.RepoUpdateResponse, error) {
-	r0, r1 := m.RequestRepoMigrateFunc.nextHook()(v0, v1)
-	m.RequestRepoMigrateFunc.appendCall(ClientRequestRepoMigrateFuncCall{v0, v1, r0, r1})
+func (m *MockClient) RequestRepoMigrate(v0 context.Context, v1 api.RepoName, v2 string, v3 string) (*protocol.RepoUpdateResponse, error) {
+	r0, r1 := m.RequestRepoMigrateFunc.nextHook()(v0, v1, v2, v3)
+	m.RequestRepoMigrateFunc.appendCall(ClientRequestRepoMigrateFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the RequestRepoMigrate
 // method of the parent MockClient instance is invoked and the hook queue is
 // empty.
-func (f *ClientRequestRepoMigrateFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)) {
+func (f *ClientRequestRepoMigrateFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, string) (*protocol.RepoUpdateResponse, error)) {
 	f.defaultHook = hook
 }
 
@@ -2239,7 +2374,7 @@ func (f *ClientRequestRepoMigrateFunc) SetDefaultHook(hook func(context.Context,
 // RequestRepoMigrate method of the parent MockClient instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *ClientRequestRepoMigrateFunc) PushHook(hook func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)) {
+func (f *ClientRequestRepoMigrateFunc) PushHook(hook func(context.Context, api.RepoName, string, string) (*protocol.RepoUpdateResponse, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2248,19 +2383,19 @@ func (f *ClientRequestRepoMigrateFunc) PushHook(hook func(context.Context, api.R
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ClientRequestRepoMigrateFunc) SetDefaultReturn(r0 *protocol.RepoUpdateResponse, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string, string) (*protocol.RepoUpdateResponse, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ClientRequestRepoMigrateFunc) PushReturn(r0 *protocol.RepoUpdateResponse, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
+	f.PushHook(func(context.Context, api.RepoName, string, string) (*protocol.RepoUpdateResponse, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientRequestRepoMigrateFunc) nextHook() func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
+func (f *ClientRequestRepoMigrateFunc) nextHook() func(context.Context, api.RepoName, string, string) (*protocol.RepoUpdateResponse, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2299,6 +2434,12 @@ type ClientRequestRepoMigrateFuncCall struct {
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *protocol.RepoUpdateResponse
@@ -2310,7 +2451,7 @@ type ClientRequestRepoMigrateFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ClientRequestRepoMigrateFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this

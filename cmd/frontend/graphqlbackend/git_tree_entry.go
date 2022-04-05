@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"io/fs"
 	"net/url"
 	"os"
@@ -21,8 +22,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -82,6 +85,7 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 
 		r.content, r.contentErr = git.ReadFile(
 			ctx,
+			r.db,
 			r.commit.repoResolver.RepoName(),
 			api.CommitID(r.commit.OID()),
 			r.Path(),
@@ -222,6 +226,7 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	}
 	entries, err := git.ReadDir(
 		ctx,
+		r.db,
 		authz.DefaultSubRepoPermsChecker,
 		r.commit.repoResolver.RepoName(),
 		api.CommitID(r.commit.OID()),
@@ -256,16 +261,52 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName 
 	})
 }
 
-func (r *GitTreeEntryResolver) CodeIntelInfo(ctx context.Context) (CodeIntelSupportResolver, error) {
+func (r *GitTreeEntryResolver) CodeIntelSupport(ctx context.Context) (GitBlobCodeIntelSupportResolver, error) {
 	repo, err := r.commit.repoResolver.repo(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return EnterpriseResolvers.codeIntelResolver.GitBlobCodeIntelInfo(ctx, &GitBlobCodeIntelInfoArgs{
-		Repo: repo.Name,
+	return EnterpriseResolvers.codeIntelResolver.GitBlobCodeIntelInfo(ctx, &GitTreeEntryCodeIntelInfoArgs{
+		Repo: repo,
 		Path: r.Path(),
 	})
+}
+
+func (r *GitTreeEntryResolver) CodeIntelInfo(ctx context.Context) (GitTreeCodeIntelSupportResolver, error) {
+	repo, err := r.commit.repoResolver.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return EnterpriseResolvers.codeIntelResolver.GitTreeCodeIntelInfo(ctx, &GitTreeEntryCodeIntelInfoArgs{
+		Repo:   repo,
+		Commit: string(r.Commit().OID()),
+		Path:   r.Path(),
+	})
+}
+
+func (r *GitTreeEntryResolver) LocalCodeIntel(ctx context.Context) (*JSONValue, error) {
+	repo, err := r.commit.repoResolver.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	payload, err := symbols.DefaultClient.LocalCodeIntel(ctx, types.RepoCommitPath{
+		Repo:   string(repo.Name),
+		Commit: string(r.commit.oid),
+		Path:   r.Path(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	jsonValue, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	return &JSONValue{Value: string(jsonValue)}, nil
 }
 
 type fileInfo struct {

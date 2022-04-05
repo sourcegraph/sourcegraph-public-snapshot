@@ -398,14 +398,19 @@ func (s *Server) Janitor(interval time.Duration) {
 func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int) {
 	var previousAddrs string
 	for {
-		addrs := conf.Get().ServiceConnections().GitServers
+		cfg := conf.Get()
+		addrs := cfg.ServiceConnectionConfig.GitServers
 		// We turn addrs into a string here for easy comparison and storage of previous
 		// addresses since we'd need to take a copy of the slice anyway.
 		currentAddrs := strings.Join(addrs, ",")
 		fullSync := currentAddrs != previousAddrs
 		previousAddrs = currentAddrs
 
-		if err := s.syncRepoState(addrs, batchSize, perSecond, fullSync); err != nil {
+		gitServerAddrs := gitserver.GitServerAddresses{
+			Addresses:     addrs,
+			PinnedServers: cfg.ExperimentalFeatures.GitServerPinnedRepos,
+		}
+		if err := s.syncRepoState(gitServerAddrs, batchSize, perSecond, fullSync); err != nil {
 			log15.Error("Syncing repo state", "error ", err)
 		}
 
@@ -507,8 +512,9 @@ var (
 	}, []string{"success"})
 )
 
-func (s *Server) syncRepoState(addrs []string, batchSize, perSecond int, fullSync bool) error {
+func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batchSize, perSecond int, fullSync bool) error {
 	log15.Info("starting syncRepoState", "fullSync", fullSync)
+	addrs := gitServerAddrs.Addresses
 
 	// When fullSync is true we'll scan all repos in the database and ensure we set
 	// their clone state and assign any that belong to this shard with the correct
@@ -576,7 +582,11 @@ func (s *Server) syncRepoState(addrs []string, batchSize, perSecond int, fullSyn
 	err := store.IterateRepoGitserverStatus(ctx, options, func(repo types.RepoGitserverStatus) error {
 		repoSyncStateCounter.WithLabelValues("check").Inc()
 		// Ensure we're only dealing with repos we are responsible for
-		if addr := gitserver.AddrForRepo(repo.Name, addrs); !s.hostnameMatch(addr) {
+		addr, err := gitserver.AddrForRepo(ctx, s.DB, repo.Name, gitServerAddrs)
+		if err != nil {
+			return err
+		}
+		if !s.hostnameMatch(addr) {
 			repoSyncStateCounter.WithLabelValues("other_shard").Inc()
 			return nil
 		}
@@ -860,11 +870,11 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 	var (
-		q       = r.URL.Query()
-		treeish = q.Get("treeish")
-		repo    = q.Get("repo")
-		format  = q.Get("format")
-		paths   = q["path"]
+		q         = r.URL.Query()
+		treeish   = q.Get("treeish")
+		repo      = q.Get("repo")
+		format    = q.Get("format")
+		pathspecs = q["path"]
 	)
 
 	if err := checkSpecArgSafety(treeish); err != nil {
@@ -903,7 +913,7 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req.Args = append(req.Args, treeish, "--")
-	req.Args = append(req.Args, paths...)
+	req.Args = append(req.Args, pathspecs...)
 
 	s.exec(w, r, req)
 }
@@ -2264,7 +2274,7 @@ func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoNam
 	if err != nil {
 		return errors.Wrap(err, "get remote show command")
 	}
-	cmd.Dir = string(dir)
+	dir.Set(cmd)
 	output, err := runWithRemoteOpts(ctx, cmd, nil)
 	if err != nil {
 		log15.Error("Failed to fetch remote info", "repo", repo, "error", err, "output", string(output))
@@ -2281,11 +2291,11 @@ func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoNam
 
 	// check if branch pointed to by HEAD exists
 	cmd = exec.CommandContext(ctx, "git", "rev-parse", headBranch, "--")
-	cmd.Dir = string(dir)
+	dir.Set(cmd)
 	if err := cmd.Run(); err != nil {
 		// branch does not exist, pick first branch
 		cmd := exec.CommandContext(ctx, "git", "branch")
-		cmd.Dir = string(dir)
+		dir.Set(cmd)
 		list, err := cmd.Output()
 		if err != nil {
 			log15.Error("Failed to list branches", "repo", repo, "error", err, "output", string(output))
@@ -2300,7 +2310,7 @@ func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoNam
 
 	// set HEAD
 	cmd = exec.CommandContext(ctx, "git", "symbolic-ref", "HEAD", "refs/heads/"+headBranch)
-	cmd.Dir = string(dir)
+	dir.Set(cmd)
 	if output, err := cmd.CombinedOutput(); err != nil {
 		log15.Error("Failed to set HEAD", "repo", repo, "error", err, "output", string(output))
 		return errors.Wrap(err, "Failed to set HEAD")
@@ -2439,7 +2449,7 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev stri
 		rev = rev + "^0"
 	}
 	cmd := exec.Command("git", "rev-parse", rev, "--")
-	cmd.Dir = string(repoDir)
+	repoDir.Set(cmd)
 	if err := cmd.Run(); err == nil {
 		return false
 	}

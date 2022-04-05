@@ -49,6 +49,12 @@ export interface SearchSidebarProps
     prefixContent?: JSX.Element
 
     buildSearchURLQueryFromQueryState: (queryParameters: BuildSearchQueryURLParameters) => string
+
+    /**
+     * Force search type links to be rendered as buttons.
+     * Used e.g. in the VS Code extension to update search query state.
+     */
+    forceButton?: boolean
 }
 
 const selectFromQueryState = ({
@@ -104,7 +110,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
             setCollapsedSections(openSections => {
                 const newSettings: TemporarySettings['search.collapsedSidebarSections'] = {
                     ...openSections,
-                    [id]: open,
+                    [id]: !open,
                 }
                 return newSettings
             })
@@ -151,6 +157,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                         query,
                         selectedSearchContextSpec: props.selectedSearchContextSpec,
                         buildSearchURLQueryFromQueryState: props.buildSearchURLQueryFromQueryState,
+                        forceButton: props.forceButton,
                     })}
                 </SearchSidebarSection>
                 <SearchSidebarSection

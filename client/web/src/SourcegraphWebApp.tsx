@@ -88,7 +88,6 @@ import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps } from './routes'
 import { PageRoutes } from './routes.constants'
 import { parseSearchURL } from './search'
-import { fetchSavedSearches, fetchRecentSearches, fetchRecentFileViews, fetchCollaborators } from './search/backend'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { SearchStack } from './search/SearchStack'
 import { listUserRepositories } from './site-admin/backend'
@@ -260,7 +259,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                 })
             })
             .catch(error => {
-                console.error('Error initalizing GraphQL client', error)
+                console.error('Error initializing GraphQL client', error)
             })
 
         this.subscriptions.add(
@@ -464,10 +463,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                                     this.state.defaultSearchContextSpec
                                                                 }
                                                                 globbing={this.state.globbing}
-                                                                fetchSavedSearches={fetchSavedSearches}
-                                                                fetchRecentSearches={fetchRecentSearches}
-                                                                fetchCollaborators={fetchCollaborators}
-                                                                fetchRecentFileViews={fetchRecentFileViews}
                                                                 streamSearch={aggregateStreamingSearch}
                                                                 onUserExternalServicesOrRepositoriesUpdate={
                                                                     this.onUserExternalServicesOrRepositoriesUpdate

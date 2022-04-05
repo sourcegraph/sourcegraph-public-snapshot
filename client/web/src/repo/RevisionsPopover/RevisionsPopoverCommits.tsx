@@ -6,10 +6,10 @@ import { useLocation } from 'react-router'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
-import { ConnectionSummary } from '@sourcegraph/web/src/components/FilteredConnection/ui'
 import { Badge, useDebounce } from '@sourcegraph/wildcard'
 
+import { useConnection } from '../../components/FilteredConnection/hooks/useConnection'
+import { ConnectionSummary } from '../../components/FilteredConnection/ui'
 import {
     GitCommitAncestorFields,
     RepositoryGitCommitResult,

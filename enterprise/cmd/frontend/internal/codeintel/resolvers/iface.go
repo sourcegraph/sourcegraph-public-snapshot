@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/grafana/regexp"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
@@ -20,8 +22,9 @@ type GitserverClient interface {
 	CommitDate(ctx context.Context, repositoryID int, commit string) (string, time.Time, bool, error)
 	RefDescriptions(ctx context.Context, repositoryID int, gitOjbs ...string) (map[string][]gitdomain.RefDescription, error)
 	CommitsUniqueToBranch(ctx context.Context, repositoryID int, branchName string, isDefaultBranch bool, maxAge *time.Time) (map[string]time.Time, error)
-	CommitExists(ctx context.Context, repositoryID int, commit string) (bool, error)
+	CommitsExist(ctx context.Context, commits []gitserver.RepositoryCommit) ([]bool, error)
 	CommitGraph(ctx context.Context, repositoryID int, options git.CommitGraphOptions) (*gitdomain.CommitGraph, error)
+	ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error)
 }
 
 type DBStore interface {
@@ -53,6 +56,10 @@ type DBStore interface {
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) error
 	RepoIDsByGlobPatterns(ctx context.Context, patterns []string, limit, offset int) ([]int, int, error)
 	CommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error)
+	RecentUploadsSummary(ctx context.Context, repositoryID int) ([]dbstore.UploadsWithRepositoryNamespace, error)
+	RecentIndexesSummary(ctx context.Context, repositoryID int) ([]dbstore.IndexesWithRepositoryNamespace, error)
+	LastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error)
+	LastIndexScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error)
 }
 
 type LSIFStore interface {
@@ -76,7 +83,7 @@ type LSIFStore interface {
 
 type IndexEnqueuer interface {
 	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force bool) ([]dbstore.Index, error)
-	InferIndexConfiguration(ctx context.Context, repositoryID int) (*config.IndexConfiguration, error)
+	InferIndexConfiguration(ctx context.Context, repositoryID int, commit string) (*config.IndexConfiguration, []config.IndexJobHint, error)
 }
 
 type (

@@ -38,11 +38,12 @@ debounceQueryInputMillis =
 
 placeholderQuery : String
 placeholderQuery =
-    "repo:github\\.com/sourcegraph/sourcegraph$ content:output((.|\\n)* -> $author) type:commit"
+    "repo:github\\.com/sourcegraph/sourcegraph$ content:output((.|\\n)* -> $author) type:commit after:\"1 month ago\" count:all"
 
 
 type alias Flags =
     { sourcegraphURL : String
+    , isLightTheme : Maybe Bool
     , computeInput : Maybe ComputeInput
     }
 
@@ -79,6 +80,11 @@ type alias DataFilter =
     }
 
 
+type Theme
+    = Dark
+    | Light
+
+
 type alias Model =
     { sourcegraphURL : String
     , query : String
@@ -87,6 +93,7 @@ type alias Model =
     , selectedTab : Tab
     , resultsMap : Dict String DataValue
     , alerts : List Alert
+    , theme : Theme
 
     -- Debug client only
     , serverless : Bool
@@ -104,6 +111,7 @@ init json =
                 Err _ ->
                     -- no initial flags
                     { sourcegraphURL = ""
+                    , isLightTheme = Nothing
                     , computeInput =
                         Just
                             { computeQueries = [ placeholderQuery ]
@@ -143,6 +151,13 @@ init json =
             , reverse = experimentalOptions.reverse
             , excludeStopWords = experimentalOptions.excludeStopWords
             }
+      , theme =
+            case flags.isLightTheme of
+                Just True ->
+                    Light
+
+                _ ->
+                    Dark
       , selectedTab = experimentalOptions.activeTab
       , debounce = 0
       , resultsMap = Dict.empty
@@ -264,6 +279,20 @@ type DataFilterMsg
     | OnExcludeStopWordsCheckbox Bool
 
 
+updateComputeInput : List String -> DataFilter -> Tab -> ComputeInput
+updateComputeInput queries dataFilter selectedTab =
+    { computeQueries = queries
+    , experimentalOptions =
+        Just
+            { dataPoints = Just dataFilter.dataPoints
+            , sortByCount = Just dataFilter.sortByCount
+            , reverse = Just dataFilter.reverse
+            , excludeStopWords = Just dataFilter.excludeStopWords
+            , activeTab = Just { name = stringFromTab selectedTab }
+            }
+    }
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -274,7 +303,16 @@ update msg model =
 
         OnDebounce ->
             if model.debounce - 1 == 0 then
-                update RunCompute { model | debounce = model.debounce - 1 }
+                let
+                    ( newModel, runCompute ) =
+                        update RunCompute { model | debounce = model.debounce - 1 }
+                in
+                ( newModel
+                , Cmd.batch
+                    [ emitInput (updateComputeInput [ model.query ] model.dataFilter model.selectedTab)
+                    , runCompute
+                    ]
+                )
 
             else
                 ( { model | debounce = model.debounce - 1 }, Cmd.none )
@@ -285,32 +323,12 @@ update msg model =
                     updateDataFilter dataFilterMsg model.dataFilter
             in
             ( { model | dataFilter = newDataFilter }
-            , emitInput
-                { computeQueries = [ model.query ]
-                , experimentalOptions =
-                    Just
-                        { dataPoints = Just newDataFilter.dataPoints
-                        , sortByCount = Just newDataFilter.sortByCount
-                        , reverse = Just newDataFilter.reverse
-                        , excludeStopWords = Just newDataFilter.excludeStopWords
-                        , activeTab = Just { name = stringFromTab model.selectedTab }
-                        }
-                }
+            , emitInput (updateComputeInput [ model.query ] newDataFilter model.selectedTab)
             )
 
         OnTabSelected selectedTab ->
             ( { model | selectedTab = selectedTab }
-            , emitInput
-                { computeQueries = [ model.query ]
-                , experimentalOptions =
-                    Just
-                        { dataPoints = Just model.dataFilter.dataPoints
-                        , sortByCount = Just model.dataFilter.sortByCount
-                        , reverse = Just model.dataFilter.reverse
-                        , excludeStopWords = Just model.dataFilter.excludeStopWords
-                        , activeTab = Just { name = stringFromTab selectedTab }
-                        }
-                }
+            , emitInput (updateComputeInput [ model.query ] model.dataFilter selectedTab)
             )
 
         OnDownloadData ->
@@ -327,20 +345,20 @@ update msg model =
                 ( { model | resultsMap = exampleResultsMap }, Cmd.none )
 
             else
-                ( { model | resultsMap = Dict.empty, alerts = [] }
+                let
+                    alerts =
+                        if (String.contains "type:commit" model.query || String.contains "type:diff" model.query) && not (String.contains "count:all" model.query) then
+                            [ { title = "Heads up"
+                              , description = "This data may be incomplete! Add `count:all` to this query? Avoid doing this all the time though... 🤣"
+                              }
+                            ]
+
+                        else
+                            []
+                in
+                ( { model | resultsMap = Dict.empty, alerts = alerts }
                 , Cmd.batch
-                    [ emitInput
-                        { computeQueries = [ model.query ]
-                        , experimentalOptions =
-                            Just
-                                { dataPoints = Just model.dataFilter.dataPoints
-                                , sortByCount = Just model.dataFilter.sortByCount
-                                , reverse = Just model.dataFilter.reverse
-                                , excludeStopWords = Just model.dataFilter.excludeStopWords
-                                , activeTab = Just { name = stringFromTab model.selectedTab }
-                                }
-                        }
-                    , openStream
+                    [ openStream
                         ( Url.Builder.crossOrigin
                             model.sourcegraphURL
                             [ ".api", "compute", "stream" ]
@@ -394,13 +412,13 @@ updateDataFilter msg dataFilter =
 -- VIEW
 
 
-table : List DataValue -> E.Element Msg
-table data =
+table : Theme -> List DataValue -> E.Element Msg
+table theme data =
     let
         headerAttrs =
             [ F.bold
             , F.size 12
-            , F.color darkModeFontColor
+            , F.color (fontColor theme)
             ]
     in
     E.el [ E.padding 10, E.centerX ]
@@ -428,7 +446,7 @@ table data =
                             E.el
                                 [ E.centerY
                                 , F.size 12
-                                , F.color darkModeFontColor
+                                , F.color (fontColor theme)
                                 , F.alignRight
                                 ]
                                 (E.text (String.fromFloat v.value))
@@ -438,8 +456,8 @@ table data =
         )
 
 
-histogram : List DataValue -> E.Element Msg
-histogram data =
+histogram : Theme -> List DataValue -> E.Element Msg
+histogram theme data =
     E.el
         [ E.width E.fill
         , E.height (E.fill |> E.minimum 400)
@@ -461,8 +479,8 @@ histogram data =
         )
 
 
-dataView : List DataValue -> E.Element Msg
-dataView data =
+dataView : Theme -> List DataValue -> E.Element Msg
+dataView theme data =
     E.row [ E.width E.fill ]
         [ E.el [ E.padding 10, E.alignLeft ]
             (E.column []
@@ -497,10 +515,10 @@ dataView data =
         ]
 
 
-viewDataFilter : DataFilter -> E.Element DataFilterMsg
-viewDataFilter dataFilter =
+viewDataFilter : Theme -> DataFilter -> E.Element DataFilterMsg
+viewDataFilter theme dataFilter =
     E.row [ E.paddingXY 0 10 ]
-        [ I.text [ E.width (E.fill |> E.maximum 65), F.center, Background.color darkModeTextInputColor ]
+        [ I.text [ E.width (E.fill |> E.maximum 65), F.center, Background.color (textInputBackgroundColor theme) ]
             { onChange = OnDataPoints
             , placeholder = Nothing
             , text =
@@ -537,13 +555,13 @@ inputRow : Model -> E.Element Msg
 inputRow model =
     E.el [ E.centerX, E.width E.fill ]
         (E.column [ E.width E.fill ]
-            [ I.text [ Background.color darkModeTextInputColor ]
+            [ I.text [ Background.color (textInputBackgroundColor model.theme) ]
                 { onChange = OnQueryChanged
                 , placeholder = Nothing
                 , text = model.query
                 , label = I.labelHidden ""
                 }
-            , E.map OnDataFilter (viewDataFilter model.dataFilter)
+            , E.map OnDataFilter (viewDataFilter model.theme model.dataFilter)
             ]
         )
 
@@ -686,10 +704,10 @@ view : Model -> Html Msg
 view model =
     E.layout
         [ E.width E.fill
-        , F.family [ F.typeface "Fira Code" ]
+        , F.family [ F.typeface "Fira Code", F.typeface "Monaco" ]
         , F.size 12
-        , F.color darkModeFontColor
-        , Background.color darkModeBackgroundColor
+        , F.color (fontColor model.theme)
+        , Background.color (backgroundColor model.theme)
         ]
         (E.row [ E.centerX, E.width (E.fill |> E.maximum width) ]
             [ E.column [ E.centerX, E.width (E.fill |> E.maximum width), E.paddingXY 20 20 ]
@@ -704,13 +722,13 @@ view model =
                   in
                   case model.selectedTab of
                     Chart ->
-                        histogram data
+                        histogram model.theme data
 
                     Table ->
-                        table data
+                        table model.theme data
 
                     Data ->
-                        dataView data
+                        dataView model.theme data
                 ]
             ]
         )
@@ -826,6 +844,7 @@ flagsDecoder : Decoder Flags
 flagsDecoder =
     Decode.succeed Flags
         |> Json.Decode.Pipeline.required "sourcegraphURL" Decode.string
+        |> Json.Decode.Pipeline.optional "isLightTheme" (Decode.maybe Decode.bool) Nothing
         |> Json.Decode.Pipeline.required "computeInput" (Decode.nullable computeInputDecoder)
 
 
@@ -891,19 +910,34 @@ alertDecoder =
 -- STYLING
 
 
-darkModeBackgroundColor : E.Color
-darkModeBackgroundColor =
-    E.rgb255 0x18 0x1B 0x26
+backgroundColor : Theme -> E.Color
+backgroundColor theme =
+    case theme of
+        Dark ->
+            E.rgb255 0x18 0x1B 0x26
+
+        Light ->
+            E.rgb255 0xFF 0xFF 0xFF
 
 
-darkModeFontColor : E.Color
-darkModeFontColor =
-    E.rgb255 0xFF 0xFF 0xFF
+fontColor : Theme -> E.Color
+fontColor theme =
+    case theme of
+        Dark ->
+            E.rgb255 0xFF 0xFF 0xFF
+
+        Light ->
+            E.rgb255 0x34 0x3A 0x4D
 
 
-darkModeTextInputColor : E.Color
-darkModeTextInputColor =
-    E.rgb255 0x1D 0x22 0x2F
+textInputBackgroundColor : Theme -> E.Color
+textInputBackgroundColor theme =
+    case theme of
+        Dark ->
+            E.rgb255 0x1D 0x22 0x2F
+
+        Light ->
+            E.rgb 0xFF 0xFF 0xFF
 
 
 alertBackgroundColor : E.Color

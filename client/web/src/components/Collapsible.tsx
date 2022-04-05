@@ -17,7 +17,7 @@ interface Props {
     /**
      * Sub-content always visible in the title bar.
      */
-    detail?: string
+    detail?: string | React.ReactElement
 
     /**
      * Optional children that appear below the title bar that can be expanded/collapsed. If present,

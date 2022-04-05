@@ -5,10 +5,10 @@ import { from, Observable, ReplaySubject, Subscription } from 'rxjs'
 import { map, mapTo, switchMap, tap } from 'rxjs/operators'
 
 import {
-    BuiltinPanelDefinition,
-    BuiltinPanelView,
-    useBuiltinPanelViews,
-} from '@sourcegraph/branded/src/components/panel/Panel'
+    BuiltinTabbedPanelDefinition,
+    BuiltinTabbedPanelView,
+    useBuiltinTabbedPanelViews,
+} from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
 import { ReferenceParameters, TextDocumentPositionParameters } from '@sourcegraph/client-api'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { isErrorLike } from '@sourcegraph/common'
@@ -112,7 +112,7 @@ export function useBlobPanelViews({
             priority: number,
             provideLocations: (parameters: P) => Observable<MaybeLoadingResult<clientType.Location[]>>,
             extraParameters?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParameters>>
-        ): Observable<BuiltinPanelView | null> =>
+        ): Observable<BuiltinTabbedPanelView | null> =>
             activeCodeEditorPositions.pipe(
                 map(textDocumentPositionParameters => {
                     if (!textDocumentPositionParameters) {
@@ -171,9 +171,9 @@ export function useBlobPanelViews({
         panelSubjectChanges.next(panelSubject)
     }, [panelSubject, panelSubjectChanges])
 
-    useBuiltinPanelViews(
+    useBuiltinTabbedPanelViews(
         useMemo(() => {
-            const panelDefinitions: BuiltinPanelDefinition[] = [
+            const panelDefinitions: BuiltinTabbedPanelDefinition[] = [
                 {
                     id: 'history',
                     provider: panelSubjectChanges.pipe(
@@ -236,7 +236,7 @@ export function useBlobPanelViews({
                 panelDefinitions.push({
                     id: 'references',
                     provider: panelSubjectChanges.pipe(
-                        map(({ repoName, commitID, position, revision, filePath, history, location }) => ({
+                        map(({ position, history, location }) => ({
                             title: 'References',
                             content: '',
                             priority: 180,
@@ -256,14 +256,6 @@ export function useBlobPanelViews({
                                     extensionsController={extensionsController}
                                     telemetryService={telemetryService}
                                     key="references"
-                                    token={{
-                                        repoName,
-                                        commitID,
-                                        revision,
-                                        filePath,
-                                        line: position.line,
-                                        character: position.character,
-                                    }}
                                     externalHistory={history}
                                     externalLocation={location}
                                 />

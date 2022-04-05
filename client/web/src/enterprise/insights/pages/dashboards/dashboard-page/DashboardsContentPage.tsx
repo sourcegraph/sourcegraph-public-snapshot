@@ -6,8 +6,9 @@ import { Redirect } from 'react-router-dom'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
+import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
-import { ALL_INSIGHTS_DASHBOARD_ID } from '../../../core/types/dashboard/virtual-dashboard'
+import { ALL_INSIGHTS_DASHBOARD } from '../../../core/constants'
 
 import { DashboardsContent } from './components/dashboards-content/DashboardsContent'
 
@@ -31,7 +32,7 @@ export const DashboardsContentPage: React.FunctionComponent<DashboardsContentPag
     if (!dashboardID) {
         // In case if url doesn't have a dashboard id we should fall back on
         // built-in "All insights" dashboard
-        return <Redirect to={`${url}/${ALL_INSIGHTS_DASHBOARD_ID}`} />
+        return <Redirect to={`${url}/${ALL_INSIGHTS_DASHBOARD.id}`} />
     }
 
     if (dashboards === undefined) {
@@ -42,5 +43,12 @@ export const DashboardsContentPage: React.FunctionComponent<DashboardsContentPag
         )
     }
 
-    return <DashboardsContent telemetryService={telemetryService} dashboardID={dashboardID} dashboards={dashboards} />
+    const currentDashboard = dashboards.find(dashboard => dashboard.id === dashboardID)
+
+    return (
+        <>
+            <PageTitle title={`${currentDashboard?.title || ''} - Code Insights`} />
+            <DashboardsContent telemetryService={telemetryService} dashboardID={dashboardID} dashboards={dashboards} />
+        </>
+    )
 }

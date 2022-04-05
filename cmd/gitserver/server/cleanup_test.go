@@ -61,7 +61,28 @@ func TestCleanup_computeStats(t *testing.T) {
 	// the correct file in the correct place.
 	s := &Server{ReposDir: root}
 	s.Handler() // Handler as a side-effect sets up Server
+	db := dbtest.NewDB(t)
+	s.DB = database.NewDB(db)
+
+	if _, err := db.Exec(`
+insert into repo(id, name) values (1, 'a'), (2, 'b/d'), (3, 'c');
+insert into gitserver_repos(repo_id, shard_id) values (1, 1), (2, 1);
+insert into gitserver_repos(repo_id, shard_id, repo_size_bytes) values (3, 1, 228);
+`); err != nil {
+		t.Fatalf("unexpected error while inserting test data: %s", err)
+	}
+
 	s.cleanupRepos()
+
+	for i := 1; i <= 3; i++ {
+		repo, err := s.DB.GitserverRepos().GetByID(context.Background(), 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if repo.RepoSizeBytes == 0 {
+			t.Fatal("repo_size_bytes is not updated")
+		}
+	}
 
 	// we hardcode the name here so the tests break if someone changes the
 	// value of reposStatsName. We don't want it to change without good reason
@@ -356,6 +377,12 @@ func TestCleanupOldLocks(t *testing.T) {
 		"github.com/foo/freshpacked/.git/HEAD",
 		"github.com/foo/freshpacked/.git/packed-refs.lock",
 
+		"github.com/foo/freshcommitgraphlock/.git/HEAD",
+		"github.com/foo/freshcommitgraphlock/.git/objects/info/commit-graph.lock",
+
+		"github.com/foo/stalecommitgraphlock/.git/HEAD",
+		"github.com/foo/stalecommitgraphlock/.git/objects/info/commit-graph.lock",
+
 		"github.com/foo/staleconfiglock/.git/HEAD",
 		"github.com/foo/staleconfiglock/.git/config.lock",
 
@@ -378,6 +405,7 @@ func TestCleanupOldLocks(t *testing.T) {
 	chtime("github.com/foo/staleconfiglock/.git/config.lock", time.Hour)
 	chtime("github.com/foo/stalepacked/.git/packed-refs.lock", 2*time.Hour)
 	chtime("github.com/foo/refslock/.git/refs/heads/stale.lock", 2*time.Hour)
+	chtime("github.com/foo/stalecommitgraphlock/.git/objects/info/commit-graph.lock", 2*time.Hour)
 
 	s := &Server{ReposDir: root}
 	s.Handler() // Handler as a side-effect sets up Server
@@ -396,6 +424,14 @@ func TestCleanupOldLocks(t *testing.T) {
 		"github.com/foo/freshpacked/.git/HEAD",
 		"github.com/foo/freshpacked/.git/packed-refs.lock",
 		"github.com/foo/freshpacked/.git/info/attributes",
+
+		"github.com/foo/freshcommitgraphlock/.git/HEAD",
+		"github.com/foo/freshcommitgraphlock/.git/objects/info/commit-graph.lock",
+		"github.com/foo/freshcommitgraphlock/.git/info/attributes",
+
+		"github.com/foo/stalecommitgraphlock/.git/HEAD",
+		"github.com/foo/stalecommitgraphlock/.git/info/attributes",
+		"github.com/foo/stalecommitgraphlock/.git/objects/info",
 
 		"github.com/foo/staleconfiglock/.git/HEAD",
 		"github.com/foo/staleconfiglock/.git/info/attributes",
@@ -842,5 +878,336 @@ func TestJitterDuration(t *testing.T) {
 	}
 	if err := quick.Check(f, nil); err != nil {
 		t.Error(err)
+	}
+}
+
+func prepareEmptyGitRepo(t *testing.T, dir string) GitDir {
+	t.Helper()
+	cmd := exec.Command("git", "init", ".")
+	cmd.Dir = dir
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("execution error: %v, output %s", err, out)
+	}
+	return GitDir(filepath.Join(dir, ".git"))
+}
+
+func TestTooManyLooseObjects(t *testing.T) {
+	dir := t.TempDir()
+	gitDir := prepareEmptyGitRepo(t, dir)
+
+	// create sentinel object folder
+	if err := os.MkdirAll(gitDir.Path("objects", "17"), fs.ModePerm); err != nil {
+		t.Fatal(err)
+	}
+
+	touch := func(name string) error {
+		file, err := os.Create(gitDir.Path("objects", "17", name))
+		if err != nil {
+			return err
+		}
+		return file.Close()
+	}
+
+	limit := 2 * 256 // 2 objects per folder
+
+	cases := []struct {
+		name string
+		file string
+		want bool
+	}{
+		{
+			name: "empty",
+			file: "",
+			want: false,
+		},
+		{
+			name: "1 file",
+			file: "abc1",
+			want: false,
+		},
+		{
+			name: "ignore files with non-hexadecimal names",
+			file: "abcxyz123",
+			want: false,
+		},
+		{
+			name: "2 files",
+			file: "abc2",
+			want: false,
+		},
+		{
+			name: "3 files (too many)",
+			file: "abc3",
+			want: true,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if c.file != "" {
+				err := touch(c.file)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			tooManyLO, err := tooManyLooseObjects(gitDir, limit)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tooManyLO != c.want {
+				t.Fatalf("want %t, got %t\n", c.want, tooManyLO)
+			}
+		})
+	}
+}
+
+func TestTooManyLooseObjectsMissingSentinelDir(t *testing.T) {
+	dir := t.TempDir()
+	gitDir := prepareEmptyGitRepo(t, dir)
+
+	_, err := tooManyLooseObjects(gitDir, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestHasBitmap(t *testing.T) {
+	dir := t.TempDir()
+	gitDir := prepareEmptyGitRepo(t, dir)
+
+	t.Run("empty git repo", func(t *testing.T) {
+		hasBm, err := hasBitmap(gitDir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if hasBm {
+			t.Fatalf("expected no bitmap file for an empty git repository")
+		}
+	})
+
+	t.Run("repo with bitmap", func(t *testing.T) {
+		script := `echo acont > afile
+git add afile
+git commit -am amsg
+git repack -d -l -A --write-bitmap
+`
+		cmd := exec.Command("/bin/sh", "-euxc", script)
+		cmd.Dir = dir
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("out=%s, err=%s", out, err)
+		}
+		hasBm, err := hasBitmap(gitDir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !hasBm {
+			t.Fatalf("expected bitmap file after running git repack -d -l -A --write-bitmap")
+		}
+	})
+}
+
+func TestTooManyPackFiles(t *testing.T) {
+	dir := t.TempDir()
+	gitDir := prepareEmptyGitRepo(t, dir)
+
+	newPackFile := func(name string) error {
+		file, err := os.Create(gitDir.Path("objects", "pack", name))
+		if err != nil {
+			return err
+		}
+		return file.Close()
+	}
+
+	packLimit := 1
+
+	cases := []struct {
+		name string
+		file string
+		want bool
+	}{
+		{
+			name: "empty",
+			file: "",
+			want: false,
+		},
+		{
+			name: "1 pack",
+			file: "a.pack",
+			want: false,
+		},
+		{
+			name: "2 packs",
+			file: "b.pack",
+			want: true,
+		},
+		{
+			name: "2 packs, with 1 keep file",
+			file: "b.keep",
+			want: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if c.file != "" {
+				err := newPackFile(c.file)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			tooManyPf, err := tooManyPackfiles(gitDir, packLimit)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tooManyPf != c.want {
+				t.Fatalf("want %t, got %t\n", c.want, tooManyPf)
+			}
+		})
+	}
+}
+
+func TestHasCommitGraph(t *testing.T) {
+	dir := t.TempDir()
+	gitDir := prepareEmptyGitRepo(t, dir)
+
+	t.Run("empty git repo", func(t *testing.T) {
+		hasBm, err := hasCommitGraph(gitDir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if hasBm {
+			t.Fatalf("expected no commit-graph file for an empty git repository")
+		}
+	})
+
+	t.Run("commit-graph", func(t *testing.T) {
+		script := `echo acont > afile
+git add afile
+git commit -am amsg
+git commit-graph write --reachable --changed-paths
+`
+		cmd := exec.Command("/bin/sh", "-euxc", script)
+		cmd.Dir = dir
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("out=%s, err=%s", out, err)
+		}
+		hasCg, err := hasCommitGraph(gitDir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !hasCg {
+			t.Fatalf("expected commit-graph file after running git commit-graph write --reachable --changed-paths")
+		}
+	})
+}
+
+func TestNeedsMaintenance(t *testing.T) {
+	dir := t.TempDir()
+	gitDir := prepareEmptyGitRepo(t, dir)
+
+	needed, reason, err := needsMaintenance(gitDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if reason != "bitmap" {
+		t.Fatalf("want %s, got %s", "bitmap", reason)
+	}
+	if !needed {
+		t.Fatal("repos without a bitmap should require a repack")
+	}
+
+	// create bitmap file and commit-graph
+	script := `echo acont > afile
+git add afile
+git commit -am amsg
+git repack -d -l -A --write-bitmap
+git commit-graph write --reachable --changed-paths
+`
+	cmd := exec.Command("/bin/sh", "-euxc", script)
+	cmd.Dir = dir
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("out=%s, err=%s", out, err)
+	}
+
+	needed, reason, err = needsMaintenance(gitDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if reason != "skipped" {
+		t.Fatalf("want %s, got %s", "skipped", reason)
+	}
+	if needed {
+		t.Fatal("this repo doesn't need maintenance")
+	}
+}
+
+func TestPruneIfNeeded(t *testing.T) {
+	gitDir := prepareEmptyGitRepo(t, t.TempDir())
+
+	// create sentinel object folder
+	if err := os.MkdirAll(gitDir.Path("objects", "17"), fs.ModePerm); err != nil {
+		t.Fatal(err)
+	}
+
+	limit := -1 // always run prune
+	if err := pruneIfNeeded(gitDir, limit); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCleanup_setRepoSizes(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	root, err := os.MkdirTemp("", "gitserver-test-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(root)
+
+	for _, name := range []string{"a", "b", "c"} {
+		p := path.Join(root, name, ".git")
+		if err := os.MkdirAll(p, 0755); err != nil {
+			t.Fatal(err)
+		}
+		cmd := exec.Command("git", "--bare", "init", p)
+		if err := cmd.Run(); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// We run cleanupRepos because we want to test as a side-effect it creates
+	// the correct file in the correct place.
+	s := &Server{ReposDir: root}
+	s.Handler() // Handler as a side-effect sets up Server
+	db := dbtest.NewDB(t)
+	s.DB = database.NewDB(db)
+
+	// inserting info about repos to DB. Repo with ID = 1 already has its size
+	if _, err := db.Exec(`
+insert into repo(id, name) values (1, 'a'), (2, 'b'), (3, 'c');
+insert into gitserver_repos(repo_id, shard_id) values (2, 1), (3, 1);
+insert into gitserver_repos(repo_id, shard_id, repo_size_bytes) values (1, 1, 228);
+`); err != nil {
+		t.Fatalf("unexpected error while inserting test data: %s", err)
+	}
+
+	s.cleanupRepos()
+
+	for i := 1; i <= 3; i++ {
+		repo, err := s.DB.GitserverRepos().GetByID(context.Background(), 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if repo.RepoSizeBytes == 0 {
+			t.Fatal("repo_size_bytes is not updated")
+		}
+		if i == 1 && repo.RepoSizeBytes != 228 {
+			t.Fatal("existing repo_size_bytes has been updated")
+		}
+		if repo.ShardID != "1" {
+			t.Fatal("shard_id has been corrupted")
+		}
 	}
 }

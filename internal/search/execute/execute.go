@@ -31,7 +31,7 @@ func Execute(
 		return nil, err
 	}
 
-	planJob, err := job.FromExpandedPlan(jobArgs, plan)
+	planJob, err := job.FromExpandedPlan(jobArgs, plan, db)
 	if err != nil {
 		return nil, err
 	}
