@@ -4,7 +4,7 @@ import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { cloneDeep } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
+import CheckBoldIcon from 'mdi-react/CheckBoldIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import ContentSaveIcon from 'mdi-react/ContentSaveIcon'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
@@ -116,54 +116,55 @@ const WorkspaceHeader: React.FunctionComponent<WorkspaceHeaderProps> = ({
     toggleShowTimeline,
 }) => (
     <>
-        <div className="d-flex justify-content-between">
-            <h3>
+        <div className="d-flex align-items-center justify-content-between mb-2">
+            <h3 className="m-0">
                 <WorkspaceStateIcon cachedResultFound={workspace.cachedResultFound} state={workspace.state} />{' '}
                 {workspace.__typename === 'VisibleBatchSpecWorkspace'
                     ? workspace.repository.name
                     : 'Workspace in hidden repository'}
                 {workspace.__typename === 'VisibleBatchSpecWorkspace' && (
-                    <Link to={workspace.repository.url}>
+                    <Link to={workspace.repository.url} className="ml-2">
                         <Icon as={ExternalLinkIcon} />
                     </Link>
                 )}
             </h3>
-            <Button className="p-0 ml-2" onClick={deselectWorkspace} variant="link" size="sm">
+            <Button className="p-0 ml-2" onClick={deselectWorkspace} variant="icon">
+                <VisuallyHidden>Deselect Workspace</VisuallyHidden>
                 <Icon as={CloseIcon} />
             </Button>
         </div>
-        <div className="text-muted">
+        <div className="d-flex align-items-center">
             {typeof workspace.placeInQueue === 'number' && (
-                <div className={styles.detailItem}>
-                    <Icon as={SyncIcon} />{' '}
+                <Badge variant="secondary" className="text-uppercase">
+                    <Icon as={TimerSandIcon} />{' '}
                     <strong>
                         <NumberInQueue number={workspace.placeInQueue} />
                     </strong>{' '}
                     in queue
-                </div>
+                </Badge>
             )}
             {workspace.__typename === 'VisibleBatchSpecWorkspace' && workspace.path && (
-                <div className={styles.detailItem}>{workspace.path}</div>
+                <span className={styles.workspaceDetail}>{workspace.path}</span>
             )}
             {workspace.__typename === 'VisibleBatchSpecWorkspace' && (
-                <div className={styles.detailItem}>
-                    <Icon as={SourceBranchIcon} /> base: <strong>{workspace.branch.displayName}</strong>
-                </div>
+                <span className={styles.workspaceDetail}>
+                    <Icon as={SourceBranchIcon} /> {workspace.branch.displayName}
+                </span>
             )}
             {workspace.startedAt && (
-                <div className={styles.detailItem}>
+                <span className={styles.workspaceDetail}>
                     Total time:{' '}
                     <strong>
                         <Duration start={workspace.startedAt} end={workspace.finishedAt ?? undefined} />
                     </strong>
-                </div>
+                </span>
             )}
             {toggleShowTimeline && !workspace.cachedResultFound && workspace.state !== BatchSpecWorkspaceState.SKIPPED && (
-                <div className={styles.detailItem}>
-                    <Button className="text-muted m-0 p-0" onClick={toggleShowTimeline} variant="link">
+                <span className={styles.workspaceDetail}>
+                    <Button className="m-0 p-0" onClick={toggleShowTimeline} variant="link">
                         Timeline
                     </Button>
-                </div>
+                </span>
             )}
         </div>
         <hr />
@@ -255,7 +256,7 @@ const VisibleWorkspaceDetails: React.FunctionComponent<VisibleWorkspaceDetailsPr
                     )}
                     {workspace.changesetSpecs.map((changesetSpec, index) => (
                         <React.Fragment key={changesetSpec.id}>
-                            <ChangesetSpecNode node={changesetSpec} index={index} isLightTheme={isLightTheme} />
+                            <ChangesetSpecNode node={changesetSpec} isLightTheme={isLightTheme} />
                             {index !== workspace.changesetSpecs!.length - 1 && <hr className="m-0" />}
                         </React.Fragment>
                     ))}
@@ -335,9 +336,10 @@ const NumberInQueue: React.FunctionComponent<{ number: number }> = ({ number }) 
     )
 }
 
-const ChangesetSpecNode: React.FunctionComponent<
-    { node: BatchSpecWorkspaceChangesetSpecFields; index: number } & ThemeProps
-> = ({ node, index, isLightTheme }) => {
+const ChangesetSpecNode: React.FunctionComponent<{ node: BatchSpecWorkspaceChangesetSpecFields } & ThemeProps> = ({
+    node,
+    isLightTheme,
+}) => {
     const history = useHistory()
 
     // TODO: This should not happen. When the workspace is visibile, the changeset spec should be visible as well.
@@ -362,9 +364,8 @@ const ChangesetSpecNode: React.FunctionComponent<
             title={
                 <div className="d-flex justify-content-between">
                     <div>
-                        {' '}
                         <h4 className="mb-0 d-inline-block mr-2">
-                            <strong>RESULT {index + 1}</strong>{' '}
+                            <h3 className={styles.result}>Result</h3>
                             {node.description.published !== null && (
                                 <Badge className="text-uppercase">
                                     {publishBadgeLabel(node.description.published)}
@@ -372,14 +373,14 @@ const ChangesetSpecNode: React.FunctionComponent<
                             )}{' '}
                         </h4>
                         <span className="text-muted">
-                            <Icon as={SourceBranchIcon} />
-                            changeset branch: <strong>{node.description.headRef}</strong>
+                            <Icon as={SourceBranchIcon} /> {node.description.headRef}
                         </span>
                     </div>
                     <DiffStat {...node.description.diffStat} expandedCounts={true} />
                 </div>
             }
             titleClassName="flex-grow-1"
+            // TODO: fix me
             defaultExpanded={1 === 1}
         >
             <Card className={classNames('mt-2', styles.resultCard)}>
@@ -393,7 +394,7 @@ const ChangesetSpecNode: React.FunctionComponent<
                     <Collapsible
                         title={<h3 className="mb-0">Changes</h3>}
                         titleClassName="flex-grow-1"
-                        defaultExpanded={false}
+                        defaultExpanded={true}
                     >
                         <ChangesetSpecFileDiffConnection
                             history={history}
@@ -466,18 +467,21 @@ const WorkspaceStep: React.FunctionComponent<WorkspaceStepProps> = ({
     return (
         <Collapsible
             className="py-2"
-            titleClassName="w-100"
+            titleClassName={styles.collapsible}
             title={
-                <div className="d-flex justify-content-between">
-                    <div className={classNames('flex-grow-1', step.skipped && 'text-muted')}>
-                        <StepStateIcon step={step} /> <strong>Step {step.number}</strong>{' '}
-                        <span className="text-monospace text-ellipsis text-muted">{step.run}</span>
+                <>
+                    <div className={classNames(styles.stepHeader, step.skipped && 'text-muted')}>
+                        <StepStateIcon step={step} />
+                        <h3 className={styles.stepNumber}>Step {step.number}</h3>
+                        <span className={classNames('text-monospace text-muted', styles.stepCommand)}>{step.run}</span>
                     </div>
-                    <div>{step.diffStat && <DiffStat {...step.diffStat} expandedCounts={true} />}</div>
-                    <span className="text-monospace text-muted ml-2">
+                    {step.diffStat && (
+                        <DiffStat className={styles.stepDiffStat} {...step.diffStat} expandedCounts={true} />
+                    )}
+                    <span className={classNames('text-monospace text-muted', styles.stepTime)}>
                         <StepTimer step={step} />
                     </span>
-                </div>
+                </>
             }
         >
             <Card className={classNames('mt-2', styles.stepCard)}>
