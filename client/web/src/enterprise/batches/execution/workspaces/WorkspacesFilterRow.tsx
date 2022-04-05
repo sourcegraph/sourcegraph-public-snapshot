@@ -63,7 +63,7 @@ export const WorkspaceFilterRow: React.FunctionComponent<WorkspaceFilterRowProps
         <div className="d-flex align-items-center mb-2">
             <Form className="d-flex flex-grow-1 mr-2" onSubmit={onSubmit}>
                 <Input
-                    className="m-0"
+                    className="m-0 flex-1"
                     type="search"
                     ref={searchElement}
                     defaultValue={search}
