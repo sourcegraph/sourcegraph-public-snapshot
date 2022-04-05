@@ -155,21 +155,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         [ExternalServiceKind.GITLAB]: gitlabAPIScopeRequired(owner.tags, scopes.gitlab),
     }
 
-    const [githubAppInstallRequestSuccess, setGitHubAppInstallRequestSuccess] = useState(false)
-
-    if (localStorage.getItem('githubInstallationRequest') && isServicesByKind(statusOrError)) {
-        if (statusOrError[ExternalServiceKind.GITHUB]) {
-            localStorage.removeItem('githubInstallationRequest')
-            setGitHubAppInstallRequestSuccess(false)
-        }
-    }
-
-    if (!githubAppInstallRequestSuccess && localStorage.getItem('githubInstallationRequest') === 'success') {
-        setGitHubAppInstallRequestSuccess(true)
-    }
-
     useEffect(() => {
-        eventLogger.logViewEvent('UserSettingsCodeHostConnections')
+        eventLogger.logPageView('UserSettingsCodeHostConnections')
     }, [])
 
     async function checkAndSetOutageAlert(
@@ -252,19 +239,11 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         })
     }, [fetchExternalServices])
 
-    const refetchServices = useCallback(
-        (reason: string | null): void => {
-            fetchExternalServices().catch(error => {
-                setStatusOrError(asError(error))
-            })
-
-            if (reason === 'request') {
-                localStorage.setItem('githubInstallationRequest', 'success')
-                setGitHubAppInstallRequestSuccess(true)
-            }
-        },
-        [fetchExternalServices]
-    )
+    const refetchServices = useCallback((): void => {
+        fetchExternalServices().catch(error => {
+            setStatusOrError(asError(error))
+        })
+    }, [fetchExternalServices])
 
     const logAddRepositoriesClicked = useCallback(
         (source: string) => () => {
@@ -497,8 +476,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
                     const browser: ParentWindow = window.self as ParentWindow
 
-                    browser.onSuccess = (reason: string | null) => {
-                        refetchServices(reason)
+                    browser.onSuccess = () => {
+                        refetchServices()
                     }
                     const popup = browser.open(
                         `${authProvider.authenticationURL as string}&redirect=${encodeURIComponent(firstRedirectURI)}`,
@@ -572,7 +551,6 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                         onDidError={handleError}
                                         loading={kind === ExternalServiceKind.GITHUB && loading && isGitHubAppLoading}
                                         useGitHubApp={kind === ExternalServiceKind.GITHUB && useGitHubApp}
-                                        reloadComponent={refetchServices}
                                     />
                                 </CodeHostListItem>
                             ) : null
