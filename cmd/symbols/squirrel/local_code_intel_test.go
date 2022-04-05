@@ -107,24 +107,26 @@ func collectAnnotations(repoCommitPath types.RepoCommitPath, contents string) []
 
 	// Annotation at the end of the line
 	for i, line := range lines {
-		matches := regexp.MustCompile(`^([^<]+)< "([^"]+)" ([a-zA-Z0-9_.-]+) (def|ref)`).FindStringSubmatch(line)
-		if matches == nil {
+		matchess := regexp.MustCompile(`([^<]+)< "([^"]+)" ([a-zA-Z0-9_.-]+) (def|ref)`).FindAllStringSubmatch(line, -1)
+		if matchess == nil {
 			continue
 		}
 
-		substr, symbol, kind := matches[2], matches[3], matches[4]
+		for _, matches := range matchess {
+			substr, symbol, kind := matches[2], matches[3], matches[4]
 
-		annotations = append(annotations, annotation{
-			repoCommitPathPoint: types.RepoCommitPathPoint{
-				RepoCommitPath: repoCommitPath,
-				Point: types.Point{
-					Row:    i,
-					Column: strings.Index(line, substr),
+			annotations = append(annotations, annotation{
+				repoCommitPathPoint: types.RepoCommitPathPoint{
+					RepoCommitPath: repoCommitPath,
+					Point: types.Point{
+						Row:    i,
+						Column: strings.Index(line, substr),
+					},
 				},
-			},
-			symbol: symbol,
-			kind:   kind,
-		})
+				symbol: symbol,
+				kind:   kind,
+			})
+		}
 	}
 
 	// Annotations below source lines
