@@ -1,5 +1,8 @@
 import { LineChartContent } from 'sourcegraph'
 
+// eslint-disable-next-line no-restricted-imports
+import { sortSeriesByName } from '../../enterprise/insights/core/backend/utils/sort-series-by-name'
+
 export const LINE_CHART_CONTENT_MOCK: LineChartContent<any, string> = {
     chart: 'line',
     data: [
@@ -27,7 +30,7 @@ export const LINE_CHART_CONTENT_MOCK: LineChartContent<any, string> = {
             name: 'B metric',
             stroke: 'var(--warning)',
         },
-    ],
+    ].sort(sortSeriesByName),
     xAxis: {
         dataKey: 'x',
         scale: 'time',
@@ -67,7 +70,7 @@ export const LINE_CHART_TESTS_CASES_EXAMPLE: LineChartContent<any, string> = {
             name: 'React Testing Library',
             stroke: 'var(--red)',
         },
-    ],
+    ].sort(sortSeriesByName),
     xAxis: {
         dataKey: 'x',
         scale: 'time',
@@ -105,7 +108,7 @@ export const LINE_CHART_WITH_MANY_LINES: LineChartContent<any, string> = {
         { dataKey: 'c', name: 'useTheme adoption', stroke: 'var(--blue)' },
         { dataKey: 'd', name: 'Class without CSS modules', stroke: 'var(--purple)' },
         { dataKey: 'f', name: 'Functional components without CSS modules', stroke: 'var(--green)' },
-    ],
+    ].sort(sortSeriesByName),
     xAxis: {
         dataKey: 'x',
         scale: 'time',
@@ -261,7 +264,7 @@ export const LINE_CHART_WITH_HUGE_NUMBER_OF_LINES: LineChartContent<any, string>
         { dataKey: 'r', name: '1.23', stroke: 'var(--oc-grape-7)' },
         { dataKey: 's', name: '1.24', stroke: 'var(--oc-green-7)' },
         { dataKey: 't', name: '1.25', stroke: 'var(--oc-cyan-7)' },
-    ],
+    ].sort(sortSeriesByName),
     xAxis: {
         dataKey: 'x',
         scale: 'time',
@@ -283,7 +286,7 @@ export const LINE_CHART_CONTENT_MOCK_EMPTY: LineChartContent<any, string> = {
             name: 'B metric',
             stroke: 'var(--warning)',
         },
-    ],
+    ].sort(sortSeriesByName),
     xAxis: {
         dataKey: 'x',
         scale: 'time',
