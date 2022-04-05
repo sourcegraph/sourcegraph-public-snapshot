@@ -31,10 +31,10 @@ func IsEnabled() bool {
 		// Insights.
 		return false
 	}
-	if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
-		// Code insights is not supported in single-container Docker demo deployments.
-		return false
-	}
+	// if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
+	// 	// Code insights is not supported in single-container Docker demo deployments.
+	// 	return false
+	// }
 	return true
 }
 
