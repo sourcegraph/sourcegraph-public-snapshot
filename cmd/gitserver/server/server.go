@@ -1143,6 +1143,12 @@ func matchCount(cm *protocol.CommitMatch) int {
 }
 
 func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
+	// 🚨 SECURITY: Only allow POST requests.
+	if strings.ToUpper(r.Method) != "POST" {
+		http.Error(w, "", http.StatusMethodNotAllowed)
+		return
+	}
+
 	operations := s.ensureOperations()
 
 	// Run git log for a single repository.
