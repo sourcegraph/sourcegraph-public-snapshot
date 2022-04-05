@@ -66,6 +66,7 @@ export interface NotebookComponentProps
     >
     exportedFileName: string
     isEmbedded?: boolean
+    outlineContainerElement: HTMLElement | null
     onSerializeBlocks: (blocks: Block[]) => void
     onCopyNotebook: (props: Omit<CopyNotebookProps, 'title'>) => Observable<NotebookFields>
 }
@@ -115,6 +116,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
         globbing,
         searchContextsEnabled,
         settingsCascade,
+        outlineContainerElement,
     }) => {
         const notebook = useMemo(
             () =>
@@ -560,7 +562,13 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                         onFocusPreviousBlock={onFocusLastBlock}
                     />
                 )}
-                <NotebookOutline notebookElement={notebookElement.current} blocks={blocks} />
+                {notebookElement.current && outlineContainerElement && (
+                    <NotebookOutline
+                        notebookElement={notebookElement.current}
+                        outlineContainerElement={outlineContainerElement}
+                        blocks={blocks}
+                    />
+                )}
                 {hoverState.hoverOverlayProps && (
                     <WebHoverOverlay
                         {...hoverState.hoverOverlayProps}

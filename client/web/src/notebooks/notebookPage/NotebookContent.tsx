@@ -28,6 +28,7 @@ export interface NotebookContentProps
     blocks: NotebookBlock[]
     exportedFileName: string
     isEmbedded?: boolean
+    outlineContainerElement: HTMLElement | null
     onUpdateBlocks: (blocks: Block[]) => void
     onCopyNotebook: (props: Omit<CopyNotebookProps, 'title'>) => Observable<NotebookFields>
 }
@@ -51,6 +52,7 @@ export const NotebookContent: React.FunctionComponent<NotebookContentProps> = Re
         settingsCascade,
         platformContext,
         extensionsController,
+        outlineContainerElement,
     }) => {
         const initializerBlocks: BlockInit[] = useMemo(
             () =>
@@ -102,6 +104,7 @@ export const NotebookContent: React.FunctionComponent<NotebookContentProps> = Re
                 onSerializeBlocks={viewerCanManage ? onUpdateBlocks : noop}
                 exportedFileName={exportedFileName}
                 onCopyNotebook={onCopyNotebook}
+                outlineContainerElement={outlineContainerElement}
             />
         )
     }

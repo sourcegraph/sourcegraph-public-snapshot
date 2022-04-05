@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
@@ -95,6 +95,7 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
     const notebookId = match.params.id
     const [notebookTitle, setNotebookTitle] = useState('')
     const [updateQueue, setUpdateQueue] = useState<Partial<NotebookInput>[]>([])
+    const outlineContainerElement = useRef<HTMLDivElement | null>(null)
 
     const exportedFileName = useMemo(
         () => `${notebookTitle ? convertNotebookTitleToFileName(notebookTitle) : 'notebook'}.snb.md`,
@@ -180,7 +181,7 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
         <div className={classNames('w-100', styles.searchNotebookPage)}>
             <PageTitle title={notebookTitle || 'Notebook'} />
             <div className={styles.columns}>
-                <div className={classNames(styles.sideColumn, styles.leftColumn)} data-notebook-outline-container="" />
+                <div className={classNames(styles.sideColumn, styles.leftColumn)} ref={outlineContainerElement} />
                 <div className={styles.centerColumn}>
                     {isNotebookLoaded(notebookOrError) && (
                         <>
@@ -297,6 +298,7 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
                                     settingsCascade={settingsCascade}
                                     platformContext={platformContext}
                                     extensionsController={extensionsController}
+                                    outlineContainerElement={outlineContainerElement.current}
                                 />
                                 <div className={styles.spacer} />
                             </>

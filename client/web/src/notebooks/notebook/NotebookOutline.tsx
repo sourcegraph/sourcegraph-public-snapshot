@@ -14,12 +14,13 @@ import { Block, MarkdownBlock } from '..'
 import styles from './NotebookOutline.module.scss'
 
 interface NotebookOutlineProps {
-    notebookElement: HTMLDivElement | null
+    notebookElement: HTMLElement
+    outlineContainerElement: HTMLElement
     blocks: Block[]
 }
 
 export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = React.memo(
-    ({ notebookElement, blocks }) => {
+    ({ notebookElement, outlineContainerElement, blocks }) => {
         const scrollableContainer = useRef<HTMLDivElement>(null)
         const [visibleHeadings, setVisibleHeadings] = useState<string[]>([])
 
@@ -43,10 +44,6 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
         )
 
         useEffect(() => {
-            if (!notebookElement) {
-                return
-            }
-
             const observeHeadings = (): void => {
                 for (const element of notebookElement.querySelectorAll('h1, h2')) {
                     intersectionObserver.observe(element)
@@ -93,11 +90,6 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
             }
         }, [notebookElement, scrollableContainer, setVisibleHeadings])
 
-        const outlineContainer = document.querySelector<HTMLDivElement>('[data-notebook-outline-container]')
-        if (!outlineContainer) {
-            return null
-        }
-
         return ReactDOM.createPortal(
             <div className={styles.outline}>
                 <div className={styles.title}>Outline</div>
@@ -119,7 +111,7 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
                     ))}
                 </div>
             </div>,
-            outlineContainer
+            outlineContainerElement
         )
     }
 )
