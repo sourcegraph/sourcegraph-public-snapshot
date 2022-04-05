@@ -3,11 +3,11 @@
 exports[`UserNavItem simple 1`] = `
 <DocumentFragment>
   <button
-    aria-controls="menu--1"
+    aria-controls=""
     aria-haspopup="true"
     class="d-flex align-items-center text-decoration-none test-user-nav-item-toggle menuButton"
     data-reach-menu-button=""
-    id="menu-button--menu"
+    id="menu-button-2"
     type="button"
   >
     <div
