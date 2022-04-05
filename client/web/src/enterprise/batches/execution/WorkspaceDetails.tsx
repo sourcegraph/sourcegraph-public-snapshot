@@ -123,7 +123,7 @@ const WorkspaceHeader: React.FunctionComponent<WorkspaceHeaderProps> = ({
                     ? workspace.repository.name
                     : 'Workspace in hidden repository'}
                 {workspace.__typename === 'VisibleBatchSpecWorkspace' && (
-                    <Link to={workspace.repository.url} className="ml-2">
+                    <Link to={workspace.repository.url} className="ml-2" target="_blank" rel="noopener noreferrer">
                         <Icon as={ExternalLinkIcon} />
                     </Link>
                 )}
