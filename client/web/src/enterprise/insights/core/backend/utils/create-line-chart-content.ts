@@ -7,7 +7,7 @@ import { InsightDataSeries, SearchPatternType } from '../../../../../graphql-ope
 import { PageRoutes } from '../../../../../routes.constants'
 import { InsightFilters, SearchBasedInsightSeries } from '../../types'
 
-interface SeriesDataset {
+export interface SeriesDataset {
     dateTime: number
     [seriesKey: string]: number
 }
