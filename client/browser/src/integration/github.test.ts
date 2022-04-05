@@ -10,7 +10,7 @@ import { retry } from '@sourcegraph/shared/src/testing/utils'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 
 import { BrowserIntegrationTestContext, createBrowserIntegrationTestContext } from './context'
-import { closeInstallPageTab, percySnapshot } from './shared'
+import { closeInstallPageTab } from './shared'
 
 describe('GitHub', () => {
     let driver: Driver
@@ -285,8 +285,6 @@ describe('GitHub', () => {
                 timeout: 6000,
             },
         })
-
-        await percySnapshot(driver.page, 'Browser extension: GitHub - blob view with code intel popup')
 
         // 2. Check that token click does not do anything by default
         await token.click()
