@@ -11,9 +11,9 @@
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "StargazerCount": 19299,
-    "ForkCount": 1208
+    "ViewerPermission": "ADMIN",
+    "StargazerCount": 17729,
+    "ForkCount": 1101
    },
    "Error": ""
   }
