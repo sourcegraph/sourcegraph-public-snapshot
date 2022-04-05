@@ -48,7 +48,7 @@ interface SignUpFormProps extends FeatureFlagProps {
     onSignUp: (args: SignUpArguments) => Promise<void>
 
     buttonLabel?: string
-    context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode'>
+    context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode' | 'experimentalFeatures'>
 
     // For use in ExperimentalSignUpPage. Modifies styling and removes terms of service and trial section.
     experimental?: boolean
