@@ -8,7 +8,8 @@
 <div class="cta-group">
 <!--<a class="btn btn-primary" href="#installation">★ ...</a>-->
 <a class="btn" href="#configuration">Configuration</a>
-<a class="btn" href="#configure-sourcegraph-on-elastic-kubernetes-service-eks">Google GKE</a>
+- <a class="btn" href="#configure-sourcegraph-on-google-kubernetes-engine-gke">Google GKE</a>
+<a class="btn" href="#configure-sourcegraph-on-elastic-kubernetes-service-eks">AWS EKS</a>
 <a class="btn" href="#configure-sourcegraph-on-azure-managed-kubernetes-service-aks">Azure AKS</a>
 <a class="btn" href="#configure-sourcegraph-on-other-cloud-providers-or-on-prem">Other cloud providers or on-prem</a>
 <a class="btn" href="#upgrading-sourcegraph">Upgrading</a>
@@ -22,14 +23,15 @@
 1. Review the changes
    - There are [three mechanisms](#reviewing-changes) that can be used to review any customizations made, this is an optional step, but may be useful the first time you deploy Sourcegraph, for peace of mind.
 1. Select your deployment method and follow the guidance:
-   - [Google GKE](#configure-sourcegraph-on-elastic-kubernetes-service-eks)
+   - [Google GKE](#configure-sourcegraph-on-google-kubernetes-engine-gke)
+   - [AWS EKS](#configure-sourcegraph-on-elastic-kubernetes-service-eks)
    - [Azure AKS](#configure-sourcegraph-on-azure-managed-kubernetes-service-aks)
    - [Other cloud providers or on-prem](#configure-sourcegraph-on-other-cloud-providers-or-on-prem)
 
 
 ## Quickstart
 
-> ℹ️ This quickstart guide is useful to those already familiar with Helm who have a good unstanding of how to use Helm in the environment they want to deploy into, and just who want to quickly deploy Sourcegraph with Helm with defalt configuration. If this doesn't cover what you need to know, see the links above for platform specifit guides.
+> ℹ️ This quickstart guide is useful to those already familiar with Helm who have a good understanding of how to use Helm in the environment they want to deploy into, and just who want to quickly deploy Sourcegraph with Helm with default configuration. If this doesn't cover what you need to know, see the links above for platform specific guides.
 
 To use the Helm chart, add the Sourcegraph helm repository:
 
@@ -57,7 +59,7 @@ The default configuration values can be viewed in the [values.yaml](https://gith
 
 To customize configuration settings with an override file, create an empty yaml file (e.g. `override.yaml`) to get started. 
 
-(There are no pre-requisites to creating this file ahead of deployment!)
+(The configuration override file can be created in advance of deployment!)
 
 It's recommended that the override file be maintained in a version control system such as GitHub, but for testing this can be created on the machine from which the Helm deployment commands will be run.
 
@@ -209,11 +211,10 @@ This section is aimed at providing high-level guidance on deploying Sourcegraph 
 
 #### Prerequisites
 
-1. You need to have a GKE cluster (>=1.19) with the `HTTP Load Balancing` addon enabled:
-> Alternatively, you can use your own choice of Ingress Controller and disable the `HTTP Load Balancing` add-on, [learn more](https://cloud.google.com/kubernetes-engine/docs/how-to/custom-ingress-controller).
-2. Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
-3. Connect to your cluster (via either the console or the command line using `gcloud`) and ensure the cluster is up and running by running: `kubectl get nodes` (several `ready` nodes should be listed)
-4. Have the Helm CLI installed and run the following command to link to the Sourcegraph helm repository
+1. You need to have a GKE cluster (>=1.19) with the `HTTP Load Balancing` addon enabled. Alternatively, you can use your own choice of Ingress Controller and disable the `HTTP Load Balancing` add-on, [learn more](https://cloud.google.com/kubernetes-engine/docs/how-to/custom-ingress-controller).
+1. Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
+1. Connect to your cluster (via either the console or the command line using `gcloud`) and ensure the cluster is up and running by running: `kubectl get nodes` (several `ready` nodes should be listed)
+1. Have the Helm CLI installed and run the following command to link to the Sourcegraph helm repository
 
 ```sh
 helm repo add sourcegraph https://sourcegraph.github.io/deploy-sourcegraph-helm/
@@ -318,9 +319,9 @@ Now the deployment is complete, more information on configuring the Sourcegraph 
    - [AWS Load Balancer Controller](https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html)
    - [AWS EBS CSI driver](https://docs.aws.amazon.com/eks/latest/userguide/managing-ebs-csi.html)
 > You may consider deploying your own Ingress Controller instead of ALB Ingress Controller, [learn more](https://kubernetes.github.io/ingress-nginx/)
-2. Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
-3. Connect to your cluster (via either the console or the command line using `eksctl`) and ensure the cluster is up and running by running: `kubectl get nodes` (several `ready` nodes should be listed)
-4. Have the Helm CLI installed and run the following command to link to the Sourcegraph helm repository
+1. Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
+1. Connect to your cluster (via either the console or the command line using `eksctl`) and ensure the cluster is up and running by running: `kubectl get nodes` (several `ready` nodes should be listed)
+1. Have the Helm CLI installed and run the following command to link to the Sourcegraph helm repository
 
 ```sh
 helm repo add sourcegraph https://sourcegraph.github.io/deploy-sourcegraph-helm/
@@ -412,7 +413,7 @@ helm repo add sourcegraph https://sourcegraph.github.io/deploy-sourcegraph-helm/
 
 **1** – Create your override file and add in any configuration override settings you need - see [configuration](#configuration) for more information on override files and the options around what can be conifgured.
 
-Add into your overide file the below values to configure both your ingress hostname and your storage class. We recommend configuring Ingress to use [Application Gateway](https://azure.microsoft.com/en-us/services/application-gateway) to expose Sourcegraph publicly on a domain of your choosing and Storage Class to use [Azure Disk CSI driver](https://docs.microsoft.com/en-us/azure/aks/azure-disk-csi).
+Add into your override file the below values to configure both your ingress hostname and your storage class. We recommend configuring Ingress to use [Application Gateway](https://azure.microsoft.com/en-us/services/application-gateway) to expose Sourcegraph publicly on a domain of your choosing and Storage Class to use [Azure Disk CSI driver](https://docs.microsoft.com/en-us/azure/aks/azure-disk-csi).
 
 [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/azure/override.yaml)
 ```yaml
