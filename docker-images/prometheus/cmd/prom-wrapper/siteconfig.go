@@ -156,6 +156,7 @@ func (c *SiteConfigSubscriber) Subscribe(ctx context.Context) {
 	conf.Init()
 
 	// Load initial alerts configuration
+	c.log.Debug("making initial site config load")
 	siteConfig := newSubscribedSiteConfig(conf.Get().SiteConfiguration)
 	diffs := siteConfig.Diff(c.config)
 	if len(diffs) > 0 {
