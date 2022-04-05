@@ -273,7 +273,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
     )
 
     const [filters, setFilters] = useState<WorkspacePreviewFilters>()
-    const [isDownloadSpecModalOpen, setIsDownloadSpecModalOpen] = useState<boolean>(false)
+    const [isDownloadSpecModalOpen, setIsDownloadSpecModalOpen] = useState(false)
     const [downloadSpecModalDismissed, setDownloadSpecModalDismissed] = useTemporarySetting(
         'batches.downloadSpecModalDismissed',
         false

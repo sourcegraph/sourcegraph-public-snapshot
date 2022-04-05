@@ -76,19 +76,15 @@ export const DownloadSpecModal: React.FunctionComponent<DownloadSpecModalProps> 
                         <h4>About src-cli </h4>
                         <p>
                             src cli is a command line interface to Sourcegraph. Its{' '}
-                            <span className={styles.mono}>batch</span> command allows to run batch specification files
-                            using Docker.
+                            <span className="text-monospace">batch</span> command allows to run batch specification
+                            files using Docker.
                         </p>
                         <Link to="https://docs.sourcegraph.com/cli">Download src-cli</Link>
                     </div>
                 </div>
             </div>
             <div className="d-flex justify-content-between">
-                <Button
-                    className={styles.dontShowAgainButton}
-                    onClick={() => setDownloadSpecModalDismissed(true)}
-                    variant="link"
-                >
+                <Button className="p-0" onClick={() => setDownloadSpecModalDismissed(true)} variant="link">
                     Don't show this again
                 </Button>
                 <div>
