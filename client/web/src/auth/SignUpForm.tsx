@@ -58,7 +58,7 @@ const preventDefault = (event: React.FormEvent): void => event.preventDefault()
 
 export function getPasswordRequirements(): string {
     let requirements = ''
-    const passwordPolicyReference = window.context.experimentalFeatures.passwordPolicy
+    const passwordPolicyReference = context.experimentalFeatures.passwordPolicy
 
     if (passwordPolicyReference && passwordPolicyReference.enabled === true) {
         console.log('Using enhanced password policy.')
@@ -181,7 +181,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
 
     const getPasswordRequirements = (): JSX.Element => {
         let requirements = ''
-        const passwordPolicyReference = window.context.experimentalFeatures.passwordPolicy
+        const passwordPolicyReference = context.experimentalFeatures.passwordPolicy
 
         if (passwordPolicyReference && passwordPolicyReference.enabled === true) {
             if (passwordPolicyReference.minimumLength && passwordPolicyReference.minimumLength > 0) {
@@ -290,9 +290,9 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                             disabled={loading}
                             autoComplete="new-password"
                             minLength={
-                                window.context.experimentalFeatures.passwordPolicy?.enabled &&
-                                window.context.experimentalFeatures.passwordPolicy.minimumLength !== undefined
-                                    ? window.context.experimentalFeatures.passwordPolicy.minimumLength
+                                context.experimentalFeatures.passwordPolicy?.enabled &&
+                                context.experimentalFeatures.passwordPolicy.minimumLength !== undefined
+                                    ? context.experimentalFeatures.passwordPolicy.minimumLength
                                     : 12
                             }
                             placeholder=" "
@@ -405,39 +405,39 @@ function isUsernameUnique(username: string): Observable<string | undefined> {
 }
 
 function validatePassword(password: string): string | undefined {
-    if (window.context.experimentalFeatures.passwordPolicy?.enabled) {
+    if (context.experimentalFeatures.passwordPolicy?.enabled) {
         if (
-            window.context.experimentalFeatures.passwordPolicy.minimumLength &&
-            password.length < window.context.experimentalFeatures.passwordPolicy.minimumLength
+            context.experimentalFeatures.passwordPolicy.minimumLength &&
+            password.length < context.experimentalFeatures.passwordPolicy.minimumLength
         ) {
             return (
                 'Password must be greater than ' +
-                window.context.experimentalFeatures.passwordPolicy.minimumLength.toString() +
+                context.experimentalFeatures.passwordPolicy.minimumLength.toString() +
                 ' characters.'
             )
         }
         if (
-            window.context.experimentalFeatures.passwordPolicy?.numberOfSpecialCharacters &&
-            window.context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters > 0
+            context.experimentalFeatures.passwordPolicy?.numberOfSpecialCharacters &&
+            context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters > 0
         ) {
             const specialCharacters = /[!"#$%&'()*+,./:;<=>?@[\]^_`{|}~-]/
             // This must be kept in sync with the security.go checks
             const count = (password.match(specialCharacters) || []).length
             if (
-                window.context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters &&
-                count < window.context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters
+                context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters &&
+                count < context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters
             ) {
                 return (
                     'Password must contain ' +
-                    window.context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters.toString() +
+                    context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters.toString() +
                     ' special character(s).'
                 )
             }
         }
 
         if (
-            window.context.experimentalFeatures.passwordPolicy.requireAtLeastOneNumber &&
-            window.context.experimentalFeatures.passwordPolicy.requireAtLeastOneNumber
+            context.experimentalFeatures.passwordPolicy.requireAtLeastOneNumber &&
+            context.experimentalFeatures.passwordPolicy.requireAtLeastOneNumber
         ) {
             const validRequireAtLeastOneNumber = /\d+/
             if (password.match(validRequireAtLeastOneNumber) === null) {
@@ -446,8 +446,8 @@ function validatePassword(password: string): string | undefined {
         }
 
         if (
-            window.context.experimentalFeatures.passwordPolicy.requireUpperandLowerCase &&
-            window.context.experimentalFeatures.passwordPolicy.requireUpperandLowerCase
+            context.experimentalFeatures.passwordPolicy.requireUpperandLowerCase &&
+            context.experimentalFeatures.passwordPolicy.requireUpperandLowerCase
         ) {
             const validUseUpperCase = new RegExp('[A-Z]+')
             if (!validUseUpperCase.test(password)) {
