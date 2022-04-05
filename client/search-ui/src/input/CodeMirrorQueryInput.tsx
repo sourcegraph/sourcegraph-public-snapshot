@@ -39,6 +39,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { MonacoQueryInputProps } from './MonacoQueryInput'
 
 import styles from './CodeMirrorQueryInput.module.scss'
+import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
 const replacePattern = /[\n\r↵]/g
 
@@ -213,11 +214,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<MonacoQueryInputPro
     // It looks like <Shortcut ... /> needs a stable onMatch callback, hence we
     // are storing the editor in a ref so that `globalFocus` is stable.
     const globalFocus = useCallback(() => {
-        if (
-            editorReference.current &&
-            !!document.activeElement &&
-            !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)
-        ) {
+        if (editorReference.current && !!document.activeElement && !isInputElement(document.activeElement)) {
             editorReference.current.focus()
         }
     }, [editorReference])
