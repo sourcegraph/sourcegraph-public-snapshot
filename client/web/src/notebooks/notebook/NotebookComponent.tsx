@@ -492,6 +492,17 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
 
         const location = useLocation()
 
+        useEffect(() => {
+            const headingId = location.hash.slice(1)
+            if (!headingId) {
+                return
+            }
+            const heading = document.querySelector(`[id="${headingId}"]`)
+            heading?.scrollIntoView()
+            // Scroll to heading only on mount.
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, [])
+
         if (copiedNotebookOrError && !isErrorLike(copiedNotebookOrError) && copiedNotebookOrError !== LOADING) {
             return <Redirect to={PageRoutes.Notebook.replace(':id', copiedNotebookOrError.id)} />
         }
