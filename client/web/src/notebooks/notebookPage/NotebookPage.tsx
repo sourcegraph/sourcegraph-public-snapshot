@@ -180,7 +180,7 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
         <div className={classNames('w-100', styles.searchNotebookPage)}>
             <PageTitle title={notebookTitle || 'Notebook'} />
             <div className={styles.cols}>
-                <div className={styles.sideCol} />
+                <div className={classNames(styles.outlineContainer)} data-notebook-outline-container="" />
                 <div className={styles.centerCol}>
                     {isNotebookLoaded(notebookOrError) && (
                         <>
@@ -260,55 +260,48 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
                             <hr className="mt-2 mb-3" />
                         </>
                     )}
-                </div>
-                <div className={styles.sideCol} />
-            </div>
-            <div className={styles.cols}>
-                <div
-                    className={classNames(styles.sideCol, styles.outlineContainer)}
-                    data-notebook-outline-container=""
-                />
-                <div className={styles.centerCol}>
-                    {isErrorLike(notebookOrError) && (
-                        <Alert variant="danger">
-                            Error while loading the notebook: <strong>{notebookOrError.message}</strong>
-                        </Alert>
-                    )}
-                    {isErrorLike(updatedNotebookOrError) && (
-                        <Alert variant="danger">
-                            Error while updating the notebook: <strong>{updatedNotebookOrError.message}</strong>
-                        </Alert>
-                    )}
-                    {notebookOrError === LOADING && (
-                        <div className="d-flex justify-content-center">
-                            <LoadingSpinner />
-                        </div>
-                    )}
-                    {isNotebookLoaded(notebookOrError) && (
-                        <>
-                            <NotebookContent
-                                viewerCanManage={notebookOrError.viewerCanManage}
-                                blocks={notebookOrError.blocks}
-                                onUpdateBlocks={onUpdateBlocks}
-                                onCopyNotebook={onCopyNotebook}
-                                exportedFileName={exportedFileName}
-                                globbing={globbing}
-                                streamSearch={streamSearch}
-                                isLightTheme={isLightTheme}
-                                telemetryService={telemetryService}
-                                searchContextsEnabled={searchContextsEnabled}
-                                isSourcegraphDotCom={isSourcegraphDotCom}
-                                location={location}
-                                fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                                authenticatedUser={authenticatedUser}
-                                showSearchContext={showSearchContext}
-                                settingsCascade={settingsCascade}
-                                platformContext={platformContext}
-                                extensionsController={extensionsController}
-                            />
-                            <div className={styles.spacer} />
-                        </>
-                    )}
+                    <>
+                        {isErrorLike(notebookOrError) && (
+                            <Alert variant="danger">
+                                Error while loading the notebook: <strong>{notebookOrError.message}</strong>
+                            </Alert>
+                        )}
+                        {isErrorLike(updatedNotebookOrError) && (
+                            <Alert variant="danger">
+                                Error while updating the notebook: <strong>{updatedNotebookOrError.message}</strong>
+                            </Alert>
+                        )}
+                        {notebookOrError === LOADING && (
+                            <div className="d-flex justify-content-center">
+                                <LoadingSpinner />
+                            </div>
+                        )}
+                        {isNotebookLoaded(notebookOrError) && (
+                            <>
+                                <NotebookContent
+                                    viewerCanManage={notebookOrError.viewerCanManage}
+                                    blocks={notebookOrError.blocks}
+                                    onUpdateBlocks={onUpdateBlocks}
+                                    onCopyNotebook={onCopyNotebook}
+                                    exportedFileName={exportedFileName}
+                                    globbing={globbing}
+                                    streamSearch={streamSearch}
+                                    isLightTheme={isLightTheme}
+                                    telemetryService={telemetryService}
+                                    searchContextsEnabled={searchContextsEnabled}
+                                    isSourcegraphDotCom={isSourcegraphDotCom}
+                                    location={location}
+                                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                    authenticatedUser={authenticatedUser}
+                                    showSearchContext={showSearchContext}
+                                    settingsCascade={settingsCascade}
+                                    platformContext={platformContext}
+                                    extensionsController={extensionsController}
+                                />
+                                <div className={styles.spacer} />
+                            </>
+                        )}
+                    </>
                 </div>
                 <div className={styles.sideCol} />
             </div>

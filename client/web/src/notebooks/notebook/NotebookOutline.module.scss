@@ -3,13 +3,20 @@
     padding: 0.5rem 1rem 1rem 0.5rem;
     width: 100%;
     max-width: 20rem;
-    // Subtract the height of the navbar
-    height: calc(100vh - 3rem);
+    height: 100%;
+    background-color: var(--subtle-bg);
+    border-right: 1px solid var(--border-color);
+}
+
+.title {
+    font-weight: 600;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
 }
 
 .scrollable-container {
     position: relative;
-    height: 100%;
+    height: 95%;
     overflow: hidden;
 
     &:hover {

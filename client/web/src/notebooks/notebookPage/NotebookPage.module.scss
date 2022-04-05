@@ -22,7 +22,11 @@
 }
 
 .side-col {
-    flex: 1;
+    flex: 2;
+
+    @media (max-width: 1520px) {
+        flex: 1;
+    }
 
     @media (--lg-breakpoint-down) {
         display: none;
@@ -30,18 +34,25 @@
 }
 
 .outline-container {
+    display: block;
     position: sticky;
-    top: 0.25rem;
-    height: 100%;
+    top: 0;
+    // Subtract the height of the navbar
+    height: calc(100vh - 2.5rem);
+    flex: 2;
+
+    @media (--lg-breakpoint-down) {
+        display: none;
+    }
 }
 
 .center-col {
-    flex: 1;
-    min-width: #{$viewport-xl};
+    flex: 3;
+    min-width: #{$viewport-lg};
+    max-width: #{$viewport-xl};
 
     @media (--lg-breakpoint-down) {
-        min-width: unset;
-        width: 100%;
+        min-width: 0;
         padding: 0 1rem;
     }
 }

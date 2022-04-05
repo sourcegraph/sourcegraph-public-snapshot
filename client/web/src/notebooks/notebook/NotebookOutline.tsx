@@ -68,7 +68,7 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
                     if (entry.isIntersecting) {
                         visibleHeadingsSet.add(headingId)
                         if (!hasScrolled) {
-                            scrollToOutlineHeading(headingId)
+                            // scrollToOutlineHeading(headingId)
                             hasScrolled = true
                         }
                     } else {
@@ -100,7 +100,7 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
 
         return ReactDOM.createPortal(
             <div className={styles.outline}>
-                <div>Outline</div>
+                <div className={styles.title}>Outline</div>
                 <div className={styles.scrollableContainer} ref={scrollableContainer}>
                     {headings.map(heading => (
                         <div
