@@ -98,7 +98,7 @@ export const OldBatchChangePageContent: React.FunctionComponent<{}> = () => {
                     to preview the commits and changesets that your batch change will make:
                 </p>
                 <CodeSnippet
-                    code={`src batch preview -f ${getFileName(selectedSample.file)}`}
+                    code={`src batch preview -f ${getFileName(selectedSample.name)}`}
                     language="bash"
                     className="mb-3"
                 />
