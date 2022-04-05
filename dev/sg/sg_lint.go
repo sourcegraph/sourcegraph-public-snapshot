@@ -122,7 +122,7 @@ type lintTargets []lint.Target
 
 // Commands converts all lint targets to CLI commands
 func (lt lintTargets) Commands() (cmds []*ffcli.Command) {
-	commandFactory := func(c lint.Target) func(context.Context, []string) error {
+	execFactory := func(c lint.Target) func(context.Context, []string) error {
 		return func(ctx context.Context, args []string) error {
 			if len(args) > 0 {
 				writeFailureLinef("unexpected argument %q provided", args[0])
@@ -138,7 +138,7 @@ func (lt lintTargets) Commands() (cmds []*ffcli.Command) {
 			ShortHelp:  c.Help,
 			LongHelp:   c.Help,
 			FlagSet:    c.FlagSet,
-			Exec:       commandFactory(c)})
+			Exec:       execFactory(c)})
 	}
 	return cmds
 }
