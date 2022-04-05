@@ -23,7 +23,7 @@ export const RepositoryMenuContent: React.FunctionComponent<RepositoryMenuConten
     return loading ? (
         <LoadingSpinner />
     ) : error ? (
-        { error }
+        <span>{error}</span>
     ) : data ? (
         <>
             <div className="px-2 py-1">
