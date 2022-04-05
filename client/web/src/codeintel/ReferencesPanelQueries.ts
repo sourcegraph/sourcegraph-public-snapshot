@@ -43,7 +43,9 @@ const codeIntelFragments = gql`
     }
 `
 
-const gitBlobLsifDataQueryFragment = gql`
+export const USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY = gql`
+    ${codeIntelFragments}
+
     fragment PreciseCodeIntelForLocationFields on GitBlobLSIFData {
         references(
             line: $line
@@ -67,9 +69,7 @@ const gitBlobLsifDataQueryFragment = gql`
             ...LocationConnectionFields
         }
     }
-`
 
-export const USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY = gql`
     query UsePreciseCodeIntelForPosition(
         $repository: String!
         $commit: String!
@@ -94,12 +94,11 @@ export const USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY = gql`
             }
         }
     }
-
-    ${codeIntelFragments}
-    ${gitBlobLsifDataQueryFragment}
 `
 
 export const LOAD_ADDITIONAL_REFERENCES_QUERY = gql`
+    ${codeIntelFragments}
+
     query LoadAdditionalReferences(
         $repository: String!
         $commit: String!
@@ -130,11 +129,11 @@ export const LOAD_ADDITIONAL_REFERENCES_QUERY = gql`
             }
         }
     }
-
-    ${codeIntelFragments}
 `
 
 export const LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY = gql`
+    ${codeIntelFragments}
+
     query LoadAdditionalImplementations(
         $repository: String!
         $commit: String!
@@ -165,8 +164,6 @@ export const LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY = gql`
             }
         }
     }
-
-    ${codeIntelFragments}
 `
 
 export const FETCH_HIGHLIGHTED_BLOB = gql`
@@ -190,63 +187,56 @@ export const FETCH_HIGHLIGHTED_BLOB = gql`
     }
 `
 
-const searchResultsFragment = gql`
-    fragment SearchResults on Search {
-        __typename
-        results {
+export const CODE_INTEL_SEARCH_QUERY = gql`
+    query CodeIntelSearch($query: String!) {
+        search(query: $query) {
             __typename
             results {
-                ... on FileMatch {
-                    __typename
-                    file {
-                        url
-                        path
-                        commit {
-                            oid
-                        }
-                        content
-                    }
-                    repository {
-                        name
-                    }
-                    symbols {
-                        name
-                        kind
-                        location {
+                __typename
+                results {
+                    ... on FileMatch {
+                        __typename
+                        file {
                             url
-                            resource {
-                                path
+                            path
+                            commit {
+                                oid
                             }
-                            range {
-                                start {
-                                    line
-                                    character
-                                }
-                                end {
-                                    line
-                                    character
-                                }
-                            }
+                            content
                         }
-                        fileLocal
-                    }
-                    lineMatches {
-                        lineNumber
-                        offsetAndLengths
+                        repository {
+                            name
+                        }
+                        symbols {
+                            name
+                            kind
+                            location {
+                                url
+                                resource {
+                                    path
+                                }
+                                range {
+                                    start {
+                                        line
+                                        character
+                                    }
+                                    end {
+                                        line
+                                        character
+                                    }
+                                }
+                            }
+                            fileLocal
+                        }
+                        lineMatches {
+                            lineNumber
+                            offsetAndLengths
+                        }
                     }
                 }
             }
         }
     }
-`
-
-export const CODE_INTEL_SEARCH_QUERY = gql`
-    query CodeIntelSearch($query: String!) {
-        search(query: $query) {
-            ...SearchResults
-        }
-    }
-    ${searchResultsFragment}
 `
 
 export const RESOLVE_REPO_REVISION_BLOB_QUERY = gql`

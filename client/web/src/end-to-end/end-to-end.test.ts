@@ -6,7 +6,7 @@ import MockDate from 'mockdate'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import { afterEachRecordCoverage } from '@sourcegraph/shared/src/testing/coverage'
-import { createDriverForTest, Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
 
@@ -87,14 +87,12 @@ describe('e2e test suite', () => {
         test('Repositories list', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/site-admin/repositories?query=gorilla%2Fmux')
             await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
-            await percySnapshot(driver.page, 'Repositories list')
         })
 
         test('Site admin overview', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/site-admin')
             await driver.page.waitForSelector('.test-site-admin-overview-menu', { visible: true })
             await driver.page.waitForSelector('.test-product-certificate', { visible: true })
-            await percySnapshot(driver.page, 'Site admin overview')
         })
     })
 
@@ -593,7 +591,6 @@ describe('e2e test suite', () => {
                     await hoverOver(24, 6)
 
                     await getHoverContents() // verify there is a hover
-                    await percySnapshot(driver.page, 'Code intel hover tooltip')
                 })
 
                 describe('jump to definition', () => {
