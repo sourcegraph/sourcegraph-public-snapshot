@@ -81,7 +81,6 @@ func TestResolverTo(t *testing.T) {
 	// codecov coverage reports are noisy.
 	resolvers := []interface{}{
 		&FileMatchResolver{db: db},
-		&GitTreeEntryResolver{db: db},
 		&NamespaceResolver{},
 		&NodeResolver{},
 		&RepositoryResolver{db: db},
@@ -92,12 +91,40 @@ func TestResolverTo(t *testing.T) {
 	}
 	for _, r := range resolvers {
 		typ := reflect.TypeOf(r)
-		for i := 0; i < typ.NumMethod(); i++ {
-			if name := typ.Method(i).Name; strings.HasPrefix(name, "To") {
-				reflect.ValueOf(r).MethodByName(name).Call(nil)
+		t.Run(typ.Name(), func(t *testing.T) {
+			for i := 0; i < typ.NumMethod(); i++ {
+				if name := typ.Method(i).Name; strings.HasPrefix(name, "To") {
+					reflect.ValueOf(r).MethodByName(name).Call(nil)
+				}
 			}
-		}
+		})
 	}
+
+	t.Run("GitTreeEntryResolver", func(t *testing.T) {
+		blobStat, err := os.Stat("graphqlbackend_test.go")
+		if err != nil {
+			t.Fatalf("unexpected error opening file: %s", err)
+		}
+		blobEntry := &GitTreeEntryResolver{db: db, stat: blobStat}
+		if _, isBlob := blobEntry.ToGitBlob(); !isBlob {
+			t.Errorf("expected blobEntry to be blob")
+		}
+		if _, isTree := blobEntry.ToGitTree(); isTree {
+			t.Errorf("expected blobEntry to be blob, but is tree")
+		}
+
+		treeStat, err := os.Stat(".")
+		if err != nil {
+			t.Fatalf("unexpected error opening directory: %s", err)
+		}
+		treeEntry := &GitTreeEntryResolver{db: db, stat: treeStat}
+		if _, isBlob := treeEntry.ToGitBlob(); isBlob {
+			t.Errorf("expected treeEntry to be tree, but is blob")
+		}
+		if _, isTree := treeEntry.ToGitTree(); !isTree {
+			t.Errorf("expected treeEntry to be tree")
+		}
+	})
 }
 
 func TestMain(m *testing.M) {

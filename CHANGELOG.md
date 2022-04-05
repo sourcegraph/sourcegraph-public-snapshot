@@ -27,6 +27,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Code Insights: A global dashboard will now be automatically created while in limited access mode to provide consistent visibility for unlocked insights. This dashboard cannot be deleted or modified while in limited access mode. [#32992](https://github.com/sourcegraph/sourcegraph/pull/32992)
 - Update "getting started checklist for visitors" to a new design [TODO:]
 - Update "getting started/quick start checklist for visitors" to a new design [#32882](https://github.com/sourcegraph/sourcegraph/pull/32882)
+- Code Insights: Capture group values are now restricted to 100 characters. [#32828](https://github.com/sourcegraph/sourcegraph/pull/32828)
 
 ### Fixed
 

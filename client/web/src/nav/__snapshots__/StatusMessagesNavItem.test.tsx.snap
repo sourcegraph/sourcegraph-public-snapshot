@@ -3,6 +3,7 @@
 exports[`StatusMessagesNavItem no messages 1`] = `
 <DocumentFragment>
   <button
+    aria-label="Show status messages"
     class="btn btnLink nav-link py-0 px-0 percy-hide chromatic-ignore"
     type="button"
   >
@@ -43,6 +44,7 @@ exports[`StatusMessagesNavItem no messages 1`] = `
 exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`] = `
 <DocumentFragment>
   <button
+    aria-label="Show status messages"
     class="btn btnLink nav-link py-0 px-0 percy-hide chromatic-ignore"
     type="button"
   >
@@ -83,6 +85,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`]
 exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
 <DocumentFragment>
   <button
+    aria-label="Show status messages"
     class="btn btnLink nav-link py-0 px-0 percy-hide chromatic-ignore"
     type="button"
   >
@@ -123,6 +126,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
 exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site admin 1`] = `
 <DocumentFragment>
   <button
+    aria-label="Show status messages"
     class="btn btnLink nav-link py-0 px-0 percy-hide chromatic-ignore"
     type="button"
   >
@@ -163,6 +167,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site 
 exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admin 1`] = `
 <DocumentFragment>
   <button
+    aria-label="Show status messages"
     class="btn btnLink nav-link py-0 px-0 percy-hide chromatic-ignore"
     type="button"
   >
@@ -203,6 +208,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
 exports[`StatusMessagesNavItem one SyncError message as non-site admin 1`] = `
 <DocumentFragment>
   <button
+    aria-label="Show status messages"
     class="btn btnLink nav-link py-0 px-0 percy-hide chromatic-ignore"
     type="button"
   >
@@ -243,6 +249,7 @@ exports[`StatusMessagesNavItem one SyncError message as non-site admin 1`] = `
 exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
 <DocumentFragment>
   <button
+    aria-label="Show status messages"
     class="btn btnLink nav-link py-0 px-0 percy-hide chromatic-ignore"
     type="button"
   >

@@ -5,6 +5,7 @@ import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/ke
 
 import { SourcegraphWebApp } from '../SourcegraphWebApp'
 
+import { RepositoryMenuContent } from './codeintel/RepositoryMenu'
 import { enterpriseExtensionAreaHeaderNavItems } from './extensions/extension/extensionAreaHeaderNavItems'
 import { enterpriseExtensionAreaRoutes } from './extensions/extension/routes'
 import { enterpriseExtensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'
@@ -47,6 +48,7 @@ export const EnterpriseWebApp: React.FunctionComponent = () => (
         routes={enterpriseRoutes}
         keyboardShortcuts={KEYBOARD_SHORTCUTS}
         codeIntelligenceEnabled={true}
+        repositoryMenuContent={RepositoryMenuContent}
         codeInsightsEnabled={true}
         batchChangesEnabled={window.context.batchChangesEnabled}
         searchContextsEnabled={true}

@@ -13,12 +13,12 @@ let
   # Pin a specific version of universal-ctags to the same version as in cmd/symbols/ctags-install-alpine.sh.
   ctags-overlay = (self: super: {
     universal-ctags = super.universal-ctags.overrideAttrs (old: {
-      version = "5.9.20220206.0";
+      version = "5.9.20220403.0";
       src = super.fetchFromGitHub {
         owner = "universal-ctags";
         repo = "ctags";
-        rev = "40603a68c1f3b14dc1db4671111096733f6d2485";
-        sha256 = "sha256-oqrLO6/+TP5ccimkgZJ66agaUcNQMOalwVsY8GWS2rg=";
+        rev = "f95bb3497f53748c2b6afc7f298cff218103ab90";
+        sha256 = "sha256-pd89KERQj6K11Nue3YFNO+NLOJGqcMnHkeqtWvMFk38=";
       };
       # disable checks, else we get `make[1]: *** No rule to make target 'optlib/cmake.c'.  Stop.`
       doCheck = false;
