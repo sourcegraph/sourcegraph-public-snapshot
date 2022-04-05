@@ -3,14 +3,13 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	errors2 "github.com/graph-gophers/graphql-go/errors"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/gqltesting"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -67,7 +66,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 		config             *schema.PermissionsUserMapping
 		mockVerifiedEmails []*database.UserEmail
 		mockUsers          []*types.User
-		gqlTests           func(database.DB) []*gqltesting.Test
+		gqlTests           func(database.DB) []*graphqlbackend.Test
 		expUserIDs         map[int32]struct{}
 		expAccounts        *extsvc.Accounts
 	}{{
@@ -81,8 +80,8 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 				Email:  "alice@example.com",
 			},
 		},
-		gqlTests: func(db database.DB) []*gqltesting.Test {
-			return []*gqltesting.Test{{
+		gqlTests: func(db database.DB) []*graphqlbackend.Test {
+			return []*graphqlbackend.Test{{
 				Schema: mustParseGraphQLSchema(t, db),
 				Query: `
 							mutation {
@@ -123,8 +122,8 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 				Username: "alice",
 			},
 		},
-		gqlTests: func(db database.DB) []*gqltesting.Test {
-			return []*gqltesting.Test{{
+		gqlTests: func(db database.DB) []*graphqlbackend.Test {
+			return []*graphqlbackend.Test{{
 				Schema: mustParseGraphQLSchema(t, db),
 				Query: `
 						mutation {
@@ -193,7 +192,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 			db.ReposFunc.SetDefaultReturn(repos)
 			db.PermsFunc.SetDefaultReturn(perms)
 
-			gqltesting.RunTests(t, test.gqlTests(db))
+			graphqlbackend.RunTests(t, test.gqlTests(db))
 		})
 	}
 }
@@ -378,11 +377,11 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		gqlTests []*gqltesting.Test
+		gqlTests []*graphqlbackend.Test
 	}{
 		{
 			name: "check authorized repos via email",
-			gqlTests: []*gqltesting.Test{
+			gqlTests: []*graphqlbackend.Test{
 				{
 					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
@@ -410,7 +409,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 		},
 		{
 			name: "check authorized repos via username",
-			gqlTests: []*gqltesting.Test{
+			gqlTests: []*graphqlbackend.Test{
 				{
 					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
@@ -438,7 +437,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 		},
 		{
 			name: "check pending authorized repos via email",
-			gqlTests: []*gqltesting.Test{
+			gqlTests: []*graphqlbackend.Test{
 				{
 					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
@@ -466,7 +465,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 		},
 		{
 			name: "check pending authorized repos via username",
-			gqlTests: []*gqltesting.Test{
+			gqlTests: []*graphqlbackend.Test{
 				{
 					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
@@ -494,7 +493,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 		},
 		{
 			name: "check pending authorized repos via username with pagination, page 1",
-			gqlTests: []*gqltesting.Test{
+			gqlTests: []*graphqlbackend.Test{
 				{
 					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
@@ -523,7 +522,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 		},
 		{
 			name: "check pending authorized repos via username with pagination, page 2",
-			gqlTests: []*gqltesting.Test{
+			gqlTests: []*graphqlbackend.Test{
 				{
 					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
@@ -552,7 +551,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 		},
 		{
 			name: "check pending authorized repos via username given no IDs after, after ID, return empty",
-			gqlTests: []*gqltesting.Test{
+			gqlTests: []*graphqlbackend.Test{
 				{
 					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
@@ -577,10 +576,37 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "check pending authorized repos via username given afterID DNE, return error",
+			gqlTests: []*graphqlbackend.Test{
+				{
+					Schema: mustParseGraphQLSchema(t, db),
+					Query: `
+						{
+							authorizedUserRepositories(
+								first: 2,
+								after: "UmVwb3NpdG9yeTo3",
+								username: "bob") {
+								nodes {
+									id
+								}
+							}
+						}
+					`,
+					ExpectedResult: "null",
+					ExpectedErrors: []*errors2.QueryError{
+						{
+							Message: "after id set, but does not exist",
+							Path:    []interface{}{"authorizedUserRepositories", "nodes"},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			gqltesting.RunTests(t, test.gqlTests)
+			graphqlbackend.RunTests(t, test.gqlTests)
 		})
 	}
 }
@@ -616,11 +642,11 @@ func TestResolver_UsersWithPendingPermissions(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		gqlTests []*gqltesting.Test
+		gqlTests []*graphqlbackend.Test
 	}{
 		{
 			name: "list pending users with their bind IDs",
-			gqlTests: []*gqltesting.Test{
+			gqlTests: []*graphqlbackend.Test{
 				{
 					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
@@ -642,7 +668,7 @@ func TestResolver_UsersWithPendingPermissions(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			gqltesting.RunTests(t, test.gqlTests)
+			graphqlbackend.RunTests(t, test.gqlTests)
 		})
 	}
 }
@@ -696,11 +722,11 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		gqlTests []*gqltesting.Test
+		gqlTests []*graphqlbackend.Test
 	}{
 		{
 			name: "get authorized users",
-			gqlTests: []*gqltesting.Test{
+			gqlTests: []*graphqlbackend.Test{
 				{
 					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
@@ -730,7 +756,7 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 		},
 		{
 			name: "get authorized users with pagination, page 1",
-			gqlTests: []*gqltesting.Test{
+			gqlTests: []*graphqlbackend.Test{
 				{
 					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
@@ -762,7 +788,7 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 		},
 		{
 			name: "get authorized users with pagination, page 2",
-			gqlTests: []*gqltesting.Test{
+			gqlTests: []*graphqlbackend.Test{
 				{
 					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
@@ -794,7 +820,7 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 		},
 		{
 			name: "get authorized users given no IDs after, after ID, return empty",
-			gqlTests: []*gqltesting.Test{
+			gqlTests: []*graphqlbackend.Test{
 				{
 					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
@@ -822,10 +848,38 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "get authorized users given afterID DNE, return error",
+			gqlTests: []*graphqlbackend.Test{
+				{
+					Schema: mustParseGraphQLSchema(t, db),
+					Query: `
+{
+					repository(name: "github.com/owner/repo") {
+						authorizedUsers(
+							first: 2,
+							after: "VXNlcjo3") {
+							nodes {
+								id
+							}
+						}
+					}
+				}
+			`,
+					ExpectedResult: `{"repository":null}`,
+					ExpectedErrors: []*errors2.QueryError{
+						{
+							Message: "after id set, but does not exist",
+							Path:    []interface{}{"repository", "authorizedUsers", "nodes"},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			gqltesting.RunTests(t, test.gqlTests)
+			graphqlbackend.RunTests(t, test.gqlTests)
 		})
 	}
 }
@@ -873,11 +927,11 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		gqlTests []*gqltesting.Test
+		gqlTests []*graphqlbackend.Test
 	}{
 		{
 			name: "get permissions information",
-			gqlTests: []*gqltesting.Test{
+			gqlTests: []*graphqlbackend.Test{
 				{
 					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
@@ -908,7 +962,7 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			gqltesting.RunTests(t, test.gqlTests)
+			graphqlbackend.RunTests(t, test.gqlTests)
 		})
 	}
 }
@@ -956,11 +1010,11 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		gqlTests []*gqltesting.Test
+		gqlTests []*graphqlbackend.Test
 	}{
 		{
 			name: "get permissions information",
-			gqlTests: []*gqltesting.Test{
+			gqlTests: []*graphqlbackend.Test{
 				{
 					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
@@ -991,7 +1045,7 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			gqltesting.RunTests(t, test.gqlTests)
+			graphqlbackend.RunTests(t, test.gqlTests)
 		})
 	}
 }
@@ -1065,7 +1119,7 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
-		test := &gqltesting.Test{
+		test := &graphqlbackend.Test{
 			Context: ctx,
 			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
@@ -1087,7 +1141,7 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 					`,
 		}
 
-		gqltesting.RunTests(t, []*gqltesting.Test{test})
+		graphqlbackend.RunTests(t, []*graphqlbackend.Test{test})
 
 		// Assert that we actually tried to store perms
 		h := subReposStore.UpsertFunc.History()
