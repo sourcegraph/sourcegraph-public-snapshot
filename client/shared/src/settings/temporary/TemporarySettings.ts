@@ -30,6 +30,7 @@ export interface TemporarySettingsSchema {
     'cta.browserExtensionAlertDismissed': boolean
     'cta.ideExtensionAlertDismissed': boolean
     'batches.defaultListFilters': MultiSelectState<BatchChangeState>
+    'batches.downloadSpecModalDismissed': boolean
 }
 
 /**
