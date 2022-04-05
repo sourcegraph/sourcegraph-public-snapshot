@@ -489,7 +489,7 @@ const WorkspaceStep: React.FunctionComponent<WorkspaceStepProps> = ({
                                 <Tab key="output-variables">Output variables</Tab>
                                 <Tab key="diff">Diff</Tab>
                                 <Tab key="files-env">Files / Env</Tab>
-                                <Tab key="command-container">Commands / container</Tab>
+                                <Tab key="command-container">Commands / Container</Tab>
                             </TabList>
                             <TabPanels>
                                 <TabPanel className="pt-2" key="logs">
