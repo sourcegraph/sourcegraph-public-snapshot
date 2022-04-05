@@ -1,12 +1,4 @@
 import semver from 'semver'
-import { LineChartSeries } from 'sourcegraph'
-
-interface SeriesDataset {
-    dateTime: number
-    [seriesKey: string]: number
-}
-
-export type SortSeriesByNameParameter = Pick<LineChartSeries<SeriesDataset>, 'name'>
 
 export function semanticSort(stringA?: string, stringB?: string): number {
     if (!stringA || !stringB) {
