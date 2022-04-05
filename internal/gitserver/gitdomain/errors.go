@@ -35,7 +35,7 @@ type BadCommitError struct {
 	Repo   api.RepoName
 }
 
-func (e BadCommitError) Error() string {
+func (e *BadCommitError) Error() string {
 	return fmt.Sprintf("ResolveRevision: got bad commit %q for repo %q at revision %q", e.Commit, e.Repo, e.Spec)
 }
 
