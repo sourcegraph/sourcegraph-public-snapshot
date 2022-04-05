@@ -90,6 +90,27 @@ var (
 	}
 )
 
+var allIndexers = []gql.CodeIntelIndexerResolver{
+	&lsifNode,
+	&msftNode,
+	&lsifTypescript,
+	&lsifJava,
+	&msftJava,
+	&lsifGo,
+	&lsifClang,
+	&lsifCPP,
+	&lsifDart,
+	&workivaDart,
+	&hieLSIF,
+	&lsifJsonnet,
+	&lsifOcaml,
+	&lsifPy,
+	&rustAnalyzer,
+	&lsifPHP,
+	&lsifTerraform,
+	&lsifDotnet,
+}
+
 // A map of file extension to a list of indexers in order of recommendation
 // from most to least.
 var languageToIndexer = map[string][]gql.CodeIntelIndexerResolver{
