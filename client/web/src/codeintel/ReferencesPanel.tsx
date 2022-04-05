@@ -263,8 +263,8 @@ export const ReferencesList: React.FunctionComponent<
         fileContent: props.fileContent,
         searchToken: props.searchToken,
         spec: props.spec,
-        repoIsFork: props.isFork,
-        repoIsArchived: props.isArchived,
+        isFork: props.isFork,
+        isArchived: props.isArchived,
         getSetting,
     })
 
