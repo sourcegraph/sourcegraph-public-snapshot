@@ -1,12 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-import { ApolloError, QueryResult } from '@apollo/client'
+import { QueryResult } from '@apollo/client'
 
-import {
-    appendLineRangeQueryParameter,
-    appendSubtreeQueryParameter,
-    toPositionOrRangeQueryParameter,
-} from '@sourcegraph/common'
+import { ErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, useLazyQuery, useQuery } from '@sourcegraph/http-client'
 
 import { ConnectionQueryArguments } from '../components/FilteredConnection'
@@ -18,21 +14,17 @@ import {
     LoadAdditionalReferencesVariables,
     LoadAdditionalImplementationsResult,
     LoadAdditionalImplementationsVariables,
-    CodeIntelSearchResult,
-    CodeIntelSearchVariables,
-    LocationFields,
 } from '../graphql-operations'
 
 import { LanguageSpec } from './language-specs/languagespec'
-import { Location, buildPreciseLocation, buildSearchBasedLocation } from './location'
+import { Location, buildPreciseLocation } from './location'
 import {
     LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY,
     LOAD_ADDITIONAL_REFERENCES_QUERY,
-    CODE_INTEL_SEARCH_QUERY,
     USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY,
 } from './ReferencesPanelQueries'
-import { definitionQuery, referencesQuery } from './searchBased'
-import { sortByProximity } from './sort'
+import { SettingsGetter } from './settings'
+import { useSearchBasedCodeIntel } from './useSearchBasedCodeIntel'
 
 interface CodeIntelData {
     references: {
@@ -51,7 +43,7 @@ interface CodeIntelData {
 
 export interface UseCodeIntelResult {
     data?: CodeIntelData
-    error?: ApolloError
+    error?: ErrorLike
     loading: boolean
 
     referencesHasNextPage: boolean
@@ -68,6 +60,9 @@ interface UseCodeIntelParameters {
     searchToken: string
     spec: LanguageSpec
     fileContent: string
+    repoIsFork: boolean
+    repoIsArchived: boolean
+    getSetting: SettingsGetter
 }
 
 export const useCodeIntel = ({
@@ -75,19 +70,11 @@ export const useCodeIntel = ({
     searchToken,
     spec,
     fileContent,
+    repoIsFork,
+    repoIsArchived,
+    getSetting,
 }: UseCodeIntelParameters): UseCodeIntelResult => {
     const [codeIntelData, setCodeIntelData] = useState<CodeIntelData>()
-    const filterDefinitions = useCallback(
-        (results: Location[]) =>
-            spec?.filterDefinitions
-                ? spec.filterDefinitions<Location>(results, {
-                      repo: variables.repository,
-                      fileContent,
-                      filePath: variables.path,
-                  })
-                : results,
-        [spec, fileContent, variables.path, variables.repository]
-    )
 
     const fellBackToSearchBased = useRef(false)
     const shouldFetchPrecise = useRef(true)
@@ -105,88 +92,47 @@ export const useCodeIntel = ({
         variables.firstImplementations,
     ])
 
-    const [fetchSearchBasedReferences, fetchSearchBasedReferencesResult] = useLazyQuery<
-        CodeIntelSearchResult,
-        CodeIntelSearchVariables
-    >(CODE_INTEL_SEARCH_QUERY, {
-        fetchPolicy: 'no-cache',
-        onCompleted: result => {
-            const newReferences = searchResultsToLocations(result).map(buildSearchBasedLocation)
-            const sorted = sortByProximity(newReferences, location.pathname)
+    const handleSearchBasedReferences = (references: Location[]): void => {
+        setCodeIntelData(previousData => ({
+            ...(previousData || {
+                implementations: { endCursor: null, nodes: [] },
+                definitions: { endCursor: null, nodes: [] },
+            }),
+            references: {
+                endCursor: null,
+                nodes: references,
+            },
+        }))
+    }
 
-            const previousData = codeIntelData
-            if (!previousData) {
-                setCodeIntelData({
-                    implementations: { endCursor: null, nodes: [] },
-                    definitions: { endCursor: null, nodes: [] },
-                    references: {
-                        endCursor: null,
-                        nodes: sorted,
-                    },
-                })
-            } else {
-                setCodeIntelData({
-                    implementations: previousData.implementations,
-                    definitions: previousData.definitions,
-                    references: {
-                        endCursor: null,
-                        nodes: sorted,
-                    },
-                })
-            }
-        },
+    const handleSearchBasedDefinitions = (definitions: Location[]): void => {
+        setCodeIntelData(previousData => ({
+            ...(previousData || {
+                implementations: { endCursor: null, nodes: [] },
+                references: { endCursor: null, nodes: [] },
+            }),
+            definitions: {
+                endCursor: null,
+                nodes: definitions,
+            },
+        }))
+    }
+
+    const {
+        loading: searchBasedLoading,
+        error: searchBasedError,
+        fetch: fetchSearchBasedCodeIntel,
+    } = useSearchBasedCodeIntel({
+        repo: variables.repository,
+        commit: variables.commit,
+        path: variables.path,
+        searchToken,
+        fileContent,
+        spec,
+        isFork: repoIsFork,
+        isArchived: repoIsArchived,
+        getSetting,
     })
-
-    const [fetchSearchBasedDefinitions, fetchSearchBasedDefinitionsResult] = useLazyQuery<
-        CodeIntelSearchResult,
-        CodeIntelSearchVariables
-    >(CODE_INTEL_SEARCH_QUERY, {
-        fetchPolicy: 'no-cache',
-        onCompleted: result => {
-            const newDefinitions = searchResultsToLocations(result).map(buildSearchBasedLocation)
-            const sorted = sortByProximity(newDefinitions, location.pathname)
-            // Definitions are filtered based on the LanguageSpec
-            const filteredDefinitions = filterDefinitions(sorted)
-
-            const previousData = codeIntelData
-            if (!previousData) {
-                setCodeIntelData({
-                    implementations: { endCursor: null, nodes: [] },
-                    references: { endCursor: null, nodes: [] },
-                    definitions: {
-                        endCursor: null,
-                        nodes: filteredDefinitions,
-                    },
-                })
-            } else {
-                setCodeIntelData({
-                    implementations: previousData.implementations,
-                    references: previousData.references,
-                    definitions: {
-                        endCursor: null,
-                        nodes: filteredDefinitions,
-                    },
-                })
-            }
-        },
-    })
-
-    const fetchSearchBasedReferencesForToken = useCallback(
-        (searchToken: string) => {
-            const terms = referencesQuery({ searchToken, path: variables.path, fileExts: spec.fileExts })
-            const query = terms.join(' ')
-            return fetchSearchBasedReferences({ variables: { query } })
-        },
-        [fetchSearchBasedReferences, variables.path, spec.fileExts]
-    )
-
-    const fetchSearchBasedDefinitionsForToken = useCallback(
-        (searchToken: string) => {
-            const query = definitionQuery({ searchToken, path: variables.path, fileExts: spec.fileExts }).join(' ')
-            return fetchSearchBasedDefinitions({ variables: { query } })
-        },
-        [fetchSearchBasedDefinitions, variables.path, spec.fileExts]
-    )
 
     const { error, loading } = useQuery<
         UsePreciseCodeIntelForPositionResult,
@@ -207,10 +153,7 @@ export const useCodeIntel = ({
                     console.info('No LSIF data. Falling back to search-based code intelligence.')
                     fellBackToSearchBased.current = true
 
-                    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-                    fetchSearchBasedDefinitionsForToken(searchToken)
-                    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-                    fetchSearchBasedReferencesForToken(searchToken)
+                    fetchSearchBasedCodeIntel(handleSearchBasedReferences, handleSearchBasedDefinitions)
                 }
             }
         },
@@ -295,12 +238,9 @@ export const useCodeIntel = ({
         })
     }
 
-    const combinedLoading =
-        loading ||
-        (fellBackToSearchBased.current &&
-            (fetchSearchBasedReferencesResult.loading || fetchSearchBasedDefinitionsResult.loading))
+    const combinedLoading = loading || (fellBackToSearchBased.current && searchBasedLoading)
 
-    const combinedError = error || fetchSearchBasedReferencesResult.error || fetchSearchBasedDefinitionsResult.error
+    const combinedError = error || searchBasedError
 
     return {
         data: codeIntelData,
@@ -347,66 +287,4 @@ const getLsifData = ({
             nodes: lsif.definitions.nodes.map(buildPreciseLocation),
         },
     }
-}
-
-function searchResultsToLocations(result: CodeIntelSearchResult): LocationFields[] {
-    if (!result || !result.search) {
-        return []
-    }
-
-    const searchResults = result.search.results.results
-        .filter(value => value !== undefined)
-        .filter(result => result.__typename === 'FileMatch')
-
-    const newReferences: LocationFields[] = []
-    for (const result of searchResults) {
-        if (result.__typename !== 'FileMatch') {
-            continue
-        }
-
-        const resource = {
-            path: result.file.path,
-            content: result.file.content,
-            repository: result.repository,
-            commit: {
-                oid: result.file.commit.oid,
-            },
-        }
-
-        for (const lineMatch of result.lineMatches) {
-            const positionOrRangeQueryParameter = toPositionOrRangeQueryParameter({
-                // TODO: only using first offset?
-                position: { line: lineMatch.lineNumber + 1, character: lineMatch.offsetAndLengths[0][0] + 1 },
-            })
-            const url = appendLineRangeQueryParameter(
-                appendSubtreeQueryParameter(result.file.url),
-                positionOrRangeQueryParameter
-            )
-            newReferences.push({
-                url,
-                resource,
-                range: {
-                    start: {
-                        line: lineMatch.lineNumber,
-                        character: lineMatch.offsetAndLengths[0][0],
-                    },
-                    end: {
-                        line: lineMatch.lineNumber,
-                        character: lineMatch.offsetAndLengths[0][0] + lineMatch.offsetAndLengths[0][1],
-                    },
-                },
-            })
-        }
-
-        const symbolReferences = result.symbols.map(symbol => ({
-            url: symbol.location.url,
-            resource,
-            range: symbol.location.range,
-        }))
-        for (const symbolReference of symbolReferences) {
-            newReferences.push(symbolReference)
-        }
-    }
-
-    return newReferences
 }

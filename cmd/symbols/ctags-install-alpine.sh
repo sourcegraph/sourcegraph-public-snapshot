@@ -3,8 +3,9 @@
 # This script installs ctags within an alpine container.
 
 # Commit hash of github.com/universal-ctags/ctags.
-# Last bumped 2022-02-10
-CTAGS_VERSION=37a4b3601288bcdc02a387197ff8d9b971f7ab34
+# Last bumped 2022-04-04.
+# When bumping please remember to also update Zoekt: https://github.com/sourcegraph/zoekt/blob/d3a8fbd8385f0201dd54ab24114ebd588dfcf0d8/install-ctags-alpine.sh
+CTAGS_VERSION=f95bb3497f53748c2b6afc7f298cff218103ab90
 
 cleanup() {
   apk --no-cache --purge del ctags-build-deps || true
