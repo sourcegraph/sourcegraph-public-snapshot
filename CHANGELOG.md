@@ -39,6 +39,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 -
 
+## 3.38.1
+
+### Fixed
+
+- An issue introduced in 3.38 that caused alerts to not be delivered [#33398](https://github.com/sourcegraph/sourcegraph/pull/33398)
+
 ## 3.38.0
 
 ### Added
