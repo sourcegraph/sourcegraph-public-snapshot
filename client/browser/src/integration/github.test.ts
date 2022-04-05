@@ -871,6 +871,7 @@ describe('GitHub', () => {
             ]
 
             const viewportM = { width: 768, height: 1024 }
+
             const viewportL = { width: 1024, height: 768 }
 
             const viewportConfigs = [
