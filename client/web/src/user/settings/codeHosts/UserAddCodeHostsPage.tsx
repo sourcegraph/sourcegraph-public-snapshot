@@ -341,7 +341,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 }
 
                 // if service has warnings or errors
-                if (problem) {
+                if (problem && !outage) {
                     servicesWithProblems.push({
                         id: service.id,
                         kind: service.kind,
