@@ -2,8 +2,17 @@ import { extname } from 'path'
 
 import escapeRegExp from 'lodash/escapeRegExp'
 
+import {
+    appendLineRangeQueryParameter,
+    appendSubtreeQueryParameter,
+    toPositionOrRangeQueryParameter,
+} from '@sourcegraph/common'
+import { Range } from '@sourcegraph/extension-api-types'
+
+import { LanguageSpec } from './language-specs/languagespec'
 import { raceWithDelayOffset } from './promise'
 import { SettingsGetter } from './settings'
+import { isDefined } from './util/helpers'
 
 export function definitionQuery({
     searchToken,
@@ -226,4 +235,196 @@ function searchUnindexed<
 
 export function isSourcegraphDotCom(): boolean {
     return window.context?.sourcegraphDotComMode
+}
+
+/**
+ * Report whether the given symbol is both private and does not belong to
+ * the current text document.
+ *
+ * @param textDocument The current text document.
+ * @param path The path of the document.
+ * @param result The search result.
+ */
+export function isExternalPrivateSymbol(
+    spec: LanguageSpec,
+    path: string,
+    { fileLocal, file, symbolKind }: Result
+): boolean {
+    // Enum members are always public, but there's an open ctags bug that
+    // doesn't let us treat that way.
+    // See https://github.com/universal-ctags/ctags/issues/1844
+
+    if (spec.languageID === 'java' && symbolKind === 'ENUMMEMBER') {
+        return false
+    }
+
+    return !!fileLocal && file !== path
+}
+
+export interface SearchResult {
+    repository: {
+        name: string
+    }
+    file: {
+        url: string
+        path: string
+        content: string
+        commit: {
+            oid: string
+        }
+    }
+    symbols: SearchSymbol[]
+    lineMatches: LineMatch[]
+}
+
+/**
+ * A symbol search result.
+ */
+export interface SearchSymbol {
+    name: string
+    fileLocal: boolean
+    kind: string
+    location: {
+        url: string
+        resource: { path: string }
+        range?: Range
+    }
+}
+
+/**
+ * An indexed or un-indexed search result.
+ */
+export interface LineMatch {
+    lineNumber: number
+    offsetAndLengths: [number, number][]
+}
+
+export interface Result {
+    /** The name of the repository containing the result. */
+    repo: string
+
+    /** The commit containing the result. */
+    rev: string
+
+    /** The path to the result file relative to the repository root. */
+    file: string
+
+    /** The content of the file. */
+    content: string
+
+    /** The unique URL to this result. */
+
+    url: string
+
+    /** The range of the match. */
+    range: Range
+
+    /** The type of symbol, if the result came from a symbol search. */
+    symbolKind?: string
+
+    /**
+     * Whether or not the symbol is local to the containing file, if
+     * the result came from a symbol search.
+     */
+    fileLocal?: boolean
+}
+
+/**
+ * Convert a search result into a set of results.
+ *
+ * @param searchResult The search result.
+ */
+export function searchResultToResults({ ...result }: SearchResult): Result[] {
+    const symbolResults = result.symbols
+        ? result.symbols.map(symbol => searchResultSymbolToResults(result, symbol))
+        : []
+
+    const lineMatchResults = result.lineMatches
+        ? result.lineMatches.flatMap(matches => lineMatchesToResults(result, matches))
+        : []
+
+    return symbolResults.filter(isDefined).concat(lineMatchResults)
+}
+
+/**
+ * Convert a search symbol to a result.
+ *
+ * @param arg0 The parent search result.
+ * @param arg1 The search symbol.
+ */
+function searchResultSymbolToResults(
+    {
+        repository: { name: repo },
+        file: {
+            content,
+            commit: { oid: revision },
+        },
+    }: SearchResult,
+    {
+        kind: symbolKind,
+        fileLocal,
+        location: {
+            url,
+            resource: { path: file },
+            range,
+        },
+    }: SearchSymbol
+): Result | undefined {
+    return (
+        range && {
+            repo,
+            rev: revision,
+            file,
+            range,
+            symbolKind,
+            fileLocal,
+            url,
+            content,
+        }
+    )
+}
+
+/**
+ * Convert a line match to a result.
+ *
+ * @param arg0 The parent search result.
+ * @param arg1 The line match.
+ */
+function lineMatchesToResults(
+    {
+        repository: { name: repo },
+        file: {
+            content,
+            url: fileUrl,
+            path: file,
+            commit: { oid: revision },
+        },
+    }: SearchResult,
+    { lineNumber, offsetAndLengths }: LineMatch
+): Result[] {
+    return offsetAndLengths.map(([offset, length]) => {
+        const url = appendLineRangeQueryParameter(
+            appendSubtreeQueryParameter(fileUrl),
+            toPositionOrRangeQueryParameter({
+                position: { line: lineNumber + 1, character: offset + 1 },
+            })
+        )
+        return {
+            repo,
+            rev: revision,
+            file,
+            url,
+            range: {
+                start: {
+                    line: lineNumber,
+                    character: offset,
+                },
+                end: {
+                    line: lineNumber,
+                    character: offset + length,
+                },
+            },
+            content,
+        }
+    })
 }

@@ -17,7 +17,15 @@ import { CodeIntelSearchResult, CodeIntelSearchVariables, LocationFields } from 
 import { LanguageSpec } from './language-specs/languagespec'
 import { Location, buildSearchBasedLocation } from './location'
 import { CODE_INTEL_SEARCH_QUERY } from './ReferencesPanelQueries'
-import { definitionQuery, isSourcegraphDotCom, referencesQuery, searchWithFallback } from './searchBased'
+import {
+    definitionQuery,
+    isExternalPrivateSymbol,
+    isSourcegraphDotCom,
+    referencesQuery,
+    SearchResult,
+    searchResultToResults,
+    searchWithFallback,
+} from './searchBased'
 import { SettingsGetter } from './settings'
 import { sortByProximity } from './sort'
 import { isDefined } from './util/helpers'
@@ -171,7 +179,7 @@ export async function searchBasedDefinitions({
 
     const doSearch = (negateRepoFilter: boolean): Promise<Location[]> =>
         searchWithFallback(
-            args => searchAndFilterDefinitions({ filterDefinitions, queryTerms: args.queryTerms }),
+            args => searchAndFilterDefinitions({ spec, path, filterDefinitions, queryTerms: args.queryTerms }),
             queryArguments,
             negateRepoFilter,
             getSetting
@@ -202,9 +210,15 @@ export async function searchBasedDefinitions({
  * @param args Parameter bag.
  */
 async function searchAndFilterDefinitions({
+    spec,
+    path,
     filterDefinitions,
     queryTerms,
 }: {
+    /** The LanguageSpec of the language in which we're searching */
+    spec: LanguageSpec
+    /** The file we're in */
+    path: string
     /** The function used to filter definitions. */
     filterDefinitions: (results: Location[]) => Location[]
     /** The terms of the search query. */
@@ -213,10 +227,10 @@ async function searchAndFilterDefinitions({
     // Perform search and perform pre-filtering before passing it
     // off to the language spec for the proper filtering pass.
     const result = await executeSearchQuery(queryTerms)
-    const preFilteredResults = searchResultsToLocations(result).map(buildSearchBasedLocation)
-
-    // TODO: This needs to be ported
-    // const preFilteredResults = searchResults.filter(result => !isExternalPrivateSymbol(doc, path, result))
+    const preFilteredResults = result
+        .flatMap(searchResultToResults)
+        .filter(result => !isExternalPrivateSymbol(spec, path, result))
+        .map(buildSearchBasedLocation)
 
     // Filter results based on language spec
     const filteredResults = filterDefinitions(preFilteredResults)
@@ -227,12 +241,20 @@ async function searchAndFilterDefinitions({
 async function searchReferences(terms: string[]): Promise<Location[]> {
     const result = await executeSearchQuery(terms)
 
-    return searchResultsToLocations(result).map(buildSearchBasedLocation)
+    return result.flatMap(searchResultToResults).map(buildSearchBasedLocation)
 }
 
-async function executeSearchQuery(terms: string[]): Promise<CodeIntelSearchResult> {
+async function executeSearchQuery(terms: string[]): Promise<SearchResult[]> {
+    interface Response {
+        search: {
+            results: {
+                limitHit: boolean
+                results: (SearchResult | undefined)[]
+            }
+        }
+    }
     const client = await getWebGraphQLClient()
-    const result = await client.query<CodeIntelSearchResult, CodeIntelSearchVariables>({
+    const result = await client.query<Response, CodeIntelSearchVariables>({
         query: getDocumentNode(CODE_INTEL_SEARCH_QUERY),
         variables: {
             query: terms.join(' '),
@@ -243,10 +265,10 @@ async function executeSearchQuery(terms: string[]): Promise<CodeIntelSearchResul
         throw createAggregateError([result.error])
     }
 
-    return result.data
+    return result.data.search.results.results.filter(isDefined)
 }
 
-export function searchResultsToLocations(result: CodeIntelSearchResult): LocationFields[] {
+function searchResultsToLocations(result: CodeIntelSearchResult): LocationFields[] {
     if (!result || !result.search) {
         return []
     }
