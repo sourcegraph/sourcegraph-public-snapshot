@@ -298,10 +298,40 @@ frontend:
       # kubernetes.io/ingress.global-static-ip-name: ADDRESS_NAME
 ```
 
-If using another certificate, add the following to Ingress:
-```
-TODO
-```
+If using your own certificate, you can do so with [TLS Secrets](https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets).
+
+`sourcegraph-frontend-tls.Secret.yaml` 
+```yaml 
+apiVersion: v1 
+kind: Secret 
+metadata: 
+  name: sourcegraph-frontend-tls 
+type: kubernetes.io/tls 
+data: 
+  # the data is abbreviated in this example 
+  tls.crt: | 
+    MIIC2DCCAcCgAwIBAgIBATANBgkqh ... 
+  tls.key: | 
+    MIIEpgIBAAKCAQEA7yn3bRHQ5FHMQ ... 
+``` 
+
+```sh 
+kubectl apply -f ./sourcegraph-frontend-tls.Secret.yaml 
+``` 
+	  
+Add the following values to your override file. 
+	  
+```yaml 
+frontend: 
+  ingress: 
+    enabled: true 
+    annotations: 
+      kubernetes.io/ingress.class: gce 
+    tlsSecret: sourcegraph-frontend-tls # reference the created TLS Secret 
+    # replace with your actual domain 
+    host: sourcegraph.company.com 
+``` 
+
 **5** – Validate the deployment
 Sourcegraph should now be available via the address set. 
 Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account. 
