@@ -2,12 +2,17 @@ import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import CheckBoldIcon from 'mdi-react/CheckBoldIcon'
+import CircleOffOutlineIcon from 'mdi-react/CircleOffOutlineIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
+import TimelineClockOutlineIcon from 'mdi-react/TimelineClockOutlineIcon'
+import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import { Redirect, Route, RouteComponentProps, Switch, useHistory, useLocation } from 'react-router'
 import { NavLink as RouterLink } from 'react-router-dom'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError, isErrorLike } from '@sourcegraph/common'
+import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
@@ -230,34 +235,41 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
         }
     }, [batchSpec.id])
 
+    const workspacesStats = batchSpec.workspaceResolution?.workspaces.stats
+
     return (
         <div className="d-flex">
             <span className="align-self-center mr-2">
                 <BatchSpecStateBadge state={batchSpec.state} />
             </span>
             {batchSpec.startedAt && (
-                <div className="mx-2 text-center text-muted">
-                    <h3>
-                        <Duration start={batchSpec.startedAt} end={batchSpec.finishedAt ?? undefined} />
-                    </h3>
-                    Total time
+                <div className={styles.workspacesStat}>
+                    <ProgressClockIcon />
+                    <Duration start={batchSpec.startedAt} end={batchSpec.finishedAt ?? undefined} />
                 </div>
             )}
-            {batchSpec.workspaceResolution?.workspaces.stats && (
+            {workspacesStats && (
                 <>
-                    <WorkspaceStat
-                        stat={batchSpec.workspaceResolution.workspaces.stats.errored}
-                        label="Errors"
-                        iconClassName="text-danger"
-                    />
-                    <WorkspaceStat
-                        stat={batchSpec.workspaceResolution.workspaces.stats.completed}
-                        label="Complete"
-                        iconClassName="text-success"
-                    />
-                    <WorkspaceStat stat={batchSpec.workspaceResolution.workspaces.stats.processing} label="Working" />
-                    <WorkspaceStat stat={batchSpec.workspaceResolution.workspaces.stats.queued} label="Queued" />
-                    <WorkspaceStat stat={batchSpec.workspaceResolution.workspaces.stats.ignored} label="Ignored" />
+                    <div className={styles.workspacesStat}>
+                        <AlertCircleIcon className="text-danger" />
+                        {workspacesStats.errored} {pluralize('error', workspacesStats.errored)}
+                    </div>
+                    <div className={styles.workspacesStat}>
+                        <CheckBoldIcon className="text-success" />
+                        {workspacesStats.completed} complete
+                    </div>
+                    <div className={styles.workspacesStat}>
+                        <TimerSandIcon />
+                        {workspacesStats.processing} working
+                    </div>
+                    <div className={styles.workspacesStat}>
+                        <TimelineClockOutlineIcon />
+                        {workspacesStats.queued} queued{' '}
+                    </div>
+                    <div className={styles.workspacesStat}>
+                        <CircleOffOutlineIcon />
+                        {workspacesStats.ignored} ignored{' '}
+                    </div>
                 </>
             )}
             <span>
@@ -323,17 +335,6 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
         </div>
     )
 }
-
-const WorkspaceStat: React.FunctionComponent<{ stat: number; label: string; iconClassName?: string }> = ({
-    stat,
-    label,
-    iconClassName,
-}) => (
-    <div className="mx-2 text-center text-muted">
-        <h3 className={iconClassName}>{stat}</h3>
-        {label}
-    </div>
-)
 
 interface EditPageProps extends ThemeProps {
     name: string
