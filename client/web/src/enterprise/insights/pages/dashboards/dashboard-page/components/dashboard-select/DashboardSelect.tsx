@@ -1,8 +1,11 @@
-import React, { useContext } from 'react'
+import React, {useContext, useState} from 'react'
 
 import { ListboxGroup, ListboxGroupLabel, ListboxInput, ListboxList, ListboxPopover } from '@reach/listbox'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
+
+import Fuse from 'fuse.js'
+
 
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
 import {
@@ -18,6 +21,7 @@ import {
 import { MenuButton, SelectDashboardOption, SelectOption } from './components'
 
 import styles from './DashboardSelect.module.scss'
+import {Input} from "reactstrap";
 
 export interface DashboardSelectProps {
     value: string | undefined
@@ -43,8 +47,25 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
         }
     }
 
-    const customDashboards = dashboards.filter(isCustomDashboard)
-    const organizationGroups = getDashboardOrganizationsGroups(customDashboards)
+    const [filtered, setFiltered] = useState(dashboards);
+
+
+    console.log("hi there")
+
+    let customDashboards = filtered.filter(isCustomDashboard)
+    let organizationGroups = getDashboardOrganizationsGroups(customDashboards)
+
+    const doFilter = (filterVal: string): void => {
+        if (filterVal === '' || filterVal === undefined) {
+            setFiltered(dashboards)
+        }
+        const fuse = new Fuse(dashboards, {includeScore: false, keys: ['title']})
+        setFiltered(fuse.search(filterVal).map(e => e.item))
+        console.log(filtered)
+
+        customDashboards = filtered.filter(isCustomDashboard)
+        organizationGroups = getDashboardOrganizationsGroups(customDashboards)
+    }
 
     return (
         <div className={className}>
@@ -58,8 +79,9 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                 <MenuButton dashboards={dashboards} />
 
                 <ListboxPopover className={classNames(styles.popover)} portal={true}>
+                    <Input type="text" onChange={(e) => doFilter(e.target.value)}>Filter:</Input>
                     <ListboxList className={classNames(styles.list, 'dropdown-menu')}>
-                        {dashboards.filter(isVirtualDashboard).map(dashboard => (
+                        {filtered.filter(isVirtualDashboard).map(dashboard => (
                             <SelectOption
                                 key={dashboard.id}
                                 value={dashboard.id}
