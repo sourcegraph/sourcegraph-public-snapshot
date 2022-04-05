@@ -1,7 +1,6 @@
 import { LineChartContent } from 'sourcegraph'
 
-// eslint-disable-next-line no-restricted-imports
-import { sortSeriesByName } from '../../enterprise/insights/core/backend/utils/sort-series-by-name'
+import { sortSeriesByName } from '../../insights/utils/sort-series-by-name'
 
 export const LINE_CHART_CONTENT_MOCK: LineChartContent<any, string> = {
     chart: 'line',

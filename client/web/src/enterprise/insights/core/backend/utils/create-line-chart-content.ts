@@ -4,12 +4,11 @@ import { LineChartContent } from 'sourcegraph'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { InsightDataSeries, SearchPatternType } from '../../../../../graphql-operations'
+import { sortSeriesByName } from '../../../../../insights/utils/sort-series-by-name'
 import { PageRoutes } from '../../../../../routes.constants'
 import { InsightFilters, SearchBasedInsightSeries } from '../../types'
 
-import { sortSeriesByName } from './sort-series-by-name'
-
-export interface SeriesDataset {
+interface SeriesDataset {
     dateTime: number
     [seriesKey: string]: number
 }

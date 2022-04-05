@@ -1,7 +1,10 @@
 import semver from 'semver'
 import { LineChartSeries } from 'sourcegraph'
 
-import { SeriesDataset } from './create-line-chart-content'
+interface SeriesDataset {
+    dateTime: number
+    [seriesKey: string]: number
+}
 
 export type SortSeriesByNameParameter = Pick<LineChartSeries<SeriesDataset>, 'name'>
 
