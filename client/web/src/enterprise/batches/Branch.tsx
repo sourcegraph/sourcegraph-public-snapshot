@@ -8,7 +8,7 @@ import { Badge, Icon, BadgeProps } from '@sourcegraph/wildcard'
 
 export interface ForkTarget {
     pushUser: boolean
-    namespace?: string | null
+    namespace: string | null
 }
 
 export interface BranchProps extends Pick<BadgeProps, 'variant'> {
@@ -24,7 +24,7 @@ export const Branch: React.FunctionComponent<BranchProps> = ({ className, delete
         className={classNames('text-monospace', className)}
         as={deleted ? 'del' : undefined}
     >
-        {!forkTarget ? (
+        {!forkTarget || forkTarget.namespace === null ? (
             name
         ) : (
             <>

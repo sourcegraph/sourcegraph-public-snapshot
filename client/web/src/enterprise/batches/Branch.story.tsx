@@ -15,7 +15,9 @@ add('Forked', () => (
 ))
 
 add('Will be forked into the user', () => (
-    <WebStory>{() => <BranchMerge baseRef="main" forkTarget={{ pushUser: true }} headRef="branch" />}</WebStory>
+    <WebStory>
+        {() => <BranchMerge baseRef="main" forkTarget={{ pushUser: true, namespace: 'org' }} headRef="branch" />}
+    </WebStory>
 ))
 
 add('Unforked', () => <WebStory>{() => <BranchMerge baseRef="main" headRef="branch" />}</WebStory>)
