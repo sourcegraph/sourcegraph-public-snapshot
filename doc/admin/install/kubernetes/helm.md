@@ -282,6 +282,7 @@ kubectl describe ingress sourcegraph-frontend
 **3** – Upon obtaining the allocated IP address of the load balancer, you should create an A record for the `sourcegraph.company.com` domain. Finally, it is recommended to enable TLS and you may consider using [Google-managed certificate](https://cloud.google.com/kubernetes-engine/docs/how-to/managed-certs) in GKE or your own certificate.
 
 If using a GKE manage certificate, add the following annotations to Ingress:
+
 ```yaml
 frontend:
   ingress:
@@ -295,8 +296,8 @@ frontend:
 
 If using your own certificate, you can do so with [TLS Secrets](https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets).
 
-`sourcegraph-frontend-tls.Secret.yaml` 
-```yaml 
+`sourcegraph-frontend-tls.Secret.yaml`
+```yaml
 apiVersion: v1 
 kind: Secret 
 metadata: 
@@ -308,15 +309,15 @@ data:
     MIIC2DCCAcCgAwIBAgIBATANBgkqh ... 
   tls.key: | 
     MIIEpgIBAAKCAQEA7yn3bRHQ5FHMQ ... 
-``` 
+```
 
-```sh 
-kubectl apply -f ./sourcegraph-frontend-tls.Secret.yaml 
-``` 
+```sh
+kubectl apply -f ./sourcegraph-frontend-tls.Secret.yaml
+```
 	  
-Add the following values to your override file. 
+Add the following values to your override file.
 	  
-```yaml 
+```yaml
 frontend: 
   ingress: 
     enabled: true 
@@ -325,7 +326,7 @@ frontend:
     tlsSecret: sourcegraph-frontend-tls # reference the created TLS Secret 
     # replace with your actual domain 
     host: sourcegraph.company.com 
-``` 
+```
 
 **5** – Validate the deployment
 Sourcegraph should now be available via the address set. 
@@ -515,6 +516,7 @@ Now the deployment is complete, more information on configuring the Sourcegraph 
 2. Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
 3. Connect to your cluster (via either the console or the command line using the relevant CLI tool) and ensure the cluster is up and running by running: `kubectl get nodes` (several `ready` nodes should be listed)
 4. Have the Helm CLI installed and run the following command to link to the Sourcegraph helm repository
+
 ```sh
 helm repo add sourcegraph https://sourcegraph.github.io/deploy-sourcegraph-helm/
 ```
@@ -554,6 +556,7 @@ storageClass:
 ```sh
 helm upgrade --install --values ./override.yaml --version 0.7.0 sourcegraph sourcegraph/sourcegraph
 ```
+
 It may take some time before your ingress is up and ready to proceed. Depending how your Ingress Controller works, you may be able to check on status and obtain the public address of your Ingress.
 
 ```sh
