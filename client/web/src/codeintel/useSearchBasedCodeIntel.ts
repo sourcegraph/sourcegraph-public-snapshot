@@ -2,17 +2,11 @@ import { useCallback, useState } from 'react'
 
 import { flatten } from 'lodash'
 
-import {
-    appendLineRangeQueryParameter,
-    appendSubtreeQueryParameter,
-    createAggregateError,
-    ErrorLike,
-    toPositionOrRangeQueryParameter,
-} from '@sourcegraph/common'
+import { createAggregateError, ErrorLike } from '@sourcegraph/common'
 import { getDocumentNode } from '@sourcegraph/http-client'
 
 import { getWebGraphQLClient } from '../backend/graphql'
-import { CodeIntelSearchResult, CodeIntelSearchVariables, LocationFields } from '../graphql-operations'
+import { CodeIntelSearchVariables } from '../graphql-operations'
 
 import { LanguageSpec } from './language-specs/languagespec'
 import { Location, buildSearchBasedLocation } from './location'
@@ -266,66 +260,4 @@ async function executeSearchQuery(terms: string[]): Promise<SearchResult[]> {
     }
 
     return result.data.search.results.results.filter(isDefined)
-}
-
-function searchResultsToLocations(result: CodeIntelSearchResult): LocationFields[] {
-    if (!result || !result.search) {
-        return []
-    }
-
-    const searchResults = result.search.results.results
-        .filter(value => value !== undefined)
-        .filter(result => result.__typename === 'FileMatch')
-
-    const newReferences: LocationFields[] = []
-    for (const result of searchResults) {
-        if (result.__typename !== 'FileMatch') {
-            continue
-        }
-
-        const resource = {
-            path: result.file.path,
-            content: result.file.content,
-            repository: result.repository,
-            commit: {
-                oid: result.file.commit.oid,
-            },
-        }
-
-        for (const lineMatch of result.lineMatches) {
-            const positionOrRangeQueryParameter = toPositionOrRangeQueryParameter({
-                // TODO: only using first offset?
-                position: { line: lineMatch.lineNumber + 1, character: lineMatch.offsetAndLengths[0][0] + 1 },
-            })
-            const url = appendLineRangeQueryParameter(
-                appendSubtreeQueryParameter(result.file.url),
-                positionOrRangeQueryParameter
-            )
-            newReferences.push({
-                url,
-                resource,
-                range: {
-                    start: {
-                        line: lineMatch.lineNumber,
-                        character: lineMatch.offsetAndLengths[0][0],
-                    },
-                    end: {
-                        line: lineMatch.lineNumber,
-                        character: lineMatch.offsetAndLengths[0][0] + lineMatch.offsetAndLengths[0][1],
-                    },
-                },
-            })
-        }
-
-        const symbolReferences = result.symbols.map(symbol => ({
-            url: symbol.location.url,
-            resource,
-            range: symbol.location.range,
-        }))
-        for (const symbolReference of symbolReferences) {
-            newReferences.push(symbolReference)
-        }
-    }
-
-    return newReferences
 }
