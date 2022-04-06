@@ -24,6 +24,18 @@ export interface LocationGroup {
     locations: Location[]
 }
 
+export type LocationGroupQuality = 'PRECISE' | 'SEARCH-BASED'
+
+export const locationGroupQuality = (group: LocationGroup): LocationGroupQuality => {
+    if (group.locations.length === 0) {
+        throw new Error(`No locations in ${group.path}`)
+    }
+
+    // Since we don't mix precise & search-based in a single file, we know that in a
+    // single group all locations are either search-based or precise.
+    return group.locations[0].precise ? 'PRECISE' : 'SEARCH-BASED'
+}
+
 export const buildPreciseLocation = (node: LocationFields): Location => buildLocation(node, true)
 export const buildSearchBasedLocation = (node: LocationFields): Location => buildLocation(node, false)
 
