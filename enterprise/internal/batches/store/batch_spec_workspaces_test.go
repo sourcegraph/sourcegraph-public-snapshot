@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 )
@@ -18,13 +19,16 @@ import (
 func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	repoStore := database.ReposWith(s)
 
-	repos, _ := ct.CreateTestRepos(t, ctx, s.DatabaseDB(), 3)
-	deletedRepo := repos[2].With(typestest.Opt.RepoDeletedAt(clock.Now()))
+	user := ct.CreateTestUser(t, s.DatabaseDB(), false)
+	repos, _ := ct.CreateTestRepos(t, ctx, s.DatabaseDB(), 4)
+	deletedRepo := repos[3].With(typestest.Opt.RepoDeletedAt(clock.Now()))
 	if err := repoStore.Delete(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}
+	// Allow all repos but repos[2]
+	ct.MockRepoPermissions(t, s.DatabaseDB(), user.ID, repos[0].ID, repos[1].ID, repos[3].ID)
 
-	workspaces := make([]*btypes.BatchSpecWorkspace, 0, 3)
+	workspaces := make([]*btypes.BatchSpecWorkspace, 0, 4)
 	for i := 0; i < cap(workspaces); i++ {
 		job := &btypes.BatchSpecWorkspace{
 			BatchSpecID:      int64(i + 567),
@@ -199,11 +203,11 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 				t.Fatal(err)
 			}
 
-			if len(have) != 1 {
+			if len(have) != 2 {
 				t.Fatalf("wrong number of results. have=%d", len(have))
 			}
 
-			if diff := cmp.Diff(have, workspaces[1:2]); diff != "" {
+			if diff := cmp.Diff(have, workspaces[1:3]); diff != "" {
 				t.Fatalf("invalid jobs returned: %s", diff)
 			}
 		})
@@ -226,15 +230,23 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 		})
 
 		t.Run("TextSearch", func(t *testing.T) {
-			for i, r := range repos[:2] {
-				have, _, err := s.ListBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{
+			for i, r := range repos[:3] {
+				userCtx := actor.WithActor(ctx, actor.FromUser(user.ID))
+				have, _, err := s.ListBatchSpecWorkspaces(userCtx, ListBatchSpecWorkspacesOpts{
 					TextSearch: []search.TextSearchTerm{{Term: string(r.Name)}},
 				})
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				if len(have) != 1 {
+				// Expect to return no results for repo[2], which the user cannot access.
+				if i == 2 {
+					if len(have) != 0 {
+						t.Fatalf("wrong number of results. have=%d", len(have))
+					}
+					break
+
+				} else if len(have) != 1 {
 					t.Fatalf("wrong number of results. have=%d", len(have))
 				}
 
@@ -251,7 +263,7 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 			if err != nil {
 				t.Fatal(err)
 			}
-			if want := int64(2); have != want {
+			if want := int64(3); have != want {
 				t.Fatalf("invalid count returned: want=%d have=%d", want, have)
 			}
 		})
