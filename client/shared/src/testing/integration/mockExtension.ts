@@ -116,7 +116,7 @@ export function simpleHoverProvider(): void {
                     }
                     return {
                         contents: {
-                            value: `Hello World! User is hovering over ${token}`,
+                            value: `User is hovering over ${token}`,
                             kind: sourcegraph.MarkupKind.Markdown,
                         },
                         range,
