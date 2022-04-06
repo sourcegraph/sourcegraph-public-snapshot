@@ -307,9 +307,10 @@ async function completeFilterValue(
 
 const startRange: CharacterRange = { start: 1, end: 1 }
 
-export interface FetchSuggestions {
-    <T extends SearchMatch['type']>(token: Token, type: T): Promise<Extract<SearchMatch, { type: T }>[]>
-}
+export type FetchSuggestions = <T extends SearchMatch['type']>(
+    token: Token,
+    type: T
+) => Promise<Extract<SearchMatch, { type: T }>[]>
 
 /**
  * Returns the completion items for a search query being typed in the Monaco query input,
