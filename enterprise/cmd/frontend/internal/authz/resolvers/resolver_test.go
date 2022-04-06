@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 	"fmt"
-	errors2 "github.com/graph-gophers/graphql-go/errors"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -576,33 +575,6 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 				},
 			},
 		},
-		{
-			name: "check pending authorized repos via username given afterID DNE, return error",
-			gqlTests: []*graphqlbackend.Test{
-				{
-					Schema: mustParseGraphQLSchema(t, db),
-					Query: `
-						{
-							authorizedUserRepositories(
-								first: 2,
-								after: "UmVwb3NpdG9yeTo3",
-								username: "bob") {
-								nodes {
-									id
-								}
-							}
-						}
-					`,
-					ExpectedResult: "null",
-					ExpectedErrors: []*errors2.QueryError{
-						{
-							Message: "after id set, but does not exist",
-							Path:    []interface{}{"authorizedUserRepositories", "nodes"},
-						},
-					},
-				},
-			},
-		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -845,34 +817,6 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
     				}
 				}
 			`,
-				},
-			},
-		},
-		{
-			name: "get authorized users given afterID DNE, return error",
-			gqlTests: []*graphqlbackend.Test{
-				{
-					Schema: mustParseGraphQLSchema(t, db),
-					Query: `
-{
-					repository(name: "github.com/owner/repo") {
-						authorizedUsers(
-							first: 2,
-							after: "VXNlcjo3") {
-							nodes {
-								id
-							}
-						}
-					}
-				}
-			`,
-					ExpectedResult: `{"repository":null}`,
-					ExpectedErrors: []*errors2.QueryError{
-						{
-							Message: "after id set, but does not exist",
-							Path:    []interface{}{"repository", "authorizedUsers", "nodes"},
-						},
-					},
 				},
 			},
 		},

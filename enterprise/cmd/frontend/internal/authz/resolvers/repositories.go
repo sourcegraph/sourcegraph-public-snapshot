@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"sync"
 
@@ -20,7 +19,7 @@ var _ graphqlbackend.RepositoryConnectionResolver = &repositoryConnectionResolve
 // repositoryConnectionResolver resolves a list of repositories from the roaring bitmap with pagination.
 type repositoryConnectionResolver struct {
 	db  database.DB
-	ids []int32 //sorted slice of repo IDs
+	ids []int32 // Sorted slice in ascending order of repo IDs.
 
 	first int32
 	after *string
@@ -36,13 +35,12 @@ type repositoryConnectionResolver struct {
 // is the site admin because this method computes data from all available information in
 // the database.
 // This function takes returns a pagination of the repo IDs
-// r.ids - the full slice of sorted repo IDs
-// r.after - (optional) the repo ID to start the paging after (does not include the after ID itself)
-// r.first - the # of repo IDs to return
+// 	r.ids - the full slice of sorted repo IDs
+// 	r.after - (optional) the repo ID to start the paging after (does not include the after ID itself)
+// 	r.first - the # of repo IDs to return
 func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Repo, *graphqlutil.PageInfo, error) {
 	r.once.Do(func() {
 		var idSubset []int32
-		found := false
 		if r.after == nil {
 			idSubset = r.ids
 		} else {
@@ -53,24 +51,22 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			}
 			for idx, id := range r.ids {
 				if id == int32(afterID) {
-					found = true
 					if idx < len(r.ids)-1 {
 						idSubset = r.ids[idx+1:]
+					}
+					break
+				} else if id > int32(afterID) {
+					if idx < len(r.ids)-1 {
+						idSubset = r.ids[idx:]
 					}
 					break
 				}
 			}
 			if len(idSubset) == 0 {
-				if !found {
-					// r.after is set, but the after id does not exist in the slice of ids
-					r.err = errors.New("after id set, but does not exist")
-					return
-				} else {
-					// r.after is set, but it's the last id, nothing to return
-					r.repos = []*types.Repo{}
-					r.pageInfo = graphqlutil.HasNextPage(false)
-					return
-				}
+				// r.after is set, but there are no elements larger than it, so return empty slice.
+				r.repos = []*types.Repo{}
+				r.pageInfo = graphqlutil.HasNextPage(false)
+				return
 			}
 		}
 		// If we have more ids than we need, trim them
