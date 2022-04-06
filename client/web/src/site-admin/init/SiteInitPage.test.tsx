@@ -54,7 +54,7 @@ describe('SiteInitPage', () => {
                     isLightTheme={true}
                     needsSiteInit={true}
                     authenticatedUser={null}
-                    context={{ authProviders: [], sourcegraphDotComMode: false }}
+                    context={{ authProviders: [], sourcegraphDotComMode: false, experimentalFeatures: {} }}
                     featureFlags={EMPTY_FEATURE_FLAGS}
                 />
             ).asFragment()
