@@ -24,6 +24,7 @@ type (
 
 var DefaultValidatorByCodeHost = AuthValidatorMap{
 	"github.com": enforceAuthViaGitHub,
+	"gitlab.com": enforceAuthViaGitLab,
 }
 
 var errVerificationNotSupported = errors.New("verification not supported for code host - see https://github.com/sourcegraph/sourcegraph/issues/4967")

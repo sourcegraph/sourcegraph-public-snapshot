@@ -1,8 +1,8 @@
-import { LineChartSeriesWithData } from './data-series-processing'
+import { getDatumValue, isDatumWithValidNumber, SeriesWithData } from './data-series-processing'
 
 interface MinMaxBoundariesInput<D> {
-    dataSeries: LineChartSeriesWithData<D>[]
-    xAxisKey: keyof D
+    dataSeries: SeriesWithData<D>[]
+    zeroYAxisMin: boolean
 }
 
 interface Boundaries {
@@ -17,7 +17,7 @@ interface Boundaries {
  * (time interval) global for all lines on the chart.
  */
 export function getMinMaxBoundaries<D>(props: MinMaxBoundariesInput<D>): Boundaries {
-    const { dataSeries, xAxisKey } = props
+    const { dataSeries, zeroYAxisMin } = props
 
     let minX
     let maxX
@@ -25,13 +25,19 @@ export function getMinMaxBoundaries<D>(props: MinMaxBoundariesInput<D>): Boundar
     let maxY
 
     for (const line of dataSeries) {
-        for (const datum of line.data) {
-            minX = Math.min(+datum[xAxisKey], minX ?? +datum[xAxisKey])
-            maxX = Math.max(+datum[xAxisKey], maxX ?? +datum[xAxisKey])
+        for (const data of line.data) {
+            minX = Math.min(+data.x, minX ?? +data.x)
+            maxX = Math.max(+data.x, maxX ?? +data.x)
 
-            minY = Math.min(+datum[line.dataKey], minY ?? +datum[line.dataKey])
-            maxY = Math.max(+datum[line.dataKey], maxY ?? +datum[line.dataKey])
+            if (isDatumWithValidNumber(data)) {
+                minY = Math.min(getDatumValue(data), minY ?? getDatumValue(data))
+                maxY = Math.max(getDatumValue(data), maxY ?? getDatumValue(data))
+            }
         }
+    }
+
+    if (zeroYAxisMin) {
+        minY = 0
     }
 
     ;[minY, maxY, minX, maxX] = [minY ?? 0, maxY ?? 0, minX ?? 0, maxX ?? 0]

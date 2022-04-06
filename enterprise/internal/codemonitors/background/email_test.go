@@ -5,9 +5,9 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/hexops/autogold"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 )
 
@@ -26,14 +26,14 @@ func TestEmail(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Html.Execute(&buf, templateData)
 			require.NoError(t, err)
-			testutil.AssertGolden(t, "testdata/"+t.Name()+".html", *update, buf.String())
+			autogold.Equal(t, autogold.Raw(buf.String()))
 		})
 
 		t.Run("text", func(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Text.Execute(&buf, templateData)
 			require.NoError(t, err)
-			testutil.AssertGolden(t, "testdata/"+t.Name()+".txt", *update, buf.String())
+			autogold.Equal(t, autogold.Raw(buf.String()))
 		})
 
 		t.Run("subject", func(t *testing.T) {
@@ -59,14 +59,14 @@ func TestEmail(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Html.Execute(&buf, templateData)
 			require.NoError(t, err)
-			testutil.AssertGolden(t, "testdata/"+t.Name()+".html", *update, buf.String())
+			autogold.Equal(t, autogold.Raw(buf.String()))
 		})
 
 		t.Run("text", func(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Text.Execute(&buf, templateData)
 			require.NoError(t, err)
-			testutil.AssertGolden(t, "testdata/"+t.Name()+".txt", *update, buf.String())
+			autogold.Equal(t, autogold.Raw(buf.String()))
 		})
 
 		t.Run("subject", func(t *testing.T) {
@@ -92,21 +92,22 @@ func TestEmail(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Html.Execute(&buf, templateData)
 			require.NoError(t, err)
-			testutil.AssertGolden(t, "testdata/"+t.Name()+".html", *update, buf.String())
+			autogold.Equal(t, autogold.Raw(buf.String()))
+
 		})
 
 		t.Run("text", func(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Text.Execute(&buf, templateData)
 			require.NoError(t, err)
-			testutil.AssertGolden(t, "testdata/"+t.Name()+".txt", *update, buf.String())
+			autogold.Equal(t, autogold.Raw(buf.String()))
 		})
 
 		t.Run("subject", func(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Subj.Execute(&buf, templateData)
 			require.NoError(t, err)
-			require.Equal(t, "Sourcegraph code monitor My test monitor detected 2 new results", buf.String())
+			autogold.Equal(t, autogold.Raw(buf.String()))
 		})
 	})
 
@@ -129,14 +130,14 @@ func TestEmail(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Html.Execute(&buf, templateData)
 			require.NoError(t, err)
-			testutil.AssertGolden(t, "testdata/"+t.Name()+".html", *update, buf.String())
+			autogold.Equal(t, autogold.Raw(buf.String()))
 		})
 
 		t.Run("text", func(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Text.Execute(&buf, templateData)
 			require.NoError(t, err)
-			testutil.AssertGolden(t, "testdata/"+t.Name()+".txt", *update, buf.String())
+			autogold.Equal(t, autogold.Raw(buf.String()))
 		})
 
 		t.Run("subject", func(t *testing.T) {
@@ -166,14 +167,14 @@ func TestEmail(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Html.Execute(&buf, templateData)
 			require.NoError(t, err)
-			testutil.AssertGolden(t, "testdata/"+t.Name()+".html", *update, buf.String())
+			autogold.Equal(t, autogold.Raw(buf.String()))
 		})
 
 		t.Run("text", func(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Text.Execute(&buf, templateData)
 			require.NoError(t, err)
-			testutil.AssertGolden(t, "testdata/"+t.Name()+".txt", *update, buf.String())
+			autogold.Equal(t, autogold.Raw(buf.String()))
 		})
 
 		t.Run("subject", func(t *testing.T) {
