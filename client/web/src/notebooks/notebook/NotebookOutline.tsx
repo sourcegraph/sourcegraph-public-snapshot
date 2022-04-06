@@ -56,7 +56,7 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
         const [highlightedHeading, setHighlightedHeading] = useState<string>('')
         useEffect(() => {
             if (visibleHeadings.length === 0) {
-                // If there are no visible headings, do not reset the last highlighted heading.
+                // If there are no visible headings, keep the last highlighted heading.
                 return
             }
             const firstVisibleHeading = visibleHeadings.reduce((accumulator, current) => {
@@ -74,6 +74,8 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
                 }
             }
 
+            // Keep a local copy of the visible headings as a set. This allows us to update
+            // the component state in a single `setVisibleHeadings` call.
             const visibleHeadingsSet = new Set<string>()
             const processIntersectionEntries = (entries: IntersectionObserverEntry[]): void => {
                 for (const entry of entries) {
