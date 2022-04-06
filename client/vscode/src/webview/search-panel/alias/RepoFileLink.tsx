@@ -1,6 +1,7 @@
 import * as React from 'react'
 
 import { parseRepoRevision } from '@sourcegraph/shared/src/util/url'
+import { useIsTruncated } from '@sourcegraph/wildcard'
 
 import { useOpenSearchResultsContext } from '../MatchHandlersContext'
 
@@ -43,6 +44,13 @@ export const RepoFileLink: React.FunctionComponent<Props> = ({
     filePath,
     className,
 }) => {
+    /**
+     * Use the custom hook useIsTruncated to check if overflow: ellipsis is activated for the element
+     * We want to do it on mouse enter as browser window size might change after the element has been
+     * loaded initially
+     */
+    const [titleReference, truncated, checkTruncation] = useIsTruncated()
+
     const [fileBase, fileName] = splitPath(filePath)
 
     const { openRepo, openFile } = useOpenSearchResultsContext()
@@ -79,7 +87,12 @@ export const RepoFileLink: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <div className={className}>
+        <div
+            ref={titleReference}
+            className={className}
+            onMouseEnter={checkTruncation}
+            data-tooltip={truncated ? (fileBase ? `${fileBase}/${fileName}` : fileName) : null}
+        >
             <button onClick={onRepoClick} type="button" className="btn btn-text-link">
                 {repoDisplayName || displayRepoName(repoName)}
             </button>{' '}

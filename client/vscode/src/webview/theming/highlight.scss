@@ -963,3 +963,61 @@ body[data-vscode-theme-name='Solarized Dark'].sourcegraph-extension.theme-dark {
         color: #93a1a1;
     }
 }
+
+// Material Theme Palenight High Contrast
+body[data-vscode-theme-name='Material Theme Palenight High Contrast'].sourcegraph-extension.theme-dark {
+    // Keyword
+    .hl-keyword {
+        color: #89ddff;
+    }
+    // Storage
+    .hl-storage {
+        color: #a6accd;
+    }
+    // Constants
+    .hl-constant {
+        color: #c3e88d;
+    }
+    .hl-import-export-all,
+    .hl-number,
+    .hl-constant.hl-numeric,
+    .hl-integer,
+    .hl-decimal {
+        color: #f78c6c;
+    }
+    // Strings
+    .hl-string,
+    .hl-constant.hl-other.hl-symbol {
+        color: #c3e88d;
+    }
+    // Functions
+    .hl-entity.hl-name.hl-function,
+    .hl-meta.hl-require,
+    .hl-support.hl-function.hl-any-method,
+    .hl-variable.hl-function {
+        color: #82aaff;
+    }
+    // Comments
+    .hl-comment,
+    .hl-punctuation.hl-definition.hl-comment {
+        color: #676e95;
+        font-style: italic;
+    }
+    .hl-type.hl-primitive,
+    .hl-type.hl-builtin {
+        color: #c792ea;
+    }
+    .hl-variable.hl-parameter {
+        color: #a6accd;
+    }
+    .hl-punctuation {
+        color: #89ddff;
+    }
+    .match-highlight,
+    .match-highlight-sticky,
+    .selection-highlight,
+    .selection-highlight-sticky {
+        background-color: var(--vscode-editor-findMatchHighlightBackground);
+        border-bottom: 1px solid var(--vscode-editor-findMatchBorder);
+    }
+}
