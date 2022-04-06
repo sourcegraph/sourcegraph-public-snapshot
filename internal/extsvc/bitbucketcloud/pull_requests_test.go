@@ -267,6 +267,56 @@ func TestClient_GetPullRequest(t *testing.T) {
 	})
 }
 
+func TestClient_MergePullRequest(t *testing.T) {
+	// WHEN UPDATING: this test expects a PR in
+	// https://bitbucket.org/sourcegraph-testing/src-cli/ to be open. Note that
+	// PRs cannot be reopened after being declined or merged, so we can't use a
+	// stable ID here — this must use a PR that is open and can be safely
+	// merged, ideally with more than one commit on the branch (to test the
+	// squashing strategy). Update the ID below with such a PR before updating!
+	//
+	// After updating, check that the PR was actually merged, that the commit
+	// onto master was squashed, and that the source branch was deleted.
+	var id int64 = 4
+	ctx := context.Background()
+
+	c, save := newTestClient(t)
+	defer save()
+
+	repo := &Repo{
+		FullName: "sourcegraph-testing/src-cli",
+	}
+
+	message := "This is a merge commit from Sourcegraph's test suite."
+	closeSourceBranch := true
+	mergeStrategy := MergeStrategySquash
+	opts := MergePullRequestOpts{
+		Message:           &message,
+		CloseSourceBranch: &closeSourceBranch,
+		MergeStrategy:     &mergeStrategy,
+	}
+
+	t.Run("not found", func(t *testing.T) {
+		pr, err := c.MergePullRequest(ctx, repo, 0, opts)
+		assert.Nil(t, pr)
+		assert.NotNil(t, err)
+		assert.True(t, errcode.IsNotFound(err))
+	})
+
+	t.Run("found", func(t *testing.T) {
+		pr, err := c.MergePullRequest(ctx, repo, id, opts)
+		assert.Nil(t, err)
+		assert.NotNil(t, pr)
+		assertGolden(t, pr)
+	})
+
+	t.Run("already merged", func(t *testing.T) {
+		pr, err := c.MergePullRequest(ctx, repo, id, opts)
+		assert.Nil(t, pr)
+		assert.NotNil(t, err)
+	})
+}
+
 func TestClient_UpdatePullRequest(t *testing.T) {
 	// WHEN UPDATING: this test expects
 	// https://bitbucket.org/sourcegraph-testing/src-cli/pull-requests/1/always-open-pr
