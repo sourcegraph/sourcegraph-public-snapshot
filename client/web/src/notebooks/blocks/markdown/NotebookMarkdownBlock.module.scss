@@ -83,3 +83,13 @@
         border-radius: var(--border-radius);
     }
 }
+
+:global(.notebook-markdown-heading-link) {
+    color: var(--text-muted-transparent);
+    margin-right: 0.25rem;
+
+    &:hover {
+        color: var(--text-muted);
+        text-decoration: none;
+    }
+}
