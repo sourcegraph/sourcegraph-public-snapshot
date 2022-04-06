@@ -766,7 +766,7 @@ type BatchSpecWorkspaceResolutionResolver interface {
 	State() string
 	StartedAt() *DateTime
 	FinishedAt() *DateTime
-	FailureMessage(context.Context) (*string, error)
+	FailureMessage() *string
 
 	Workspaces(ctx context.Context, args *ListWorkspacesArgs) (BatchSpecWorkspaceConnectionResolver, error)
 

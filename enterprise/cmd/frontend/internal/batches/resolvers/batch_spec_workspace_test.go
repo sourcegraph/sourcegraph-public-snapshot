@@ -81,7 +81,7 @@ func TestBatchSpecWorkspaceResolver(t *testing.T) {
 	}
 
 	wantTmpl := apitest.BatchSpecWorkspace{
-		Typename: "BatchSpecWorkspace",
+		Typename: "VisibleBatchSpecWorkspace",
 		ID:       apiID,
 
 		Repository: apitest.Repository{
@@ -159,12 +159,21 @@ query($batchSpecWorkspace: ID!) {
     ... on BatchSpecWorkspace {
       id
 
+      batchSpec {
+        id
+      }
+
+      onlyFetchWorkspace
+      unsupported
+      ignored
+
+      state
+      placeInQueue
+    }
+    ... on VisibleBatchSpecWorkspace {
       repository {
         id
         name
-      }
-      batchSpec {
-        id
       }
 
       searchResultPaths
@@ -176,17 +185,11 @@ query($batchSpecWorkspace: ID!) {
       }
 
       path
-      onlyFetchWorkspace
-      unsupported
-      ignored
 
-      steps {
+	  steps {
         run
         container
       }
-
-      state
-      placeInQueue
     }
   }
 }
