@@ -1,13 +1,7 @@
+import { noop } from 'lodash'
+
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-export const vscodeTelemetryService: TelemetryService = {
-    // TODO: generate and store anon user id.
-    // store w Memento
-
-    log: () => {},
-    logViewEvent: () => {},
-    logPageView: () => {},
-}
 /**
  * Props interface that can be extended by React components depending on the TelemetryService.
  */
@@ -21,7 +15,7 @@ export interface VsceTelemetryProps {
 /**
  * The telemetry service logs events.
  */
-export interface VsceTelemetryService {
+export interface VsceTelemetryService extends TelemetryService {
     /**
      * Log an event (by sending it to the server).
      * Provide uri manually for some events (e.g ViewRepository, ViewBlob) as webview does not provide link location
@@ -44,10 +38,7 @@ export interface VsceTelemetryService {
  * * Provide uri manually for some events
  */
 export const NOOP_TELEMETRY_SERVICE: VsceTelemetryService = {
-    log: () => {
-        /* noop */
-    },
-    logViewEvent: () => {
-        /* noop */
-    },
+    log: noop,
+    logViewEvent: noop,
+    logPageView: noop,
 }

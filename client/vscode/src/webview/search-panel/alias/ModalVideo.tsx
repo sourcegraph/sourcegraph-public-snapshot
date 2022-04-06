@@ -1,9 +1,10 @@
-import classNames from 'classnames'
 import React from 'react'
 
-import styles from '@sourcegraph/search-ui/src/documentation/ModalVideo.module.scss'
+import classNames from 'classnames'
 
 import { extensionCoreAPI } from '..'
+
+import styles from './ModalVideo.module.scss'
 
 // We can't play video in VS Code Desktop: https://stackoverflow.com/a/57512681
 // Open video in YouTube instead.
@@ -12,7 +13,7 @@ interface ModalVideoProps {
     id: string
     title: string
     src: string
-    thumbnail: { src: string; alt: string }
+    thumbnail?: { src: string; alt: string }
     onToggle?: (isOpen: boolean) => void
     showCaption?: boolean
     className?: string
@@ -35,7 +36,7 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
         })
     }
 
-    let thumbnailElement = (
+    let thumbnailElement = thumbnail ? (
         <button type="button" className={classNames(styles.thumbnailButton, 'border-0')} onClick={onClick}>
             <img
                 src={`${assetsRoot}/${thumbnail.src}`}
@@ -46,7 +47,7 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
                 <PlayIcon />
             </div>
         </button>
-    )
+    ) : null
 
     if (showCaption) {
         thumbnailElement = (

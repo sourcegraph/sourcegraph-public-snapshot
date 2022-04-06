@@ -83,6 +83,7 @@ export const RepoFileLink: React.FunctionComponent<Props> = ({
             <button onClick={onRepoClick} type="button" className="btn btn-text-link">
                 {repoDisplayName || displayRepoName(repoName)}
             </button>{' '}
+            ›{' '}
             <button onClick={onFileClick} type="button" className="btn btn-text-link">
                 {fileBase ? `${fileBase}/` : null}
                 <strong>{fileName}</strong>

@@ -1,7 +1,7 @@
 import * as Comlink from 'comlink'
 import * as uuid from 'uuid'
 
-import { EventSource, Event as EventType } from '@sourcegraph/web/src/graphql-operations'
+import { EventSource, Event as EventType } from '@sourcegraph/shared/src/graphql-operations'
 
 import { version } from '../../../package.json'
 import { ExtensionCoreAPI } from '../../contract'
@@ -39,6 +39,10 @@ export class EventLogger implements VsceTelemetryService {
                 url
             )
         }
+    }
+
+    public logPageView(): void {
+        // Debt: migrate VS Code `logViewEvent` calls to `logPageView`
     }
 
     /**

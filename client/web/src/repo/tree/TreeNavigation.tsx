@@ -10,10 +10,11 @@ import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import TagIcon from 'mdi-react/TagIcon'
 
 import { encodeURIPathComponent } from '@sourcegraph/common'
+import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { Button, ButtonGroup, Icon, Link } from '@sourcegraph/wildcard'
 
 import { RepoBatchChangesButton } from '../../batches/RepoBatchChangesButton'
-import { TreeFields, TreePageRepositoryFields } from '../../graphql-operations'
+import { TreePageRepositoryFields } from '../../graphql-operations'
 import { useExperimentalFeatures } from '../../stores'
 
 interface TreeNavigationProps {

@@ -10,7 +10,7 @@ import {
     getUserSearchContextNamespaces,
     QueryState,
 } from '@sourcegraph/search'
-import { SearchBox, SearchBoxEditor, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
+import { IEditor, SearchBox, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
@@ -54,8 +54,8 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
     > | null>(null)
 
     // Editor focus.
-    const editorReference = useRef<SearchBoxEditor>()
-    const setEditor = useCallback((editor: SearchBoxEditor) => {
+    const editorReference = useRef<IEditor>()
+    const setEditor = useCallback((editor: IEditor) => {
         editorReference.current = editor
         setTimeout(() => editor.focus(), 0)
     }, [])
@@ -309,7 +309,8 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     className={classNames('flex-grow-1 flex-shrink-past-contents', styles.searchBox)}
                     containerClassName={styles.searchBoxContainer}
                     autoFocus={true}
-                    setEditor={setEditor}
+                    onEditorCreated={setEditor}
+                    editorComponent="monaco"
                 />
             </form>
 

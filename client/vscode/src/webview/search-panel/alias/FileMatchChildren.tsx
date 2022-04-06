@@ -5,6 +5,7 @@ import * as H from 'history'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import {
     appendLineRangeQueryParameter,
@@ -13,7 +14,6 @@ import {
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { CodeExcerpt, FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import styles from '@sourcegraph/shared/src/components/FileMatchChildren.module.scss'
 import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIcon'
