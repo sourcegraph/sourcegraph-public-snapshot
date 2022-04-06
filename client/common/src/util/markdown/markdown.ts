@@ -57,6 +57,8 @@ export const renderMarkdown = (
     options: {
         /** Whether to render line breaks as HTML `<br>`s */
         breaks?: boolean
+        renderer?: marked.Renderer
+        headerPrefix?: string
     } & (
         | {
               /** Strip off any HTML and return a plain text string, useful for previews */
@@ -76,6 +78,8 @@ export const renderMarkdown = (
         breaks: options.breaks,
         sanitize: false,
         highlight: (code, language) => highlightCodeSafe(code, language),
+        renderer: options.renderer,
+        headerPrefix: options.headerPrefix ?? '',
     })
 
     let sanitizeOptions: Overwrite<sanitize.IOptions, sanitize.IDefaults>
