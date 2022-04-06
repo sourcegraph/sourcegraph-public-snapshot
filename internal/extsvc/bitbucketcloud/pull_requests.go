@@ -134,6 +134,32 @@ func (c *Client) CreatePullRequestComment(ctx context.Context, repo *Repo, id in
 	return &comment, nil
 }
 
+type MergePullRequestOpts struct {
+	Message           *string        `json:"message,omitempty"`
+	CloseSourceBranch *bool          `json:"close_source_branch,omitempty"`
+	MergeStrategy     *MergeStrategy `json:"merge_strategy,omitempty"`
+}
+
+// MergePullRequest merges the given pull request.
+func (c *Client) MergePullRequest(ctx context.Context, repo *Repo, id int64, opts MergePullRequestOpts) (*PullRequest, error) {
+	data, err := json.Marshal(&opts)
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling request")
+	}
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("/2.0/repositories/%s/pullrequests/%d/merge", repo.FullName, id), bytes.NewBuffer(data))
+	if err != nil {
+		return nil, errors.Wrap(err, "creating request")
+	}
+
+	var pr PullRequest
+	if err := c.do(ctx, req, &pr); err != nil {
+		return nil, errors.Wrap(err, "sending request")
+	}
+
+	return &pr, nil
+}
+
 // PullRequest represents a single pull request, as returned by the API.
 type PullRequest struct {
 	Links             Links                     `json:"links"`
