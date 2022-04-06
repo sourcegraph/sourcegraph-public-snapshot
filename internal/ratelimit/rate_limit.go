@@ -4,6 +4,8 @@ import (
 	"math"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+
 	"golang.org/x/time/rate"
 )
 
@@ -11,10 +13,18 @@ import (
 // limit mappings for each instance of our services.
 var DefaultRegistry = NewRegistry()
 
-// NewRegistry creates and returns an empty rate limit registry.
+// NewRegistry creates and returns an empty rate limit registry. If a global default rate limit is specified a fallback
+// rate limiter will be added.
 func NewRegistry() *Registry {
+	defaultRateLimit := conf.Get().ExperimentalFeatures.DefaultRateLimit
+	fallbackRateLimit := rate.Limit(defaultRateLimit)
+	if defaultRateLimit <= 0 {
+		fallbackRateLimit = rate.Inf
+	}
+	fallback := rate.NewLimiter(fallbackRateLimit, 1) // TODO Question: should the burst be configurable as well?
 	return &Registry{
 		rateLimiters: make(map[string]*rate.Limiter),
+		fallBack:     fallback,
 	}
 }
 
@@ -24,15 +34,17 @@ type Registry struct {
 	// rateLimiters contains mappings of external service to its *rate.Limiter. The
 	// key should be the URN of the external service.
 	rateLimiters map[string]*rate.Limiter
+	fallBack     *rate.Limiter
 }
 
 // Get returns the rate limiter configured for the given URN of an external
-// service. It returns an infinite limiter if no rate limiter has been configured
-// for the URN.
+// service. If no rate limiter has been configured for the URN, it returns either
+// the default rate limiter specified by the config or an infinite limiter if no
+// limiter specified in the config.
 //
 // Modifications to the returned rate limiter takes effect on all call sites.
 func (r *Registry) Get(urn string) *rate.Limiter {
-	return r.GetOrSet(urn, nil)
+	return r.GetOrSet(urn, r.fallBack)
 }
 
 // GetOrSet returns the rate limiter configured for the given URN of an external

@@ -3,9 +3,22 @@ package ratelimit
 import (
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/time/rate"
 )
+
+func TestDefaultRateLimiter(t *testing.T) {
+	cfg := conf.Get()
+	cfg.ExperimentalFeatures.DefaultRateLimit = 100
+	conf.Mock(cfg)
+
+	r := NewRegistry()
+	got := r.Get("Unknown")
+	want := rate.NewLimiter(rate.Limit(100), 1)
+	assert.Equal(t, want, got)
+}
 
 func TestRegistry(t *testing.T) {
 	r := NewRegistry()
