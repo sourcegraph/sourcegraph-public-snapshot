@@ -488,12 +488,11 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// PERMISSIONS: Now we view the same batch spec but as another non-admin user.
-	// We want to response to be a 404, so an empty BatchSpec
-	want = apitest.BatchSpec{}
-	// Now we can query
+	// This should still work.
+	want.ViewerCanAdminister = false
+	want.ViewerCanRetry = false
 	otherUser := ct.CreateTestUser(t, db, false)
 	otherUserCtx := actor.WithActor(ctx, actor.FromUser(otherUser.ID))
-
 	queryAndAssertBatchSpec(t, otherUserCtx, s, apiID, want)
 }
 
@@ -593,7 +592,7 @@ func setResolutionJobState(t *testing.T, ctx context.Context, s *store.Store, jo
 }
 
 const queryBatchSpecNode = `
-fragment u on User { id, databaseID, siteAdmin }
+fragment u on User { id, databaseID }
 fragment o on Org  { id, name }
 
 query($batchSpec: ID!) {
