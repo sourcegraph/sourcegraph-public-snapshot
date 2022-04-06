@@ -11,12 +11,16 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
+var client = gitserver.NewClient(database.NewMockDB())
+
 func TestAdjustPath(t *testing.T) {
-	adjuster := NewPositionAdjuster(&types.Repo{ID: 50}, "deadbeef1", nil)
+	adjuster := NewPositionAdjuster(client, &types.Repo{ID: 50}, "deadbeef1", nil)
 	path, ok, err := adjuster.AdjustPath(context.Background(), "deadbeef2", "/foo/bar.go", false)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
@@ -34,7 +38,7 @@ func TestAdjustPosition(t *testing.T) {
 	t.Cleanup(func() {
 		git.Mocks.ExecReader = nil
 	})
-	git.Mocks.ExecReader = func(args []string) (reader io.ReadCloser, err error) {
+	gitserver.Mocks.ExecReader = func(args []string) (reader io.ReadCloser, err error) {
 		expectedArgs := []string{"diff", "deadbeef1", "deadbeef2", "--", "/foo/bar.go"}
 		if diff := cmp.Diff(expectedArgs, args); diff != "" {
 			t.Errorf("unexpected exec reader args (-want +got):\n%s", diff)
@@ -45,7 +49,7 @@ func TestAdjustPosition(t *testing.T) {
 
 	posIn := lsifstore.Position{Line: 302, Character: 15}
 
-	adjuster := NewPositionAdjuster(&types.Repo{ID: 50}, "deadbeef1", nil)
+	adjuster := NewPositionAdjuster(client, &types.Repo{ID: 50}, "deadbeef1", nil)
 	path, posOut, ok, err := adjuster.AdjustPosition(context.Background(), "deadbeef2", "/foo/bar.go", posIn, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
@@ -68,13 +72,13 @@ func TestAdjustPositionEmptyDiff(t *testing.T) {
 	t.Cleanup(func() {
 		git.Mocks.ExecReader = nil
 	})
-	git.Mocks.ExecReader = func(args []string) (reader io.ReadCloser, err error) {
+	gitserver.Mocks.ExecReader = func(args []string) (reader io.ReadCloser, err error) {
 		return io.NopCloser(bytes.NewReader(nil)), nil
 	}
 
 	posIn := lsifstore.Position{Line: 10, Character: 15}
 
-	adjuster := NewPositionAdjuster(&types.Repo{ID: 50}, "deadbeef1", nil)
+	adjuster := NewPositionAdjuster(client, &types.Repo{ID: 50}, "deadbeef1", nil)
 	path, posOut, ok, err := adjuster.AdjustPosition(context.Background(), "deadbeef2", "/foo/bar.go", posIn, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
@@ -95,7 +99,7 @@ func TestAdjustPositionReverse(t *testing.T) {
 	t.Cleanup(func() {
 		git.Mocks.ExecReader = nil
 	})
-	git.Mocks.ExecReader = func(args []string) (reader io.ReadCloser, err error) {
+	gitserver.Mocks.ExecReader = func(args []string) (reader io.ReadCloser, err error) {
 		expectedArgs := []string{"diff", "deadbeef2", "deadbeef1", "--", "/foo/bar.go"}
 		if diff := cmp.Diff(expectedArgs, args); diff != "" {
 			t.Errorf("unexpected exec reader args (-want +got):\n%s", diff)
@@ -106,7 +110,7 @@ func TestAdjustPositionReverse(t *testing.T) {
 
 	posIn := lsifstore.Position{Line: 302, Character: 15}
 
-	adjuster := NewPositionAdjuster(&types.Repo{ID: 50}, "deadbeef1", nil)
+	adjuster := NewPositionAdjuster(client, &types.Repo{ID: 50}, "deadbeef1", nil)
 	path, posOut, ok, err := adjuster.AdjustPosition(context.Background(), "deadbeef2", "/foo/bar.go", posIn, true)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
@@ -129,7 +133,7 @@ func TestAdjustRange(t *testing.T) {
 	t.Cleanup(func() {
 		git.Mocks.ExecReader = nil
 	})
-	git.Mocks.ExecReader = func(args []string) (reader io.ReadCloser, err error) {
+	gitserver.Mocks.ExecReader = func(args []string) (reader io.ReadCloser, err error) {
 		expectedArgs := []string{"diff", "deadbeef1", "deadbeef2", "--", "/foo/bar.go"}
 		if diff := cmp.Diff(expectedArgs, args); diff != "" {
 			t.Errorf("unexpected exec reader args (-want +got):\n%s", diff)
@@ -143,7 +147,7 @@ func TestAdjustRange(t *testing.T) {
 		End:   lsifstore.Position{Line: 305, Character: 20},
 	}
 
-	adjuster := NewPositionAdjuster(&types.Repo{ID: 50}, "deadbeef1", nil)
+	adjuster := NewPositionAdjuster(client, &types.Repo{ID: 50}, "deadbeef1", nil)
 	path, rOut, ok, err := adjuster.AdjustRange(context.Background(), "deadbeef2", "/foo/bar.go", rIn, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
@@ -169,7 +173,7 @@ func TestAdjustRangeEmptyDiff(t *testing.T) {
 	t.Cleanup(func() {
 		git.Mocks.ExecReader = nil
 	})
-	git.Mocks.ExecReader = func(args []string) (reader io.ReadCloser, err error) {
+	gitserver.Mocks.ExecReader = func(args []string) (reader io.ReadCloser, err error) {
 		return io.NopCloser(bytes.NewReader(nil)), nil
 	}
 
@@ -178,7 +182,7 @@ func TestAdjustRangeEmptyDiff(t *testing.T) {
 		End:   lsifstore.Position{Line: 305, Character: 20},
 	}
 
-	adjuster := NewPositionAdjuster(&types.Repo{ID: 50}, "deadbeef1", nil)
+	adjuster := NewPositionAdjuster(client, &types.Repo{ID: 50}, "deadbeef1", nil)
 	path, rOut, ok, err := adjuster.AdjustRange(context.Background(), "deadbeef2", "/foo/bar.go", rIn, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
@@ -199,7 +203,7 @@ func TestAdjustRangeReverse(t *testing.T) {
 	t.Cleanup(func() {
 		git.Mocks.ExecReader = nil
 	})
-	git.Mocks.ExecReader = func(args []string) (reader io.ReadCloser, err error) {
+	gitserver.Mocks.ExecReader = func(args []string) (reader io.ReadCloser, err error) {
 		expectedArgs := []string{"diff", "deadbeef2", "deadbeef1", "--", "/foo/bar.go"}
 		if diff := cmp.Diff(expectedArgs, args); diff != "" {
 			t.Errorf("unexpected exec reader args (-want +got):\n%s", diff)
@@ -213,7 +217,7 @@ func TestAdjustRangeReverse(t *testing.T) {
 		End:   lsifstore.Position{Line: 305, Character: 20},
 	}
 
-	adjuster := NewPositionAdjuster(&types.Repo{ID: 50}, "deadbeef1", nil)
+	adjuster := NewPositionAdjuster(client, &types.Repo{ID: 50}, "deadbeef1", nil)
 	path, rOut, ok, err := adjuster.AdjustRange(context.Background(), "deadbeef2", "/foo/bar.go", rIn, true)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
