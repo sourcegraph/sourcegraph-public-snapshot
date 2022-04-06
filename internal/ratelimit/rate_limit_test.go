@@ -3,16 +3,22 @@ package ratelimit
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/time/rate"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestDefaultRateLimiter(t *testing.T) {
-	cfg := conf.Get()
-	cfg.ExperimentalFeatures.DefaultRateLimit = 100
-	conf.Mock(cfg)
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				DefaultRateLimit: 100,
+			},
+		},
+	})
+	defer conf.Mock(nil)
 
 	r := NewRegistry()
 	got := r.Get("Unknown")
