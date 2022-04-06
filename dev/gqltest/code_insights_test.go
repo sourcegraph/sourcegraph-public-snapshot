@@ -8,7 +8,7 @@ import (
 
 func TestGetInsights(t *testing.T) {
 	t.Run("can get insights", func(t *testing.T) {
-		result, err := client.GetInsights("")
+		result, err := client.GetInsights()
 		if err != nil {
 			t.Fatal(err)
 		}

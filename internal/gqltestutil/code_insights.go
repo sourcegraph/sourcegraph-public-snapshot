@@ -4,7 +4,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (c *Client) GetInsights(username string) ([]string, error) {
+func (c *Client) GetInsights() ([]string, error) {
 	const query = `
 		query InsightViews {
 			insightViews {
