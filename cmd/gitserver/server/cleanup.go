@@ -41,8 +41,9 @@ const (
 	// repoTTLGC is how often we should re-clone a repository once it is
 	// reporting git gc issues.
 	repoTTLGC = time.Hour * 24 * 2
-	// repoTTLSGM is how often we should re-clone a repository once it is
-	// reporting issues with sg maintenance.
+	// repoTTLSGM is how often we should re-clone a repository once it is reporting
+	// issues with sg maintenance. repoTTLSGM should be greater than sgmLogExpire,
+	// otherwise we will always re-clone before the log expires.
 	repoTTLSGM = time.Hour * 24 * 2
 	// gitConfigMaybeCorrupt is a key we add to git config to signal that a repo may be
 	// corrupt on disk.
@@ -69,8 +70,9 @@ var looseObjectsLimit, _ = strconv.Atoi(env.Get("SRC_GIT_LOOSE_OBJECTS_LIMIT", "
 
 // A failed sg maintenance run will place a log file in the git directory.
 // Subsequent sg maintenance runs are skipped unless the log file is old. Based
-// on how https://github.com/git/git handles the gc.log file.
-var sgmLogExpire, _ = strconv.Atoi(env.Get("SRC_GIT_LOG_FILE_EXPIRY", "24", "the number of hours after which sg maintenance runs even if a log file is present"))
+// on how https://github.com/git/git handles the gc.log file. sgmLogExpire should
+// be less than repoTLLSGM, otherwise we will always re-clone before the log
+// expires.
 var sgmLogExpire = env.MustGetDuration("SRC_GIT_LOG_FILE_EXPIRY", 24*time.Hour, "the number of hours after which sg maintenance runs even if a log file is present")
 
 // sg maintenance and git gc must not be enabled at the same time. However, both
