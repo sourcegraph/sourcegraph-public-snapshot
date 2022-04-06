@@ -162,7 +162,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			kind:        KindBitbucketCloud,
 			displayName: "No Trailing Slash",
 			want: RateLimitConfig{
-				BaseURL:     "https://example.com",
+				BaseURL:     "https://example.com/",
 				DisplayName: "No Trailing Slash",
 				Limit:       1.0,
 				IsDefault:   false,
