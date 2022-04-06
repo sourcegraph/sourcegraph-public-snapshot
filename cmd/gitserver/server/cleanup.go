@@ -906,7 +906,7 @@ func sgMaintenance(dir GitDir) (err error) {
 	b, err := cmd.CombinedOutput()
 	if err != nil {
 		if err := os.WriteFile(dir.Path(sgmLog), b, 0666); err != nil {
-			log15.Debug(fmt.Sprintf("cloud not write %s", sgmLog), "err", err)
+			log15.Debug("sg maintenance failed to write log file", "file", dir.Path(sgmLog), "err", err)
 		}
 		log15.Debug("sg maintenance", "dir", dir, "out", string(b))
 		return errors.Wrapf(wrapCmdError(cmd, err), "failed to run sg maintenance")
