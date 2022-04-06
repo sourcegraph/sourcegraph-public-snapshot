@@ -14,9 +14,23 @@ import { parseSearchURL } from '../search'
 import { submitSearch } from '../search/helpers'
 import { defaultCaseSensitiveFromSettings, defaultPatternTypeFromSettings } from '../util/settings'
 
-export interface NavbarQueryState extends SearchQueryState {}
+/**
+ * Describes where settings have been loaded from when the app loads. Higher
+ * values have higher precedence, i.e. if settings have been loaded from the
+ * URL, user settings should not overwrite them.
+ */
+enum InitialSettingsSource {
+    DEFAULT,
+    USER_SETTINGS,
+    URL,
+}
+
+export interface NavbarQueryState extends SearchQueryState {
+    settingsSource: InitialSettingsSource
+}
 
 export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
+    settingsSource: InitialSettingsSource.DEFAULT,
     queryState: { query: '' },
     searchCaseSensitivity: false,
     searchPatternType: SearchPatternType.literal,
@@ -55,15 +69,20 @@ export function setSearchCaseSensitivity(searchCaseSensitivity: boolean): void {
  * Update or initialize query state related data from URL search parameters
  */
 export function setQueryStateFromURL(urlParameters: string): void {
+    if (useNavbarQueryState.getState().settingsSource > InitialSettingsSource.URL) {
+        return
+    }
+
     // This will be updated with the default in settings when the web app mounts.
     const newState: Partial<
-        Pick<NavbarQueryState, 'searchPatternType' | 'searchCaseSensitivity' | 'searchQueryFromURL'>
+        Pick<NavbarQueryState, 'searchPatternType' | 'searchCaseSensitivity' | 'searchQueryFromURL' | 'settingsSource'>
     > = {}
 
     const parsedSearchURL = parseSearchURL(urlParameters)
 
     if (parsedSearchURL.query) {
         // Only update flags if the URL contains a search query.
+        newState.settingsSource = InitialSettingsSource.URL
         newState.searchCaseSensitivity = parsedSearchURL.caseSensitive
         if (parsedSearchURL.patternType !== undefined) {
             newState.searchPatternType = parsedSearchURL.patternType
@@ -81,10 +100,18 @@ export function setQueryStateFromURL(urlParameters: string): void {
  * Update or initialize query state related data from settings
  */
 export function setQueryStateFromSettings(settings: SettingsCascadeOrError<Settings>): void {
-    const newState: Partial<Pick<NavbarQueryState, 'searchPatternType' | 'searchCaseSensitivity'>> = {}
+    if (useNavbarQueryState.getState().settingsSource > InitialSettingsSource.USER_SETTINGS) {
+        return
+    }
+
+    const newState: Partial<
+        Pick<NavbarQueryState, 'searchPatternType' | 'searchCaseSensitivity' | 'settingsSource'>
+    > = {
+        settingsSource: InitialSettingsSource.USER_SETTINGS,
+    }
 
     const caseSensitive = defaultCaseSensitiveFromSettings(settings)
-    if (caseSensitive) {
+    if (caseSensitive !== undefined) {
         newState.searchCaseSensitivity = caseSensitive
     }
 
