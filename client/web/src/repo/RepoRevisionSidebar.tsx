@@ -89,17 +89,18 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
     }
 
     return (
-        <Panel defaultSize={256} position="left" storageKey={SIZE_STORAGE_KEY}>
+        <Panel defaultSize={256} position="left" className="h-100" storageKey={SIZE_STORAGE_KEY}>
             <div className="d-flex flex-column h-100 w-100">
                 <GettingStartedTour
-                    className="mb-1 mr-3"
+                    className="mr-3 flex-shrink-0"
                     telemetryService={props.telemetryService}
                     isAuthenticated={!!props.authenticatedUser}
                     featureFlags={props.featureFlags}
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
                 />
                 <Tabs
-                    className="w-100 h-100 test-repo-revision-sidebar pr-3"
+                    className="w-100 test-repo-revision-sidebar pr-3 flex-shrink-0 flex-grow-1"
+                    style={{ height: 10 }}
                     defaultIndex={persistedTabIndex}
                     onChange={setPersistedTabIndex}
                     lazy={true}
