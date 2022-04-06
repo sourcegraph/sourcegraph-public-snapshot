@@ -95,7 +95,7 @@ const NerdData: React.FunctionComponent<{ data: UseCodeIntelStatusPayload }> = (
                                     .map(support =>
                                         support.indexers?.map(indexer => (
                                             <li key={`precise-support-level-${supportLevel}-${indexer.name}`}>
-                                                <IndexerLink data={indexer} /> (
+                                                <CodeIntelIndexer indexer={indexer} /> (
                                                 {support.confidence && (
                                                     <span className="text-muted">{support.confidence}</span>
                                                 )}
@@ -189,6 +189,3 @@ const UploadOrIndexMeta: React.FunctionComponent<{ data: LsifUploadFields | Lsif
         </td>
     </tr>
 )
-
-const IndexerLink: React.FunctionComponent<{ data: CodeIntelIndexerFields }> = ({ data }) =>
-    data.url === '' ? <>{data.name}</> : <Link to={data.url}>{data.name}</Link>

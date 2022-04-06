@@ -7,6 +7,10 @@ export const lsifIndexFieldsFragment = gql`
         inputCommit
         inputRoot
         inputIndexer
+        indexer {
+            name
+            url
+        }
         projectRoot {
             url
             path

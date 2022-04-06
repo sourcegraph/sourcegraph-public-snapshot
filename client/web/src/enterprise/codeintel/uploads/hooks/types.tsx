@@ -7,6 +7,10 @@ export const lsifUploadFieldsFragment = gql`
         inputCommit
         inputRoot
         inputIndexer
+        indexer {
+            name
+            url
+        }
         projectRoot {
             url
             path
