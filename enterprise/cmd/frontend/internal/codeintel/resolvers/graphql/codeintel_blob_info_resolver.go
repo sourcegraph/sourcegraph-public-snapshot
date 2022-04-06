@@ -46,10 +46,10 @@ func (r *codeIntelSupportResolver) SearchBasedSupport(ctx context.Context) (_ gq
 	}
 
 	if ctagsSupported {
-		return NewSearchBasedCodeIntelResolver(&language), nil
+		return NewSearchBasedCodeIntelResolver(language), nil
 	}
 
-	return NewSearchBasedCodeIntelResolver(nil), nil
+	return NewSearchBasedCodeIntelResolver(""), nil
 }
 
 func (r *codeIntelSupportResolver) PreciseSupport(ctx context.Context) (gql.PreciseSupportResolver, error) {

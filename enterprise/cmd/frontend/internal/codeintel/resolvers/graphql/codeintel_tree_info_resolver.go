@@ -140,5 +140,5 @@ func (r *codeIntelTreeSearchBasedCoverageResolver) CoveredPaths() []string {
 }
 
 func (r *codeIntelTreeSearchBasedCoverageResolver) Support() gql.SearchBasedSupportResolver {
-	return NewSearchBasedCodeIntelResolver(&r.language)
+	return NewSearchBasedCodeIntelResolver(r.language)
 }

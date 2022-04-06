@@ -1658,7 +1658,7 @@ type SearchBasedCodeIntelSupport {
     The infered language the underlying tool infered when building an index for
     search-based code-intel.
     """
-    language: String
+    language: String!
 }
 
 """
