@@ -65,9 +65,7 @@ export function getPasswordRequirements(): string {
 
         if (passwordPolicyReference.minimumLength && passwordPolicyReference.minimumLength > 0) {
             requirements +=
-                'Your password must include at least ' +
-                String(passwordPolicyReference.minimumLength) +
-                ' characters'
+                'Your password must include at least ' + String(passwordPolicyReference.minimumLength) + ' characters'
         }
         if (
             passwordPolicyReference.numberOfSpecialCharacters &&
@@ -292,7 +290,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                             minLength={
                                 context.experimentalFeatures.passwordPolicy != undefined &&
                                 context.experimentalFeatures.passwordPolicy.enabled != undefined &&
-                                context.experimentalFeatures.passwordPolicy.enabled &&                                    
+                                context.experimentalFeatures.passwordPolicy.enabled &&
                                 context.experimentalFeatures.passwordPolicy.minimumLength !== undefined
                                     ? context.experimentalFeatures.passwordPolicy.minimumLength
                                     : 12
