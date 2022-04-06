@@ -1,7 +1,7 @@
 import React from 'react'
 
-import { CategoricalLikeChart, PieChart } from '../../../../../charts'
-import { CategoricalBasedChartTypes } from '../types'
+import { CategoricalLikeChart, PieChart } from '../../../../../../charts'
+import { CategoricalBasedChartTypes } from '../../types'
 
 interface CategoricalChartProps<Datum> extends CategoricalLikeChart<Datum> {
     type: CategoricalBasedChartTypes

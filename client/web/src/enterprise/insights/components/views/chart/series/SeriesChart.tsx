@@ -1,7 +1,7 @@
 import React from 'react'
 
-import { LineChart, SeriesLikeChart } from '../../../../../charts'
-import { SeriesBasedChartTypes } from '../types'
+import { LineChart, SeriesLikeChart } from '../../../../../../charts'
+import { SeriesBasedChartTypes } from '../../types'
 
 export interface SeriesChartProps<D> extends SeriesLikeChart<D> {
     type: SeriesBasedChartTypes
