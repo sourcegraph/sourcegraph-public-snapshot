@@ -56,3 +56,28 @@ const buildLocation = (node: LocationFields, precise: boolean): Location => {
     location.lines = location.content.split(/\r?\n/)
     return location
 }
+
+export const buildRepoLocationGroups = (locations: Location[]): RepoLocationGroup[] => {
+    const byRepoAndFile: Record<string, Record<string, Location[]>> = {}
+    for (const location of locations) {
+        if (byRepoAndFile[location.repo] === undefined) {
+            byRepoAndFile[location.repo] = {}
+        }
+        if (byRepoAndFile[location.repo][location.file] === undefined) {
+            byRepoAndFile[location.repo][location.file] = []
+        }
+        byRepoAndFile[location.repo][location.file].push(location)
+    }
+
+    return Object.keys(byRepoAndFile).map(repoName => {
+        const byFile = byRepoAndFile[repoName]
+
+        const referenceGroups: LocationGroup[] = Object.keys(byFile).map(path => ({
+            path,
+            locations: byFile[path],
+            repoName,
+        }))
+
+        return { repoName, referenceGroups }
+    })
+}

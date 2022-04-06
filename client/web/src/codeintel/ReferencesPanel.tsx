@@ -54,7 +54,7 @@ import { parseBrowserRepoURL } from '../util/url'
 
 import { findLanguageSpec } from './language-specs/languages'
 import { LanguageSpec } from './language-specs/languagespec'
-import { Location, RepoLocationGroup, LocationGroup, locationGroupQuality } from './location'
+import { Location, RepoLocationGroup, LocationGroup, locationGroupQuality, buildRepoLocationGroups } from './location'
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
 import { newSettingsGetter } from './settings'
 import { findSearchToken } from './token'
@@ -630,36 +630,7 @@ const LocationsList: React.FunctionComponent<LocationsListProps> = ({
     setActiveLocation,
     filter,
 }) => {
-    const repoLocationGroups = useMemo((): RepoLocationGroup[] => {
-        const byFile: Record<string, Location[]> = {}
-        for (const location of locations) {
-            if (byFile[location.file] === undefined) {
-                byFile[location.file] = []
-            }
-            byFile[location.file].push(location)
-        }
-
-        const locationsGroups: LocationGroup[] = []
-        Object.keys(byFile).map(path => {
-            const references = byFile[path]
-            const repoName = references[0].repo
-            locationsGroups.push({ path, locations: references, repoName })
-        })
-
-        const byRepo: Record<string, LocationGroup[]> = {}
-        for (const group of locationsGroups) {
-            if (byRepo[group.repoName] === undefined) {
-                byRepo[group.repoName] = []
-            }
-            byRepo[group.repoName].push(group)
-        }
-        const repoLocationGroups: RepoLocationGroup[] = []
-        Object.keys(byRepo).map(repoName => {
-            const referenceGroups = byRepo[repoName]
-            repoLocationGroups.push({ repoName, referenceGroups })
-        })
-        return repoLocationGroups
-    }, [locations])
+    const repoLocationGroups = useMemo(() => buildRepoLocationGroups(locations), [locations])
 
     return (
         <>
