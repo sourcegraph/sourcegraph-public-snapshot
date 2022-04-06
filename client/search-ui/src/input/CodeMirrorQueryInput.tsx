@@ -35,6 +35,7 @@ import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transf
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
 import { MonacoQueryInputProps } from './MonacoQueryInput'
 
@@ -213,11 +214,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<MonacoQueryInputPro
     // It looks like <Shortcut ... /> needs a stable onMatch callback, hence we
     // are storing the editor in a ref so that `globalFocus` is stable.
     const globalFocus = useCallback(() => {
-        if (
-            editorReference.current &&
-            !!document.activeElement &&
-            !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)
-        ) {
+        if (editorReference.current && !!document.activeElement && !isInputElement(document.activeElement)) {
             editorReference.current.focus()
         }
     }, [editorReference])
