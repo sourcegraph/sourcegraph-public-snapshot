@@ -31,8 +31,8 @@ export interface UseCodeIntelStatusPayload {
     activeUploads: LsifUploadFields[]
     recentUploads: LSIFUploadsWithRepositoryNamespaceFields[]
     recentIndexes: LSIFIndexesWithRepositoryNamespaceFields[]
-    preciseSupport: (PreciseSupportFields & { confidence?: InferedPreciseSupportLevel })[]
-    searchBasedSupport: SearchBasedCodeIntelSupportFields[]
+    preciseSupport?: (PreciseSupportFields & { confidence?: InferedPreciseSupportLevel })[]
+    searchBasedSupport?: SearchBasedCodeIntelSupportFields[]
 }
 
 export const useCodeIntelStatus = ({ variables }: UseCodeIntelStatusParameters): UseCodeIntelStatusResult => {
@@ -67,8 +67,8 @@ export const useCodeIntelStatus = ({ variables }: UseCodeIntelStatusParameters):
             return {
                 data: {
                     ...common,
-                    searchBasedSupport: [support.searchBasedSupport],
-                    preciseSupport: [support.preciseSupport],
+                    searchBasedSupport: support.searchBasedSupport ? [support.searchBasedSupport] : undefined,
+                    preciseSupport: support.preciseSupport ? [support.preciseSupport] : undefined,
                 },
                 error,
                 loading,
