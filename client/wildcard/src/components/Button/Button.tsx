@@ -70,6 +70,7 @@ export const Button = React.forwardRef(
         const { isBranded } = useWildcardTheme()
 
         const brandedButtonClassname = classNames(
+            styles.btn,
             variant && getButtonStyle({ variant, outline }),
             display && getButtonDisplay({ display }),
             size && getButtonSize({ size })
