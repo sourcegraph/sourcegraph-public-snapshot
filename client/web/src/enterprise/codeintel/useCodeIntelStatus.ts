@@ -1,129 +1,38 @@
 import { ApolloError } from '@apollo/client'
 
-import { gql, useQuery } from '@sourcegraph/http-client'
+import { useQuery } from '@sourcegraph/http-client'
 
 import {
     CodeIntelStatusResult,
     CodeIntelStatusVariables,
+    InferedPreciseSupportLevel,
+    LSIFIndexesWithRepositoryNamespaceFields,
+    LsifUploadFields,
+    LSIFUploadsWithRepositoryNamespaceFields,
     PreciseSupportFields,
     SearchBasedCodeIntelSupportFields,
 } from '../../graphql-operations'
 
-import { lsifIndexFieldsFragment } from './indexes/hooks/types'
-import { lsifUploadFieldsFragment } from './uploads/hooks/types'
-
-const codeIntelIndexerFieldsFragment = gql`
-    fragment CodeIntelIndexerFields on CodeIntelIndexer {
-        name
-        url
-    }
-`
-
-const codeIntelSupportFieldsFragment = gql`
-    fragment CodeIntelSupportFields on CodeIntelSupport {
-        preciseSupport {
-            ...PreciseSupportFields
-        }
-        searchBasedSupport {
-            ...SearchBasedCodeIntelSupportFields
-        }
-    }
-`
-
-const gitTreeCodeIntelInfoFieldsFragment = gql`
-    fragment GitTreeCodeIntelInfoFields on GitTreeCodeIntelInfo {
-        preciseSupport {
-            support {
-                ...PreciseSupportFields
-            }
-            confidence
-        }
-        searchBasedSupport {
-            support {
-                ...SearchBasedCodeIntelSupportFields
-            }
-        }
-    }
-`
-
-const preciseSupportFieldsFragment = gql`
-    fragment PreciseSupportFields on PreciseCodeIntelSupport {
-        supportLevel
-        indexers {
-            ...CodeIntelIndexerFields
-        }
-    }
-`
-
-const searchBasedCodeIntelSupportFieldsFragment = gql`
-    fragment SearchBasedCodeIntelSupportFields on SearchBasedCodeIntelSupport {
-        language
-        supportLevel
-    }
-`
-
-const codeIntelStatusQuery = gql`
-    query CodeIntelStatus($repository: String!, $commit: String!, $path: String!) {
-        repository(name: $repository) {
-            codeIntelSummary {
-                lastIndexScan
-                lastUploadRetentionScan
-                recentUploads {
-                    root
-                    indexer {
-                        ...CodeIntelIndexerFields
-                    }
-                    uploads {
-                        ...LsifUploadFields
-                    }
-                }
-                recentIndexes {
-                    root
-                    indexer {
-                        ...CodeIntelIndexerFields
-                    }
-                    indexes {
-                        ...LsifIndexFields
-                    }
-                }
-            }
-            commit(rev: $commit) {
-                path(path: $path) {
-                    ... on GitBlob {
-                        codeIntelSupport {
-                            ...CodeIntelSupportFields
-                        }
-                    }
-                    ... on GitTree {
-                        codeIntelInfo {
-                            ...GitTreeCodeIntelInfoFields
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    ${lsifUploadFieldsFragment}
-    ${lsifIndexFieldsFragment}
-    ${codeIntelIndexerFieldsFragment}
-    ${codeIntelSupportFieldsFragment}
-    ${gitTreeCodeIntelInfoFieldsFragment}
-    ${preciseSupportFieldsFragment}
-    ${searchBasedCodeIntelSupportFieldsFragment}
-`
+import { codeIntelStatusQuery } from './queries'
 
 export interface UseCodeIntelStatusParameters {
     variables: CodeIntelStatusVariables
 }
 
 export interface UseCodeIntelStatusResult {
-    data?: {
-        preciseSupport?: PreciseSupportFields[]
-        searchBasedSupport?: SearchBasedCodeIntelSupportFields[]
-    }
+    data?: UseCodeIntelStatusPayload
     error?: ApolloError
     loading: boolean
+}
+
+export interface UseCodeIntelStatusPayload {
+    lastIndexScan?: string
+    lastUploadRetentionScan?: string
+    activeUploads: LsifUploadFields[]
+    recentUploads: LSIFUploadsWithRepositoryNamespaceFields[]
+    recentIndexes: LSIFIndexesWithRepositoryNamespaceFields[]
+    preciseSupport: (PreciseSupportFields & { confidence?: InferedPreciseSupportLevel })[]
+    searchBasedSupport: SearchBasedCodeIntelSupportFields[]
 }
 
 export const useCodeIntelStatus = ({ variables }: UseCodeIntelStatusParameters): UseCodeIntelStatusResult => {
@@ -136,13 +45,30 @@ export const useCodeIntelStatus = ({ variables }: UseCodeIntelStatusParameters):
         }
     )
 
-    const path = rawData?.repository?.commit?.path
+    const repo = rawData?.repository
+    const path = repo?.commit?.path
+    const lsif = path?.lsif
+    if (!repo || !path) {
+        return { loading, error }
+    }
+
+    const summary = repo.codeIntelSummary
+    const common: Omit<UseCodeIntelStatusPayload, 'preciseSupport' | 'searchBasedSupport'> = {
+        lastIndexScan: summary.lastIndexScan || undefined,
+        lastUploadRetentionScan: summary.lastUploadRetentionScan || undefined,
+        activeUploads: lsif?.lsifUploads || [],
+        recentUploads: summary.recentUploads,
+        recentIndexes: summary.recentIndexes,
+    }
+
     switch (path?.__typename) {
         case 'GitBlob': {
+            const support = path.codeIntelSupport
             return {
                 data: {
-                    searchBasedSupport: [path.codeIntelSupport.searchBasedSupport],
-                    preciseSupport: [path.codeIntelSupport.preciseSupport],
+                    ...common,
+                    searchBasedSupport: [support.searchBasedSupport],
+                    preciseSupport: [support.preciseSupport],
                 },
                 error,
                 loading,
@@ -154,8 +80,12 @@ export const useCodeIntelStatus = ({ variables }: UseCodeIntelStatusParameters):
             return {
                 data: info
                     ? {
-                          searchBasedSupport: info.searchBasedSupport?.map(wrapper => wrapper.support) || [],
-                          preciseSupport: info.preciseSupport?.map(wrapper => wrapper.support) || [],
+                          ...common,
+                          searchBasedSupport: (info.searchBasedSupport || []).map(wrapper => wrapper.support),
+                          preciseSupport: (info.preciseSupport || []).map(wrapper => ({
+                              ...wrapper.support,
+                              confidence: wrapper.confidence,
+                          })),
                       }
                     : undefined,
                 error,
