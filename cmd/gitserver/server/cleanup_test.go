@@ -1246,33 +1246,34 @@ func TestSGMLogFile(t *testing.T) {
 		}
 	}
 
+	// break the repo
+	fakeRef := dir.Path("refs", "heads", "apple")
+	if _, err := os.Create(fakeRef); err != nil {
+		t.Fatal("test setup failed. Could not create fake ref")
+	}
+
 	// failed run => log file
-	if err := sgMaintenance(dir, exec.Command("git", "apple")); err == nil {
+	if err := sgMaintenance(dir); err == nil {
 		t.Fatal("sgMaintenance should have returned an error")
 	}
 	mustHaveLogFile(t)
 
-	// fresh log file => skip execution
-	cmd = sgmCmd()
-	if err := sgMaintenance(dir, cmd); err != nil {
+	// fix the repo
+	os.Remove(fakeRef)
+
+	// fresh sgmLog file => skip execution
+	if err := sgMaintenance(dir); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	}
 	mustHaveLogFile(t)
-	if cmd.ProcessState != nil {
-		t.Fatal("command should NOT have run")
-	}
 
 	// backdate sgmLog file => sgMaintenance ignores log file
 	old := time.Now().Add(-2 * sgmLogExpire)
 	if err := os.Chtimes(dir.Path(sgmLog), old, old); err != nil {
 		t.Fatal(err)
 	}
-	cmd = sgmCmd()
-	if err := sgMaintenance(dir, cmd); err != nil {
+	if err := sgMaintenance(dir); err != nil {
 		t.Fatalf("unexpected error %s", err)
-	}
-	if cmd.ProcessState == nil {
-		t.Fatal("command should have run")
 	}
 	if _, err := os.Stat(dir.Path(sgmLog)); err == nil {
 		t.Fatalf("%s should have been removed", sgmLog)

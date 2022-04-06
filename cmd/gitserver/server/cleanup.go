@@ -302,7 +302,7 @@ func (s *Server) cleanupRepos() {
 	}
 
 	performSGMaintenance := func(dir GitDir) (done bool, err error) {
-		return false, sgMaintenance(dir, sgmCmd())
+		return false, sgMaintenance(dir)
 	}
 
 	performGitPrune := func(dir GitDir) (done bool, err error) {
@@ -874,17 +874,11 @@ func gitGC(dir GitDir) error {
 	return nil
 }
 
-func sgmCmd() *exec.Cmd {
-	cmd := exec.Command("sh")
-	cmd.Stdin = strings.NewReader(sgMaintenanceScript)
-	return cmd
-}
-
 // sgMaintenance runs a set of git cleanup tasks in dir. This must not be run
 // concurrently with git gc. sgMaintenance will check the state of the repository
 // to avoid running the cleanup tasks if possible. If a sgmLog file is present in
 // dir, sgMaintenance will not run unless the file is old.
-func sgMaintenance(dir GitDir, cmd *exec.Cmd) (err error) {
+func sgMaintenance(dir GitDir) (err error) {
 	// Don't run if sgmLog file is younger than sgmLogExpire hours. There is no need
 	// to report an error, because the error has already been logged in a previous
 	// run.
@@ -904,7 +898,11 @@ func sgMaintenance(dir GitDir, cmd *exec.Cmd) (err error) {
 		return nil
 	}
 
+	cmd := exec.Command("sh")
 	dir.Set(cmd)
+
+	cmd.Stdin = strings.NewReader(sgMaintenanceScript)
+
 	b, err := cmd.CombinedOutput()
 	if err != nil {
 		if err := os.WriteFile(dir.Path(sgmLog), b, 0666); err != nil {
