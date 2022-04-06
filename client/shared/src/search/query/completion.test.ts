@@ -144,7 +144,6 @@ describe('getCompletionItems()', () => {
             'timeout',
             'type',
             'visibility',
-            'github.com/sourcegraph/jsonrpc2',
             'RepoRoutes',
         ])
     })
