@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 
 import { Button, Icon } from '@sourcegraph/wildcard'
@@ -43,24 +42,9 @@ export const WorkspacesPreviewListItem: React.FunctionComponent<WorkspacesPrevie
 
     if (workspace.__typename === 'HiddenBatchSpecWorkspace') {
         return (
-            <li
-                className={classNames(
-                    'd-flex align-items-center px-2 py-3 w-100',
-                    variant === 'light' ? styles.light : styles.dark
-                )}
-                key={workspace.id}
-            >
-                <div className={classNames(styles.statusContainer, 'mr-2')}>
-                    <StatusIcon
-                        status={toBeExcluded ? 'to-exclude' : workspace.cachedResultFound ? 'cached' : 'none'}
-                    />
-                </div>
-                <div className="flex-1">
-                    <h4 className={classNames(styles.overflow, (toBeExcluded || isStale) && styles.stale)}>
-                        Workspace in hidden repository
-                    </h4>
-                </div>
-            </li>
+            <ListItem className={isStale ? styles.stale : undefined}>
+                <Descriptor workspace={undefined} statusIndicator={statusIndicator} />
+            </ListItem>
         )
     }
 
