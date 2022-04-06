@@ -2,6 +2,8 @@ import { Range } from '@sourcegraph/extension-api-types'
 
 import { LocationFields } from '../graphql-operations'
 
+import { Result } from './searchBased'
+
 export interface Location {
     repo: string
     file: string
@@ -36,23 +38,30 @@ export const locationGroupQuality = (group: LocationGroup): LocationGroupQuality
     return group.locations[0].precise ? 'PRECISE' : 'SEARCH-BASED'
 }
 
-export const buildPreciseLocation = (node: LocationFields): Location => buildLocation(node, true)
-export const buildSearchBasedLocation = (node: LocationFields): Location => buildLocation(node, false)
+export const buildSearchBasedLocation = (node: Result): Location => ({
+    repo: node.repo,
+    file: node.file,
+    commitID: node.rev,
+    content: node.content,
+    url: node.url,
+    lines: node.content.split(/\r?\n/),
+    precise: false,
+    range: node.range,
+})
 
-const buildLocation = (node: LocationFields, precise: boolean): Location => {
+export const buildPreciseLocation = (node: LocationFields): Location => {
     const location: Location = {
         content: node.resource.content,
         commitID: node.resource.commit.oid,
         repo: node.resource.repository.name,
         file: node.resource.path,
-        url: '',
+        url: node.url,
         lines: [],
-        precise,
+        precise: true,
     }
     if (node.range !== null) {
         location.range = node.range
     }
-    location.url = node.url
     location.lines = location.content.split(/\r?\n/)
     return location
 }
