@@ -24,18 +24,22 @@ export const WorkspacesListItem: React.FunctionComponent<WorkspacesListItemProps
         <WorkspaceStateIcon cachedResultFound={workspace.cachedResultFound} state={workspace.state} />
     )
 
+    const diffStat = (
+        <>{workspace.diffStat && <DiffStat className="pr-3" {...workspace.diffStat} expandedCounts={true} />}</>
+    )
+
     if (workspace.__typename === 'HiddenBatchSpecWorkspace') {
         return (
             <ListItem className={isSelected ? styles.selected : undefined} onClick={onSelect}>
                 <Descriptor workspace={undefined} statusIndicator={statusIndicator} />
-                {workspace.diffStat && <DiffStat className="pr-3" {...workspace.diffStat} expandedCounts={true} />}
+                {diffStat}
             </ListItem>
         )
     }
     return (
         <ListItem className={isSelected ? styles.selected : undefined} onClick={onSelect}>
             <Descriptor workspace={workspace} statusIndicator={statusIndicator} />
-            {workspace.diffStat && <DiffStat className="pr-3" {...workspace.diffStat} expandedCounts={true} />}
+            {diffStat}
         </ListItem>
     )
 }

@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
+import { noop } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
@@ -88,76 +89,110 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
     }
 
     if (workspace.__typename === 'HiddenBatchSpecWorkspace') {
-        return <HiddenWorkspaceDetails isLightTheme={isLightTheme} workspace={workspace} />
+        return (
+            <HiddenWorkspaceDetails
+                deselectWorkspace={deselectWorkspace}
+                isLightTheme={isLightTheme}
+                workspace={workspace}
+            />
+        )
     }
-    return <VisibleWorkspaceDetails isLightTheme={isLightTheme} workspace={workspace} />
+    return (
+        <VisibleWorkspaceDetails
+            deselectWorkspace={deselectWorkspace}
+            isLightTheme={isLightTheme}
+            workspace={workspace}
+        />
+    )
 }
+
+interface WorkspaceHeaderProps extends Pick<WorkspaceDetailsProps, 'deselectWorkspace'> {
+    workspace: HiddenBatchSpecWorkspaceFields | VisibleBatchSpecWorkspaceFields
+    toggleShowTimeline: () => void
+}
+
+const WorkspaceHeader: React.FunctionComponent<WorkspaceHeaderProps> = ({
+    workspace,
+    deselectWorkspace,
+    toggleShowTimeline,
+}) => (
+    <>
+        <div className="d-flex justify-content-between">
+            <h3>
+                <WorkspaceStateIcon cachedResultFound={workspace.cachedResultFound} state={workspace.state} />{' '}
+                {workspace.__typename === 'VisibleBatchSpecWorkspace'
+                    ? workspace.repository.name
+                    : 'Workspace in hidden repository'}
+                {workspace.__typename === 'VisibleBatchSpecWorkspace' && (
+                    <Link to={workspace.repository.url}>
+                        <Icon as={ExternalLinkIcon} />
+                    </Link>
+                )}
+            </h3>
+            <Button className="p-0 ml-2" onClick={deselectWorkspace} variant="link" size="sm">
+                <Icon as={CloseIcon} />
+            </Button>
+        </div>
+        <div className="text-muted">
+            {typeof workspace.placeInQueue === 'number' && (
+                <>
+                    <Icon as={SyncIcon} />{' '}
+                    <strong>
+                        <NumberInQueue number={workspace.placeInQueue} />
+                    </strong>{' '}
+                    in queue |{' '}
+                </>
+            )}
+            {workspace.__typename === 'VisibleBatchSpecWorkspace' && workspace.path && <>{workspace.path} | </>}
+            {workspace.__typename === 'VisibleBatchSpecWorkspace' && (
+                <>
+                    <Icon as={SourceBranchIcon} /> base: <strong>{workspace.branch.displayName}</strong>
+                </>
+            )}
+            {workspace.startedAt && (
+                <>
+                    {' '}
+                    | Total time:{' '}
+                    <strong>
+                        <Duration start={workspace.startedAt} end={workspace.finishedAt ?? undefined} />
+                    </strong>
+                </>
+            )}
+            {workspace.__typename === 'VisibleBatchSpecWorkspace' &&
+                !workspace.cachedResultFound &&
+                workspace.state !== BatchSpecWorkspaceState.SKIPPED && (
+                    <>
+                        {' '}
+                        |{' '}
+                        <Button className="text-muted m-0 p-0" onClick={toggleShowTimeline} variant="link">
+                            Timeline
+                        </Button>
+                    </>
+                )}
+        </div>
+        <hr />
+    </>
+)
 
 interface HiddenWorkspaceDetailsProps extends Omit<WorkspaceDetailsProps, 'id'> {
     workspace: HiddenBatchSpecWorkspaceFields
 }
 
-const HiddenWorkspaceDetails: React.FunctionComponent<HiddenWorkspaceDetailsProps> = ({ workspace }) => {
-    const history = useHistory()
-    const onClose = useCallback(() => {
-        history.push(history.location.pathname)
-    }, [history])
-    return (
-        <>
-            <div className="d-flex justify-content-between">
-                <h3>
-                    <WorkspaceStateIcon cachedResultFound={workspace.cachedResultFound} state={workspace.state} />{' '}
-                    Workspace in hidden repository
-                </h3>
-                <Button className="p-0 ml-2" onClick={onClose} variant="link" size="sm">
-                    <CloseIcon className="icon-inline" />
-                </Button>
-            </div>
-            <div className="text-muted">
-                {workspace.startedAt && (
-                    <>
-                        Total time:{' '}
-                        <strong>
-                            <Duration start={workspace.startedAt} end={workspace.finishedAt ?? undefined} />
-                        </strong>
-                    </>
-                )}
-                {typeof workspace.placeInQueue === 'number' && (
-                    <>
-                        {' '}
-                        | <SyncIcon className="icon-inline" />{' '}
-                        <strong>
-                            <NumberInQueue number={workspace.placeInQueue} />
-                        </strong>{' '}
-                        in queue
-                    </>
-                )}
-            </div>
-            <hr />
-            {workspace.state === BatchSpecWorkspaceState.SKIPPED && workspace.ignored && (
-                <p className="text-muted text-center py-3 mb-0">
-                    <strong>
-                        <LinkVariantRemoveIcon className="icon-inline" /> This workspace has been skipped because a{' '}
-                        <code>.batchignore</code> file was found.
-                    </strong>
-                </p>
-            )}
-            {workspace.state === BatchSpecWorkspaceState.SKIPPED && workspace.unsupported && (
-                <p className="text-muted text-center py-3 mb-0">
-                    <strong>
-                        <LinkVariantRemoveIcon className="icon-inline" /> This workspace has been skipped because it is
-                        on an unsupported code host.
-                    </strong>
-                </p>
-            )}
-            <h1 className="text-center text-muted mt-5">
-                <Icon as={EyeOffOutlineIcon} />
-            </h1>
-            <p className="text-center">This workspace is hidden due to permissions.</p>
-            <p className="text-center">Contact the owner of this batch change for more information.</p>
-        </>
-    )
-}
+const HiddenWorkspaceDetails: React.FunctionComponent<HiddenWorkspaceDetailsProps> = ({
+    workspace,
+    deselectWorkspace,
+}) => (
+    <>
+        <WorkspaceHeader deselectWorkspace={deselectWorkspace} toggleShowTimeline={noop} workspace={workspace} />
+        <IgnoredBanner workspace={workspace} />
+        <UnsupportedBanner workspace={workspace} />
+        <h1 className="text-center text-muted mt-5">
+            <Icon as={EyeOffOutlineIcon} />
+        </h1>
+        <p className="text-center">This workspace is hidden due to permissions.</p>
+        <p className="text-center">Contact the owner of this batch change for more information.</p>
+    </>
+)
 
 interface VisibleWorkspaceDetailsProps extends Omit<WorkspaceDetailsProps, 'id'> {
     workspace: VisibleBatchSpecWorkspaceFields
@@ -166,12 +201,8 @@ interface VisibleWorkspaceDetailsProps extends Omit<WorkspaceDetailsProps, 'id'>
 const VisibleWorkspaceDetails: React.FunctionComponent<VisibleWorkspaceDetailsProps> = ({
     isLightTheme,
     workspace,
+    deselectWorkspace,
 }) => {
-    const history = useHistory()
-    const onClose = useCallback(() => {
-        history.push(history.location.pathname)
-    }, [history])
-
     const [retrying, setRetrying] = useState<boolean | ErrorLike>(false)
     const onRetry = useCallback(async () => {
         setRetrying(true)
@@ -194,50 +225,11 @@ const VisibleWorkspaceDetails: React.FunctionComponent<VisibleWorkspaceDetailsPr
     return (
         <>
             {showTimeline && <TimelineModal node={workspace} onCancel={onDismissTimeline} />}
-            <div className="d-flex justify-content-between">
-                <h3>
-                    <WorkspaceStateIcon cachedResultFound={workspace.cachedResultFound} state={workspace.state} />{' '}
-                    {workspace.repository.name}{' '}
-                    <Link to={workspace.repository.url}>
-                        <Icon as={ExternalLinkIcon} />
-                    </Link>
-                </h3>
-                <Button className="p-0 ml-2" onClick={onClose} variant="link" size="sm">
-                    <Icon as={CloseIcon} />
-                </Button>
-            </div>
-            <div className="text-muted">
-                {typeof workspace.placeInQueue === 'number' && (
-                    <>
-                        <Icon as={SyncIcon} />{' '}
-                        <strong>
-                            <NumberInQueue number={workspace.placeInQueue} />
-                        </strong>{' '}
-                        in queue |{' '}
-                    </>
-                )}
-                {workspace.path && <>{workspace.path} | </>}
-                <Icon as={SourceBranchIcon} /> base: <strong>{workspace.branch.displayName}</strong>
-                {workspace.startedAt && (
-                    <>
-                        {' '}
-                        | Total time:{' '}
-                        <strong>
-                            <Duration start={workspace.startedAt} end={workspace.finishedAt ?? undefined} />
-                        </strong>
-                    </>
-                )}
-                {!workspace.cachedResultFound && workspace.state !== BatchSpecWorkspaceState.SKIPPED && (
-                    <>
-                        {' '}
-                        |{' '}
-                        <Button className="text-muted m-0 p-0" onClick={toggleShowTimeline} variant="link">
-                            Timeline
-                        </Button>
-                    </>
-                )}
-            </div>
-            <hr />
+            <WorkspaceHeader
+                deselectWorkspace={deselectWorkspace}
+                toggleShowTimeline={toggleShowTimeline}
+                workspace={workspace}
+            />
             {workspace.failureMessage && (
                 <>
                     <div className="d-flex my-3 w-100">
@@ -255,22 +247,10 @@ const VisibleWorkspaceDetails: React.FunctionComponent<VisibleWorkspaceDetailsPr
                     {isErrorLike(retrying) && <ErrorAlert error={retrying} />}
                 </>
             )}
-            {workspace.state === BatchSpecWorkspaceState.SKIPPED && workspace.ignored && (
-                <p className="text-muted text-center py-3 mb-0">
-                    <strong>
-                        <Icon as={LinkVariantRemoveIcon} /> This workspace has been skipped because a{' '}
-                        <code>.batchignore</code> file was found.
-                    </strong>
-                </p>
-            )}
-            {workspace.state === BatchSpecWorkspaceState.SKIPPED && workspace.unsupported && (
-                <p className="text-muted text-center py-3 mb-0">
-                    <strong>
-                        <Icon as={LinkVariantRemoveIcon} /> This workspace has been skipped because it is on an
-                        unsupported code host.
-                    </strong>
-                </p>
-            )}
+
+            <IgnoredBanner workspace={workspace} />
+            <UnsupportedBanner workspace={workspace} />
+
             {workspace.changesetSpecs && workspace.state === BatchSpecWorkspaceState.COMPLETED && (
                 <div className="my-3">
                     {workspace.changesetSpecs.length === 0 && (
@@ -284,6 +264,7 @@ const VisibleWorkspaceDetails: React.FunctionComponent<VisibleWorkspaceDetailsPr
                     ))}
                 </div>
             )}
+
             {workspace.steps.map((step, index) => (
                 <React.Fragment key={step.number}>
                     <WorkspaceStep
@@ -296,6 +277,38 @@ const VisibleWorkspaceDetails: React.FunctionComponent<VisibleWorkspaceDetailsPr
                 </React.Fragment>
             ))}
         </>
+    )
+}
+
+const IgnoredBanner: React.FunctionComponent<{
+    workspace: HiddenBatchSpecWorkspaceFields | VisibleBatchSpecWorkspaceFields
+}> = ({ workspace }) => {
+    if (workspace.state !== BatchSpecWorkspaceState.SKIPPED || !workspace.ignored) {
+        return null
+    }
+    return (
+        <p className="text-muted text-center py-3 mb-0">
+            <strong>
+                <Icon as={LinkVariantRemoveIcon} /> This workspace has been skipped because a <code>.batchignore</code>{' '}
+                file was found.
+            </strong>
+        </p>
+    )
+}
+
+const UnsupportedBanner: React.FunctionComponent<{
+    workspace: HiddenBatchSpecWorkspaceFields | VisibleBatchSpecWorkspaceFields
+}> = ({ workspace }) => {
+    if (workspace.state !== BatchSpecWorkspaceState.SKIPPED || !workspace.unsupported) {
+        return null
+    }
+    return (
+        <p className="text-muted text-center py-3 mb-0">
+            <strong>
+                <Icon as={LinkVariantRemoveIcon} /> This workspace has been skipped because it is on an unsupported code
+                host.
+            </strong>
+        </p>
     )
 }
 
