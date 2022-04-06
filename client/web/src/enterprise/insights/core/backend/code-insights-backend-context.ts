@@ -1,10 +1,10 @@
 import React from 'react'
 
 import { throwError } from 'rxjs'
-import { LineChartContent, PieChartContent } from 'sourcegraph'
+import { LineChartContent } from 'sourcegraph'
 
 import { CodeInsightsBackend } from './code-insights-backend'
-import { RepositorySuggestionData } from './code-insights-backend-types'
+import { PieChartContent, RepositorySuggestionData } from './code-insights-backend-types'
 
 const errorMockMethod = (methodName: string) => () => throwError(new Error(`Implement ${methodName} method first`))
 
