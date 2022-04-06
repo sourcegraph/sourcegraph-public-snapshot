@@ -202,7 +202,7 @@ const VisibleWorkspaceDetails: React.FunctionComponent<VisibleWorkspaceDetailsPr
                         <Icon as={ExternalLinkIcon} />
                     </Link>
                 </h3>
-                <Button className="p-0 ml-2" onClick={deselectWorkspace} variant="link" size="sm">
+                <Button className="p-0 ml-2" onClick={onClose} variant="link" size="sm">
                     <Icon as={CloseIcon} />
                 </Button>
             </div>

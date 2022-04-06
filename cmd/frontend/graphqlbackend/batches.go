@@ -766,10 +766,9 @@ type BatchSpecWorkspaceResolutionResolver interface {
 	State() string
 	StartedAt() *DateTime
 	FinishedAt() *DateTime
-	FailureMessage() *string
+	FailureMessage(context.Context) (*string, error)
 
 	Workspaces(ctx context.Context, args *ListWorkspacesArgs) (BatchSpecWorkspaceConnectionResolver, error)
-	Unsupported(ctx context.Context) RepositoryConnectionResolver
 
 	RecentlyCompleted(ctx context.Context, args *ListRecentlyCompletedWorkspacesArgs) BatchSpecWorkspaceConnectionResolver
 	RecentlyErrored(ctx context.Context, args *ListRecentlyErroredWorkspacesArgs) BatchSpecWorkspaceConnectionResolver

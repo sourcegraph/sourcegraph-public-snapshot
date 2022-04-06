@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -37,8 +38,11 @@ func (r *batchSpecWorkspaceResolutionResolver) FinishedAt() *graphqlbackend.Date
 	return &graphqlbackend.DateTime{Time: r.resolution.FinishedAt}
 }
 
-func (r *batchSpecWorkspaceResolutionResolver) FailureMessage() *string {
-	return r.resolution.FailureMessage
+func (r *batchSpecWorkspaceResolutionResolver) FailureMessage(ctx context.Context) (*string, error) {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), r.resolution.InitiatorID); err != nil {
+		return nil, err
+	}
+	return r.resolution.FailureMessage, nil
 }
 
 func (r *batchSpecWorkspaceResolutionResolver) Workspaces(ctx context.Context, args *graphqlbackend.ListWorkspacesArgs) (graphqlbackend.BatchSpecWorkspaceConnectionResolver, error) {
@@ -49,11 +53,6 @@ func (r *batchSpecWorkspaceResolutionResolver) Workspaces(ctx context.Context, a
 	opts.BatchSpecID = r.resolution.BatchSpecID
 
 	return &batchSpecWorkspaceConnectionResolver{store: r.store, opts: opts}, nil
-}
-
-func (r *batchSpecWorkspaceResolutionResolver) Unsupported(ctx context.Context) graphqlbackend.RepositoryConnectionResolver {
-	// TODO(ssbc): not implemented
-	return nil
 }
 
 func (r *batchSpecWorkspaceResolutionResolver) RecentlyCompleted(ctx context.Context, args *graphqlbackend.ListRecentlyCompletedWorkspacesArgs) graphqlbackend.BatchSpecWorkspaceConnectionResolver {

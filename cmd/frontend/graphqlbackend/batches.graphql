@@ -1885,7 +1885,6 @@ A bag for all info around resolving workspaces.
 type BatchSpecWorkspaceResolution {
     """
     Error message, if the evaluation failed.
-    TODO: Who can access this one?
     """
     failureMessage: String
 

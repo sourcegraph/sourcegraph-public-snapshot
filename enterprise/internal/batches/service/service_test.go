@@ -1121,6 +1121,7 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("ExecuteBatchSpec", func(t *testing.T) {
+		adminCtx := actor.WithActor(ctx, actor.FromUser(admin.ID))
 		t.Run("success", func(t *testing.T) {
 			spec := testBatchSpec(admin.ID)
 			if err := s.CreateBatchSpec(ctx, spec); err != nil {
@@ -1131,6 +1132,7 @@ func TestService(t *testing.T) {
 			job := &btypes.BatchSpecResolutionJob{
 				State:       btypes.BatchSpecResolutionJobStateCompleted,
 				BatchSpecID: spec.ID,
+				InitiatorID: admin.ID,
 			}
 
 			if err := s.CreateBatchSpecResolutionJob(ctx, job); err != nil {
@@ -1150,7 +1152,7 @@ func TestService(t *testing.T) {
 			}
 
 			// Execute BatchSpec by creating execution jobs
-			if _, err := svc.ExecuteBatchSpec(ctx, ExecuteBatchSpecOpts{BatchSpecRandID: spec.RandID}); err != nil {
+			if _, err := svc.ExecuteBatchSpec(adminCtx, ExecuteBatchSpecOpts{BatchSpecRandID: spec.RandID}); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1174,6 +1176,7 @@ func TestService(t *testing.T) {
 			job := &btypes.BatchSpecResolutionJob{
 				State:       btypes.BatchSpecResolutionJobStateQueued,
 				BatchSpecID: spec.ID,
+				InitiatorID: admin.ID,
 			}
 
 			if err := s.CreateBatchSpecResolutionJob(ctx, job); err != nil {
@@ -1181,7 +1184,7 @@ func TestService(t *testing.T) {
 			}
 
 			// Execute BatchSpec by creating execution jobs
-			_, err := svc.ExecuteBatchSpec(ctx, ExecuteBatchSpecOpts{BatchSpecRandID: spec.RandID})
+			_, err := svc.ExecuteBatchSpec(adminCtx, ExecuteBatchSpecOpts{BatchSpecRandID: spec.RandID})
 			if !errors.Is(err, ErrBatchSpecResolutionIncomplete) {
 				t.Fatalf("error has wrong type: %T", err)
 			}
@@ -1198,6 +1201,7 @@ func TestService(t *testing.T) {
 				State:          btypes.BatchSpecResolutionJobStateFailed,
 				FailureMessage: &failureMessage,
 				BatchSpecID:    spec.ID,
+				InitiatorID:    admin.ID,
 			}
 
 			if err := s.CreateBatchSpecResolutionJob(ctx, job); err != nil {
@@ -1205,7 +1209,7 @@ func TestService(t *testing.T) {
 			}
 
 			// Execute BatchSpec by creating execution jobs
-			_, err := svc.ExecuteBatchSpec(ctx, ExecuteBatchSpecOpts{BatchSpecRandID: spec.RandID})
+			_, err := svc.ExecuteBatchSpec(adminCtx, ExecuteBatchSpecOpts{BatchSpecRandID: spec.RandID})
 			if !errors.HasType(err, ErrBatchSpecResolutionErrored{}) {
 				t.Fatalf("error has wrong type: %T", err)
 			}
@@ -1221,6 +1225,7 @@ func TestService(t *testing.T) {
 			job := &btypes.BatchSpecResolutionJob{
 				State:       btypes.BatchSpecResolutionJobStateCompleted,
 				BatchSpecID: spec.ID,
+				InitiatorID: admin.ID,
 			}
 
 			if err := s.CreateBatchSpecResolutionJob(ctx, job); err != nil {
@@ -1242,7 +1247,7 @@ func TestService(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if _, err := svc.ExecuteBatchSpec(ctx, ExecuteBatchSpecOpts{BatchSpecRandID: spec.RandID}); err != nil {
+			if _, err := svc.ExecuteBatchSpec(adminCtx, ExecuteBatchSpecOpts{BatchSpecRandID: spec.RandID}); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1282,6 +1287,7 @@ func TestService(t *testing.T) {
 			job := &btypes.BatchSpecResolutionJob{
 				State:       btypes.BatchSpecResolutionJobStateCompleted,
 				BatchSpecID: spec.ID,
+				InitiatorID: admin.ID,
 			}
 
 			if err := s.CreateBatchSpecResolutionJob(ctx, job); err != nil {
@@ -1342,7 +1348,10 @@ func TestService(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			resolutionJob := &btypes.BatchSpecResolutionJob{BatchSpecID: spec.ID}
+			resolutionJob := &btypes.BatchSpecResolutionJob{
+				BatchSpecID: spec.ID,
+				InitiatorID: admin.ID,
+			}
 			if err := s.CreateBatchSpecResolutionJob(ctx, resolutionJob); err != nil {
 				t.Fatal(err)
 			}
@@ -1382,6 +1391,7 @@ func TestService(t *testing.T) {
 			job := &btypes.BatchSpecResolutionJob{
 				State:       btypes.BatchSpecResolutionJobStateCompleted,
 				BatchSpecID: spec.ID,
+				InitiatorID: admin.ID,
 			}
 
 			if err := s.CreateBatchSpecResolutionJob(ctx, job); err != nil {
@@ -1491,8 +1501,9 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CreateBatchSpecFromRaw", func(t *testing.T) {
+		adminCtx := actor.WithActor(ctx, actor.FromUser(admin.ID))
 		t.Run("success", func(t *testing.T) {
-			newSpec, err := svc.CreateBatchSpecFromRaw(ctx, CreateBatchSpecFromRawOpts{
+			newSpec, err := svc.CreateBatchSpecFromRaw(adminCtx, CreateBatchSpecFromRawOpts{
 				RawSpec:         ct.TestRawBatchSpecYAML,
 				NamespaceUserID: admin.ID,
 			})
@@ -1529,7 +1540,7 @@ func TestService(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			_, err = svc.CreateBatchSpecFromRaw(ctx, CreateBatchSpecFromRawOpts{
+			_, err = svc.CreateBatchSpecFromRaw(adminCtx, CreateBatchSpecFromRawOpts{
 				RawSpec:         string(marshaledRawSpec),
 				NamespaceUserID: admin.ID,
 			})
@@ -1543,8 +1554,9 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("UpsertBatchSpecInput", func(t *testing.T) {
+		adminCtx := actor.WithActor(ctx, actor.FromUser(admin.ID))
 		t.Run("new spec", func(t *testing.T) {
-			newSpec, err := svc.UpsertBatchSpecInput(ctx, UpsertBatchSpecInputOpts{
+			newSpec, err := svc.UpsertBatchSpecInput(adminCtx, UpsertBatchSpecInputOpts{
 				RawSpec:         ct.TestRawBatchSpecYAML,
 				NamespaceUserID: admin.ID,
 			})
@@ -1619,7 +1631,10 @@ func TestService(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			job := &btypes.BatchSpecResolutionJob{BatchSpecID: spec.ID}
+			job := &btypes.BatchSpecResolutionJob{
+				BatchSpecID: spec.ID,
+				InitiatorID: admin.ID,
+			}
 			if err := s.CreateBatchSpecResolutionJob(ctx, job); err != nil {
 				t.Fatal(err)
 			}
@@ -1870,7 +1885,11 @@ func TestService(t *testing.T) {
 			if err := s.CreateBatchSpec(ctx, spec); err != nil {
 				t.Fatal(err)
 			}
-			job := &btypes.BatchSpecResolutionJob{BatchSpecID: spec.ID, State: btypes.BatchSpecResolutionJobStateCompleted}
+			job := &btypes.BatchSpecResolutionJob{
+				BatchSpecID: spec.ID,
+				State:       btypes.BatchSpecResolutionJobStateCompleted,
+				InitiatorID: admin.ID,
+			}
 			if err := s.CreateBatchSpecResolutionJob(ctx, job); err != nil {
 				t.Fatal(err)
 			}

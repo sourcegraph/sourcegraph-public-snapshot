@@ -40,6 +40,10 @@ type BatchSpecResolutionJob struct {
 	ID int64
 
 	BatchSpecID int64
+	// InitiatorID is the user ID of the user who initiated the resolution job.
+	// Currently, this is always the person who created the batch spec but we will
+	// change this in the future when we split those two operations.
+	InitiatorID int32
 
 	// workerutil fields
 	State           BatchSpecResolutionJobState
