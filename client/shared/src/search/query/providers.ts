@@ -3,7 +3,7 @@ import { Observable, fromEventPattern, of } from 'rxjs'
 import { map, delay, takeUntil, switchMap } from 'rxjs/operators'
 
 import { SearchPatternType } from '../../graphql-operations'
-import { SearchMatch } from '../stream'
+import { isSearchMatchOfType, SearchMatch } from '../stream'
 
 import { getCompletionItems, REPO_DEPS_PREDICATE_REGEX } from './completion'
 import { getMonacoTokens } from './decoratedToken'
@@ -42,6 +42,10 @@ const MAX_SUGGESTION_COUNT = 50
 const REPO_SUGGESTION_FILTERS = [FilterType.fork, FilterType.visibility, FilterType.archived]
 const FILE_SUGGESTION_FILTERS = [...REPO_SUGGESTION_FILTERS, FilterType.repo, FilterType.rev, FilterType.lang]
 
+/**
+ * getSuggestionsQuery might return an empty query. The caller is responsible
+ * for handling this accordingly.
+ */
 export function getSuggestionQuery(tokens: Token[], tokenAtColumn: Token, suggestionType: SearchMatch['type']): string {
     const hasAndOrOperators = tokens.some(
         token => token.type === 'keyword' && (token.kind === KeywordKind.Or || token.kind === KeywordKind.And)
@@ -58,31 +62,33 @@ export function getSuggestionQuery(tokens: Token[], tokenAtColumn: Token, sugges
             break
     }
 
-    if (tokenValue) {
-        if (suggestionType === 'repo') {
-            const depsPredicateMatch = tokenValue.match(REPO_DEPS_PREDICATE_REGEX)
-            const repoValue = depsPredicateMatch ? depsPredicateMatch[2] : tokenValue
-            const relevantFilters =
-                !hasAndOrOperators && !depsPredicateMatch ? serializeFilters(tokens, REPO_SUGGESTION_FILTERS) : ''
-            return `${relevantFilters} repo:${repoValue} type:repo count:${MAX_SUGGESTION_COUNT}`.trimStart()
-        }
+    if (!tokenValue) {
+        return ''
+    }
 
-        // For the cases below, we are not handling queries with and/or operators. This is because we would need to figure out
-        // for each filter which filters from the surrounding expression apply to it. For example, if we have a query: `repo:x file:y z OR repo:xx file:yy`
-        // and we want to get suggestions for the `file:yy` filter. We would only want to include file suggestions from the `xx` repo and not the `x` repo, because it
-        // is a part of a different expression.
-        if (hasAndOrOperators) {
-            return ''
-        }
+    if (suggestionType === 'repo') {
+        const depsPredicateMatch = tokenValue.match(REPO_DEPS_PREDICATE_REGEX)
+        const repoValue = depsPredicateMatch ? depsPredicateMatch[2] : tokenValue
+        const relevantFilters =
+            !hasAndOrOperators && !depsPredicateMatch ? serializeFilters(tokens, REPO_SUGGESTION_FILTERS) : ''
+        return `${relevantFilters} repo:${repoValue} type:repo count:${MAX_SUGGESTION_COUNT}`.trimStart()
+    }
 
-        if (suggestionType === 'path') {
-            const relevantFilters = serializeFilters(tokens, FILE_SUGGESTION_FILTERS)
-            return `${relevantFilters} file:${tokenValue} type:path count:${MAX_SUGGESTION_COUNT}`.trimStart()
-        }
-        if (suggestionType === 'symbol') {
-            const relevantFilters = serializeFilters(tokens, [...FILE_SUGGESTION_FILTERS, FilterType.file])
-            return `${relevantFilters} ${tokenValue} type:symbol count:${MAX_SUGGESTION_COUNT}`.trimStart()
-        }
+    // For the cases below, we are not handling queries with and/or operators. This is because we would need to figure out
+    // for each filter which filters from the surrounding expression apply to it. For example, if we have a query: `repo:x file:y z OR repo:xx file:yy`
+    // and we want to get suggestions for the `file:yy` filter. We would only want to include file suggestions from the `xx` repo and not the `x` repo, because it
+    // is a part of a different expression.
+    if (hasAndOrOperators) {
+        return ''
+    }
+
+    if (suggestionType === 'path') {
+        const relevantFilters = serializeFilters(tokens, FILE_SUGGESTION_FILTERS)
+        return `${relevantFilters} file:${tokenValue} type:path count:${MAX_SUGGESTION_COUNT}`.trimStart()
+    }
+    if (suggestionType === 'symbol') {
+        const relevantFilters = serializeFilters(tokens, [...FILE_SUGGESTION_FILTERS, FilterType.file])
+        return `${relevantFilters} ${tokenValue} type:symbol count:${MAX_SUGGESTION_COUNT}`.trimStart()
     }
 
     return ''
@@ -196,10 +202,10 @@ export function getProviders(
                 return getCompletionItems(
                     tokenAtColumn,
                     position,
-                    async (token, type) =>
+                    (token, type) =>
                         cancelableFetch(getSuggestionQuery(scanned.term, token, type), listener =>
                             cancellationToken.onCancellationRequested(listener)
-                        ),
+                        ).then(matches => matches.filter(isSearchMatchOfType(type))),
                     options
                 )
             },

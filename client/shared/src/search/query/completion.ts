@@ -307,6 +307,10 @@ async function completeFilterValue(
 
 const startRange: CharacterRange = { start: 1, end: 1 }
 
+export interface FetchSuggestions {
+    <T extends SearchMatch['type']>(token: Token, type: T): Promise<Extract<SearchMatch, { type: T }>[]>
+}
+
 /**
  * Returns the completion items for a search query being typed in the Monaco query input,
  * including both static and dynamically fetched suggestions.
@@ -314,7 +318,7 @@ const startRange: CharacterRange = { start: 1, end: 1 }
 export async function getCompletionItems(
     tokenAtPosition: Token | null,
     { column }: Pick<Monaco.Position, 'column'>,
-    fetchDynamicSuggestions: (token: Token, type: SearchMatch['type']) => Promise<SearchMatch[]>,
+    fetchDynamicSuggestions: FetchSuggestions,
     {
         globbing = false,
         isSourcegraphDotCom = false,

@@ -37,7 +37,7 @@ import { createCancelableFetchSuggestions, getSuggestionQuery } from '@sourcegra
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import { isSearchMatchOfType, SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
@@ -727,10 +727,10 @@ const autocomplete = (
                     const completionList = await getCompletionItems(
                         token,
                         { column: context.pos + 1 },
-                        async (token, type) =>
+                        (token, type) =>
                             cancelableFetch(getSuggestionQuery(query.tokens, token, type), listener =>
                                 context.addEventListener('abort', listener)
-                            ),
+                            ).then(matches => matches.filter(isSearchMatchOfType(type))),
                         options
                     )
 
