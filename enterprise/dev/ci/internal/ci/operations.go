@@ -70,7 +70,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 			clientChromaticTests(opts.ChromaticShouldAutoAccept),
 			frontendTests, // ~4.5m
 			addWebApp,     // ~5.5m
-			// Flakey
+			// Broken: https://github.com/sourcegraph/sourcegraph/issues/33484
 			// addBrowserExt,     // ~4.5m
 			addClientLinters)) // ~9m
 	}
