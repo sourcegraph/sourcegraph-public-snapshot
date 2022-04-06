@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs'
-import { LineChartContent, PieChartContent } from 'sourcegraph'
+import { LineChartContent } from 'sourcegraph'
 
 import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
@@ -23,6 +23,7 @@ import {
     AccessibleInsightInfo,
     RemoveInsightFromDashboardInput,
     RepositorySuggestionData,
+    PieChartContent,
 } from './code-insights-backend-types'
 
 export interface UiFeaturesConfig {
@@ -109,7 +110,7 @@ export interface CodeInsightsBackend {
     /**
      * Returns content for the code stats insight live preview chart.
      */
-    getLangStatsInsightContent: (input: GetLangStatsInsightContentInput) => Promise<PieChartContent<any>>
+    getLangStatsInsightContent: (input: GetLangStatsInsightContentInput) => Promise<PieChartContent<unknown>>
 
     getCaptureInsightContent: (input: CaptureInsightSettings) => Promise<LineChartContent<any, string>>
 

@@ -1,11 +1,10 @@
 import { useContext, useEffect, useState } from 'react'
 
-import { PieChartContent } from 'sourcegraph'
-
 import { asError } from '@sourcegraph/common'
 import { useDebounce } from '@sourcegraph/wildcard'
 
 import { CodeInsightsBackendContext } from '../../../../../../../core/backend/code-insights-backend-context'
+import { PieChartContent } from '../../../../../../../core/backend/code-insights-backend-types'
 
 export interface UseLangStatsPreviewContentProps {
     /** Prop to turn off fetching and reset data for live preview chart. */
@@ -19,13 +18,13 @@ export interface UseLangStatsPreviewContentProps {
 
 export interface UseLangStatsPreviewContentAPI {
     loading: boolean
-    dataOrError: PieChartContent<any> | Error | undefined
+    dataOrError: PieChartContent<object> | Error | undefined
     update: () => void
 }
 
 /**
  * Unified logic for fetching data for live preview chart of lang stats insight.
- * */
+ */
 export function useLangStatsPreviewContent(props: UseLangStatsPreviewContentProps): UseLangStatsPreviewContentAPI {
     const { disabled, previewSetting } = props
 

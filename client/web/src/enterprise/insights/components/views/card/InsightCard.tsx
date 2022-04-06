@@ -1,4 +1,4 @@
-import React, { forwardRef, ReactNode } from 'react'
+import React, { forwardRef, HTMLAttributes, ReactNode } from 'react'
 
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
@@ -69,8 +69,10 @@ const InsightCardLoading: React.FunctionComponent = props => (
     </InsightCardBanner>
 )
 
-const InsightCardBanner: React.FunctionComponent = props => (
-    <div className={styles.loadingContent}>{props.children}</div>
+const InsightCardBanner: React.FunctionComponent<HTMLAttributes<HTMLDivElement>> = props => (
+    <div {...props} className={classNames(styles.loadingContent, props.className)}>
+        {props.children}
+    </div>
 )
 
 const Root = InsightCard
