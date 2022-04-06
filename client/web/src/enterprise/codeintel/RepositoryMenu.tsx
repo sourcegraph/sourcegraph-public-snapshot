@@ -2,12 +2,12 @@ import React from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
-import { Link, LoadingSpinner, MenuDivider } from '@sourcegraph/wildcard'
+import { LoadingSpinner, MenuDivider } from '@sourcegraph/wildcard'
 
 import { RepositoryMenuContentProps } from '../../codeintel/RepositoryMenu'
 import { Collapsible } from '../../components/Collapsible'
 import { Timestamp } from '../../components/time/Timestamp'
-import { CodeIntelIndexerFields, LsifIndexFields, LsifUploadFields } from '../../graphql-operations'
+import { LsifIndexFields, LsifUploadFields } from '../../graphql-operations'
 
 import { CodeIntelStateIcon } from './shared/components/CodeIntelStateIcon'
 import { CodeIntelUploadOrIndexCommit } from './shared/components/CodeIntelUploadOrIndexCommit'
