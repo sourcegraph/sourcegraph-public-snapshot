@@ -6,6 +6,6 @@ export const BADGE_VARIANTS = [
     'warning',
     'info',
     'merged',
-    'outline-secondary',
+    'outlineSecondary',
 ] as const
 export const PRODUCT_STATUSES = ['beta', 'prototype', 'experimental', 'wip', 'new'] as const
