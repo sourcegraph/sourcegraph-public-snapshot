@@ -68,9 +68,10 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 		ops.Merge(operations.NewNamedSet("Client checks",
 			clientIntegrationTests,
 			clientChromaticTests(opts.ChromaticShouldAutoAccept),
-			frontendTests,     // ~4.5m
-			addWebApp,         // ~5.5m
-			addBrowserExt,     // ~4.5m
+			frontendTests, // ~4.5m
+			addWebApp,     // ~5.5m
+			// Flakey
+			// addBrowserExt,     // ~4.5m
 			addClientLinters)) // ~9m
 	}
 
