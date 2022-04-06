@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"strings"
+	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -58,6 +59,10 @@ type batchSpecWorkspaceResolver struct {
 
 	repo         *types.Repo
 	repoResolver *graphqlbackend.RepositoryResolver
+
+	changesetSpecs     []*btypes.ChangesetSpec
+	changesetSpecsOnce sync.Once
+	changesetSpecsErr  error
 }
 
 var _ graphqlbackend.BatchSpecWorkspaceResolver = &batchSpecWorkspaceResolver{}
@@ -83,14 +88,18 @@ func (r *batchSpecWorkspaceResolver) ID() graphql.ID {
 }
 
 func (r *batchSpecWorkspaceResolver) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
-	// TODO: This can be nil.
+	if _, ok := r.ToHiddenBatchSpecWorkspace(); ok {
+		return nil, nil
+	}
+
 	return r.repoResolver, nil
 }
 
 func (r *batchSpecWorkspaceResolver) Branch(ctx context.Context) (*graphqlbackend.GitRefResolver, error) {
-	if r.repoResolver == nil {
+	if _, ok := r.ToHiddenBatchSpecWorkspace(); ok {
 		return nil, nil
 	}
+
 	return graphqlbackend.NewGitRefResolver(r.repoResolver, r.workspace.Branch, graphqlbackend.GitObjectID(r.workspace.Commit)), nil
 }
 
@@ -107,7 +116,7 @@ func (r *batchSpecWorkspaceResolver) SearchResultPaths() []string {
 }
 
 func (r *batchSpecWorkspaceResolver) computeStepResolvers() ([]graphqlbackend.BatchSpecWorkspaceStepResolver, error) {
-	if r.repo == nil {
+	if _, ok := r.ToHiddenBatchSpecWorkspace(); ok {
 		return nil, nil
 	}
 
@@ -291,7 +300,7 @@ func (r *batchSpecWorkspaceResolver) ChangesetSpecs(ctx context.Context) (*[]gra
 	}
 
 	// If this is a hidden resolver, we don't return changeset specs, since we only return visible changeset spec resolvers here.
-	if r.repo == nil {
+	if _, ok := r.ToHiddenBatchSpecWorkspace(); ok {
 		return nil, nil
 	}
 
@@ -308,39 +317,51 @@ func (r *batchSpecWorkspaceResolver) ChangesetSpecs(ctx context.Context) (*[]gra
 	return &resolvers, nil
 }
 
-// TODO: Cache this computation.
 func (r *batchSpecWorkspaceResolver) computeChangesetSpecs(ctx context.Context) ([]*btypes.ChangesetSpec, error) {
-	if len(r.workspace.ChangesetSpecIDs) == 0 {
-		return []*btypes.ChangesetSpec{}, nil
-	}
+	r.changesetSpecsOnce.Do(func() {
+		if len(r.workspace.ChangesetSpecIDs) == 0 {
+			r.changesetSpecs = []*btypes.ChangesetSpec{}
+			return
+		}
 
-	specs, _, err := r.store.ListChangesetSpecs(ctx, store.ListChangesetSpecsOpts{IDs: r.workspace.ChangesetSpecIDs})
-	if err != nil {
-		return nil, err
-	}
+		specs, _, err := r.store.ListChangesetSpecs(ctx, store.ListChangesetSpecsOpts{IDs: r.workspace.ChangesetSpecIDs})
+		if err != nil {
+			r.changesetSpecsErr = err
+			return
+		}
 
-	repoIDs := specs.RepoIDs()
-	if len(repoIDs) > 1 {
-		return nil, errors.New("changeset specs associated with workspace they don't belong to")
-	}
-	if len(repoIDs) == 1 && repoIDs[0] != r.workspace.RepoID {
-		return nil, errors.New("changeset specs associated with workspace they don't belong to")
-	}
+		repoIDs := specs.RepoIDs()
+		if len(repoIDs) > 1 {
+			r.changesetSpecsErr = errors.New("changeset specs associated with workspace they don't belong to")
+			return
+		}
+		if len(repoIDs) == 1 && repoIDs[0] != r.workspace.RepoID {
+			r.changesetSpecsErr = errors.New("changeset specs associated with workspace they don't belong to")
+			return
+		}
 
-	return specs, nil
+		r.changesetSpecs = specs
+	})
+
+	return r.changesetSpecs, r.changesetSpecsErr
 }
 
-// TODO: This doesn't return anything if the workspace is hidden, but it should.
 func (r *batchSpecWorkspaceResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
-	resolvers, err := r.ChangesetSpecs(ctx)
+	specs, err := r.computeChangesetSpecs(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if resolvers == nil || len(*resolvers) == 0 {
+
+	resolvers := make([]graphqlbackend.VisibleChangesetSpecResolver, 0, len(specs))
+	for _, spec := range specs {
+		resolvers = append(resolvers, NewChangesetSpecResolverWithRepo(r.store, r.repo, spec))
+	}
+
+	if len(resolvers) == 0 {
 		return nil, nil
 	}
 	var totalDiff graphqlbackend.DiffStat
-	for _, r := range *resolvers {
+	for _, r := range resolvers {
 		// If changeset is not visible to user, skip it.
 		v, ok := r.ToVisibleChangesetSpec()
 		if !ok {

@@ -1474,6 +1474,13 @@ func (r *Resolver) BatchSpecs(ctx context.Context, args *graphqlbackend.ListBatc
 		NewestFirst: true,
 	}
 
+	// 🚨 SECURITY: If the user is not an admin, we don't want to include
+	// BatchSpecs that were created with CreateBatchSpecFromRaw and not owned
+	// by the user
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+		opts.ExcludeCreatedFromRawNotOwnedByUser = actor.FromContext(ctx).UID
+	}
+
 	if args.After != nil {
 		id, err := strconv.Atoi(*args.After)
 		if err != nil {

@@ -186,7 +186,7 @@ query($batchSpecWorkspace: ID!) {
 
       path
 
-	  steps {
+      steps {
         run
         container
       }
