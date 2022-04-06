@@ -21,6 +21,7 @@ import {
 } from '@sourcegraph/shared/src/util/url'
 
 import LogoSVG from '../../../../assets/img/sourcegraph-mark.svg'
+import { background } from '../../../browser-extension/web-extension-api/runtime'
 import { SourcegraphIconButton } from '../../components/SourcegraphIconButton'
 import { fetchBlobContentLines } from '../../repo/backend'
 import { getPlatformName } from '../../util/context'
@@ -382,16 +383,19 @@ const searchEnhancement: GithubCodeHost['searchEnhancement'] = {
  */
 export const isPrivateRepository = async (
     repoName: string,
+    fetchCache = background.fetchCache,
     fallbackSelector = '#repository-container-header h2 span.Label'
 ): Promise<boolean> => {
     if (window.location.hostname !== 'github.com') {
         return Promise.resolve(true)
     }
     try {
-        const reponse = await fetch(`https://github.com/${repoName}`)
-        const html = await reponse.text()
-        const element = new DOMParser().parseFromString(html, 'text/html').querySelector(fallbackSelector)
-        return element?.textContent?.toLowerCase().trim() === 'private'
+        const { status } = await fetchCache({
+            url: `https://github.com/${repoName}`,
+            credentials: 'omit',
+            cacheMaxAge: 60 * 60 * 1000, // 1 hour
+        })
+        return status !== 200
     } catch (error) {
         // If network error
         console.warn('Failed to fetch if the repository is private.', error)
