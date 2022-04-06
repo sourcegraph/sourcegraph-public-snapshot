@@ -12,6 +12,10 @@ func (r *codeIntelIndexerResolver) Name() string {
 }
 
 func (r *codeIntelIndexerResolver) URL() string {
+	if r.urn == "" {
+		return ""
+	}
+
 	return "https://" + r.urn
 }
 
@@ -89,6 +93,27 @@ var (
 		urn:  "github.com/tcz717/LsifDotnet",
 	}
 )
+
+var allIndexers = []gql.CodeIntelIndexerResolver{
+	&lsifNode,
+	&msftNode,
+	&lsifTypescript,
+	&lsifJava,
+	&msftJava,
+	&lsifGo,
+	&lsifClang,
+	&lsifCPP,
+	&lsifDart,
+	&workivaDart,
+	&hieLSIF,
+	&lsifJsonnet,
+	&lsifOcaml,
+	&lsifPy,
+	&rustAnalyzer,
+	&lsifPHP,
+	&lsifTerraform,
+	&lsifDotnet,
+}
 
 // A map of file extension to a list of indexers in order of recommendation
 // from most to least.

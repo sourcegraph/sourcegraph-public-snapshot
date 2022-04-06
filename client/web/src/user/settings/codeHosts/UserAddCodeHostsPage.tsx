@@ -113,10 +113,17 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     }
     const [statusOrError, setStatusOrError] = useState<Status>()
     const { scopes, setScope } = useCodeHostScopeContext()
-    const [isUpdateModalOpen, setIssUpdateModalOpen] = useState(false)
-    const toggleUpdateModal = useCallback(() => {
-        setIssUpdateModalOpen(!isUpdateModalOpen)
-    }, [isUpdateModalOpen])
+    const codeHostModalRecord: Record<string, boolean> = Object.fromEntries(
+        Object.entries(codeHostExternalServices).map(([id_, { kind }]) => [kind, false])
+    )
+    const [isUpdateModalOpen, setIsUpdateModalOpen] = useState<Record<string, boolean>>(codeHostModalRecord)
+    const toggleUpdateModal = (kind: string) => (): void => {
+        setIsUpdateModalOpen(modalState => {
+            const newModalState = { ...modalState } // You have to create a new object otherwise React won't register the state changed
+            newModalState[kind] = !modalState[kind]
+            return newModalState
+        })
+    }
     const [servicesDown, setServicesDown] = useState<string[]>()
     const flagsOverridesResult = useFlagsOverrides()
     const isGitHubAppLoading = flagsOverridesResult.loading
@@ -131,21 +138,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         [ExternalServiceKind.GITLAB]: gitlabAPIScopeRequired(owner.tags, scopes.gitlab),
     }
 
-    const [githubAppInstallRequestSuccess, setGitHubAppInstallRequestSuccess] = useState(false)
-
-    if (localStorage.getItem('githubInstallationRequest') && isServicesByKind(statusOrError)) {
-        if (statusOrError[ExternalServiceKind.GITHUB]) {
-            localStorage.removeItem('githubInstallationRequest')
-            setGitHubAppInstallRequestSuccess(false)
-        }
-    }
-
-    if (!githubAppInstallRequestSuccess && localStorage.getItem('githubInstallationRequest') === 'success') {
-        setGitHubAppInstallRequestSuccess(true)
-    }
-
     useEffect(() => {
-        eventLogger.logViewEvent('UserSettingsCodeHostConnections')
+        eventLogger.logPageView('UserSettingsCodeHostConnections')
     }, [])
 
     async function checkAndSetOutageAlert(
@@ -228,19 +222,11 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         })
     }, [fetchExternalServices])
 
-    const refetchServices = useCallback(
-        (reason: string | null): void => {
-            fetchExternalServices().catch(error => {
-                setStatusOrError(asError(error))
-            })
-
-            if (reason === 'request') {
-                localStorage.setItem('githubInstallationRequest', 'success')
-                setGitHubAppInstallRequestSuccess(true)
-            }
-        },
-        [fetchExternalServices]
-    )
+    const refetchServices = useCallback((): void => {
+        fetchExternalServices().catch(error => {
+            setStatusOrError(asError(error))
+        })
+    }, [fetchExternalServices])
 
     const logAddRepositoriesClicked = useCallback(
         (source: string) => () => {
@@ -256,7 +242,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         interface ServiceConfig {
             pending: boolean
         }
-        const serviceConfig: ServiceConfig = JSON.parse(service.config)
+        const serviceConfig = JSON.parse(service.config) as ServiceConfig
 
         if (serviceConfig.pending) {
             return (
@@ -305,6 +291,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
     interface serviceProblem {
         id: string
+        kind: string
         displayName: string
         problem: string
     }
@@ -331,7 +318,12 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
                 // if service has warnings or errors
                 if (problem && !outage) {
-                    servicesWithProblems.push({ id: service.id, displayName: service.displayName, problem })
+                    servicesWithProblems.push({
+                        id: service.id,
+                        kind: service.kind,
+                        displayName: service.displayName,
+                        problem,
+                    })
                     continue
                 }
 
@@ -393,7 +385,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 {owner.type === 'org' ? (
                     <Button
                         className="font-weight-normal shadow-none p-0 border-0"
-                        onClick={toggleUpdateModal}
+                        onClick={toggleUpdateModal(service.kind)}
                         variant="link"
                     >
                         updating the code host connection
@@ -473,8 +465,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
                     const browser: ParentWindow = window.self as ParentWindow
 
-                    browser.onSuccess = (reason: string | null) => {
-                        refetchServices(reason)
+                    browser.onSuccess = () => {
+                        refetchServices()
                     }
                     const popup = browser.open(
                         `${authProvider.authenticationURL as string}&redirect=${encodeURIComponent(firstRedirectURI)}`,
@@ -539,15 +531,14 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                         }
                                         navigateToAuthProvider={navigateToAuthProvider}
                                         icon={icon}
-                                        isUpdateModalOpen={isUpdateModalOpen}
-                                        toggleUpdateModal={toggleUpdateModal}
+                                        isUpdateModalOpen={isUpdateModalOpen[kind]}
+                                        toggleUpdateModal={toggleUpdateModal(kind)}
                                         onDidUpsert={handleServiceUpsert}
                                         onDidAdd={addNewService}
                                         onDidRemove={removeService(kind)}
                                         onDidError={handleError}
                                         loading={kind === ExternalServiceKind.GITHUB && isGitHubAppLoading}
                                         useGitHubApp={kind === ExternalServiceKind.GITHUB && isSourcegraphDotCom}
-                                        reloadComponent={refetchServices}
                                     />
                                 </CodeHostListItem>
                             ) : null

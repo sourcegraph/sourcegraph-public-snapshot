@@ -35,7 +35,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 var (
@@ -83,11 +82,26 @@ func main() {
 	}
 
 	db := ensureFrontendDB()
+	git := gitserver.NewClient(db)
 
 	service := &search.Service{
 		Store: &search.Store{
 			FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
-				return git.ArchiveReader(ctx, db, nil, repo, gitserver.ArchiveOptions{Treeish: string(commit), Format: git.ArchiveFormatTar})
+				return git.Archive(ctx, repo, gitserver.ArchiveOptions{
+					Treeish: string(commit),
+					Format:  "tar",
+				})
+			},
+			FetchTarPaths: func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
+				pathspecs := make([]gitserver.Pathspec, len(paths))
+				for i, p := range paths {
+					pathspecs[i] = gitserver.PathspecLiteral(p)
+				}
+				return git.Archive(ctx, repo, gitserver.ArchiveOptions{
+					Treeish:   string(commit),
+					Format:    "tar",
+					Pathspecs: pathspecs,
+				})
 			},
 			FilterTar:         search.NewFilter,
 			Path:              filepath.Join(cacheDir, "searcher-archives"),

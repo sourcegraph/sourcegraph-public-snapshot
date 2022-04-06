@@ -69,7 +69,6 @@ const tabRepoSyncErrorCache = (() => {
          * private code on Cloud or not synced repo on other than Cloud Sourcegrpah instance error.
          */
         setTabHasRepoSyncError(tabId: number, hasRepoSyncError: boolean, sourcegraphURL?: string): void {
-            console.log('cache', [...cache.keys()])
             if (sourcegraphURL) {
                 let record = cache.get(tabId)
 
@@ -255,10 +254,6 @@ async function main(): Promise<void> {
         },
 
         fetchCache,
-
-        getCookie(details) {
-            return browser.cookies.get(details)
-        },
     }
 
     // Handle calls from other scripts

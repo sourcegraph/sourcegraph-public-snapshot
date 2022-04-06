@@ -1,6 +1,7 @@
 package ratelimit
 
 import (
+	"math"
 	"sync"
 
 	"golang.org/x/time/rate"
@@ -58,4 +59,37 @@ func (r *Registry) Count() int {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return len(r.rateLimiters)
+}
+
+type LimitInfo struct {
+	// Maximum allowed burst of requests
+	Burst int
+	// Maximum allowed requests per second. If the limit is infinite, Limit will be
+	// zero and Infinite will be true
+	Limit float64
+	// Infinite is true if Limit is infinite. This is required since infinity cannot
+	// be marshalled in JSON.
+	Infinite bool
+}
+
+// LimitInfo reports how all the existing rate limiters are configured, keyed by
+// URN.
+func (r *Registry) LimitInfo() map[string]LimitInfo {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	m := make(map[string]LimitInfo, len(r.rateLimiters))
+	for urn, rl := range r.rateLimiters {
+		limit := rl.Limit()
+		info := LimitInfo{
+			Burst: rl.Burst(),
+			Limit: float64(limit),
+		}
+		if math.IsInf(info.Limit, 0) || limit == rate.Inf {
+			info.Limit = 0
+			info.Infinite = true
+		}
+		m[urn] = info
+	}
+	return m
 }

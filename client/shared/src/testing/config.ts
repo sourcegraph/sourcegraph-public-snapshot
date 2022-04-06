@@ -30,6 +30,7 @@ export interface Config {
     headless: boolean
     keepBrowser: boolean
     bitbucketCloudUserBobAppPassword: string
+    gitHubDotComToken: string
 }
 
 interface Field<T = string> {
@@ -90,6 +91,10 @@ const configFields: ConfigFields = {
         envVar: 'GITHUB_CLIENT_SECRET',
         description:
             'Cilent secret of the GitHub app to use to authenticate to Sourcegraph. Follow these instructions to obtain: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/',
+    },
+    gitHubDotComToken: {
+        envVar: 'GH_TOKEN',
+        description: 'A Github personal token with access to private repos used for e2e tests.',
     },
     gitHubToken: {
         envVar: 'GITHUB_TOKEN',
