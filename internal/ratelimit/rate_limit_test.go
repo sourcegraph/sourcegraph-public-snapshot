@@ -23,3 +23,22 @@ func TestRegistry(t *testing.T) {
 
 	assert.Equal(t, 2, r.Count())
 }
+
+func TestLimitInfo(t *testing.T) {
+	r := NewRegistry()
+	r.GetOrSet("extsvc:github:1", rate.NewLimiter(rate.Inf, 1))
+	r.GetOrSet("extsvc:github:2", rate.NewLimiter(10, 1))
+
+	info := r.LimitInfo()
+
+	assert.Equal(t, info["extsvc:github:1"], LimitInfo{
+		Limit:    0,
+		Burst:    1,
+		Infinite: true,
+	})
+	assert.Equal(t, info["extsvc:github:2"], LimitInfo{
+		Limit:    10,
+		Burst:    1,
+		Infinite: false,
+	})
+}
