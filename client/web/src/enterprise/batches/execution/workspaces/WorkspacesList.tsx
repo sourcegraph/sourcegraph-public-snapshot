@@ -12,12 +12,16 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../../../../components/FilteredConnection/ui'
-import { BatchSpecWorkspaceListFields, Scalars } from '../../../../graphql-operations'
+import {
+    HiddenBatchSpecWorkspaceListFields,
+    Scalars,
+    VisibleBatchSpecWorkspaceListFields,
+} from '../../../../graphql-operations'
 
 import { WorkspacesListItem } from './WorkspacesListItem'
 
 export interface WorkspacesListProps {
-    workspacesConnection: UseConnectionResult<BatchSpecWorkspaceListFields>
+    workspacesConnection: UseConnectionResult<VisibleBatchSpecWorkspaceListFields | HiddenBatchSpecWorkspaceListFields>
     /** The currently selected workspace node id. Will be highlighted. */
     selectedNode?: Scalars['ID']
     /** The URL path to the execution page this workspaces list is shown on. */

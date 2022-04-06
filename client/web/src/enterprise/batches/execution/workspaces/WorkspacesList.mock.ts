@@ -15,7 +15,7 @@ export const mockBatchSpec = (): EditBatchChangeFields['currentSpec'] => ({
 export const mockWorkspace = (
     id: number,
     fields?: Partial<VisibleBatchSpecWorkspaceListFields>
-): BatchSpecWorkspaceListFields => ({
+): VisibleBatchSpecWorkspaceListFields => ({
     __typename: 'VisibleBatchSpecWorkspace',
     id: `spec-${id}`,
     state: BatchSpecWorkspaceState.PROCESSING,
