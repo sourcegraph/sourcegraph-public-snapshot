@@ -29,7 +29,8 @@ export interface UserAddCodeHostsPageProps
     codeHostExternalServices: Record<string, AddExternalServiceOptions>
     routingPrefix: string
     context: Pick<SourcegraphContext, 'authProviders'>
-    onOrgGetStartedRefresh?: () => void
+    onOrgGetStartedRefresh?: () => void,
+    isSourcegraphDotCom?: boolean
 }
 
 type ServicesByKind = Partial<Record<ExternalServiceKind, ListExternalServiceFields>>
@@ -98,6 +99,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     onUserExternalServicesOrRepositoriesUpdate,
     telemetryService,
     onOrgGetStartedRefresh,
+    isSourcegraphDotCom,
 }) => {
     if (window.opener) {
         const parentWindow: ParentWindow = window.opener as ParentWindow
@@ -116,8 +118,6 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         setIssUpdateModalOpen(!isUpdateModalOpen)
     }, [isUpdateModalOpen])
     const [servicesDown, setServicesDown] = useState<string[]>()
-    const useGitHubApp = true
-
     const flagsOverridesResult = useFlagsOverrides()
     const isGitHubAppLoading = flagsOverridesResult.loading
 
@@ -546,7 +546,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                         onDidRemove={removeService(kind)}
                                         onDidError={handleError}
                                         loading={kind === ExternalServiceKind.GITHUB && isGitHubAppLoading}
-                                        useGitHubApp={kind === ExternalServiceKind.GITHUB && useGitHubApp}
+                                        useGitHubApp={kind === ExternalServiceKind.GITHUB && isSourcegraphDotCom}
                                         reloadComponent={refetchServices}
                                     />
                                 </CodeHostListItem>
