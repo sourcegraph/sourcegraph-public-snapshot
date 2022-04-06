@@ -1263,7 +1263,7 @@ func TestSGMLogFile(t *testing.T) {
 	}
 
 	// backdate sgmLog file => sgMaintenance ignores log file
-	old := time.Now().Add(-2 * time.Hour * time.Duration(sgmLogExpire))
+	old := time.Now().Add(-2 * sgmLogExpire)
 	if err := os.Chtimes(dir.Path(sgmLog), old, old); err != nil {
 		t.Fatal(err)
 	}

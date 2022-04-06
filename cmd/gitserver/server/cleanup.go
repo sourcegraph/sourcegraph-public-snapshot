@@ -71,6 +71,7 @@ var looseObjectsLimit, _ = strconv.Atoi(env.Get("SRC_GIT_LOOSE_OBJECTS_LIMIT", "
 // Subsequent sg maintenance runs are skipped unless the log file is old. Based
 // on how https://github.com/git/git handles the gc.log file.
 var sgmLogExpire, _ = strconv.Atoi(env.Get("SRC_GIT_LOG_FILE_EXPIRY", "24", "the number of hours after which sg maintenance runs even if a log file is present"))
+var sgmLogExpire = env.MustGetDuration("SRC_GIT_LOG_FILE_EXPIRY", 24*time.Hour, "the number of hours after which sg maintenance runs even if a log file is present")
 
 // sg maintenance and git gc must not be enabled at the same time. However, both
 // might be disabled at the same time, hence we need both SRC_ENABLE_GC_AUTO and
@@ -886,7 +887,7 @@ func sgMaintenance(dir GitDir, cmd *exec.Cmd) (err error) {
 	// to report an error, because the error has already been logged in a previous
 	// run.
 	if fi, err := os.Stat(dir.Path(sgmLog)); err == nil {
-		if fi.ModTime().After(time.Now().Add(-time.Hour * time.Duration(sgmLogExpire))) {
+		if fi.ModTime().After(time.Now().Add(-sgmLogExpire)) {
 			return nil
 		}
 	}
