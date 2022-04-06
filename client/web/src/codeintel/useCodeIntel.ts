@@ -41,6 +41,12 @@ interface CodeIntelData {
     }
 }
 
+const EMPTY_CODE_INTEL_DATA = {
+    implementations: { endCursor: null, nodes: [] },
+    definitions: { endCursor: null, nodes: [] },
+    references: { endCursor: null, nodes: [] },
+}
+
 export interface UseCodeIntelResult {
     data?: CodeIntelData
     error?: ErrorLike
@@ -57,11 +63,15 @@ export interface UseCodeIntelResult {
 
 interface UseCodeIntelParameters {
     variables: UsePreciseCodeIntelForPositionVariables & ConnectionQueryArguments
+
     searchToken: string
-    spec: LanguageSpec
     fileContent: string
-    repoIsFork: boolean
-    repoIsArchived: boolean
+
+    spec: LanguageSpec
+
+    isFork: boolean
+    isArchived: boolean
+
     getSetting: SettingsGetter
 }
 
@@ -70,17 +80,38 @@ export const useCodeIntel = ({
     searchToken,
     spec,
     fileContent,
-    repoIsFork,
-    repoIsArchived,
+    isFork,
+    isArchived,
     getSetting,
 }: UseCodeIntelParameters): UseCodeIntelResult => {
     const [codeIntelData, setCodeIntelData] = useState<CodeIntelData>()
+
+    const setReferences = (references: Location[]): void => {
+        setCodeIntelData(previousData => ({
+            ...(previousData || EMPTY_CODE_INTEL_DATA),
+            references: {
+                endCursor: null,
+                nodes: references,
+            },
+        }))
+    }
+
+    const setDefinitions = (definitions: Location[]): void => {
+        setCodeIntelData(previousData => ({
+            ...(previousData || EMPTY_CODE_INTEL_DATA),
+            definitions: {
+                endCursor: null,
+                nodes: definitions,
+            },
+        }))
+    }
 
     const fellBackToSearchBased = useRef(false)
     const shouldFetchPrecise = useRef(true)
     useEffect(() => {
         // We need to fetch again if the variables change
         shouldFetchPrecise.current = true
+        fellBackToSearchBased.current = false
     }, [
         variables.repository,
         variables.commit,
@@ -91,32 +122,6 @@ export const useCodeIntel = ({
         variables.firstReferences,
         variables.firstImplementations,
     ])
-
-    const handleSearchBasedReferences = (references: Location[]): void => {
-        setCodeIntelData(previousData => ({
-            ...(previousData || {
-                implementations: { endCursor: null, nodes: [] },
-                definitions: { endCursor: null, nodes: [] },
-            }),
-            references: {
-                endCursor: null,
-                nodes: references,
-            },
-        }))
-    }
-
-    const handleSearchBasedDefinitions = (definitions: Location[]): void => {
-        setCodeIntelData(previousData => ({
-            ...(previousData || {
-                implementations: { endCursor: null, nodes: [] },
-                references: { endCursor: null, nodes: [] },
-            }),
-            definitions: {
-                endCursor: null,
-                nodes: definitions,
-            },
-        }))
-    }
 
     const {
         loading: searchBasedLoading,
@@ -129,8 +134,8 @@ export const useCodeIntel = ({
         searchToken,
         fileContent,
         spec,
-        isFork: repoIsFork,
-        isArchived: repoIsArchived,
+        isFork,
+        isArchived,
         getSetting,
     })
 
@@ -153,7 +158,7 @@ export const useCodeIntel = ({
                     console.info('No LSIF data. Falling back to search-based code intelligence.')
                     fellBackToSearchBased.current = true
 
-                    fetchSearchBasedCodeIntel(handleSearchBasedReferences, handleSearchBasedDefinitions)
+                    fetchSearchBasedCodeIntel(setReferences, setDefinitions)
                 }
             }
         },

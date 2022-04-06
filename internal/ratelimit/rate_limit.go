@@ -59,3 +59,27 @@ func (r *Registry) Count() int {
 	defer r.mu.Unlock()
 	return len(r.rateLimiters)
 }
+
+type LimitInfo struct {
+	// Maximum allowed burst of requests
+	Burst int
+	// Maximum allowed requests per second
+	Limit float64
+}
+
+// LimitInfo reports how all of the existing rate limiters are configured, keyed
+// by URN.
+func (r *Registry) LimitInfo() map[string]LimitInfo {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	m := make(map[string]LimitInfo, len(r.rateLimiters))
+	for urn, rl := range r.rateLimiters {
+		info := LimitInfo{
+			Burst: rl.Burst(),
+			Limit: float64(rl.Limit()),
+		}
+		m[urn] = info
+	}
+	return m
+}

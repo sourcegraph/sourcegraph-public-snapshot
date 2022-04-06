@@ -401,6 +401,7 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
             onClick={toggleIsOpen}
             className={classNames(styles.popoverButton, buttonClassName, isOpen && buttonOpenClassName)}
             variant={variant}
+            aria-label="Command list"
         >
             <Icon as={ConsoleIcon} size="md" />
 

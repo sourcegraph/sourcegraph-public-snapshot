@@ -60,6 +60,13 @@ type Store struct {
 	// determine if the error is a bad request (eg invalid repo).
 	FetchTar func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error)
 
+	// FetchTarPaths is the future version of FetchTar, but for now exists as
+	// its own function to minimize changes.
+	//
+	// If paths is non-empty, the archive will only contain files from paths.
+	// If a path is missing the first Read call will fail with an error.
+	FetchTarPaths func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error)
+
 	// FilterTar returns a FilterFunc that filters out files we don't want to write to disk
 	FilterTar func(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID) (FilterFunc, error)
 
