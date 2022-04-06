@@ -289,7 +289,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 
 	if background && repo != nil {
 		go func() {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 			defer cancel()
 
 			// We don't care about the return value here, but we still want to ensure that
@@ -841,7 +841,7 @@ func (s *Syncer) observeSync(
 
 		if !success {
 			tr.SetError(err)
-			syncErrors.WithLabelValues(family, owner).Add(1)
+			syncErrors.WithLabelValues(family, owner).Inc()
 		}
 
 		tr.Finish()
