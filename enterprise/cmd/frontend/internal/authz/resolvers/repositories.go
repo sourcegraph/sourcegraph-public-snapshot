@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -10,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -79,6 +79,8 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			repoIDs[i] = api.RepoID(idSubset[i])
 		}
 
+		// TODO(asdine): GetByIDs now returns the complete repo information rather that only a subset.
+		// Ensure this doesn't have an impact on performance and switch to using ListMinimalRepos if needed.
 		r.repos, r.err = r.db.Repos().GetByIDs(ctx, repoIDs...)
 		if r.err != nil {
 			return
