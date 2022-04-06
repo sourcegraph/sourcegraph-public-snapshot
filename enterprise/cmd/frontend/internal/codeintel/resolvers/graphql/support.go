@@ -23,21 +23,21 @@ const (
 )
 
 type searchBasedSupportResolver struct {
-	language *string
+	language string
 }
 
-func NewSearchBasedCodeIntelResolver(language *string) gql.SearchBasedSupportResolver {
+func NewSearchBasedCodeIntelResolver(language string) gql.SearchBasedSupportResolver {
 	return &searchBasedSupportResolver{language}
 }
 
 func (r *searchBasedSupportResolver) SupportLevel() string {
-	if r.language != nil && *r.language != "" {
+	if r.language != "" {
 		return string(basic)
 	}
 	return string(unsupported)
 }
 
-func (r *searchBasedSupportResolver) Language() *string {
+func (r *searchBasedSupportResolver) Language() string {
 	return r.language
 }
 

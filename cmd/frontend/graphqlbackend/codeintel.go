@@ -422,5 +422,5 @@ type CodeIntelIndexerResolver interface {
 
 type SearchBasedSupportResolver interface {
 	SupportLevel() string
-	Language() *string
+	Language() string
 }

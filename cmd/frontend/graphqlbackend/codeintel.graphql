@@ -1587,12 +1587,12 @@ type CodeIntelSupport {
     """
     Search-based code-intel support overview.
     """
-    searchBasedSupport: SearchBasedCodeIntelSupport!
+    searchBasedSupport: SearchBasedCodeIntelSupport
 
     """
     Precise code-intel support overview.
     """
-    preciseSupport: PreciseCodeIntelSupport!
+    preciseSupport: PreciseCodeIntelSupport
 }
 
 """
@@ -1658,7 +1658,7 @@ type SearchBasedCodeIntelSupport {
     The infered language the underlying tool infered when building an index for
     search-based code-intel.
     """
-    language: String
+    language: String!
 }
 
 """
