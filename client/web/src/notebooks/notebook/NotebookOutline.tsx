@@ -74,8 +74,9 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
                 }
             }
 
-            // Keep a local copy of the visible headings as a set. This allows us to update
-            // the component state in a single `setVisibleHeadings` call.
+            // We keep a local copy of the visible headings as a set. This allows us to update
+            // the component state in a single `setVisibleHeadings` call and we can avoid
+            // needless state changes.
             const visibleHeadingsSet = new Set<string>()
             const processIntersectionEntries = (entries: IntersectionObserverEntry[]): void => {
                 for (const entry of entries) {
@@ -89,13 +90,11 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
                 setVisibleHeadings([...visibleHeadingsSet])
             }
 
-            // We use the requestAnimationFrame callback to avoid processing on the main thread.
-            const intersectionCallback = (entries: IntersectionObserverEntry[]): number =>
-                window.requestAnimationFrame(() => processIntersectionEntries(entries))
-
             // We use the IntersectionObserver to keep track of the headings that
-            // are currently in the viewport.
-            const intersectionObserver = new IntersectionObserver(intersectionCallback)
+            // are currently in the viewport. We use the requestAnimationFrame callback to avoid processing on the main thread.
+            const intersectionObserver = new IntersectionObserver((entries: IntersectionObserverEntry[]): number =>
+                window.requestAnimationFrame(() => processIntersectionEntries(entries))
+            )
             observeHeadings()
 
             // On every notebook mutation, observe the rendered headings again.
