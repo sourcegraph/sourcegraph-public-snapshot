@@ -183,7 +183,8 @@ export const useCodeIntel = ({
                 if (lsifData) {
                     setCodeIntelData(lsifData)
 
-                    if (shouldMixPreciseAndSearchBasedReferences()) {
+                    // If we've exhausted LSIF data and the flag is enabled, we add search-based data.
+                    if (lsifData.references.endCursor === null && shouldMixPreciseAndSearchBasedReferences()) {
                         fetchSearchBasedReferences(deduplicateAndAddReferences)
                     }
                 } else {
@@ -218,6 +219,11 @@ export const useCodeIntel = ({
                     nodes: [...previousData.references.nodes, ...newReferenceData.nodes.map(buildPreciseLocation)],
                 },
             })
+
+            // If we've exhausted LSIF data and the flag is enabled, we add search-based data.
+            if (newReferenceData.pageInfo.endCursor === null && shouldMixPreciseAndSearchBasedReferences()) {
+                fetchSearchBasedReferences(deduplicateAndAddReferences)
+            }
         },
     })
 
@@ -266,13 +272,15 @@ export const useCodeIntel = ({
     const fetchMoreImplementations = (): void => {
         const cursor = codeIntelData?.implementations.endCursor || null
 
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        fetchAdditionalImplementations({
-            variables: {
-                ...variables,
-                ...{ afterImplementations: cursor },
-            },
-        })
+        if (cursor !== null) {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+            fetchAdditionalImplementations({
+                variables: {
+                    ...variables,
+                    ...{ afterImplementations: cursor },
+                },
+            })
+        }
     }
 
     const combinedLoading = loading || (fellBackToSearchBased.current && searchBasedLoading)

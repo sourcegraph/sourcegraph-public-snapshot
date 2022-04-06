@@ -683,60 +683,43 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<{
     setActiveLocation: (reference: Location | undefined) => void
     getLineContent: (location: Location) => string
     filter: string | undefined
-}> = ({ repoLocationGroup, setActiveLocation, getLineContent, activeLocation, filter }) => {
-    const quality = useMemo(
-        () => locationGroupQuality(repoLocationGroup.referenceGroups.flatMap(reference => reference.locations)),
-        [repoLocationGroup]
-    )
+}> = ({ repoLocationGroup, setActiveLocation, getLineContent, activeLocation, filter }) => (
+    <Collapse openByDefault={true}>
+        {({ isOpen }) => (
+            <>
+                <CollapseHeader
+                    as={Button}
+                    aria-expanded={isOpen}
+                    type="button"
+                    className="bg-transparent py-1 border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
+                >
+                    <span className="p-0 mb-0">
+                        {isOpen ? (
+                            <Icon aria-label="Close" as={ChevronDownIcon} />
+                        ) : (
+                            <Icon aria-label="Expand" as={ChevronRightIcon} />
+                        )}
 
-    return (
-        <Collapse openByDefault={true}>
-            {({ isOpen }) => (
-                <>
-                    <CollapseHeader
-                        as={Button}
-                        aria-expanded={isOpen}
-                        type="button"
-                        className="bg-transparent py-1 border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
-                    >
-                        <span className="p-0 mb-0">
-                            {isOpen ? (
-                                <Icon aria-label="Close" as={ChevronDownIcon} />
-                            ) : (
-                                <Icon aria-label="Expand" as={ChevronRightIcon} />
-                            )}
+                        <Link to={`/${repoLocationGroup.repoName}`}>{displayRepoName(repoLocationGroup.repoName)}</Link>
+                    </span>
+                </CollapseHeader>
 
-                            <Link to={`/${repoLocationGroup.repoName}`}>
-                                {displayRepoName(repoLocationGroup.repoName)}
-                            </Link>
-
-                            <Badge pill={true} small={true} variant="secondary" className="ml-2">
-                                {quality === 'MIXED'
-                                    ? 'PRECISE AND SEARCH-BASED'
-                                    : quality === 'SEARCH-BASED'
-                                    ? 'SEARCH-BASED'
-                                    : 'PRECISE'}
-                            </Badge>
-                        </span>
-                    </CollapseHeader>
-
-                    <CollapsePanel id={repoLocationGroup.repoName}>
-                        {repoLocationGroup.referenceGroups.map(group => (
-                            <ReferenceGroup
-                                key={group.path + group.repoName}
-                                group={group}
-                                activeLocation={activeLocation}
-                                setActiveLocation={setActiveLocation}
-                                getLineContent={getLineContent}
-                                filter={filter}
-                            />
-                        ))}
-                    </CollapsePanel>
-                </>
-            )}
-        </Collapse>
-    )
-}
+                <CollapsePanel id={repoLocationGroup.repoName}>
+                    {repoLocationGroup.referenceGroups.map(group => (
+                        <ReferenceGroup
+                            key={group.path + group.repoName}
+                            group={group}
+                            activeLocation={activeLocation}
+                            setActiveLocation={setActiveLocation}
+                            getLineContent={getLineContent}
+                            filter={filter}
+                        />
+                    ))}
+                </CollapsePanel>
+            </>
+        )}
+    </Collapse>
+)
 
 const ReferenceGroup: React.FunctionComponent<{
     group: LocationGroup
@@ -777,6 +760,9 @@ const ReferenceGroup: React.FunctionComponent<{
                                     group.path
                                 )}{' '}
                                 ({group.locations.length} references)
+                                <Badge pill={true} small={true} variant="secondary" className="ml-2">
+                                    {locationGroupQuality(group)}
+                                </Badge>
                             </span>
                         </CollapseHeader>
 
