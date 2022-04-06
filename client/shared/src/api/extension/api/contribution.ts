@@ -123,34 +123,25 @@ function evaluateActionContributions<T>(
     context: Context<T>,
     actions: Contributions['actions']
 ): Evaluated<Contributions['actions']> {
-    return actions?.map(action => {
-        if (
-            action.id === 'batches.replaceSymbol' &&
-            action.commandArguments?.[0] &&
-            action.commandArguments?.[0] instanceof Expression
-        ) {
-            console.log('evaluateActionContributions', context, action.commandArguments[0])
-        }
-        return {
-            ...action,
-            title: action.title?.exec(context),
-            disabledTitle: action.disabledTitle?.exec(context),
-            category: action.category?.exec(context),
-            description: action.description?.exec(context),
-            iconURL: action.iconURL?.exec(context),
-            actionItem: action.actionItem && {
-                ...action.actionItem,
-                label: action.actionItem.label?.exec(context),
-                description: action.actionItem.description?.exec(context),
-                iconURL: action.actionItem.iconURL?.exec(context),
-                iconDescription: action.actionItem.iconDescription?.exec(context),
-                pressed: action.actionItem.pressed?.exec(context),
-            },
-            commandArguments: action.commandArguments?.map(argument =>
-                argument instanceof Expression ? argument.exec(context) : argument
-            ),
-        }
-    })
+    return actions?.map(action => ({
+        ...action,
+        title: action.title?.exec(context),
+        disabledTitle: action.disabledTitle?.exec(context),
+        category: action.category?.exec(context),
+        description: action.description?.exec(context),
+        iconURL: action.iconURL?.exec(context),
+        actionItem: action.actionItem && {
+            ...action.actionItem,
+            label: action.actionItem.label?.exec(context),
+            description: action.actionItem.description?.exec(context),
+            iconURL: action.actionItem.iconURL?.exec(context),
+            iconDescription: action.actionItem.iconDescription?.exec(context),
+            pressed: action.actionItem.pressed?.exec(context),
+        },
+        commandArguments: action.commandArguments?.map(argument =>
+            argument instanceof Expression ? argument.exec(context) : argument
+        ),
+    }))
 }
 
 /**

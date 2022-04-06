@@ -175,9 +175,6 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
         const parameters = new URLSearchParams(location.search)
         if (parameters.has('kind')) {
             switch (parameters.get('kind')) {
-                case 'replaceSymbol':
-                    setTemplate(renameSymbolTemplate(nameInput));
-                    break;
                 case 'goCheckerSA6005':
                     setTemplate(goCheckerSA6005Template(nameInput));
                     break;
@@ -987,29 +984,6 @@ changesetTemplate:
     branch: batches/\${{batch_change.name}}
     commit:
         message: unnecessary use of fmt.Sprint
-`
-}
-
-function renameSymbolTemplate(name: string): string {
-    return `name: ${name}
-description: Renames the symbol "foo" to "bar"
-
-on:
-    - repository: github.com/hashicorp/errwrap
-
-steps:
-    - run: renamer -repoPath=/work -repoName=github.com/hashicorp/errwrap -rev=7b00e5db719c64d14dd0caaacbd13e76254d02c0 -filePath=errwrap.go -line=162 -character=6 -replacement=BatchYeah
-      container: eseliger/renamer:0.0.1
-      env:
-        SRC_ENDPOINT: https://k8s.sgdev.org
-        SRC_ACCESS_TOKEN: 494bf58148bc74c0370c685e3bd033b6152653f4
-
-changesetTemplate:
-    title: Hello World
-    body: My first batch change!
-    branch: hello-world
-    commit:
-        message: Append Hello World to all README.md files
 `
 }
 
