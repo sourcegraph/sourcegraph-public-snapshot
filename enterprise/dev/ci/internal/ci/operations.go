@@ -263,39 +263,23 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 
 	// Chunk web integration tests to save time via parallel execution.
 	chunkedTestFiles := getChunkedWebIntegrationFileNames(chunkSize)
-	// Percy finalize step should be executed after all integration tests.
-	puppeteerFinalizeDependencies := make([]bk.StepOpt, len(chunkedTestFiles))
+	chunkCount := len(chunkedTestFiles)
 
 	// Add pipeline step for each chunk of web integrations files.
 	for i, chunkTestFiles := range chunkedTestFiles {
 		stepLabel := fmt.Sprintf(":puppeteer::electric_plug: Puppeteer tests chunk #%s", fmt.Sprint(i+1))
 
-		stepKey := fmt.Sprintf("puppeteer:chunk:%s", fmt.Sprint(i+1))
-		puppeteerFinalizeDependencies[i] = bk.DependsOn(stepKey)
-
 		pipeline.AddStep(stepLabel,
 			withYarnCache(),
-			bk.Key(stepKey),
 			bk.DependsOn(prepStepKey),
-			bk.DisableManualRetry("The Percy build is finalized even if one of the concurrent agents fails. To retry correctly, restart the entire pipeline."),
+			bk.DisableManualRetry("The Percy build is not finalized if one of the concurrent agents fails. To retry correctly, restart the entire pipeline."),
 			bk.Env("PERCY_ON", "true"),
+			// If PERCY_PARALLEL_TOTAL is set, the API will wait for that many finalized builds to finalize the Percy build.
+			// https://docs.percy.io/docs/parallel-test-suites#how-it-works
+			bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(chunkCount)),
 			bk.Cmd(fmt.Sprintf(`dev/ci/yarn-web-integration.sh "%s"`, chunkTestFiles)),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
-
-	finalizeSteps := []bk.StepOpt{
-		// Allow to teardown the Percy build even if there was a failure in the earlier Percy steps.
-		bk.AllowDependencyFailure(),
-		// Percy service often fails for obscure reasons. The step is pretty fast, so we
-		// just retry a few times.
-		bk.AutomaticRetry(3),
-		// Finalize just uses a remote package.
-		// skipGitCloneStep,
-		bk.Cmd("npx @percy/cli build:finalize"),
-	}
-
-	pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests finalize",
-		append(finalizeSteps, puppeteerFinalizeDependencies...)...)
 }
 
 func clientChromaticTests(autoAcceptChanges bool) operations.Operation {
