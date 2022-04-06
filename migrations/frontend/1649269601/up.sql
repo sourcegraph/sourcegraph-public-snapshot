@@ -11,6 +11,6 @@
 --    in the associated metadata.yaml file.
 
 ALTER TABLE cm_trigger_jobs
-    DROP COLUMN results;
+    DROP COLUMN IF EXISTS results;
 ALTER TABLE cm_trigger_jobs
-    DROP COLUMN num_results;
+    DROP COLUMN IF EXISTS num_results;
