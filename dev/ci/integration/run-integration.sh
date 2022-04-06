@@ -65,7 +65,7 @@ function cleanup() {
 trap cleanup EXIT
 
 echo "--- Running a daemonized $IMAGE as the test subject..."
-CLEAN="true" "${root_dir}"/dev/run-server-image.sh -d --name "$CONTAINER"
+CLEAN="true" ALLOW_SINGLE_DOCKER_CODE_INSIGHTS=true "${root_dir}"/dev/run-server-image.sh -d --name "$CONTAINER"
 
 echo "--- Waiting for $URL to be up"
 set +e
