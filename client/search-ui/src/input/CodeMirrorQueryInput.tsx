@@ -12,7 +12,14 @@ import {
 import { RangeSetBuilder } from '@codemirror/rangeset'
 import { EditorSelection, EditorState, Extension, Facet, StateEffect, StateField, Prec } from '@codemirror/state'
 import { hoverTooltip, TooltipView } from '@codemirror/tooltip'
-import { EditorView, ViewUpdate, keymap, Decoration, placeholder as placeholderExtension } from '@codemirror/view'
+import {
+    EditorView,
+    ViewUpdate,
+    keymap,
+    Decoration,
+    placeholder as placeholderExtension,
+    ViewPlugin,
+} from '@codemirror/view'
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 import { editor as Monaco, MarkerSeverity, languages } from 'monaco-editor'
@@ -35,6 +42,7 @@ import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transf
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
 import { MonacoQueryInputProps } from './MonacoQueryInput'
 
@@ -213,11 +221,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<MonacoQueryInputPro
     // It looks like <Shortcut ... /> needs a stable onMatch callback, hence we
     // are storing the editor in a ref so that `globalFocus` is stable.
     const globalFocus = useCallback(() => {
-        if (
-            editorReference.current &&
-            !!document.activeElement &&
-            !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)
-        ) {
+        if (editorReference.current && !!document.activeElement && !isInputElement(document.activeElement)) {
             editorReference.current.focus()
         }
     }, [editorReference])
@@ -475,23 +479,29 @@ const tokenHighlight = EditorView.decorations.compute([decoratedTokens], state =
 
 // Determines whether the cursor is over a filter and if yes, decorates that
 // filter.
-const highlightFocusedFilter = EditorView.decorations.compute(
-    ['selection', EditorView.editable, parsedQuery],
-    state => {
-        // No need to highlight anything if the input is "disabled"
-        if (!state.facet(EditorView.editable)) {
-            return Decoration.none
-        }
-
-        const query = state.facet(parsedQuery)
-        const position = state.selection.main.head
-        const focusedFilter = query.tokens.find(
-            (token): token is Filter =>
-                token.type === 'filter' && token.range.start <= position && token.range.end >= position
-        )
-        return focusedFilter
-            ? Decoration.set(focusedFilterDeco.range(focusedFilter.range.start, focusedFilter.range.end))
-            : Decoration.none
+const highlightFocusedFilter = ViewPlugin.define(
+    () => ({
+        decorations: Decoration.none,
+        update(update) {
+            if (update.focusChanged && !update.view.hasFocus) {
+                this.decorations = Decoration.none
+            } else if (update.docChanged || update.selectionSet || update.focusChanged) {
+                const query = update.state.facet(parsedQuery)
+                const position = update.state.selection.main.head
+                const focusedFilter = query.tokens.find(
+                    (token): token is Filter =>
+                        // Inclusive end so that the filter is highlighed when
+                        // the cursor is positioned directly after the value
+                        token.type === 'filter' && token.range.start <= position && token.range.end >= position
+                )
+                this.decorations = focusedFilter
+                    ? Decoration.set(focusedFilterDeco.range(focusedFilter.range.start, focusedFilter.range.end))
+                    : Decoration.none
+            }
+        },
+    }),
+    {
+        decorations: plugin => plugin.decorations,
     }
 )
 
