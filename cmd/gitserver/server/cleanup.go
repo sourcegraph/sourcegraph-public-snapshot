@@ -401,6 +401,12 @@ func (s *Server) cleanupRepos() {
 
 // setRepoSizes uses calculated sizes of repos to update database entries of repos with repo_size_bytes = NULL
 func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]int64) error {
+	if len(repoToSize) == 0 {
+		log15.Info("cleanup: file system walk didn't yield any directory sizes")
+		return nil
+	}
+	log15.Info(fmt.Sprintf("cleanup: %v directory sizes calculated during file system walk", len(repoToSize)))
+
 	db := s.DB
 	gitserverRepos := db.GitserverRepos()
 	// getting all the repos without size
@@ -409,7 +415,7 @@ func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]i
 		return err
 	}
 	if len(reposWithoutSize) == 0 {
-		log15.Info("cleanup: all repos have their sizes")
+		log15.Info("cleanup: all repos in a DB have their sizes")
 		return nil
 	}
 

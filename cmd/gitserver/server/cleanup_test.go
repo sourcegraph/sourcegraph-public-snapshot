@@ -1166,7 +1166,11 @@ func TestCleanup_setRepoSizes(t *testing.T) {
 	}
 	defer os.RemoveAll(root)
 
-	for _, name := range []string{"a", "b", "c"} {
+	for _, name := range []string{
+		"ghe.sgdev.org/sourcegraph/gorilla-websocket",
+		"ghe.sgdev.org/sourcegraph/gorilla-mux",
+		"ghe.sgdev.org/sourcegraph/gorilla-sessions",
+	} {
 		p := path.Join(root, name, ".git")
 		if err := os.MkdirAll(p, 0755); err != nil {
 			t.Fatal(err)
@@ -1186,7 +1190,10 @@ func TestCleanup_setRepoSizes(t *testing.T) {
 
 	// inserting info about repos to DB. Repo with ID = 1 already has its size
 	if _, err := db.Exec(`
-insert into repo(id, name) values (1, 'a'), (2, 'b'), (3, 'c');
+insert into repo(id, name)
+values (1, 'ghe.sgdev.org/sourcegraph/gorilla-websocket'),
+       (2, 'ghe.sgdev.org/sourcegraph/gorilla-mux'),
+       (3, 'ghe.sgdev.org/sourcegraph/gorilla-sessions');
 insert into gitserver_repos(repo_id, shard_id) values (2, 1), (3, 1);
 insert into gitserver_repos(repo_id, shard_id, repo_size_bytes) values (1, 1, 228);
 `); err != nil {
