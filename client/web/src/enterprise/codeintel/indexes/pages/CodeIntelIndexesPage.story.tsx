@@ -22,6 +22,7 @@ const indexPrototype: Omit<LsifIndexFields, 'id' | 'state' | 'queuedAt'> = {
     inputCommit: '',
     inputRoot: 'web/',
     inputIndexer: 'lsif-tsc',
+    indexer: { name: 'lsif-tsc', url: '' },
     failure: null,
     startedAt: null,
     finishedAt: null,
