@@ -135,39 +135,38 @@ const WorkspaceHeader: React.FunctionComponent<WorkspaceHeaderProps> = ({
         </div>
         <div className="text-muted">
             {typeof workspace.placeInQueue === 'number' && (
-                <>
+                <div className={styles.detailItem}>
                     <Icon as={SyncIcon} />{' '}
                     <strong>
                         <NumberInQueue number={workspace.placeInQueue} />
                     </strong>{' '}
-                    in queue |{' '}
-                </>
+                    in queue
+                </div>
             )}
-            {workspace.__typename === 'VisibleBatchSpecWorkspace' && workspace.path && <>{workspace.path} | </>}
+            {workspace.__typename === 'VisibleBatchSpecWorkspace' && workspace.path && (
+                <div className={styles.detailItem}>{workspace.path}</div>
+            )}
             {workspace.__typename === 'VisibleBatchSpecWorkspace' && (
-                <>
+                <div className={styles.detailItem}>
                     <Icon as={SourceBranchIcon} /> base: <strong>{workspace.branch.displayName}</strong>
-                </>
+                </div>
             )}
             {workspace.startedAt && (
-                <>
-                    {' '}
-                    | Total time:{' '}
+                <div className={styles.detailItem}>
+                    Total time:{' '}
                     <strong>
                         <Duration start={workspace.startedAt} end={workspace.finishedAt ?? undefined} />
                     </strong>
-                </>
+                </div>
             )}
             {workspace.__typename === 'VisibleBatchSpecWorkspace' &&
                 !workspace.cachedResultFound &&
                 workspace.state !== BatchSpecWorkspaceState.SKIPPED && (
-                    <>
-                        {' '}
-                        |{' '}
+                    <div className={styles.detailItem}>
                         <Button className="text-muted m-0 p-0" onClick={toggleShowTimeline} variant="link">
                             Timeline
                         </Button>
-                    </>
+                    </div>
                 )}
         </div>
         <hr />
