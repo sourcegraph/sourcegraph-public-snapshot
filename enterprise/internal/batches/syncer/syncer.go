@@ -366,7 +366,7 @@ func (s *changesetSyncer) Run(ctx context.Context) {
 			err := s.syncFunc(ctx, next.changesetID)
 			labelValues := []string{s.codeHostURL, strconv.FormatBool(err == nil)}
 			s.metrics.syncDuration.WithLabelValues(labelValues...).Observe(s.syncStore.Clock()().Sub(start).Seconds())
-			s.metrics.syncs.WithLabelValues(labelValues...).Add(1)
+			s.metrics.syncs.WithLabelValues(labelValues...).Inc()
 
 			if err != nil {
 				log15.Error("Syncing changeset", "err", err)
