@@ -9,6 +9,7 @@ import { Collapsible } from '../../components/Collapsible'
 import { Timestamp } from '../../components/time/Timestamp'
 import { LsifIndexFields, LsifUploadFields } from '../../graphql-operations'
 
+import { CodeIntelIndexer } from './shared/components/CodeIntelIndexer'
 import { CodeIntelStateIcon } from './shared/components/CodeIntelStateIcon'
 import { CodeIntelUploadOrIndexCommit } from './shared/components/CodeIntelUploadOrIndexCommit'
 import { CodeIntelUploadOrIndexIndexer } from './shared/components/CodeIntelUploadOrIndexIndexer'
