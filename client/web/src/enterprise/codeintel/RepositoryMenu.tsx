@@ -60,8 +60,10 @@ export const RepositoryMenuContent: React.FunctionComponent<
 }
 
 const NerdData: React.FunctionComponent<{ data: UseCodeIntelStatusPayload }> = ({ data }) => {
-    const preciseSupportLevels = [...new Set(data.preciseSupport.map(support => support.supportLevel))].sort()
-    const searchBasedSupportLevels = [...new Set(data.searchBasedSupport.map(support => support.supportLevel))].sort()
+    const preciseSupportLevels = [...new Set((data?.preciseSupport || []).map(support => support.supportLevel))].sort()
+    const searchBasedSupportLevels = [
+        ...new Set((data?.searchBasedSupport || []).map(support => support.supportLevel)),
+    ].sort()
 
     return (
         <div className="px-2 py-1">
