@@ -415,7 +415,7 @@ func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]i
 		return err
 	}
 	if len(reposWithoutSize) == 0 {
-		log15.Info("cleanup: all repos in a DB have their sizes")
+		log15.Info("cleanup: all repos in the DB have their sizes")
 		return nil
 	}
 
