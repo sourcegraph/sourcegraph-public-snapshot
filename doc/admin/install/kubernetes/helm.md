@@ -197,6 +197,47 @@ preciseCodeIntel:
     <<: *objectStorageEnv
 ```
 
+### Using SSH to clone repositories
+
+Create a [Secret](https://kubernetes.io/docs/concepts/configuration/secret/) that contains the base64 encoded contents of your SSH private key (make sure it doesn’t require a passphrase) and known_hosts file. The [Secret] will be mounted in the `gitserver` deployment to authenticate with your code host.
+
+If you have access to the ssh keys locally, you can run the command below to create the secret:
+
+```sh
+kubectl create secret generic gitserver-ssh \
+	    --from-file id_rsa=${HOME}/.ssh/id_rsa \
+	    --from-file known_hosts=${HOME}/.ssh/known_hosts
+```
+
+Alternatively, you may manually create the [Secret] from a manifest file.
+
+> WARNING: Do NOT commit the secret manifest into your Git repository unless you are okay with storing sensitive information in plaintext and your repository is private.
+
+`gitserver-ssh.Secret.yaml`
+```sh
+apiVersion: v1
+kind: Secret
+metadata:
+  name: gitserver-ssh
+data:
+  # notes: secrets data has to be base64-encoded
+  id_rsa: ""
+  known_hosts: ""
+```
+
+Apply the created [Secret] with the command below:
+
+```sh
+kubectl apply -f gitserver-ssh.Secret.yaml
+```
+
+You should add the following values to your override file to reference the [Secret] you created earlier.
+
+```yaml
+gitserver:
+  sshSecret: gitserver-ssh
+```
+
 ## Cloud providers guides
 
 This section is aimed at providing high-level guidance on deploying Sourcegraph via Helm on major Cloud providers. In general, you need the following to get started:
