@@ -243,37 +243,21 @@ describe('isPrivateRepository', () => {
 
         it('fallbacks to DOM check on unsuccessful request', async () => {
             fetch.mockRejectOnce(new Error('Error happened'))
-
             document.body.innerHTML = '<span id="public-flag">Public</span>'
             expect(await isPrivateRepository('test-org/test-repo', fetchCache, '#public-flag')).toBeFalsy()
 
+            fetch.mockRejectOnce(new Error('Error happened'))
             document.body.innerHTML = '<span>Public</span>'
             expect(await isPrivateRepository('test-org/test-repo', fetchCache, '#public-flag')).toBeTruthy()
 
             expect(fetch).toHaveBeenCalledTimes(2)
         })
 
-        it('returns [private=true] if empty response', async () => {
-            fetch.mockResponseOnce(JSON.stringify({}))
-
-            expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
-            expect(fetch).toHaveBeenCalledTimes(1)
-        })
-
-        it('returns [private=true] if rate-limit exceeded', async () => {
-            fetch.mockResponseOnce(JSON.stringify({ private: false }), {
-                headers: { 'X-RateLimit-Remaining': '0' },
-            })
-
-            expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
-            expect(fetch).toHaveBeenCalledTimes(1)
-        })
-
         it('returns correctly from API response', async () => {
-            fetch.mockResponseOnce(JSON.stringify({ private: true }))
+            fetch.mockResponseOnce(() => Promise.resolve({ status: 404 }))
             expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
 
-            fetch.mockResponseOnce(JSON.stringify({ private: false }))
+            fetch.mockResponseOnce(() => Promise.resolve({ status: 200 }))
             expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeFalsy()
 
             expect(fetch).toHaveBeenCalledTimes(2)
