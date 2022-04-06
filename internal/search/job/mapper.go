@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
+	"github.com/sourcegraph/sourcegraph/internal/search/notebook"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
@@ -28,6 +29,7 @@ type Mapper struct {
 	MapCommitSearchJob             func(*commit.CommitSearch) *commit.CommitSearch
 	MapRepoUniverseSymbolSearchJob func(*symbol.RepoUniverseSymbolSearch) *symbol.RepoUniverseSymbolSearch
 	MapComputeExcludedReposJob     func(*repos.ComputeExcludedRepos) *repos.ComputeExcludedRepos
+	MapNotebookSearchJob           func(*notebook.SearchJob) *notebook.SearchJob
 
 	// Repo pager Job (pre-step for some Search Jobs)
 	MapRepoPagerJob func(*repoPagerJob) *repoPagerJob
@@ -115,6 +117,12 @@ func (m *Mapper) Map(job Job) Job {
 	case *repos.ComputeExcludedRepos:
 		if m.MapComputeExcludedReposJob != nil {
 			j = m.MapComputeExcludedReposJob(j)
+		}
+		return j
+
+	case *notebook.SearchJob:
+		if m.MapNotebookSearchJob != nil {
+			j = m.MapNotebookSearchJob(j)
 		}
 		return j
 

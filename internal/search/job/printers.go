@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
+	"github.com/sourcegraph/sourcegraph/internal/search/notebook"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
@@ -50,6 +51,7 @@ func SexpFormat(job Job, sep, indent string) string {
 			*commit.CommitSearch,
 			*symbol.RepoUniverseSymbolSearch,
 			*repos.ComputeExcludedRepos,
+			*notebook.SearchJob,
 			*noopJob:
 			b.WriteString(j.Name())
 
@@ -220,6 +222,7 @@ func PrettyMermaid(job Job) string {
 			*commit.CommitSearch,
 			*symbol.RepoUniverseSymbolSearch,
 			*repos.ComputeExcludedRepos,
+			*notebook.SearchJob,
 			*noopJob:
 			writeNode(b, depth, RoundedStyle, &id, j.Name())
 
@@ -346,6 +349,7 @@ func toJSON(job Job, verbose bool) interface{} {
 			*commit.CommitSearch,
 			*symbol.RepoUniverseSymbolSearch,
 			*repos.ComputeExcludedRepos,
+			*notebook.SearchJob,
 			*noopJob:
 			if verbose {
 				return map[string]interface{}{j.Name(): j}

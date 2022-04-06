@@ -170,6 +170,12 @@ func TestToSearchInputs(t *testing.T) {
           SymbolSearcher))
       Commit)))
 `).Equal(t, test("type:file type:path type:repo type:commit type:symbol repo:test test", search.Batch, query.ParseRegexp))
+
+	autogold.Want("notebook search", `
+(PARALLEL
+  NotebookSearch
+  ComputeExcludedRepos)
+`).Equal(t, test("type:notebook hello world", search.Streaming, query.ParseLiteral))
 }
 
 func TestToEvaluateJob(t *testing.T) {
@@ -210,4 +216,16 @@ func TestToEvaluateJob(t *testing.T) {
       RepoSearch
       ComputeExcludedRepos)))
 `).Equal(t, test("foo", search.Batch))
+
+	autogold.Want("select notebook block", `
+(TIMEOUT
+  20s
+  (LIMIT
+    500
+    (SELECT
+      notebook.block.md
+      (PARALLEL
+        NotebookSearch
+        ComputeExcludedRepos))))
+`).Equal(t, test("type:notebook select:notebook.block.md", search.Streaming))
 }

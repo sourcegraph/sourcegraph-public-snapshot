@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
+	"github.com/sourcegraph/sourcegraph/internal/search/notebook"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
@@ -36,6 +37,7 @@ var allJobs = []Job{
 	&commit.CommitSearch{},
 	&symbol.RepoUniverseSymbolSearch{},
 	&repos.ComputeExcludedRepos{},
+	&notebook.SearchJob{},
 	&noopJob{},
 
 	&repoPagerJob{},
