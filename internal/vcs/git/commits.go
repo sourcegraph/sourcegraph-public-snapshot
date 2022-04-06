@@ -782,9 +782,17 @@ lineLoop:
 			return nil, errors.Errorf(`unexpected output from git for-each-ref "%s"`, line)
 		}
 
-		createdDate, err := time.Parse(time.RFC3339, string(parts[3]))
-		if err != nil {
+		var (
+			createdDatePart = string(parts[3])
+			createdDatePtr  *time.Time
+		)
+		createdDate, err := time.Parse(time.RFC3339, createdDatePart)
+		if err != nil && createdDatePart != "" {
 			return nil, errors.Errorf(`unexpected output from git for-each-ref (bad date format) "%s"`, line)
+		}
+		createdDatePtr = &createdDate
+		if createdDate.Equal(time.Time{}) {
+			createdDatePtr = nil
 		}
 
 		// Check for duplicates before adding it to the slice
@@ -798,7 +806,7 @@ lineLoop:
 			Name:            name,
 			Type:            refType,
 			IsDefaultBranch: isDefaultBranch,
-			CreatedDate:     createdDate,
+			CreatedDate:     createdDatePtr,
 		})
 	}
 

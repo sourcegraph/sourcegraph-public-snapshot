@@ -870,7 +870,7 @@ func TestParseCommitsUniqueToBranch(t *testing.T) {
 		t.Fatalf("unexpected error parsing commits: %s", err)
 	}
 
-	expectedCommits := map[string]time.Time{
+	expectedCommits := map[string]*time.Time{
 		"c165bfff52e9d4f87891bba497e3b70fea144d89": mustParseDate("2020-08-04T08:23:30-05:00", t),
 		"f73ee8ed601efea74f3b734eeb073307e1615606": mustParseDate("2020-04-16T16:06:21-04:00", t),
 		"6057f7ed8d331c82030c713b650fc8fd2c0c2347": mustParseDate("2020-04-16T16:20:26-04:00", t),
@@ -967,6 +967,7 @@ func TestParseRefDescriptions(t *testing.T) {
 		[]byte("9df3358a18792fa9dbd40d506f2e0ad23fc11ee8\x00refs/heads/nsc/random\x00 \x002021-02-10T16:29:06+00:00"),
 		[]byte("a02b85b63345a1406d7a19727f7a5472c976e053\x00refs/heads/sg/document-symbols\x00 \x002021-04-08T15:33:03-07:00"),
 		[]byte("234b0a484519129b251164ecb0674ec27d154d2f\x00refs/heads/symbols\x00 \x002021-01-01T22:51:55-08:00"),
+		[]byte("6b5ae2e0ce568a7641174072271d109d7d0977c7\x00refs/tags/v0.0.0\x00 \x00"),
 		[]byte("c165bfff52e9d4f87891bba497e3b70fea144d89\x00refs/tags/v0.10.0\x00 \x002020-08-04T08:23:30-05:00"),
 		[]byte("f73ee8ed601efea74f3b734eeb073307e1615606\x00refs/tags/v0.5.1\x00 \x002020-04-16T16:06:21-04:00"),
 		[]byte("6057f7ed8d331c82030c713b650fc8fd2c0c2347\x00refs/tags/v0.5.2\x00 \x002020-04-16T16:20:26-04:00"),
@@ -1011,6 +1012,7 @@ func TestParseRefDescriptions(t *testing.T) {
 		"9df3358a18792fa9dbd40d506f2e0ad23fc11ee8": {makeBranch("nsc/random", "2021-02-10T16:29:06+00:00", false)},
 		"a02b85b63345a1406d7a19727f7a5472c976e053": {makeBranch("sg/document-symbols", "2021-04-08T15:33:03-07:00", false)},
 		"234b0a484519129b251164ecb0674ec27d154d2f": {makeBranch("symbols", "2021-01-01T22:51:55-08:00", false)},
+		"6b5ae2e0ce568a7641174072271d109d7d0977c7": {gitdomain.RefDescription{Name: "v0.0.0", Type: gitdomain.RefTypeTag, IsDefaultBranch: false}},
 		"c165bfff52e9d4f87891bba497e3b70fea144d89": {makeTag("v0.10.0", "2020-08-04T08:23:30-05:00")},
 		"f73ee8ed601efea74f3b734eeb073307e1615606": {makeTag("v0.5.1", "2020-04-16T16:06:21-04:00")},
 		"6057f7ed8d331c82030c713b650fc8fd2c0c2347": {makeTag("v0.5.2", "2020-04-16T16:20:26-04:00")},
@@ -1124,7 +1126,7 @@ func TestCommitsUniqueToBranch(t *testing.T) {
 		if err != nil {
 			t.Errorf("err calling RefDescriptions: %s", err)
 		}
-		expectedCommits := map[string]time.Time{
+		expectedCommits := map[string]*time.Time{
 			"2775e60f523d3151a2a34ffdc659f500d0e73022": mustParseDate("2006-01-02T15:04:05-00:00", t),
 			"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": mustParseDate("2006-01-02T15:04:05-00:00", t),
 			"791ce7cd8ca2d855e12f47f8692a62bc42477edc": mustParseDate("2006-01-02T15:04:05-00:00", t),
@@ -1141,7 +1143,7 @@ func TestCommitsUniqueToBranch(t *testing.T) {
 		if err != nil {
 			t.Errorf("err calling RefDescriptions: %s", err)
 		}
-		expectedCommits := map[string]time.Time{
+		expectedCommits := map[string]*time.Time{
 			"2775e60f523d3151a2a34ffdc659f500d0e73022": mustParseDate("2006-01-02T15:04:05-00:00", t),
 			"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": mustParseDate("2006-01-02T15:04:05-00:00", t),
 			"d38233a79e037d2ab8170b0d0bc0aa438473e6da": mustParseDate("2006-01-02T15:04:05-00:00", t),
@@ -1256,11 +1258,11 @@ func getGitCommandsWithFiles(fileName1, fileName2 string) []string {
 	}
 }
 
-func mustParseDate(s string, t *testing.T) time.Time {
+func mustParseDate(s string, t *testing.T) *time.Time {
 	t.Helper()
 	date, err := time.Parse(time.RFC3339, s)
 	if err != nil {
 		t.Fatalf("unexpected error parsing date string: %s", err)
 	}
-	return date
+	return &date
 }

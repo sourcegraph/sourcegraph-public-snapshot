@@ -102,7 +102,7 @@ type RefDescription struct {
 	Name            string
 	Type            RefType
 	IsDefaultBranch bool
-	CreatedDate     time.Time
+	CreatedDate     *time.Time
 }
 
 // A PersonCount is a contributor to a repository.

@@ -282,8 +282,8 @@ func (m *Matcher) policyMatchesRefDescription(context matcherContext, policy dbs
 		return false
 	}
 
-	if policyDuration, _ := m.extractor(policy); m.filterByCreatedDate && policyDuration != nil && now.Sub(refDescription.CreatedDate) > *policyDuration {
-		// Policy is not unbounded, we are filtering by commit date, commit is moo old
+	if policyDuration, _ := m.extractor(policy); m.filterByCreatedDate && policyDuration != nil && (refDescription.CreatedDate == nil || now.Sub(*refDescription.CreatedDate) > *policyDuration) {
+		// Policy is not unbounded, we are filtering by commit date, commit is too old
 		return false
 	}
 
