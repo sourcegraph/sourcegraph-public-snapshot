@@ -288,10 +288,9 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                             disabled={loading}
                             autoComplete="new-password"
                             minLength={
-                                context.experimentalFeatures.passwordPolicy != undefined &&
-                                context.experimentalFeatures.passwordPolicy.enabled != undefined &&
+                                context.experimentalFeatures.passwordPolicy?.enabled !== undefined &&
                                 context.experimentalFeatures.passwordPolicy.enabled &&
-                                context.experimentalFeatures.passwordPolicy.minimumLength !== undefined
+                                context.experimentalFeatures.passwordPolicy?.minimumLength !== undefined
                                     ? context.experimentalFeatures.passwordPolicy.minimumLength
                                     : 12
                             }
