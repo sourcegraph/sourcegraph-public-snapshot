@@ -66,14 +66,14 @@ export function getPasswordRequirements(): string {
         if (passwordPolicyReference.minimumLength && passwordPolicyReference.minimumLength > 0) {
             requirements +=
                 'Your password must include at least ' +
-                passwordPolicyReference.minimumLength.toString() +
+                String(passwordPolicyReference.minimumLength) +
                 ' characters'
         }
         if (
             passwordPolicyReference.numberOfSpecialCharacters &&
             passwordPolicyReference.numberOfSpecialCharacters > 0
         ) {
-            requirements += ', ' + passwordPolicyReference.numberOfSpecialCharacters.toString() + ' special characters'
+            requirements += ', ' + String(passwordPolicyReference.numberOfSpecialCharacters) + ' special characters'
         }
         if (
             passwordPolicyReference.requireAtLeastOneNumber &&
@@ -412,7 +412,7 @@ function validatePassword(password: string): string | undefined {
         ) {
             return (
                 'Password must be greater than ' +
-                context.experimentalFeatures.passwordPolicy.minimumLength.toString() +
+                String(context.experimentalFeatures.passwordPolicy.minimumLength) +
                 ' characters.'
             )
         }
@@ -429,7 +429,7 @@ function validatePassword(password: string): string | undefined {
             ) {
                 return (
                     'Password must contain ' +
-                    context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters.toString() +
+                    String(context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters) +
                     ' special character(s).'
                 )
             }
