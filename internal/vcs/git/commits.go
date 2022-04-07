@@ -10,8 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/opentracing/opentracing-go/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -844,63 +842,6 @@ func CommitDate(ctx context.Context, db database.DB, repo api.RepoName, commit a
 	}
 
 	return parts[0], duration, true, nil
-}
-
-type CommitGraphOptions struct {
-	Commit  string
-	AllRefs bool
-	Limit   int
-	Since   *time.Time
-} // please update LogFields if you add a field here
-
-func stableTimeRepr(t time.Time) string {
-	s, _ := t.MarshalText()
-	return string(s)
-}
-
-var unixEpoch = stableTimeRepr(time.Unix(0, 0))
-
-func (opts *CommitGraphOptions) LogFields() []log.Field {
-	since := unixEpoch
-	if opts.Since != nil {
-		since = stableTimeRepr(*opts.Since)
-	}
-	return []log.Field{
-		log.String("commit", opts.Commit),
-		log.Int("limit", opts.Limit),
-		log.Bool("allrefs", opts.AllRefs),
-		log.String("since", since),
-	}
-}
-
-// CommitGraph returns the commit graph for the given repository as a mapping
-// from a commit to its parents. If a commit is supplied, the returned graph will
-// be rooted at the given commit. If a non-zero limit is supplied, at most that
-// many commits will be returned.
-func CommitGraph(ctx context.Context, db database.DB, repo api.RepoName, opts CommitGraphOptions) (_ *gitdomain.CommitGraph, err error) {
-	args := []string{"log", "--pretty=%H %P", "--topo-order"}
-	if opts.AllRefs {
-		args = append(args, "--all")
-	}
-	if opts.Commit != "" {
-		args = append(args, opts.Commit)
-	}
-	if opts.Since != nil {
-		args = append(args, fmt.Sprintf("--since=%s", opts.Since.Format(time.RFC3339)))
-	}
-	if opts.Limit > 0 {
-		args = append(args, fmt.Sprintf("-%d", opts.Limit))
-	}
-
-	cmd := gitserver.NewClient(db).Command("git", args...)
-	cmd.Repo = repo
-
-	out, err := cmd.CombinedOutput(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return gitdomain.ParseCommitGraph(strings.Split(string(out), "\n")), nil
 }
 
 func addNameOnly(opt CommitsOptions, checker authz.SubRepoPermissionChecker) CommitsOptions {
