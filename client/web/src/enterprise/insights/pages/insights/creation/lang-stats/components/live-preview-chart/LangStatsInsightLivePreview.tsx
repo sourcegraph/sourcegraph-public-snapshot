@@ -33,7 +33,7 @@ export interface LangStatsInsightLivePreviewProps {
 }
 
 /**
- * Displays live preview chart for creation UI with latest insights settings
+ * Displays live preview chart for creation UI with the latest insights settings
  * from creation UI form.
  */
 export const LangStatsInsightLivePreview: React.FunctionComponent<LangStatsInsightLivePreviewProps> = props => {
@@ -42,9 +42,10 @@ export const LangStatsInsightLivePreview: React.FunctionComponent<LangStatsInsig
     const previewSetting = useDeepMemo({
         repository: repository.trim(),
         otherThreshold: threshold / 100,
+        disabled,
     })
 
-    const { loading, dataOrError, update } = useLangStatsPreviewContent({ disabled, previewSetting })
+    const { loading, dataOrError, update } = useLangStatsPreviewContent(previewSetting)
 
     return (
         <aside className={className}>
