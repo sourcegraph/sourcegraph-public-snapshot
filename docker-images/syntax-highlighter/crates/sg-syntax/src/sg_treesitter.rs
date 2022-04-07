@@ -78,21 +78,9 @@ macro_rules! create_configurations {
 
         $(
             {
-                // Associate with tree-sitter FFI
-                paste! {
-                    extern "C" {
-                        pub fn [<tree_sitter_ $name>]() -> tree_sitter::Language;
-                    }
-
-                    // Make "safe" function from unsafe function.
-                    fn $name() -> tree_sitter::Language {
-                        unsafe { [<tree_sitter_ $name>]() }
-                    }
-                }
-
                 // Create HighlightConfiguration language
                 let mut lang = HighlightConfiguration::new(
-                    $name(),
+                    paste! { [<tree_sitter_ $name>]::language() },
                     include_project_file_optional!("queries/", $name, "/highlights.scm"),
                     include_project_file_optional!("queries/", $name, "/injections.scm"),
                     include_project_file_optional!("queries/", $name, "/locals.scm"),
