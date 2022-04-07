@@ -1,57 +1,71 @@
 # Administration
 
-Administration is usually handled by site administrators, or admins, who are responsible for deploying, managing, and configuring Sourcegraph for regular users. In addition, Admins have [special privileges](privileges.md) on a Sourcegraph instance that enable a wide variety of functionality including customization, access management, and repository management as well as management for other activities such as monitoring, alerting, upgrading, and migration.
+Site administrators, or admins, are responsible for deploying, managing, and configuring Sourcegraph for regular users, what we would call Administration. 
 
-We've broken our Admin documentation up into a variety of key categories which can be navigated to using the list below. Not all areas of the documentaiton will be applicable to everyone, and much is dependent on the deployment method you choose.
+In addition, Admins have [special privileges](privileges.md) on a Sourcegraph instance that enable a wide variety of functionality, including customization, access management, and repository management, as well as management for other activities such as monitoring, alerting, upgrading, and migration.
 
-If you are just getting started, check out our [Deployment Overview](deployment/deployment_overview.md) which highlights the different deplyment methods available as well as some key concepts that will be useful throughout your interaction with Sourcegraph as an administrator.
-
-<!--- 
+We've broken our Administration docs into sections (the list below).
+ 
 ## [Deployment](deployment/index.md)
-## Customization
-## Access Management
-## Repository Management
-## Monitoring and alerting
-## Migration 
---->
 
-<!--- 
-## [Deployment](deployment/index.md)
-### [Overview](deployment/deployment_overview.md)
-### [Resource Estimator](install/resource_estimator.md)
-### Docker Single Container
-### Docker Compose
-### Kubernetes
-### Managed instances
-### Sourcegraph Cloud
+The deployment section of our docs covers everything you need regardless of the type or size of the deployment you need to do. 
+
+We recommend starting with the [Deployment Overview](deployment/deployment_overview.md). It highlights the different deployment types available. It also provides high-level instruction for many concepts that will be helpful throughout your interaction with Sourcegraph as an admin. 
+
+**Popular Links**
+
+- [Deployment Overview](/deployment/deployment_overview.md)
+- [Docker Compose Deployment](/deployment/docker-compose/index.md)
+- [Kubernetes Deployment](/deployment/kubernetes/index.md)
+
 ## Customization
-### Site configruation
-### Global settings
-### HTTP and HTTPS/SSL
-### Custom domains
-### Search configuration
-### Extensions registry
+
+As with other products, Sourcegraph provides a range of customizations, Site configuration, HTTP and HTTPS/SSL configuration, and custom domains, to name a few. Use this section to help plan, prioritize, and optimize the Sourcegraph experience for your users.
+
+**Popular Links**
+
+- Site configuration
+- Global settings
+- Search configuration
+
 ## Access Management
-### Authentication and authorization
-### User authentication
-### Organization management
-### User data management
+
+The Access Management section focuses on helping admins manage general authentication, user authentication, authorization, and user data management.
+
+**Popular Links**
+
+- Authentication and authorization
+- User authentication
+- User data management
+
 ## Repository Management
-### Monorepos
-### Codehosts
-### Non-code hosts
-### Repository webhooks
-### Repository permissions
-### Row-level security
-### Using Perforce depots
+
+Connecting and configuring your team's repositories and code hosts is an essential first task for Sourcegraph administrators. This section walks you through various repository management configuration scenarios. It also covers permission and security topics relevant to your organization's needs and goals.
+
+**Popular Links**
+
+- Using a monorepo
+- Code host management
+- Repository webhooks
+- Repository permissions
+
+
 ## Monitoring and alerting
-### Worker services
-### Metrics and dashboards
-### Alerting
-### Tracing
-### Logs
-### Health checks
-### Troubleshooting
-### Dashboards
-## Migration 
---->
+
+Sourcegraph includes a range of tools to ensure you can monitor, measure, and communicate the health and usage of your enterprise production instance. The monitoring and alerting section will walk you through the configuration and use of each. 
+
+**Popular Links**
+
+- Authentication and authorization
+- User authentication
+- User data management
+
+## Migration
+
+Whether you are moving from an existing, alternative solution like Oracle Open Grok, or looking to migrate from a Docker Single Container instance to Docker Compose, the Migration section focuses on topics to guide you through these more specialized interactions.
+
+**Popular Links**
+
+- Docker Single Container to Docker Compose migration
+- Data migration and backup options
+- Datastores
