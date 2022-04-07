@@ -310,3 +310,10 @@ func (c *ClientImplementor) DiffPath(ctx context.Context, repo api.RepoName, sou
 	}
 	return d.Hunks, nil
 }
+
+// DiffSymbols performs a diff command which is expected to be parsed by our symbols package
+func (c *ClientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error) {
+	command := c.Command("git", "diff", "-z", "--name-status", "--no-renames", string(commitA), string(commitB))
+	command.Repo = repo
+	return command.Output(ctx)
+}
