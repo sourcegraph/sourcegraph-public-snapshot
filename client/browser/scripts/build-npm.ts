@@ -10,22 +10,24 @@ export const packagePath = path.resolve(__dirname, '..', 'build', 'integration')
 /**
  * Build a new native integration to npm package
  */
-export async function buildNpm(): Promise<void> {
+export async function buildNpm(bumpVersion?: boolean): Promise<void> {
     const name = '@sourcegraph/code-host-integration'
     // Bump version
-    let version: string
-    try {
-        const currentVersion = await latestVersion(name)
-        signale.info(`Current version is ${currentVersion}`)
-        version = semver.inc(currentVersion, 'patch')!
-    } catch (error) {
-        if (error && error.name === 'PackageNotFoundError') {
-            signale.info('Package is not released yet')
-            version = '0.0.0'
-        } else {
-            throw error
+    let version = '0.0.0'
+    if (bumpVersion) {
+        try {
+            const currentVersion = await latestVersion(name)
+            signale.info(`Current version is ${currentVersion}`)
+            version = semver.inc(currentVersion, 'patch')!
+        } catch (error) {
+            if (error && error.name === 'PackageNotFoundError') {
+                signale.info('Package is not released yet')
+            } else {
+                throw error
+            }
         }
     }
+
     const packageJson = {
         name,
         version,

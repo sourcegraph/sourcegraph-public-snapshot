@@ -7,7 +7,7 @@ import { buildNpm, packagePath } from './build-npm'
  * Publish the native integration to npm
  */
 async function main(): Promise<void> {
-    await buildNpm()
+    await buildNpm(true)
     if (!process.env.CI) {
         signale.warn('Not running in CI, aborting')
         return
