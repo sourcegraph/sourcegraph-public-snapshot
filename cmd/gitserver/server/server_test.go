@@ -1192,17 +1192,17 @@ func TestHandleBatchLog(t *testing.T) {
 				Results: []protocol.BatchLogResult{
 					{
 						RepoCommit:    api.RepoCommit{Repo: "github.com/foo/bar", CommitID: "deadbeef1"},
-						CommandOutput: "stdout<github.com/foo/bar/.git:git log -n 1 --format=test deadbeef1>",
+						CommandOutput: "stdout<github.com/foo/bar/.git:git log -n 1 --name-only --format=test deadbeef1>",
 						CommandError:  "",
 					},
 					{
 						RepoCommit:    api.RepoCommit{Repo: "github.com/foo/baz", CommitID: "deadbeef2"},
-						CommandOutput: "stdout<github.com/foo/baz/.git:git log -n 1 --format=test deadbeef2>",
+						CommandOutput: "stdout<github.com/foo/baz/.git:git log -n 1 --name-only --format=test deadbeef2>",
 						CommandError:  "",
 					},
 					{
 						RepoCommit:    api.RepoCommit{Repo: "github.com/foo/bonk", CommitID: "deadbeef3"},
-						CommandOutput: "stdout<github.com/foo/bonk/.git:git log -n 1 --format=test deadbeef3>",
+						CommandOutput: "stdout<github.com/foo/bonk/.git:git log -n 1 --name-only --format=test deadbeef3>",
 						CommandError:  "",
 					},
 				},
@@ -1223,7 +1223,7 @@ func TestHandleBatchLog(t *testing.T) {
 				Results: []protocol.BatchLogResult{
 					{
 						RepoCommit:    api.RepoCommit{Repo: "github.com/foo/bar", CommitID: "deadbeef1"},
-						CommandOutput: "stdout<github.com/foo/bar/.git:git log -n 1 --format=test deadbeef1>",
+						CommandOutput: "stdout<github.com/foo/bar/.git:git log -n 1 --name-only --format=test deadbeef1>",
 						CommandError:  "",
 					},
 					{
