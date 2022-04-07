@@ -308,7 +308,7 @@ docker logs worker | grep insights
 
 Read the [initial schema migration](https://github.com/sourcegraph/sourcegraph/blob/main/migrations/codeinsights/1000000001/up.sql) which contains all of the tables we create in Postgres and describes them in detail. This will explain the general layout of the database schema, etc.
 
-The most important table in the insights database is `series_points`, that's where the actual data is stored. It's a [hypertable](https://docs.timescale.com/latest/using-timescaledb/hypertables).
+The most important table in the insights database is `series_points`, that's where the actual data is stored.
 
 #### Querying data
 
