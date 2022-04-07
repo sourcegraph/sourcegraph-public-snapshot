@@ -787,7 +787,7 @@ lineLoop:
 			createdDatePtr  *time.Time
 		)
 		// Some repositories attach tags to non-commit objects, such as trees. In such a situation, one
-		// cannot deference the tag to obtain the commit it points to, and there is not associated creatordate.
+		// cannot deference the tag to obtain the commit it points to, and there is no associated creatordate.
 		if createdDatePart != "" {
 			createdDate, err := time.Parse(time.RFC3339, createdDatePart)
 			if err != nil {
