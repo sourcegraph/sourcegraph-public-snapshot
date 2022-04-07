@@ -46,6 +46,7 @@ import {
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { CodeIntelligenceProps } from '../codeintel'
+import { RepositoryMenu as CodeIntelRepositoryMenu } from '../codeintel/RepositoryMenu'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
@@ -371,6 +372,10 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={<ErrorMessage error={repoOrError} />} />
     }
 
+    const isCodeIntelRepositoryBadgeEnabled =
+        !isErrorLike(props.settingsCascade.final) &&
+        props.settingsCascade.final?.experimentalFeatures?.codeIntelRepositoryBadge?.enabled === true
+
     const repoMatchURL = '/' + encodeURIPathComponent(repoName)
 
     const context: RepoContainerContext = {
@@ -426,6 +431,31 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                     />
                 )}
             </RepoHeaderContributionPortal>
+
+            {isCodeIntelRepositoryBadgeEnabled && (
+                <RepoHeaderContributionPortal
+                    position="right"
+                    priority={110}
+                    id="code-intelligence-status"
+                    {...repoHeaderContributionsLifecycleProps}
+                >
+                    {({ actionType }) =>
+                        actionType === 'nav' ? (
+                            <CodeIntelRepositoryMenu
+                                key="code-intelligence-status"
+                                settingsCascade={props.settingsCascade}
+                                repoName={repoName}
+                                revision={rawRevision || 'HEAD'}
+                                filePath={filePath || ''}
+                                content={props.repositoryMenuContent}
+                            />
+                        ) : (
+                            <></>
+                        )
+                    }
+                </RepoHeaderContributionPortal>
+            )}
+
             <ErrorBoundary location={props.location}>
                 <Switch>
                     {[

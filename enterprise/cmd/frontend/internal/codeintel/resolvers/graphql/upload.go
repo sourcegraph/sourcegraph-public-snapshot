@@ -116,3 +116,13 @@ func (r *UploadResolver) RetentionPolicyOverview(ctx context.Context, args *gql.
 
 	return NewCodeIntelligenceRetentionPolicyMatcherConnectionResolver(r.db, r.resolver, matches, totalCount, r.traceErrs), nil
 }
+
+func (r *UploadResolver) Indexer() gql.CodeIntelIndexerResolver {
+	for _, indexer := range allIndexers {
+		if indexer.Name() == r.upload.Indexer {
+			return indexer
+		}
+	}
+
+	return &codeIntelIndexerResolver{name: r.upload.Indexer}
+}

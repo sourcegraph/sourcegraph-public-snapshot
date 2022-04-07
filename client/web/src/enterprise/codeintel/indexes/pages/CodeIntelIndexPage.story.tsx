@@ -369,6 +369,7 @@ const indexPrototype: Omit<LsifIndexFields, 'id' | 'state' | 'queuedAt' | 'steps
     inputCommit: '',
     inputRoot: 'staging/src/k8s.io/apiextensions-apiserver/',
     inputIndexer: 'sourcegraph/lsif-go:latest',
+    indexer: { name: 'lsif-go', url: '' },
     failure: null,
     startedAt: null,
     finishedAt: null,

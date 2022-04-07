@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/hexops/autogold"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -68,7 +69,7 @@ func TestTriggerTestWebhookAction(t *testing.T) {
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		b, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
-		testutil.AssertGolden(t, "testdata/"+t.Name()+".json", *update, b)
+		autogold.Equal(t, autogold.Raw(b))
 		w.WriteHeader(200)
 	}))
 	defer s.Close()

@@ -1,0 +1,29 @@
+## queries just for dogfood (k8s.sgdev.org)
+
+## These are our monorepo queries, but targetting the gigarepo instead which
+## is much larger scale and only exists on dogfood. We keep the regular
+## monorepo queries so we can compare performance between cloud and dogfood.
+
+# giga_regex_small
+repo:^gigarepo$ patterntype:regexp se[arc]{3}hZoekt
+
+# giga_rev_regex_small
+repo:^gigarepo$ patterntype:regexp se[arc]{3}hZoekt rev:main
+
+# giga_structural_small
+repo:^gigarepo$ patterntype:structural strings.ToUpper(...)
+
+# giga_rev_structural_small
+repo:^gigarepo$ patterntype:structural strings.ToUpper(...) rev:main
+
+# giga_symbol_small
+repo:^gigarepo$ type:symbol IndexFormatVersion
+
+# giga_rev_symbol_small
+repo:^gigarepo$ type:symbol IndexFormatVersion rev:main
+
+# giga_diff_small
+repo:^gigarepo$ type:diff   author:camden before:"february 1 2021"
+
+# giga_commit_small
+repo:^gigarepo$ type:commit author:camden before:"february 1 2021"
