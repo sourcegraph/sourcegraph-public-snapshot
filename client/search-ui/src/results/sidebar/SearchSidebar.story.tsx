@@ -8,6 +8,7 @@ import create from 'zustand'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import {
     BuildSearchQueryURLParameters,
+    InitialParametersSource,
     SearchPatternType,
     SearchQueryState,
     SearchQueryStateStoreProvider,
@@ -29,6 +30,7 @@ const { add } = storiesOf('search-ui/results/sidebar/SearchSidebar', module).add
 })
 
 const mockUseQueryState = create<SearchQueryState>((set, get) => ({
+    parametersSource: InitialParametersSource.DEFAULT,
     queryState: { query: '' },
     searchCaseSensitivity: false,
     searchPatternType: SearchPatternType.literal,

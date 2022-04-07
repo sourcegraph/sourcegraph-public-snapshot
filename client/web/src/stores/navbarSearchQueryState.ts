@@ -5,7 +5,13 @@
 // (see https://github.com/sourcegraph/sourcegraph/issues/21200).
 import create from 'zustand'
 
-import { BuildSearchQueryURLParameters, canSubmitSearch, SearchQueryState, updateQuery } from '@sourcegraph/search'
+import {
+    BuildSearchQueryURLParameters,
+    canSubmitSearch,
+    SearchQueryState,
+    updateQuery,
+    InitialParametersSource,
+} from '@sourcegraph/search'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
@@ -14,23 +20,10 @@ import { parseSearchURL } from '../search'
 import { submitSearch } from '../search/helpers'
 import { defaultCaseSensitiveFromSettings, defaultPatternTypeFromSettings } from '../util/settings'
 
-/**
- * Describes where settings have been loaded from when the app loads. Higher
- * values have higher precedence, i.e. if settings have been loaded from the
- * URL, user settings should not overwrite them.
- */
-enum InitialSettingsSource {
-    DEFAULT,
-    USER_SETTINGS,
-    URL,
-}
-
-export interface NavbarQueryState extends SearchQueryState {
-    settingsSource: InitialSettingsSource
-}
+export interface NavbarQueryState extends SearchQueryState {}
 
 export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
-    settingsSource: InitialSettingsSource.DEFAULT,
+    parametersSource: InitialParametersSource.DEFAULT,
     queryState: { query: '' },
     searchCaseSensitivity: false,
     searchPatternType: SearchPatternType.literal,
@@ -69,20 +62,23 @@ export function setSearchCaseSensitivity(searchCaseSensitivity: boolean): void {
  * Update or initialize query state related data from URL search parameters
  */
 export function setQueryStateFromURL(urlParameters: string): void {
-    if (useNavbarQueryState.getState().settingsSource > InitialSettingsSource.URL) {
+    if (useNavbarQueryState.getState().parametersSource > InitialParametersSource.URL) {
         return
     }
 
     // This will be updated with the default in settings when the web app mounts.
     const newState: Partial<
-        Pick<NavbarQueryState, 'searchPatternType' | 'searchCaseSensitivity' | 'searchQueryFromURL' | 'settingsSource'>
+        Pick<
+            NavbarQueryState,
+            'searchPatternType' | 'searchCaseSensitivity' | 'searchQueryFromURL' | 'parametersSource'
+        >
     > = {}
 
     const parsedSearchURL = parseSearchURL(urlParameters)
 
     if (parsedSearchURL.query) {
         // Only update flags if the URL contains a search query.
-        newState.settingsSource = InitialSettingsSource.URL
+        newState.parametersSource = InitialParametersSource.URL
         newState.searchCaseSensitivity = parsedSearchURL.caseSensitive
         if (parsedSearchURL.patternType !== undefined) {
             newState.searchPatternType = parsedSearchURL.patternType
@@ -100,14 +96,14 @@ export function setQueryStateFromURL(urlParameters: string): void {
  * Update or initialize query state related data from settings
  */
 export function setQueryStateFromSettings(settings: SettingsCascadeOrError<Settings>): void {
-    if (useNavbarQueryState.getState().settingsSource > InitialSettingsSource.USER_SETTINGS) {
+    if (useNavbarQueryState.getState().parametersSource > InitialParametersSource.USER_SETTINGS) {
         return
     }
 
     const newState: Partial<
-        Pick<NavbarQueryState, 'searchPatternType' | 'searchCaseSensitivity' | 'settingsSource'>
+        Pick<NavbarQueryState, 'searchPatternType' | 'searchCaseSensitivity' | 'parametersSource'>
     > = {
-        settingsSource: InitialSettingsSource.USER_SETTINGS,
+        parametersSource: InitialParametersSource.USER_SETTINGS,
     }
 
     const caseSensitive = defaultCaseSensitiveFromSettings(settings)
