@@ -31,7 +31,7 @@ const (
 	testRepoC = "testrepo-C"
 )
 
-func (s *Server) testHandlerWithDB(t *testing.T) {
+func (s *Server) testSetup(t *testing.T) {
 	t.Helper()
 	s.Handler() // Handler as a side-effect sets up Server
 	db := dbtest.NewDB(t)
@@ -67,7 +67,7 @@ func TestCleanup_computeStats(t *testing.T) {
 	// We run cleanupRepos because we want to test as a side-effect it creates
 	// the correct file in the correct place.
 	s := &Server{ReposDir: root}
-	s.testHandlerWithDB(t)
+	s.testSetup(t)
 
 	if _, err := s.DB.ExecContext(context.Background(), `
 insert into repo(id, name) values (1, 'a'), (2, 'b/d'), (3, 'c');
@@ -133,7 +133,7 @@ func TestCleanupInactive(t *testing.T) {
 	}
 
 	s := &Server{ReposDir: root}
-	s.testHandlerWithDB(t)
+	s.testSetup(t)
 	s.cleanupRepos()
 
 	if _, err := os.Stat(repoA); os.IsNotExist(err) {
@@ -195,7 +195,7 @@ func TestGitGCAuto(t *testing.T) {
 
 	// Handler must be invoked for Server side-effects.
 	s := &Server{ReposDir: root}
-	s.testHandlerWithDB(t)
+	s.testSetup(t)
 	s.cleanupRepos()
 
 	// Verify that there are no more GC-able objects in the repository.
@@ -318,7 +318,7 @@ func TestCleanupExpired(t *testing.T) {
 			return &GitRepoSyncer{}, nil
 		},
 	}
-	s.testHandlerWithDB(t)
+	s.testSetup(t)
 	s.cleanupRepos()
 
 	// repos that shouldn't be re-cloned
@@ -413,7 +413,7 @@ func TestCleanupOldLocks(t *testing.T) {
 	chtime("github.com/foo/stalecommitgraphlock/.git/objects/info/commit-graph.lock", 2*time.Hour)
 
 	s := &Server{ReposDir: root}
-	s.testHandlerWithDB(t)
+	s.testSetup(t)
 	s.cleanupRepos()
 
 	assertPaths(t, root,
