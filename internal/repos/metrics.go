@@ -17,6 +17,7 @@ const (
 	tagID      = "id"
 	tagSuccess = "success"
 	tagState   = "state"
+	tagReason  = "reason"
 )
 
 var (
@@ -38,7 +39,7 @@ var (
 	syncErrors = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_repoupdater_syncer_sync_errors_total",
 		Help: "Total number of sync errors",
-	}, []string{tagFamily, tagOwner})
+	}, []string{tagFamily, tagOwner, tagReason})
 
 	syncDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name: "src_repoupdater_syncer_sync_duration_seconds",

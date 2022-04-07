@@ -839,9 +839,26 @@ func (s *Syncer) observeSync(
 
 		if !success {
 			tr.SetError(err)
-			syncErrors.WithLabelValues(family, owner).Inc()
+			syncErrors.WithLabelValues(family, owner, syncErrorReason(err)).Inc()
 		}
 
 		tr.Finish()
+	}
+}
+
+func syncErrorReason(err error) string {
+	switch {
+	case err == nil:
+		return ""
+	case errcode.IsNotFound(err):
+		return "not_found"
+	case errcode.IsUnauthorized(err):
+		return "unauthorized"
+	case errcode.IsForbidden(err):
+		return "forbidden"
+	case errcode.IsTemporary(err):
+		return "temporary"
+	default:
+		return "unknown"
 	}
 }
