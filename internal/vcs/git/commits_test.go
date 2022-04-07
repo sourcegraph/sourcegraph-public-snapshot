@@ -1126,11 +1126,11 @@ func TestCommitsUniqueToBranch(t *testing.T) {
 		if err != nil {
 			t.Errorf("err calling RefDescriptions: %s", err)
 		}
-		expectedCommits := map[string]*time.Time{
-			"2775e60f523d3151a2a34ffdc659f500d0e73022": mustParseDate("2006-01-02T15:04:05-00:00", t),
-			"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": mustParseDate("2006-01-02T15:04:05-00:00", t),
-			"791ce7cd8ca2d855e12f47f8692a62bc42477edc": mustParseDate("2006-01-02T15:04:05-00:00", t),
-			"d38233a79e037d2ab8170b0d0bc0aa438473e6da": mustParseDate("2006-01-02T15:04:05-00:00", t),
+		expectedCommits := map[string]time.Time{
+			"2775e60f523d3151a2a34ffdc659f500d0e73022": *mustParseDate("2006-01-02T15:04:05-00:00", t),
+			"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": *mustParseDate("2006-01-02T15:04:05-00:00", t),
+			"791ce7cd8ca2d855e12f47f8692a62bc42477edc": *mustParseDate("2006-01-02T15:04:05-00:00", t),
+			"d38233a79e037d2ab8170b0d0bc0aa438473e6da": *mustParseDate("2006-01-02T15:04:05-00:00", t),
 		}
 		if diff := cmp.Diff(expectedCommits, commits); diff != "" {
 			t.Errorf("unexpected ref descriptions (-want +got):\n%s", diff)
@@ -1143,10 +1143,10 @@ func TestCommitsUniqueToBranch(t *testing.T) {
 		if err != nil {
 			t.Errorf("err calling RefDescriptions: %s", err)
 		}
-		expectedCommits := map[string]*time.Time{
-			"2775e60f523d3151a2a34ffdc659f500d0e73022": mustParseDate("2006-01-02T15:04:05-00:00", t),
-			"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": mustParseDate("2006-01-02T15:04:05-00:00", t),
-			"d38233a79e037d2ab8170b0d0bc0aa438473e6da": mustParseDate("2006-01-02T15:04:05-00:00", t),
+		expectedCommits := map[string]time.Time{
+			"2775e60f523d3151a2a34ffdc659f500d0e73022": *mustParseDate("2006-01-02T15:04:05-00:00", t),
+			"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": *mustParseDate("2006-01-02T15:04:05-00:00", t),
+			"d38233a79e037d2ab8170b0d0bc0aa438473e6da": *mustParseDate("2006-01-02T15:04:05-00:00", t),
 		}
 		if diff := cmp.Diff(expectedCommits, commits); diff != "" {
 			t.Errorf("unexpected ref descriptions (-want +got):\n%s", diff)
