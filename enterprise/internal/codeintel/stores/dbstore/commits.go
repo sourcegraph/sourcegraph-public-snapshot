@@ -937,7 +937,7 @@ func sanitizeCommitInput(
 					isDefaultBranch = true
 				} else {
 					maxAge, ok := maxAges[refDescription.Type]
-					if !ok || time.Since(refDescription.CreatedDate) > maxAge {
+					if !ok || refDescription.CreatedDate == nil || time.Since(*refDescription.CreatedDate) > maxAge {
 						continue
 					}
 				}

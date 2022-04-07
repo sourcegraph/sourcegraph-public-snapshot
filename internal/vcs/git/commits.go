@@ -780,9 +780,18 @@ lineLoop:
 			return nil, errors.Errorf(`unexpected output from git for-each-ref "%s"`, line)
 		}
 
-		createdDate, err := time.Parse(time.RFC3339, string(parts[3]))
-		if err != nil {
-			return nil, errors.Errorf(`unexpected output from git for-each-ref (bad date format) "%s"`, line)
+		var (
+			createdDatePart = string(parts[3])
+			createdDatePtr  *time.Time
+		)
+		// Some repositories attach tags to non-commit objects, such as trees. In such a situation, one
+		// cannot deference the tag to obtain the commit it points to, and there is no associated creatordate.
+		if createdDatePart != "" {
+			createdDate, err := time.Parse(time.RFC3339, createdDatePart)
+			if err != nil {
+				return nil, errors.Errorf(`unexpected output from git for-each-ref (bad date format) "%s"`, line)
+			}
+			createdDatePtr = &createdDate
 		}
 
 		// Check for duplicates before adding it to the slice
@@ -796,7 +805,7 @@ lineLoop:
 			Name:            name,
 			Type:            refType,
 			IsDefaultBranch: isDefaultBranch,
-			CreatedDate:     createdDate,
+			CreatedDate:     createdDatePtr,
 		})
 	}
 
