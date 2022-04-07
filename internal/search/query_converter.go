@@ -290,7 +290,7 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *Features, 
 	filesExclude = append(filesExclude, mapSlice(langExclude, LangToFileRegexp)...)
 	filesReposMustInclude, filesReposMustExclude := b.IncludeExcludeValues(query.FieldRepoHasFile)
 
-	if typ == SymbolRequest {
+	if typ == SymbolRequest && q != nil {
 		// Tell zoekt q must match on symbols
 		q = &zoekt.Symbol{
 			Expr: q,

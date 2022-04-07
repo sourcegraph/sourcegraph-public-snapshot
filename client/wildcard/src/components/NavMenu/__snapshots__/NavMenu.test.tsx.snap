@@ -4,12 +4,12 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
 <body>
   <div>
     <button
-      aria-controls="menu--1"
+      aria-controls=""
       aria-expanded="true"
       aria-haspopup="true"
       class=""
       data-reach-menu-button=""
-      id="menu-button--menu"
+      id="menu-button-2"
       type="button"
     >
       menu trigger
@@ -17,12 +17,12 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
   </div>
   <div>
     <div
-      aria-labelledby="menu-button--menu"
+      aria-labelledby="menu-button-2"
       aria-modal="true"
       class="floatingPanel popover py-1"
       data-reach-menu-items=""
       data-reach-menu-popover=""
-      id="menu--1"
+      id="menu-1"
       role="dialog"
       tabindex="-1"
     >
@@ -38,7 +38,7 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
           data-reach-menu-link=""
           data-valuetext="Settings"
           href="/users/ralph/settings/organizations"
-          id="option-0--menu--1"
+          id="option-0--menu-1"
           role="menuitem"
           tabindex="-1"
         >
@@ -50,7 +50,7 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
           data-reach-menu-link=""
           data-valuetext="Your repositories"
           href="/users/ralph/settings/repositories"
-          id="option-1--menu--1"
+          id="option-1--menu-1"
           role="menuitem"
           tabindex="-1"
         >
@@ -62,7 +62,7 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
           data-reach-menu-link=""
           data-valuetext="Saved searches"
           href="/users/ralph/searches"
-          id="option-2--menu--1"
+          id="option-2--menu-1"
           role="menuitem"
           tabindex="-1"
         >
@@ -84,7 +84,7 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
           data-reach-menu-link=""
           data-valuetext="Sourcegraph"
           href="/users/ralph/settings/organizations"
-          id="option-3--menu--1"
+          id="option-3--menu-1"
           role="menuitem"
           tabindex="-1"
         >
@@ -96,7 +96,7 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
           data-reach-menu-link=""
           data-valuetext="Gitstart"
           href="/users/ralph/settings/repositories"
-          id="option-4--menu--1"
+          id="option-4--menu-1"
           role="menuitem"
           tabindex="-1"
         >
@@ -111,7 +111,7 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
           class="dropdown-item item"
           data-reach-menu-item=""
           data-valuetext="Keyboard shortcuts"
-          id="option-5--menu--1"
+          id="option-5--menu-1"
           role="menuitem"
           tabindex="-1"
         >
@@ -123,7 +123,7 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
           data-disabled=""
           data-reach-menu-item=""
           data-valuetext="Help"
-          id="option-6--menu--1"
+          id="option-6--menu-1"
           role="menuitem"
           tabindex="-1"
         >
@@ -140,7 +140,7 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
           data-reach-menu-link=""
           data-valuetext="About Sourcegraph"
           href="https://about.sourcegraph.com"
-          id="option-7--menu--1"
+          id="option-7--menu-1"
           role="menuitem"
           tabindex="-1"
         >
@@ -152,7 +152,7 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
           data-reach-menu-link=""
           data-valuetext="Browser Extension"
           href="https://docs.sourcegraph.com/integration/browser_extension"
-          id="option-8--menu--1"
+          id="option-8--menu-1"
           role="menuitem"
           tabindex="-1"
         >

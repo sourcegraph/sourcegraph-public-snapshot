@@ -246,6 +246,9 @@ type Server struct {
 	repoUpdateLocksMu sync.Mutex // protects the map below and also updates to locks.once
 	repoUpdateLocks   map[api.RepoName]*locks
 
+	// Used for setRepoSizes function to run only during the first run of janitor
+	setRepoSizesOnce sync.Once
+
 	// operations provide uniform observability via internal/observation. This value is
 	// set by RegisterMetrics when compiled as part of the gitserver binary. The server
 	// method ensureOperations should be used in all references to avoid a nil pointer
@@ -1144,7 +1147,7 @@ func matchCount(cm *protocol.CommitMatch) int {
 
 func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 	// 🚨 SECURITY: Only allow POST requests.
-	if strings.ToUpper(r.Method) != "POST" {
+	if strings.ToUpper(r.Method) != http.MethodPost {
 		http.Error(w, "", http.StatusMethodNotAllowed)
 		return
 	}
@@ -1203,8 +1206,7 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 
 		// Validate request parameters
 		if len(req.RepoCommits) == 0 {
-			// Early exit
-			w.WriteHeader(http.StatusOK)
+			// Early exit: implicitly writes 200 OK
 			_ = json.NewEncoder(w).Encode(protocol.BatchLogResponse{Results: []protocol.BatchLogResult{}})
 			return 0, nil
 		}
@@ -1235,8 +1237,7 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 			})
 		}
 
-		// Write payload to client
-		w.WriteHeader(http.StatusOK)
+		// Write payload to client: implicitly writes 200 OK
 		_ = json.NewEncoder(w).Encode(protocol.BatchLogResponse{Results: results})
 		return 0, nil
 	}
@@ -1263,7 +1264,7 @@ func (s *Server) ensureOperations() *operations {
 func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	// 🚨 SECURITY: Only allow POST requests.
 	// See https://github.com/sourcegraph/security-issues/issues/213.
-	if strings.ToUpper(r.Method) != "POST" {
+	if strings.ToUpper(r.Method) != http.MethodPost {
 		http.Error(w, "", http.StatusMethodNotAllowed)
 		return
 	}

@@ -54,7 +54,7 @@ func (s *Syncer) SyncReposWithLastErrors(ctx context.Context, rateLimiter *rate.
 		if err != nil {
 			log15.Error("error syncing repo", "repo", repo.Name, "err", err)
 		}
-		erroredRepoGauge.Add(1)
+		erroredRepoGauge.Inc()
 		return nil
 	})
 	return err

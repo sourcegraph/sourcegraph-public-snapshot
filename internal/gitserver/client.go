@@ -30,9 +30,11 @@ import (
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
+	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/go-rendezvous"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
@@ -244,6 +246,10 @@ type Client interface {
 	// it goes by calling onMatches with each set of results it receives in
 	// response.
 	Search(_ context.Context, _ *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error)
+
+	// DiffPath returns a position-ordered slice of changes (additions or deletions)
+	// of the given path between the given source and target commits.
+	DiffPath(ctx context.Context, repo api.RepoName, sourceCommit, targetCommit, path string, checker authz.SubRepoPermissionChecker) ([]*diff.Hunk, error)
 }
 
 func (c *ClientImplementor) Addrs() []string {
@@ -644,9 +650,9 @@ func (c *ClientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 	ctx, endObservation := c.operations.batchLog.With(ctx, &err, observation.Args{LogFields: opts.LogFields()})
 	defer endObservation(1, observation.Args{})
 
-	// Make a request to a signle gitserver shard and feed the results to the user-supplied
-	// callback. Invoked multiple times (and concurrently) in the function defined in the
-	// following.
+	// Make a request to a singlee gitserver shard and feed the results to the user-supplied
+	// callback. This function is invoked multiple times (and concurrently) in the loops below
+	// this function definition.
 	performLogRequestToShard := func(ctx context.Context, addr string, repoCommits []api.RepoCommit) (err error) {
 		var numProcessed int
 		repoNames := repoNamesFromRepoCommits(repoCommits)
@@ -747,7 +753,8 @@ func (c *ClientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 	// is down. Any of these operations failing will cause an error to be returned from the entire
 	// BatchLog function.
 
-	sem := semaphore.NewWeighted(int64(4))
+	limit := int64(4)
+	sem := semaphore.NewWeighted(limit)
 	g, ctx := errgroup.WithContext(ctx)
 
 	for addr, repoCommits := range batches {

@@ -1225,7 +1225,7 @@ func (s *PermsSyncer) observe(ctx context.Context, family, title string) (contex
 
 		if !success {
 			tr.SetError(*err)
-			metricsSyncErrors.WithLabelValues(typLabel).Add(1)
+			metricsSyncErrors.WithLabelValues(typLabel).Inc()
 		}
 	}
 }

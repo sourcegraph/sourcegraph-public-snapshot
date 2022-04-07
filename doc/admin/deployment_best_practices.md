@@ -24,7 +24,7 @@ _To get a better idea of your resource requirements for your instance use our_ [
 Kubernetes deployments may be customized in a variety of ways, we consider the following best practice:
 
 - Users should use our [standard deployment](https://github.com/sourcegraph/deploy-sourcegraph) as a base, users may customize deployments via:
-  - Kustomize [overlays](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays)
+  - Kustomize - [overlays](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays), [guide](install/kubernetes/kustomize.md)
 - The suggested Kubernetes version is the current [GKE Stable release version](https://cloud.google.com/kubernetes-engine/docs/release-notes-stable)
 - We attempt to support new versions of Kubernetes 2-3 months after their release.
 - Users are expected to run a compliant Kubernetes version ([a CNCF certified Kubernetes distribution](https://github.com/cncf/k8s-conformance))

@@ -200,12 +200,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                 GitCommitFields,
                 Pick<
                     GitCommitNodeProps,
-                    | 'className'
-                    | 'compact'
-                    | 'messageSubjectClassName'
-                    | 'expandCommitMessageBody'
-                    | 'hideExpandCommitMessageBody'
-                    | 'sidebar'
+                    'className' | 'compact' | 'messageSubjectClassName' | 'hideExpandCommitMessageBody' | 'sidebar'
                 >
             >
                 location={props.location}
@@ -220,7 +215,6 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                     className: classNames('list-group-item', styles.gitCommitNode),
                     messageSubjectClassName: isSidebar ? 'd-none' : styles.gitCommitNodeMessageSubject,
                     compact: isSidebar,
-                    expandCommitMessageBody: !isSidebar,
                     hideExpandCommitMessageBody: isSidebar,
                     sidebar: isSidebar,
                 }}
@@ -330,10 +324,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                                         <div className="col">Not available</div>
                                     </div>
                                     <div className="text-right">
-                                        <Link
-                                            className="btn btn-sm btn-link mr-0 pr-0"
-                                            to="https://docs.sourcegraph.com/batch_changes"
-                                        >
+                                        <Link className="btn btn-sm btn-link mr-0 pr-0" to="/help/batch_changes">
                                             Learn more
                                         </Link>
                                     </div>
