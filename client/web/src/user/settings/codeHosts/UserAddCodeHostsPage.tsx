@@ -29,7 +29,7 @@ export interface UserAddCodeHostsPageProps
     codeHostExternalServices: Record<string, AddExternalServiceOptions>
     routingPrefix: string
     context: Pick<SourcegraphContext, 'authProviders'>
-    onOrgGetStartedRefresh?: () => void,
+    onOrgGetStartedRefresh?: () => void
     isSourcegraphDotCom?: boolean
 }
 
