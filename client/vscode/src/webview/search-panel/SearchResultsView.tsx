@@ -54,20 +54,20 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
     > | null>(null)
 
     // Check VS Code local storage to see if user has clicked dismiss button before
-    const [sarchCtaDismissButtonClicked, setSearchCtaDismissButtonClicked] = useState(false)
+    const [dismissSearchCta, setDismissSearchCta] = useState(false)
     // Return empty string if not in vs code local storage or 'search' if it exists
     const showCtaAlert = useMemo(() => extensionCoreAPI.getLocalStorageItem(DISMISS_CTA_KEY), [extensionCoreAPI])
     const onDismissCtaAlert = useCallback(async () => {
-        setSearchCtaDismissButtonClicked(true)
+        setDismissSearchCta(true)
         await extensionCoreAPI.setLocalStorageItem(DISMISS_CTA_KEY, 'search')
     }, [extensionCoreAPI])
 
     useEffect(() => {
         showCtaAlert
             .then(setting => {
-                setSearchCtaDismissButtonClicked(setting === 'search')
+                setDismissSearchCta(setting === 'search')
             })
-            .catch(() => setSearchCtaDismissButtonClicked(false))
+            .catch(() => setDismissSearchCta(false))
     }, [showCtaAlert])
 
     // Editor focus.
@@ -136,7 +136,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
     // Track sidebar + keyboard shortcut search submissions
     useEffect(() => {
         platformContext.telemetryService.log('IDESearchSubmitted')
-    }, [platformContext, context.submittedSearchQueryState.queryState.query, showCtaAlert])
+    }, [platformContext, context.submittedSearchQueryState.queryState.query])
 
     const onSubmit = useCallback(
         (options?: { caseSensitive?: boolean; patternType?: SearchPatternType; newQuery?: string }) => {
@@ -333,7 +333,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
 
             {!repoToShow ? (
                 <div className={styles.resultsViewScrollContainer}>
-                    {isSourcegraphDotCom && !authenticatedUser && !sarchCtaDismissButtonClicked && (
+                    {isSourcegraphDotCom && !authenticatedUser && !dismissSearchCta && (
                         <CtaAlert
                             title="Sign up to add your public and private repositories and unlock search flow"
                             description="Do all the things editors can’t: search multiple repos & commit history, monitor, save
