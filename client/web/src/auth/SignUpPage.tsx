@@ -88,10 +88,6 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
             if (context.experimentalFeatures.enablePostSignupFlow && !newUserFromEmailInvitation) {
                 window.location.replace(new URL(maybeAddPostSignUpRedirect(), window.location.href).pathname)
             } else {
-                //  TODO:
-                // - add another condition to check if the user that is singing up has a pending invite that has not expired yet.
-                // - if user has a pending invite, redirect it  to the OrgInvitationPage so it can see/accept the invite.
-                // - as we don't have a graphql query that gets invites based on the user email, a new one should be added.
                 window.location.replace(getReturnTo(location))
             }
 
