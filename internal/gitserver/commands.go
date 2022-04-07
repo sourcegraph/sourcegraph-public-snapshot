@@ -3,14 +3,20 @@ package gitserver
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"net/mail"
+	"os"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/go-diff/diff"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -214,7 +220,100 @@ func checkSpecArgSafety(spec string) error {
 	return nil
 }
 
+type CommitGraphOptions struct {
+	Commit  string
+	AllRefs bool
+	Limit   int
+	Since   *time.Time
+} // please update LogFields if you add a field here
+
+func stableTimeRepr(t time.Time) string {
+	s, _ := t.MarshalText()
+	return string(s)
+}
+
+func (opts *CommitGraphOptions) LogFields() []log.Field {
+	var since string
+	if opts.Since != nil {
+		since = stableTimeRepr(*opts.Since)
+	} else {
+		since = stableTimeRepr(time.Unix(0, 0))
+	}
+
+	return []log.Field{
+		log.String("commit", opts.Commit),
+		log.Int("limit", opts.Limit),
+		log.Bool("allrefs", opts.AllRefs),
+		log.String("since", since),
+	}
+}
+
+// CommitGraph returns the commit graph for the given repository as a mapping
+// from a commit to its parents. If a commit is supplied, the returned graph will
+// be rooted at the given commit. If a non-zero limit is supplied, at most that
+// many commits will be returned.
+func (c *ClientImplementor) CommitGraph(ctx context.Context, repo api.RepoName, opts CommitGraphOptions) (_ *gitdomain.CommitGraph, err error) {
+	args := []string{"log", "--pretty=%H %P", "--topo-order"}
+	if opts.AllRefs {
+		args = append(args, "--all")
+	}
+	if opts.Commit != "" {
+		args = append(args, opts.Commit)
+	}
+	if opts.Since != nil {
+		args = append(args, fmt.Sprintf("--since=%s", opts.Since.Format(time.RFC3339)))
+	}
+	if opts.Limit > 0 {
+		args = append(args, fmt.Sprintf("-%d", opts.Limit))
+	}
+
+	cmd := c.Command("git", args...)
+	cmd.Repo = repo
+
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return gitdomain.ParseCommitGraph(strings.Split(string(out), "\n")), nil
+}
+
 // DevNullSHA 4b825dc642cb6eb9a060e54bf8d69288fbee4904 is `git hash-object -t
 // tree /dev/null`, which is used as the base when computing the `git diff` of
 // the root commit.
 const DevNullSHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+
+func (c *ClientImplementor) DiffPath(ctx context.Context, repo api.RepoName, sourceCommit, targetCommit, path string, checker authz.SubRepoPermissionChecker) ([]*diff.Hunk, error) {
+	a := actor.FromContext(ctx)
+	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, path); err != nil {
+		return nil, err
+	} else if !hasAccess {
+		return nil, os.ErrNotExist
+	}
+	reader, err := c.execReader(ctx, repo, []string{"diff", sourceCommit, targetCommit, "--", path})
+	if err != nil {
+		return nil, err
+	}
+	defer reader.Close()
+
+	output, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+	if len(output) == 0 {
+		return nil, nil
+	}
+
+	d, err := diff.NewFileDiffReader(bytes.NewReader(output)).Read()
+	if err != nil {
+		return nil, err
+	}
+	return d.Hunks, nil
+}
+
+// DiffSymbols performs a diff command which is expected to be parsed by our symbols package
+func (c *ClientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error) {
+	command := c.Command("git", "diff", "-z", "--name-status", "--no-renames", string(commitA), string(commitB))
+	command.Repo = repo
+	return command.Output(ctx)
+}

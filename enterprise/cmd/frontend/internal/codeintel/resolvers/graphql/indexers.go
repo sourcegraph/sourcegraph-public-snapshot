@@ -12,6 +12,10 @@ func (r *codeIntelIndexerResolver) Name() string {
 }
 
 func (r *codeIntelIndexerResolver) URL() string {
+	if r.urn == "" {
+		return ""
+	}
+
 	return "https://" + r.urn
 }
 

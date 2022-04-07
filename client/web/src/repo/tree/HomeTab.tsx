@@ -200,12 +200,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                 GitCommitFields,
                 Pick<
                     GitCommitNodeProps,
-                    | 'className'
-                    | 'compact'
-                    | 'messageSubjectClassName'
-                    | 'expandCommitMessageBody'
-                    | 'hideExpandCommitMessageBody'
-                    | 'sidebar'
+                    'className' | 'compact' | 'messageSubjectClassName' | 'hideExpandCommitMessageBody' | 'sidebar'
                 >
             >
                 location={props.location}
@@ -220,7 +215,6 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                     className: classNames('list-group-item', styles.gitCommitNode),
                     messageSubjectClassName: isSidebar ? 'd-none' : styles.gitCommitNodeMessageSubject,
                     compact: isSidebar,
-                    expandCommitMessageBody: !isSidebar,
                     hideExpandCommitMessageBody: isSidebar,
                     sidebar: isSidebar,
                 }}

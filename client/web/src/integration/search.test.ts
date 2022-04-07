@@ -183,7 +183,7 @@ describe('Search', () => {
             await driver.page.waitForSelector('#monaco-query-input')
             await driver.replaceText({
                 selector: '#monaco-query-input',
-                newText: 'go-jwt-middlew',
+                newText: 'repo:go-jwt-middlew',
                 enterTextMethod: 'type',
             })
             await driver.page.waitForSelector('#monaco-query-input .suggest-widget.visible')
@@ -200,7 +200,7 @@ describe('Search', () => {
             // File autocomplete from repo search bar
             await driver.page.waitForSelector('#monaco-query-input')
             await driver.page.focus('#monaco-query-input')
-            await driver.page.keyboard.type('jwtmi')
+            await driver.page.keyboard.type('file:jwtmi')
             await driver.page.waitForSelector('#monaco-query-input .suggest-widget.visible')
             await driver.findElementWithText('jwtmiddleware.go', {
                 selector: '#monaco-query-input .suggest-widget.visible span',

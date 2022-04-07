@@ -1,6 +1,8 @@
 package graphql
 
 import (
+	"strings"
+
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
@@ -128,7 +130,8 @@ func (r *LSIFIndexesWithRepositoryNamespaceResolver) Root() string {
 }
 
 func (r *LSIFIndexesWithRepositoryNamespaceResolver) Indexer() gql.CodeIntelIndexerResolver {
-	if idx, ok := imageToIndexer[r.indexesSummary.Indexer]; ok {
+	// drop the tag if it exists
+	if idx, ok := imageToIndexer[strings.Split(r.indexesSummary.Indexer, ":")[0]]; ok {
 		return idx
 	}
 

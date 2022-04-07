@@ -31,6 +31,13 @@ const (
 	testRepoC = "testrepo-C"
 )
 
+func (s *Server) testSetup(t *testing.T) {
+	t.Helper()
+	s.Handler() // Handler as a side-effect sets up Server
+	db := dbtest.NewDB(t)
+	s.DB = database.NewDB(db)
+}
+
 func TestCleanup_computeStats(t *testing.T) {
 	root, err := os.MkdirTemp("", "gitserver-test-")
 	if err != nil {
@@ -60,11 +67,9 @@ func TestCleanup_computeStats(t *testing.T) {
 	// We run cleanupRepos because we want to test as a side-effect it creates
 	// the correct file in the correct place.
 	s := &Server{ReposDir: root}
-	s.Handler() // Handler as a side-effect sets up Server
-	db := dbtest.NewDB(t)
-	s.DB = database.NewDB(db)
+	s.testSetup(t)
 
-	if _, err := db.Exec(`
+	if _, err := s.DB.ExecContext(context.Background(), `
 insert into repo(id, name) values (1, 'a'), (2, 'b/d'), (3, 'c');
 insert into gitserver_repos(repo_id, shard_id) values (1, 1), (2, 1);
 insert into gitserver_repos(repo_id, shard_id, repo_size_bytes) values (3, 1, 228);
@@ -128,7 +133,7 @@ func TestCleanupInactive(t *testing.T) {
 	}
 
 	s := &Server{ReposDir: root}
-	s.Handler() // Handler as a side-effect sets up Server
+	s.testSetup(t)
 	s.cleanupRepos()
 
 	if _, err := os.Stat(repoA); os.IsNotExist(err) {
@@ -190,7 +195,7 @@ func TestGitGCAuto(t *testing.T) {
 
 	// Handler must be invoked for Server side-effects.
 	s := &Server{ReposDir: root}
-	s.Handler()
+	s.testSetup(t)
 	s.cleanupRepos()
 
 	// Verify that there are no more GC-able objects in the repository.
@@ -313,7 +318,7 @@ func TestCleanupExpired(t *testing.T) {
 			return &GitRepoSyncer{}, nil
 		},
 	}
-	s.Handler() // Handler as a side-effect sets up Server
+	s.testSetup(t)
 	s.cleanupRepos()
 
 	// repos that shouldn't be re-cloned
@@ -408,7 +413,7 @@ func TestCleanupOldLocks(t *testing.T) {
 	chtime("github.com/foo/stalecommitgraphlock/.git/objects/info/commit-graph.lock", 2*time.Hour)
 
 	s := &Server{ReposDir: root}
-	s.Handler() // Handler as a side-effect sets up Server
+	s.testSetup(t)
 	s.cleanupRepos()
 
 	assertPaths(t, root,
@@ -416,34 +421,42 @@ func TestCleanupOldLocks(t *testing.T) {
 
 		"github.com/foo/empty/.git/HEAD",
 		"github.com/foo/empty/.git/info/attributes",
+		"github.com/foo/empty/.git/sgm.log",
 
 		"github.com/foo/freshconfiglock/.git/HEAD",
 		"github.com/foo/freshconfiglock/.git/config.lock",
 		"github.com/foo/freshconfiglock/.git/info/attributes",
+		"github.com/foo/freshconfiglock/.git/sgm.log",
 
 		"github.com/foo/freshpacked/.git/HEAD",
 		"github.com/foo/freshpacked/.git/packed-refs.lock",
 		"github.com/foo/freshpacked/.git/info/attributes",
+		"github.com/foo/freshpacked/.git/sgm.log",
 
 		"github.com/foo/freshcommitgraphlock/.git/HEAD",
 		"github.com/foo/freshcommitgraphlock/.git/objects/info/commit-graph.lock",
 		"github.com/foo/freshcommitgraphlock/.git/info/attributes",
+		"github.com/foo/freshcommitgraphlock/.git/sgm.log",
 
 		"github.com/foo/stalecommitgraphlock/.git/HEAD",
 		"github.com/foo/stalecommitgraphlock/.git/info/attributes",
 		"github.com/foo/stalecommitgraphlock/.git/objects/info",
+		"github.com/foo/stalecommitgraphlock/.git/sgm.log",
 
 		"github.com/foo/staleconfiglock/.git/HEAD",
 		"github.com/foo/staleconfiglock/.git/info/attributes",
+		"github.com/foo/staleconfiglock/.git/sgm.log",
 
 		"github.com/foo/stalepacked/.git/HEAD",
 		"github.com/foo/stalepacked/.git/info/attributes",
+		"github.com/foo/stalepacked/.git/sgm.log",
 
 		"github.com/foo/refslock/.git/HEAD",
 		"github.com/foo/refslock/.git/refs/heads/fresh",
 		"github.com/foo/refslock/.git/refs/heads/fresh.lock",
 		"github.com/foo/refslock/.git/refs/heads/stale",
 		"github.com/foo/refslock/.git/info/attributes",
+		"github.com/foo/refslock/.git/sgm.log",
 	)
 }
 
@@ -1166,7 +1179,11 @@ func TestCleanup_setRepoSizes(t *testing.T) {
 	}
 	defer os.RemoveAll(root)
 
-	for _, name := range []string{"a", "b", "c"} {
+	for _, name := range []string{
+		"ghe.sgdev.org/sourcegraph/gorilla-websocket",
+		"ghe.sgdev.org/sourcegraph/gorilla-mux",
+		"ghe.sgdev.org/sourcegraph/gorilla-sessions",
+	} {
 		p := path.Join(root, name, ".git")
 		if err := os.MkdirAll(p, 0755); err != nil {
 			t.Fatal(err)
@@ -1186,7 +1203,10 @@ func TestCleanup_setRepoSizes(t *testing.T) {
 
 	// inserting info about repos to DB. Repo with ID = 1 already has its size
 	if _, err := db.Exec(`
-insert into repo(id, name) values (1, 'a'), (2, 'b'), (3, 'c');
+insert into repo(id, name)
+values (1, 'ghe.sgdev.org/sourcegraph/gorilla-websocket'),
+       (2, 'ghe.sgdev.org/sourcegraph/gorilla-mux'),
+       (3, 'ghe.sgdev.org/sourcegraph/gorilla-sessions');
 insert into gitserver_repos(repo_id, shard_id) values (2, 1), (3, 1);
 insert into gitserver_repos(repo_id, shard_id, repo_size_bytes) values (1, 1, 228);
 `); err != nil {
@@ -1209,5 +1229,58 @@ insert into gitserver_repos(repo_id, shard_id, repo_size_bytes) values (1, 1, 22
 		if repo.ShardID != "1" {
 			t.Fatal("shard_id has been corrupted")
 		}
+	}
+}
+
+func TestSGMLogFile(t *testing.T) {
+	dir := GitDir(t.TempDir())
+	cmd := exec.Command("git", "--bare", "init")
+	dir.Set(cmd)
+	if err := cmd.Run(); err != nil {
+		t.Fatal(err)
+	}
+
+	mustHaveLogFile := func(t *testing.T) {
+		t.Helper()
+		content, err := os.ReadFile(dir.Path(sgmLog))
+		if err != nil {
+			t.Fatalf("%s should have been set: %s", sgmLog, err)
+		}
+		if len(content) == 0 {
+			t.Fatal("log file should have contained command output")
+		}
+	}
+
+	// break the repo
+	fakeRef := dir.Path("refs", "heads", "apple")
+	if _, err := os.Create(fakeRef); err != nil {
+		t.Fatal("test setup failed. Could not create fake ref")
+	}
+
+	// failed run => log file
+	if err := sgMaintenance(dir); err == nil {
+		t.Fatal("sgMaintenance should have returned an error")
+	}
+	mustHaveLogFile(t)
+
+	// fix the repo
+	os.Remove(fakeRef)
+
+	// fresh sgmLog file => skip execution
+	if err := sgMaintenance(dir); err != nil {
+		t.Fatalf("unexpected error %s", err)
+	}
+	mustHaveLogFile(t)
+
+	// backdate sgmLog file => sgMaintenance ignores log file
+	old := time.Now().Add(-2 * sgmLogExpire)
+	if err := os.Chtimes(dir.Path(sgmLog), old, old); err != nil {
+		t.Fatal(err)
+	}
+	if err := sgMaintenance(dir); err != nil {
+		t.Fatalf("unexpected error %s", err)
+	}
+	if _, err := os.Stat(dir.Path(sgmLog)); err == nil {
+		t.Fatalf("%s should have been removed", sgmLog)
 	}
 }

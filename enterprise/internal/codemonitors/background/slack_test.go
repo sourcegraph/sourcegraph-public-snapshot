@@ -2,20 +2,18 @@ package background
 
 import (
 	"context"
-	"flag"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 
+	"github.com/hexops/autogold"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
-
-var update = flag.Bool("update", false, "Update goldenfiles of tests")
 
 func TestSlackWebhook(t *testing.T) {
 	t.Parallel()
@@ -31,11 +29,17 @@ func TestSlackWebhook(t *testing.T) {
 		IncludeResults:     false,
 	}
 
+	jsonSlackPayload := func(a actionArgs) autogold.Raw {
+		b, err := json.MarshalIndent(slackPayload(a), " ", " ")
+		require.NoError(t, err)
+		return autogold.Raw(b)
+	}
+
 	t.Run("no error", func(t *testing.T) {
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			b, err := io.ReadAll(r.Body)
 			require.NoError(t, err)
-			testutil.AssertGolden(t, "testdata/"+t.Name()+".json", *update, b)
+			autogold.Equal(t, autogold.Raw(b))
 			w.WriteHeader(200)
 		}))
 		defer s.Close()
@@ -49,7 +53,7 @@ func TestSlackWebhook(t *testing.T) {
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			b, err := io.ReadAll(r.Body)
 			require.NoError(t, err)
-			testutil.AssertGolden(t, "testdata/"+t.Name()+".json", *update, b)
+			autogold.Equal(t, autogold.Raw(b))
 			w.WriteHeader(500)
 		}))
 		defer s.Close()
@@ -64,7 +68,7 @@ func TestSlackWebhook(t *testing.T) {
 	t.Run("golden with results", func(t *testing.T) {
 		actionCopy := action
 		actionCopy.IncludeResults = true
-		testutil.AssertGolden(t, "testdata/"+t.Name()+".json", *update, slackPayload(actionCopy))
+		autogold.Equal(t, jsonSlackPayload(actionCopy))
 	})
 
 	t.Run("golden with truncated results", func(t *testing.T) {
@@ -73,11 +77,11 @@ func TestSlackWebhook(t *testing.T) {
 		// quadruple the number of results
 		actionCopy.Results = append(actionCopy.Results, actionCopy.Results...)
 		actionCopy.Results = append(actionCopy.Results, actionCopy.Results...)
-		testutil.AssertGolden(t, "testdata/"+t.Name()+".json", *update, slackPayload(actionCopy))
+		autogold.Equal(t, jsonSlackPayload(actionCopy))
 	})
 
 	t.Run("golden without results", func(t *testing.T) {
-		testutil.AssertGolden(t, "testdata/"+t.Name()+".json", *update, slackPayload(action))
+		autogold.Equal(t, jsonSlackPayload(action))
 	})
 }
 
@@ -85,7 +89,7 @@ func TestTriggerTestSlackWebhookAction(t *testing.T) {
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		b, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
-		testutil.AssertGolden(t, "testdata/"+t.Name()+".json", *update, b)
+		autogold.Equal(t, autogold.Raw(b))
 		w.WriteHeader(200)
 	}))
 	defer s.Close()

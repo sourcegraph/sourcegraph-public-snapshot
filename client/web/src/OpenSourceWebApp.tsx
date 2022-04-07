@@ -2,6 +2,7 @@ import React from 'react'
 
 import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 
+import { RepositoryMenuContent } from './codeintel/RepositoryMenu'
 import { extensionAreaHeaderNavItems } from './extensions/extension/extensionAreaHeaderNavItems'
 import { extensionAreaRoutes } from './extensions/extension/routes'
 import { extensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'
@@ -48,6 +49,7 @@ export const OpenSourceWebApp: React.FunctionComponent = () => (
         routes={routes}
         keyboardShortcuts={KEYBOARD_SHORTCUTS}
         codeIntelligenceEnabled={false}
+        repositoryMenuContent={RepositoryMenuContent}
         batchChangesEnabled={false}
         searchContextsEnabled={false}
     />
