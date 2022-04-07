@@ -227,7 +227,7 @@ func (s *permsStore) LoadUserPermissions(ctx context.Context, p *authz.UserPermi
 	ctx, save := s.observe(ctx, "LoadUserPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
-	_, ids, updatedAt, syncedAt, err := s.loadUserPermissions(ctx, p, "")
+	ids, updatedAt, syncedAt, err := s.loadUserPermissions(ctx, p, "")
 	if err != nil {
 		return err
 	}
@@ -247,7 +247,7 @@ func (s *permsStore) LoadRepoPermissions(ctx context.Context, p *authz.RepoPermi
 	ctx, save := s.observe(ctx, "LoadRepoPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
-	_, ids, updatedAt, syncedAt, err := s.loadRepoPermissions(ctx, p, "")
+	ids, updatedAt, syncedAt, err := s.loadRepoPermissions(ctx, p, "")
 	if err != nil {
 		return err
 	}
@@ -274,7 +274,7 @@ func (s *permsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 
 	// Retrieve currently stored object IDs of this user.
 	oldIDs := map[int32]struct{}{}
-	_, ids, _, _, err := txs.loadUserPermissions(ctx, p, "FOR UPDATE")
+	ids, _, _, err := txs.loadUserPermissions(ctx, p, "FOR UPDATE")
 	if err != nil {
 		if err != authz.ErrPermsNotFound {
 			return errors.Wrap(err, "load user permissions")
@@ -401,7 +401,7 @@ func (s *permsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermis
 
 	// Retrieve currently stored user IDs of this repository.
 	oldIDs := map[int32]struct{}{}
-	_, ids, _, _, err := txs.loadRepoPermissions(ctx, p, "FOR UPDATE")
+	ids, _, _, err := txs.loadRepoPermissions(ctx, p, "FOR UPDATE")
 	if err != nil {
 		if err != authz.ErrPermsNotFound {
 			return errors.Wrap(err, "load repo permissions")
@@ -616,7 +616,7 @@ func (s *permsStore) LoadUserPendingPermissions(ctx context.Context, p *authz.Us
 	ctx, save := s.observe(ctx, "LoadUserPendingPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
-	id, ids, updatedAt, _, err := s.loadUserPendingPermissions(ctx, p, "")
+	id, ids, updatedAt, err := s.loadUserPendingPermissions(ctx, p, "")
 	if err != nil {
 		return err
 	}
@@ -717,10 +717,8 @@ func (s *permsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 	}
 
 	oldIDs := map[int64]struct{}{}
-	if ids != nil {
-		for _, id := range ids {
-			oldIDs[id] = struct{}{}
-		}
+	for _, id := range ids {
+		oldIDs[id] = struct{}{}
 	}
 
 	// Compute differences between the old and new sets.
@@ -936,7 +934,7 @@ func (s *permsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 		defer func() { err = txs.Done(err) }()
 	}
 
-	id, ids, _, _, err := txs.loadUserPendingPermissions(ctx, p, "FOR UPDATE")
+	id, ids, _, err := txs.loadUserPendingPermissions(ctx, p, "FOR UPDATE")
 	if err != nil {
 		// Skip the whole grant process if the user has no pending permissions.
 		if err == authz.ErrPermsNotFound {
@@ -1232,11 +1230,11 @@ func (s *permsStore) execute(ctx context.Context, q *sqlf.Query, vs ...interface
 }
 
 // loadUserPermissions is a method that scans three values from one user_permissions table row:
-// int32 (id), []int32 (ids), time.Time (updatedAt) and nullable time.Time (syncedAt).
-func (s *permsStore) loadUserPermissions(ctx context.Context, p *authz.UserPermissions, lock string) (id int32, ids []int32, updatedAt, syncedAt time.Time, err error) {
+// []int32 (ids), time.Time (updatedAt) and nullable time.Time (syncedAt).
+func (s *permsStore) loadUserPermissions(ctx context.Context, p *authz.UserPermissions, lock string) (ids []int32, updatedAt, syncedAt time.Time, err error) {
 	const format = `
 -- source: enterprise/internal/database/perms_store.go:loadUserPermissions
-SELECT user_id, object_ids_ints, updated_at, synced_at
+SELECT object_ids_ints, updated_at, synced_at
 FROM user_permissions
 WHERE user_id = %s
 AND permission = %s
@@ -1271,7 +1269,7 @@ AND object_type = %s
 		return
 	}
 
-	if err = rows.Scan(&id, pq.Array(&ids), &updatedAt, &dbutil.NullTime{Time: &syncedAt}); err != nil {
+	if err = rows.Scan(pq.Array(&ids), &updatedAt, &dbutil.NullTime{Time: &syncedAt}); err != nil {
 		return
 	}
 	err = rows.Close()
@@ -1280,11 +1278,11 @@ AND object_type = %s
 }
 
 // loadRepoPermissions is a method that scans three values from one repo_permissions table row:
-// int32 (id), []int32 (ids), time.Time (updatedAt) and nullable time.Time (syncedAt).
-func (s *permsStore) loadRepoPermissions(ctx context.Context, p *authz.RepoPermissions, lock string) (id int32, ids []int32, updatedAt, syncedAt time.Time, err error) {
+// []int32 (ids), time.Time (updatedAt) and nullable time.Time (syncedAt).
+func (s *permsStore) loadRepoPermissions(ctx context.Context, p *authz.RepoPermissions, lock string) (ids []int32, updatedAt, syncedAt time.Time, err error) {
 	const format = `
 -- source: enterprise/internal/database/perms_store.go:loadRepoPermissions
-SELECT repo_id, user_ids_ints, updated_at, synced_at
+SELECT user_ids_ints, updated_at, synced_at
 FROM repo_permissions
 WHERE repo_id = %s
 AND permission = %s
@@ -1318,7 +1316,7 @@ AND permission = %s
 		return
 	}
 
-	if err = rows.Scan(&id, pq.Array(&ids), &updatedAt, &dbutil.NullTime{Time: &syncedAt}); err != nil {
+	if err = rows.Scan(pq.Array(&ids), &updatedAt, &dbutil.NullTime{Time: &syncedAt}); err != nil {
 		return
 	}
 	err = rows.Close()
@@ -1327,11 +1325,11 @@ AND permission = %s
 }
 
 // loadUserPendingPermissions is a method that scans three values from one user_pending_permissions table row:
-// int64 (id), []int32 (ids), time.Time (updatedAt) and nullable time.Time (syncedAt).
-func (s *permsStore) loadUserPendingPermissions(ctx context.Context, p *authz.UserPendingPermissions, lock string) (id int64, ids []int32, updatedAt, syncedAt time.Time, err error) {
+// int64 (id), []int32 (ids), time.Time (updatedAt).
+func (s *permsStore) loadUserPendingPermissions(ctx context.Context, p *authz.UserPendingPermissions, lock string) (id int64, ids []int32, updatedAt time.Time, err error) {
 	const format = `
 -- source: enterprise/internal/database/perms_store.go:loadUserPendingPermissions
-SELECT id, object_ids_ints, updated_at, NULL
+SELECT id, object_ids_ints, updated_at
 FROM user_pending_permissions
 WHERE service_type = %s
 AND service_id = %s
@@ -1369,7 +1367,7 @@ AND bind_id = %s
 		return
 	}
 
-	if err = rows.Scan(&id, pq.Array(&ids), &updatedAt, &dbutil.NullTime{Time: &syncedAt}); err != nil {
+	if err = rows.Scan(&id, pq.Array(&ids), &updatedAt); err != nil {
 		return
 	}
 	err = rows.Close()
