@@ -114,7 +114,7 @@ func (c *Client) CommitsExist(ctx context.Context, commits []RepositoryCommit) (
 	// Spread the response back to the correct indexes the caller is expecting. Each value in the
 	// response from gitserver belongs to some index in the original commits slice. We re-map these
 	// values and leave all other values implicitly false (these repo name were not resolvable).
-	out := make([]bool, 0, len(commits))
+	out := make([]bool, len(commits))
 	for i, e := range exists {
 		out[originalIndexes[i]] = e
 	}
