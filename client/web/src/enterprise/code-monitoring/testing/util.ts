@@ -19,6 +19,7 @@ export const mockUser: AuthenticatedUser = {
     displayName: 'display name',
     settingsURL: '',
     viewerCanAdminister: true,
+    viewerNeedsCodeHostUpgrade: false,
     organizations: {
         __typename: 'OrgConnection',
         nodes: [],

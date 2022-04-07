@@ -34,6 +34,8 @@ const authUser: AuthenticatedUser = {
     },
     tags: ['AllowUserExternalServicePublic'],
     viewerCanAdminister: true,
+    viewerNeedsCodeHostUpgrade: false,
+
     databaseID: 0,
     tosAccepted: true,
     searchable: true,

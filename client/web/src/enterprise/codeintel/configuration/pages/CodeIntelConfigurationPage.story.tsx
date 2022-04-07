@@ -278,6 +278,7 @@ Policies.args = {
         url: 'string',
         settingsURL: 'string',
         viewerCanAdminister: true,
+        viewerNeedsCodeHostUpgrade: false,
         organizations: {
             __typename: 'OrgConnection',
             nodes: [

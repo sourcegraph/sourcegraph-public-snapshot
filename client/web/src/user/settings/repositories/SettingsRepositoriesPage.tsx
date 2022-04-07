@@ -353,9 +353,11 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                     },
                 ]}
                 description={
-                    <span className="text-muted">
-                        All repositories synced with Sourcegraph from {owner.name ? owner.name + "'s" : 'your'}{' '}
-                        <Link to={`${routingPrefix}/code-hosts`}>connected code hosts</Link>.
+                    <span>
+                        <span className="text-muted">
+                            All repositories synced with Sourcegraph from {owner.name ? owner.name + "'s" : 'your'}{' '}
+                            <Link to={`${routingPrefix}/code-hosts`}>connected code hosts</Link>.
+                        </span>
                     </span>
                 }
                 actions={
@@ -401,6 +403,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 }
                 className="mb-3"
             />
+            {authenticatedUser && authenticatedUser.viewerNeedsCodeHostUpgrade && <OrgUserNeedsGithubUpgrade />}
             {isErrorLike(status) ? (
                 <h3 className="text-muted">Sorry, we couldn’t fetch your repositories. Try again?</h3>
             ) : !externalServices ? (

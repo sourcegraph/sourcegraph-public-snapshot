@@ -29,6 +29,7 @@ export const currentAuthStateQuery = gql`
                 canSignOut
             }
             viewerCanAdminister
+            viewerNeedsCodeHostUpgrade
             tags
             tosAccepted
             searchable

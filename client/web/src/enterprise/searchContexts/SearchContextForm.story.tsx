@@ -75,6 +75,7 @@ const authUser: AuthenticatedUser = {
     },
     tags: [],
     viewerCanAdminister: true,
+    viewerNeedsCodeHostUpgrade: false,
     databaseID: 0,
     tosAccepted: true,
     searchable: true,

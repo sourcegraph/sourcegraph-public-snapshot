@@ -36,6 +36,7 @@ export const commonWebGraphQlResults: Partial<
             organizations: { nodes: [] },
             session: { canSignOut: true },
             viewerCanAdminister: true,
+            viewerNeedsCodeHostUpgrade: false,
             searchable: true,
         },
     }),
