@@ -37,7 +37,7 @@ The following architecture diagram shows how the backend fits into the two Sourc
 Code Insights backend is currently disabled on `sourcegraph.com` until solutions can be built to address the large indexed repo count.
 
 ## Feature Flags 
-Code Insights is currently an experimental feature, and ships with an "escape hatch" feature flag that will completely disable the dependency on TimescaleDB (named `codeinsights-db`). This feature flag is implemented as an environment variable that if set true `DISABLE_CODE_INSIGHTS=true` will disable the dependency and will not start the Code Insights background workers or GraphQL resolvers. This variable must be set on both the `worker` and `frontend` services to remove the dependency. If the flag is not set on both services, the `codeinsights-db` dependency will be required.
+Code Insights ships with an "escape hatch" feature flag that will completely disable the dependency on the Code Insights DB (named `codeinsights-db`). This feature flag is implemented as an environment variable that if set true `DISABLE_CODE_INSIGHTS=true` will disable the dependency and will not start the Code Insights background workers or GraphQL resolvers. This variable must be set on both the `worker` and `frontend` services to remove the dependency. If the flag is not set on both services, the `codeinsights-db` dependency will be required.
 
 Implementation of this environment variable can be found in the [`frontend`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/insights.go#L43) and [`worker`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/background/background.go#L30) services.
 
