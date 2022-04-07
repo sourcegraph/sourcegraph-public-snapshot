@@ -82,7 +82,7 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
 
     // Handle insight delete and remove actions
     const { loading: isDeleting, delete: handleDelete } = useDeleteInsight()
-    const { remove: handleRemove, loading: isRemoving } = useRemoveInsightFromDashboard()
+    const { loading: isRemoving } = useRemoveInsightFromDashboard()
 
     const handleFilterSave = async (filters: InsightFilters): Promise<SubmissionErrors> => {
         try {
@@ -165,7 +165,6 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
                             menuButtonClassName="ml-1 d-inline-flex"
                             zeroYAxisMin={zeroYAxisMin}
                             onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
-                            onRemoveFromDashboard={dashboard => handleRemove({ insight, dashboard })}
                             onDelete={() => setShowDeleteConfirm(true)}
                         />
                     </>
