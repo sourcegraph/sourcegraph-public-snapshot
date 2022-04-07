@@ -65,6 +65,12 @@ func SecurityEventLogs(db dbutil.DB) *SecurityEventLogStore {
 	return &SecurityEventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
+// SecurityEventLogsWith instantiates and returns a new SecurityEventLogStore
+// using the other store handle.
+func SecurityEventLogsWith(other basestore.ShareableStore) *SecurityEventLogStore {
+	return &SecurityEventLogStore{Store: basestore.NewWithHandle(other.Handle())}
+}
+
 // Insert adds a new security event to the store.
 func (s *SecurityEventLogStore) Insert(ctx context.Context, e *SecurityEvent) error {
 	argument := e.Argument
