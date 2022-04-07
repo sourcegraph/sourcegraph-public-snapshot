@@ -93,7 +93,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
 				triggerAsync(buildOptions)))
 
-			ops.Append(prPreview())
+			// Do not create client PR preview if Go or GraphQL is changed to avoid confusing
+			// preview behavior, because only Client code is used to deploy application preview.
+			if !c.Diff.Has(changed.Go) && !c.Diff.Has(changed.GraphQL) {
+				ops.Append(prPreview())
+			}
 		}
 		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
 
