@@ -62,6 +62,12 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
         return <Redirect to="/sign-in" />
     }
 
+    let newUserFromEmailInvitation = false
+    const returnTo = getReturnTo(location)
+    if (context.sourcegraphDotComMode && returnTo.includes('/organizations/invitation/')) {
+        newUserFromEmailInvitation = true
+    }
+
     const handleSignUp = (args: SignUpArguments): Promise<void> =>
         fetch('/-/sign-up', {
             credentials: 'same-origin',
@@ -79,7 +85,7 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
 
             // if sign up is successful and enablePostSignupFlow feature is ON -
             // redirect user to the /post-sign-up page
-            if (context.experimentalFeatures.enablePostSignupFlow) {
+            if (context.experimentalFeatures.enablePostSignupFlow && !newUserFromEmailInvitation) {
                 window.location.replace(new URL(maybeAddPostSignUpRedirect(), window.location.href).pathname)
             } else {
                 window.location.replace(getReturnTo(location))
