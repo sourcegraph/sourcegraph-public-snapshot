@@ -7,7 +7,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -125,7 +125,7 @@ func (r *resolver) inferClosestUploads(ctx context.Context, repositoryID int, co
 	// and try to link it with what we have in the database. Then mark the repository's commit
 	// graph as dirty so it's updated for subsequent requests.
 
-	graph, err := r.gitserverClient.CommitGraph(ctx, repositoryID, gitdomain.CommitGraphOptions{
+	graph, err := r.gitserverClient.CommitGraph(ctx, repositoryID, gitserver.CommitGraphOptions{
 		Commit: commit,
 		Limit:  numAncestors,
 	})

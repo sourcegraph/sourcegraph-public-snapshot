@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -219,11 +220,39 @@ func checkSpecArgSafety(spec string) error {
 	return nil
 }
 
+type CommitGraphOptions struct {
+	Commit  string
+	AllRefs bool
+	Limit   int
+	Since   *time.Time
+} // please update LogFields if you add a field here
+
+func stableTimeRepr(t time.Time) string {
+	s, _ := t.MarshalText()
+	return string(s)
+}
+
+func (opts *CommitGraphOptions) LogFields() []log.Field {
+	var since string
+	if opts.Since != nil {
+		since = stableTimeRepr(*opts.Since)
+	} else {
+		since = stableTimeRepr(time.Unix(0, 0))
+	}
+
+	return []log.Field{
+		log.String("commit", opts.Commit),
+		log.Int("limit", opts.Limit),
+		log.Bool("allrefs", opts.AllRefs),
+		log.String("since", since),
+	}
+}
+
 // CommitGraph returns the commit graph for the given repository as a mapping
 // from a commit to its parents. If a commit is supplied, the returned graph will
 // be rooted at the given commit. If a non-zero limit is supplied, at most that
 // many commits will be returned.
-func (c *ClientImplementor) CommitGraph(ctx context.Context, repo api.RepoName, opts gitdomain.CommitGraphOptions) (_ *gitdomain.CommitGraph, err error) {
+func (c *ClientImplementor) CommitGraph(ctx context.Context, repo api.RepoName, opts CommitGraphOptions) (_ *gitdomain.CommitGraph, err error) {
 	args := []string{"log", "--pretty=%H %P", "--topo-order"}
 	if opts.AllRefs {
 		args = append(args, "--all")
