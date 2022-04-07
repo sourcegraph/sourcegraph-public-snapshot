@@ -79,6 +79,16 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 				err = errors.New("the authenticated user does not belong to the organization requested")
 				return nil, err
 			}
+
+			quotaReached, err := backend.OrgExternalServicesQuotaReached(ctx, r.db, namespaceOrgID)
+			if err != nil {
+				return nil, err
+			}
+
+			if quotaReached {
+				err = errors.Errorf("maximum number of external servcies has been reached for organization %v ", namespaceOrgID)
+				return nil, err
+			}
 		}
 
 	} else if backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
@@ -288,6 +298,16 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 
 	if namespaceOrgID > 0 {
 		if err := backend.CheckOrgExternalServices(ctx, r.db, namespaceOrgID); err != nil {
+			return nil, err
+		}
+
+		quotaReached, err := backend.OrgExternalServicesQuotaReached(ctx, r.db, namespaceOrgID)
+		if err != nil {
+			return nil, err
+		}
+
+		if quotaReached {
+			err = errors.Errorf("maximum number of external servcies has been reached for organization %v ", namespaceOrgID)
 			return nil, err
 		}
 	}
