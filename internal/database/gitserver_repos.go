@@ -322,7 +322,7 @@ WHERE r.name = %s
 
 func (s *gitserverRepoStore) GetByNames(ctx context.Context, names ...api.RepoName) ([]*types.GitserverRepo, error) {
 	if len(names) > batch.MaxNumPostgresParameters {
-		return nil, errors.Newf("getting GitserverRepos by names: too much names provided: %v", len(names))
+		return nil, errors.Newf("getting GitserverRepos by names: too many names provided: %v", len(names))
 	}
 
 	q := `
