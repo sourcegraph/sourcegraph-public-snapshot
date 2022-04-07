@@ -22,6 +22,7 @@ CHECKS=(
   ./shfmt.sh
   ./shellcheck.sh
   ./ts-enterprise-import.sh
+  ./submodule.sh
 )
 
 echo "--- 🚨 Buildkite's timing information is misleading! Only consider the job timing that's printed after 'done'"
