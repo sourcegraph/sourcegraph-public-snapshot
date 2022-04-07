@@ -4,9 +4,13 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+
+	sctypes "github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 
@@ -90,7 +94,8 @@ func (r *insightSeriesResolver) Points(ctx context.Context, args *graphqlbackend
 		excludeRepo(*r.filters.ExcludeRepoRegex)
 	}
 
-	inc, exc, err := r.unwrapSearchContexts(ctx, r.filters.SearchContexts)
+	scLoader := &scLoader{primary: r.workerBaseStore.Handle().DB()}
+	inc, exc, err := r.unwrapSearchContexts(ctx, scLoader, r.filters.SearchContexts)
 	if err != nil {
 		return nil, errors.Wrap(err, "unwrapSearchContexts")
 	}
@@ -108,37 +113,41 @@ func (r *insightSeriesResolver) Points(ctx context.Context, args *graphqlbackend
 	return resolvers, nil
 }
 
-func (r *insightSeriesResolver) unwrapSearchContexts(ctx context.Context, rawContexts []string) ([]string, []string, error) {
-	ndb := database.NewDB(r.workerBaseStore.Handle().DB())
+type SearchContextLoader interface {
+	GetByName(ctx context.Context, name string) (*sctypes.SearchContext, error)
+}
+
+type scLoader struct {
+	primary dbutil.DB
+}
+
+func (l *scLoader) GetByName(ctx context.Context, name string) (*sctypes.SearchContext, error) {
+	db := database.NewDB(l.primary)
+	return searchcontexts.ResolveSearchContextSpec(ctx, db, name)
+}
+
+func (r *insightSeriesResolver) unwrapSearchContexts(ctx context.Context, loader SearchContextLoader, rawContexts []string) ([]string, []string, error) {
 	var include []string
 	var exclude []string
 
 	for _, rawContext := range rawContexts {
-		searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, ndb, rawContext)
+		searchContext, err := loader.GetByName(ctx, rawContext)
 		if err != nil {
 			return nil, nil, err
 		}
 		if searchContext.Query != "" {
 			var plan searchquery.Plan
-			// q := "repo:sourcegraph/.* -repo:asdf/.*"
 			plan, err := searchquery.Pipeline(
 				searchquery.Init(searchContext.Query, searchquery.SearchTypeRegex),
 			)
 			if err != nil {
-				return nil, nil, err
+				return nil, nil, errors.Wrapf(err, "failed to parse search query for search context: %s", rawContext)
 			}
 			inc, exc := plan.ToParseTree().Repositories()
 			include = append(include, inc...)
 			exclude = append(exclude, exc...)
 		}
 	}
-
-	// scStore := database.SearchContexts(r.workerBaseStore.Handle().DB())
-	// scStore.GetSearchContext(ctx, database.GetSearchContextOptions{
-	// 	Name:            "",
-	// 	NamespaceUserID: 0,
-	// 	NamespaceOrgID:  0,
-	// })
 	return include, exclude, nil
 }
 
