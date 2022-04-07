@@ -31,6 +31,13 @@ const (
 	testRepoC = "testrepo-C"
 )
 
+func (s *Server) testSetup(t *testing.T) {
+	t.Helper()
+	s.Handler() // Handler as a side-effect sets up Server
+	db := dbtest.NewDB(t)
+	s.DB = database.NewDB(db)
+}
+
 func TestCleanup_computeStats(t *testing.T) {
 	root, err := os.MkdirTemp("", "gitserver-test-")
 	if err != nil {
@@ -60,11 +67,9 @@ func TestCleanup_computeStats(t *testing.T) {
 	// We run cleanupRepos because we want to test as a side-effect it creates
 	// the correct file in the correct place.
 	s := &Server{ReposDir: root}
-	s.Handler() // Handler as a side-effect sets up Server
-	db := dbtest.NewDB(t)
-	s.DB = database.NewDB(db)
+	s.testSetup(t)
 
-	if _, err := db.Exec(`
+	if _, err := s.DB.ExecContext(context.Background(), `
 insert into repo(id, name) values (1, 'a'), (2, 'b/d'), (3, 'c');
 insert into gitserver_repos(repo_id, shard_id) values (1, 1), (2, 1);
 insert into gitserver_repos(repo_id, shard_id, repo_size_bytes) values (3, 1, 228);
@@ -128,7 +133,7 @@ func TestCleanupInactive(t *testing.T) {
 	}
 
 	s := &Server{ReposDir: root}
-	s.Handler() // Handler as a side-effect sets up Server
+	s.testSetup(t)
 	s.cleanupRepos()
 
 	if _, err := os.Stat(repoA); os.IsNotExist(err) {
@@ -190,7 +195,7 @@ func TestGitGCAuto(t *testing.T) {
 
 	// Handler must be invoked for Server side-effects.
 	s := &Server{ReposDir: root}
-	s.Handler()
+	s.testSetup(t)
 	s.cleanupRepos()
 
 	// Verify that there are no more GC-able objects in the repository.
@@ -313,7 +318,7 @@ func TestCleanupExpired(t *testing.T) {
 			return &GitRepoSyncer{}, nil
 		},
 	}
-	s.Handler() // Handler as a side-effect sets up Server
+	s.testSetup(t)
 	s.cleanupRepos()
 
 	// repos that shouldn't be re-cloned
@@ -408,7 +413,7 @@ func TestCleanupOldLocks(t *testing.T) {
 	chtime("github.com/foo/stalecommitgraphlock/.git/objects/info/commit-graph.lock", 2*time.Hour)
 
 	s := &Server{ReposDir: root}
-	s.Handler() // Handler as a side-effect sets up Server
+	s.testSetup(t)
 	s.cleanupRepos()
 
 	assertPaths(t, root,
