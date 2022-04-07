@@ -61,7 +61,7 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
                 height: outerHeight,
                 margin: {
                     top: 10,
-                    right: 0,
+                    right: 20,
                     left: yAxisReference.current?.getBoundingClientRect().width,
                     bottom: xAxisReference.current?.getBoundingClientRect().height,
                 },
@@ -85,11 +85,11 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
         () =>
             scaleTime({
                 domain: [minX, maxX],
-                range: [margin.left, outerWidth],
+                range: [margin.left, outerWidth - margin.right],
                 nice: true,
                 clamp: true,
             }),
-        [minX, maxX, margin.left, outerWidth]
+        [minX, maxX, margin.left, margin.right, outerWidth]
     )
 
     const yScale = useMemo(
@@ -149,7 +149,7 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
             <AxisLeft
                 ref={yAxisReference}
                 scale={yScale}
-                width={outerWidth}
+                width={width}
                 height={height}
                 top={margin.top}
                 left={margin.left}
