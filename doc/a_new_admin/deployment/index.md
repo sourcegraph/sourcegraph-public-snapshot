@@ -1,4 +1,4 @@
-# Deployment Table of Contents
+# Deployment
 
 Sourcegraph supports a variety of deployment methods including Docker (single container), Docker Compose, and Kubernetes. Each of these methods will require a different level of investment and should be based on the needs and desired outcomes for your business. 
 
@@ -6,6 +6,14 @@ If you aren't currently working wth our Customer Engineering team, we recommend 
 
 If you already know which method you want to use, use the table of contents below to navigate the relevant topics.
 
+## [Overview](deployment_overview.md)
+## Resource Estimator
+## Docker Single Container
+## Docker Compose
+## Kubernetes
+
+
+<!--- 
 ## [Overview](deployment_overview.md)
 ### [Resource planning](deployment_overview.md#resource-planning)
 ### [Options and scenarios](deployment_overview.md#options-and-scenarios)
@@ -58,3 +66,4 @@ If you already know which method you want to use, use the table of contents belo
 ### Scaling
 ### Upgrade
 ### Restoration
+--->

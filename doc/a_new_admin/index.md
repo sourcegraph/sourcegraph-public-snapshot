@@ -1,4 +1,4 @@
-# Administration Table of Contents
+# Administration
 
 Administration is usually handled by site administrators, or admins, who are responsible for deploying, managing, and configuring Sourcegraph for regular users. In addition, Admins have [special privileges](privileges.md) on a Sourcegraph instance that enable a wide variety of functionality including customization, access management, and repository management as well as management for other activities such as monitoring, alerting, upgrading, and migration.
 
@@ -6,6 +6,16 @@ We've broken our Admin documentation up into a variety of key categories which c
 
 If you are just getting started, check out our [Deployment Overview](deployment/deployment_overview.md) which highlights the different deplyment methods available as well as some key concepts that will be useful throughout your interaction with Sourcegraph as an administrator.
 
+<!--- 
+## [Deployment](deployment/index.md)
+## Customization
+## Access Management
+## Repository Management
+## Monitoring and alerting
+## Migration 
+--->
+
+<!--- 
 ## [Deployment](deployment/index.md)
 ### [Overview](deployment/deployment_overview.md)
 ### [Resource Estimator](install/resource_estimator.md)
@@ -43,4 +53,5 @@ If you are just getting started, check out our [Deployment Overview](deployment/
 ### Health checks
 ### Troubleshooting
 ### Dashboards
-## Migration
+## Migration 
+--->
