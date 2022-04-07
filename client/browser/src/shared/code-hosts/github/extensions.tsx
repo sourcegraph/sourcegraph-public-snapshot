@@ -4,7 +4,9 @@ import { MountGetter } from '../shared/codeHost'
 export const getCommandPaletteMount: MountGetter = (container: HTMLElement): HTMLElement | null => {
     const className = 'command-palette-button'
     // This selector matches both GitHub Enterprise and github.com
-    const existing = container.querySelector<HTMLElement>(`.Header .${className}`)
+    const existing =
+        container.querySelector<HTMLElement>(`.Header .${className}`) ||
+        container.querySelector<HTMLElement>(`.Header-old .${className}`) // selector for not logged in user on github.com
     if (existing) {
         return existing
     }
