@@ -16228,6 +16228,9 @@ type MockGitserverRepoStore struct {
 	// GetByNameFunc is an instance of a mock function object controlling
 	// the behavior of the method GetByName.
 	GetByNameFunc *GitserverRepoStoreGetByNameFunc
+	// GetByNamesFunc is an instance of a mock function object controlling
+	// the behavior of the method GetByNames.
+	GetByNamesFunc *GitserverRepoStoreGetByNamesFunc
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *GitserverRepoStoreHandleFunc
@@ -16281,6 +16284,11 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 		},
 		GetByNameFunc: &GitserverRepoStoreGetByNameFunc{
 			defaultHook: func(context.Context, api.RepoName) (*types.GitserverRepo, error) {
+				return nil, nil
+			},
+		},
+		GetByNamesFunc: &GitserverRepoStoreGetByNamesFunc{
+			defaultHook: func(context.Context, ...api.RepoName) ([]*types.GitserverRepo, error) {
 				return nil, nil
 			},
 		},
@@ -16362,6 +16370,11 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 				panic("unexpected invocation of MockGitserverRepoStore.GetByName")
 			},
 		},
+		GetByNamesFunc: &GitserverRepoStoreGetByNamesFunc{
+			defaultHook: func(context.Context, ...api.RepoName) ([]*types.GitserverRepo, error) {
+				panic("unexpected invocation of MockGitserverRepoStore.GetByNames")
+			},
+		},
 		HandleFunc: &GitserverRepoStoreHandleFunc{
 			defaultHook: func() *basestore.TransactableHandle {
 				panic("unexpected invocation of MockGitserverRepoStore.Handle")
@@ -16435,6 +16448,9 @@ func NewMockGitserverRepoStoreFrom(i GitserverRepoStore) *MockGitserverRepoStore
 		},
 		GetByNameFunc: &GitserverRepoStoreGetByNameFunc{
 			defaultHook: i.GetByName,
+		},
+		GetByNamesFunc: &GitserverRepoStoreGetByNamesFunc{
+			defaultHook: i.GetByNames,
 		},
 		HandleFunc: &GitserverRepoStoreHandleFunc{
 			defaultHook: i.Handle,
@@ -16688,6 +16704,122 @@ func (c GitserverRepoStoreGetByNameFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverRepoStoreGetByNameFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverRepoStoreGetByNamesFunc describes the behavior when the
+// GetByNames method of the parent MockGitserverRepoStore instance is
+// invoked.
+type GitserverRepoStoreGetByNamesFunc struct {
+	defaultHook func(context.Context, ...api.RepoName) ([]*types.GitserverRepo, error)
+	hooks       []func(context.Context, ...api.RepoName) ([]*types.GitserverRepo, error)
+	history     []GitserverRepoStoreGetByNamesFuncCall
+	mutex       sync.Mutex
+}
+
+// GetByNames delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverRepoStore) GetByNames(v0 context.Context, v1 ...api.RepoName) ([]*types.GitserverRepo, error) {
+	r0, r1 := m.GetByNamesFunc.nextHook()(v0, v1...)
+	m.GetByNamesFunc.appendCall(GitserverRepoStoreGetByNamesFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetByNames method of
+// the parent MockGitserverRepoStore instance is invoked and the hook queue
+// is empty.
+func (f *GitserverRepoStoreGetByNamesFunc) SetDefaultHook(hook func(context.Context, ...api.RepoName) ([]*types.GitserverRepo, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetByNames method of the parent MockGitserverRepoStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *GitserverRepoStoreGetByNamesFunc) PushHook(hook func(context.Context, ...api.RepoName) ([]*types.GitserverRepo, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverRepoStoreGetByNamesFunc) SetDefaultReturn(r0 []*types.GitserverRepo, r1 error) {
+	f.SetDefaultHook(func(context.Context, ...api.RepoName) ([]*types.GitserverRepo, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverRepoStoreGetByNamesFunc) PushReturn(r0 []*types.GitserverRepo, r1 error) {
+	f.PushHook(func(context.Context, ...api.RepoName) ([]*types.GitserverRepo, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverRepoStoreGetByNamesFunc) nextHook() func(context.Context, ...api.RepoName) ([]*types.GitserverRepo, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverRepoStoreGetByNamesFunc) appendCall(r0 GitserverRepoStoreGetByNamesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverRepoStoreGetByNamesFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverRepoStoreGetByNamesFunc) History() []GitserverRepoStoreGetByNamesFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverRepoStoreGetByNamesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverRepoStoreGetByNamesFuncCall is an object that describes an
+// invocation of method GetByNames on an instance of MockGitserverRepoStore.
+type GitserverRepoStoreGetByNamesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg1 []api.RepoName
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*types.GitserverRepo
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c GitserverRepoStoreGetByNamesFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg1 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverRepoStoreGetByNamesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
