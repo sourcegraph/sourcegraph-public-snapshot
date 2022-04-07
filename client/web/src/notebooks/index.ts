@@ -7,6 +7,7 @@ import { IHighlightLineRange, SymbolKind } from '@sourcegraph/shared/src/schema'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
+// When adding a new block type, make sure to track its usage in internal/usagestats/notebooks.go.
 export type BlockType = 'md' | 'query' | 'file' | 'compute' | 'symbol'
 
 interface BaseBlock<I, O> {
