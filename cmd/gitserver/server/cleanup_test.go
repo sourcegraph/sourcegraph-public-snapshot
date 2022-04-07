@@ -416,34 +416,42 @@ func TestCleanupOldLocks(t *testing.T) {
 
 		"github.com/foo/empty/.git/HEAD",
 		"github.com/foo/empty/.git/info/attributes",
+		"github.com/foo/empty/.git/sgm.log",
 
 		"github.com/foo/freshconfiglock/.git/HEAD",
 		"github.com/foo/freshconfiglock/.git/config.lock",
 		"github.com/foo/freshconfiglock/.git/info/attributes",
+		"github.com/foo/freshconfiglock/.git/sgm.log",
 
 		"github.com/foo/freshpacked/.git/HEAD",
 		"github.com/foo/freshpacked/.git/packed-refs.lock",
 		"github.com/foo/freshpacked/.git/info/attributes",
+		"github.com/foo/freshpacked/.git/sgm.log",
 
 		"github.com/foo/freshcommitgraphlock/.git/HEAD",
 		"github.com/foo/freshcommitgraphlock/.git/objects/info/commit-graph.lock",
 		"github.com/foo/freshcommitgraphlock/.git/info/attributes",
+		"github.com/foo/freshcommitgraphlock/.git/sgm.log",
 
 		"github.com/foo/stalecommitgraphlock/.git/HEAD",
 		"github.com/foo/stalecommitgraphlock/.git/info/attributes",
 		"github.com/foo/stalecommitgraphlock/.git/objects/info",
+		"github.com/foo/stalecommitgraphlock/.git/sgm.log",
 
 		"github.com/foo/staleconfiglock/.git/HEAD",
 		"github.com/foo/staleconfiglock/.git/info/attributes",
+		"github.com/foo/staleconfiglock/.git/sgm.log",
 
 		"github.com/foo/stalepacked/.git/HEAD",
 		"github.com/foo/stalepacked/.git/info/attributes",
+		"github.com/foo/stalepacked/.git/sgm.log",
 
 		"github.com/foo/refslock/.git/HEAD",
 		"github.com/foo/refslock/.git/refs/heads/fresh",
 		"github.com/foo/refslock/.git/refs/heads/fresh.lock",
 		"github.com/foo/refslock/.git/refs/heads/stale",
 		"github.com/foo/refslock/.git/info/attributes",
+		"github.com/foo/refslock/.git/sgm.log",
 	)
 }
 
@@ -1216,5 +1224,58 @@ insert into gitserver_repos(repo_id, shard_id, repo_size_bytes) values (1, 1, 22
 		if repo.ShardID != "1" {
 			t.Fatal("shard_id has been corrupted")
 		}
+	}
+}
+
+func TestSGMLogFile(t *testing.T) {
+	dir := GitDir(t.TempDir())
+	cmd := exec.Command("git", "--bare", "init")
+	dir.Set(cmd)
+	if err := cmd.Run(); err != nil {
+		t.Fatal(err)
+	}
+
+	mustHaveLogFile := func(t *testing.T) {
+		t.Helper()
+		content, err := os.ReadFile(dir.Path(sgmLog))
+		if err != nil {
+			t.Fatalf("%s should have been set: %s", sgmLog, err)
+		}
+		if len(content) == 0 {
+			t.Fatal("log file should have contained command output")
+		}
+	}
+
+	// break the repo
+	fakeRef := dir.Path("refs", "heads", "apple")
+	if _, err := os.Create(fakeRef); err != nil {
+		t.Fatal("test setup failed. Could not create fake ref")
+	}
+
+	// failed run => log file
+	if err := sgMaintenance(dir); err == nil {
+		t.Fatal("sgMaintenance should have returned an error")
+	}
+	mustHaveLogFile(t)
+
+	// fix the repo
+	os.Remove(fakeRef)
+
+	// fresh sgmLog file => skip execution
+	if err := sgMaintenance(dir); err != nil {
+		t.Fatalf("unexpected error %s", err)
+	}
+	mustHaveLogFile(t)
+
+	// backdate sgmLog file => sgMaintenance ignores log file
+	old := time.Now().Add(-2 * sgmLogExpire)
+	if err := os.Chtimes(dir.Path(sgmLog), old, old); err != nil {
+		t.Fatal(err)
+	}
+	if err := sgMaintenance(dir); err != nil {
+		t.Fatalf("unexpected error %s", err)
+	}
+	if _, err := os.Stat(dir.Path(sgmLog)); err == nil {
+		t.Fatalf("%s should have been removed", sgmLog)
 	}
 }
