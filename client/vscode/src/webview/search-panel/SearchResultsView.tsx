@@ -14,11 +14,13 @@ import { IEditor, SearchBox, StreamingProgress, StreamingSearchResultsList } fro
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { CtaAlert } from '@sourcegraph/shared/src/components/CtaAlert'
 import { appendContextFilter, updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
 import { LATEST_VERSION, RepositoryMatch, SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
+import { DISMISS_CTA_KEY } from '../../settings/LocalStorageService'
 import { SearchResultsState } from '../../state'
 import { WebviewPageProps } from '../platform/context'
 
@@ -26,7 +28,6 @@ import { fetchSearchContexts } from './alias/fetchSearchContext'
 import { setFocusSearchBox } from './api'
 import { SearchBetaIcon } from './components/icons'
 import { SavedSearchCreateForm } from './components/SavedSearchForm'
-import { SearchPageCta } from './components/SearchCta'
 import { SearchResultsInfoBar } from './components/SearchResultsInfoBar'
 import { MatchHandlersContext, useMatchHandlers } from './MatchHandlersContext'
 import { RepoView } from './RepoView'
@@ -51,6 +52,23 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
         RepositoryMatch,
         'repository' | 'branches' | 'description'
     > | null>(null)
+
+    // Check VS Code local storage to see if user has clicked dismiss button before
+    const [sarchCtaDismissButtonClicked, setSearchCtaDismissButtonClicked] = useState(false)
+    // Return empty string if not in vs code local storage or 'search' if it exists
+    const showCtaAlert = useMemo(() => extensionCoreAPI.getLocalStorageItem(DISMISS_CTA_KEY), [extensionCoreAPI])
+    const onDismissCtaAlert = useCallback(async () => {
+        setSearchCtaDismissButtonClicked(true)
+        await extensionCoreAPI.setLocalStorageItem(DISMISS_CTA_KEY, 'search')
+    }, [extensionCoreAPI])
+
+    useEffect(() => {
+        showCtaAlert
+            .then(setting => {
+                setSearchCtaDismissButtonClicked(setting === 'search')
+            })
+            .catch(() => setSearchCtaDismissButtonClicked(false))
+    }, [showCtaAlert])
 
     // Editor focus.
     const editorReference = useRef<IEditor>()
@@ -118,7 +136,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
     // Track sidebar + keyboard shortcut search submissions
     useEffect(() => {
         platformContext.telemetryService.log('IDESearchSubmitted')
-    }, [platformContext, context.submittedSearchQueryState.queryState.query])
+    }, [platformContext, context.submittedSearchQueryState.queryState.query, showCtaAlert])
 
     const onSubmit = useCallback(
         (options?: { caseSensitive?: boolean; patternType?: SearchPatternType; newQuery?: string }) => {
@@ -315,13 +333,20 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
 
             {!repoToShow ? (
                 <div className={styles.resultsViewScrollContainer}>
-                    {isSourcegraphDotCom && !authenticatedUser && (
-                        <SearchPageCta
+                    {isSourcegraphDotCom && !authenticatedUser && !sarchCtaDismissButtonClicked && (
+                        <CtaAlert
+                            title="Sign up to add your public and private repositories and unlock search flow"
+                            description="Do all the things editors can’t: search multiple repos & commit history, monitor, save
+                searches and more."
+                            cta={{
+                                label: 'Get started',
+                                href:
+                                    'https://sourcegraph.com/sign-up?editor=vscode&utm_medium=VSCODE&utm_source=sidebar&utm_campaign=vsce-sign-up&utm_content=sign-up',
+                                onClick: onSignUpClick,
+                            }}
                             icon={<SearchBetaIcon />}
-                            ctaTitle="Sign up to add your public and private repositories and access other features"
-                            ctaDescription="Do all the things editors can’t: search multiple repos & commit history, monitor, save searches and more."
-                            buttonText="Create a free account"
-                            onClickAction={onSignUpClick}
+                            className={classNames('percy-display-none', styles.ctaContainer)}
+                            onClose={onDismissCtaAlert}
                         />
                     )}
                     <SearchResultsInfoBar

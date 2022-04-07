@@ -84,3 +84,8 @@
         height: 100%;
     }
 }
+
+.cta-container {
+    background-color: var(--vscode-editorWidget-background) !important;
+    font-size: var(--vscode-font-size) !important;
+}

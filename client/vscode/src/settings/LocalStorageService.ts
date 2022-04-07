@@ -22,3 +22,4 @@ export class LocalStorageService {
 export const SELECTED_SEARCH_CONTEXT_SPEC_KEY = 'selected-search-context-spec'
 export const INSTANCE_VERSION_NUMBER_KEY = 'sourcegraphVersionNumber'
 export const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
+export const DISMISS_CTA_KEY = 'sourcegraphDismissCta'
