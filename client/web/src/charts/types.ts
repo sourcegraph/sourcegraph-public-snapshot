@@ -30,15 +30,15 @@ export interface Series<Datum> {
     dataKey: keyof Datum
 
     /**
-     * Link for data series point. It may be used to make datum points with links
-     * instead of plain visual svg elements.
-     */
-    getLinkURL?: (datum: Datum) => string | undefined
-
-    /**
      * The name of the line shown in the legend and tooltip
      */
     name: string
+
+    /**
+     * Link for data series point. It may be used to make datum points with links
+     * instead of plain visual svg elements.
+     */
+    getLinkURL?: (datum: Datum, index: number) => string | undefined
 
     /**
      * The CSS color of the series. If color wasn't provided the default (gray) color
