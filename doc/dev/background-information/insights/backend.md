@@ -208,7 +208,7 @@ installations `Searcher` service.
 
 ### (5) Query-time and rendering!
 
-The webapp frontend invokes a GraphQL API which is served by the Sourcegraph `frontend` monolith backend service in order to query information about backend insights. ([cpde](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/+lang:go+InsightConnectionResolver&patternType=literal))
+The webapp frontend invokes a GraphQL API which is served by the Sourcegraph `frontend` monolith backend service in order to query information about backend insights. ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/+lang:go+InsightConnectionResolver&patternType=literal))
 
 1. A GraphQL resolver `insightViewResolver` returns all the distinct data series in a single insight (UI panel) ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type+insightViewResolver+struct&patternType=literal))
 2. A [resolver is selected](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/resolvers/insight_view_resolvers.go?L98-118) depending on the type of series, and whether or not dynamic search results need to be expanded.
@@ -434,31 +434,8 @@ INSERT INTO series_points(
 
 You can omit all of the `*repo*` fields (nullable) if you want to store a data point describing a global (associated with no repository) series of data.
 
-##### Inserting fake generated data points
-
-TimescaleDB has a `generate_series` function you can use like this to insert one data point every 15 days for the last year:
-
-```
-INSERT INTO series_points(
-    series_id,
-    time,
-    value,
-    metadata_id,
-    repo_id,
-    repo_name_id,
-    original_repo_name_id)
-SELECT time,
-    "my unique test series ID",
-    random()*80 - 40,
-    (SELECT id FROM metadata WHERE metadata = '{"hello": "world", "languages": ["Go", "Python", "Java"]}'),
-    2,
-    (SELECT id FROM repo_names WHERE name = 'github.com/gorilla/mux-renamed'),
-    (SELECT id FROM repo_names WHERE name = 'github.com/gorilla/mux-original')
-    FROM generate_series(TIMESTAMP '2020-01-01 00:00:00', TIMESTAMP '2021-01-01 00:00:00', INTERVAL '15 day') AS time;
-```
-
 ## Creating DB migrations
 
-`migrations/codeinsights` in the root of this repository contains the migrations for the Code Insights Timescale database, they are executed when the frontend starts up (as is the same with e.g. codeintel DB migrations.)
+`migrations/codeinsights` in the root of this repository contains the migrations for the Code Insights database, they are executed when the frontend starts up (as is the same with e.g. codeintel DB migrations.)
 
 Currently, the migration process blocks `frontend` and `worker` startup - which is one issue [we will need to solve](https://github.com/sourcegraph/sourcegraph/issues/18388).
