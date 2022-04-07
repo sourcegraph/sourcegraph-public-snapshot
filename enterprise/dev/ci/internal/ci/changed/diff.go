@@ -50,6 +50,14 @@ func ParseDiff(files []string) (diff Diff) {
 		if strings.HasSuffix(p, "dev/ci/go-test.sh") {
 			diff |= Go
 		}
+		// most go code lives in these top level directories. A PR could just
+		// mutate test data or embedded files, so we treat any change as a go
+		// change.
+		for _, dir := range []string{"cmd", "enterprise", "internal", "lib", "migrations", "monitoring", "schema"} {
+			if strings.HasPrefix(p, dir+"/") {
+				diff |= Go
+			}
+		}
 
 		// Client
 		if !strings.HasSuffix(p, ".md") && (isRootClientFile(p) || strings.HasPrefix(p, "client/")) {
