@@ -1,7 +1,7 @@
 import { ApolloCache, ApolloClient, ApolloQueryResult, gql } from '@apollo/client'
 import { from, Observable, of } from 'rxjs'
 import { map, mapTo, switchMap } from 'rxjs/operators'
-import { LineChartContent } from 'sourcegraph'
+import { LineChartContent as LegacyLineChartContent } from 'sourcegraph'
 import {
     AddInsightViewToDashboardResult,
     DeleteDashboardResult,
@@ -36,6 +36,7 @@ import {
     InsightUpdateInput,
     RemoveInsightFromDashboardInput,
     PieChartContent,
+    LineChartContent,
 } from '../code-insights-backend-types'
 import { getRepositorySuggestions } from '../core/api/get-repository-suggestions'
 import { getResolvedSearchRepositories } from '../core/api/get-resolved-search-repositories'
@@ -227,13 +228,28 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         updateDashboard(this.apolloClient, input)
 
     // Live preview fetchers
-    public getSearchInsightContent = (input: GetSearchInsightContentInput): Promise<LineChartContent<any, string>> =>
-        getSearchInsightContent(input.insight)
+    public getSearchInsightContent = (input: GetSearchInsightContentInput): Promise<LineChartContent<any>> =>
+        getSearchInsightContent(input.insight).then(data => {
+            const { data: datumList, series, xAxis } = data
+
+            // TODO: Remove this when the dashboard page has new chart fetchers
+            return {
+                data: datumList,
+                series: series.map(series => ({
+                    dataKey: series.dataKey,
+                    name: series.name ?? '',
+                    color: series.stroke,
+                    getLinkURL: datum => series.linkURLs?.[+datum[xAxis.dataKey]] ?? undefined,
+                })),
+                getXValue: datum => new Date(+datum[xAxis.dataKey]),
+            }
+        })
 
     public getLangStatsInsightContent = (input: GetLangStatsInsightContentInput): Promise<PieChartContent<any>> =>
         getLangStatsInsightContent(input.insight).then(data => {
             const { data: dataList, dataKey, nameKey, fillKey = '', linkURLKey = '' } = data.pies[0]
 
+            // TODO: Remove this when the dashboard page has new chart fetchers
             return {
                 data: dataList,
                 getDatumValue: datum => datum[dataKey],
@@ -243,7 +259,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             }
         })
 
-    public getCaptureInsightContent = (input: CaptureInsightSettings): Promise<LineChartContent<any, string>> =>
+    public getCaptureInsightContent = (input: CaptureInsightSettings): Promise<LegacyLineChartContent<any, string>> =>
         getCaptureGroupInsightsPreview(this.apolloClient, input)
 
     // Repositories API
