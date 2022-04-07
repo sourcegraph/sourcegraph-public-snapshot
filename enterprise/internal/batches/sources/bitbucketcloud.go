@@ -187,8 +187,27 @@ func (s BitbucketCloudSource) CreateComment(ctx context.Context, cs *Changeset, 
 // must attempt a squash merge. Otherwise, it is expected to perform a regular
 // merge. If the changeset cannot be merged, because it is in an unmergeable
 // state, ChangesetNotMergeableError must be returned.
-func (s BitbucketCloudSource) MergeChangeset(ctx context.Context, ch *Changeset, squash bool) error {
-	panic("not implemented") // TODO: Implement
+func (s BitbucketCloudSource) MergeChangeset(ctx context.Context, cs *Changeset, squash bool) error {
+	repo := cs.TargetRepo.Metadata.(*bitbucketcloud.Repo)
+	pr := cs.Metadata.(*bbcs.AnnotatedPullRequest)
+
+	var mergeStrategy *bitbucketcloud.MergeStrategy
+	if squash {
+		ms := bitbucketcloud.MergeStrategySquash
+		mergeStrategy = &ms
+	}
+
+	updated, err := s.client.MergePullRequest(ctx, repo, pr.ID, bitbucketcloud.MergePullRequestOpts{
+		MergeStrategy: mergeStrategy,
+	})
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			return errors.Wrap(err, "merging pull request")
+		}
+		return ChangesetNotMergeableError{ErrorMsg: err.Error()}
+	}
+
+	return s.setChangesetMetadata(ctx, repo, updated, cs)
 }
 
 // GetNamespaceFork returns a repo pointing to a fork of the given repo in
