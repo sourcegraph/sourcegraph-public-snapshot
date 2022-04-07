@@ -26,10 +26,12 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/go-rendezvous"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
@@ -224,6 +226,10 @@ type Client interface {
 	// it goes by calling onMatches with each set of results it receives in
 	// response.
 	Search(_ context.Context, _ *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error)
+
+	// DiffPath returns a position-ordered slice of changes (additions or deletions)
+	// of the given path between the given source and target commits.
+	DiffPath(ctx context.Context, repo api.RepoName, sourceCommit, targetCommit, path string, checker authz.SubRepoPermissionChecker) ([]*diff.Hunk, error)
 }
 
 func (c *ClientImplementor) Addrs() []string {

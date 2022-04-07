@@ -5,12 +5,15 @@ import (
 	"context"
 	"io"
 	"net/mail"
+	"os"
 	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/go-diff/diff"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -218,3 +221,31 @@ func checkSpecArgSafety(spec string) error {
 // tree /dev/null`, which is used as the base when computing the `git diff` of
 // the root commit.
 const DevNullSHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+
+func (c *ClientImplementor) DiffPath(ctx context.Context, repo api.RepoName, sourceCommit, targetCommit, path string, checker authz.SubRepoPermissionChecker) ([]*diff.Hunk, error) {
+	a := actor.FromContext(ctx)
+	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, path); err != nil {
+		return nil, err
+	} else if !hasAccess {
+		return nil, os.ErrNotExist
+	}
+	reader, err := c.execReader(ctx, repo, []string{"diff", sourceCommit, targetCommit, "--", path})
+	if err != nil {
+		return nil, err
+	}
+	defer reader.Close()
+
+	output, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+	if len(output) == 0 {
+		return nil, nil
+	}
+
+	d, err := diff.NewFileDiffReader(bytes.NewReader(output)).Read()
+	if err != nil {
+		return nil, err
+	}
+	return d.Hunks, nil
+}
