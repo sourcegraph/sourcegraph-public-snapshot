@@ -39,6 +39,8 @@ $ make
 $ make install # may require extra privileges depending on where to install
 ```
 
+The installation will place the binaries in `/where/you/want/bin/`. Make sure the `bin` directory is on your `$Path`.
+
 `--program-prefix=universal-` ensures that ctags will be picked up by Zoekt just like it would in production. Note that
 the binary name "universal-ctags" is treated differently in Zoekt. Setting the environment
 variable `CTAGS_COMMAND=ctags` might lead to different results because Zoekt won't
