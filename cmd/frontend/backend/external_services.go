@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -42,4 +43,22 @@ func CheckOrgExternalServices(ctx context.Context, db database.DB, orgID int32) 
 	}
 
 	return errors.New("organization code host connections are not enabled")
+}
+
+// OrgExternalServicesQuotaReached checks if the maximum mumber of external services has been
+// reached for a given org. This is currenlty used only for Cloud orgs.
+func OrgExternalServicesQuotaReached(ctx context.Context, db database.DB, orgID int32) (bool, error) {
+	externalServicesAllowed := []string{extsvc.KindGitHub, extsvc.KindGitLab}
+	options := database.ExternalServicesListOptions{NamespaceOrgID: orgID, Kinds: externalServicesAllowed}
+
+	totalUsed, err := db.ExternalServices().Count(ctx, options)
+	if err != nil {
+		return true, err
+	}
+
+	if totalUsed == extsvc.MaxCodeHostsForCloudOrgs {
+		return true, errors.Errorf("maximum number of external servcies has been reached for organization %v ", orgID)
+	}
+
+	return false, nil
 }

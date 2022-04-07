@@ -581,3 +581,5 @@ func UniqueCodeHostIdentifier(kind, config string) (string, error) {
 
 	return NormalizeBaseURL(u).String(), nil
 }
+
+const MaxCodeHostsForCloudOrgs = 2
