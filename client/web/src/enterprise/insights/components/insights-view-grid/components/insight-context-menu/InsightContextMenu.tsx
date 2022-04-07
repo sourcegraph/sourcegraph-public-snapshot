@@ -17,7 +17,6 @@ export interface InsightCardMenuProps {
     dashboard: InsightDashboard | null
     zeroYAxisMin: boolean
     menuButtonClassName?: string
-    onDelete: (insightID: string) => void
     onToggleZeroYAxisMin?: () => void
 }
 
@@ -25,9 +24,12 @@ export interface InsightCardMenuProps {
  * Renders context menu (three dots menu) for particular insight card.
  */
 export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> = props => {
-    const { insight, dashboard, zeroYAxisMin, menuButtonClassName, onDelete, onToggleZeroYAxisMin = noop } = props
+    const { insight, dashboard, zeroYAxisMin, menuButtonClassName, onToggleZeroYAxisMin = noop } = props
 
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
+
+    const { delete: handleDelete } = useDeleteInsight()
     const { remove: handleRemove } = useRemoveInsightFromDashboard()
 
     const { insight: insightPermissions } = useUiFeatures()
@@ -109,7 +111,7 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
 
                             <MenuItem
                                 data-testid="insight-context-menu-delete-button"
-                                onSelect={() => onDelete(insightID)}
+                                onSelect={() => setShowDeleteConfirm(true)}
                                 className={styles.item}
                             >
                                 Delete
@@ -118,6 +120,17 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
                     </>
                 )}
             </Menu>
+            <ConfirmationModal
+                showModal={showDeleteConfirm}
+                handleCancel={() => setShowDeleteConfirm(false)}
+                handleConfirmation={() => handleDelete(insight)}
+                header="Delete Insight?"
+                message={
+                    <>
+                        Are you sure you want to delete the insight <strong>{insight.title}</strong>?
+                    </>
+                }
+            />
             <ConfirmationModal
                 showModal={showRemoveConfirm}
                 handleCancel={() => setShowRemoveConfirm(false)}

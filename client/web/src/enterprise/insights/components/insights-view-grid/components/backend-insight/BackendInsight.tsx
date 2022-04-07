@@ -165,7 +165,6 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
                             menuButtonClassName="ml-1 d-inline-flex"
                             zeroYAxisMin={zeroYAxisMin}
                             onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
-                            onDelete={() => setShowDeleteConfirm(true)}
                         />
                     </>
                 )}
