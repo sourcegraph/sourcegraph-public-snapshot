@@ -149,7 +149,7 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
             <AxisLeft
                 ref={yAxisReference}
                 scale={yScale}
-                width={width}
+                width={outerWidth}
                 height={height}
                 top={margin.top}
                 left={margin.left}
