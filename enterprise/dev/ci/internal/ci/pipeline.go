@@ -200,24 +200,24 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 		ops.Merge(imageBuildOps)
 
-		// // Trivy security scans
-		// imageScanOps := operations.NewNamedSet("Image security scans")
-		// for _, dockerImage := range images.SourcegraphDockerImages {
-		// 	imageScanOps.Append(trivyScanCandidateImage(dockerImage, c.candidateImageTag()))
-		// }
-		// ops.Merge(imageScanOps)
+		// Trivy security scans
+		imageScanOps := operations.NewNamedSet("Image security scans")
+		for _, dockerImage := range images.SourcegraphDockerImages {
+			imageScanOps.Append(trivyScanCandidateImage(dockerImage, c.candidateImageTag()))
+		}
+		ops.Merge(imageScanOps)
 
-		// // Core tests
-		// ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
-		// 	ChromaticShouldAutoAccept: c.RunType.Is(runtype.MainBranch),
-		// 	MinimumUpgradeableVersion: minimumUpgradeableVersion,
-		// }))
+		// Core tests
+		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
+			ChromaticShouldAutoAccept: c.RunType.Is(runtype.MainBranch),
+			MinimumUpgradeableVersion: minimumUpgradeableVersion,
+		}))
 
-		// // Integration tests
-		// ops.Merge(operations.NewNamedSet("Integration tests",
-		// 	backendIntegrationTests(c.candidateImageTag()),
-		// 	codeIntelQA(c.candidateImageTag()),
-		// ))
+		// Integration tests
+		ops.Merge(operations.NewNamedSet("Integration tests",
+			backendIntegrationTests(c.candidateImageTag()),
+			codeIntelQA(c.candidateImageTag()),
+		))
 		// End-to-end tests
 		ops.Merge(operations.NewNamedSet("End-to-end tests",
 			serverE2E(c.candidateImageTag()),
