@@ -40,6 +40,7 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
     const location = useLocation()
     const query = new URLSearchParams(location.search)
     const invitedBy = query.get('invitedBy')
+    const returnTo = getReturnTo(location)
 
     useEffect(() => {
         eventLogger.logViewEvent('SignUp', null, false)
@@ -54,7 +55,6 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
     }, [invitedBy, authenticatedUser, context.allowSignup])
 
     if (authenticatedUser) {
-        const returnTo = getReturnTo(location)
         return <Redirect to={returnTo} />
     }
 
@@ -63,7 +63,6 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
     }
 
     let newUserFromEmailInvitation = false
-    const returnTo = getReturnTo(location)
     if (context.sourcegraphDotComMode && returnTo.includes('/organizations/invitation/')) {
         newUserFromEmailInvitation = true
     }
@@ -89,7 +88,7 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
             if (context.experimentalFeatures.enablePostSignupFlow && !newUserFromEmailInvitation) {
                 window.location.replace(new URL(maybeAddPostSignUpRedirect(), window.location.href).pathname)
             } else {
-                window.location.replace(getReturnTo(location))
+                window.location.replace(returnTo)
             }
 
             return Promise.resolve()
