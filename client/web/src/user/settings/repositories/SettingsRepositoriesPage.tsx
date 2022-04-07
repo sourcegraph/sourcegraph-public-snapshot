@@ -338,7 +338,6 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                     orgDisplayName={owner.name}
                 />
             )}
-            {!isUserOwner && authenticatedUser && org && org.viewerNeedsCodeHostUpdate && <OrgUserNeedsGithubUpgrade />}
             <PageTitle title="Your repositories" />
             <PageHeader
                 headingElement="h2"
@@ -403,7 +402,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 }
                 className="mb-3"
             />
-            {authenticatedUser && authenticatedUser.viewerNeedsCodeHostUpgrade && <OrgUserNeedsGithubUpgrade />}
+            {authenticatedUser?.viewerNeedsCodeHostUpgrade && <OrgUserNeedsGithubUpgrade />}
             {isErrorLike(status) ? (
                 <h3 className="text-muted">Sorry, we couldn’t fetch your repositories. Try again?</h3>
             ) : !externalServices ? (
