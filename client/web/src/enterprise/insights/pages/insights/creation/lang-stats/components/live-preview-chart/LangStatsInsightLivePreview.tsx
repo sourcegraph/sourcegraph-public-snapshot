@@ -1,6 +1,5 @@
 import React from 'react'
 
-import classNames from 'classnames'
 import RefreshIcon from 'mdi-react/RefreshIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -48,7 +47,7 @@ export const LangStatsInsightLivePreview: React.FunctionComponent<LangStatsInsig
     const { loading, dataOrError, update } = useLangStatsPreviewContent({ disabled, previewSetting })
 
     return (
-        <aside className={classNames(className)}>
+        <aside className={className}>
             <Button variant="icon" disabled={disabled} onClick={update}>
                 Live preview <RefreshIcon size="1rem" />
             </Button>
