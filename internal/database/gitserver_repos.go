@@ -350,7 +350,7 @@ WHERE r.name IN (%s)
 		return nil, err
 	}
 
-	repos := []*types.GitserverRepo{}
+	repos := make([]*types.GitserverRepo, 0, len(names))
 
 	for rows.Next() {
 		repo, err := scanSingleGitserverRepo(rows)
