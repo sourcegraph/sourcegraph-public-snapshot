@@ -138,10 +138,8 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                     <MenuButton
                         ref={menuButtonRef}
                         variant="link"
-                        className={classNames(
-                            'd-flex align-items-center text-decoration-none test-user-nav-item-toggle',
-                            styles.menuButton
-                        )}
+                        data-testid="user-nav-item-toggle"
+                        className={classNames('d-flex align-items-center text-decoration-none', styles.menuButton)}
                     >
                         <div className="position-relative">
                             <div className="align-items-center d-flex">
@@ -201,7 +199,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                                     aria-label=""
                                     isCustomStyle={true}
                                     selectSize="sm"
-                                    selectClassName="test-theme-toggle"
+                                    data-testid="theme-toggle"
                                     onChange={onThemeChange}
                                     value={props.themePreference}
                                     className="mb-0 flex-1"

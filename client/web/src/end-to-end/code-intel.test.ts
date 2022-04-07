@@ -1,61 +1,35 @@
 import expect from 'expect'
 import { sortBy } from 'lodash'
 import { describe, test, before, beforeEach, after } from 'mocha'
-import MockDate from 'mockdate'
 
-import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import { afterEachRecordCoverage } from '@sourcegraph/shared/src/testing/coverage'
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
 
-const { gitHubDotComToken, sourcegraphBaseUrl } = getConfig('gitHubDotComToken', 'sourcegraphBaseUrl')
+import { cloneRepos } from './utils/cloneRepos'
+import { initEndToEndTest } from './utils/initEndToEndTest'
+
+const { sourcegraphBaseUrl } = getConfig('gitHubDotComToken', 'sourcegraphBaseUrl')
 
 describe('e2e test suite', () => {
     let driver: Driver
 
     before(async function () {
-        // Cloning the repositories takes ~1 minute, so give initialization 2
-        // minutes instead of 1 (which would be inherited from
-        // `jest.setTimeout(1 * 60 * 1000)` above).
-        this.timeout(5 * 60 * 1000)
+        driver = await initEndToEndTest()
 
-        // Reset date mocking
-        MockDate.reset()
-
-        const config = getConfig('headless', 'slowMo', 'testUserPassword')
-
-        // Start browser
-        driver = await createDriverForTest({
-            sourcegraphBaseUrl,
-            logBrowserConsole: true,
-            ...config,
-        })
-        const clonedRepoSlugs = [
-            'sourcegraph/java-langserver',
-            'gorilla/mux',
-            'gorilla/securecookie',
-            'sourcegraph/jsonrpc2',
-            'sourcegraph/go-diff',
-            'sourcegraph/appdash',
-            'sourcegraph/sourcegraph-typescript',
-            'sourcegraph-testing/automation-e2e-test',
-            'sourcegraph/e2e-test-private-repository',
-        ]
-        const alwaysCloningRepoSlugs = ['sourcegraphtest/AlwaysCloningTest']
-        await driver.ensureLoggedIn({ username: 'test', password: config.testUserPassword, email: 'test@test.com' })
-        await driver.resetUserSettings()
-        await driver.ensureHasExternalService({
-            kind: ExternalServiceKind.GITHUB,
-            displayName: 'test-test-github',
-            config: JSON.stringify({
-                url: 'https://github.com',
-                token: gitHubDotComToken,
-                repos: clonedRepoSlugs.concat(alwaysCloningRepoSlugs),
-            }),
-            ensureRepos: clonedRepoSlugs.map(slug => `github.com/${slug}`),
-            alwaysCloning: alwaysCloningRepoSlugs.map(slug => `github.com/${slug}`),
+        await cloneRepos({
+            driver,
+            mochaContext: this,
+            repoSlugs: [
+                'sourcegraph/java-langserver',
+                'gorilla/mux',
+                'sourcegraph/jsonrpc2',
+                'sourcegraph/go-diff',
+                'sourcegraph/appdash',
+                'sourcegraph/sourcegraph-typescript',
+            ],
         })
     })
 
@@ -82,44 +56,6 @@ describe('e2e test suite', () => {
             (selector: string) => document.querySelector<HTMLAnchorElement>(selector)?.click(),
             selector
         )
-
-    describe('Visual tests', () => {
-        test('Repositories list', async () => {
-            await driver.page.goto(sourcegraphBaseUrl + '/site-admin/repositories?query=gorilla%2Fmux')
-            await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
-        })
-
-        test('Site admin overview', async () => {
-            await driver.page.goto(sourcegraphBaseUrl + '/site-admin')
-            await driver.page.waitForSelector('.test-site-admin-overview-menu', { visible: true })
-            await driver.page.waitForSelector('.test-product-certificate', { visible: true })
-        })
-    })
-
-    describe('Theme switcher', () => {
-        // Issue to fix: https://github.com/sourcegraph/sourcegraph/issues/25949
-        test.skip('changes the theme', async () => {
-            await driver.page.goto(sourcegraphBaseUrl + '/github.com/gorilla/mux/-/blob/mux.go')
-            await driver.page.waitForSelector('.theme.theme-dark, .theme.theme-light', { visible: true })
-
-            const getActiveThemeClasses = (): Promise<string[]> =>
-                driver.page.evaluate(() =>
-                    [...document.querySelector('.theme')!.classList].filter(className => className.startsWith('theme-'))
-                )
-
-            expect(await getActiveThemeClasses()).toHaveLength(1)
-            await driver.page.waitForSelector('.test-user-nav-item-toggle')
-            await driver.page.click('.test-user-nav-item-toggle')
-
-            // Switch to dark
-            await driver.page.select('.test-theme-toggle', 'dark')
-            expect(await getActiveThemeClasses()).toEqual(expect.arrayContaining(['theme-dark']))
-
-            // Switch to light
-            await driver.page.select('.test-theme-toggle', 'light')
-            expect(await getActiveThemeClasses()).toEqual(expect.arrayContaining(['theme-light']))
-        })
-    })
 
     describe('Repository component', () => {
         const blobTableSelector = '.test-blob > table'
@@ -648,8 +584,9 @@ describe('e2e test suite', () => {
                         )
                     })
                 })
-                // TODO re-enable once flake is identified @frontend-platform team
+
                 describe('find references', () => {
+                    // TODO re-enable once flake is identified @code-intel team
                     test.skip('opens widget and fetches local references', async () => {
                         // this.timeout(120000)
 
