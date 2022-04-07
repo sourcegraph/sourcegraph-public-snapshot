@@ -120,9 +120,7 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
                             </Badge>
                         )}
                         {stat}
-                        <Link to={{ ...location, hash: anchor }} className={classNames('ml-2', styles.headerPath)}>
-                            {path}
-                        </Link>
+                        <span className={classNames('ml-2', styles.headerPath)}>{path}</span>
                     </div>
                     <div className={styles.headerActions}>
                         {/* We only have a 'view' component for GitBlobs, but not for `VirtualFile`s. */}
