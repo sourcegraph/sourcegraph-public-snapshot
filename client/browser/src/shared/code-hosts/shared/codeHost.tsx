@@ -1030,7 +1030,7 @@ export async function handleCodeHost({
                         distinctUntilChanged()
                     ),
                     from(getContext()),
-                    observeUserSettingsURL(requestGraphQL),
+                    observeUserSettingsURL(requestGraphQL).pipe(startWith(undefined)),
                 ]).subscribe(([repoExistsOrError, mount, showSignInButton, context, userSettingsURL]) => {
                     render(
                         <ViewOnSourcegraphButton
@@ -1039,11 +1039,10 @@ export async function handleCodeHost({
                             context={context}
                             minimalUI={minimalUI}
                             sourcegraphURL={sourcegraphURL}
-                            userSettingsURL={buildManageRepositoriesURL(
-                                sourcegraphURL,
-                                userSettingsURL,
-                                context.rawRepoName
-                            )}
+                            userSettingsURL={
+                                userSettingsURL &&
+                                buildManageRepositoriesURL(sourcegraphURL, userSettingsURL, context.rawRepoName)
+                            }
                             repoExistsOrError={repoExistsOrError}
                             showSignInButton={showSignInButton}
                             // The bound function is constant
