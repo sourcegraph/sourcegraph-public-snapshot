@@ -27,3 +27,15 @@ repo:^gigarepo$ type:diff   author:camden before:"february 1 2021"
 
 # giga_commit_small
 repo:^gigarepo$ type:commit author:camden before:"february 1 2021"
+
+# mono_literal_small
+repo:^gigarepo$ patterntype:literal --exclude-task=test
+
+# mono_rev_literal_small
+repo:^gigarepo$ patterntype:literal --exclude-task=test rev:main
+
+# mono_literal_large
+repo:^gigarepo$ patterntype:literal lang:go -file:vendor/ count:1000 TempDir
+
+# mono_rev_literal_large
+repo:^gigarepo$ patterntype:literal lang:go -file:vendor/ count:1000 TempDir rev:main
