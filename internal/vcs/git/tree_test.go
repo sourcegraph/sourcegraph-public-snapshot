@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 func TestRepository_FileSystem_Symlinks(t *testing.T) {
@@ -76,7 +77,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 
 	// Check symlinks are links
 	for symlink := range symlinks {
-		fi, err := lStat(ctx, db, authz.DefaultSubRepoPermsChecker, repo, commitID, symlink)
+		fi, err := gitserver.LStat(ctx, db, authz.DefaultSubRepoPermsChecker, repo, commitID, symlink)
 		if err != nil {
 			t.Fatalf("fs.lStat(%s): %s", symlink, err)
 		}
@@ -88,7 +89,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 
 	// Also check the FileInfo returned by ReadDir to ensure it's
 	// consistent with the FileInfo returned by lStat.
-	entries, err := ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, repo, commitID, ".", false)
+	entries, err := gitserver.ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, repo, commitID, ".", false)
 	if err != nil {
 		t.Fatalf("fs.ReadDir(.): %s", err)
 	}
@@ -188,7 +189,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// dir1 should contain one entry: file1.
-		dir1Entries, err := ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "dir1", false)
+		dir1Entries, err := gitserver.ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "dir1", false)
 		if err != nil {
 			t.Errorf("%s: fs1.ReadDir(dir1): %s", label, err)
 			continue
@@ -209,7 +210,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// dir2 should not exist
-		_, err = ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "dir2", false)
+		_, err = gitserver.ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "dir2", false)
 		if !os.IsNotExist(err) {
 			t.Errorf("%s: fs1.ReadDir(dir2): should not exist: %s", label, err)
 			continue
@@ -273,7 +274,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// root should have 2 entries: dir1 and file 2.
-		rootEntries, err := ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, test.second, ".", false)
+		rootEntries, err := gitserver.ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, test.second, ".", false)
 		if err != nil {
 			t.Errorf("%s: fs2.ReadDir(.): %s", label, err)
 			continue
@@ -290,7 +291,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// dir1 should still only contain one entry: file1.
-		dir1Entries, err = ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, test.second, "dir1", false)
+		dir1Entries, err = gitserver.ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, test.second, "dir1", false)
 		if err != nil {
 			t.Errorf("%s: fs1.ReadDir(dir1): %s", label, err)
 			continue
@@ -304,7 +305,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// rootEntries should be empty for third commit
-		rootEntries, err = ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, test.third, ".", false)
+		rootEntries, err = gitserver.ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, test.third, ".", false)
 		if err != nil {
 			t.Errorf("%s: fs3.ReadDir(.): %s", label, err)
 			continue
@@ -358,7 +359,7 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		entries, err := ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, commitID, ".", false)
+		entries, err := gitserver.ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, commitID, ".", false)
 		if err != nil {
 			t.Errorf("%s: fs.ReadDir(.): %s", label, err)
 			continue
@@ -433,7 +434,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 			if mode := submod.Mode(); mode&ModeSubmodule == 0 {
 				t.Errorf("%s: submod.Mode(): got %o, want & ModeSubmodule (%o) != 0", label, mode, ModeSubmodule)
 			}
-			si, ok := submod.Sys().(Submodule)
+			si, ok := submod.Sys().(gitdomain.Submodule)
 			if !ok {
 				t.Errorf("%s: submod.Sys(): got %v, want Submodule", label, si)
 			}
@@ -453,7 +454,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 			continue
 		}
 		checkSubmoduleFileInfo(label+" (Stat)", submod)
-		entries, err := ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, commitID, ".", false)
+		entries, err := gitserver.ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, commitID, ".", false)
 		if err != nil {
 			t.Errorf("%s: fs.ReadDir(.): %s", label, err)
 			continue
