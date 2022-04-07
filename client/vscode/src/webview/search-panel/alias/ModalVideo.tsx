@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { extensionCoreAPI } from '..'
+import { useWebviewPageContext } from '../../platform/context'
 
 import styles from './ModalVideo.module.scss'
 
@@ -29,6 +29,8 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
     className,
     assetsRoot = '',
 }) => {
+    const { extensionCoreAPI } = useWebviewPageContext()
+
     const onClick = (): void => {
         onToggle?.(false)
         extensionCoreAPI.openLink(src).catch(error => {

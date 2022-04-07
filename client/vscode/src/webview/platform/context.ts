@@ -1,3 +1,5 @@
+import { createContext, useContext } from 'react'
+
 import * as Comlink from 'comlink'
 import { print } from 'graphql'
 import { BehaviorSubject, from, Observable } from 'rxjs'
@@ -75,4 +77,17 @@ export interface WebviewPageProps {
     authenticatedUser: AuthenticatedUser | null
     settingsCascade: SettingsCascadeOrError
     instanceURL: string
+}
+
+// Webview page context. Used to pass to aliased components.
+export const WebviewPageContext = createContext<WebviewPageProps | undefined>(undefined)
+
+export function useWebviewPageContext(): WebviewPageProps {
+    const context = useContext(WebviewPageContext)
+
+    if (context === undefined) {
+        throw new Error('useWebviewPageContext must be used within a WebviewPageContextProvider')
+    }
+
+    return context
 }

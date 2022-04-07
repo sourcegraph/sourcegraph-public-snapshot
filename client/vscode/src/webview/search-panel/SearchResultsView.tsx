@@ -23,7 +23,6 @@ import { SearchResultsState } from '../../state'
 import { WebviewPageProps } from '../platform/context'
 
 import { fetchSearchContexts } from './alias/fetchSearchContext'
-import { ModalVideo } from './alias/ModalVideo'
 import { setFocusSearchBox } from './api'
 import { SearchBetaIcon } from './components/icons'
 import { SavedSearchCreateForm } from './components/SavedSearchForm'
@@ -379,7 +378,6 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                             // TODO "no results" video thumbnail assets
                             // In build, copy ui/assets/img folder to dist/
                             assetsRoot="https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/ui/assets"
-                            ModalVideo={ModalVideo}
                         />
                     </MatchHandlersContext.Provider>
                 </div>

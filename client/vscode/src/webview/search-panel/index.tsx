@@ -20,7 +20,7 @@ import {
 
 import { ExtensionCoreAPI } from '../../contract'
 import { createEndpointsForWebToNode } from '../comlink/webviewEndpoint'
-import { createPlatformContext, WebviewPageProps } from '../platform/context'
+import { createPlatformContext, WebviewPageContext, WebviewPageProps } from '../platform/context'
 import { adaptMonacoThemeToEditorTheme } from '../theming/monacoTheme'
 import { adaptSourcegraphThemeToEditorTheme } from '../theming/sourcegraphTheme'
 
@@ -96,17 +96,23 @@ const Main: React.FC = () => {
 
     // Render SearchHomeView until the user submits a search.
     if (state.context.submittedSearchQueryState === null) {
-        return <SearchHomeView {...webviewPageProps} context={state.context} />
+        return (
+            <WebviewPageContext.Provider value={webviewPageProps}>
+                <SearchHomeView {...webviewPageProps} context={state.context} />
+            </WebviewPageContext.Provider>
+        )
     }
 
     return (
-        <SearchResultsView
-            {...webviewPageProps}
-            context={{
-                ...state.context,
-                submittedSearchQueryState: state.context.submittedSearchQueryState,
-            }}
-        />
+        <WebviewPageContext.Provider value={webviewPageProps}>
+            <SearchResultsView
+                {...webviewPageProps}
+                context={{
+                    ...state.context,
+                    submittedSearchQueryState: state.context.submittedSearchQueryState,
+                }}
+            />
+        </WebviewPageContext.Provider>
     )
 }
 

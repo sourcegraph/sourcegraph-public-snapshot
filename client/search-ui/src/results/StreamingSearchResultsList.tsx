@@ -34,8 +34,6 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { ModalVideo as DefaultModalVideo } from '../documentation/ModalVideo'
-
 import { NoResultsPage } from './NoResultsPage'
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
 import { useItemsToShow } from './use-items-to-show'
@@ -73,13 +71,6 @@ export interface StreamingSearchResultsListProps
      * Classname to be applied to the container of a search result.
      */
     resultClassName?: string
-    ModalVideo?: typeof DefaultModalVideo
-    /**
-     * Called when a search result is selected.
-     * If it is a file match search result, it is called
-     * with the index of the selected match.
-     */
-    onResultSelect?: (result: SearchMatch, matchIndex?: number) => void
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearchResultsListProps> = ({
@@ -102,8 +93,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     openMatchesInNewTab,
     executedQuery,
     resultClassName,
-    ModalVideo,
-    onResultSelect,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
@@ -118,20 +107,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
         [telemetryService]
     )
 
-    const onSelect = useCallback(
-        (
-            result: SearchMatch,
-            resultIndex: number,
-            type: string,
-            /** Index of the selected file match within a file match search result. */
-            matchIndex?: number
-        ) => {
-            logSearchResultClicked(resultIndex, type)
-            onResultSelect?.(result, matchIndex)
-        },
-        [logSearchResultClicked, onResultSelect]
-    )
-
     const renderResult = useCallback(
         (result: SearchMatch, index: number): JSX.Element => {
             switch (result.type) {
@@ -144,7 +119,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             telemetryService={telemetryService}
                             icon={getFileMatchIcon(result)}
                             result={result}
-                            onSelect={matchIndex => onSelect(result, index, 'fileMatch', matchIndex)}
+                            onSelect={() => logSearchResultClicked(index, 'fileMatch')}
                             expanded={false}
                             showAllMatches={false}
                             allExpanded={allExpanded}
@@ -164,7 +139,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             result={result}
                             repoName={result.repository}
                             platformContext={platformContext}
-                            onSelect={() => onSelect(result, index, 'commit')}
+                            onSelect={() => logSearchResultClicked(index, 'commit')}
                             openInNewTab={openMatchesInNewTab}
                             containerClassName={resultClassName}
                         />
@@ -176,7 +151,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             result={result}
                             repoName={result.repository}
                             platformContext={platformContext}
-                            onSelect={() => onSelect(result, index, 'repo')}
+                            onSelect={() => logSearchResultClicked(index, 'repo')}
                             containerClassName={resultClassName}
                         />
                     )
@@ -185,7 +160,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
         [
             location,
             telemetryService,
-            onSelect,
+            logSearchResultClicked,
             allExpanded,
             fetchHighlightedFileLineRanges,
             settingsCascade,
@@ -231,7 +206,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                                 telemetryService={telemetryService}
                                 showSearchContext={showSearchContext}
                                 assetsRoot={assetsRoot}
-                                ModalVideo={ModalVideo}
                             />
                         )}
                     </>
