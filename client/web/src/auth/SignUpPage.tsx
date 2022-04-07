@@ -83,7 +83,8 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
                 return response.text().then(text => Promise.reject(new Error(text)))
             }
 
-            // if sign up is successful and enablePostSignupFlow feature is ON -
+            // if sign up is successful and enablePostSignupFlow feature is ON
+            // and user is not signing up from an email invitation to join an org -
             // redirect user to the /post-sign-up page
             if (context.experimentalFeatures.enablePostSignupFlow && !newUserFromEmailInvitation) {
                 window.location.replace(new URL(maybeAddPostSignUpRedirect(), window.location.href).pathname)
