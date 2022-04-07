@@ -2,7 +2,6 @@ package git
 
 import (
 	"context"
-	"io"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -46,28 +45,6 @@ func execSafe(ctx context.Context, db database.DB, repo api.RepoName, params []s
 		err = nil // the error must just indicate that the exit code was nonzero
 	}
 	return stdout, stderr, exitCode, err
-}
-
-// execReader executes an arbitrary `git` command (`git [args...]`) and returns a
-// reader connected to its stdout.
-//
-// execReader should NOT be exported. We want to limit direct git calls to this
-// package.
-func execReader(ctx context.Context, db database.DB, repo api.RepoName, args []string) (io.ReadCloser, error) {
-	if Mocks.ExecReader != nil {
-		return Mocks.ExecReader(args)
-	}
-
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: ExecReader")
-	span.SetTag("args", args)
-	defer span.Finish()
-
-	if !gitdomain.IsAllowedGitCmd(args) {
-		return nil, errors.Errorf("command failed: %v is not a allowed git command", args)
-	}
-	cmd := gitserver.NewClient(db).Command("git", args...)
-	cmd.Repo = repo
-	return gitserver.StdoutReader(ctx, cmd)
 }
 
 // checkSpecArgSafety returns a non-nil err if spec begins with a "-", which

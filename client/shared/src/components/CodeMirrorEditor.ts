@@ -55,9 +55,3 @@ export function useCodeMirror(
 
     return view
 }
-
-export function elementIsInput(element: HTMLElement): boolean {
-    return (
-        element.nodeName === 'INPUT' || element.nodeName === 'TEXTAREA' || !!element.closest('[contenteditable=true]')
-    )
-}

@@ -91,11 +91,12 @@ exports[`GlobalNavbar default 1`] = `
                 </span>
               </a>
               <button
-                aria-controls="menu--1"
+                aria-controls=""
                 aria-haspopup="true"
+                aria-label="Show search menu"
                 class="btn navDropdownIconButton itemFocusable"
                 data-reach-menu-button=""
-                id="menu-button--menu"
+                id="menu-button-2"
                 type="button"
               >
                 <span
@@ -349,11 +350,12 @@ exports[`GlobalNavbar low-profile 1`] = `
                 </span>
               </a>
               <button
-                aria-controls="menu--3"
+                aria-controls=""
                 aria-haspopup="true"
+                aria-label="Show search menu"
                 class="btn navDropdownIconButton itemFocusable"
                 data-reach-menu-button=""
-                id="menu-button--menu--3"
+                id="menu-button-4"
                 type="button"
               >
                 <span

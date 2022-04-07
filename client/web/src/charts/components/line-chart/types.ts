@@ -2,10 +2,10 @@ export interface Point<D> {
     id: string
     seriesKey: string
     value: number
-    color: string
+    time: Date
     x: number
     y: number
     datum: D
-    originalDatum: D
     linkUrl?: string
+    color: string
 }

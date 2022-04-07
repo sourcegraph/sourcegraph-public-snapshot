@@ -68,6 +68,6 @@
     // Code needs to be smaller than 100% so it scrolls correctly
     &--side-blob-code {
         // Subtract the space taken up by the filename
-        height: calc(100% - #{$references-filter-height + $references-token-height});
+        height: calc(100% - #{$references-filter-height});
     }
 }

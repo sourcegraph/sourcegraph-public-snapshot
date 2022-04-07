@@ -52,7 +52,7 @@ export const PageHeader: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <header className={classNames(styles.container, className)}>
+        <div className={classNames(styles.container, className)}>
             <div>
                 {annotation && <small className={styles.annotation}>{annotation}</small>}
                 <HeadingX className={styles.heading}>
@@ -70,6 +70,6 @@ export const PageHeader: React.FunctionComponent<Props> = ({
                 {description && <p className={styles.description}>{description}</p>}
             </div>
             {actions && <div className={styles.actions}>{actions}</div>}
-        </header>
+        </div>
     )
 }

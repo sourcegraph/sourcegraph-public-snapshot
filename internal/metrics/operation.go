@@ -28,7 +28,7 @@ func (m *REDMetrics) Observe(secs, count float64, err *error, lvals ...string) {
 	}
 
 	if err != nil && *err != nil {
-		m.Errors.WithLabelValues(lvals...).Add(1)
+		m.Errors.WithLabelValues(lvals...).Inc()
 	} else {
 		m.Duration.WithLabelValues(lvals...).Observe(secs)
 		m.Count.WithLabelValues(lvals...).Add(count)

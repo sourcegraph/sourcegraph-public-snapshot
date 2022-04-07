@@ -3,7 +3,7 @@ import React from 'react'
 export interface SeriesLikeChart<Datum> {
     data: Datum[]
     series: Series<Datum>[]
-    xAxisKey: keyof Datum
+    getXValue: (datum: Datum) => Date
     stacked?: boolean
 
     /**

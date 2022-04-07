@@ -3768,6 +3768,15 @@ type GitCommit implements Node {
     """
     externalURLs: [ExternalLink!]!
     """
+    The Git tree or blob in this commit at the given path.
+    """
+    path(
+        """
+        The path of the tree or blob.
+        """
+        path: String = ""
+    ): GitTreeOrBlob
+    """
     The Git tree in this commit at the given path.
     """
     tree(
@@ -3847,6 +3856,11 @@ type GitCommit implements Node {
         includePatterns: [String!]
     ): SymbolConnection!
 }
+
+"""
+Either a git tree or blob.
+"""
+union GitTreeOrBlob = GitTree | GitBlob
 
 """
 A set of Git behind/ahead counts for one commit relative to another.
