@@ -1,5 +1,51 @@
+const { createReadStream, createWriteStream } = require('fs')
+const { pipeline } = require('stream')
+const { promisify } = require('util')
+const { createGzip, unzip, deflate } = require('zlib')
+
 const { readdir, readFile } = require('mz/fs')
 const shelljs = require('shelljs')
+
+const pipe = promisify(pipeline)
+
+const findRecordingPath = async path => {
+  const content = await readdir(path)
+
+  if (content.length === 0) {
+    return
+  }
+
+  const recording = content.find(element => element === 'recording.har')
+
+  return recording ? `${path}/${recording}` : findRecordingArchivePath(`${path}/${content[0]}`)
+}
+
+const compress = async (input, output) => {
+  const gzip = createGzip()
+  const source = createReadStream(input)
+  const destination = createWriteStream(output)
+  await pipe(source, gzip, destination)
+}
+
+const compressRecordings = async () => {
+  const folders = await readdir('./src/integration/__fixtures__')
+
+  for (const folder of folders) {
+    const file = await findRecordingPath(`./src/integration/__fixtures__/${folder}`)
+
+    // delete existing recording
+
+    if (file) {
+      try {
+        // console.log(await readFile(file, 'utf-8'))
+        await compress(file, `${file}.gz`)
+      } catch (error) {
+        console.error('An error occurred:', error)
+        process.exitCode = 1
+      }
+    }
+  }
+}
 
 const recordSnapshot = grepValue =>
   shelljs.exec(
@@ -21,11 +67,11 @@ const recordSnapshot = grepValue =>
   for (let index = 0; index < args.length; ++index) {
     if (args[index] === '--grep' && !!args[index + 1]) {
       recordSnapshot(args[index + 1])
-      return
+      return compressRecordings()
     }
     if (args[index].startsWith('--grep=')) {
       recordSnapshot(args.replace('--grep=', ''))
-      return
+      return compressRecordings()
     }
   }
 
@@ -46,6 +92,8 @@ const recordSnapshot = grepValue =>
   for (const testName of testNames) {
     recordSnapshot(testName)
   }
+
+  return compressRecordings()
 })().catch(error => {
   console.log(error)
 })
