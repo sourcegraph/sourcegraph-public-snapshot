@@ -19,6 +19,22 @@ const PORT = 29378
 async function run(): Promise<void> {
     let vscodeProccess: null | { kill: () => void } = null
 
+    function cleanupVSCode(runAfter?: () => void): void {
+        setTimeout(() => {
+            if (vscodeProccess !== null) {
+                vscodeProccess.kill()
+            }
+
+            // eslint-disable-next-line no-void
+            void delay(1000).then(() => {
+                rimraf.sync(userDataDirectory)
+                rimraf.sync(extensionsDirectory)
+
+                runAfter?.()
+            })
+        }, 1000)
+    }
+
     const userDataDirectory = mkdtempSync(join(tmpdir(), 'vsce'))
     const extensionsDirectory = mkdtempSync(join(tmpdir(), 'vsce'))
     try {
@@ -68,11 +84,16 @@ async function run(): Promise<void> {
         // The VSCode extension currently opens two web views, one is the sidebar content and the other the search page.
         // We want to run assertions on the search page.
         const outerFrameHandle = await page.waitForSelector(
-            'iframe:not([name~="webviewview-sourcegraph-searchsidebar"])'
+            // TODO more robust iframe selectors now that it seems name does not use given ID anymore!
+            // Previous selector: 'iframe:not([name~="webviewview-sourcegraph-searchsidebar"])'
+            'div[data-parent-flow-to-element-id^="webview-editor-element"] > iframe'
         )
         if (outerFrameHandle === null) {
             throw new Error('Could not find Sourcegraph search page iframe handle')
         }
+        // TODO Try again using last iframe as fallback.
+        // Assumption: last iframe is search page.
+
         const outerFrame = await outerFrameHandle.contentFrame()
         if (outerFrame === null) {
             throw new Error('Could not find Sourcegraph search page iframe')
@@ -96,22 +117,11 @@ async function run(): Promise<void> {
         }
 
         console.log('+++ Test successful')
+        cleanupVSCode()
     } catch (error) {
         console.error('--- Failed to run tests')
         console.error(error)
-        process.exit(1)
-    } finally {
-        setTimeout(() => {
-            if (vscodeProccess !== null) {
-                vscodeProccess.kill()
-            }
-
-            // eslint-disable-next-line no-void
-            void delay(1000).then(() => {
-                rimraf.sync(userDataDirectory)
-                rimraf.sync(extensionsDirectory)
-            })
-        }, 1000)
+        cleanupVSCode(() => process.exit(1))
     }
 }
 
