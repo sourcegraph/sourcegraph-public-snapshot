@@ -12,6 +12,7 @@ interface GetGraphqlClientOptions {
     headers: RequestInit['headers']
     isAuthenticated: boolean
     baseUrl?: string
+    credentials?: 'include' | 'omit' | 'same-origin'
 }
 
 export type GraphQLClient = ApolloClient<NormalizedCacheObject>
@@ -25,7 +26,7 @@ const getApolloPersistCacheKey = (isAuthenticated: boolean): string =>
 
 export const getGraphQLClient = once(
     async (options: GetGraphqlClientOptions): Promise<GraphQLClient> => {
-        const { headers, baseUrl, isAuthenticated } = options
+        const { headers, baseUrl, isAuthenticated, credentials } = options
         const uri = buildGraphQLUrl({ baseUrl })
 
         const persistor = new CachePersistor({
@@ -72,6 +73,7 @@ export const getGraphQLClient = once(
                 createHttpLink({
                     uri: ({ operationName }) => `${uri}?${operationName}`,
                     headers,
+                    credentials,
                 }),
             ]),
         })
