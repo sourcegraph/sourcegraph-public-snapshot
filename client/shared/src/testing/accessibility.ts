@@ -47,7 +47,10 @@ export const ACCESSIBILITY_AUDIT_IGNORE_CLASS = '.a11y-ignore'
  */
 export async function accessibilityAudit(page: Page, config: AccessibilityAuditConfiguration = {}): Promise<void> {
     const { options, mode = 'fail' } = config
-    const axe = new AxePuppeteer(page).exclude(ACCESSIBILITY_AUDIT_IGNORE_CLASS)
+    const axe = new AxePuppeteer(page)
+        .exclude(ACCESSIBILITY_AUDIT_IGNORE_CLASS)
+        // https://github.com/microsoft/monaco-editor/issues/2448
+        .exclude('.monaco-status')
 
     if (options) {
         axe.options(options)

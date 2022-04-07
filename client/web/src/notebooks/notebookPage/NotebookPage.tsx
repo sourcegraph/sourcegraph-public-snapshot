@@ -203,7 +203,7 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
                                 <FeedbackBadge status="beta" feedback={{ mailto: 'support@sourcegraph.com' }} />
                             }
                             path={[
-                                { icon: MagnifyIcon, to: '/search' },
+                                { icon: MagnifyIcon, to: '/search', ariaLabel: 'Code search' },
                                 { to: '/notebooks', text: 'Notebooks' },
                                 {
                                     text: (

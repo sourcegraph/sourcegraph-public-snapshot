@@ -159,7 +159,7 @@ const NotebookSettingsDropdown: React.FunctionComponent<NotebookSettingsDropdown
     return (
         <>
             <Menu>
-                <MenuButton outline={true}>
+                <MenuButton outline={true} aria-label="Notebook action">
                     <DotsHorizontalIcon />
                 </MenuButton>
                 <MenuList position={Position.bottomEnd}>
