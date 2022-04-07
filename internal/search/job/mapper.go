@@ -119,6 +119,8 @@ func (m *Mapper) Map(job Job) Job {
 		return j
 
 	case *repoPagerJob:
+		child := m.Map(j.child)
+		j.child = child
 		if m.MapRepoPagerJob != nil {
 			j = m.MapRepoPagerJob(j)
 		}

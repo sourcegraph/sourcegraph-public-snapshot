@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/workerdb"
-	batchesjanitor "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches/janitor"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches"
 	batchesmigrations "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches/migrations"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel"
 	codeintelmigrations "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/migrations"
@@ -35,15 +35,19 @@ func main() {
 	go setAuthzProviders()
 
 	additionalJobs := map[string]job.Job{
-		"codeintel-commitgraph":     codeintel.NewCommitGraphJob(),
-		"codeintel-janitor":         codeintel.NewJanitorJob(),
-		"codeintel-auto-indexing":   codeintel.NewIndexingJob(),
-		"codehost-version-syncing":  versions.NewSyncingJob(),
-		"insights-job":              workerinsights.NewInsightsJob(),
-		"insights-query-runner-job": workerinsights.NewInsightsQueryRunnerJob(),
-		"batches-janitor":           batchesjanitor.NewJanitorJob(),
-		"executors-janitor":         executors.NewJanitorJob(),
-		"codemonitors-job":          codemonitors.NewCodeMonitorJob(),
+		"codeintel-commitgraph":      codeintel.NewCommitGraphJob(),
+		"codeintel-janitor":          codeintel.NewJanitorJob(),
+		"codeintel-auto-indexing":    codeintel.NewIndexingJob(),
+		"codehost-version-syncing":   versions.NewSyncingJob(),
+		"insights-job":               workerinsights.NewInsightsJob(),
+		"insights-query-runner-job":  workerinsights.NewInsightsQueryRunnerJob(),
+		"batches-janitor":            batches.NewJanitorJob(),
+		"batches-scheduler":          batches.NewSchedulerJob(),
+		"batches-reconciler":         batches.NewReconcilerJob(),
+		"batches-bulk-processor":     batches.NewBulkOperationProcessorJob(),
+		"batches-workspace-resolver": batches.NewWorkspaceResolverJob(),
+		"executors-janitor":          executors.NewJanitorJob(),
+		"codemonitors-job":           codemonitors.NewCodeMonitorJob(),
 	}
 
 	shared.Start(additionalJobs, registerEnterpriseMigrations)

@@ -353,6 +353,10 @@ func (r *RepositoryResolver) CodeIntelligenceCommitGraph(ctx context.Context) (C
 	return EnterpriseResolvers.codeIntelResolver.CommitGraph(ctx, r.ID())
 }
 
+func (r *RepositoryResolver) CodeIntelSummary(ctx context.Context) (CodeIntelRepositorySummaryResolver, error) {
+	return EnterpriseResolvers.codeIntelResolver.RepositorySummary(ctx, r.ID())
+}
+
 func (r *RepositoryResolver) PreviewGitObjectFilter(ctx context.Context, args *PreviewGitObjectFilterArgs) ([]GitObjectFilterPreviewResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.PreviewGitObjectFilter(ctx, r.ID(), args)
 }

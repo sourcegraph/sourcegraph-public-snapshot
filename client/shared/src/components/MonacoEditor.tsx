@@ -8,6 +8,7 @@ import { map, distinctUntilChanged } from 'rxjs/operators'
 
 import { KeyboardShortcut } from '../keyboardShortcuts'
 import { ThemeProps } from '../theme'
+import { isInputElement } from '../util/dom'
 
 const SOURCEGRAPH_LIGHT = 'sourcegraph-light'
 const SOURCEGRAPH_DARK = 'sourcegraph-dark'
@@ -300,11 +301,7 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
     }
 
     private focusInput = (): void => {
-        if (
-            this.editor &&
-            !!document.activeElement &&
-            !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)
-        ) {
+        if (this.editor && !!document.activeElement && !isInputElement(document.activeElement)) {
             this.editor.focus()
         }
     }

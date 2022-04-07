@@ -286,9 +286,9 @@ func externalServiceValidate(ctx context.Context, req protocol.ExternalServiceSy
 var mockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
 
 func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (result *protocol.RepoLookupResult, err error) {
-	// Sourcegraph.com: this is on the user path, do not block for ever if codehost is being
-	// bad. Ideally block before cloudflare 504s the request (1min).
-	// Other: we only speak to our database, so response should be in a few ms.
+	// Sourcegraph.com: this is on the user path, do not block forever if codehost is
+	// being bad. Ideally block before cloudflare 504s the request (1min). Other: we
+	// only speak to our database, so response should be in a few ms.
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 

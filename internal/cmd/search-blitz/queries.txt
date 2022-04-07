@@ -52,6 +52,14 @@ type:diff repo:^github\.com/sourcegraph/sourcegraph$ author:camden before:"febru
 # commit_small
 type:commit repo:^github\.com/sourcegraph/sourcegraph$ author:camden before:"february 1 2021"
 
+# and_regex
+patterntype:regexp \beven\b and \bintelligence\b and \bdream\b and \bsimplest\b
+
+# or_regex
+patterntype:regexp \bdeadbeeeeef\b or \bdeadbeeeeeef\b or \bdeadBEEEEEF\b or \bdeadbeeeeef\b or \bdeadbeeeeeef\b or \bdeadBEEEEEF\b or \bdoResults\b
+
+# or_literal_simple
+patterntype:literal readUInt16LE or readUInt8
 
 ## mono_ queries cherry-pick the above queries but are run on our synthetic
 ## monorepo. The queries specifying rev: will use the latest commit, not just
@@ -81,20 +89,18 @@ repo:^github\.com/sgtest/megarepo$ type:diff   author:camden before:"february 1 
 # mono_commit_small
 repo:^github\.com/sgtest/megarepo$ type:commit author:camden before:"february 1 2021"
 
-# literal_small_select_repo
-patterntype:literal --exclude-task=test select:repo
+# mono_literal_small
+repo:^github\.com/sgtest/megarepo$ patterntype:literal --exclude-task=test
 
-# literal_large_select_repo
-patterntype:literal lang:go -file:vendor/ count:1000 cfssl select:repo
+# mono_rev_literal_small
+repo:^github\.com/sgtest/megarepo$ patterntype:literal --exclude-task=test rev:main
 
-# and_regex
-patterntype:regexp \beven\b and \bintelligence\b and \bdream\b and \bsimplest\b
+# mono_literal_large
+repo:^github\.com/sgtest/megarepo$ patterntype:literal lang:go -file:vendor/ count:1000 TempDir
 
-# or_regex
-patterntype:regexp \bdeadbeeeeef\b or \bdeadbeeeeeef\b or \bdeadBEEEEEF\b or \bdeadbeeeeef\b or \bdeadbeeeeeef\b or \bdeadBEEEEEF\b or \bdoResults\b
+# mono_rev_literal_large
+repo:^github\.com/sgtest/megarepo$ patterntype:literal lang:go -file:vendor/ count:1000 TempDir rev:main
 
-# or_literal_simple
-patterntype:literal readUInt16LE or readUInt8
 
 ## incremental_ queries consist of standard queries that run against two versions of
 ## sourcegraph/sourcegraph that use different indexing strategies:

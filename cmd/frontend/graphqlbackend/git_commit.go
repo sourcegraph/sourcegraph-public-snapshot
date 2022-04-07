@@ -207,22 +207,18 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	Path      string
 	Recursive bool
 }) (*GitTreeEntryResolver, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "commit.tree")
-	defer span.Finish()
-	span.SetTag("path", args.Path)
-
-	stat, err := git.Stat(ctx, r.db, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), args.Path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
+	treeEntry, err := r.path(ctx, args.Path, func(stat fs.FileInfo) error {
+		if !stat.Mode().IsDir() {
+			return errors.Errorf("not a directory: %q", args.Path)
 		}
+
+		return nil
+	})
+	if err != nil {
 		return nil, err
 	}
-	if !stat.Mode().IsDir() {
-		return nil, errors.Errorf("not a directory: %q", args.Path)
-	}
 
-	treeEntry := NewGitTreeEntryResolver(r.db, r, stat)
+	// Note: args.Recursive is deprecated
 	treeEntry.isRecursive = args.Recursive
 	return treeEntry, nil
 }
@@ -230,23 +226,44 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 	Path string
 }) (*GitTreeEntryResolver, error) {
-	stat, err := git.Stat(ctx, r.db, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), args.Path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
+	return r.path(ctx, args.Path, func(stat fs.FileInfo) error {
+		if mode := stat.Mode(); !(mode.IsRegular() || mode.Type()&fs.ModeSymlink != 0) {
+			return errors.Errorf("not a blob: %q", args.Path)
 		}
-		return nil, err
-	}
-	if mode := stat.Mode(); !(mode.IsRegular() || mode.Type()&fs.ModeSymlink != 0) {
-		return nil, errors.Errorf("not a blob: %q", args.Path)
-	}
-	return NewGitTreeEntryResolver(r.db, r, stat), nil
+
+		return nil
+	})
 }
 
 func (r *GitCommitResolver) File(ctx context.Context, args *struct {
 	Path string
 }) (*GitTreeEntryResolver, error) {
 	return r.Blob(ctx, args)
+}
+
+func (r *GitCommitResolver) Path(ctx context.Context, args *struct {
+	Path string
+}) (*GitTreeEntryResolver, error) {
+	return r.path(ctx, args.Path, func(_ fs.FileInfo) error { return nil })
+}
+
+func (r *GitCommitResolver) path(ctx context.Context, path string, validate func(fs.FileInfo) error) (*GitTreeEntryResolver, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "commit.path")
+	defer span.Finish()
+	span.SetTag("path", path)
+
+	stat, err := git.Stat(ctx, r.db, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	if err := validate(stat); err != nil {
+		return nil, err
+	}
+
+	return NewGitTreeEntryResolver(r.db, r, stat), nil
 }
 
 func (r *GitCommitResolver) FileNames(ctx context.Context) ([]string, error) {

@@ -248,12 +248,35 @@
           }
         },
         "coolCodeIntel": {
-          "description": "Use the (cool) experimental reference panel for code intelligence",
+          "description": "Use the (cool) experimental reference panel for code intelligence.",
           "type": "boolean",
           "default": false,
           "!go": {
             "pointer": true
           }
+        },
+        "codeIntelRepositoryBadge": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Show the code intelligence badge when viewing a repository.",
+              "type": "boolean",
+              "default": false,
+              "!go": {
+                "pointer": true
+              }
+            },
+            "forNerds": {
+              "description": "Show entirely too much information.",
+              "type": "boolean",
+              "default": false,
+              "!go": {
+                "pointer": true
+              }
+            }
+          },
+          "required": ["enabled"],
+          "additionalProperties": false
         },
         "showCodeMonitoringLogs": {
           "description": "Shows code monitoring logs tab.",

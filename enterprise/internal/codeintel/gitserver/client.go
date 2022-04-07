@@ -163,7 +163,7 @@ func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (_ map[api
 // CommitGraph returns the commit graph for the given repository as a mapping from a commit
 // to its parents. If a commit is supplied, the returned graph will be rooted at the given
 // commit. If a non-zero limit is supplied, at most that many commits will be returned.
-func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts git.CommitGraphOptions) (_ *gitdomain.CommitGraph, err error) {
+func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts gitserver.CommitGraphOptions) (_ *gitdomain.CommitGraph, err error) {
 	ctx, endObservation := c.operations.commitGraph.With(ctx, &err, observation.Args{
 		LogFields: append([]log.Field{log.Int("repositoryID", repositoryID)}, opts.LogFields()...),
 	})
@@ -174,7 +174,7 @@ func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts git.Com
 		return nil, err
 	}
 
-	g, err := git.CommitGraph(ctx, c.db, repo, opts)
+	g, err := gitserver.NewClient(c.db).CommitGraph(ctx, repo, opts)
 	if err == nil {
 		return g, nil
 	}

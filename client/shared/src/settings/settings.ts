@@ -28,6 +28,10 @@ export interface Settings {
         fuzzyFinderCaseInsensitiveFileCountThreshold?: number
         clientSearchResultRanking?: string
         coolCodeIntel?: boolean
+        codeIntelRepositoryBadge?: {
+            enabled: boolean
+            forNerds?: boolean
+        }
     }
     [key: string]: any
 

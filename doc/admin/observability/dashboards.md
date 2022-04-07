@@ -4400,11 +4400,11 @@ Query: `histogram_quantile(0.95, sum(rate(src_gitserver_janitor_job_duration_sec
 
 <br />
 
-#### gitserver: repos_removed
+#### gitserver: janitor_job_failures
 
-<p class="subtitle">Repositories removed due to disk pressure</p>
+<p class="subtitle">Failures over 5m (by job)</p>
 
-Repositories removed due to disk pressure
+the rate of failures over 5m (by job)
 
 This panel has no related alerts.
 
@@ -4415,7 +4415,70 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10022
 <details>
 <summary>Technical details</summary>
 
+Query: `sum by (job_name) (rate(src_gitserver_janitor_job_duration_seconds_count{success="false"}[5m]))`
+
+</details>
+
+<br />
+
+#### gitserver: repos_removed
+
+<p class="subtitle">Repositories removed due to disk pressure</p>
+
+Repositories removed due to disk pressure
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100230` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
 Query: `sum by (instance) (rate(src_gitserver_repos_removed_disk_pressure[5m]))`
+
+</details>
+
+<br />
+
+#### gitserver: sg_maintenance_reason
+
+<p class="subtitle">Successful sg maintenance jobs over 1h (by reason)</p>
+
+the rate of successful sg maintenance jobs and the reason why they were triggered
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100240` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (reason) (rate(src_gitserver_maintenance_status{success="true"}[1h]))`
+
+</details>
+
+<br />
+
+#### gitserver: git_prune_skipped
+
+<p class="subtitle">Successful git prune jobs over 1h</p>
+
+the rate of successful git prune jobs over 1h and whether they were skipped
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100250` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (skipped) (rate(src_gitserver_prune_status{success="true"}[1h]))`
 
 </details>
 
@@ -5695,7 +5758,7 @@ To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100300`
 <details>
 <summary>Technical details</summary>
 
-Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^(pgsql|codeintel-db).*"}[1d])`
+Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^(pgsql|codeintel-db|codeinsights-db).*"}[1d])`
 
 </details>
 
@@ -5714,7 +5777,7 @@ To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100301`
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(pgsql|codeintel-db).*"}[1d])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(pgsql|codeintel-db|codeinsights-db).*"}[1d])`
 
 </details>
 
@@ -5733,7 +5796,7 @@ To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100310`
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^(pgsql|codeintel-db).*"}[5m])`
+Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^(pgsql|codeintel-db|codeinsights-db).*"}[5m])`
 
 </details>
 
@@ -5752,7 +5815,7 @@ To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100311`
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(pgsql|codeintel-db).*"}[5m])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(pgsql|codeintel-db|codeinsights-db).*"}[5m])`
 
 </details>
 
@@ -5773,7 +5836,7 @@ To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100400`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(app) (up{app=~".*(pgsql|codeintel-db)"}) / count by (app) (up{app=~".*(pgsql|codeintel-db)"}) * 100`
+Query: `sum by(app) (up{app=~".*(pgsql|codeintel-db|codeinsights-db)"}) / count by (app) (up{app=~".*(pgsql|codeintel-db|codeinsights-db)"}) * 100`
 
 </details>
 
