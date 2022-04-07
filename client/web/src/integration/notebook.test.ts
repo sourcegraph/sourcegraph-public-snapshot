@@ -704,7 +704,8 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
 
     it('Should highlight the top visible heading in the outline', async () => {
         const fillerText = 'Lorem ipsum dolor sit amet. '.repeat(256)
-        const markdownInput = `# Title 1\n\n${fillerText}\n# Title 2\n\n${fillerText}\n`
+        // HTML should not affect heading ids.
+        const markdownInput = `# Title <i>1</i>\n\n${fillerText}\n# Title <i>2</i>\n\n${fillerText}\n`
 
         testContext.overrideGraphQL({
             ...commonSearchGraphQLResults,
@@ -730,7 +731,8 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
 
     it('Should scroll to the heading specified in the hash on page load', async () => {
         const fillerText = 'Lorem ipsum dolor sit amet. '.repeat(256)
-        const markdownInput = `# Title 1\n\n${fillerText}\n# Title 2\n\n${fillerText}\n`
+        // HTML should not affect heading ids.
+        const markdownInput = `# Title <i>1</i>\n\n${fillerText}\n# Title <i>2</i>\n\n${fillerText}\n`
 
         testContext.overrideGraphQL({
             ...commonSearchGraphQLResults,

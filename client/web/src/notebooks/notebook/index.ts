@@ -80,7 +80,7 @@ export class NotebookHeadingMarkdownRenderer extends Renderer {
         slugger: marked.Slugger
     ): string {
         const headerPrefix = this.options.headerPrefix ?? ''
-        const slug = slugger.slug(text)
+        const slug = slugger.slug(raw)
         const headingId = `${slug}-${headerPrefix}`
         return `<h${level} id="${headingId}">
             <a class="notebook-markdown-heading-link" href="#${headingId}">#</a>

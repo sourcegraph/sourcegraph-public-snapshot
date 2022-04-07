@@ -49,9 +49,9 @@
     flex: 3;
     min-width: #{$viewport-lg};
     max-width: #{$viewport-xl};
+    padding: 0 1rem;
 
     @media (--lg-breakpoint-down) {
         min-width: 0;
-        padding: 0 1rem;
     }
 }

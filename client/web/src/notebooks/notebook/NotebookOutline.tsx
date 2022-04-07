@@ -4,10 +4,12 @@ import classNames from 'classnames'
 // We're using marked import here to access the `marked` package type definitions.
 // eslint-disable-next-line no-restricted-imports
 import { marked, Slugger } from 'marked'
+import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import ReactDOM from 'react-dom'
 
 import { markdownLexer } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/wildcard'
+import { Button, Icon, Link } from '@sourcegraph/wildcard'
 
 import { Block, MarkdownBlock } from '..'
 
@@ -23,6 +25,7 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
     ({ notebookElement, outlineContainerElement, blocks }) => {
         const scrollableContainer = useRef<HTMLDivElement>(null)
         const [visibleHeadings, setVisibleHeadings] = useState<string[]>([])
+        const [isOpen, setIsOpen] = useState(true)
 
         const headings = useMemo(
             () =>
@@ -120,9 +123,35 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
             scrollableContainer.current.scrollTo({ top, behavior: 'smooth' })
         }, [highlightedHeading])
 
+        if (!isOpen) {
+            return ReactDOM.createPortal(
+                <div className={classNames(styles.outline, styles.outlineClosed)}>
+                    <div className={styles.title}>
+                        <Button
+                            onClick={() => setIsOpen(true)}
+                            className={styles.toggleOutlineButton}
+                            aria-label="Open Outline panel"
+                        >
+                            <Icon as={ChevronRightIcon} size="sm" />
+                        </Button>
+                    </div>
+                </div>,
+                outlineContainerElement
+            )
+        }
+
         return ReactDOM.createPortal(
             <div className={styles.outline}>
-                <div className={styles.title}>Outline</div>
+                <div className={styles.title}>
+                    <Button
+                        onClick={() => setIsOpen(false)}
+                        className={styles.toggleOutlineButton}
+                        aria-label="Close Outline panel"
+                    >
+                        <Icon as={ChevronLeftIcon} size="sm" />
+                    </Button>
+                    <span>Outline</span>
+                </div>
                 <div className={styles.scrollableContainer} ref={scrollableContainer}>
                     {headings.map(heading => (
                         <div
@@ -135,7 +164,11 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
                             )}
                             data-test-highlighted={highlightedHeading === heading.id}
                         >
-                            <Link className={classNames(styles.headingLink)} to={`#${heading.id}`}>
+                            <Link
+                                className={classNames(styles.headingLink)}
+                                to={`#${heading.id}`}
+                                data-tooltip={heading.text}
+                            >
                                 {highlightedHeading === heading.id && (
                                     <span className={styles.highlightDot}>&middot;</span>
                                 )}
