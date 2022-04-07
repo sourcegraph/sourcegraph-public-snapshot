@@ -48,7 +48,7 @@ func NewMockCommitStore() *MockCommitStore {
 			},
 		},
 		InsertCommitsFunc: &CommitStoreInsertCommitsFunc{
-			defaultHook: func(context.Context, api.RepoID, []*gitdomain.Commit, string) error {
+			defaultHook: func(context.Context, api.RepoID, []*gitdomain.Commit, time.Time, string) error {
 				return nil
 			},
 		},
@@ -58,7 +58,7 @@ func NewMockCommitStore() *MockCommitStore {
 			},
 		},
 		UpsertMetadataStampFunc: &CommitStoreUpsertMetadataStampFunc{
-			defaultHook: func(context.Context, api.RepoID) (CommitIndexMetadata, error) {
+			defaultHook: func(context.Context, api.RepoID, time.Time) (CommitIndexMetadata, error) {
 				return CommitIndexMetadata{}, nil
 			},
 		},
@@ -80,7 +80,7 @@ func NewStrictMockCommitStore() *MockCommitStore {
 			},
 		},
 		InsertCommitsFunc: &CommitStoreInsertCommitsFunc{
-			defaultHook: func(context.Context, api.RepoID, []*gitdomain.Commit, string) error {
+			defaultHook: func(context.Context, api.RepoID, []*gitdomain.Commit, time.Time, string) error {
 				panic("unexpected invocation of MockCommitStore.InsertCommits")
 			},
 		},
@@ -90,7 +90,7 @@ func NewStrictMockCommitStore() *MockCommitStore {
 			},
 		},
 		UpsertMetadataStampFunc: &CommitStoreUpsertMetadataStampFunc{
-			defaultHook: func(context.Context, api.RepoID) (CommitIndexMetadata, error) {
+			defaultHook: func(context.Context, api.RepoID, time.Time) (CommitIndexMetadata, error) {
 				panic("unexpected invocation of MockCommitStore.UpsertMetadataStamp")
 			},
 		},
@@ -344,24 +344,24 @@ func (c CommitStoreGetMetadataFuncCall) Results() []interface{} {
 // CommitStoreInsertCommitsFunc describes the behavior when the
 // InsertCommits method of the parent MockCommitStore instance is invoked.
 type CommitStoreInsertCommitsFunc struct {
-	defaultHook func(context.Context, api.RepoID, []*gitdomain.Commit, string) error
-	hooks       []func(context.Context, api.RepoID, []*gitdomain.Commit, string) error
+	defaultHook func(context.Context, api.RepoID, []*gitdomain.Commit, time.Time, string) error
+	hooks       []func(context.Context, api.RepoID, []*gitdomain.Commit, time.Time, string) error
 	history     []CommitStoreInsertCommitsFuncCall
 	mutex       sync.Mutex
 }
 
 // InsertCommits delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockCommitStore) InsertCommits(v0 context.Context, v1 api.RepoID, v2 []*gitdomain.Commit, v3 string) error {
-	r0 := m.InsertCommitsFunc.nextHook()(v0, v1, v2, v3)
-	m.InsertCommitsFunc.appendCall(CommitStoreInsertCommitsFuncCall{v0, v1, v2, v3, r0})
+func (m *MockCommitStore) InsertCommits(v0 context.Context, v1 api.RepoID, v2 []*gitdomain.Commit, v3 time.Time, v4 string) error {
+	r0 := m.InsertCommitsFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.InsertCommitsFunc.appendCall(CommitStoreInsertCommitsFuncCall{v0, v1, v2, v3, v4, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the InsertCommits method
 // of the parent MockCommitStore instance is invoked and the hook queue is
 // empty.
-func (f *CommitStoreInsertCommitsFunc) SetDefaultHook(hook func(context.Context, api.RepoID, []*gitdomain.Commit, string) error) {
+func (f *CommitStoreInsertCommitsFunc) SetDefaultHook(hook func(context.Context, api.RepoID, []*gitdomain.Commit, time.Time, string) error) {
 	f.defaultHook = hook
 }
 
@@ -369,7 +369,7 @@ func (f *CommitStoreInsertCommitsFunc) SetDefaultHook(hook func(context.Context,
 // InsertCommits method of the parent MockCommitStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *CommitStoreInsertCommitsFunc) PushHook(hook func(context.Context, api.RepoID, []*gitdomain.Commit, string) error) {
+func (f *CommitStoreInsertCommitsFunc) PushHook(hook func(context.Context, api.RepoID, []*gitdomain.Commit, time.Time, string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -378,19 +378,19 @@ func (f *CommitStoreInsertCommitsFunc) PushHook(hook func(context.Context, api.R
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *CommitStoreInsertCommitsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoID, []*gitdomain.Commit, string) error {
+	f.SetDefaultHook(func(context.Context, api.RepoID, []*gitdomain.Commit, time.Time, string) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *CommitStoreInsertCommitsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, api.RepoID, []*gitdomain.Commit, string) error {
+	f.PushHook(func(context.Context, api.RepoID, []*gitdomain.Commit, time.Time, string) error {
 		return r0
 	})
 }
 
-func (f *CommitStoreInsertCommitsFunc) nextHook() func(context.Context, api.RepoID, []*gitdomain.Commit, string) error {
+func (f *CommitStoreInsertCommitsFunc) nextHook() func(context.Context, api.RepoID, []*gitdomain.Commit, time.Time, string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -434,7 +434,10 @@ type CommitStoreInsertCommitsFuncCall struct {
 	Arg2 []*gitdomain.Commit
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 string
+	Arg3 time.Time
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -443,7 +446,7 @@ type CommitStoreInsertCommitsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c CommitStoreInsertCommitsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this
@@ -566,24 +569,24 @@ func (c CommitStoreSaveFuncCall) Results() []interface{} {
 // UpsertMetadataStamp method of the parent MockCommitStore instance is
 // invoked.
 type CommitStoreUpsertMetadataStampFunc struct {
-	defaultHook func(context.Context, api.RepoID) (CommitIndexMetadata, error)
-	hooks       []func(context.Context, api.RepoID) (CommitIndexMetadata, error)
+	defaultHook func(context.Context, api.RepoID, time.Time) (CommitIndexMetadata, error)
+	hooks       []func(context.Context, api.RepoID, time.Time) (CommitIndexMetadata, error)
 	history     []CommitStoreUpsertMetadataStampFuncCall
 	mutex       sync.Mutex
 }
 
 // UpsertMetadataStamp delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockCommitStore) UpsertMetadataStamp(v0 context.Context, v1 api.RepoID) (CommitIndexMetadata, error) {
-	r0, r1 := m.UpsertMetadataStampFunc.nextHook()(v0, v1)
-	m.UpsertMetadataStampFunc.appendCall(CommitStoreUpsertMetadataStampFuncCall{v0, v1, r0, r1})
+func (m *MockCommitStore) UpsertMetadataStamp(v0 context.Context, v1 api.RepoID, v2 time.Time) (CommitIndexMetadata, error) {
+	r0, r1 := m.UpsertMetadataStampFunc.nextHook()(v0, v1, v2)
+	m.UpsertMetadataStampFunc.appendCall(CommitStoreUpsertMetadataStampFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the UpsertMetadataStamp
 // method of the parent MockCommitStore instance is invoked and the hook
 // queue is empty.
-func (f *CommitStoreUpsertMetadataStampFunc) SetDefaultHook(hook func(context.Context, api.RepoID) (CommitIndexMetadata, error)) {
+func (f *CommitStoreUpsertMetadataStampFunc) SetDefaultHook(hook func(context.Context, api.RepoID, time.Time) (CommitIndexMetadata, error)) {
 	f.defaultHook = hook
 }
 
@@ -591,7 +594,7 @@ func (f *CommitStoreUpsertMetadataStampFunc) SetDefaultHook(hook func(context.Co
 // UpsertMetadataStamp method of the parent MockCommitStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *CommitStoreUpsertMetadataStampFunc) PushHook(hook func(context.Context, api.RepoID) (CommitIndexMetadata, error)) {
+func (f *CommitStoreUpsertMetadataStampFunc) PushHook(hook func(context.Context, api.RepoID, time.Time) (CommitIndexMetadata, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -600,19 +603,19 @@ func (f *CommitStoreUpsertMetadataStampFunc) PushHook(hook func(context.Context,
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *CommitStoreUpsertMetadataStampFunc) SetDefaultReturn(r0 CommitIndexMetadata, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoID) (CommitIndexMetadata, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoID, time.Time) (CommitIndexMetadata, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *CommitStoreUpsertMetadataStampFunc) PushReturn(r0 CommitIndexMetadata, r1 error) {
-	f.PushHook(func(context.Context, api.RepoID) (CommitIndexMetadata, error) {
+	f.PushHook(func(context.Context, api.RepoID, time.Time) (CommitIndexMetadata, error) {
 		return r0, r1
 	})
 }
 
-func (f *CommitStoreUpsertMetadataStampFunc) nextHook() func(context.Context, api.RepoID) (CommitIndexMetadata, error) {
+func (f *CommitStoreUpsertMetadataStampFunc) nextHook() func(context.Context, api.RepoID, time.Time) (CommitIndexMetadata, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -652,6 +655,9 @@ type CommitStoreUpsertMetadataStampFuncCall struct {
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 api.RepoID
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 time.Time
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 CommitIndexMetadata
@@ -663,7 +669,7 @@ type CommitStoreUpsertMetadataStampFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c CommitStoreUpsertMetadataStampFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this

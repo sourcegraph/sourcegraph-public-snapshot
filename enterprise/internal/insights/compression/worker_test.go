@@ -194,8 +194,8 @@ func commit(ref string, commitTime string) *gitdomain.Commit {
 	}
 }
 
-func mockCommits(commits map[string][]*gitdomain.Commit) func(ctx context.Context, db database.DB, name api.RepoName, after time.Time, operation *observation.Operation) ([]*gitdomain.Commit, error) {
-	return func(ctx context.Context, db database.DB, name api.RepoName, after time.Time, operation *observation.Operation) ([]*gitdomain.Commit, error) {
+func mockCommits(commits map[string][]*gitdomain.Commit) func(ctx context.Context, db database.DB, name api.RepoName, after time.Time, batchSize int, operation *observation.Operation) ([]*gitdomain.Commit, error) {
+	return func(ctx context.Context, db database.DB, name api.RepoName, after time.Time, batchSize int, operation *observation.Operation) ([]*gitdomain.Commit, error) {
 		return commits[(string(name))], nil
 	}
 }
