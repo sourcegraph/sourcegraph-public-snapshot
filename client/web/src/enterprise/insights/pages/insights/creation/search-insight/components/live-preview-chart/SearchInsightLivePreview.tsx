@@ -82,6 +82,7 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
                                     type={SeriesBasedChartTypes.Line}
                                     width={parent.width}
                                     height={parent.height}
+                                    data-testid="code-search-insight-live-preview"
                                     {...dataOrError}
                                 />
                             ) : (
