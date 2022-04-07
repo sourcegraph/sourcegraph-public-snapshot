@@ -1177,7 +1177,7 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var buf bytes.Buffer
-		cmd := exec.CommandContext(ctx, "git", "log", "-n", "1", format, string(repoCommit.CommitID))
+		cmd := exec.CommandContext(ctx, "git", "log", "-n", "1", "--name-only", format, string(repoCommit.CommitID))
 		dir.Set(cmd)
 		cmd.Stdout = &buf
 

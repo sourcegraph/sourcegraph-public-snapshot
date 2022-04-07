@@ -585,7 +585,7 @@ func getCommits(ctx context.Context, db database.DB, repoCommits []api.RepoCommi
 			return errors.Wrap(err, "failed to perform git log")
 		}
 
-		wrappedCommits, err := parseCommitLogOutput([]byte(rawResult.Stdout), false)
+		wrappedCommits, err := parseCommitLogOutput([]byte(rawResult.Stdout), true)
 		if err != nil {
 			if ignoreErrors {
 				// Treat as not-found
