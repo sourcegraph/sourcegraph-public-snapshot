@@ -17,12 +17,12 @@ const verbose = process.argv.includes('-v') || process.argv.includes('--verbose'
 const PORT = 29378
 
 async function run(): Promise<void> {
-    let vscodeProccess: null | { kill: () => void } = null
+    let vscodeProcess: null | { kill: () => void } = null
 
     function cleanupVSCode(runAfter?: () => void): void {
         setTimeout(() => {
-            if (vscodeProccess !== null) {
-                vscodeProccess.kill()
+            if (vscodeProcess !== null) {
+                vscodeProcess.kill()
             }
 
             // eslint-disable-next-line no-void
@@ -51,7 +51,7 @@ async function run(): Promise<void> {
 
         await installExtension(extensionPackage, extensionsDirectory)
 
-        vscodeProccess = launchVSC(vscodeExecutablePath, userDataDirectory, extensionsDirectory, PORT)
+        vscodeProcess = launchVSC(vscodeExecutablePath, userDataDirectory, extensionsDirectory, PORT)
 
         const browserURL = `http://127.0.0.1:${PORT}`
         await delay(2000)
@@ -78,36 +78,7 @@ async function run(): Promise<void> {
             throw new Error('Could not find VS Code frontend page')
         }
 
-        await page.waitForSelector('[aria-label="Sourcegraph"]')
-        await page.click('[aria-label="Sourcegraph"]')
-
-        // The VSCode extension currently opens two web views, one is the sidebar content and the other the search page.
-        // We want to run assertions on the search page.
-        const outerFrameHandle = await page.waitForSelector(
-            // TODO more robust iframe selectors now that it seems name does not use given ID anymore!
-            // Previous selector: 'iframe:not([name~="webviewview-sourcegraph-searchsidebar"])'
-            'div[data-parent-flow-to-element-id^="webview-editor-element"] > iframe'
-        )
-        if (outerFrameHandle === null) {
-            throw new Error('Could not find Sourcegraph search page iframe handle')
-        }
-        // TODO Try again using last iframe as fallback.
-        // Assumption: last iframe is search page.
-
-        const outerFrame = await outerFrameHandle.contentFrame()
-        if (outerFrame === null) {
-            throw new Error('Could not find Sourcegraph search page iframe')
-        }
-
-        // The search page web view has another iframe inside it. ¯\_(ツ)_/¯
-        const frameHandle = await outerFrame.waitForSelector('iframe')
-        if (frameHandle === null) {
-            throw new Error('Could not find inner Sourcegraph search page iframe handle')
-        }
-        const frame = await frameHandle.contentFrame()
-        if (frame === null) {
-            throw new Error('Could not find inner Sourcegraph search page iframe')
-        }
+        const frame = await getSearchPanelWebview(page)
 
         const context = await frame.executionContext()
         const textContent: string = await context.evaluate(() => document.body.textContent)
@@ -152,4 +123,65 @@ function launchVSC(executablePath: string, userDataDirectory: string, extensions
 
 function delay(timeout: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, timeout))
+}
+
+/**
+ * The VSCode extension currently opens two web views, one is the sidebar content and the other the search page.
+ * We want to run assertions on the search page.
+ * To be reused for all search panel test cases.
+ *
+ * @param page The VS Code frontend page.
+ * @returns Search panel webview frame.
+ */
+async function getSearchPanelWebview(page: puppeteer.Page): Promise<puppeteer.Frame> {
+    await page.waitForSelector('[aria-label="Sourcegraph"]')
+    await page.click('[aria-label="Sourcegraph"]')
+
+    // In the release of VS Code at the time this test harness was written, there was no
+    // stable unique selector for the search panel webview's outermost iframe ancestor.
+    // Try all iframes, from last to first. Fail when we can't find the search panel webview.
+    const outerFrameHandles = (await page?.$$('div[id^="webview"] iframe')).reverse()
+
+    let searchPanelWebviewFrame: puppeteer.Frame | null = null
+
+    // Throw error for the latest step in which a failure occurred.
+    const errorMessages: string[] = []
+
+    if (outerFrameHandles.length === 0) {
+        errorMessages[0] = 'Could not find Sourcegraph search page iframe handle'
+    }
+
+    for (const outerFrameHandle of outerFrameHandles) {
+        const outerFrame = await outerFrameHandle.contentFrame()
+        if (!outerFrame) {
+            errorMessages[1] = 'Could not find Sourcegraph search page iframe'
+            continue
+        }
+        // The search page web view has another iframe inside it. ¯\_(ツ)_/¯
+        const frameHandle = await outerFrame.waitForSelector('iframe')
+        if (frameHandle === null) {
+            errorMessages[2] = 'Could not find inner Sourcegraph search page iframe handle'
+            continue
+        }
+        const frame = await frameHandle.contentFrame()
+        if (frame === null) {
+            errorMessages[3] = 'Could not find inner Sourcegraph search page iframe'
+            continue
+        }
+        // Determine whether this is the search panel.
+        const context = await frame.executionContext()
+        const textContent: string = await context.evaluate(() => document.body.textContent)
+        if (!textContent.includes('Search your code and 2M+ open source repositories')) {
+            errorMessages[4] = 'Expected page content to contain a specific string'
+            continue
+        }
+        searchPanelWebviewFrame = frame
+        break
+    }
+
+    if (!searchPanelWebviewFrame) {
+        throw new Error(errorMessages.slice(-1)[0])
+    }
+
+    return searchPanelWebviewFrame
 }
