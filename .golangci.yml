@@ -3,7 +3,8 @@ linters:
   disable-all: true
   enable:
     - bodyclose
-    - depguard
+    # Disabled due to flakes: https://github.com/sourcegraph/sourcegraph/issues/33183
+    # - depguard
     - forbidigo
     - gocritic
     - goimports
@@ -15,10 +16,12 @@ linters:
     - typecheck
     - unconvert
     - unused
+    - unparam
+    - exportloopref
 
 linters-settings:
   depguard:
-    list-type: blacklist
+    list-type: denylist
     include-go-root: true
     packages-with-error-message:
       # Deprecated packages
@@ -63,6 +66,7 @@ run:
     - ui
     - vendor
     - node_modules
+    - docker-images/syntax-highlighter
 
   skip-files:
     # Auto-generated with depguard and forbidigo failures

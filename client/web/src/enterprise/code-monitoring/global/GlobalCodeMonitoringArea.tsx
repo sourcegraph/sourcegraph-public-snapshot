@@ -1,4 +1,5 @@
 import React from 'react'
+
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'

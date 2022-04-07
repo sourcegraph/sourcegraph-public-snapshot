@@ -20,11 +20,6 @@ type parser struct {
 	allowErrors bool
 }
 
-// context holds settings active within a given scope during parsing.
-type context struct {
-	field string // name of the field currently in scope (or "")
-}
-
 // Parse parses the input string and returns its parse tree. Returned errors are of
 // type *ParseError, which includes the error position and message.
 //
@@ -38,8 +33,7 @@ type context struct {
 func Parse(input string) (ParseTree, error) {
 	tokens := Scan(input)
 	p := parser{tokens: tokens}
-	ctx := context{field: ""}
-	exprs, err := p.parseExprList(ctx)
+	exprs, err := p.parseExprList()
 	if err != nil {
 		return nil, err
 	}
@@ -51,8 +45,7 @@ func Parse(input string) (ParseTree, error) {
 func ParseAllowingErrors(input string) ParseTree {
 	tokens := Scan(input)
 	p := parser{tokens: tokens, allowErrors: true}
-	ctx := context{field: ""}
-	exprs, err := p.parseExprList(ctx)
+	exprs, err := p.parseExprList()
 	if err != nil {
 		panic(fmt.Sprintf("(bug) error returned by parseExprList despite allowErrors=true (this should never happen): %v", err))
 	}
@@ -85,7 +78,7 @@ func (p *parser) next() Token {
 }
 
 // exprList := {exprSign} | exprSign (sep exprSign)*
-func (p *parser) parseExprList(ctx context) (exprList []*Expr, err error) {
+func (p *parser) parseExprList() (exprList []*Expr, err error) {
 	if p.peek().Type == TokenEOF {
 		return nil, nil
 	}
@@ -100,7 +93,7 @@ func (p *parser) parseExprList(ctx context) (exprList []*Expr, err error) {
 			continue
 		}
 
-		expr, err := p.parseExprSign(ctx)
+		expr, err := p.parseExprSign()
 		if err != nil {
 			return nil, err
 		}
@@ -111,7 +104,7 @@ func (p *parser) parseExprList(ctx context) (exprList []*Expr, err error) {
 }
 
 // exprSign := {"-"} expr
-func (p *parser) parseExprSign(ctx context) (*Expr, error) {
+func (p *parser) parseExprSign() (*Expr, error) {
 	tok := p.next()
 	switch tok.Type {
 	case TokenMinus:
@@ -121,7 +114,7 @@ func (p *parser) parseExprSign(ctx context) (*Expr, error) {
 		p.backup()
 	}
 
-	expr, err := p.parseExpr(ctx)
+	expr, err := p.parseExpr()
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +128,7 @@ func (p *parser) parseExprSign(ctx context) (*Expr, error) {
 }
 
 // expr := exprField | lit | quoted | pattern
-func (p *parser) parseExpr(ctx context) (*Expr, error) {
+func (p *parser) parseExpr() (*Expr, error) {
 	tok := p.next()
 	switch tok.Type {
 	case TokenLiteral:

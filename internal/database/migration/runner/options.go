@@ -1,6 +1,8 @@
 package runner
 
-import "github.com/sourcegraph/sourcegraph/lib/errors"
+import (
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+)
 
 type Options struct {
 	Operations []MigrationOperation
@@ -10,6 +12,17 @@ type Options struct {
 	// same database can be targeted by multiple schemas, we do not hit errors that occur
 	// when trying to install Postgres extensions concurrently (which do not seem txn-safe).
 	Parallel bool
+
+	// UnprivilegedOnly controls whether privileged migrations can run with the current user
+	// credentials, or if an error should be printed so the site admin can apply manulaly the
+	// privileged migration file with a superuser.
+	UnprivilegedOnly bool
+
+	// IgnoreSingleDirtyLog controls whether or not to ignore a dirty database in the specific
+	// case when the _next_ migration application is the only failure. This is meant to enable
+	// a short development loop where the user can re-apply the `up` command without having to
+	// create a dummy migration log to proceed.
+	IgnoreSingleDirtyLog bool
 }
 
 type MigrationOperation struct {
@@ -71,17 +84,17 @@ func desugarRevert(schemaContext schemaContext, operation MigrationOperation) (M
 	// Construct a map from migration version to the number of its children that are also applied
 	counts := make(map[int]int, len(schemaVersion.appliedVersions))
 	for _, version := range schemaVersion.appliedVersions {
-		counts[version] = 0
-	}
-	for _, version := range schemaVersion.appliedVersions {
 		definition, ok := definitions.GetByID(version)
 		if !ok {
-			return MigrationOperation{}, errors.Newf("unknown version %d", version)
+			continue
 		}
 
 		for _, parent := range definition.Parents {
-			counts[parent]++
+			counts[parent] = counts[parent] + 1
 		}
+
+		// Ensure that we have an entry for this definition (but do not modify the count)
+		counts[definition.ID] = counts[definition.ID] + 0
 	}
 
 	// Find applied migrations with no applied children

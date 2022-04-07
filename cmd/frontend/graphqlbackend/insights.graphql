@@ -573,6 +573,11 @@ input LineChartSearchInsightInput {
     The dashboard IDs to associate this insight with once created.
     """
     dashboards: [ID!]
+
+    """
+    The default values for filters and aggregates for this line chart.
+    """
+    viewControls: InsightViewControlsInput
 }
 
 """
@@ -802,6 +807,11 @@ type InsightView implements Node {
     The total number of dashboards on which this insight is referenced. The count is global and disregards permissions.
     """
     dashboardReferenceCount: Int!
+
+    """
+    Represents if this insight is in a frozen state or not. A frozen state is relevant when a license is downgraded and the number of insights exceed the free plan limits.
+    """
+    isFrozen: Boolean!
 }
 
 """

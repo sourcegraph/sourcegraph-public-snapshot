@@ -1,4 +1,5 @@
 import React, { FunctionComponent, useCallback, useState } from 'react'
+
 import { Subject } from 'rxjs'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'

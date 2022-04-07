@@ -21,9 +21,11 @@ type DB interface {
 	Authz() AuthzStore
 	Conf() ConfStore
 	EventLogs() EventLogStore
+	SecurityEventLogs() SecurityEventLogsStore
 	ExternalServices() ExternalServiceStore
 	FeatureFlags() FeatureFlagStore
 	GitserverRepos() GitserverRepoStore
+	GitserverLocalClone() GitserverLocalCloneStore
 	GlobalState() GlobalStateStore
 	Namespaces() NamespaceStore
 	OrgInvitations() OrgInvitationStore
@@ -105,6 +107,10 @@ func (d *db) EventLogs() EventLogStore {
 	return EventLogsWith(d.Store)
 }
 
+func (d *db) SecurityEventLogs() SecurityEventLogsStore {
+	return SecurityEventLogsWith(d.Store)
+}
+
 func (d *db) ExternalServices() ExternalServiceStore {
 	return ExternalServicesWith(d.Store)
 }
@@ -115,6 +121,10 @@ func (d *db) FeatureFlags() FeatureFlagStore {
 
 func (d *db) GitserverRepos() GitserverRepoStore {
 	return NewGitserverReposWith(d.Store)
+}
+
+func (d *db) GitserverLocalClone() GitserverLocalCloneStore {
+	return NewGitserverLocalCloneStoreWith(d.Store)
 }
 
 func (d *db) GlobalState() GlobalStateStore {

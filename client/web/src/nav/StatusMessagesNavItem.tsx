@@ -1,3 +1,5 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual, upperFirst } from 'lodash'
@@ -6,8 +8,6 @@ import CheckboxCircleIcon from 'mdi-react/CheckboxMarkedCircleIcon'
 import CloudOffOutlineIcon from 'mdi-react/CloudOffOutlineIcon'
 import InformationCircleIcon from 'mdi-react/InformationCircleIcon'
 import SyncIcon from 'mdi-react/SyncIcon'
-import React from 'react'
-import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { Observable, Subscription, of } from 'rxjs'
 import { catchError, map, repeatWhen, delay, distinctUntilChanged, switchMap } from 'rxjs/operators'
 
@@ -19,7 +19,7 @@ import {
     CloudSyncIconRefresh,
     CloudCheckIconRefresh,
 } from '@sourcegraph/shared/src/components/icons'
-import { Link, Button } from '@sourcegraph/wildcard'
+import { Button, Link, Popover, PopoverContent, PopoverTrigger, Position, Icon } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../backend/graphql'
 import { CircleDashedIcon } from '../components/CircleDashedIcon'
@@ -400,18 +400,12 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
 
     private renderIcon(): JSX.Element | null {
         if (isErrorLike(this.state.messagesOrError)) {
-            return (
-                <CloudAlertIconRefresh
-                    className="icon-inline-md"
-                    data-tooltip="Sorry, we couldn’t fetch notifications!"
-                />
-            )
+            return <Icon data-tooltip="Sorry, we couldn’t fetch notifications!" as={CloudAlertIconRefresh} size="md" />
         }
 
         if (isNoActivityReason(this.state.messagesOrError)) {
             return (
-                <CloudOffOutlineIcon
-                    className="icon-inline-md"
+                <Icon
                     data-tooltip={
                         this.state.isOpen
                             ? undefined
@@ -419,6 +413,8 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                             ? 'No code host connections'
                             : 'No repositories'
                     }
+                    as={CloudOffOutlineIcon}
+                    size="md"
                 />
             )
         }
@@ -427,24 +423,27 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             this.state.messagesOrError.some(({ type }) => type === 'ExternalServiceSyncError' || type === 'SyncError')
         ) {
             return (
-                <CloudAlertIconRefresh
-                    className="icon-inline-md"
+                <Icon
                     data-tooltip={this.state.isOpen ? undefined : 'Syncing repositories failed!'}
+                    as={CloudAlertIconRefresh}
+                    size="md"
                 />
             )
         }
         if (this.state.messagesOrError.some(({ type }) => type === 'CloningProgress')) {
             return (
-                <CloudSyncIconRefresh
-                    className="icon-inline-md"
+                <Icon
                     data-tooltip={this.state.isOpen ? undefined : 'Cloning repositories...'}
+                    as={CloudSyncIconRefresh}
+                    size="md"
                 />
             )
         }
         return (
-            <CloudCheckIconRefresh
-                className="icon-inline-md"
+            <Icon
                 data-tooltip={this.state.isOpen ? undefined : 'Repositories up-to-date'}
+                as={CloudCheckIconRefresh}
+                size="md"
             />
         )
     }
@@ -475,16 +474,17 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         }
 
         return (
-            <ButtonDropdown
-                isOpen={this.state.isOpen}
-                toggle={this.toggleIsOpen}
-                className="nav-link py-0 px-0 percy-hide chromatic-ignore"
-            >
-                <Button caret={false} nav={true} variant="link" as={DropdownToggle}>
+            <Popover isOpen={this.state.isOpen} onOpenChange={event => this.setState({ isOpen: event.isOpen })}>
+                <PopoverTrigger
+                    className="nav-link py-0 px-0 percy-hide chromatic-ignore"
+                    as={Button}
+                    variant="link"
+                    aria-label={this.state.isOpen ? 'Hide status messages' : 'Show status messages'}
+                >
                     {this.renderIcon()}
-                </Button>
+                </PopoverTrigger>
 
-                <DropdownMenu right={true} className={classNames('p-0', styles.dropdownMenu)}>
+                <PopoverContent position={Position.bottomEnd} className={classNames('p-0', styles.dropdownMenu)}>
                     <div className={styles.dropdownMenuContent}>
                         <small className={classNames('d-inline-block text-muted', styles.sync)}>Code sync status</small>
                         {isErrorLike(this.state.messagesOrError) ? (
@@ -497,8 +497,8 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                             this.renderMessage(this.state.messagesOrError, this.props.user.isSiteAdmin)
                         )}
                     </div>
-                </DropdownMenu>
-            </ButtonDropdown>
+                </PopoverContent>
+            </Popover>
         )
     }
 }

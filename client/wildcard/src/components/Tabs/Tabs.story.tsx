@@ -1,8 +1,9 @@
-import { Meta, Story } from '@storybook/react'
 import React from 'react'
 
+import { Meta, Story } from '@storybook/react'
+
 import brandedStyles from '@sourcegraph/branded/src/global-styles/index.scss'
-import { usePrependStyles } from '@sourcegraph/storybook/src/hooks/usePrependStyles'
+import { usePrependStyles } from '@sourcegraph/storybook'
 
 import { Tabs, Tab, TabList, TabPanel, TabPanels, TabsProps } from '.'
 
@@ -35,12 +36,19 @@ const config: Meta = {
             enableDarkMode: true,
             disableSnapshot: false,
         },
-        design: {
-            type: 'figma',
-            name: 'Figma',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=954%3A5153',
-        },
+        design: [
+            {
+                type: 'figma',
+                name: 'Figma Light',
+                url:
+                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=954%3A5153',
+            },
+            {
+                type: 'figma',
+                name: 'Figma Dark',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=954%3A6125',
+            },
+        ],
     },
     argTypes: {
         size: {

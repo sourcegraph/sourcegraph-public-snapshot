@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
+
+import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -7,10 +8,11 @@ import { Button, LoadingSpinner, Modal, Link } from '@sourcegraph/wildcard'
 
 import { ExternalServiceKind, Scalars } from '../../../graphql-operations'
 
-import styles from './AddCredentialModal.module.scss'
 import { useCreateBatchChangesCredential } from './backend'
 import { CodeHostSshPublicKey } from './CodeHostSshPublicKey'
 import { ModalHeader } from './ModalHeader'
+
+import styles from './AddCredentialModal.module.scss'
 
 export interface AddCredentialModalProps {
     onCancel: () => void
@@ -56,6 +58,7 @@ const helpTexts: Record<ExternalServiceKind, JSX.Element> = {
     // These are just for type completeness and serve as placeholders for a bright future.
     [ExternalServiceKind.BITBUCKETCLOUD]: <span>Unsupported</span>,
     [ExternalServiceKind.GITOLITE]: <span>Unsupported</span>,
+    [ExternalServiceKind.GOMODULES]: <span>Unsupported</span>,
     [ExternalServiceKind.JVMPACKAGES]: <span>Unsupported</span>,
     [ExternalServiceKind.NPMPACKAGES]: <span>Unsupported</span>,
     [ExternalServiceKind.PERFORCE]: <span>Unsupported</span>,

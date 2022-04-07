@@ -1,8 +1,9 @@
 import { NEVER, of } from 'rxjs'
 import { first, take, toArray } from 'rxjs/operators'
 
+import { ContributableViewContainer } from '@sourcegraph/client-api'
+
 import { wrapRemoteObservable } from '../client/api/common'
-import { ContributableViewContainer } from '../protocol'
 
 import { assertToJSON, integrationTestContext } from './testHelpers'
 

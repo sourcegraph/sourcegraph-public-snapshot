@@ -15,11 +15,14 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // The metric generated here will be named as "src_bitbucket_cloud_requests_total".
@@ -48,18 +51,19 @@ type Client struct {
 	// URL is the base URL of Bitbucket Cloud.
 	URL *url.URL
 
-	// The username and app password credentials for accessing the server.
-	Username, AppPassword string
+	// Auth is the authentication method used when accessing the server. Only
+	// auth.BasicAuth is currently supported.
+	Auth auth.Authenticator
 
 	// RateLimit is the self-imposed rate limiter (since Bitbucket does not have a concept
 	// of rate limiting in HTTP response headers).
 	RateLimit *rate.Limiter
 }
 
-// NewClient creates a new Bitbucket Cloud API client with given apiURL. If a nil httpClient
-// is provided, http.DefaultClient will be used. Both Username and AppPassword fields are
-// required to be set before calling any APIs.
-func NewClient(apiURL *url.URL, httpClient httpcli.Doer) *Client {
+// NewClient creates a new Bitbucket Cloud API client from the given external
+// service configuration. If a nil httpClient is provided, http.DefaultClient
+// will be used.
+func NewClient(config *schema.BitbucketCloudConnection, httpClient httpcli.Doer) (*Client, error) {
 	if httpClient == nil {
 		httpClient = httpcli.ExternalDoer
 	}
@@ -74,6 +78,11 @@ func NewClient(apiURL *url.URL, httpClient httpcli.Doer) *Client {
 		return category
 	})
 
+	apiURL, err := urlFromConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
 	// Normally our registry will return a default infinite limiter when nothing has been
 	// synced from config. However, we always want to ensure there is at least some form of rate
 	// limiting for Bitbucket.
@@ -82,8 +91,28 @@ func NewClient(apiURL *url.URL, httpClient httpcli.Doer) *Client {
 
 	return &Client{
 		httpClient: httpClient,
-		URL:        apiURL,
-		RateLimit:  l,
+		URL:        extsvc.NormalizeBaseURL(apiURL),
+		Auth: &auth.BasicAuth{
+			Username: config.Username,
+			Password: config.AppPassword,
+		},
+		RateLimit: l,
+	}, nil
+}
+
+// WithAuthenticator returns a new Client that uses the same configuration,
+// HTTPClient, and RateLimiter as the current Client, except authenticated with
+// the given authenticator instance.
+//
+// Note that using an unsupported Authenticator implementation may result in
+// unexpected behaviour, or (more likely) errors. At present, only BasicAuth is
+// supported.
+func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
+	return &Client{
+		httpClient: c.httpClient,
+		URL:        c.URL,
+		Auth:       a,
+		RateLimit:  c.RateLimit,
 	}
 }
 
@@ -155,7 +184,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 
-	if err := c.authenticate(req); err != nil {
+	if err := c.Auth.Authenticate(req); err != nil {
 		return err
 	}
 
@@ -192,11 +221,6 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		return json.Unmarshal(bs, result)
 	}
 
-	return nil
-}
-
-func (c *Client) authenticate(req *http.Request) error {
-	req.SetBasicAuth(c.Username, c.AppPassword)
 	return nil
 }
 
@@ -277,4 +301,11 @@ func (e *httpError) Unauthorized() bool {
 
 func (e *httpError) NotFound() bool {
 	return e.StatusCode == http.StatusNotFound
+}
+
+func urlFromConfig(config *schema.BitbucketCloudConnection) (*url.URL, error) {
+	if config.ApiURL == "" {
+		return url.Parse("https://api.bitbucket.org")
+	}
+	return url.Parse(config.ApiURL)
 }

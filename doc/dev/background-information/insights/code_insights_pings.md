@@ -172,3 +172,93 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
    - For the "extensions insight" funnel: (1) [ViewCodeInsightsCreationPage](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+ViewCodeInsightsCreationPage&patternType=regexp), (2) [CodeInsightsExploreInsightExtensionsClick](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+CodeInsightsExploreInsightExtensionsClick&patternType=regexp). 
 - **Version added:** 3.29
 <!-- - **Version(s) broken:**  -->
+
+### View series counts
+
+**Type:** BE capture
+
+**Intended purpose:** To track the number of view series, grouped by presentation type and generation method. Note: a "view series" differs from a "series" by being attached to a particular insight. A series can be attached to more than one insight.
+
+**Functional implementation:** This is calculated by joining the `insight_series`, `insight_view_series`, and `insight_view` tables.
+
+**Other considerations:** N/A
+
+- Aggregation: total 
+- Event Code: [ViewSeriesCounts](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+ViewSeriesCounts&patternType=literal)
+- **Version added:** 3.34
+<!-- - **Version(s) broken:**  -->
+
+### Series counts
+
+**Type:** BE capture
+
+**Intended purpose:** To track the number of series, grouped by generation method.
+
+**Functional implementation:** This is calculated using the `insight_series` table. 
+
+**Other considerations:** N/A
+
+- Aggregation: total 
+- Event Code: [SeriesCounts](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+SeriesCounts&patternType=literal)
+- **Version added:** 3.34
+<!-- - **Version(s) broken:**  -->
+
+### View counts
+
+**Type:** BE capture
+
+**Intended purpose:** To track the number of insight views, grouped by presentation type.
+
+**Functional implementation:** This is calculated using the `insight_view` table. 
+
+**Other considerations:** N/A
+
+- Aggregation: total 
+- Event Code: [ViewCounts](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+ViewCounts&patternType=literal)
+- **Version added:** 3.34
+<!-- - **Version(s) broken:**  -->
+
+### Total orgs with dashboards
+
+**Type:** BE capture
+
+**Intended purpose:** To track the number of orgs with at least one dashboard.
+
+**Functional implementation:** This is calculated using the `dashboard_grants` table.
+
+**Other considerations:** N/A
+
+- Aggregation: total 
+- Event Code: [TotalOrgsWithDashboard](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+TotalOrgsWithDashboard&patternType=literal)
+- **Version added:** 3.38
+<!-- - **Version(s) broken:**  -->
+
+### Total dashboard count
+
+**Type:** BE capture
+
+**Intended purpose:** To track the total number of dashboards.
+
+**Functional implementation:** This is calculated using the `dashboard` table.
+
+**Other considerations:** N/A
+
+- Aggregation: total 
+- Event Code: [TotalDashboardCount](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+TotalDashboardCount&patternType=literal)
+- **Version added:** 3.38
+<!-- - **Version(s) broken:**  -->
+
+### Insights per dashboard
+
+**Type:** BE capture
+
+**Intended purpose:** To track statistics (average, min, max, median, std dev,) about how many insights are on each dashboard. 
+
+**Functional implementation:** These are calculated using the `dashboard_insight_view` table.
+
+**Other considerations:** N/A
+
+- Aggregation: total 
+- Event Code: [InsightsPerDashboard](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+InsightsPerDashboard&patternType=literal)
+- **Version added:** 3.38
+<!-- - **Version(s) broken:**  -->

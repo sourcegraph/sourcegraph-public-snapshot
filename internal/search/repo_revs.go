@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -72,7 +73,7 @@ type RepositoryRevisions struct {
 
 	// ListRefs is called to list all Git refs for a repository. It is intended to be mocked by
 	// tests. If nil, git.ListRefs is used.
-	ListRefs func(context.Context, api.RepoName) ([]git.Ref, error)
+	ListRefs func(ctx context.Context, db database.DB, repo api.RepoName) ([]git.Ref, error) `json:"-"`
 }
 
 func (r *RepositoryRevisions) Copy() *RepositoryRevisions {
@@ -194,9 +195,9 @@ func (r *RepositoryRevisions) RevSpecs() []string {
 // Not all callers need to expand ref glob expressions. If a caller is passing the ref globs as
 // command-line args to `git` directly (e.g., to `git log --glob ... --exclude ...`), it does not
 // need to use this function.
-func (r *RepositoryRevisions) ExpandedRevSpecs(ctx context.Context) ([]string, error) {
+func (r *RepositoryRevisions) ExpandedRevSpecs(ctx context.Context, db database.DB) ([]string, error) {
 	r.resolveOnce.Do(func() {
-		revSpecsList, err := expandedRevSpec(ctx, r)
+		revSpecsList, err := expandedRevSpec(ctx, db, r)
 		if err != nil {
 			r.resolveErr = err
 			return
@@ -209,7 +210,7 @@ func (r *RepositoryRevisions) ExpandedRevSpecs(ctx context.Context) ([]string, e
 // expandedRevSpecs evaluates all of r's ref glob expressions and returns the full, current list of
 // refs matched or resolved by them, plus the explicitly listed Git revspecs. See
 // git.CompileRefGlobs for information on how ref include/exclude globs are handled.
-func expandedRevSpec(ctx context.Context, r *RepositoryRevisions) ([]string, error) {
+func expandedRevSpec(ctx context.Context, db database.DB, r *RepositoryRevisions) ([]string, error) {
 	listRefs := r.ListRefs
 	if listRefs == nil {
 		listRefs = git.ListRefs
@@ -230,7 +231,7 @@ func expandedRevSpec(ctx context.Context, r *RepositoryRevisions) ([]string, err
 		}
 	}
 	if len(globs) > 0 {
-		allRefs, err := listRefs(ctx, r.GitserverRepo())
+		allRefs, err := listRefs(ctx, db, r.GitserverRepo())
 		if err != nil {
 			return nil, err
 		}

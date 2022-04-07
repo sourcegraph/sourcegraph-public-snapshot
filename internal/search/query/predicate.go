@@ -1,6 +1,7 @@
 package query
 
 import (
+	"regexp/syntax" //nolint:depguard
 	"strings"
 
 	"github.com/grafana/regexp"
@@ -35,6 +36,8 @@ var DefaultPredicateRegistry = PredicateRegistry{
 		"contains.file":         func() Predicate { return &RepoContainsFilePredicate{} },
 		"contains.content":      func() Predicate { return &RepoContainsContentPredicate{} },
 		"contains.commit.after": func() Predicate { return &RepoContainsCommitAfterPredicate{} },
+		"dependencies":          func() Predicate { return &RepoDependenciesPredicate{} },
+		"deps":                  func() Predicate { return &RepoDependenciesPredicate{} },
 	},
 	FieldFile: {
 		"contains.content": func() Predicate { return &FileContainsContentPredicate{} },
@@ -264,6 +267,36 @@ func (f *RepoContainsCommitAfterPredicate) Plan(parent Basic) (Plan, error) {
 	nodes = append(nodes, nonPredicateRepos(parent)...)
 	return ToPlan(Dnf(nodes))
 }
+
+// RepoDependenciesPredicate represents the `repo:dependencies(regex@rev)` predicate,
+// which filters to repos that are dependencies of the repos matching the given of regex.
+type RepoDependenciesPredicate struct{}
+
+func (f *RepoDependenciesPredicate) ParseParams(params string) (err error) {
+	re := params
+	if n := strings.LastIndex(params, "@"); n > 0 {
+		re = re[:n]
+	}
+
+	if re == "" {
+		return errors.Errorf("empty repo:dependencies predicate parameter %q", params)
+	}
+
+	_, err = syntax.Parse(re, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
+	if err != nil {
+		return errors.Errorf("invalid repo:dependencies predicate parameter %q: %v", params, err)
+	}
+
+	return nil
+}
+
+func (f *RepoDependenciesPredicate) Field() string { return FieldRepo }
+func (f *RepoDependenciesPredicate) Name() string  { return "dependencies" }
+func (f *RepoDependenciesPredicate) Plan(parent Basic) (Plan, error) {
+	return nil, nil
+}
+
+/* repo:contains.content(pattern) */
 
 type FileContainsContentPredicate struct {
 	Pattern string

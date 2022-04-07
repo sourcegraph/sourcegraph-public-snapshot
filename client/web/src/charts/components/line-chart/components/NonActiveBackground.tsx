@@ -1,16 +1,17 @@
-import { AxisScale } from '@visx/axis/lib/types'
-import { PatternLines } from '@visx/pattern'
 import React, { ReactElement, useMemo } from 'react'
 
-import { LineChartSeries } from '../types'
-import { isValidNumber } from '../utils/data-guards'
+import { AxisScale } from '@visx/axis/lib/types'
+import { PatternLines } from '@visx/pattern'
+
+import { Series } from '../../../types'
+import { isValidNumber } from '../utils'
 
 const PATTERN_ID = 'xy-chart-pattern'
 
-export interface NonActiveBackgroundProps<Datum extends object> {
+export interface NonActiveBackgroundProps<Datum> {
     data: Datum[]
-    series: LineChartSeries<Datum>[]
-    xAxisKey: keyof Datum
+    series: Series<Datum>[]
+    getXValue: (datum: Datum) => Date
     xScale: AxisScale
     width: number
     height: number
@@ -36,24 +37,24 @@ export interface NonActiveBackgroundProps<Datum extends object> {
  * └──────────────────────────────────┘
  * Where ` is a non-active background
  */
-export function NonActiveBackground<Datum extends object>(props: NonActiveBackgroundProps<Datum>): ReactElement | null {
-    const { data, series, xAxisKey, xScale, top, left, width, height } = props
+export function NonActiveBackground<Datum>(props: NonActiveBackgroundProps<Datum>): ReactElement | null {
+    const { data, series, getXValue, xScale, top, left, width, height } = props
 
     const backgroundWidth = useMemo(() => {
-        // For non active background's width we need to find first non nullable element
+        // For non-active background's width we need to find first non-nullable element
         const firstNonNullablePoints: (Datum | undefined)[] = series.map(line =>
             data.find(datum => isValidNumber(datum[line.dataKey]))
         )
 
         const lastNullablePointX = firstNonNullablePoints.reduce((xCoord, datum) => {
-            // In case if the first non nullable element is the first element
+            // In case if the first non-nullable element is the first element
             // of data that means we don't need to render non active background.
             if (!datum || datum === data[0]) {
                 return null
             }
 
             // Get x point from datum by x accessor
-            return +datum[xAxisKey]
+            return +getXValue(datum)
         }, null as Date | number | null)
 
         // If we didn't find any non-nullable elements we don't need to render
@@ -62,14 +63,14 @@ export function NonActiveBackground<Datum extends object>(props: NonActiveBackgr
             return 0
         }
 
-        // Convert x value of first non nullable point to reals svg coordinate
+        // Convert x value of first non-nullable point to reals svg coordinate
         const xValue = xScale?.(lastNullablePointX) ?? 0
 
         return +xValue
-    }, [data, series, xAxisKey, xScale])
+    }, [data, series, getXValue, xScale])
 
     // Early return values not available in context or we don't need render
-    // non active background.
+    // non-active background.
     if (!backgroundWidth || !width || !height) {
         return null
     }

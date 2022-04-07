@@ -1,9 +1,9 @@
-import React, { useState } from 'react'
-import { Popover } from 'reactstrap'
+import React, { useMemo, useState } from 'react'
 
 import { escapeRevspecForURL } from '@sourcegraph/common'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Popover, PopoverContent, PopoverTrigger, Position, Icon, useObservable } from '@sourcegraph/wildcard'
 
+import { fetchFeatureFlags } from '../../featureFlags/featureFlags'
 import { eventLogger } from '../../tracking/eventLogger'
 import { RepoRevisionChevronDownIcon } from '../components/RepoRevision'
 import { RevisionsPopover } from '../RevisionsPopover'
@@ -44,6 +44,12 @@ export const RepositoryComparePopover: React.FunctionComponent<RepositoryCompare
     const [popoverOpen, setPopoverOpen] = useState(false)
     const togglePopover = (): void => setPopoverOpen(previous => !previous)
 
+    const features = useObservable(useMemo(() => fetchFeatureFlags(), []))
+
+    if (!features) {
+        return null
+    }
+
     const handleSelect = (): void => {
         eventLogger.log('RepositoryComparisonSubmitted')
         togglePopover()
@@ -59,34 +65,31 @@ export const RepositoryComparePopover: React.FunctionComponent<RepositoryCompare
                 ? `${escapedRevision}...${escapeRevspecForURL(comparison.head.revision || '')}`
                 : `${escapeRevspecForURL(comparison.base.revision || '')}...${escapedRevision}`
 
-        return `/${repo.name}/-/compare/${comparePath}`
+        const revisionPath = features.get('new-repo-page')
+            ? `/${repo.name}/-/compare/tab/${comparePath}`
+            : `/${repo.name}/-/compare/${comparePath}`
+
+        return revisionPath
     }
 
     const defaultBranch = repo.defaultBranch?.abbrevName || 'HEAD'
     const currentRevision = comparison[type]?.revision || undefined
 
     return (
-        <Button
-            type="button"
-            variant="secondary"
-            outline={true}
-            className="d-flex align-items-center text-nowrap"
-            id={id}
-            aria-label={`Change ${type} Git revspec for comparison`}
-        >
-            <div className="text-muted mr-1">{type}: </div>
-            {comparison[type].revision || defaultBranch}
-            <RepoRevisionChevronDownIcon className="icon-inline" />
-            <Popover
-                isOpen={popoverOpen}
-                toggle={togglePopover}
-                placement="bottom-start"
-                target={id}
-                trigger="legacy"
-                hideArrow={true}
-                fade={false}
-                popperClassName="border-0"
+        <Popover isOpen={popoverOpen} onOpenChange={event => setPopoverOpen(event.isOpen)}>
+            <PopoverTrigger
+                as={Button}
+                variant="secondary"
+                outline={true}
+                className="d-flex align-items-center text-nowrap"
+                id={id}
+                aria-label={`Change ${type} Git revspec for comparison`}
             >
+                <div className="text-muted mr-1">{type}: </div>
+                {comparison[type].revision || defaultBranch}
+                <Icon as={RepoRevisionChevronDownIcon} />
+            </PopoverTrigger>
+            <PopoverContent position={Position.bottomStart}>
                 <RevisionsPopover
                     repo={repo.id}
                     repoName={repo.name}
@@ -98,7 +101,7 @@ export const RepositoryComparePopover: React.FunctionComponent<RepositoryCompare
                     showSpeculativeResults={true}
                     onSelect={handleSelect}
                 />
-            </Popover>
-        </Button>
+            </PopoverContent>
+        </Popover>
     )
 }

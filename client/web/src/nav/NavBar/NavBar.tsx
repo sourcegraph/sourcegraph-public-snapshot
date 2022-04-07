@@ -1,13 +1,15 @@
+import React, { useEffect, useRef, useState } from 'react'
+
 import classNames from 'classnames'
 import H from 'history'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
-import React, { useEffect, useRef, useState } from 'react'
 import { LinkProps, NavLink as RouterLink } from 'react-router-dom'
 
-import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, Icon } from '@sourcegraph/wildcard'
+
+import { PageRoutes } from '../../routes.constants'
 
 import navActionStyles from './NavAction.module.scss'
 import navBarStyles from './NavBar.module.scss'
@@ -76,8 +78,8 @@ export const NavGroup = ({ children }: NavGroupProps): JSX.Element => {
     return (
         <div className={navBarStyles.menu} ref={menuReference}>
             <Button className={navBarStyles.menuButton} onClick={() => setOpen(!open)} aria-label="Sections Navigation">
-                <MenuIcon className="icon-inline" />
-                {!open ? <ChevronDownIcon className="icon-inline" /> : <ChevronUpIcon className="icon-inline" />}
+                <Icon as={MenuIcon} />
+                <Icon as={open ? ChevronUpIcon : ChevronDownIcon} />
             </Button>
             <ul className={classNames(navBarStyles.list, { [navBarStyles.menuClose]: !open })}>{children}</ul>
         </div>
@@ -112,10 +114,16 @@ export const NavItem: React.FunctionComponent<NavItemProps> = ({ children, class
     )
 }
 
-export const NavLink: React.FunctionComponent<NavLinkProps> = ({ icon: Icon, children, to, external, className }) => {
+export const NavLink: React.FunctionComponent<NavLinkProps> = ({
+    icon: LinkIcon,
+    children,
+    to,
+    external,
+    className,
+}) => {
     const content = (
         <span className={classNames(navItemStyles.linkContent, className)}>
-            {Icon ? <Icon className={classNames('icon-inline', navItemStyles.icon)} /> : null}
+            {LinkIcon ? <Icon className={navItemStyles.icon} as={LinkIcon} /> : null}
             <span
                 className={classNames(navItemStyles.text, {
                     [navItemStyles.iconIncluded]: Icon,

@@ -1,5 +1,6 @@
-import { uniqueId } from 'lodash'
 import * as React from 'react'
+
+import { uniqueId } from 'lodash'
 import { from, merge, Subscription } from 'rxjs'
 import { delay, map, mergeMap, switchMap, takeWhile } from 'rxjs/operators'
 
@@ -11,6 +12,7 @@ import { ExtensionsControllerProps } from '../extensions/controller'
 
 import { Notification } from './notification'
 import { NotificationItem, NotificationItemProps } from './NotificationItem'
+
 import styles from './Notifications.module.scss'
 
 export interface NotificationsProps

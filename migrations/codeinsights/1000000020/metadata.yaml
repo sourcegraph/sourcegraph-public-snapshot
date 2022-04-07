@@ -1,2 +1,4 @@
-name: 'presentation type'
-parent: 1000000019
+name: squashed migrations (privileged)
+parents: []
+privileged: true
+nonIdempotent: true

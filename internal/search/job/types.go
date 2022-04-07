@@ -8,10 +8,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
+	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
-	"github.com/sourcegraph/sourcegraph/internal/search/textsearch"
+	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 )
 
 // Job is an interface shared by all individual search operations in the
@@ -25,15 +26,19 @@ type Job interface {
 }
 
 var allJobs = []Job{
+	&zoekt.ZoektRepoSubsetSearch{},
+	&zoekt.ZoektSymbolSearch{},
+	&searcher.Searcher{},
+	&searcher.SymbolSearcher{},
 	&run.RepoSearch{},
-	&textsearch.RepoSubsetTextSearch{},
-	&textsearch.RepoUniverseTextSearch{},
+	&zoekt.GlobalSearch{},
 	&structural.StructuralSearch{},
 	&commit.CommitSearch{},
-	&symbol.RepoSubsetSymbolSearch{},
 	&symbol.RepoUniverseSymbolSearch{},
 	&repos.ComputeExcludedRepos{},
 	&noopJob{},
+
+	&repoPagerJob{},
 
 	&AndJob{},
 	&OrJob{},

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
@@ -12,9 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type SymbolsParameters struct {
@@ -125,40 +122,6 @@ type SearcherParameters struct {
 	UseFullDeadline bool
 }
 
-// TextParameters are the parameters passed to a search backend. It contains the Pattern
-// to search for, as well as the hydrated list of repository revisions to
-// search. It defines behavior for text search on repository names, file names, and file content.
-type TextParameters struct {
-	PatternInfo *TextPatternInfo
-	RepoOptions RepoOptions
-	Features    Features
-	ResultTypes result.Types
-	Timeout     time.Duration
-
-	Repos []*RepositoryRevisions
-
-	// perf: For global queries, we only resolve private repos.
-	UserPrivateRepos []types.MinimalRepo
-	Mode             GlobalSearchMode
-
-	// Query is the parsed query from the user. You should be using Pattern
-	// instead, but Query is useful for checking extra fields that are set and
-	// ignored by Pattern, such as index:no
-	Query query.Q
-
-	// UseFullDeadline indicates that the search should try do as much work as
-	// it can within context.Deadline. If false the search should try and be
-	// as fast as possible, even if a "slow" deadline is set.
-	//
-	// For example searcher will wait to full its archive cache for a
-	// repository if this field is true. Another example is we set this field
-	// to true if the user requests a specific timeout or maximum result size.
-	UseFullDeadline bool
-
-	Zoekt        zoekt.Streamer
-	SearcherURLs *endpoint.Map
-}
-
 // TextPatternInfo is the struct used by vscode pass on search queries. Keep it in
 // sync with pkg/searcher/protocol.PatternInfo.
 type TextPatternInfo struct {
@@ -262,9 +225,9 @@ type Features struct {
 type RepoOptions struct {
 	RepoFilters              []string
 	MinusRepoFilters         []string
+	Dependencies             []string
 	CaseSensitiveRepoFilters bool
 	SearchContextSpec        string
-	UserSettings             *schema.Settings
 	NoForks                  bool
 	OnlyForks                bool
 	NoArchived               bool

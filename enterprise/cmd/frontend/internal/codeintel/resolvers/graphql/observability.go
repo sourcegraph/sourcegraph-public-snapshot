@@ -18,6 +18,8 @@ type operations struct {
 	commitGraph               *observation.Operation
 	queueAutoIndexJobsForRepo *observation.Operation
 	gitBlobLsifData           *observation.Operation
+	gitBlobCodeIntelInfo      *observation.Operation
+	gitTreeCodeIntelInfo      *observation.Operation
 	configurationPolicyByID   *observation.Operation
 	configurationPolicies     *observation.Operation
 	createConfigurationPolicy *observation.Operation
@@ -27,6 +29,7 @@ type operations struct {
 	updateIndexConfiguration  *observation.Operation
 	previewRepoFilter         *observation.Operation
 	previewGitObjectFilter    *observation.Operation
+	repositorySummary         *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -54,6 +57,8 @@ func newOperations(observationContext *observation.Context) *operations {
 		commitGraph:               op("CommitGraph"),
 		queueAutoIndexJobsForRepo: op("QueueAutoIndexJobsForRepo"),
 		gitBlobLsifData:           op("GitBlobLSIFData"),
+		gitBlobCodeIntelInfo:      op("GitBlobCodeIntelInfo"),
+		gitTreeCodeIntelInfo:      op("GitTreeCodeIntelInfo"),
 		configurationPolicyByID:   op("ConfigurationPolicyByID"),
 		configurationPolicies:     op("ConfigurationPolicies"),
 		createConfigurationPolicy: op("CreateConfigurationPolicy"),
@@ -63,5 +68,6 @@ func newOperations(observationContext *observation.Context) *operations {
 		updateIndexConfiguration:  op("UpdateIndexConfiguration"),
 		previewRepoFilter:         op("PreviewRepoFilter"),
 		previewGitObjectFilter:    op("PreviewGitObjectFilter"),
+		repositorySummary:         op("RepositorySummary"),
 	}
 }

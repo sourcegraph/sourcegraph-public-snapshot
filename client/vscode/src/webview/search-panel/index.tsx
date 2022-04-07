@@ -1,5 +1,6 @@
-import * as Comlink from 'comlink'
 import React, { useMemo } from 'react'
+
+import * as Comlink from 'comlink'
 import { render } from 'react-dom'
 import { of } from 'rxjs'
 

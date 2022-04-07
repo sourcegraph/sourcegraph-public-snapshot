@@ -1,2 +1,5 @@
-name: 'add dirty query cascade'
-parent: 1000000020
+name: squashed migrations (unprivileged)
+parents:
+  - 1000000020
+privileged: false
+nonIdempotent: true

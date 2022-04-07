@@ -1,10 +1,11 @@
+import React from 'react'
+
 import { ListboxButton } from '@reach/listbox'
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
-import React from 'react'
 
-import { InsightDashboard, isRealDashboard } from '../../../../../../../core/types'
+import { InsightDashboard, isCustomDashboard } from '../../../../../../../core/types'
 import { getDashboardOwnerName, getDashboardTitle } from '../../helpers/get-dashboard-title'
 import { InsightsBadge } from '../insights-badge/InsightsBadge'
 import { TruncatedText } from '../trancated-text/TrancatedText'
@@ -34,7 +35,7 @@ export const MenuButton: React.FunctionComponent<MenuButtonProps> = props => {
                 return (
                     <MenuButtonContent
                         title={getDashboardTitle(dashboard)}
-                        badge={isRealDashboard(dashboard) ? getDashboardOwnerName(dashboard) : undefined}
+                        badge={isCustomDashboard(dashboard) ? getDashboardOwnerName(dashboard) : undefined}
                         isExpanded={isExpanded}
                     />
                 )

@@ -61,7 +61,7 @@ extend type Mutation {
     If a configuration is supplied, that configuration is used to determine what jobs to
     schedule. If no configuration is supplied, it will go through the regular index scheduling
     rules: first read any in-repo configuration (e.g., sourcegraph.yaml), then look for any
-    existing in-database configuration, finally falling back to the automatically inferred
+    existing in-database configuration, finally falling back to the automatically infered
     connfiguration based on the repo contents at the target commit.
     """
     queueAutoIndexJobsForRepo(repository: ID!, rev: String, configuration: String): [LSIFIndex!]!
@@ -370,6 +370,48 @@ type CodeIntelligenceConfigurationPolicy implements Node {
     indexIntermediateCommits: Boolean!
 }
 
+"""
+A retention policy match candidate.
+"""
+type CodeIntelligenceRetentionPolicyMatch {
+    """
+    The actual retention policy.
+    """
+    configurationPolicy: CodeIntelligenceConfigurationPolicy
+
+    """
+    Whether the retention policy matches the upload or not. False values may be returned
+    if non-matching policies are requested for inclusion.
+    """
+    matches: Boolean!
+
+    """
+    A list of commits that are visible to this upload for which this retention policy applies.
+    It is empty if the policy applies directly to the commit associated with the upload.
+    """
+    protectingCommits: [String!]
+}
+
+"""
+A list of code intelligence retention policy match candidates.
+"""
+type CodeIntelligenceRetentionPolicyMatchesConnection {
+    """
+    A list of code intelligence retention policies matches.
+    """
+    nodes: [CodeIntelligenceRetentionPolicyMatch!]!
+
+    """
+    The total number of policies in this result set.
+    """
+    totalCount: Int
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
 extend type Repository {
     """
     Gets the indexing configuration associated with the repository.
@@ -454,6 +496,11 @@ extend type Repository {
     ): LSIFIndexConnection!
 
     """
+    Provides a summary of the most reecent upload and index status.
+    """
+    codeIntelSummary: CodeIntelRepositorySummary!
+
+    """
     The set of git objects that match the given git object type and glob pattern.
     This resolver is used by the UI to preview what names match a code intelligence
     policy in a given repository.
@@ -493,6 +540,11 @@ extend type GitTree {
         """
         toolName: String
     ): GitTreeLSIFData
+
+    """
+    Provides info on the level of code-intel support for the direct children of this git tree.
+    """
+    codeIntelInfo: GitTreeCodeIntelInfo
 }
 
 extend type GitBlob {
@@ -506,6 +558,87 @@ extend type GitBlob {
         """
         toolName: String
     ): GitBlobLSIFData
+
+    """
+    Provides info on the level of code-intel support for this git blob.
+    """
+    codeIntelSupport: CodeIntelSupport!
+
+    """
+    Provides code intelligence within the file.
+
+    Experimental: This API is likely to change in the future.
+    """
+    localCodeIntel: JSONValue
+}
+
+"""
+A summary of the most reecent upload and index status.
+"""
+type CodeIntelRepositorySummary {
+    """
+    A list of recent uploads for a specific repository. This list contains processing,
+    recently queued, and the most recently processed uploads for each distinct indexer
+    and root.
+    """
+    recentUploads: [LSIFUploadsWithRepositoryNamespace!]!
+
+    """
+    A list of recent indexes for a specific repository. This list contains processing,
+    recently queued, and the most recently processed indexes for each distinct indexer
+    and root.
+    """
+    recentIndexes: [LSIFIndexesWithRepositoryNamespace!]!
+
+    """
+    The last time uploads of this repository were checked against data retention policies.
+    """
+    lastUploadRetentionScan: DateTime
+
+    """
+    The last time this repository was considered for auto-indexing job scheduling.
+    """
+    lastIndexScan: DateTime
+}
+
+"""
+A group of uploads that share the same root and indexer values.
+"""
+type LSIFUploadsWithRepositoryNamespace {
+    """
+    The root of all uploads in the associated connection.
+    """
+    root: String!
+
+    """
+    The indexer used to produce the each upload in the associated connection.
+    """
+    indexer: CodeIntelIndexer!
+
+    """
+    A list of uploads.
+    """
+    uploads: [LSIFUpload!]!
+}
+
+"""
+A group of indexes that share the same root and indexer values.
+"""
+type LSIFIndexesWithRepositoryNamespace {
+    """
+    The root of all indexes in the associated connection.
+    """
+    root: String!
+
+    """
+    The configured indexer of each index in the associated connection.
+    """
+    indexer: CodeIntelIndexer!
+
+    """
+    A list of indexes.
+    """
+    indexes: [LSIFIndex!]!
 }
 
 """
@@ -533,6 +666,11 @@ interface TreeEntryLSIFData {
     Code diagnostics provided through LSIF.
     """
     diagnostics(first: Int): DiagnosticConnection!
+
+    """
+    The list of LSIF uploads that may be used to service code-intel requests for this TreeEntry.
+    """
+    lsifUploads: [LSIFUpload!]!
 
     """
     Returns the documentation page corresponding to the given path ID, where the empty string "/"
@@ -623,6 +761,11 @@ type GitTreeLSIFData implements TreeEntryLSIFData {
     Code diagnostics provided through LSIF.
     """
     diagnostics(first: Int): DiagnosticConnection!
+
+    """
+    The list of LSIF uploads that may be used to service code-intel requests for this TreeEntry.
+    """
+    lsifUploads: [LSIFUpload!]!
 
     """
     Returns the documentation page corresponding to the given path ID, where the empty string "/"
@@ -850,6 +993,11 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     diagnostics(first: Int): DiagnosticConnection!
 
     """
+    The list of LSIF uploads that may be used to service code-intel requests for this GitBlob.
+    """
+    lsifUploads: [LSIFUpload!]!
+
+    """
     Returns the documentation page corresponding to the given path ID, where the path ID "/"
     refers to the current git blob and can be used to walk all documentation below this git blob.
 
@@ -1064,6 +1212,11 @@ type LSIFUpload implements Node {
     inputIndexer: String!
 
     """
+    The indexer used to produce this index.
+    """
+    indexer: CodeIntelIndexer
+
+    """
     The upload's current state.
     """
     state: LSIFUploadState!
@@ -1105,6 +1258,34 @@ type LSIFUpload implements Node {
     The LSIF indexing job that created this upload record.
     """
     associatedIndex: LSIFIndex
+
+    """
+    The list of retention policies, optionally filtered by only ones that match/apply to this upload and/or
+    by name substring match.
+    """
+    retentionPolicyOverview(
+        matchesOnly: Boolean!
+
+        """
+        An (optional) search query that searches over the name property.
+        """
+        query: String
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+        A future request can be made for more results by passing in the
+        'CodeIntelligenceRetentionPolicyMatchesConnection.pageInfo.endCursor' that is returned.
+        """
+        after: String
+
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page.
+        """
+        first: Int
+    ): CodeIntelligenceRetentionPolicyMatchesConnection!
 }
 
 """
@@ -1180,6 +1361,11 @@ type LSIFIndex implements Node {
     The name of the target indexer Docker image (e.g., sourcegraph/lsif-go@sha256:...).
     """
     inputIndexer: String!
+
+    """
+    The indexer used to produce the index artifact.
+    """
+    indexer: CodeIntelIndexer
 
     """
     The index's current state.
@@ -1328,7 +1514,174 @@ type IndexConfiguration {
     configuration: String
 
     """
-    The raw JSON-encoded index configuration as inferred by the auto-indexer.
+    The raw JSON-encoded index configuration as infered by the auto-indexer.
     """
     inferredConfiguration: String
+}
+
+"""
+Details code-intel support for a group of files rooted at a tree.
+"""
+type GitTreeCodeIntelInfo {
+    """
+    Search-based coverage grouped by language.
+    """
+    searchBasedSupport: [GitTreeSearchBasedCoverage!]
+    """
+    Precise coverage based on inference derived from the directory
+    structure and its files.
+    """
+    preciseSupport: [GitTreePreciseCoverage!]
+}
+
+"""
+Search-based code-intel support coverage grouped by related files.
+"""
+type GitTreeSearchBasedCoverage {
+    """
+    The files comprising this grouping of search-based support.
+    Each grouping consists of all the files of the same langauge e.g.
+    all .go files in one group, all .kt and .kts files in another.
+    """
+    coveredPaths: [String!]!
+    """
+    Overview of the level of support for this group of files.
+    """
+    support: SearchBasedCodeIntelSupport!
+}
+
+"""
+Precise code-intel support coverage grouped by LSIF indexer language
+support for a group of files.
+"""
+type GitTreePreciseCoverage {
+    """
+    Overview of the level of support for this group of files.
+    """
+    support: PreciseCodeIntelSupport!
+    """
+    Level of confidence in the inference of an indexing target suggestion.
+    """
+    confidence: InferedPreciseSupportLevel!
+}
+
+"""
+Denotes the confidence in the correctness of the proposed index target.
+"""
+enum InferedPreciseSupportLevel {
+    """
+    The language is known to have an LSIF indexer associated with it
+    but this may not be the directory from which it should be invoked.
+    Relevant build tool configuration may be available at a parent directory.
+    """
+    LANGUAGE_SUPPORTED
+    """
+    Relevant build tool configuration files were located that indicate
+    a good possibility of this directory being where an LSIF indexer
+    could be invoked, however we have or can not infer a potentially complete
+    auto indexing job configuration.
+    """
+    PROJECT_STRUCTURE_SUPPORTED
+    """
+    An auto-indexing job configuration was able to be infered for this
+    directory that has a high likelyhood of being complete enough to result
+    in an LSIF index.
+    """
+    INDEX_JOB_INFERED
+}
+
+"""
+Details the types, tools and levels of code-intel support.
+"""
+type CodeIntelSupport {
+    """
+    Search-based code-intel support overview.
+    """
+    searchBasedSupport: SearchBasedCodeIntelSupport
+
+    """
+    Precise code-intel support overview.
+    """
+    preciseSupport: PreciseCodeIntelSupport
+}
+
+"""
+Details precise code-intel support overview.
+"""
+type PreciseCodeIntelSupport {
+    """
+    Level of support/ownership for the most complete/accurate precise code-intel indexer.
+    This may be THIRD_PARTY even where a by us indexer exists, where the third-party indexer is
+    more maintained/accurate/complete etc such as with the Dart indexer, where the Workiva one
+    should be used over our own.
+    """
+    supportLevel: PreciseSupportLevel!
+    """
+    List of indexers in subjective order of recommendation, from most to least recommended
+    (not an indication of absolute quality, rather relative).
+    """
+    indexers: [CodeIntelIndexer!]
+}
+
+"""
+Describes a precise code-intel indexer.
+"""
+type CodeIntelIndexer {
+    """
+    Name of the precise code-intel indexer.
+    """
+    name: String!
+    """
+    URL to the source of the indexer e.g. https://github.com/sourcegraph/lsif-go
+    """
+    url: String!
+}
+
+"""
+Ownership level of the recommended precise code-intel indexer.
+"""
+enum PreciseSupportLevel {
+    """
+    When there is no known indexer.
+    """
+    UNKNOWN
+    """
+    When the recommended indexer is maintained by us.
+    """
+    NATIVE
+    """
+    When the recommended indexer is maintained by a third-party
+    but is recommended over a native indexer, where one exists.
+    """
+    THIRD_PARTY
+}
+
+"""
+Details search-based code-intel support overview.
+"""
+type SearchBasedCodeIntelSupport {
+    """
+    Level of support.
+    """
+    supportLevel: SearchBasedSupportLevel!
+    """
+    The infered language the underlying tool infered when building an index for
+    search-based code-intel.
+    """
+    language: String!
+}
+
+"""
+Tiered list of types of search-based support for a language. This may be expanded as different
+indexing methods are introduced.
+"""
+enum SearchBasedSupportLevel {
+    """
+    The language has no configured search-based code-intel support.
+    """
+    UNSUPPORTED
+    """
+    Universal-ctags is used for indexing this language.
+    """
+    BASIC
 }

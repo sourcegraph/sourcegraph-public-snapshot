@@ -32,7 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
+func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
 
@@ -471,14 +471,12 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			// This test is separate from the other unit tests for this
 			// function above because it needs to set up a bad database
 			// connection on the repo store.
-			store := gitLabTestSetup(t, db)
-			database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				return nil, errors.New("foo")
-			}
-			defer func() {
-				database.Mocks.ExternalServices.List = nil
-			}()
+			externalServices := database.NewMockExternalServiceStore()
+			externalServices.ListFunc.SetDefaultReturn(nil, errors.New("foo"))
+			mockDB := database.NewMockDBFrom(database.NewDB(db))
+			mockDB.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
+			store := gitLabTestSetup(t, db).With(mockDB)
 			h := NewGitLabWebhook(store)
 
 			_, err := h.getExternalServiceFromRawID(ctx, "12345")

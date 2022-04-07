@@ -17,9 +17,11 @@ func Executor() *monitoring.Container {
 		Description: `Executes jobs in an isolated environment.`,
 		Variables: []monitoring.ContainerVariable{
 			{
-				Label:   "Queue name",
-				Name:    "queue",
-				Options: []string{"batches", "codeintel"},
+				Label: "Queue name",
+				Name:  "queue",
+				Options: monitoring.ContainerVariableOptions{
+					Options: []string{"batches", "codeintel"},
+				},
 			},
 			{
 				Label:        "Compute instance",

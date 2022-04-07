@@ -71,7 +71,7 @@ Docker Compose is a tool for defining and running multi-[container](https://www.
 Our Docker Compose support also has the following requirements:
 
 - Minimum Docker version: [v20.10.0](https://docs.docker.com/engine/release-notes/#20100)
-- Minimum version of Docker Compose: [v1.22.0](https://docs.docker.com/compose/release-notes/#1220) (this is first version that supports Docker Compose format `2.4`)
+- Minimum version of Docker Compose: [v1.29.0](https://docs.docker.com/compose/release-notes/#1290) (this is the first version that supports the `service_completed_successfully` dependency condition)
 - Docker Compose deployments should only be deployed with [one of our supported installation methods](#installation), and *not* Docker Swarm
 
 ### Reference repository
@@ -81,5 +81,9 @@ Sourcegraph for Docker Compose is configured using our [`sourcegraph/deploy-sour
 ### Windows support
 
 > WARNING: Running Sourcegraph on Windows is not supported for production deployments.
+
+### ARM / ARM64 support
+
+> WARNING: Running Sourcegraph on ARM / ARM64 images is not supported for production deployments.
 
 The Docker Compose installation requires a minimum of 8 CPU cores (logical) on the host machine in order to complete successfully. If using the Docker for Windows app, the default CPU count is limited to 2 which will result in errors during installation. You can go into the Docker app Settings->Resources window to increase the CPU count to > 8 to resolve this issue.

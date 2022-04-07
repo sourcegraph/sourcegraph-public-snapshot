@@ -1,6 +1,7 @@
+import React, { useState, useCallback, useMemo, memo } from 'react'
+
 import classNames from 'classnames'
 import WarningIcon from 'mdi-react/WarningIcon'
-import React, { useState, useCallback, useMemo, memo } from 'react'
 
 import { isErrorLike, isEncodedImage } from '@sourcegraph/common'
 import { ConfiguredRegistryExtension, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
@@ -13,17 +14,18 @@ import {
 } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useTimeoutManager, Link, CardBody, Card, Alert } from '@sourcegraph/wildcard'
+import { useTimeoutManager, Link, CardBody, Card, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 
 import { isExtensionAdded } from './extension/extension'
 import { ExtensionConfigurationState } from './extension/ExtensionConfigurationState'
 import { ExtensionStatusBadge } from './extension/ExtensionStatusBadge'
-import styles from './ExtensionCard.module.scss'
-import headerColorStyles from './ExtensionHeader.module.scss'
 import { ExtensionToggle, OptimisticUpdateFailure } from './ExtensionToggle'
 import { DefaultExtensionIcon, DefaultSourcegraphExtensionIcon, SourcegraphExtensionIcon } from './icons'
+
+import styles from './ExtensionCard.module.scss'
+import headerColorStyles from './ExtensionHeader.module.scss'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'>, ThemeProps {
     node: Pick<
@@ -217,16 +219,14 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                         </h3>
                         <span>
                             by {publisher}
-                            {isSourcegraphExtension && (
-                                <SourcegraphExtensionIcon className={classNames('icon-inline', styles.logo)} />
-                            )}
+                            {isSourcegraphExtension && <Icon className={styles.logo} as={SourcegraphExtensionIcon} />}
                         </span>
                     </div>
                     <div className={classNames('mt-3', styles.description, featured && styles.descriptionFeatured)}>
                         {extension.manifest ? (
                             isErrorLike(extension.manifest) ? (
                                 <span className="text-danger small" title={extension.manifest.message}>
-                                    <WarningIcon className="icon-inline" /> Invalid manifest
+                                    <Icon as={WarningIcon} /> Invalid manifest
                                 </span>
                             ) : (
                                 extension.manifest.description && (
@@ -235,7 +235,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                             )
                         ) : (
                             <span className="text-warning small">
-                                <WarningIcon className="icon-inline" /> No manifest
+                                <Icon as={WarningIcon} /> No manifest
                             </span>
                         )}
                     </div>

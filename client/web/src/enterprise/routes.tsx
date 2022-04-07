@@ -1,4 +1,5 @@
 import React from 'react'
+
 import { Redirect } from 'react-router'
 
 import { isErrorLike } from '@sourcegraph/common'
@@ -52,7 +53,7 @@ export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: EnterprisePageRoutes.Insights,
-        render: lazyComponent(() => import('./insights/InsightsRouter'), 'InsightsRouter'),
+        render: lazyComponent(() => import('./insights/CodeInsightsRouter'), 'CodeInsightsRouter'),
         condition: props => isCodeInsightsEnabled(props.settingsCascade),
     },
     {

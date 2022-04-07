@@ -1,11 +1,11 @@
-import { Menu, MenuButton, MenuItem, MenuItems, MenuPopover } from '@reach/menu-button'
+import React from 'react'
+
 import { Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
-import React from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Menu, MenuButton, MenuItem, MenuList, Position } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../components/WebStory'
 import { LINE_CHART_CONTENT_MOCK } from '../../mocks/charts-content'
@@ -47,18 +47,16 @@ export const SimpleViewGrid: Story = () => (
 function ContextMenu() {
     return (
         <Menu>
-            <MenuButton as={Button} variant="icon" className="p-1">
+            <MenuButton variant="icon" className="p-1">
                 <DotsVerticalIcon size={16} />
             </MenuButton>
-            <MenuPopover>
-                <MenuItems className="d-block position-static dropdown-menu">
-                    <MenuItem onSelect={noop}>Create</MenuItem>
+            <MenuList position={Position.bottomEnd}>
+                <MenuItem onSelect={noop}>Create</MenuItem>
 
-                    <MenuItem onSelect={noop}>Update</MenuItem>
+                <MenuItem onSelect={noop}>Update</MenuItem>
 
-                    <MenuItem onSelect={noop}>Delete</MenuItem>
-                </MenuItems>
-            </MenuPopover>
+                <MenuItem onSelect={noop}>Delete</MenuItem>
+            </MenuList>
         </Menu>
     )
 }

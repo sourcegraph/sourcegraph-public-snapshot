@@ -3,10 +3,13 @@ package graphqlbackend
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"testing"
+	"time"
 
+	"github.com/gofrs/uuid"
 	"github.com/graph-gophers/graphql-go/errors"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -16,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -218,6 +222,141 @@ func TestOrganization(t *testing.T) {
 					}
 				}
 				`,
+			},
+		})
+	})
+}
+
+func TestCreateOrganization(t *testing.T) {
+	userID := int32(1)
+
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: userID, SiteAdmin: false}, nil)
+
+	mockedOrg := types.Org{ID: 42, Name: "acme"}
+	orgs := database.NewMockOrgStore()
+	orgs.CreateFunc.SetDefaultReturn(&mockedOrg, nil)
+
+	orgMembers := database.NewMockOrgMemberStore()
+	orgMembers.CreateFunc.SetDefaultReturn(&types.OrgMembership{OrgID: mockedOrg.ID, UserID: userID}, nil)
+
+	db := database.NewMockDB()
+	db.OrgsFunc.SetDefaultReturn(orgs)
+	db.UsersFunc.SetDefaultReturn(users)
+	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: userID})
+
+	t.Run("Creates organization", func(t *testing.T) {
+		RunTest(t, &Test{
+			Schema:  mustParseGraphQLSchema(t, db),
+			Context: ctx,
+			Query: `mutation CreateOrganization($name: String!, $displayName: String) {
+				createOrganization(name: $name, displayName: $displayName) {
+					id
+                    name
+				}
+			}`,
+			ExpectedResult: fmt.Sprintf(`
+			{
+				"createOrganization": {
+					"id": "%s",
+					"name": "%s"
+				}
+			}
+			`, MarshalOrgID(mockedOrg.ID), mockedOrg.Name),
+			Variables: map[string]interface{}{
+				"name": "acme",
+			},
+		})
+	})
+
+	t.Run("Creates organization and sets statistics", func(t *testing.T) {
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(false)
+
+		id, err := uuid.NewV4()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		orgs.UpdateOrgsOpenBetaStatsFunc.SetDefaultReturn(nil)
+		defer func() {
+			orgs.UpdateOrgsOpenBetaStatsFunc = nil
+		}()
+
+		RunTest(t, &Test{
+			Schema:  mustParseGraphQLSchema(t, db),
+			Context: ctx,
+			Query: `mutation CreateOrganization($name: String!, $displayName: String, $statsID: ID) {
+				createOrganization(name: $name, displayName: $displayName, statsID: $statsID) {
+					id
+                    name
+				}
+			}`,
+			ExpectedResult: fmt.Sprintf(`
+			{
+				"createOrganization": {
+					"id": "%s",
+					"name": "%s"
+				}
+			}
+			`, MarshalOrgID(mockedOrg.ID), mockedOrg.Name),
+			Variables: map[string]interface{}{
+				"name":    "acme",
+				"statsID": id.String(),
+			},
+		})
+	})
+
+	t.Run("Fails for unauthenticated user", func(t *testing.T) {
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(false)
+
+		RunTest(t, &Test{
+			Schema:  mustParseGraphQLSchema(t, db),
+			Context: context.Background(),
+			Query: `mutation CreateOrganization($name: String!, $displayName: String) {
+				createOrganization(name: $name, displayName: $displayName) {
+					id
+                    name
+				}
+			}`,
+			ExpectedResult: "null",
+			ExpectedErrors: []*gqlerrors.QueryError{
+				{
+					Message: "no current user",
+					Path:    []interface{}{string("createOrganization")},
+				},
+			},
+			Variables: map[string]interface{}{
+				"name": "test",
+			},
+		})
+	})
+
+	t.Run("Fails for suspicious organization name", func(t *testing.T) {
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(false)
+
+		RunTest(t, &Test{
+			Schema:  mustParseGraphQLSchema(t, db),
+			Context: ctx,
+			Query: `mutation CreateOrganization($name: String!, $displayName: String) {
+				createOrganization(name: $name, displayName: $displayName) {
+					id
+                    name
+				}
+			}`,
+			ExpectedResult: "null",
+			ExpectedErrors: []*gqlerrors.QueryError{
+				{
+					Message: `rejected suspicious name "test"`,
+					Path:    []interface{}{string("createOrganization")},
+				},
+			},
+			Variables: map[string]interface{}{
+				"name": "test",
 			},
 		})
 	})
@@ -430,4 +569,90 @@ func TestUnmarshalOrgID(t *testing.T) {
 		_, err := UnmarshalOrgID(namespaceOrgID)
 		assert.Error(t, err)
 	})
+}
+
+func TestOrganization_viewerNeedsCodeHostUpdate(t *testing.T) {
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+	featureFlags := database.NewMockFeatureFlagStore()
+	featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(true, nil)
+	users := database.NewStrictMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+	orgs := database.NewMockOrgStore()
+	mockedOrg := types.Org{ID: 1, Name: "acme"}
+	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
+	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
+	for name, test := range map[string]struct {
+		OrgServices  []*types.ExternalService
+		UserServices []*types.ExternalService
+		OrgMembers   *types.OrgMembership
+		Expected     string
+	}{
+		"not a member": {
+			Expected: `{"organization":{"viewerNeedsCodeHostUpdate":false}}`,
+		},
+		"member and org without service": {
+			OrgMembers: &types.OrgMembership{OrgID: 1, UserID: 1},
+			Expected:   `{"organization":{"viewerNeedsCodeHostUpdate":false}}`,
+		},
+		"member without service, org with service": {
+			OrgServices:  []*types.ExternalService{{Kind: extsvc.KindGitHub}},
+			UserServices: []*types.ExternalService{},
+			OrgMembers:   &types.OrgMembership{OrgID: 1, UserID: 1},
+			Expected:     `{"organization":{"viewerNeedsCodeHostUpdate":false}}`,
+		},
+		"member with service, org without service": {
+			OrgServices:  []*types.ExternalService{{Kind: extsvc.KindGitHub}},
+			UserServices: []*types.ExternalService{},
+			OrgMembers:   &types.OrgMembership{OrgID: 1, UserID: 1},
+			Expected:     `{"organization":{"viewerNeedsCodeHostUpdate":false}}`,
+		},
+		"member with service, org with service created earlier": {
+			OrgServices:  []*types.ExternalService{{Kind: extsvc.KindGitHub, CreatedAt: time.Now().Add(-1 * time.Hour)}},
+			UserServices: []*types.ExternalService{{Kind: extsvc.KindGitHub, UpdatedAt: time.Now()}},
+			OrgMembers:   &types.OrgMembership{OrgID: 1, UserID: 1},
+			Expected:     `{"organization":{"viewerNeedsCodeHostUpdate":false}}`,
+		},
+		"member with service, org with service created later": {
+			OrgServices:  []*types.ExternalService{{Kind: extsvc.KindGitHub, CreatedAt: time.Now().Add(-1 * time.Hour)}},
+			UserServices: []*types.ExternalService{{Kind: extsvc.KindGitHub, UpdatedAt: time.Now().Add(-2 * time.Hour)}},
+			OrgMembers:   &types.OrgMembership{OrgID: 1, UserID: 1},
+			Expected:     `{"organization":{"viewerNeedsCodeHostUpdate":true}}`,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			orgMembers := database.NewStrictMockOrgMemberStore()
+			orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(test.OrgMembers, nil)
+			externalServices := database.NewStrictMockExternalServiceStore()
+			externalServices.ListFunc.SetDefaultHook(func(_ context.Context, opts database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+				if opts.NamespaceUserID == 1 {
+					return test.UserServices, nil
+				}
+				if opts.NamespaceOrgID == 1 {
+					return test.OrgServices, nil
+				}
+				return nil, nil
+			})
+			db := database.NewStrictMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
+			db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+			db.OrgsFunc.SetDefaultReturn(orgs)
+			db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+
+			RunTests(t, []*Test{
+				{
+					Schema:  mustParseGraphQLSchema(t, db),
+					Context: ctx,
+					Query: `
+					{
+						organization(name: "acme") {
+							viewerNeedsCodeHostUpdate
+						}
+					}
+				`,
+					ExpectedResult: test.Expected,
+				},
+			})
+		})
+	}
 }

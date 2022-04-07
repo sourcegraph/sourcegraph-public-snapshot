@@ -1,10 +1,11 @@
-import WrapIcon from 'mdi-react/WrapIcon'
 import * as React from 'react'
+
+import WrapIcon from 'mdi-react/WrapIcon'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
 import { WrapDisabledIcon } from '@sourcegraph/shared/src/components/icons'
-import { TooltipController } from '@sourcegraph/wildcard'
+import { TooltipController, Icon } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
@@ -75,11 +76,7 @@ export class ToggleLineWrap extends React.PureComponent<
         if (this.props.actionType === 'dropdown') {
             return (
                 <RepoHeaderActionButtonLink file={true} onSelect={this.onClick}>
-                    {this.state.value ? (
-                        <WrapDisabledIcon className="icon-inline" />
-                    ) : (
-                        <WrapIcon className="icon-inline" />
-                    )}
+                    <Icon as={this.state.value ? WrapDisabledIcon : WrapIcon} />
                     <span>{this.state.value ? 'Disable' : 'Enable'} wrapping long lines (Alt+Z/Opt+Z)</span>
                 </RepoHeaderActionButtonLink>
             )
@@ -92,7 +89,7 @@ export class ToggleLineWrap extends React.PureComponent<
                 onSelect={this.onClick}
                 data-tooltip={`${this.state.value ? 'Disable' : 'Enable'} wrapping long lines (Alt+Z/Opt+Z)`}
             >
-                {this.state.value ? <WrapDisabledIcon className="icon-inline" /> : <WrapIcon className="icon-inline" />}
+                <Icon as={this.state.value ? WrapDisabledIcon : WrapIcon} />
             </RepoHeaderActionButtonLink>
         )
     }

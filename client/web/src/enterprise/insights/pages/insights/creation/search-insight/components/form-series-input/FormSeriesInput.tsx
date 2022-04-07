@@ -1,10 +1,11 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 import { noop } from 'rxjs'
 
-import { Button, Card, Link } from '@sourcegraph/wildcard'
+import { Button, Card, Input } from '@sourcegraph/wildcard'
 
-import { FormInput } from '../../../../../../components/form/form-input/FormInput'
+import { getDefaultInputProps } from '../../../../../../components/form/getDefaultInputProps'
 import { useField } from '../../../../../../components/form/hooks/useField'
 import { useForm } from '../../../../../../components/form/hooks/useForm'
 import { InsightQueryInput } from '../../../../../../components/form/query-input/InsightQueryInput'
@@ -21,14 +22,6 @@ const validQuery = createRequiredValidator('Query is a required field for data s
 interface FormSeriesInputProps {
     /** Series index. */
     index: number
-
-    /**
-     * This prop represents the case whenever the edit insight UI page
-     * deals with backend insight. We need to disable our search insight
-     * query field since our backend insight can't update BE data according
-     * to the latest insight configuration.
-     */
-    isSearchQueryDisabled: boolean
 
     /**
      * Show all validation error of all fields within the form.
@@ -63,7 +56,6 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
     const {
         index,
         series,
-        isSearchQueryDisabled,
         showValidationErrorsOnMount = false,
         className,
         cancel = false,
@@ -75,8 +67,6 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
     } = props
 
     const { name, query, stroke: color } = series
-    const hasNameControlledValue = !!name
-    const hasQueryControlledValue = !!query
 
     const { formAPI, handleSubmit, ref } = useForm({
         touched: showValidationErrorsOnMount,
@@ -117,7 +107,6 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
         name: 'seriesQuery',
         formApi: formAPI,
         validators: { sync: validQuery },
-        disabled: isSearchQueryDisabled,
     })
 
     const colorField = useField({
@@ -127,29 +116,25 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
 
     return (
         <Card data-testid="series-form" ref={ref} className={classNames('d-flex flex-column', className)}>
-            <FormInput
-                title="Name"
+            <Input
+                label="Name"
                 required={true}
                 autoFocus={autofocus}
                 placeholder="Example: Function component"
-                description="Name shown in the legend and tooltip"
-                valid={(hasNameControlledValue || nameField.meta.touched) && nameField.meta.validState === 'VALID'}
-                error={nameField.meta.touched && nameField.meta.error}
-                {...nameField.input}
+                message="Name shown in the legend and tooltip"
+                {...getDefaultInputProps(nameField)}
             />
 
-            <FormInput
-                title="Search query"
+            <Input
+                label="Search query"
                 required={true}
                 as={InsightQueryInput}
                 repositories={repositories}
                 patternType={getQueryPatternTypeFilter(queryField.input.value)}
                 placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
-                description={<QueryFieldDescription isSearchQueryDisabled={isSearchQueryDisabled} />}
-                valid={(hasQueryControlledValue || queryField.meta.touched) && queryField.meta.validState === 'VALID'}
-                error={queryField.meta.touched && queryField.meta.error}
+                message={<QueryFieldDescription />}
                 className="mt-4"
-                {...queryField.input}
+                {...getDefaultInputProps(queryField)}
             />
 
             <FormColorInput
@@ -180,28 +165,12 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
     )
 }
 
-const QueryFieldDescription: React.FunctionComponent<{ isSearchQueryDisabled: boolean }> = props => (
+const QueryFieldDescription: React.FunctionComponent = () => (
     <span>
-        {!props.isSearchQueryDisabled ? (
-            <>
-                Do not include the <code>context:</code> or <code>repo:</code> filter; if needed, <code>repo:</code>{' '}
-                will be added automatically.
-                <br />
-                Tip: include <code>archived:no</code> and <code>fork:no</code> if you don't want results from archived
-                or forked repos.
-            </>
-        ) : (
-            <>
-                We don't yet allow editing queries for insights over all repos. To change the query, make a new insight.
-                This is a known{' '}
-                <Link
-                    to="/help/code_insights/explanations/current_limitations_of_code_insights"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    beta limitation
-                </Link>
-            </>
-        )}
+        Do not include the <code>context:</code> or <code>repo:</code> filter; if needed, <code>repo:</code> will be
+        added automatically.
+        <br />
+        Tip: include <code>archived:no</code> and <code>fork:no</code> if you don't want results from archived or forked
+        repos.
     </span>
 )

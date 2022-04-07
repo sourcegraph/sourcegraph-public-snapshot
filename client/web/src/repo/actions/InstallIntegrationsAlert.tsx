@@ -1,9 +1,11 @@
 import React, { useCallback, useMemo } from 'react'
 
-import { useLocalStorage, useObservable } from '@sourcegraph/wildcard'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { usePersistentCadence } from '../../hooks'
-import { browserExtensionInstalled } from '../../tracking/analyticsUtils'
+import { useIsActiveIdeIntegrationUser } from '../../IdeExtensionTracker'
+import { useIsBrowserExtensionActiveUser } from '../../tracking/BrowserExtensionTracker'
 import { HOVER_COUNT_KEY, HOVER_THRESHOLD } from '../RepoContainer'
 
 import { BrowserExtensionAlert } from './BrowserExtensionAlert'
@@ -23,8 +25,6 @@ interface InstallIntegrationsAlertProps
 const CADENCE_KEY = 'InstallIntegrationsAlert.pageViews'
 const DISPLAY_CADENCE = 6
 const IDE_CTA_CADENCE_SHIFT = 3
-export const HAS_DISMISSED_BROWSER_EXTENSION_ALERT_KEY = 'hasDismissedBrowserExtensionAlert'
-export const HAS_DISMISSED_IDE_EXTENSION_ALERT_KEY = 'hasDismissedIdeExtensionAlert'
 
 type CtaToDisplay = 'browser' | 'ide'
 
@@ -41,29 +41,34 @@ export const InstallIntegrationsAlert: React.FunctionComponent<InstallIntegratio
         DISPLAY_CADENCE,
         IDE_CTA_CADENCE_SHIFT
     )
-    const isBrowserExtensionInstalled = useObservable<boolean>(browserExtensionInstalled)
+    const isBrowserExtensionActiveUser = useIsBrowserExtensionActiveUser()
+    const isUsingIdeIntegration = useIsActiveIdeIntegrationUser()
     const [hoverCount] = useLocalStorage<number>(HOVER_COUNT_KEY, 0)
-    const [hasDismissedBrowserExtensionAlert, setHasDismissedBrowserExtensionAlert] = useLocalStorage<boolean>(
-        HAS_DISMISSED_BROWSER_EXTENSION_ALERT_KEY,
+    const [hasDismissedBrowserExtensionAlert, setHasDismissedBrowserExtensionAlert] = useTemporarySetting(
+        'cta.browserExtensionAlertDismissed',
         false
     )
-    const [hasDismissedIDEExtensionAlert, setHasDismissedIDEExtensionAlert] = useLocalStorage<boolean>(
-        HAS_DISMISSED_IDE_EXTENSION_ALERT_KEY,
+    const [hasDismissedIDEExtensionAlert, setHasDismissedIDEExtensionAlert] = useTemporarySetting(
+        'cta.ideExtensionAlertDismissed',
         false
     )
 
     const ctaToDisplay = useMemo<CtaToDisplay | undefined>(
         (): CtaToDisplay | undefined => {
             if (
-                isBrowserExtensionInstalled === false &&
+                isBrowserExtensionActiveUser === false &&
                 displayBrowserExtensionCTABasedOnCadence &&
-                !hasDismissedBrowserExtensionAlert &&
+                hasDismissedBrowserExtensionAlert === false &&
                 hoverCount >= HOVER_THRESHOLD
             ) {
                 return 'browser'
             }
 
-            if (displayIDEExtensionCTABasedOnCadence && !hasDismissedIDEExtensionAlert) {
+            if (
+                isUsingIdeIntegration === false &&
+                displayIDEExtensionCTABasedOnCadence &&
+                hasDismissedIDEExtensionAlert === false
+            ) {
                 return 'ide'
             }
 
@@ -79,7 +84,8 @@ export const InstallIntegrationsAlert: React.FunctionComponent<InstallIntegratio
             displayIDEExtensionCTABasedOnCadence,
             hasDismissedBrowserExtensionAlert,
             hasDismissedIDEExtensionAlert,
-            isBrowserExtensionInstalled,
+            isBrowserExtensionActiveUser,
+            isUsingIdeIntegration,
         ]
     )
 

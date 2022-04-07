@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 
 	"github.com/grafana/regexp"
 	"github.com/graph-gophers/graphql-go"
@@ -78,6 +79,11 @@ func (i *insightViewResolver) AppliedFilters(ctx context.Context) (graphqlbacken
 
 func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.InsightSeriesResolver, error) {
 	var resolvers []graphqlbackend.InsightSeriesResolver
+	if i.view.IsFrozen {
+		// if the view is frozen, we do not show time series data. This is just a basic limitation to prevent
+		// easy mis-use of unlicensed features.
+		return nil, nil
+	}
 
 	var filters *types.InsightViewFilters
 	if i.overrideFilters != nil {
@@ -294,6 +300,10 @@ func (i *insightViewResolver) DashboardReferenceCount(ctx context.Context) (int3
 	return int32(referenceCount), nil
 }
 
+func (i *insightViewResolver) IsFrozen(ctx context.Context) (bool, error) {
+	return i.view.IsFrozen, nil
+}
+
 type searchInsightDataSeriesDefinitionResolver struct {
 	series *types.InsightViewSeries
 }
@@ -387,19 +397,49 @@ func (l *lineChartDataSeriesPresentationResolver) Color(ctx context.Context) (st
 }
 
 func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.CreateLineChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
+	if len(args.Input.DataSeries) == 0 {
+		return nil, errors.New("At least one data series is required to create an insight view")
+	}
+
 	uid := actor.FromContext(ctx).UID
 	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
 
-	tx, err := r.insightStore.Transact(ctx)
+	insightTx, err := r.insightStore.Transact(ctx)
+	dashboardTx := r.dashboardStore.With(insightTx)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = tx.Done(err) }()
+	defer func() { err = insightTx.Done(err) }()
 
-	view, err := tx.CreateView(ctx, types.InsightView{
+	var dashboardIds []int
+	if args.Input.Dashboards != nil {
+		for _, id := range *args.Input.Dashboards {
+			dashboardID, err := unmarshalDashboardID(id)
+			if err != nil {
+				return nil, errors.Wrapf(err, "unmarshalDashboardID, id:%s", dashboardID)
+			}
+			dashboardIds = append(dashboardIds, int(dashboardID.Arg))
+		}
+	}
+
+	lamDashboardId, err := createInsightLicenseCheck(ctx, insightTx, dashboardTx, dashboardIds)
+	if err != nil {
+		return nil, errors.Wrapf(err, "createInsightLicenseCheck")
+	}
+	if lamDashboardId != 0 {
+		dashboardIds = append(dashboardIds, lamDashboardId)
+	}
+
+	filters := types.InsightViewFilters{}
+	if args.Input.ViewControls != nil {
+		filters.IncludeRepoRegex = args.Input.ViewControls.Filters.IncludeRepoRegex
+		filters.ExcludeRepoRegex = args.Input.ViewControls.Filters.ExcludeRepoRegex
+	}
+
+	view, err := insightTx.CreateView(ctx, types.InsightView{
 		Title:            emptyIfNil(args.Input.Options.Title),
 		UniqueID:         ksuid.New().String(),
-		Filters:          types.InsightViewFilters{},
+		Filters:          filters,
 		PresentationType: types.Line,
 	}, []store.InsightViewGrant{store.UserGrant(int(uid))})
 	if err != nil {
@@ -407,27 +447,22 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 	}
 
 	for _, series := range args.Input.DataSeries {
-		err = createAndAttachSeries(ctx, tx, view, series)
+		err = createAndAttachSeries(ctx, insightTx, view, series)
 		if err != nil {
 			return nil, errors.Wrap(err, "createAndAttachSeries")
 		}
 	}
 
-	if args.Input.Dashboards != nil {
-		dashboardTx := r.dashboardStore.With(tx)
-		err := validateUserDashboardPermissions(ctx, dashboardTx, *args.Input.Dashboards, database.Orgs(r.postgresDB))
-		if err != nil {
-			return nil, err
-		}
-
-		for _, id := range *args.Input.Dashboards {
-			dashboardID, err := unmarshalDashboardID(id)
+	if len(dashboardIds) > 0 {
+		if args.Input.Dashboards != nil {
+			err := validateUserDashboardPermissions(ctx, dashboardTx, *args.Input.Dashboards, database.Orgs(r.postgresDB))
 			if err != nil {
-				return nil, errors.Wrapf(err, "unmarshalDashboardID, id:%s", dashboardID)
+				return nil, err
 			}
-
-			log15.Debug("AddView", "insightId", view.UniqueID, "dashboardId", dashboardID.Arg)
-			err = dashboardTx.AddViewsToDashboard(ctx, int(dashboardID.Arg), []string{view.UniqueID})
+		}
+		for _, dashboardId := range dashboardIds {
+			log15.Debug("AddView", "insightId", view.UniqueID, "dashboardId", dashboardId)
+			err = dashboardTx.AddViewsToDashboard(ctx, dashboardId, []string{view.UniqueID})
 			if err != nil {
 				return nil, errors.Wrap(err, "AddViewsToDashboard")
 			}
@@ -438,6 +473,10 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 }
 
 func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.UpdateLineChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
+	if len(args.Input.DataSeries) == 0 {
+		return nil, errors.New("At least one data series is required to update an insight view")
+	}
+
 	tx, err := r.insightStore.Transact(ctx)
 	if err != nil {
 		return nil, err
@@ -528,15 +567,35 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 }
 
 func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphqlbackend.CreatePieChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
-	tx, err := r.insightStore.Transact(ctx)
+	insightTx, err := r.insightStore.Transact(ctx)
+	dashboardTx := r.dashboardStore.With(insightTx)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = tx.Done(err) }()
+	defer func() { err = insightTx.Done(err) }()
 	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
 
+	var dashboardIds []int
+	if args.Input.Dashboards != nil {
+		for _, id := range *args.Input.Dashboards {
+			dashboardID, err := unmarshalDashboardID(id)
+			if err != nil {
+				return nil, errors.Wrapf(err, "unmarshalDashboardID, id:%s", dashboardID)
+			}
+			dashboardIds = append(dashboardIds, int(dashboardID.Arg))
+		}
+	}
+
+	lamDashboardId, err := createInsightLicenseCheck(ctx, insightTx, dashboardTx, dashboardIds)
+	if err != nil {
+		return nil, errors.Wrapf(err, "createInsightLicenseCheck")
+	}
+	if lamDashboardId != 0 {
+		dashboardIds = append(dashboardIds, lamDashboardId)
+	}
+
 	uid := actor.FromContext(ctx).UID
-	view, err := tx.CreateView(ctx, types.InsightView{
+	view, err := insightTx.CreateView(ctx, types.InsightView{
 		Title:            args.Input.PresentationOptions.Title,
 		UniqueID:         ksuid.New().String(),
 		OtherThreshold:   &args.Input.PresentationOptions.OtherThreshold,
@@ -546,7 +605,7 @@ func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphq
 		return nil, errors.Wrap(err, "CreateView")
 	}
 	repos := args.Input.RepositoryScope.Repositories
-	seriesToAdd, err := tx.CreateSeries(ctx, types.InsightSeries{
+	seriesToAdd, err := insightTx.CreateSeries(ctx, types.InsightSeries{
 		SeriesID:           ksuid.New().String(),
 		Query:              args.Input.Query,
 		CreatedAt:          time.Now(),
@@ -564,26 +623,21 @@ func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphq
 	if err != nil {
 		return nil, errors.Wrap(err, "CreateSeries")
 	}
-	err = tx.AttachSeriesToView(ctx, seriesToAdd, view, types.InsightViewSeriesMetadata{})
+	err = insightTx.AttachSeriesToView(ctx, seriesToAdd, view, types.InsightViewSeriesMetadata{})
 	if err != nil {
 		return nil, errors.Wrap(err, "AttachSeriesToView")
 	}
 
-	if args.Input.Dashboards != nil {
-		dashboardTx := r.dashboardStore.With(tx)
-		err := validateUserDashboardPermissions(ctx, dashboardTx, *args.Input.Dashboards, database.Orgs(r.postgresDB))
-		if err != nil {
-			return nil, err
-		}
-
-		for _, id := range *args.Input.Dashboards {
-			dashboardID, err := unmarshalDashboardID(id)
+	if len(dashboardIds) > 0 {
+		if args.Input.Dashboards != nil {
+			err := validateUserDashboardPermissions(ctx, dashboardTx, *args.Input.Dashboards, database.Orgs(r.postgresDB))
 			if err != nil {
-				return nil, errors.Wrapf(err, "unmarshalDashboardID, id:%s", dashboardID)
+				return nil, err
 			}
-
-			log15.Debug("AddView", "insightId", view.UniqueID, "dashboardId", dashboardID.Arg)
-			err = dashboardTx.AddViewsToDashboard(ctx, int(dashboardID.Arg), []string{view.UniqueID})
+		}
+		for _, dashboardId := range dashboardIds {
+			log15.Debug("AddView", "insightId", view.UniqueID, "dashboardId", dashboardId)
+			err = dashboardTx.AddViewsToDashboard(ctx, dashboardId, []string{view.UniqueID})
 			if err != nil {
 				return nil, errors.Wrap(err, "AddViewsToDashboard")
 			}
@@ -800,7 +854,8 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 			args.After = afterID
 		}
 		if r.args.First != nil {
-			args.Limit = int(*r.args.First)
+			// Ask for one more result than needed in order to determine if there is a next page.
+			args.Limit = int(*r.args.First) + 1
 		}
 		var err error
 		args.UserID, args.OrgID, err = getUserPermissions(ctx, orgStore)
@@ -827,8 +882,9 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 
 		r.views = r.insightStore.GroupByView(ctx, viewSeries)
 
-		if len(r.views) > 0 {
-			r.next = r.views[len(r.views)-1].UniqueID
+		if r.args.First != nil && len(r.views) == args.Limit {
+			r.next = r.views[len(r.views)-2].UniqueID
+			r.views = r.views[:args.Limit-1]
 		}
 	})
 	return r.views, r.next, r.err
@@ -960,4 +1016,36 @@ func (r *Resolver) DeleteInsightView(ctx context.Context, args *graphqlbackend.D
 	}
 
 	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func createInsightLicenseCheck(ctx context.Context, insightTx *store.InsightStore, dashboardTx *store.DBDashboardStore, dashboardIds []int) (int, error) {
+	licenseError := licensing.Check(licensing.FeatureCodeInsights)
+	if licenseError != nil {
+		globalUnfrozenInsightCount, _, err := insightTx.GetUnfrozenInsightCount(ctx)
+		if err != nil {
+			return 0, errors.Wrap(err, "GetUnfrozenInsightCount")
+		}
+		if globalUnfrozenInsightCount >= 2 {
+			return 0, errors.New("Cannot create more than 2 global insights in Limited Access Mode.")
+		}
+		if len(dashboardIds) > 0 {
+			dashboards, err := dashboardTx.GetDashboards(ctx, store.DashboardQueryArgs{ID: dashboardIds, WithoutAuthorization: true})
+			if err != nil {
+				return 0, errors.Wrap(err, "GetDashboards")
+			}
+			for _, dashboard := range dashboards {
+				if !dashboard.GlobalGrant {
+					return 0, errors.New("Cannot create an insight on a non-global dashboard in Limited Access Mode.")
+				}
+			}
+		}
+
+		lamDashboardId, err := dashboardTx.EnsureLimitedAccessModeDashboard(ctx)
+		if err != nil {
+			return 0, errors.Wrap(err, "EnsureLimitedAccessModeDashboard")
+		}
+		return lamDashboardId, nil
+	}
+
+	return 0, nil
 }

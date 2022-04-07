@@ -9,7 +9,7 @@
     display: flex;
     flex-direction: column;
     flex: 1;
-    min-width: 60%;
+    min-width: 20%;
     height: 100%;
 }
 
@@ -25,9 +25,7 @@
     margin-left: 1rem;
     background: none;
     border: none;
-    min-width: 300px;
-    width: 30%;
-    max-width: 700px;
+    width: 100%;
 }
 
 // Should mostly match WorkspacesPreview header and LibraryPane header
@@ -40,4 +38,9 @@
     margin-bottom: 0.5rem;
     border-bottom: 1px solid var(--border-color);
     overflow: hidden;
+}
+
+.download-link {
+    padding: 0;
+    font-weight: normal;
 }

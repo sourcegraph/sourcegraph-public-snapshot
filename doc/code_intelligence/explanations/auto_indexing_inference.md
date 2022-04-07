@@ -61,7 +61,7 @@ indexing_jobs:
       - root: <ancestor(dir)>
         image: sourcegraph/lsif-node:autoindex
         commands:
-          # NPM is used to resolve dependencies otherwise.
+          # npm is used to resolve dependencies otherwise.
           - npm install
       - ...
     local_steps:

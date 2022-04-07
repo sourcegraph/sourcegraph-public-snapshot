@@ -2,13 +2,13 @@
 // a specific commit.
 //
 // Architecture Notes:
-// * Archive is fetched from gitserver
-// * Simple HTTP API exposed
-// * Currently no concept of authorization
-// * On disk cache of fetched archives to reduce load on gitserver
-// * Run search on archive. Rely on OS file buffers
-// * Simple to scale up since stateless
-// * Use ingress with affinity to increase local cache hit ratio
+//  * Archive is fetched from gitserver
+//  * Simple HTTP API exposed
+//  * Currently no concept of authorization
+//  * On disk cache of fetched archives to reduce load on gitserver
+//  * Run search on archive. Rely on OS file buffers
+//  * Simple to scale up since stateless
+//  * Use ingress with affinity to increase local cache hit ratio
 package search
 
 import (
@@ -32,7 +32,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
-	"github.com/sourcegraph/sourcegraph/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -46,7 +45,7 @@ const (
 
 // Service is the search service. It is an http.Handler.
 type Service struct {
-	Store *store.Store
+	Store *Store
 	Log   log15.Logger
 }
 
@@ -196,16 +195,16 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	prepareCtx, cancel := context.WithTimeout(ctx, fetchTimeout)
 	defer cancel()
 
-	getZf := func() (string, *store.ZipFile, error) {
+	getZf := func() (string, *zipFile, error) {
 		path, err := s.Store.PrepareZip(prepareCtx, p.Repo, p.Commit)
 		if err != nil {
 			return "", nil, err
 		}
-		zf, err := s.Store.ZipCache.Get(path)
+		zf, err := s.Store.zipCache.Get(path)
 		return path, zf, err
 	}
 
-	zipPath, zf, err := store.GetZipFileWithRetry(getZf)
+	zipPath, zf, err := getZipFileWithRetry(getZf)
 	if err != nil {
 		return errors.Wrap(err, "failed to get archive")
 	}
@@ -223,7 +222,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	if p.IsStructuralPat {
 		return filteredStructuralSearch(ctx, zipPath, zf, &p.PatternInfo, p.Repo, sender)
 	} else {
-		return regexSearch(ctx, rg, zf, p.Limit, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated, sender)
+		return regexSearch(ctx, rg, zf, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated, sender)
 	}
 }
 

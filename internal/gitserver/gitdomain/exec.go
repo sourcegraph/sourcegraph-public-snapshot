@@ -24,11 +24,12 @@ var (
 		"archive":      {"--worktree-attributes", "--format", "-0", "HEAD", "--"},
 		"ls-tree":      {"--name-only", "HEAD", "--long", "--full-name", "--", "-z", "-r", "-t"},
 		"ls-files":     {"--with-tree", "-z"},
-		"for-each-ref": {"--format"},
+		"for-each-ref": {"--format", "--points-at"},
 		"tag":          {"--list", "--sort", "-creatordate", "--format"},
 		"merge-base":   {"--"},
 		"show-ref":     {"--heads"},
 		"shortlog":     {"-s", "-n", "-e", "--no-merges"},
+		"cat-file":     {},
 
 		// Used in tests to simulate errors with runCommand in handleExec of gitserver.
 		"testcommand": {},

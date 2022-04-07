@@ -1,4 +1,5 @@
 import React from 'react'
+
 import { Redirect, RouteComponentProps } from 'react-router'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
@@ -119,5 +120,18 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         path: '/migrations',
         exact: true,
         render: lazyComponent(() => import('./SiteAdminMigrationsPage'), 'SiteAdminMigrationsPage'),
+    },
+    {
+        path: '/feature-flags',
+        exact: true,
+        render: lazyComponent(() => import('./SiteAdminFeatureFlagsPage'), 'SiteAdminFeatureFlagsPage'),
+    },
+    {
+        path: '/feature-flags/configuration/:name',
+        exact: true,
+        render: lazyComponent(
+            () => import('./SiteAdminFeatureFlagConfigurationPage'),
+            'SiteAdminFeatureFlagConfigurationPage'
+        ),
     },
 ]

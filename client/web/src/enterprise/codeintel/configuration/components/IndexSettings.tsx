@@ -8,6 +8,7 @@ import { CodeIntelligenceConfigurationPolicyFields, GitObjectType } from '../../
 import { nullPolicy } from '../hooks/types'
 
 import { DurationSelect } from './DurationSelect'
+
 // This uses the same styles as the RetentionSettings component to style radio buttons
 import styles from './RetentionSettings.module.scss'
 

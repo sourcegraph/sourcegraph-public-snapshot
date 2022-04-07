@@ -54,7 +54,7 @@ const (
 )
 
 func (s *DBSettingsMigrationJobsStore) GetNextSettingsMigrationJobs(ctx context.Context, jobType SettingsMigrationJobType) ([]*SettingsMigrationJob, error) {
-	where := getWhereForSubjectType(ctx, jobType)
+	where := getWhereForSubjectType(jobType)
 	q := sqlf.Sprintf(getSettingsMigrationJobsSql, where)
 	return scanSettingsMigrationJobs(s.Query(ctx, q))
 }
@@ -97,7 +97,7 @@ func scanSettingsMigrationJobs(rows *sql.Rows, queryErr error) (_ []*SettingsMig
 }
 
 func (s *DBSettingsMigrationJobsStore) UpdateTotalInsights(ctx context.Context, userId *int, orgId *int, totalInsights int) error {
-	q := sqlf.Sprintf(updateTotalInsightsSql, totalInsights, getWhereForSubject(ctx, userId, orgId))
+	q := sqlf.Sprintf(updateTotalInsightsSql, totalInsights, getWhereForSubject(userId, orgId))
 	row := s.QueryRow(ctx, q)
 	if row.Err() != nil {
 		return row.Err()
@@ -111,7 +111,7 @@ UPDATE insights_settings_migration_jobs SET total_insights = %s WHERE %s
 `
 
 func (s *DBSettingsMigrationJobsStore) UpdateMigratedInsights(ctx context.Context, userId *int, orgId *int, migratedInsights int) error {
-	q := sqlf.Sprintf(updateMigratedInsightsSql, migratedInsights, getWhereForSubject(ctx, userId, orgId))
+	q := sqlf.Sprintf(updateMigratedInsightsSql, migratedInsights, getWhereForSubject(userId, orgId))
 	row := s.QueryRow(ctx, q)
 	if row.Err() != nil {
 		return row.Err()
@@ -125,7 +125,7 @@ UPDATE insights_settings_migration_jobs SET migrated_insights = %s WHERE %s
 `
 
 func (s *DBSettingsMigrationJobsStore) UpdateTotalDashboards(ctx context.Context, userId *int, orgId *int, totalDashboards int) error {
-	q := sqlf.Sprintf(updateTotalDashboardsSql, totalDashboards, getWhereForSubject(ctx, userId, orgId))
+	q := sqlf.Sprintf(updateTotalDashboardsSql, totalDashboards, getWhereForSubject(userId, orgId))
 	row := s.QueryRow(ctx, q)
 	if row.Err() != nil {
 		return row.Err()
@@ -139,7 +139,7 @@ UPDATE insights_settings_migration_jobs SET total_dashboards = %s WHERE %s
 `
 
 func (s *DBSettingsMigrationJobsStore) UpdateMigratedDashboards(ctx context.Context, userId *int, orgId *int, migratedDashboards int) error {
-	q := sqlf.Sprintf(updateMigratedDashboardsSql, migratedDashboards, getWhereForSubject(ctx, userId, orgId))
+	q := sqlf.Sprintf(updateMigratedDashboardsSql, migratedDashboards, getWhereForSubject(userId, orgId))
 	row := s.QueryRow(ctx, q)
 	if row.Err() != nil {
 		return row.Err()
@@ -153,7 +153,7 @@ UPDATE insights_settings_migration_jobs SET migrated_dashboards = %s WHERE %s
 `
 
 func (s *DBSettingsMigrationJobsStore) UpdateRuns(ctx context.Context, userId *int, orgId *int, runs int) error {
-	q := sqlf.Sprintf(updateRunsSql, runs, getWhereForSubject(ctx, userId, orgId))
+	q := sqlf.Sprintf(updateRunsSql, runs, getWhereForSubject(userId, orgId))
 	row := s.QueryRow(ctx, q)
 	if row.Err() != nil {
 		return row.Err()
@@ -167,7 +167,7 @@ UPDATE insights_settings_migration_jobs SET runs = %s WHERE %s
 `
 
 func (s *DBSettingsMigrationJobsStore) MarkCompleted(ctx context.Context, userId *int, orgId *int) error {
-	q := sqlf.Sprintf(markCompletedSql, s.Now(), getWhereForSubject(ctx, userId, orgId))
+	q := sqlf.Sprintf(markCompletedSql, s.Now(), getWhereForSubject(userId, orgId))
 	row := s.QueryRow(ctx, q)
 	if row.Err() != nil {
 		return row.Err()
@@ -191,7 +191,7 @@ SELECT COUNT(*) from insights_settings_migration_jobs;
 `
 
 func (s *DBSettingsMigrationJobsStore) IsJobTypeComplete(ctx context.Context, jobType SettingsMigrationJobType) (bool, error) {
-	where := getWhereForSubjectType(ctx, jobType)
+	where := getWhereForSubjectType(jobType)
 	q := sqlf.Sprintf(countIncompleteJobsSql, where)
 
 	count, _, err := basestore.ScanFirstInt(s.Query(ctx, q))
@@ -204,7 +204,7 @@ SELECT COUNT(*) FROM insights_settings_migration_jobs
 WHERE %s AND completed_at IS NULL;
 `
 
-func getWhereForSubject(ctx context.Context, userId *int, orgId *int) *sqlf.Query {
+func getWhereForSubject(userId *int, orgId *int) *sqlf.Query {
 	if userId != nil {
 		return sqlf.Sprintf("user_id = %s", *userId)
 	} else if orgId != nil {
@@ -214,7 +214,7 @@ func getWhereForSubject(ctx context.Context, userId *int, orgId *int) *sqlf.Quer
 	}
 }
 
-func getWhereForSubjectType(ctx context.Context, jobType SettingsMigrationJobType) *sqlf.Query {
+func getWhereForSubjectType(jobType SettingsMigrationJobType) *sqlf.Query {
 	if jobType == UserJob {
 		return sqlf.Sprintf("user_id IS NOT NULL")
 	} else if jobType == OrgJob {

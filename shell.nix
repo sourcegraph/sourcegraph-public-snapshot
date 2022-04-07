@@ -13,12 +13,12 @@ let
   # Pin a specific version of universal-ctags to the same version as in cmd/symbols/ctags-install-alpine.sh.
   ctags-overlay = (self: super: {
     universal-ctags = super.universal-ctags.overrideAttrs (old: {
-      version = "5.9.20220206.0";
+      version = "5.9.20220403.0";
       src = super.fetchFromGitHub {
         owner = "universal-ctags";
         repo = "ctags";
-        rev = "40603a68c1f3b14dc1db4671111096733f6d2485";
-        sha256 = "sha256-oqrLO6/+TP5ccimkgZJ66agaUcNQMOalwVsY8GWS2rg=";
+        rev = "f95bb3497f53748c2b6afc7f298cff218103ab90";
+        sha256 = "sha256-pd89KERQj6K11Nue3YFNO+NLOJGqcMnHkeqtWvMFk38=";
       };
       # disable checks, else we get `make[1]: *** No rule to make target 'optlib/cmake.c'.  Stop.`
       doCheck = false;
@@ -29,8 +29,8 @@ let
   pkgs = import
     (fetchTarball {
       url =
-        "https://github.com/NixOS/nixpkgs/archive/2b914ee8e20c7082b18a550bd93e1e7b384adc0f.tar.gz";
-      sha256 = "0qnhrm4ywci89kvl35vwd85ldid3g1z74gqsj1b4hw06186dvcnp";
+        "https://github.com/NixOS/nixpkgs/archive/a5d12145047970d663764ce95bf1e459e734a014.tar.gz";
+      sha256 = "1rbnmbc3mvk5in86wx6hla54d7kkmgn6pz0zwigcchhmi2dv76h3";
     })
     { overlays = [ ctags-overlay ]; };
   # pkgs.universal-ctags installs the binary as "ctags", not "universal-ctags"
@@ -59,7 +59,7 @@ pkgs.mkShell {
     universal-ctags
 
     # Build our backend.
-    go_1_17
+    go_1_18
 
     # Lots of our tooling and go tests rely on git et al.
     git

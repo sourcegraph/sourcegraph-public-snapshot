@@ -2,12 +2,12 @@ import React from 'react'
 
 import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 
+import { RepositoryMenuContent } from './codeintel/RepositoryMenu'
 import { extensionAreaHeaderNavItems } from './extensions/extension/extensionAreaHeaderNavItems'
 import { extensionAreaRoutes } from './extensions/extension/routes'
 import { extensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'
 import { extensionsAreaRoutes } from './extensions/routes'
 import './SourcegraphWebApp.scss'
-import { LazyExtensionViewsSection } from './insights/sections/LazyExtensionViewsSection'
 import { orgAreaHeaderNavItems } from './org/area/navitems'
 import { orgAreaRoutes } from './org/area/routes'
 import { repoHeaderActionButtons } from './repo/repoHeaderActionButtons'
@@ -48,8 +48,8 @@ export const OpenSourceWebApp: React.FunctionComponent = () => (
         repoSettingsSidebarGroups={repoSettingsSideBarGroups}
         routes={routes}
         keyboardShortcuts={KEYBOARD_SHORTCUTS}
-        extensionViews={LazyExtensionViewsSection}
         codeIntelligenceEnabled={false}
+        repositoryMenuContent={RepositoryMenuContent}
         batchChangesEnabled={false}
         searchContextsEnabled={false}
     />

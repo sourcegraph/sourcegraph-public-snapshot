@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-import { SearchBasedBackendFilters } from '../../../../../../core/types/insight/search-insight'
+import { InsightFilters } from '../../../../../../core/types'
 import { FormChangeEvent, SubmissionResult } from '../../../../../form/hooks/useForm'
 
 import {
@@ -11,6 +11,7 @@ import {
     DrillDownInsightCreationForm,
     DrillDownInsightCreationFormValues,
 } from './components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
+
 import styles from './DrillDownFiltersPanel.module.scss'
 
 enum DrillDownFiltersStep {
@@ -19,10 +20,10 @@ enum DrillDownFiltersStep {
 }
 
 export interface DrillDownFiltersPanelProps {
-    initialFiltersValue: SearchBasedBackendFilters
-    originalFiltersValue: SearchBasedBackendFilters
-    onFiltersChange: (filters: SearchBasedBackendFilters) => void
-    onFilterSave: (filters: SearchBasedBackendFilters) => SubmissionResult
+    initialFiltersValue: InsightFilters
+    originalFiltersValue: InsightFilters
+    onFiltersChange: (filters: InsightFilters) => void
+    onFilterSave: (filters: InsightFilters) => SubmissionResult
     onInsightCreate: (values: DrillDownInsightCreationFormValues) => SubmissionResult
 }
 

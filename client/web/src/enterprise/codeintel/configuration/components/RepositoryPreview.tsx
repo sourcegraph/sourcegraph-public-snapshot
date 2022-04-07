@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { FunctionComponent } from 'react'
+
+import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { LoadingSpinner, Alert } from '@sourcegraph/wildcard'

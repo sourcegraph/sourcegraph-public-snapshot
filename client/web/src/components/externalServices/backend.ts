@@ -161,6 +161,7 @@ export function listAffiliatedRepositories(
                         }
                         private
                     }
+                    codeHostErrors
                 }
             }
         `,

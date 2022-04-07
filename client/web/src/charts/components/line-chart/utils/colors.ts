@@ -1,10 +1,6 @@
-import { LineChartSeries } from '../types'
+import { DEFAULT_FALLBACK_COLOR } from '../../../constants'
+import { Series } from '../../../types'
 
-/**
- * Default value for line color in case if we didn't get color for line from content config.
- */
-export const DEFAULT_LINE_STROKE = 'var(--gray-07)'
-
-export function getLineColor(series: LineChartSeries<any>): string {
-    return series.color ?? DEFAULT_LINE_STROKE
+export function getLineColor(series: Series<any>): string {
+    return series.color ?? DEFAULT_FALLBACK_COLOR
 }

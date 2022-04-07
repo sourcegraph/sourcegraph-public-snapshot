@@ -1,12 +1,14 @@
-import classNames from 'classnames'
-import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import React from 'react'
 
-import { PageHeader, Link } from '@sourcegraph/wildcard'
+import classNames from 'classnames'
+import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
+
+import { PageHeader, Link, Icon } from '@sourcegraph/wildcard'
 
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
-import styles from './RepositoryCompareHeader.module.scss'
 import { RepositoryComparePopover } from './RepositoryComparePopover'
+
+import styles from './RepositoryCompareHeader.module.scss'
 
 interface RepositoryCompareHeaderProps extends RepositoryCompareAreaPageProps {
     className: string
@@ -22,7 +24,7 @@ export const RepositoryCompareHeader: React.FunctionComponent<RepositoryCompareH
         <PageHeader
             path={[{ text: 'Compare changes across revisions' }]}
             description={
-                <p>
+                <span className="mb-3">
                     Select a revision or provide a{' '}
                     <Link
                         to="https://git-scm.com/docs/git-rev-parse.html#_specifying_revisions"
@@ -32,12 +34,12 @@ export const RepositoryCompareHeader: React.FunctionComponent<RepositoryCompareH
                         Git revspec
                     </Link>{' '}
                     for more fine-grained comparisons
-                </p>
+                </span>
             }
         />
         <div className="d-flex align-items-center">
             <RepositoryComparePopover id="base-popover" type="base" comparison={{ base, head }} repo={repo} />
-            <DotsHorizontalIcon className="icon-inline mx-2" />
+            <Icon className="mx-2" as={DotsHorizontalIcon} />
             <RepositoryComparePopover id="head-popover" type="head" comparison={{ base, head }} repo={repo} />
         </div>
     </div>

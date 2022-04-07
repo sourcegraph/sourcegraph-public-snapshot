@@ -1,8 +1,9 @@
+import { useCallback, useEffect, useMemo, useState } from 'react'
+
 import AJV from 'ajv'
 import addFormats from 'ajv-formats'
 import { load as loadYAML } from 'js-yaml'
 import { debounce } from 'lodash'
-import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { BatchSpec } from '@sourcegraph/shared/src/schema/batch_spec.schema'
 import { useDebounce } from '@sourcegraph/wildcard'
@@ -158,6 +159,7 @@ export const useBatchSpecCode = (initialCode: string, name: string): UseBatchSpe
 
     // Automatically updates the batch spec code when the user wants to exclude a repo
     // resolved in the workspaces preview.
+    // TODO: https://github.com/sourcegraph/sourcegraph/issues/25085
     const excludeRepo = useCallback(
         (repo: string, branch: string) => {
             clearErrors()

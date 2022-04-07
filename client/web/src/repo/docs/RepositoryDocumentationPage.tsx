@@ -1,9 +1,10 @@
+import React, { useEffect, useCallback, useMemo, useState, useRef } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
 import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useEffect, useCallback, useMemo, useState, useRef } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
@@ -23,6 +24,7 @@ import {
     ButtonLink,
     Button,
     PopoverTrigger,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
@@ -38,8 +40,9 @@ import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { DocumentationNode } from './DocumentationNode'
 import { DocumentationWelcomeAlert } from './DocumentationWelcomeAlert'
 import { fetchDocumentationPage, fetchDocumentationPathInfo, GQLDocumentationNode, isExcluded, Tag } from './graphql'
-import styles from './RepositoryDocumentationPage.module.scss'
 import { RepositoryDocumentationSidebar, getSidebarVisibility } from './RepositoryDocumentationSidebar'
+
+import styles from './RepositoryDocumentationPage.module.scss'
 
 const PageError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
     <Alert className="m-2" variant="danger">
@@ -49,7 +52,7 @@ const PageError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => 
 
 const PageNotFound: React.FunctionComponent = () => (
     <div>
-        <MapSearchIcon className="icon-inline" /> Page not found
+        <Icon as={MapSearchIcon} /> Page not found
     </div>
 )
 
@@ -236,7 +239,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                             </FeedbackPrompt>
                         </div>
                         <h1>
-                            <BookOpenBlankVariantIcon className="icon-inline mr-1" />
+                            <Icon className="mr-1" as={BookOpenBlankVariantIcon} />
                             API docs
                             <ProductStatusBadge
                                 status="experimental"
@@ -247,7 +250,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                         <p>API documentation generated for all your code</p>
                         <Container>
                             <h2 className="text-muted mb-2">
-                                <MapSearchIcon className="icon-inline mr-2" />
+                                <Icon className="mr-2" as={MapSearchIcon} />
                                 Repository has no LSIF documentation data
                             </h2>
                             <p className="mt-3">

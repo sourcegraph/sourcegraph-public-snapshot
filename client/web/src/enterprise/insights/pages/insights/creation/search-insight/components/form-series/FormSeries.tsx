@@ -1,23 +1,19 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { Button } from '@sourcegraph/wildcard'
 
+import { LimitedAccessLabel } from '../../../../../../components/limited-access-label/LimitedAccessLabel'
+import { useUiFeatures } from '../../../../../../hooks/use-ui-features'
 import { EditableDataSeries } from '../../types'
 import { FormSeriesInput } from '../form-series-input/FormSeriesInput'
 
 import { SeriesCard } from './components/series-card/SeriesCard'
+
 import styles from './FormSeries.module.scss'
 
 export interface FormSeriesProps {
-    /**
-     * This prop represents the case whenever the edit insight UI page
-     * deals with backend insight. We need to disable our search insight
-     * query field since our backend insight can't update BE data according
-     * to the latest insight configuration.
-     */
-    isBackendInsightEdit: boolean
-
     /**
      * Show all validation error for all forms and fields within the series forms.
      */
@@ -71,7 +67,6 @@ export interface FormSeriesProps {
 export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
     const {
         series = [],
-        isBackendInsightEdit,
         showValidationErrorsOnMount,
         repositories,
         onEditSeriesRequest,
@@ -81,6 +76,8 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
         onLiveChange,
     } = props
 
+    const { licensed } = useUiFeatures()
+
     return (
         <ul data-testid="form-series" className="list-unstyled d-flex flex-column">
             {series.map((line, index) =>
@@ -88,7 +85,6 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
                     <FormSeriesInput
                         key={line.id}
                         series={line}
-                        isSearchQueryDisabled={isBackendInsightEdit}
                         showValidationErrorsOnMount={showValidationErrorsOnMount}
                         index={index + 1}
                         cancel={series.length > 1}
@@ -103,7 +99,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
                     line && (
                         <SeriesCard
                             key={line.id}
-                            isRemoveSeriesAvailable={!isBackendInsightEdit}
+                            disabled={index >= 10}
                             onEdit={() => onEditSeriesRequest(line.id)}
                             onRemove={() => onSeriesRemove(line.id)}
                             className={styles.formSeriesItem}
@@ -113,12 +109,16 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
                 )
             )}
 
+            {!licensed && (
+                <LimitedAccessLabel message="Unlock Code Insights for unlimited data series" className="mx-auto my-3" />
+            )}
+
             <Button
                 data-testid="add-series-button"
                 type="button"
-                disabled={isBackendInsightEdit}
                 onClick={() => onEditSeriesRequest()}
                 variant="link"
+                disabled={!licensed ? series.length >= 10 : false}
                 className={classNames(styles.formSeriesItem, styles.formSeriesAddButton, 'p-3')}
             >
                 + Add another data series

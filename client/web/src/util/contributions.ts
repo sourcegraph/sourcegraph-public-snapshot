@@ -1,3 +1,5 @@
+import React from 'react'
+
 import { RouteComponentProps } from 'react-router'
 
 interface Conditional<C extends object> {
@@ -57,6 +59,9 @@ export interface NavItemDescriptor<C extends object = {}> extends Conditional<C>
 
     /** The link source to determine the render strategy (react-dom link component or <a>) */
     readonly source?: 'server' | 'client'
+
+    /** The text of the item calculated dynamically passing the context*/
+    readonly dynamicLabel?: (context: C) => React.ReactNode
 }
 
 export interface NavItemWithIconDescriptor<C extends object = {}> extends NavItemDescriptor<C>, WithIcon {}

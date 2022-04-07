@@ -277,7 +277,7 @@ func TestInviteUserToOrganization(t *testing.T) {
 				ExpectedResult: `
 				{
 					"inviteUserToOrganization": {
-						"invitationURL": "http://example.com/organizations/invitation/eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpbnZpdGVfSUQiOjEsInNlbmRlcl9pZCI6MCwiaXNzIjoiaHR0cDovL2V4YW1wbGUuY29tIiwic3ViIjoiMCIsImV4cCI6MTYxMTk2NDgwMH0.UGJRadHkOsL3PTPgyXTKJE1XYIh-DDDfL_MjIlR5FJJRXPkpEgF97L1S30_n_2Nrj__A3ipXCJ-SQmH8ASMbIg",
+						"invitationURL": "http://example.com/organizations/invitation/eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpbnZpdGVfaWQiOjEsInNlbmRlcl9pZCI6MCwiaXNzIjoiaHR0cDovL2V4YW1wbGUuY29tIiwic3ViIjoiMCIsImV4cCI6MTYxMTk2NDgwMH0.26FeOWbKQJ0uZ6_aeCmbYoIb2mnP0e96hiSYrw1gd91CKyVvuZQRvbzDnUf4D2gOPnwBl4GLovBjByy6xgN1ow",
 						"sentInvitationEmail": false
 					}
 				}
@@ -341,7 +341,7 @@ func TestInviteUserToOrganization(t *testing.T) {
 				ExpectedResult: `
 				{
 					"inviteUserToOrganization": {
-						"invitationURL": "http://example.com/organizations/invitation/eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpbnZpdGVfSUQiOjEsInNlbmRlcl9pZCI6MCwiaXNzIjoiaHR0cDovL2V4YW1wbGUuY29tIiwic3ViIjoiMCIsImV4cCI6MTYxMTk2NDgwMH0.UGJRadHkOsL3PTPgyXTKJE1XYIh-DDDfL_MjIlR5FJJRXPkpEgF97L1S30_n_2Nrj__A3ipXCJ-SQmH8ASMbIg",
+						"invitationURL": "http://example.com/organizations/invitation/eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpbnZpdGVfaWQiOjEsInNlbmRlcl9pZCI6MCwiaXNzIjoiaHR0cDovL2V4YW1wbGUuY29tIiwic3ViIjoiMCIsImV4cCI6MTYxMTk2NDgwMH0.26FeOWbKQJ0uZ6_aeCmbYoIb2mnP0e96hiSYrw1gd91CKyVvuZQRvbzDnUf4D2gOPnwBl4GLovBjByy6xgN1ow",
 						"sentInvitationEmail": false
 					}
 				}
@@ -659,7 +659,7 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 		invitationID := int64(3)
 		orgID := int32(3)
 		email := "foo@bar.baz"
-		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientEmail: email}, nil)
+		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientEmail: strings.ToUpper(email)}, nil)
 
 		userEmails := database.NewMockUserEmailsStore()
 		userEmails.ListByUserFunc.SetDefaultReturn([]*database.UserEmail{{Email: email, UserID: 2}}, nil)
@@ -873,6 +873,7 @@ func TestResendOrganizationInvitationNotification(t *testing.T) {
 		email := "foo@bar.baz"
 		yesterday := timeNow().Add(-24 * time.Hour)
 		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientEmail: email, ExpiresAt: &yesterday}, nil)
+		wantErr := database.NewOrgInvitationExpiredErr(invitationID)
 
 		RunTests(t, []*Test{
 			{
@@ -891,7 +892,7 @@ func TestResendOrganizationInvitationNotification(t *testing.T) {
 				ExpectedResult: "null",
 				ExpectedErrors: []*errors.QueryError{
 					{
-						Message: "invitation is expired",
+						Message: wantErr.Error(),
 						Path:    []interface{}{"resendOrganizationInvitationNotification"},
 					},
 				},

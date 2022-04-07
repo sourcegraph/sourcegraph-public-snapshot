@@ -8,11 +8,15 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
+	"github.com/gobwas/glob"
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
+
+	"github.com/sourcegraph/go-ctags"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -20,9 +24,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/resetonce"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -61,12 +67,15 @@ type Client struct {
 	// database connection.
 	SubRepoPermsChecker func() authz.SubRepoPermissionChecker
 
-	once     sync.Once
-	endpoint *endpoint.Map
+	endpointOnce sync.Once
+	endpoint     *endpoint.Map
+
+	langMappingOnce  resetonce.Once
+	langMappingCache map[string][]glob.Glob
 }
 
 func (c *Client) url(repo api.RepoName) (string, error) {
-	c.once.Do(func() {
+	c.endpointOnce.Do(func() {
 		if len(strings.Fields(c.URL)) == 0 {
 			c.endpoint = endpoint.Empty(errors.New("a symbols service has not been configured"))
 		} else {
@@ -74,6 +83,50 @@ func (c *Client) url(repo api.RepoName) (string, error) {
 		}
 	})
 	return c.endpoint.Get(string(repo))
+}
+
+func (c *Client) ListLanguageMappings(ctx context.Context, repo api.RepoName) (_ map[string][]glob.Glob, err error) {
+	c.langMappingOnce.Do(func() {
+		var resp *http.Response
+		resp, err = c.httpPost(ctx, "list-languages", repo, nil)
+		if err != nil {
+			return
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			// best-effort inclusion of body in error message
+			body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
+			err = errors.Errorf(
+				"Symbol.ListLanguageMappings http status %d: %s",
+				resp.StatusCode,
+				string(body),
+			)
+			return
+		}
+
+		mapping := make(map[string][]string)
+		err = json.NewDecoder(resp.Body).Decode(&mapping)
+
+		globs := make(map[string][]glob.Glob, len(ctags.SupportedLanguages))
+
+		for _, allowedLanguage := range ctags.SupportedLanguages {
+			for _, pattern := range mapping[allowedLanguage] {
+				var compiled glob.Glob
+				compiled, err = glob.Compile(pattern)
+				if err != nil {
+					return
+				}
+
+				globs[allowedLanguage] = append(globs[allowedLanguage], compiled)
+			}
+		}
+
+		c.langMappingCache = globs
+		time.AfterFunc(time.Minute*10, c.langMappingOnce.Reset)
+	})
+
+	return c.langMappingCache, nil
 }
 
 // Search performs a symbol search on the symbols service.
@@ -99,8 +152,7 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 		// best-effort inclusion of body in error message
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
 		return nil, errors.Errorf(
-			"Symbol.Search http status %d for %+v: %s",
-			resp.StatusCode,
+			"Symbol.Search http status %d: %s",
 			resp.StatusCode,
 			string(body),
 		)
@@ -140,6 +192,42 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 	}
 
 	return filtered, nil
+}
+
+func (c *Client) LocalCodeIntel(ctx context.Context, args types.RepoCommitPath) (result *types.LocalCodeIntelPayload, err error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "squirrel.Client.LocalCodeIntel")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.LogFields(otlog.Error(err))
+		}
+		span.Finish()
+	}()
+	span.SetTag("Repo", args.Repo)
+	span.SetTag("CommitID", args.Commit)
+
+	resp, err := c.httpPost(ctx, "localCodeIntel", api.RepoName(args.Repo), args)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		// best-effort inclusion of body in error message
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
+		return nil, errors.Errorf(
+			"Squirrel.LocalCodeIntel http status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
+	}
+
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err != nil {
+		return nil, errors.Wrap(err, "decoding response body")
+	}
+
+	return result, nil
 }
 
 func (c *Client) httpPost(

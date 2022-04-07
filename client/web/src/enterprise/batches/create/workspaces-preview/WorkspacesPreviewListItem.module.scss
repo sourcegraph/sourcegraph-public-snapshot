@@ -1,22 +1,3 @@
-.light {
-    // The light items just share the background color with the rest of the section.
-    background-color: none;
-}
-
-.dark {
-    background-color: var(--subtle-bg-2);
-}
-
-.overflow {
-    overflow-wrap: anywhere;
-}
-
-.stale {
+.stale h4 {
     color: var(--text-disabled);
-}
-
-.status-container {
-    width: 1rem;
-    align-self: flex-start;
-    margin-top: 0.1rem;
 }

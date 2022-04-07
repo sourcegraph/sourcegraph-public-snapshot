@@ -256,7 +256,7 @@ func writeFiles(workspaceFileContentsByPath map[string][]byte, logger *command.L
 	return nil
 }
 
-func createHoneyEvent(ctx context.Context, job executor.Job, err error, duration time.Duration) honey.Event {
+func createHoneyEvent(_ context.Context, job executor.Job, err error, duration time.Duration) honey.Event {
 	fields := map[string]interface{}{
 		"duration_ms":    duration.Milliseconds(),
 		"recordID":       job.RecordID(),

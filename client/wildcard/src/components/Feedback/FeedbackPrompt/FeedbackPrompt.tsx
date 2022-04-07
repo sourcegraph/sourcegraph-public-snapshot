@@ -1,6 +1,7 @@
+import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'react'
+
 import CloseIcon from 'mdi-react/CloseIcon'
 import TickIcon from 'mdi-react/TickIcon'
-import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -10,8 +11,9 @@ import { useAutoFocus, useLocalStorage } from '../../..'
 import { Modal } from '../../Modal'
 
 import { Happy, Sad, VeryHappy, VerySad } from './FeedbackIcons'
-import styles from './FeedbackPrompt.module.scss'
 import { IconRadioButtons } from './IconRadioButtons'
+
+import styles from './FeedbackPrompt.module.scss'
 
 export const HAPPINESS_FEEDBACK_OPTIONS = [
     {
@@ -125,7 +127,7 @@ const FeedbackPromptContent: React.FunctionComponent<FeedbackPromptContentProps>
                 </div>
             ) : (
                 <Form onSubmit={handleSubmit}>
-                    <h3 className="mb-0">What’s on your mind?</h3>
+                    <h3 className="mb-3">What’s on your mind?</h3>
 
                     <FlexTextArea
                         onChange={handleTextChange}
@@ -144,6 +146,7 @@ const FeedbackPromptContent: React.FunctionComponent<FeedbackPromptContentProps>
                         selected={rating}
                         onChange={handleRateChange}
                         disabled={submitting}
+                        className="mt-3"
                     />
                     {submitResponse?.errorMessage && (
                         <ErrorAlert

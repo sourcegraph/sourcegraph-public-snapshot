@@ -1,9 +1,10 @@
+import React, { useState, useCallback } from 'react'
+
 import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import ChevronDoubleRightIcon from 'mdi-react/ChevronDoubleRightIcon'
-import React, { useState, useCallback } from 'react'
 import { animated, useSpring } from 'react-spring'
 
-import { Button, useLocalStorage } from '@sourcegraph/wildcard'
+import { Button, useLocalStorage, Icon, Link } from '@sourcegraph/wildcard'
 
 import { Scalars } from '../../../../graphql-operations'
 import { insertNameIntoLibraryItem } from '../yaml-util'
@@ -11,9 +12,10 @@ import { insertNameIntoLibraryItem } from '../yaml-util'
 import combySample from './comby.batch.yaml'
 import goImportsSample from './go-imports.batch.yaml'
 import helloWorldSample from './hello-world.batch.yaml'
-import styles from './LibraryPane.module.scss'
 import minimalSample from './minimal.batch.yaml'
 import { ReplaceSpecModal } from './ReplaceSpecModal'
+
+import styles from './LibraryPane.module.scss'
 
 interface LibraryItem {
     name: string
@@ -114,11 +116,7 @@ export const LibraryPane: React.FunctionComponent<LibraryPaneProps> = ({ name, o
                             onClick={() => toggleCollapse(!collapsed)}
                             aria-label={collapsed ? 'Expand' : 'Collapse'}
                         >
-                            {collapsed ? (
-                                <ChevronDoubleRightIcon className="icon-inline" />
-                            ) : (
-                                <ChevronDoubleLeftIcon className="icon-inline" />
-                            )}
+                            <Icon as={collapsed ? ChevronDoubleRightIcon : ChevronDoubleLeftIcon} />
                         </Button>
                     </div>
                 </div>
@@ -137,6 +135,9 @@ export const LibraryPane: React.FunctionComponent<LibraryPaneProps> = ({ name, o
                             </li>
                         ))}
                     </ul>
+                    <p className={styles.lastItem}>
+                        <Link to="https://github.com/sourcegraph/batch-change-examples">View more examples</Link>
+                    </p>
                 </animated.div>
             </animated.div>
         </>

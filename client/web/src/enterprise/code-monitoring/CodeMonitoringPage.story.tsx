@@ -1,5 +1,6 @@
-import { storiesOf } from '@storybook/react'
 import React from 'react'
+
+import { storiesOf } from '@storybook/react'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
@@ -17,7 +18,7 @@ const { add } = storiesOf('web/enterprise/code-monitoring/CodeMonitoringPage', m
     chromatic: {
         // Delay screenshot taking, so <CodeMonitoringPage /> is ready to show content.
         delay: 600,
-        chromatic: { disableSnapshot: false },
+        disableSnapshot: false,
     },
 })
 

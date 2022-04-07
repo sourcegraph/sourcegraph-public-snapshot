@@ -1,9 +1,12 @@
 import assert from 'assert'
 
-import { createMemoryHistory } from 'history'
 import React from 'react'
+
+import { createMemoryHistory } from 'history'
 import ReactDOM from 'react-dom'
 import * as sinon from 'sinon'
+
+import { Link } from '@sourcegraph/wildcard'
 
 import { createLinkClickHandler } from './linkClickHandler'
 
@@ -19,7 +22,7 @@ describe('createLinkClickHandler', () => {
         ReactDOM.render(
             // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
             <div onClick={createLinkClickHandler(history)}>
-                <a href="https://sourcegraph.test/else/where">Test</a>
+                <Link to="https://sourcegraph.test/else/where">Test</Link>
             </div>,
             root
         )
@@ -49,7 +52,7 @@ describe('createLinkClickHandler', () => {
         ReactDOM.render(
             // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
             <div onClick={createLinkClickHandler(history)}>
-                <a href="https://github.com/some/where">Test</a>
+                <Link to="https://github.com/some/where">Test</Link>
             </div>,
             root
         )

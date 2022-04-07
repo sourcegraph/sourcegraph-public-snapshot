@@ -1,5 +1,6 @@
-import { Story, Meta } from '@storybook/react'
 import React from 'react'
+
+import { Story, Meta } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
@@ -23,6 +24,11 @@ const config: Meta = {
             enableDarkMode: true,
             disableSnapshot: false,
         },
+        design: {
+            type: 'figma',
+            name: 'Figma',
+            url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=1366%3A611',
+        },
     },
 }
 export default config
@@ -30,9 +36,9 @@ export default config
 export const Simple: Story = () => (
     <>
         <h3>Small Icon</h3>
-        <Icon svg={<SourcegraphIcon />} size="sm" />
+        <Icon as={SourcegraphIcon} size="sm" />
 
         <h3>Medium Icon</h3>
-        <Icon svg={<SourcegraphIcon />} size="md" />
+        <Icon as={SourcegraphIcon} size="md" />
     </>
 )

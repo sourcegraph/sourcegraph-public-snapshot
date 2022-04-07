@@ -1,49 +1,25 @@
 package git
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/avelino/slugify"
-	"github.com/rainycape/unidecode"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-// HumanReadableBranchName returns a human readable branch name from the
-// given text. It replaces unicode characters with their ASCII equivalent
-// or similar and connects each component with a dash.
-//
-// Example: "Change coördination mechanism" -> "change-coordination-mechanism"
-func HumanReadableBranchName(text string) string {
-	name := slugify.Slugify(unidecode.Unidecode(text))
-
-	const length = 60
-	if len(name) <= length {
-		return name
-	}
-
-	// Find the last word separator so we don't cut in the middle of a word.
-	// If the word separator is found in the very first part of the name we don't
-	// cut there because it'd leave out too much of it.
-	sep := strings.LastIndexByte(name[:length], '-')
-	if sep >= 0 && float32(sep)/float32(length) >= 0.2 {
-		return name[:sep]
-	}
-
-	return name[:length]
-}
 
 // EnsureRefPrefix checks whether the ref is a full ref and contains the
 // "refs/heads" prefix (i.e. "refs/heads/master") or just an abbreviated ref
@@ -146,28 +122,28 @@ func (f branchFilter) add(list []string) {
 }
 
 // ListBranches returns a list of all branches in the repository.
-func ListBranches(ctx context.Context, repo api.RepoName, opt BranchesOptions) ([]*Branch, error) {
+func ListBranches(ctx context.Context, db database.DB, repo api.RepoName, opt BranchesOptions) ([]*Branch, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Branches")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
 	f := make(branchFilter)
 	if opt.MergedInto != "" {
-		b, err := branches(ctx, repo, "--merged", opt.MergedInto)
+		b, err := branches(ctx, db, repo, "--merged", opt.MergedInto)
 		if err != nil {
 			return nil, err
 		}
 		f.add(b)
 	}
 	if opt.ContainsCommit != "" {
-		b, err := branches(ctx, repo, "--contains="+opt.ContainsCommit)
+		b, err := branches(ctx, db, repo, "--contains="+opt.ContainsCommit)
 		if err != nil {
 			return nil, err
 		}
 		f.add(b)
 	}
 
-	refs, err := showRef(ctx, repo, "--heads")
+	refs, err := showRef(ctx, db, repo, "--heads")
 	if err != nil {
 		return nil, err
 	}
@@ -181,13 +157,13 @@ func ListBranches(ctx context.Context, repo api.RepoName, opt BranchesOptions) (
 
 		branch := &Branch{Name: name, Head: ref.CommitID}
 		if opt.IncludeCommit {
-			branch.Commit, err = getCommit(ctx, repo, ref.CommitID, ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
+			branch.Commit, err = getCommit(ctx, db, repo, ref.CommitID, ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
 			if err != nil {
 				return nil, err
 			}
 		}
 		if opt.BehindAheadBranch != "" {
-			branch.Counts, err = GetBehindAhead(ctx, repo, "refs/heads/"+opt.BehindAheadBranch, "refs/heads/"+name)
+			branch.Counts, err = GetBehindAhead(ctx, db, repo, "refs/heads/"+opt.BehindAheadBranch, "refs/heads/"+name)
 			if err != nil {
 				return nil, err
 			}
@@ -199,8 +175,8 @@ func ListBranches(ctx context.Context, repo api.RepoName, opt BranchesOptions) (
 
 // branches runs the `git branch` command followed by the given arguments and
 // returns the list of branches if successful.
-func branches(ctx context.Context, repo api.RepoName, args ...string) ([]string, error) {
-	cmd := gitserver.DefaultClient.Command("git", append([]string{"branch"}, args...)...)
+func branches(ctx context.Context, db database.DB, repo api.RepoName, args ...string) ([]string, error) {
+	cmd := gitserver.NewClient(db).Command("git", append([]string{"branch"}, args...)...)
 	cmd.Repo = repo
 	out, err := cmd.Output(ctx)
 	if err != nil {
@@ -217,7 +193,7 @@ func branches(ctx context.Context, repo api.RepoName, args ...string) ([]string,
 
 // GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
 // revspecs).
-func GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) (*BehindAhead, error) {
+func GetBehindAhead(ctx context.Context, db database.DB, repo api.RepoName, left, right string) (*BehindAhead, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: BehindAhead")
 	defer span.Finish()
 
@@ -228,7 +204,7 @@ func GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) 
 		return nil, err
 	}
 
-	cmd := gitserver.DefaultClient.Command("git", "rev-list", "--count", "--left-right", fmt.Sprintf("%s...%s", left, right))
+	cmd := gitserver.NewClient(db).Command("git", "rev-list", "--count", "--left-right", fmt.Sprintf("%s...%s", left, right))
 	cmd.Repo = repo
 	out, err := cmd.Output(ctx)
 	if err != nil {
@@ -247,14 +223,14 @@ func GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) 
 }
 
 // ListTags returns a list of all tags in the repository.
-func ListTags(ctx context.Context, repo api.RepoName) ([]*Tag, error) {
+func ListTags(ctx context.Context, db database.DB, repo api.RepoName) ([]*Tag, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Tags")
 	defer span.Finish()
 
 	// Support both lightweight tags and tag objects. For creatordate, use an %(if) to prefer the
 	// taggerdate for tag objects, otherwise use the commit's committerdate (instead of just always
 	// using committerdate).
-	cmd := gitserver.DefaultClient.Command("git", "tag", "--list", "--sort", "-creatordate", "--format", "%(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end)%00%(refname:short)%00%(if)%(creatordate:unix)%(then)%(creatordate:unix)%(else)%(*creatordate:unix)%(end)")
+	cmd := gitserver.NewClient(db).Command("git", "tag", "--list", "--sort", "-creatordate", "--format", "%(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end)%00%(refname:short)%00%(if)%(creatordate:unix)%(then)%(creatordate:unix)%(else)%(*creatordate:unix)%(end)")
 	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
@@ -302,10 +278,10 @@ func (p byteSlices) Less(i, j int) bool { return bytes.Compare(p[i], p[j]) < 0 }
 func (p byteSlices) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 // ListRefs returns a list of all refs in the repository.
-func ListRefs(ctx context.Context, repo api.RepoName) ([]Ref, error) {
+func ListRefs(ctx context.Context, db database.DB, repo api.RepoName) ([]Ref, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: ListRefs")
 	defer span.Finish()
-	return showRef(ctx, repo)
+	return showRef(ctx, db, repo)
 }
 
 // Ref describes a Git ref.
@@ -314,8 +290,8 @@ type Ref struct {
 	CommitID api.CommitID
 }
 
-func showRef(ctx context.Context, repo api.RepoName, args ...string) ([]Ref, error) {
-	cmd := gitserver.DefaultClient.Command("git", "show-ref")
+func showRef(ctx context.Context, db database.DB, repo api.RepoName, args ...string) ([]Ref, error) {
+	cmd := gitserver.NewClient(db).Command("git", "show-ref")
 	cmd.Args = append(cmd.Args, args...)
 	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)
@@ -353,4 +329,45 @@ var invalidBranch = lazyregexp.New(`\.\.|/\.|\.lock$|[\000-\037\177 ~^:?*[]+|^/|
 // NOTE: It does not require a slash as mentioned in point 2.
 func ValidateBranchName(branch string) bool {
 	return !(invalidBranch.MatchString(branch) || strings.EqualFold(branch, "head"))
+}
+
+// RevList makes a git rev-list call and iterates through the resulting commits, calling the provided onCommit function for each.
+func RevList(repo string, db database.DB, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	command := gitserver.NewClient(db).Command("git", RevListArgs(commit)...)
+	command.Repo = api.RepoName(repo)
+	command.DisableTimeout()
+	stdout, err := gitserver.StdoutReader(ctx, command)
+	if err != nil {
+		return err
+	}
+	defer stdout.Close()
+
+	return RevListEach(stdout, onCommit)
+}
+
+func RevListArgs(givenCommit string) []string {
+	return []string{"rev-list", "--first-parent", givenCommit}
+}
+
+func RevListEach(stdout io.Reader, onCommit func(commit string) (shouldContinue bool, err error)) error {
+	reader := bufio.NewReader(stdout)
+
+	for {
+		commit, err := reader.ReadString('\n')
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return err
+		}
+		commit = commit[:len(commit)-1] // Drop the trailing newline
+		shouldContinue, err := onCommit(commit)
+		if !shouldContinue {
+			return err
+		}
+	}
+
+	return nil
 }

@@ -159,6 +159,14 @@
             "pointer": true
           }
         },
+        "showComputeComponent": {
+          "description": "Enables display of compute components (currently Notebook blocks)",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "showQueryBuilder": {
           "description": "REMOVED. Previously, enabled the search query builder page. This page has been removed.",
           "type": "boolean",
@@ -198,6 +206,14 @@
             "pointer": true
           }
         },
+        "treeSitterEnabled": {
+          "description": "DEPRECATED: Enables tree sitter for enabled filetypes.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "batchChangesExecution": {
           "description": "Enables/disables the Batch Changes server side execution feature.",
           "type": "boolean",
@@ -232,17 +248,57 @@
           }
         },
         "coolCodeIntel": {
-          "description": "Use the (cool) experimental reference panel for code intelligence",
+          "description": "Use the (cool) experimental reference panel for code intelligence.",
           "type": "boolean",
           "default": false,
           "!go": {
             "pointer": true
           }
         },
+        "codeIntelRepositoryBadge": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Show the code intelligence badge when viewing a repository.",
+              "type": "boolean",
+              "default": false,
+              "!go": {
+                "pointer": true
+              }
+            },
+            "forNerds": {
+              "description": "Show entirely too much information.",
+              "type": "boolean",
+              "default": false,
+              "!go": {
+                "pointer": true
+              }
+            }
+          },
+          "required": ["enabled"],
+          "additionalProperties": false
+        },
         "showCodeMonitoringLogs": {
           "description": "Shows code monitoring logs tab.",
           "type": "boolean",
           "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "homepageUserInvitation": {
+          "description": "Shows a panel to invite collaborators to Sourcegraph on home page.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "editor": {
+          "description": "Specifies which (code) editor to use for query and text input",
+          "type": "string",
+          "default": "monaco",
+          "enum": ["monaco", "codemirror6"],
           "!go": {
             "pointer": true
           }
@@ -335,6 +391,11 @@
       "description": "Maximum number of references/definitions (or other code intelligence results provided by extensions) shown in the panel. If not set a default value will be used to ensure best performance.",
       "type": "integer"
     },
+    "codeIntelligence.clickToGoToDefinition": {
+      "description": "Enable click to go to definition.",
+      "type": "boolean",
+      "default": true
+    },
     "search.contextLines": {
       "description": "The default number of lines to show as context below and above search results. Default is 1.",
       "type": "integer",
@@ -385,6 +446,11 @@
       "items": {
         "type": "string"
       }
+    },
+    "history.preferAbsoluteTimestamps": {
+      "description": "Show absolute timestamps in the history panel and only show relative timestamps (e.g.: \"5 days ago\") in tooltip when hovering.",
+      "type": "boolean",
+      "default": false
     },
     "notices": {
       "description": "Custom informational messages to display to users at specific locations in the Sourcegraph user interface.\n\nUsually this setting is used in global and organization settings. If set in user settings, the message will only be displayed to that single user.",

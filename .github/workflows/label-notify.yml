@@ -10,8 +10,9 @@ jobs:
     steps:
         - uses: jenschelkopf/issue-label-notification-action@f7d2363e5efa18b8aeea671ca8093e183ae8f218 # 1.3
           with:
+             token: "${{ secrets.LABELER_GITHUB_TOKEN }}"
              recipients: |
-                  team/growth-and-integrations=@muratsu @rrhyne @jjinnii @ryankscott
+                  team/growth-and-integrations=@muratsu @jjinnii @ryankscott
                   team/cloud=@RafLeszczynski
                   team/search-product=@benvenker @lguychard
                   team/search-core=@jjeffwarner
@@ -19,8 +20,8 @@ jobs:
                   team/code-intelligence=@macraig
                   team/code-insights=@joelkw @felixfbecker @vovakulikov @unclejustin
                   team/distribution=@dan-mckean
-                  team/delivery=@dan-mckean @caugustus-sourcegraph @kevinwojo
+                  team/delivery=@caugustus-sourcegraph @kevinwojo @michaellzc
                   team/security=@dcomas
                   team/dev-experience=@taylorsperry @jhchabran @kstretch9
-                  team/repo-management=@jplahn @dan-mckean
+                  team/repo-management=@jplahn
                   team/devops=@sourcegraph/cloud-devops

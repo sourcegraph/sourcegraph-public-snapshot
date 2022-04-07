@@ -1,34 +1,32 @@
+import React, { ComponentType, ElementType, PropsWithChildren } from 'react'
+
 import classNames from 'classnames'
-import React from 'react'
+import { MdiReactIconProps } from 'mdi-react'
+
+import { ForwardReferenceComponent } from '../..'
 
 import { ICON_SIZES } from './constants'
+
 import styles from './Icon.module.scss'
 
-interface IconProps {
+export interface IconProps extends Omit<MdiReactIconProps, 'children'> {
     className?: string
-    svg: React.SVGAttributes<SVGSVGElement>
     /**
      * The variant style of the icon. defaults to 'sm'
      */
     size?: typeof ICON_SIZES[number]
-    /**
-     * Used to change the element that is rendered.
-     * Always be mindful of potentially accessibility pitfalls when using this!
-     */
-    as?: React.ElementType
 }
 
-export const Icon: React.FunctionComponent<IconProps> = ({
-    svg,
-    className,
-    size,
-    as: Component = 'div',
-    ...attributes
-}) => (
-    <Component
-        className={classNames(styles.iconInline, size === 'md' && styles.iconInlineMd, className)}
-        {...attributes}
-    >
-        {svg}
-    </Component>
-)
+export const Icon = React.forwardRef((props, reference) => {
+    const { children, inline = true, className, size, as: Component = 'svg', ...attributes } = props
+
+    return (
+        <Component
+            className={classNames(styles.iconInline, size === 'md' && styles.iconInlineMd, className)}
+            ref={reference}
+            {...attributes}
+        >
+            {children}
+        </Component>
+    )
+}) as ForwardReferenceComponent<ComponentType<MdiReactIconProps> | ElementType, PropsWithChildren<IconProps>>

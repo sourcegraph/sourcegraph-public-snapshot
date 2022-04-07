@@ -3,10 +3,11 @@ import React, { FunctionComponent } from 'react'
 import { Link } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../components/DismissibleAlert'
-import globalAlertStyles from '../../global/GlobalAlerts.module.scss'
 import { githubRepoScopeRequired, gitlabAPIScopeRequired } from '../../user/settings/cloud-ga'
 
 import { useCodeHostScopeContext } from './CodeHostScopeProvider'
+
+import globalAlertStyles from '../../global/GlobalAlerts.module.scss'
 
 interface Props {
     authenticatedUser: { id: string; tags: string[] } | null

@@ -8,9 +8,10 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/hexops/autogold"
 	"github.com/stretchr/testify/require"
 
-	cmtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/types"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
@@ -24,7 +25,7 @@ func TestWebhook(t *testing.T) {
 			ExternalURL:        eu,
 			MonitorID:          42,
 			Query:              "repo:camdentest -file:id_rsa.pub BEGIN",
-			Results:            make(cmtypes.CommitSearchResults, 313),
+			Results:            make([]*result.CommitMatch, 3),
 			IncludeResults:     false,
 		}
 
@@ -46,7 +47,7 @@ func TestWebhook(t *testing.T) {
 			MonitorDescription: "My test monitor",
 			ExternalURL:        eu,
 			Query:              "repo:camdentest -file:id_rsa.pub BEGIN",
-			Results:            make(cmtypes.CommitSearchResults, 313),
+			Results:            make([]*result.CommitMatch, 3),
 			IncludeResults:     false,
 		}
 
@@ -68,7 +69,7 @@ func TestTriggerTestWebhookAction(t *testing.T) {
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		b, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
-		testutil.AssertGolden(t, "testdata/"+t.Name()+".json", *update, b)
+		autogold.Equal(t, autogold.Raw(b))
 		w.WriteHeader(200)
 	}))
 	defer s.Close()

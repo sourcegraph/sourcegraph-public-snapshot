@@ -31,7 +31,7 @@ func Redis() *monitoring.Container {
 							Query:         `redis_up{app="redis-store"}`,
 							Panel:         monitoring.Panel().LegendFormat("{{app}}"),
 							DataMustExist: false, // not deployed on docker-compose
-							Critical:      monitoring.Alert().Less(1, nil).For(10 * time.Second),
+							Critical:      monitoring.Alert().Less(1).For(10 * time.Second),
 							PossibleSolutions: `
 								- Ensure redis-store is running
 							`,
@@ -53,7 +53,7 @@ func Redis() *monitoring.Container {
 							Panel:         monitoring.Panel().LegendFormat("{{app}}"),
 							DataMustExist: false, // not deployed on docker-compose
 
-							Critical: monitoring.Alert().Less(1, nil).For(10 * time.Second),
+							Critical: monitoring.Alert().Less(1).For(10 * time.Second),
 							PossibleSolutions: `
 								- Ensure redis-cache is running
 							`,

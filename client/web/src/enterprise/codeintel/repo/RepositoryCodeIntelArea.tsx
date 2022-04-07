@@ -1,14 +1,15 @@
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useMemo } from 'react'
+
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
 
 import { AuthenticatedUser } from '../../../auth'
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
+import { HeroPage } from '../../../components/HeroPage'
 import { RepositoryFields } from '../../../graphql-operations'
 import { RouteDescriptor } from '../../../util/contributions'
 import { CodeIntelConfigurationPageProps } from '../configuration/pages/CodeIntelConfigurationPage'

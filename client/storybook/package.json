@@ -5,6 +5,7 @@
   "description": "Sourcegraph Storybook configuration",
   "sideEffects": false,
   "license": "Apache-2.0",
+  "main": "./src/index.ts",
   "scripts": {
     "eslint": "eslint --cache 'src/**/*.[jt]s?(x)'",
     "start": "TS_NODE_TRANSPILE_ONLY=true start-storybook -p 9001 -c ./src -s ./assets,../../ui/assets",

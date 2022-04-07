@@ -208,7 +208,8 @@
 
         &:not(:disabled):not(:global(.disabled)) {
             // Set inlined icons to match outline border
-            svg {
+            // except [data-caret] attribute (which can be used for button carret
+            svg:not([data-caret]) {
                 fill: $base-color;
             }
 

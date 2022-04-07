@@ -31,51 +31,24 @@ function go_test() {
     -race \
     -v \
     $test_packages | tee "$tmpfile" | richgo testfilter
-  # Save the test exit code so we can return it after submitting the test run to the analytics.
+  # Save the test exit code so we can return it after saving the test report
   test_exit_code="${PIPESTATUS[0]}"
   set -eo pipefail # resume being strict about errors
 
-  local xml
-  xml=$(go-junit-report <"$tmpfile")
-  # escape xml output properly for JSON
-  local quoted_xml
-  quoted_xml="$(echo "$xml" | jq -R -s '.')"
+  mkdir -p './test-reports'
+  go-junit-report <"$tmpfile" >>./test-reports/go-test-junit.xml
 
-  local data
-  data=$(
-    cat <<EOF
-{
-  "format": "junit",
-  "run_env": {
-    "CI": "buildkite",
-    "key": "$BUILDKITE_BUILD_ID",
-    "job_id": "$BUILDKITE_JOB_ID",
-    "branch": "$BUILDKITE_BRANCH",
-    "commit_sha": "$BUILDKITE_COMMIT",
-    "message": "$BUILDKITE_MESSAGE",
-    "url": "$BUILDKITE_BUILD_URL"
-  },
-  "data": $quoted_xml
-}
-EOF
-  )
-
-  echo -e "\n--- :information_source: Uploading test results to Buildkite analytics"
-  set +e
-  echo "$data" | curl \
-    --fail \
-    --request POST \
-    --url https://analytics-api.buildkite.com/v1/uploads \
-    --header "Authorization: Token token=\"$BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY\";" \
-    --header 'Content-Type: application/json' \
-    --data-binary @-
-  local curl_exit="$?"
-  if [ "$curl_exit" -eq 0 ]; then
-    echo -e "\n--- :information_source: Succesfully uploaded test results to Buildkite analytics"
-  else
-    echo -e "\n^^^ +++ :warning: Failed to upload test results to Buildkite analytics"
+  # Create annotation from test failure
+  if [ "$test_exit_code" -ne 0 ]; then
+    set -x
+    echo "~~~ Creating test failures anotation"
+    RICHGO_CONFIG="./.richstyle.yml"
+    cp "./dev/ci/go-test-failures.richstyle.yml" $RICHGO_CONFIG
+    mkdir -p ./annotations
+    richgo testfilter <"$tmpfile" >>./annotations/go-test
+    rm -rf $RICHGO_CONFIG
+    set +x
   fi
-  set -e
 
   return "$test_exit_code"
 }
@@ -96,16 +69,15 @@ if [ -n "$FILTER_ACTION" ]; then
   echo -e "--- :information_source: \033[0;34mFiltering go tests: $FILTER_ACTION $FILTER_TARGETS\033[0m"
 fi
 
-# Buildkite analytics
-
+echo "--- install tools"
 # https://github.com/sourcegraph/sourcegraph/issues/28469
 # TODO is that the best way to handle this?
 go install github.com/jstemmer/go-junit-report@latest
+# Install richgo for better output
+# This fork gives us the `anyStyle` configuration required to hide log lines
+go install github.com/jhchabran/richgo@installable
+# Reshim so that the above tools are available
 asdf reshim golang
-
-# TODO move to manifest
-# https://github.com/sourcegraph/sourcegraph/issues/28469
-BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY=$(gcloud secrets versions access latest --secret="BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY" --project="sourcegraph-ci" --quiet)
 
 # For searcher
 echo "--- comby install"
@@ -119,12 +91,22 @@ export DB_STARTUP_TIMEOUT=360s # codeinsights-db needs more time to start in som
 # Disable GraphQL logs which are wildly noisy
 export NO_GRAPHQL_LOG=true
 
-# Install richgo for better output
-go install github.com/kyoh86/richgo@latest
-asdf reshim golang
+# Used to ignore directories (for example, when using submodules)
+#   (It appears to be unused, but it's actually used doing -v below)
+#
+# shellcheck disable=SC2034
+declare -A IGNORED_DIRS=(
+  ["./docker-images/syntax-highlighter"]=1
+)
 
 # We have multiple go.mod files and go list doesn't recurse into them.
 find . -name go.mod -exec dirname '{}' \; | while read -r d; do
+
+  # Skip any ignored directories.
+  if [ -v "IGNORED_DIRS[$d]" ]; then
+    continue
+  fi
+
   pushd "$d" >/dev/null
 
   # Separate out time for go mod from go test

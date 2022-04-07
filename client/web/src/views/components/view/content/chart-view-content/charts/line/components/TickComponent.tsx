@@ -1,10 +1,11 @@
+import React from 'react'
+
 import { TickLabelProps, TickRendererProps } from '@visx/axis/lib/types'
 import { Group } from '@visx/group'
 import { Text } from '@visx/text'
 import { TextProps } from '@visx/text/lib/Text'
 import { format } from 'd3-format'
 import { timeFormat } from 'd3-time-format'
-import React from 'react'
 
 // Date formatters
 const SI_PREFIX_FORMATTER = format('~s')

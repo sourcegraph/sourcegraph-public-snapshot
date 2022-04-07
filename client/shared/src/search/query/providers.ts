@@ -1,11 +1,11 @@
 import * as Monaco from 'monaco-editor'
 import { Observable, fromEventPattern, of } from 'rxjs'
-import { map, takeUntil, switchMap, delay } from 'rxjs/operators'
+import { map, delay, takeUntil, switchMap } from 'rxjs/operators'
 
 import { SearchPatternType } from '../../graphql-operations'
-import { SearchMatch } from '../stream'
+import { isSearchMatchOfType, SearchMatch } from '../stream'
 
-import { getCompletionItems } from './completion'
+import { getCompletionItems, REPO_DEPS_PREDICATE_REGEX } from './completion'
 import { getMonacoTokens } from './decoratedToken'
 import { FilterType } from './filters'
 import { getHoverResult } from './hover'
@@ -42,14 +42,36 @@ const MAX_SUGGESTION_COUNT = 50
 const REPO_SUGGESTION_FILTERS = [FilterType.fork, FilterType.visibility, FilterType.archived]
 const FILE_SUGGESTION_FILTERS = [...REPO_SUGGESTION_FILTERS, FilterType.repo, FilterType.rev, FilterType.lang]
 
-export function getSuggestionQuery(tokens: Token[], tokenAtColumn: Token): string {
+/**
+ * getSuggestionsQuery might return an empty query. The caller is responsible
+ * for handling this accordingly.
+ */
+export function getSuggestionQuery(tokens: Token[], tokenAtColumn: Token, suggestionType: SearchMatch['type']): string {
     const hasAndOrOperators = tokens.some(
         token => token.type === 'keyword' && (token.kind === KeywordKind.Or || token.kind === KeywordKind.And)
     )
 
-    if (isFilterType(tokenAtColumn, FilterType.repo) && tokenAtColumn.value) {
-        const relevantFilters = !hasAndOrOperators ? serializeFilters(tokens, REPO_SUGGESTION_FILTERS) : ''
-        return `${relevantFilters} repo:${tokenAtColumn.value.value} type:repo count:${MAX_SUGGESTION_COUNT}`.trimStart()
+    let tokenValue = ''
+
+    switch (tokenAtColumn.type) {
+        case 'filter':
+            tokenValue = tokenAtColumn.value?.value ?? ''
+            break
+        case 'pattern':
+            tokenValue = tokenAtColumn.value
+            break
+    }
+
+    if (!tokenValue) {
+        return ''
+    }
+
+    if (suggestionType === 'repo') {
+        const depsPredicateMatch = tokenValue.match(REPO_DEPS_PREDICATE_REGEX)
+        const repoValue = depsPredicateMatch ? depsPredicateMatch[2] : tokenValue
+        const relevantFilters =
+            !hasAndOrOperators && !depsPredicateMatch ? serializeFilters(tokens, REPO_SUGGESTION_FILTERS) : ''
+        return `${relevantFilters} repo:${repoValue} type:repo count:${MAX_SUGGESTION_COUNT}`.trimStart()
     }
 
     // For the cases below, we are not handling queries with and/or operators. This is because we would need to figure out
@@ -59,13 +81,14 @@ export function getSuggestionQuery(tokens: Token[], tokenAtColumn: Token): strin
     if (hasAndOrOperators) {
         return ''
     }
-    if (isFilterType(tokenAtColumn, FilterType.file) && tokenAtColumn.value) {
+
+    if (suggestionType === 'path') {
         const relevantFilters = serializeFilters(tokens, FILE_SUGGESTION_FILTERS)
-        return `${relevantFilters} file:${tokenAtColumn.value.value} type:path count:${MAX_SUGGESTION_COUNT}`.trimStart()
+        return `${relevantFilters} file:${tokenValue} type:path count:${MAX_SUGGESTION_COUNT}`.trimStart()
     }
-    if (tokenAtColumn.type === 'pattern' && tokenAtColumn.value) {
+    if (suggestionType === 'symbol') {
         const relevantFilters = serializeFilters(tokens, [...FILE_SUGGESTION_FILTERS, FilterType.file])
-        return `${relevantFilters} ${tokenAtColumn.value} type:symbol count:${MAX_SUGGESTION_COUNT}`.trimStart()
+        return `${relevantFilters} ${tokenValue} type:symbol count:${MAX_SUGGESTION_COUNT}`.trimStart()
     }
 
     return ''
@@ -73,6 +96,51 @@ export function getSuggestionQuery(tokens: Token[], tokenAtColumn: Token): strin
 
 function getTokenAtColumn(tokens: Token[], column: number): Token | null {
     return tokens.find(({ range }) => range.start + 1 <= column && range.end + 1 >= column) ?? null
+}
+
+export function createCancelableFetchSuggestions(
+    fetchSuggestions: (query: string) => Observable<SearchMatch[]>
+): (query: string, onAbort: (hander: () => void) => void) => Promise<SearchMatch[]> {
+    return (query, onAbort) => {
+        if (!query) {
+            // Don't fetch suggestions if the query is empty. This would result
+            // in arbitrary result types being returned, which is unexpected.
+            return Promise.resolve([])
+        }
+
+        let aborted = false
+
+        // By listeing to the abort event of the autocompletion we
+        // can close the connection to server early and don't have to download
+        // data sent by the server.
+        const abort = new Observable(subscriber => {
+            onAbort(() => {
+                aborted = true
+                subscriber.next(null)
+                subscriber.complete()
+            })
+        })
+
+        return (
+            of(query)
+                .pipe(
+                    // We use a delay here to implement a custom debounce. In the
+                    // next step we check if the current completion request was
+                    // cancelled in the meantime.
+                    // This prevents us from needlessly running multiple suggestion
+                    // queries.
+                    delay(200),
+                    switchMap(query => (aborted ? Promise.resolve([]) : fetchSuggestions(query))),
+                    takeUntil(abort)
+                )
+                // toPromise may return undefined if the observable completes before
+                // a value was emitted . The return type was fixed in newer versions
+                // (and the method was actually deprecated).
+                // See https://rxjs.dev/deprecations/to-promise
+                .toPromise()
+                .then(result => result ?? [])
+        )
+    }
 }
 
 /**
@@ -84,10 +152,13 @@ export function getProviders(
     options: {
         patternType: SearchPatternType
         globbing: boolean
+        disablePatternSuggestions?: boolean
         interpretComments?: boolean
         isSourcegraphDotCom?: boolean
     }
 ): SearchFieldProviders {
+    const cancelableFetch = createCancelableFetchSuggestions(fetchSuggestions)
+
     return {
         tokens: {
             getInitialState: () => SCANNER_STATE,
@@ -117,7 +188,7 @@ export function getProviders(
         completion: {
             // An explicit list of trigger characters is needed for the Monaco editor to show completions.
             triggerCharacters: [...printable, ...latin1Alpha],
-            provideCompletionItems: (textModel, position, context, cancellationToken) => {
+            provideCompletionItems: (textModel, position, _context, cancellationToken) => {
                 const scanned = scanSearchQuery(
                     textModel.getValue(),
                     options.interpretComments ?? false,
@@ -127,29 +198,16 @@ export function getProviders(
                     return null
                 }
                 const tokenAtColumn = getTokenAtColumn(scanned.term, position.column)
-                if (!tokenAtColumn) {
-                    return null
-                }
 
-                return of(getSuggestionQuery(scanned.term, tokenAtColumn))
-                    .pipe(
-                        // We use a delay here to implement a custom debounce. In the next step we check if the current
-                        // completion request was cancelled in the meantime (`token.isCancellationRequested`).
-                        // This prevents us from needlessly running multiple suggestion queries.
-                        delay(200),
-                        switchMap(query =>
-                            cancellationToken.isCancellationRequested
-                                ? Promise.resolve(null)
-                                : getCompletionItems(
-                                      tokenAtColumn,
-                                      position,
-                                      fetchSuggestions(query),
-                                      options.globbing,
-                                      options.isSourcegraphDotCom
-                                  )
-                        )
-                    )
-                    .toPromise()
+                return getCompletionItems(
+                    tokenAtColumn,
+                    position,
+                    (token, type) =>
+                        cancelableFetch(getSuggestionQuery(scanned.term, token, type), listener =>
+                            cancellationToken.onCancellationRequested(listener)
+                        ).then(matches => matches.filter(isSearchMatchOfType(type))),
+                    options
+                )
             },
         },
     }

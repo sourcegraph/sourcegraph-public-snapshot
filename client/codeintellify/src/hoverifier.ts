@@ -346,7 +346,7 @@ const internalToExternalState = <C extends object, D, A>(
 export const LOADER_DELAY = 600
 
 /** The time in ms after the mouse has stopped moving in which to show the tooltip */
-export const TOOLTIP_DISPLAY_DELAY = 10
+export const TOOLTIP_DISPLAY_DELAY = 60
 
 /** The time in ms to debounce mouseover events. */
 export const MOUSEOVER_DELAY = 50

@@ -1,8 +1,8 @@
+import React from 'react'
+
 import { gql } from '@apollo/client'
 import { createMockClient } from '@apollo/client/testing'
 import { Meta } from '@storybook/react'
-import React from 'react'
-import { of } from 'rxjs'
 
 import { TemporarySettingsContext } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import {
@@ -12,7 +12,8 @@ import {
 
 import { WebStory } from '../../../components/WebStory'
 import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from '../core/backend/gql-api/code-insights-gql-backend'
+import { CodeInsightsGqlBackend } from '../core/backend/gql-backend/code-insights-gql-backend'
+import { DashboardPermissions } from '../pages/dashboards/dashboard-page/utils/get-dashboard-permissions'
 
 import { GaConfirmationModal } from './GaConfirmationModal'
 
@@ -28,7 +29,10 @@ const settingsClient = createMockClient(
 )
 
 class CodeInsightExampleBackend extends CodeInsightsGqlBackend {
-    public isCodeInsightsLicensed = () => of(false)
+    public getUiFeatures = () => {
+        const permissions: DashboardPermissions = { isConfigurable: true }
+        return { licensed: false, permissions }
+    }
 }
 const api = new CodeInsightExampleBackend({} as any)
 

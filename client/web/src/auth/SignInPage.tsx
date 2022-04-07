@@ -1,12 +1,14 @@
+import React, { useEffect, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { partition } from 'lodash'
 import GithubIcon from 'mdi-react/GithubIcon'
-import React, { useEffect, useState } from 'react'
+import GitlabIcon from 'mdi-react/GitlabIcon'
 import { Redirect } from 'react-router-dom'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Link, Alert } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
@@ -17,8 +19,9 @@ import { eventLogger } from '../tracking/eventLogger'
 import { SourcegraphIcon } from './icons'
 import { OrDivider } from './OrDivider'
 import { getReturnTo, maybeAddPostSignUpRedirect } from './SignInSignUpCommon'
-import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 import { UsernamePasswordSignInForm } from './UsernamePasswordSignInForm'
+
+import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 
 interface SignInPageProps {
     location: H.Location
@@ -79,9 +82,14 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
                                 variant="secondary"
                                 as="a"
                             >
-                                {provider.displayName === 'GitHub' && (
+                                {provider.serviceType === 'github' && (
                                     <>
-                                        <GithubIcon className="icon-inline" />{' '}
+                                        <Icon as={GithubIcon} />{' '}
+                                    </>
+                                )}
+                                {provider.serviceType === 'gitlab' && (
+                                    <>
+                                        <Icon as={GitlabIcon} />{' '}
                                     </>
                                 )}
                                 Continue with {provider.displayName}

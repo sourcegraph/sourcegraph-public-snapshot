@@ -1,5 +1,6 @@
 @import './colors.scss';
 @import './border-radius.scss';
+@import './variables.scss';
 
 // Bootstrap configuration before Bootstrap is imported
 $border-radius: var(--border-radius);
@@ -7,12 +8,7 @@ $border-radius-sm: var(--border-radius);
 $border-radius-lg: var(--border-radius);
 $popover-border-radius: var(--popover-border-radius);
 
-$font-size-base: 0.875rem;
-$line-height-base: (20/14);
-
 $box-shadow: var(--box-shadow);
-
-$grid-gutter-width: 1.5rem;
 
 // No max width except for xl.
 $container-max-widths: (
@@ -77,23 +73,11 @@ $dropdown-item-padding-y: 0.25rem;
 $dropdown-item-padding-x: 0.5rem;
 $dropdown-padding-y: $dropdown-item-padding-y;
 
-// Tables
-
-$table-cell-padding: 0.625rem;
-$table-border-color: var(--border-color);
-
 $hr-border-color: var(--border-color);
 $hr-margin-y: 0.25rem;
 
-// Disable transitions
-$input-transition: none;
-
-// Spacer
-$spacer: 1rem;
-
-:root {
-    --spacer: #{$spacer};
-}
+// Disable all Bootstrap transitions
+$enable-transitions: false;
 
 // Apply static variables before Bootstrap imports.
 @import 'bootstrap/scss/functions';
@@ -101,16 +85,9 @@ $spacer: 1rem;
 @import 'bootstrap/scss/mixins';
 @import 'bootstrap/scss/reboot';
 @import 'bootstrap/scss/utilities';
-@import 'bootstrap/scss/grid';
-@import 'bootstrap/scss/transitions';
 
 // Modified in `./buttons.scss`
 @import 'bootstrap/scss/buttons';
-
-// Modified in `./forms.scss`
-@import 'bootstrap/scss/forms';
-@import 'bootstrap/scss/custom-forms';
-@import 'bootstrap/scss/input-group';
 
 @import 'wildcard/src/global-styles/breakpoints';
 @import 'shared/src/global-styles/icons';
@@ -120,15 +97,19 @@ $spacer: 1rem;
 @import './popover';
 @import './nav';
 @import './list-group';
+@import './custom-forms';
 @import './typography';
 @import './tables';
 @import './code';
 @import './buttons';
 @import './button-group';
+@import './input-group';
 @import './forms';
 @import './highlight';
 @import './tabs';
 @import './progress';
+@import './collapse';
+@import './grid';
 
 * {
     box-sizing: border-box;

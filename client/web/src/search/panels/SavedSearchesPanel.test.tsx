@@ -1,5 +1,6 @@
-import { cleanup, fireEvent } from '@testing-library/react'
 import React from 'react'
+
+import { cleanup, fireEvent } from '@testing-library/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
@@ -7,7 +8,7 @@ import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { SearchPatternType } from '../../graphql-operations'
 
 import { SavedSearchesPanel } from './SavedSearchesPanel'
-import { _fetchSavedSearches, authUser } from './utils'
+import { savedSearchesPayload, authUser } from './utils'
 
 describe('SavedSearchesPanel', () => {
     afterAll(cleanup)
@@ -17,7 +18,7 @@ describe('SavedSearchesPanel', () => {
     const defaultProps = {
         patternType: SearchPatternType.literal,
         authenticatedUser: authUser,
-        fetchSavedSearches: _fetchSavedSearches,
+        savedSearchesFragment: { savedSearches: savedSearchesPayload() },
         telemetryService: NOOP_TELEMETRY_SERVICE,
     }
 

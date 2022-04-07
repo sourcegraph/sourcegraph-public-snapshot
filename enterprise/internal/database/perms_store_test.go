@@ -1015,7 +1015,6 @@ func checkRepoPendingPermsTable(
 		if expects[id] == nil {
 			return errors.Errorf("unexpected row in table: (id: %v) -> (ids: %v)", id, intIDs)
 		}
-		want := fmt.Sprintf("%v", expects[id])
 
 		haveSpecs := make([]extsvc.AccountSpec, 0, len(intIDs))
 		for _, userID := range intIDs {
@@ -1026,11 +1025,23 @@ func checkRepoPendingPermsTable(
 
 			haveSpecs = append(haveSpecs, spec)
 		}
+		wantSpecs := expects[id]
 
-		have := fmt.Sprintf("%v", haveSpecs)
-		if have != want {
-			return errors.Errorf("intIDs - id %d: want %q but got %q", id, want, have)
+		// Verify Specs are the same, the ordering might not be the same but the elements/length are.
+		if len(wantSpecs) != len(haveSpecs) {
+			return errors.Errorf("initIDs - id %d: want %q but got %q", id, wantSpecs, haveSpecs)
 		}
+		wantSpecsSet := map[extsvc.AccountSpec]struct{}{}
+		for _, spec := range wantSpecs {
+			wantSpecsSet[spec] = struct{}{}
+		}
+
+		for _, spec := range haveSpecs {
+			if _, ok := wantSpecsSet[spec]; !ok {
+				return errors.Errorf("initIDs - id %d: want %q but got %q", id, wantSpecs, haveSpecs)
+			}
+		}
+
 		delete(expects, id)
 	}
 
@@ -2340,18 +2351,19 @@ func testPermsStore_GetUserIDsByExternalAccounts(db *sql.DB) func(*testing.T) {
 
 		// Set up test users and external accounts
 		extSQL := `
-INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id, client_id, created_at, updated_at)
-	VALUES(%s, %s, %s, %s, %s, %s, %s)
+INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id, client_id, created_at, updated_at, deleted_at)
+	VALUES(%s, %s, %s, %s, %s, %s, %s, %s)
 `
 		qs := []*sqlf.Query{
 			sqlf.Sprintf(`INSERT INTO users(username) VALUES('alice')`), // ID=1
 			sqlf.Sprintf(`INSERT INTO users(username) VALUES('bob')`),   // ID=2
 			sqlf.Sprintf(`INSERT INTO users(username) VALUES('cindy')`), // ID=3
 
-			sqlf.Sprintf(extSQL, 1, extsvc.TypeGitLab, "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock()), // ID=1
-			sqlf.Sprintf(extSQL, 1, "github", "https://github.com/", "alice_github", "alice_github_client_id", clock(), clock()),          // ID=2
-			sqlf.Sprintf(extSQL, 2, extsvc.TypeGitLab, "https://gitlab.com/", "bob_gitlab", "bob_gitlab_client_id", clock(), clock()),     // ID=3
-			sqlf.Sprintf(extSQL, 3, extsvc.TypeGitLab, "https://gitlab.com/", "cindy_gitlab", "cindy_gitlab_client_id", clock(), clock()), // ID=4
+			sqlf.Sprintf(extSQL, 1, extsvc.TypeGitLab, "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock(), nil), // ID=1
+			sqlf.Sprintf(extSQL, 1, "github", "https://github.com/", "alice_github", "alice_github_client_id", clock(), clock(), nil),          // ID=2
+			sqlf.Sprintf(extSQL, 2, extsvc.TypeGitLab, "https://gitlab.com/", "bob_gitlab", "bob_gitlab_client_id", clock(), clock(), nil),     // ID=3
+			sqlf.Sprintf(extSQL, 3, extsvc.TypeGitLab, "https://gitlab.com/", "cindy_gitlab", "cindy_gitlab_client_id", clock(), clock(), nil), // ID=4
+			sqlf.Sprintf(extSQL, 3, "github", "https://github.com/", "cindy_github", "cindy_github_client_id", clock(), clock(), clock()),      // ID=5, deleted
 		}
 		for _, q := range qs {
 			if err := s.execute(ctx, q); err != nil {
@@ -2378,6 +2390,15 @@ INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id
 		} else if userIDs["bob_gitlab"] != 2 {
 			t.Fatalf(`userIDs["bob_gitlab"]: want 2 but got %d`, userIDs["bob_gitlab"])
 		}
+
+		accounts = &extsvc.Accounts{
+			ServiceType: "github",
+			ServiceID:   "https://github.com/",
+			AccountIDs:  []string{"cindy_github"},
+		}
+		userIDs, err = s.GetUserIDsByExternalAccounts(ctx, accounts)
+		require.Nil(t, err)
+		assert.Empty(t, userIDs)
 	}
 }
 

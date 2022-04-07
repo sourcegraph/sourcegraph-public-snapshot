@@ -53,7 +53,9 @@ func NewMatcher(
 // filtered out. If false, policy duration is not considered. This is set to true for auto-indexing, but false
 // for data retention as we need to compare the policy duration against the associated upload date, not the
 // commit date.
-func (m *Matcher) CommitsDescribedByPolicy(ctx context.Context, repositoryID int, policies []dbstore.ConfigurationPolicy, now time.Time) (map[string][]PolicyMatch, error) {
+//
+// A subset of all commits can be returned by passing in any number of commit revhash strings.
+func (m *Matcher) CommitsDescribedByPolicy(ctx context.Context, repositoryID int, policies []dbstore.ConfigurationPolicy, now time.Time, filterCommits ...string) (map[string][]PolicyMatch, error) {
 	if len(policies) == 0 && !m.includeTipOfDefaultBranch {
 		return nil, nil
 	}
@@ -72,7 +74,7 @@ func (m *Matcher) CommitsDescribedByPolicy(ctx context.Context, repositoryID int
 		branchRequests: map[string]branchRequestMeta{},
 	}
 
-	refDescriptions, err := m.gitserverClient.RefDescriptions(ctx, repositoryID)
+	refDescriptions, err := m.gitserverClient.RefDescriptions(ctx, repositoryID, filterCommits...)
 	if err != nil {
 		return nil, errors.Wrap(err, "gitserver.RefDescriptions")
 	}
@@ -254,9 +256,10 @@ func (m *Matcher) matchCommitPolicies(ctx context.Context, context matcherContex
 				continue
 			}
 
+			id := policy.ID // avoid a reference to the loop variable
 			context.commitMap[policy.Pattern] = append(context.commitMap[policy.Pattern], PolicyMatch{
 				Name:           commit,
-				PolicyID:       &policy.ID,
+				PolicyID:       &id,
 				PolicyDuration: policyDuration,
 			})
 		}
@@ -279,8 +282,8 @@ func (m *Matcher) policyMatchesRefDescription(context matcherContext, policy dbs
 		return false
 	}
 
-	if policyDuration, _ := m.extractor(policy); m.filterByCreatedDate && policyDuration != nil && now.Sub(refDescription.CreatedDate) > *policyDuration {
-		// Policy is not unbounded, we are filtering by commit date, commit is moo old
+	if policyDuration, _ := m.extractor(policy); m.filterByCreatedDate && policyDuration != nil && (refDescription.CreatedDate == nil || now.Sub(*refDescription.CreatedDate) > *policyDuration) {
+		// Policy is not unbounded, we are filtering by commit date, commit is too old
 		return false
 	}
 

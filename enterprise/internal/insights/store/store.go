@@ -51,7 +51,7 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 	}, nil
 }
 
-// New returns a new Store backed by the given Timescale db.
+// New returns a new Store backed by the given Postgres db.
 func New(db dbutil.DB, permStore InsightPermissionStore) *Store {
 	return NewWithClock(db, permStore, timeutil.Now)
 }
@@ -158,6 +158,36 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 	})
 	return points, err
 }
+
+// Delete will delete the time series data for a particular series_id. This will hard (permanently) delete the data.
+func (s *Store) Delete(ctx context.Context, seriesId string) (err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	err = tx.Exec(ctx, sqlf.Sprintf(deleteForSeries, seriesId))
+	if err != nil {
+		return errors.Wrap(err, "DeleteForSeries")
+	}
+	err = tx.Exec(ctx, sqlf.Sprintf(deleteForSeriesSnapshots, seriesId))
+	if err != nil {
+		return errors.Wrap(err, "DeleteForSeriesSnapshots")
+	}
+
+	return nil
+}
+
+const deleteForSeries = `
+-- source: enterprise/internal/insights/store/store.go:Delete
+DELETE FROM series_points where series_id = %s;
+`
+
+const deleteForSeriesSnapshots = `
+-- source: enterprise/internal/insights/store/store.go:Delete
+DELETE FROM series_points_snapshots where series_id = %s;
+`
 
 // Note: the inner query could return duplicate points on its own if we merely did a SUM(value) over
 // all desired repositories. By using the sub-query, we select the per-repository maximum (thus
@@ -410,14 +440,9 @@ func (s *Store) RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) 
 		metadataID = &metadataIDValue
 	}
 
-	var tableName string
-	switch v.PersistMode {
-	case RecordMode:
-		tableName = recordingTable
-	case SnapshotMode:
-		tableName = snapshotsTable
-	default:
-		return errors.Newf("unsupported insights series point persist mode: %v", v.PersistMode)
+	tableName, err := getTableForPersistMode(v.PersistMode)
+	if err != nil {
+		return err
 	}
 
 	q := sqlf.Sprintf(
@@ -434,6 +459,17 @@ func (s *Store) RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) 
 	)
 	// Insert the actual data point.
 	return txStore.Exec(ctx, q)
+}
+
+func getTableForPersistMode(mode PersistMode) (string, error) {
+	switch mode {
+	case RecordMode:
+		return recordingTable, nil
+	case SnapshotMode:
+		return snapshotsTable, nil
+	default:
+		return "", errors.Newf("unsupported insights series point persist mode: %v", mode)
+	}
 }
 
 // RecordSeriesPoints stores multiple data points atomically.

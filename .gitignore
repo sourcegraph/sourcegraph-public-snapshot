@@ -1,3 +1,6 @@
+# Temporary directory for whatever you want
+.tmp/
+
 # Vim
 *.swp
 
@@ -114,9 +117,13 @@ sourcegraph-webapp-*.tgz
 graphql-operations.ts
 *.module.scss.d.ts
 dll-bundle
+elm-stuff
 
 # Extensions
 /client/extension-api/dist
+
+# Compute Component
+/client/web/src/notebooks/blocks/compute/component/public/dist
 
 # Direnv
 .envrc
@@ -162,4 +169,4 @@ sitemap_query.db
 annotations/
 
 # Buildkite analytics files
-jest-junit.xml
+test-reports/

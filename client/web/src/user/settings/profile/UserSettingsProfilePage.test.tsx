@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { MockedResponse } from '@apollo/client/testing'
 import { fireEvent, render, RenderResult, act } from '@testing-library/react'
-import React from 'react'
 import { MemoryRouter } from 'react-router'
 
 import { getDocumentNode } from '@sourcegraph/http-client'

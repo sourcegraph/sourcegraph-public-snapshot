@@ -1,4 +1,5 @@
 import { MouseEvent } from 'react'
+
 import { LineChartSeries } from 'sourcegraph'
 
 export type YAccessor<Datum> = (data: Datum) => any

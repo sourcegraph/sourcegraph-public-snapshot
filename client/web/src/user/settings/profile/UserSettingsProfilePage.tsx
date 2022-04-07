@@ -12,6 +12,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
 import { EditUserProfileForm } from './EditUserProfileForm'
+
 import styles from './UserSettingsProfilePage.module.scss'
 
 export const EditUserProfilePageGQLFragment = gql`

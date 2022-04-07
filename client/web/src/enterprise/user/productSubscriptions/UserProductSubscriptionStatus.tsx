@@ -1,8 +1,9 @@
-import InformationIcon from 'mdi-react/InformationIcon'
-import KeyIcon from 'mdi-react/KeyIcon'
 import React, { useState, useCallback } from 'react'
 
-import { Button, CardFooter, Link } from '@sourcegraph/wildcard'
+import InformationIcon from 'mdi-react/InformationIcon'
+import KeyIcon from 'mdi-react/KeyIcon'
+
+import { Button, CardFooter, Link, Icon } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../../components/CopyableText'
 import { formatUserCount, mailtoSales } from '../../../productSubscription/helpers'
@@ -46,7 +47,7 @@ export const UserProductSubscriptionStatus: React.FunctionComponent<Props> = ({
                 <>
                     <CardFooter className="d-flex align-items-center justify-content-between flex-wrap">
                         <Button className="mr-4 my-1" onClick={toggleShowLicenseKey} variant="primary">
-                            <KeyIcon className="icon-inline" /> {showLicenseKey ? 'Hide' : 'Reveal'} license key
+                            <Icon as={KeyIcon} /> {showLicenseKey ? 'Hide' : 'Reveal'} license key
                         </Button>
                         <div className="flex-fill" />
                         <div className="my-1" />
@@ -58,7 +59,7 @@ export const UserProductSubscriptionStatus: React.FunctionComponent<Props> = ({
                                 <>
                                     <CopyableText text={licenseKey} className="d-block" />
                                     <small className="mt-2 d-flex align-items-center">
-                                        <InformationIcon className="icon-inline mr-1" />{' '}
+                                        <Icon className="mr-1" as={InformationIcon} />{' '}
                                         <span>
                                             Use this license key as the{' '}
                                             <code>

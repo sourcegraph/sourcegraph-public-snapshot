@@ -9,7 +9,7 @@ exports[`GitCommitNodeByline author (compact) 1`] = `
     <div>
       <img
         alt=""
-        class="userAvatar icon-inline mr-1 mr-2"
+        class="iconInline userAvatar mr-1 mr-2"
         data-tooltip="Alice Zhao"
         role="presentation"
         src="http://example.com/alice.png"
@@ -46,7 +46,7 @@ exports[`GitCommitNodeByline author 1`] = `
     <div>
       <img
         alt=""
-        class="userAvatar icon-inline mr-1 mr-2"
+        class="iconInline userAvatar mr-1 mr-2"
         data-tooltip="Alice Zhao"
         role="presentation"
         src="http://example.com/alice.png"
@@ -85,7 +85,7 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
     >
       <img
         alt=""
-        class="userAvatar icon-inline"
+        class="iconInline userAvatar"
         data-tooltip="Alice Zhao (author)"
         role="presentation"
         src="http://example.com/alice.png"
@@ -93,7 +93,7 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
        
       <img
         alt=""
-        class="userAvatar icon-inline mr-2"
+        class="iconInline userAvatar mr-2"
         data-tooltip="bYang (committer)"
         role="presentation"
         src="http://example.com/bob.png"
@@ -139,7 +139,7 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
     >
       <img
         alt=""
-        class="userAvatar icon-inline"
+        class="iconInline userAvatar"
         data-tooltip="Alice Zhao (author)"
         role="presentation"
         src="http://example.com/alice.png"
@@ -147,7 +147,7 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
        
       <img
         alt=""
-        class="userAvatar icon-inline mr-2"
+        class="iconInline userAvatar mr-2"
         data-tooltip="bYang (committer)"
         role="presentation"
         src="http://example.com/bob.png"
@@ -191,7 +191,7 @@ exports[`GitCommitNodeByline omit GitHub committer 1`] = `
     <div>
       <img
         alt=""
-        class="userAvatar icon-inline mr-1 mr-2"
+        class="iconInline userAvatar mr-1 mr-2"
         data-tooltip="Alice Zhao"
         role="presentation"
         src="http://example.com/alice.png"
@@ -228,7 +228,7 @@ exports[`GitCommitNodeByline same author and committer 1`] = `
     <div>
       <img
         alt=""
-        class="userAvatar icon-inline mr-1 mr-2"
+        class="iconInline userAvatar mr-1 mr-2"
         data-tooltip="Alice Zhao"
         role="presentation"
         src="http://example.com/alice.png"

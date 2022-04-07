@@ -19,7 +19,7 @@ import (
 // duplication kludge.
 
 // NOTE: Keep in sync with services/backend/httpapi/repo_shield.go
-func badgeValue(r *http.Request, db database.DB) (int, error) {
+func badgeValue(r *http.Request) (int, error) {
 	totalRefs, err := backend.CountGoImporters(r.Context(), httpcli.InternalDoer, routevar.ToRepo(mux.Vars(r)))
 	if err != nil {
 		return 0, errors.Wrap(err, "Defs.TotalRefs")
@@ -43,7 +43,7 @@ func badgeValueFmt(totalRefs int) string {
 
 func serveRepoBadge(db database.DB) func(http.ResponseWriter, *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		value, err := badgeValue(r, db)
+		value, err := badgeValue(r)
 		if err != nil {
 			return err
 		}

@@ -32,6 +32,7 @@ func GitServer() *monitoring.Container {
 			},
 		},
 		Groups: []monitoring.Group{
+			shared.GitServer.NewAPIGroup(containerName),
 			{
 				Title: "General",
 				Rows: []monitoring.Row{
@@ -90,8 +91,8 @@ func GitServer() *monitoring.Container {
 							Name:        "disk_space_remaining",
 							Description: "disk space remaining by instance",
 							Query:       `(src_gitserver_disk_space_available / src_gitserver_disk_space_total) * 100`,
-							Warning:     monitoring.Alert().LessOrEqual(25, nil),
-							Critical:    monitoring.Alert().LessOrEqual(15, nil),
+							Warning:     monitoring.Alert().LessOrEqual(25),
+							Critical:    monitoring.Alert().LessOrEqual(15),
 							Panel: monitoring.Panel().LegendFormat("{{instance}}").
 								Unit(monitoring.Percentage).
 								With(monitoring.PanelOptions.LegendOnRight()),
@@ -184,8 +185,8 @@ func GitServer() *monitoring.Container {
 							Name:        "running_git_commands",
 							Description: "git commands running on each gitserver instance",
 							Query:       "sum by (instance, cmd) (src_gitserver_exec_running{instance=~`${shard:regex}`})",
-							Warning:     monitoring.Alert().GreaterOrEqual(50, nil).For(2 * time.Minute),
-							Critical:    monitoring.Alert().GreaterOrEqual(100, nil).For(5 * time.Minute),
+							Warning:     monitoring.Alert().GreaterOrEqual(50).For(2 * time.Minute),
+							Critical:    monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
 							Panel: monitoring.Panel().LegendFormat("{{instance}} {{cmd}}").
 								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner: monitoring.ObservableOwnerCoreApplication,
@@ -214,7 +215,7 @@ func GitServer() *monitoring.Container {
 							Name:        "repository_clone_queue_size",
 							Description: "repository clone queue size",
 							Query:       "sum(src_gitserver_clone_queue)",
-							Warning:     monitoring.Alert().GreaterOrEqual(25, nil),
+							Warning:     monitoring.Alert().GreaterOrEqual(25),
 							Panel:       monitoring.Panel().LegendFormat("queue size"),
 							Owner:       monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: `
@@ -226,7 +227,7 @@ func GitServer() *monitoring.Container {
 							Name:        "repository_existence_check_queue_size",
 							Description: "repository existence check queue size",
 							Query:       "sum(src_gitserver_lsremote_queue)",
-							Warning:     monitoring.Alert().GreaterOrEqual(25, nil),
+							Warning:     monitoring.Alert().GreaterOrEqual(25),
 							Panel:       monitoring.Panel().LegendFormat("queue size"),
 							Owner:       monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: `
@@ -392,6 +393,17 @@ func GitServer() *monitoring.Container {
 					},
 					{
 						{
+							Name:           "janitor_job_failures",
+							Description:    "failures over 5m (by job)",
+							Query:          `sum by (job_name) (rate(src_gitserver_janitor_job_duration_seconds_count{success="false"}[5m]))`,
+							NoAlert:        true,
+							Panel:          monitoring.Panel().LegendFormat("{{job_name}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Interpretation: "the rate of failures over 5m (by job)",
+						},
+					},
+					{
+						{
 							Name:           "repos_removed",
 							Description:    "repositories removed due to disk pressure",
 							Query:          "sum by (instance) (rate(src_gitserver_repos_removed_disk_pressure[5m]))",
@@ -399,6 +411,28 @@ func GitServer() *monitoring.Container {
 							Panel:          monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
 							Owner:          monitoring.ObservableOwnerCoreApplication,
 							Interpretation: "Repositories removed due to disk pressure",
+						},
+					},
+					{
+						{
+							Name:           "sg_maintenance_reason",
+							Description:    "successful sg maintenance jobs over 1h (by reason)",
+							Query:          `sum by (reason) (rate(src_gitserver_maintenance_status{success="true"}[1h]))`,
+							NoAlert:        true,
+							Panel:          monitoring.Panel().LegendFormat("{{reason}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Interpretation: "the rate of successful sg maintenance jobs and the reason why they were triggered",
+						},
+					},
+					{
+						{
+							Name:           "git_prune_skipped",
+							Description:    "successful git prune jobs over 1h",
+							Query:          `sum by (skipped) (rate(src_gitserver_prune_status{success="true"}[1h]))`,
+							NoAlert:        true,
+							Panel:          monitoring.Panel().LegendFormat("skipped={{skipped}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Interpretation: "the rate of successful git prune jobs over 1h and whether they were skipped",
 						},
 					},
 				},
@@ -451,7 +485,7 @@ func GitServer() *monitoring.Container {
 			},
 
 			shared.CodeIntelligence.NewCoursierGroup(containerName),
-			shared.CodeIntelligence.NewNPMGroup(containerName),
+			shared.CodeIntelligence.NewNpmGroup(containerName),
 
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),

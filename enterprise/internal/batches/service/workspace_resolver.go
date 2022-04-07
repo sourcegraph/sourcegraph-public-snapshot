@@ -90,7 +90,7 @@ func (wr *workspaceResolver) ResolveWorkspacesForBatchSpec(ctx context.Context, 
 	}
 
 	// Next, find the repos that are ignored through a .batchignore file.
-	ignored, err := findIgnoredRepositories(ctx, repos)
+	ignored, err := findIgnoredRepositories(ctx, database.NewDBWith(wr.store), repos)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +158,7 @@ func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpe
 	return repoRevs, errs
 }
 
-func findIgnoredRepositories(ctx context.Context, repos []*RepoRevision) (map[*types.Repo]struct{}, error) {
+func findIgnoredRepositories(ctx context.Context, db database.DB, repos []*RepoRevision) (map[*types.Repo]struct{}, error) {
 	type result struct {
 		repo           *RepoRevision
 		hasBatchIgnore bool
@@ -179,7 +179,7 @@ func findIgnoredRepositories(ctx context.Context, repos []*RepoRevision) (map[*t
 		go func(in chan *RepoRevision, out chan result) {
 			defer wg.Done()
 			for repo := range in {
-				hasBatchIgnore, err := hasBatchIgnoreFile(ctx, repo)
+				hasBatchIgnore, err := hasBatchIgnoreFile(ctx, db, repo)
 				out <- result{repo, hasBatchIgnore, err}
 			}
 		}(input, results)
@@ -270,6 +270,7 @@ func (wr *workspaceResolver) resolveRepositoryName(ctx context.Context, name str
 
 	return repoToRepoRevisionWithDefaultBranch(
 		ctx,
+		database.NewDBWith(wr.store),
 		repo,
 		// Directly resolved repos don't have any file matches.
 		[]string{},
@@ -288,7 +289,7 @@ func (wr *workspaceResolver) resolveRepositoryNameAndBranch(ctx context.Context,
 		return nil, err
 	}
 
-	commit, err := git.ResolveRevision(ctx, repo.Name, branch, git.ResolveRevisionOptions{
+	commit, err := git.ResolveRevision(ctx, database.NewDBWith(wr.store), repo.Name, branch, git.ResolveRevisionOptions{
 		NoEnsureRevision: true,
 	})
 	if err != nil && errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
@@ -365,7 +366,7 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 			fileMatches = append(fileMatches, path)
 		}
 		sort.Strings(fileMatches)
-		rev, err := repoToRepoRevisionWithDefaultBranch(ctx, repo, fileMatches)
+		rev, err := repoToRepoRevisionWithDefaultBranch(ctx, database.NewDBWith(wr.store), repo, fileMatches)
 		if err != nil {
 			// There is an edge-case where a repo might be returned by a search query that does not exist in gitserver yet.
 			if errcode.IsNotFound(err) {
@@ -419,14 +420,14 @@ func (wr *workspaceResolver) runSearch(ctx context.Context, query string, onMatc
 	return err
 }
 
-func repoToRepoRevisionWithDefaultBranch(ctx context.Context, repo *types.Repo, fileMatches []string) (_ *RepoRevision, err error) {
+func repoToRepoRevisionWithDefaultBranch(ctx context.Context, db database.DB, repo *types.Repo, fileMatches []string) (_ *RepoRevision, err error) {
 	tr, ctx := trace.New(ctx, "repoToRepoRevision", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	branch, commit, err := git.GetDefaultBranch(ctx, repo.Name)
+	branch, commit, err := git.GetDefaultBranch(ctx, db, repo.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -440,7 +441,7 @@ func repoToRepoRevisionWithDefaultBranch(ctx context.Context, repo *types.Repo, 
 	return repoRev, nil
 }
 
-func hasBatchIgnoreFile(ctx context.Context, r *RepoRevision) (_ bool, err error) {
+func hasBatchIgnoreFile(ctx context.Context, db database.DB, r *RepoRevision) (_ bool, err error) {
 	traceTitle := fmt.Sprintf("RepoID: %q", r.Repo.ID)
 	tr, ctx := trace.New(ctx, "hasBatchIgnoreFile", traceTitle)
 	defer func() {
@@ -449,7 +450,7 @@ func hasBatchIgnoreFile(ctx context.Context, r *RepoRevision) (_ bool, err error
 	}()
 
 	const path = ".batchignore"
-	stat, err := git.Stat(ctx, authz.DefaultSubRepoPermsChecker, r.Repo.Name, r.Commit, path)
+	stat, err := git.Stat(ctx, db, authz.DefaultSubRepoPermsChecker, r.Repo.Name, r.Commit, path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return false, nil

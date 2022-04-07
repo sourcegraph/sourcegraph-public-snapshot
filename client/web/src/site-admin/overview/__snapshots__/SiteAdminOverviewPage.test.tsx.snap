@@ -99,7 +99,7 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
           >
             <svg
               aria-label="Close section"
-              class="mdi-icon icon-inline"
+              class="mdi-icon iconInline"
               fill="currentColor"
               height="24"
               viewBox="0 0 24 24"
@@ -125,7 +125,7 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
               >
                 View all usage statistics 
                 <svg
-                  class="mdi-icon icon-inline"
+                  class="mdi-icon iconInline"
                   fill="currentColor"
                   height="24"
                   viewBox="0 0 24 24"
@@ -319,7 +319,7 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
           >
             <svg
               aria-label="Close section"
-              class="mdi-icon icon-inline"
+              class="mdi-icon iconInline"
               fill="currentColor"
               height="24"
               viewBox="0 0 24 24"
@@ -347,6 +347,7 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
                 aria-expanded="false"
                 class="btn btnLink list-group-item list-group-item-action button"
                 data-reach-accordion-button=""
+                data-state="collapsed"
                 id="button--1--0"
               >
                 <div
@@ -356,7 +357,7 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
                     class="d-flex align-items-center"
                   >
                     <span
-                      class="icon-inline iconContainer iconDown"
+                      class="iconInline iconContainer iconDown"
                     >
                       <svg
                         class="mdi-icon icon"
@@ -371,7 +372,7 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
                       </svg>
                     </span>
                     <span
-                      class="icon-inline iconContainer iconRight"
+                      class="iconInline iconContainer iconRight"
                     >
                       <svg
                         class="mdi-icon icon"
@@ -391,7 +392,7 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
                   </div>
                   <div>
                     <svg
-                      class="mdi-icon icon-inline text-muted"
+                      class="mdi-icon iconInline text-muted"
                       fill="currentColor"
                       height="24"
                       viewBox="0 0 24 24"
@@ -412,7 +413,6 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
                 hidden=""
                 id="panel--1--0"
                 role="region"
-                tabindex="-1"
               >
                 <div
                   class="pb-1 detail"

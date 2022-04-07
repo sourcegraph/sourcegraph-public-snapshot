@@ -1,9 +1,10 @@
-import { storiesOf } from '@storybook/react'
-import { noop } from 'lodash'
 import React from 'react'
 
+import { storiesOf } from '@storybook/react'
+import { noop } from 'lodash'
+
 import { WebStory } from '../../../../../../../../../components/WebStory'
-import { InsightDashboard, InsightsDashboardScope, InsightsDashboardType } from '../../../../../../../core/types'
+import { InsightDashboard, InsightsDashboardOwnerType, InsightsDashboardType } from '../../../../../../../core/types'
 
 import { EmptyInsightDashboard } from './EmptyInsightDashboard'
 
@@ -17,15 +18,11 @@ const { add } = storiesOf('web/insights/EmptyInsightDashboard', module)
 
 add('EmptyInsightDashboard', () => {
     const dashboard: InsightDashboard = {
-        scope: InsightsDashboardScope.Personal,
-        type: InsightsDashboardType.BuiltIn,
+        type: InsightsDashboardType.Custom,
         id: '101',
         title: 'Personal',
         insightIds: [],
-        owner: {
-            id: '101',
-            name: 'Pesonal',
-        },
+        owners: [{ type: InsightsDashboardOwnerType.Personal, id: '101', title: 'Personal ' }],
     }
 
     return <EmptyInsightDashboard dashboard={dashboard} onAddInsight={noop} />

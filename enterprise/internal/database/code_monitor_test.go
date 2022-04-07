@@ -7,6 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type testFixtures struct {
@@ -16,7 +18,7 @@ type testFixtures struct {
 	recipients [2]*Recipient
 }
 
-func (s *codeMonitorStore) insertTestMonitor(ctx context.Context, t *testing.T) (*testFixtures, error) {
+func (s *codeMonitorStore) insertTestMonitor(ctx context.Context, t *testing.T) *testFixtures {
 	t.Helper()
 
 	fixtures := testFixtures{}
@@ -62,5 +64,23 @@ func (s *codeMonitorStore) insertTestMonitor(ctx context.Context, t *testing.T) 
 		require.NoError(t, err)
 		// TODO(camdencheek): add other action types (webhooks) here
 	}
-	return &fixtures, nil
+	return &fixtures
+}
+
+type codeMonitorTestFixtures struct {
+	User    *types.User
+	Monitor *Monitor
+	Query   *QueryTrigger
+}
+
+func populateCodeMonitorFixtures(t *testing.T, db EnterpriseDB) codeMonitorTestFixtures {
+	ctx := context.Background()
+	u, err := db.Users().Create(ctx, database.NewUser{Email: "test", Username: "test", EmailVerificationCode: "test"})
+	require.NoError(t, err)
+	ctx = actor.WithActor(ctx, actor.FromUser(u.ID))
+	m, err := db.CodeMonitors().CreateMonitor(ctx, MonitorArgs{NamespaceUserID: &u.ID, Enabled: true})
+	require.NoError(t, err)
+	q, err := db.CodeMonitors().CreateQueryTrigger(ctx, m.ID, "type:commit repo:.")
+	require.NoError(t, err)
+	return codeMonitorTestFixtures{User: u, Monitor: m, Query: q}
 }

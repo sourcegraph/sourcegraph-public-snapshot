@@ -1,5 +1,6 @@
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import React, { useEffect, useMemo } from 'react'
+
+import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import { Observable, of } from 'rxjs'
 import { map, catchError } from 'rxjs/operators'
 
@@ -10,7 +11,7 @@ import { ActivationProps, percentageDone } from '@sourcegraph/shared/src/compone
 import { ActivationChecklist } from '@sourcegraph/shared/src/components/activation/ActivationChecklist'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner, useObservable, Button, Link } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { Collapsible } from '../../components/Collapsible'
@@ -264,8 +265,7 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                                                             variant="secondary"
                                                             as={Link}
                                                         >
-                                                            View all usage statistics{' '}
-                                                            <OpenInNewIcon className="icon-inline" />
+                                                            View all usage statistics <Icon as={OpenInNewIcon} />
                                                         </Button>
                                                     </h3>
                                                 </div>

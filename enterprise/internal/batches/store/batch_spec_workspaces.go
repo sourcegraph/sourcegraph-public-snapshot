@@ -134,7 +134,7 @@ func (s *Store) CreateBatchSpecWorkspace(ctx context.Context, ws ...*btypes.Batc
 		batchSpecWorkspaceInsertColumns,
 		"",
 		BatchSpecWorkspaceColums,
-		func(rows *sql.Rows) error {
+		func(rows dbutil.Scanner) error {
 			i++
 			return scanBatchSpecWorkspace(ws[i], rows)
 		},

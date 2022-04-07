@@ -5,8 +5,9 @@ import { ButtonLink } from '@sourcegraph/wildcard'
 import { onlyDefaultExtensionsAdded } from '../extensions/extensions'
 import { SettingsCascadeOrError } from '../settings/settings'
 
-import styles from './EmptyCommandList.module.scss'
 import { EmptyCommandListContainer } from './EmptyCommandListContainer'
+
+import styles from './EmptyCommandList.module.scss'
 
 interface Props {
     settingsCascade?: SettingsCascadeOrError

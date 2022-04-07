@@ -89,34 +89,24 @@ func getMode() configurationMode {
 var configurationServerFrontendOnlyInitialized = make(chan struct{})
 
 func initDefaultClient() *client {
-	clientStore := newStore()
+	clientStore := defaultStore
 	defaultClient := &client{store: clientStore}
 
 	mode := getMode()
-
 	// Don't kickoff the background updaters for the client/server
 	// when in empty mode.
 	if mode == modeEmpty {
 		close(configurationServerFrontendOnlyInitialized)
 
 		// Seed the client store with an empty configuration.
-		_, err := clientStore.MaybeUpdate(conftypes.RawUnified{
+		_, err := defaultClient.store.MaybeUpdate(conftypes.RawUnified{
 			Site:               "{}",
 			ServiceConnections: conftypes.ServiceConnections{},
 		})
 		if err != nil {
 			log.Fatalf("received error when setting up the store for the default client during test, err :%s", err)
 		}
-		return defaultClient
 	}
-
-	// The default client is started in InitConfigurationServerFrontendOnly in
-	// the case of server mode.
-	if mode == modeClient {
-		go defaultClient.continuouslyUpdate(nil)
-		close(configurationServerFrontendOnlyInitialized)
-	}
-
 	return defaultClient
 }
 

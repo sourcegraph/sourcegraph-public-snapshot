@@ -1,6 +1,7 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import * as React from 'react'
 import { RouteComponentProps } from 'react-router-dom'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -14,8 +15,9 @@ import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { SourcegraphIcon } from './icons'
-import styles from './ResetPasswordPage.module.scss'
 import { PasswordInput } from './SignInSignUpCommon'
+
+import styles from './ResetPasswordPage.module.scss'
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 
 interface ResetPasswordInitFormState {

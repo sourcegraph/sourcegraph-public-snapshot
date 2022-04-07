@@ -26,7 +26,9 @@ doc/
 **/__fixtures__
 GH2SG.bookmarklet.js
 docker-images/grafana/config/provisioning/dashboards/sourcegraph/
+docker-images/syntax-highlighter/crates/
 storybook-static/
 browser/code-intel-extensions/
 .buildkite-cache/
 lib/codeintel/reprolang/
+cmd/symbols/squirrel/language-file-extensions.json

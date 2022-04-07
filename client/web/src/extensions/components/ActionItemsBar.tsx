@@ -1,3 +1,5 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { head, last } from 'lodash'
@@ -6,21 +8,20 @@ import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { focusable, FocusableElement } from 'tabbable'
 import { Key } from 'ts-key-enum'
 
+import { ContributableMenu } from '@sourcegraph/client-api'
 import { LocalStorageSubject } from '@sourcegraph/common'
 import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
-import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, LoadingSpinner, useObservable, Link, ButtonLink } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useObservable, Link, ButtonLink, Icon } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
@@ -226,7 +227,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
                         tabIndex={-1}
                         variant="link"
                     >
-                        <MenuUpIcon className="icon-inline" />
+                        <Icon as={MenuUpIcon} />
                     </Button>
                 )}
                 <ActionsContainer
@@ -286,7 +287,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
                         tabIndex={-1}
                         variant="link"
                     >
-                        <MenuDownIcon className="icon-inline" />
+                        <Icon as={MenuDownIcon} />
                     </Button>
                 )}
                 {haveExtensionsLoaded && <ActionItemsDivider />}
@@ -298,7 +299,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
                             data-tooltip="Add extensions"
                             aria-label="Add extensions"
                         >
-                            <PlusIcon className="icon-inline" />
+                            <Icon as={PlusIcon} />
                         </Link>
                     </li>
                 </ul>
@@ -332,9 +333,9 @@ export const ActionItemsToggle: React.FunctionComponent<ActionItemsToggleProps> 
                         {!haveExtensionsLoaded ? (
                             <LoadingSpinner />
                         ) : isOpen ? (
-                            <ChevronDoubleUpIcon data-testid="action-items-toggle-open" className="icon-inline" />
+                            <Icon data-testid="action-items-toggle-open" as={ChevronDoubleUpIcon} />
                         ) : (
-                            <PuzzleOutlineIcon className="icon-inline" />
+                            <Icon as={PuzzleOutlineIcon} />
                         )}
                     </ButtonLink>
                 </div>

@@ -21,7 +21,7 @@ type DBDashboardStore struct {
 	Now func() time.Time
 }
 
-// NewDashboardStore returns a new DBDashboardStore backed by the given Timescale db.
+// NewDashboardStore returns a new DBDashboardStore backed by the given Postgres db.
 func NewDashboardStore(db dbutil.DB) *DBDashboardStore {
 	return &DBDashboardStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), Now: time.Now}
 }
@@ -41,19 +41,35 @@ func (s *DBDashboardStore) Transact(ctx context.Context) (*DBDashboardStore, err
 	return &DBDashboardStore{Store: txBase, Now: s.Now}, err
 }
 
+type DashboardType string
+
+const (
+	Standard DashboardType = "standard"
+	// This is a singleton dashboard that facilitates users having global access to their insights in Limited Access Mode.
+	LimitedAccessMode DashboardType = "limited_access_mode"
+)
+
 type DashboardQueryArgs struct {
 	UserID  []int
 	OrgID   []int
-	ID      int
+	ID      []int
 	Deleted bool
 	Limit   int
 	After   int
+
+	// This field will disable user level authorization checks on the dashboards. This should only be used interally,
+	// and not to return dashboards to users.
+	WithoutAuthorization bool
 }
 
 func (s *DBDashboardStore) GetDashboards(ctx context.Context, args DashboardQueryArgs) ([]*types.Dashboard, error) {
 	preds := make([]*sqlf.Query, 0, 1)
-	if args.ID > 0 {
-		preds = append(preds, sqlf.Sprintf("db.id = %s", args.ID))
+	if len(args.ID) > 0 {
+		elems := make([]*sqlf.Query, 0, len(args.ID))
+		for _, id := range args.ID {
+			elems = append(elems, sqlf.Sprintf("%s", id))
+		}
+		preds = append(preds, sqlf.Sprintf("db.id in (%s)", sqlf.Join(elems, ",")))
 	}
 	if args.Deleted {
 		preds = append(preds, sqlf.Sprintf("db.deleted_at is not null"))
@@ -64,7 +80,9 @@ func (s *DBDashboardStore) GetDashboards(ctx context.Context, args DashboardQuer
 		preds = append(preds, sqlf.Sprintf("db.id > %s", args.After))
 	}
 
-	preds = append(preds, sqlf.Sprintf("db.id in (%s)", visibleDashboardsQuery(args.UserID, args.OrgID)))
+	if !args.WithoutAuthorization {
+		preds = append(preds, sqlf.Sprintf("db.id in (%s)", visibleDashboardsQuery(args.UserID, args.OrgID)))
+	}
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("%s", "TRUE"))
 	}
@@ -173,6 +191,7 @@ func (s *DBDashboardStore) CreateDashboard(ctx context.Context, args CreateDashb
 	row := tx.QueryRow(ctx, sqlf.Sprintf(insertDashboardSql,
 		args.Dashboard.Title,
 		args.Dashboard.Save,
+		Standard,
 	))
 	if row.Err() != nil {
 		return nil, row.Err()
@@ -191,7 +210,7 @@ func (s *DBDashboardStore) CreateDashboard(ctx context.Context, args CreateDashb
 		return nil, errors.Wrap(err, "AddDashboardGrants")
 	}
 
-	dashboards, err := tx.GetDashboards(ctx, DashboardQueryArgs{ID: dashboardId, UserID: args.UserID, OrgID: args.OrgID})
+	dashboards, err := tx.GetDashboards(ctx, DashboardQueryArgs{ID: []int{dashboardId}, UserID: args.UserID, OrgID: args.OrgID})
 	if err != nil {
 		return nil, errors.Wrap(err, "GetDashboards")
 	}
@@ -237,7 +256,7 @@ func (s *DBDashboardStore) UpdateDashboard(ctx context.Context, args UpdateDashb
 			return nil, errors.Wrap(err, "AddDashboardGrants")
 		}
 	}
-	dashboards, err := tx.GetDashboards(ctx, DashboardQueryArgs{ID: args.ID, UserID: args.UserID, OrgID: args.OrgID})
+	dashboards, err := tx.GetDashboards(ctx, DashboardQueryArgs{ID: []int{args.ID}, UserID: args.UserID, OrgID: args.OrgID})
 	if err != nil {
 		return nil, errors.Wrap(err, "GetDashboards")
 	}
@@ -294,7 +313,7 @@ func (s *DBDashboardStore) GetDashboardGrants(ctx context.Context, dashboardId i
 func (s *DBDashboardStore) HasDashboardPermission(ctx context.Context, dashboardIds []int, userIds []int, orgIds []int) (bool, error) {
 	query := sqlf.Sprintf(getDashboardGrantsByPermissionsSql, pq.Array(dashboardIds), visibleDashboardsQuery(userIds, orgIds))
 	count, _, err := basestore.ScanFirstInt(s.Query(ctx, query))
-	return count == 0, err
+	return count == len(dashboardIds), err
 }
 
 func (s *DBDashboardStore) AddDashboardGrants(ctx context.Context, dashboardId int, grants []DashboardGrant) error {
@@ -320,9 +339,35 @@ func (s *DBDashboardStore) AddDashboardGrants(ctx context.Context, dashboardId i
 	return nil
 }
 
+func (s *DBDashboardStore) EnsureLimitedAccessModeDashboard(ctx context.Context) (int, error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	id, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf("SELECT id FROM dashboard WHERE type = %s", LimitedAccessMode)))
+	if err != nil {
+		return 0, err
+	}
+	if id == 0 {
+		query := sqlf.Sprintf(insertDashboardSql, "Limited Access Mode Dashboard", true, LimitedAccessMode)
+		id, _, err = basestore.ScanFirstInt(tx.Query(ctx, query))
+		if err != nil {
+			return 0, err
+		}
+		global := true
+		err = tx.AddDashboardGrants(ctx, id, []DashboardGrant{{Global: &global}})
+		if err != nil {
+			return 0, err
+		}
+	}
+	return id, nil
+}
+
 const insertDashboardSql = `
 -- source: enterprise/internal/insights/store/dashboard_store.go:CreateDashboard
-INSERT INTO dashboard (title, save) VALUES (%s, %s) RETURNING id;
+INSERT INTO dashboard (title, save, type) VALUES (%s, %s, %s) RETURNING id;
 `
 
 const insertDashboardInsightViewConnectionsByViewIds = `
@@ -336,7 +381,6 @@ INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id) (
     WHERE unique_id = ANY(%s)
 	ORDER BY ids.ordering
 ) ON CONFLICT DO NOTHING;
-
 `
 const updateDashboardSql = `
 -- source: enterprise/internal/insights/store/dashboard_store.go:UpdateDashboard
@@ -374,7 +418,7 @@ const getDashboardGrantsByPermissionsSql = `
 SELECT count(*)
 FROM dashboard
 WHERE id = ANY (%s)
-AND id NOT IN (%s);
+AND id IN (%s);
 `
 
 const addDashboardGrantsSql = `

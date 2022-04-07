@@ -1,2 +1,4 @@
-name: 'disable saved search notifications'
-parent: 1528395942
+name: squashed migrations (privileged)
+parents: []
+privileged: true
+nonIdempotent: true

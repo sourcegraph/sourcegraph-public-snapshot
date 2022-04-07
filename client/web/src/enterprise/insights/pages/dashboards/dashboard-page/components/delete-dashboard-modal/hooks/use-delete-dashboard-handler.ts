@@ -28,13 +28,7 @@ export function useDeleteDashboardHandler(props: UseDeleteDashboardHandlerProps)
         setLoadingOrError(true)
 
         try {
-            // if settingsKey or owner are missing then we are using the
-            // new graphql api. these are not needed
-            await deleteDashboard({
-                dashboardSettingKey: dashboard.settingsKey || '',
-                dashboardOwnerId: dashboard.owner?.id || '',
-                id: dashboard.id,
-            }).toPromise()
+            await deleteDashboard({ id: dashboard.id }).toPromise()
 
             setLoadingOrError(false)
             onSuccess()

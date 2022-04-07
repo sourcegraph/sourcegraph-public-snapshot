@@ -1,15 +1,16 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 import { HoverAlert } from 'sourcegraph'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { Link, Alert } from '@sourcegraph/wildcard'
 
 import { NotificationType } from '../../api/extension/extensionHostApi'
-import hoverOverlayStyle from '../HoverOverlay.module.scss'
 import { GetAlertClassName, GetAlertVariant } from '../HoverOverlay.types'
-import contentStyles from '../HoverOverlayContents/HoverOverlayContent/HoverOverlayContent.module.scss'
 
+import hoverOverlayStyle from '../HoverOverlay.module.scss'
+import contentStyles from '../HoverOverlayContents/HoverOverlayContent/HoverOverlayContent.module.scss'
 import styles from './HoverOverlayAlerts.module.scss'
 
 export interface HoverOverlayAlertsProps {

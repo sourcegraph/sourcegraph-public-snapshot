@@ -1,8 +1,6 @@
 package graphql
 
 import (
-	"context"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
@@ -15,7 +13,7 @@ type params struct {
 	limit  int
 }
 
-func validateArgs(ctx context.Context, query *string, active *bool, first *int32, after *string) (p params, err error) {
+func validateArgs(query *string, active *bool, first *int32, after *string) (p params, err error) {
 	if query != nil {
 		p.query = *query
 	}

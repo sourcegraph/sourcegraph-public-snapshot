@@ -1,7 +1,7 @@
 import React, { FC, useMemo } from 'react'
 
 import { encodeURIPathComponent } from '@sourcegraph/common'
-import { Badge, useObservable, Button, Link } from '@sourcegraph/wildcard'
+import { Badge, useObservable, Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { queryRepoChangesetsStats as _queryRepoChangesetsStats } from './backend'
 import { BatchChangesIcon } from './icons'
@@ -36,7 +36,7 @@ export const RepoBatchChangesButton: FC<RepoBatchChangesButtonProps> = ({
             outline={true}
             as={Link}
         >
-            <BatchChangesIcon className="icon-inline" /> Batch Changes
+            <Icon as={BatchChangesIcon} /> Batch Changes
             {open > 0 && (
                 <Badge
                     tooltip={`${open} open batch changesets`}

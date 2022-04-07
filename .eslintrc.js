@@ -31,7 +31,7 @@ const config = {
       },
     ],
   },
-  plugins: ['@sourcegraph/sourcegraph', 'monorepo'],
+  plugins: ['@sourcegraph/sourcegraph', 'monorepo', '@sourcegraph/wildcard'],
   rules: {
     // Rules that are specific to this repo
     // All other rules should go into https://github.com/sourcegraph/eslint-config
@@ -52,7 +52,24 @@ const config = {
           {
             name: 'react-router-dom',
             importNames: ['Link'],
-            message: "Use the Link component from the @sourcegraph/wildcard package instead of react-router-dom's Link",
+            message: 'Use the <Link /> component from @sourcegraph/wildcard instead.',
+          },
+          {
+            name: 'reactstrap',
+            importNames: ['Form'],
+            message: 'Use the <Form /> component from @sourcegraph/branded package instead',
+          },
+          {
+            name: '@sourcegraph/wildcard',
+            importNames: ['Tooltip'],
+            message:
+              'Please ensure there is only a single `<Tooltip />` component present in the React tree. To display a specific tooltip, you can add the `data-tooltip` attribute to the relevant element.',
+          },
+          {
+            name: 'zustand',
+            importNames: ['default'],
+            message:
+              'Our Zustand stores should be created in a single place. Create this store in client/web/src/stores',
           },
         ],
         patterns: [
@@ -61,6 +78,16 @@ const config = {
             message: `The OSS product may not pull in any code from the enterprise codebase, to stay a 100% open-source program.
 
 See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-source for more information.`,
+          },
+          {
+            group: [
+              '@sourcegraph/*/src/*',
+              '!@sourcegraph/branded/src/*',
+              '!@sourcegraph/shared/src/*',
+              '!@sourcegraph/web/src/SourcegraphWebApp.scss',
+            ],
+            message:
+              'Imports from package internals are banned. Add relevant export to the entry point of the package to import it from the outside world.',
           },
         ],
       },
@@ -73,6 +100,33 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
             element: 'form',
             message:
               'Use the Form component in src/components/Form.tsx instead of the native HTML form element to get proper form validation feedback',
+          },
+          {
+            element: 'select',
+            message: 'Use the <Select /> component from @sourcegraph/wildcard instead.',
+          },
+          {
+            element: 'textarea',
+            message: 'Use the <TextArea /> component from @sourcegraph/wildcard instead.',
+          },
+          {
+            element: 'a',
+            message: 'Use the <Link /> component from @sourcegraph/wildcard instead.',
+          },
+        ],
+      },
+    ],
+    '@sourcegraph/wildcard/forbid-class-name': [
+      'error',
+      {
+        forbid: [
+          {
+            className: 'badge',
+            message: 'Use the <Badge /> component from @sourcegraph/wildcard instead.',
+          },
+          {
+            className: 'icon-inline',
+            message: 'Use the <Icon /> component from @sourcegraph/wildcard instead.',
           },
         ],
       },

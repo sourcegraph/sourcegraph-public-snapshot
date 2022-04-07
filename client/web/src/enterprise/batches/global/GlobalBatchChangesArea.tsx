@@ -1,5 +1,6 @@
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React from 'react'
+
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { RouteComponentProps, Switch, Route } from 'react-router'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -16,6 +17,7 @@ import { HeroPage } from '../../../components/HeroPage'
 import type { BatchChangeClosePageProps } from '../close/BatchChangeClosePage'
 import type { CreateBatchChangePageProps } from '../create/CreateBatchChangePage'
 import type { BatchChangeDetailsPageProps } from '../detail/BatchChangeDetailsPage'
+import { TabName } from '../detail/BatchChangeDetailsTabs'
 import type { BatchSpecExecutionDetailsPageProps } from '../execution/BatchSpecExecutionDetailsPage'
 import type { BatchChangeListPageProps, NamespaceBatchChangeListPageProps } from '../list/BatchChangeListPage'
 import type { BatchChangePreviewPageProps } from '../preview/BatchChangePreviewPage'
@@ -54,8 +56,8 @@ const DotcomGettingStartedPage = lazyComponent<DotcomGettingStartedPageProps, 'D
     () => import('./DotcomGettingStartedPage'),
     'DotcomGettingStartedPage'
 )
-interface Props
-    extends RouteComponentProps<{}>,
+interface Props<RouteProps extends {} = {}>
+    extends RouteComponentProps<RouteProps>,
         ThemeProps,
         ExtensionsControllerProps,
         TelemetryProps,
@@ -92,22 +94,11 @@ export const AuthenticatedBatchChangesArea = withAuthenticatedUser<Authenticated
             render={props => <CreateBatchChangePage headingElement="h1" {...outerProps} {...props} />}
             exact={true}
         />
-        <Route
-            path={`${match.url}/executions/:batchSpecID`}
-            render={({ match, ...props }: RouteComponentProps<{ batchSpecID: string }>) => (
-                <BatchSpecExecutionDetailsPage
-                    {...outerProps}
-                    {...props}
-                    match={match}
-                    batchSpecID={match.params.batchSpecID}
-                />
-            )}
-        />
         <Route component={NotFoundPage} key="hardcoded-key" />
     </Switch>
 ))
 
-export interface NamespaceBatchChangesAreaProps extends Props {
+export interface NamespaceBatchChangesAreaProps<RouteProps = {}> extends Props<RouteProps> {
     namespaceID: Scalars['ID']
 }
 
@@ -130,6 +121,18 @@ export const NamespaceBatchChangesArea = withAuthenticatedUser<
                         {...props}
                         namespaceID={namespaceID}
                         batchChangeName={match.params.batchChangeName}
+                    />
+                )}
+            />
+            <Route
+                path={`${match.url}/:batchChangeName/executions`}
+                render={({ match, ...props }: RouteComponentProps<{ batchChangeName: string }>) => (
+                    <BatchChangeDetailsPage
+                        {...outerProps}
+                        {...props}
+                        namespaceID={namespaceID}
+                        batchChangeName={match.params.batchChangeName}
+                        initialTab={TabName.Executions}
                     />
                 )}
             />
@@ -159,3 +162,17 @@ export const NamespaceBatchChangesArea = withAuthenticatedUser<
         </Switch>
     </div>
 ))
+
+export interface ExecutionAreaProps extends NamespaceBatchChangesAreaProps<{ batchSpecID: string }> {}
+
+/**
+ * This is just a dumb hack to work around the namespaces header that is preserved on
+ * original, non-SSBC pages but omitted from newer, SSBC ones, which bring their own
+ * header. Eventually all BC pages should supply their own header, at which point this can
+ * be removed.
+ */
+export const ExecutionArea = withAuthenticatedUser<ExecutionAreaProps & { authenticatedUser: AuthenticatedUser }>(
+    ({ match, namespaceID, ...outerProps }) => (
+        <BatchSpecExecutionDetailsPage {...outerProps} match={match} batchSpecID={match.params.batchSpecID} />
+    )
+)

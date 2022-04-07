@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React, { useEffect, useMemo } from 'react'
+
+import * as H from 'history'
 
 import { Container, PageHeader, LoadingSpinner, useObservable, Alert, Link } from '@sourcegraph/wildcard'
 

@@ -1,6 +1,7 @@
+import React, { useEffect, useMemo } from 'react'
+
 import { isEmpty, noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
-import React, { useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router-dom'
 import { fromFetch } from 'rxjs/fetch'
 
@@ -93,7 +94,8 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                 <li>Sourcegraph version string (e.g. "vX.X.X")</li>
                 <li>Dependency versions (e.g. "6.0.9" for Redis, or "13.0" for Postgres)</li>
                 <li>
-                    Deployment type (single Docker image, Docker Compose, Kubernetes cluster, or pure Docker cluster)
+                    Deployment type (single Docker image, Docker Compose, Kubernetes cluster, Helm, or pure Docker
+                    cluster)
                 </li>
                 <li>License key associated with your Sourcegraph subscription</li>
                 <li>Aggregate count of current monthly users</li>
@@ -301,26 +303,25 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                             Browser extension
                             <ul>
                                 <li>
-                                    Total number of users who viewed the "install browser extension" CTA on the file
-                                    page
+                                    Number of users who viewed / clicked the "install browser extension" CTA on the file
+                                    / search pages today
                                 </li>
                                 <li>
-                                    Total number of users who clicked the "install browser extension" CTA on the file
-                                    page
+                                    Number of views / clicks on the "install browser extension" CTA on the file / search
+                                    pages today
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            IDE extension
+                            <ul>
+                                <li>
+                                    Number of users who viewed / clicked the "install IDE extension" CTA on the file /
+                                    search pages today
                                 </li>
                                 <li>
-                                    Total number of users who viewed the "install browser extension" CTA on the search
-                                    page
-                                </li>
-                                <li>
-                                    Total number of users who clicked the "install browser extension" CTA on the search
-                                    page
-                                </li>
-                                <li>Total number of views of the "install browser extension" CTA on the file page</li>
-                                <li>Total number of clicks on the "install browser extension" CTA on the file page</li>
-                                <li>Total number of views of the "install browser extension" CTA on the search page</li>
-                                <li>
-                                    Total number of clicks on the "install browser extension" CTA on the search page
+                                    Number of views / clicks on the "install IDE extension" CTA on the file / search
+                                    pages today
                                 </li>
                             </ul>
                         </li>
@@ -335,6 +336,24 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                             visited Sourcegraph instance from browser extension
                         </li>
                     </ul>
+                </li>
+                <li>
+                    IDE extensions data
+                    <ul>
+                        Aggregate counts of current daily, weekly, and monthly searches performed:
+                        <li>
+                            <ul>Count of unique users who performed searches</ul>
+                            <ul>Count of total searches performed</ul>
+                        </li>
+                    </ul>
+                    <ul>
+                        Aggregate counts of daily user state:
+                        <li>
+                            <ul>Count of unique users who installed the extension</ul>
+                            <ul>Count of unique users who uninstalled the extension</ul>
+                        </li>
+                    </ul>
+                    <ul>Aggregate count of daily redirects from extension to Sourcegraph instance</ul>
                 </li>
             </ul>
             {updatesDisabled ? (

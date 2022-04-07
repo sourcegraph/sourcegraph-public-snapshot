@@ -20,7 +20,6 @@ func TestGet(t *testing.T) {
 	reset := func() {
 		inited = false
 		siteID = ""
-		database.Mocks = database.MockStores{}
 		conf.Mock(nil)
 	}
 

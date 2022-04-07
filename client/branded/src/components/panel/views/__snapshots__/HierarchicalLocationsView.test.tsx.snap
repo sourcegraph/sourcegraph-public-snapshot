@@ -8,9 +8,6 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
       data-testid="hierarchical-locations-view"
     >
       <div
-        class="d-flex"
-      />
-      <div
         class="fileLocations fileLocations"
       >
         <div>
@@ -24,7 +21,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
               class="header"
             >
               <svg
-                class="mdi-icon icon-inline flex-shrink-0"
+                class="mdi-icon iconInline flex-shrink-0"
                 fill="currentColor"
                 height="24"
                 viewBox="0 0 24 24"
@@ -47,7 +44,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                   title="github.com"
                 >
                   <svg
-                    class="mdi-icon icon-inline text-muted"
+                    class="mdi-icon iconInline text-muted flex-shrink-0"
                     fill="currentColor"
                     height="24"
                     viewBox="0 0 24 24"
@@ -59,7 +56,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                   </svg>
                 </span>
                 <div
-                  class="ml-1"
+                  class="ml-1 flex-shrink-past-contents text-truncate"
                 >
                   <a
                     class="anchorLink"
@@ -163,77 +160,73 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
       data-testid="hierarchical-locations-view"
     >
       <div
-        class="d-flex"
+        class="panel panelLeft panelRelative"
+        style="width: 200px;"
       >
         <div
-          class="resizable resizableGroup"
-          style="width: 200px;"
+          class="handle handleLeft"
+          role="presentation"
+        />
+        <div
+          class="groupList"
+          data-testid="hierarchical-locations-view-list"
         >
-          <div
-            class="list-group groupList"
-            data-testid="hierarchical-locations-view-list"
+          <button
+            class="list-group-item list-group-item-action locationButton active"
+            data-testid="hierarchical-locations-view-button"
+            type="button"
           >
-            <button
-              class="list-group-item list-group-item-action locationButton active"
-              data-testid="hierarchical-locations-view-button"
-              type="button"
+            <span
+              class="locationName"
+              title="file1.txt"
             >
               <span
-                class="locationName"
-                title="file1.txt"
+                class="locationNameText"
               >
                 <span
-                  class="locationNameText"
+                  class=""
                 >
-                  <span
-                    class=""
-                  >
-                     
-                    <span>
-                      file1.txt
-                    </span>
+                   
+                  <span>
+                    file1.txt
                   </span>
                 </span>
               </span>
-              <span
-                class="locationBadge ml-1"
-              >
-                2
-              </span>
-            </button>
-            <button
-              class="list-group-item list-group-item-action locationButton"
-              data-testid="hierarchical-locations-view-button"
-              type="button"
+            </span>
+            <span
+              class="locationBadge ml-1"
+            >
+              2
+            </span>
+          </button>
+          <button
+            class="list-group-item list-group-item-action locationButton"
+            data-testid="hierarchical-locations-view-button"
+            type="button"
+          >
+            <span
+              class="locationName"
+              title="file2.txt"
             >
               <span
-                class="locationName"
-                title="file2.txt"
+                class="locationNameText"
               >
                 <span
-                  class="locationNameText"
+                  class=""
                 >
-                  <span
-                    class=""
-                  >
-                     
-                    <span>
-                      file2.txt
-                    </span>
+                   
+                  <span>
+                    file2.txt
                   </span>
                 </span>
               </span>
-              <span
-                class="locationBadge ml-1"
-              >
-                3
-              </span>
-            </button>
-          </div>
-          <div
-            class="handle handleRight resizableHandle"
-            role="presentation"
-          />
+            </span>
+            <span
+              class="locationBadge ml-1"
+            >
+              3
+            </span>
+          </button>
         </div>
       </div>
       <div
@@ -250,7 +243,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
               class="header"
             >
               <svg
-                class="mdi-icon icon-inline flex-shrink-0"
+                class="mdi-icon iconInline flex-shrink-0"
                 fill="currentColor"
                 height="24"
                 viewBox="0 0 24 24"
@@ -273,7 +266,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   title="github.com"
                 >
                   <svg
-                    class="mdi-icon icon-inline text-muted"
+                    class="mdi-icon iconInline text-muted flex-shrink-0"
                     fill="currentColor"
                     height="24"
                     viewBox="0 0 24 24"
@@ -285,7 +278,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   </svg>
                 </span>
                 <div
-                  class="ml-1"
+                  class="ml-1 flex-shrink-past-contents text-truncate"
                 >
                   <a
                     class="anchorLink"
@@ -415,9 +408,6 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
       data-testid="hierarchical-locations-view"
     >
       <div
-        class="d-flex"
-      />
-      <div
         class="fileLocations fileLocations"
       >
         <div>
@@ -431,7 +421,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
               class="header"
             >
               <svg
-                class="mdi-icon icon-inline flex-shrink-0"
+                class="mdi-icon iconInline flex-shrink-0"
                 fill="currentColor"
                 height="24"
                 viewBox="0 0 24 24"
@@ -454,7 +444,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                   title="github.com"
                 >
                   <svg
-                    class="mdi-icon icon-inline text-muted"
+                    class="mdi-icon iconInline text-muted flex-shrink-0"
                     fill="currentColor"
                     height="24"
                     viewBox="0 0 24 24"
@@ -466,7 +456,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                   </svg>
                 </span>
                 <div
-                  class="ml-1"
+                  class="ml-1 flex-shrink-past-contents text-truncate"
                 >
                   <a
                     class="anchorLink"
@@ -565,7 +555,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
 exports[`<HierarchicalLocationsView /> shows a spinner before any locations emissions 1`] = `
 <DocumentFragment>
   <div
-    class="loadingSpinner icon-inline m-1 test-loading-spinner"
+    class="iconInline loadingSpinner m-1 test-loading-spinner"
   />
 </DocumentFragment>
 `;
@@ -573,7 +563,7 @@ exports[`<HierarchicalLocationsView /> shows a spinner before any locations emis
 exports[`<HierarchicalLocationsView /> shows a spinner if locations emits empty and is not complete 1`] = `
 <DocumentFragment>
   <div
-    class="loadingSpinner icon-inline m-1 test-loading-spinner"
+    class="iconInline loadingSpinner m-1 test-loading-spinner"
   />
 </DocumentFragment>
 `;

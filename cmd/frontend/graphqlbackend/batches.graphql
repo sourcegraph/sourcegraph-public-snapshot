@@ -212,9 +212,13 @@ interface Changeset {
         """
         after: String
         """
-        Only return batch changes in this state.
+        Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
         """
         state: BatchChangeState
+        """
+        Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+        """
+        states: [BatchChangeState!]
         """
         Only include batch changes that the viewer can administer.
         """
@@ -282,9 +286,13 @@ type HiddenExternalChangeset implements Node & Changeset {
         """
         after: String
         """
-        Only return batch changes in this state.
+        Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
         """
         state: BatchChangeState
+        """
+        Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+        """
+        states: [BatchChangeState!]
         """
         Only include batch changes that the viewer can administer.
         """
@@ -363,9 +371,13 @@ type ExternalChangeset implements Node & Changeset {
         """
         after: String
         """
-        Only return batch changes in this state.
+        Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
         """
         state: BatchChangeState
+        """
+        Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+        """
+        states: [BatchChangeState!]
         """
         Only include batch changes that the viewer can administer.
         """
@@ -1753,9 +1765,13 @@ extend type Query {
         """
         after: String
         """
-        Only return batch changes in this state.
+        Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
         """
         state: BatchChangeState
+        """
+        Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+        """
+        states: [BatchChangeState!]
         """
         Only include batch changes that the viewer can administer.
         """
@@ -1788,6 +1804,20 @@ extend type Query {
         """
         after: String
     ): BatchChangesCodeHostConnection!
+
+    """
+    Returns a list of available bulk operations for changesets belonging to a batch change.
+    """
+    availableBulkOperations(
+        """
+        The batch change the selected changesets belong to.
+        """
+        batchChange: ID!
+        """
+        The changesets to query for bulk operations applicable to.
+        """
+        changesets: [ID!]!
+    ): [BulkOperationType!]!
 
     """
     A list of batch specs.
@@ -2392,6 +2422,11 @@ type BatchChange implements Node {
         """
         state: ChangesetState
         """
+        Query only changesets that are either open or draft. This is used on the close page to list changesets that remain open.
+        When set, passing state is not allowed.
+        """
+        onlyClosable: Boolean
+        """
         Only include changesets with the given review state.
         """
         reviewState: ChangesetReviewState
@@ -2942,9 +2977,13 @@ extend type Org {
         """
         after: String
         """
-        Only return batch changes in this state.
+        Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
         """
         state: BatchChangeState
+        """
+        Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+        """
+        states: [BatchChangeState!]
         """
         Only include batch changes that the viewer can administer.
         """
@@ -2966,9 +3005,13 @@ extend type User {
         """
         after: String
         """
-        Only return batch changes in this state.
+        Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
         """
         state: BatchChangeState
+        """
+        Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+        """
+        states: [BatchChangeState!]
         """
         Only include batch changes that the viewer can administer.
         """
@@ -3012,9 +3055,13 @@ extend type Repository {
         """
         after: String
         """
-        Only return batch changes in this state.
+        Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
         """
         state: BatchChangeState
+        """
+        Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+        """
+        states: [BatchChangeState!]
         """
         Only include batch changes that the viewer can administer.
         """

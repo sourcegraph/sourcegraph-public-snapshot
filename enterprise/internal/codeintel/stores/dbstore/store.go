@@ -2,26 +2,31 @@ package dbstore
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type Store struct {
-	*dbstore.Store
+	*basestore.Store
 	operations *operations
 }
 
 func NewWithDB(db dbutil.DB, observationContext *observation.Context) *Store {
-	// Use same prometheus metric created by the OSS layer
-	operationsMetrics := dbstore.NewREDMetrics(observationContext)
+	operationsMetrics := metrics.NewREDMetrics(
+		observationContext.Registerer,
+		"codeintel_dbstore",
+		metrics.WithLabels("op"),
+		metrics.WithCountHelp("Total number of method invocations."),
+	)
 
 	return &Store{
-		Store:      dbstore.NewWithDB(db, observationContext, operationsMetrics),
+		Store:      basestore.NewWithDB(db, sql.TxOptions{}),
 		operations: newOperations(observationContext, operationsMetrics),
 	}
 }

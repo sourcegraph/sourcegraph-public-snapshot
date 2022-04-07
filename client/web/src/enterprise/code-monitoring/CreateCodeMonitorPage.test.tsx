@@ -1,12 +1,14 @@
-import { screen } from '@testing-library/react'
+import * as React from 'react'
+
+import { getByRole, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import * as H from 'history'
-import * as React from 'react'
 import { act } from 'react-dom/test-utils'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { AuthenticatedUser } from '../../auth'
 import { CreateCodeMonitorVariables } from '../../graphql-operations'
@@ -34,6 +36,8 @@ describe('CreateCodeMonitorPage', () => {
         createCodeMonitor: sinon.spy((monitor: CreateCodeMonitorVariables) =>
             of({ description: mockCodeMonitor.node.description })
         ),
+        isLightTheme: true,
+        isSourcegraphDotCom: false,
     }
     let clock: sinon.SinonFakeTimers
 
@@ -50,7 +54,11 @@ describe('CreateCodeMonitorPage', () => {
     })
 
     test('createCodeMonitor is called on submit', () => {
-        renderWithBrandedContext(<CreateCodeMonitorPage {...props} />)
+        renderWithBrandedContext(
+            <MockedTestProvider>
+                <CreateCodeMonitorPage {...props} />
+            </MockedTestProvider>
+        )
         const nameInput = screen.getByTestId('name-input')
         userEvent.type(nameInput, 'Test updated')
         userEvent.click(screen.getByTestId('trigger-button'))
@@ -58,7 +66,8 @@ describe('CreateCodeMonitorPage', () => {
         const triggerInput = screen.getByTestId('trigger-query-edit')
         expect(triggerInput).toBeInTheDocument()
 
-        userEvent.type(triggerInput, 'test type:diff repo:test')
+        const textbox = getByRole(triggerInput, 'textbox')
+        userEvent.type(textbox, 'test type:diff repo:test')
         act(() => {
             clock.tick(600)
         })
@@ -81,7 +90,11 @@ describe('CreateCodeMonitorPage', () => {
     })
 
     test('createCodeMonitor is not called on submit when trigger or action is incomplete', () => {
-        renderWithBrandedContext(<CreateCodeMonitorPage {...props} />)
+        renderWithBrandedContext(
+            <MockedTestProvider>
+                <CreateCodeMonitorPage {...props} />
+            </MockedTestProvider>
+        )
         const nameInput = screen.getByTestId('name-input')
         userEvent.type(nameInput, 'Test updated')
         userEvent.click(screen.getByTestId('submit-monitor'))
@@ -94,7 +107,9 @@ describe('CreateCodeMonitorPage', () => {
         const triggerInput = screen.getByTestId('trigger-query-edit')
         expect(triggerInput).toBeInTheDocument()
 
-        userEvent.type(triggerInput, 'test type:diff repo:test')
+        const textbox = getByRole(triggerInput, 'textbox')
+
+        userEvent.type(textbox, 'test type:diff repo:test')
         act(() => {
             clock.tick(600)
         })
@@ -120,7 +135,11 @@ describe('CreateCodeMonitorPage', () => {
     })
 
     test('Actions area button is disabled while trigger is incomplete', () => {
-        renderWithBrandedContext(<CreateCodeMonitorPage {...props} />)
+        renderWithBrandedContext(
+            <MockedTestProvider>
+                <CreateCodeMonitorPage {...props} />
+            </MockedTestProvider>
+        )
         const actionButton = screen.getByTestId('form-action-toggle-email')
         expect(actionButton).toBeDisabled()
     })

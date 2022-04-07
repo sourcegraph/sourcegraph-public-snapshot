@@ -668,6 +668,7 @@ func createWorkspaces(t *testing.T, ctx context.Context, s *Store) []*btypes.Bat
 }
 
 func workspacesIDs(t *testing.T, workspaces []*btypes.BatchSpecWorkspace) []int64 {
+	t.Helper()
 	ids := make([]int64, len(workspaces))
 	for i, w := range workspaces {
 		ids[i] = w.ID

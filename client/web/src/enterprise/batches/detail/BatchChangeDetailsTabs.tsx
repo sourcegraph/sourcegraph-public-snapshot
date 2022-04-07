@@ -1,10 +1,11 @@
+import React, { useMemo } from 'react'
+
 import * as H from 'history'
 import ArchiveIcon from 'mdi-react/ArchiveIcon'
 import ChartLineVariantIcon from 'mdi-react/ChartLineVariantIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import MonitorStarIcon from 'mdi-react/MonitorStarIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
-import React from 'react'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -12,9 +13,9 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Badge, Container } from '@sourcegraph/wildcard'
+import { Badge, Container, Icon } from '@sourcegraph/wildcard'
 
-import { BatchChangeFields } from '../../../graphql-operations'
+import { BatchSpecState, BatchChangeFields } from '../../../graphql-operations'
 import {
     BatchChangeTab,
     BatchChangeTabList,
@@ -31,14 +32,18 @@ import {
     queryAllChangesetIDs as _queryAllChangesetIDs,
 } from './backend'
 import { BatchChangeBurndownChart } from './BatchChangeBurndownChart'
-import styles from './BatchChangeDetailsTabs.module.scss'
 import { BulkOperationsTab } from './BulkOperationsTab'
 import { BatchChangeChangesets } from './changesets/BatchChangeChangesets'
+
+import styles from './BatchChangeDetailsTabs.module.scss'
 
 export enum TabName {
     Changesets = 'changesets',
     Chart = 'chart',
+    // Non-SSBC
     Spec = 'spec',
+    // SSBC-only
+    Executions = 'executions',
     Archived = 'archived',
     BulkOperations = 'bulkoperations',
 }
@@ -51,6 +56,8 @@ export interface BatchChangeDetailsProps
         TelemetryProps {
     history: H.History
     location: H.Location
+    /** The name of the tab that should be initially open */
+    initialTab?: TabName
 
     /** For testing only. */
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
@@ -73,24 +80,33 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
     location,
     platformContext,
     settingsCascade,
+    initialTab = TabName.Changesets,
     queryChangesetCountsOverTime,
     queryExternalChangesetWithFileDiffs,
     queryAllChangesetIDs,
     refetchBatchChange,
     telemetryService,
 }) => {
-    const executionEnabled =
+    const isExecutionEnabled =
         (settingsCascade.final &&
             !isErrorLike(settingsCascade.final) &&
             settingsCascade.final.experimentalFeatures?.batchChangesExecution) ??
         false
 
+    const executingCount = useMemo(
+        () =>
+            batchChange.batchSpecs.nodes.filter(
+                node => node.state === BatchSpecState.PROCESSING || node.state === BatchSpecState.QUEUED
+            ).length,
+        [batchChange.batchSpecs.nodes]
+    )
+
     return (
-        <BatchChangeTabs history={history} location={location}>
+        <BatchChangeTabs history={history} location={location} initialTab={initialTab}>
             <BatchChangeTabList>
                 <BatchChangeTab index={0} name={TabName.Changesets}>
                     <span>
-                        <SourceBranchIcon className="icon-inline text-muted mr-1" />
+                        <Icon className="text-muted mr-1" as={SourceBranchIcon} />
                         <span className="text-content" data-tab-content="Changesets">
                             Changesets
                         </span>{' '}
@@ -101,35 +117,42 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                 </BatchChangeTab>
                 <BatchChangeTab index={1} name={TabName.Chart}>
                     <span>
-                        <ChartLineVariantIcon className="icon-inline text-muted mr-1" />{' '}
+                        <Icon className="text-muted mr-1" as={ChartLineVariantIcon} />{' '}
                         <span className="text-content" data-tab-content="Burndown chart">
                             Burndown chart
                         </span>
                     </span>
                 </BatchChangeTab>
-                {!executionEnabled && (
+                {!isExecutionEnabled && (
                     <BatchChangeTab index={2} name={TabName.Spec}>
                         <span>
-                            <FileDocumentIcon className="icon-inline text-muted mr-1" />{' '}
+                            <Icon className="text-muted mr-1" as={FileDocumentIcon} />{' '}
                             <span className="text-content" data-tab-content="Spec">
                                 Spec
                             </span>
                         </span>
                     </BatchChangeTab>
                 )}
-                {executionEnabled && (
-                    <BatchChangeTab index={2} name={TabName.Spec}>
+                {isExecutionEnabled && (
+                    <BatchChangeTab index={2} name={TabName.Executions} customPath="/executions">
                         <span>
-                            <FileDocumentIcon className="icon-inline text-muted mr-1" />{' '}
-                            <span className="text-content" data-tab-content="Specs">
-                                Specs
-                            </span>
+                            <Icon className="text-muted mr-1" as={FileDocumentIcon} />{' '}
+                            <span className="text-content" data-tab-content="Executions">
+                                Executions
+                            </span>{' '}
+                            <Badge
+                                variant={executingCount === 0 ? 'secondary' : 'warning'}
+                                pill={true}
+                                className="ml-1"
+                            >
+                                {executingCount} {batchChange.batchSpecs.pageInfo.hasNextPage && <>+</>}
+                            </Badge>
                         </span>
                     </BatchChangeTab>
                 )}
                 <BatchChangeTab index={3} name={TabName.Archived}>
                     <span>
-                        <ArchiveIcon className="icon-inline text-muted mr-1" />{' '}
+                        <Icon className="text-muted mr-1" as={ArchiveIcon} />{' '}
                         <span className="text-content" data-tab-content="Archived">
                             Archived
                         </span>{' '}
@@ -140,7 +163,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                 </BatchChangeTab>
                 <BatchChangeTab index={4} name={TabName.BulkOperations}>
                     <span>
-                        <MonitorStarIcon className="icon-inline text-muted mr-1" />{' '}
+                        <Icon className="text-muted mr-1" as={MonitorStarIcon} />{' '}
                         <span className="text-content" data-tab-content="Bulk operations">
                             Bulk operations
                         </span>{' '}
@@ -154,6 +177,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                 <BatchChangeTabPanel>
                     <BatchChangeChangesets
                         batchChangeID={batchChange.id}
+                        batchChangeState={batchChange.state}
                         viewerCanAdminister={batchChange.viewerCanAdminister}
                         refetchBatchChange={refetchBatchChange}
                         history={history}
@@ -165,6 +189,8 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                         queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                         queryAllChangesetIDs={queryAllChangesetIDs}
                         onlyArchived={false}
+                        settingsCascade={settingsCascade}
+                        isExecutionEnabled={isExecutionEnabled}
                     />
                 </BatchChangeTabPanel>
                 <BatchChangeTabPanel>
@@ -175,7 +201,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                     />
                 </BatchChangeTabPanel>
                 <BatchChangeTabPanel>
-                    {!executionEnabled ? (
+                    {!isExecutionEnabled ? (
                         <>
                             <div className="d-flex flex-wrap justify-content-between align-items-baseline mb-2 test-batches-spec">
                                 <BatchSpecMeta
@@ -213,6 +239,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                 <BatchChangeTabPanel>
                     <BatchChangeChangesets
                         batchChangeID={batchChange.id}
+                        batchChangeState={batchChange.state}
                         viewerCanAdminister={batchChange.viewerCanAdminister}
                         history={history}
                         location={location}
@@ -223,6 +250,8 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                         queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                         onlyArchived={true}
                         refetchBatchChange={refetchBatchChange}
+                        settingsCascade={settingsCascade}
+                        isExecutionEnabled={isExecutionEnabled}
                     />
                 </BatchChangeTabPanel>
                 <BatchChangeTabPanel>

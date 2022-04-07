@@ -1,6 +1,7 @@
+import * as React from 'react'
+
 import * as _graphiqlModule from 'graphiql' // type only
 import * as H from 'history'
-import * as React from 'react'
 import { from as fromPromise, Subject, Subscription } from 'rxjs'
 import { catchError, debounceTime } from 'rxjs/operators'
 

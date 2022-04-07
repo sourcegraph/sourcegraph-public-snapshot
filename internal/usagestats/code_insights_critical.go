@@ -2,33 +2,43 @@ package usagestats
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 func GetCodeInsightsCriticalTelemetry(ctx context.Context, db database.DB) (_ *types.CodeInsightsCriticalTelemetry, err error) {
-	telemetry := &types.CodeInsightsCriticalTelemetry{}
-
-	totalCount, err := totalCountCritical(ctx, db)
+	criticalCount, err := totalCountCritical(ctx, db)
 	if err != nil {
 		return nil, err
 	}
-	telemetry.TotalInsights = totalCount
-
-	return telemetry, nil
+	return &criticalCount, nil
 }
 
-func totalCountCritical(ctx context.Context, db database.DB) (int32, error) {
-	counts, err := GetTotalInsightCounts(ctx, db)
+func totalCountCritical(ctx context.Context, db database.DB) (types.CodeInsightsCriticalTelemetry, error) {
+	store := database.EventLogs(db)
+	name := InsightsTotalCountCriticalPingName
+	all, err := store.ListAll(ctx, database.EventLogsListOptions{
+		LimitOffset: &database.LimitOffset{
+			Limit:  1,
+			Offset: 0,
+		},
+		EventName: &name,
+	})
 	if err != nil {
-		return 0, err
+		return types.CodeInsightsCriticalTelemetry{}, err
+	} else if len(all) == 0 {
+		return types.CodeInsightsCriticalTelemetry{}, nil
 	}
 
-	sum := 0
-	for _, count := range counts.ViewCounts {
-		sum += count.TotalCount
+	latest := all[0]
+	var criticalCount types.CodeInsightsCriticalTelemetry
+	err = json.Unmarshal([]byte(latest.Argument), &criticalCount)
+	if err != nil {
+		return types.CodeInsightsCriticalTelemetry{}, errors.Wrap(err, "Unmarshal")
 	}
-	return int32(sum), nil
+	return criticalCount, err
 }

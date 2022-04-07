@@ -3,18 +3,17 @@ import assert from 'assert'
 import delay from 'delay'
 
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
-import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
 import { percySnapshotWithVariants } from '../utils'
 
 import {
-    INSIGHT_TYPES_MIGRATION_BULK_SEARCH,
-    INSIGHT_TYPES_MIGRATION_COMMITS,
-    LangStatsInsightContent,
-} from './utils/insight-mock-data'
-import { overrideGraphQLExtensions } from './utils/override-insights-graphql'
+    MIGRATION_TO_GQL_INSIGHT_COMMITS_FIXTURE,
+    MIGRATION_TO_GQL_INSIGHT_MATCHES_DATA_FIXTURE,
+    SOURCEGRAPH_LANG_STATS_INSIGHT_DATA_FIXTURE,
+} from './fixtures/runtime-insights'
+import { overrideInsightsGraphQLApi } from './utils/override-insights-graphql-api'
 
 describe('Code insight create insight page', () => {
     let driver: Driver
@@ -24,19 +23,24 @@ describe('Code insight create insight page', () => {
         driver = await createDriverForTest()
     })
 
-    after(() => driver?.close())
-
     beforeEach(async function () {
         testContext = await createWebIntegrationTestContext({
             driver,
             currentTest: this.currentTest!,
             directory: __dirname,
+            customContext: {
+                // Enforce using a new gql API for code insights pages
+                codeInsightsGqlApiEnabled: true,
+            },
         })
     })
 
-    afterEachSaveScreenshotIfFailed(() => driver.page)
+    after(() => driver?.close())
     afterEach(() => testContext?.dispose())
+    afterEachSaveScreenshotIfFailed(() => driver.page)
+
     it('is styled correctly, with welcome popup', async () => {
+        overrideInsightsGraphQLApi({ testContext })
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/create')
 
         // Waiting for all important part page be rendered.
@@ -48,7 +52,7 @@ describe('Code insight create insight page', () => {
     })
 
     it('is styled correctly, without welcome popup', async () => {
-        overrideGraphQLExtensions({ testContext })
+        overrideInsightsGraphQLApi({ testContext })
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/create')
 
         // Waiting for all important part page be rendered.
@@ -59,27 +63,10 @@ describe('Code insight create insight page', () => {
         await percySnapshotWithVariants(driver.page, 'Create new insight page')
     })
 
-    it('should update user/org setting if code stats insight has been created', async () => {
-        overrideGraphQLExtensions({
+    it('should run a proper GQL mutation if code-stats insight has been created', async () => {
+        overrideInsightsGraphQLApi({
             testContext,
             overrides: {
-                OverwriteSettings: () => ({
-                    settingsMutation: {
-                        overwriteSettings: {
-                            empty: emptyResponse,
-                        },
-                    },
-                }),
-
-                SubjectSettings: () => ({
-                    settingsSubject: {
-                        latestSettings: {
-                            id: 310,
-                            contents: JSON.stringify({}),
-                        },
-                    },
-                }),
-
                 /**
                  * Mock for async repositories field validation.
                  */
@@ -87,11 +74,19 @@ describe('Code insight create insight page', () => {
                     repoSearch0: { name: 'github.com/sourcegraph/sourcegraph' },
                 }),
 
-                LangStatsInsightContent: () => LangStatsInsightContent,
+                LangStatsInsightContent: () => SOURCEGRAPH_LANG_STATS_INSIGHT_DATA_FIXTURE,
 
                 /** Mock for repository suggest component. */
                 RepositorySearchSuggestions: () => ({
                     repositories: { nodes: [] },
+                }),
+
+                CreateLangStatsInsight: () => ({
+                    __typename: 'Mutation',
+                    createPieChartSearchInsight: {
+                        __typename: 'InsightViewPayload',
+                        view: { __typename: 'InsightView', id: '001' },
+                    },
                 }),
             },
         })
@@ -119,19 +114,22 @@ describe('Code insight create insight page', () => {
 
         const addToUserConfigRequest = await testContext.waitForGraphQLRequest(async () => {
             await driver.page.click('[data-testid="insight-save-button"]')
-        }, 'OverwriteSettings')
+        }, 'CreateLangStatsInsight')
 
         // Check that new org settings config has edited insight
-        assert.deepStrictEqual(JSON.parse(addToUserConfigRequest.contents), {
-            'codeStatsInsights.insight.testInsightTitle': {
+        assert.deepStrictEqual(addToUserConfigRequest.input, {
+            query: '',
+            repositoryScope: {
+                repositories: ['github.com/sourcegraph/sourcegraph'],
+            },
+            presentationOptions: {
                 title: 'Test insight title',
-                repository: 'github.com/sourcegraph/sourcegraph',
                 otherThreshold: 0.03,
             },
         })
     })
 
-    it('should update user/org settings if search based insight has been created', async () => {
+    it('should run a proper GQL mutation if search-based insight has been created', async () => {
         // Mock `Date.now` to stabilize timestamps
         await driver.page.evaluateOnNewDocument(() => {
             // Number of ms between Unix epoch and June 31, 2021
@@ -139,38 +137,29 @@ describe('Code insight create insight page', () => {
             Date.now = () => mockMs
         })
 
-        overrideGraphQLExtensions({
+        overrideInsightsGraphQLApi({
             testContext,
             overrides: {
-                OverwriteSettings: () => ({
-                    settingsMutation: {
-                        overwriteSettings: {
-                            empty: emptyResponse,
-                        },
-                    },
-                }),
-
-                SubjectSettings: () => ({
-                    settingsSubject: {
-                        latestSettings: {
-                            id: 310,
-                            contents: JSON.stringify({}),
-                        },
-                    },
-                }),
-
                 // Mock for async repositories field validation.
                 BulkRepositoriesSearch: () => ({
                     repoSearch0: { name: 'github.com/sourcegraph/sourcegraph' },
                 }),
 
                 // Mocks of commits searching and data search itself for live preview chart
-                BulkSearchCommits: () => INSIGHT_TYPES_MIGRATION_COMMITS,
-                BulkSearch: () => INSIGHT_TYPES_MIGRATION_BULK_SEARCH,
+                BulkSearchCommits: () => MIGRATION_TO_GQL_INSIGHT_COMMITS_FIXTURE,
+                BulkSearch: () => MIGRATION_TO_GQL_INSIGHT_MATCHES_DATA_FIXTURE,
 
                 // Mock for repository suggest component
                 RepositorySearchSuggestions: () => ({
                     repositories: { nodes: [] },
+                }),
+
+                CreateSearchBasedInsight: () => ({
+                    __typename: 'Mutation',
+                    createLineChartSearchInsight: {
+                        __typename: 'InsightViewPayload',
+                        view: { __typename: 'InsightView', id: '001' },
+                    },
                 }),
             },
         })
@@ -229,28 +218,46 @@ describe('Code insight create insight page', () => {
 
         const addToUserConfigRequest = await testContext.waitForGraphQLRequest(async () => {
             await driver.page.click('[data-testid="insight-save-button"]')
-        }, 'OverwriteSettings')
+        }, 'CreateSearchBasedInsight')
 
         // Check that new org settings config has edited insight
-        assert.deepStrictEqual(JSON.parse(addToUserConfigRequest.contents), {
-            'searchInsights.insight.testInsightTitle': {
-                title: 'Test insight title',
-                repositories: ['github.com/sourcegraph/sourcegraph'],
-                series: [
-                    {
-                        name: 'test series #1 title',
-                        query: 'test series #1 query',
-                        stroke: 'var(--oc-cyan-7)',
+        assert.deepStrictEqual(addToUserConfigRequest.input, {
+            dataSeries: [
+                {
+                    query: 'test series #1 query',
+                    options: {
+                        label: 'test series #1 title',
+                        lineColor: 'var(--oc-cyan-7)',
                     },
-                    {
-                        name: 'test series #2 title',
-                        query: 'test series #2 query',
-                        stroke: 'var(--oc-grape-7)',
+                    repositoryScope: {
+                        repositories: ['github.com/sourcegraph/sourcegraph'],
                     },
-                ],
-                step: {
-                    months: 2,
+                    timeScope: {
+                        stepInterval: {
+                            unit: 'MONTH',
+                            value: 2,
+                        },
+                    },
                 },
+                {
+                    query: 'test series #2 query',
+                    options: {
+                        label: 'test series #2 title',
+                        lineColor: 'var(--oc-grape-7)',
+                    },
+                    repositoryScope: {
+                        repositories: ['github.com/sourcegraph/sourcegraph'],
+                    },
+                    timeScope: {
+                        stepInterval: {
+                            unit: 'MONTH',
+                            value: 2,
+                        },
+                    },
+                },
+            ],
+            options: {
+                title: 'Test insight title',
             },
         })
     })

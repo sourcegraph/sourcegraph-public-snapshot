@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -36,7 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -67,6 +68,9 @@ func main() {
 		Logger:     log15.Root(),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
+		HoneyDataset: &honey.Dataset{
+			Name: "codeintel-worker",
+		},
 	}
 
 	// Start debug server
@@ -88,9 +92,9 @@ func main() {
 
 	// Initialize stores
 	dbStore := dbstore.NewWithDB(db, observationContext)
-	workerStore := dbstore.WorkerutilUploadStore(dbStore, observationContext)
+	workerStore := dbstore.WorkerutilUploadStore(dbStore, makeObservationContext(observationContext, false))
 	lsifStore := lsifstore.NewStore(codeIntelDB, conf.Get(), observationContext)
-	gitserverClient := gitserver.New(dbStore, observationContext)
+	gitserverClient := gitserver.New(database.NewDB(db), dbStore, observationContext)
 
 	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
 	if err != nil {
@@ -107,7 +111,7 @@ func main() {
 	}
 
 	// Initialize metrics
-	mustRegisterQueueMetric(observationContext, workerStore)
+	dbworker.InitPrometheusMetric(observationContext, workerStore, "codeintel", "upload", nil)
 
 	// Initialize worker
 	worker := worker.NewWorker(
@@ -148,7 +152,7 @@ func mustInitializeDB() *sql.DB {
 	ctx := context.Background()
 	go func() {
 		for range time.NewTicker(eiauthz.RefreshInterval()).C {
-			allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.ExternalServices(sqlDB))
+			allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.ExternalServices(sqlDB), database.NewDB(sqlDB))
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()
@@ -171,18 +175,13 @@ func mustInitializeCodeIntelDB() *sql.DB {
 	return db
 }
 
-func mustRegisterQueueMetric(observationContext *observation.Context, workerStore dbworkerstore.Store) {
-	observationContext.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_codeintel_upload_total",
-		Help: "Total number of uploads in the queued state.",
-	}, func() float64 {
-		count, err := workerStore.QueuedCount(context.Background(), false, nil)
-		if err != nil {
-			log15.Error("Failed to determine queue size", "err", err)
-		}
-
-		return float64(count)
-	}))
+func makeObservationContext(observationContext *observation.Context, withHoney bool) *observation.Context {
+	if withHoney {
+		return observationContext
+	}
+	ctx := *observationContext
+	ctx.HoneyDataset = nil
+	return &ctx
 }
 
 func makeWorkerMetrics(observationContext *observation.Context) workerutil.WorkerMetrics {

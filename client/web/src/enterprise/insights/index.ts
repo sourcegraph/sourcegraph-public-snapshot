@@ -1,7 +1,7 @@
 export * from '../../insights/analytics'
 
 // Public Insights components
-export { InsightsRouter } from './InsightsRouter'
+export { CodeInsightsRouter } from './CodeInsightsRouter'
 
 // Guard
 export { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'

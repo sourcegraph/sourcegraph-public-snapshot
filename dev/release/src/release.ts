@@ -356,6 +356,10 @@ These steps must be completed before this PR can be merged, unless otherwise sta
 ${actionItems.map(item => `- [ ] ${item}`).join('\n')}
 
 cc @${config.captainGitHubUsername}
+
+### Test plan
+
+CI checks in this repository should pass, and a manual review should confirm if the generated changes are correct.
 `,
                 }
             }

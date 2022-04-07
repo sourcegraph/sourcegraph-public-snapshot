@@ -1,14 +1,14 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 
 	"github.com/keegancsmith/sqlf"
+	"gopkg.in/yaml.v2"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 )
 
@@ -18,44 +18,19 @@ func main() {
 	}
 	tempDirectory := os.Args[1]
 
-	minMigrationVersions := map[string]int{
-		"frontend":     1528395834,
-		"codeintel":    1000000015,
-		"codeinsights": 1000000000,
-	}
-
 	contents := map[string]string{}
 	for _, schema := range schemas.Schemas {
-		versionBase := minMigrationVersions[schema.Name]
-
-		for versionOffset, definition := range schema.Definitions.All() {
-			version := versionBase + versionOffset
-
-			metadataLines := []string{}
-			metadataLines = append(metadataLines, fmt.Sprintf("name: '%s'", definition.Name))
-			if versionOffset > 0 {
-				metadataLines = append(metadataLines, fmt.Sprintf("parent: %d", version-1))
+		for _, definition := range schema.Definitions.All() {
+			metadata, err := renderMetadata(definition)
+			if err != nil {
+				panic(err.Error())
 			}
-			if definition.IsCreateIndexConcurrently {
-				metadataLines = append(metadataLines, "createIndexConcurrently: true")
-			}
-			metadata := strings.Join(metadataLines, "\n") + "\n"
 
-			preambleLines := []string{}
-			for _, line := range metadataLines {
-				preambleLines = append(preambleLines, "-- "+line)
-			}
-			preambleLines = append(preambleLines, "-- +++")
-			preamble := "-- +++\n" + strings.Join(preambleLines, "\n") + "\n"
+			migrationDirectory := filepath.Join(tempDirectory, schema.Name, strconv.Itoa(definition.ID))
 
-			// Old format
-			contents[filepath.Join(tempDirectory, "flat", schema.Name, fmt.Sprintf("%d_%s.up.sql", version, definition.Name))] = preamble + definition.UpQuery.Query(sqlf.PostgresBindVar)
-			contents[filepath.Join(tempDirectory, "flat", schema.Name, fmt.Sprintf("%d_%s.down.sql", version, definition.Name))] = definition.DownQuery.Query(sqlf.PostgresBindVar)
-
-			// New format
-			contents[filepath.Join(tempDirectory, "dirs", schema.Name, strconv.Itoa(version), "metadata.yaml")] = metadata
-			contents[filepath.Join(tempDirectory, "dirs", schema.Name, strconv.Itoa(version), "up.sql")] = definition.UpQuery.Query(sqlf.PostgresBindVar)
-			contents[filepath.Join(tempDirectory, "dirs", schema.Name, strconv.Itoa(version), "down.sql")] = definition.DownQuery.Query(sqlf.PostgresBindVar)
+			contents[filepath.Join(migrationDirectory, "metadata.yaml")] = string(metadata)
+			contents[filepath.Join(migrationDirectory, "up.sql")] = definition.UpQuery.Query(sqlf.PostgresBindVar)
+			contents[filepath.Join(migrationDirectory, "down.sql")] = definition.DownQuery.Query(sqlf.PostgresBindVar)
 		}
 	}
 
@@ -68,4 +43,20 @@ func main() {
 			panic(err.Error())
 		}
 	}
+}
+
+func renderMetadata(definition definition.Definition) ([]byte, error) {
+	return yaml.Marshal(struct {
+		Name                    string `yaml:"name"`
+		Parents                 []int  `yaml:"parents"`
+		CreateIndexConcurrently bool   `yaml:"createIndexConcurrently"`
+		Privileged              bool   `yaml:"privileged"`
+		NonIdempotent           bool   `yaml:"nonIdempotent"`
+	}{
+		Name:                    definition.Name,
+		Parents:                 definition.Parents,
+		CreateIndexConcurrently: definition.IsCreateIndexConcurrently,
+		Privileged:              definition.Privileged,
+		NonIdempotent:           definition.NonIdempotent,
+	})
 }

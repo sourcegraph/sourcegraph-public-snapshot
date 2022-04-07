@@ -3,13 +3,13 @@ import { BehaviorSubject, combineLatest, from, Observable, Subscription } from '
 import { catchError, concatMap, distinctUntilChanged, map, tap } from 'rxjs/operators'
 import sourcegraph from 'sourcegraph'
 
+import { Contributions } from '@sourcegraph/client-api'
 import { asError, ErrorLike, isErrorLike, hashCode, memoizeObservable } from '@sourcegraph/common'
 
 import { ConfiguredExtension, getScriptURLFromExtensionManifest, splitExtensionID } from '../../extensions/extension'
 import { areExtensionsSame, getEnabledExtensionsForSubject } from '../../extensions/extensions'
 import { wrapRemoteObservable } from '../client/api/common'
 import { MainThreadAPI } from '../contract'
-import { Contributions } from '../protocol'
 import { tryCatchPromise } from '../util'
 
 import { parseContributionExpressions } from './api/contribution'
@@ -166,21 +166,28 @@ export function activateExtensions(
                         return from(
                             Promise.all([
                                 toActivate.map(async ({ id, scriptURL }) => {
-                                    console.log(`Activating Sourcegraph extension: ${id}`)
-
                                     // We only want to log non-default extension events
                                     if (!defaultExtensions[id]) {
                                         // Hash extension IDs that specify host, since that means that it's a private registry extension.
-                                        const telemetryExtensionID = splitExtensionID(id).host ? await hashCode(id) : id
-                                        mainAPI
-                                            .logEvent('ExtensionActivation', {
-                                                extension_id: telemetryExtensionID,
-                                            })
-                                            .catch(() => {
-                                                // noop
-                                            })
+                                        try {
+                                            const telemetryExtensionID = splitExtensionID(id).host
+                                                ? await hashCode(id)
+                                                : id
+                                            mainAPI
+                                                .logEvent('ExtensionActivation', {
+                                                    extension_id: telemetryExtensionID,
+                                                })
+                                                .catch(() => {
+                                                    // noop
+                                                })
+                                        } catch (error) {
+                                            console.error(
+                                                `Fail to log ExtensionActivation event for extension ${id}:`,
+                                                asError(error)
+                                            )
+                                        }
                                     }
-
+                                    console.log(`Activating Sourcegraph extension: ${id}`)
                                     return activate(id, scriptURL, createExtensionAPI).catch(error =>
                                         console.error(`Error activating extension ${id}:`, asError(error))
                                     )

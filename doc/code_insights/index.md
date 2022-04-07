@@ -1,4 +1,4 @@
-# Code Insights <a href="../admin/beta_and_experimental_features"><sup><span class="badge badge-beta">Beta</span></sup></a>
+# Code Insights
 
 <style>
 
@@ -40,17 +40,7 @@ body.theme-dark .markdown-body ul li:before {
 
 <p class="lead">Code Insights reveals high-level information about your codebase, based on both how your code changes over time and its current state.</p>
 
-Code Insights is based on our universal code search, making it precise and configurable. Track anything that can be expressed with a Sourcegraph search query: migrations, package use, version adoption, code smells, codebase size and much more, across 1,000s of repositories.
-
-### Code Insights is in Beta
-
-Code Insights are currently in [Beta](../admin/beta_and_experimental_features.md). If you want early access or support, please [send us an email](mailto:feedback@sourcegraph.com).
-
-> NOTE: While in Beta, Code Insights is free for enterprise customers. Once Code Insights is generally available and no sooner than January 1, 2022, to continue using Code Insights may require a separate paid plan.
-
-We're still polishing Code Insights and you might find bugs while we’re in beta. Please [share any bugs 🐛 or feedback](mailto:feedback@sourcegraph.com) you have to help us make Code Insights better.
-
-Code insights docs are actively in progress during the beta.
+Code Insights is based on our universal code search, making it precise and configurable. Track anything that can be expressed with a Sourcegraph search query: migrations, package use, version adoption, code smells, codebase size and much more, across 1,000s of repositories. Code Insights will backfill years of historical data from your version control, so you can immediately reveal current trends and baselines. 
 
 <div class="cta-group">
 <a class="btn btn-primary" href="quickstart">★ Quickstart</a>
@@ -62,7 +52,7 @@ Code insights docs are actively in progress during the beta.
 - [Administration and security of Code Insights](explanations/administration_and_security_of_code_insights.md)
 - [Automatically generated data series for version or pattern tracking](explanations/automatically_generated_data_series.md)
 - [Code Insights filters](explanations/code_insights_filters.md)
-- [Current limitations of Code Insights (Beta limitations)](explanations/current_limitations_of_code_insights.md)
+- [Current limitations of Code Insights](explanations/current_limitations_of_code_insights.md)
 - [Viewing code insights](explanations/viewing_code_insights.md)
 
 ## [How-tos](how-tos/index.md)

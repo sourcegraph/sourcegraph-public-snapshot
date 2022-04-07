@@ -12,7 +12,6 @@ import { CodeView, DOMFunctions } from '../shared/codeViews'
 import { createNotificationClassNameGetter } from '../shared/getNotificationClassName'
 import { ViewResolver } from '../shared/views'
 
-import styles from './codeHost.module.scss'
 import { getContext } from './context'
 import { diffDOMFunctions, newDiffDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import {
@@ -23,6 +22,8 @@ import {
     resolveSingleFileDiffFileInfo,
 } from './fileInfo'
 import { isCommitsView, isCompareView, isPullRequestView, isSingleFileView } from './scrape'
+
+import styles from './codeHost.module.scss'
 
 /**
  * Gets or creates the toolbar mount for allcode views.

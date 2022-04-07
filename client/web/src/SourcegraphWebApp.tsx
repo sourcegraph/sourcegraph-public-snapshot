@@ -1,14 +1,16 @@
 import 'focus-visible'
 
+import * as React from 'react'
+
 import { ApolloProvider } from '@apollo/client'
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import { createBrowserHistory } from 'history'
 import ServerIcon from 'mdi-react/ServerIcon'
-import * as React from 'react'
 import { Route, Router } from 'react-router'
 import { ScrollManager } from 'react-scroll-manager'
 import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
+import * as uuid from 'uuid'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
@@ -68,8 +70,12 @@ import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { FeatureFlagName, fetchFeatureFlags, FlagSet } from './featureFlags/featureFlags'
 import { OverrideFeatureFlagsAgent } from './featureFlags/OverrideFeatureFlagsAgent'
+import { IdeExtensionTracker } from './IdeExtensionTracker'
 import { CodeInsightsProps } from './insights/types'
 import { Layout, LayoutProps } from './Layout'
+import { BlockInput } from './notebooks'
+import { createNotebook } from './notebooks/backend'
+import { blockToGQLInput } from './notebooks/serialize'
 import { OrgAreaRoute } from './org/area/OrgArea'
 import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import { createPlatformContext } from './platform/context'
@@ -80,15 +86,14 @@ import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps } from './routes'
+import { PageRoutes } from './routes.constants'
 import { parseSearchURL } from './search'
-import { fetchSavedSearches, fetchRecentSearches, fetchRecentFileViews } from './search/backend'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { SearchStack } from './search/SearchStack'
 import { listUserRepositories } from './site-admin/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { CodeHostScopeProvider } from './site/CodeHostScopeAlerts/CodeHostScopeProvider'
-import styles from './SourcegraphWebApp.module.scss'
 import {
     setQueryStateFromSettings,
     setQueryStateFromURL,
@@ -96,6 +101,7 @@ import {
     getExperimentalFeatures,
     useNavbarQueryState,
 } from './stores'
+import { BrowserExtensionTracker } from './tracking/BrowserExtensionTracker'
 import { eventLogger } from './tracking/eventLogger'
 import { withActivation } from './tracking/withActivation'
 import { UserAreaRoute } from './user/area/UserArea'
@@ -106,6 +112,8 @@ import { UserSessionStores } from './UserSessionStores'
 import { globbingEnabledFromSettings } from './util/globbing'
 import { observeLocation } from './util/location'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
+
+import styles from './SourcegraphWebApp.module.scss'
 
 export interface SourcegraphWebAppProps
     extends CodeIntelligenceProps,
@@ -251,7 +259,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                 })
             })
             .catch(error => {
-                console.error('Error initalizing GraphQL client', error)
+                console.error('Error initializing GraphQL client', error)
             })
 
         this.subscriptions.add(
@@ -455,12 +463,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                                     this.state.defaultSearchContextSpec
                                                                 }
                                                                 globbing={this.state.globbing}
-                                                                isCodeInsightsGqlApiEnabled={
-                                                                    window.context.codeInsightsGqlApiEnabled
-                                                                }
-                                                                fetchSavedSearches={fetchSavedSearches}
-                                                                fetchRecentSearches={fetchRecentSearches}
-                                                                fetchRecentFileViews={fetchRecentFileViews}
                                                                 streamSearch={aggregateStreamingSearch}
                                                                 onUserExternalServicesOrRepositoriesUpdate={
                                                                     this.onUserExternalServicesOrRepositoriesUpdate
@@ -473,7 +475,9 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                         </CodeHostScopeProvider>
                                                     )}
                                                 />
-                                                <SearchStack />
+                                                <SearchStack onCreateNotebook={this.onCreateNotebook} />
+                                                <IdeExtensionTracker />
+                                                <BrowserExtensionTracker />
                                             </Router>
                                         </ScrollManager>
                                         <Tooltip key={1} />
@@ -540,5 +544,24 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
     private async setWorkspaceSearchContext(spec: string | undefined): Promise<void> {
         const extensionHostAPI = await this.extensionsController.extHostAPI
         await extensionHostAPI.setSearchContext(spec)
+    }
+
+    private onCreateNotebook = (blocks: BlockInput[]): void => {
+        if (!this.state.authenticatedUser) {
+            return
+        }
+
+        this.subscriptions.add(
+            createNotebook({
+                notebook: {
+                    title: 'New Notebook',
+                    blocks: blocks.map(block => blockToGQLInput({ id: uuid.v4(), ...block })),
+                    public: false,
+                    namespace: this.state.authenticatedUser.id,
+                },
+            }).subscribe(createdNotebook => {
+                history.push(PageRoutes.Notebook.replace(':id', createdNotebook.id))
+            })
+        )
     }
 }

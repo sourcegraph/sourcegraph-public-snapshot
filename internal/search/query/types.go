@@ -212,6 +212,52 @@ func (b Basic) Index() YesNoOnly {
 	return *v
 }
 
+// PatternString returns the simple string pattern of a basic query. It assumes
+// there is only on pattern atom.
+func (b Basic) PatternString() string {
+	if p, ok := b.Pattern.(Pattern); ok {
+		if b.IsLiteral() {
+			// Escape regexp meta characters if this pattern should be treated literally.
+			return regexp.QuoteMeta(p.Value)
+		} else {
+			return p.Value
+		}
+	}
+	return ""
+}
+
+func (b Basic) IsEmptyPattern() bool {
+	if b.Pattern == nil {
+		return true
+	}
+	if p, ok := b.Pattern.(Pattern); ok {
+		return p.Value == ""
+	}
+	return false
+}
+
+// IncludeExcludeValues partitions multiple values of a field into positive
+// (include) and negated (exclude) values.
+func (b Basic) IncludeExcludeValues(field string) (include, exclude []string) {
+	b.VisitParameter(field, func(v string, negated bool, _ Annotation) {
+		if negated {
+			exclude = append(exclude, v)
+		} else {
+			include = append(include, v)
+		}
+	})
+	return include, exclude
+}
+
+// Exists returns whether a parameter exists in the query (whether negated or not).
+func (b Basic) Exists(field string) bool {
+	found := false
+	b.VisitParameter(field, func(_ string, _ bool, _ Annotation) {
+		found = true
+	})
+	return found
+}
+
 // A query is a tree of Nodes. We choose the type name Q so that external uses like query.Q do not stutter.
 type Q []Node
 
@@ -252,6 +298,14 @@ func (q Q) StringValue(field string) (value, negatedValue string) {
 	return value, negatedValue
 }
 
+func (q Q) Index() YesNoOnly {
+	v := q.yesNoOnlyValue(FieldIndex)
+	if v == nil {
+		return Yes
+	}
+	return *v
+}
+
 func (q Q) Values(field string) []*Value {
 	var values []*Value
 	if field == "" {
@@ -268,7 +322,7 @@ func (q Q) Values(field string) []*Value {
 
 func (q Q) Fields() map[string][]*Value {
 	fields := make(map[string][]*Value)
-	VisitPattern(q, func(value string, _ bool, _ Annotation) {
+	VisitPattern(q, func(_ string, _ bool, _ Annotation) {
 		fields[""] = q.Values("")
 	})
 	VisitParameter(q, func(field, _ string, _ bool, _ Annotation) {
@@ -334,14 +388,27 @@ func (q Q) IsCaseSensitive() bool {
 }
 
 func (q Q) Repositories() (repos []string, negatedRepos []string) {
-	VisitField(q, FieldRepo, func(value string, negated bool, _ Annotation) {
-		if negated {
-			negatedRepos = append(negatedRepos, value)
+	VisitField(q, FieldRepo, func(value string, negated bool, a Annotation) {
+		if a.Labels.IsSet(IsPredicate) {
 			return
 		}
-		repos = append(repos, value)
+
+		if negated {
+			negatedRepos = append(negatedRepos, value)
+		} else {
+			repos = append(repos, value)
+		}
 	})
 	return repos, negatedRepos
+}
+
+func (q Q) Dependencies() (dependencies []string) {
+	VisitPredicate(q, func(field, name, value string) {
+		if field == FieldRepo && (name == "dependencies" || name == "deps") {
+			dependencies = append(dependencies, value)
+		}
+	})
+	return dependencies
 }
 
 func (q Q) MaxResults(defaultLimit int) int {

@@ -4,63 +4,17 @@ import { LineChartContent } from 'sourcegraph'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { InsightDataSeries, SearchPatternType } from '../../../../../graphql-operations'
+import { semanticSort } from '../../../../../insights/utils/semantic-sort'
 import { PageRoutes } from '../../../../../routes.constants'
-import { SearchBasedBackendFilters, SearchBasedInsightSeries } from '../../types/insight/search-insight'
+import { InsightFilters, SearchBasedInsightSeries } from '../../types'
 
 interface SeriesDataset {
     dateTime: number
-
     [seriesKey: string]: number
 }
 
-export interface InsightData {
-    series: {
-        label: string
-        points: { dateTime: string; value: number }[]
-    }[]
-}
-
-export function createLineChartContent(
-    seriesData: InsightData,
-    seriesDefinition: SearchBasedInsightSeries[] = []
-): LineChartContent<SeriesDataset, 'dateTime'> {
-    // Immutable sort is required to avoid breaking useCallback memoziation in BackendInsight component
-    const sortedSeriesSettings = [...seriesDefinition].sort((a, b) => a.query.localeCompare(b.query))
-    const dataByXValue = new Map<string, SeriesDataset>()
-
-    for (const [seriesIndex, series] of seriesData.series.entries()) {
-        for (const point of series.points) {
-            let dataObject = dataByXValue.get(point.dateTime)
-            if (!dataObject) {
-                dataObject = {
-                    dateTime: Date.parse(point.dateTime),
-                    // Initialize all series to null (empty chart) value
-                    ...Object.fromEntries(seriesData.series.map((series, index) => [`series${index}`, null])),
-                }
-                dataByXValue.set(point.dateTime, dataObject)
-            }
-            dataObject[`series${seriesIndex}`] = point.value
-        }
-    }
-
-    return {
-        chart: 'line',
-        data: [...dataByXValue.values()],
-        series: seriesData.series.map((series, index) => ({
-            name: sortedSeriesSettings[index]?.name ?? series.label,
-            dataKey: `series${index}`,
-            stroke: sortedSeriesSettings[index]?.stroke,
-        })),
-        xAxis: {
-            dataKey: 'dateTime',
-            scale: 'time',
-            type: 'number',
-        },
-    }
-}
-
 /**
- * Minimal input type model for {@link createLineChartContentFromIndexedSeries} function
+ * Minimal input type model for {@link createLineChartContent} function
  */
 export type InsightDataSeriesData = Pick<InsightDataSeries, 'seriesId' | 'label' | 'points'>
 
@@ -73,13 +27,13 @@ export type InsightDataSeriesData = Pick<InsightDataSeries, 'seriesId' | 'label'
  * @param seriesDefinition - insight definition with line settings (color, name, query)
  * @param filters - insight drill-down filters
  */
-export function createLineChartContentFromIndexedSeries(
+export function createLineChartContent(
     series: InsightDataSeriesData[],
     seriesDefinition: SearchBasedInsightSeries[] = [],
-    filters?: SearchBasedBackendFilters
+    filters?: InsightFilters
 ): LineChartContent<SeriesDataset, 'dateTime'> {
     const definitionMap = Object.fromEntries<SearchBasedInsightSeries>(
-        seriesDefinition.map(definition => [definition.id ?? '', definition])
+        seriesDefinition.map(definition => [definition.id, definition])
     )
 
     const { includeRepoRegexp = '', excludeRepoRegexp = '' } = filters ?? {}
@@ -87,37 +41,45 @@ export function createLineChartContentFromIndexedSeries(
     return {
         chart: 'line',
         data: getDataPoints(series),
-        series: series.map(line => ({
-            name: definitionMap[line.seriesId]?.name ?? line.label,
-            dataKey: line.seriesId,
-            stroke: definitionMap[line.seriesId]?.stroke,
-            linkURLs: Object.fromEntries(
-                [...line.points]
-                    .sort((a, b) => Date.parse(a.dateTime) - Date.parse(b.dateTime))
-                    .map((point, index, points) => {
-                        const previousPoint = points[index - 1]
-                        const date = Date.parse(point.dateTime)
+        series: series
+            .map(line => ({
+                name: definitionMap[line.seriesId]?.name ?? line.label,
+                dataKey: line.seriesId,
+                stroke: definitionMap[line.seriesId]?.stroke,
+                linkURLs: Object.fromEntries(
+                    [...line.points]
+                        .sort((a, b) => Date.parse(a.dateTime) - Date.parse(b.dateTime))
+                        .map((point, index, points) => {
+                            const previousPoint = points[index - 1]
+                            const date = Date.parse(point.dateTime)
 
-                        // Use formatISO instead of toISOString(), because toISOString() always outputs UTC.
-                        // They mark the same point in time, but using the user's timezone makes the date string
-                        // easier to read (else the date component may be off by one day)
-                        const after = previousPoint ? formatISO(Date.parse(previousPoint.dateTime)) : ''
-                        const before = formatISO(date)
+                            // Use formatISO instead of toISOString(), because toISOString() always outputs UTC.
+                            // They mark the same point in time, but using the user's timezone makes the date string
+                            // easier to read (else the date component may be off by one day)
+                            const after = previousPoint ? formatISO(Date.parse(previousPoint.dateTime)) : ''
+                            const before = formatISO(date)
 
-                        const includeRepoFilter = includeRepoRegexp ? `repo:${includeRepoRegexp}` : ''
-                        const excludeRepoFilter = excludeRepoRegexp ? `-repo:${excludeRepoRegexp}` : ''
+                            const includeRepoFilter = includeRepoRegexp ? `repo:${includeRepoRegexp}` : ''
+                            const excludeRepoFilter = excludeRepoRegexp ? `-repo:${excludeRepoRegexp}` : ''
 
-                        const repoFilter = `${includeRepoFilter} ${excludeRepoFilter}`
-                        const afterFilter = after ? `after:${after}` : ''
-                        const beforeFilter = `before:${before}`
-                        const dateFilters = `${afterFilter} ${beforeFilter}`
-                        const diffQuery = `${repoFilter} type:diff ${dateFilters} ${definitionMap[line.seriesId].query}`
-                        const searchQueryParameter = buildSearchURLQuery(diffQuery, SearchPatternType.literal, false)
+                            const repoFilter = `${includeRepoFilter} ${excludeRepoFilter}`
+                            const afterFilter = after ? `after:${after}` : ''
+                            const beforeFilter = `before:${before}`
+                            const dateFilters = `${afterFilter} ${beforeFilter}`
+                            const diffQuery = `${repoFilter} type:diff ${dateFilters} ${
+                                definitionMap[line.seriesId].query
+                            }`
+                            const searchQueryParameter = buildSearchURLQuery(
+                                diffQuery,
+                                SearchPatternType.literal,
+                                false
+                            )
 
-                        return [date, `${window.location.origin}${PageRoutes.Search}?${searchQueryParameter}`]
-                    })
-            ),
-        })),
+                            return [date, `${window.location.origin}${PageRoutes.Search}?${searchQueryParameter}`]
+                        })
+                ),
+            }))
+            .sort((a, b) => semanticSort(a.name, b.name)),
         xAxis: {
             dataKey: 'dateTime',
             scale: 'time',

@@ -1,13 +1,14 @@
+import React, { useCallback, useState } from 'react'
+
 import * as H from 'history'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import InformationIcon from 'mdi-react/InformationIcon'
 import PencilIcon from 'mdi-react/PencilIcon'
-import React, { useCallback, useState } from 'react'
 
 import { isErrorLike, asError } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { Scalars } from '../../../graphql-operations'
@@ -18,6 +19,7 @@ export interface BatchChangeDetailsActionSectionProps extends SettingsCascadePro
     batchChangeID: Scalars['ID']
     batchChangeClosed: boolean
     batchChangeNamespaceURL: string
+    batchChangeURL: string
     history: H.History
 
     /** For testing only. */
@@ -28,6 +30,7 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<BatchChang
     batchChangeID,
     batchChangeClosed,
     batchChangeNamespaceURL,
+    batchChangeURL,
     history,
     settingsCascade,
     deleteBatchChange = _deleteBatchChange,
@@ -57,27 +60,27 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<BatchChang
                 outline={true}
                 variant="danger"
             >
-                {isErrorLike(isDeleting) && <InformationIcon className="icon-inline" data-tooltip={isDeleting} />}
-                <DeleteIcon className="icon-inline" /> Delete
+                {isErrorLike(isDeleting) && <Icon data-tooltip={isDeleting} as={InformationIcon} />}
+                <Icon as={DeleteIcon} /> Delete
             </Button>
         )
     }
     return (
         <div className="d-flex">
             {showEditButton && (
-                <Button to={`${location.pathname}/edit`} className="mr-2" variant="secondary" as={Link}>
-                    <PencilIcon className="icon-inline" /> Edit
+                <Button to={`${batchChangeURL}/edit`} className="mr-2" variant="secondary" as={Link}>
+                    <Icon as={PencilIcon} /> Edit
                 </Button>
             )}
             <Button
-                to={`${location.pathname}/close`}
+                to={`${batchChangeURL}/close`}
                 className="test-batches-close-btn"
                 data-tooltip="View a preview of all changes that will happen when you close this batch change."
                 variant="danger"
                 outline={true}
                 as={Link}
             >
-                <DeleteIcon className="icon-inline" /> Close
+                <Icon as={DeleteIcon} /> Close
             </Button>
         </div>
     )

@@ -6,14 +6,12 @@ import (
 	"context"
 	"database/sql"
 	"encoding/base64"
-	"encoding/json"
 	"log"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 
@@ -21,13 +19,14 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/tidwall/gjson"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	codeinteldbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -38,6 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -50,6 +50,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -98,11 +99,7 @@ func main() {
 	db := database.NewDB(sqlDB)
 
 	repoStore := database.Repos(db)
-	codeintelDB := codeinteldbstore.NewWithDB(db, &observation.Context{
-		Logger:     log15.Root(),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		Registerer: prometheus.DefaultRegisterer,
-	}, nil)
+	codeintelDB := dependenciesStore.GetStore(db)
 	externalServiceStore := database.ExternalServices(db)
 
 	err = keyring.Init(ctx)
@@ -123,7 +120,13 @@ func main() {
 		DB:         db,
 		CloneQueue: server.NewCloneQueue(list.New()),
 	}
-	gitserver.RegisterMetrics(db)
+
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+	gitserver.RegisterMetrics(db, observationContext)
 
 	if tmpDir, err := gitserver.SetupAndClearTmp(); err != nil {
 		log.Fatalf("failed to setup temporary directory: %s", err)
@@ -150,12 +153,15 @@ func main() {
 	defer cancel()
 	gitserver.StartClonePipeline(ctx)
 
-	port := "3178"
-	host := ""
-	if env.InsecureDev {
-		host = "127.0.0.1"
+	addr := os.Getenv("GITSERVER_ADDR")
+	if addr == "" {
+		port := "3178"
+		host := ""
+		if env.InsecureDev {
+			host = "127.0.0.1"
+		}
+		addr = net.JoinHostPort(host, port)
 	}
-	addr := net.JoinHostPort(host, port)
 	srv := &http.Server{
 		Addr:    addr,
 		Handler: handler,
@@ -209,6 +215,7 @@ func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
 		Retries:             10,
 		MaxChanges:          -1,
 		IncludeBinaries:     false,
+		FsyncEnable:         false,
 	}
 
 	if conn.FusionClient == nil {
@@ -239,6 +246,7 @@ func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
 		fc.MaxChanges = conn.FusionClient.MaxChanges
 	}
 	fc.IncludeBinaries = conn.FusionClient.IncludeBinaries
+	fc.FsyncEnable = conn.FusionClient.FsyncEnable
 
 	return fc
 }
@@ -287,76 +295,81 @@ func getRemoteURLFunc(
 			return "", err
 		}
 
+		if svc.CloudDefault && r.Private {
+			// We won't be able to use this remote URL, so we should skip it. This can happen
+			// if a repo moves from being public to private while belonging to both a cloud
+			// default external service and another external service with a token that has
+			// access to the private repo.
+			continue
+		}
+
 		dotcomConfig := conf.SiteConfig().Dotcom
 		if envvar.SourcegraphDotComMode() &&
 			repos.IsGitHubAppCloudEnabled(dotcomConfig) &&
 			svc.Kind == extsvc.KindGitHub {
-			parsed, err := extsvc.ParseConfig(svc.Kind, svc.Config)
-			if err != nil {
-				return "", errors.Wrap(err, "parse config")
-			}
-
-			c, ok := parsed.(*schema.GitHubConnection)
-			if !ok {
-				return "", errors.Errorf("expect *schema.GitHubConnection but got %T", parsed)
-			}
-			if c.GithubAppInstallationID != "" {
-				baseURL, err := url.Parse(c.Url)
+			installationID := gjson.Get(svc.Config, "githubAppInstallationID").Int()
+			if installationID > 0 {
+				svc.Config, err = editGitHubAppExternalServiceConfigToken(ctx, externalServiceStore, svc, dotcomConfig, installationID, cli)
 				if err != nil {
-					return "", errors.Wrap(err, "parse base URL")
+					return "", errors.Wrap(err, "edit GitHub App external service config token")
 				}
-
-				apiURL, githubDotCom := github.APIRoot(baseURL)
-				if !githubDotCom {
-					return "", errors.Errorf("only GitHub App on GitHub.com is supported, but got %q", baseURL)
-				}
-
-				pkey, err := base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
-				if err != nil {
-					return "", errors.Wrap(err, "decode private key")
-				}
-
-				auther, err := auth.NewOAuthBearerTokenWithGitHubApp(dotcomConfig.GithubAppCloud.AppID, pkey)
-				if err != nil {
-					return "", errors.Wrap(err, "new authenticator with GitHub App")
-				}
-
-				client := github.NewV3Client(apiURL, auther, cli)
-
-				installationID, err := strconv.ParseInt(c.GithubAppInstallationID, 10, 64)
-				if err != nil {
-					return "", errors.Wrap(err, "parse installation ID")
-				}
-
-				ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-				defer cancel()
-
-				// TODO(cloud-saas): Cache the installation access token until it expires, see
-				// https://sourcegraph.atlassian.net/browse/CLOUD-255
-				token, err := client.CreateAppInstallationAccessToken(ctx, installationID)
-				if err != nil {
-					return "", errors.Wrap(err, "create app installation access token")
-				}
-				if token.Token == nil {
-					return "", errors.New("empty token returned")
-				}
-
-				c.Token = *token.Token
-				config, err := json.Marshal(c)
-				if err != nil {
-					return "", errors.Wrap(err, "marshal config")
-				}
-				svc.Config = string(config)
 			}
 		}
-
 		return repos.CloneURL(svc.Kind, svc.Config, r)
 	}
 	return "", errors.Errorf("no sources for %q", repo)
 }
 
+// editGitHubAppExternalServiceConfigToken updates the "token" field of the given
+// external service config through GitHub App and returns a new copy of the
+// config ensuring the token is always valid.
+func editGitHubAppExternalServiceConfigToken(
+	ctx context.Context,
+	externalServiceStore database.ExternalServiceStore,
+	svc *types.ExternalService,
+	dotcomConfig *schema.Dotcom,
+	installationID int64,
+	cli httpcli.Doer,
+) (string, error) {
+	baseURL, err := url.Parse(gjson.Get(svc.Config, "url").String())
+	if err != nil {
+		return "", errors.Wrap(err, "parse base URL")
+	}
+
+	apiURL, githubDotCom := github.APIRoot(baseURL)
+	if !githubDotCom {
+		return "", errors.Errorf("only GitHub App on GitHub.com is supported, but got %q", baseURL)
+	}
+
+	pkey, err := base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
+	if err != nil {
+		return "", errors.Wrap(err, "decode private key")
+	}
+
+	auther, err := auth.NewOAuthBearerTokenWithGitHubApp(dotcomConfig.GithubAppCloud.AppID, pkey)
+	if err != nil {
+		return "", errors.Wrap(err, "new authenticator with GitHub App")
+	}
+
+	client := github.NewV3Client(svc.URN(), apiURL, auther, cli)
+
+	token, err := repos.GetOrRenewGitHubAppInstallationAccessToken(ctx, externalServiceStore, svc, client, installationID)
+	if err != nil {
+		return "", errors.Wrap(err, "get or renew GitHub App installation access token")
+	}
+
+	// NOTE: Use `json.Marshal` breaks the actual external service config that fails
+	// validation with missing "repos" property when no repository has been selected,
+	// due to generated JSON tag of ",omitempty".
+	config, err := jsonc.Edit(svc.Config, token, "token")
+	if err != nil {
+		return "", errors.Wrap(err, "edit token")
+	}
+	return config, nil
+}
+
 func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalServiceStore, repoStore database.RepoStore,
-	codeintelDB *codeinteldbstore.Store, repo api.RepoName) (server.VCSSyncer, error) {
+	codeintelDB *dependenciesStore.Store, repo api.RepoName) (server.VCSSyncer, error) {
 	// We need an internal actor in case we are trying to access a private repo. We
 	// only need access in order to find out the type of code host we're using, so
 	// it's safe.
@@ -399,13 +412,20 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 		if err := extractOptions(&c); err != nil {
 			return nil, err
 		}
-		return &server.JVMPackagesSyncer{Config: &c, DBStore: codeintelDB}, nil
-	case extsvc.TypeNPMPackages:
-		var c schema.NPMPackagesConnection
+		return &server.JVMPackagesSyncer{Config: &c, DepsStore: codeintelDB}, nil
+	case extsvc.TypeNpmPackages:
+		var c schema.NpmPackagesConnection
 		if err := extractOptions(&c); err != nil {
 			return nil, err
 		}
-		return server.NewNPMPackagesSyncer(c, codeintelDB, nil), nil
+		return server.NewNpmPackagesSyncer(c, codeintelDB, nil), nil
+	case extsvc.TypeGoModules:
+		var c schema.GoModulesConnection
+		if err := extractOptions(&c); err != nil {
+			return nil, err
+		}
+		cli := gomodproxy.NewClient(&c, httpcli.ExternalDoer)
+		return server.NewGoModulesSyncer(&c, codeintelDB, cli), nil
 	}
 	return &server.GitRepoSyncer{}, nil
 }

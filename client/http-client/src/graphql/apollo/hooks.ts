@@ -1,3 +1,5 @@
+import { useMemo } from 'react'
+
 import {
     gql as apolloGql,
     useQuery as useApolloQuery,
@@ -11,7 +13,6 @@ import {
     MutationTuple,
     QueryTuple,
 } from '@apollo/client'
-import { useMemo } from 'react'
 
 import { ApolloContext } from '../types'
 

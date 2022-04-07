@@ -34,6 +34,7 @@
   "editor.formatOnSave": true,
   "go.useLanguageServer": true,
   "gopls": {
+    "build.allowImplicitNetworkAccess": true,
     "local": "github.com/sourcegraph/sourcegraph",
   },
   "jest.pathToJest": "yarn -s test",
@@ -72,6 +73,7 @@
     "./client/extension-api",
     "./client/template-parser",
     "./client/codeintellify",
+    "./client/client-api",
   ],
   "go.lintTool": "golangci-lint",
   "shellformat.flag": "-i 2 -ci",

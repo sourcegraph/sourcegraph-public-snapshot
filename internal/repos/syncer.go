@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -137,13 +138,11 @@ func (s *Syncer) TriggerExternalServiceSync(ctx context.Context, id int64) error
 	return s.Store.EnqueueSingleSyncJob(ctx, id)
 }
 
-type externalServiceOwnerType string
-
 const (
-	ownerUndefined externalServiceOwnerType = ""
-	ownerSite      externalServiceOwnerType = "site"
-	ownerUser      externalServiceOwnerType = "user"
-	ownerOrg       externalServiceOwnerType = "org"
+	ownerUndefined = ""
+	ownerSite      = "site"
+	ownerUser      = "user"
+	ownerOrg       = "org"
 )
 
 type ErrUnauthorized struct{}
@@ -247,23 +246,32 @@ func (d Diff) Len() int {
 	return len(d.Deleted) + len(d.Modified) + len(d.Added) + len(d.Unmodified)
 }
 
-// SyncRepo syncs a single repository by name. It's only currently used on sourcegraph.com
-// because we don't sync our "cloud_default" code hosts in the background
-// since there are too many repos. Instead we use an incremental approach where we check for
-// changes everytime a user browses a repo. The "background" boolean flag indicates that we should run this
+// SyncRepo syncs a single repository by name and associates it with an external service.
+//
+// It works for repos from:
+// 1. Public "cloud_default" code hosts since we don't sync them in the background
+//    (which would delete lazy synced repos).
+// 2. Any package hosts (i.e. npm, Maven, etc) since callers are expected to store
+//    repos in the `lsif_dependency_repos` table which is used as the source of truth
+//    for the next full sync, so lazy added repos don't get wiped.
+//
+// The "background" boolean flag indicates that we should run this
 // sync in the background vs block and call s.syncRepo synchronously.
 func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background bool) (repo *types.Repo, err error) {
 	tr, ctx := trace.New(ctx, "Syncer.SyncRepo", string(name))
 	defer tr.Finish()
 
-	codehost := extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...)
-	if codehost == nil {
-		return nil, &database.RepoNotFoundErr{Name: name}
-	}
-
 	repo, err = s.Store.RepoStore.GetByName(ctx, name)
 	if err != nil && !errcode.IsNotFound(err) {
 		return nil, err
+	}
+
+	codehost := extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...)
+	if codehost == nil {
+		if repo != nil {
+			return repo, nil
+		}
+		return nil, &database.RepoNotFoundErr{Name: name}
 	}
 
 	if repo != nil {
@@ -279,7 +287,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 
 	if background && repo != nil {
 		go func() {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 			defer cancel()
 
 			// We don't care about the return value here, but we still want to ensure that
@@ -315,8 +323,13 @@ func (s *Syncer) syncRepo(
 	defer func() { save(svc, err) }()
 
 	svcs, err := s.Store.ExternalServiceStore.List(ctx, database.ExternalServicesListOptions{
-		Kinds:            []string{extsvc.TypeToKind(codehost.ServiceType)},
-		OnlyCloudDefault: true,
+		Kinds: []string{extsvc.TypeToKind(codehost.ServiceType)},
+		// Since package host external services have the set of repositories to sync in
+		// the lsif_dependency_repos table, we can lazy-sync individual repos wihout wiping them
+		// out in the next full background sync as long as we add them to that table.
+		//
+		// This permits lazy-syncing of package repos in on-prem instances as well as in cloud.
+		OnlyCloudDefault: !codehost.IsPackageHost(),
 		LimitOffset:      &database.LimitOffset{Limit: 1},
 	})
 	if err != nil {
@@ -339,7 +352,10 @@ func (s *Syncer) syncRepo(
 
 	rg, ok := src.(RepoGetter)
 	if !ok {
-		return nil, errors.Errorf("can't source repo %q", name)
+		return nil, errors.Wrapf(
+			&database.RepoNotFoundErr{Name: name},
+			"can't get repo metadata for service of type %q", codehost.ServiceType,
+		)
 	}
 
 	path := strings.TrimPrefix(string(name), strings.TrimPrefix(codehost.ServiceID, "https://"))
@@ -456,6 +472,9 @@ func (s *Syncer) SyncExternalService(
 	minSyncInterval time.Duration,
 ) (err error) {
 	s.log().Info("Syncing external service", "serviceID", externalServiceID)
+
+	// Ensure the job field is recorded when monitoring external API calls
+	ctx = metrics.ContextWithTask(ctx, "SyncExternalService")
 
 	var svc *types.ExternalService
 	ctx, save := s.observeSync(ctx, "Syncer.SyncExternalService", "")
@@ -687,6 +706,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 			return Diff{}, errors.Wrap(err, "syncer: failed to update external service repo")
 		}
 
+		*sourced = *stored[0]
 		d.Modified = append(d.Modified, stored[0])
 	case 0: // New repo, create.
 		if !svc.IsSiteOwned() { // enforce user and org repo limits
@@ -798,13 +818,13 @@ func (s *Syncer) observeSync(
 	return ctx, func(svc *types.ExternalService, err error) {
 		var owner string
 		if svc == nil {
-			owner = string(ownerUndefined)
+			owner = ownerUndefined
 		} else if svc.NamespaceUserID > 0 {
-			owner = string(ownerUser)
+			owner = ownerUser
 		} else if svc.NamespaceOrgID > 0 {
-			owner = string(ownerOrg)
+			owner = ownerOrg
 		} else {
-			owner = string(ownerSite)
+			owner = ownerSite
 		}
 
 		syncStarted.WithLabelValues(family, owner).Inc()
@@ -819,9 +839,26 @@ func (s *Syncer) observeSync(
 
 		if !success {
 			tr.SetError(err)
-			syncErrors.WithLabelValues(family, owner).Add(1)
+			syncErrors.WithLabelValues(family, owner, syncErrorReason(err)).Inc()
 		}
 
 		tr.Finish()
+	}
+}
+
+func syncErrorReason(err error) string {
+	switch {
+	case err == nil:
+		return ""
+	case errcode.IsNotFound(err):
+		return "not_found"
+	case errcode.IsUnauthorized(err):
+		return "unauthorized"
+	case errcode.IsForbidden(err):
+		return "forbidden"
+	case errcode.IsTemporary(err):
+		return "temporary"
+	default:
+		return "unknown"
 	}
 }

@@ -1,5 +1,6 @@
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import * as React from 'react'
+
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import { RouteComponentProps } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
@@ -9,7 +10,7 @@ import { asError, createAggregateError, ErrorLike, isErrorLike, memoizeObservabl
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Link, LoadingSpinner, CardHeader, Card } from '@sourcegraph/wildcard'
+import { Link, LoadingSpinner, CardHeader, Card, Icon } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
@@ -17,6 +18,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { gitReferenceFragments, GitReferenceNode } from '../GitReference'
 
 import { RepositoryBranchesAreaPageProps } from './RepositoryBranchesArea'
+
 import styles from './RepositoryBranchesOverviewPage.module.scss'
 
 interface Data {
@@ -25,7 +27,7 @@ interface Data {
     hasMoreActiveBranches: boolean
 }
 
-const queryGitBranches = memoizeObservable(
+export const queryGitBranches = memoizeObservable(
     (args: { repo: Scalars['ID']; first: number }): Observable<Data> =>
         queryGraphQL(
             gql`
@@ -148,7 +150,7 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                                             to={`/${this.props.repo.name}/-/branches/all`}
                                         >
                                             View more branches
-                                            <ChevronRightIcon className="icon-inline" />
+                                            <Icon as={ChevronRightIcon} />
                                         </Link>
                                     )}
                                 </div>

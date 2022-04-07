@@ -2,6 +2,7 @@
 
 ## Sourcegraph Cloud for Individuals
 Sourcegraph Cloud allows individuals to search their personal code as well as more than 2 million open source respositories for free. Sign up today for free on [Sourcegraph.com](https://sourcegraph.com/sign-up).
+
 - [Getting Started on Sourcegraph Cloud](getting_started_on_cloud.md)
 - [Differences between Sourcegraph Cloud, self-hosted, and enterprise](cloud_ent_on-prem_comparison.md)
 - [Indexing open source code in Sourcegraph Cloud](indexing_open_source_code.md)

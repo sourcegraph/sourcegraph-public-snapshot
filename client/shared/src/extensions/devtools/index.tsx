@@ -1,14 +1,29 @@
+import React, { useCallback } from 'react'
+
 import classNames from 'classnames'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
-import React, { useCallback } from 'react'
-import { UncontrolledPopover } from 'reactstrap'
 
-import { Button, Card, Tab, TabList, TabPanel, TabPanels, Tabs, useLocalStorage } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Card,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    Tabs,
+    useLocalStorage,
+    Icon,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+    Position,
+} from '@sourcegraph/wildcard'
 
 import { PlatformContextProps } from '../../platform/context'
 import { ExtensionsControllerProps } from '../controller'
 
 import { ActiveExtensionsPanel } from './ActiveExtensionsPanel'
+
 import styles from './index.module.scss'
 
 export interface ExtensionsDevelopmentToolsProps
@@ -63,17 +78,12 @@ const ExtensionDevelopmentTools: React.FunctionComponent<ExtensionsDevelopmentTo
 
 /** A button that toggles the visibility of the ExtensionDevTools element in a popover. */
 export const ExtensionDevelopmentToolsPopover = React.memo<ExtensionsDevelopmentToolsProps>(props => (
-    <>
-        <Button id="extension-status-popover" className="text-decoration-none px-2" variant="link">
-            <span className="text-muted">Ext</span> <MenuUpIcon className="icon-inline" />
-        </Button>
-        <UncontrolledPopover
-            placement="auto-end"
-            target="extension-status-popover"
-            hideArrow={true}
-            popperClassName="border-0 rounded-0"
-        >
+    <Popover>
+        <PopoverTrigger as={Button} className="text-decoration-none px-2" variant="link">
+            <span className="text-muted">Ext</span> <Icon as={MenuUpIcon} />
+        </PopoverTrigger>
+        <PopoverContent position={Position.leftEnd}>
             <ExtensionDevelopmentTools {...props} />
-        </UncontrolledPopover>
-    </>
+        </PopoverContent>
+    </Popover>
 ))

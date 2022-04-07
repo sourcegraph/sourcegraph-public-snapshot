@@ -3,10 +3,14 @@ package graphqlbackend
 import (
 	"context"
 
+	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (r *UserResolver) OrganizationMemberships(ctx context.Context) (*organizationMembershipConnectionResolver, error) {
@@ -24,6 +28,64 @@ func (r *UserResolver) OrganizationMemberships(ctx context.Context) (*organizati
 		c.nodes[i] = &organizationMembershipResolver{r.db, member}
 	}
 	return &c, nil
+}
+
+func (r *schemaResolver) AutocompleteMembersSearch(ctx context.Context, args *struct {
+	Organization graphql.ID
+	Query        string
+}) ([]*OrgMemberAutocompleteSearchItemResolver, error) {
+	actor := actor.FromContext(ctx)
+	if !actor.IsAuthenticated() {
+		return nil, errors.New("no current user")
+	}
+
+	orgID, err := UnmarshalOrgID(args.Organization)
+	if err != nil {
+		return nil, err
+	}
+
+	usersMatching, err := r.db.OrgMembers().AutocompleteMembersSearch(ctx, orgID, args.Query)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var users []*OrgMemberAutocompleteSearchItemResolver
+	for _, user := range usersMatching {
+		users = append(users, NewOrgMemberAutocompleteSearchItemResolver(r.db, user))
+	}
+
+	return users, nil
+}
+
+func (r *schemaResolver) OrgMembersSummary(ctx context.Context, args *struct {
+	Organization graphql.ID
+}) (*OrgMembersSummaryResolver, error) {
+	actor := actor.FromContext(ctx)
+	if !actor.IsAuthenticated() {
+		return nil, errors.New("no current user")
+	}
+
+	orgID, err := UnmarshalOrgID(args.Organization)
+	if err != nil {
+		return nil, err
+	}
+
+	usersCount, err := r.db.OrgMembers().MemberCount(ctx, orgID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	pendingInvites, err := r.db.OrgInvitations().Count(ctx, database.OrgInvitationsListOptions{OrgID: orgID})
+
+	if err != nil {
+		return nil, err
+	}
+
+	var summary = NewOrgMembersSummaryResolver(r.db, orgID, int32(usersCount), int32(pendingInvites))
+
+	return summary, nil
 }
 
 type organizationMembershipConnectionResolver struct {
@@ -57,4 +119,67 @@ func (r *organizationMembershipResolver) CreatedAt() DateTime {
 
 func (r *organizationMembershipResolver) UpdatedAt() DateTime {
 	return DateTime{Time: r.membership.UpdatedAt}
+}
+
+type OrgMemberAutocompleteSearchItemResolver struct {
+	db   database.DB
+	user *types.OrgMemberAutocompleteSearchItem
+}
+
+func (r *OrgMemberAutocompleteSearchItemResolver) ID() graphql.ID {
+	return MarshalUserID(r.user.ID)
+}
+
+func (r *OrgMemberAutocompleteSearchItemResolver) Username() string {
+	return r.user.Username
+}
+
+func (r *OrgMemberAutocompleteSearchItemResolver) DisplayName() *string {
+	if r.user.DisplayName == "" {
+		return nil
+	}
+	return &r.user.DisplayName
+}
+
+func (r *OrgMemberAutocompleteSearchItemResolver) AvatarURL() *string {
+	if r.user.AvatarURL == "" {
+		return nil
+	}
+	return &r.user.AvatarURL
+}
+
+func (r *OrgMemberAutocompleteSearchItemResolver) InOrg() *bool {
+	inOrg := r.user.InOrg > 0
+	return &inOrg
+}
+
+func NewOrgMemberAutocompleteSearchItemResolver(db database.DB, user *types.OrgMemberAutocompleteSearchItem) *OrgMemberAutocompleteSearchItemResolver {
+	return &OrgMemberAutocompleteSearchItemResolver{db: db, user: user}
+}
+
+type OrgMembersSummaryResolver struct {
+	db           database.DB
+	id           int32
+	membersCount int32
+	invitesCount int32
+}
+
+func NewOrgMembersSummaryResolver(db database.DB, orgId int32, membersCount int32, invitesCount int32) *OrgMembersSummaryResolver {
+	return &OrgMembersSummaryResolver{
+		db:           db,
+		id:           orgId,
+		membersCount: membersCount,
+		invitesCount: invitesCount,
+	}
+}
+func (r *OrgMembersSummaryResolver) ID() graphql.ID {
+	return MarshalUserID(r.id)
+}
+
+func (r *OrgMembersSummaryResolver) MembersCount() int32 {
+	return r.membersCount
+}
+
+func (r *OrgMembersSummaryResolver) InvitesCount() int32 {
+	return r.invitesCount
 }

@@ -3,11 +3,11 @@
 exports[`UserNavItem simple 1`] = `
 <DocumentFragment>
   <button
-    aria-controls="menu--1"
+    aria-controls=""
     aria-haspopup="true"
     class="d-flex align-items-center text-decoration-none test-user-nav-item-toggle menuButton"
     data-reach-menu-button=""
-    id="menu-button--menu"
+    id="menu-button-2"
     type="button"
   >
     <div
@@ -17,13 +17,17 @@ exports[`UserNavItem simple 1`] = `
         class="align-items-center d-flex"
       >
         <div
-          class="userAvatar icon-inline avatar"
+          class="userAvatar avatar"
           id="target-user-avatar"
         >
-          ad
+          <span
+            class="initials"
+          >
+            ad
+          </span>
         </div>
         <svg
-          class="mdi-icon icon-inline"
+          class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"

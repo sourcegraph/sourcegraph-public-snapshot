@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -66,6 +67,7 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 	c := configuredRepo{ID: 3, Name: "c"}
 	d := configuredRepo{ID: 4, Name: "d"}
 	e := configuredRepo{ID: 5, Name: "e"}
+	db := database.NewMockDB()
 
 	type enqueueCall struct {
 		repo     configuredRepo
@@ -274,7 +276,7 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler()
+			s := NewUpdateScheduler(db)
 
 			for _, call := range test.calls {
 				s.updateQueue.enqueue(call.repo, call.priority)
@@ -440,7 +442,7 @@ func TestUpdateQueue_remove(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler()
+			s := NewUpdateScheduler(database.NewMockDB())
 			setupInitialQueue(s, test.initialQueue)
 
 			// Perform the removals.
@@ -512,7 +514,7 @@ func TestUpdateQueue_acquireNext(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler()
+			s := NewUpdateScheduler(database.NewMockDB())
 			setupInitialQueue(s, test.initialQueue)
 
 			// Test aquireNext.
@@ -538,13 +540,13 @@ func TestUpdateQueue_acquireNext(t *testing.T) {
 	}
 }
 
-func setupInitialQueue(s *updateScheduler, initialQueue []*repoUpdate) {
+func setupInitialQueue(s *UpdateScheduler, initialQueue []*repoUpdate) {
 	for _, update := range initialQueue {
 		heap.Push(s.updateQueue, update)
 	}
 }
 
-func verifyQueue(t *testing.T, s *updateScheduler, expected []*repoUpdate) {
+func verifyQueue(t *testing.T, s *UpdateScheduler, expected []*repoUpdate) {
 	t.Helper()
 
 	var actualQueue []*repoUpdate
@@ -642,7 +644,7 @@ func Test_updateScheduler_UpdateFromDiff(t *testing.T) {
 			_, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler()
+			s := NewUpdateScheduler(database.NewMockDB())
 			setupInitialSchedule(s, test.initialSchedule)
 			setupInitialQueue(s, test.initialQueue)
 
@@ -788,7 +790,7 @@ func TestSchedule_upsert(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler()
+			s := NewUpdateScheduler(database.NewMockDB())
 			setupInitialSchedule(s, test.initialSchedule)
 
 			for _, call := range test.upsertCalls {
@@ -810,7 +812,7 @@ func TestUpdateQueue_PrioritiseUncloned(t *testing.T) {
 	_, stop := startRecording()
 	defer stop()
 
-	s := NewUpdateScheduler()
+	s := NewUpdateScheduler(database.NewMockDB())
 
 	assertFront := func(name api.RepoName) {
 		t.Helper()
@@ -831,7 +833,12 @@ func TestUpdateQueue_PrioritiseUncloned(t *testing.T) {
 	// Reset the time to now and do prioritiseUncloned. We then verify that notcloned
 	// is now at the front of the queue.
 	mockTime(defaultTime)
-	s.schedule.prioritiseUncloned([]string{"notcloned"})
+	s.schedule.prioritiseUncloned([]types.MinimalRepo{
+		{
+			ID:   3,
+			Name: "notcloned",
+		},
+	})
 
 	assertFront(notcloned.Name)
 }
@@ -843,7 +850,7 @@ func TestScheduleInsertNew(t *testing.T) {
 	_, stop := startRecording()
 	defer stop()
 
-	s := NewUpdateScheduler()
+	s := NewUpdateScheduler(database.NewMockDB())
 
 	assertFront := func(name api.RepoName) {
 		t.Helper()
@@ -1034,7 +1041,7 @@ func TestSchedule_updateInterval(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler()
+			s := NewUpdateScheduler(database.NewMockDB())
 			setupInitialSchedule(s, test.initialSchedule)
 			s.schedule.randGenerator = &mockRandomGenerator{}
 
@@ -1133,7 +1140,7 @@ func TestSchedule_remove(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler()
+			s := NewUpdateScheduler(database.NewMockDB())
 			setupInitialSchedule(s, test.initialSchedule)
 
 			for _, call := range test.removeCalls {
@@ -1147,13 +1154,13 @@ func TestSchedule_remove(t *testing.T) {
 	}
 }
 
-func setupInitialSchedule(s *updateScheduler, initialSchedule []*scheduledRepoUpdate) {
+func setupInitialSchedule(s *UpdateScheduler, initialSchedule []*scheduledRepoUpdate) {
 	for _, update := range initialSchedule {
 		heap.Push(s.schedule, update)
 	}
 }
 
-func verifySchedule(t *testing.T, s *updateScheduler, expected []*scheduledRepoUpdate) {
+func verifySchedule(t *testing.T, s *UpdateScheduler, expected []*scheduledRepoUpdate) {
 	t.Helper()
 
 	var actualSchedule []*scheduledRepoUpdate
@@ -1168,7 +1175,7 @@ func verifySchedule(t *testing.T, s *updateScheduler, expected []*scheduledRepoU
 	}
 }
 
-func verifyScheduleRecording(t *testing.T, s *updateScheduler, timeAfterFuncDelays []time.Duration, wakeupNotifications int, r *recording) {
+func verifyScheduleRecording(t *testing.T, s *UpdateScheduler, timeAfterFuncDelays []time.Duration, wakeupNotifications int, r *recording) {
 	t.Helper()
 
 	if !reflect.DeepEqual(timeAfterFuncDelays, r.timeAfterFuncDelays) {
@@ -1199,7 +1206,7 @@ func TestUpdateScheduler_runSchedule(t *testing.T) {
 		finalSchedule         []*scheduledRepoUpdate
 		finalQueue            []*repoUpdate
 		timeAfterFuncDelays   []time.Duration
-		expectedNotifications func(s *updateScheduler) []chan struct{}
+		expectedNotifications func(s *UpdateScheduler) []chan struct{}
 	}{
 		{
 			name: "empty schedule",
@@ -1213,7 +1220,7 @@ func TestUpdateScheduler_runSchedule(t *testing.T) {
 				{Repo: a, Interval: 11 * time.Second, Due: defaultTime.Add(time.Minute)},
 			},
 			timeAfterFuncDelays: []time.Duration{time.Minute},
-			expectedNotifications: func(s *updateScheduler) []chan struct{} {
+			expectedNotifications: func(s *UpdateScheduler) []chan struct{} {
 				return []chan struct{}{s.schedule.wakeup}
 			},
 		},
@@ -1231,7 +1238,7 @@ func TestUpdateScheduler_runSchedule(t *testing.T) {
 				{Repo: a, Priority: priorityLow, Seq: 1},
 			},
 			timeAfterFuncDelays: []time.Duration{11 * time.Second},
-			expectedNotifications: func(s *updateScheduler) []chan struct{} {
+			expectedNotifications: func(s *UpdateScheduler) []chan struct{} {
 				return []chan struct{}{s.updateQueue.notifyEnqueue, s.schedule.wakeup}
 			},
 		},
@@ -1249,7 +1256,7 @@ func TestUpdateScheduler_runSchedule(t *testing.T) {
 				{Repo: a, Priority: priorityLow, Seq: 1},
 			},
 			timeAfterFuncDelays: []time.Duration{time.Minute},
-			expectedNotifications: func(s *updateScheduler) []chan struct{} {
+			expectedNotifications: func(s *UpdateScheduler) []chan struct{} {
 				return []chan struct{}{s.updateQueue.notifyEnqueue, s.schedule.wakeup}
 			},
 		},
@@ -1277,7 +1284,7 @@ func TestUpdateScheduler_runSchedule(t *testing.T) {
 				{Repo: b, Priority: priorityLow, Seq: 5},
 			},
 			timeAfterFuncDelays: []time.Duration{1 * time.Minute},
-			expectedNotifications: func(s *updateScheduler) []chan struct{} {
+			expectedNotifications: func(s *UpdateScheduler) []chan struct{} {
 				return []chan struct{}{
 					s.updateQueue.notifyEnqueue,
 					s.updateQueue.notifyEnqueue,
@@ -1295,7 +1302,7 @@ func TestUpdateScheduler_runSchedule(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler()
+			s := NewUpdateScheduler(database.NewMockDB())
 
 			setupInitialSchedule(s, test.initialSchedule)
 
@@ -1328,7 +1335,7 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 		finalSchedule          []*scheduledRepoUpdate
 		finalQueue             []*repoUpdate
 		timeAfterFuncDelays    []time.Duration
-		expectedNotifications  func(s *updateScheduler) []chan struct{}
+		expectedNotifications  func(s *UpdateScheduler) []chan struct{}
 	}{
 		{
 			name: "empty queue",
@@ -1386,7 +1393,7 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 				{Repo: a, Interval: time.Minute, Due: defaultTime.Add(time.Minute)},
 			},
 			timeAfterFuncDelays: []time.Duration{time.Minute},
-			expectedNotifications: func(s *updateScheduler) []chan struct{} {
+			expectedNotifications: func(s *UpdateScheduler) []chan struct{} {
 				return []chan struct{}{s.schedule.wakeup}
 			},
 		},
@@ -1412,7 +1419,7 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 			// intentionally don't close the channel so any further receives just block
 
 			contexts := make(chan context.Context, expectedRequestCount)
-			requestRepoUpdate = func(ctx context.Context, repo configuredRepo, since time.Duration) (*gitserverprotocol.RepoUpdateResponse, error) {
+			requestRepoUpdate = func(ctx context.Context, db database.DB, repo configuredRepo, since time.Duration) (*gitserverprotocol.RepoUpdateResponse, error) {
 				select {
 				case mock := <-mockRequestRepoUpdates:
 					if !reflect.DeepEqual(mock.repo, repo) {
@@ -1426,7 +1433,7 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 			}
 			defer func() { requestRepoUpdate = nil }()
 
-			s := NewUpdateScheduler()
+			s := NewUpdateScheduler(database.NewMockDB())
 			s.schedule.randGenerator = &mockRandomGenerator{}
 
 			// unbuffer the channel
@@ -1468,13 +1475,13 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 	}
 }
 
-func verifyRecording(t *testing.T, s *updateScheduler, timeAfterFuncDelays []time.Duration, expectedNotifications func(s *updateScheduler) []chan struct{}, r *recording) {
+func verifyRecording(t *testing.T, s *UpdateScheduler, timeAfterFuncDelays []time.Duration, expectedNotifications func(s *UpdateScheduler) []chan struct{}, r *recording) {
 	if !reflect.DeepEqual(timeAfterFuncDelays, r.timeAfterFuncDelays) {
 		t.Fatalf("\nexpected timeAfterFuncDelays\n%s\ngot\n%s", spew.Sdump(timeAfterFuncDelays), spew.Sdump(r.timeAfterFuncDelays))
 	}
 
 	if expectedNotifications == nil {
-		expectedNotifications = func(s *updateScheduler) []chan struct{} {
+		expectedNotifications = func(s *UpdateScheduler) []chan struct{} {
 			return nil
 		}
 	}

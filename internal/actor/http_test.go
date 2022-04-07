@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 )
 
 type roundTripFunc func(req *http.Request) *http.Response
@@ -104,6 +105,13 @@ func TestHTTPMiddleware(t *testing.T) {
 			headerKeyActorUID: "",
 		},
 		wantActor: &Actor{Internal: false},
+	}, {
+		name: "anonymous UID for unauthed actor",
+		headers: map[string]string{
+			headerKeyActorUID:          "none",
+			headerKeyActorAnonymousUID: "anonymousUID",
+		},
+		wantActor: &Actor{AnonymousUID: "anonymousUID"},
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -111,7 +119,7 @@ func TestHTTPMiddleware(t *testing.T) {
 				got := FromContext(r.Context())
 				// Compare string representation
 				if diff := cmp.Diff(tt.wantActor.String(), got.String()); diff != "" {
-					t.Errorf("aactor mismatch (-want +got):\n%s", diff)
+					t.Errorf("actor mismatch (-want +got):\n%s", diff)
 				}
 			}))
 			req, err := http.NewRequest(http.MethodGet, "/test", nil)
@@ -124,4 +132,36 @@ func TestHTTPMiddleware(t *testing.T) {
 			handler.ServeHTTP(httptest.NewRecorder(), req)
 		})
 	}
+}
+
+func TestAnonymousUIDMiddleware(t *testing.T) {
+	t.Run("cookie value is respected", func(t *testing.T) {
+		handler := AnonymousUIDMiddleware(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+			got := FromContext(r.Context())
+			require.Equal(t, "anon", got.AnonymousUID)
+		}))
+
+		req, err := http.NewRequest(http.MethodGet, "/test", nil)
+		require.NoError(t, err)
+		req.AddCookie(&http.Cookie{Name: "sourcegraphAnonymousUid", Value: "anon"})
+		handler.ServeHTTP(httptest.NewRecorder(), req)
+	})
+
+	t.Run("cookie doesn't overwrite existing middleware", func(t *testing.T) {
+		handler := http.Handler(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+			got := FromContext(r.Context())
+			require.Equal(t, int32(132), got.UID)
+			require.Equal(t, "", got.AnonymousUID)
+		}))
+		anonHandler := AnonymousUIDMiddleware(handler)
+		userHandler := http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+			// Add an authenticated actor
+			anonHandler.ServeHTTP(rw, r.WithContext(WithActor(r.Context(), FromUser(132))))
+		})
+
+		req, err := http.NewRequest(http.MethodGet, "/test", nil)
+		require.NoError(t, err)
+		req.AddCookie(&http.Cookie{Name: "sourcegraphAnonymousUid", Value: "anon"})
+		userHandler.ServeHTTP(httptest.NewRecorder(), req)
+	})
 }

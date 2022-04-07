@@ -20,7 +20,7 @@ func readDefinitions(database db.Database) (*definition.Definitions, error) {
 		return nil, err
 	}
 
-	return definition.ReadDefinitions(fs)
+	return definition.ReadDefinitions(fs, filepath.Join("migrations", database.Name))
 }
 
 type MigrationFiles struct {
@@ -111,4 +111,13 @@ func parseVersions(lines []string, migrationsDir string) []int {
 	sort.Ints(versions)
 
 	return versions
+}
+
+// rootRelative removes the repo root prefix from the given path.
+func rootRelative(path string) string {
+	if root, _ := root.RepositoryRoot(); root != "" {
+		return strings.TrimPrefix(path, root)
+	}
+
+	return path
 }

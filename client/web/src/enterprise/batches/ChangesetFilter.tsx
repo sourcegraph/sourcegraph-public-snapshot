@@ -1,6 +1,7 @@
+import React, { useCallback } from 'react'
+
 import classNames from 'classnames'
 import { upperFirst, lowerCase } from 'lodash'
-import React, { useCallback } from 'react'
 
 import { Select } from '@sourcegraph/wildcard'
 

@@ -818,7 +818,8 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
       "query_data":{
          "query":{
              "count_and":3,
-             "count_repo_contains_commit_after":2
+             "count_repo_contains_commit_after":2,
+             "count_repo_dependencies":5
          },
          "empty":false,
          "combined":"don't care"
@@ -891,6 +892,17 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 			Day:          now.Truncate(time.Hour * 24),
 			TotalMonth:   2,
 			TotalWeek:    2,
+			TotalDay:     0,
+			UniquesMonth: 1,
+			UniquesWeek:  1,
+		},
+		{
+			Name:         "count_repo_dependencies",
+			Month:        time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+			Week:         now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5),
+			Day:          now.Truncate(time.Hour * 24),
+			TotalMonth:   5,
+			TotalWeek:    5,
 			TotalDay:     0,
 			UniquesMonth: 1,
 			UniquesWeek:  1,

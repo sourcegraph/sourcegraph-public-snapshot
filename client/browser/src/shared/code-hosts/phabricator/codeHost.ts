@@ -13,11 +13,12 @@ import { CodeView, toCodeViewResolver } from '../shared/codeViews'
 import { createNotificationClassNameGetter } from '../shared/getNotificationClassName'
 import { ViewResolver } from '../shared/views'
 
-import styles from './codeHost.module.scss'
 import { diffDomFunctions, diffusionDOMFns } from './domFunctions'
 import { resolveDiffFileInfo, resolveDiffusionFileInfo, resolveRevisionFileInfo } from './fileInfo'
 
 import { convertSpacesToTabs, spacesToTabsAdjustment } from '.'
+
+import styles from './codeHost.module.scss'
 
 /**
  * Gets the actual text content we care about and returns the number of characters we have stripped

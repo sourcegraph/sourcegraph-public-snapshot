@@ -26,7 +26,7 @@ For the above example, this means that if `<java.version>1.9</java.version>` was
 
 ## Current limitations 
 
-Code Insights is in Beta and this feature has some yet-released limitations. In rough order, with limitations listed first likely to be removed soonest, they are: 
+This feature has some yet-released limitations. In rough order, with limitations listed first likely to be removed soonest, they are: 
 
 ### Limited to 20 matches
 

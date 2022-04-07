@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useState, useRef, SyntheticEvent, useCallback, useMemo, useEffect } from 'react'
+
+import classNames from 'classnames'
 
 import { Button, ProductStatusBadge } from '@sourcegraph/wildcard'
 
@@ -8,20 +9,23 @@ import { FinishWelcomeFlow } from '../PostSignUpPage'
 import { useSteps } from '../Steps'
 
 import { Footer } from './Footer'
-import styles from './TeamsBeta.module.scss'
 import { useHubSpotForm } from './useHubSpotForm'
+
+import styles from './TeamsBeta.module.scss'
 
 const PORTAL_ID = '2762526'
 const FORM_ID = 'b65cc7a2-75ad-4114-be4c-cd9637e7c068'
 
 interface TeamsBeta {
+    username: string
     onFinish: FinishWelcomeFlow
     onError: (error: Error) => void
 }
 
-export const TeamsBeta: React.FunctionComponent<TeamsBeta> = ({ onFinish, onError }) => {
+export const TeamsBeta: React.FunctionComponent<TeamsBeta> = ({ onFinish, onError, username }) => {
     const contentReference = useRef<HTMLDivElement | null>(null)
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
+    const [isSubmitted, setIsSubmitted] = useState<boolean>(false)
     const [isTransitioning, setIsTransitioning] = useState<boolean>(false)
 
     const { setComplete, currentIndex } = useSteps()
@@ -31,6 +35,7 @@ export const TeamsBeta: React.FunctionComponent<TeamsBeta> = ({ onFinish, onErro
     }, [])
 
     const logFormSubmission = useCallback(() => {
+        setIsSubmitted(true)
         eventLogger.log('PostSignUpOrgTabBetaFormSubmit')
         setComplete(currentIndex, true)
     }, [currentIndex, setComplete])
@@ -43,9 +48,11 @@ export const TeamsBeta: React.FunctionComponent<TeamsBeta> = ({ onFinish, onErro
             },
             onFormSubmitted: logFormSubmission,
             onError,
-            initialFormValues: {},
+            initialFormValues: {
+                cftb_sourcegraph_username: username,
+            },
         }),
-        [logFormSubmission, onError]
+        [logFormSubmission, onError, username]
     )
     const form = useHubSpotForm(config)
 
@@ -72,7 +79,11 @@ export const TeamsBeta: React.FunctionComponent<TeamsBeta> = ({ onFinish, onErro
                 </p>
             </div>
             <div
-                className={classNames({ [styles.content]: true, [styles.contentTransitioning]: isTransitioning })}
+                className={classNames({
+                    [styles.content]: true,
+                    [styles.contentTransitioning]: isTransitioning,
+                    [styles.contentSubmitted]: isSubmitted,
+                })}
                 onTransitionEnd={onTransitionEnd}
                 ref={contentReference}
             >

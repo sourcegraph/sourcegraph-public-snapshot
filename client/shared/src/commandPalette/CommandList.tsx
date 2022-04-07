@@ -1,3 +1,5 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 import { Remote } from 'comlink'
@@ -7,7 +9,6 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import TooltipPopoverWrapper from 'reactstrap/lib/TooltipPopoverWrapper'
@@ -16,14 +17,14 @@ import { filter, switchMap } from 'rxjs/operators'
 import stringScore from 'string-score'
 import { Key } from 'ts-key-enum'
 
+import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/client-api'
 import { memoizeObservable } from '@sourcegraph/common'
-import { Button, ButtonProps, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, ButtonProps, LoadingSpinner, Icon } from '@sourcegraph/wildcard'
 
 import { ActionItem, ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
 import { FlatExtensionHostAPI } from '../api/contract'
 import { haveInitialExtensionsLoaded } from '../api/features'
-import { ContributableMenu, Contributions, Evaluated } from '../api/protocol'
 import { HighlightedMatches } from '../components/HighlightedMatches'
 import { getContributedActionItems } from '../contributions/contributions'
 import { ExtensionsControllerProps } from '../extensions/controller'
@@ -32,9 +33,10 @@ import { PlatformContextProps } from '../platform/context'
 import { SettingsCascadeOrError } from '../settings/settings'
 import { TelemetryProps } from '../telemetry/telemetryService'
 
-import styles from './CommandList.module.scss'
 import { EmptyCommandList } from './EmptyCommandList'
 import { EmptyCommandListContainer } from './EmptyCommandListContainer'
+
+import styles from './CommandList.module.scss'
 
 /**
  * Customizable CSS classes for elements of the the command list button.
@@ -190,7 +192,7 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
                     <div className="d-flex py-5 align-items-center justify-content-center">
                         <LoadingSpinner inline={false} />
                         <span className="mx-2">Loading Sourcegraph extensions</span>
-                        <PuzzleIcon className="icon-inline" />
+                        <Icon as={PuzzleIcon} />
                     </div>
                 </EmptyCommandListContainer>
             )
@@ -389,8 +391,7 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
 
     const id = useMemo(() => uniqueId('command-list-popover-button-'), [])
 
-    const MenuDropdownIcon = (): JSX.Element =>
-        isOpen ? <ChevronUpIcon className="icon-inline" /> : <ChevronDownIcon className="icon-inline" />
+    const MenuDropdownIcon = (): JSX.Element => (isOpen ? <Icon as={ChevronUpIcon} /> : <Icon as={ChevronDownIcon} />)
 
     return (
         <Button
@@ -400,8 +401,9 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
             onClick={toggleIsOpen}
             className={classNames(styles.popoverButton, buttonClassName, isOpen && buttonOpenClassName)}
             variant={variant}
+            aria-label="Command list"
         >
-            <ConsoleIcon className="icon-inline-md" />
+            <Icon as={ConsoleIcon} size="md" />
 
             {showCaret && <MenuDropdownIcon />}
 

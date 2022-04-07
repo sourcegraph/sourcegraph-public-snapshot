@@ -1,19 +1,21 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import { isEqual } from 'lodash'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Input } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../../components/LoaderButton'
-import { FormInput } from '../../../../../../../form/form-input/FormInput'
+import { getDefaultInputProps } from '../../../../../../../form/getDefaultInputProps'
 import { useField } from '../../../../../../../form/hooks/useField'
 import { FORM_ERROR, FormChangeEvent, SubmissionResult, useForm } from '../../../../../../../form/hooks/useForm'
 
 import { DrillDownRegExpInput, LabelWithReset } from './components/drill-down-reg-exp-input/DrillDownRegExpInput'
-import styles from './DrillDownFiltersForm.module.scss'
 import { validRegexp } from './validators'
+
+import styles from './DrillDownFiltersForm.module.scss'
 
 export interface DrillDownFiltersFormValues {
     includeRepoRegexp: string
@@ -40,7 +42,7 @@ interface DrillDownFiltersFormProps {
     originalFiltersValue: DrillDownFiltersFormValues
 
     /**
-     * Live filters that lives only in runtime memory and can be different
+     * Live filters that live only in runtime memory and can be different
      * from originalFiltersValue of insight until the user syncs them by
      * save/update default filters.
      */
@@ -94,6 +96,7 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
     const hasAppliedFilters = hasActiveFilters(originalFiltersValue)
 
     return (
+        // eslint-disable-next-line react/forbid-elements
         <form ref={ref} className={classNames(className, 'd-flex flex-column px-3')} onSubmit={handleSubmit}>
             <header className={styles.header}>
                 <h4 className="mb-0">Filter repositories</h4>
@@ -118,37 +121,33 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
             <small className={styles.description}>Use regular expression to change the scope of this insight.</small>
 
             <fieldset>
-                <FormInput
+                <Input
                     as={DrillDownRegExpInput}
                     autoFocus={true}
                     prefix="repo:"
-                    title={
+                    label={
                         <LabelWithReset onReset={() => includeRegex.input.onChange('')}>
                             Include repositories
                         </LabelWithReset>
                     }
                     placeholder="^github\.com/sourcegraph/sourcegraph$"
                     className="mb-3"
-                    valid={includeRegex.meta.dirty && includeRegex.meta.validState === 'VALID'}
-                    error={includeRegex.meta.dirty && includeRegex.meta.error}
                     spellCheck={false}
-                    {...includeRegex.input}
+                    {...getDefaultInputProps(includeRegex)}
                 />
 
-                <FormInput
+                <Input
                     as={DrillDownRegExpInput}
                     prefix="-repo:"
-                    title={
+                    label={
                         <LabelWithReset onReset={() => excludeRegex.input.onChange('')}>
                             Exclude repositories
                         </LabelWithReset>
                     }
                     placeholder="^github\.com/sourcegraph/sourcegraph$"
-                    valid={excludeRegex.meta.dirty && excludeRegex.meta.validState === 'VALID'}
-                    error={excludeRegex.meta.dirty && excludeRegex.meta.error}
                     spellCheck={false}
                     className="mb-2"
-                    {...excludeRegex.input}
+                    {...getDefaultInputProps(excludeRegex)}
                 />
             </fieldset>
 
@@ -182,7 +181,7 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
                     variant="secondary"
                     onClick={onCreateInsightRequest}
                 >
-                    <PlusIcon className="icon-inline mr-1" />
+                    <Icon className="mr-1" as={PlusIcon} />
                     Save as new view
                 </Button>
             </footer>

@@ -2,6 +2,7 @@
 import '../../shared/polyfills'
 
 import React from 'react'
+
 import { render } from 'react-dom'
 
 import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'

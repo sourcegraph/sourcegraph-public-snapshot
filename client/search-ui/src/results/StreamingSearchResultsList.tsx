@@ -1,3 +1,5 @@
+import React, { useCallback } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import AlphaSBoxIcon from 'mdi-react/AlphaSBoxIcon'
@@ -5,16 +7,20 @@ import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import FileIcon from 'mdi-react/FileIcon'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import React, { useCallback } from 'react'
 import { Observable } from 'rxjs'
 
+import { HoverMerged } from '@sourcegraph/client-api'
+import { Hoverifier } from '@sourcegraph/codeintellify'
 import { SearchContextProps } from '@sourcegraph/search'
 import { SearchResult } from '@sourcegraph/search-ui'
+import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
+import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
+import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import {
     AggregateStreamingSearchResults,
@@ -30,8 +36,9 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { NoResultsPage } from './NoResultsPage'
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
-import styles from './StreamingSearchResultsList.module.scss'
 import { useItemsToShow } from './use-items-to-show'
+
+import styles from './StreamingSearchResultsList.module.scss'
 
 export interface StreamingSearchResultsListProps
     extends ThemeProps,
@@ -52,6 +59,9 @@ export interface StreamingSearchResultsListProps
     assetsRoot?: string
     /** Render prop for `<SearchUserNeedsCodeHost>`  */
     renderSearchUserNeedsCodeHost?: (user: AuthenticatedUser) => JSX.Element
+
+    extensionsController?: Pick<ExtensionsController, 'extHostAPI'>
+    hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearchResultsListProps> = ({
@@ -69,6 +79,8 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     assetsRoot,
     renderSearchUserNeedsCodeHost,
     platformContext,
+    extensionsController,
+    hoverifier,
     openMatchesInNewTab,
 }) => {
     const resultsNumber = results?.results.length || 0
@@ -103,6 +115,8 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                             repoDisplayName={displayRepoName(result.repository)}
                             settingsCascade={settingsCascade}
+                            extensionsController={extensionsController}
+                            hoverifier={hoverifier}
                             openInNewTab={openMatchesInNewTab}
                         />
                     )
@@ -137,6 +151,8 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
             fetchHighlightedFileLineRanges,
             settingsCascade,
             platformContext,
+            extensionsController,
+            hoverifier,
             openMatchesInNewTab,
         ]
     )

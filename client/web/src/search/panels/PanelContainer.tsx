@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import * as React from 'react'
+
+import classNames from 'classnames'
 
 import styles from './PanelContainer.module.scss'
 
@@ -14,6 +15,7 @@ interface Props {
     populatedContent: JSX.Element
     actionButtons?: JSX.Element
     className?: string
+    insideTabPanel?: boolean
 }
 
 export const PanelContainer: React.FunctionComponent<Props> = ({
@@ -24,12 +26,17 @@ export const PanelContainer: React.FunctionComponent<Props> = ({
     populatedContent,
     actionButtons,
     className,
+    insideTabPanel,
 }) => (
     <div className={classNames(className, styles.panelContainer, 'd-flex', 'flex-column')}>
-        <div className={classNames('d-flex border-bottom', styles.header)}>
-            <h4 className={styles.headerText}>{title}</h4>
-            {actionButtons}
-        </div>
+        {insideTabPanel !== true ? (
+            <div className={classNames('d-flex border-bottom', styles.header)}>
+                <h4 className={styles.headerText}>{title}</h4>
+                {actionButtons}
+            </div>
+        ) : (
+            <div className={classNames(styles.header, styles.headerInsideTabPanel)}>{actionButtons}</div>
+        )}
 
         <div className={classNames('h-100', styles.content)}>
             {state === 'loading' && loadingContent}

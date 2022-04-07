@@ -1,12 +1,12 @@
 import React from 'react'
 
-import { UseConnectionResult } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
+import { UseConnectionResult } from '../../components/FilteredConnection/hooks/useConnection'
 import {
     ConnectionError,
     ConnectionLoading,
     ShowMoreButton,
     SummaryContainer,
-} from '@sourcegraph/web/src/components/FilteredConnection/ui'
+} from '../../components/FilteredConnection/ui'
 
 import { ConnectionPopoverContainer, ConnectionPopoverForm, ConnectionPopoverList } from './components'
 

@@ -21,7 +21,7 @@ func TestStoreQueuedCount(t *testing.T) {
 	db := setupStoreTest(t)
 
 	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, uploaded_at)
+		INSERT INTO workerutil_test (id, state, created_at)
 		VALUES
 			(1, 'queued', NOW() - '1 minute'::interval),
 			(2, 'queued', NOW() - '2 minute'::interval),
@@ -45,7 +45,7 @@ func TestStoreQueuedCountIncludeProcessing(t *testing.T) {
 	db := setupStoreTest(t)
 
 	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, uploaded_at)
+		INSERT INTO workerutil_test (id, state, created_at)
 		VALUES
 			(1, 'queued', NOW() - '1 minute'::interval),
 			(2, 'queued', NOW() - '2 minute'::interval),
@@ -69,7 +69,7 @@ func TestStoreQueuedCountFailed(t *testing.T) {
 	db := setupStoreTest(t)
 
 	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, uploaded_at, num_failures)
+		INSERT INTO workerutil_test (id, state, created_at, num_failures)
 		VALUES
 			(1, 'queued', NOW() - '1 minute'::interval, 0),
 			(2, 'errored', NOW() - '2 minute'::interval, 2),
@@ -94,7 +94,7 @@ func TestStoreQueuedCountConditions(t *testing.T) {
 	db := setupStoreTest(t)
 
 	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, uploaded_at)
+		INSERT INTO workerutil_test (id, state, created_at)
 		VALUES
 			(1, 'queued', NOW() - '1 minute'::interval),
 			(2, 'queued', NOW() - '2 minute'::interval),
@@ -115,11 +115,100 @@ func TestStoreQueuedCountConditions(t *testing.T) {
 	}
 }
 
+func TestStoreMaxDurationInQueue(t *testing.T) {
+	db := setupStoreTest(t)
+
+	if _, err := db.ExecContext(context.Background(), `
+		INSERT INTO workerutil_test (id, state, created_at)
+		VALUES
+			(1, 'queued', NOW() - '20 minutes'::interval), -- young
+			(2, 'queued', NOW() - '30 minutes'::interval), -- oldest queued
+			(3, 'state2', NOW() - '40 minutes'::interval), -- wrong state
+			(4, 'queued', NOW() - '10 minutes'::interval), -- young
+			(5, 'state3', NOW() - '50 minutes'::interval)  -- wrong state
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	age, err := testStore(db, defaultTestStoreOptions(nil)).MaxDurationInQueue(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error getting max duration in queue: %s", err)
+	}
+	if age.Round(time.Second) != 30*time.Minute {
+		t.Fatalf("unexpected max age. want=%s have=%s", 30*time.Minute, age)
+	}
+}
+
+func TestStoreMaxDurationInQueueProcessAfter(t *testing.T) {
+	db := setupStoreTest(t)
+
+	if _, err := db.ExecContext(context.Background(), `
+		INSERT INTO workerutil_test (id, state, created_at, process_after)
+		VALUES
+			(1, 'queued', NOW() - '90 minutes'::interval, NOW() + '10 minutes'::interval), -- oldest queued, waiting for process_after
+			(2, 'queued', NOW() - '70 minutes'::interval, NOW() - '30 minutes'::interval), -- oldest queued
+			(3, 'state2', NOW() - '40 minutes'::interval, NULL),                           -- wrong state
+			(4, 'queued', NOW() - '10 minutes'::interval, NULL),                           -- young
+			(5, 'state3', NOW() - '50 minutes'::interval, NULL)                            -- wrong state
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	age, err := testStore(db, defaultTestStoreOptions(nil)).MaxDurationInQueue(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error getting max duration in queue: %s", err)
+	}
+	if age.Round(time.Second) != 30*time.Minute {
+		t.Fatalf("unexpected max age. want=%s have=%s", 30*time.Minute, age)
+	}
+}
+
+func TestStoreMaxDurationInQueueFailed(t *testing.T) {
+	db := setupStoreTest(t)
+
+	if _, err := db.ExecContext(context.Background(), `
+		INSERT INTO workerutil_test (id, state, created_at, finished_at, num_failures)
+		VALUES
+			(1, 'queued',  NOW() - '10 minutes'::interval, NULL,                           0), -- young
+			(2, 'errored', NOW(),                          NOW() - '30 minutes'::interval, 2), -- oldest retryable error'd
+			(3, 'errored', NOW(),                          NOW() - '10 minutes'::interval, 2), -- retryable, but too young to be queued
+			(4, 'state2',  NOW() - '40 minutes'::interval, NULL,                           0), -- wrong state
+			(5, 'errored', NOW(),                          NOW() - '50 minutes'::interval, 3), -- non-retryable (max attempts exceeded)
+			(6, 'queued',  NOW() - '20 minutes'::interval, NULL,                           0), -- oldest queued
+			(7, 'failed',  NOW(),                          NOW() - '60 minutes'::interval, 1)  -- wrong state
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	options := defaultTestStoreOptions(nil)
+	options.RetryAfter = 5 * time.Minute
+
+	age, err := testStore(db, options).MaxDurationInQueue(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error getting max duration in queue: %s", err)
+	}
+	if age.Round(time.Second) != 25*time.Minute {
+		t.Fatalf("unexpected max age. want=%s have=%s", 25*time.Minute, age)
+	}
+}
+
+func TestStoreMaxDurationInQueueEmpty(t *testing.T) {
+	db := setupStoreTest(t)
+
+	age, err := testStore(db, defaultTestStoreOptions(nil)).MaxDurationInQueue(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error getting max duration in queue: %s", err)
+	}
+	if age.Round(time.Second) != 0*time.Minute {
+		t.Fatalf("unexpected max age. want=%s have=%s", 0*time.Minute, age)
+	}
+}
+
 func TestStoreDequeueState(t *testing.T) {
 	db := setupStoreTest(t)
 
 	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, uploaded_at)
+		INSERT INTO workerutil_test (id, state, created_at)
 		VALUES
 			(1, 'queued', NOW() - '1 minute'::interval),
 			(2, 'queued', NOW() - '2 minute'::interval),
@@ -138,7 +227,7 @@ func TestStoreDequeueOrder(t *testing.T) {
 	db := setupStoreTest(t)
 
 	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, uploaded_at)
+		INSERT INTO workerutil_test (id, state, created_at)
 		VALUES
 			(1, 'queued', NOW() - '2 minute'::interval),
 			(2, 'queued', NOW() - '5 minute'::interval),
@@ -157,7 +246,7 @@ func TestStoreDequeueConditions(t *testing.T) {
 	db := setupStoreTest(t)
 
 	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, uploaded_at)
+		INSERT INTO workerutil_test (id, state, created_at)
 		VALUES
 			(1, 'queued', NOW() - '1 minute'::interval),
 			(2, 'queued', NOW() - '2 minute'::interval),
@@ -177,7 +266,7 @@ func TestStoreDequeueResetExecutionLogs(t *testing.T) {
 	db := setupStoreTest(t)
 
 	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, execution_logs, uploaded_at)
+		INSERT INTO workerutil_test (id, state, execution_logs, created_at)
 		VALUES
 			(1, 'queued', E'{"{\\"key\\": \\"test\\"}"}', NOW() - '1 minute'::interval)
 	`); err != nil {
@@ -193,7 +282,7 @@ func TestStoreDequeueDelay(t *testing.T) {
 	db := setupStoreTest(t)
 
 	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, uploaded_at, process_after)
+		INSERT INTO workerutil_test (id, state, created_at, process_after)
 		VALUES
 			(1, 'queued', NOW() - '1 minute'::interval, NULL),
 			(2, 'queued', NOW() - '2 minute'::interval, NULL),
@@ -212,7 +301,7 @@ func TestStoreDequeueView(t *testing.T) {
 	db := setupStoreTest(t)
 
 	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, uploaded_at)
+		INSERT INTO workerutil_test (id, state, created_at)
 		VALUES
 			(1, 'queued', NOW() - '1 minute'::interval),
 			(2, 'queued', NOW() - '2 minute'::interval),
@@ -226,7 +315,7 @@ func TestStoreDequeueView(t *testing.T) {
 	options := defaultTestStoreOptions(nil)
 	options.ViewName = "workerutil_test_view v"
 	options.Scan = testScanFirstRecordView
-	options.OrderByExpression = sqlf.Sprintf("v.uploaded_at")
+	options.OrderByExpression = sqlf.Sprintf("v.created_at")
 	options.ColumnExpressions = []*sqlf.Query{
 		sqlf.Sprintf("v.id"),
 		sqlf.Sprintf("v.state"),
@@ -242,7 +331,7 @@ func TestStoreDequeueConcurrent(t *testing.T) {
 	db := setupStoreTest(t)
 
 	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, uploaded_at)
+		INSERT INTO workerutil_test (id, state, created_at)
 		VALUES
 			(1, 'queued', NOW() - '2 minute'::interval),
 			(2, 'queued', NOW() - '1 minute'::interval)
@@ -291,7 +380,7 @@ func TestStoreDequeueRetryAfter(t *testing.T) {
 	db := setupStoreTest(t)
 
 	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, finished_at, failure_message, num_failures, uploaded_at)
+		INSERT INTO workerutil_test (id, state, finished_at, failure_message, num_failures, created_at)
 		VALUES
 			(1, 'errored', NOW() - '6 minute'::interval, 'error', 3, NOW() - '2 minutes'::interval),
 			(2, 'errored', NOW() - '4 minute'::interval, 'error', 0, NOW() - '3 minutes'::interval),
@@ -330,7 +419,7 @@ func TestStoreDequeueRetryAfterDisabled(t *testing.T) {
 	db := setupStoreTest(t)
 
 	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, finished_at, failure_message, num_failures, uploaded_at)
+		INSERT INTO workerutil_test (id, state, finished_at, failure_message, num_failures, created_at)
 		VALUES
 			(1, 'errored', NOW() - '6 minute'::interval, 'error', 3, NOW() - '2 minutes'::interval),
 			(2, 'errored', NOW() - '4 minute'::interval, 'error', 0, NOW() - '3 minutes'::interval),

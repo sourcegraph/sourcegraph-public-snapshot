@@ -12,6 +12,11 @@
 <polygon fill="white" stroke="transparent" points="-14.4,14.4 -14.4,-1130.4 1008.9,-1130.4 1008.9,14.4 -14.4,14.4"/>
 <text text-anchor="middle" x="497.25" y="-34.4" font-family="Source Code Pro, monospace" font-size="12.00">Sourcegraph Architecture Overview</text>
 <text text-anchor="middle" x="497.25" y="-7.4" font-family="Source Code Pro, monospace" font-size="12.00">Box =&gt; horizontally scalable service, Rectangle =&gt; singleton service</text>
+<g id="clust10" class="cluster">
+<title>cluster_external_precise_code_intel</title>
+<polygon fill="none" stroke="black" stroke-dasharray="1,5" points="0,-173 0,-246 317,-246 317,-173 0,-173"/>
+<text text-anchor="middle" x="158.5" y="-232.4" font-family="Source Code Pro, monospace" font-size="12.00">External services (on raw compute nodes)</text>
+</g>
 <g id="clust1" class="cluster">
 <title>cluster_clients</title>
 <polygon fill="none" stroke="black" stroke-dasharray="1,5" points="114.5,-254 114.5,-868 202.5,-868 202.5,-254 114.5,-254"/>
@@ -27,6 +32,11 @@
 <polygon fill="none" stroke="black" stroke-dasharray="1,5" points="350.5,-315 350.5,-1079 849.5,-1079 849.5,-315 350.5,-315"/>
 <text text-anchor="middle" x="600" y="-1065.4" font-family="Source Code Pro, monospace" font-size="12.00">Internal services</text>
 </g>
+<g id="clust6" class="cluster">
+<title>cluster_code_intelligence</title>
+<polygon fill="none" stroke="black" stroke-dasharray="1,5" points="502.5,-912 502.5,-1050 691.5,-1050 691.5,-912 502.5,-912"/>
+<text text-anchor="middle" x="597" y="-1036.4" font-family="Source Code Pro, monospace" font-size="12.00">Code intelligence</text>
+</g>
 <g id="clust4" class="cluster">
 <title>cluster_search</title>
 <polygon fill="none" stroke="black" stroke-dasharray="1,5" points="518.5,-607 518.5,-839 675.5,-839 675.5,-607 518.5,-607"/>
@@ -36,11 +46,6 @@
 <title>cluster_zoekt</title>
 <polygon fill="none" stroke="black" stroke-dasharray="1,5" points="526.5,-672 526.5,-810 667.5,-810 667.5,-672 526.5,-672"/>
 <text text-anchor="middle" x="597" y="-796.4" font-family="Source Code Pro, monospace" font-size="12.00">Indexed search</text>
-</g>
-<g id="clust6" class="cluster">
-<title>cluster_code_intelligence</title>
-<polygon fill="none" stroke="black" stroke-dasharray="1,5" points="502.5,-912 502.5,-1050 691.5,-1050 691.5,-912 502.5,-912"/>
-<text text-anchor="middle" x="597" y="-1036.4" font-family="Source Code Pro, monospace" font-size="12.00">Code intelligence</text>
 </g>
 <g id="clust7" class="cluster">
 <title>cluster_code_insights</title>
@@ -56,11 +61,6 @@
 <title>cluster_databases</title>
 <polygon fill="none" stroke="black" stroke-dasharray="1,5" points="738.5,-64 738.5,-147 849.5,-147 849.5,-64 738.5,-64"/>
 <text text-anchor="middle" x="794" y="-133.4" font-family="Source Code Pro, monospace" font-size="12.00">Postgres</text>
-</g>
-<g id="clust10" class="cluster">
-<title>cluster_external_precise_code_intel</title>
-<polygon fill="none" stroke="black" stroke-dasharray="1,5" points="0,-173 0,-246 317,-246 317,-173 0,-173"/>
-<text text-anchor="middle" x="158.5" y="-232.4" font-family="Source Code Pro, monospace" font-size="12.00">External services (on raw compute nodes)</text>
 </g>
 <g id="clust11" class="cluster">
 <title>cluster_codehosts</title>
@@ -250,7 +250,10 @@
 <g id="node19" class="node">
 <title>syntect_server</title>
 <g id="a_node19"><a xlink:href="https://github.com/sourcegraph/sourcegraph/tree/main/docker-images/syntax-highlighter" xlink:title="syntect\nserver" target="_blank">
-<polygon fill="#cc0085" stroke="black" points="629.5,-891 564.5,-891 564.5,-847 629.5,-847 629.5,-891"/>
+<polygon fill="#cc0085" stroke="black" points="629.5,-891 568.5,-891 564.5,-887 564.5,-847 625.5,-847 629.5,-851 629.5,-891"/>
+<polyline fill="none" stroke="black" points="625.5,-887 564.5,-887 "/>
+<polyline fill="none" stroke="black" points="625.5,-887 625.5,-847 "/>
+<polyline fill="none" stroke="black" points="625.5,-887 629.5,-891 "/>
 <text text-anchor="middle" x="597" y="-872" font-family="Source Code Pro, monospace" font-size="10.00">syntect</text>
 <text text-anchor="middle" x="597" y="-861" font-family="Source Code Pro, monospace" font-size="10.00">server</text>
 </a>

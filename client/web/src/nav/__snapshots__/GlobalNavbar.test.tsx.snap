@@ -31,7 +31,7 @@ exports[`GlobalNavbar default 1`] = `
         type="button"
       >
         <svg
-          class="mdi-icon icon-inline"
+          class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -42,7 +42,7 @@ exports[`GlobalNavbar default 1`] = `
           />
         </svg>
         <svg
-          class="mdi-icon icon-inline"
+          class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -57,68 +57,64 @@ exports[`GlobalNavbar default 1`] = `
         class="list menuClose"
       >
         <li
-          class="item d-none d-md-flex"
+          class="item d-none d-md-flex position-relative"
         >
           <div
-            class="btn-group"
+            class="link d-flex align-items-center p-0"
           >
-            <a
-              aria-expanded="false"
-              aria-haspopup="true"
-              class="link d-flex align-items-center p-0 nav-link"
-              href="#"
-            >
-              <span
-                class="linkContent"
-              >
-                <svg
-                  class="mdi-icon icon-inline icon"
-                  fill="currentColor"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  width="24"
-                >
-                  <path
-                    d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"
-                  />
-                </svg>
-                <span
-                  class="text iconIncluded"
-                >
-                  Code Search
-                </span>
-                <svg
-                  class="mdi-icon icon-inline icon"
-                  fill="currentColor"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  width="24"
-                >
-                  <path
-                    d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
-                  />
-                </svg>
-              </span>
-            </a>
             <div
-              aria-hidden="true"
-              class="dropdown-menu"
-              role="menu"
-              tabindex="-1"
+              class="h-100 d-flex linkContent navDropdownWrapper"
             >
               <a
-                class="anchorLink dropdown-item showOnTouchScreen"
+                class="anchorLink navDropdownLink itemFocusable"
                 href="/search"
               >
-                Search home
+                <span
+                  class="itemFocusableContent"
+                >
+                  <svg
+                    class="mdi-icon iconInline icon"
+                    fill="currentColor"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    width="24"
+                  >
+                    <path
+                      d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"
+                    />
+                  </svg>
+                  <span
+                    class="text iconIncluded"
+                  >
+                    Code Search
+                  </span>
+                </span>
               </a>
-              <a
-                class="anchorLink dropdown-item"
-                href="/contexts"
-                role="menuitem"
+              <button
+                aria-controls=""
+                aria-haspopup="true"
+                aria-label="Show search menu"
+                class="btn navDropdownIconButton itemFocusable"
+                data-reach-menu-button=""
+                id="menu-button-2"
+                type="button"
               >
-                Contexts
-              </a>
+                <span
+                  class="itemFocusableContent"
+                >
+                  <svg
+                    class="mdi-icon iconInline icon"
+                    fill="currentColor"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    width="24"
+                  >
+                    <path
+                      d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+                    />
+                  </svg>
+                </span>
+              </button>
             </div>
           </div>
         </li>
@@ -133,7 +129,7 @@ exports[`GlobalNavbar default 1`] = `
               class="linkContent"
             >
               <svg
-                class="mdi-icon icon-inline icon"
+                class="mdi-icon iconInline icon"
                 fill="currentColor"
                 height="24"
                 viewBox="0 0 24 24"
@@ -162,7 +158,7 @@ exports[`GlobalNavbar default 1`] = `
               class="linkContent pl-2"
             >
               <span
-                class="text"
+                class="text iconIncluded"
               >
                 Contexts
               </span>
@@ -180,7 +176,7 @@ exports[`GlobalNavbar default 1`] = `
               class="linkContent"
             >
               <svg
-                class="mdi-icon icon-inline icon"
+                class="mdi-icon iconInline icon"
                 fill="currentColor"
                 height="24"
                 viewBox="0 0 24 24"
@@ -294,7 +290,7 @@ exports[`GlobalNavbar low-profile 1`] = `
         type="button"
       >
         <svg
-          class="mdi-icon icon-inline"
+          class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -305,7 +301,7 @@ exports[`GlobalNavbar low-profile 1`] = `
           />
         </svg>
         <svg
-          class="mdi-icon icon-inline"
+          class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -320,68 +316,64 @@ exports[`GlobalNavbar low-profile 1`] = `
         class="list menuClose"
       >
         <li
-          class="item d-none d-md-flex"
+          class="item d-none d-md-flex position-relative"
         >
           <div
-            class="btn-group"
+            class="link d-flex align-items-center p-0"
           >
-            <a
-              aria-expanded="false"
-              aria-haspopup="true"
-              class="link d-flex align-items-center p-0 nav-link"
-              href="#"
-            >
-              <span
-                class="linkContent"
-              >
-                <svg
-                  class="mdi-icon icon-inline icon"
-                  fill="currentColor"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  width="24"
-                >
-                  <path
-                    d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"
-                  />
-                </svg>
-                <span
-                  class="text iconIncluded"
-                >
-                  Code Search
-                </span>
-                <svg
-                  class="mdi-icon icon-inline icon"
-                  fill="currentColor"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  width="24"
-                >
-                  <path
-                    d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
-                  />
-                </svg>
-              </span>
-            </a>
             <div
-              aria-hidden="true"
-              class="dropdown-menu"
-              role="menu"
-              tabindex="-1"
+              class="h-100 d-flex linkContent navDropdownWrapper"
             >
               <a
-                class="anchorLink dropdown-item showOnTouchScreen"
+                class="anchorLink navDropdownLink itemFocusable"
                 href="/search"
               >
-                Search home
+                <span
+                  class="itemFocusableContent"
+                >
+                  <svg
+                    class="mdi-icon iconInline icon"
+                    fill="currentColor"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    width="24"
+                  >
+                    <path
+                      d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"
+                    />
+                  </svg>
+                  <span
+                    class="text iconIncluded"
+                  >
+                    Code Search
+                  </span>
+                </span>
               </a>
-              <a
-                class="anchorLink dropdown-item"
-                href="/contexts"
-                role="menuitem"
+              <button
+                aria-controls=""
+                aria-haspopup="true"
+                aria-label="Show search menu"
+                class="btn navDropdownIconButton itemFocusable"
+                data-reach-menu-button=""
+                id="menu-button-4"
+                type="button"
               >
-                Contexts
-              </a>
+                <span
+                  class="itemFocusableContent"
+                >
+                  <svg
+                    class="mdi-icon iconInline icon"
+                    fill="currentColor"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    width="24"
+                  >
+                    <path
+                      d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+                    />
+                  </svg>
+                </span>
+              </button>
             </div>
           </div>
         </li>
@@ -396,7 +388,7 @@ exports[`GlobalNavbar low-profile 1`] = `
               class="linkContent"
             >
               <svg
-                class="mdi-icon icon-inline icon"
+                class="mdi-icon iconInline icon"
                 fill="currentColor"
                 height="24"
                 viewBox="0 0 24 24"
@@ -425,7 +417,7 @@ exports[`GlobalNavbar low-profile 1`] = `
               class="linkContent pl-2"
             >
               <span
-                class="text"
+                class="text iconIncluded"
               >
                 Contexts
               </span>
@@ -443,7 +435,7 @@ exports[`GlobalNavbar low-profile 1`] = `
               class="linkContent"
             >
               <svg
-                class="mdi-icon icon-inline icon"
+                class="mdi-icon iconInline icon"
                 fill="currentColor"
                 height="24"
                 viewBox="0 0 24 24"

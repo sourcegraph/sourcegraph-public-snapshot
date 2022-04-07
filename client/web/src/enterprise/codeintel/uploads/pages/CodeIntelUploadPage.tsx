@@ -1,7 +1,8 @@
+import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
+
 import { useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
-import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { takeWhile } from 'rxjs/operators'
@@ -10,14 +11,15 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { LSIFUploadState } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import {
-    FilteredConnection,
-    FilteredConnectionQueryArguments,
-} from '@sourcegraph/web/src/components/FilteredConnection'
-import { Button, Container, PageHeader, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { Collapsible } from '../../../../components/Collapsible'
+import {
+    Connection,
+    FilteredConnection,
+    FilteredConnectionQueryArguments,
+} from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
 import { LsifUploadFields, LsifUploadConnectionFields } from '../../../../graphql-operations'
 import { CodeIntelStateBanner, CodeIntelStateBannerProps } from '../../shared/components/CodeIntelStateBanner'
@@ -28,8 +30,14 @@ import { CodeIntelUploadTimeline } from '../components/CodeIntelUploadTimeline'
 import { DependencyOrDependentNode } from '../components/DependencyOrDependentNode'
 import { EmptyDependencies } from '../components/EmptyDependencies'
 import { EmptyDependents } from '../components/EmptyDependents'
+import { EmptyUploadRetentionMatchStatus } from '../components/EmptyUploadRetentionStatusNode'
+import { RetentionMatchNode } from '../components/UploadRetentionStatusNode'
 import { queryLisfUploadFields as defaultQueryLisfUploadFields } from '../hooks/queryLisfUploadFields'
 import { queryLsifUploadsList as defaultQueryLsifUploadsList } from '../hooks/queryLsifUploadsList'
+import {
+    queryUploadRetentionMatches as defaultQueryRetentionMatches,
+    NormalizedUploadRetentionMatch,
+} from '../hooks/queryUploadRetentionMatches'
 import { useDeleteLsifUpload } from '../hooks/useDeleteLsifUpload'
 
 import styles from './CodeIntelUploadPage.module.scss'
@@ -38,6 +46,7 @@ export interface CodeIntelUploadPageProps extends RouteComponentProps<{ id: stri
     authenticatedUser: AuthenticatedUser | null
     queryLisfUploadFields?: typeof defaultQueryLisfUploadFields
     queryLsifUploadsList?: typeof defaultQueryLsifUploadsList
+    queryRetentionMatches?: typeof defaultQueryRetentionMatches
     now?: () => Date
 }
 
@@ -51,6 +60,11 @@ enum DependencyGraphState {
     ShowDependents,
 }
 
+enum RetentionPolicyMatcherState {
+    ShowMatchingOnly,
+    ShowAll,
+}
+
 export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = ({
     match: {
         params: { id },
@@ -58,6 +72,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
     authenticatedUser,
     queryLisfUploadFields = defaultQueryLisfUploadFields,
     queryLsifUploadsList = defaultQueryLsifUploadsList,
+    queryRetentionMatches = defaultQueryRetentionMatches,
     telemetryService,
     now,
     history,
@@ -68,6 +83,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
     const apolloClient = useApolloClient()
     const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
     const [dependencyGraphState, setDependencyGraphState] = useState(DependencyGraphState.ShowDependencies)
+    const [retentionPolicyMatcherState, setRetentionPolicyMatcherState] = useState(RetentionPolicyMatcherState.ShowAll)
     const { handleDeleteLsifUpload, deleteError } = useDeleteLsifUpload()
 
     useEffect(() => {
@@ -144,6 +160,20 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
         [uploadOrError, queryLsifUploadsList, apolloClient]
     )
 
+    const queryRetentionPoliciesCallback = useCallback(
+        (args: FilteredConnectionQueryArguments): Observable<Connection<NormalizedUploadRetentionMatch>> => {
+            if (uploadOrError && !isErrorLike(uploadOrError)) {
+                return queryRetentionMatches(apolloClient, id, {
+                    matchesOnly: retentionPolicyMatcherState === RetentionPolicyMatcherState.ShowMatchingOnly,
+                    ...args,
+                })
+            }
+
+            throw new Error('unreachable: queryRetentionPolicies referenced with invalid upload')
+        },
+        [uploadOrError, apolloClient, id, queryRetentionMatches, retentionPolicyMatcherState]
+    )
+
     return deletionOrError === 'deleted' ? (
         <Redirect to="." />
     ) : isErrorLike(deletionOrError) ? (
@@ -186,9 +216,8 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                         />
                         {uploadOrError.isLatestForRepo && (
                             <div>
-                                <InformationOutlineIcon className="icon-inline" /> This upload can answer queries for
-                                the tip of the default branch and are targets of cross-repository find reference
-                                operations.
+                                <Icon as={InformationOutlineIcon} /> This upload can answer queries for the tip of the
+                                default branch and are targets of cross-repository find reference operations.
                             </div>
                         )}
                     </Container>
@@ -211,68 +240,117 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
 
                     {(uploadOrError.state === LSIFUploadState.COMPLETED ||
                         uploadOrError.state === LSIFUploadState.DELETING) && (
-                        <Container className="mt-2">
-                            <Collapsible
-                                title={
-                                    dependencyGraphState === DependencyGraphState.ShowDependencies ? (
-                                        <h3 className="mb-0">Dependencies</h3>
+                        <>
+                            <Container className="mt-2">
+                                <Collapsible
+                                    title={
+                                        dependencyGraphState === DependencyGraphState.ShowDependencies ? (
+                                            <h3 className="mb-0">Dependencies</h3>
+                                        ) : (
+                                            <h3 className="mb-0">Dependents</h3>
+                                        )
+                                    }
+                                    titleAtStart={true}
+                                >
+                                    {dependencyGraphState === DependencyGraphState.ShowDependencies ? (
+                                        <>
+                                            <Button
+                                                type="button"
+                                                className="float-right p-0 mb-2"
+                                                variant="link"
+                                                onClick={() =>
+                                                    setDependencyGraphState(DependencyGraphState.ShowDependents)
+                                                }
+                                            >
+                                                Show dependents
+                                            </Button>
+                                            <FilteredConnection
+                                                listComponent="div"
+                                                listClassName={classNames(styles.grid, 'mb-3')}
+                                                noun="dependency"
+                                                pluralNoun="dependencies"
+                                                nodeComponent={DependencyOrDependentNode}
+                                                queryConnection={queryDependencies}
+                                                history={history}
+                                                location={props.location}
+                                                cursorPaging={true}
+                                                useURLQuery={false}
+                                                emptyElement={<EmptyDependencies />}
+                                            />
+                                        </>
                                     ) : (
-                                        <h3 className="mb-0">Dependents</h3>
-                                    )
-                                }
-                                titleAtStart={true}
-                            >
-                                {dependencyGraphState === DependencyGraphState.ShowDependencies ? (
-                                    <>
-                                        <Button
-                                            type="button"
-                                            className="float-right p-0 mb-2"
-                                            variant="link"
-                                            onClick={() => setDependencyGraphState(DependencyGraphState.ShowDependents)}
-                                        >
-                                            Show dependents
-                                        </Button>
-                                        <FilteredConnection
-                                            listComponent="div"
-                                            listClassName={classNames(styles.grid, 'mb-3')}
-                                            noun="dependency"
-                                            pluralNoun="dependencies"
-                                            nodeComponent={DependencyOrDependentNode}
-                                            queryConnection={queryDependencies}
-                                            history={history}
-                                            location={props.location}
-                                            cursorPaging={true}
-                                            emptyElement={<EmptyDependencies />}
-                                        />
-                                    </>
-                                ) : (
-                                    <>
+                                        <>
+                                            <Button
+                                                type="button"
+                                                className="float-right p-0 mb-2"
+                                                variant="link"
+                                                onClick={() =>
+                                                    setDependencyGraphState(DependencyGraphState.ShowDependencies)
+                                                }
+                                            >
+                                                Show dependencies
+                                            </Button>
+                                            <FilteredConnection
+                                                listComponent="div"
+                                                listClassName={classNames(styles.grid, 'mb-3')}
+                                                noun="dependent"
+                                                pluralNoun="dependents"
+                                                nodeComponent={DependencyOrDependentNode}
+                                                queryConnection={queryDependents}
+                                                history={history}
+                                                location={props.location}
+                                                cursorPaging={true}
+                                                useURLQuery={false}
+                                                emptyElement={<EmptyDependents />}
+                                            />
+                                        </>
+                                    )}
+                                </Collapsible>
+                            </Container>
+
+                            <Container className="mt-2">
+                                <Collapsible title={<h3 className="mb-0">Retention overview</h3>} titleAtStart={true}>
+                                    {retentionPolicyMatcherState === RetentionPolicyMatcherState.ShowAll ? (
                                         <Button
                                             type="button"
                                             className="float-right p-0 mb-2"
                                             variant="link"
                                             onClick={() =>
-                                                setDependencyGraphState(DependencyGraphState.ShowDependencies)
+                                                setRetentionPolicyMatcherState(
+                                                    RetentionPolicyMatcherState.ShowMatchingOnly
+                                                )
                                             }
                                         >
-                                            Show dependencies
+                                            Show matching only
                                         </Button>
-                                        <FilteredConnection
-                                            listComponent="div"
-                                            listClassName={classNames(styles.grid, 'mb-3')}
-                                            noun="dependent"
-                                            pluralNoun="dependents"
-                                            nodeComponent={DependencyOrDependentNode}
-                                            queryConnection={queryDependents}
-                                            history={history}
-                                            location={props.location}
-                                            cursorPaging={true}
-                                            emptyElement={<EmptyDependents />}
-                                        />
-                                    </>
-                                )}
-                            </Collapsible>
-                        </Container>
+                                    ) : (
+                                        <Button
+                                            type="button"
+                                            className="float-right p-0 mb-2"
+                                            variant="link"
+                                            onClick={() =>
+                                                setRetentionPolicyMatcherState(RetentionPolicyMatcherState.ShowAll)
+                                            }
+                                        >
+                                            Show all
+                                        </Button>
+                                    )}
+                                    <FilteredConnection
+                                        listComponent="div"
+                                        listClassName={classNames(styles.grid, 'mb-3')}
+                                        noun="match"
+                                        pluralNoun="matches"
+                                        nodeComponent={RetentionMatchNode}
+                                        queryConnection={queryRetentionPoliciesCallback}
+                                        history={history}
+                                        location={props.location}
+                                        cursorPaging={true}
+                                        useURLQuery={false}
+                                        emptyElement={<EmptyUploadRetentionMatchStatus />}
+                                    />
+                                </Collapsible>
+                            </Container>
+                        </>
                     )}
                 </>
             )}

@@ -460,7 +460,9 @@ type GitserverRepo struct {
 	LastFetched time.Time
 	// The last time a fetch updated the repository.
 	LastChanged time.Time
-	UpdatedAt   time.Time
+	// Size of the repository in bytes.
+	RepoSizeBytes int64
+	UpdatedAt     time.Time
 }
 
 // ExternalService is a connection to an external service.
@@ -476,9 +478,10 @@ type ExternalService struct {
 	NextSyncAt      time.Time
 	NamespaceUserID int32
 	NamespaceOrgID  int32
-	Unrestricted    bool  // Whether access to repositories belong to this external service is unrestricted.
-	CloudDefault    bool  // Whether this external service is our default public service on Cloud
-	HasWebhooks     *bool // Whether this external service has webhooks configured; calculated from Config
+	Unrestricted    bool       // Whether access to repositories belong to this external service is unrestricted.
+	CloudDefault    bool       // Whether this external service is our default public service on Cloud
+	HasWebhooks     *bool      // Whether this external service has webhooks configured; calculated from Config
+	TokenExpiresAt  *time.Time // Whether the token in this external services expires, nil indicates never expires.
 }
 
 // ExternalServiceSyncJob represents an sync job for an external service
@@ -662,6 +665,14 @@ type User struct {
 	InvalidatedSessionsAt time.Time
 	TosAccepted           bool
 	Searchable            bool
+}
+
+type OrgMemberAutocompleteSearchItem struct {
+	ID          int32
+	Username    string
+	DisplayName string
+	AvatarURL   string
+	InOrg       int32
 }
 
 type Org struct {
@@ -903,6 +914,7 @@ type SearchUsagePeriod struct {
 	RepoContainsFile        *SearchCountStatistics
 	RepoContainsContent     *SearchCountStatistics
 	RepoContainsCommitAfter *SearchCountStatistics
+	RepoDependencies        *SearchCountStatistics
 	CountAll                *SearchCountStatistics
 	NonGlobalContext        *SearchCountStatistics
 	OnlyPatterns            *SearchCountStatistics
@@ -1036,6 +1048,47 @@ type GrowthStatistics struct {
 	RetainedUsers    int32
 }
 
+// IDEExtensionsUsage represents the daily, weekly and monthly numbers
+// of search performed and user state events from all IDE extensions,
+// and all inbound traffic from the extension to Sourcegraph instance
+type IDEExtensionsUsage struct {
+	IDEs []*IDEExtensionsUsageStatistics
+}
+
+// Usage statistics from each IDE extension
+type IDEExtensionsUsageStatistics struct {
+	IdeKind string
+	Month   IDEExtensionsUsageRegularPeriod
+	Week    IDEExtensionsUsageRegularPeriod
+	Day     IDEExtensionsUsageDailyPeriod
+}
+
+// Monthly and Weekly usage from each IDE extension
+type IDEExtensionsUsageRegularPeriod struct {
+	StartTime         time.Time
+	SearchesPerformed IDEExtensionsUsageSearchesPerformed
+}
+
+// Daily usage from each IDE extension
+type IDEExtensionsUsageDailyPeriod struct {
+	StartTime         time.Time
+	SearchesPerformed IDEExtensionsUsageSearchesPerformed
+	UserState         IDEExtensionsUsageUserState
+	RedirectsCount    int32
+}
+
+// Count of unique users who performed searches & total searches performed
+type IDEExtensionsUsageSearchesPerformed struct {
+	UniquesCount int32
+	TotalCount   int32
+}
+
+// Count of unique users who installed & uninstalled each extension
+type IDEExtensionsUsageUserState struct {
+	Installs   int32
+	Uninstalls int32
+}
+
 // CodeHostIntegrationUsage represents the daily, weekly and monthly
 // number of unique users and events for code host integration usage
 // and inbound traffic from code host integration to Sourcegraph instance
@@ -1060,6 +1113,30 @@ type CodeHostIntegrationUsageType struct {
 type CodeHostIntegrationUsageInboundTrafficToWeb struct {
 	UniquesCount int32
 	TotalCount   int32
+}
+
+// UserAndEventCount represents the number of events triggered in a given
+// time frame per user and overall.
+type UserAndEventCount struct {
+	UserCount  int32
+	EventCount int32
+}
+
+// FileAndSearchPageUserAndEventCounts represents the number of events triggered
+// on the "search result" and "file" pages in a given time frame.
+type FileAndSearchPageUserAndEventCounts struct {
+	StartTime             time.Time
+	DisplayedOnFilePage   UserAndEventCount
+	DisplayedOnSearchPage UserAndEventCount
+	ClickedOnFilePage     UserAndEventCount
+	ClickedOnSearchPage   UserAndEventCount
+}
+
+// CTAUsage represents the total number of CTAs displayed and clicked
+// on the "search result" and "file" pages over the current month.
+type CTAUsage struct {
+	DailyBrowserExtensionCTA FileAndSearchPageUserAndEventCounts
+	DailyIDEExtensionCTA     FileAndSearchPageUserAndEventCounts
 }
 
 // SavedSearches represents the total number of saved searches, users
@@ -1159,6 +1236,9 @@ type CodeInsightsUsageStatistics struct {
 	InsightTimeIntervals                    []InsightTimeIntervalPing
 	InsightOrgVisible                       []OrgVisibleInsightPing
 	InsightTotalCounts                      InsightTotalCounts
+	TotalOrgsWithDashboard                  *int32
+	TotalDashboardCount                     *int32
+	InsightsPerDashboard                    InsightsPerDashboardPing
 }
 
 type CodeInsightsCriticalTelemetry struct {
@@ -1220,6 +1300,14 @@ type InsightTotalCounts struct {
 	ViewCounts       []InsightViewsCountPing
 	SeriesCounts     []InsightSeriesCountPing
 	ViewSeriesCounts []InsightViewSeriesCountPing
+}
+
+type InsightsPerDashboardPing struct {
+	Avg    float32
+	Max    int
+	Min    int
+	StdDev float32
+	Median float32
 }
 
 type CodeMonitoringUsageStatistics struct {

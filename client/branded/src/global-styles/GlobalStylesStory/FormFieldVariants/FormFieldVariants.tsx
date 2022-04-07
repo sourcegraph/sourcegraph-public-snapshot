@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { ReactNode } from 'react'
+
+import classNames from 'classnames'
 
 import { RadioButton, Select, TextArea } from '@sourcegraph/wildcard'
 import 'storybook-addon-designs'

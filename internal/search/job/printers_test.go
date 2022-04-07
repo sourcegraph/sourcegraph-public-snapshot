@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -193,7 +195,7 @@ func TestPrettyJSON(t *testing.T) {
 				Protocol:     search.Streaming,
 			},
 		}
-		j, _ := ToSearchJob(args, q)
+		j, _ := ToSearchJob(args, q, database.NewMockDB())
 		return PrettyJSONVerbose(j)
 	}
 
@@ -201,54 +203,85 @@ func TestPrettyJSON(t *testing.T) {
 {
   "PARALLEL": [
     {
-      "RepoSubsetText": {
-        "ZoektArgs": {
-          "Query": {
-            "Pattern": "bar",
-            "CaseSensitive": false,
-            "FileName": false,
-            "Content": false
+      "REPOPAGER": {
+        "PARALLEL": [
+          {
+            "ZoektRepoSubset": {
+              "Repos": null,
+              "Query": {
+                "Pattern": "bar",
+                "CaseSensitive": false,
+                "FileName": false,
+                "Content": false
+              },
+              "Typ": "text",
+              "FileMatchLimit": 500,
+              "Select": [],
+              "Zoekt": null
+            }
           },
-          "Typ": "text",
+          {
+            "Searcher": {
+              "PatternInfo": {
+                "Pattern": "bar",
+                "IsNegated": false,
+                "IsRegExp": true,
+                "IsStructuralPat": false,
+                "CombyRule": "",
+                "IsWordMatch": false,
+                "IsCaseSensitive": false,
+                "FileMatchLimit": 500,
+                "Index": "yes",
+                "Select": [],
+                "IncludePatterns": null,
+                "ExcludePattern": "",
+                "FilePatternsReposMustInclude": null,
+                "FilePatternsReposMustExclude": null,
+                "PathPatternsAreCaseSensitive": false,
+                "PatternMatchesContent": true,
+                "PatternMatchesPath": true,
+                "Languages": null
+              },
+              "Repos": null,
+              "Indexed": false,
+              "SearcherURLs": null,
+              "UseFullDeadline": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "RepoSearch": {
+        "PatternInfo": {
+          "Pattern": "bar",
+          "IsNegated": false,
+          "IsRegExp": true,
+          "IsStructuralPat": false,
+          "CombyRule": "",
+          "IsWordMatch": false,
+          "IsCaseSensitive": false,
           "FileMatchLimit": 500,
+          "Index": "yes",
           "Select": [],
-          "Zoekt": null
+          "IncludePatterns": null,
+          "ExcludePattern": "",
+          "FilePatternsReposMustInclude": null,
+          "FilePatternsReposMustExclude": null,
+          "PathPatternsAreCaseSensitive": false,
+          "PatternMatchesContent": true,
+          "PatternMatchesPath": true,
+          "Languages": null
         },
-        "SearcherArgs": {
-          "SearcherURLs": null,
-          "PatternInfo": {
-            "Pattern": "bar",
-            "IsNegated": false,
-            "IsRegExp": true,
-            "IsStructuralPat": false,
-            "CombyRule": "",
-            "IsWordMatch": false,
-            "IsCaseSensitive": false,
-            "FileMatchLimit": 500,
-            "Index": "yes",
-            "Select": [],
-            "IncludePatterns": null,
-            "ExcludePattern": "",
-            "FilePatternsReposMustInclude": null,
-            "FilePatternsReposMustExclude": null,
-            "PathPatternsAreCaseSensitive": false,
-            "PatternMatchesContent": true,
-            "PatternMatchesPath": true,
-            "Languages": null
-          },
-          "UseFullDeadline": true
-        },
-        "NotSearcherOnly": true,
-        "UseIndex": "yes",
-        "ContainsRefGlobs": false,
-        "RepoOpts": {
+        "RepoOptions": {
           "RepoFilters": [
-            "foo"
+            "foo",
+            "bar"
           ],
           "MinusRepoFilters": null,
+          "Dependencies": null,
           "CaseSensitiveRepoFilters": false,
           "SearchContextSpec": "",
-          "UserSettings": {},
           "NoForks": true,
           "OnlyForks": false,
           "NoArchived": true,
@@ -286,120 +319,44 @@ func TestPrettyJSON(t *testing.T) {
               }
             }
           ]
-        }
-      }
-    },
-    {
-      "Repo": {
-        "Args": {
-          "PatternInfo": {
-            "Pattern": "bar",
-            "IsNegated": false,
-            "IsRegExp": true,
-            "IsStructuralPat": false,
-            "CombyRule": "",
-            "IsWordMatch": false,
-            "IsCaseSensitive": false,
-            "FileMatchLimit": 500,
-            "Index": "yes",
-            "Select": [],
-            "IncludePatterns": null,
-            "ExcludePattern": "",
-            "FilePatternsReposMustInclude": null,
-            "FilePatternsReposMustExclude": null,
-            "PathPatternsAreCaseSensitive": false,
-            "PatternMatchesContent": true,
-            "PatternMatchesPath": true,
-            "Languages": null
-          },
-          "RepoOptions": {
-            "RepoFilters": [
-              "foo",
-              "bar"
-            ],
-            "MinusRepoFilters": null,
-            "CaseSensitiveRepoFilters": false,
-            "SearchContextSpec": "",
-            "UserSettings": {},
-            "NoForks": true,
-            "OnlyForks": false,
-            "NoArchived": true,
-            "OnlyArchived": false,
-            "CommitAfter": "",
-            "Visibility": "Any",
-            "Limit": 0,
-            "Cursors": null,
-            "Query": [
+        },
+        "Features": {
+          "ContentBasedLangFilters": false
+        },
+        "Repos": null,
+        "Mode": 0,
+        "Query": [
+          {
+            "Kind": 1,
+            "Operands": [
               {
-                "Kind": 1,
-                "Operands": [
-                  {
-                    "field": "repo",
-                    "value": "foo",
-                    "negated": false
-                  },
-                  {
-                    "value": "bar",
-                    "negated": false
-                  }
-                ],
-                "Annotation": {
-                  "labels": 0,
-                  "range": {
-                    "start": {
-                      "line": 0,
-                      "column": 0
-                    },
-                    "end": {
-                      "line": 0,
-                      "column": 0
-                    }
-                  }
-                }
+                "field": "repo",
+                "value": "foo",
+                "negated": false
+              },
+              {
+                "value": "bar",
+                "negated": false
               }
-            ]
-          },
-          "Features": {
-            "ContentBasedLangFilters": false
-          },
-          "ResultTypes": 13,
-          "Timeout": 20000000000,
-          "Repos": null,
-          "UserPrivateRepos": null,
-          "Mode": 0,
-          "Query": [
-            {
-              "Kind": 1,
-              "Operands": [
-                {
-                  "field": "repo",
-                  "value": "foo",
-                  "negated": false
+            ],
+            "Annotation": {
+              "labels": 0,
+              "range": {
+                "start": {
+                  "line": 0,
+                  "column": 0
                 },
-                {
-                  "value": "bar",
-                  "negated": false
-                }
-              ],
-              "Annotation": {
-                "labels": 0,
-                "range": {
-                  "start": {
-                    "line": 0,
-                    "column": 0
-                  },
-                  "end": {
-                    "line": 0,
-                    "column": 0
-                  }
+                "end": {
+                  "line": 0,
+                  "column": 0
                 }
               }
             }
-          ],
-          "UseFullDeadline": true,
-          "Zoekt": null,
-          "SearcherURLs": null
-        }
+          }
+        ],
+        "UseFullDeadline": true,
+        "Zoekt": null,
+        "SearcherURLs": null
       }
     },
     {
@@ -409,9 +366,9 @@ func TestPrettyJSON(t *testing.T) {
             "foo"
           ],
           "MinusRepoFilters": null,
+          "Dependencies": null,
           "CaseSensitiveRepoFilters": false,
           "SearchContextSpec": "",
-          "UserSettings": {},
           "NoForks": true,
           "OnlyForks": false,
           "NoArchived": true,

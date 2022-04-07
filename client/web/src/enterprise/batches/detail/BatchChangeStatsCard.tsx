@@ -1,16 +1,16 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 import ProgressCheckIcon from 'mdi-react/ProgressCheckIcon'
-import React from 'react'
 
 import { pluralize } from '@sourcegraph/common'
-import { Badge } from '@sourcegraph/wildcard'
+import { Badge, Icon } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../components/diff/DiffStat'
 import { BatchChangeFields, ChangesetsStatsFields, DiffStatFields } from '../../../graphql-operations'
 
 import { BatchChangeStateBadge } from './BatchChangeStateBadge'
-import styles from './BatchChangeStatsCard.module.scss'
 import {
     ChangesetStatusUnpublished,
     ChangesetStatusOpen,
@@ -19,6 +19,8 @@ import {
     ChangesetStatusDraft,
     ChangesetStatusArchived,
 } from './changesets/ChangesetStatusCell'
+
+import styles from './BatchChangeStatsCard.module.scss'
 
 interface BatchChangeStatsCardProps {
     stats: ChangesetsStatsFields
@@ -52,12 +54,9 @@ export const BatchChangeStatsCard: React.FunctionComponent<BatchChangeStatsCardP
                 <div className={classNames(styles.batchChangeStatsCardDivider, 'mx-3')} />
                 <div className="d-flex align-items-center">
                     <h1 className="d-inline mb-0">
-                        <BatchChangeStatusIcon
-                            className={classNames(
-                                'icon-inline mr-2',
-                                isCompleted && 'text-success',
-                                !isCompleted && 'text-muted'
-                            )}
+                        <Icon
+                            className={classNames('mr-2', isCompleted ? 'text-success' : 'text-muted')}
+                            as={BatchChangeStatusIcon}
                         />
                     </h1>{' '}
                     <span className={classNames(styles.batchChangeStatsCardCompleteness, 'lead text-nowrap')}>

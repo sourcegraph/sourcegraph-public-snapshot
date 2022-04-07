@@ -1,6 +1,7 @@
+import React, { useEffect, useMemo } from 'react'
+
 import { subDays, startOfDay } from 'date-fns'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React, { useEffect, useMemo } from 'react'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery } from '@sourcegraph/http-client'
@@ -19,9 +20,10 @@ import {
 } from '../../../graphql-operations'
 import { Description } from '../Description'
 
+import { ActiveExecutionNotice } from './ActiveExecutionNotice'
 import { deleteBatchChange as _deleteBatchChange, BATCH_CHANGE_BY_NAMESPACE } from './backend'
 import { BatchChangeDetailsActionSection } from './BatchChangeDetailsActionSection'
-import { BatchChangeDetailsProps, BatchChangeDetailsTabs } from './BatchChangeDetailsTabs'
+import { BatchChangeDetailsProps, BatchChangeDetailsTabs, TabName } from './BatchChangeDetailsTabs'
 import { BatchChangeInfoByline } from './BatchChangeInfoByline'
 import { BatchChangeStatsCard } from './BatchChangeStatsCard'
 import { BulkOperationsAlerts } from './BulkOperationsAlerts'
@@ -36,6 +38,8 @@ export interface BatchChangeDetailsPageProps extends BatchChangeDetailsProps, Se
     namespaceID: Scalars['ID']
     /** The batch change name. */
     batchChangeName: BatchChangeFields['name']
+    /** The name of the tab that should be initially open */
+    initialTab?: TabName
     /** For testing only. */
     deleteBatchChange?: typeof _deleteBatchChange
 }
@@ -70,7 +74,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
             // For subsequent requests while this page is open, make additional network
             // requests; this is necessary for `refetch` to actually use the network. (see
             // https://github.com/apollographql/apollo-client/issues/5515)
-            nextFetchPolicy: 'network-only',
+            nextFetchPolicy: 'cache-and-network',
         }
     )
 
@@ -126,6 +130,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                         batchChangeClosed={!!batchChange.closedAt}
                         deleteBatchChange={deleteBatchChange}
                         batchChangeNamespaceURL={batchChange.namespace.url}
+                        batchChangeURL={batchChange.url}
                         history={history}
                         settingsCascade={props.settingsCascade}
                     />
@@ -134,6 +139,11 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
             />
             <BulkOperationsAlerts location={location} bulkOperations={batchChange.activeBulkOperations} />
             <SupersedingBatchSpecAlert spec={batchChange.currentSpec.supersedingBatchSpec} />
+            <ActiveExecutionNotice
+                batchSpecs={batchChange.batchSpecs.nodes}
+                batchChangeURL={batchChange.url}
+                className="mb-3"
+            />
             <ClosedNotice closedAt={batchChange.closedAt} className="mb-3" />
             <UnpublishedNotice
                 unpublished={batchChange.changesetsStats.unpublished}

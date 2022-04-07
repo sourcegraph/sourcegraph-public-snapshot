@@ -1,5 +1,6 @@
-import { GlyphDot } from '@visx/glyph'
 import React, { FocusEventHandler, MouseEventHandler } from 'react'
+
+import { GlyphDot } from '@visx/glyph'
 
 import { MaybeLink } from '../../../../views/components/view/content/chart-view-content/charts/MaybeLink'
 

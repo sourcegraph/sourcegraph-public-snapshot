@@ -43,6 +43,7 @@ type UserPayload struct {
 type RepositoryPayload struct {
 	FullName string `json:"full_name"`
 	URL      string `json:"html_url"`
+	Private  bool   `json:"private"`
 }
 
 func (r *RepositoryPayload) GetOwnerAndName() (string, string) {

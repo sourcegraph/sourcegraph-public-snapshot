@@ -12,7 +12,6 @@ import (
 	"github.com/hexops/autogold"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -20,14 +19,14 @@ import (
 
 // TestResolver_InsightSeries tests that the InsightSeries GraphQL resolver works.
 func TestResolver_InsightSeries(t *testing.T) {
-	testSetup := func(t *testing.T) (context.Context, [][]graphqlbackend.InsightSeriesResolver, *store.MockInterface, func()) {
+	testSetup := func(t *testing.T) (context.Context, [][]graphqlbackend.InsightSeriesResolver, *store.MockInterface) {
 		// Setup the GraphQL resolver.
 		ctx := actor.WithInternalActor(context.Background())
 		now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond)
 		clock := func() time.Time { return now }
-		timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+		insightsDB := dbtest.NewInsightsDB(t)
 		postgres := dbtest.NewDB(t)
-		resolver := newWithClock(timescale, postgres, clock)
+		resolver := newWithClock(insightsDB, postgres, clock)
 
 		// Create a mock store, delegating any un-mocked methods to the DB store.
 		dbStore := resolver.timeSeriesStore
@@ -62,25 +61,22 @@ func TestResolver_InsightSeries(t *testing.T) {
 		// Create the insights connection resolver and query series.
 		conn, err := resolver.Insights(ctx, nil)
 		if err != nil {
-			cleanup()
 			t.Fatal(err)
 		}
 
 		nodes, err := conn.Nodes(ctx)
 		if err != nil {
-			cleanup()
 			t.Fatal(err)
 		}
 		var series [][]graphqlbackend.InsightSeriesResolver
 		for _, node := range nodes {
 			series = append(series, node.Series())
 		}
-		return ctx, series, mockStore, cleanup
+		return ctx, series, mockStore
 	}
 
 	t.Run("Points", func(t *testing.T) {
-		ctx, insights, mock, cleanup := testSetup(t)
-		defer cleanup()
+		ctx, insights, mock := testSetup(t)
 		autogold.Want("insights length", int(1)).Equal(t, len(insights))
 
 		autogold.Want("insights[0].length", int(1)).Equal(t, len(insights[0]))

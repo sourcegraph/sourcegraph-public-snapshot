@@ -53,7 +53,7 @@ func purge(ctx context.Context, db database.DB, log log15.Logger) error {
 	// However, if we fetch cloned first the only race is we may miss a
 	// repository that got disabled. The next time purge runs we will remove
 	// it though.
-	cloned, err := gitserver.DefaultClient.ListCloned(ctx)
+	cloned, err := gitserver.NewClient(db).ListCloned(ctx)
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ func purge(ctx context.Context, db database.DB, log log15.Logger) error {
 		// Race condition: A repo can be re-enabled between our listing and
 		// now. This should be very rare, so we ignore it since it will get
 		// cloned again.
-		if err = gitserver.DefaultClient.Remove(ctx, repo); err != nil {
+		if err = gitserver.NewClient(db).Remove(ctx, repo); err != nil {
 			// Do not fail at this point, just log so we can remove other
 			// repos.
 			log.Error("failed to remove disabled repository", "repo", repo, "error", err)

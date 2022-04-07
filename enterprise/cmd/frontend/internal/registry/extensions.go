@@ -17,9 +17,7 @@ func init() {
 		if err != nil {
 			return nil, err
 		}
-		if err := prefixLocalExtensionID(x); err != nil {
-			return nil, err
-		}
+		prefixLocalExtensionID(x)
 		return &extensionDBResolver{db: db, v: x}, nil
 	}
 
@@ -38,14 +36,13 @@ func init() {
 
 // prefixLocalExtensionID adds the local registry's extension ID prefix (from
 // GetLocalRegistryExtensionIDPrefix) to all extensions' extension IDs in the list.
-func prefixLocalExtensionID(xs ...*stores.Extension) error {
+func prefixLocalExtensionID(xs ...*stores.Extension) {
 	prefix := registry.GetLocalRegistryExtensionIDPrefix()
 	if prefix == nil {
-		return nil
+		return
 	}
 	for _, x := range xs {
 		x.NonCanonicalExtensionID = *prefix + "/" + x.NonCanonicalExtensionID
 		x.NonCanonicalRegistry = *prefix
 	}
-	return nil
 }

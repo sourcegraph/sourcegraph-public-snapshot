@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { render } from '@testing-library/react'
 import { noop } from 'lodash'
-import React from 'react'
 
 import { PlainQueryInput } from './LazyMonacoQueryInput'
 

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestCheckEmailAbuse(t *testing.T) {
@@ -66,6 +67,30 @@ func TestCheckEmailAbuse(t *testing.T) {
 				t.Fatalf("abused: want %v but got %v", test.expAbused, abused)
 			} else if test.expReason != reason {
 				t.Fatalf("reason: want %q but got %q", test.expReason, reason)
+			}
+		})
+	}
+}
+
+func TestCheckEmailFormat(t *testing.T) {
+	for name, test := range map[string]struct {
+		email string
+		err   error
+		code  int
+	}{
+		"valid":   {email: "foo@bar.pl", err: nil},
+		"invalid": {email: "foo@", err: errors.Newf("mail: no angle-addr")},
+		"toolong": {email: "a012345678901234567890123456789012345678901234567890123456789@0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789.comeeeeqwqwwe", err: errors.Newf("maximum email length is 320, got 326")}} {
+		t.Run(name, func(t *testing.T) {
+			err := checkEmailFormat(test.email)
+			if test.err == nil {
+				if err != nil {
+					t.Fatalf("err: want nil but got %v", err)
+				}
+			} else {
+				if test.err.Error() != err.Error() {
+					t.Fatalf("err: want %v but got %v", test.err, err)
+				}
 			}
 		})
 	}

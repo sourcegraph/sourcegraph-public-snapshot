@@ -9,7 +9,7 @@ import (
 
 type MatchedString struct {
 	Content       string `json:"content"`
-	MatchedRanges Ranges `json:"matched_ranges"`
+	MatchedRanges Ranges `json:"matchedRanges"`
 }
 
 func (m MatchedString) ToHighlightedString() HighlightedString {

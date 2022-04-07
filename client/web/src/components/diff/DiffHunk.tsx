@@ -1,6 +1,7 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-noninteractive-element-interactions: warn */
-import classNames from 'classnames'
 import * as React from 'react'
+
+import classNames from 'classnames'
 import { useLocation } from 'react-router'
 
 import { isDefined, property } from '@sourcegraph/common'
@@ -16,6 +17,7 @@ import { Link } from '@sourcegraph/wildcard'
 import { DiffHunkLineType, FileDiffHunkFields } from '../../graphql-operations'
 
 import { DiffBoundary } from './DiffBoundary'
+
 import styles from './DiffHunk.module.scss'
 
 const diffHunkTypeIndicators: Record<DiffHunkLineType, string> = {

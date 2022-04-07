@@ -1,13 +1,14 @@
+import React, { useCallback } from 'react'
+
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
-import React, { useCallback } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, useEventObservable, Link } from '@sourcegraph/wildcard'
+import { Button, useEventObservable, Link, Icon } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../../backend/graphql'
 import {
@@ -72,11 +73,11 @@ export const SiteAdminProductSubscriptionBillingLink: React.FunctionComponent<Pr
             <div className="d-flex align-items-center">
                 {productSubscription.urlForSiteAdminBilling && (
                     <Link to={productSubscription.urlForSiteAdminBilling} className="mr-2 d-flex align-items-center">
-                        View billing subscription <ExternalLinkIcon className="icon-inline ml-1" />
+                        View billing subscription <Icon className="ml-1" as={ExternalLinkIcon} />
                     </Link>
                 )}
                 {isErrorLike(update) && (
-                    <AlertCircleIcon className="icon-inline text-danger mr-2" data-tooltip={update.message} />
+                    <Icon className="text-danger mr-2" data-tooltip={update.message} as={AlertCircleIcon} />
                 )}
                 <Button
                     onClick={productSubscriptionHasLinkedBilling ? onUnlinkBillingClick : onLinkBillingClick}

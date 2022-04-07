@@ -40,16 +40,39 @@ const (
 	// repoTTLGC is how often we should re-clone a repository once it is
 	// reporting git gc issues.
 	repoTTLGC = time.Hour * 24 * 2
-
+	// repoTTLSGM is how often we should re-clone a repository once it is reporting
+	// issues with sg maintenance. repoTTLSGM should be greater than sgmLogExpire,
+	// otherwise we will always re-clone before the log expires.
+	repoTTLSGM = time.Hour * 24 * 2
 	// gitConfigMaybeCorrupt is a key we add to git config to signal that a repo may be
 	// corrupt on disk.
 	gitConfigMaybeCorrupt = "sourcegraph.maybeCorruptRepo"
+	// The name of the log file placed by sg maintenance in case it encountered an
+	// error.
+	sgmLog = "sgm.log"
 )
 
 // EnableGCAuto is a temporary flag that allows us to control whether or not
 // `git gc --auto` is invoked during janitorial activities. This flag will
 // likely evolve into some form of site config value in the future.
 var enableGCAuto, _ = strconv.ParseBool(env.Get("SRC_ENABLE_GC_AUTO", "false", "Use git-gc during janitorial cleanup phases"))
+
+// The limit of 50 mirrors Git's gc_auto_pack_limit
+var autoPackLimit, _ = strconv.Atoi(env.Get("SRC_GIT_AUTO_PACK_LIMIT", "50", "the maximum number of pack files we tolerate before we trigger a repack"))
+
+// Our original Git gc job used 1 as limit, while git's default is 6700. We
+// don't want to be too aggressive to avoid unnecessary IO, hence we choose a
+// value somewhere in the middle. https://gitlab.com/gitlab-org/gitaly uses a
+// limit of 1024, which corresponds to an average of 4 loose objects per folder.
+// We can tune this parameter once we gain more experience.
+var looseObjectsLimit, _ = strconv.Atoi(env.Get("SRC_GIT_LOOSE_OBJECTS_LIMIT", "1024", "the maximum number of loose objects we tolerate before we trigger a repack"))
+
+// A failed sg maintenance run will place a log file in the git directory.
+// Subsequent sg maintenance runs are skipped unless the log file is old. Based
+// on how https://github.com/git/git handles the gc.log file. sgmLogExpire should
+// be less than repoTLLSGM, otherwise we will always re-clone before the log
+// expires.
+var sgmLogExpire = env.MustGetDuration("SRC_GIT_LOG_FILE_EXPIRY", 24*time.Hour, "the number of hours after which sg maintenance runs even if a log file is present")
 
 // sg maintenance and git gc must not be enabled at the same time. However, both
 // might be disabled at the same time, hence we need both SRC_ENABLE_GC_AUTO and
@@ -76,7 +99,15 @@ var (
 	jobTimer = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name: "src_gitserver_janitor_job_duration_seconds",
 		Help: "Duration of the individual jobs within the gitserver janitor background job",
-	}, []string{"job_name"})
+	}, []string{"success", "job_name"})
+	maintenanceStatus = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_gitserver_maintenance_status",
+		Help: "whether the maintenance run was a success (true/false) and the reason why a cleanup was needed",
+	}, []string{"success", "reason"})
+	pruneStatus = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_gitserver_prune_status",
+		Help: "whether git prune was a success (true/false) and whether it was skipped (true/false)",
+	}, []string{"success", "skipped"})
 )
 
 const reposStatsName = "repos-stats.json"
@@ -92,6 +123,8 @@ const reposStatsName = "repos-stats.json"
 // 7. Re-clone repos after a while. (simulate git gc)
 // 8. Remove repos based on disk pressure.
 // 9. Perform sg-maintenance
+// 10. Git prune
+// 11. Only during first run: Set sizes of repos which don't have it in a database.
 func (s *Server) cleanupRepos() {
 	janitorRunning.Set(1)
 	defer janitorRunning.Set(0)
@@ -103,8 +136,11 @@ func (s *Server) cleanupRepos() {
 		UpdatedAt: time.Now(),
 	}
 
+	repoToSize := make(map[api.RepoName]int64)
 	computeStats := func(dir GitDir) (done bool, err error) {
-		stats.GitDirBytes += dirSize(dir.Path("."))
+		size := dirSize(dir.Path("."))
+		stats.GitDirBytes += size
+		repoToSize[s.name(dir)] = size
 		return false, nil
 	}
 
@@ -180,6 +216,11 @@ func (s *Server) cleanupRepos() {
 				reason = fmt.Sprintf("git gc %s", string(bytes.TrimSpace(gclog)))
 			}
 		}
+		if time.Since(recloneTime) > repoTTLSGM+jitterDuration(string(dir), repoTTLSGM/4) {
+			if sgmLog, err := os.ReadFile(dir.Path(sgmLog)); err == nil && len(sgmLog) > 0 {
+				reason = fmt.Sprintf("sg maintenance %s", string(bytes.TrimSpace(sgmLog)))
+			}
+		}
 
 		// We believe converting a Perforce depot to a Git repository is generally a
 		// very expensive operation, therefore we do not try to re-clone/redo the
@@ -213,23 +254,21 @@ func (s *Server) cleanupRepos() {
 		return true, nil
 	}
 
-	removeStaleLocks := func(dir GitDir) (done bool, err error) {
-		gitDir := string(dir)
-
+	removeStaleLocks := func(gitDir GitDir) (done bool, err error) {
 		// if removing a lock fails, we still want to try the other locks.
 		var multi error
 
 		// config.lock should be held for a very short amount of time.
-		if err := removeFileOlderThan(filepath.Join(gitDir, "config.lock"), time.Minute); err != nil {
+		if err := removeFileOlderThan(gitDir.Path("config.lock"), time.Minute); err != nil {
 			multi = errors.Append(multi, err)
 		}
 		// packed-refs can be held for quite a while, so we are conservative
 		// with the age.
-		if err := removeFileOlderThan(filepath.Join(gitDir, "packed-refs.lock"), time.Hour); err != nil {
+		if err := removeFileOlderThan(gitDir.Path("packed-refs.lock"), time.Hour); err != nil {
 			multi = errors.Append(multi, err)
 		}
 		// we use the same conservative age for locks inside of refs
-		if err := bestEffortWalk(filepath.Join(gitDir, "refs"), func(path string, fi fs.FileInfo) error {
+		if err := bestEffortWalk(gitDir.Path("refs"), func(path string, fi fs.FileInfo) error {
 			if fi.IsDir() {
 				return nil
 			}
@@ -242,6 +281,14 @@ func (s *Server) cleanupRepos() {
 		}); err != nil {
 			multi = errors.Append(multi, err)
 		}
+		// We have seen that, occasionally, commit-graph.locks prevent a git repack from
+		// succeeding. Benchmarks on our dogfood cluster have shown that a commit-graph
+		// call for a 5GB bare repository takes less than 1 min. The lock is only held
+		// during a short period during this time. A 1-hour grace period is very
+		// conservative.
+		if err := removeFileOlderThan(gitDir.Path("objects", "info", "commit-graph.lock"), time.Hour); err != nil {
+			multi = errors.Append(multi, err)
+		}
 
 		return false, multi
 	}
@@ -252,6 +299,10 @@ func (s *Server) cleanupRepos() {
 
 	performSGMaintenance := func(dir GitDir) (done bool, err error) {
 		return false, sgMaintenance(dir)
+	}
+
+	performGitPrune := func(dir GitDir) (done bool, err error) {
+		return false, pruneIfNeeded(dir, looseObjectsLimit)
 	}
 
 	type cleanupFn struct {
@@ -287,6 +338,7 @@ func (s *Server) cleanupRepos() {
 		// reducing storage requirements for the repository. Note: "garbage collect" and
 		// "sg maintenance" must not be enabled at the same time.
 		cleanups = append(cleanups, cleanupFn{"sg maintenance", performSGMaintenance})
+		cleanups = append(cleanups, cleanupFn{"git prune", performGitPrune})
 	}
 
 	if !conf.Get().DisableAutoGitUpdates {
@@ -323,7 +375,7 @@ func (s *Server) cleanupRepos() {
 			if err != nil {
 				log15.Error("error running cleanup command", "name", cfn.Name, "repo", gitDir, "error", err)
 			}
-			jobTimer.WithLabelValues(cfn.Name).Observe(time.Since(start).Seconds())
+			jobTimer.WithLabelValues(strconv.FormatBool(err == nil), cfn.Name).Observe(time.Since(start).Seconds())
 			if done {
 				break
 			}
@@ -340,6 +392,15 @@ func (s *Server) cleanupRepos() {
 		log15.Error("cleanup: failed to write periodic stats", "error", err)
 	}
 
+	// Repo sizes are set only once during the first janitor run.
+	// There is no need for a second run because all repo sizes will be set until this moment
+	s.setRepoSizesOnce.Do(func() {
+		err = s.setRepoSizes(context.Background(), repoToSize)
+		if err != nil {
+			log15.Error("cleanup: setting repo sizes", "error", err)
+		}
+	})
+
 	if s.DiskSizer == nil {
 		s.DiskSizer = &StatDiskSizer{}
 	}
@@ -350,6 +411,43 @@ func (s *Server) cleanupRepos() {
 	if err := s.freeUpSpace(b); err != nil {
 		log15.Error("cleanup: error freeing up space", "error", err)
 	}
+}
+
+// setRepoSizes uses calculated sizes of repos to update database entries of repos with repo_size_bytes = NULL
+func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]int64) error {
+	if len(repoToSize) == 0 {
+		log15.Info("cleanup: file system walk didn't yield any directory sizes")
+		return nil
+	}
+	log15.Info(fmt.Sprintf("cleanup: %v directory sizes calculated during file system walk", len(repoToSize)))
+
+	db := s.DB
+	gitserverRepos := db.GitserverRepos()
+	// getting all the repos without size
+	reposWithoutSize, err := gitserverRepos.ListReposWithoutSize(ctx)
+	if err != nil {
+		return err
+	}
+	if len(reposWithoutSize) == 0 {
+		log15.Info("cleanup: all repos in the DB have their sizes")
+		return nil
+	}
+
+	// preparing a mapping of repoID to its size which should be inserted
+	reposToUpdate := make(map[api.RepoID]int64)
+	for repoName, repoID := range reposWithoutSize {
+		if size, exists := repoToSize[repoName]; exists {
+			reposToUpdate[repoID] = size
+		}
+	}
+
+	// updating repos
+	err = gitserverRepos.UpdateRepoSizes(ctx, s.Hostname, reposToUpdate)
+	if err != nil {
+		return err
+	}
+	log15.Info(fmt.Sprintf("cleanup: %v repos had their sizes updated", len(reposToUpdate)))
+	return nil
 }
 
 // DiskSizer gets information about disk size and free space.
@@ -773,8 +871,29 @@ func gitGC(dir GitDir) error {
 }
 
 // sgMaintenance runs a set of git cleanup tasks in dir. This must not be run
-// concurrently with git gc.
-func sgMaintenance(dir GitDir) error {
+// concurrently with git gc. sgMaintenance will check the state of the repository
+// to avoid running the cleanup tasks if possible. If a sgmLog file is present in
+// dir, sgMaintenance will not run unless the file is old.
+func sgMaintenance(dir GitDir) (err error) {
+	// Don't run if sgmLog file is younger than sgmLogExpire hours. There is no need
+	// to report an error, because the error has already been logged in a previous
+	// run.
+	if fi, err := os.Stat(dir.Path(sgmLog)); err == nil {
+		if fi.ModTime().After(time.Now().Add(-sgmLogExpire)) {
+			return nil
+		}
+	}
+	needed, reason, err := needsMaintenance(dir)
+	defer func() {
+		maintenanceStatus.WithLabelValues(strconv.FormatBool(err == nil), reason).Inc()
+	}()
+	if err != nil {
+		return err
+	}
+	if !needed {
+		return nil
+	}
+
 	cmd := exec.Command("sh")
 	dir.Set(cmd)
 
@@ -782,10 +901,156 @@ func sgMaintenance(dir GitDir) error {
 
 	b, err := cmd.CombinedOutput()
 	if err != nil {
+		if err := os.WriteFile(dir.Path(sgmLog), b, 0666); err != nil {
+			log15.Debug("sg maintenance failed to write log file", "file", dir.Path(sgmLog), "err", err)
+		}
 		log15.Debug("sg maintenance", "dir", dir, "out", string(b))
 		return errors.Wrapf(wrapCmdError(cmd, err), "failed to run sg maintenance")
 	}
+	// Remove the log file after a successful run.
+	_ = os.Remove(dir.Path(sgmLog))
 	return nil
+}
+
+// We run git-prune only if there are enough loose objects. This approach is
+// adapted from https://gitlab.com/gitlab-org/gitaly.
+func pruneIfNeeded(dir GitDir, limit int) (err error) {
+	needed, err := tooManyLooseObjects(dir, limit)
+	defer func() {
+		pruneStatus.WithLabelValues(strconv.FormatBool(err == nil), strconv.FormatBool(!needed)).Inc()
+	}()
+	if err != nil {
+		return err
+	}
+	if !needed {
+		return nil
+	}
+
+	// "--expire now" will remove all unreachable, loose objects from the store. The
+	// default setting is 2 weeks. We choose a more aggressive setting because
+	// unreachable, loose objects count towards the threshold that triggers a
+	// repack. In the worst case, IE all loose objects are unreachable, we would
+	// continuously trigger repacks until the loose objects expire.
+	cmd := exec.Command("git", "prune", "--expire", "now")
+	dir.Set(cmd)
+	err = cmd.Run()
+	if err != nil {
+		return errors.Wrapf(wrapCmdError(cmd, err), "failed to git-prune")
+	}
+	return nil
+}
+
+func needsMaintenance(dir GitDir) (bool, string, error) {
+	// Bitmaps store reachability information about the set of objects in a
+	// packfile which speeds up clone and fetch operations.
+	hasBm, err := hasBitmap(dir)
+	if err != nil {
+		return false, "", err
+	}
+	if !hasBm {
+		return true, "bitmap", nil
+	}
+
+	// The commit-graph file is a supplemental data structure that accelerates
+	// commit graph walks triggered EG by git-log.
+	hasCg, err := hasCommitGraph(dir)
+	if err != nil {
+		return false, "", err
+	}
+	if !hasCg {
+		return true, "commit_graph", nil
+	}
+
+	tooManyPf, err := tooManyPackfiles(dir, autoPackLimit)
+	if err != nil {
+		return false, "", err
+	}
+	if tooManyPf {
+		return true, "packfiles", nil
+	}
+
+	tooManyLO, err := tooManyLooseObjects(dir, looseObjectsLimit)
+	if err != nil {
+		return false, "", err
+	}
+	if tooManyLO {
+		return tooManyLO, "loose_objects", nil
+	}
+	return false, "skipped", nil
+}
+
+var reHexadecimal = lazyregexp.New("^[0-9a-f]+$")
+
+// tooManyLooseObjects follows Git's approach of estimating the number of
+// loose objects by counting the objects in a sentinel folder and extrapolating
+// based on the assumption that loose objects are randomly distributed in the
+// 256 possible folders.
+func tooManyLooseObjects(dir GitDir, limit int) (bool, error) {
+	// We use the same folder git uses to estimate the number of loose objects.
+	objs, err := os.ReadDir(filepath.Join(dir.Path(), "objects", "17"))
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return false, nil
+		}
+		return false, errors.Wrap(err, "tooManyLooseObjects")
+	}
+
+	count := 0
+	for _, obj := range objs {
+		// Git checks if the file names are hexadecimal and that they have the right
+		// length depending on the chosen hash algorithm. Since the hash algorithm might
+		// change over time, checking the length seems too brittle. Instead, we just
+		// count all files with hexadecimal names.
+		if obj.IsDir() {
+			continue
+		}
+		if matches := reHexadecimal.MatchString(obj.Name()); !matches {
+			continue
+		}
+		count++
+	}
+	return count*256 > limit, nil
+}
+
+func hasBitmap(dir GitDir) (bool, error) {
+	bitmaps, err := filepath.Glob(dir.Path("objects", "pack", "*.bitmap"))
+	if err != nil {
+		return false, err
+	}
+	return len(bitmaps) > 0, nil
+}
+
+func hasCommitGraph(dir GitDir) (bool, error) {
+	if _, err := os.Stat(dir.Path("objects", "info", "commit-graph")); err == nil {
+		return true, nil
+	} else if errors.Is(err, fs.ErrNotExist) {
+		return false, nil
+	} else {
+		return false, err
+	}
+}
+
+// tooManyPackfiles counts the packfiles in objects/pack. Packfiles with an
+// accompanying .keep file are ignored.
+func tooManyPackfiles(dir GitDir, limit int) (bool, error) {
+	packs, err := filepath.Glob(dir.Path("objects", "pack", "*.pack"))
+	if err != nil {
+		return false, err
+	}
+	count := 0
+	for _, p := range packs {
+		// Because we know p has the extension .pack, we can slice it off directly
+		// instead of using strings.TrimSuffix and filepath.Ext. Benchmarks showed that
+		// this option is 20x faster than strings.TrimSuffix(file, filepath.Ext(file))
+		// and 17x faster than file[:strings.LastIndex(file, ".")]. However, the runtime
+		// of all options is dominated by adding the extension ".keep".
+		keepFile := p[:len(p)-5] + ".keep"
+		if _, err := os.Stat(keepFile); err == nil {
+			continue
+		}
+		count++
+	}
+	return count > limit, nil
 }
 
 func gitConfigGet(dir GitDir, key string) (string, error) {

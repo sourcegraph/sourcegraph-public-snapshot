@@ -1,7 +1,8 @@
+import React from 'react'
+
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createBrowserHistory } from 'history'
-import React from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import { EMPTY, NEVER, of } from 'rxjs'
 import sinon from 'sinon'
@@ -52,7 +53,6 @@ describe('StreamingSearchResults', () => {
         fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_REQUEST,
         isLightTheme: true,
         featureFlags: EMPTY_FEATURE_FLAGS,
-        extensionViews: () => null,
         isSourcegraphDotCom: false,
         searchContextsEnabled: true,
     }

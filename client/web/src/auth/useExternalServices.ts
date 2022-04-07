@@ -1,8 +1,8 @@
 import { ApolloError, ApolloQueryResult } from '@apollo/client'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { EXTERNAL_SERVICES } from '@sourcegraph/web/src/components/externalServices/backend'
 
+import { EXTERNAL_SERVICES } from '../components/externalServices/backend'
 import {
     Exact,
     ExternalServicesResult,

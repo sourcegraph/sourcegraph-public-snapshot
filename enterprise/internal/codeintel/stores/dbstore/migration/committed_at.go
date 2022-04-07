@@ -86,7 +86,7 @@ func (m *committedAtMigrator) handleSourcedCommits(ctx context.Context, tx *dbst
 	// come back to this and figure out how to batch these so we're not doing so many
 	// gitserver roundtrips on these kind of background tasks for code intelligence.
 	for _, commit := range sourcedCommits.Commits {
-		if err := m.handleCommit(ctx, tx, sourcedCommits.RepositoryID, sourcedCommits.RepositoryName, commit); err != nil {
+		if err := m.handleCommit(ctx, tx, sourcedCommits.RepositoryID, commit); err != nil {
 			return err
 		}
 	}
@@ -99,7 +99,7 @@ func (m *committedAtMigrator) handleSourcedCommits(ctx context.Context, tx *dbst
 	return nil
 }
 
-func (m *committedAtMigrator) handleCommit(ctx context.Context, tx *dbstore.Store, repositoryID int, repositoryName, commit string) error {
+func (m *committedAtMigrator) handleCommit(ctx context.Context, tx *dbstore.Store, repositoryID int, commit string) error {
 	_, commitDate, revisionExists, err := m.gitserverClient.CommitDate(ctx, repositoryID, commit)
 	if err != nil && !gitdomain.IsRepoNotExist(err) {
 		return errors.Wrap(err, "gitserver.CommitDate")

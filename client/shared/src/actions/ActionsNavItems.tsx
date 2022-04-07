@@ -1,21 +1,23 @@
+import React, { useMemo, useRef } from 'react'
+
 import classNames from 'classnames'
 import { identity } from 'lodash'
-import React, { useMemo, useRef } from 'react'
 import { combineLatest, from, ReplaySubject } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
+import { Contributions, Evaluated } from '@sourcegraph/client-api'
 import { Context } from '@sourcegraph/template-parser'
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { wrapRemoteObservable } from '../api/client/api/common'
 import { ContributionScope } from '../api/extension/api/context/context'
-import { Contributions, Evaluated } from '../api/protocol'
 import { getContributedActionItems } from '../contributions/contributions'
 import { TelemetryProps } from '../telemetry/telemetryService'
 
 import { ActionItem, ActionItemProps } from './ActionItem'
 import { ActionsProps } from './ActionsContainer'
+
 import styles from './ActionsNavItems.module.scss'
 
 export interface ActionNavItemsClassProps {

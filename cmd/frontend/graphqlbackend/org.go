@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/graph-gophers/graphql-go"
@@ -15,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -196,6 +198,11 @@ func (o *OrgResolver) ViewerPendingInvitation(ctx context.Context) (*organizatio
 			return nil, nil
 		}
 		if err != nil {
+			// ignore expired invitations, otherwise error is returned
+			// for all users who have an expired invitation on record
+			if _, ok := err.(database.OrgInvitationExpiredErr); ok {
+				return nil, nil
+			}
 			return nil, err
 		}
 		return &organizationInvitationResolver{o.db, orgInvitation}, nil
@@ -226,6 +233,48 @@ func (o *OrgResolver) ViewerIsMember(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
+func (o *OrgResolver) ViewerNeedsCodeHostUpdate(ctx context.Context) (bool, error) {
+	actor := actor.FromContext(ctx)
+	if !actor.IsAuthenticated() {
+		return false, nil
+	}
+	enabled, err := o.db.FeatureFlags().GetOrgFeatureFlag(ctx, o.OrgID(), "github-app-cloud")
+	if err != nil {
+		return false, err
+	} else if !enabled {
+		return false, nil
+	}
+	if _, err := o.db.OrgMembers().GetByOrgIDAndUserID(ctx, o.org.ID, actor.UID); err != nil {
+		return false, nil
+	}
+	orgServices, err := o.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{Kinds: []string{extsvc.KindGitHub}, NamespaceOrgID: o.OrgID()})
+	if err != nil {
+		return false, err
+	}
+	if len(orgServices) == 0 {
+		// no need to update
+		return false, nil
+	}
+	userServices, err := o.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{Kinds: []string{extsvc.KindGitHub}, NamespaceUserID: actor.UID})
+	if err != nil {
+		return false, err
+	}
+	if len(userServices) == 0 {
+		// no need to update
+		return false, nil
+	}
+	for _, os := range orgServices {
+		for _, us := range userServices {
+			if os.Kind == extsvc.KindGitHub && us.Kind == extsvc.KindGitHub {
+				if os.CreatedAt.After(us.UpdatedAt) {
+					return true, nil
+				}
+			}
+		}
+	}
+	return false, nil
+}
+
 func (o *OrgResolver) NamespaceName() string { return o.org.Name }
 
 func (o *OrgResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
@@ -237,6 +286,7 @@ func (o *OrgResolver) BatchChanges(ctx context.Context, args *ListBatchChangesAr
 func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	Name        string
 	DisplayName *string
+	StatsID     *string
 }) (*OrgResolver, error) {
 	a := actor.FromContext(ctx)
 	if !a.IsAuthenticated() {
@@ -246,13 +296,22 @@ func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	if err := suspiciousnames.CheckNameAllowedForUserOrOrganization(args.Name); err != nil {
 		return nil, err
 	}
-	newOrg, err := database.Orgs(r.db).Create(ctx, args.Name, args.DisplayName)
+	newOrg, err := r.db.Orgs().Create(ctx, args.Name, args.DisplayName)
 	if err != nil {
 		return nil, err
 	}
 
+	// Write the org_id into orgs open beta stats table on Cloud
+	if envvar.SourcegraphDotComMode() && args.StatsID != nil {
+		// we do not throw errors here as this is best effort
+		err = r.db.Orgs().UpdateOrgsOpenBetaStats(ctx, *args.StatsID, newOrg.ID)
+		if err != nil {
+			log15.Warn("Cannot update orgs open beta stats", "id", *args.StatsID, "orgID", newOrg.ID, "error", err)
+		}
+	}
+
 	// Add the current user as the first member of the new org.
-	_, err = database.OrgMembers(r.db).Create(ctx, newOrg.ID, a.UID)
+	_, err = r.db.OrgMembers().Create(ctx, newOrg.ID, a.UID)
 	if err != nil {
 		return nil, err
 	}
@@ -372,6 +431,26 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 		)
 	}
 	return &EmptyResponse{}, nil
+}
+
+func (r *schemaResolver) AddOrgsOpenBetaStats(ctx context.Context, args *struct {
+	Stats JSONCString
+}) (*graphql.ID, error) {
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() {
+		return nil, errors.New("no current user")
+	}
+	if args == nil || !json.Valid([]byte(args.Stats)) {
+		return nil, errors.New("must supply valid json")
+	}
+
+	id, err := r.db.Orgs().AddOrgsOpenBetaStats(ctx, a.UID, string(args.Stats))
+	if err != nil {
+		return nil, err
+	}
+
+	graphqlID := graphql.ID(id)
+	return &graphqlID, nil
 }
 
 type ListOrgRepositoriesArgs struct {

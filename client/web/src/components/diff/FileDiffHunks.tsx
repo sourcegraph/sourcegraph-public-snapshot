@@ -1,6 +1,7 @@
+import React, { useCallback, useMemo, useState, useEffect } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { useCallback, useMemo, useState, useEffect } from 'react'
 import { combineLatest, from, NEVER, Observable, of, ReplaySubject, Subscription } from 'rxjs'
 import { distinctUntilKeyChanged, filter, first, map, switchMap, tap } from 'rxjs/operators'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
@@ -22,6 +23,7 @@ import { diffDomFunctions } from '../../repo/compare/dom-functions'
 import { DiffHunk } from './DiffHunk'
 import { DiffSplitHunk } from './DiffSplitHunk'
 import { ExtensionInfo } from './FileDiffConnection'
+
 import styles from './FileDiffHunks.module.scss'
 
 export interface FileHunksProps extends ThemeProps {

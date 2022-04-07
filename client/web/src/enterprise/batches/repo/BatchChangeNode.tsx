@@ -1,6 +1,7 @@
+import React, { useState, useEffect } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { useState, useEffect } from 'react'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Link, Button } from '@sourcegraph/wildcard'
@@ -11,6 +12,7 @@ import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileD
 import { ChangesetNode } from '../detail/changesets/ChangesetNode'
 
 import { MAX_CHANGESETS_COUNT } from './backend'
+
 import styles from './BatchChangeNode.module.scss'
 
 export interface BatchChangeNodeProps extends ThemeProps {

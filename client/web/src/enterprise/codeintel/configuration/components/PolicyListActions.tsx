@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React, { FunctionComponent } from 'react'
+
+import * as H from 'history'
 
 import { Button } from '@sourcegraph/wildcard'
 

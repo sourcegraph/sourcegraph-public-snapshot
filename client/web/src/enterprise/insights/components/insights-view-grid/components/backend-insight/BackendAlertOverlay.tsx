@@ -1,6 +1,7 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import ProgressWrench from 'mdi-react/ProgressWrenchIcon'
-import React from 'react'
 
 import { AlertOverlay } from '../../../alert-overlay/AlertOverlay'
 

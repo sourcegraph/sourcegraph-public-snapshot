@@ -2,6 +2,10 @@ package github
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"sort"
 	"strings"
@@ -448,17 +452,19 @@ func TestGetOrganization(t *testing.T) {
 	})
 }
 
-// Note: To update this test, access the sourcegraph-vcr account saved in 1password. The token used
-// for this test has repo:* and org:read permissions which is more than enough. The token is called
-// sourcegraph-vcr which can also be accessed in 1password or under Personal access tokens in the
-// sourcegraph-vcr user account.
+// ListOrganizations is primarily used for GitHub Enterprise clients. As a result we test against
+// ghe.sgdev.org.  To update this test, access the GitHub Enterprise Admin Account (ghe.sgdev.org)
+// with username milton in 1password. The token used for this test is named sourcegraph-vcr-token
+// and is also saved in 1Password under this account.
 func TestListOrganizations(t *testing.T) {
-	cli, save := newV3TestClient(t, "ListOrganizations")
-	defer save()
+	t.Run("enterprise-integration-without-cache", func(t *testing.T) {
+		cli, save := newV3TestEnterpriseClient(t, "ListOrganizations")
+		defer save()
 
-	t.Run("orgs", func(t *testing.T) {
-		ctx := context.Background()
-		orgs, hasNextPage, err := cli.ListOrganizations(ctx, 1)
+		// Simplest way to initialise a client with no cache.
+		cli.orgsCache = nil
+
+		orgs, nextSince, err := cli.ListOrganizations(context.Background(), 0)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -471,9 +477,276 @@ func TestListOrganizations(t *testing.T) {
 			t.Fatalf("expected 100 orgs but got %d", len(orgs))
 		}
 
-		if !hasNextPage {
-			t.Fatalf("expected hasNextPage to be true but got %v", hasNextPage)
+		if nextSince < 1 {
+			t.Fatalf("expected nextSince to be a positive int but got %v", nextSince)
 		}
+	})
+
+	t.Run("enterprise-integration-with-cache", func(t *testing.T) {
+		rcache.SetupForTest(t)
+		cli, save := newV3TestEnterpriseClient(t, "ListOrganizations")
+		defer save()
+
+		if cli.orgsCache == nil {
+			t.Fatal("expected orgsCache to be initialised but is nil")
+		}
+
+		hash := cli.auth.Hash()
+		expectedEtagKey := hash + "-orgs-etag-0"
+		expectedOrgsKey := hash + "-orgs-0"
+
+		// When starting from scratch, the cache should be empty.
+		if val, ok := cli.orgsCache.Get(expectedEtagKey); ok {
+			t.Fatalf("expected key %q to be empty in cache, but found %s", expectedEtagKey, val)
+		}
+
+		if val, ok := cli.orgsCache.Get(expectedOrgsKey); ok {
+			t.Fatalf("expected key %q to be empty in cache, but found %s", expectedOrgsKey, val)
+		}
+
+		// Make the API call. This should also populate the cache.
+		orgs, nextSince, err := cli.ListOrganizations(context.Background(), 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if orgs == nil {
+			t.Fatal("expected orgs but got nil")
+		}
+
+		if len(orgs) != 100 {
+			t.Fatalf("expected 100 orgs but got %d", len(orgs))
+		}
+
+		if nextSince < 1 {
+			t.Fatalf("expected nextSince to be a positive int but got %v", nextSince)
+		}
+
+		rawEtag, ok := cli.orgsCache.Get(expectedEtagKey)
+		if !ok {
+			t.Fatalf("expected key %q to be populated in cache, but found empty", expectedEtagKey)
+		}
+
+		// Get the orgs stored in cache.
+		rawOrgs, ok := cli.orgsCache.Get(expectedOrgsKey)
+		if !ok {
+			t.Fatalf("expected key %q to be populated in cache, but found empty", expectedOrgsKey)
+		}
+
+		// Expected orgs.
+		expectedOrgs, err := json.Marshal(orgs)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Verify that the value of orgs returned from the call to cli.ListOrganizations is the same
+		// as the one stored in the cache.
+		if diff := cmp.Diff(expectedOrgs, rawOrgs); diff != "" {
+			t.Fatalf("mismatch in cached orgs and orgs returned from API: (-want +got):\n%s", diff)
+		}
+
+		// Make another API call. This should read from the cache since the resource has not been
+		// modified upstream.
+		refetchedOrgs, refetchedNextSince, err := cli.ListOrganizations(context.Background(), 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if diff := cmp.Diff(orgs, refetchedOrgs); diff != "" {
+			t.Fatalf("mismatch in refetched orgs: (-want +got):\n%s", diff)
+		}
+
+		if nextSince != refetchedNextSince {
+			t.Fatalf("expected refetched nextSince: %d, but got %d", nextSince, refetchedNextSince)
+		}
+
+		// We want to verify that for a cached request, the correct header name and its value is
+		// used. Using an httptest.NewServer helps us accomplish this. We don't care about
+		// replicating the server's response here because we've already tested for that prior to
+		// reacing this point.
+		//
+		// If the testServer exits with the fatal error, this test will panic, which is acceptable.
+		testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if got := r.Header.Get(headerIfNoneMatch); got != string(rawEtag) {
+				t.Fatalf("expected request header %q to be set to %q but found %q", headerIfNoneMatch, string(rawEtag), got)
+			}
+
+			w.WriteHeader(304)
+		}))
+
+		uri, _ := url.Parse(testServer.URL)
+		testCli := NewV3Client("Test", uri, gheToken, testServer.Client())
+		testCli.ListOrganizations(context.Background(), 0)
+	})
+
+	t.Run("enterprise-cache-behaviour", func(t *testing.T) {
+		rcache.SetupForTest(t)
+
+		// Marshal a list of orgs.
+
+		// Existing list of orgs.
+		mockOldOrgs, err := json.Marshal([]*Org{
+			{
+				ID:    1,
+				Login: "foo",
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Updated list of orgs after an initial request is already made, used to verify that the
+		// cache was updated correctly.
+		//
+		// We simulate an existing org being deleted and a new one being created. So the list still
+		// contains one item, but the ID has increased. Using the older value of ID in the "since"
+		// argument should still work.
+		mockNewOrgs, err := json.Marshal([]*Org{
+			{
+				ID:    2,
+				Login: "bar",
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		testMockOldOrgs := true
+		testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Pretend like this is a request where the existing resource has not been modified yet.
+			if testMockOldOrgs {
+				testMockOldOrgs = false
+				w.Write(mockOldOrgs)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				w.WriteHeader(304)
+				return
+			}
+
+			// Pretend like this is a request where the existing request has been modified and will
+			// require a cache invalidation on the client.
+			_, err := w.Write(mockNewOrgs)
+			if err != nil {
+				t.Fatal(err)
+			}
+			w.WriteHeader(200)
+		}))
+
+		uri, _ := url.Parse(testServer.URL)
+		testCli := NewV3Client("Test", uri, gheToken, testServer.Client())
+
+		runTest := func(since int, expectedOrgs []byte) {
+			orgs, nextSince, err := testCli.ListOrganizations(context.Background(), since)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// nextSince must always be greater than "since" which was passed as the argument to ListOrganizations.
+			if nextSince <= since {
+				t.Fatalf("expected nextSince greater than since (%d), but got %d", since, nextSince)
+			}
+
+			gotOrgs, err := json.Marshal(orgs)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(expectedOrgs, gotOrgs); diff != "" {
+				t.Fatalf("mismatch in expected orgs and orgs returned from API: (-want +got):\n%s", diff)
+			}
+
+			key := fmt.Sprintf("%s-orgs-%d", testCli.auth.Hash(), since)
+			gotCachedOrgs, ok := testCli.orgsCache.Get(key)
+			if !ok {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(expectedOrgs, gotCachedOrgs); diff != "" {
+				t.Fatalf("mismatch in expected orgs and orgs cached in the client: (-want +got):\n%s", diff)
+			}
+		}
+
+		// Initial request.
+		t.Run("initial orgs list", func(t *testing.T) {
+			runTest(0, mockOldOrgs)
+		})
+
+		t.Run("modified orgs list", func(t *testing.T) {
+			// New request but with orgs modified.
+			runTest(1, mockNewOrgs)
+		})
+	})
+
+	t.Run("enterprise-pagination", func(t *testing.T) {
+		rcache.SetupForTest(t)
+
+		mockOrgs := make([]*Org, 200)
+
+		for i := 0; i < 200; i++ {
+			mockOrgs[i] = &Org{
+				ID:    i + 1,
+				Login: fmt.Sprint("foo-", i+1),
+			}
+		}
+
+		testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			val, ok := r.URL.Query()["since"]
+			if !ok {
+				t.Fatal(`unexpected test scenario, no query parameter "since"`)
+			}
+
+			writeJson := func(orgs []*Org) {
+				data, err := json.Marshal(orgs)
+				if err != nil {
+					t.Fatalf("failed to marshal orgs into json: %v", err)
+				}
+
+				_, err = w.Write(data)
+				if err != nil {
+					t.Fatalf("failed to write response: %v", err)
+				}
+			}
+
+			switch val[0] {
+			case "0":
+				writeJson(mockOrgs[0:100])
+			case "100":
+				writeJson(mockOrgs[100:])
+			case "200":
+				writeJson([]*Org{})
+			}
+		}))
+
+		uri, _ := url.Parse(testServer.URL)
+		testCli := NewV3Client("Test", uri, gheToken, testServer.Client())
+
+		runTest := func(since int, expectedNextSince int, expectedOrgs []*Org) {
+			orgs, nextSince, err := testCli.ListOrganizations(context.Background(), since)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if nextSince != expectedNextSince {
+				t.Fatalf("expected nextSince: %d but got %d", nextSince, expectedNextSince)
+			}
+
+			if diff := cmp.Diff(expectedOrgs, orgs); diff != "" {
+				t.Fatalf("mismatch in expected orgs and orgs received in response: (-want +got):\n%s", diff)
+			}
+		}
+
+		t.Run("orgs 0 to 100", func(t *testing.T) {
+			runTest(0, 100, mockOrgs[:100])
+		})
+
+		t.Run("orgs 100 to 200", func(t *testing.T) {
+			runTest(100, 200, mockOrgs[100:])
+		})
+
+		t.Run("orgs out of bounds", func(t *testing.T) {
+			runTest(200, -1, []*Org{})
+		})
 	})
 }
 
@@ -615,7 +888,24 @@ func newV3TestClient(t testing.TB, name string) (*V3Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV3Client(uri, vcrToken, doer), save
+	return NewV3Client("Test", uri, vcrToken, doer), save
+}
+
+func newV3TestEnterpriseClient(t testing.TB, name string) (*V3Client, func()) {
+	t.Helper()
+
+	cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
+	uri, err := url.Parse("https://ghe.sgdev.org/api/v3")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	doer, err := cf.Doer()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return NewV3Client("Test", uri, gheToken, doer), save
 }
 
 func strPtr(s string) *string { return &s }

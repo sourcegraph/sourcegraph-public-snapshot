@@ -37,6 +37,7 @@ export const fetchBlob = memoizeObservable(
                     highlight(disableTimeout: $disableTimeout) {
                         aborted
                         html
+                        lsif
                     }
                 }
             `,

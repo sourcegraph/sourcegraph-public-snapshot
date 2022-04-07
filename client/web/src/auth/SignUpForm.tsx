@@ -1,9 +1,10 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import cookies from 'js-cookie'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 import { Observable, of } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { catchError, switchMap } from 'rxjs/operators'
@@ -16,7 +17,7 @@ import {
     ValidationOptions,
     deriveInputClassName,
 } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../components/LoaderButton'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
@@ -26,8 +27,9 @@ import { enterpriseTrial } from '../util/features'
 
 import { OrDivider } from './OrDivider'
 import { maybeAddPostSignUpRedirect, PasswordInput, UsernameInput } from './SignInSignUpCommon'
-import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 import { SignupEmailField } from './SignupEmailField'
+
+import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 
 export interface SignUpArguments {
     email: string
@@ -239,7 +241,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                                 <span className="text-nowrap">
                                     30 days{' '}
                                     <Link target="_blank" rel="noopener" to="https://about.sourcegraph.com/pricing">
-                                        <HelpCircleOutlineIcon className="icon-inline" />
+                                        <Icon as={HelpCircleOutlineIcon} />
                                     </Link>
                                 </span>
                             </label>
@@ -271,9 +273,9 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                                     as="a"
                                 >
                                     {provider.serviceType === 'github' ? (
-                                        <GithubIcon className="icon-inline" />
+                                        <Icon as={GithubIcon} />
                                     ) : provider.serviceType === 'gitlab' ? (
-                                        <GitlabIcon className="icon-inline" />
+                                        <Icon as={GitlabIcon} />
                                     ) : null}{' '}
                                     Continue with {provider.displayName}
                                 </Button>

@@ -5,11 +5,11 @@ import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/ke
 
 import { SourcegraphWebApp } from '../SourcegraphWebApp'
 
+import { RepositoryMenuContent } from './codeintel/RepositoryMenu'
 import { enterpriseExtensionAreaHeaderNavItems } from './extensions/extension/extensionAreaHeaderNavItems'
 import { enterpriseExtensionAreaRoutes } from './extensions/extension/routes'
 import { enterpriseExtensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'
 import { enterpriseExtensionsAreaRoutes } from './extensions/routes'
-import { LazyExtensionViewsSection } from './insights/sections/LazyExtensionViewsSection'
 import { enterpriseOrgAreaHeaderNavItems } from './organizations/navitems'
 import { enterpriseOrganizationAreaRoutes } from './organizations/routes'
 import { enterpriseRepoHeaderActionButtons } from './repo/repoHeaderActionButtons'
@@ -46,9 +46,9 @@ export const EnterpriseWebApp: React.FunctionComponent = () => (
         repoSettingsAreaRoutes={enterpriseRepoSettingsAreaRoutes}
         repoSettingsSidebarGroups={enterpriseRepoSettingsSidebarGroups}
         routes={enterpriseRoutes}
-        extensionViews={LazyExtensionViewsSection}
         keyboardShortcuts={KEYBOARD_SHORTCUTS}
         codeIntelligenceEnabled={true}
+        repositoryMenuContent={RepositoryMenuContent}
         codeInsightsEnabled={true}
         batchChangesEnabled={window.context.batchChangesEnabled}
         searchContextsEnabled={true}

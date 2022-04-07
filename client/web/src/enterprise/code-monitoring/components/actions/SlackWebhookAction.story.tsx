@@ -1,8 +1,10 @@
-import { storiesOf } from '@storybook/react'
 import React from 'react'
+
+import { storiesOf } from '@storybook/react'
 import sinon from 'sinon'
 
 import { WebStory } from '../../../../components/WebStory'
+import { mockAuthenticatedUser } from '../../testing/util'
 import { ActionProps } from '../FormActionArea'
 
 import { SlackWebhookAction } from './SlackWebhookAction'
@@ -16,6 +18,7 @@ const defaultProps: ActionProps = {
     setAction: sinon.fake(),
     disabled: false,
     monitorName: 'Example code monitor',
+    authenticatedUser: mockAuthenticatedUser,
 }
 
 const action: ActionProps['action'] = {
@@ -44,6 +47,13 @@ add('SlackWebhookAction', () => (
 
                 <h2>Open, populated, enabled</h2>
                 <SlackWebhookAction {...defaultProps} _testStartOpen={true} action={action} />
+
+                <h2>Open, populated with error, enabled</h2>
+                <SlackWebhookAction
+                    {...defaultProps}
+                    _testStartOpen={true}
+                    action={{ ...action, url: 'https://example.com' }}
+                />
 
                 <h2>Closed, populated, disabled</h2>
                 <SlackWebhookAction {...defaultProps} action={{ ...action, enabled: false }} />

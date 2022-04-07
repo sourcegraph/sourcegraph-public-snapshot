@@ -6,19 +6,17 @@ import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 import { SmartInsightsViewGrid } from '../../../../../../../components/insights-view-grid/SmartInsightsViewGrid'
 import { CodeInsightsBackendContext } from '../../../../../../../core/backend/code-insights-backend-context'
 import { InsightDashboard } from '../../../../../../../core/types'
-import { SupportedInsightSubject } from '../../../../../../../core/types/subjects'
 import { EmptyInsightDashboard } from '../empty-insight-dashboard/EmptyInsightDashboard'
 
 import { DashboardInsightsContext } from './DashboardInsightsContext'
 
 interface DashboardInsightsProps extends TelemetryProps {
     dashboard: InsightDashboard
-    subjects?: SupportedInsightSubject[]
     onAddInsightRequest: () => void
 }
 
 export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> = props => {
-    const { telemetryService, dashboard, subjects, onAddInsightRequest } = props
+    const { telemetryService, dashboard, onAddInsightRequest } = props
 
     const { getInsights } = useContext(CodeInsightsBackendContext)
 
@@ -32,17 +30,11 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
 
     return (
         <DashboardInsightsContext.Provider value={{ dashboard }}>
-            <div>
-                {insights.length > 0 ? (
-                    <SmartInsightsViewGrid insights={insights} telemetryService={telemetryService} />
-                ) : (
-                    <EmptyInsightDashboard
-                        subjects={subjects}
-                        dashboard={dashboard}
-                        onAddInsight={onAddInsightRequest}
-                    />
-                )}
-            </div>
+            {insights.length > 0 ? (
+                <SmartInsightsViewGrid insights={insights} telemetryService={telemetryService} />
+            ) : (
+                <EmptyInsightDashboard dashboard={dashboard} onAddInsight={onAddInsightRequest} />
+            )}
         </DashboardInsightsContext.Provider>
     )
 }

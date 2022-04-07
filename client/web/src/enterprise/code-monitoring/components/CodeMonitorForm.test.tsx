@@ -1,9 +1,11 @@
-import { fireEvent, screen } from '@testing-library/react'
-import { createMemoryHistory, createLocation } from 'history'
 import React from 'react'
+
+import { fireEvent, getByRole, screen } from '@testing-library/react'
+import { createMemoryHistory, createLocation } from 'history'
 import { NEVER } from 'rxjs'
 
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { mockAuthenticatedUser, mockCodeMonitorFields } from '../testing/util'
 
@@ -15,17 +17,27 @@ const PROPS: CodeMonitorFormProps = {
     onSubmit: () => NEVER,
     submitButtonLabel: '',
     authenticatedUser: mockAuthenticatedUser,
+    isLightTheme: true,
+    isSourcegraphDotCom: false,
 }
 
 describe('CodeMonitorForm', () => {
     test('Uses trigger query when present', () => {
-        renderWithBrandedContext(<CodeMonitorForm {...PROPS} triggerQuery="foo" />)
-        expect(screen.getByTestId('trigger-query-edit')).toHaveValue('foo')
+        renderWithBrandedContext(
+            <MockedTestProvider>
+                <CodeMonitorForm {...PROPS} triggerQuery="foo" />
+            </MockedTestProvider>
+        )
+
+        const triggerEdit = screen.getByTestId('trigger-query-edit')
+        expect(getByRole(triggerEdit, 'textbox')).toHaveValue('foo')
     })
 
     test('Submit button disabled if no actions are present', () => {
         const { getByTestId } = renderWithBrandedContext(
-            <CodeMonitorForm {...PROPS} codeMonitor={mockCodeMonitorFields} />
+            <MockedTestProvider>
+                <CodeMonitorForm {...PROPS} codeMonitor={mockCodeMonitorFields} />
+            </MockedTestProvider>
         )
 
         fireEvent.click(getByTestId('form-action-toggle-email'))
@@ -36,7 +48,9 @@ describe('CodeMonitorForm', () => {
 
     test('Submit button enabled if one action is present', () => {
         const { getByTestId } = renderWithBrandedContext(
-            <CodeMonitorForm {...PROPS} codeMonitor={{ ...mockCodeMonitorFields, actions: { nodes: [] } }} />
+            <MockedTestProvider>
+                <CodeMonitorForm {...PROPS} codeMonitor={{ ...mockCodeMonitorFields, actions: { nodes: [] } }} />
+            </MockedTestProvider>
         )
         fireEvent.click(getByTestId('form-action-toggle-email'))
         fireEvent.click(getByTestId('submit-action-email'))

@@ -66,6 +66,9 @@ func NewBatchSpecWorkspaceExecutionWorkerStore(handle *basestore.TransactableHan
 	return &batchSpecWorkspaceExecutionWorkerStore{
 		Store:              dbworkerstore.NewWithMetrics(handle, batchSpecWorkspaceExecutionWorkerStoreOptions, observationContext),
 		observationContext: observationContext,
+		accessTokenDeleterForTX: func(tx *Store) accessTokenHardDeleter {
+			return tx.DatabaseDB().AccessTokens().HardDeleteByID
+		},
 	}
 }
 
@@ -77,6 +80,8 @@ var _ dbworkerstore.Store = &batchSpecWorkspaceExecutionWorkerStore{}
 // job as complete.
 type batchSpecWorkspaceExecutionWorkerStore struct {
 	dbworkerstore.Store
+
+	accessTokenDeleterForTX func(tx *Store) accessTokenHardDeleter
 
 	observationContext *observation.Context
 }
@@ -101,10 +106,12 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) FetchCanceled(ctx context.Conte
 	return ids, nil
 }
 
+type accessTokenHardDeleter func(context.Context, int64) error
+
 // deleteAccessToken tries to delete the associated internal access
 // token. If the token cannot be found it does *not* return an error.
-func deleteAccessToken(ctx context.Context, batchesStore *Store, tokenID int64) error {
-	err := database.AccessTokensWith(batchesStore).HardDeleteByID(ctx, tokenID)
+func deleteAccessToken(ctx context.Context, deleteToken accessTokenHardDeleter, tokenID int64) error {
+	err := deleteToken(ctx, tokenID)
 	if err != nil && err != database.ErrAccessTokenNotFound {
 		return err
 	}
@@ -136,7 +143,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) markFinal(ctx context.Context, 
 		return false, err
 	}
 
-	err = deleteAccessToken(ctx, tx, job.AccessTokenID)
+	err = deleteAccessToken(ctx, s.accessTokenDeleterForTX(tx), job.AccessTokenID)
 	if err != nil {
 		return false, err
 	}
@@ -146,7 +153,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) markFinal(ctx context.Context, 
 		return false, err
 	}
 
-	executionResults, stepResults, err := extractCacheEntries(ctx, events)
+	executionResults, stepResults, err := extractCacheEntries(events)
 	if err != nil {
 		return false, err
 	}
@@ -225,7 +232,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		return s.Store.MarkFailed(ctx, id, fmt.Sprintf(fmtStr, args...), options)
 	}
 
-	executionResults, stepResults, err := extractCacheEntries(ctx, events)
+	executionResults, stepResults, err := extractCacheEntries(events)
 	if err != nil {
 		return rollbackAndMarkFailed(err, fmt.Sprintf("failed to extract cache entries: %s", err))
 	}
@@ -290,7 +297,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		}
 	}
 
-	err = deleteAccessToken(ctx, tx, job.AccessTokenID)
+	err = deleteAccessToken(ctx, s.accessTokenDeleterForTX(tx), job.AccessTokenID)
 	if err != nil {
 		return rollbackAndMarkFailed(err, fmt.Sprintf("failed to delete internal access token: %s", err))
 	}
@@ -355,7 +362,7 @@ SET
 WHERE id = %s
 `
 
-func extractCacheEntries(ctx context.Context, events []*batcheslib.LogEvent) (executionResults, stepResults []*btypes.BatchSpecExecutionCacheEntry, err error) {
+func extractCacheEntries(events []*batcheslib.LogEvent) (executionResults, stepResults []*btypes.BatchSpecExecutionCacheEntry, err error) {
 	for _, e := range events {
 		switch m := e.Metadata.(type) {
 		case *batcheslib.CacheResultMetadata:

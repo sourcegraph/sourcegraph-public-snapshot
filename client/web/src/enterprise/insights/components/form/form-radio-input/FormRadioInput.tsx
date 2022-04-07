@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { InputHTMLAttributes } from 'react'
+
+import classNames from 'classnames'
 
 interface RadioInputProps extends InputHTMLAttributes<HTMLInputElement> {
     /** Title of radio input. */

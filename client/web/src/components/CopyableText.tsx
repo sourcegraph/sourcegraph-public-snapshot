@@ -1,9 +1,10 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
-import * as React from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import styles from './CopyableText.module.scss'
 
@@ -54,7 +55,7 @@ export class CopyableText extends React.PureComponent<Props, State> {
                     />
                     <div className="input-group-append">
                         <Button onClick={this.onClickButton} disabled={this.state.copied} variant="secondary">
-                            <ContentCopyIcon className="icon-inline" /> {this.state.copied ? 'Copied' : 'Copy'}
+                            <Icon as={ContentCopyIcon} /> {this.state.copied ? 'Copied' : 'Copy'}
                         </Button>
                     </div>
                 </div>

@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { render } from '@testing-library/react'
 import * as H from 'history'
-import React from 'react'
 import { of } from 'rxjs'
 
 import { IRepository, IGitRef } from '@sourcegraph/shared/src/schema'

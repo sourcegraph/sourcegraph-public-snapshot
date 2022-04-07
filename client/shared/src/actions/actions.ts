@@ -1,4 +1,4 @@
-import { Contributions, Evaluated } from '../api/protocol'
+import { Contributions, Evaluated } from '@sourcegraph/client-api'
 
 export interface ActionsState {
     /** The contributions, merged from all extensions, or undefined before the initial emission. */

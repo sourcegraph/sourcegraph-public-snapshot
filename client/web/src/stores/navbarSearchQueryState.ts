@@ -89,7 +89,7 @@ export function setQueryStateFromSettings(settings: SettingsCascadeOrError<Setti
     }
 
     const searchPatternType = defaultPatternTypeFromSettings(settings)
-    if (caseSensitive) {
+    if (searchPatternType) {
         newState.searchPatternType = searchPatternType
     }
 

@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { storiesOf } from '@storybook/react'
 import { createMemoryHistory } from 'history'
-import React from 'react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -61,7 +62,6 @@ const defaultProps = (
     hasUserAddedRepositories: false,
     hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
-    extensionViews: () => null,
 })
 
 const { add } = storiesOf('web/nav/GlobalNav', module).addDecorator(Story => {

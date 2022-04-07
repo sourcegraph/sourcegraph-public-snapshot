@@ -1,4 +1,5 @@
 import * as React from 'react'
+
 import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
@@ -173,13 +174,13 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                                 disabled={this.state.loading}
                                 variant="primary"
                             >
+                                {this.state.loading && (
+                                    <>
+                                        <LoadingSpinner />{' '}
+                                    </>
+                                )}
                                 Update password
                             </Button>
-                            {this.state.loading && (
-                                <div className="icon-inline">
-                                    <LoadingSpinner />
-                                </div>
-                            )}
                         </Form>
                     </>
                 )}

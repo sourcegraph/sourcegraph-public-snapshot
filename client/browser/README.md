@@ -140,7 +140,17 @@ Click reload for Sourcegraph at `about:debugging`
 ## Testing
 
 - Unit tests: `sg test bext`
-- Integration tests: `sg test bext-build` & `sg test bext-integration`
+- Integration tests
+  - install [git lfs](https://git-lfs.github.com) if it's not installed
+  - run
+    - fetch snapshots with `git lfs fetch`
+    - build browser extension with `sg test bext-build`
+    - run tests with `sg test bext-integration`
+  - develop
+    - add/edit test case or at least its part with navigation to a certain page
+    - if there's no page snapshot for created test or page URL referenced in the existing test has been changed, test will fail with 'Page not found' error
+    - to generate or update page snapshots for tests run `yarn record-integration`
+    - after pushing the updated snapshots to remote they will be stored on GitHub LFS and snapshot files will contain references to that storage
 - E2E tests: `sg test bext-build` & `sg test bext-e2e`
 
 ### E2E tests

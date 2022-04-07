@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useEffect } from 'react'
+
+import classNames from 'classnames'
 
 import { PageHeader, CardBody, Card } from '@sourcegraph/wildcard'
 

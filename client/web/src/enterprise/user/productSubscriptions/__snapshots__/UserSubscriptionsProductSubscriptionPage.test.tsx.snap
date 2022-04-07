@@ -13,7 +13,7 @@ exports[`UserSubscriptionsProductSubscriptionPage renders 1`] = `
         href="/u/subscriptions"
       >
         <svg
-          class="mdi-icon icon-inline"
+          class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"

@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { storiesOf } from '@storybook/react'
 import { createBrowserHistory } from 'history'
-import React from 'react'
 import { EMPTY, NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
@@ -59,7 +60,6 @@ const defaultProps: StreamingSearchResultsProps = {
 
     fetchHighlightedFileLineRanges: () => of(HIGHLIGHTED_FILE_LINES_LONG),
     featureFlags: EMPTY_FEATURE_FLAGS,
-    extensionViews: () => null,
     isSourcegraphDotCom: false,
     searchContextsEnabled: true,
 }

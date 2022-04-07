@@ -2,7 +2,6 @@ package testing
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
@@ -105,7 +104,7 @@ func CreateBatchSpecWorkspaceExecutionJob(ctx context.Context, s createBatchSpec
 			"batch_spec_workspace_execution_jobs.created_at",
 			"batch_spec_workspace_execution_jobs.updated_at",
 		},
-		func(rows *sql.Rows) error {
+		func(rows dbutil.Scanner) error {
 			i++
 			return scanFn(jobs[i], rows)
 		},

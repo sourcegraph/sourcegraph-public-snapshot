@@ -1,14 +1,15 @@
+import React, { useMemo, useEffect } from 'react'
+
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import maxDate from 'date-fns/max'
 import { isObject } from 'lodash'
 import GithubIcon from 'mdi-react/GithubIcon'
-import React, { useMemo, useEffect } from 'react'
 
 import { isErrorLike, isDefined, isEncodedImage } from '@sourcegraph/common'
 import { splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionCategory, ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
@@ -16,9 +17,10 @@ import { DefaultExtensionIcon, DefaultSourcegraphExtensionIcon, SourcegraphExten
 
 import { extensionsQuery, urlToExtensionsQuery, validCategories } from './extension'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
-import styles from './RegistryExtensionOverviewPage.module.scss'
 import { ExtensionReadme } from './RegistryExtensionReadme'
 import { SourcegraphExtensionFeedback } from './SourcegraphExtensionFeedback'
+
+import styles from './RegistryExtensionOverviewPage.module.scss'
 
 interface Props extends Pick<ExtensionAreaRouteContext, 'extension' | 'telemetryService' | 'isLightTheme'> {}
 
@@ -155,7 +157,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                         )}
                         {repositoryURL && (
                             <div className="d-flex">
-                                {repositoryURL.hostname === 'github.com' && <GithubIcon className="icon-inline mr-1" />}
+                                {repositoryURL.hostname === 'github.com' && <Icon className="mr-1" as={GithubIcon} />}
                                 <Link
                                     to={repositoryURL.href}
                                     rel="nofollow noreferrer noopener"

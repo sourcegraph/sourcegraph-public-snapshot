@@ -1,5 +1,6 @@
-import RegexIcon from 'mdi-react/RegexIcon'
 import React, { forwardRef } from 'react'
+
+import RegexIcon from 'mdi-react/RegexIcon'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { Button } from '@sourcegraph/wildcard'

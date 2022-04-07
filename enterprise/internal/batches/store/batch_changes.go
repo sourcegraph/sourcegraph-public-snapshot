@@ -157,7 +157,7 @@ DELETE FROM batch_changes WHERE id = %s
 // counting batches.
 type CountBatchChangesOpts struct {
 	ChangesetID int64
-	State       btypes.BatchChangeState
+	States      []btypes.BatchChangeState
 	RepoID      api.RepoID
 
 	CreatorID int32
@@ -204,13 +204,21 @@ func countBatchChangesQuery(opts *CountBatchChangesOpts, repoAuthzConds *sqlf.Qu
 		preds = append(preds, sqlf.Sprintf("changesets.id = %s", opts.ChangesetID))
 	}
 
-	switch opts.State {
-	case btypes.BatchChangeStateOpen:
-		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NULL AND batch_changes.last_applied_at IS NOT NULL"))
-	case btypes.BatchChangeStateClosed:
-		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NOT NULL"))
-	case btypes.BatchChangeStateDraft:
-		preds = append(preds, sqlf.Sprintf("batch_changes.last_applied_at IS NULL"))
+	if len(opts.States) > 0 {
+		stateConds := []*sqlf.Query{}
+		for _, state := range opts.States {
+			switch state {
+			case btypes.BatchChangeStateOpen:
+				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.closed_at IS NULL AND batch_changes.last_applied_at IS NOT NULL"))
+			case btypes.BatchChangeStateClosed:
+				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.closed_at IS NOT NULL"))
+			case btypes.BatchChangeStateDraft:
+				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.last_applied_at IS NULL"))
+			}
+		}
+		if len(stateConds) > 0 {
+			preds = append(preds, sqlf.Sprintf("(%s)", sqlf.Join(stateConds, "OR")))
+		}
 	}
 
 	if opts.CreatorID != 0 {
@@ -435,7 +443,7 @@ type ListBatchChangesOpts struct {
 	LimitOpts
 	ChangesetID int64
 	Cursor      int64
-	State       btypes.BatchChangeState
+	States      []btypes.BatchChangeState
 
 	CreatorID int32
 
@@ -503,13 +511,21 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Quer
 		preds = append(preds, sqlf.Sprintf("changesets.id = %s", opts.ChangesetID))
 	}
 
-	switch opts.State {
-	case btypes.BatchChangeStateOpen:
-		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NULL AND batch_changes.last_applied_at IS NOT NULL"))
-	case btypes.BatchChangeStateClosed:
-		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NOT NULL"))
-	case btypes.BatchChangeStateDraft:
-		preds = append(preds, sqlf.Sprintf("batch_changes.last_applied_at IS NULL"))
+	if len(opts.States) > 0 {
+		stateConds := []*sqlf.Query{}
+		for i := 0; i < len(opts.States); i++ {
+			switch opts.States[i] {
+			case btypes.BatchChangeStateOpen:
+				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.closed_at IS NULL AND batch_changes.last_applied_at IS NOT NULL"))
+			case btypes.BatchChangeStateClosed:
+				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.closed_at IS NOT NULL"))
+			case btypes.BatchChangeStateDraft:
+				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.last_applied_at IS NULL"))
+			}
+		}
+		if len(stateConds) > 0 {
+			preds = append(preds, sqlf.Sprintf("(%s)", sqlf.Join(stateConds, "OR")))
+		}
 	}
 
 	if opts.CreatorID != 0 {

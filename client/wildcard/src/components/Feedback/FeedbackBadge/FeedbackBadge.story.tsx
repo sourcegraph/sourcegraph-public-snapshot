@@ -1,9 +1,10 @@
-import { Meta, Story } from '@storybook/react'
 import React from 'react'
+
+import { Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-import { PRODUCT_STATUSES } from '@sourcegraph/wildcard/src/components/Badge/constants'
+import { PRODUCT_STATUSES } from '@sourcegraph/wildcard'
 
 import { FeedbackBadge } from '.'
 
@@ -21,6 +22,19 @@ const config: Meta = {
             enableDarkMode: true,
             disableSnapshot: false,
         },
+        design: [
+            {
+                type: 'figma',
+                name: 'Figma Light',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=908%3A6149',
+            },
+
+            {
+                type: 'figma',
+                name: 'Figma Dark',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=908%3A6447',
+            },
+        ],
     },
 }
 

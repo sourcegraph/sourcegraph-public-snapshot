@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React from 'react'
+
+import * as H from 'history'
 import { Subscription } from 'rxjs'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'

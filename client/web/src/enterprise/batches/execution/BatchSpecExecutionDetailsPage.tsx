@@ -1,7 +1,8 @@
+import React, { useCallback, useState } from 'react'
+
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch, useHistory, useLocation } from 'react-router'
 import { NavLink as RouterLink } from 'react-router-dom'
 
@@ -21,6 +22,8 @@ import {
     Link,
     CardBody,
     Card,
+    Icon,
+    Panel,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -39,10 +42,11 @@ import { BatchSpec } from '../BatchSpec'
 import { NewBatchChangePreviewPage } from '../preview/BatchChangePreviewPage'
 
 import { cancelBatchSpecExecution, FETCH_BATCH_SPEC_EXECUTION, retryBatchSpecExecution } from './backend'
-import styles from './BatchSpecExecutionDetailsPage.module.scss'
 import { BatchSpecStateBadge } from './BatchSpecStateBadge'
 import { WorkspaceDetails } from './WorkspaceDetails'
-import { WorkspacesList } from './WorkspacesList'
+import { Workspaces } from './workspaces/Workspaces'
+
+import styles from './BatchSpecExecutionDetailsPage.module.scss'
 
 export interface BatchSpecExecutionDetailsPageProps extends ThemeProps, TelemetryProps, RouteComponentProps<{}> {
     batchSpecID: Scalars['ID']
@@ -112,7 +116,7 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
                         </LinkOrSpan>
                     </>
                 }
-                actions={<BatchSpecActions batchSpec={batchSpec} />}
+                actions={<BatchSpecActions batchSpec={batchSpec} executionURL={match.url} />}
                 className="mb-3"
             />
 
@@ -121,7 +125,7 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
             <Switch>
                 <Route render={() => <Redirect to={`${match.url}/execution`} />} path={match.url} exact={true} />
                 <Route
-                    path={`${match.url}/edit`}
+                    path={`${match.url}/spec`}
                     render={() => (
                         <EditPage
                             name={batchSpec.description.name}
@@ -133,8 +137,7 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
                 />
                 <Route
                     path={`${match.url}/execution`}
-                    render={() => <ExecutionPage batchSpec={batchSpec} isLightTheme={isLightTheme} />}
-                    exact={true}
+                    render={props => <ExecutionPage {...props} batchSpec={batchSpec} isLightTheme={isLightTheme} />}
                 />
                 <Route
                     path={`${match.url}/preview`}
@@ -159,7 +162,7 @@ const TabBar: React.FunctionComponent<{ url: string; batchSpec: BatchSpecExecuti
     <div className="mb-3">
         <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
             <li className="nav-item">
-                <RouterLink to={`${url}/edit`} role="button" activeClassName="active" className="nav-link">
+                <RouterLink to={`${url}/spec`} role="button" activeClassName="active" className="nav-link">
                     {/* TODO: Rename to edit once this IS an editor. */}
                     <span className="text-content" data-tab-content="1. Batch spec">
                         1. Batch spec
@@ -199,9 +202,10 @@ const TabBar: React.FunctionComponent<{ url: string; batchSpec: BatchSpecExecuti
 
 interface BatchSpecActionsProps {
     batchSpec: BatchSpecExecutionFields
+    executionURL: string
 }
 
-const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batchSpec }) => {
+const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batchSpec, executionURL }) => {
     const location = useLocation()
 
     const [isCanceling, setIsCanceling] = useState<boolean | Error>(false)
@@ -276,7 +280,7 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
                     {!location.pathname.endsWith('preview') &&
                         batchSpec.applyURL &&
                         batchSpec.state === BatchSpecState.COMPLETED && (
-                            <Button to="preview" variant="primary" as={Link}>
+                            <Button to={`${executionURL}/preview`} variant="primary" as={Link}>
                                 Preview
                             </Button>
                         )}
@@ -293,7 +297,7 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
                             {isRetrying !== true && <>Retry</>}
                             {isRetrying === true && (
                                 <>
-                                    <LoadingSpinner className="icon-inline" /> Retrying
+                                    <LoadingSpinner /> Retrying
                                 </>
                             )}
                         </Button>
@@ -302,13 +306,13 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
                         batchSpec.applyURL &&
                         batchSpec.state === BatchSpecState.FAILED && (
                             <Button
-                                to="preview"
+                                to={`${executionURL}/preview`}
                                 data-tooltip="Execution didn't finish successfully in all workspaces. The batch spec might have less changeset specs than expected."
                                 variant="warning"
                                 outline={true}
                                 as={Link}
                             >
-                                <AlertCircleIcon className="icon-inline mb-0 mr-2 text-warning" />
+                                <Icon className="mb-0 mr-2 text-warning" as={AlertCircleIcon} />
                                 Preview
                             </Button>
                         )}
@@ -342,34 +346,65 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ name, content, isLig
     </div>
 )
 
-interface ExecutionPageProps extends ThemeProps {
+const WORKSPACES_LIST_SIZE = 'batch-changes.ssbc-workspaces-list-size'
+
+interface ExecutionPageProps extends ThemeProps, RouteComponentProps<{}> {
     batchSpec: BatchSpecExecutionFields
 }
 
-const ExecutionPage: React.FunctionComponent<ExecutionPageProps> = ({ batchSpec, isLightTheme }) => {
-    const history = useHistory()
+const ExecutionPage: React.FunctionComponent<ExecutionPageProps> = ({ match, ...props }) => (
+    <Switch>
+        <Route
+            path={`${match.url}/workspaces/:workspaceID`}
+            render={({
+                match: {
+                    params: { workspaceID },
+                },
+            }: RouteComponentProps<{ workspaceID: string }>) => (
+                <ExecutionWorkspacesPage {...props} executionURL={match.url} selectedWorkspaceID={workspaceID} />
+            )}
+            exact={true}
+        />
+        <Route
+            path={match.url}
+            render={() => <ExecutionWorkspacesPage {...props} executionURL={match.url} />}
+            exact={true}
+        />
+        <Route component={NotFoundPage} key="hardcoded-key" />
+    </Switch>
+)
 
-    // Read the selected workspace from the URL params.
-    const selectedWorkspace = useMemo(() => {
-        const query = new URLSearchParams(history.location.search)
-        return query.get('workspace')
-    }, [history.location.search])
+interface ExecutionWorkspacesPageProps extends ThemeProps {
+    executionURL: string
+    batchSpec: BatchSpecExecutionFields
+    selectedWorkspaceID?: string
+}
+
+const ExecutionWorkspacesPage: React.FunctionComponent<ExecutionWorkspacesPageProps> = ({
+    batchSpec,
+    selectedWorkspaceID,
+    executionURL,
+    isLightTheme,
+}) => {
+    const history = useHistory()
+    const deselectWorkspace = useCallback(() => history.push(executionURL), [executionURL, history])
 
     return (
         <>
             {batchSpec.failureMessage && <ErrorAlert error={batchSpec.failureMessage} />}
             <div className={classNames(styles.layoutContainer, 'd-flex flex-1')}>
-                <div className={classNames(styles.workspacesListContainer, 'd-flex flex-column')}>
-                    <h3 className="mb-2">Workspaces</h3>
-                    <div className={styles.workspacesList}>
-                        <WorkspacesList batchSpecID={batchSpec.id} selectedNode={selectedWorkspace ?? undefined} />
-                    </div>
-                </div>
-                <div className="d-flex flex-grow-1">
-                    <div className="d-flex overflow-auto w-100">
-                        <SelectedWorkspace workspace={selectedWorkspace} isLightTheme={isLightTheme} />
-                    </div>
-                </div>
+                <Panel defaultSize={500} minSize={405} maxSize={1400} position="left" storageKey={WORKSPACES_LIST_SIZE}>
+                    <Workspaces
+                        batchSpecID={batchSpec.id}
+                        selectedNode={selectedWorkspaceID}
+                        executionURL={executionURL}
+                    />
+                </Panel>
+                <SelectedWorkspace
+                    workspace={selectedWorkspaceID ?? null}
+                    isLightTheme={isLightTheme}
+                    deselectWorkspace={deselectWorkspace}
+                />
             </div>
         </>
     )
@@ -407,26 +442,25 @@ const PreviewPage: React.FunctionComponent<PreviewPageProps> = ({
     )
 }
 
-const SelectedWorkspace: React.FunctionComponent<{ workspace: Scalars['ID'] | null } & ThemeProps> = ({
-    workspace,
-    isLightTheme,
-}) => {
-    if (workspace === null) {
-        return (
-            <Card className="w-100">
-                <CardBody>
-                    <h3 className="text-center my-3">Select a workspace to view details.</h3>
-                </CardBody>
-            </Card>
-        )
-    }
-    return (
-        <Card className="w-100">
-            <CardBody>
-                <WorkspaceDetails id={workspace} isLightTheme={isLightTheme} />
-            </CardBody>
-        </Card>
-    )
+interface SelectedWorkspaceProps extends ThemeProps {
+    deselectWorkspace: () => void
+    workspace: Scalars['ID'] | null
 }
+
+const SelectedWorkspace: React.FunctionComponent<SelectedWorkspaceProps> = ({
+    workspace,
+    deselectWorkspace,
+    isLightTheme,
+}) => (
+    <Card className="w-100 overflow-auto flex-grow-1">
+        <CardBody>
+            {workspace ? (
+                <WorkspaceDetails id={workspace} isLightTheme={isLightTheme} deselectWorkspace={deselectWorkspace} />
+            ) : (
+                <h3 className="text-center my-3">Select a workspace to view details.</h3>
+            )}
+        </CardBody>
+    </Card>
+)
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />

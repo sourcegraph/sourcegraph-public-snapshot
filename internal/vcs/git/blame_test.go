@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
@@ -63,7 +64,7 @@ func TestRepository_BlameFile(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		newestCommitID, err := ResolveRevision(ctx, test.repo, string(test.opt.NewestCommit), ResolveRevisionOptions{})
+		newestCommitID, err := ResolveRevision(ctx, database.NewMockDB(), test.repo, string(test.opt.NewestCommit), ResolveRevisionOptions{})
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on base: %s", label, test.opt.NewestCommit, err)
 			continue
@@ -101,7 +102,7 @@ func TestRepository_BlameFile(t *testing.T) {
 func runBlameFileTest(ctx context.Context, t *testing.T, repo api.RepoName, path string, opt *BlameOptions,
 	checker authz.SubRepoPermissionChecker, label string, wantHunks []*Hunk) {
 	t.Helper()
-	hunks, err := BlameFile(ctx, repo, path, opt, checker)
+	hunks, err := BlameFile(ctx, database.NewMockDB(), repo, path, opt, checker)
 	if err != nil {
 		t.Errorf("%s: BlameFile(%s, %+v): %s", label, path, opt, err)
 		return

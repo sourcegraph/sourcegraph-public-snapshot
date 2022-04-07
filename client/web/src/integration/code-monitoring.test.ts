@@ -8,6 +8,7 @@ import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteID, siteGQLID } from './jscontext'
+import { mixedSearchStreamEvents } from './streaming-search-mocks'
 import { percySnapshotWithVariants } from './utils'
 
 describe('Code monitoring', () => {
@@ -97,6 +98,7 @@ describe('Code monitoring', () => {
                 },
             }),
         })
+        testContext.overrideSearchStreamEvents(mixedSearchStreamEvents)
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())

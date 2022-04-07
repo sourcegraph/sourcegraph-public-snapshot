@@ -42,6 +42,9 @@ type SubRepoPermissionChecker interface {
 
 	// EnabledForRepoId indicates whether sub-repo permissions are enabled for the given repoID
 	EnabledForRepoId(ctx context.Context, repoId api.RepoID) (bool, error)
+
+	// EnabledForRepo indicates whether sub-repo permissions are enabled for the given repo
+	EnabledForRepo(ctx context.Context, repo api.RepoName) (bool, error)
 }
 
 // DefaultSubRepoPermsChecker allows us to use a single instance with a shared
@@ -64,6 +67,10 @@ func (*noopPermsChecker) EnabledForRepoId(ctx context.Context, repoId api.RepoID
 	return false, nil
 }
 
+func (*noopPermsChecker) EnabledForRepo(ctx context.Context, repo api.RepoName) (bool, error) {
+	return false, nil
+}
+
 var _ SubRepoPermissionChecker = &SubRepoPermsClient{}
 
 // SubRepoPermissionsGetter allows getting sub repository permissions.
@@ -75,6 +82,9 @@ type SubRepoPermissionsGetter interface {
 
 	// RepoIdSupported returns true if repo with the given ID has sub-repo permissions
 	RepoIdSupported(ctx context.Context, repoId api.RepoID) (bool, error)
+
+	// RepoSupported returns true if repo with the given name has sub-repo permissions
+	RepoSupported(ctx context.Context, repo api.RepoName) (bool, error)
 }
 
 // SubRepoPermsClient is a concrete implementation of SubRepoPermissionChecker.
@@ -293,6 +303,10 @@ func (s *SubRepoPermsClient) EnabledForRepoId(ctx context.Context, id api.RepoID
 	return s.permissionsGetter.RepoIdSupported(ctx, id)
 }
 
+func (s *SubRepoPermsClient) EnabledForRepo(ctx context.Context, repo api.RepoName) (bool, error) {
+	return s.permissionsGetter.RepoSupported(ctx, repo)
+}
+
 // ActorPermissions returns the level of access the given actor has for the requested
 // content.
 //
@@ -330,6 +344,15 @@ func SubRepoEnabledForRepoID(ctx context.Context, checker SubRepoPermissionCheck
 		return false, nil
 	}
 	return checker.EnabledForRepoId(ctx, repoID)
+}
+
+// SubRepoEnabledForRepo takes a SubRepoPermissionChecker and repo name and returns true if sub-repo
+// permissions are enabled for the given repo
+func SubRepoEnabledForRepo(ctx context.Context, checker SubRepoPermissionChecker, repo api.RepoName) (bool, error) {
+	if !SubRepoEnabled(checker) {
+		return false, nil
+	}
+	return checker.EnabledForRepo(ctx, repo)
 }
 
 // CanReadAllPaths returns true if the actor can read all paths.

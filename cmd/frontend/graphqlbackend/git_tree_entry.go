@@ -2,9 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"io/fs"
 	"net/url"
-	neturl "net/url"
 	"os"
 	"path"
 	"strings"
@@ -22,17 +22,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var metricLabels = []string{"origin"}
-var codeIntelRequests = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_lsif_requests",
-	Help: "Counts LSIF requests.",
-}, metricLabels)
+var (
+	metricLabels      = []string{"origin"}
+	codeIntelRequests = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_lsif_requests",
+		Help: "Counts LSIF requests.",
+	}, metricLabels)
+)
 
 // GitTreeEntryResolver resolves an entry in a Git tree in a repository. The entry can be any Git
 // object type that is valid in a tree.
@@ -61,8 +65,8 @@ func NewGitTreeEntryResolver(db database.DB, commit *GitCommitResolver, stat fs.
 func (r *GitTreeEntryResolver) Path() string { return r.stat.Name() }
 func (r *GitTreeEntryResolver) Name() string { return path.Base(r.stat.Name()) }
 
-func (r *GitTreeEntryResolver) ToGitTree() (*GitTreeEntryResolver, bool) { return r, true }
-func (r *GitTreeEntryResolver) ToGitBlob() (*GitTreeEntryResolver, bool) { return r, true }
+func (r *GitTreeEntryResolver) ToGitTree() (*GitTreeEntryResolver, bool) { return r, r.IsDirectory() }
+func (r *GitTreeEntryResolver) ToGitBlob() (*GitTreeEntryResolver, bool) { return r, !r.IsDirectory() }
 
 func (r *GitTreeEntryResolver) ToVirtualFile() (*virtualFileResolver, bool) { return nil, false }
 
@@ -81,6 +85,7 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 
 		r.content, r.contentErr = git.ReadFile(
 			ctx,
+			r.db,
 			r.commit.repoResolver.RepoName(),
 			api.CommitID(r.commit.OID()),
 			r.Path(),
@@ -126,24 +131,27 @@ func (r *GitTreeEntryResolver) Repository() *RepositoryResolver { return r.commi
 func (r *GitTreeEntryResolver) IsRecursive() bool { return r.isRecursive }
 
 func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
+	return r.url(ctx).String(), nil
+}
+
+func (r *GitTreeEntryResolver) url(ctx context.Context) *url.URL {
 	span, ctx := ot.StartSpanFromContext(ctx, "treeentry.URL")
 	defer span.Finish()
 
 	if submodule := r.Submodule(); submodule != nil {
 		span.SetTag("Submodule", "true")
-		url := submodule.URL()
-		if strings.HasPrefix(url, "../") {
-			url = path.Join(r.Repository().Name(), url)
+		submoduleURL := submodule.URL()
+		if strings.HasPrefix(submoduleURL, "../") {
+			submoduleURL = path.Join(r.Repository().Name(), submoduleURL)
 		}
-		repoName, err := cloneURLToRepoName(ctx, r.db, url)
+		repoName, err := cloneURLToRepoName(ctx, r.db, submoduleURL)
 		if err != nil {
 			log15.Error("Failed to resolve submodule repository name from clone URL", "cloneURL", submodule.URL(), "err", err)
-			return "", nil
+			return &url.URL{}
 		}
-		return "/" + repoName + "@" + submodule.Commit(), nil
+		return &url.URL{Path: "/" + repoName + "@" + submodule.Commit()}
 	}
-	url := r.commit.repoRevURL()
-	return r.urlPath(url).String(), nil
+	return r.urlPath(r.commit.repoRevURL())
 }
 
 func (r *GitTreeEntryResolver) CanonicalURL() string {
@@ -178,7 +186,7 @@ func (r *GitTreeEntryResolver) ExternalURLs(ctx context.Context) ([]*externallin
 }
 
 func (r *GitTreeEntryResolver) RawZipArchiveURL() string {
-	return globals.ExternalURL().ResolveReference(&neturl.URL{
+	return globals.ExternalURL().ResolveReference(&url.URL{
 		Path:     path.Join(r.Repository().URL(), "-/raw/", r.Path()),
 		RawQuery: "format=zip",
 	}).String()
@@ -218,6 +226,7 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	}
 	entries, err := git.ReadDir(
 		ctx,
+		r.db,
 		authz.DefaultSubRepoPermsChecker,
 		r.commit.repoResolver.RepoName(),
 		api.CommitID(r.commit.OID()),
@@ -250,6 +259,54 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName 
 		ExactPath: !r.stat.IsDir(),
 		ToolName:  toolName,
 	})
+}
+
+func (r *GitTreeEntryResolver) CodeIntelSupport(ctx context.Context) (GitBlobCodeIntelSupportResolver, error) {
+	repo, err := r.commit.repoResolver.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return EnterpriseResolvers.codeIntelResolver.GitBlobCodeIntelInfo(ctx, &GitTreeEntryCodeIntelInfoArgs{
+		Repo: repo,
+		Path: r.Path(),
+	})
+}
+
+func (r *GitTreeEntryResolver) CodeIntelInfo(ctx context.Context) (GitTreeCodeIntelSupportResolver, error) {
+	repo, err := r.commit.repoResolver.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return EnterpriseResolvers.codeIntelResolver.GitTreeCodeIntelInfo(ctx, &GitTreeEntryCodeIntelInfoArgs{
+		Repo:   repo,
+		Commit: string(r.Commit().OID()),
+		Path:   r.Path(),
+	})
+}
+
+func (r *GitTreeEntryResolver) LocalCodeIntel(ctx context.Context) (*JSONValue, error) {
+	repo, err := r.commit.repoResolver.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	payload, err := symbols.DefaultClient.LocalCodeIntel(ctx, types.RepoCommitPath{
+		Repo:   string(repo.Name),
+		Commit: string(r.commit.oid),
+		Path:   r.Path(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	jsonValue, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	return &JSONValue{Value: string(jsonValue)}, nil
 }
 
 type fileInfo struct {

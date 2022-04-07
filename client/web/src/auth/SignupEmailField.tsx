@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { deriveInputClassName, InputValidationState } from '@sourcegraph/shared/src/util/useInputValidation'

@@ -1,11 +1,13 @@
-import classNames from 'classnames'
 import React from 'react'
 
+import classNames from 'classnames'
+
 import { AccessibleFieldProps } from './AccessibleFieldType'
-import styles from './BaseControlInput.module.scss'
 import { FormFieldLabel } from './FormFieldLabel'
 import { FormFieldMessage } from './FormFieldMessage'
 import { getValidStyle } from './utils'
+
+import styles from './BaseControlInput.module.scss'
 
 export const BASE_CONTROL_TYPES = ['radio', 'checkbox'] as const
 

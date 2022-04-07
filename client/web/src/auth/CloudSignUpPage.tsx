@@ -1,12 +1,13 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import React, { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ProductStatusBadge, Link } from '@sourcegraph/wildcard'
+import { ProductStatusBadge, Link, Icon } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
@@ -15,9 +16,10 @@ import { AuthProvider, SourcegraphContext } from '../jscontext'
 import { USER_AREA_USER_PROFILE } from '../user/area/UserArea'
 import { UserAvatar } from '../user/UserAvatar'
 
-import styles from './CloudSignUpPage.module.scss'
 import { ExternalsAuth } from './ExternalsAuth'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
+
+import styles from './CloudSignUpPage.module.scss'
 
 interface Props extends ThemeProps, TelemetryProps, FeatureFlagProps {
     source: string | null
@@ -74,12 +76,6 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
     })
     const invitedByUser = data?.user
 
-    useEffect(() => {
-        if (invitedBy !== null) {
-            telemetryService.log('SignUpInvitedByUser')
-        }
-    }, [telemetryService, invitedBy])
-
     const logEvent = (type: AuthProvider['serviceType']): void => {
         const eventType = type === 'builtin' ? 'form' : type
         telemetryService.log('SignupInitiated', { type: eventType }, { type: eventType })
@@ -121,7 +117,7 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
                     className="d-flex align-items-center"
                     to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}
                 >
-                    <ChevronLeftIcon className={classNames('icon-inline', styles.backIcon)} />
+                    <Icon className={styles.backIcon} as={ChevronLeftIcon} />
                     Go back
                 </Link>
             </small>
@@ -153,7 +149,8 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
                         {invitedByUser ? (
                             <>
                                 <UserAvatar
-                                    className={classNames('icon-inline', 'mr-3', styles.avatar)}
+                                    inline={true}
+                                    className={classNames('mr-3', styles.avatar)}
                                     user={invitedByUser}
                                 />
                                 <strong className="mr-1">{invitedBy}</strong> has invited you to join Sourcegraph

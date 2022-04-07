@@ -13,11 +13,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func DownTo(commandName string, factory RunnerFactory, out *output.Output) *ffcli.Command {
+func DownTo(commandName string, factory RunnerFactory, out *output.Output, development bool) *ffcli.Command {
 	var (
-		flagSet        = flag.NewFlagSet(fmt.Sprintf("%s downto", commandName), flag.ExitOnError)
-		schemaNameFlag = flagSet.String("db", "", `The target schema to modify.`)
-		targetsFlag    = flagSet.String("target", "", "Revert all children of the given target. Comma-separated values are accepted.")
+		flagSet                  = flag.NewFlagSet(fmt.Sprintf("%s downto", commandName), flag.ExitOnError)
+		schemaNameFlag           = flagSet.String("db", "", `The target schema to modify.`)
+		unprivilegedOnlyFlag     = flagSet.Bool("unprivileged-only", false, `Do not apply privileged migrations.`)
+		ignoreSingleDirtyLogFlag = flagSet.Bool("ignore-single-dirty-log", development, `Ignore a previously failed attempt if it will be immediately retried by this operation.`)
+		targetsFlag              = flagSet.String("target", "", "Revert all children of the given target. Comma-separated values are accepted.")
 	)
 
 	exec := func(ctx context.Context, args []string) error {
@@ -31,11 +33,11 @@ func DownTo(commandName string, factory RunnerFactory, out *output.Output) *ffcl
 			return flag.ErrHelp
 		}
 
-		targets := strings.Split(*targetsFlag, ",")
-		if len(targets) == 0 {
+		if *targetsFlag == "" {
 			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply a migration target via -target"))
 			return flag.ErrHelp
 		}
+		targets := strings.Split(*targetsFlag, ",")
 
 		versions := make([]int, 0, len(targets))
 		for _, target := range targets {
@@ -60,6 +62,8 @@ func DownTo(commandName string, factory RunnerFactory, out *output.Output) *ffcl
 					TargetVersions: versions,
 				},
 			},
+			UnprivilegedOnly:     *unprivilegedOnlyFlag,
+			IgnoreSingleDirtyLog: *ignoreSingleDirtyLogFlag,
 		})
 	}
 

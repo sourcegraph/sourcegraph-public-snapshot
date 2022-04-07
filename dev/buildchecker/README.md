@@ -1,4 +1,4 @@
-# buildchecker
+# buildchecker [![buildchecker](https://github.com/sourcegraph/sourcegraph/actions/workflows/buildchecker.yml/badge.svg)](https://github.com/sourcegraph/sourcegraph/actions/workflows/buildchecker.yml)
 
 `buildchecker` is designed to respond to periods of consecutive build failures on a Buildkite pipeline.
 Owned by the [DevX team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/dev-experience).
@@ -28,10 +28,28 @@ Also see the [`buildchecker` GitHub Action workflow](../../.github/workflows/bui
 Writes aggregated historical data, including the builds it finds, to a few files.
 
 ```sh
-go run ./dev/buildchecker -buildkite.token=$BUILDKITE_TOKEN -failures.timeout=999 -created.from="2021-08-01" history
+go run ./dev/buildchecker \
+  -buildkite.token=$BUILDKITE_TOKEN \
+  -builds.write-to=".tmp/builds.json" \
+  -csv.write-to=".tmp/" \
+  -failures.timeout=999 \
+  -created.from="2021-08-01" \
+  history
 ```
 
-To load builds from a file instead of fetching from Buildkite, use `-load-from="$FILE"`.
+To load builds from a file instead of fetching from Buildkite, use `-builds.load-from="$FILE"`.
+
+You can also send metrics to Honeycomb with `-honeycomb.dataset` and `-honeycomb.token`:
+
+```sh
+go run ./dev/buildchecker \
+  -builds.load-from=".tmp/builds.json" \
+  -failures.timeout=999 \
+  -created.from="2021-08-01" \
+  -honeycomb.dataset="buildkite-history" \
+  -honeycomb.token=$HONEYCOMB_TOKEN \
+  history
+```
 
 ## Tokens
 

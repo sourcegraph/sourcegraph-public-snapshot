@@ -48,7 +48,7 @@ func maybeTaggedImage(rootImage, tag string) string {
 //
 // The `addDockerImages` pipeline step determines what images are built and published.
 var SourcegraphDockerImages = append(DeploySourcegraphDockerImages,
-	"server")
+	"server", "sg")
 
 // DeploySourcegraphDockerImages denotes all Docker images that are included in a typical
 // deploy-sourcegraph installation.
@@ -69,7 +69,7 @@ var DeploySourcegraphDockerImages = []string{
 	"jaeger-agent",
 	"jaeger-all-in-one",
 	"minio",
-	"postgres-12.6-alpine",
+	"postgres-12-alpine",
 	"postgres_exporter",
 	"precise-code-intel-worker",
 	"prometheus",

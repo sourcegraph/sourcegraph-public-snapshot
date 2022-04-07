@@ -446,9 +446,12 @@ From there, you can start exploring logs with the Grafana explore panel.
 							continue
 						}
 
-						// Set buildkite branch if available
+						// Set buildkite metadata if available
 						if ciBranch := os.Getenv("BUILDKITE_BRANCH"); ciBranch != "" {
 							stream.Stream.Branch = ciBranch
+						}
+						if ciQueue := os.Getenv("BUILDKITE_AGENT_META_DATA_QUEUE"); ciQueue != "" {
+							stream.Stream.Queue = ciQueue
 						}
 
 						err = lokiClient.PushStreams(ctx, []*loki.Stream{stream})
@@ -493,8 +496,19 @@ From there, you can start exploring logs with the Grafana explore panel.
 				}
 				return writePrettyMarkdown(out)
 			},
-		},
-		},
+		}, {
+			Name:       "open",
+			ShortHelp:  "Open Sourcegraph's Buildkite page in browser.",
+			ShortUsage: "sg ci open [pipeline]",
+			LongHelp:   "Open Sourcegraph's Buildkite page in browser. Optionally specify the pipeline you want to open.",
+			Exec: func(ctx context.Context, args []string) error {
+				buildkiteURL := fmt.Sprintf("https://buildkite.com/%s", bk.BuildkiteOrg)
+				if pipeline := args[0]; pipeline != "" {
+					buildkiteURL += fmt.Sprintf("/%s", pipeline)
+				}
+				return open.URL(buildkiteURL)
+			},
+		}},
 	}
 )
 

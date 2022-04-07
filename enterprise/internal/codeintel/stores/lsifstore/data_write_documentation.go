@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -336,7 +335,7 @@ func (s *Store) WriteDocumentationSearch(
 		return errors.Wrap(err, "upsertTags")
 	}
 
-	if err := tx.replaceSearchRecords(ctx, upload, repositoryNameID, languageNameID, pages, tagIDs, tableSuffix, timeutil.Now()); err != nil {
+	if err := tx.replaceSearchRecords(ctx, upload, repositoryNameID, languageNameID, pages, tagIDs, tableSuffix); err != nil {
 		return errors.Wrap(err, "replaceSearchRecords")
 	}
 
@@ -508,7 +507,6 @@ func (s *Store) replaceSearchRecords(
 	pages []*precise.DocumentationPageData,
 	tagIDs map[string]int,
 	tableSuffix string,
-	now time.Time,
 ) error {
 	tx, err := s.Transact(ctx)
 	if err != nil {
@@ -731,11 +729,11 @@ func (s *Store) truncateDocumentationSearchIndexSize(ctx context.Context, tableS
 	totalRows, exists, err := basestore.ScanFirstInt64(s.Query(ctx, sqlf.Sprintf(
 		strings.ReplaceAll(countDocumentationSearchRowsQuery, "$SUFFIX", tableSuffix),
 	)))
-	if !exists {
-		return errors.Newf("failed to count table size")
-	}
 	if err != nil {
 		return errors.Wrap(err, "counting table size")
+	}
+	if !exists {
+		return errors.Newf("failed to count table size")
 	}
 
 	searchIndexLimitFactor := s.config.SiteConfig().ApidocsSearchIndexSizeLimitFactor

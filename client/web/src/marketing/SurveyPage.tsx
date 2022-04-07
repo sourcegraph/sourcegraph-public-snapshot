@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react'
+
 import { useLocation, useParams } from 'react-router'
 
 import { FeedbackText } from '@sourcegraph/wildcard'
@@ -9,8 +10,9 @@ import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { SurveyForm, SurveyFormLocationState } from './SurveyForm'
-import styles from './SurveyPage.module.scss'
 import { TweetFeedback } from './TweetFeedback'
+
+import styles from './SurveyPage.module.scss'
 
 interface SurveyPageProps {
     authenticatedUser: AuthenticatedUser | null

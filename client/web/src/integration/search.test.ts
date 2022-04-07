@@ -183,7 +183,7 @@ describe('Search', () => {
             await driver.page.waitForSelector('#monaco-query-input')
             await driver.replaceText({
                 selector: '#monaco-query-input',
-                newText: 'go-jwt-middlew',
+                newText: 'repo:go-jwt-middlew',
                 enterTextMethod: 'type',
             })
             await driver.page.waitForSelector('#monaco-query-input .suggest-widget.visible')
@@ -200,7 +200,7 @@ describe('Search', () => {
             // File autocomplete from repo search bar
             await driver.page.waitForSelector('#monaco-query-input')
             await driver.page.focus('#monaco-query-input')
-            await driver.page.keyboard.type('jwtmi')
+            await driver.page.keyboard.type('file:jwtmi')
             await driver.page.waitForSelector('#monaco-query-input .suggest-widget.visible')
             await driver.findElementWithText('jwtmiddleware.go', {
                 selector: '#monaco-query-input .suggest-widget.visible span',
@@ -410,7 +410,7 @@ describe('Search', () => {
                 waitUntil: 'networkidle0',
             })
             await hideCreateCodeMonitorFeatureTour()
-            await driver.page.waitForSelector('[data-testid="search-result-match-code-excerpt"] .selection-highlight', {
+            await driver.page.waitForSelector('[data-testid="search-result-match-code-excerpt"] .match-highlight', {
                 visible: true,
             })
             await driver.page.waitForSelector('#monaco-query-input', { visible: true })
@@ -431,7 +431,7 @@ describe('Search', () => {
                 waitUntil: 'networkidle0',
             })
             await hideCreateCodeMonitorFeatureTour()
-            await driver.page.waitForSelector('[data-testid="search-result-match-code-excerpt"] .selection-highlight', {
+            await driver.page.waitForSelector('[data-testid="search-result-match-code-excerpt"] .match-highlight', {
                 visible: true,
             })
             await driver.page.waitForSelector('#monaco-query-input', { visible: true })
@@ -449,7 +449,7 @@ describe('Search', () => {
             testContext.overrideSearchStreamEvents(mixedSearchStreamEvents)
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
-            await driver.page.waitForSelector('[data-testid="code-excerpt"] .selection-highlight', {
+            await driver.page.waitForSelector('[data-testid="code-excerpt"] .match-highlight', {
                 visible: true,
             })
             await driver.page.waitForSelector('#monaco-query-input', { visible: true })

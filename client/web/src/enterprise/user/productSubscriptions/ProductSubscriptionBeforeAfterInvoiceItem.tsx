@@ -1,6 +1,7 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
-import React from 'react'
 
 import { numberWithCommas } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'

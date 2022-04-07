@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"net/url"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -10,8 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -144,11 +147,26 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 		return nil, err
 	}
 
+	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", false) {
+		settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, tx.db)
+		if err != nil {
+			return nil, err
+		}
+
+		// Snapshot the state of the searched repos when the monitor is created so that
+		// we can distinguish new repos.
+		err = codemonitors.Snapshot(ctx, tx.db, args.Trigger.Query, m.ID, settings)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// Create actions.
 	err = tx.createActions(ctx, m.ID, args.Actions)
 	if err != nil {
 		return nil, err
 	}
+
 	return &monitor{
 		Resolver: r,
 		Monitor:  m,
@@ -211,7 +229,7 @@ func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		return nil, err
 	}
 
-	toCreate, toDelete, err := splitActionIDs(ctx, args, actionIDs)
+	toCreate, toDelete, err := splitActionIDs(args, actionIDs)
 	if len(toDelete) == len(actionIDs) && len(toCreate) == 0 {
 		return nil, errors.Errorf("you tried to delete all actions, but every monitor must be connected to at least 1 action")
 	}
@@ -261,6 +279,9 @@ func (r *Resolver) createActions(ctx context.Context, monitorID int64, args []*g
 				return err
 			}
 		case a.SlackWebhook != nil:
+			if err := validateSlackURL(a.SlackWebhook.URL); err != nil {
+				return err
+			}
 			_, err := r.db.CodeMonitors().CreateSlackWebhookAction(ctx, monitorID, a.SlackWebhook.Enabled, a.SlackWebhook.IncludeResults, a.SlackWebhook.URL)
 			if err != nil {
 				return err
@@ -385,11 +406,6 @@ func (r *Resolver) TriggerTestSlackWebhookAction(ctx context.Context, args *grap
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func (r *Resolver) CodeMonitorSearch(ctx context.Context, args *graphqlbackend.SearchArgs) (graphqlbackend.SearchImplementer, error) {
-	args.Version = "V2"
-	return graphqlbackend.NewSearchImplementer(ctx, r.db, args)
-}
-
 func sendTestEmail(ctx context.Context, recipient graphql.ID, description string) error {
 	var (
 		userID int32
@@ -403,7 +419,7 @@ func sendTestEmail(ctx context.Context, recipient graphql.ID, description string
 	if orgID != 0 {
 		return nil
 	}
-	data := background.NewTestTemplateDataForNewSearchResults(ctx, description)
+	data := background.NewTestTemplateDataForNewSearchResults(description)
 	return background.SendEmailForNewSearchResult(ctx, userID, data)
 }
 
@@ -436,7 +452,7 @@ func (r *Resolver) actionIDsForMonitorIDInt64(ctx context.Context, monitorID int
 
 // splitActionIDs splits actions into three buckets: create, delete and update.
 // Note: args is mutated. After splitActionIDs, args only contains actions to be updated.
-func splitActionIDs(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs, actionIDs []graphql.ID) (toCreate []*graphqlbackend.CreateActionArgs, toDelete []graphql.ID, err error) {
+func splitActionIDs(args *graphqlbackend.UpdateCodeMonitorArgs, actionIDs []graphql.ID) (toCreate []*graphqlbackend.CreateActionArgs, toDelete []graphql.ID, err error) {
 	aMap := make(map[graphql.ID]struct{}, len(actionIDs))
 	for _, id := range actionIDs {
 		aMap[id] = struct{}{}
@@ -512,11 +528,35 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		return nil, err
 	}
 
+	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", false) {
+		currentTrigger, err := r.db.CodeMonitors().GetQueryTriggerForMonitor(ctx, monitorID)
+		if err != nil {
+			return nil, err
+		}
+
+		// When the query is changed, take a new snapshot of the commits that currently
+		// exist so we know where to start.
+		if currentTrigger.QueryString != args.Trigger.Update.Query {
+			settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, r.db)
+			if err != nil {
+				return nil, err
+			}
+
+			// Snapshot the state of the searched repos when the monitor is created so that
+			// we can distinguish new repos.
+			err = codemonitors.Snapshot(ctx, r.db, args.Trigger.Update.Query, monitorID, settings)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	// Update trigger.
 	err = r.db.CodeMonitors().UpdateQueryTrigger(ctx, triggerID, args.Trigger.Update.Query)
 	if err != nil {
 		return nil, err
 	}
+
 	// Update actions.
 	if len(args.Actions) == 0 {
 		return &monitor{
@@ -531,6 +571,9 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		case action.Webhook != nil:
 			err = r.updateWebhookAction(ctx, *action.Webhook)
 		case action.SlackWebhook != nil:
+			if err := validateSlackURL(action.SlackWebhook.Update.URL); err != nil {
+				return nil, err
+			}
 			err = r.updateSlackWebhookAction(ctx, *action.SlackWebhook)
 		default:
 			err = errors.New("action must be one of email, webhook, or slack webhook")
@@ -927,6 +970,18 @@ func (m *monitorTriggerEvent) Status() (string, error) {
 	return "", errors.Errorf("unknown status: %s", m.State)
 }
 
+func (m *monitorTriggerEvent) Query() *string {
+	return m.TriggerJob.QueryString
+}
+
+func (m *monitorTriggerEvent) ResultCount() int32 {
+	count := 0
+	for _, cm := range m.TriggerJob.SearchResults {
+		count += cm.ResultCount()
+	}
+	return int32(count)
+}
+
 func (m *monitorTriggerEvent) Message() *string {
 	return m.FailureMessage
 }
@@ -1304,4 +1359,17 @@ func (m *monitorActionEvent) Timestamp() graphqlbackend.DateTime {
 		return graphqlbackend.DateTime{Time: m.db.CodeMonitors().Now()}
 	}
 	return graphqlbackend.DateTime{Time: *m.FinishedAt}
+}
+
+func validateSlackURL(urlString string) error {
+	u, err := url.Parse(urlString)
+	if err != nil {
+		return err
+	}
+
+	// Restrict slack webhooks to only canonical host and HTTPS
+	if u.Host != "hooks.slack.com" || u.Scheme != "https" {
+		return errors.New("slack webhook URL must begin with 'https://hooks.slack.com/")
+	}
+	return nil
 }

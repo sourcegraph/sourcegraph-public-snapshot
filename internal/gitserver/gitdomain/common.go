@@ -2,6 +2,7 @@ package gitdomain
 
 import (
 	"encoding/hex"
+	"fmt"
 	"strings"
 	"time"
 
@@ -101,5 +102,16 @@ type RefDescription struct {
 	Name            string
 	Type            RefType
 	IsDefaultBranch bool
-	CreatedDate     time.Time
+	CreatedDate     *time.Time
+}
+
+// A PersonCount is a contributor to a repository.
+type PersonCount struct {
+	Name  string
+	Email string
+	Count int32
+}
+
+func (p *PersonCount) String() string {
+	return fmt.Sprintf("%d %s <%s>", p.Count, p.Name, p.Email)
 }

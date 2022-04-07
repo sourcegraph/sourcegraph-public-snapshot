@@ -41,6 +41,7 @@ export const createBlobContentResult = (
                 highlight: {
                     aborted: false,
                     html,
+                    lsif: '',
                 },
             },
         },

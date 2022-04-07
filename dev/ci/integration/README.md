@@ -1,6 +1,6 @@
 # Integration tests
 
-This directory is home to the integration tests that run in [Sourcegraph's Buildkite pipelines](https://docs.sourcegraph.com/dev/background-information/continuous_integration#buildkite-pipelines).
+This directory is home to the integration tests that run in [Sourcegraph's Buildkite pipelines](https://docs.sourcegraph.com/dev/background-information/ci#buildkite-pipelines).
 
 ## Test structure
 

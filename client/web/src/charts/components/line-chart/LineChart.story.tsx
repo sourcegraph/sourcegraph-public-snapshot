@@ -1,120 +1,274 @@
-import { Meta } from '@storybook/react'
-import React from 'react'
+import React, { useCallback, useState } from 'react'
+
+import { Meta, Story } from '@storybook/react'
+import { ParentSize } from '@visx/responsive'
 
 import { WebStory } from '../../../components/WebStory'
+import { Series } from '../../types'
 
-import { LineChartSeries } from './types'
+import { LineChart, LegendList, LegendItem, getLineColor } from '.'
 
-import { LineChart, LegendList, ParentSize } from '.'
-
-export default {
+const StoryConfig: Meta = {
     title: 'web/charts/line',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
-} as Meta
+}
+
+export default StoryConfig
+
+export const LineChartsVitrina: Story = () => (
+    <div className="d-flex flex-wrap" style={{ gap: 20 }}>
+        <PlainChart />
+        <PlainStackedChart />
+        <WithLegendExample />
+        <WithHugeData />
+        <WithZeroOneData />
+        <WithDataSteps />
+        <WithDataMissingValues />
+        <StackedWithDataMissingValues />
+    </div>
+)
 
 interface StandardDatum {
     a: number | null
+    aLink: string
     b: number | null
+    bLink: string
     c: number | null
-    x: number | null
+    cLink: string
+    x: number
 }
 
-export const PlainChart = () => {
+const getXValue = (datum: { x: number }) => new Date(datum.x)
+
+const PlainChart = () => {
     const DATA: StandardDatum[] = [
-        { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, c: 5000, a: 4000, b: 15000 },
-        { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, c: 5000, a: 4000, b: 26000 },
-        { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, c: 5000, a: 5600, b: 20000 },
-        { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, c: 5000, a: 9800, b: 19000 },
-        { x: 1588965700286, c: 5000, a: 6000, b: 17000 },
+        {
+            x: 1588965700286 - 4 * 24 * 60 * 60 * 1000,
+            a: 4000,
+            aLink: 'https://google.com/search',
+            b: 15000,
+            bLink: 'https://yandex.com/search',
+            c: 5000,
+            cLink: 'https://twitter.com/search',
+        },
+        {
+            x: 1588965700286 - 3 * 24 * 60 * 60 * 1000,
+            a: 4000,
+            aLink: 'https://google.com/search',
+            b: 26000,
+            bLink: 'https://yandex.com/search',
+            c: 5000,
+            cLink: 'https://twitter.com/search',
+        },
+        {
+            x: 1588965700286 - 2 * 24 * 60 * 60 * 1000,
+            a: 5600,
+            aLink: 'https://google.com/search',
+            b: 20000,
+            bLink: 'https://yandex.com/search',
+            c: 5000,
+            cLink: 'https://twitter.com/search',
+        },
+        {
+            x: 1588965700286 - 24 * 60 * 60 * 1000,
+            a: 9800,
+            aLink: 'https://google.com/search',
+            b: 19000,
+            bLink: 'https://yandex.com/search',
+            c: 5000,
+            cLink: 'https://twitter.com/search',
+        },
+        {
+            x: 1588965700286,
+            a: 6000,
+            aLink: 'https://google.com/search',
+            b: 17000,
+            bLink: 'https://yandex.com/search',
+            c: 5000,
+            cLink: 'https://twitter.com/search',
+        },
     ]
 
-    const SERIES: LineChartSeries<StandardDatum>[] = [
+    const SERIES: Series<StandardDatum>[] = [
         {
             dataKey: 'a',
             name: 'A metric',
             color: 'var(--blue)',
-            linkURLs: [
-                'https://google.com/search',
-                'https://google.com/search',
-                'https://google.com/search',
-                'https://google.com/search',
-                'https://google.com/search',
-            ],
+            getLinkURL: datum => datum.aLink,
         },
         {
             dataKey: 'b',
             name: 'B metric',
             color: 'var(--warning)',
-            linkURLs: [
-                'https://yandex.com/search',
-                'https://yandex.com/search',
-                'https://yandex.com/search',
-                'https://yandex.com/search',
-                'https://yandex.com/search',
-            ],
+            getLinkURL: datum => datum.bLink,
         },
         {
             dataKey: 'c',
             name: 'C metric',
             color: 'var(--green)',
-            linkURLs: [
-                'https://twitter.com/search',
-                'https://twitter.com/search',
-                'https://twitter.com/search',
-                'https://twitter.com/search',
-                'https://twitter.com/search',
-            ],
+            getLinkURL: datum => datum.cLink,
         },
     ]
 
-    return <LineChart width={400} height={400} data={DATA} series={SERIES} xAxisKey="x" />
+    return <LineChart width={400} height={400} data={DATA} series={SERIES} getXValue={getXValue} />
 }
 
-export const WithLegendExample = () => {
+const PlainStackedChart = () => {
+    const [active, setActive] = useState(false)
     const DATA: StandardDatum[] = [
-        { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, c: 5000, a: 4000, b: 15000 },
-        { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, c: 5000, a: 4000, b: 26000 },
-        { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, c: 5000, a: 5600, b: 20000 },
-        { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, c: 5000, a: 9800, b: 19000 },
-        { x: 1588965700286, c: 5000, a: 6000, b: 17000 },
+        {
+            x: 1588965700286 - 4 * 24 * 60 * 60 * 1000,
+            a: 4000,
+            aLink: 'https://google.com/search',
+            b: 6000,
+            bLink: 'https://yandex.com/search',
+            c: 5000,
+            cLink: 'https://twitter.com/search',
+        },
+        {
+            x: 1588965700286 - 3 * 24 * 60 * 60 * 1000,
+            a: 4000,
+            aLink: 'https://google.com/search',
+            b: 6000,
+            bLink: 'https://yandex.com/search',
+            c: 5000,
+            cLink: 'https://twitter.com/search',
+        },
+        {
+            x: 1588965700286 - 2 * 24 * 60 * 60 * 1000,
+            a: 5600,
+            aLink: 'https://google.com/search',
+            b: 6000,
+            bLink: 'https://yandex.com/search',
+            c: 5000,
+            cLink: 'https://twitter.com/search',
+        },
+        {
+            x: 1588965700286 - 24 * 60 * 60 * 1000,
+            a: 9800,
+            aLink: 'https://google.com/search',
+            b: 6000,
+            bLink: 'https://yandex.com/search',
+            c: 5000,
+            cLink: 'https://twitter.com/search',
+        },
+        {
+            x: 1588965700286,
+            a: 6000,
+            aLink: 'https://google.com/search',
+            b: 6000,
+            bLink: 'https://yandex.com/search',
+            c: 5000,
+            cLink: 'https://twitter.com/search',
+        },
     ]
 
-    const SERIES: LineChartSeries<StandardDatum>[] = [
+    const SERIES: Series<StandardDatum>[] = [
         {
             dataKey: 'a',
             name: 'A metric',
             color: 'var(--blue)',
-            linkURLs: [
-                'https://google.com/search',
-                'https://google.com/search',
-                'https://google.com/search',
-                'https://google.com/search',
-                'https://google.com/search',
-            ],
+            getLinkURL: datum => datum.aLink,
         },
         {
             dataKey: 'b',
             name: 'B metric',
             color: 'var(--warning)',
-            linkURLs: [
-                'https://yandex.com/search',
-                'https://yandex.com/search',
-                'https://yandex.com/search',
-                'https://yandex.com/search',
-                'https://yandex.com/search',
-            ],
+            getLinkURL: datum => datum.bLink,
         },
         {
             dataKey: 'c',
             name: 'C metric',
             color: 'var(--green)',
-            linkURLs: [
-                'https://twitter.com/search',
-                'https://twitter.com/search',
-                'https://twitter.com/search',
-                'https://twitter.com/search',
-                'https://twitter.com/search',
-            ],
+            getLinkURL: datum => datum.cLink,
+        },
+    ]
+
+    return (
+        <section>
+            <button className="d-block" onClick={() => setActive(!active)}>
+                Toggle zero Y axis state
+            </button>
+            <LineChart
+                width={400}
+                height={400}
+                data={DATA}
+                series={SERIES}
+                stacked={true}
+                zeroYAxisMin={active}
+                getXValue={getXValue}
+            />
+        </section>
+    )
+}
+
+const WithLegendExample = () => {
+    const DATA: StandardDatum[] = [
+        {
+            x: 1588965700286 - 4 * 24 * 60 * 60 * 1000,
+            a: 4000,
+            aLink: 'https://google.com/search',
+            b: 15000,
+            bLink: 'https://yandex.com/search',
+            c: 5000,
+            cLink: 'https://twitter.com/search',
+        },
+        {
+            x: 1588965700286 - 3 * 24 * 60 * 60 * 1000,
+            a: 4000,
+            aLink: 'https://google.com/search',
+            b: 26000,
+            bLink: 'https://yandex.com/search',
+            c: 5000,
+            cLink: 'https://twitter.com/search',
+        },
+        {
+            x: 1588965700286 - 2 * 24 * 60 * 60 * 1000,
+            a: 5600,
+            aLink: 'https://google.com/search',
+            b: 20000,
+            bLink: 'https://yandex.com/search',
+            c: 5000,
+            cLink: 'https://twitter.com/search',
+        },
+        {
+            x: 1588965700286 - 24 * 60 * 60 * 1000,
+            a: 9800,
+            aLink: 'https://google.com/search',
+            b: 19000,
+            bLink: 'https://yandex.com/search',
+            c: 5000,
+            cLink: 'https://twitter.com/search',
+        },
+        {
+            x: 1588965700286,
+            a: 6000,
+            aLink: 'https://google.com/search',
+            b: 17000,
+            bLink: 'https://yandex.com/search',
+            c: 5000,
+            cLink: 'https://twitter.com/search',
+        },
+    ]
+
+    const SERIES: Series<StandardDatum>[] = [
+        {
+            dataKey: 'a',
+            name: 'A metric',
+            color: 'var(--blue)',
+            getLinkURL: datum => datum.aLink,
+        },
+        {
+            dataKey: 'b',
+            name: 'B metric',
+            color: 'var(--warning)',
+            getLinkURL: datum => datum.bLink,
+        },
+        {
+            dataKey: 'c',
+            name: 'C metric',
+            color: 'var(--green)',
+            getLinkURL: datum => datum.cLink,
         },
     ]
 
@@ -122,10 +276,20 @@ export const WithLegendExample = () => {
         <div className="d-flex flex-column" style={{ width: 400, height: 400 }}>
             <ParentSize className="flex-1">
                 {({ width, height }) => (
-                    <LineChart<StandardDatum> width={width} height={height} data={DATA} series={SERIES} xAxisKey="x" />
+                    <LineChart<StandardDatum>
+                        width={width}
+                        height={height}
+                        data={DATA}
+                        series={SERIES}
+                        getXValue={getXValue}
+                    />
                 )}
             </ParentSize>
-            <LegendList series={SERIES} />
+            <LegendList>
+                {SERIES.map(line => (
+                    <LegendItem key={line.dataKey.toString()} color={getLineColor(line)} name={line.name} />
+                ))}
+            </LegendList>
         </div>
     )
 }
@@ -136,7 +300,7 @@ interface HugeDataDatum {
     dateTime: number
 }
 
-export const WithHugeData = () => {
+const WithHugeData = () => {
     const DATA: HugeDataDatum[] = [
         { dateTime: 1606780800000, series0: 8394074, series1: 1001777 },
         {
@@ -176,10 +340,12 @@ export const WithHugeData = () => {
         },
     ]
 
-    const SERIES: LineChartSeries<HugeDataDatum>[] = [
+    const SERIES: Series<HugeDataDatum>[] = [
         { name: 'Fix', dataKey: 'series0', color: 'var(--oc-indigo-7)' },
         { name: 'Revert', dataKey: 'series1', color: 'var(--oc-orange-7)' },
     ]
+
+    const getXValue = useCallback<(datum: HugeDataDatum) => Date>(datum => new Date(datum.dateTime), [])
 
     return (
         <div style={{ width: 400, height: 400 }}>
@@ -190,7 +356,7 @@ export const WithHugeData = () => {
                         height={height}
                         data={DATA}
                         series={SERIES}
-                        xAxisKey="dateTime"
+                        getXValue={getXValue}
                     />
                 )}
             </ParentSize>
@@ -203,13 +369,13 @@ interface ZeroOneDatum {
     x: number
 }
 
-export const WithZeroOneData = () => {
+const WithZeroOneData = () => {
     const DATA: ZeroOneDatum[] = [
         { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: 0 },
         { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 1 },
     ]
 
-    const SERIES: LineChartSeries<ZeroOneDatum>[] = [
+    const SERIES: Series<ZeroOneDatum>[] = [
         {
             dataKey: 'a',
             name: 'A metric',
@@ -221,7 +387,13 @@ export const WithZeroOneData = () => {
         <div style={{ width: 400, height: 400 }}>
             <ParentSize>
                 {({ width, height }) => (
-                    <LineChart<ZeroOneDatum> width={width} height={height} data={DATA} series={SERIES} xAxisKey="x" />
+                    <LineChart<ZeroOneDatum>
+                        width={width}
+                        height={height}
+                        data={DATA}
+                        series={SERIES}
+                        getXValue={getXValue}
+                    />
                 )}
             </ParentSize>
         </div>
@@ -233,7 +405,7 @@ interface StepDatum {
     dateTime: number
 }
 
-export const WithDataSteps = () => {
+const WithDataSteps = () => {
     const DATA_WITH_STEP: StepDatum[] = [
         { dateTime: 1604188800000, series0: 3725 },
         {
@@ -268,13 +440,15 @@ export const WithDataSteps = () => {
         { dateTime: 1634952495000, series0: 3053 },
     ]
 
-    const SERIES: LineChartSeries<StepDatum>[] = [
+    const SERIES: Series<StepDatum>[] = [
         {
             dataKey: 'series0',
             name: 'A metric',
             color: 'var(--blue)',
         },
     ]
+
+    const getXValue = useCallback<(datum: StepDatum) => Date>(datum => new Date(datum.dateTime), [])
 
     return (
         <div style={{ width: 400, height: 400 }}>
@@ -285,7 +459,7 @@ export const WithDataSteps = () => {
                         height={height}
                         data={DATA_WITH_STEP}
                         series={SERIES}
-                        xAxisKey="dateTime"
+                        getXValue={getXValue}
                     />
                 )}
             </ParentSize>
@@ -296,21 +470,22 @@ export const WithDataSteps = () => {
 interface DatumWithMissingData {
     a: number | null
     b: number | null
+    c: number | null
     x: number
 }
 
-export const WithDataMissingValues = () => {
+const WithDataMissingValues = () => {
     const DATA_WITH_STEP: DatumWithMissingData[] = [
-        { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: null, b: null },
-        { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: null, b: null },
-        { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 94, b: 200 },
-        { x: 1588965700286 - 1.5 * 24 * 60 * 60 * 1000, a: 134, b: null },
-        { x: 1588965700286 - 1.3 * 24 * 60 * 60 * 1000, a: null, b: 150 },
-        { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, a: 134, b: 190 },
-        { x: 1588965700286, a: 123, b: 170 },
+        { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: null, b: null, c: null },
+        { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: null, b: null, c: null },
+        { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 94, b: 200, c: 200 },
+        { x: 1588965700286 - 1.5 * 24 * 60 * 60 * 1000, a: 134, b: null, c: 134 },
+        { x: 1588965700286 - 1.3 * 24 * 60 * 60 * 1000, a: null, b: 150, c: null },
+        { x: 1588965700286 - 24 * 60 * 60 * 1000, a: 134, b: 190, c: 134 },
+        { x: 1588965700286, a: 123, b: 170, c: 123 },
     ]
 
-    const SERIES: LineChartSeries<DatumWithMissingData>[] = [
+    const SERIES: Series<DatumWithMissingData>[] = [
         {
             dataKey: 'a',
             name: 'A metric',
@@ -332,7 +507,58 @@ export const WithDataMissingValues = () => {
                         height={height}
                         data={DATA_WITH_STEP}
                         series={SERIES}
-                        xAxisKey="x"
+                        getXValue={getXValue}
+                        zeroYAxisMin={true}
+                    />
+                )}
+            </ParentSize>
+        </div>
+    )
+}
+
+const StackedWithDataMissingValues = () => {
+    const DATA_WITH_STEP: DatumWithMissingData[] = [
+        { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: null, b: null, c: null },
+        { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: null, b: null, c: null },
+        { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 94, b: null, c: null },
+        { x: 1588965700286 - 1.5 * 24 * 60 * 60 * 1000, a: 134, b: null, c: 200 },
+        { x: 1588965700286 - 1.4 * 24 * 60 * 60 * 1000, a: null, b: 150, c: null },
+        { x: 1588965700286 - 1.3 * 24 * 60 * 60 * 1000, a: null, b: 150, c: 150 },
+        { x: 1588965700286 - 24 * 60 * 60 * 1000, a: 134, b: 190, c: 190 },
+        { x: 1588965700286, a: 123, b: 170, c: 170 },
+        { x: 1588965700286 + 24 * 60 * 60 * 1000, a: null, b: 200, c: null },
+        { x: 1588965700286 + 1.3 * 24 * 60 * 60 * 1000, a: null, b: 180, c: null },
+    ]
+
+    const SERIES: Series<DatumWithMissingData>[] = [
+        {
+            dataKey: 'a',
+            name: 'A metric',
+            color: 'var(--blue)',
+        },
+        {
+            dataKey: 'c',
+            name: 'C metric',
+            color: 'var(--purple)',
+        },
+        {
+            dataKey: 'b',
+            name: 'B metric',
+            color: 'var(--warning)',
+        },
+    ]
+
+    return (
+        <div style={{ width: 400, height: 400 }}>
+            <ParentSize>
+                {({ width, height }) => (
+                    <LineChart<DatumWithMissingData>
+                        width={width}
+                        height={height}
+                        data={DATA_WITH_STEP}
+                        series={SERIES}
+                        stacked={true}
+                        getXValue={getXValue}
                     />
                 )}
             </ParentSize>

@@ -28,8 +28,8 @@ func Worker() *monitoring.Container {
 			Query:         fmt.Sprintf(`sum (src_worker_jobs{job="worker", job_name="%s"})`, job.Name),
 			Panel:         monitoring.Panel().LegendFormat(fmt.Sprintf("instances running %s", job.Name)),
 			DataMustExist: true,
-			Warning:       monitoring.Alert().Less(1, nil).For(1 * time.Minute),
-			Critical:      monitoring.Alert().Less(1, nil).For(5 * time.Minute),
+			Warning:       monitoring.Alert().Less(1).For(1 * time.Minute),
+			Critical:      monitoring.Alert().Less(1).For(5 * time.Minute),
 			Owner:         job.Owner,
 			PossibleSolutions: fmt.Sprintf(`
 				- Ensure your instance defines a worker container such that:
@@ -177,7 +177,7 @@ func Worker() *monitoring.Container {
 					Owner:             monitoring.ObservableOwnerCodeInsights,
 					Query:             "max(src_insights_search_queue_total{job=~\"^worker.*\"}) > 0 and on(job) sum by (op)(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{job=~\"^worker.*\",op=\"Dequeue\"}[5m])) < 1",
 					DataMustExist:     false,
-					Warning:           monitoring.Alert().Greater(0.0, nil).For(time.Minute * 30),
+					Warning:           monitoring.Alert().Greater(0.0).For(time.Minute * 30),
 					PossibleSolutions: "Verify code insights worker job has successfully started. Restart worker service and monitoring startup logs, looking for worker panics.",
 					Interpretation:    "Any value on this panel indicates code insights is not processing queries from its queue. This observable and alert only fire if there are records in the queue and there have been no dequeue attempts for 30 minutes.",
 					Panel:             monitoring.Panel().LegendFormat("count"),

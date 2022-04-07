@@ -2,7 +2,9 @@
 
 exports[`RepoFileLink renders 1`] = `
 <DocumentFragment>
-  <div>
+  <div
+    class=""
+  >
     <a
       class="anchorLink"
       href="https://example.com"

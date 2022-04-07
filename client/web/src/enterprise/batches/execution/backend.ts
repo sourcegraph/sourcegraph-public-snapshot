@@ -56,7 +56,7 @@ const batchSpecWorkspaceFieldsFragment = gql`
             url
         }
         branch {
-            abbrevName
+            displayName
         }
         path
         onlyFetchWorkspace
@@ -373,7 +373,7 @@ const BATCH_SPEC_WORKSPACES = gql`
             url
         }
         branch {
-            abbrevName
+            displayName
         }
         path
         ignored

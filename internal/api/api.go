@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/opentracing/opentracing-go/log"
 )
 
 // RepoID is the unique identifier for a repository.
@@ -33,6 +35,23 @@ func (c CommitID) Short() string {
 		return string(c)[:7]
 	}
 	return string(c)
+}
+
+// RevSpec is a revision range specifier suitable for passing to git. See
+// the manpage gitrevisions(7).
+type RevSpec string
+
+// RepoCommit scopes a commit to a repository.
+type RepoCommit struct {
+	Repo     RepoName
+	CommitID CommitID
+}
+
+func (rc RepoCommit) LogFields() []log.Field {
+	return []log.Field{
+		log.String("repo", string(rc.Repo)),
+		log.String("commitID", string(rc.CommitID)),
+	}
 }
 
 // Repo represents a source code repository.

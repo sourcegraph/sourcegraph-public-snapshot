@@ -1,9 +1,10 @@
+import React, { RefObject, useEffect, useMemo, useRef } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import LinkVariantIcon from 'mdi-react/LinkVariantIcon'
-import React, { RefObject, useEffect, useMemo, useRef } from 'react'
 import { Observable } from 'rxjs'
 
 import { renderMarkdown } from '@sourcegraph/common'
@@ -11,7 +12,7 @@ import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExce
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { AnchorLink, ProductStatusBadge, Link } from '@sourcegraph/wildcard'
+import { AnchorLink, ProductStatusBadge, Link, Icon } from '@sourcegraph/wildcard'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { RepositoryFields } from '../../graphql-operations'
@@ -19,9 +20,10 @@ import { toDocumentationSingleSymbolURL, toDocumentationURL } from '../../util/u
 
 import { DocumentationExamples } from './DocumentationExamples'
 import { DocumentationIcons } from './DocumentationIcons'
-import styles from './DocumentationNode.module.scss'
 import { GQLDocumentationNode, Tag, isExcluded } from './graphql'
 import { hasDescendent } from './RepositoryDocumentationSidebar'
+
+import styles from './DocumentationNode.module.scss'
 
 interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec, BreadcrumbSetters, SettingsCascadeProps {
     repo: RepositoryFields
@@ -137,7 +139,7 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
                             className={classNames('d-flex align-items-center', styles.heading)}
                         >
                             <AnchorLink className={styles.headingAnchorLink} to={thisPage}>
-                                <LinkVariantIcon className="icon-inline" />
+                                <Icon as={LinkVariantIcon} />
                             </AnchorLink>
                             {depth !== 0 && <DocumentationIcons className="mr-1" tags={node.documentation.tags} />}
                             <Link className="h" id={hash} to={singleSymbolPage}>
@@ -153,8 +155,8 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
                                             styles.pill
                                         )}
                                     >
-                                        <BookOpenBlankVariantIcon className="icon-inline text-muted mr-1" /> Generated
-                                        API docs
+                                        <Icon className="text-muted mr-1" as={BookOpenBlankVariantIcon} /> Generated API
+                                        docs
                                         <span className={classNames('mx-2', styles.pillDivider)} />
                                         <Link
                                             target="_blank"
@@ -193,9 +195,10 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
                                 <>
                                     <h4 className="mt-4">
                                         Usage examples
-                                        <HelpCircleOutlineIcon
-                                            className="icon-inline ml-1"
+                                        <Icon
+                                            className="ml-1"
                                             data-tooltip="Usage examples from precise LSIF code intelligence index"
+                                            as={HelpCircleOutlineIcon}
                                         />
                                     </h4>
                                     <DocumentationExamples {...props} pathID={node.pathID} count={onlyPathID ? 3 : 1} />

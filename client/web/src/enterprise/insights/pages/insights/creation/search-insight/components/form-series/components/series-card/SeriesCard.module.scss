@@ -1,4 +1,12 @@
 .card {
+    display: flex;
+    flex-direction: row;
+    padding: 1rem;
+
+    &--disabled {
+        color: var(--text-muted) !important;
+    }
+
     &:hover {
         box-shadow: 0 0 0 0.1875rem var(--primary);
         border-color: transparent;

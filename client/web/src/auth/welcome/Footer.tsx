@@ -1,8 +1,8 @@
 import React from 'react'
 
-import { LoaderButton } from '@sourcegraph/web/src/components/LoaderButton'
 import { Button, Link } from '@sourcegraph/wildcard'
 
+import { LoaderButton } from '../../components/LoaderButton'
 import { FinishWelcomeFlow } from '../PostSignUpPage'
 import { useSteps } from '../Steps/context'
 
@@ -30,7 +30,7 @@ export const Footer: React.FunctionComponent<Props> = ({ onFinish, isSkippable }
             <div>
                 {currentStep.isFirstStep && (
                     <Button
-                        className="font-weight-normal text-secondary"
+                        className="font-weight-normal"
                         onClick={event => {
                             event.currentTarget.blur()
                             setStep(currentIndex + 1)

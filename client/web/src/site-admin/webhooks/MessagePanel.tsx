@@ -1,5 +1,6 @@
-import { getReasonPhrase } from 'http-status-codes'
 import React, { useMemo } from 'react'
+
+import { getReasonPhrase } from 'http-status-codes'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 

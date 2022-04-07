@@ -17,9 +17,11 @@ This page documents how to configure a Sourcegraph instance. For deployment conf
 - [Add organizations](../organizations.md)
 - [Set up HTTPS](../http_https_configuration.md)
 - [Use a custom domain](../url.md)
+- [Configure email sending / SMTP server](email.md)
 - [Update Sourcegraph](../updates/index.md)
 - [Using external services (PostgreSQL, Redis, S3/GCS)](../external_services/index.md)
 - [PostgreSQL Config](./postgres-conf.md)
+- [Disabling user invitations](./user_invitations.md)
 
 ## Advanced tasks
 

@@ -1,7 +1,8 @@
+import React from 'react'
+
 import { boolean, select } from '@storybook/addon-knobs'
 import { Meta, Story } from '@storybook/react'
 import SearchIcon from 'mdi-react/SearchIcon'
-import React from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
@@ -24,12 +25,18 @@ const config: Meta = {
 
     parameters: {
         component: Button,
-        design: {
-            type: 'figma',
-            name: 'Figma',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A2514',
-        },
+        design: [
+            {
+                type: 'figma',
+                name: 'Figma Light',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=908%3A2513',
+            },
+            {
+                type: 'figma',
+                name: 'Figma Dark',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=908%3A5794',
+            },
+        ],
     },
 }
 

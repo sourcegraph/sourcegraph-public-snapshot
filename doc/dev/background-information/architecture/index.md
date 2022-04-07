@@ -8,6 +8,10 @@ The **"Dependencies"** sections give a short, high-level overview of dependencie
 
 You can click on each component to jump to its respective code repository or subtree. <a href="./architecture.svg" target="_blank">Open in new tab</a>
 
+<!-- 
+Auto-generated from ./doc/dev/background-information/architecture/architecture.dot
+Run cd ./doc/dev/background-information/architecture && ./generate.sh to update the .svg
+-->
 <object data="./architecture/architecture.svg" type="image/svg+xml" width="1023" height="1113" style="width:100%; height: auto">
 </object>
 

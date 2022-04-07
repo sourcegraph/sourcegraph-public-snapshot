@@ -3,8 +3,12 @@ package database
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"strings"
 	"testing"
+
+	"github.com/gofrs/uuid"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -99,6 +103,50 @@ func TestOrgs_Delete(t *testing.T) {
 	}
 }
 
+func TestOrgs_HardDelete(t *testing.T) {
+	t.Parallel()
+	db := dbtest.NewDB(t)
+	ctx := context.Background()
+
+	displayName := "org1"
+	org, err := Orgs(db).Create(ctx, "org1", &displayName)
+	require.NoError(t, err)
+
+	// Hard Delete org.
+	if err := Orgs(db).HardDelete(ctx, org.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	// Org no longer exists.
+	_, err = Orgs(db).GetByID(ctx, org.ID)
+	if !errors.HasType(err, &OrgNotFoundError{}) {
+		t.Errorf("got error %v, want *OrgNotFoundError", err)
+	}
+
+	orgs, err := Orgs(db).List(ctx, &OrgsListOptions{Query: "org1"})
+	require.NoError(t, err)
+	if len(orgs) > 0 {
+		t.Errorf("got %d orgs, want 0", len(orgs))
+	}
+
+	// Cannot hard delete an org that doesn't exist.
+	err = Orgs(db).HardDelete(ctx, org.ID)
+	if !errors.HasType(err, &OrgNotFoundError{}) {
+		t.Errorf("got error %v, want *OrgNotFoundError", err)
+	}
+
+	// Can hard delete an org that has been soft deleted.
+	displayName2 := "org2"
+	org2, err := Orgs(db).Create(ctx, "org2", &displayName2)
+	require.NoError(t, err)
+
+	err = Orgs(db).Delete(ctx, org2.ID)
+	require.NoError(t, err)
+
+	err = Orgs(db).HardDelete(ctx, org2.ID)
+	require.NoError(t, err)
+}
+
 func TestOrgs_GetByID(t *testing.T) {
 	createOrg := func(ctx context.Context, db *sql.DB, name string, displayName string) *types.Org {
 		org, err := Orgs(db).Create(ctx, name, &displayName)
@@ -172,13 +220,11 @@ func TestOrgs_GetOrgsWithRepositoriesByUserID(t *testing.T) {
 		return user
 	}
 
-	createOrgMember := func(ctx context.Context, db *sql.DB, userID int32, orgID int32) *types.OrgMembership {
-		member, err := OrgMembers(db).Create(ctx, orgID, userID)
+	createOrgMember := func(ctx context.Context, db *sql.DB, userID int32, orgID int32) {
+		_, err := OrgMembers(db).Create(ctx, orgID, userID)
 		if err != nil {
 			t.Fatal(err)
-			return nil
 		}
-		return member
 	}
 
 	t.Parallel()
@@ -218,4 +264,74 @@ func TestOrgs_GetOrgsWithRepositoriesByUserID(t *testing.T) {
 	if orgs[0].Name != org2.Name {
 		t.Errorf("got %q org Name, want %q", orgs[0].Name, org2.Name)
 	}
+}
+
+func TestOrgs_AddOrgsOpenBetaStats(t *testing.T) {
+	t.Parallel()
+	db := dbtest.NewDB(t)
+	ctx := context.Background()
+
+	userID := int32(42)
+
+	type FooBar struct {
+		Foo string `json:"foo"`
+	}
+
+	data, err := json.Marshal(FooBar{Foo: "bar"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("When adding stats, returns valid UUID", func(t *testing.T) {
+		id, err := Orgs(db).AddOrgsOpenBetaStats(ctx, userID, string(data))
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = uuid.FromString(id)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("Can add stats multiple times by the same user", func(t *testing.T) {
+		_, err := Orgs(db).AddOrgsOpenBetaStats(ctx, userID, string(data))
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = Orgs(db).AddOrgsOpenBetaStats(ctx, userID, string(data))
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+}
+
+func TestOrgs_UpdateOrgsOpenBetaStats(t *testing.T) {
+	t.Parallel()
+	db := dbtest.NewDB(t)
+	ctx := context.Background()
+
+	userID := int32(42)
+	orgID := int32(10)
+	statsID, err := Orgs(db).AddOrgsOpenBetaStats(ctx, userID, "{}")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("Updates stats with orgID if the UUID exists in the DB", func(t *testing.T) {
+		err := Orgs(db).UpdateOrgsOpenBetaStats(ctx, statsID, orgID)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("Silently does nothing if UUID does not match any record", func(t *testing.T) {
+		randomUUID, err := uuid.NewV4()
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = Orgs(db).UpdateOrgsOpenBetaStats(ctx, randomUUID.String(), orgID)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
 }

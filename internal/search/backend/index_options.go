@@ -80,11 +80,13 @@ type RepoIndexOptions struct {
 	GetVersion func(branch string) (string, error)
 }
 
+type getRepoIndexOptsFn func(repoID int32) (*RepoIndexOptions, error)
+
 // GetIndexOptions returns a json blob for consumption by
 // sourcegraph-zoekt-indexserver. It is for repos based on site settings c.
 func GetIndexOptions(
 	c *schema.SiteConfiguration,
-	getRepoIndexOptions func(repoID int32) (*RepoIndexOptions, error),
+	getRepoIndexOptions getRepoIndexOptsFn,
 	getSearchContextRevisions func(repoID int32) ([]string, error),
 	repos ...int32,
 ) []byte {

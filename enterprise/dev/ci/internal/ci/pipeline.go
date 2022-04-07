@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
-	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
@@ -41,8 +40,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		"DATE":                               c.Time.Format(time.RFC3339),
 		"VERSION":                            c.Version,
 
-		// Additional flags
+		// Go flags
 		"GO111MODULE": "on",
+
+		// Additional flags
 		"FORCE_COLOR": "3",
 		"ENTERPRISE":  "1",
 		// Add debug flags for scripts to consume
@@ -60,6 +61,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// HoneyComb dataset that stores build traces.
 		"CI_BUILDEVENT_DATASET": "buildkite",
 	}
+	bk.FeatureFlags.ApplyEnv(env)
 
 	// On release branches Percy must compare to the previous commit of the release branch, not main.
 	if c.RunType.Is(runtype.ReleaseBranch) {
@@ -74,37 +76,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		Env:     env,
 	}
 
-	// Make all command steps timeout after 60 minutes in case a buildkite agent
-	// got stuck / died.
-	bk.AfterEveryStepOpts = append(bk.AfterEveryStepOpts, func(s *bk.Step) {
-		// bk.Step is a union containing fields across all the different step types.
-		// However, "timeout_in_minutes" only applies to the "command" step type.
-		//
-		// Testing the length of the "Command" field seems to be the most reliable way
-		// of differentiating "command" steps from other step types without refactoring
-		// everything.
-		if len(s.Command) > 0 {
-			if s.TimeoutInMinutes == "" {
-				// Set the default value iff someone else hasn't set a custom one.
-				s.TimeoutInMinutes = "60"
-			}
-		}
-	})
-
-	// Toggle profiling of each step
-	if c.MessageFlags.ProfilingEnabled {
-		bk.AfterEveryStepOpts = append(bk.AfterEveryStepOpts, func(s *bk.Step) {
-			// wrap "time -v" around each command for CPU/RAM utilization information
-			var prefixed []string
-			for _, cmd := range s.Command {
-				prefixed = append(prefixed, fmt.Sprintf("env time -v %s", cmd))
-			}
-			s.Command = prefixed
-		})
-	}
-
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	const minimumUpgradeableVersion = "3.37.0"
+	const minimumUpgradeableVersion = "3.38.0"
 
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
@@ -119,6 +92,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			// set it up separately from CoreTestOperations
 			ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
 				triggerAsync(buildOptions)))
+
+			// Do not create client PR preview if Go or GraphQL is changed to avoid confusing
+			// preview behavior, because only Client code is used to deploy application preview.
+			if !c.Diff.Has(changed.Go) && !c.Diff.Has(changed.GraphQL) {
+				ops.Append(prPreview())
+			}
 		}
 		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
 
@@ -130,14 +109,18 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			buildCandidateDockerImage("server", c.Version, c.candidateImageTag()),
 			backendIntegrationTests(c.candidateImageTag()))
 
-		// Run default set of PR checks as well
-		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
+		// always include very backend-oriented changes in this set of tests
+		testDiff := c.Diff | changed.DatabaseSchema | changed.Go
+		ops.Merge(CoreTestOperations(
+			testDiff,
+			CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion},
+		))
 
 	case runtype.BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
 		ops = operations.NewSet(
-			addTsLint,
+			addClientLinters,
 			addBrowserExt,
 			frontendTests,
 			wait,
@@ -147,7 +130,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
 		ops = operations.NewSet(
-			addTsLint,
+			addClientLinters,
 			addBrowserExt,
 			frontendTests,
 			wait,
@@ -271,11 +254,24 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	)
 
 	// Construct pipeline
-	pipeline := &bk.Pipeline{Env: env}
+	pipeline := &bk.Pipeline{
+		Env: env,
+
+		AfterEveryStepOpts: []bk.StepOpt{
+			withDefaultTimeout,
+			withAgentQueueDefaults,
+		},
+	}
+	// Toggle profiling of each step
+	if c.MessageFlags.ProfilingEnabled {
+		pipeline.AfterEveryStepOpts = append(pipeline.AfterEveryStepOpts, withProfiling)
+	}
+
+	// Apply operations on pipeline
 	ops.Apply(pipeline)
 
 	// Validate generated pipeline have unique keys
-	if err := ensureUniqueKeys(pipeline); err != nil {
+	if err := pipeline.EnsureUniqueKeys(); err != nil {
 		return nil, err
 	}
 
@@ -304,20 +300,42 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	return pipeline, nil
 }
 
-func ensureUniqueKeys(pipeline *bk.Pipeline) error {
-	occurences := map[string]int{}
-	for _, step := range pipeline.Steps {
-		if s, ok := step.(*buildkite.Step); ok {
-			if s.Key == "" {
-				return errors.Newf("empty key on step with label %q", s.Label)
-			}
-			occurences[s.Key] += 1
+// withDefaultTimeout makes all command steps timeout after 60 minutes in case a buildkite
+// agent got stuck / died.
+func withDefaultTimeout(s *bk.Step) {
+	// bk.Step is a union containing fields across all the different step types.
+	// However, "timeout_in_minutes" only applies to the "command" step type.
+	//
+	// Testing the length of the "Command" field seems to be the most reliable way
+	// of differentiating "command" steps from other step types without refactoring
+	// everything.
+	if len(s.Command) > 0 {
+		if s.TimeoutInMinutes == "" {
+			// Set the default value iff someone else hasn't set a custom one.
+			s.TimeoutInMinutes = "60"
 		}
 	}
-	for k, count := range occurences {
-		if count > 1 {
-			return errors.Newf("non unique key on step with key %q", k)
-		}
+}
+
+// withAgentQueueDefaults ensures all agents target a specific queue, and ensures they
+// steps are configured appropriately to run on the queue
+func withAgentQueueDefaults(s *bk.Step) {
+	if len(s.Agents) == 0 || s.Agents["queue"] == "" {
+		s.Agents["queue"] = bk.AgentQueueStateless
 	}
-	return nil
+
+	if s.Agents["queue"] != bk.AgentQueueBaremetal {
+		// Use athens proxy for go modules downloads, falling back to direct
+		// https://github.com/sourcegraph/infrastructure/blob/main/buildkite/kubernetes/athens-proxy/athens-athens-proxy.Deployment.yaml
+		s.Env["GOPROXY"] = "http://athens-athens-proxy,direct"
+	}
+}
+
+// withProfiling wraps "time -v" around each command for CPU/RAM utilization information
+func withProfiling(s *bk.Step) {
+	var prefixed []string
+	for _, cmd := range s.Command {
+		prefixed = append(prefixed, fmt.Sprintf("env time -v %s", cmd))
+	}
+	s.Command = prefixed
 }

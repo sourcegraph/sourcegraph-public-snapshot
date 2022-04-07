@@ -34,7 +34,7 @@ main() {
   printf '%s\n' 'determining latest release of sg' 1>&2
 
   local _location_header
-  _location_header="$(curl --silent -I "https://github.com/sourcegraph/sg/releases/latest" | grep "location:" | tr -d '\r')"
+  _location_header="$(curl --silent -I "https://github.com/sourcegraph/sg/releases/latest" | grep -i "location:" | tr -d '\r')"
 
   local _base_url
   _base_url="$(echo "${_location_header}" | sed s/location:\ // | sed s/tag/download/ | tr -d "[:blank:]")"

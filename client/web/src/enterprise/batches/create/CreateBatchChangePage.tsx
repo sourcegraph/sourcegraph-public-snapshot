@@ -3,11 +3,11 @@ import React from 'react'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { BatchChangesIcon } from '../../../batches/icons'
+import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
 import { Scalars } from '../../../graphql-operations'
 

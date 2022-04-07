@@ -327,6 +327,8 @@ export const mockLogs: MonitorTriggerEventsResult = {
                                     status: EventStatus.SUCCESS,
                                     message: null,
                                     timestamp: '2022-02-11T18:30:50Z',
+                                    query: 'test type:diff',
+                                    resultCount: 1,
                                     actions: {
                                         __typename: 'MonitorActionConnection',
                                         nodes: [
@@ -343,6 +345,7 @@ export const mockLogs: MonitorTriggerEventsResult = {
                                                     __typename: 'MonitorActionEventConnection',
                                                     nodes: [
                                                         {
+                                                            id: 'ad',
                                                             __typename: 'MonitorActionEvent',
                                                             status: EventStatus.SUCCESS,
                                                             message: null,
@@ -360,6 +363,8 @@ export const mockLogs: MonitorTriggerEventsResult = {
                                     status: EventStatus.SUCCESS,
                                     message: null,
                                     timestamp: '2022-02-11T18:24:49Z',
+                                    query: 'test type:diff',
+                                    resultCount: 2,
                                     actions: {
                                         __typename: 'MonitorActionConnection',
                                         nodes: [
@@ -376,6 +381,7 @@ export const mockLogs: MonitorTriggerEventsResult = {
                                                     __typename: 'MonitorActionEventConnection',
                                                     nodes: [
                                                         {
+                                                            id: 'ad',
                                                             __typename: 'MonitorActionEvent',
                                                             status: EventStatus.SUCCESS,
                                                             message: null,
@@ -393,6 +399,8 @@ export const mockLogs: MonitorTriggerEventsResult = {
                                     status: EventStatus.SUCCESS,
                                     message: null,
                                     timestamp: '2022-02-11T17:29:16Z',
+                                    query: 'test type:diff',
+                                    resultCount: 5,
                                     actions: {
                                         __typename: 'MonitorActionConnection',
                                         nodes: [
@@ -409,6 +417,7 @@ export const mockLogs: MonitorTriggerEventsResult = {
                                                     __typename: 'MonitorActionEventConnection',
                                                     nodes: [
                                                         {
+                                                            id: 'ac',
                                                             __typename: 'MonitorActionEvent',
                                                             status: EventStatus.SUCCESS,
                                                             message: null,
@@ -458,24 +467,20 @@ export const mockLogs: MonitorTriggerEventsResult = {
                                     __typename: 'MonitorTriggerEvent',
                                     id: 'd',
                                     status: EventStatus.ERROR,
-                                    message: null,
+                                    message: 'Search failed',
                                     timestamp: '2022-02-14T12:29:21Z',
+                                    query: '',
+                                    resultCount: 0,
                                     actions: {
                                         __typename: 'MonitorActionConnection',
                                         nodes: [
-                                            {
-                                                __typename: 'MonitorEmail',
-                                                events: {
-                                                    __typename: 'MonitorActionEventConnection',
-                                                    nodes: [],
-                                                },
-                                            },
                                             {
                                                 __typename: 'MonitorSlackWebhook',
                                                 events: {
                                                     __typename: 'MonitorActionEventConnection',
                                                     nodes: [
                                                         {
+                                                            id: 'ab',
                                                             __typename: 'MonitorActionEvent',
                                                             status: EventStatus.SUCCESS,
                                                             message: null,
@@ -509,6 +514,8 @@ export const mockLogs: MonitorTriggerEventsResult = {
                                     status: EventStatus.SUCCESS,
                                     message: null,
                                     timestamp: '2022-02-13T12:29:21Z',
+                                    query: '',
+                                    resultCount: 0,
                                     actions: {
                                         __typename: 'MonitorActionConnection',
                                         nodes: [
@@ -526,11 +533,19 @@ export const mockLogs: MonitorTriggerEventsResult = {
                                                     nodes: [
                                                         {
                                                             __typename: 'MonitorActionEvent',
+                                                            id: 'aa',
                                                             status: EventStatus.ERROR,
-                                                            message: null,
+                                                            message: 'Calling webhook failed',
                                                             timestamp: '2022-02-13T12:29:21Z',
                                                         },
                                                     ],
+                                                },
+                                            },
+                                            {
+                                                __typename: 'MonitorWebhook',
+                                                events: {
+                                                    __typename: 'MonitorActionEventConnection',
+                                                    nodes: [],
                                                 },
                                             },
                                         ],

@@ -16,6 +16,7 @@ import {
     mapTo,
 } from 'rxjs/operators'
 
+import { ContributableMenu, TextDocumentPositionParameters } from '@sourcegraph/client-api'
 import { HoveredToken, LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/codeintellify'
 import { asError, ErrorLike, isErrorLike, isExternalLink } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
@@ -25,7 +26,6 @@ import { ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
 import { FlatExtensionHostAPI } from '../api/contract'
 import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
-import { ContributableMenu, TextDocumentPositionParameters } from '../api/protocol'
 import { syncRemoteSubscription } from '../api/util'
 import { resolveRawRepoName } from '../backend/repo'
 import { getContributedActionItems } from '../contributions/contributions'
@@ -47,7 +47,7 @@ export function getHoverActions(
     {
         extensionsController,
         platformContext,
-    }: ExtensionsControllerProps & PlatformContextProps<'urlToFile' | 'requestGraphQL'>,
+    }: ExtensionsControllerProps<'extHostAPI'> & PlatformContextProps<'urlToFile' | 'requestGraphQL'>,
     hoverContext: HoveredToken & HoverContext
 ): Observable<ActionItemAction[]> {
     return getHoverActionsContext(

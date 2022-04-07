@@ -1,8 +1,9 @@
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Redirect } from 'react-router'
 import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
@@ -24,12 +25,12 @@ import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
-import { GlobalCoolCodeIntelProps } from '../../global/CoolCodeIntel'
+import { render as renderLsifHtml } from '../../lsif/html'
+import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
 import { SearchStreamingProps } from '../../search'
 import { useSearchStack, useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
-import { fetchRepository, resolveRevision } from '../backend'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { HoverThresholdProps } from '../RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
@@ -41,11 +42,12 @@ import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
 import { fetchBlob } from './backend'
 import { Blob, BlobInfo } from './Blob'
-import styles from './BlobPage.module.scss'
 import { GoToRawAction } from './GoToRawAction'
 import { useBlobPanelViews } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
-import { RenderedSearchNotebookMarkdown, SEARCH_NOTEBOOK_FILE_EXTENSION } from './RenderedSearchNotebookMarkdown'
+import { RenderedNotebookMarkdown, SEARCH_NOTEBOOK_FILE_EXTENSION } from './RenderedNotebookMarkdown'
+
+import styles from './BlobPage.module.scss'
 
 interface Props
     extends AbsoluteRepoFile,
@@ -60,8 +62,7 @@ interface Props
         BreadcrumbSetters,
         SearchStreamingProps,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
-        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
-        GlobalCoolCodeIntelProps {
+        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'> {
     location: H.Location
     history: H.History
     repoID: Scalars['ID']
@@ -87,7 +88,6 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
     useEffect(() => {
         props.telemetryService.logViewEvent('Blob', { repoName, filePath })
     }, [repoName, commitID, filePath, renderMode, props.telemetryService])
-
     useSearchStack(
         useMemo(
             () => ({
@@ -155,6 +155,12 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                         if (blob === null) {
                             return blob
                         }
+
+                        // Replace html with lsif generated HTML, if available
+                        if (blob.highlight.lsif && blob.highlight.lsif !== '{}') {
+                            blob.highlight.html = renderLsifHtml(blob.highlight.lsif, blob.content)
+                        }
+
                         const blobInfo: BlobInfo & { richHTML: string; aborted: boolean } = {
                             content: blob.content,
                             html: blob.highlight.html,
@@ -169,10 +175,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                         }
                         return blobInfo
                     }),
-                    catchError((error): [ErrorLike] => {
-                        console.error(error)
-                        return [asError(error)]
-                    })
+                    catchError((error): [ErrorLike] => [asError(error)])
                 ),
             [repoName, revision, commitID, filePath, mode]
         )
@@ -203,6 +206,15 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
         !isErrorLike(blobInfoOrError) &&
         blobInfoOrError.filePath.endsWith(SEARCH_NOTEBOOK_FILE_EXTENSION) &&
         showSearchNotebook
+
+    const onCopyNotebook = useCallback(
+        (props: Omit<CopyNotebookProps, 'title'>) => {
+            const title =
+                blobInfoOrError && !isErrorLike(blobInfoOrError) ? basename(blobInfoOrError.filePath) : 'Notebook'
+            return copyNotebook({ title: `Copy of ${title}`, ...props })
+        },
+        [blobInfoOrError]
+    )
 
     // If url explicitly asks for a certain rendering mode, renderMode is set to that mode, else it checks:
     // - If file contains richHTML and url does not include a line number: We render in richHTML.
@@ -324,11 +336,10 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                 </RepoHeaderContributionPortal>
             )}
             {isSearchNotebook && renderMode === 'rendered' && (
-                <RenderedSearchNotebookMarkdown
+                <RenderedNotebookMarkdown
                     {...props}
                     markdown={blobInfoOrError.content}
-                    resolveRevision={resolveRevision}
-                    fetchRepository={fetchRepository}
+                    onCopyNotebook={onCopyNotebook}
                     showSearchContext={showSearchContext}
                     exportedFileName={basename(blobInfoOrError.filePath)}
                 />
@@ -361,8 +372,6 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                     telemetryService={props.telemetryService}
                     location={props.location}
                     disableStatusBar={false}
-                    onTokenClick={props.onTokenClick}
-                    coolCodeIntelEnabled={props.coolCodeIntelEnabled}
                 />
             )}
         </>

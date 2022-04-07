@@ -20,10 +20,10 @@ type ServiceConnections struct {
 	// eg: "postgres://sg@pgsql/sourcegraph_codeintel?sslmode=false"
 	CodeIntelPostgresDSN string `json:"codeIntelPostgresDSN"`
 
-	// CodeInsightsTimescaleDSN is the TimescaleDB data source name for the
+	// CodeInsightsDSN is the PostgreSQL DB data source name for the
 	// code insights database.
 	// eg: "postgres://sg@pgsql/sourcegraph_codeintel?sslmode=false"
-	CodeInsightsTimescaleDSN string `json:"codeinsightsTimescaleDSN"`
+	CodeInsightsDSN string `json:"codeInsightsPostgresDSN"`
 }
 
 // RawUnified is the unparsed variant of conf.Unified.

@@ -1,5 +1,6 @@
-import { RenderTooltipParams } from '@visx/xychart/lib/components/Tooltip'
 import React, { ReactElement, useMemo } from 'react'
+
+import { RenderTooltipParams } from '@visx/xychart/lib/components/Tooltip'
 
 import { isDefined } from '@sourcegraph/common'
 
@@ -7,6 +8,7 @@ import { LineChartSeriesWithData, Point } from '../../types'
 import { getLineStroke } from '../LineChartContent'
 
 import { getListWindow, ListWindow } from './get-list-window'
+
 import styles from './TooltipContent.module.scss'
 
 const MAX_ITEMS_IN_TOOLTIP = 10

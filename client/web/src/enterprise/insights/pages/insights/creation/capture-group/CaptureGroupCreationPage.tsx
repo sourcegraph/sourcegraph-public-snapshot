@@ -1,12 +1,13 @@
 import React, { useEffect } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link } from '@sourcegraph/wildcard'
+import { Link, PageHeader } from '@sourcegraph/wildcard'
 
-import { Page } from '../../../../../../components/Page'
 import { PageTitle } from '../../../../../../components/PageTitle'
+import { CodeInsightsIcon } from '../../../../../../insights/Icons'
+import { CodeInsightsPage } from '../../../../components/code-insights-page/CodeInsightsPage'
 import { FormChangeEvent, SubmissionErrors } from '../../../../components/form/hooks/useForm'
-import { CaptureGroupInsight } from '../../../../core/types'
+import { MinimalCaptureGroupInsightData } from '../../../../core/backend/code-insights-backend-types'
 import { CodeInsightTrackType } from '../../../../pings'
 
 import { CaptureGroupCreationContent } from './components/CaptureGroupCreationContent'
@@ -15,8 +16,8 @@ import { CaptureGroupFormFields } from './types'
 import { getSanitizedCaptureGroupInsight } from './utils/capture-group-insight-sanitizer'
 
 interface CaptureGroupCreationPageProps extends TelemetryProps {
-    onInsightCreateRequest: (event: { insight: CaptureGroupInsight }) => Promise<unknown>
-    onSuccessfulCreation: (insight: CaptureGroupInsight) => void
+    onInsightCreateRequest: (event: { insight: MinimalCaptureGroupInsightData }) => Promise<unknown>
+    onSuccessfulCreation: (insight: MinimalCaptureGroupInsightData) => void
     onCancel: () => void
 }
 
@@ -58,19 +59,25 @@ export const CaptureGroupCreationPage: React.FunctionComponent<CaptureGroupCreat
     }
 
     return (
-        <Page>
-            <PageTitle title="Create new capture group code insight" />
+        <CodeInsightsPage>
+            <PageTitle title="Create insight - Code Insights" />
 
-            <header className="mb-5">
-                <h2>Create new code insight</h2>
-
-                <p className="text-muted">
-                    Search-based code insights analyze your code based on any search query.{' '}
-                    <Link to="/help/code_insights" target="_blank" rel="noopener">
-                        Learn more.
-                    </Link>
-                </p>
-            </header>
+            <PageHeader
+                className="mb-5"
+                path={[{ icon: CodeInsightsIcon }, { text: 'Create new capture group insight' }]}
+                description={
+                    <span className="text-muted">
+                        Capture group code insights analyze your code based on generated data series queries.{' '}
+                        <Link
+                            to="/help/code_insights/explanations/automatically_generated_data_series"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            Learn more.
+                        </Link>
+                    </span>
+                }
+            />
 
             <CaptureGroupCreationContent
                 mode="creation"
@@ -80,6 +87,6 @@ export const CaptureGroupCreationPage: React.FunctionComponent<CaptureGroupCreat
                 onCancel={handleCancel}
                 onChange={handleChange}
             />
-        </Page>
+        </CodeInsightsPage>
     )
 }

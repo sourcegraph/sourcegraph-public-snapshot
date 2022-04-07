@@ -1,17 +1,19 @@
-import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useEffect } from 'react'
 
+import CloseIcon from 'mdi-react/CloseIcon'
+
 import { GitRefType, Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { Button, useLocalStorage, Tab, TabList, TabPanel, TabPanels } from '@sourcegraph/wildcard'
+import { Button, useLocalStorage, Tab, TabList, TabPanel, TabPanels, Icon } from '@sourcegraph/wildcard'
 
 import { GitCommitAncestorFields, GitRefFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { replaceRevisionInURL } from '../../util/url'
 
 import { ConnectionPopoverTabs } from './components'
-import styles from './RevisionsPopover.module.scss'
 import { RevisionsPopoverCommits } from './RevisionsPopoverCommits'
 import { RevisionsPopoverReferences } from './RevisionsPopoverReferences'
+
+import styles from './RevisionsPopover.module.scss'
 
 export interface RevisionsPopoverProps {
     repo: Scalars['ID']
@@ -89,7 +91,7 @@ export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = 
                         className={styles.tabsClose}
                         aria-label="Close"
                     >
-                        <CloseIcon className="icon-inline" />
+                        <Icon as={CloseIcon} />
                     </Button>
                 }
             >

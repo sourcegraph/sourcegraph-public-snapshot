@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -22,9 +23,9 @@ type Sourcer func(*types.ExternalService) (Source, error)
 // http.Clients needed to contact the respective upstream code host APIs.
 //
 // The provided decorator functions will be applied to the Source.
-func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
+func NewSourcer(db database.DB, cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 	return func(svc *types.ExternalService) (Source, error) {
-		src, err := NewSource(svc, cf)
+		src, err := NewSource(db, svc, cf)
 		if err != nil {
 			return nil, err
 		}
@@ -38,10 +39,12 @@ func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 }
 
 // NewSource returns a repository yielding Source from the given ExternalService configuration.
-func NewSource(svc *types.ExternalService, cf *httpcli.Factory) (Source, error) {
+func NewSource(db database.DB, svc *types.ExternalService, cf *httpcli.Factory) (Source, error) {
+	externalServicesStore := db.ExternalServices()
+
 	switch strings.ToUpper(svc.Kind) {
 	case extsvc.KindGitHub:
-		return NewGithubSource(svc, cf)
+		return NewGithubSource(externalServicesStore, svc, cf)
 	case extsvc.KindGitLab:
 		return NewGitLabSource(svc, cf)
 	case extsvc.KindBitbucketServer:
@@ -49,19 +52,21 @@ func NewSource(svc *types.ExternalService, cf *httpcli.Factory) (Source, error) 
 	case extsvc.KindBitbucketCloud:
 		return NewBitbucketCloudSource(svc, cf)
 	case extsvc.KindGitolite:
-		return NewGitoliteSource(svc, cf)
+		return NewGitoliteSource(db, svc, cf)
 	case extsvc.KindPhabricator:
 		return NewPhabricatorSource(svc, cf)
 	case extsvc.KindAWSCodeCommit:
 		return NewAWSCodeCommitSource(svc, cf)
 	case extsvc.KindPerforce:
 		return NewPerforceSource(svc)
+	case extsvc.KindGoModules:
+		return NewGoModulesSource(svc, cf)
 	case extsvc.KindJVMPackages:
 		return NewJVMPackagesSource(svc)
 	case extsvc.KindPagure:
 		return NewPagureSource(svc, cf)
-	case extsvc.KindNPMPackages:
-		return NewNPMPackagesSource(svc)
+	case extsvc.KindNpmPackages:
+		return NewNpmPackagesSource(svc)
 	case extsvc.KindOther:
 		return NewOtherSource(svc, cf)
 	default:

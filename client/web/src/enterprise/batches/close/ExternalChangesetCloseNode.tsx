@@ -1,17 +1,18 @@
+import React, { useState, useCallback } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import React, { useState, useCallback } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../components/diff/DiffStat'
 import { ExternalChangesetFields } from '../../../graphql-operations'
@@ -22,6 +23,7 @@ import { ChangesetReviewStatusCell } from '../detail/changesets/ChangesetReviewS
 import { ExternalChangesetInfoCell } from '../detail/changesets/ExternalChangesetInfoCell'
 
 import { ChangesetCloseActionClose, ChangesetCloseActionKept } from './ChangesetCloseAction'
+
 import styles from './ExternalChangesetCloseNode.module.scss'
 
 export interface ExternalChangesetCloseNodeProps extends ThemeProps {
@@ -65,9 +67,9 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<ExternalChanges
                 onClick={toggleIsExpanded}
             >
                 {isExpanded ? (
-                    <ChevronDownIcon className="icon-inline" aria-label="Close section" />
+                    <Icon aria-label="Close section" as={ChevronDownIcon} />
                 ) : (
-                    <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
+                    <Icon aria-label="Expand section" as={ChevronRightIcon} />
                 )}
             </Button>
             {willClose ? (
@@ -111,9 +113,9 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<ExternalChanges
                 variant="secondary"
             >
                 {isExpanded ? (
-                    <ChevronDownIcon className="icon-inline" aria-label="Close section" />
+                    <Icon aria-label="Close section" as={ChevronDownIcon} />
                 ) : (
-                    <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
+                    <Icon aria-label="Expand section" as={ChevronRightIcon} />
                 )}{' '}
                 {isExpanded ? 'Hide' : 'Show'} details
             </Button>

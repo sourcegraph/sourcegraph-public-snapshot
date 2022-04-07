@@ -1,8 +1,9 @@
-import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import React, { useMemo } from 'react'
 
+import MenuDownIcon from 'mdi-react/MenuDownIcon'
+
 import { Namespace } from '@sourcegraph/shared/src/schema'
-import { Menu, MenuButton, MenuDivider, MenuItem, MenuList } from '@sourcegraph/wildcard'
+import { Menu, MenuButton, MenuDivider, MenuItem, MenuList, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 
@@ -59,7 +60,7 @@ export const SearchContextOwnerDropdown: React.FunctionComponent<SearchContextOw
                 data-tooltip={isDisabled ? "Owner can't be changed." : ''}
             >
                 {selectedNamespace.type === 'global-owner' ? 'Global' : `@${selectedNamespace.name}`}{' '}
-                <MenuDownIcon className="icon-inline" size={18} />
+                <Icon as={MenuDownIcon} />
             </MenuButton>
             <MenuList className={styles.menuList}>
                 <MenuItem onSelect={() => setSelectedNamespace(selectedUserNamespace)}>

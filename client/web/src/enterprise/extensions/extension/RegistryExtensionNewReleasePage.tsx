@@ -1,7 +1,8 @@
+import React, { useCallback, useState } from 'react'
+
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import React, { useCallback, useState } from 'react'
 import { of, Observable, concat, from } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { map, catchError, tap, concatMap } from 'rxjs/operators'
@@ -16,7 +17,7 @@ import * as GQL from '@sourcegraph/shared/src/schema'
 import extensionSchemaJSON from '@sourcegraph/shared/src/schema/extension.schema.json'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner, useLocalStorage, useEventObservable, Link } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useLocalStorage, useEventObservable, Link, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
@@ -215,7 +216,7 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                                         <LoadingSpinner />
                                     ) : (
                                         <span className="text-success">
-                                            <CheckCircleIcon className="icon-inline" /> Published release successfully.
+                                            <Icon as={CheckCircleIcon} /> Published release successfully.
                                         </span>
                                     ))}
                             </div>

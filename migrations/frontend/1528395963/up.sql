@@ -1,5 +1,3 @@
-BEGIN;
-
 CREATE TABLE IF NOT EXISTS insights_settings_migration_jobs
 (
     id SERIAL NOT NULL,
@@ -49,5 +47,3 @@ VALUES (14, 'code-insights', 'db.insights_settings_migration_jobs',
         'Migrating insight definitions from settings files to database tables as a last stage to use the GraphQL API.',
         TRUE, FALSE, TRUE, 3, 35)
 ON CONFLICT DO NOTHING;
-
-COMMIT;

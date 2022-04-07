@@ -72,16 +72,16 @@ exports[`ExtensionsQueryInputToolbar renders 1`] = `
       class="my-3 divider"
     />
     <button
-      aria-controls="menu--1"
+      aria-controls=""
       aria-haspopup="true"
       class="btn btnOutlineSecondary btnSm"
       data-reach-menu-button=""
-      id="menu-button--menu"
+      id="menu-button-2"
       type="button"
     >
       Show all 
       <svg
-        class="mdi-icon icon-inline"
+        class="mdi-icon iconInline"
         fill="currentColor"
         height="24"
         viewBox="0 0 24 24"

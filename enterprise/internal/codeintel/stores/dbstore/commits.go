@@ -11,13 +11,13 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -141,11 +141,40 @@ func (s *Store) DirtyRepositories(ctx context.Context) (_ map[int]int, err error
 
 const dirtyRepositoriesQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/commits.go:DirtyRepositories
-SELECT lsif_dirty_repositories.repository_id, lsif_dirty_repositories.dirty_token
-  FROM lsif_dirty_repositories
-    INNER JOIN repo ON repo.id = lsif_dirty_repositories.repository_id
-  WHERE dirty_token > update_token
+SELECT ldr.repository_id, ldr.dirty_token
+  FROM lsif_dirty_repositories ldr
+    INNER JOIN repo ON repo.id = ldr.repository_id
+  WHERE ldr.dirty_token > ldr.update_token
     AND repo.deleted_at IS NULL
+`
+
+// MaxStaleAge returns the longest duration that a repository has been (currently) stale for. This method considers
+// only repositories that would be returned by DirtyRepositories. This method returns a duration of zero if there
+// are no stale repositories.
+func (s *Store) MaxStaleAge(ctx context.Context) (_ time.Duration, err error) {
+	ctx, endObservation := s.operations.maxStaleAge.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	ageSeconds, ok, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(maxStaleAgeQuery)))
+	if err != nil {
+		return 0, err
+	}
+	if !ok {
+		return 0, nil
+	}
+
+	return time.Duration(ageSeconds) * time.Second, nil
+}
+
+const maxStaleAgeQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/commits.go:MaxStaleAge
+SELECT EXTRACT(EPOCH FROM NOW() - ldr.updated_at)::integer AS age
+  FROM lsif_dirty_repositories ldr
+    INNER JOIN repo ON repo.id = ldr.repository_id
+  WHERE ldr.dirty_token > ldr.update_token
+    AND repo.deleted_at IS NULL
+  ORDER BY age DESC
+  LIMIT 1
 `
 
 // CommitsVisibleToUpload returns the set of commits for which the given upload can answer code intelligence queries.
@@ -346,8 +375,18 @@ func (s *Store) calculateVisibleUploadsInternal(
 	// Determine which uploads are visible to which commits for this repository
 	graph := commitgraph.NewGraph(commitGraph, commitGraphView)
 
+	pctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Return a structure holding several channels that are populated by a background goroutine.
+	// When we write this data to temporary tables, we have three consumers pulling values from
+	// these channels in parallel. We need to make sure that once we return from this function that
+	// the producer routine shuts down. This prevents the producer from leaking if there is an
+	// error in one of the consumers before all values have been emitted.
+	sanitizedInput := sanitizeCommitInput(pctx, graph, refDescriptions, maxAgeForNonStaleBranches, maxAgeForNonStaleTags)
+
 	// Write the graph into temporary tables in Postgres
-	if err := tx.writeVisibleUploads(ctx, sanitizeCommitInput(ctx, graph, refDescriptions, maxAgeForNonStaleBranches, maxAgeForNonStaleTags)); err != nil {
+	if err := tx.writeVisibleUploads(ctx, sanitizedInput); err != nil {
 		return err
 	}
 
@@ -460,10 +499,12 @@ func (s *Store) writeVisibleUploads(ctx context.Context, sanitizedInput *sanitiz
 		return err
 	}
 
+	g, gctx := errgroup.WithContext(ctx)
+
 	// Insert the set of uploads that are visible from each commit for a given repository into a temporary table.
 	nearestUploadsWriter := func() error {
 		return batch.InsertValues(
-			ctx,
+			gctx,
 			s.Handle().DB(),
 			"t_lsif_nearest_uploads",
 			batch.MaxNumPostgresParameters,
@@ -477,7 +518,7 @@ func (s *Store) writeVisibleUploads(ctx context.Context, sanitizedInput *sanitiz
 	// set, which is multiplicative in the size of the commit graph AND the number of unique roots.
 	nearestUploadsLinksWriter := func() error {
 		return batch.InsertValues(
-			ctx,
+			gctx,
 			s.Handle().DB(),
 			"t_lsif_nearest_uploads_links",
 			batch.MaxNumPostgresParameters,
@@ -490,7 +531,7 @@ func (s *Store) writeVisibleUploads(ctx context.Context, sanitizedInput *sanitiz
 	// used to determine which bundles for a repository we open during a global find references query.
 	uploadsVisibleAtTipWriter := func() error {
 		return batch.InsertValues(
-			ctx,
+			gctx,
 			s.Handle().DB(),
 			"t_lsif_uploads_visible_at_tip",
 			batch.MaxNumPostgresParameters,
@@ -499,7 +540,11 @@ func (s *Store) writeVisibleUploads(ctx context.Context, sanitizedInput *sanitiz
 		)
 	}
 
-	if err := goroutine.Parallel(nearestUploadsWriter, nearestUploadsLinksWriter, uploadsVisibleAtTipWriter); err != nil {
+	g.Go(nearestUploadsWriter)
+	g.Go(nearestUploadsLinksWriter)
+	g.Go(uploadsVisibleAtTipWriter)
+
+	if err := g.Wait(); err != nil {
 		return err
 	}
 	trace.Log(
@@ -892,7 +937,7 @@ func sanitizeCommitInput(
 					isDefaultBranch = true
 				} else {
 					maxAge, ok := maxAges[refDescription.Type]
-					if !ok || time.Since(refDescription.CreatedDate) > maxAge {
+					if !ok || refDescription.CreatedDate == nil || time.Since(*refDescription.CreatedDate) > maxAge {
 						continue
 					}
 				}

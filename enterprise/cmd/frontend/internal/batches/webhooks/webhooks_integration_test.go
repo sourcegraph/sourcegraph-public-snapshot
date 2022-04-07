@@ -22,5 +22,5 @@ func TestWebhooksIntegration(t *testing.T) {
 
 	t.Run("GitHubWebhook", testGitHubWebhook(sqlDB, user.ID))
 	t.Run("BitbucketWebhook", testBitbucketWebhook(sqlDB, user.ID))
-	t.Run("GitLabWebhook", testGitLabWebhook(sqlDB, user.ID))
+	t.Run("GitLabWebhook", testGitLabWebhook(sqlDB))
 }

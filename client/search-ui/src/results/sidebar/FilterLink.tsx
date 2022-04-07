@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { pluralize } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
@@ -12,6 +13,7 @@ import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/s
 import { Button } from '@sourcegraph/wildcard'
 
 import { getFiltersOfKind } from './helpers'
+
 import styles from './SearchSidebarSection.module.scss'
 
 export interface FilterLinkProps {
@@ -58,7 +60,7 @@ export const getRepoFilterLinks = (
     function repoLabelConverter(label: string): JSX.Element {
         const Icon = RepoIcon({
             repoName: label,
-            className: classNames('icon-inline text-muted', styles.sidebarSectionIcon),
+            className: classNames('text-muted', styles.sidebarSectionIcon),
         })
 
         return (

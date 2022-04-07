@@ -1,10 +1,11 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import { ApolloQueryResult } from '@apollo/client'
 import classNames from 'classnames'
 import { compact, noop } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import LockIcon from 'mdi-react/LockIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 import { useHistory } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -16,11 +17,22 @@ import {
     SettingsOrgSubject,
     SettingsUserSubject,
 } from '@sourcegraph/shared/src/settings/settings'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
-import { PageHeader, Button, Container, Input, LoadingSpinner, FeedbackBadge, RadioButton } from '@sourcegraph/wildcard'
+import {
+    PageHeader,
+    Button,
+    Container,
+    Input,
+    LoadingSpinner,
+    FeedbackBadge,
+    RadioButton,
+    Icon,
+    Panel,
+} from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
+import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import {
     BatchChangeFields,
@@ -35,7 +47,7 @@ import {
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
 import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE } from './backend'
-import styles from './CreateOrEditBatchChangePage.module.scss'
+import { DownloadSpecModal } from './DownloadSpecModal'
 import { EditorFeedbackPanel } from './editor/EditorFeedbackPanel'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
 import { ExecutionOptions, ExecutionOptionsDropdown } from './ExecutionOptions'
@@ -49,6 +61,8 @@ import { useWorkspacesPreview } from './useWorkspacesPreview'
 import { useImportingChangesets } from './workspaces-preview/useImportingChangesets'
 import { useWorkspaces, WorkspacePreviewFilters } from './workspaces-preview/useWorkspaces'
 import { WorkspacesPreview } from './workspaces-preview/WorkspacesPreview'
+
+import styles from './CreateOrEditBatchChangePage.module.scss'
 
 export interface CreateOrEditBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Settings> {
     /**
@@ -101,7 +115,7 @@ export const CreateOrEditBatchChangePage: React.FunctionComponent<CreateOrEditBa
     if (loading && !data) {
         return (
             <div className="w-100 text-center">
-                <LoadingSpinner className="icon-inline m-2" />
+                <Icon className="m-2" as={LoadingSpinner} />
             </div>
         )
     }
@@ -190,7 +204,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
                         </small>
                         <hr className="my-3" />
                         <h3 className="text-muted">
-                            Visibility <InfoCircleOutlineIcon className="icon-inline" data-tooltip="Coming soon" />
+                            Visibility <Icon data-tooltip="Coming soon" as={InfoCircleOutlineIcon} />
                         </h3>
                         <div className="form-group mb-1">
                             <RadioButton
@@ -211,7 +225,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
                                 disabled={true}
                                 label={
                                     <>
-                                        Private <LockIcon className="text-warning icon-inline" aria-hidden={true} />
+                                        Private <Icon className="text-warning" aria-hidden={true} as={LockIcon} />
                                     </>
                                 }
                                 aria-label="Private"
@@ -239,6 +253,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
 }
 
 const INVALID_BATCH_SPEC_TOOLTIP = "There's a problem with your batch spec."
+const WORKSPACES_PREVIEW_SIZE = 'batch-changes.ssbc-workspaces-preview-size'
 
 interface EditPageProps extends ThemeProps {
     batchChange: EditBatchChangeFields
@@ -258,6 +273,12 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
     )
 
     const [filters, setFilters] = useState<WorkspacePreviewFilters>()
+    const [isDownloadSpecModalOpen, setIsDownloadSpecModalOpen] = useState(false)
+    const [downloadSpecModalDismissed, setDownloadSpecModalDismissed] = useTemporarySetting(
+        'batches.downloadSpecModalDismissed',
+        false
+    )
+
     const workspacesConnection = useWorkspaces(batchSpec.id, filters)
     const importingChangesetsConnection = useImportingChangesets(batchSpec.id)
 
@@ -367,9 +388,16 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
                 options={executionOptions}
                 onChangeOptions={setExecutionOptions}
             />
-            <BatchSpecDownloadLink name={batchChange.name} originalInput={code} isLightTheme={isLightTheme}>
-                or download for src-cli
-            </BatchSpecDownloadLink>
+
+            {downloadSpecModalDismissed ? (
+                <BatchSpecDownloadLink name={batchChange.name} originalInput={code} isLightTheme={isLightTheme}>
+                    or download for src-cli
+                </BatchSpecDownloadLink>
+            ) : (
+                <Button className={styles.downloadLink} variant="link" onClick={() => setIsDownloadSpecModalOpen(true)}>
+                    or download for src-cli
+                </Button>
+            )}
         </>
     )
 
@@ -394,24 +422,42 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
                     <EditorFeedbackPanel
                         errors={compact([codeErrors.update, codeErrors.validation, previewError, executeError])}
                     />
+
+                    {isDownloadSpecModalOpen && !downloadSpecModalDismissed ? (
+                        <DownloadSpecModal
+                            name={batchChange.name}
+                            originalInput={code}
+                            isLightTheme={isLightTheme}
+                            setDownloadSpecModalDismissed={setDownloadSpecModalDismissed}
+                            setIsDownloadSpecModalOpen={setIsDownloadSpecModalOpen}
+                        />
+                    ) : null}
                 </div>
-                <div className={styles.workspacesPreviewContainer}>
-                    <WorkspacesPreview
-                        previewDisabled={previewDisabled}
-                        preview={() => previewBatchSpec(debouncedCode)}
-                        batchSpecStale={
-                            isBatchSpecStale || isWorkspacesPreviewInProgress || resolutionState === 'CANCELED'
-                        }
-                        hasPreviewed={hasPreviewed}
-                        excludeRepo={excludeRepo}
-                        cancel={cancel}
-                        isWorkspacesPreviewInProgress={isWorkspacesPreviewInProgress}
-                        resolutionState={resolutionState}
-                        workspacesConnection={workspacesConnection}
-                        importingChangesetsConnection={importingChangesetsConnection}
-                        setFilters={setFilters}
-                    />
-                </div>
+                <Panel
+                    defaultSize={500}
+                    minSize={405}
+                    maxSize={1400}
+                    position="right"
+                    storageKey={WORKSPACES_PREVIEW_SIZE}
+                >
+                    <div className={styles.workspacesPreviewContainer}>
+                        <WorkspacesPreview
+                            previewDisabled={previewDisabled}
+                            preview={() => previewBatchSpec(debouncedCode)}
+                            batchSpecStale={
+                                isBatchSpecStale || isWorkspacesPreviewInProgress || resolutionState === 'CANCELED'
+                            }
+                            hasPreviewed={hasPreviewed}
+                            excludeRepo={excludeRepo}
+                            cancel={cancel}
+                            isWorkspacesPreviewInProgress={isWorkspacesPreviewInProgress}
+                            resolutionState={resolutionState}
+                            workspacesConnection={workspacesConnection}
+                            importingChangesetsConnection={importingChangesetsConnection}
+                            setFilters={setFilters}
+                        />
+                    </div>
+                </Panel>
             </div>
         </BatchChangePage>
     )

@@ -3,7 +3,7 @@ package background
 import (
 	"net/url"
 
-	cmtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/types"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 // actionArgs is the shared set of arguments needed to execute any
@@ -16,6 +16,6 @@ type actionArgs struct {
 	MonitorOwnerName   string
 
 	Query          string
-	Results        cmtypes.CommitSearchResults
+	Results        []*result.CommitMatch
 	IncludeResults bool
 }

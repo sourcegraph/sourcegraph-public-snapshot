@@ -24,6 +24,7 @@ type uploadState struct {
 	commit            string
 	root              string
 	indexer           string
+	indexerVersion    string
 	associatedIndexID int
 	numParts          int
 	uploadedParts     []int
@@ -45,6 +46,7 @@ func (h *UploadHandler) constructUploadState(ctx context.Context, r *http.Reques
 		commit:            getQuery(r, "commit"),
 		root:              sanitizeRoot(getQuery(r, "root")),
 		indexer:           getQuery(r, "indexerName"),
+		indexerVersion:    getQuery(r, "indexerVersion"),
 		associatedIndexID: getQueryInt(r, "associatedIndexId"),
 		numParts:          getQueryInt(r, "numParts"),
 		multipart:         hasQuery(r, "multiPart"),
@@ -101,7 +103,7 @@ func ensureRepoAndCommitExist(ctx context.Context, db database.DB, repoName, com
 	//
 	// 1. Resolve repository
 
-	repo, err := backend.NewRepos(db.Repos()).GetByName(ctx, api.RepoName(repoName))
+	repo, err := backend.NewRepos(db).GetByName(ctx, api.RepoName(repoName))
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return 0, http.StatusNotFound, errors.Errorf("unknown repository %q", repoName)
@@ -113,7 +115,7 @@ func ensureRepoAndCommitExist(ctx context.Context, db database.DB, repoName, com
 	//
 	// 2. Resolve commit
 
-	if _, err := backend.NewRepos(db.Repos()).ResolveRev(ctx, repo, commit); err != nil {
+	if _, err := backend.NewRepos(db).ResolveRev(ctx, repo, commit); err != nil {
 		var reason string
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			reason = "commit not found"
