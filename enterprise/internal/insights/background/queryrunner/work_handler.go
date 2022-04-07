@@ -278,6 +278,14 @@ func (r *workHandler) searchStreamHandler(ctx context.Context, job *Job, series 
 	}
 	defer func() { err = tx.Done(err) }()
 
+	if job.PersistMode == string(store.SnapshotMode) {
+		// The purpose of the snapshot is for low fidelity but recently updated data points.
+		// To avoid unbounded growth of the snapshots table we will prune it at the same time as adding new values.
+		if err := tx.DeleteSnapshots(ctx, series); err != nil {
+			return err
+		}
+	}
+
 	checker := authz.DefaultSubRepoPermsChecker
 	for _, match := range streamRepoCounts {
 		// sub-repo permissions filtering. If the repo supports it, then it should be excluded from search results
