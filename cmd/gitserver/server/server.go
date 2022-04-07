@@ -243,6 +243,9 @@ type Server struct {
 
 	repoUpdateLocksMu sync.Mutex // protects the map below and also updates to locks.once
 	repoUpdateLocks   map[api.RepoName]*locks
+
+	// Used for setRepoSizes function to run only during the first run of janitor
+	setRepoSizesOnce sync.Once
 }
 
 type locks struct {
