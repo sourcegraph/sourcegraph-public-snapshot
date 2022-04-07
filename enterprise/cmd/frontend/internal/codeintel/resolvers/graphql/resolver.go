@@ -516,6 +516,37 @@ func (r *Resolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context
 	return &gql.EmptyResponse{}, nil
 }
 
+func (r *Resolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ gql.CodeIntelRepositorySummaryResolver, err error) {
+	ctx, errTracer, endObservation := r.observationContext.repositorySummary.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("repoID", string(id)),
+	}})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	repositoryID, err := gql.UnmarshalRepositoryID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a new prefetcher here as we only want to cache upload and index records in
+	// the same graphQL request, not across different request.
+	prefetcher := NewPrefetcher(r.resolver)
+
+	summary, err := r.resolver.RepositorySummary(ctx, int(repositoryID))
+	if err != nil {
+		return nil, err
+	}
+
+	return NewRepositorySummaryResolver(
+		r.db,
+		r.resolver,
+		r.gitserver,
+		summary,
+		prefetcher,
+		r.locationResolver,
+		errTracer,
+	), nil
+}
+
 // 🚨 SECURITY: Only entrypoint is within the repository resolver so the user is already authenticated
 func (r *Resolver) IndexConfiguration(ctx context.Context, id graphql.ID) (_ gql.IndexConfigurationResolver, err error) {
 	_, traceErrs, endObservation := r.observationContext.indexConfiguration.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{

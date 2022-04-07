@@ -35,6 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -206,6 +207,7 @@ func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
 		Retries:             10,
 		MaxChanges:          -1,
 		IncludeBinaries:     false,
+		FsyncEnable:         false,
 	}
 
 	if conn.FusionClient == nil {
@@ -236,6 +238,7 @@ func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
 		fc.MaxChanges = conn.FusionClient.MaxChanges
 	}
 	fc.IncludeBinaries = conn.FusionClient.IncludeBinaries
+	fc.FsyncEnable = conn.FusionClient.FsyncEnable
 
 	return fc
 }
@@ -282,6 +285,14 @@ func getRemoteURLFunc(
 		svc, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
 		if err != nil {
 			return "", err
+		}
+
+		if svc.CloudDefault && r.Private {
+			// We won't be able to use this remote URL, so we should skip it. This can happen
+			// if a repo moves from being public to private while belonging to both a cloud
+			// default external service and another external service with a token that has
+			// access to the private repo.
+			continue
 		}
 
 		dotcomConfig := conf.SiteConfig().Dotcom
@@ -400,6 +411,13 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 			return nil, err
 		}
 		return server.NewNpmPackagesSyncer(c, codeintelDB, nil), nil
+	case extsvc.TypeGoModules:
+		var c schema.GoModulesConnection
+		if err := extractOptions(&c); err != nil {
+			return nil, err
+		}
+		cli := gomodproxy.NewClient(&c, httpcli.ExternalDoer)
+		return server.NewGoModulesSyncer(&c, codeintelDB, cli), nil
 	}
 	return &server.GitRepoSyncer{}, nil
 }

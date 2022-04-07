@@ -13,7 +13,7 @@
     "captainSlackUsername": "keegan",
     "captainGitHubUsername": "keegancsmith",
     // Release versions
-    "previousRelease": "3.38.0",
+    "previousRelease": "3.38.1",
     "upcomingRelease": "3.39.0",
     // Release dates
     "oneWorkingDayBeforeRelease": "19 April 2022 10:00 PST",

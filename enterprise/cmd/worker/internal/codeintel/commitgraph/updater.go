@@ -7,10 +7,10 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -163,7 +163,7 @@ func (u *Updater) getCommitGraph(ctx context.Context, repositoryID int) (*gitdom
 	// back any more data than we wanted.
 	commitDate = commitDate.Add(-time.Second)
 
-	commitGraph, err := u.gitserverClient.CommitGraph(ctx, repositoryID, git.CommitGraphOptions{
+	commitGraph, err := u.gitserverClient.CommitGraph(ctx, repositoryID, gitserver.CommitGraphOptions{
 		AllRefs: true,
 		Since:   &commitDate,
 	})

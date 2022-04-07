@@ -6,6 +6,7 @@ import { fromEvent, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 import { Icon } from '@sourcegraph/wildcard'
 
 import { replaceRevisionInURL } from '../../util/url'
@@ -43,9 +44,7 @@ export class GoToPermalinkAction extends React.PureComponent<
                     filter(
                         event =>
                             // 'y' shortcut (if no input element is focused)
-                            event.key === 'y' &&
-                            !!document.activeElement &&
-                            !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)
+                            event.key === 'y' && !!document.activeElement && !isInputElement(document.activeElement)
                     )
                 )
                 .subscribe(event => {

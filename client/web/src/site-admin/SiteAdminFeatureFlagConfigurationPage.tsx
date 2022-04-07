@@ -12,7 +12,6 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { asError, ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import {
     Button,
     Container,
@@ -29,6 +28,7 @@ import {
 
 import { Collapsible } from '../components/Collapsible'
 import { LoaderButton } from '../components/LoaderButton'
+import { PageTitle } from '../components/PageTitle'
 import { RadioButtons } from '../components/RadioButtons'
 
 import { fetchFeatureFlags as defaultFetchFeatureFlags } from './backend'

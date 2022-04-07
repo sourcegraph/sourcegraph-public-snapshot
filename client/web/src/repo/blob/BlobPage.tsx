@@ -88,7 +88,6 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
     useEffect(() => {
         props.telemetryService.logViewEvent('Blob', { repoName, filePath })
     }, [repoName, commitID, filePath, renderMode, props.telemetryService])
-
     useSearchStack(
         useMemo(
             () => ({

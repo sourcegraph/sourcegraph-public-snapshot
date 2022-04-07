@@ -4,6 +4,9 @@ This guide gives specific instructions for troubleshooting code intelligence in 
 
 ## When are issues related to code-intelligence?
 
+
+Issues are related to Sourcegraph code intelligence when the [LSIF indexer](./indexers.md) is one that we build and maintain.
+
 A customer issue should **definitely** be routed to code intelligence if any of the following are true.
 
 - Precise code intelligence queries are slow
@@ -13,6 +16,10 @@ A customer issue should **possibly** be routed to code intelligence if any of th
 
 - Search-based code intelligence queries are slow
 - Search-based code intelligence queries yield unexpected results
+
+A customer issue should **not** be routed to code intelligence if any of the following are true.
+
+- The indexer is listed in [LSIF.dev](https://lsif.dev/) and _it is not_ one that we maintain. Instead, flag the indexers status and maintainer of the relevant indexer with the customer, and suggest they reach out directly
 
 ## Gathering evidence
 

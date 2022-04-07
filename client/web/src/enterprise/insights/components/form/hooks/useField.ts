@@ -62,6 +62,8 @@ export interface useFieldAPI<FieldValue> {
     }
 }
 
+export type Field = useFieldAPI<string> | useFieldAPI<number>
+
 export type UseFieldProps<FormValues, Key, Value> = {
     name: Key
     formApi: FormAPI<FormValues>
@@ -202,8 +204,8 @@ function useFormFieldState<FormValues, Key extends keyof FormAPI<FormValues>['in
     setFieldStateReference.current = setFieldState
 
     const setState = useCallback(
-        (trasformer: FieldStateTransformer<FormValues[Key]>) => {
-            setFieldStateReference.current(name, trasformer as FieldStateTransformer<unknown>)
+        (transformer: FieldStateTransformer<FormValues[Key]>) => {
+            setFieldStateReference.current(name, transformer as FieldStateTransformer<unknown>)
         },
         [name]
     )

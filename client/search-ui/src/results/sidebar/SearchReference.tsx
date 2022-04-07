@@ -5,7 +5,6 @@ import { escapeRegExp } from 'lodash'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
-import { Collapse } from 'reactstrap'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import {
@@ -20,7 +19,20 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { FILTERS, FilterType, isNegatableFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, useLocalStorage, Link, Tab, TabList, TabPanel, TabPanels, Tabs, Icon } from '@sourcegraph/wildcard'
+import {
+    Button,
+    useLocalStorage,
+    Link,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    Tabs,
+    Collapse,
+    CollapseHeader,
+    CollapsePanel,
+    Icon,
+} from '@sourcegraph/wildcard'
 
 import styles from './SearchReference.module.scss'
 import sidebarStyles from './SearchSidebarSection.module.scss'
@@ -367,6 +379,8 @@ const SearchReferenceEntry = <T extends SearchReferenceInfo>({
     const [collapsed, setCollapsed] = useState(true)
     const CollapseIcon = collapsed ? ChevronLeftIcon : ChevronDownIcon
 
+    const handleOpenChange = useCallback(collapsed => setCollapsed(!collapsed), [])
+
     let buttonTextPrefix: ReactElement | null = null
     if (isFilterInfo(searchReference)) {
         buttonTextPrefix = <span className="search-filter-keyword">{searchReference.field}:</span>
@@ -374,74 +388,77 @@ const SearchReferenceEntry = <T extends SearchReferenceInfo>({
 
     return (
         <li>
-            <span
-                className={classNames(styles.item, sidebarStyles.sidebarSectionListItem, {
-                    [styles.active]: !collapsed,
-                })}
-            >
-                <Button className="p-0 flex-1" onClick={event => onClick(searchReference, event.altKey)}>
-                    <span className="text-monospace">
-                        {buttonTextPrefix}
-                        {searchReference.tokens.map(token => (
-                            <span key={token.start} className={classNameTokenMap[token.type]}>
-                                {token.value}
-                            </span>
-                        ))}
-                    </span>
-                </Button>
-                <Button
-                    variant="icon"
-                    className={styles.collapseButton}
-                    onClick={event => {
-                        event.stopPropagation()
-                        setCollapsed(collapsed => !collapsed)
-                    }}
-                    aria-label={collapsed ? 'Show filter description' : 'Hide filter description'}
+            <Collapse isOpen={!collapsed} onOpenChange={handleOpenChange}>
+                <span
+                    className={classNames(styles.item, sidebarStyles.sidebarSectionListItem, {
+                        [styles.active]: !collapsed,
+                    })}
                 >
-                    <small className="text-monospace">i</small>
-                    <Icon as={CollapseIcon} />
-                </Button>
-            </span>
-            <Collapse isOpen={!collapsed}>
-                <div className={styles.description}>
-                    {searchReference.description && (
-                        <Markdown dangerousInnerHTML={renderMarkdown(searchReference.description)} />
-                    )}
-                    {searchReference.alias && (
-                        <p>
-                            Alias:{' '}
-                            <span className="text-code search-filter-keyword">
-                                {searchReference.alias}
-                                {isFilterInfo(searchReference) ? ':' : ''}
-                            </span>
-                        </p>
-                    )}
-                    {isFilterInfo(searchReference) && isNegatableFilter(searchReference.field) && (
-                        <p>
-                            Negation: <span className="test-code search-filter-keyword">-{searchReference.field}:</span>
-                            {searchReference.alias && (
-                                <>
-                                    {' '}
-                                    | <span className="test-code search-filter-keyword">-{searchReference.alias}:</span>
-                                </>
-                            )}
-                            <br />
-                            <span className={styles.placeholder}>(opt + click filter in reference list)</span>
-                        </p>
-                    )}
-                    {searchReference.examples && (
-                        <>
-                            <div className="font-weight-medium">Examples</div>
-                            <div className={classNames('text-code', styles.examples)}>
-                                {searchReference.examples.map(example => (
-                                    <p key={example}>
-                                        <SearchReferenceExample example={example} onClick={onExampleClick} />
-                                    </p>
-                                ))}
-                            </div>
-                        </>
-                    )}
-                </div>
+                    <Button className="p-0 flex-1" onClick={event => onClick(searchReference, event.altKey)}>
+                        <span className="text-monospace">
+                            {buttonTextPrefix}
+                            {searchReference.tokens.map(token => (
+                                <span key={token.start} className={classNameTokenMap[token.type]}>
+                                    {token.value}
+                                </span>
+                            ))}
+                        </span>
+                    </Button>
+                    <CollapseHeader
+                        as={Button}
+                        variant="icon"
+                        className={styles.collapseButton}
+                        aria-label={collapsed ? 'Show filter description' : 'Hide filter description'}
+                    >
+                        <small className="text-monospace">i</small>
+                        <Icon as={CollapseIcon} />
+                    </CollapseHeader>
+                </span>
+                <CollapsePanel>
+                    <div className={styles.description}>
+                        {searchReference.description && (
+                            <Markdown dangerousInnerHTML={renderMarkdown(searchReference.description)} />
+                        )}
+                        {searchReference.alias && (
+                            <p>
+                                Alias:{' '}
+                                <span className="text-code search-filter-keyword">
+                                    {searchReference.alias}
+                                    {isFilterInfo(searchReference) ? ':' : ''}
+                                </span>
+                            </p>
+                        )}
+                        {isFilterInfo(searchReference) && isNegatableFilter(searchReference.field) && (
+                            <p>
+                                Negation:{' '}
+                                <span className="test-code search-filter-keyword">-{searchReference.field}:</span>
+                                {searchReference.alias && (
+                                    <>
+                                        {' '}
+                                        |{' '}
+                                        <span className="test-code search-filter-keyword">
+                                            -{searchReference.alias}:
+                                        </span>
+                                    </>
+                                )}
+                                <br />
+                                <span className={styles.placeholder}>(opt + click filter in reference list)</span>
+                            </p>
+                        )}
+                        {searchReference.examples && (
+                            <>
+                                <div className="font-weight-medium">Examples</div>
+                                <div className={classNames('text-code', styles.examples)}>
+                                    {searchReference.examples.map(example => (
+                                        <p key={example}>
+                                            <SearchReferenceExample example={example} onClick={onExampleClick} />
+                                        </p>
+                                    ))}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </CollapsePanel>
             </Collapse>
         </li>
     )

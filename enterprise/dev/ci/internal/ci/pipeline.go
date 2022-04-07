@@ -92,6 +92,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			// set it up separately from CoreTestOperations
 			ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
 				triggerAsync(buildOptions)))
+
+			ops.Append(prPreview())
 		}
 		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
 
@@ -315,11 +317,7 @@ func withDefaultTimeout(s *bk.Step) {
 // steps are configured appropriately to run on the queue
 func withAgentQueueDefaults(s *bk.Step) {
 	if len(s.Agents) == 0 || s.Agents["queue"] == "" {
-		if bk.FeatureFlags.StatelessBuild {
-			s.Agents["queue"] = bk.AgentQueueStateless
-		} else {
-			s.Agents["queue"] = bk.AgentQueueStateful
-		}
+		s.Agents["queue"] = bk.AgentQueueStateless
 	}
 
 	if s.Agents["queue"] != bk.AgentQueueBaremetal {

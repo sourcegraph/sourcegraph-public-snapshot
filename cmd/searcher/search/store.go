@@ -55,10 +55,17 @@ const maxFileSize = 2 << 20 // 2MB; match https://sourcegraph.com/search?q=repo:
 // (tar). We want to be able to support random concurrent access for reading,
 // so we store as a zip.
 type Store struct {
-	// FetchTar returns an io.ReadCloser to a tar archive of a repository at the specified Git
-	// remote URL and commit ID. If the error implements "BadRequest() bool", it will be used to
+	// FetchTar returns an io.ReadCloser to a tar archive of repo at commit.
+	// If the error implements "BadRequest() bool", it will be used to
 	// determine if the error is a bad request (eg invalid repo).
 	FetchTar func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error)
+
+	// FetchTarPaths is the future version of FetchTar, but for now exists as
+	// its own function to minimize changes.
+	//
+	// If paths is non-empty, the archive will only contain files from paths.
+	// If a path is missing the first Read call will fail with an error.
+	FetchTarPaths func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error)
 
 	// FilterTar returns a FilterFunc that filters out files we don't want to write to disk
 	FilterTar func(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID) (FilterFunc, error)

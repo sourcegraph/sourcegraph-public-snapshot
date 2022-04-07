@@ -1,0 +1,165 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
+<body>
+  <div>
+    <button
+      aria-controls=""
+      aria-expanded="true"
+      aria-haspopup="true"
+      class=""
+      data-reach-menu-button=""
+      id="menu-button-2"
+      type="button"
+    >
+      menu trigger
+    </button>
+  </div>
+  <div>
+    <div
+      aria-labelledby="menu-button-2"
+      aria-modal="true"
+      class="floatingPanel popover py-1"
+      data-reach-menu-items=""
+      data-reach-menu-popover=""
+      id="menu-1"
+      role="dialog"
+      tabindex="-1"
+    >
+      <div>
+        <h6
+          class="dropdown-header"
+        >
+           Signed in as @ralph
+        </h6>
+        <a
+          class="dropdown-item item"
+          data-reach-menu-item=""
+          data-reach-menu-link=""
+          data-valuetext="Settings"
+          href="/users/ralph/settings/organizations"
+          id="option-0--menu-1"
+          role="menuitem"
+          tabindex="-1"
+        >
+          Settings
+        </a>
+        <a
+          class="dropdown-item item"
+          data-reach-menu-item=""
+          data-reach-menu-link=""
+          data-valuetext="Your repositories"
+          href="/users/ralph/settings/repositories"
+          id="option-1--menu-1"
+          role="menuitem"
+          tabindex="-1"
+        >
+          Your repositories
+        </a>
+        <a
+          class="dropdown-item item"
+          data-reach-menu-item=""
+          data-reach-menu-link=""
+          data-valuetext="Saved searches"
+          href="/users/ralph/searches"
+          id="option-2--menu-1"
+          role="menuitem"
+          tabindex="-1"
+        >
+          Saved searches
+        </a>
+      </div>
+      <div>
+        <div
+          class="dropdown-divider"
+        />
+        <h6
+          class="dropdown-header"
+        >
+          Your organizations
+        </h6>
+        <a
+          class="dropdown-item item"
+          data-reach-menu-item=""
+          data-reach-menu-link=""
+          data-valuetext="Sourcegraph"
+          href="/users/ralph/settings/organizations"
+          id="option-3--menu-1"
+          role="menuitem"
+          tabindex="-1"
+        >
+          Sourcegraph
+        </a>
+        <a
+          class="dropdown-item item"
+          data-reach-menu-item=""
+          data-reach-menu-link=""
+          data-valuetext="Gitstart"
+          href="/users/ralph/settings/repositories"
+          id="option-4--menu-1"
+          role="menuitem"
+          tabindex="-1"
+        >
+          Gitstart
+        </a>
+      </div>
+      <div>
+        <div
+          class="dropdown-divider"
+        />
+        <div
+          class="dropdown-item item"
+          data-reach-menu-item=""
+          data-valuetext="Keyboard shortcuts"
+          id="option-5--menu-1"
+          role="menuitem"
+          tabindex="-1"
+        >
+          Keyboard shortcuts
+        </div>
+        <div
+          aria-disabled="true"
+          class="dropdown-item item"
+          data-disabled=""
+          data-reach-menu-item=""
+          data-valuetext="Help"
+          id="option-6--menu-1"
+          role="menuitem"
+          tabindex="-1"
+        >
+          Help
+        </div>
+      </div>
+      <div>
+        <div
+          class="dropdown-divider"
+        />
+        <a
+          class="dropdown-item item"
+          data-reach-menu-item=""
+          data-reach-menu-link=""
+          data-valuetext="About Sourcegraph"
+          href="https://about.sourcegraph.com"
+          id="option-7--menu-1"
+          role="menuitem"
+          tabindex="-1"
+        >
+          About Sourcegraph
+        </a>
+        <a
+          class="dropdown-item item"
+          data-reach-menu-item=""
+          data-reach-menu-link=""
+          data-valuetext="Browser Extension"
+          href="https://docs.sourcegraph.com/integration/browser_extension"
+          id="option-8--menu-1"
+          role="menuitem"
+          tabindex="-1"
+        >
+          Browser Extension
+        </a>
+      </div>
+    </div>
+  </div>
+</body>
+`;

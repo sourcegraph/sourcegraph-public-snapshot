@@ -14,13 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // Service encapsulates the resolution and persistence of dependencies at the repository and package levels.
 type Service struct {
-	dependenciesStore  *store.Store
+	dependenciesStore  Store
 	lockfilesSvc       LockfilesService
 	lockfilesSemaphore *semaphore.Weighted
 	syncer             Syncer
@@ -28,18 +27,20 @@ type Service struct {
 	operations         *operations
 }
 
-var (
-	lockfilesSemaphoreWeight = env.MustGetInt("CODEINTEL_DEPENDENCIES_LOCKFILES_SEMAPHORE_WEIGHT", 64, "The maximum number of concurrent routines parsing lockfile contents.")
-	syncerSemaphoreWeight    = env.MustGetInt("CODEINTEL_DEPENDENCIES_LOCKFILES_SYNCER_WEIGHT", 64, "The maximum number of concurrent routines actively syncing repositories.")
-)
-
-func newService(depsStore *store.Store, lockfilesSvc LockfilesService, syncer Syncer, observationContext *observation.Context) *Service {
+func newService(
+	dependenciesStore Store,
+	lockfilesSvc LockfilesService,
+	lockfilesSemaphore *semaphore.Weighted,
+	syncer Syncer,
+	syncerSemaphore *semaphore.Weighted,
+	observationContext *observation.Context,
+) *Service {
 	return &Service{
-		dependenciesStore:  depsStore,
+		dependenciesStore:  dependenciesStore,
 		lockfilesSvc:       lockfilesSvc,
-		lockfilesSemaphore: semaphore.NewWeighted(int64(lockfilesSemaphoreWeight)),
+		lockfilesSemaphore: lockfilesSemaphore,
 		syncer:             syncer,
-		syncerSemaphore:    semaphore.NewWeighted(int64(syncerSemaphoreWeight)),
+		syncerSemaphore:    syncerSemaphore,
 		operations:         newOperations(observationContext),
 	}
 }

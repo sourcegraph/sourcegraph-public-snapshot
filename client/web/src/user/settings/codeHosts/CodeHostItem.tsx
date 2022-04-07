@@ -37,7 +37,6 @@ interface CodeHostItemProps {
     onDidError: (error: ErrorLike) => void
     loading?: boolean
     useGitHubApp?: boolean
-    reloadComponent?: (reason: string | null) => void
 }
 
 export interface ParentWindow extends Window {
@@ -60,7 +59,6 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     onDidUpsert,
     loading = false,
     useGitHubApp = false,
-    reloadComponent,
 }) => {
     const [isAddConnectionModalOpen, setIsAddConnectionModalOpen] = useState(false)
     const toggleAddConnectionModal = useCallback(() => setIsAddConnectionModalOpen(!isAddConnectionModalOpen), [
@@ -182,13 +180,15 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                             variant="merged"
                         />
                     ) : (
-                        <Button
-                            className={classNames(!isUserOwner && 'p-0 shadow-none font-weight-normal')}
-                            variant={isUserOwner ? 'merged' : 'link'}
-                            onClick={updateAction}
-                        >
-                            Update
-                        </Button>
+                        !useGitHubApp && (
+                            <Button
+                                className={classNames(!isUserOwner && 'p-0 shadow-none font-weight-normal')}
+                                variant={isUserOwner ? 'merged' : 'link'}
+                                onClick={updateAction}
+                            >
+                                Update
+                            </Button>
+                        )
                     ))
                 )}
 

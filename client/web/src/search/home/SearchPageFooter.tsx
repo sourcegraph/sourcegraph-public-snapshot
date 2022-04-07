@@ -4,10 +4,10 @@ import classNames from 'classnames'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
 import { Link } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../components/branding/BrandLogo'
+import { PageRoutes } from '../../routes.constants'
 
 import styles from './SearchPageFooter.module.scss'
 

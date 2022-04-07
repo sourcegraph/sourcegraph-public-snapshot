@@ -24,7 +24,7 @@ func TestParse(t *testing.T) {
 		Equal(t, test("content:'foo'"))
 
 	autogold.Want("`case:yes` honored for `Match only` command",
-		"Command: `Match only search pattern: milk, compute pattern: milk`, Parameters: `\"case:yes\"`").
+		"Command: `Match only search pattern: milk, compute pattern: milk`, Parameters: `case:yes`").
 		Equal(t, test("milk case:yes"))
 
 	autogold.Want("no pattern",
@@ -32,7 +32,7 @@ func TestParse(t *testing.T) {
 		Equal(t, test("repo:cool"))
 
 	autogold.Want("unsupported operators",
-		"compute endpoint only supports one search pattern currently ('and' or 'or' operators are not supported yet)").
+		"compute endpoint cannot currently support expressions in patterns containing 'and', 'or', 'not' (or negation) right now!").
 		Equal(t, test("a or b"))
 
 	autogold.Want("replace",
@@ -63,10 +63,14 @@ func TestToSearchQuery(t *testing.T) {
 	}
 
 	autogold.Want("convert match-only to search query",
-		"repo:foo file:bar carolado").
+		"(repo:foo file:bar and carolado)").
 		Equal(t, test("repo:foo file:bar carolado"))
 
 	autogold.Want("convert replace-in-place to search query",
-		"repo:foo file:bar colarado").
+		"(repo:foo file:bar and colarado)").
 		Equal(t, test("content:replace(colarado -> colorodo) repo:foo file:bar"))
+
+	autogold.Want("allow expressions on search parameters (filters)",
+		"((repo:foo file:bar lang:go or repo:foo file:bar lang:text) and colarado)").
+		Equal(t, test("content:replace(colarado -> colorodo) repo:foo file:bar (lang:go or lang:text)"))
 }

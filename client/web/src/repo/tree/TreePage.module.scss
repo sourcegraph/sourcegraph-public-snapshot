@@ -12,6 +12,11 @@
     }
 }
 
+.header {
+    width: 100%;
+    max-width: var(--media-xl);
+}
+
 .git-commit-node {
     padding-left: 0;
     padding-right: 0;
@@ -34,6 +39,5 @@
 
 .section {
     width: 100%;
-
     max-width: var(--media-xl);
 }

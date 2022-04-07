@@ -4,8 +4,9 @@ import classNames from 'classnames'
 import ArrowRightIcon from 'mdi-react/ArrowRightIcon'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { MarketingBlock } from '@sourcegraph/web/src/components/MarketingBlock'
 import { Link, Icon } from '@sourcegraph/wildcard'
+
+import { MarketingBlock } from '../MarketingBlock'
 
 export interface SelfHostedCtaProps extends TelemetryProps {
     className?: string
