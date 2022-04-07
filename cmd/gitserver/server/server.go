@@ -27,6 +27,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
+	"github.com/opentracing/opentracing-go/log"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -46,6 +47,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -246,6 +248,12 @@ type Server struct {
 
 	// Used for setRepoSizes function to run only during the first run of janitor
 	setRepoSizesOnce sync.Once
+
+	// operations provide uniform observability via internal/observation. This value is
+	// set by RegisterMetrics when compiled as part of the gitserver binary. The server
+	// method ensureOperations should be used in all references to avoid a nil pointer
+	// dereferencs.
+	operations *operations
 }
 
 type locks struct {
@@ -345,6 +353,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/archive", s.handleArchive)
 	mux.HandleFunc("/exec", s.handleExec)
 	mux.HandleFunc("/search", s.handleSearch)
+	mux.HandleFunc("/batch-log", s.handleBatchLog)
 	mux.HandleFunc("/p4-exec", s.handleP4Exec)
 	mux.HandleFunc("/list", s.handleList)
 	mux.HandleFunc("/list-gitolite", s.handleListGitolite)
@@ -1136,10 +1145,126 @@ func matchCount(cm *protocol.CommitMatch) int {
 	return 1
 }
 
+func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
+	// 🚨 SECURITY: Only allow POST requests.
+	if strings.ToUpper(r.Method) != http.MethodPost {
+		http.Error(w, "", http.StatusMethodNotAllowed)
+		return
+	}
+
+	operations := s.ensureOperations()
+
+	// Run git log for a single repository.
+	// Invoked multiple times from the handler defined below.
+	performGitLogCommand := func(ctx context.Context, repoCommit api.RepoCommit, format string) (output string, isRepoCloned bool, err error) {
+		ctx, endObservation := operations.batchLogSingle.With(ctx, &err, observation.Args{
+			LogFields: append(
+				[]log.Field{
+					log.String("format", format),
+				},
+				repoCommit.LogFields()...,
+			),
+		})
+		defer func() {
+			endObservation(1, observation.Args{LogFields: []log.Field{
+				log.Bool("isRepoCloned", isRepoCloned),
+			}})
+		}()
+
+		dir := s.dir(repoCommit.Repo)
+		if !repoCloned(dir) {
+			return "", false, nil
+		}
+
+		var buf bytes.Buffer
+		cmd := exec.CommandContext(ctx, "git", "log", "-n", "1", "--name-only", format, string(repoCommit.CommitID))
+		dir.Set(cmd)
+		cmd.Stdout = &buf
+
+		if _, err := runCommand(ctx, cmd); err != nil {
+			return "", true, err
+		}
+
+		return buf.String(), true, nil
+	}
+
+	// Handles the /batch-log route
+	instrumentedHandler := func(ctx context.Context) (statusCodeOnError int, err error) {
+		ctx, logger, endObservation := operations.batchLog.WithAndLogger(ctx, &err, observation.Args{})
+		defer func() {
+			endObservation(1, observation.Args{LogFields: []log.Field{
+				log.Int("statusCodeOnError", statusCodeOnError),
+			}})
+		}()
+
+		// Read request body
+		var req protocol.BatchLogRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			return http.StatusBadRequest, err
+		}
+		logger.Log(req.LogFields()...)
+
+		// Validate request parameters
+		if len(req.RepoCommits) == 0 {
+			// Early exit: implicitly writes 200 OK
+			_ = json.NewEncoder(w).Encode(protocol.BatchLogResponse{Results: []protocol.BatchLogResult{}})
+			return 0, nil
+		}
+		if !strings.HasPrefix(req.Format, "--format=") {
+			return http.StatusUnprocessableEntity, errors.New("format parameter expected to be of the form `--format=<git log format>`")
+		}
+
+		// Perform requests in each repository in the input batch. We do this synchronously
+		// today so that this endpoint remains simple. If it is determined that performing
+		// the git log requests in parallel _on each shard_ is necesesary, we should keep
+		// the following sequence of actions as simple as possible.
+
+		results := make([]protocol.BatchLogResult, 0, len(req.RepoCommits))
+		for _, repoCommit := range req.RepoCommits {
+			output, isRepoCloned, err := performGitLogCommand(ctx, repoCommit, req.Format)
+			if err == nil && !isRepoCloned {
+				err = errors.Newf("repo not found")
+			}
+			var errMessage string
+			if err != nil {
+				errMessage = err.Error()
+			}
+
+			results = append(results, protocol.BatchLogResult{
+				RepoCommit:    repoCommit,
+				CommandOutput: output,
+				CommandError:  errMessage,
+			})
+		}
+
+		// Write payload to client: implicitly writes 200 OK
+		_ = json.NewEncoder(w).Encode(protocol.BatchLogResponse{Results: results})
+		return 0, nil
+	}
+
+	// Handle unexpected error conditions. We expect the instrumented handler to not
+	// have written the status code or any of the body if this error value is non-nil.
+	if statusCodeOnError, err := instrumentedHandler(r.Context()); err != nil {
+		http.Error(w, err.Error(), statusCodeOnError)
+		return
+	}
+}
+
+// ensureOperations returns the non-nil operations value supplied to this server
+// via RegisterMetrics (when constructed as part of the gitserver binary), or
+// constructs and memoizes a no-op operations value (for use in tests).
+func (s *Server) ensureOperations() *operations {
+	if s.operations == nil {
+		s.operations = newOperations(&observation.TestContext)
+	}
+
+	return s.operations
+}
+
 func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	// 🚨 SECURITY: Only allow POST requests.
 	// See https://github.com/sourcegraph/security-issues/issues/213.
-	if strings.ToUpper(r.Method) != "POST" {
+	if strings.ToUpper(r.Method) != http.MethodPost {
 		http.Error(w, "", http.StatusMethodNotAllowed)
 		return
 	}

@@ -23,11 +23,14 @@ import (
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
+	"github.com/opentracing/opentracing-go/log"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/go-diff/diff"
+	"golang.org/x/sync/errgroup"
+	"golang.org/x/sync/semaphore"
 
+	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/go-rendezvous"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -40,6 +43,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -89,7 +93,8 @@ func NewClient(db database.DB) *ClientImplementor {
 		// Use the binary name for UserAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
-		UserAgent: filepath.Base(os.Args[0]),
+		UserAgent:  filepath.Base(os.Args[0]),
+		operations: getOperations(),
 	}
 }
 
@@ -107,8 +112,9 @@ func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) *ClientImpl
 		// Use the binary name for UserAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
-		UserAgent: filepath.Base(os.Args[0]),
-		db:        db,
+		UserAgent:  filepath.Base(os.Args[0]),
+		db:         db,
+		operations: newOperations(&observation.TestContext),
 	}
 }
 
@@ -136,7 +142,16 @@ type ClientImplementor struct {
 
 	// db is a connection to the database
 	db database.DB
+
+	// operations are used for internal observability
+	operations *operations
 }
+
+type RawBatchLogResult struct {
+	Stdout string
+	Error  error
+}
+type BatchLogCallback func(repoCommit api.RepoCommit, gitLogResult RawBatchLogResult) error
 
 //go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/gitserver -i Client -o mock_client.go
 type Client interface {
@@ -151,6 +166,11 @@ type Client interface {
 	// ArchiveURL returns a URL from which an archive of the given Git repository can
 	// be downloaded from.
 	ArchiveURL(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error)
+
+	// BatchLog invokes the given callback with the `git log` output for a batch of repository
+	// and commit pairs. If the invoked callback returns a non-nil error, the operation will begin
+	// to abort processing further results.
+	BatchLog(ctx context.Context, opts BatchLogOptions, callback BatchLogCallback) error
 
 	// Command creates a new Cmd. Command name must be 'git', otherwise it panics.
 	Command(name string, args ...string) *Cmd
@@ -325,6 +345,15 @@ type ArchiveOptions struct {
 	Treeish   string     // the tree or commit to produce an archive for
 	Format    string     // format of the resulting archive (usually "tar" or "zip")
 	Pathspecs []Pathspec // if nonempty, only include these pathspecs.
+}
+
+type BatchLogOptions protocol.BatchLogRequest
+
+func (opts BatchLogOptions) LogFields() []log.Field {
+	return []log.Field{
+		log.Int("numRepoCommits", len(opts.RepoCommits)),
+		log.String("Format", opts.Format),
+	}
 }
 
 // Pathspec is a git term for a pattern that matches paths using glob-like syntax.
@@ -613,6 +642,187 @@ var deadlineExceededCounter = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "src_gitserver_client_deadline_exceeded",
 	Help: "Times that Client.sendExec() returned context.DeadlineExceeded",
 })
+
+// BatchLog invokes the given callback with the `git log` output for a batch of repository
+// and commit pairs. If the invoked callback returns a non-nil error, the operation will begin
+// to abort processing further results.
+func (c *ClientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, callback BatchLogCallback) (err error) {
+	ctx, endObservation := c.operations.batchLog.With(ctx, &err, observation.Args{LogFields: opts.LogFields()})
+	defer endObservation(1, observation.Args{})
+
+	// Make a request to a singlee gitserver shard and feed the results to the user-supplied
+	// callback. This function is invoked multiple times (and concurrently) in the loops below
+	// this function definition.
+	performLogRequestToShard := func(ctx context.Context, addr string, repoCommits []api.RepoCommit) (err error) {
+		var numProcessed int
+		repoNames := repoNamesFromRepoCommits(repoCommits)
+
+		ctx, logger, endObservation := c.operations.batchLogSingle.WithAndLogger(ctx, &err, observation.Args{
+			LogFields: []log.Field{
+				log.String("addr", addr),
+				log.Int("numRepos", len(repoNames)),
+				log.Int("numRepoCommits", len(repoCommits)),
+			},
+		})
+		defer func() {
+			endObservation(1, observation.Args{
+				LogFields: []log.Field{
+					log.Int("numProcessed", numProcessed),
+				},
+			})
+		}()
+
+		uri := "http://" + addr + "/batch-log"
+		repoName := api.RepoName(strings.Join(repoNames, ",")) // only used to label spans
+
+		request := protocol.BatchLogRequest{
+			RepoCommits: repoCommits,
+			Format:      opts.Format,
+		}
+
+		var buf bytes.Buffer
+		if err := json.NewEncoder(&buf).Encode(request); err != nil {
+			return err
+		}
+
+		resp, err := c.do(ctx, repoName, "POST", uri, buf.Bytes())
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+		logger.Log(log.Int("resp.StatusCode", resp.StatusCode))
+
+		// TODO(efritz) - remove after 3.39 branch cut
+		if resp.StatusCode == http.StatusNotFound {
+			// Frontend and gitserver may be rolling out. Fall back to issuing one
+			// command per item in the batch via the original /exec endpoint. We
+			// inline the same behavior as BatchLog here as this is throw-away code.
+
+			for _, repoCommit := range repoCommits {
+				content, err := func() (string, error) {
+					reader, err := c.execReader(ctx, repoCommit.Repo, []string{"log", "-n", "1", "--name-only", opts.Format, string(repoCommit.CommitID)})
+					if err != nil {
+						return "", errors.Wrap(err, "execReader")
+					}
+
+					content, err := io.ReadAll(reader)
+					if err != nil {
+						return "", errors.Wrap(err, "io.ReadAll")
+					}
+
+					return string(content), nil
+				}()
+
+				rawResult := RawBatchLogResult{
+					Stdout: content,
+					Error:  err,
+				}
+				if err := callback(repoCommit, rawResult); err != nil {
+					return errors.Wrap(err, "commitLogCallback")
+				}
+			}
+
+			return nil
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
+			return errors.Newf("http status %d: %s", resp.StatusCode, body)
+		}
+
+		var response protocol.BatchLogResponse
+		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+			return err
+		}
+		logger.Log(log.Int("numResults", len(response.Results)))
+
+		for _, result := range response.Results {
+			var err error
+			if result.CommandError != "" {
+				err = errors.New(result.CommandError)
+			}
+
+			rawResult := RawBatchLogResult{
+				Stdout: result.CommandOutput,
+				Error:  err,
+			}
+			if err := callback(result.RepoCommit, rawResult); err != nil {
+				return errors.Wrap(err, "commitLogCallback")
+			}
+
+			numProcessed++
+		}
+
+		return nil
+	}
+
+	// Construct batches of requests keyed by the address of the server that will receive the batch.
+	// The results from gitserver will have to be re-interlaced before returning to the client, so we
+	// don't need to be particularly concerned about order here.
+
+	batches := make(map[string][]api.RepoCommit, len(opts.RepoCommits))
+	addrsByName := make(map[api.RepoName]string, len(opts.RepoCommits))
+
+	for _, repoCommit := range opts.RepoCommits {
+		addr, ok := addrsByName[repoCommit.Repo]
+		if !ok {
+			addr, err = c.AddrForRepo(ctx, repoCommit.Repo)
+			if err != nil {
+				return err
+			}
+
+			addrsByName[repoCommit.Repo] = addr
+		}
+
+		batches[addr] = append(batches[addr], api.RepoCommit{
+			Repo:     repoCommit.Repo,
+			CommitID: repoCommit.CommitID,
+		})
+	}
+
+	// Perform each batch reqeuest concurrently, but only allow four requests to be in-flight at a
+	// time. This operation returns partial results in the case of a malformed or missing repository
+	// or a bad commit reference, but does not attempt to return partial results when an entire shard
+	// is down. Any of these operations failing will cause an error to be returned from the entire
+	// BatchLog function.
+
+	limit := int64(4)
+	sem := semaphore.NewWeighted(limit)
+	g, ctx := errgroup.WithContext(ctx)
+
+	for addr, repoCommits := range batches {
+		// avoid capturing loop variable below
+		addr, repoCommits := addr, repoCommits
+
+		if err := sem.Acquire(ctx, 1); err != nil {
+			return err
+		}
+
+		g.Go(func() (err error) {
+			defer sem.Release(1)
+
+			return performLogRequestToShard(ctx, addr, repoCommits)
+		})
+	}
+
+	return g.Wait()
+}
+
+func repoNamesFromRepoCommits(repoCommits []api.RepoCommit) []string {
+	repoNames := make([]string, 0, len(repoCommits))
+	repoNameSet := make(map[api.RepoName]struct{}, len(repoCommits))
+
+	for _, rc := range repoCommits {
+		if _, ok := repoNameSet[rc.Repo]; ok {
+			continue
+		}
+
+		repoNameSet[rc.Repo] = struct{}{}
+		repoNames = append(repoNames, string(rc.Repo))
+	}
+
+	return repoNames
+}
 
 // Cmd represents a command to be executed remotely.
 type Cmd struct {
