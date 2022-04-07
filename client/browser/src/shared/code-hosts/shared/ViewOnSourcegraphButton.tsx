@@ -25,7 +25,7 @@ interface ViewOnSourcegraphButtonProps
         Pick<ConfigureSourcegraphButtonProps, 'codeHostType' | 'onConfigureSourcegraphClick'> {
     context: CodeHostContext
     sourcegraphURL: string
-    userSettingsURL: string
+    userSettingsURL?: string
     minimalUI: boolean
     repoExistsOrError?: boolean | ErrorLike
     showSignInButton?: boolean
@@ -106,7 +106,7 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
 
     // If the repository does not exist, communicate that to explain why e.g. code intelligence does not work
     if (!repoExistsOrError) {
-        if (isDefaultSourcegraphUrl(sourcegraphURL) && privateRepository) {
+        if (isDefaultSourcegraphUrl(sourcegraphURL) && privateRepository && userSettingsURL) {
             return <ConfigureSourcegraphButton {...commonProps} codeHostType={codeHostType} href={userSettingsURL} />
         }
 
