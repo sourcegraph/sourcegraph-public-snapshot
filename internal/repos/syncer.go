@@ -138,13 +138,11 @@ func (s *Syncer) TriggerExternalServiceSync(ctx context.Context, id int64) error
 	return s.Store.EnqueueSingleSyncJob(ctx, id)
 }
 
-type externalServiceOwnerType string
-
 const (
-	ownerUndefined externalServiceOwnerType = ""
-	ownerSite      externalServiceOwnerType = "site"
-	ownerUser      externalServiceOwnerType = "user"
-	ownerOrg       externalServiceOwnerType = "org"
+	ownerUndefined = ""
+	ownerSite      = "site"
+	ownerUser      = "user"
+	ownerOrg       = "org"
 )
 
 type ErrUnauthorized struct{}
@@ -820,13 +818,13 @@ func (s *Syncer) observeSync(
 	return ctx, func(svc *types.ExternalService, err error) {
 		var owner string
 		if svc == nil {
-			owner = string(ownerUndefined)
+			owner = ownerUndefined
 		} else if svc.NamespaceUserID > 0 {
-			owner = string(ownerUser)
+			owner = ownerUser
 		} else if svc.NamespaceOrgID > 0 {
-			owner = string(ownerOrg)
+			owner = ownerOrg
 		} else {
-			owner = string(ownerSite)
+			owner = ownerSite
 		}
 
 		syncStarted.WithLabelValues(family, owner).Inc()
