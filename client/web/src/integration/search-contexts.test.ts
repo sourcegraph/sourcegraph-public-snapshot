@@ -274,7 +274,9 @@ describe('Search contexts', () => {
             }),
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts/new')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts/new', {
+            waitUntil: 'networkidle0',
+        })
 
         await driver.replaceText({
             selector: '[data-testid="search-context-name-input"]',
