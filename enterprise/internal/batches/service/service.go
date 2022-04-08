@@ -177,9 +177,7 @@ func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBa
 	}
 
 	actor := actor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
-		return nil, errors.New("no authenticated actor in context")
-	}
+	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
 
 	batchSpec := &btypes.BatchSpec{
 		RawSpec:         string(rawSpec),
@@ -342,10 +340,8 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 	}
 	spec.NamespaceOrgID = opts.NamespaceOrgID
 	spec.NamespaceUserID = opts.NamespaceUserID
+	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
 	actor := actor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
-		return nil, backend.ErrNotAuthenticated
-	}
 	spec.UserID = actor.UID
 
 	tx, err := s.store.Transact(ctx)
@@ -586,10 +582,8 @@ func (s *Service) UpsertBatchSpecInput(ctx context.Context, opts UpsertBatchSpec
 	}
 	spec.NamespaceOrgID = opts.NamespaceOrgID
 	spec.NamespaceUserID = opts.NamespaceUserID
+	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
 	actor := actor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
-		return nil, backend.ErrNotAuthenticated
-	}
 	spec.UserID = actor.UID
 
 	// Start transaction.

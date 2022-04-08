@@ -1526,19 +1526,6 @@ func TestService(t *testing.T) {
 			}
 		})
 
-		t.Run("fail if not authenticated", func(t *testing.T) {
-			_, err := svc.CreateBatchSpecFromRaw(context.Background(), CreateBatchSpecFromRawOpts{
-				RawSpec:         ct.TestRawBatchSpecYAML,
-				NamespaceUserID: admin.ID,
-			})
-			if err == nil {
-				t.Fatal("unexpected nil error returned")
-			}
-			if err != backend.ErrNotAuthenticated {
-				t.Fatalf("incorrect error returned: %v", err)
-			}
-		})
-
 		t.Run("validation error", func(t *testing.T) {
 			rawSpec := batcheslib.BatchSpec{
 				Name:        "test-batch-change",
@@ -1606,19 +1593,6 @@ func TestService(t *testing.T) {
 				ID: oldSpec.ID,
 			})
 			assert.Equal(t, store.ErrNoResults, err)
-		})
-
-		t.Run("fail if not authenticated", func(t *testing.T) {
-			_, err := svc.UpsertBatchSpecInput(context.Background(), UpsertBatchSpecInputOpts{
-				RawSpec:         ct.TestRawBatchSpecYAML,
-				NamespaceUserID: admin.ID,
-			})
-			if err == nil {
-				t.Fatal("unexpected nil error returned")
-			}
-			if err != backend.ErrNotAuthenticated {
-				t.Fatalf("incorrect error returned: %v", err)
-			}
 		})
 	})
 
