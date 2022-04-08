@@ -90,11 +90,11 @@ const deleteRecordings = async () => {
 
   await Promise.all(
     folders.map(async folder => {
-      const file = await findRecordingPath(`${fixturesPath}/${folder}`, false)
+      const filePath = await findRecordingPath(`${fixturesPath}/${folder}`, false)
 
-      if (file) {
+      if (filePath) {
         try {
-          await unlink(file) // delete original recording
+          await unlink(filePath) // delete original recording
         } catch (error) {
           console.error('An error occurred:', error)
           process.exitCode = 1
