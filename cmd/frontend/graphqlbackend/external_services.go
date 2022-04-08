@@ -87,6 +87,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		return nil, err
 	}
 
+	// TODO: confirm if there's a such a case where both namespaceOrgID and namespaceUserID can be null (checks bellow depend on having or or another value)
 	if envvar.SourcegraphDotComMode() {
 		if err := backend.ExternalServiceSupported(args.Input.Kind); err != nil {
 			return nil, err

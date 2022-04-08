@@ -50,17 +50,18 @@ func CheckOrgExternalServices(ctx context.Context, db database.DB, orgID int32) 
 // CheckExternalServicesQuota returns an error message if the maximum mumber of external services has been
 // reached for a given org or user on Cloud. Max of 2 services - one for GitHub, one for GitLab - can be added
 func CheckExternalServicesQuota(ctx context.Context, db database.DB, kind string, orgID, userID int32) error {
+	// TODO: CONFIRM if there's a case when orgID and userID are both null
 	services, err := servicesMap(ctx, db, orgID, userID)
 	if err != nil {
 		return err
 	}
 
-	if services[extsvc.KindGitHub] == 0 || services[extsvc.KindGitLab] == 0 {
-		return nil
+	if (kind == extsvc.KindGitHub && services[extsvc.KindGitHub] >= 1) || (kind == extsvc.KindGitLab services[extsvc.KindGitLab] >= 1) {
+		return errors.New(fmt.Sprintf("a max of one %s external service is allowed", kind))
 	}
 
-	if (services[extsvc.KindGitHub] == 1 && kind == extsvc.KindGitHub) || (services[extsvc.KindGitLab] == 1 && kind == extsvc.KindGitLab) {
-		return errors.New(fmt.Sprintf("only one external service of kind %s can be added", kind))
+	if services[extsvc.KindGitHub] == 0 || services[extsvc.KindGitLab] == 0 {
+		return nil
 	}
 
 	return errors.New("maximum number of external services has been reached")
@@ -99,7 +100,7 @@ func servicesMap(ctx context.Context, db database.DB, orgID, userID int32) (map[
 // ExternalServiceSupported checks if a given external service is supported on Cloud mode.
 // Services currently supported are GitHub and GitLab
 func ExternalServiceSupported(kind string) error {
-	if kind != extsvc.KindGitHub && kind != extsvc.KindGitLab {
+	if kind == extsvc.KindGitHub || kind == extsvc.KindGitLab {
 		return nil
 	}
 
