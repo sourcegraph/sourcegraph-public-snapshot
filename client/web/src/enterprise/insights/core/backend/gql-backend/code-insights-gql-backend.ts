@@ -1,7 +1,6 @@
 import { ApolloCache, ApolloClient, ApolloQueryResult, gql } from '@apollo/client'
 import { from, Observable, of } from 'rxjs'
 import { map, mapTo, switchMap } from 'rxjs/operators'
-import { LineChartContent as LegacyLineChartContent } from 'sourcegraph'
 import {
     AddInsightViewToDashboardResult,
     DeleteDashboardResult,
@@ -259,8 +258,21 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             }
         })
 
-    public getCaptureInsightContent = (input: CaptureInsightSettings): Promise<LegacyLineChartContent<any, string>> =>
-        getCaptureGroupInsightsPreview(this.apolloClient, input)
+    public getCaptureInsightContent = (input: CaptureInsightSettings): Promise<LineChartContent<any>> =>
+        getCaptureGroupInsightsPreview(this.apolloClient, input).then(data => {
+            const { data: datumList, series, xAxis } = data
+
+            // TODO: Remove this when the dashboard page has new chart fetchers
+            return {
+                data: datumList,
+                series: series.map(series => ({
+                    dataKey: series.dataKey,
+                    name: series.name ?? '',
+                    color: series.stroke,
+                })),
+                getXValue: datum => new Date(+datum[xAxis.dataKey]),
+            }
+        })
 
     // Repositories API
     public getRepositorySuggestions = getRepositorySuggestions

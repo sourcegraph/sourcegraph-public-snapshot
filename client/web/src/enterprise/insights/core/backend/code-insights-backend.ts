@@ -1,5 +1,4 @@
 import { Observable } from 'rxjs'
-import { LineChartContent as LegacyLineChartContent } from 'sourcegraph'
 
 import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
@@ -113,7 +112,7 @@ export interface CodeInsightsBackend {
      */
     getLangStatsInsightContent: (input: GetLangStatsInsightContentInput) => Promise<PieChartContent<unknown>>
 
-    getCaptureInsightContent: (input: CaptureInsightSettings) => Promise<LegacyLineChartContent<any, string>>
+    getCaptureInsightContent: (input: CaptureInsightSettings) => Promise<LineChartContent<unknown>>
 
     /**
      * Returns a list of suggestions for the repositories' field in the insight creation UI.

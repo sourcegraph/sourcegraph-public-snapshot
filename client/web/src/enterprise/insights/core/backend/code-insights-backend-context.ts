@@ -1,7 +1,6 @@
 import React from 'react'
 
 import { throwError } from 'rxjs'
-import { LineChartContent as LegacyChartContent } from 'sourcegraph'
 
 import { CodeInsightsBackend } from './code-insights-backend'
 import { LineChartContent, PieChartContent, RepositorySuggestionData } from './code-insights-backend-types'
@@ -44,7 +43,7 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public getLangStatsInsightContent = (): Promise<PieChartContent<unknown>> =>
         errorMockMethod('getLangStatsInsightContent')().toPromise()
 
-    public getCaptureInsightContent = (): Promise<LegacyChartContent<any, string>> =>
+    public getCaptureInsightContent = (): Promise<LineChartContent<unknown>> =>
         errorMockMethod('getCaptureInsightContent')().toPromise()
 
     // Repositories API

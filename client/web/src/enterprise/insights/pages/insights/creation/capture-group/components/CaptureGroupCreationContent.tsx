@@ -18,7 +18,7 @@ import { CaptureGroupFormFields } from '../types'
 import { searchQueryValidator } from '../utils/search-query-validator'
 
 import { CaptureGroupCreationForm } from './CaptureGoupCreationForm'
-import { CaptureGroupCreationLivePreview } from './CaptureGroupCreationLivePreview'
+import { CaptureGroupCreationLivePreview } from './live-preview/CaptureGroupCreationLivePreview'
 
 const INITIAL_VALUES: CaptureGroupFormFields = {
     repositories: '',
