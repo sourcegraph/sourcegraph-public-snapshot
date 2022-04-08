@@ -46,18 +46,48 @@ func CheckOrgExternalServices(ctx context.Context, db database.DB, orgID int32) 
 }
 
 // OrgExternalServicesQuotaReached checks if the maximum mumber of external services has been
-// reached for a given org. This is currenlty used only for Cloud orgs.
-func OrgExternalServicesQuotaReached(ctx context.Context, db database.DB, orgID int32) (bool, error) {
-	externalServicesAllowed := []string{extsvc.KindGitHub, extsvc.KindGitLab}
-	options := database.ExternalServicesListOptions{NamespaceOrgID: orgID, Kinds: externalServicesAllowed}
-
-	totalUsed, err := db.ExternalServices().Count(ctx, options)
+// reached for a given org on Cloud.
+func OrgExternalServicesQuotaReached(ctx context.Context, db database.DB, orgID int32, kind string) (bool, error) {
+	services, err := servicesCountPerKind(ctx, db, orgID)
 	if err != nil {
 		return true, err
 	}
 
-	if totalUsed == extsvc.MaxCodeHostsForCloudOrgs {
-		return true, errors.Errorf("maximum number of external servcies has been reached for organization %v ", orgID)
+	if services[extsvc.KindGitHub] == 0 || services[extsvc.KindGitLab] == 0 {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+// servicesMapPerKind gets total count for each type of service for a given org
+func servicesCountPerKind(ctx context.Context, db database.DB, orgID int32) (map[string]int, error) {
+	options := database.ExternalServicesListOptions{NamespaceOrgID: orgID}
+
+	services, err := db.ExternalServices().List(ctx, options)
+	if err != nil {
+		return nil, err
+	}
+
+	countPerKind := map[string]int{}
+	for _, svc := range services {
+		if _, ok := countPerKind[svc.Kind]; ok {
+			countPerKind[svc.Kind] += 1
+		}
+		countPerKind[svc.Kind] = 1
+	}
+
+	return countPerKind, nil
+}
+
+// IsExternalServiceAllowed checks if a given external service can be added to an org on Cloud.
+func IsExternalServiceAllowed(kind string) (bool, error) {
+	allowed := []string{extsvc.KindGitHub, extsvc.KindGitLab}
+
+	for _, allowed := range allowed {
+		if allowed == kind {
+			return true, nil
+		}
 	}
 
 	return false, nil
