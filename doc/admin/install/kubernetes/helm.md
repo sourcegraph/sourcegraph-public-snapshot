@@ -144,17 +144,62 @@ codeIntelDB:
 
 To use external Redis instances, first review our [general recommendations](https://docs.sourcegraph.com/admin/external_services/redis).
 
-<!--
-  If we copy the entire README.md over here the page will be too cluttered.
-  When the docsite V2 is ready, this should potentially have its own page
--->
-Follow [using your own Redis](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/external-redis) to configure your override file.
+
+If your external Redis instances do not require authentication, you can configure access in your [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/examples/external-redis/override.yaml) with the `endpoint` settings:
+
+```yaml
+redisCache:
+  enabled: false
+  connection:
+    endpoint: redis://redis-cache.example.com:6379 # use a dedicated Redis, recommended
+
+redisStore:
+  enabled: false
+  connection:
+    endpoint: redis://redis-shared.example.com:6379/2 # shared Redis, not recommended
+```
+
+If your endpoints do require authentication, we recommend storing the credentials in [Secrets] created outside of the helm chart and managed in a secure manner.
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: redis-cache-connection
+data:
+  # notes: secrets data has to be base64-encoded
+  endpoint: ""
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: redis-store-connection
+data:
+  # notes: secrets data has to be base64-encoded
+  endpoint: ""
+```
+
+You can reference this secret in your [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/examples/external-redis/override-secret.yaml) by configuring the `existingSecret` key:
+
+```yaml
+redisCache:
+  enabled: false
+  connection:
+    existingSecret: redis-cache-connection
+
+redisStore:
+  enabled: false
+  connection:
+    existingSecret: redis-store-connection
+```
+
+The [using your own Redis](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/external-redis) example demonstrates this approach.
 
 ### Using external Object Storage
 
 To use an external Object Storage service (S3-compatible services, or GCS), first review our [general recommendations](https://docs.sourcegraph.com/admin/external_services/object_storage). Then add the below code snippet to your override file.
 
-Prior to installing the chart, you should store these sensitive environment variables in [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/).
+Prior to installing the chart, you should store these sensitive environment variables in [Secrets].
 
 > The example override assumes the use of AWS S3. You may configure the environment variables accordingly for your own use case based on our [general recommendations](https://docs.sourcegraph.com/admin/external_services/object_storage).
 
@@ -821,6 +866,4 @@ For more examples and configuration options, reference the [Helm Diff] plugin do
 [Sourcegraph Changelog]: https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md
 [Sourcegraph Migrator]: https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph-migrator
 [Helm Diff]: https://github.com/databus23/helm-diff
-
-
-
+[Secrets]: https://kubernetes.io/docs/concepts/configuration/secret/
