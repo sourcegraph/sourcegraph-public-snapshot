@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
-import { noop } from 'lodash'
+import { cloneDeep, noop } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
@@ -443,7 +443,7 @@ const WorkspaceStep: React.FunctionComponent<WorkspaceStepProps> = ({
     cachedResultFound,
 }) => {
     const outputLines = useMemo(() => {
-        const outputLines = step.outputLines
+        const outputLines = cloneDeep(step.outputLines)
         if (outputLines !== null) {
             if (
                 outputLines.every(

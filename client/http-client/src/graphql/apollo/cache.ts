@@ -36,6 +36,8 @@ export const generateCache = (): InMemoryCache =>
         typePolicies,
         possibleTypes: {
             BatchSpecWorkspace: ['VisibleBatchSpecWorkspace', 'HiddenBatchSpecWorkspace'],
+            ChangesetSpec: ['VisibleChangesetSpec', 'HiddenChangesetSpec'],
+            Changeset: ['ExternalChangeset', 'HiddenExternalChangeset'],
         },
     })
 
