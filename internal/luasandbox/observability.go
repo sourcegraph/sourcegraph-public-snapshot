@@ -8,7 +8,8 @@ import (
 )
 
 type operations struct {
-	run *observation.Operation
+	createSandbox *observation.Operation
+	runScript     *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -28,6 +29,7 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		run: op("Run"),
+		createSandbox: op("CreateSandbox"),
+		runScript:     op("RunScript"),
 	}
 }
