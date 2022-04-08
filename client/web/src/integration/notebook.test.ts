@@ -696,10 +696,9 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
     })
 
     const getHighlightedOutlineHeading = async () => {
-        await driver.page.waitForSelector('[data-test-highlighted="true"]', { visible: true })
-        return driver.page.evaluate(
-            () => document.querySelector<HTMLElement>('[data-test-highlighted="true"]')?.dataset.id
-        )
+        const selector = '[data-testid="notebook-outline"] [aria-current="true"]'
+        await driver.page.waitForSelector(selector, { visible: true })
+        return driver.page.evaluate(selector => document.querySelector<HTMLElement>(selector)?.dataset.id, selector)
     }
 
     it('Should highlight the top visible heading in the outline', async () => {

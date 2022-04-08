@@ -23,7 +23,7 @@ interface NotebookOutlineProps {
 
 export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = React.memo(
     ({ notebookElement, outlineContainerElement, blocks }) => {
-        const scrollableContainer = useRef<HTMLDivElement>(null)
+        const scrollableContainer = useRef<HTMLUListElement>(null)
         const [visibleHeadings, setVisibleHeadings] = useState<string[]>([])
         const [isOpen, setIsOpen] = useState(true)
 
@@ -125,7 +125,11 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
 
         if (!isOpen) {
             return ReactDOM.createPortal(
-                <div className={classNames(styles.outline, styles.outlineClosed)}>
+                <nav
+                    className={classNames(styles.outline, styles.outlineClosed)}
+                    aria-label="Notebook Outline"
+                    data-testid="notebook-outline"
+                >
                     <div className={styles.title}>
                         <Button
                             onClick={() => setIsOpen(true)}
@@ -135,13 +139,13 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
                             <Icon as={ChevronRightIcon} size="sm" />
                         </Button>
                     </div>
-                </div>,
+                </nav>,
                 outlineContainerElement
             )
         }
 
         return ReactDOM.createPortal(
-            <div className={styles.outline}>
+            <nav className={styles.outline} aria-label="Notebook Outline" data-testid="notebook-outline">
                 <div className={styles.title}>
                     <Button
                         onClick={() => setIsOpen(false)}
@@ -152,9 +156,9 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
                     </Button>
                     <span>Outline</span>
                 </div>
-                <div className={styles.scrollableContainer} ref={scrollableContainer}>
+                <ul className={classNames(styles.scrollableContainer, 'list-unstyled')} ref={scrollableContainer}>
                     {headings.map(heading => (
-                        <div
+                        <li
                             key={heading.id}
                             data-id={heading.id}
                             className={classNames(
@@ -162,7 +166,7 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
                                 `heading-${heading.depth}`,
                                 highlightedHeading === heading.id && styles.highlight
                             )}
-                            data-test-highlighted={highlightedHeading === heading.id}
+                            aria-current={highlightedHeading === heading.id}
                         >
                             <Link
                                 className={classNames(styles.headingLink)}
@@ -174,10 +178,10 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
                                 )}
                                 <span>{heading.text}</span>
                             </Link>
-                        </div>
+                        </li>
                     ))}
-                </div>
-            </div>,
+                </ul>
+            </nav>,
             outlineContainerElement
         )
     }
