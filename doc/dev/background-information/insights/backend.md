@@ -290,7 +290,7 @@ kubectl exec -it deployment/codeinsights-db -- psql -U postgres
 
 Since insights runs inside of the `frontend` and `worker` containers/processes, it can be difficult to locate the relevant logs. Best way to do it is to grep for `insights`.
 
-      The `frontend` will contain logs about e.g. the GraphQL resolvers and Postgres migrations being ran, while `worker` will have the vast majority of logs coming from the insights background workers.
+The `frontend` will contain logs about e.g. the GraphQL resolvers and Postgres migrations being ran, while `worker` will have the vast majority of logs coming from the insights background workers.
 
 #### Docker compose deployments
 
