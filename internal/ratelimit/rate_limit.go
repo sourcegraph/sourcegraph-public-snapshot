@@ -23,7 +23,7 @@ func NewRegistry() *Registry {
 	if defaultRateLimit <= 0 {
 		fallbackRateLimit = rate.Inf
 	}
-	fallback := rate.NewLimiter(fallbackRateLimit, 1) // TODO Question: should the burst be configurable as well?
+	fallback := rate.NewLimiter(fallbackRateLimit, defaultBurst)
 	return &Registry{
 		rateLimiters: make(map[string]*rate.Limiter),
 		fallBack:     fallback,
