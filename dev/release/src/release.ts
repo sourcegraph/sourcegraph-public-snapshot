@@ -507,32 +507,15 @@ CI checks in this repository should pass, and a manual review should confirm if 
                     {
                         owner: 'sourcegraph',
                         repo: 'deploy-sourcegraph-helm',
-                        base: 'main',
+                        base: `release/${release.major}.${release.minor}`,
                         head: `publish-${release.version}`,
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
                         edits: [
-                            `sg ops update-images -kind helm -pin-tag ${release.version} charts/sourcegraph/.`,
-                            `${sed} -i 's/appVersion:.*/appVersion: "${release.version}"/g' charts/sourcegraph/Chart.yaml`,
-                            (directory: string) => {
-                                const chartYamlPath = path.join(directory, 'charts/sourcegraph/Chart.yaml')
-                                const metadata = chart.parseChartMetadata(chartYamlPath)
-                                const parsedPreviousVersion = semver.parse(metadata.version)
-                                if (!parsedPreviousVersion) {
-                                    throw new Error('`version` field in Chart.yaml is not valid semver')
-                                }
-                                const nextVersion = notPatchRelease
-                                    ? parsedPreviousVersion.inc('minor')
-                                    : parsedPreviousVersion.inc('patch')
-                                execa.sync(
-                                    'bash',
-                                    [
-                                        '-c',
-                                        `${sed} -i 's/version:.*/version: ${nextVersion.version}/g' charts/sourcegraph/Chart.yaml`,
-                                    ],
-                                    { stdio: 'inherit', cwd: directory }
-                                )
-                            },
+                            `for i in charts/*; do sg ops update-images -kind helm -pin-tag ${release.version} $i/.; done`,
+                            `${sed} -i 's/appVersion:.*/appVersion: "${release.version}"/g' charts/*/Chart.yaml`,
+                            `${sed} -i 's/version:.*/version: "${release.version}"/g' charts/*/Chart.yaml`,
+                            `./scripts/helm-docs.sh`,
                         ],
                         ...prBodyAndDraftState([]),
                     },
