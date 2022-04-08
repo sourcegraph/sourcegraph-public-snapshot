@@ -7,6 +7,7 @@ const { readdir, writeFile, readFile, unlink, createReadStream, createWriteStrea
 const fixturesPath = './src/integration/__fixtures__'
 const recordingFileName = 'recording.har'
 
+// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
 const buildCompressedFilePath = filePath => `${filePath}.gz`
 const buildDecompressedFilePath = compressedFilePath => compressedFilePath.replace(/\.gz$/, '')
 
@@ -21,6 +22,7 @@ const findRecordingPath = async (path, isCompressed) => {
     element => element === (isCompressed ? buildCompressedFilePath(recordingFileName) : recordingFileName)
   )
 
+  // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
   return recording ? `${path}/${recording}` : findRecordingPath(`${path}/${content[0]}`, isCompressed)
 }
 

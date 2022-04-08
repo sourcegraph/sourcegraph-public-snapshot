@@ -11,10 +11,11 @@ const recordSnapshot = grepValue =>
       (code, stdout, stderr) => {
         if (code !== 0) {
           console.error(code)
-          return
+        } else {
+          console.log(`stdout: ${stdout}`)
+          console.error(`stderr: ${stderr}`)
         }
-        console.log(`stdout: ${stdout}`)
-        console.error(`stderr: ${stderr}`)
+
         resolve()
       }
     )
