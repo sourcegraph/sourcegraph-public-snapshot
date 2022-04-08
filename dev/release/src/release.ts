@@ -3,12 +3,9 @@ import * as path from 'path'
 
 import commandExists from 'command-exists'
 import { addMinutes } from 'date-fns'
-import * as execa from 'execa'
-import * as semver from 'semver'
 
 import * as batchChanges from './batchChanges'
 import * as changelog from './changelog'
-import * as chart from './chart'
 import { Config, releaseVersions } from './config'
 import {
     getAuthenticatedGitHubClient,
@@ -515,7 +512,7 @@ CI checks in this repository should pass, and a manual review should confirm if 
                             `for i in charts/*; do sg ops update-images -kind helm -pin-tag ${release.version} $i/.; done`,
                             `${sed} -i 's/appVersion:.*/appVersion: "${release.version}"/g' charts/*/Chart.yaml`,
                             `${sed} -i 's/version:.*/version: "${release.version}"/g' charts/*/Chart.yaml`,
-                            `./scripts/helm-docs.sh`,
+                            './scripts/helm-docs.sh',
                         ],
                         ...prBodyAndDraftState([]),
                     },
