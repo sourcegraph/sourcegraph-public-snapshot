@@ -389,7 +389,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         useActionItemsBar,
     }
     return (
-        <div className={classNames('w-100 d-flex flex-column overflow-hidden', styles.repoContainer)}>
+        <div className={classNames('w-100 d-flex flex-column', styles.repoContainer)}>
             <RepoHeader
                 actionButtons={props.repoHeaderActionButtons}
                 useActionItemsToggle={useActionItemsToggle}
