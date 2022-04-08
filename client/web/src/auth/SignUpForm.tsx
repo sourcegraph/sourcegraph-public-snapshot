@@ -56,7 +56,9 @@ interface SignUpFormProps extends FeatureFlagProps {
 
 const preventDefault = (event: React.FormEvent): void => event.preventDefault()
 
-export function getPasswordRequirements(context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode' | 'experimentalFeatures'>): string {
+export function getPasswordRequirements(
+    context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode' | 'experimentalFeatures'>
+): string {
     let requirements = ''
     const passwordPolicyReference = context.experimentalFeatures.passwordPolicy
 
@@ -368,7 +370,7 @@ function isUsernameUnique(username: string): Observable<string | undefined> {
 
 function validatePassword(
     context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode' | 'experimentalFeatures'>,
-    password: string,
+    password: string
 ): string | undefined {
     if (context.experimentalFeatures.passwordPolicy?.enabled) {
         if (
