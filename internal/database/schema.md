@@ -1557,6 +1557,8 @@ Referenced by:
     TABLE "lsif_dependency_indexing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey1" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_packages" CONSTRAINT "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_references" CONSTRAINT "lsif_references_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+Triggers:
+    trigger_lsif_uploads_update AFTER UPDATE OF state, num_resets, num_failures, worker_hostname, expired, committed_at ON lsif_uploads FOR EACH ROW EXECUTE FUNCTION func_lsif_uploads_update()
 
 ```
 
@@ -1585,6 +1587,27 @@ Stores metadata about an LSIF index uploaded by a user.
 **upload_size**: The size of the index file (in bytes).
 
 **uploaded_parts**: The index of parts that have been successfully uploaded.
+
+# Table "public.lsif_uploads_audit_logs"
+```
+       Column        |           Type           | Collation | Nullable | Default 
+---------------------+--------------------------+-----------+----------+---------
+ instant             | timestamp with time zone |           |          | now()
+ upload_id           | integer                  |           | not null | 
+ commit              | text                     |           | not null | 
+ root                | text                     |           | not null | 
+ repository_id       | integer                  |           | not null | 
+ uploaded_at         | timestamp with time zone |           | not null | 
+ indexer             | text                     |           | not null | 
+ indexer_version     | text                     |           |          | 
+ upload_size         | integer                  |           | not null | 
+ associated_index_id | integer                  |           | not null | 
+ committed_at        | timestamp with time zone |           |          | 
+ transition_columns  | USER-DEFINED[]           |           |          | 
+Indexes:
+    "lsif_uploads_audit_logs_timestamp" brin (instant)
+
+```
 
 # Table "public.lsif_uploads_visible_at_tip"
 ```
