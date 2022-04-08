@@ -1,9 +1,9 @@
-import React from 'react'
+import React, { SVGProps } from 'react'
 
-import { CategoricalLikeChart, PieChart } from '../../../../../charts'
-import { CategoricalBasedChartTypes } from '../types'
+import { CategoricalLikeChart, PieChart } from '../../../../../../charts'
+import { CategoricalBasedChartTypes } from '../../types'
 
-interface CategoricalChartProps<Datum> extends CategoricalLikeChart<Datum> {
+interface CategoricalChartProps<Datum> extends CategoricalLikeChart<Datum>, Omit<SVGProps<SVGSVGElement>, 'type'> {
     type: CategoricalBasedChartTypes
     width: number
     height: number

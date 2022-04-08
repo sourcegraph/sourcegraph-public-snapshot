@@ -1,7 +1,7 @@
 import { ApolloCache, ApolloClient, ApolloQueryResult, gql } from '@apollo/client'
 import { from, Observable, of } from 'rxjs'
 import { map, mapTo, switchMap } from 'rxjs/operators'
-import { LineChartContent, PieChartContent } from 'sourcegraph'
+import { LineChartContent } from 'sourcegraph'
 import {
     AddInsightViewToDashboardResult,
     DeleteDashboardResult,
@@ -35,6 +35,7 @@ import {
     InsightCreateInput,
     InsightUpdateInput,
     RemoveInsightFromDashboardInput,
+    PieChartContent,
 } from '../code-insights-backend-types'
 import { getRepositorySuggestions } from '../core/api/get-repository-suggestions'
 import { getResolvedSearchRepositories } from '../core/api/get-resolved-search-repositories'
@@ -230,7 +231,17 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         getSearchInsightContent(input.insight)
 
     public getLangStatsInsightContent = (input: GetLangStatsInsightContentInput): Promise<PieChartContent<any>> =>
-        getLangStatsInsightContent(input.insight)
+        getLangStatsInsightContent(input.insight).then(data => {
+            const { data: dataList, dataKey, nameKey, fillKey = '', linkURLKey = '' } = data.pies[0]
+
+            return {
+                data: dataList,
+                getDatumValue: datum => datum[dataKey],
+                getDatumColor: datum => datum[fillKey ?? ''],
+                getDatumName: datum => datum[nameKey],
+                getDatumLink: datum => datum[linkURLKey],
+            }
+        })
 
     public getCaptureInsightContent = (input: CaptureInsightSettings): Promise<LineChartContent<any, string>> =>
         getCaptureGroupInsightsPreview(this.apolloClient, input)
