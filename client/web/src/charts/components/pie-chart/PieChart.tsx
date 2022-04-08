@@ -1,4 +1,4 @@
-import React, { ReactElement, useMemo, useState } from 'react'
+import React, { ReactElement, SVGProps, useMemo, useState } from 'react'
 
 import { Group } from '@visx/group'
 import Pie, { PieArcDatum } from '@visx/shape/lib/shapes/Pie'
@@ -25,7 +25,7 @@ function getSubtitle<Datum>(arc: PieArcDatum<Datum>, total: number): string {
     return `${((100 * arc.value) / total).toFixed(2)}%`
 }
 
-export interface PieChartProps<Datum> extends CategoricalLikeChart<Datum> {
+export interface PieChartProps<Datum> extends CategoricalLikeChart<Datum>, SVGProps<SVGSVGElement> {
     width: number
     height: number
     padding?: typeof DEFAULT_PADDING
@@ -40,8 +40,10 @@ export function PieChart<Datum>(props: PieChartProps<Datum>): ReactElement | nul
         getDatumValue,
         getDatumName,
         getDatumColor,
-        getDatumLink,
+        getDatumLink = noop,
         onDatumLinkClick = noop,
+        className,
+        ...attributes
     } = props
 
     // We have to track which arc is hovered to change order of rendering.
@@ -76,7 +78,13 @@ export function PieChart<Datum>(props: PieChartProps<Datum>): ReactElement | nul
     }
 
     return (
-        <svg aria-label="Pie chart" width={width} height={height} className={styles.svg}>
+        <svg
+            {...attributes}
+            aria-label="Pie chart"
+            width={width}
+            height={height}
+            className={classNames(styles.svg, className)}
+        >
             <Group top={centerY + padding.top} left={centerX + padding.left}>
                 <Pie data={sortedData} pieValue={getDatumValue} outerRadius={radius} cornerRadius={3}>
                     {pie => {

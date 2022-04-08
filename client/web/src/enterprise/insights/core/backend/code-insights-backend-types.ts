@@ -8,8 +8,17 @@ import {
     CaptureGroupInsight,
     LangStatsInsight,
     InsightsDashboardOwner,
+    SearchBackendBasedInsight,
+    SearchRuntimeBasedInsight,
 } from '../types'
-import { SearchBackendBasedInsight, SearchRuntimeBasedInsight } from '../types/insight/types/search-insight'
+
+export interface PieChartContent<Datum> {
+    data: Datum[]
+    getDatumValue: (datum: Datum) => number
+    getDatumName: (datum: Datum) => string
+    getDatumColor: (datum: Datum) => string | undefined
+    getDatumLink?: (datum: Datum) => string | undefined
+}
 
 export interface DashboardCreateInput {
     name: string

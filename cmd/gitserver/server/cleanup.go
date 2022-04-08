@@ -15,7 +15,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"syscall"
 	"time"
 
@@ -112,9 +111,6 @@ var (
 )
 
 const reposStatsName = "repos-stats.json"
-
-// Used for setRepoSizes function to run only during the first run of janitor
-var setRepoSizesOnce sync.Once
 
 // cleanupRepos walks the repos directory and performs maintenance tasks:
 //
@@ -398,7 +394,7 @@ func (s *Server) cleanupRepos() {
 
 	// Repo sizes are set only once during the first janitor run.
 	// There is no need for a second run because all repo sizes will be set until this moment
-	setRepoSizesOnce.Do(func() {
+	s.setRepoSizesOnce.Do(func() {
 		err = s.setRepoSizes(context.Background(), repoToSize)
 		if err != nil {
 			log15.Error("cleanup: setting repo sizes", "error", err)

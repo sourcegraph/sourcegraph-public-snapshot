@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import {
     autocompletion,
-    CompletionResult,
     Completion,
     snippet,
     completionKeymap,
@@ -23,8 +22,7 @@ import {
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 import { editor as Monaco, MarkerSeverity, languages } from 'monaco-editor'
-import { Observable, of } from 'rxjs'
-import { delay, map, switchMap } from 'rxjs/operators'
+import { Observable } from 'rxjs'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { QueryChangeSource, SearchPatternType, SearchPatternTypeProps } from '@sourcegraph/search'
@@ -35,11 +33,11 @@ import { decorate, DecoratedToken } from '@sourcegraph/shared/src/search/query/d
 import { getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
 import { resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { toHover } from '@sourcegraph/shared/src/search/query/hover'
-import { getSuggestionQuery } from '@sourcegraph/shared/src/search/query/providers'
+import { createCancelableFetchSuggestions, getSuggestionQuery } from '@sourcegraph/shared/src/search/query/providers'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import { isSearchMatchOfType, SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
@@ -691,76 +689,63 @@ const queryDiagnostic: Extension[] = [
 const autocomplete = (
     fetchSuggestions: (query: string) => Observable<SearchMatch[]>,
     options: { globbing: boolean; isSourcegraphDotCom: boolean }
-): Extension[] => [
-    // Uses the default keymapping but changes accepting suggestions from Enter
-    // to Tab
-    Prec.highest(
-        keymap.of(
-            completionKeymap.map(keybinding =>
-                keybinding.key === 'Enter' ? { ...keybinding, key: 'Tab' } : keybinding
+): Extension => {
+    const cancelableFetch = createCancelableFetchSuggestions(fetchSuggestions)
+    return [
+        // Uses the default keymapping but changes accepting suggestions from Enter
+        // to Tab
+        Prec.highest(
+            keymap.of(
+                completionKeymap.map(keybinding =>
+                    keybinding.key === 'Enter' ? { ...keybinding, key: 'Tab' } : keybinding
+                )
             )
-        )
-    ),
-    EditorView.updateListener.of(update => {
-        // We want the completion list to be hidden when the editor looses focus
-        if (update.focusChanged && !update.view.hasFocus) {
-            closeCompletion(update.view)
-        }
-        // Show the completion list again if a filter was completed
-        if (update.transactions.some(transaction => transaction.isUserEvent('input.complete'))) {
-            const query = update.state.facet(parsedQuery)
-            const token = query.tokens.find(token => isTokenInRange(update.state.selection.main.anchor - 1, token))
-            if (token) {
-                startCompletion(update.view)
+        ),
+        EditorView.updateListener.of(update => {
+            // We want the completion list to be hidden when the editor looses focus
+            if (update.focusChanged && !update.view.hasFocus) {
+                closeCompletion(update.view)
             }
-        }
-    }),
-    autocompletion({
-        defaultKeymap: false,
-        override: [
-            context => {
-                const query = context.state.facet(parsedQuery)
-                const token = query.tokens.find(token => isTokenInRange(context.pos - 1, token))
-                if (!token) {
-                    return null
+            // Show the completion list again if a filter was completed
+            if (update.transactions.some(transaction => transaction.isUserEvent('input.complete'))) {
+                const query = update.state.facet(parsedQuery)
+                const token = query.tokens.find(token => isTokenInRange(update.state.selection.main.anchor - 1, token))
+                if (token) {
+                    startCompletion(update.view)
                 }
-                return of(getSuggestionQuery(query.tokens, token))
-                    .pipe(
-                        // We use a delay here to implement a custom debounce. In the
-                        // next step we check if the current completion request was
-                        // cancelled in the meantime (`context.aborted`).
-                        // This prevents us from needlessly running multiple suggestion
-                        // queries.
-                        delay(200),
-                        switchMap(query =>
-                            context.aborted
-                                ? Promise.resolve(null)
-                                : getCompletionItems(
-                                      token,
-                                      { column: context.pos + 1 },
-                                      fetchSuggestions(query),
-                                      options.globbing,
-                                      options.isSourcegraphDotCom
-                                  )
-                        ),
-                        map((completionList): CompletionResult | null => {
-                            if (completionList === null || completionList.suggestions.length === 0) {
-                                return null
-                            }
-                            return {
-                                from:
-                                    token.type === 'filter'
-                                        ? token.value?.range.start ?? context.pos
-                                        : token.range.start,
-                                options: toCMCompletions(completionList),
-                            }
-                        })
+            }
+        }),
+        autocompletion({
+            defaultKeymap: false,
+            override: [
+                async context => {
+                    const query = context.state.facet(parsedQuery)
+                    const token = query.tokens.find(token => isTokenInRange(context.pos - 1, token))
+                    if (!token) {
+                        return null
+                    }
+                    const completionList = await getCompletionItems(
+                        token,
+                        { column: context.pos + 1 },
+                        (token, type) =>
+                            cancelableFetch(getSuggestionQuery(query.tokens, token, type), listener =>
+                                context.addEventListener('abort', listener)
+                            ).then(matches => matches.filter(isSearchMatchOfType(type))),
+                        options
                     )
-                    .toPromise()
-            },
-        ],
-    }),
-]
+
+                    if (completionList === null || completionList.suggestions.length === 0) {
+                        return null
+                    }
+                    return {
+                        from: token.type === 'filter' ? token.value?.range.start ?? context.pos : token.range.start,
+                        options: toCMCompletions(completionList),
+                    }
+                },
+            ],
+        }),
+    ]
+}
 
 function toCMCompletions(completionList: languages.CompletionList): Completion[] {
     // Boost suggestions by position because it appears they are already orderd.

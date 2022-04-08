@@ -6879,6 +6879,9 @@ type MockEnterpriseDB struct {
 	// SearchContextsFunc is an instance of a mock function object
 	// controlling the behavior of the method SearchContexts.
 	SearchContextsFunc *EnterpriseDBSearchContextsFunc
+	// SecurityEventLogsFunc is an instance of a mock function object
+	// controlling the behavior of the method SecurityEventLogs.
+	SecurityEventLogsFunc *EnterpriseDBSecurityEventLogsFunc
 	// SettingsFunc is an instance of a mock function object controlling the
 	// behavior of the method Settings.
 	SettingsFunc *EnterpriseDBSettingsFunc
@@ -7037,6 +7040,11 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 		},
 		SearchContextsFunc: &EnterpriseDBSearchContextsFunc{
 			defaultHook: func() database.SearchContextsStore {
+				return nil
+			},
+		},
+		SecurityEventLogsFunc: &EnterpriseDBSecurityEventLogsFunc{
+			defaultHook: func() database.SecurityEventLogsStore {
 				return nil
 			},
 		},
@@ -7222,6 +7230,11 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 				panic("unexpected invocation of MockEnterpriseDB.SearchContexts")
 			},
 		},
+		SecurityEventLogsFunc: &EnterpriseDBSecurityEventLogsFunc{
+			defaultHook: func() database.SecurityEventLogsStore {
+				panic("unexpected invocation of MockEnterpriseDB.SecurityEventLogs")
+			},
+		},
 		SettingsFunc: &EnterpriseDBSettingsFunc{
 			defaultHook: func() database.SettingsStore {
 				panic("unexpected invocation of MockEnterpriseDB.Settings")
@@ -7354,6 +7367,9 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		},
 		SearchContextsFunc: &EnterpriseDBSearchContextsFunc{
 			defaultHook: i.SearchContexts,
+		},
+		SecurityEventLogsFunc: &EnterpriseDBSecurityEventLogsFunc{
+			defaultHook: i.SecurityEventLogs,
 		},
 		SettingsFunc: &EnterpriseDBSettingsFunc{
 			defaultHook: i.Settings,
@@ -9915,6 +9931,107 @@ func (c EnterpriseDBSearchContextsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterpriseDBSearchContextsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnterpriseDBSecurityEventLogsFunc describes the behavior when the
+// SecurityEventLogs method of the parent MockEnterpriseDB instance is
+// invoked.
+type EnterpriseDBSecurityEventLogsFunc struct {
+	defaultHook func() database.SecurityEventLogsStore
+	hooks       []func() database.SecurityEventLogsStore
+	history     []EnterpriseDBSecurityEventLogsFuncCall
+	mutex       sync.Mutex
+}
+
+// SecurityEventLogs delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) SecurityEventLogs() database.SecurityEventLogsStore {
+	r0 := m.SecurityEventLogsFunc.nextHook()()
+	m.SecurityEventLogsFunc.appendCall(EnterpriseDBSecurityEventLogsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SecurityEventLogs
+// method of the parent MockEnterpriseDB instance is invoked and the hook
+// queue is empty.
+func (f *EnterpriseDBSecurityEventLogsFunc) SetDefaultHook(hook func() database.SecurityEventLogsStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SecurityEventLogs method of the parent MockEnterpriseDB instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *EnterpriseDBSecurityEventLogsFunc) PushHook(hook func() database.SecurityEventLogsStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBSecurityEventLogsFunc) SetDefaultReturn(r0 database.SecurityEventLogsStore) {
+	f.SetDefaultHook(func() database.SecurityEventLogsStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBSecurityEventLogsFunc) PushReturn(r0 database.SecurityEventLogsStore) {
+	f.PushHook(func() database.SecurityEventLogsStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBSecurityEventLogsFunc) nextHook() func() database.SecurityEventLogsStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBSecurityEventLogsFunc) appendCall(r0 EnterpriseDBSecurityEventLogsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBSecurityEventLogsFuncCall
+// objects describing the invocations of this function.
+func (f *EnterpriseDBSecurityEventLogsFunc) History() []EnterpriseDBSecurityEventLogsFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBSecurityEventLogsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBSecurityEventLogsFuncCall is an object that describes an
+// invocation of method SecurityEventLogs on an instance of
+// MockEnterpriseDB.
+type EnterpriseDBSecurityEventLogsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.SecurityEventLogsStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBSecurityEventLogsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBSecurityEventLogsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
