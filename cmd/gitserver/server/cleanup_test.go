@@ -369,95 +369,136 @@ func TestCleanupExpired(t *testing.T) {
 	}
 }
 
+// TestCleanupOldLocks checks whether cleanupRepos removes stale lock files. It
+// does not check whether each job in cleanupRepos finishes successfully, nor
+// does it check if other files or directories have been created.
 func TestCleanupOldLocks(t *testing.T) {
+	type file struct {
+		name        string
+		age         time.Duration
+		wantRemoved bool
+	}
+
+	cases := []struct {
+		name  string
+		files []file
+	}{
+		{
+			name: "fresh_config_lock",
+			files: []file{
+				{
+					name: "config.lock",
+				},
+			},
+		},
+		{
+			name: "stale_config_lock",
+			files: []file{
+				{
+					name:        "config.lock",
+					age:         time.Hour,
+					wantRemoved: true,
+				},
+			},
+		},
+		{
+			name: "fresh_packed",
+			files: []file{
+				{
+					name: "packed-refs.lock",
+				},
+			},
+		},
+		{
+			name: "stale_packed",
+			files: []file{
+				{
+					name:        "packed-refs.lock",
+					age:         2 * time.Hour,
+					wantRemoved: true,
+				},
+			},
+		},
+		{
+			name: "fresh_commit-graph_lock",
+			files: []file{
+				{
+					name: "objects/info/commit-graph.lock",
+				},
+			},
+		},
+		{
+			name: "stale_commit-graph_lock",
+			files: []file{
+				{
+					name:        "objects/info/commit-graph.lock",
+					age:         2 * time.Hour,
+					wantRemoved: true,
+				},
+			},
+		},
+		{
+			name: "refs_lock",
+			files: []file{
+				{
+					name: "refs/heads/fresh",
+				},
+				{
+					name: "refs/heads/fresh.lock",
+				},
+				{
+					name: "refs/heads/stale",
+				},
+				{
+					name:        "refs/heads/stale.lock",
+					age:         2 * time.Hour,
+					wantRemoved: true,
+				},
+			},
+		},
+	}
+
 	root := t.TempDir()
 
-	// Only recent lock files should remain.
-	mkFiles(t, root,
-		"github.com/foo/empty/.git/HEAD",
-
-		"github.com/foo/freshconfiglock/.git/HEAD",
-		"github.com/foo/freshconfiglock/.git/config.lock",
-
-		"github.com/foo/freshpacked/.git/HEAD",
-		"github.com/foo/freshpacked/.git/packed-refs.lock",
-
-		"github.com/foo/freshcommitgraphlock/.git/HEAD",
-		"github.com/foo/freshcommitgraphlock/.git/objects/info/commit-graph.lock",
-
-		"github.com/foo/stalecommitgraphlock/.git/HEAD",
-		"github.com/foo/stalecommitgraphlock/.git/objects/info/commit-graph.lock",
-
-		"github.com/foo/staleconfiglock/.git/HEAD",
-		"github.com/foo/staleconfiglock/.git/config.lock",
-
-		"github.com/foo/stalepacked/.git/HEAD",
-		"github.com/foo/stalepacked/.git/packed-refs.lock",
-
-		"github.com/foo/refslock/.git/HEAD",
-		"github.com/foo/refslock/.git/refs/heads/fresh",
-		"github.com/foo/refslock/.git/refs/heads/fresh.lock",
-		"github.com/foo/refslock/.git/refs/heads/stale",
-		"github.com/foo/refslock/.git/refs/heads/stale.lock",
-	)
-
-	chtime := func(p string, age time.Duration) {
-		err := os.Chtimes(filepath.Join(root, p), time.Now().Add(-age), time.Now().Add(-age))
-		if err != nil {
+	// initialize git directories and place files
+	for _, c := range cases {
+		cmd := exec.Command("git", "--bare", "init", c.name+"/.git")
+		cmd.Dir = root
+		if err := cmd.Run(); err != nil {
 			t.Fatal(err)
 		}
+		dir := GitDir(filepath.Join(root, c.name, ".git"))
+		for _, f := range c.files {
+			writeFile(t, dir.Path(f.name), nil)
+			if f.age == 0 {
+				continue
+			}
+			err := os.Chtimes(dir.Path(f.name), time.Now().Add(-f.age), time.Now().Add(-f.age))
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
 	}
-	chtime("github.com/foo/staleconfiglock/.git/config.lock", time.Hour)
-	chtime("github.com/foo/stalepacked/.git/packed-refs.lock", 2*time.Hour)
-	chtime("github.com/foo/refslock/.git/refs/heads/stale.lock", 2*time.Hour)
-	chtime("github.com/foo/stalecommitgraphlock/.git/objects/info/commit-graph.lock", 2*time.Hour)
 
 	s := &Server{ReposDir: root}
 	s.testSetup(t)
 	s.cleanupRepos()
 
-	assertPaths(t, root,
-		"repos-stats.json",
+	isRemoved := func(path string) bool {
+		_, err := os.Stat(path)
+		return errors.Is(err, fs.ErrNotExist)
+	}
 
-		"github.com/foo/empty/.git/HEAD",
-		"github.com/foo/empty/.git/info/attributes",
-		"github.com/foo/empty/.git/sgm.log",
-
-		"github.com/foo/freshconfiglock/.git/HEAD",
-		"github.com/foo/freshconfiglock/.git/config.lock",
-		"github.com/foo/freshconfiglock/.git/info/attributes",
-		"github.com/foo/freshconfiglock/.git/sgm.log",
-
-		"github.com/foo/freshpacked/.git/HEAD",
-		"github.com/foo/freshpacked/.git/packed-refs.lock",
-		"github.com/foo/freshpacked/.git/info/attributes",
-		"github.com/foo/freshpacked/.git/sgm.log",
-
-		"github.com/foo/freshcommitgraphlock/.git/HEAD",
-		"github.com/foo/freshcommitgraphlock/.git/objects/info/commit-graph.lock",
-		"github.com/foo/freshcommitgraphlock/.git/info/attributes",
-		"github.com/foo/freshcommitgraphlock/.git/sgm.log",
-
-		"github.com/foo/stalecommitgraphlock/.git/HEAD",
-		"github.com/foo/stalecommitgraphlock/.git/info/attributes",
-		"github.com/foo/stalecommitgraphlock/.git/objects/info",
-		"github.com/foo/stalecommitgraphlock/.git/sgm.log",
-
-		"github.com/foo/staleconfiglock/.git/HEAD",
-		"github.com/foo/staleconfiglock/.git/info/attributes",
-		"github.com/foo/staleconfiglock/.git/sgm.log",
-
-		"github.com/foo/stalepacked/.git/HEAD",
-		"github.com/foo/stalepacked/.git/info/attributes",
-		"github.com/foo/stalepacked/.git/sgm.log",
-
-		"github.com/foo/refslock/.git/HEAD",
-		"github.com/foo/refslock/.git/refs/heads/fresh",
-		"github.com/foo/refslock/.git/refs/heads/fresh.lock",
-		"github.com/foo/refslock/.git/refs/heads/stale",
-		"github.com/foo/refslock/.git/info/attributes",
-		"github.com/foo/refslock/.git/sgm.log",
-	)
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			dir := GitDir(filepath.Join(root, c.name, ".git"))
+			for _, f := range c.files {
+				if f.wantRemoved != isRemoved(dir.Path(f.name)) {
+					t.Fatalf("%s should have been removed", f.name)
+				}
+			}
+		})
+	}
 }
 
 func TestSetupAndClearTmp(t *testing.T) {
