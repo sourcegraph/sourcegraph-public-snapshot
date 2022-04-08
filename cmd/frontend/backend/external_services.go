@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -58,7 +59,7 @@ func OrgExternalServicesQuotaReached(ctx context.Context, db database.DB, orgID 
 	}
 
 	if (services[extsvc.KindGitHub] == 1 && kind == extsvc.KindGitHub) || (services[extsvc.KindGitLab] == 1 && kind == extsvc.KindGitLab) {
-		return true, errors.New("only one external service of  type %s can be added per org")
+		return true, errors.New(fmt.Sprintf("only one external service of kind %s can be added per org", kind))
 	}
 
 	return true, nil
