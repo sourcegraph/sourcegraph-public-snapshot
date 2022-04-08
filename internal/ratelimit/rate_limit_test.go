@@ -13,16 +13,14 @@ import (
 func TestDefaultRateLimiter(t *testing.T) {
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
-			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				DefaultRateLimit: 100,
-			},
+			DefaultRateLimit: 100,
 		},
 	})
 	defer conf.Mock(nil)
 
 	r := NewRegistry()
 	got := r.Get("Unknown")
-	want := rate.NewLimiter(rate.Limit(100), 1)
+	want := rate.NewLimiter(rate.Limit(100), defaultBurst)
 	assert.Equal(t, want, got)
 }
 

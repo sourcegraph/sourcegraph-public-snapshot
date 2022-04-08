@@ -575,8 +575,6 @@ type ExperimentalFeatures struct {
 	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
 	DebugLog *DebugLog `json:"debug.log,omitempty"`
-	// DefaultRateLimit description: The rate limit for the default rate limiter in the rate limiters registry
-	DefaultRateLimit int `json:"defaultRateLimit,omitempty"`
 	// DependenciesSearch description: Enables support for repo:dependencies predicate queries.
 	DependenciesSearch string `json:"dependenciesSearch,omitempty"`
 	// EnableGitServerCommandExecFilter description: Enable filtering of all exec commands on gitserver based on a pre-defined allowlist
@@ -1735,6 +1733,8 @@ type SiteConfiguration struct {
 	CorsOrigin string `json:"corsOrigin,omitempty"`
 	// DebugSearchSymbolsParallelism description: (debug) controls the amount of symbol search parallelism. Defaults to 20. It is not recommended to change this outside of debugging scenarios. This option will be removed in a future version.
 	DebugSearchSymbolsParallelism int `json:"debug.search.symbolsParallelism,omitempty"`
+	// DefaultRateLimit description: The rate limit for the default rate limiter in the rate limiters registry
+	DefaultRateLimit int `json:"defaultRateLimit,omitempty"`
 	// DisableAutoCodeHostSyncs description: Disable periodic syncs of configured code host connections (repository metadata, permissions, batch changes changesets, etc)
 	DisableAutoCodeHostSyncs bool `json:"disableAutoCodeHostSyncs,omitempty"`
 	// DisableAutoGitUpdates description: Disable periodically fetching git contents for existing repositories.

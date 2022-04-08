@@ -18,7 +18,7 @@ const defaultBurst = 10
 // NewRegistry creates and returns an empty rate limit registry. If a global default rate limit is specified a fallback
 // rate limiter will be added.
 func NewRegistry() *Registry {
-	defaultRateLimit := conf.Get().ExperimentalFeatures.DefaultRateLimit
+	defaultRateLimit := conf.Get().DefaultRateLimit
 	fallbackRateLimit := rate.Limit(defaultRateLimit)
 	if defaultRateLimit <= 0 {
 		fallbackRateLimit = rate.Inf

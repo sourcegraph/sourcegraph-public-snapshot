@@ -55,16 +55,16 @@
       "type": "boolean",
       "default": false
     },
+    "defaultRateLimit" : {
+      "description": "The rate limit for the default rate limiter in the rate limiters registry",
+      "type": "integer",
+      "default": -1
+    },
     "experimentalFeatures": {
       "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "defaultRateLimit" : {
-          "description": "The rate limit for the default rate limiter in the rate limiters registry",
-          "type": "integer",
-          "default": -1
-        },
         "rateLimitAnonymous": {
           "description": "Configures the hourly rate limits for anonymous calls to the GraphQL API. Setting limit to 0 disables the limiter. This is only relevant if unauthenticated calls to the API are permitted.",
           "type": "integer",
