@@ -88,7 +88,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 				return nil, errors.Errorf("service %v is not allowed", args.Input.Kind)
 			}
 
-			quotaReached, err := backend.OrgExternalServicesQuotaReached(ctx, r.db, namespaceOrgID)
+			quotaReached, err := backend.OrgExternalServicesQuotaReached(ctx, r.db, namespaceOrgID, args.Input.Kind)
 			if err != nil {
 				return nil, err
 			}

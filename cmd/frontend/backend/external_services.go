@@ -46,9 +46,9 @@ func CheckOrgExternalServices(ctx context.Context, db database.DB, orgID int32) 
 }
 
 // OrgExternalServicesQuotaReached checks if the maximum mumber of external services has been
-// reached for a given org on Cloud
-func OrgExternalServicesQuotaReached(ctx context.Context, db database.DB, orgID int32) (bool, error) {
-	services, err := servicesCountPerKind(ctx, db, orgID)
+// reached for a given org on Cloud. Max of two services, one for GitHub and one for GitLab, can be added per org
+func OrgExternalServicesQuotaReached(ctx context.Context, db database.DB, orgID int32, kind string) (bool, error) {
+	services, err := servicesCountPerType(ctx, db, orgID)
 	if err != nil {
 		return true, err
 	}
@@ -57,11 +57,15 @@ func OrgExternalServicesQuotaReached(ctx context.Context, db database.DB, orgID 
 		return false, nil
 	}
 
+	if (services[extsvc.KindGitHub] == 1 && kind == extsvc.KindGitHub) || (services[extsvc.KindGitLab] == 1 && kind == extsvc.KindGitLab) {
+		return true, errors.New("only one external service of  type %s can be added per org")
+	}
+
 	return true, nil
 }
 
-// servicesCountPerKind returns a dictionary with the total count for each type of service
-func servicesCountPerKind(ctx context.Context, db database.DB, orgID int32) (map[string]int, error) {
+// servicesCountPerType returns a dictionary with the total count for each type of service
+func servicesCountPerType(ctx context.Context, db database.DB, orgID int32) (map[string]int, error) {
 	options := database.ExternalServicesListOptions{NamespaceOrgID: orgID}
 
 	services, err := db.ExternalServices().List(ctx, options)
@@ -69,15 +73,15 @@ func servicesCountPerKind(ctx context.Context, db database.DB, orgID int32) (map
 		return nil, err
 	}
 
-	countPerKind := map[string]int{}
+	svcCountMap := map[string]int{}
 	for _, svc := range services {
-		if _, ok := countPerKind[svc.Kind]; ok {
-			countPerKind[svc.Kind] += 1
+		if _, ok := svcCountMap[svc.Kind]; ok {
+			svcCountMap[svc.Kind] += 1
 		}
-		countPerKind[svc.Kind] = 1
+		svcCountMap[svc.Kind] = 1
 	}
 
-	return countPerKind, nil
+	return svcCountMap, nil
 }
 
 // IsExternalServiceAllowed checks if a given external service can be added to an org on Cloud.
