@@ -49,7 +49,7 @@ export const Simple: Story = () => (
         disabled={boolean('Disabled', false)}
         outline={boolean('Outline', false)}
     >
-        Click me!
+        Click me
     </Button>
 )
 
