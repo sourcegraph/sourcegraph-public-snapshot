@@ -453,6 +453,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     renderSearchUserNeedsCodeHost={user => (
                         <SearchUserNeedsCodeHost user={user} orgSearchContext={props.selectedSearchContextSpec} />
                     )}
+                    executedQuery={location.search}
                 />
             </div>
         </div>

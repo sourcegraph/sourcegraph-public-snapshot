@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo, useEffect } from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'
@@ -75,11 +75,19 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
         const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
         const searchResults = useObservable(output ?? of(undefined))
         const location = useLocation()
+        const [executedQuery, setExecutedQuery] = useState<string>(input.query)
 
         const onInputChange = useCallback(
             (query: string) => onBlockInputChange(id, { type: 'query', input: { query } }),
             [id, onBlockInputChange]
         )
+
+        useEffect(() => {
+            setExecutedQuery(input.query)
+            // We intentionally want to track the input query state at the time
+            // of search submission, not on input change.
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, [output])
 
         useMonacoBlockInput({
             editor,
@@ -174,6 +182,7 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
                             extensionsController={props.extensionsController}
                             hoverifier={hoverifier}
                             openMatchesInNewTab={true}
+                            executedQuery={executedQuery}
                         />
                     </div>
                 )}
