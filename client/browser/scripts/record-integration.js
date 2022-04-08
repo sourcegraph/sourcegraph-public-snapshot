@@ -45,9 +45,7 @@ const recordTests = async () => {
     .filter(Boolean)
     .map(matchArray => matchArray[2])
 
-  for (const testName of testNames) {
-    await recordSnapshot(testName)
-  }
+  await Promise.all(testNames.map(testName => recordSnapshot(testName)))
 }
 
 ;(async () => {

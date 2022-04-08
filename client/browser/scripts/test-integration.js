@@ -4,8 +4,7 @@ const { decompressRecordings, deleteRecordings } = require('./utils')
 
 ;(async () => {
   await decompressRecordings()
-  await new Promise(resolve => shelljs.exec('yarn run-integration', () => resolve()))
-  await deleteRecordings()
+  shelljs.exec('yarn run-integration', () => deleteRecordings())
 })().catch(error => {
   console.log(error)
 })
