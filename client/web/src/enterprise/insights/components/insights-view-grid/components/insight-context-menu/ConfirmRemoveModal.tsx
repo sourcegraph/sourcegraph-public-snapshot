@@ -1,11 +1,11 @@
 import React from 'react'
 
-import { ConfirmationModal, ConfirmationModalProps } from '@sourcegraph/shared/src/components/ConfirmationModal'
+import { ConfirmationModal, ConfirmationModalProps } from '@sourcegraph/wildcard'
 
 import { Insight, InsightDashboard } from '../../../../core/types'
 import { useRemoveInsightFromDashboard } from '../../../../hooks/use-remove-insight'
 
-interface ConfirmRemoveModalProps extends Pick<ConfirmationModalProps, 'showModal' | 'handleCancel'> {
+interface ConfirmRemoveModalProps extends Pick<ConfirmationModalProps, 'showModal' | 'onCancel'> {
     insight: Insight
     dashboard: InsightDashboard | null
 }
@@ -14,22 +14,23 @@ export const ConfirmRemoveModal: React.FunctionComponent<ConfirmRemoveModalProps
     insight,
     dashboard,
     showModal,
-    handleCancel,
+    onCancel,
 }) => {
-    const { remove: handleRemove } = useRemoveInsightFromDashboard()
+    const { remove, loading } = useRemoveInsightFromDashboard()
 
     return (
         <ConfirmationModal
             showModal={showModal}
-            handleCancel={handleCancel}
-            handleConfirmation={() => dashboard && handleRemove({ insight, dashboard })}
-            header="Remove Insight?"
-            message={
-                <>
-                    Are you sure you want to remove the insight <strong>{insight.title}</strong> from the dashboard{' '}
-                    <strong>{dashboard?.title}</strong>?
-                </>
-            }
-        />
+            onCancel={onCancel}
+            onConfirm={() => dashboard && !loading && remove({ insight, dashboard })}
+            ariaLabel="Remove insight modal"
+            disabled={loading}
+        >
+            <h3>Remove Insight?</h3>
+            <p className="mb-4">
+                Are you sure you want to remove the insight <strong>{insight.title}</strong> from the dashboard{' '}
+                <strong>{dashboard?.title}</strong>?
+            </p>
+        </ConfirmationModal>
     )
 }

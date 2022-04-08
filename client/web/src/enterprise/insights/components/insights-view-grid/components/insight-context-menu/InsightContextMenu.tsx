@@ -122,13 +122,13 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
             <ConfirmDeleteModal
                 insight={insight}
                 showModal={showDeleteConfirm}
-                handleCancel={() => setShowDeleteConfirm(false)}
+                onCancel={() => setShowDeleteConfirm(false)}
             />
             <ConfirmRemoveModal
                 insight={insight}
                 dashboard={dashboard}
                 showModal={showRemoveConfirm}
-                handleCancel={() => setShowRemoveConfirm(false)}
+                onCancel={() => setShowRemoveConfirm(false)}
             />
         </>
     )

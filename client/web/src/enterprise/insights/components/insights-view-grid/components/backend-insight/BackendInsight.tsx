@@ -79,8 +79,6 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
     )
 
     // Handle insight delete and remove actions
-    const { loading: isDeleting, delete: handleDelete } = useDeleteInsight()
-    const { loading: isRemoving } = useRemoveInsightFromDashboard()
 
     const handleFilterSave = async (filters: InsightFilters): Promise<SubmissionErrors> => {
         try {

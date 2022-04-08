@@ -43,6 +43,7 @@ export {
     createRectangle,
 } from './Popover'
 export { Collapse, CollapseHeader, CollapsePanel } from './Collapse'
+export { ConfirmationModal } from './ConfirmationModal'
 
 /**
  * Type Exports
@@ -60,3 +61,4 @@ export type { IconProps } from './Icon'
 export type { Point } from './Popover'
 export type { BadgeProps, ProductStatusType, BaseProductStatusBadgeProps } from './Badge'
 export type { AnchorLinkProps } from './Link'
+export type { ConfirmationModalProps } from './ConfirmationModal'

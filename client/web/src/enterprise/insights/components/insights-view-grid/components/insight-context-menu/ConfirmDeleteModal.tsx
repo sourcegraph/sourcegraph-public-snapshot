@@ -1,32 +1,33 @@
 import React from 'react'
 
-import { ConfirmationModal, ConfirmationModalProps } from '@sourcegraph/shared/src/components/ConfirmationModal'
+import { ConfirmationModal, ConfirmationModalProps } from '@sourcegraph/wildcard'
 
 import { Insight } from '../../../../core/types'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight'
 
-interface ConfirmDeleteModalProps extends Pick<ConfirmationModalProps, 'showModal' | 'handleCancel'> {
+interface ConfirmDeleteModalProps extends Pick<ConfirmationModalProps, 'showModal' | 'onCancel'> {
     insight: Insight
 }
 
 export const ConfirmDeleteModal: React.FunctionComponent<ConfirmDeleteModalProps> = ({
     insight,
     showModal,
-    handleCancel,
+    onCancel,
 }) => {
-    const { delete: handleDelete } = useDeleteInsight()
+    const { delete: handleDelete, loading } = useDeleteInsight()
 
     return (
         <ConfirmationModal
             showModal={showModal}
-            handleCancel={handleCancel}
-            handleConfirmation={() => handleDelete(insight)}
-            header="Delete Insight?"
-            message={
-                <>
-                    Are you sure you want to delete the insight <strong>{insight.title}</strong>?
-                </>
-            }
-        />
+            onCancel={onCancel}
+            onConfirm={() => !loading && handleDelete(insight)}
+            ariaLabel="Delete insight modal"
+            disabled={loading}
+        >
+            <h3>Delete Insight?</h3>
+            <p className="mb-4">
+                Are you sure you want to delete the insight <strong>{insight.title}</strong>?
+            </p>
+        </ConfirmationModal>
     )
 }
