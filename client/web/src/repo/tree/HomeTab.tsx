@@ -228,21 +228,21 @@ export const HomeTab: React.FunctionComponent<Props> = ({
         </div>
     )
 
-    const ReadmeFile: React.FunctionComponent = () => (
+    const READMEFile: React.FunctionComponent = () => (
         <div>
             {richHTML && richHTML !== 'loading' && (
                 <RenderedFile className="pt-0 pl-3" dangerousInnerHTML={richHTML} location={props.location} />
             )}
             {!richHTML && richHTML !== 'loading' && (
-                <div className="text-center">
-                    <img src="https://i.ibb.co/tztztYB/eric.png" alt="loser" className="mb-3 w-50" />
-                    <h2>No README available, loser.</h2>
+                <div className="text-center mt-5">
+                    <img src="https://i.ibb.co/tztztYB/eric.png" alt="winner" className="mb-3 w-25" />
+                    <h2>No README available :)</h2>
                 </div>
             )}
             {blobInfoOrError && richHTML && aborted && (
                 <div>
                     <Alert variant="info">
-                        Syntax-highlighting this file took too long. &nbsp;
+                        Rendering this file took too long. &nbsp;
                         <Button onClick={onExtendTimeoutClick} variant="primary" size="sm">
                             Try again
                         </Button>
@@ -258,15 +258,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
             <div className="container mw-100">
                 <RecentCommits isSidebar={false} />
                 <h2 className="mt-5">README.md</h2>
-                {richHTML && richHTML !== 'loading' && (
-                    <RenderedFile dangerousInnerHTML={richHTML} location={props.location} />
-                )}
-                {!richHTML && richHTML !== 'loading' && (
-                    <div className="text-center">
-                        <img src="https://i.ibb.co/tztztYB/eric.png" alt="loser" className="mb-3 w-50" />
-                        <h2>No README available, loser.</h2>
-                    </div>
-                )}
+                <READMEFile />
             </div>
         )
     }
@@ -276,7 +268,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
             <div className="row">
                 {/* RENDER README */}
                 <div className="col-sm m-0 pl-0 pt-0">
-                    <ReadmeFile />
+                    <READMEFile />
                 </div>
                 {/* SIDE MENU*/}
                 <div className="col-sm col-lg-4 m-0">

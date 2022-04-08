@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
@@ -60,10 +62,8 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			err := SecurityEventLogs(db).Insert(ctx, tc.event)
-
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("have %+v, want %+v", have, want)
-			}
+			got := fmt.Sprintf("%v", err)
+			assert.Equal(t, tc.err, got)
 		})
 	}
 }

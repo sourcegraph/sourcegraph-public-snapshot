@@ -11,7 +11,7 @@ func TestRegistry(t *testing.T) {
 	r := NewRegistry()
 
 	got := r.Get("404")
-	want := rate.NewLimiter(rate.Inf, 1)
+	want := rate.NewLimiter(rate.Inf, defaultBurst)
 	assert.Equal(t, want, got)
 
 	rl := rate.NewLimiter(10, 10)
