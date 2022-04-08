@@ -81,26 +81,18 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 				return nil, err
 			}
 		}
+		if envvar.SourcegraphDotComMode() {
+			if err := backend.ExternalServiceKindSupported(args.Input.Kind); err != nil {
+				return nil, err
+			}
+			if err := backend.CheckExternalServicesQuota(ctx, r.db, args.Input.Kind, namespaceOrgID, namespaceUserID); err != nil {
+				return nil, err
+			}
+		}
 
 	} else if backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
 		err = backend.ErrMustBeSiteAdmin
 		return nil, err
-	}
-
-	// TODO: OPEN QUESTIONS
-	// 1) both namespaceOrgID and namespaceUserID can be != nil at the same time?
-	// 2) If answer to 1) is yes, does this happen when  a SiteAdmin is adding am external service (line 85 check)?
-	// 3) In DotCom, we don't have a siteAdmin area in the UI  -- in the API, do we need to make the checks bellow (for max number of services reached, etc) or can we skip those?
-
-	// TODO: this block probably will be moved up or changed a bit depending on the answers to the questions above...
-	if envvar.SourcegraphDotComMode() {
-		if err := backend.ExternalServiceSupported(args.Input.Kind); err != nil {
-			return nil, err
-		}
-
-		if err := backend.CheckExternalServicesQuota(ctx, r.db, args.Input.Kind, namespaceOrgID, namespaceUserID); err != nil {
-			return nil, err
-		}
 	}
 
 	externalService := &types.ExternalService{

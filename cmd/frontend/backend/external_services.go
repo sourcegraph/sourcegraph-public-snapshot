@@ -12,6 +12,8 @@ import (
 )
 
 var ErrNoAccessExternalService = errors.New("the authenticated user does not have access to this external service")
+var ErrExternalServiceQuotaReached = errors.New("maximum number of external services has been reached")
+var ErrExternalServiceTypeNotSupported = errors.New("external service type not supported on Cloud mode")
 
 // CheckExternalServiceAccess checks whether the current user is allowed to
 // access the supplied external service.
@@ -63,7 +65,7 @@ func CheckExternalServicesQuota(ctx context.Context, db database.DB, kind string
 		return nil
 	}
 
-	return errors.New("maximum number of external services has been reached")
+	return ErrExternalServiceQuotaReached
 }
 
 // servicesMap returns a map with the total count for each type of service
@@ -103,5 +105,5 @@ func ExternalServiceKindSupported(kind string) error {
 		return nil
 	}
 
-	return errors.Errorf("external service of kind %v is not supported on Cloud mode", kind)
+	return ErrExternalServiceTypeNotSupported
 }
