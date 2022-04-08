@@ -40,7 +40,7 @@ var requestCounter = metrics.NewRequestMeter("bitbucket_cloud", "Total number of
 // See `pkg/extsvc/bitbucketserver/client.go` for the calculations behind these limits`
 const (
 	rateLimitRequestsPerSecond = 2 // 120/min or 7200/hr
-	RateLimitMaxBurstRequests  = 500
+	rateLimitMaxBurstRequests  = 500
 )
 
 // Client access a Bitbucket Cloud via the REST API 2.0.
@@ -86,7 +86,7 @@ func NewClient(config *schema.BitbucketCloudConnection, httpClient httpcli.Doer)
 	// Normally our registry will return a default infinite limiter when nothing has been
 	// synced from config. However, we always want to ensure there is at least some form of rate
 	// limiting for Bitbucket.
-	defaultLimiter := rate.NewLimiter(rateLimitRequestsPerSecond, RateLimitMaxBurstRequests)
+	defaultLimiter := rate.NewLimiter(rateLimitRequestsPerSecond, rateLimitMaxBurstRequests)
 	l := ratelimit.DefaultRegistry.GetOrSet(apiURL.String(), defaultLimiter)
 
 	return &Client{
