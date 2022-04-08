@@ -14,6 +14,8 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 ### Fixes
 
 - Improve developer scripts [issue/32741](https://github.com/sourcegraph/sourcegraph/issues/32741)
+- Code Monitor button redirect issue for non signed-in users [issues/33631](https://github.com/sourcegraph/sourcegraph/issues/33631)
+- Error regarding missing PatternType when creating save search [issues/31093](https://github.com/sourcegraph/sourcegraph/issues/31093)
 
 ## 2.2.0
 
