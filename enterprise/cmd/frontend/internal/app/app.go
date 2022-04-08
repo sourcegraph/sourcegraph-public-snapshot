@@ -221,8 +221,8 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 		externalServices := db.ExternalServices()
 		svcs, err := externalServices.List(r.Context(),
 			database.ExternalServicesListOptions{
-				NamespaceOrgID: org.ID,
-				Kinds:          []string{extsvc.KindGitHub},
+				NamespaceOrgIDs: []int32{org.ID},
+				Kinds:           []string{extsvc.KindGitHub},
 			},
 		)
 		if err != nil {

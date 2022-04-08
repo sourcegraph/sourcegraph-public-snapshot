@@ -300,7 +300,10 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 			return nil, err
 		}
 	}
-
+	var orgIDs []int32
+	if namespaceOrgID > 0 {
+		orgIDs = append(orgIDs, namespaceOrgID)
+	}
 	opt := database.ExternalServicesListOptions{
 		// 🚨 SECURITY: When both `namespaceUserID` and `namespaceOrgID` are not
 		// specified we need to explicitly specify `NoNamespace`, otherwise site
@@ -308,7 +311,7 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 		// accessible when trying to access them individually.
 		NoNamespace:     namespaceUserID == 0 && namespaceOrgID == 0,
 		NamespaceUserID: namespaceUserID,
-		NamespaceOrgID:  namespaceOrgID,
+		NamespaceOrgIDs: orgIDs,
 		AfterID:         afterID,
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)

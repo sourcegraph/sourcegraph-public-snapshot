@@ -227,7 +227,7 @@ type ExternalServicesListOptions struct {
 	// When specified, only include external services under given user namespace.
 	NamespaceUserID int32
 	// When specified, only include external services under given organization namespace.
-	NamespaceOrgID int32
+	NamespaceOrgIDs []int32
 	// When specified, only include external services with given list of kinds.
 	Kinds []string
 	// When specified, only include external services with ID below this number
@@ -268,8 +268,12 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 			conds = append(conds, sqlf.Sprintf(`namespace_user_id = %d`, o.NamespaceUserID))
 		}
 
-		if o.NamespaceOrgID > 0 {
-			conds = append(conds, sqlf.Sprintf(`namespace_org_id = %d`, o.NamespaceOrgID))
+		if len(o.NamespaceOrgIDs) > 0 {
+			ids := make([]*sqlf.Query, 0, len(o.NamespaceOrgIDs))
+			for _, id := range o.NamespaceOrgIDs {
+				ids = append(ids, sqlf.Sprintf("%s", id))
+			}
+			conds = append(conds, sqlf.Sprintf(`namespace_org_id IN (%s)`, sqlf.Join(ids, ",")))
 		}
 	}
 	if len(o.Kinds) > 0 {
@@ -534,7 +538,7 @@ func validateSingleKindPerNamespace(ctx context.Context, e ExternalServiceStore,
 	if userID > 0 {
 		opt.NamespaceUserID = userID
 	} else if orgID > 0 {
-		opt.NamespaceOrgID = orgID
+		opt.NamespaceOrgIDs = []int32{orgID}
 	}
 	for {
 		svcs, err := e.List(ctx, opt)

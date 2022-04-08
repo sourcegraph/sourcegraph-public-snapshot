@@ -69,7 +69,7 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 		{
 			name:           "has namespace org ID",
 			namespaceOrgID: 1,
-			wantQuery:      "deleted_at IS NULL AND namespace_org_id = $1",
+			wantQuery:      "deleted_at IS NULL AND namespace_org_id IN ($1)",
 			wantArgs:       []interface{}{int32(1)},
 		},
 		{
@@ -107,11 +107,13 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 				NoNamespace:          test.noNamespace,
 				ExcludeNamespaceUser: test.excludeNamespaceUser,
 				NamespaceUserID:      test.namespaceUserID,
-				NamespaceOrgID:       test.namespaceOrgID,
 				Kinds:                test.kinds,
 				AfterID:              test.afterID,
 				OnlyCloudDefault:     test.onlyCloudDefault,
 				NoCachedWebhooks:     test.noCachedWebhooks,
+			}
+			if test.namespaceOrgID > 0 {
+				opts.NamespaceOrgIDs = []int32{test.namespaceOrgID}
 			}
 			q := sqlf.Join(opts.sqlConditions(), "AND")
 			if diff := cmp.Diff(test.wantQuery, q.Query(sqlf.PostgresBindVar)); diff != "" {
@@ -1338,6 +1340,12 @@ func TestExternalServicesStore_List(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Create test org
+	displayName2 := "Dynamite Org"
+	org2, err := Orgs(db).Create(ctx, "dynamite", &displayName2)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// Create new external services
 	confGet := func() *conf.Unified {
@@ -1360,6 +1368,12 @@ func TestExternalServicesStore_List(t *testing.T) {
 			DisplayName:    "GITHUB #3",
 			Config:         `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def", "authorization": {}}`,
 			NamespaceOrgID: org.ID,
+		},
+		{
+			Kind:           extsvc.KindGitHub,
+			DisplayName:    "GITHUB #4",
+			Config:         `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def", "authorization": {}}`,
+			NamespaceOrgID: org2.ID,
 		},
 	}
 	for _, es := range ess {
@@ -1466,7 +1480,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 
 	t.Run("list only test org's external services", func(t *testing.T) {
 		got, err := ExternalServices(db).List(ctx, ExternalServicesListOptions{
-			NamespaceOrgID: org.ID,
+			NamespaceOrgIDs: []int32{org.ID},
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -1479,9 +1493,29 @@ func TestExternalServicesStore_List(t *testing.T) {
 		}
 	})
 
+	t.Run("list external services for multiple  test org's ", func(t *testing.T) {
+		got, err := ExternalServices(db).List(ctx, ExternalServicesListOptions{
+			NamespaceOrgIDs: []int32{org.ID, org2.ID},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(got) != 2 {
+			t.Fatalf("Want 2 external services but got %d", len(ess))
+		} else {
+			if diff := cmp.Diff(ess[2], got[1]); diff != "" {
+				t.Fatalf("Mismatch (-want +got):\n%s", diff)
+			}
+			if diff := cmp.Diff(ess[3], got[0]); diff != "" {
+				t.Fatalf("Mismatch (-want +got):\n%s", diff)
+			}
+		}
+	})
+
 	t.Run("list non-existing org external services", func(t *testing.T) {
 		ess, err := ExternalServices(db).List(ctx, ExternalServicesListOptions{
-			NamespaceOrgID: 404,
+			NamespaceOrgIDs: []int32{404},
 		})
 		if err != nil {
 			t.Fatal(err)

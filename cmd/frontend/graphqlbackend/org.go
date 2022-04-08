@@ -247,7 +247,7 @@ func (o *OrgResolver) ViewerNeedsCodeHostUpdate(ctx context.Context) (bool, erro
 	if _, err := o.db.OrgMembers().GetByOrgIDAndUserID(ctx, o.org.ID, actor.UID); err != nil {
 		return false, nil
 	}
-	orgServices, err := o.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{Kinds: []string{extsvc.KindGitHub}, NamespaceOrgID: o.OrgID()})
+	orgServices, err := o.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{Kinds: []string{extsvc.KindGitHub}, NamespaceOrgIDs: []int32{o.OrgID()}})
 	if err != nil {
 		return false, err
 	}

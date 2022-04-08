@@ -581,14 +581,11 @@ func viewerNeedsCodeHostUpgrade(ctx context.Context, db database.DB, userID int3
 	if len(queryFor) == 0 {
 		return false
 	}
-	orgServices := []*types.ExternalService{}
-	for _, orgID := range queryFor {
-		s, err := db.ExternalServices().List(ctx, database.ExternalServicesListOptions{Kinds: []string{extsvc.KindGitHub}, NamespaceOrgID: orgID})
-		if err != nil {
-			return false
-		}
-		orgServices = append(orgServices, s...)
+	orgServices, err := db.ExternalServices().List(ctx, database.ExternalServicesListOptions{Kinds: []string{extsvc.KindGitHub}, NamespaceOrgIDs: queryFor})
+	if err != nil {
+		return false
 	}
+
 	if len(orgServices) == 0 {
 		return false
 	}

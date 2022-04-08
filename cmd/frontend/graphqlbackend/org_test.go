@@ -627,7 +627,7 @@ func TestOrganization_viewerNeedsCodeHostUpdate(t *testing.T) {
 				if opts.NamespaceUserID == 1 {
 					return test.UserServices, nil
 				}
-				if opts.NamespaceOrgID == 1 {
+				if len(opts.NamespaceOrgIDs) == 1 && opts.NamespaceOrgIDs[0] == 1 {
 					return test.OrgServices, nil
 				}
 				return nil, nil
