@@ -7,8 +7,8 @@ CREATE TABLE IF NOT EXISTS lsif_uploads_audit_logs (
     uploaded_at         timestamptz not null,
     indexer             text not null,
     indexer_version     text,
-    upload_size         integer not null,
-    associated_index_id integer not null,
+    upload_size         integer,
+    associated_index_id integer,
     committed_at        timestamptz,
     transition_columns  hstore[]
 );
