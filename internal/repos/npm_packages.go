@@ -38,8 +38,8 @@ func NewNpmPackagesSource(svc *types.ExternalService) (*NpmPackagesSource, error
 	return &NpmPackagesSource{
 		svc:        svc,
 		connection: c,
-		/*dbStore initialized in SetDB */
-		client: npm.NewHTTPClient(c.Registry, c.RateLimit, c.Credentials),
+		/* dbStore initialized in SetDB */
+		client: npm.NewHTTPClient(c.Registry, c.Credentials),
 	}, nil
 }
 

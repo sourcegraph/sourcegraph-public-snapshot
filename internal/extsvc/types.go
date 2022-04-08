@@ -460,6 +460,13 @@ func GetLimitFromConfig(kind string, config interface{}) (rlc RateLimitConfig, e
 			rlc.IsDefault = false
 		}
 		rlc.BaseURL = c.Url
+	case *schema.NpmPackagesConnection:
+		rlc.Limit = defaultRateLimit
+		if c != nil && c.RateLimit != nil {
+			rlc.Limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
+			rlc.IsDefault = false
+		}
+		rlc.BaseURL = c.Registry
 	default:
 		return rlc, ErrRateLimitUnsupported{codehostKind: kind}
 	}

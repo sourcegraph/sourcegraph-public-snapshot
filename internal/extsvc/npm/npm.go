@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"math"
 	"net/http"
 	"time"
 
@@ -26,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type Client interface {
@@ -94,15 +92,8 @@ type HTTPClient struct {
 	credentials string
 }
 
-func NewHTTPClient(registryURL string, rateLimit *schema.NpmRateLimit, credentials string) *HTTPClient {
-	var requestsPerHour float64
-	if rateLimit == nil || !rateLimit.Enabled {
-		requestsPerHour = math.Inf(1)
-	} else {
-		requestsPerHour = rateLimit.RequestsPerHour
-	}
-	defaultLimiter := rate.NewLimiter(rate.Limit(requestsPerHour/3600.0), 100)
-	cachedLimiter := ratelimit.DefaultRegistry.GetOrSet(registryURL, defaultLimiter)
+func NewHTTPClient(registryURL string, credentials string) *HTTPClient {
+	cachedLimiter := ratelimit.DefaultRegistry.Get(registryURL)
 	return &HTTPClient{
 		registryURL,
 		httpcli.ExternalDoer,
