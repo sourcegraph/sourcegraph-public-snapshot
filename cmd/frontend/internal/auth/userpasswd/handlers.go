@@ -325,32 +325,15 @@ func logSignInEvent(r *http.Request, db database.DB, user *types.User, name *dat
 	db.SecurityEventLogs().LogEvent(r.Context(), event)
 }
 
-// todo
-type LockoutStore interface {
-	IsLockedOut(userID int32) (reason string, locked bool)
-	IncreaseFailedAttempt(userID int32) error
-	ClearFailedAttempts(userID int32) error
-}
-
 func checkAccountLockout(store LockoutStore, user *types.User, event database.SecurityEventName) {
 	if user.ID <= 0 {
 		return
 	}
 
 	if event == database.SecurityEventNameSignInSucceeded {
-		err := store.ClearFailedAttempts(user.ID)
-		if err != nil {
-			log15.Error("checkAccountLockout.ClearFailedAttempts", "error", err)
-		}
-		return
-	}
-
-	if event == database.SecurityEventNameSignInFailed {
-		err := store.IncreaseFailedAttempt(user.ID)
-		if err != nil {
-			log15.Error("checkAccountLockout.IncreaseFailedAttempt", "error", err)
-		}
-		return
+		store.Reset(user.ID)
+	} else if event == database.SecurityEventNameSignInFailed {
+		store.IncreaseFailedAttempt(user.ID)
 	}
 }
 
