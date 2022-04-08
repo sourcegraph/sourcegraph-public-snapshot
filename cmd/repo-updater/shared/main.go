@@ -136,12 +136,11 @@ func Main(enterpriseInit EnterpriseInit) {
 		Scheduler:             updateScheduler,
 		GitserverClient:       gitserver.NewClient(db),
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
+		RateLimitSyncer:       repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store.ExternalServiceStore),
 	}
 
-	rateLimitSyncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store.ExternalServiceStore)
-	server.RateLimitSyncer = rateLimitSyncer
 	// Attempt to perform an initial sync with all external services
-	if err := rateLimitSyncer.SyncRateLimiters(ctx); err != nil {
+	if err := server.RateLimitSyncer.SyncRateLimiters(ctx); err != nil {
 		// This is not a fatal error since the syncer has been added to the server above
 		// and will still be run whenever an external service is added or updated
 		log15.Error("Performing initial rate limit sync", "err", err)
