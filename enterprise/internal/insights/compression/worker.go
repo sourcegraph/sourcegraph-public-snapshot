@@ -76,10 +76,10 @@ func NewCommitIndexer(background context.Context, base database.DB, insights dbu
 		getCommits:        getCommits,
 		operations:        operations,
 	}
-	conf.Watch(func() {
-		log15.Debug("Insights commit indexer page size updated")
-		indexer.commitsBatchSize = conf.Get().InsightsCommitIndexerPageSize
-	})
+	// conf.Watch(func() {
+	// 	log15.Debug("Insights commit indexer page size updated")
+	indexer.commitsBatchSize = conf.Get().InsightsCommitIndexerBatchSize
+	// })
 	return &indexer
 }
 
