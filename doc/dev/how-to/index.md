@@ -33,6 +33,7 @@
 - [Configure a test instance of Phabricator and Gitolite](configure_phabricator_gitolite.md)
 - [Test a Phabricator and Gitolite instance](test_phabricator.md)
 - [How to test changes in dogfood](testing_in_dogfood.md)
+- [How to use client app PR previews](client_pr_previews.md)
 
 ## Profiling
 
