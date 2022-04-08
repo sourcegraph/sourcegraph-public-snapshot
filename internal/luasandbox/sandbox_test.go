@@ -43,7 +43,28 @@ func TestSandboxHasNoIO(t *testing.T) {
 	})
 }
 
-func TestRunWithBasicModule(t *testing.T) {
+func TestRunScript(t *testing.T) {
+	ctx := context.Background()
+
+	sandbox, err := newService(&observation.TestContext).CreateSandbox(ctx, CreateOptions{})
+	if err != nil {
+		t.Fatalf("unexpected error creating sandbox: %s", err)
+	}
+	defer sandbox.Close()
+
+	script := `
+		return 38 + 4
+	`
+	retValue, err := sandbox.RunScript(ctx, RunOptions{}, script)
+	if err != nil {
+		t.Fatalf("unexpected error running script: %s", err)
+	}
+	if lua.LVAsNumber(retValue) != 42 {
+		t.Errorf("unexpected return value. want=%d have=%v", 42, retValue)
+	}
+}
+
+func TestModule(t *testing.T) {
 	var stashedValue lua.LValue
 
 	api := map[string]lua.LGFunction{
