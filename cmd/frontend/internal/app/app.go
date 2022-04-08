@@ -50,13 +50,10 @@ func NewHandler(db database.DB, githubAppCloudSetupHandler http.Handler) http.Ha
 
 	r.Get(router.UI).Handler(ui.Router())
 
+	lockoutStore := userpasswd.NewLockoutStore(5, 30*time.Minute, time.Hour)
 	r.Get(router.SignUp).Handler(trace.Route(userpasswd.HandleSignUp(db)))
 	r.Get(router.SiteInit).Handler(trace.Route(userpasswd.HandleSiteInit(db)))
-	r.Get(router.SignIn).Handler(trace.Route(http.HandlerFunc(
-		userpasswd.HandleSignIn(db,
-			userpasswd.NewLockoutStore(5, 30*time.Minute, time.Hour),
-		),
-	)))
+	r.Get(router.SignIn).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleSignIn(db, lockoutStore))))
 	r.Get(router.SignOut).Handler(trace.Route(http.HandlerFunc(serveSignOutHandler(db))))
 	r.Get(router.ResetPasswordInit).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleResetPasswordInit(db))))
 	r.Get(router.ResetPasswordCode).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleResetPasswordCode(db))))

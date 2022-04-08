@@ -238,7 +238,9 @@ func getByEmailOrUsername(ctx context.Context, db database.DB, emailOrUsername s
 
 // HandleSignIn accepts a POST containing username-password credentials and
 // authenticates the current session if the credentials are valid.
-// todo: docstring for lockout
+//
+// The account will be locked out after consecutive failed attempts in a certain
+// period of time.
 func HandleSignIn(db database.DB, store LockoutStore) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if handleEnabledCheck(w) {
