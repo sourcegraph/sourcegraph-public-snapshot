@@ -29,8 +29,8 @@ type lockoutStore struct {
 func NewLockoutStore(failedThreshold int, lockoutPeriod, consecutivePeriod time.Duration) LockoutStore {
 	return &lockoutStore{
 		failedThreshold: failedThreshold,
-		lockouts:        rcache.NewWithTTL("account_lockout:", int(lockoutPeriod.Seconds())),
-		failedAttempts:  rcache.NewWithTTL("account_failed_attempts:", int(consecutivePeriod.Seconds())),
+		lockouts:        rcache.NewWithTTL("account_lockout", int(lockoutPeriod.Seconds())),
+		failedAttempts:  rcache.NewWithTTL("account_failed_attempts", int(consecutivePeriod.Seconds())),
 	}
 }
 
