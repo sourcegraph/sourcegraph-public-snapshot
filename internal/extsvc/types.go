@@ -373,113 +373,81 @@ func ExtractToken(config string, kind string) (string, error) {
 	}
 }
 
-// ExtractRateLimitConfig extracts the rate limit config from the given args. If rate limiting is not
+// ExtractRateLimit extracts the rate limit from the given args. If rate limiting is not
 // supported the error returned will be an ErrRateLimitUnsupported.
-func ExtractRateLimitConfig(config, kind, displayName string) (RateLimitConfig, error) {
+func ExtractRateLimit(config, kind string) (rate.Limit, error) {
 	parsed, err := ParseConfig(kind, config)
 	if err != nil {
-		return RateLimitConfig{}, errors.Wrap(err, "loading service configuration")
+		return rate.Inf, errors.Wrap(err, "loading service configuration")
 	}
 
 	rlc, err := GetLimitFromConfig(kind, parsed)
 	if err != nil {
-		return RateLimitConfig{}, err
+		return rate.Inf, err
 	}
-	rlc.DisplayName = displayName
 
 	return rlc, nil
 }
 
-// RateLimitConfig represents the internal rate limit configured for an external service
-type RateLimitConfig struct {
-	BaseURL     string
-	DisplayName string
-	Limit       rate.Limit
-	IsDefault   bool
-}
-
 // GetLimitFromConfig gets RateLimitConfig from an already parsed config schema.
-func GetLimitFromConfig(kind string, config interface{}) (rlc RateLimitConfig, err error) {
+func GetLimitFromConfig(kind string, config interface{}) (rate.Limit, error) {
 	// Rate limit config can be in a few states:
 	// 1. Not defined: We fall back to default specified in code.
 	// 2. Defined and enabled: We use their defined limit.
 	// 3. Defined and disabled: We use an infinite limiter.
 
-	rlc.IsDefault = true
+	var limit rate.Limit
 	switch c := config.(type) {
 	case *schema.GitLabConnection:
 		// 10/s is the default enforced by GitLab on their end
-		rlc.Limit = rate.Limit(10)
+		limit = rate.Limit(10)
 		if c != nil && c.RateLimit != nil {
-			rlc.Limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
-			rlc.IsDefault = false
+			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
-		rlc.BaseURL = c.Url
 	case *schema.GitHubConnection:
 		// 5000 per hour is the default enforced by GitHub on their end
-		rlc.Limit = rate.Limit(5000.0 / 3600.0)
+		limit = rate.Limit(5000.0 / 3600.0)
 		if c != nil && c.RateLimit != nil {
-			rlc.Limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
-			rlc.IsDefault = false
+			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
-		rlc.BaseURL = c.Url
 	case *schema.BitbucketServerConnection:
 		// 8/s is the default limit we enforce
-		rlc.Limit = rate.Limit(8)
+		limit = rate.Limit(8)
 		if c != nil && c.RateLimit != nil {
-			rlc.Limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
-			rlc.IsDefault = false
+			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
-		rlc.BaseURL = c.Url
 	case *schema.BitbucketCloudConnection:
-		rlc.Limit = defaultRateLimit
+		limit = defaultRateLimit
 		if c != nil && c.RateLimit != nil {
-			rlc.Limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
-			rlc.IsDefault = false
+			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
-		rlc.BaseURL = c.Url
 	case *schema.PerforceConnection:
-		rlc.Limit = rate.Limit(5000.0 / 3600.0)
+		limit = rate.Limit(5000.0 / 3600.0)
 		if c != nil && c.RateLimit != nil {
-			rlc.Limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
-			rlc.IsDefault = false
+			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
-		rlc.BaseURL = c.P4Port
 	case *schema.JVMPackagesConnection:
-		rlc.Limit = defaultRateLimit
+		limit = defaultRateLimit
 		if c != nil && c.Maven.RateLimit != nil {
-			rlc.Limit = limitOrInf(c.Maven.RateLimit.Enabled, c.Maven.RateLimit.RequestsPerHour)
-			rlc.IsDefault = false
+			limit = limitOrInf(c.Maven.RateLimit.Enabled, c.Maven.RateLimit.RequestsPerHour)
 		}
-		rlc.BaseURL = "maven"
 	case *schema.PagureConnection:
 		// 8/s is the default limit we enforce
-		rlc.Limit = rate.Limit(8)
+		limit = rate.Limit(8)
 		if c != nil && c.RateLimit != nil {
-			rlc.Limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
-			rlc.IsDefault = false
+			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
-		rlc.BaseURL = c.Url
 	case *schema.NpmPackagesConnection:
 		// 3000 per hour is the same default we use in our schema
-		rlc.Limit = rate.Limit(3000.0 / 3600.0)
+		limit = rate.Limit(3000.0 / 3600.0)
 		if c != nil && c.RateLimit != nil {
-			rlc.Limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
-			rlc.IsDefault = false
+			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
-		rlc.BaseURL = c.Registry
 	default:
-		return rlc, ErrRateLimitUnsupported{codehostKind: kind}
+		return limit, ErrRateLimitUnsupported{codehostKind: kind}
 	}
 
-	u, err := url.Parse(rlc.BaseURL)
-	if err != nil {
-		return rlc, errors.Wrap(err, "parsing external service URL")
-	}
-
-	rlc.BaseURL = NormalizeBaseURL(u).String()
-
-	return rlc, nil
+	return limit, nil
 }
 
 func limitOrInf(enabled bool, perHour float64) rate.Limit {
