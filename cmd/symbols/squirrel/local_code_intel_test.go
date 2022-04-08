@@ -14,8 +14,14 @@ import (
 )
 
 func TestLocalCodeIntel(t *testing.T) {
-	path := types.RepoCommitPath{Repo: "foo", Commit: "bar", Path: "test.java"}
-	contents := `
+	type pathContents struct {
+		path     string
+		contents string
+	}
+
+	tests := []pathContents{{
+		path: "test.java",
+		contents: `
 class Foo {
 
     //             v f1.p def
@@ -38,45 +44,91 @@ class Foo {
         String x = p;
     }
 }
-`
+`}, {
+		path: "test.go",
+		contents: `
+//      v f1.p def
+//      v f1.p ref
+func f1(p int) {
 
-	want := collectAnnotations(path, contents)
+	//  v f1.x def
+	//  v f1.x ref
+	var x int
 
-	payload := getLocalCodeIntel(t, path, contents)
-	got := []annotation{}
-	for _, symbol := range payload.Symbols {
-		got = append(got, annotation{
-			repoCommitPathPoint: types.RepoCommitPathPoint{
-				RepoCommitPath: path,
-				Point: types.Point{
-					Row:    symbol.Def.Row,
-					Column: symbol.Def.Column,
-				},
-			},
-			symbol: "(unused)",
-			kind:   "def",
-		})
+	// v f1.y def
+	// v f1.y ref
+	_, y := g() // < "_" f1.y def < "_" f1.y ref
 
-		for _, ref := range symbol.Refs {
+	//  v f1.i def
+	//  v f1.i ref
+	//     v f1.j def
+	//     v f1.j ref
+	for i, j := range z {
+
+		//          v f1.p ref
+		//             v f1.i ref
+		//                v f1.j ref
+		//                   v f1.x ref
+		//                      v f1.y ref
+		fmt.Println(p, i, j, x, y)
+	}
+
+	//     v f1.x ref
+	switch x {
+	case 3:
+		//  v f1.switch1.x def
+		//  v f1.switch1.x ref
+		var x int
+	}
+
+	select {
+	//   v f1.switch2.x def
+	//   v f1.switch2.x ref
+	case x := <-ch:
+	}
+}
+`},
+	}
+
+	for _, test := range tests {
+		path := types.RepoCommitPath{Repo: "foo", Commit: "bar", Path: test.path}
+		want := collectAnnotations(path, test.contents)
+		payload := getLocalCodeIntel(t, path, test.contents)
+		got := []annotation{}
+		for _, symbol := range payload.Symbols {
 			got = append(got, annotation{
 				repoCommitPathPoint: types.RepoCommitPathPoint{
 					RepoCommitPath: path,
 					Point: types.Point{
-						Row:    ref.Row,
-						Column: ref.Column,
+						Row:    symbol.Def.Row,
+						Column: symbol.Def.Column,
 					},
 				},
 				symbol: "(unused)",
-				kind:   "ref",
+				kind:   "def",
 			})
+
+			for _, ref := range symbol.Refs {
+				got = append(got, annotation{
+					repoCommitPathPoint: types.RepoCommitPathPoint{
+						RepoCommitPath: path,
+						Point: types.Point{
+							Row:    ref.Row,
+							Column: ref.Column,
+						},
+					},
+					symbol: "(unused)",
+					kind:   "ref",
+				})
+			}
 		}
-	}
 
-	sortAnnotations(want)
-	sortAnnotations(got)
+		sortAnnotations(want)
+		sortAnnotations(got)
 
-	if diff := cmp.Diff(want, got, compareAnnotations); diff != "" {
-		t.Fatalf("unexpected annotations (-want +got):\n%s", diff)
+		if diff := cmp.Diff(want, got, compareAnnotations); diff != "" {
+			t.Fatalf("unexpected annotations (-want +got):\n%s", diff)
+		}
 	}
 }
 

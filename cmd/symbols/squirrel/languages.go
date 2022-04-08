@@ -7,6 +7,7 @@ import (
 
 	"github.com/grafana/regexp"
 	sitter "github.com/smacker/go-tree-sitter"
+	"github.com/smacker/go-tree-sitter/golang"
 	"github.com/smacker/go-tree-sitter/java"
 )
 
@@ -81,6 +82,32 @@ var langToLangSpec = map[string]LangSpec{
 (lambda_expression          parameters: (inferred_parameters (identifier) @definition))       ; (x, y) -> ...
 (lambda_expression          parameters: (identifier) @definition)                             ; x -> ...
 (enhanced_for_statement     name:       (identifier) @definition)                             ; for (var item : items) ...
+`,
+	},
+	"go": {
+		language: golang.GetLanguage(),
+		commentStyle: CommentStyle{
+			nodeTypes:     []string{"comment"},
+			stripRegex:    regexp.MustCompile(`(^//|^\s*\*|^/\*\*|\*/$)`),
+			ignoreRegex:   regexp.MustCompile(`^\s*(/\*\*|\*/)\s*$`),
+			codeFenceName: "go",
+		},
+		localsQuery: `
+(block)                   @scope ; { ... }
+(function_declaration)    @scope ; func f() { ... }
+(method_declaration)      @scope ; func (r R) f() { ... }
+(func_literal)            @scope ; func() { ... }
+(if_statement)            @scope ; if true { ... }
+(for_statement)           @scope ; for x := range xs { ... }
+(expression_case)         @scope ; case "foo": ...
+(communication_case)      @scope ; case x := <-ch: ...
+
+(var_spec              name: (identifier) @definition)                   ; var x int = ...
+(const_spec            name: (identifier) @definition)                   ; const x int = ...
+(parameter_declaration name: (identifier) @definition)                   ; func(x int) { ... }
+(short_var_declaration left: (expression_list (identifier) @definition)) ; x, y := ...
+(range_clause          left: (expression_list (identifier) @definition)) ; for i := range ... { ... }
+(receive_statement     left: (expression_list (identifier) @definition)) ; case x := <-ch: ...
 `,
 	},
 }
