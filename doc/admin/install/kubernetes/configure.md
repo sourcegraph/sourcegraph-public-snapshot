@@ -13,7 +13,7 @@ of your deployment environment.
    Get started with configuring Sourcegraph with Kubernetes.
   </a>
 
-  <a href="#overlays" class="btn" alt="Overlays">
+  <a href="./kustomize#overlays" class="btn" alt="Overlays">
    <span>Overlays</span>
    </br>
    Learn about Kustomize, how to use our provided overlays, and how to create your own.

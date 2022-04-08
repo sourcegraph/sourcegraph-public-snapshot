@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -16,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -388,9 +390,13 @@ var runCommitLog = func(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOpti
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, data))
 	}
 
+	return parseCommitLogOutput(data, opt.NameOnly)
+}
+
+func parseCommitLogOutput(data []byte, nameOnly bool) ([]*wrappedCommit, error) {
 	allParts := bytes.Split(data, []byte{'\x00'})
 	partsPerCommit := partsPerCommitBasic
-	if opt.NameOnly {
+	if nameOnly {
 		partsPerCommit = partsPerCommitWithFileNames
 	}
 	numCommits := len(allParts) / partsPerCommit
@@ -517,6 +523,116 @@ func CommitExists(ctx context.Context, db database.DB, repo api.RepoName, id api
 		return false, err
 	}
 	return c != nil, nil
+}
+
+// CommitsExist determines if the given commits exists in the given repositories. This function returns
+// a slice of the same size as the input slice, true indicating that the commit at the symmetric index
+// exists.
+func CommitsExist(ctx context.Context, db database.DB, repoCommits []api.RepoCommit, checker authz.SubRepoPermissionChecker) ([]bool, error) {
+	commits, err := getCommits(ctx, db, repoCommits, true, checker)
+	if err != nil {
+		return nil, err
+	}
+
+	exists := make([]bool, len(commits))
+	for i, commit := range commits {
+		exists[i] = commit != nil
+	}
+
+	return exists, nil
+}
+
+// getCommits returns a git commit object describing each of the give repository and commit pairs. This
+// function returns a slice of the same size as the input slice. Values in the output slice may be nil if
+// their associated repository or commit are unresolvable.
+//
+// If ignoreErrors is true, then errors arising from any single failed git log operation will cause the
+// resulting commit to be nil, but not fail the entire operation.
+func getCommits(ctx context.Context, db database.DB, repoCommits []api.RepoCommit, ignoreErrors bool, checker authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: getCommits")
+	span.SetTag("numRepoCommits", len(repoCommits))
+	defer span.Finish()
+
+	indexesByRepoCommit := make(map[api.RepoCommit]int, len(repoCommits))
+	for i, repoCommit := range repoCommits {
+		if err := checkSpecArgSafety(string(repoCommit.CommitID)); err != nil {
+			return nil, err
+		}
+
+		// Ensure repository names are normalized. If do this in a lower layer, then we may
+		// not be able to compare the RepoCommit parameter in the callback below with the
+		// input values.
+		repoCommits[i].Repo = protocol.NormalizeRepo(repoCommit.Repo)
+
+		// Make it easy to look up the index to populate for a particular RepoCommit value.
+		// Note that we use the slice-indexed version as the key, not the local variable, which
+		// was not updated in the normalization phase above
+		indexesByRepoCommit[repoCommits[i]] = i
+	}
+
+	// Create a slice with values populated in the callback defined below. Since the callback
+	// may be invoked concurrently inside BatchLog, we need to synchronize writes to this slice
+	// with this local mutex.
+	commits := make([]*gitdomain.Commit, len(repoCommits))
+	var mu sync.Mutex
+
+	callback := func(repoCommit api.RepoCommit, rawResult gitserver.RawBatchLogResult) error {
+		if err := rawResult.Error; err != nil {
+			if ignoreErrors {
+				// Treat as not-found
+				return nil
+			}
+			return errors.Wrap(err, "failed to perform git log")
+		}
+
+		wrappedCommits, err := parseCommitLogOutput([]byte(rawResult.Stdout), true)
+		if err != nil {
+			if ignoreErrors {
+				// Treat as not-found
+				return nil
+			}
+			return errors.Wrap(err, "parseCommitLogOutput")
+		}
+		if len(wrappedCommits) > 1 {
+			// Check this prior to filtering commits so that we still log an issue
+			// if the user happens to have access one but not the other; a rev being
+			// ambiguous here should be a visible issue regardless of permissions.
+			return errors.Errorf("git log: expected 1 commit, got %d", len(commits))
+		}
+
+		// Enforce sub-repository permissions
+		filteredCommits, err := filterCommits(ctx, wrappedCommits, repoCommit.Repo, checker)
+		if err != nil {
+			// Note that we don't check ignoreErrors on this condition. When we
+			// ignore errors it's to hide an issue with a single git log request on a
+			// single shard, which could return an error if that repo is missing, the
+			// supplied commit does not exist in the clone, or if the repo is malformed.
+			//
+			// We don't want to hide unrelated infrastructure errors caused by this
+			// method call.
+			return errors.Wrap(err, "filterCommits")
+		}
+		if len(filteredCommits) == 0 {
+			// Not found
+			return nil
+		}
+
+		mu.Lock()
+		defer mu.Unlock()
+		index := indexesByRepoCommit[repoCommit]
+		commits[index] = filteredCommits[0]
+		return nil
+	}
+
+	opts := gitserver.BatchLogOptions{
+		RepoCommits: repoCommits,
+		Format:      logFormatWithoutRefs,
+	}
+	if err := gitserver.NewClient(db).BatchLog(ctx, opts, callback); err != nil {
+		return nil, errors.Wrap(err, "gitserver.BatchLog")
+	}
+
+	return commits, nil
 }
 
 // Head determines the tip commit of the default branch for the given repository.
