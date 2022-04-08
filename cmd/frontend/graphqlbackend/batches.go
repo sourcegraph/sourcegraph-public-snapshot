@@ -820,8 +820,8 @@ type VisibleBatchSpecWorkspaceResolver interface {
 	Repository(ctx context.Context) (*RepositoryResolver, error)
 	Branch(ctx context.Context) (*GitRefResolver, error)
 	Path() string
-	Step(ctx context.Context, args BatchSpecWorkspaceStepArgs) (BatchSpecWorkspaceStepResolver, error)
-	Steps(ctx context.Context) ([]BatchSpecWorkspaceStepResolver, error)
+	Step(args BatchSpecWorkspaceStepArgs) (BatchSpecWorkspaceStepResolver, error)
+	Steps() ([]BatchSpecWorkspaceStepResolver, error)
 	SearchResultPaths() []string
 	ChangesetSpecs(ctx context.Context) (*[]VisibleChangesetSpecResolver, error)
 	Executor(ctx context.Context) (*gql.ExecutorResolver, error)

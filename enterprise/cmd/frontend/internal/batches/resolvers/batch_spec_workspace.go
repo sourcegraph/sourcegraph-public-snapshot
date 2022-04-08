@@ -184,11 +184,11 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers() ([]graphqlbackend.Ba
 	return resolvers, nil
 }
 
-func (r *batchSpecWorkspaceResolver) Steps(ctx context.Context) ([]graphqlbackend.BatchSpecWorkspaceStepResolver, error) {
+func (r *batchSpecWorkspaceResolver) Steps() ([]graphqlbackend.BatchSpecWorkspaceStepResolver, error) {
 	return r.computeStepResolvers()
 }
 
-func (r *batchSpecWorkspaceResolver) Step(ctx context.Context, args graphqlbackend.BatchSpecWorkspaceStepArgs) (graphqlbackend.BatchSpecWorkspaceStepResolver, error) {
+func (r *batchSpecWorkspaceResolver) Step(args graphqlbackend.BatchSpecWorkspaceStepArgs) (graphqlbackend.BatchSpecWorkspaceStepResolver, error) {
 	// Check if step exists.
 	if int(args.Index) > len(r.batchSpec.Steps) {
 		return nil, nil
