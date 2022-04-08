@@ -254,7 +254,7 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
             <small
               class="form-help text-muted"
             >
-              At least 12 characters.
+              At least 12 characters
             </small>
           </div>
           <div
