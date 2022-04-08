@@ -557,7 +557,7 @@ func viewerNeedsCodeHostUpgrade(ctx context.Context, db database.DB, userID int3
 	potentialUpgradeOrgs := map[int32]struct{}{}
 	for _, override := range overrides {
 		if override.FlagName == "github-app-cloud" {
-			if override.Value == true {
+			if override.Value {
 				potentialUpgradeOrgs[*override.OrgID] = struct{}{}
 			}
 		}
