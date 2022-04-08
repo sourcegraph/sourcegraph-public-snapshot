@@ -225,7 +225,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 	// 		bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
 	// 		bk.Cmd("git-lfs fetch"),
 	// 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-	// 		bk.Cmd("yarn --cwd client/browser -s run build"),
+	// 		bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
 	// 		bk.Cmd("yarn run cover-browser-integration"),
 	// 		bk.Cmd("yarn nyc report -r json"),
 	// 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
@@ -417,7 +417,7 @@ func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("yarn --cwd client/browser -s run build"),
+			bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
 			bk.Cmd("yarn -s mocha ./client/browser/src/end-to-end/github.test.ts ./client/browser/src/end-to-end/gitlab.test.ts"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
@@ -433,21 +433,21 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":rocket::chrome: Extension release",
 		withYarnCache(),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn --cwd client/browser -s run build"),
-		bk.Cmd("yarn --cwd client/browser release:chrome"))
+		bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
+		bk.Cmd("yarn workspace @sourcegraph/browser release:chrome"))
 
 	// Build and self sign the FF add-on and upload it to a storage bucket
 	pipeline.AddStep(":rocket::firefox: Extension release",
 		withYarnCache(),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn --cwd client/browser release:firefox"))
+		bk.Cmd("yarn workspace @sourcegraph/browser release:firefox"))
 
 	// Release to npm
 	pipeline.AddStep(":rocket::npm: npm Release",
 		withYarnCache(),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn --cwd client/browser -s run build"),
-		bk.Cmd("yarn --cwd client/browser release:npm"))
+		bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
+		bk.Cmd("yarn workspace @sourcegraph/browser release:npm"))
 }
 
 // Adds a Buildkite pipeline "Wait".
