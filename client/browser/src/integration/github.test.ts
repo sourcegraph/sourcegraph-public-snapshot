@@ -774,7 +774,7 @@ describe('GitHub', () => {
                         { timeout: 3000 }
                     )
 
-                    assert(!linkToSourcegraph, 'Expected link to Sourcegraph search page exists')
+                    assert(linkToSourcegraph, 'Expected link to Sourcegraph search page exists')
                 }
             })
 
