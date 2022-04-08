@@ -95,7 +95,7 @@ func (r *insightSeriesResolver) Points(ctx context.Context, args *graphqlbackend
 	}
 
 	scLoader := &scLoader{primary: r.workerBaseStore.Handle().DB()}
-	inc, exc, err := r.unwrapSearchContexts(ctx, scLoader, r.filters.SearchContexts)
+	inc, exc, err := unwrapSearchContexts(ctx, scLoader, r.filters.SearchContexts)
 	if err != nil {
 		return nil, errors.Wrap(err, "unwrapSearchContexts")
 	}
@@ -113,6 +113,9 @@ func (r *insightSeriesResolver) Points(ctx context.Context, args *graphqlbackend
 	return resolvers, nil
 }
 
+// SearchContextLoader loads search contexts just from the full name of the
+// context. This will not verify that the calling context owns the context, it
+// will load regardless of the current user.
 type SearchContextLoader interface {
 	GetByName(ctx context.Context, name string) (*sctypes.SearchContext, error)
 }
@@ -126,7 +129,7 @@ func (l *scLoader) GetByName(ctx context.Context, name string) (*sctypes.SearchC
 	return searchcontexts.ResolveSearchContextSpec(ctx, db, name)
 }
 
-func (r *insightSeriesResolver) unwrapSearchContexts(ctx context.Context, loader SearchContextLoader, rawContexts []string) ([]string, []string, error) {
+func unwrapSearchContexts(ctx context.Context, loader SearchContextLoader, rawContexts []string) ([]string, []string, error) {
 	var include []string
 	var exclude []string
 
