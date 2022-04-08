@@ -43,7 +43,7 @@ func (s *lockoutStore) IncreaseFailedAttempt(userID int32) {
 	key := strconv.Itoa(int(userID))
 	s.failedAttempts.Increase(key)
 
-	// Get right after Increase should make the key always exits
+	// Get right after Increase should make the key always exist
 	v, _ := s.failedAttempts.Get(key)
 	count, _ := strconv.Atoi(string(v))
 	if count >= s.failedThreshold {
