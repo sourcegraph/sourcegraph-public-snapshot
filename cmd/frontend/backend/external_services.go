@@ -46,8 +46,8 @@ func CheckOrgExternalServices(ctx context.Context, db database.DB, orgID int32) 
 }
 
 // OrgExternalServicesQuotaReached checks if the maximum mumber of external services has been
-// reached for a given org on Cloud.
-func OrgExternalServicesQuotaReached(ctx context.Context, db database.DB, orgID int32, kind string) (bool, error) {
+// reached for a given org on Cloud
+func OrgExternalServicesQuotaReached(ctx context.Context, db database.DB, orgID int32) (bool, error) {
 	services, err := servicesCountPerKind(ctx, db, orgID)
 	if err != nil {
 		return true, err
@@ -60,7 +60,7 @@ func OrgExternalServicesQuotaReached(ctx context.Context, db database.DB, orgID 
 	return true, nil
 }
 
-// servicesMapPerKind gets total count for each type of service for a given org
+// servicesCountPerKind returns a dictionary with the total count for each type of service
 func servicesCountPerKind(ctx context.Context, db database.DB, orgID int32) (map[string]int, error) {
 	options := database.ExternalServicesListOptions{NamespaceOrgID: orgID}
 
@@ -81,6 +81,7 @@ func servicesCountPerKind(ctx context.Context, db database.DB, orgID int32) (map
 }
 
 // IsExternalServiceAllowed checks if a given external service can be added to an org on Cloud.
+// Services currently allowed are GitHub and GitLab
 func IsExternalServiceAllowed(kind string) (bool, error) {
 	allowed := []string{extsvc.KindGitHub, extsvc.KindGitLab}
 

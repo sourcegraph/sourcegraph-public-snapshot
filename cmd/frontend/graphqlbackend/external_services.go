@@ -80,13 +80,20 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 				return nil, err
 			}
 
+			allowed, err := backend.IsExternalServiceAllowed(args.Input.Kind)
+			if err != nil {
+				return nil, err
+			}
+			if !allowed {
+				return nil, errors.Errorf("service %v is not allowed", args.Input.Kind)
+			}
+
 			quotaReached, err := backend.OrgExternalServicesQuotaReached(ctx, r.db, namespaceOrgID)
 			if err != nil {
 				return nil, err
 			}
-
 			if quotaReached {
-				err = errors.Errorf("maximum number of external servcies has been reached for organization %v ", namespaceOrgID)
+				err = errors.Errorf("maximum number of external services has been reached for organization %v ", namespaceOrgID)
 				return nil, err
 			}
 		}
@@ -298,16 +305,6 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 
 	if namespaceOrgID > 0 {
 		if err := backend.CheckOrgExternalServices(ctx, r.db, namespaceOrgID); err != nil {
-			return nil, err
-		}
-
-		quotaReached, err := backend.OrgExternalServicesQuotaReached(ctx, r.db, namespaceOrgID)
-		if err != nil {
-			return nil, err
-		}
-
-		if quotaReached {
-			err = errors.Errorf("maximum number of external servcies has been reached for organization %v ", namespaceOrgID)
 			return nil, err
 		}
 	}
