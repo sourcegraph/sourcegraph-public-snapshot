@@ -15,6 +15,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -79,28 +80,21 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 				err = errors.New("the authenticated user does not belong to the organization requested")
 				return nil, err
 			}
-
-			allowed, err := backend.IsExternalServiceAllowed(args.Input.Kind)
-			if err != nil {
-				return nil, err
-			}
-			if !allowed {
-				return nil, errors.Errorf("service %v is not allowed", args.Input.Kind)
-			}
-
-			quotaReached, err := backend.OrgExternalServicesQuotaReached(ctx, r.db, namespaceOrgID, args.Input.Kind)
-			if err != nil {
-				return nil, err
-			}
-			if quotaReached {
-				err = errors.Errorf("maximum number of external services has been reached for organization %v ", namespaceOrgID)
-				return nil, err
-			}
 		}
 
 	} else if backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
 		err = backend.ErrMustBeSiteAdmin
 		return nil, err
+	}
+
+	if envvar.SourcegraphDotComMode() {
+		if err := backend.ExternalServiceSupported(args.Input.Kind); err != nil {
+			return nil, err
+		}
+
+		if err := backend.CheckExternalServicesQuota(ctx, r.db, args.Input.Kind, namespaceOrgID, namespaceUserID); err != nil {
+			return nil, err
+		}
 	}
 
 	externalService := &types.ExternalService{

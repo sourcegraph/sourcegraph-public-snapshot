@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -46,55 +47,61 @@ func CheckOrgExternalServices(ctx context.Context, db database.DB, orgID int32) 
 	return errors.New("organization code host connections are not enabled")
 }
 
-// OrgExternalServicesQuotaReached checks if the maximum mumber of external services has been
-// reached for a given org on Cloud. Max of two services, one for GitHub and one for GitLab, can be added per org
-func OrgExternalServicesQuotaReached(ctx context.Context, db database.DB, orgID int32, kind string) (bool, error) {
-	services, err := servicesCountPerType(ctx, db, orgID)
+// CheckExternalServicesQuota returns an error message if the maximum mumber of external services has been
+// reached for a given org or user on Cloud. Max of 2 services - one for GitHub, one for GitLab - can be added
+func CheckExternalServicesQuota(ctx context.Context, db database.DB, kind string, orgID, userID int32) error {
+	services, err := servicesMap(ctx, db, orgID, userID)
 	if err != nil {
-		return true, err
+		return err
 	}
 
 	if services[extsvc.KindGitHub] == 0 || services[extsvc.KindGitLab] == 0 {
-		return false, nil
+		return nil
 	}
 
 	if (services[extsvc.KindGitHub] == 1 && kind == extsvc.KindGitHub) || (services[extsvc.KindGitLab] == 1 && kind == extsvc.KindGitLab) {
-		return true, errors.New(fmt.Sprintf("only one external service of kind %s can be added per org", kind))
+		return errors.New(fmt.Sprintf("only one external service of kind %s can be added", kind))
 	}
 
-	return true, nil
+	return errors.New("maximum number of external services has been reached")
 }
 
-// servicesCountPerType returns a dictionary with the total count for each type of service
-func servicesCountPerType(ctx context.Context, db database.DB, orgID int32) (map[string]int, error) {
-	options := database.ExternalServicesListOptions{NamespaceOrgID: orgID}
+// servicesMap returns a dictionary with the total count for each type of service
+func servicesMap(ctx context.Context, db database.DB, orgID, userID int32) (map[string]int, error) {
+	var services []*types.ExternalService
+	var err error
 
-	services, err := db.ExternalServices().List(ctx, options)
-	if err != nil {
-		return nil, err
+	if orgID > 0 {
+		services, err = db.ExternalServices().List(ctx, database.ExternalServicesListOptions{NamespaceOrgID: orgID})
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	svcCountMap := map[string]int{}
+	if userID > 0 {
+		services, err = db.ExternalServices().List(ctx, database.ExternalServicesListOptions{NamespaceUserID: userID})
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	svcMap := map[string]int{}
 	for _, svc := range services {
-		if _, ok := svcCountMap[svc.Kind]; ok {
-			svcCountMap[svc.Kind] += 1
+		if _, ok := svcMap[svc.Kind]; ok {
+			svcMap[svc.Kind] += 1
 		}
-		svcCountMap[svc.Kind] = 1
+		svcMap[svc.Kind] = 1
 	}
 
-	return svcCountMap, nil
+	return svcMap, nil
 }
 
-// IsExternalServiceAllowed checks if a given external service can be added to an org on Cloud.
-// Services currently allowed are GitHub and GitLab
-func IsExternalServiceAllowed(kind string) (bool, error) {
-	allowed := []string{extsvc.KindGitHub, extsvc.KindGitLab}
-
-	for _, allowed := range allowed {
-		if allowed == kind {
-			return true, nil
-		}
+// ExternalServiceSupported checks if a given external service is supported on Cloud mode.
+// Services currently supported are GitHub and GitLab
+func ExternalServiceSupported(kind string) error {
+	if kind != extsvc.KindGitHub && kind != extsvc.KindGitLab {
+		return nil
 	}
 
-	return false, nil
+	return errors.Errorf("external service of kind %v is currently not supported on Cloud mode", kind)
 }
