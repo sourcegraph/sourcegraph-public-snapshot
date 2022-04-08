@@ -44,7 +44,7 @@ Install the Sourcegraph chart using default values:
 helm install --version 0.7.0 sourcegraph sourcegraph/sourcegraph
 ```
 
-Sourcegraph should now be available via the address set. Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account. 
+Sourcegraph should now be available via the address set. Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account.
 
 More information on configuring the Sourcegraph application can be found here:
 [Configuring Sourcegraph](../../config/index.md)
@@ -52,11 +52,11 @@ More information on configuring the Sourcegraph application can be found here:
 
 ## Configuration
 
-The Sourcegraph Helm chart is highly customizable to support a wide range of environments. We highly recommend that customizations be applied using an override file, which allows customizations to persist through upgrades without needing to manage merge conflicts. 
+The Sourcegraph Helm chart is highly customizable to support a wide range of environments. We highly recommend that customizations be applied using an override file, which allows customizations to persist through upgrades without needing to manage merge conflicts.
 
-The default configuration values can be viewed in the [values.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/values.yaml) file along with all [supported options](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph#configuration-options). 
+The default configuration values can be viewed in the [values.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/values.yaml) file along with all [supported options](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph#configuration-options).
 
-To customize configuration settings with an override file, begin by creating an empty yaml file (e.g. `override.yaml`). 
+To customize configuration settings with an override file, begin by creating an empty yaml file (e.g. `override.yaml`).
 
 (The configuration override file can be created in advance of deployment, and the configuration override settings can be populated in preparation.)
 
@@ -74,7 +74,7 @@ When making configuration changes, it's recommended to review the changes that w
 
 ### Using external PostgreSQL databases
 
-To use external PostgreSQL databases, first review our [general recommendations](https://docs.sourcegraph.com/admin/external_services/postgres#using-your-own-postgresql-server) and [required postgres permissions](https://docs.sourcegraph.com/admin/external_services/postgres#postgres-permissions-and-database-migrations). 
+To use external PostgreSQL databases, first review our [general recommendations](https://docs.sourcegraph.com/admin/external_services/postgres#using-your-own-postgresql-server) and [required postgres permissions](https://docs.sourcegraph.com/admin/external_services/postgres#postgres-permissions-and-database-migrations).
 
 > ℹ️ Prior to installing the chart, you should store these sensitive environment variables in [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/).
 
@@ -386,39 +386,39 @@ If using your own certificate, you can do so with [TLS Secrets](https://kubernet
 
 `sourcegraph-frontend-tls.Secret.yaml`
 ```yaml
-apiVersion: v1 
-kind: Secret 
-metadata: 
-  name: sourcegraph-frontend-tls 
-type: kubernetes.io/tls 
-data: 
-  # the data is abbreviated in this example 
-  tls.crt: | 
-    MIIC2DCCAcCgAwIBAgIBATANBgkqh ... 
-  tls.key: | 
-    MIIEpgIBAAKCAQEA7yn3bRHQ5FHMQ ... 
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sourcegraph-frontend-tls
+type: kubernetes.io/tls
+data:
+  # the data is abbreviated in this example
+  tls.crt: |
+    MIIC2DCCAcCgAwIBAgIBATANBgkqh ...
+  tls.key: |
+    MIIEpgIBAAKCAQEA7yn3bRHQ5FHMQ ...
 ```
 
 ```sh
 kubectl apply -f ./sourcegraph-frontend-tls.Secret.yaml
 ```
-	  
+
 Add the following values to your override file.
-	  
+
 ```yaml
-frontend: 
-  ingress: 
-    enabled: true 
-    annotations: 
-      kubernetes.io/ingress.class: gce 
-    tlsSecret: sourcegraph-frontend-tls # reference the created TLS Secret 
-    # replace with your actual domain 
-    host: sourcegraph.company.com 
+frontend:
+  ingress:
+    enabled: true
+    annotations:
+      kubernetes.io/ingress.class: gce
+    tlsSecret: sourcegraph-frontend-tls # reference the created TLS Secret
+    # replace with your actual domain
+    host: sourcegraph.company.com
 ```
 
 **5** – Validate the deployment
-Sourcegraph should now be available via the address set. 
-Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account. 
+Sourcegraph should now be available via the address set.
+Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account.
 
 **6** – Further configuration
 
@@ -494,8 +494,8 @@ frontend:
 ```
 
 **4** – Validate the deployment
-Sourcegraph should now be available via the address set. 
-Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account. 
+Sourcegraph should now be available via the address set.
+Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account.
 
 **5** – Further configuration
 
@@ -579,8 +579,8 @@ frontend:
 ```
 
 **4** – Validate the deployment
-Sourcegraph should now be available via the address set. 
-Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account. 
+Sourcegraph should now be available via the address set.
+Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account.
 
 **5** – Further configuration
 
@@ -709,8 +709,8 @@ frontend:
 ```
 
 **4** – Validate the deployment
-Sourcegraph should now be available via the address set. 
-Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account. 
+Sourcegraph should now be available via the address set.
+Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account.
 
 **5** – Further configuration
 
@@ -749,7 +749,7 @@ A new version of Sourcegraph is released every month (with patch releases in bet
 
 ### Upgrading
 
-1. Review [Helm Changelog] and [Sourcegraph Changelog] and select a helm chart version compatible with your current Sourcegraph version. 
+1. Review [Helm Changelog] and [Sourcegraph Changelog] and select a helm chart version compatible with your current Sourcegraph version.
 
 > ⚠️ You can only upgrade one minor version of Sourcegraph at a time.
 
