@@ -384,7 +384,6 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 			if err != nil {
 				return "", errors.Wrap(err, "get external service")
 			}
-			urn := extSvc.URN()
 			normalized, err := jsonc.Parse(extSvc.Config)
 			if err != nil {
 				return "", errors.Wrap(err, "normalize JSON")
@@ -392,7 +391,7 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 			if err = jsoniter.Unmarshal(normalized, connection); err != nil {
 				return "", errors.Wrap(err, "unmarshal JSON")
 			}
-			return urn, nil
+			return extSvc.URN(), nil
 		}
 		return "", errors.Errorf("unexpected empty Sources map in %v", r)
 	}
