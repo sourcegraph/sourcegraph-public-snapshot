@@ -102,68 +102,80 @@ More details on how to create and configure a subchart can be found in the [helm
 
 To use external PostgreSQL databases, first review our [general recommendations](https://docs.sourcegraph.com/admin/external_services/postgres#using-your-own-postgresql-server) and [required postgres permissions](https://docs.sourcegraph.com/admin/external_services/postgres#postgres-permissions-and-database-migrations).
 
-> ℹ️ Prior to installing the chart, you should store these sensitive environment variables in [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/).
+We recommend storing the credentials in [Secrets] created outside of the helm chart and managed in a secure manner. Each database requires its own Secret and should follow the following format. The Secret name can be customized as desired:
 
-Include code snippets below in your override file:
-
-`pgsql-credentials.Secret.yaml`
 ```yaml
 apiVersion: v1
 kind: Secret
 metadata:
-  name: sourcegraph-pgsql-credentials
+  name: pgsql-credentials
 data:
   # notes: secrets data has to be base64-encoded
-  PGPASSWORD: ""
-```
-
-`codeintel-db-credentials.Secret.yaml`
-```yaml
+  database: ""
+  host: "" # example: pgsql.database.example.com
+  password: ""
+  port: ""
+  user: ""
+---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: sourcegraph-codeintel-db-credentials
+  name: codeintel-db-credentials
 data:
   # notes: secrets data has to be base64-encoded
-  CODEINTEL_PGPASSWORD: ""
+  database: ""
+  host: ""
+  password: ""
+  port: ""
+  user: ""
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: codeinsights-db-credentials
+data:
+  # notes: secrets data has to be base64-encoded
+  database: ""
+  host: ""
+  password: ""
+  port: ""
+  user: ""
 ```
 
-[override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/external-databases/override.yaml)
+The above Secrets should be deployed to the same namespace as the existing Sourcegraph deployment.
+
+You can reference the Secrets in your [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/examples/external-databases/override.yaml) by configuring the `existingSecret` key:
+
 ```yaml
-frontend:
-  env:
-    PGHOST:
-      value: pgsql.database.company.com # external pgsql host
-    PGPORT:
-      value: "5432" # external pgsql port
-    PGDATABASE:
-      value: sg # external pgsql database name
-    PGUSER:
-      value: sg # external pgsql user
-    PGPASSWORD:
-      valueFrom:
-        secretKeyRef: # Pre-existing secret, not created by this chart
-          name: sourcegraph-pgsql-credentials
-          key: PGPASSWORD
-    CODEINTEL_PGHOST:
-      value: codeintel-db.database.company.com # external codeintel-db host
-    CODEINTEL_PGPORT:
-      value: "5432" # external codeintel-db port
-    CODEINTEL_PGDATABASE:
-      value: sg # external codeintel-db database name
-    CODEINTEL_PGUSER:
-      value: sg # external codeintel-db user
-    CODEINTEL_PGPASSWORD:
-      valueFrom:
-        secretKeyRef: # Pre-existing secret, not created by this chart
-          name: sourcegraph-codeintel-db-credentials
-          key: CODEINTEL_PGPASSWORD
+codeIntelDB:
+  enabled: false # disables deployment of the database
+  auth:
+    existingSecret: codeintel-db-credentials
+
+codeInsightsDB:
+  enabled: false
+  auth:
+    existingSecret: codeinsights-db-credentials
 
 pgsql:
-  enabled: false # disable internal pgsql database
+  enabled: false
+  auth:
+    existingSecret: pgsql-credentials
+```
 
-codeIntelDB:
-  enabled: false # disable internal codeintel-db database
+The [using external databases](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/external-databases) example demonstrates this approach.
+
+Although not recommended, credentials can also be configured directly in the helm chart. For example, add the following to your override.yaml to customize pgsql credentials:
+
+```yaml
+pgsql:
+  enabled: false # disable internal pgsql database
+  auth:
+    database: "customdb"
+    host: pgsql.database.company.com # external pgsql host
+    user: "newuser"
+    password: "newpassword"
+    port: "5432"
 ```
 
 ### Using external Redis instances
@@ -242,6 +254,10 @@ data:
 
 [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/external-object-storage/override.yaml)
 ```yaml
+
+minio:
+  enabled: false # Disable deployment of the built-in object storage
+
 # we use YAML anchors and alias to keep override file clean
 objectStorageEnv: &objectStorageEnv
   PRECISE_CODE_INTEL_UPLOAD_BACKEND:
