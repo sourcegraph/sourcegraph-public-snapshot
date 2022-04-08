@@ -330,7 +330,7 @@ func (c *ClientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, 
 }
 
 // ReadDir reads the contents of the named directory at commit.
-func ReadDir(
+func (c *ClientImplementor) ReadDir(
 	ctx context.Context,
 	db database.DB,
 	checker authz.SubRepoPermissionChecker,

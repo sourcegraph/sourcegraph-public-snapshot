@@ -5,6 +5,7 @@ package gitserver
 import (
 	"context"
 	"io"
+	fs "io/fs"
 	"net/http"
 	"net/url"
 	"sync"
@@ -13,6 +14,7 @@ import (
 	diff "github.com/sourcegraph/go-diff/diff"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	authz "github.com/sourcegraph/sourcegraph/internal/authz"
+	database "github.com/sourcegraph/sourcegraph/internal/database"
 	gitolite "github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	protocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -64,6 +66,9 @@ type MockClient struct {
 	// P4ExecFunc is an instance of a mock function object controlling the
 	// behavior of the method P4Exec.
 	P4ExecFunc *ClientP4ExecFunc
+	// ReadDirFunc is an instance of a mock function object controlling the
+	// behavior of the method ReadDir.
+	ReadDirFunc *ClientReadDirFunc
 	// RemoveFunc is an instance of a mock function object controlling the
 	// behavior of the method Remove.
 	RemoveFunc *ClientRemoveFunc
@@ -168,6 +173,11 @@ func NewMockClient() *MockClient {
 		P4ExecFunc: &ClientP4ExecFunc{
 			defaultHook: func(context.Context, string, string, string, ...string) (io.ReadCloser, http.Header, error) {
 				return nil, nil, nil
+			},
+		},
+		ReadDirFunc: &ClientReadDirFunc{
+			defaultHook: func(context.Context, database.DB, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
+				return nil, nil
 			},
 		},
 		RemoveFunc: &ClientRemoveFunc{
@@ -297,6 +307,11 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.P4Exec")
 			},
 		},
+		ReadDirFunc: &ClientReadDirFunc{
+			defaultHook: func(context.Context, database.DB, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
+				panic("unexpected invocation of MockClient.ReadDir")
+			},
+		},
 		RemoveFunc: &ClientRemoveFunc{
 			defaultHook: func(context.Context, api.RepoName) error {
 				panic("unexpected invocation of MockClient.Remove")
@@ -395,6 +410,9 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		P4ExecFunc: &ClientP4ExecFunc{
 			defaultHook: i.P4Exec,
+		},
+		ReadDirFunc: &ClientReadDirFunc{
+			defaultHook: i.ReadDir,
 		},
 		RemoveFunc: &ClientRemoveFunc{
 			defaultHook: i.Remove,
@@ -1957,6 +1975,128 @@ func (c ClientP4ExecFuncCall) Args() []interface{} {
 // invocation.
 func (c ClientP4ExecFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// ClientReadDirFunc describes the behavior when the ReadDir method of the
+// parent MockClient instance is invoked.
+type ClientReadDirFunc struct {
+	defaultHook func(context.Context, database.DB, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error)
+	hooks       []func(context.Context, database.DB, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error)
+	history     []ClientReadDirFuncCall
+	mutex       sync.Mutex
+}
+
+// ReadDir delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockClient) ReadDir(v0 context.Context, v1 database.DB, v2 authz.SubRepoPermissionChecker, v3 api.RepoName, v4 api.CommitID, v5 string, v6 bool) ([]fs.FileInfo, error) {
+	r0, r1 := m.ReadDirFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6)
+	m.ReadDirFunc.appendCall(ClientReadDirFuncCall{v0, v1, v2, v3, v4, v5, v6, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ReadDir method of
+// the parent MockClient instance is invoked and the hook queue is empty.
+func (f *ClientReadDirFunc) SetDefaultHook(hook func(context.Context, database.DB, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ReadDir method of the parent MockClient instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *ClientReadDirFunc) PushHook(hook func(context.Context, database.DB, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientReadDirFunc) SetDefaultReturn(r0 []fs.FileInfo, r1 error) {
+	f.SetDefaultHook(func(context.Context, database.DB, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientReadDirFunc) PushReturn(r0 []fs.FileInfo, r1 error) {
+	f.PushHook(func(context.Context, database.DB, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
+		return r0, r1
+	})
+}
+
+func (f *ClientReadDirFunc) nextHook() func(context.Context, database.DB, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientReadDirFunc) appendCall(r0 ClientReadDirFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientReadDirFuncCall objects describing
+// the invocations of this function.
+func (f *ClientReadDirFunc) History() []ClientReadDirFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientReadDirFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientReadDirFuncCall is an object that describes an invocation of method
+// ReadDir on an instance of MockClient.
+type ClientReadDirFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 database.DB
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 authz.SubRepoPermissionChecker
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 api.RepoName
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 api.CommitID
+	// Arg5 is the value of the 6th argument passed to this method
+	// invocation.
+	Arg5 string
+	// Arg6 is the value of the 7th argument passed to this method
+	// invocation.
+	Arg6 bool
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []fs.FileInfo
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientReadDirFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5, c.Arg6}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientReadDirFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // ClientRemoveFunc describes the behavior when the Remove method of the

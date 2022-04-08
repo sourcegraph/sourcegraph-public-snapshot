@@ -43,7 +43,7 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 	span, ctx := ot.StartSpanFromContext(ctx, "tree.entries")
 	defer span.Finish()
 
-	entries, err := gitserver.ReadDir(
+	entries, err := gitserver.NewClient(r.db).ReadDir(
 		ctx,
 		r.db,
 		authz.DefaultSubRepoPermsChecker,
