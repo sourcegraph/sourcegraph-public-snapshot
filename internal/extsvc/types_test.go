@@ -156,6 +156,18 @@ func TestExtractRateLimitConfig(t *testing.T) {
 				IsDefault:   false,
 			},
 		},
+		{
+			name:        "No trailing slash",
+			config:      `{"url": "https://example.com", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
+			kind:        KindBitbucketCloud,
+			displayName: "No Trailing Slash",
+			want: RateLimitConfig{
+				BaseURL:     "https://example.com/",
+				DisplayName: "No Trailing Slash",
+				Limit:       1.0,
+				IsDefault:   false,
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			rlc, err := ExtractRateLimitConfig(tc.config, tc.kind, tc.displayName)

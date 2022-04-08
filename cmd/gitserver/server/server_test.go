@@ -1135,6 +1135,143 @@ func TestSyncRepoState(t *testing.T) {
 	}
 }
 
+type BatchLogTest struct {
+	Name           string
+	Request        *http.Request
+	ExpectedCode   int
+	ExpectedBody   string
+	RunCommandMock func(ctx context.Context, cmd *exec.Cmd) (int, error)
+}
+
+func TestHandleBatchLog(t *testing.T) {
+	originalRepoCloned := repoCloned
+	repoCloned = func(dir GitDir) bool {
+		return dir == "github.com/foo/bar/.git" || dir == "github.com/foo/baz/.git" || dir == "github.com/foo/bonk/.git"
+	}
+	t.Cleanup(func() { repoCloned = originalRepoCloned })
+
+	runCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
+		for _, v := range cmd.Args {
+			if strings.HasPrefix(v, "dumbmilk") {
+				return 128, errors.New("test error")
+			}
+		}
+
+		cmd.Stdout.Write([]byte(fmt.Sprintf("stdout<%s:%s>", cmd.Dir, strings.Join(cmd.Args, " "))))
+		return 0, nil
+	}
+	t.Cleanup(func() { runCommandMock = nil })
+
+	tests := []BatchLogTest{
+		{
+			Name:         "bad request",
+			Request:      httptest.NewRequest("POST", "/batch-log", strings.NewReader(``)),
+			ExpectedCode: http.StatusBadRequest,
+			ExpectedBody: "EOF", // the particular error when parsing empty payload
+		},
+		{
+			Name:         "empty",
+			Request:      httptest.NewRequest("POST", "/batch-log", strings.NewReader(`{}`)),
+			ExpectedCode: http.StatusOK,
+			ExpectedBody: mustEncodeJSONResponse(protocol.BatchLogResponse{
+				Results: []protocol.BatchLogResult{},
+			}),
+		},
+		{
+			Name: "all resolved",
+			Request: httptest.NewRequest("POST", "/batch-log", strings.NewReader(`{
+				"repoCommits": [
+					{"repo": "github.com/foo/bar", "commitId": "deadbeef1"},
+					{"repo": "github.com/foo/baz", "commitId": "deadbeef2"},
+					{"repo": "github.com/foo/bonk", "commitId": "deadbeef3"}
+				],
+				"format": "--format=test"
+			}`)),
+			ExpectedCode: http.StatusOK,
+			ExpectedBody: mustEncodeJSONResponse(protocol.BatchLogResponse{
+				Results: []protocol.BatchLogResult{
+					{
+						RepoCommit:    api.RepoCommit{Repo: "github.com/foo/bar", CommitID: "deadbeef1"},
+						CommandOutput: "stdout<github.com/foo/bar/.git:git log -n 1 --name-only --format=test deadbeef1>",
+						CommandError:  "",
+					},
+					{
+						RepoCommit:    api.RepoCommit{Repo: "github.com/foo/baz", CommitID: "deadbeef2"},
+						CommandOutput: "stdout<github.com/foo/baz/.git:git log -n 1 --name-only --format=test deadbeef2>",
+						CommandError:  "",
+					},
+					{
+						RepoCommit:    api.RepoCommit{Repo: "github.com/foo/bonk", CommitID: "deadbeef3"},
+						CommandOutput: "stdout<github.com/foo/bonk/.git:git log -n 1 --name-only --format=test deadbeef3>",
+						CommandError:  "",
+					},
+				},
+			}),
+		},
+		{
+			Name: "partially resolved",
+			Request: httptest.NewRequest("POST", "/batch-log", strings.NewReader(`{
+				"repoCommits": [
+					{"repo": "github.com/foo/bar", "commitId": "deadbeef1"},
+					{"repo": "github.com/foo/baz", "commitId": "dumbmilk1"},
+					{"repo": "github.com/foo/honk", "commitId": "deadbeef3"}
+				],
+				"format": "--format=test"
+			}`)),
+			ExpectedCode: http.StatusOK,
+			ExpectedBody: mustEncodeJSONResponse(protocol.BatchLogResponse{
+				Results: []protocol.BatchLogResult{
+					{
+						RepoCommit:    api.RepoCommit{Repo: "github.com/foo/bar", CommitID: "deadbeef1"},
+						CommandOutput: "stdout<github.com/foo/bar/.git:git log -n 1 --name-only --format=test deadbeef1>",
+						CommandError:  "",
+					},
+					{
+						// git directory found, but cmd.Run returned error
+						RepoCommit:    api.RepoCommit{Repo: "github.com/foo/baz", CommitID: "dumbmilk1"},
+						CommandOutput: "",
+						CommandError:  "test error",
+					},
+					{
+						// no .git directory here
+						RepoCommit:    api.RepoCommit{Repo: "github.com/foo/honk", CommitID: "deadbeef3"},
+						CommandOutput: "",
+						CommandError:  "repo not found",
+					},
+				},
+			}),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			server := &Server{}
+			h := server.Handler()
+
+			w := httptest.ResponseRecorder{Body: new(bytes.Buffer)}
+			h.ServeHTTP(&w, test.Request)
+
+			res := w.Result()
+			if res.StatusCode != test.ExpectedCode {
+				t.Errorf("wrong status: expected %d, got %d", test.ExpectedCode, w.Code)
+			}
+
+			body, err := io.ReadAll(res.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if strings.TrimSpace(string(body)) != test.ExpectedBody {
+				t.Errorf("wrong body: expected %q, got %q", test.ExpectedBody, string(body))
+			}
+		})
+	}
+}
+
+func mustEncodeJSONResponse(value interface{}) string {
+	encoded, _ := json.Marshal(value)
+	return strings.TrimSpace(string(encoded))
+}
+
 func TestMain(m *testing.M) {
 	flag.Parse()
 	if !testing.Verbose() {
