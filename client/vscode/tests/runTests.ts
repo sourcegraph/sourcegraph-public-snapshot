@@ -168,13 +168,17 @@ async function getSearchPanelWebview(page: puppeteer.Page): Promise<puppeteer.Fr
             errorMessages[3] = 'Could not find inner Sourcegraph search page iframe'
             continue
         }
-        // Determine whether this is the search panel.
-        const context = await frame.executionContext()
-        const textContent: string = await context.evaluate(() => document.body.textContent)
-        if (!textContent.includes('Search your code and 2M+ open source repositories')) {
-            errorMessages[4] = 'Expected page content to contain a specific string'
+
+        try {
+            const brandHeader = await frame.waitForSelector('[data-testid="brand-header"]')
+            if (!brandHeader) {
+                throw new Error('Expected search panel to render brand header')
+            }
+        } catch {
+            errorMessages[4] = 'Expected search panel to render brand header'
             continue
         }
+
         searchPanelWebviewFrame = frame
         break
     }
