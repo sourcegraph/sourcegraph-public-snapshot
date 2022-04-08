@@ -375,7 +375,7 @@ func ExtractToken(config string, kind string) (string, error) {
 
 // ExtractRateLimitConfig extracts the rate limit config from the given args. If rate limiting is not
 // supported the error returned will be an ErrRateLimitUnsupported.
-func ExtractRateLimitConfig(config, kind, displayName string) (RateLimitConfig, error) {
+func ExtractRateLimitConfig(config, kind string) (RateLimitConfig, error) {
 	parsed, err := ParseConfig(kind, config)
 	if err != nil {
 		return RateLimitConfig{}, errors.Wrap(err, "loading service configuration")
@@ -385,17 +385,14 @@ func ExtractRateLimitConfig(config, kind, displayName string) (RateLimitConfig, 
 	if err != nil {
 		return RateLimitConfig{}, err
 	}
-	rlc.DisplayName = displayName
 
 	return rlc, nil
 }
 
 // RateLimitConfig represents the internal rate limit configured for an external service
 type RateLimitConfig struct {
-	BaseURL     string
-	DisplayName string
-	Limit       rate.Limit
-	IsDefault   bool
+	BaseURL string
+	Limit   rate.Limit
 }
 
 // GetLimitFromConfig gets RateLimitConfig from an already parsed config schema.
@@ -405,14 +402,12 @@ func GetLimitFromConfig(kind string, config interface{}) (rlc RateLimitConfig, e
 	// 2. Defined and enabled: We use their defined limit.
 	// 3. Defined and disabled: We use an infinite limiter.
 
-	rlc.IsDefault = true
 	switch c := config.(type) {
 	case *schema.GitLabConnection:
 		// 10/s is the default enforced by GitLab on their end
 		rlc.Limit = rate.Limit(10)
 		if c != nil && c.RateLimit != nil {
 			rlc.Limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
-			rlc.IsDefault = false
 		}
 		rlc.BaseURL = c.Url
 	case *schema.GitHubConnection:
@@ -420,7 +415,6 @@ func GetLimitFromConfig(kind string, config interface{}) (rlc RateLimitConfig, e
 		rlc.Limit = rate.Limit(5000.0 / 3600.0)
 		if c != nil && c.RateLimit != nil {
 			rlc.Limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
-			rlc.IsDefault = false
 		}
 		rlc.BaseURL = c.Url
 	case *schema.BitbucketServerConnection:
@@ -428,28 +422,24 @@ func GetLimitFromConfig(kind string, config interface{}) (rlc RateLimitConfig, e
 		rlc.Limit = rate.Limit(8)
 		if c != nil && c.RateLimit != nil {
 			rlc.Limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
-			rlc.IsDefault = false
 		}
 		rlc.BaseURL = c.Url
 	case *schema.BitbucketCloudConnection:
 		rlc.Limit = defaultRateLimit
 		if c != nil && c.RateLimit != nil {
 			rlc.Limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
-			rlc.IsDefault = false
 		}
 		rlc.BaseURL = c.Url
 	case *schema.PerforceConnection:
 		rlc.Limit = rate.Limit(5000.0 / 3600.0)
 		if c != nil && c.RateLimit != nil {
 			rlc.Limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
-			rlc.IsDefault = false
 		}
 		rlc.BaseURL = c.P4Port
 	case *schema.JVMPackagesConnection:
 		rlc.Limit = defaultRateLimit
 		if c != nil && c.Maven.RateLimit != nil {
 			rlc.Limit = limitOrInf(c.Maven.RateLimit.Enabled, c.Maven.RateLimit.RequestsPerHour)
-			rlc.IsDefault = false
 		}
 		rlc.BaseURL = "maven"
 	case *schema.PagureConnection:
@@ -457,7 +447,6 @@ func GetLimitFromConfig(kind string, config interface{}) (rlc RateLimitConfig, e
 		rlc.Limit = rate.Limit(8)
 		if c != nil && c.RateLimit != nil {
 			rlc.Limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
-			rlc.IsDefault = false
 		}
 		rlc.BaseURL = c.Url
 	case *schema.NpmPackagesConnection:
@@ -465,7 +454,6 @@ func GetLimitFromConfig(kind string, config interface{}) (rlc RateLimitConfig, e
 		rlc.Limit = rate.Limit(3000.0 / 3600.0)
 		if c != nil && c.RateLimit != nil {
 			rlc.Limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
-			rlc.IsDefault = false
 		}
 		rlc.BaseURL = c.Registry
 	default:
