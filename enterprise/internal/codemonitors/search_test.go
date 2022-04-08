@@ -106,16 +106,21 @@ func TestCodeMonitorHook(t *testing.T) {
 
 	type testFixtures struct {
 		User    *types.User
+		Repo    *types.Repo
 		Monitor *edb.Monitor
 	}
 	populateFixtures := func(db edb.EnterpriseDB) testFixtures {
 		ctx := context.Background()
 		u, err := db.Users().Create(ctx, database.NewUser{Email: "test", Username: "test", EmailVerificationCode: "test"})
 		require.NoError(t, err)
+		err = db.Repos().Create(ctx, &types.Repo{Name: "test"})
+		require.NoError(t, err)
+		r, err := db.Repos().GetByName(ctx, "test")
+		require.NoError(t, err)
 		ctx = actor.WithActor(ctx, actor.FromUser(u.ID))
 		m, err := db.CodeMonitors().CreateMonitor(ctx, edb.MonitorArgs{NamespaceUserID: &u.ID})
 		require.NoError(t, err)
-		return testFixtures{User: u, Monitor: m}
+		return testFixtures{User: u, Monitor: m, Repo: r}
 	}
 
 	db := database.NewDB(dbtest.NewDB(t))
@@ -135,7 +140,7 @@ func TestCodeMonitorHook(t *testing.T) {
 		}})
 		return nil
 	}
-	err := hookWithID(ctx, db, gs, &gitprotocol.SearchRequest{}, doSearch, fixtures.Monitor.ID)
+	err := hookWithID(ctx, db, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{}, doSearch)
 	require.NoError(t, err)
 
 	// The next time, doSearch should receive the new resolved hashes plus the
@@ -152,6 +157,6 @@ func TestCodeMonitorHook(t *testing.T) {
 		}})
 		return nil
 	}
-	err = hookWithID(ctx, db, gs, &gitprotocol.SearchRequest{}, doSearch, fixtures.Monitor.ID)
+	err = hookWithID(ctx, db, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{}, doSearch)
 	require.NoError(t, err)
 }
