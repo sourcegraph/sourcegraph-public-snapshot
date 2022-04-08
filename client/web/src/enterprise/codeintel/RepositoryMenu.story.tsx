@@ -168,6 +168,18 @@ const preciseSupport = [
             },
         ],
     },
+]
+
+const multiplePreciseSupport = [
+    {
+        supportLevel: PreciseSupportLevel.NATIVE,
+        indexers: [
+            {
+                name: 'lsif-go',
+                url: 'https://github.com/sourcegraph/lsif-go',
+            },
+        ],
+    },
     {
         supportLevel: PreciseSupportLevel.NATIVE,
         indexers: [
@@ -231,15 +243,19 @@ const withPayload = (payload: Partial<UseCodeIntelStatusPayload>): typeof defaul
 
 add('Unavailable', () => <RepositoryMenu {...defaultProps} content={RepositoryMenuContent} />)
 
-add('Configurable', () => (
-    <RepositoryMenu {...defaultProps} content={RepositoryMenuContent} {...withPayload({ preciseSupport })} />
-))
-
-add('Enabled', () => (
+add('Multiple projects', () => (
     <RepositoryMenu
         {...defaultProps}
         content={RepositoryMenuContent}
-        {...withPayload({ recentUploads: [completedUpload] })}
+        {...withPayload({ preciseSupport: multiplePreciseSupport })}
+    />
+))
+
+add('Multiple projects, one enabled', () => (
+    <RepositoryMenu
+        {...defaultProps}
+        content={RepositoryMenuContent}
+        {...withPayload({ recentUploads: [completedUpload], preciseSupport })}
     />
 ))
 
