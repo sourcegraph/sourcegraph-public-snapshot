@@ -21,7 +21,7 @@ type DB interface {
 	Authz() AuthzStore
 	Conf() ConfStore
 	EventLogs() EventLogStore
-	SecurityEventLogs() *SecurityEventLogStore
+	SecurityEventLogs() SecurityEventLogsStore
 	ExternalServices() ExternalServiceStore
 	FeatureFlags() FeatureFlagStore
 	GitserverRepos() GitserverRepoStore
@@ -107,7 +107,7 @@ func (d *db) EventLogs() EventLogStore {
 	return EventLogsWith(d.Store)
 }
 
-func (d *db) SecurityEventLogs() *SecurityEventLogStore {
+func (d *db) SecurityEventLogs() SecurityEventLogsStore {
 	return SecurityEventLogsWith(d.Store)
 }
 

@@ -8,8 +8,8 @@ import (
 	"time"
 
 	locker "github.com/sourcegraph/sourcegraph/internal/database/locker"
+	gitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	git "github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // MockDBStore is a mock implementation of the DBStore interface (from the
@@ -445,7 +445,7 @@ type MockGitserverClient struct {
 func NewMockGitserverClient() *MockGitserverClient {
 	return &MockGitserverClient{
 		CommitGraphFunc: &GitserverClientCommitGraphFunc{
-			defaultHook: func(context.Context, int, git.CommitGraphOptions) (*gitdomain.CommitGraph, error) {
+			defaultHook: func(context.Context, int, gitserver.CommitGraphOptions) (*gitdomain.CommitGraph, error) {
 				return nil, nil
 			},
 		},
@@ -462,7 +462,7 @@ func NewMockGitserverClient() *MockGitserverClient {
 func NewStrictMockGitserverClient() *MockGitserverClient {
 	return &MockGitserverClient{
 		CommitGraphFunc: &GitserverClientCommitGraphFunc{
-			defaultHook: func(context.Context, int, git.CommitGraphOptions) (*gitdomain.CommitGraph, error) {
+			defaultHook: func(context.Context, int, gitserver.CommitGraphOptions) (*gitdomain.CommitGraph, error) {
 				panic("unexpected invocation of MockGitserverClient.CommitGraph")
 			},
 		},
@@ -491,15 +491,15 @@ func NewMockGitserverClientFrom(i GitserverClient) *MockGitserverClient {
 // GitserverClientCommitGraphFunc describes the behavior when the
 // CommitGraph method of the parent MockGitserverClient instance is invoked.
 type GitserverClientCommitGraphFunc struct {
-	defaultHook func(context.Context, int, git.CommitGraphOptions) (*gitdomain.CommitGraph, error)
-	hooks       []func(context.Context, int, git.CommitGraphOptions) (*gitdomain.CommitGraph, error)
+	defaultHook func(context.Context, int, gitserver.CommitGraphOptions) (*gitdomain.CommitGraph, error)
+	hooks       []func(context.Context, int, gitserver.CommitGraphOptions) (*gitdomain.CommitGraph, error)
 	history     []GitserverClientCommitGraphFuncCall
 	mutex       sync.Mutex
 }
 
 // CommitGraph delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitserverClient) CommitGraph(v0 context.Context, v1 int, v2 git.CommitGraphOptions) (*gitdomain.CommitGraph, error) {
+func (m *MockGitserverClient) CommitGraph(v0 context.Context, v1 int, v2 gitserver.CommitGraphOptions) (*gitdomain.CommitGraph, error) {
 	r0, r1 := m.CommitGraphFunc.nextHook()(v0, v1, v2)
 	m.CommitGraphFunc.appendCall(GitserverClientCommitGraphFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -508,7 +508,7 @@ func (m *MockGitserverClient) CommitGraph(v0 context.Context, v1 int, v2 git.Com
 // SetDefaultHook sets function that is called when the CommitGraph method
 // of the parent MockGitserverClient instance is invoked and the hook queue
 // is empty.
-func (f *GitserverClientCommitGraphFunc) SetDefaultHook(hook func(context.Context, int, git.CommitGraphOptions) (*gitdomain.CommitGraph, error)) {
+func (f *GitserverClientCommitGraphFunc) SetDefaultHook(hook func(context.Context, int, gitserver.CommitGraphOptions) (*gitdomain.CommitGraph, error)) {
 	f.defaultHook = hook
 }
 
@@ -516,7 +516,7 @@ func (f *GitserverClientCommitGraphFunc) SetDefaultHook(hook func(context.Contex
 // CommitGraph method of the parent MockGitserverClient instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *GitserverClientCommitGraphFunc) PushHook(hook func(context.Context, int, git.CommitGraphOptions) (*gitdomain.CommitGraph, error)) {
+func (f *GitserverClientCommitGraphFunc) PushHook(hook func(context.Context, int, gitserver.CommitGraphOptions) (*gitdomain.CommitGraph, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -525,19 +525,19 @@ func (f *GitserverClientCommitGraphFunc) PushHook(hook func(context.Context, int
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitserverClientCommitGraphFunc) SetDefaultReturn(r0 *gitdomain.CommitGraph, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, git.CommitGraphOptions) (*gitdomain.CommitGraph, error) {
+	f.SetDefaultHook(func(context.Context, int, gitserver.CommitGraphOptions) (*gitdomain.CommitGraph, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverClientCommitGraphFunc) PushReturn(r0 *gitdomain.CommitGraph, r1 error) {
-	f.PushHook(func(context.Context, int, git.CommitGraphOptions) (*gitdomain.CommitGraph, error) {
+	f.PushHook(func(context.Context, int, gitserver.CommitGraphOptions) (*gitdomain.CommitGraph, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverClientCommitGraphFunc) nextHook() func(context.Context, int, git.CommitGraphOptions) (*gitdomain.CommitGraph, error) {
+func (f *GitserverClientCommitGraphFunc) nextHook() func(context.Context, int, gitserver.CommitGraphOptions) (*gitdomain.CommitGraph, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -578,7 +578,7 @@ type GitserverClientCommitGraphFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 git.CommitGraphOptions
+	Arg2 gitserver.CommitGraphOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *gitdomain.CommitGraph

@@ -17,6 +17,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tidwall/gjson"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -118,7 +120,13 @@ func main() {
 		DB:         db,
 		CloneQueue: server.NewCloneQueue(list.New()),
 	}
-	gitserver.RegisterMetrics(db)
+
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+	gitserver.RegisterMetrics(db, observationContext)
 
 	if tmpDir, err := gitserver.SetupAndClearTmp(); err != nil {
 		log.Fatalf("failed to setup temporary directory: %s", err)

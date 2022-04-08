@@ -68,10 +68,9 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 		ops.Merge(operations.NewNamedSet("Client checks",
 			clientIntegrationTests,
 			clientChromaticTests(opts.ChromaticShouldAutoAccept),
-			frontendTests, // ~4.5m
-			addWebApp,     // ~5.5m
-			// Broken: https://github.com/sourcegraph/sourcegraph/issues/33484
-			// addBrowserExt,     // ~4.5m
+			frontendTests,     // ~4.5m
+			addWebApp,         // ~5.5m
+			addBrowserExt,     // ~4.5m
 			addClientLinters)) // ~9m
 	}
 
@@ -213,25 +212,26 @@ func addWebApp(pipeline *bk.Pipeline) {
 
 // Builds and tests the browser extension.
 func addBrowserExt(pipeline *bk.Pipeline) {
+	// Broken: https://github.com/sourcegraph/sourcegraph/issues/33484
 	// Browser extension integration tests
-	for _, browser := range []string{"chrome"} {
-		pipeline.AddStep(
-			fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
-			withYarnCache(),
-			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
-			bk.Env("BROWSER", browser),
-			bk.Env("LOG_BROWSER_CONSOLE", "true"),
-			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
-			bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
-			bk.Cmd("git-lfs fetch"),
-			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("yarn --cwd client/browser -s run build"),
-			bk.Cmd("yarn run cover-browser-integration"),
-			bk.Cmd("yarn nyc report -r json"),
-			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
-			bk.ArtifactPaths("./puppeteer/*.png"),
-		)
-	}
+	// for _, browser := range []string{"chrome"} {
+	// 	pipeline.AddStep(
+	// 		fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
+	// 		withYarnCache(),
+	// 		bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
+	// 		bk.Env("BROWSER", browser),
+	// 		bk.Env("LOG_BROWSER_CONSOLE", "true"),
+	// 		bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
+	// 		bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
+	// 		bk.Cmd("git-lfs fetch"),
+	// 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+	// 		bk.Cmd("yarn --cwd client/browser -s run build"),
+	// 		bk.Cmd("yarn run cover-browser-integration"),
+	// 		bk.Cmd("yarn nyc report -r json"),
+	// 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
+	// 		bk.ArtifactPaths("./puppeteer/*.png"),
+	// 	)
+	// }
 
 	// Browser extension unit tests
 	pipeline.AddStep(":jest::chrome: Test (client/browser)",

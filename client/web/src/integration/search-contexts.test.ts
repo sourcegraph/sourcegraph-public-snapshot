@@ -274,7 +274,9 @@ describe('Search contexts', () => {
             }),
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts/new')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts/new', {
+            waitUntil: 'networkidle0',
+        })
 
         await driver.replaceText({
             selector: '[data-testid="search-context-name-input"]',
@@ -298,10 +300,14 @@ describe('Search contexts', () => {
         // Select query option
         await driver.page.click('#search-context-type-dynamic')
 
-        // Enter query
-        await driver.page.waitForSelector('[data-testid="search-context-dynamic-query"] .monaco-editor')
+        // Wait for search query input
+        const searchQueryInputSelector = '[data-testid="search-context-dynamic-query"] .monaco-editor .view-lines'
+        await driver.page.waitForSelector(searchQueryInputSelector)
+        await driver.page.click(searchQueryInputSelector)
+
+        // Enter search query
         await driver.replaceText({
-            selector: '[data-testid="search-context-dynamic-query"] .monaco-editor',
+            selector: searchQueryInputSelector,
             newText: 'repo:abc',
             selectMethod: 'keyboard',
             enterTextMethod: 'paste',

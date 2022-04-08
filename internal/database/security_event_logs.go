@@ -55,24 +55,35 @@ type SecurityEvent struct {
 	Timestamp       time.Time
 }
 
-// A SecurityEventLogStore provides persistence for security events.
-type SecurityEventLogStore struct {
+// SecurityEventLogsStore provides persistence for security events.
+type SecurityEventLogsStore interface {
+	basestore.ShareableStore
+
+	// Insert adds a new security event to the store.
+	Insert(ctx context.Context, e *SecurityEvent) error
+	// LogEvent logs the given security events.
+	//
+	// It logs errors directly instead of returning to callers.
+	LogEvent(ctx context.Context, e *SecurityEvent)
+}
+
+type securityEventLogsStore struct {
 	*basestore.Store
 }
 
-// SecurityEventLogs instantiates and returns a new SecurityEventLogStore with prepared statements.
-func SecurityEventLogs(db dbutil.DB) *SecurityEventLogStore {
-	return &SecurityEventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+// SecurityEventLogs instantiates and returns a new SecurityEventLogsStore with
+// prepared statements.
+func SecurityEventLogs(db dbutil.DB) SecurityEventLogsStore {
+	return &securityEventLogsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
-// SecurityEventLogsWith instantiates and returns a new SecurityEventLogStore
+// SecurityEventLogsWith instantiates and returns a new SecurityEventLogsStore
 // using the other store handle.
-func SecurityEventLogsWith(other basestore.ShareableStore) *SecurityEventLogStore {
-	return &SecurityEventLogStore{Store: basestore.NewWithHandle(other.Handle())}
+func SecurityEventLogsWith(other basestore.ShareableStore) SecurityEventLogsStore {
+	return &securityEventLogsStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
-// Insert adds a new security event to the store.
-func (s *SecurityEventLogStore) Insert(ctx context.Context, e *SecurityEvent) error {
+func (s *securityEventLogsStore) Insert(ctx context.Context, e *SecurityEvent) error {
 	argument := e.Argument
 	if argument == nil {
 		argument = []byte(`{}`)
@@ -96,10 +107,7 @@ func (s *SecurityEventLogStore) Insert(ctx context.Context, e *SecurityEvent) er
 	return nil
 }
 
-// LogEvent will log security events.
-//
-// Note that it does not return an error and will instead simply log it.
-func (s *SecurityEventLogStore) LogEvent(ctx context.Context, e *SecurityEvent) {
+func (s *securityEventLogsStore) LogEvent(ctx context.Context, e *SecurityEvent) {
 	// We don't want to begin logging authentication or authorization events in
 	// on-premises installations yet.
 	if !envvar.SourcegraphDotComMode() {
@@ -108,7 +116,7 @@ func (s *SecurityEventLogStore) LogEvent(ctx context.Context, e *SecurityEvent) 
 
 	if err := s.Insert(ctx, e); err != nil {
 		j, _ := json.Marshal(e)
-		log15.Error(string(e.Name), "event", string(j), "traceID", trace.ID(ctx), "err", err)
+		log15.Error(string(e.Name), "event", string(j), "traceID", trace.ID(ctx), "error", err)
 		// We want to capture in sentry as it includes a stack trace which will allow us
 		// to track down the root cause.
 		sentry.CaptureError(err, map[string]string{})
