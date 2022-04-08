@@ -64,8 +64,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			config: `{"url": "https://example.com/"}`,
 			kind:   KindGitLab,
 			want: RateLimitConfig{
-				BaseURL: "https://example.com/",
-				Limit:   10.0,
+				Limit: 10.0,
 			},
 		},
 		{
@@ -73,8 +72,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			config: `{"url": "https://example.com/"}`,
 			kind:   KindGitHub,
 			want: RateLimitConfig{
-				BaseURL: "https://example.com/",
-				Limit:   1.3888888888888888,
+				Limit: 1.3888888888888888,
 			},
 		},
 		{
@@ -82,8 +80,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			config: `{"url": "https://example.com/"}`,
 			kind:   KindBitbucketServer,
 			want: RateLimitConfig{
-				BaseURL: "https://example.com/",
-				Limit:   8.0,
+				Limit: 8.0,
 			},
 		},
 		{
@@ -91,8 +88,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			config: `{"url": "https://example.com/"}`,
 			kind:   KindBitbucketCloud,
 			want: RateLimitConfig{
-				BaseURL: "https://example.com/",
-				Limit:   2.0,
+				Limit: 2.0,
 			},
 		},
 		{
@@ -100,8 +96,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			config: `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
 			kind:   KindGitLab,
 			want: RateLimitConfig{
-				BaseURL: "https://example.com/",
-				Limit:   1.0,
+				Limit: 1.0,
 			},
 		},
 		{
@@ -109,8 +104,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			config: `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
 			kind:   KindGitHub,
 			want: RateLimitConfig{
-				BaseURL: "https://example.com/",
-				Limit:   1.0,
+				Limit: 1.0,
 			},
 		},
 		{
@@ -118,8 +112,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			config: `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
 			kind:   KindBitbucketServer,
 			want: RateLimitConfig{
-				BaseURL: "https://example.com/",
-				Limit:   1.0,
+				Limit: 1.0,
 			},
 		},
 		{
@@ -127,8 +120,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			config: `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
 			kind:   KindBitbucketCloud,
 			want: RateLimitConfig{
-				BaseURL: "https://example.com/",
-				Limit:   1.0,
+				Limit: 1.0,
 			},
 		},
 		{
@@ -136,8 +128,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			config: `{"registry": "https://registry.npmjs.org"}`,
 			kind:   KindNpmPackages,
 			want: RateLimitConfig{
-				BaseURL: "https://registry.npmjs.org/",
-				Limit:   3000.0 / 3600.0,
+				Limit: 3000.0 / 3600.0,
 			},
 		},
 		{
@@ -145,8 +136,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			config: `{"registry": "https://registry.npmjs.org", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
 			kind:   KindNpmPackages,
 			want: RateLimitConfig{
-				BaseURL: "https://registry.npmjs.org/",
-				Limit:   1.0,
+				Limit: 1.0,
 			},
 		},
 		{
@@ -154,8 +144,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			config: `{"url": "https://example.com", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
 			kind:   KindBitbucketCloud,
 			want: RateLimitConfig{
-				BaseURL: "https://example.com/",
-				Limit:   1.0,
+				Limit: 1.0,
 			},
 		},
 	} {
