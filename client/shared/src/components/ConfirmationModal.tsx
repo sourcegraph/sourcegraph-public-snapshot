@@ -2,7 +2,7 @@ import React from 'react'
 
 import { Button, Modal } from '@sourcegraph/wildcard'
 
-interface ConfirmationModalProps {
+export interface ConfirmationModalProps {
     showModal: boolean
     handleCancel: () => void
     handleConfirmation: () => void

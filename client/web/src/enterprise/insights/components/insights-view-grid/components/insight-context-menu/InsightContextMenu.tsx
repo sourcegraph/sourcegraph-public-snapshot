@@ -4,11 +4,13 @@ import classNames from 'classnames'
 import { noop } from 'lodash'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 
-import { ConfirmationModal } from '@sourcegraph/shared/src/components/ConfirmationModal'
 import { Link, Menu, MenuButton, MenuDivider, MenuItem, MenuLink, MenuList, Position } from '@sourcegraph/wildcard'
 
 import { Insight, InsightDashboard, isVirtualDashboard } from '../../../../core'
 import { useUiFeatures } from '../../../../hooks/use-ui-features'
+
+import { ConfirmDeleteModal } from './ConfirmDeleteModal'
+import { ConfirmRemoveModal } from './ConfirmRemoveModal'
 
 import styles from './InsightContextMenu.module.scss'
 
@@ -28,9 +30,6 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
 
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
-
-    const { delete: handleDelete } = useDeleteInsight()
-    const { remove: handleRemove } = useRemoveInsightFromDashboard()
 
     const { insight: insightPermissions } = useUiFeatures()
     const menuPermissions = insightPermissions.getContextActionsPermissions(insight)
@@ -120,28 +119,16 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
                     </>
                 )}
             </Menu>
-            <ConfirmationModal
+            <ConfirmDeleteModal
+                insight={insight}
                 showModal={showDeleteConfirm}
                 handleCancel={() => setShowDeleteConfirm(false)}
-                handleConfirmation={() => handleDelete(insight)}
-                header="Delete Insight?"
-                message={
-                    <>
-                        Are you sure you want to delete the insight <strong>{insight.title}</strong>?
-                    </>
-                }
             />
-            <ConfirmationModal
+            <ConfirmRemoveModal
+                insight={insight}
+                dashboard={dashboard}
                 showModal={showRemoveConfirm}
                 handleCancel={() => setShowRemoveConfirm(false)}
-                handleConfirmation={() => dashboard && handleRemove({ insight, dashboard })}
-                header="Remove Insight?"
-                message={
-                    <>
-                        Are you sure you want to remove the insight <strong>{insight.title}</strong> from the dashboard{' '}
-                        <strong>{dashboard?.title}</strong>?
-                    </>
-                }
             />
         </>
     )
