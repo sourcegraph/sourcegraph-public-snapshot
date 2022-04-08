@@ -228,7 +228,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
     // Live preview fetchers
     public getSearchInsightContent = (input: GetSearchInsightContentInput): Promise<LineChartContent<any>> =>
-        getSearchInsightContent(input.insight).then(data => {
+        getSearchInsightContent(input).then(data => {
             const { data: datumList, series, xAxis } = data
 
             // TODO: Remove this when the dashboard page has new chart fetchers
@@ -245,7 +245,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         })
 
     public getLangStatsInsightContent = (input: GetLangStatsInsightContentInput): Promise<PieChartContent<any>> =>
-        getLangStatsInsightContent(input.insight).then(data => {
+        getLangStatsInsightContent(input).then(data => {
             const { data: dataList, dataKey, nameKey, fillKey = '', linkURLKey = '' } = data.pies[0]
 
             // TODO: Remove this when the dashboard page has new chart fetchers

@@ -1,13 +1,12 @@
-import React from 'react'
+import React, { useContext, useMemo } from 'react'
 
 import RefreshIcon from 'mdi-react/RefreshIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { isErrorLike } from '@sourcegraph/common'
 import { Button, useDeepMemo } from '@sourcegraph/wildcard'
 
 import { getLineColor, LegendItem, LegendList, ParentSize } from '../../../../../../../../charts'
-import { getSanitizedRepositories } from '../../../../../../components/creation-ui-kit'
+import { getSanitizedRepositories, useLivePreview, StateStatus } from '../../../../../../components/creation-ui-kit'
 import {
     InsightCard,
     InsightCardBanner,
@@ -15,11 +14,11 @@ import {
     SeriesBasedChartTypes,
     SeriesChart,
 } from '../../../../../../components/views'
+import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
 import { InsightStep } from '../../../search-insight'
 import { getSanitizedCaptureQuery } from '../../utils/capture-group-insight-sanitizer'
 
 import { MOCK_CHART_CONTENT } from './constants'
-import { useCaptureGroupPreviewContent } from './use-capture-group-preview-content'
 
 import styles from './CaptureGroupCreationLivePreview.module.scss'
 
@@ -35,6 +34,7 @@ interface CaptureGroupCreationLivePreviewProps {
 
 export const CaptureGroupCreationLivePreview: React.FunctionComponent<CaptureGroupCreationLivePreviewProps> = props => {
     const { disabled, repositories, query, stepValue, step, isAllReposMode, className } = props
+    const { getCaptureInsightContent } = useContext(CodeInsightsBackendContext)
 
     const settings = useDeepMemo({
         disabled,
@@ -43,7 +43,15 @@ export const CaptureGroupCreationLivePreview: React.FunctionComponent<CaptureGro
         step: { [step]: stepValue },
     })
 
-    const { loading, dataOrError, update } = useCaptureGroupPreviewContent(settings)
+    const getLivePreviewContent = useMemo(
+        () => ({
+            disabled: settings.disabled,
+            fetcher: () => getCaptureInsightContent(settings),
+        }),
+        [settings, getCaptureInsightContent]
+    )
+
+    const { state, update } = useLivePreview(getLivePreviewContent)
 
     return (
         <aside className={className}>
@@ -52,20 +60,20 @@ export const CaptureGroupCreationLivePreview: React.FunctionComponent<CaptureGro
             </Button>
 
             <InsightCard className={styles.insightCard}>
-                {loading ? (
+                {state.status === StateStatus.Loading ? (
                     <InsightCardLoading>Loading code insight</InsightCardLoading>
-                ) : isErrorLike(dataOrError) ? (
-                    <ErrorAlert error={dataOrError} />
+                ) : state.status === StateStatus.Error ? (
+                    <ErrorAlert error={state.error} />
                 ) : (
                     <ParentSize className={styles.chartBlock}>
                         {parent =>
-                            dataOrError ? (
+                            state.status === StateStatus.Data ? (
                                 <SeriesChart
                                     type={SeriesBasedChartTypes.Line}
                                     width={parent.width}
                                     height={parent.height}
                                     data-testid="code-search-insight-live-preview"
-                                    {...dataOrError}
+                                    {...state.data}
                                 />
                             ) : (
                                 <>
@@ -87,15 +95,17 @@ export const CaptureGroupCreationLivePreview: React.FunctionComponent<CaptureGro
                     </ParentSize>
                 )}
 
-                {dataOrError && !isErrorLike(dataOrError) && (
+                {state.status === StateStatus.Data && (
                     <LegendList className="mt-3">
-                        {dataOrError.series.map(series => (
+                        {state.data.series.map(series => (
                             <LegendItem key={series.dataKey} color={getLineColor(series)} name={series.name} />
                         ))}
                     </LegendList>
                 )}
             </InsightCard>
-            {isAllReposMode && <p>Previews are only displayed if you individually list up to 50 repositories.</p>}
+            {isAllReposMode && (
+                <p className="mt-2">Previews are only displayed if you individually list up to 50 repositories.</p>
+            )}
         </aside>
     )
 }

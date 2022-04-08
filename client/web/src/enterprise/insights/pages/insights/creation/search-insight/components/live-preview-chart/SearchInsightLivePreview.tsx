@@ -1,13 +1,12 @@
-import React from 'react'
+import React, { useContext, useMemo } from 'react'
 
 import RefreshIcon from 'mdi-react/RefreshIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { isErrorLike } from '@sourcegraph/common'
 import { Button, useDeepMemo } from '@sourcegraph/wildcard'
 
 import { getLineColor, LegendItem, LegendList, ParentSize } from '../../../../../../../../charts'
-import { getSanitizedRepositories } from '../../../../../../components/creation-ui-kit'
+import { getSanitizedRepositories, useLivePreview, StateStatus } from '../../../../../../components/creation-ui-kit'
 import {
     InsightCard,
     InsightCardBanner,
@@ -15,11 +14,11 @@ import {
     SeriesBasedChartTypes,
     SeriesChart,
 } from '../../../../../../components/views'
+import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
 import { SearchBasedInsightSeries } from '../../../../../../core/types'
 import { EditableDataSeries, InsightStep } from '../../types'
 import { getSanitizedLine } from '../../utils/insight-sanitizer'
 
-import { useSearchBasedLivePreviewContent } from './hooks/use-search-based-live-preview-content'
 import { DEFAULT_MOCK_CHART_CONTENT } from './live-preview-mock-data'
 
 import styles from './SearchInsightLivePreview.module.scss'
@@ -47,9 +46,11 @@ export interface SearchInsightLivePreviewProps {
 export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLivePreviewProps> = props => {
     const { series, repositories, step, stepValue, disabled = false, isAllReposMode, className } = props
 
+    const { getSearchInsightContent } = useContext(CodeInsightsBackendContext)
+
     // Compare live insight settings with deep check to avoid unnecessary
     // search insight content fetching
-    const previewSetting = useDeepMemo({
+    const settings = useDeepMemo({
         series: series
             .filter(series => series.valid)
             // Cut off all unnecessary for live preview fields in order to
@@ -61,7 +62,15 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
         disabled,
     })
 
-    const { loading, dataOrError, update } = useSearchBasedLivePreviewContent(previewSetting)
+    const getLivePreviewContent = useMemo(
+        () => ({
+            disabled: settings.disabled,
+            fetcher: () => getSearchInsightContent(settings),
+        }),
+        [settings, getSearchInsightContent]
+    )
+
+    const { state, update } = useLivePreview(getLivePreviewContent)
 
     return (
         <aside className={className}>
@@ -70,20 +79,20 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
             </Button>
 
             <InsightCard className={styles.insightCard}>
-                {loading ? (
+                {state.status === StateStatus.Loading ? (
                     <InsightCardLoading>Loading code insight</InsightCardLoading>
-                ) : isErrorLike(dataOrError) ? (
-                    <ErrorAlert error={dataOrError} />
+                ) : state.status === StateStatus.Error ? (
+                    <ErrorAlert error={state.error} />
                 ) : (
                     <ParentSize className={styles.chartBlock}>
                         {parent =>
-                            dataOrError ? (
+                            state.status === StateStatus.Data ? (
                                 <SeriesChart
                                     type={SeriesBasedChartTypes.Line}
                                     width={parent.width}
                                     height={parent.height}
                                     data-testid="code-search-insight-live-preview"
-                                    {...dataOrError}
+                                    {...state.data}
                                 />
                             ) : (
                                 <>
@@ -105,9 +114,9 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
                     </ParentSize>
                 )}
 
-                {dataOrError && !isErrorLike(dataOrError) && (
+                {state.status === StateStatus.Data && (
                     <LegendList className="mt-3">
-                        {dataOrError.series.map(series => (
+                        {state.data.series.map(series => (
                             <LegendItem key={series.dataKey} color={getLineColor(series)} name={series.name} />
                         ))}
                     </LegendList>

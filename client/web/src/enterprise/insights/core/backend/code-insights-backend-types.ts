@@ -92,17 +92,6 @@ export interface RemoveInsightFromDashboardInput {
     dashboardId: string
 }
 
-export interface SearchInsightSettings {
-    series: SearchBasedInsightSeries[]
-    step: Duration
-    repositories: string[]
-}
-
-export interface LangStatsInsightsSettings {
-    repository: string
-    otherThreshold: number
-}
-
 export interface CaptureInsightSettings {
     repositories: string[]
     query: string
@@ -129,11 +118,14 @@ export interface GetBuiltInsightInput {
 }
 
 export interface GetSearchInsightContentInput {
-    insight: SearchInsightSettings
+    series: SearchBasedInsightSeries[]
+    step: Duration
+    repositories: string[]
 }
 
 export interface GetLangStatsInsightContentInput {
-    insight: LangStatsInsightsSettings
+    repository: string
+    otherThreshold: number
 }
 
 export interface RepositorySuggestionData {
