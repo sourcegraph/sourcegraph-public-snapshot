@@ -56,7 +56,7 @@ interface SignUpFormProps extends FeatureFlagProps {
 
 const preventDefault = (event: React.FormEvent): void => event.preventDefault()
 
-export function getPasswordRequirements(): string {
+export function getPasswordRequirements(context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode' | 'experimentalFeatures'>): string {
     let requirements = ''
     const passwordPolicyReference = context.experimentalFeatures.passwordPolicy
 
@@ -116,11 +116,11 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                 asynchronousValidators: [isUsernameUnique],
             },
             password: {
-                synchronousValidators: [validatePassword],
+                synchronousValidators: [password => validatePassword(context, password)],
                 asynchronousValidators: [],
             },
         }),
-        []
+        [context]
     )
 
     const [emailState, nextEmailFieldChange, emailInputReference] = useInputValidation(signUpFieldValidators.email)
@@ -176,43 +176,6 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
         },
         []
     )
-
-    const getPasswordRequirements = (): JSX.Element => {
-        let requirements = ''
-        const passwordPolicyReference = context.experimentalFeatures.passwordPolicy
-
-        if (passwordPolicyReference && passwordPolicyReference.enabled === true) {
-            if (passwordPolicyReference.minimumLength && passwordPolicyReference.minimumLength > 0) {
-                requirements +=
-                    'Your password must include at least ' +
-                    passwordPolicyReference.minimumLength.toString() +
-                    ' characters'
-            }
-            if (
-                passwordPolicyReference.numberOfSpecialCharacters &&
-                passwordPolicyReference.numberOfSpecialCharacters > 0
-            ) {
-                requirements +=
-                    ', ' + passwordPolicyReference.numberOfSpecialCharacters.toString() + ' special characters'
-            }
-            if (
-                passwordPolicyReference.requireAtLeastOneNumber &&
-                passwordPolicyReference.requireAtLeastOneNumber === true
-            ) {
-                requirements += ', at least one number'
-            }
-            if (
-                passwordPolicyReference.requireUpperandLowerCase &&
-                passwordPolicyReference.requireUpperandLowerCase === true
-            ) {
-                requirements += ', at least one uppercase letter'
-            }
-        } else {
-            requirements += 'At least 12 characters.'
-        }
-
-        return <small className="form-help text-muted">{requirements}</small>
-    }
 
     return (
         <>
@@ -305,7 +268,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                             {passwordState.reason}
                         </small>
                     )}
-                    {getPasswordRequirements()}
+                    <small className="form-help text-muted">{getPasswordRequirements(context)}</small>
                 </div>
                 {!experimental && enterpriseTrial && (
                     <div className="form-group">
@@ -403,7 +366,10 @@ function isUsernameUnique(username: string): Observable<string | undefined> {
     )
 }
 
-function validatePassword(password: string): string | undefined {
+function validatePassword(
+    context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode' | 'experimentalFeatures'>,
+    password: string,
+): string | undefined {
     if (context.experimentalFeatures.passwordPolicy?.enabled) {
         if (
             context.experimentalFeatures.passwordPolicy.minimumLength &&
