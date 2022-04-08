@@ -43,8 +43,8 @@ type NpmPackagesSyncer struct {
 	client npm.Client
 }
 
-// Create a new NpmPackagesSyncer. If customClient is nil, the client
-// for the syncer is configured based on the connection parameter.
+// NewNpmPackagesSyncer create a new NpmPackageSyncer. If customClient is nil,
+// the client for the syncer is configured based on the connection parameter.
 func NewNpmPackagesSyncer(
 	connection schema.NpmPackagesConnection,
 	dbStore repos.DependenciesStore,
@@ -52,7 +52,7 @@ func NewNpmPackagesSyncer(
 ) *NpmPackagesSyncer {
 	var client = customClient
 	if client == nil {
-		client = npm.NewHTTPClient(connection.Registry, connection.RateLimit, connection.Credentials)
+		client = npm.NewHTTPClient(connection.Registry, connection.Credentials)
 	}
 	return &NpmPackagesSyncer{connection, dbStore, client}
 }
@@ -70,8 +70,8 @@ func (s *NpmPackagesSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL)
 	return nil
 }
 
-// Similar to CloneCommand for JVMPackagesSyncer; it handles cloning itself
-// instead of returning a command that does the cloning.
+// CloneCommand is similar to CloneCommand for JVMPackagesSyncer; it handles
+// cloning itself instead of returning a command that does the cloning.
 func (s *NpmPackagesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, bareGitDirectory string) (*exec.Cmd, error) {
 	err := os.MkdirAll(bareGitDirectory, 0755)
 	if err != nil {

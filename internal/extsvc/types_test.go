@@ -121,7 +121,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			},
 		},
 		{
-			name:        "GitHub default",
+			name:        "GitHub non-default",
 			config:      `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
 			kind:        KindGitHub,
 			displayName: "GitHub 1",
@@ -133,7 +133,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			},
 		},
 		{
-			name:        "Bitbucket Server default",
+			name:        "Bitbucket Server non-default",
 			config:      `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
 			kind:        KindBitbucketServer,
 			displayName: "BitbucketServer 1",
@@ -145,13 +145,37 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			},
 		},
 		{
-			name:        "Bitbucket Cloud default",
+			name:        "Bitbucket Cloud non-default",
 			config:      `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
 			kind:        KindBitbucketCloud,
 			displayName: "BitbucketCloud 1",
 			want: RateLimitConfig{
 				BaseURL:     "https://example.com/",
 				DisplayName: "BitbucketCloud 1",
+				Limit:       1.0,
+				IsDefault:   false,
+			},
+		},
+		{
+			name:        "NPM default",
+			config:      `{"registry": "https://registry.npmjs.org"}`,
+			kind:        KindNpmPackages,
+			displayName: "NPM 1",
+			want: RateLimitConfig{
+				BaseURL:     "https://registry.npmjs.org/",
+				DisplayName: "NPM 1",
+				Limit:       3000.0 / 3600.0,
+				IsDefault:   true,
+			},
+		},
+		{
+			name:        "NPM non-default",
+			config:      `{"registry": "https://registry.npmjs.org", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
+			kind:        KindNpmPackages,
+			displayName: "NPM 1",
+			want: RateLimitConfig{
+				BaseURL:     "https://registry.npmjs.org/",
+				DisplayName: "NPM 1",
 				Limit:       1.0,
 				IsDefault:   false,
 			},
