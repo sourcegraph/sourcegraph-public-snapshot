@@ -70,7 +70,7 @@ func (s *NpmPackagesSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL)
 	return nil
 }
 
-// CloneCommand is similar ro CloneCommand for JVMPackagesSyncer; it handles
+// CloneCommand is similar to CloneCommand for JVMPackagesSyncer; it handles
 // cloning itself instead of returning a command that does the cloning.
 func (s *NpmPackagesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, bareGitDirectory string) (*exec.Cmd, error) {
 	err := os.MkdirAll(bareGitDirectory, 0755)
