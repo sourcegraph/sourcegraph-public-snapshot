@@ -12,15 +12,17 @@ import { closeInstallPageTab } from './shared'
 
 describe('GitLab', () => {
     let driver: Driver
-    let testContext: BrowserIntegrationTestContext
-
-    beforeEach(async function () {
+    before(async () => {
         driver = await createDriverForTest({ loadExtension: true })
         await closeInstallPageTab(driver.browser)
         if (driver.sourcegraphBaseUrl !== 'https://sourcegraph.com') {
             await driver.setExtensionSourcegraphUrl()
         }
+    })
+    after(() => driver?.close())
 
+    let testContext: BrowserIntegrationTestContext
+    beforeEach(async function () {
         testContext = await createBrowserIntegrationTestContext({
             driver,
             currentTest: this.currentTest!,
@@ -79,13 +81,8 @@ describe('GitLab', () => {
         // Ensure that the same assets are requested in all environments.
         await driver.page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }])
     })
-
     afterEachSaveScreenshotIfFailed(() => driver.page)
-
-    afterEach(() => {
-        testContext?.dispose()
-        driver?.close()
-    })
+    afterEach(() => testContext?.dispose())
 
     it('adds "view on Sourcegraph" buttons to files', async () => {
         const repoName = 'gitlab.com/sourcegraph/jsonrpc2'
