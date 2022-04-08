@@ -13,7 +13,13 @@ const defaultProps = {
     filePath: 'foo/bar/baz.bonk',
     settingsCascade: { subjects: null, final: null },
     useCodeIntelStatus: (parameters: UseCodeIntelStatusParameters): UseCodeIntelStatusResult => ({
-        data: {},
+        data: {
+            activeUploads: [],
+            recentUploads: [],
+            recentIndexes: [],
+            preciseSupport: [],
+            searchBasedSupport: [],
+        },
         loading: false,
     }),
 }

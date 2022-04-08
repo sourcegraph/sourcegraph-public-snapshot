@@ -2,10 +2,12 @@ import React, { FunctionComponent } from 'react'
 
 import { LsifIndexFields } from '../../../../graphql-operations'
 
+import { CodeIntelIndexer } from './CodeIntelIndexer'
+
 export interface CodeIntelUploadOrIndexIndexerProps {
-    node: Partial<Pick<LsifIndexFields, 'inputIndexer'>>
+    node: Partial<Pick<LsifIndexFields, 'indexer'>>
 }
 
 export const CodeIntelUploadOrIndexIndexer: FunctionComponent<CodeIntelUploadOrIndexIndexerProps> = ({ node }) => (
-    <span>{node.inputIndexer}</span>
+    <span>{node.indexer && <CodeIntelIndexer indexer={node.indexer} />}</span>
 )

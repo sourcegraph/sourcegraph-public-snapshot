@@ -4,6 +4,7 @@ import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { Container, Button, Link } from '@sourcegraph/wildcard'
 
 import { SidebarGroup, SidebarGroupHeader } from '../../../components/Sidebar'
+import { getFileName } from '../BatchSpec'
 
 import combySample from './library/comby.batch.yaml'
 import goImportsSample from './library/go-imports.batch.yaml'
@@ -96,7 +97,11 @@ export const OldBatchChangePageContent: React.FunctionComponent<{}> = () => {
                     </Link>{' '}
                     to preview the commits and changesets that your batch change will make:
                 </p>
-                <CodeSnippet code={`src batch preview -f ${selectedSample.name}`} language="bash" className="mb-3" />
+                <CodeSnippet
+                    code={`src batch preview -f ${getFileName(selectedSample.name)}`}
+                    language="bash"
+                    className="mb-3"
+                />
                 <p className="mb-0">
                     Follow the URL printed in your terminal to see the preview and (when you're ready) create the batch
                     change.
