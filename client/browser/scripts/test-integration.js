@@ -4,7 +4,7 @@ const { decompressRecordings, deleteRecordings } = require('./utils')
 
 ;(async () => {
   await decompressRecordings()
-  shelljs.exec('yarn run-integration', () => deleteRecordings())
+  shelljs.exec('POLLYJS_MODE=replay yarn run-integration', () => deleteRecordings())
 })().catch(error => {
   console.log(error)
 })
