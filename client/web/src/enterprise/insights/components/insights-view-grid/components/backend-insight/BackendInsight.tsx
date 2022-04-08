@@ -45,8 +45,6 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
     const { dashboard } = useContext(InsightContext)
     const { getBackendInsightData, createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
 
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
     const insightCardReference = useRef<HTMLDivElement>(null)
