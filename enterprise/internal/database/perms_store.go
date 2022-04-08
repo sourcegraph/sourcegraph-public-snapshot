@@ -233,7 +233,7 @@ func (s *permsStore) LoadUserPermissions(ctx context.Context, p *authz.UserPermi
 	}
 
 	// Since this is the Permissions table and not pending permissions we still use bitmaps here
-	p.IDs = map[int32]struct{}{}
+	p.IDs = make(map[int32]struct{}, len(ids))
 	for _, id := range ids {
 		p.IDs[id] = struct{}{}
 	}
@@ -252,7 +252,7 @@ func (s *permsStore) LoadRepoPermissions(ctx context.Context, p *authz.RepoPermi
 		return err
 	}
 	// Since this is the Permissions table and not pending permissions we still use bitmaps here
-	p.UserIDs = map[int32]struct{}{}
+	p.UserIDs = make(map[int32]struct{}, len(ids))
 	for _, id := range ids {
 		p.UserIDs[id] = struct{}{}
 	}
@@ -418,7 +418,6 @@ func (s *permsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermis
 
 	// Compute differences between the old and new sets.
 	var added []int32
-
 	for id := range p.UserIDs {
 		if _, ok := oldIDs[id]; !ok {
 			added = append(added, id)
@@ -426,7 +425,6 @@ func (s *permsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermis
 	}
 
 	var removed []int32
-
 	for id := range oldIDs {
 		if _, ok := p.UserIDs[id]; !ok {
 			removed = append(removed, id)
@@ -621,7 +619,7 @@ func (s *permsStore) LoadUserPendingPermissions(ctx context.Context, p *authz.Us
 		return err
 	}
 	p.ID = id
-	p.IDs = map[int32]struct{}{}
+	p.IDs = make(map[int32]struct{}, len(ids))
 	for _, id := range ids {
 		p.IDs[id] = struct{}{}
 	}
@@ -716,7 +714,7 @@ func (s *permsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 		return errors.Wrap(err, "load repo pending permissions")
 	}
 
-	oldIDs := map[int64]struct{}{}
+	oldIDs := make(map[int64]struct{}, len(ids))
 	for _, id := range ids {
 		oldIDs[id] = struct{}{}
 	}
@@ -943,8 +941,8 @@ func (s *permsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 		return errors.Wrap(err, "load user pending permissions")
 	}
 	p.ID = id
-	p.IDs = map[int32]struct{}{}
-	var allRepoIDs []int32
+	p.IDs = make(map[int32]struct{}, len(ids))
+	allRepoIDs := make([]int32, 0, len(ids))
 	for _, id := range ids {
 		p.IDs[id] = struct{}{}
 		allRepoIDs = append(allRepoIDs, id)
@@ -1257,7 +1255,7 @@ AND object_type = %s
 	var rows *sql.Rows
 	rows, err = s.Query(ctx, q)
 	if err != nil {
-		return
+		return nil, time.Time{}, time.Time{}, err
 	}
 
 	if !rows.Next() {
@@ -1266,15 +1264,18 @@ AND object_type = %s
 		if err == nil {
 			err = authz.ErrPermsNotFound
 		}
-		return
+		return nil, time.Time{}, time.Time{}, err
 	}
 
 	if err = rows.Scan(pq.Array(&ids), &updatedAt, &dbutil.NullTime{Time: &syncedAt}); err != nil {
-		return
+		return nil, time.Time{}, time.Time{}, err
 	}
-	err = rows.Close()
 
-	return
+	if err = rows.Close(); err != nil {
+		return nil, time.Time{}, time.Time{}, err
+	}
+
+	return ids, updatedAt, syncedAt, nil
 }
 
 // loadRepoPermissions is a method that scans three values from one repo_permissions table row:
@@ -1304,7 +1305,7 @@ AND permission = %s
 	var rows *sql.Rows
 	rows, err = s.Query(ctx, q)
 	if err != nil {
-		return
+		return nil, time.Time{}, time.Time{}, err
 	}
 
 	if !rows.Next() {
@@ -1313,15 +1314,17 @@ AND permission = %s
 		if err == nil {
 			err = authz.ErrPermsNotFound
 		}
-		return
+		return nil, time.Time{}, time.Time{}, err
 	}
 
 	if err = rows.Scan(pq.Array(&ids), &updatedAt, &dbutil.NullTime{Time: &syncedAt}); err != nil {
-		return
+		return nil, time.Time{}, time.Time{}, err
 	}
-	err = rows.Close()
 
-	return
+	if err = rows.Close(); err != nil {
+		return nil, time.Time{}, time.Time{}, err
+	}
+	return ids, updatedAt, syncedAt, nil
 }
 
 // loadUserPendingPermissions is a method that scans three values from one user_pending_permissions table row:
@@ -1355,7 +1358,7 @@ AND bind_id = %s
 	var rows *sql.Rows
 	rows, err = s.Query(ctx, q)
 	if err != nil {
-		return
+		return -1, nil, time.Time{}, err
 	}
 
 	if !rows.Next() {
@@ -1364,15 +1367,17 @@ AND bind_id = %s
 		if err == nil {
 			err = authz.ErrPermsNotFound
 		}
-		return
+		return -1, nil, time.Time{}, err
 	}
 
 	if err = rows.Scan(&id, pq.Array(&ids), &updatedAt); err != nil {
-		return
+		return -1, nil, time.Time{}, err
 	}
-	err = rows.Close()
+	if err = rows.Close(); err != nil {
+		return -1, nil, time.Time{}, err
+	}
 
-	return
+	return id, ids, updatedAt, nil
 }
 
 // loadRepoPendingPermissions is a method that scans three values from one repo_pending_permissions table row:
@@ -1400,7 +1405,7 @@ AND permission = %s
 	var rows *sql.Rows
 	rows, err = s.Query(ctx, q)
 	if err != nil {
-		return
+		return -1, nil, time.Time{}, time.Time{}, err
 	}
 
 	if !rows.Next() {
@@ -1409,15 +1414,17 @@ AND permission = %s
 		if err == nil {
 			err = authz.ErrPermsNotFound
 		}
-		return
+		return -1, nil, time.Time{}, time.Time{}, err
 	}
 
 	if err = rows.Scan(&id, pq.Array(&ids), &updatedAt, &dbutil.NullTime{Time: &syncedAt}); err != nil {
-		return
+		return -1, nil, time.Time{}, time.Time{}, err
 	}
-	err = rows.Close()
+	if err = rows.Close(); err != nil {
+		return -1, nil, time.Time{}, time.Time{}, err
+	}
 
-	return
+	return id, ids, updatedAt, syncedAt, nil
 }
 
 func (s *permsStore) ListExternalAccounts(ctx context.Context, userID int32) (accounts []*extsvc.Account, err error) {

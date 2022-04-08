@@ -297,7 +297,7 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 				err := s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
 					RepoID:  update.repoID,
 					Perm:    authz.Read,
-					UserIDs: toMapSet(update.userIDs...),
+					UserIDs: toMapset(update.userIDs...),
 				})
 				if err != nil {
 					t.Fatal(err)
@@ -324,7 +324,7 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 	if err := s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
 		RepoID:  1,
 		Perm:    authz.Read,
-		UserIDs: toMapSet(1),
+		UserIDs: toMapset(1),
 	}); err != nil {
 		t.Fatal(err)
 	}

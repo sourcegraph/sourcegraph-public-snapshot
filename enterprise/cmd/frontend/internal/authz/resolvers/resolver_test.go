@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"sync/atomic"
 	"testing"
@@ -394,15 +395,15 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 					}
 				}
 			`,
-					ExpectedResult: `
+					ExpectedResult: fmt.Sprintf(`
 				{
 					"authorizedUserRepositories": {
 						"nodes": [
-							{"id":"UmVwb3NpdG9yeTox"}
+							{"id":"%s"}
 						]
     				}
 				}
-			`,
+			`, convertToBase64("Repository:1")),
 				},
 			},
 		},
@@ -422,15 +423,15 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 					}
 				}
 			`,
-					ExpectedResult: `
+					ExpectedResult: fmt.Sprintf(`
 				{
 					"authorizedUserRepositories": {
 						"nodes": [
-							{"id":"UmVwb3NpdG9yeTox"}
+							{"id":"%s"}
 						]
     				}
 				}
-			`,
+			`, convertToBase64("Repository:1")),
 				},
 			},
 		},
@@ -450,15 +451,15 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 					}
 				}
 			`,
-					ExpectedResult: `
+					ExpectedResult: fmt.Sprintf(`
 				{
 					"authorizedUserRepositories": {
 						"nodes": [
-							{"id":"UmVwb3NpdG9yeToy"},{"id":"UmVwb3NpdG9yeToz"},{"id":"UmVwb3NpdG9yeTo0"},{"id":"UmVwb3NpdG9yeTo1"}
+							{"id":"%s"},{"id":"%s"},{"id":"%s"},{"id":"%s"}
 						]
     				}
 				}
-			`,
+			`, convertToBase64("Repository:2"), convertToBase64("Repository:3"), convertToBase64("Repository:4"), convertToBase64("Repository:5")),
 				},
 			},
 		},
@@ -478,15 +479,15 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 					}
 				}
 			`,
-					ExpectedResult: `
+					ExpectedResult: fmt.Sprintf(`
 				{
 					"authorizedUserRepositories": {
 						"nodes": [
-							{"id":"UmVwb3NpdG9yeToy"},{"id":"UmVwb3NpdG9yeToz"},{"id":"UmVwb3NpdG9yeTo0"},{"id":"UmVwb3NpdG9yeTo1"}
+							{"id":"%s"},{"id":"%s"},{"id":"%s"},{"id":"%s"}
 						]
     				}
 				}
-			`,
+			`, convertToBase64("Repository:2"), convertToBase64("Repository:3"), convertToBase64("Repository:4"), convertToBase64("Repository:5")),
 				},
 			},
 		},
@@ -495,27 +496,27 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 			gqlTests: []*graphqlbackend.Test{
 				{
 					Schema: mustParseGraphQLSchema(t, db),
-					Query: `
+					Query: fmt.Sprintf(`
 				{
 					authorizedUserRepositories(
 						first: 2,
-						after: "UmVwb3NpdG9yeToy",
+						after: "%s",
 						username: "bob") {
 						nodes {
 							id
 						}
 					}
 				}
-			`,
-					ExpectedResult: `
+			`, convertToBase64("Repository:2")),
+					ExpectedResult: fmt.Sprintf(`
 				{
 					"authorizedUserRepositories": {
 						"nodes": [
-							{"id":"UmVwb3NpdG9yeToz"},{"id":"UmVwb3NpdG9yeTo0"}
+							{"id":"%s"},{"id":"%s"}
 						]
-    				}
+                    }
 				}
-			`,
+			`, convertToBase64("Repository:3"), convertToBase64("Repository:4")),
 				},
 			},
 		},
@@ -524,27 +525,27 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 			gqlTests: []*graphqlbackend.Test{
 				{
 					Schema: mustParseGraphQLSchema(t, db),
-					Query: `
+					Query: fmt.Sprintf(`
 				{
 					authorizedUserRepositories(
 						first: 2,
-						after: "UmVwb3NpdG9yeTo0",
+						after: "%s",
 						username: "bob") {
 						nodes {
 							id
 						}
 					}
 				}
-			`,
-					ExpectedResult: `
+			`, convertToBase64("Repository:4")),
+					ExpectedResult: fmt.Sprintf(`
 				{
 					"authorizedUserRepositories": {
 						"nodes": [
-							{"id":"UmVwb3NpdG9yeTo1"}
+							{"id":"%s"}
 						]
     				}
 				}
-			`,
+			`, convertToBase64("Repository:5")),
 				},
 			},
 		},
@@ -553,18 +554,18 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 			gqlTests: []*graphqlbackend.Test{
 				{
 					Schema: mustParseGraphQLSchema(t, db),
-					Query: `
+					Query: fmt.Sprintf(`
 						{
 							authorizedUserRepositories(
 								first: 2,
-								after: "UmVwb3NpdG9yeTo1",
+								after: "%s",
 								username: "bob") {
 								nodes {
 									id
 								}
 							}
 						}
-					`,
+					`, convertToBase64("Repository:5")),
 					ExpectedResult: `
 				{
 					"authorizedUserRepositories": {
@@ -712,17 +713,17 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 					}
 				}
 			`,
-					ExpectedResult: `
+					ExpectedResult: fmt.Sprintf(`
 				{
 					"repository": {
 						"authorizedUsers": {
 							"nodes":[
-								{"id":"VXNlcjox"},{"id":"VXNlcjoy"},{"id":"VXNlcjoz"},{"id":"VXNlcjo0"},{"id":"VXNlcjo1"}
+								{"id":"%s"},{"id":"%s"},{"id":"%s"},{"id":"%s"},{"id":"%s"}
 							]
 						}
     				}
 				}
-			`,
+			`, convertToBase64("User:1"), convertToBase64("User:2"), convertToBase64("User:3"), convertToBase64("User:4"), convertToBase64("User:5")),
 				},
 			},
 		},
@@ -731,30 +732,30 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 			gqlTests: []*graphqlbackend.Test{
 				{
 					Schema: mustParseGraphQLSchema(t, db),
-					Query: `
+					Query: fmt.Sprintf(`
 {
 					repository(name: "github.com/owner/repo") {
 						authorizedUsers(
 							first: 2,
-							after: "VXNlcjox") {
+							after: "%s") {
 							nodes {
 								id
 							}
 						}
 					}
 				}
-			`,
-					ExpectedResult: `
+			`, convertToBase64("User:1")),
+					ExpectedResult: fmt.Sprintf(`
 				{
 					"repository": {
 						"authorizedUsers": {
 							"nodes":[
-								{"id":"VXNlcjoy"},{"id":"VXNlcjoz"}
+								{"id":"%s"},{"id":"%s"}
 							]
 						}
     				}
 				}
-			`,
+			`, convertToBase64("User:2"), convertToBase64("User:3")),
 				},
 			},
 		},
@@ -763,30 +764,30 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 			gqlTests: []*graphqlbackend.Test{
 				{
 					Schema: mustParseGraphQLSchema(t, db),
-					Query: `
+					Query: fmt.Sprintf(`
 {
 					repository(name: "github.com/owner/repo") {
 						authorizedUsers(
 							first: 2,
-							after: "VXNlcjoz") {
+							after: "%s") {
 							nodes {
 								id
 							}
 						}
 					}
 				}
-			`,
-					ExpectedResult: `
+			`, convertToBase64("User:3")),
+					ExpectedResult: fmt.Sprintf(`
 				{
 					"repository": {
 						"authorizedUsers": {
 							"nodes":[
-								{"id":"VXNlcjo0"},{"id":"VXNlcjo1"}
+								{"id":"%s"},{"id":"%s"}
 							]
 						}
     				}
 				}
-			`,
+			`, convertToBase64("User:4"), convertToBase64("User:5")),
 				},
 			},
 		},
@@ -795,26 +796,26 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 			gqlTests: []*graphqlbackend.Test{
 				{
 					Schema: mustParseGraphQLSchema(t, db),
-					Query: `
+					Query: fmt.Sprintf(`
 {
 					repository(name: "github.com/owner/repo") {
 						authorizedUsers(
 							first: 2,
-							after: "VXNlcjo1") {
+							after: "%s") {
 							nodes {
 								id
 							}
 						}
 					}
 				}
-			`,
+			`, convertToBase64("User:5")),
 					ExpectedResult: `
 				{
 					"repository": {
 						"authorizedUsers": {
 							"nodes":[]
 						}
-    				}
+                    }
 				}
 			`,
 				},
@@ -1093,4 +1094,8 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 			t.Fatalf("Wanted 1 call, got %d", len(h))
 		}
 	})
+}
+
+func convertToBase64(input string) string {
+	return base64.StdEncoding.EncodeToString([]byte(input))
 }

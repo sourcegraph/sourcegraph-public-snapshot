@@ -51,7 +51,7 @@ func mapsetToArray(ms map[int32]struct{}) []int {
 	return ints
 }
 
-func toMapSet(ids ...int32) map[int32]struct{} {
+func toMapset(ids ...int32) map[int32]struct{} {
 	ms := map[int32]struct{}{}
 	for _, id := range ids {
 		ms[id] = struct{}{}
@@ -76,7 +76,7 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 			rp := &authz.RepoPermissions{
 				RepoID:  1,
 				Perm:    authz.Read,
-				UserIDs: toMapSet(2),
+				UserIDs: toMapset(2),
 			}
 			if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
@@ -103,7 +103,7 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 			rp := &authz.RepoPermissions{
 				RepoID:  1,
 				Perm:    authz.Read,
-				UserIDs: toMapSet(2),
+				UserIDs: toMapset(2),
 			}
 			if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
@@ -134,7 +134,7 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 			rp := &authz.RepoPermissions{
 				RepoID:  1,
 				Perm:    authz.Read,
-				UserIDs: toMapSet(1, 2),
+				UserIDs: toMapset(1, 2),
 			}
 			if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
@@ -143,7 +143,7 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 			rp = &authz.RepoPermissions{
 				RepoID:  1,
 				Perm:    authz.Read,
-				UserIDs: toMapSet(2, 3),
+				UserIDs: toMapset(2, 3),
 			}
 			if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
@@ -209,7 +209,7 @@ func testPermsStore_LoadRepoPermissions(db *sql.DB) func(*testing.T) {
 				UserID: 2,
 				Perm:   authz.Read,
 				Type:   authz.PermRepos,
-				IDs:    toMapSet(1),
+				IDs:    toMapset(1),
 			}
 			if err := s.SetUserPermissions(context.Background(), up); err != nil {
 				t.Fatal(err)
@@ -236,7 +236,7 @@ func testPermsStore_LoadRepoPermissions(db *sql.DB) func(*testing.T) {
 				UserID: 2,
 				Perm:   authz.Read,
 				Type:   authz.PermRepos,
-				IDs:    toMapSet(1),
+				IDs:    toMapset(1),
 			}
 			if err := s.SetUserPermissions(context.Background(), up); err != nil {
 				t.Fatal(err)
@@ -285,7 +285,7 @@ func checkRegularPermsTable(s *permsStore, sql string, expects map[int32][]uint3
 		}
 
 		if cmp.Diff(expects[id], intIDs, cmpopts.SortSlices(comparator)) != "" {
-			return errors.Errorf("intIDs - key %v: want %q but got %q", id, expects[id], intIDs)
+			return errors.Errorf("intIDs - key %v: want %d but got %d", id, expects[id], intIDs)
 		}
 
 		delete(expects, id)
@@ -332,15 +332,15 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 				{
 					UserID: 1,
 					Perm:   authz.Read,
-					IDs:    toMapSet(1),
+					IDs:    toMapset(1),
 				}, {
 					UserID: 2,
 					Perm:   authz.Read,
-					IDs:    toMapSet(1, 2),
+					IDs:    toMapset(1, 2),
 				}, {
 					UserID: 3,
 					Perm:   authz.Read,
-					IDs:    toMapSet(3, 4),
+					IDs:    toMapset(3, 4),
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
@@ -361,19 +361,19 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 				{
 					UserID: 1,
 					Perm:   authz.Read,
-					IDs:    toMapSet(1),
+					IDs:    toMapset(1),
 				}, {
 					UserID: 1,
 					Perm:   authz.Read,
-					IDs:    toMapSet(2, 3),
+					IDs:    toMapset(2, 3),
 				}, {
 					UserID: 2,
 					Perm:   authz.Read,
-					IDs:    toMapSet(1, 2),
+					IDs:    toMapset(1, 2),
 				}, {
 					UserID: 2,
 					Perm:   authz.Read,
-					IDs:    toMapSet(1, 3),
+					IDs:    toMapset(1, 3),
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
@@ -392,11 +392,11 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 				{
 					UserID: 1,
 					Perm:   authz.Read,
-					IDs:    toMapSet(1, 2, 3),
+					IDs:    toMapset(1, 2, 3),
 				}, {
 					UserID: 1,
 					Perm:   authz.Read,
-					IDs:    toMapSet(),
+					IDs:    toMapset(),
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
@@ -415,7 +415,7 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 				{
 					UserID: 1,
 					Perm:   authz.Read,
-					IDs:    toMapSet(1, 2, 3),
+					IDs:    toMapset(1, 2, 3),
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
@@ -434,7 +434,7 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 				user := &authz.UserPermissions{
 					UserID: 1,
 					Perm:   authz.Read,
-					IDs:    toMapSet(),
+					IDs:    toMapset(),
 				}
 				for i := 1; i <= countToExceedParameterLimit; i += 1 {
 					user.IDs[int32(i)] = struct{}{}
@@ -469,7 +469,7 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 				UserID: 2,
 				Perm:   authz.Read,
 				Type:   authz.PermRepos,
-				IDs:    toMapSet(1),
+				IDs:    toMapset(1),
 			}
 			if err := s.SetUserPermissions(context.Background(), up); err != nil {
 				t.Fatal(err)
@@ -568,15 +568,15 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 				{
 					RepoID:  1,
 					Perm:    authz.Read,
-					UserIDs: toMapSet(1),
+					UserIDs: toMapset(1),
 				}, {
 					RepoID:  2,
 					Perm:    authz.Read,
-					UserIDs: toMapSet(1, 2),
+					UserIDs: toMapset(1, 2),
 				}, {
 					RepoID:  3,
 					Perm:    authz.Read,
-					UserIDs: toMapSet(3, 4),
+					UserIDs: toMapset(3, 4),
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
@@ -597,19 +597,19 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 				{
 					RepoID:  1,
 					Perm:    authz.Read,
-					UserIDs: toMapSet(1),
+					UserIDs: toMapset(1),
 				}, {
 					RepoID:  1,
 					Perm:    authz.Read,
-					UserIDs: toMapSet(2, 3),
+					UserIDs: toMapset(2, 3),
 				}, {
 					RepoID:  2,
 					Perm:    authz.Read,
-					UserIDs: toMapSet(1, 2),
+					UserIDs: toMapset(1, 2),
 				}, {
 					RepoID:  2,
 					Perm:    authz.Read,
-					UserIDs: toMapSet(3, 4),
+					UserIDs: toMapset(3, 4),
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
@@ -629,11 +629,11 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 				{
 					RepoID:  1,
 					Perm:    authz.Read,
-					UserIDs: toMapSet(1, 2, 3),
+					UserIDs: toMapset(1, 2, 3),
 				}, {
 					RepoID:  1,
 					Perm:    authz.Read,
-					UserIDs: toMapSet(),
+					UserIDs: toMapset(),
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
@@ -657,7 +657,7 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 			rp := &authz.RepoPermissions{
 				RepoID:  1,
 				Perm:    authz.Read,
-				UserIDs: toMapSet(2),
+				UserIDs: toMapset(2),
 			}
 			if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
@@ -738,7 +738,7 @@ func testPermsStore_TouchRepoPermissions(db *sql.DB) func(*testing.T) {
 		rp := &authz.RepoPermissions{
 			RepoID:  1,
 			Perm:    authz.Read,
-			UserIDs: toMapSet(2),
+			UserIDs: toMapset(2),
 		}
 		if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
 			t.Fatal(err)
@@ -1504,11 +1504,11 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 						{
 							RepoID:  1,
 							Perm:    authz.Read,
-							UserIDs: toMapSet(1),
+							UserIDs: toMapset(1),
 						}, {
 							RepoID:  2,
 							Perm:    authz.Read,
-							UserIDs: toMapSet(1, 2),
+							UserIDs: toMapset(1, 2),
 						},
 					},
 					pendings: []pending{
@@ -1612,11 +1612,11 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 						{
 							RepoID:  1,
 							Perm:    authz.Read,
-							UserIDs: toMapSet(1),
+							UserIDs: toMapset(1),
 						}, {
 							RepoID:  2,
 							Perm:    authz.Read,
-							UserIDs: toMapSet(1, 2),
+							UserIDs: toMapset(1, 2),
 						},
 					},
 					pendings: []pending{
@@ -1702,11 +1702,11 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 						{
 							RepoID:  1,
 							Perm:    authz.Read,
-							UserIDs: toMapSet(1),
+							UserIDs: toMapset(1),
 						}, {
 							RepoID:  2,
 							Perm:    authz.Read,
-							UserIDs: toMapSet(1, 2),
+							UserIDs: toMapset(1, 2),
 						},
 					},
 					pendings: []pending{
@@ -2034,14 +2034,14 @@ func testPermsStore_DeleteAllUserPermissions(db *sql.DB) func(*testing.T) {
 		if err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
 			RepoID:  1,
 			Perm:    authz.Read,
-			UserIDs: toMapSet(1, 2),
+			UserIDs: toMapset(1, 2),
 		}); err != nil {
 			t.Fatal(err)
 		}
 		if err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
 			RepoID:  2,
 			Perm:    authz.Read,
-			UserIDs: toMapSet(1, 2),
+			UserIDs: toMapset(1, 2),
 		}); err != nil {
 			t.Fatal(err)
 		}
@@ -2145,7 +2145,7 @@ func testPermsStore_DatabaseDeadlocks(db *sql.DB) func(*testing.T) {
 			if err := s.SetUserPermissions(ctx, &authz.UserPermissions{
 				UserID: 1,
 				Perm:   authz.Read,
-				IDs:    toMapSet(1),
+				IDs:    toMapset(1),
 			}); err != nil {
 				t.Fatal(err)
 			}
@@ -2154,7 +2154,7 @@ func testPermsStore_DatabaseDeadlocks(db *sql.DB) func(*testing.T) {
 			if err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
 				RepoID:  1,
 				Perm:    authz.Read,
-				UserIDs: toMapSet(1),
+				UserIDs: toMapset(1),
 			}); err != nil {
 				t.Fatal(err)
 			}
@@ -2450,7 +2450,7 @@ func testPermsStore_UserIDsWithOutdatedPerms(db *sql.DB) func(*testing.T) {
 				UserID: 1,
 				Perm:   authz.Read,
 				Type:   authz.PermRepos,
-				IDs:    toMapSet(1),
+				IDs:    toMapset(1),
 			},
 		)
 		if err != nil {
@@ -2462,7 +2462,7 @@ func testPermsStore_UserIDsWithOutdatedPerms(db *sql.DB) func(*testing.T) {
 			&authz.RepoPermissions{
 				RepoID:  1,
 				Perm:    authz.Read,
-				UserIDs: toMapSet(2),
+				UserIDs: toMapset(2),
 			},
 		)
 		if err != nil {
@@ -2475,7 +2475,7 @@ func testPermsStore_UserIDsWithOutdatedPerms(db *sql.DB) func(*testing.T) {
 				UserID: 3,
 				Perm:   authz.Read,
 				Type:   authz.PermRepos,
-				IDs:    toMapSet(1),
+				IDs:    toMapset(1),
 			},
 		)
 		if err != nil {
@@ -2488,7 +2488,7 @@ func testPermsStore_UserIDsWithOutdatedPerms(db *sql.DB) func(*testing.T) {
 				UserID: 4,
 				Perm:   authz.Read,
 				Type:   authz.PermRepos,
-				IDs:    toMapSet(1),
+				IDs:    toMapset(1),
 			},
 		)
 		if err != nil {
@@ -2551,7 +2551,7 @@ func testPermsStore_UserIDsWithNoPerms(db *sql.DB) func(*testing.T) {
 		err = s.SetRepoPermissions(ctx, &authz.RepoPermissions{
 			RepoID:  1,
 			Perm:    authz.Read,
-			UserIDs: toMapSet(1),
+			UserIDs: toMapset(1),
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -2620,7 +2620,7 @@ func testPermsStore_RepoIDsWithNoPerms(db *sql.DB) func(*testing.T) {
 		err = s.SetRepoPermissions(ctx, &authz.RepoPermissions{
 			RepoID:  1,
 			Perm:    authz.Read,
-			UserIDs: toMapSet(1),
+			UserIDs: toMapset(1),
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -2685,7 +2685,7 @@ func testPermsStore_UserIDsWithOldestPerms(db *sql.DB) func(*testing.T) {
 		err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
 			RepoID:  1,
 			Perm:    authz.Read,
-			UserIDs: toMapSet(1, 2),
+			UserIDs: toMapset(1, 2),
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -2780,15 +2780,15 @@ func testPermsStore_ReposIDsWithOldestPerms(db *sql.DB) func(*testing.T) {
 			{
 				RepoID:  1,
 				Perm:    authz.Read,
-				UserIDs: toMapSet(1),
+				UserIDs: toMapset(1),
 			}, {
 				RepoID:  2,
 				Perm:    authz.Read,
-				UserIDs: toMapSet(1),
+				UserIDs: toMapset(1),
 			}, {
 				RepoID:  3,
 				Perm:    authz.Read,
-				UserIDs: toMapSet(1),
+				UserIDs: toMapset(1),
 			},
 		}
 		for _, perm := range perms {
@@ -2979,7 +2979,7 @@ func testPermsStore_Metrics(db *sql.DB) func(*testing.T) {
 			err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
 				RepoID:  int32(i),
 				Perm:    authz.Read,
-				UserIDs: toMapSet(1, 2, 3, 4),
+				UserIDs: toMapset(1, 2, 3, 4),
 			})
 			if err != nil {
 				t.Fatal(err)

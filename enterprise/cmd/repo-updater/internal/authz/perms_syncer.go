@@ -629,11 +629,12 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	for i := range repoIDs {
 		p.IDs[int32(repoIDs[i])] = struct{}{}
 	}
-	externalRepoIds := append(externalAccountsRepoIDs, externalServicesRepoIDs...)
-	for i := range externalRepoIds {
-		p.IDs[int32(externalRepoIds[i])] = struct{}{}
+	for i := range externalAccountsRepoIDs {
+		p.IDs[int32(externalAccountsRepoIDs[i])] = struct{}{}
 	}
-
+	for i := range externalServicesRepoIDs {
+		p.IDs[int32(externalServicesRepoIDs[i])] = struct{}{}
+	}
 	err = s.permsStore.SetUserPermissions(ctx, p)
 	if err != nil {
 		return errors.Wrap(err, "set user permissions")
