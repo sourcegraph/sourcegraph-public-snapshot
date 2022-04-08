@@ -21,6 +21,7 @@ type DB interface {
 	Authz() AuthzStore
 	Conf() ConfStore
 	EventLogs() EventLogStore
+	SecurityEventLogs() SecurityEventLogsStore
 	ExternalServices() ExternalServiceStore
 	FeatureFlags() FeatureFlagStore
 	GitserverRepos() GitserverRepoStore
@@ -104,6 +105,10 @@ func (d *db) Conf() ConfStore {
 
 func (d *db) EventLogs() EventLogStore {
 	return EventLogsWith(d.Store)
+}
+
+func (d *db) SecurityEventLogs() SecurityEventLogsStore {
+	return SecurityEventLogsWith(d.Store)
 }
 
 func (d *db) ExternalServices() ExternalServiceStore {

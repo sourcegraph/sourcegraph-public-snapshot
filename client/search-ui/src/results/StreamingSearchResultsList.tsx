@@ -65,7 +65,7 @@ export interface StreamingSearchResultsListProps
     /**
      * Latest run query. Resets scroll visibility state when changed.
      * For example, `location.search` on web.
-     * */
+     */
     executedQuery: string
     /**
      * Classname to be applied to the container of a search result.

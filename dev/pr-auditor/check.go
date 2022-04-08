@@ -23,7 +23,7 @@ func (r checkResult) HasTestPlan() bool {
 }
 
 var (
-	testPlanDividerRegexp       = regexp.MustCompile("(?m)(^#+ Test [pP]lan)|(^Test [pP]lan:)")
+	testPlanDividerRegexp       = regexp.MustCompile("(?m)(#+ Test [pP]lan)|(Test [pP]lan:)")
 	noReviewNeededDividerRegexp = regexp.MustCompile("(?m)([nN]o [rR]eview [rR]equired:)")
 	markdownCommentRegexp       = regexp.MustCompile("<!--((.|\n)*?)-->(\n)*")
 )

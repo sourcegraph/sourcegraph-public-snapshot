@@ -2,22 +2,24 @@ import { useCallback, useState } from 'react'
 
 import { flatten } from 'lodash'
 
-import {
-    appendLineRangeQueryParameter,
-    appendSubtreeQueryParameter,
-    createAggregateError,
-    ErrorLike,
-    toPositionOrRangeQueryParameter,
-} from '@sourcegraph/common'
+import { createAggregateError, ErrorLike } from '@sourcegraph/common'
 import { getDocumentNode } from '@sourcegraph/http-client'
 
 import { getWebGraphQLClient } from '../backend/graphql'
-import { CodeIntelSearchResult, CodeIntelSearchVariables, LocationFields } from '../graphql-operations'
+import { CodeIntelSearchVariables } from '../graphql-operations'
 
 import { LanguageSpec } from './language-specs/languagespec'
 import { Location, buildSearchBasedLocation } from './location'
 import { CODE_INTEL_SEARCH_QUERY } from './ReferencesPanelQueries'
-import { definitionQuery, isSourcegraphDotCom, referencesQuery, searchWithFallback } from './searchBased'
+import {
+    definitionQuery,
+    isExternalPrivateSymbol,
+    isSourcegraphDotCom,
+    referencesQuery,
+    SearchResult,
+    searchResultToResults,
+    searchWithFallback,
+} from './searchBased'
 import { SettingsGetter } from './settings'
 import { sortByProximity } from './sort'
 import { isDefined } from './util/helpers'
@@ -171,7 +173,7 @@ export async function searchBasedDefinitions({
 
     const doSearch = (negateRepoFilter: boolean): Promise<Location[]> =>
         searchWithFallback(
-            args => searchAndFilterDefinitions({ filterDefinitions, queryTerms: args.queryTerms }),
+            args => searchAndFilterDefinitions({ spec, path, filterDefinitions, queryTerms: args.queryTerms }),
             queryArguments,
             negateRepoFilter,
             getSetting
@@ -202,9 +204,15 @@ export async function searchBasedDefinitions({
  * @param args Parameter bag.
  */
 async function searchAndFilterDefinitions({
+    spec,
+    path,
     filterDefinitions,
     queryTerms,
 }: {
+    /** The LanguageSpec of the language in which we're searching */
+    spec: LanguageSpec
+    /** The file we're in */
+    path: string
     /** The function used to filter definitions. */
     filterDefinitions: (results: Location[]) => Location[]
     /** The terms of the search query. */
@@ -213,10 +221,10 @@ async function searchAndFilterDefinitions({
     // Perform search and perform pre-filtering before passing it
     // off to the language spec for the proper filtering pass.
     const result = await executeSearchQuery(queryTerms)
-    const preFilteredResults = searchResultsToLocations(result).map(buildSearchBasedLocation)
-
-    // TODO: This needs to be ported
-    // const preFilteredResults = searchResults.filter(result => !isExternalPrivateSymbol(doc, path, result))
+    const preFilteredResults = result
+        .flatMap(searchResultToResults)
+        .filter(result => !isExternalPrivateSymbol(spec, path, result))
+        .map(buildSearchBasedLocation)
 
     // Filter results based on language spec
     const filteredResults = filterDefinitions(preFilteredResults)
@@ -227,12 +235,20 @@ async function searchAndFilterDefinitions({
 async function searchReferences(terms: string[]): Promise<Location[]> {
     const result = await executeSearchQuery(terms)
 
-    return searchResultsToLocations(result).map(buildSearchBasedLocation)
+    return result.flatMap(searchResultToResults).map(buildSearchBasedLocation)
 }
 
-async function executeSearchQuery(terms: string[]): Promise<CodeIntelSearchResult> {
+async function executeSearchQuery(terms: string[]): Promise<SearchResult[]> {
+    interface Response {
+        search: {
+            results: {
+                limitHit: boolean
+                results: (SearchResult | undefined)[]
+            }
+        }
+    }
     const client = await getWebGraphQLClient()
-    const result = await client.query<CodeIntelSearchResult, CodeIntelSearchVariables>({
+    const result = await client.query<Response, CodeIntelSearchVariables>({
         query: getDocumentNode(CODE_INTEL_SEARCH_QUERY),
         variables: {
             query: terms.join(' '),
@@ -243,67 +259,5 @@ async function executeSearchQuery(terms: string[]): Promise<CodeIntelSearchResul
         throw createAggregateError([result.error])
     }
 
-    return result.data
-}
-
-export function searchResultsToLocations(result: CodeIntelSearchResult): LocationFields[] {
-    if (!result || !result.search) {
-        return []
-    }
-
-    const searchResults = result.search.results.results
-        .filter(value => value !== undefined)
-        .filter(result => result.__typename === 'FileMatch')
-
-    const newReferences: LocationFields[] = []
-    for (const result of searchResults) {
-        if (result.__typename !== 'FileMatch') {
-            continue
-        }
-
-        const resource = {
-            path: result.file.path,
-            content: result.file.content,
-            repository: result.repository,
-            commit: {
-                oid: result.file.commit.oid,
-            },
-        }
-
-        for (const lineMatch of result.lineMatches) {
-            const positionOrRangeQueryParameter = toPositionOrRangeQueryParameter({
-                // TODO: only using first offset?
-                position: { line: lineMatch.lineNumber + 1, character: lineMatch.offsetAndLengths[0][0] + 1 },
-            })
-            const url = appendLineRangeQueryParameter(
-                appendSubtreeQueryParameter(result.file.url),
-                positionOrRangeQueryParameter
-            )
-            newReferences.push({
-                url,
-                resource,
-                range: {
-                    start: {
-                        line: lineMatch.lineNumber,
-                        character: lineMatch.offsetAndLengths[0][0],
-                    },
-                    end: {
-                        line: lineMatch.lineNumber,
-                        character: lineMatch.offsetAndLengths[0][0] + lineMatch.offsetAndLengths[0][1],
-                    },
-                },
-            })
-        }
-
-        const symbolReferences = result.symbols.map(symbol => ({
-            url: symbol.location.url,
-            resource,
-            range: symbol.location.range,
-        }))
-        for (const symbolReference of symbolReferences) {
-            newReferences.push(symbolReference)
-        }
-    }
-
-    return newReferences
+    return result.data.search.results.results.filter(isDefined)
 }

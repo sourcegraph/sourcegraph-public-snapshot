@@ -177,7 +177,7 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                                 showSearchContext={showSearchContext}
                                 assetsRoot={window.context?.assetsRoot || ''}
                                 renderSearchUserNeedsCodeHost={user => <SearchUserNeedsCodeHost user={user} />}
-                                executedQuery={searchQuery.value}
+                                executedQuery={props.location.search}
                             />
                         ))}
                 </div>

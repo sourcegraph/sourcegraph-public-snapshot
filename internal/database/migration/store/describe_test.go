@@ -38,11 +38,9 @@ CREATE TYPE public.mpaa_rating AS ENUM (
     'R',
     'NC-17'
 );
-ALTER TYPE public.mpaa_rating OWNER TO postgres;
 
 CREATE DOMAIN public.year AS integer
 	CONSTRAINT year_check CHECK (((VALUE >= 1901) AND (VALUE <= 2155)));
-ALTER DOMAIN public.year OWNER TO postgres;
 
 CREATE FUNCTION public._group_concat(text, text) RETURNS text
     LANGUAGE sql IMMUTABLE
@@ -53,7 +51,6 @@ SELECT CASE
   ELSE $1 || ', ' || $2
 END
 $_$;
-ALTER FUNCTION public._group_concat(text, text) OWNER TO postgres;
 
 CREATE FUNCTION public.film_in_stock(p_film_id integer, p_store_id integer, OUT p_film_count integer) RETURNS SETOF integer
     LANGUAGE sql
@@ -64,7 +61,6 @@ CREATE FUNCTION public.film_in_stock(p_film_id integer, p_store_id integer, OUT 
      AND store_id = $2
      AND inventory_in_stock(inventory_id);
 $_$;
-ALTER FUNCTION public.film_in_stock(p_film_id integer, p_store_id integer, OUT p_film_count integer) OWNER TO postgres;
 
 CREATE FUNCTION public.film_not_in_stock(p_film_id integer, p_store_id integer, OUT p_film_count integer) RETURNS SETOF integer
     LANGUAGE sql
@@ -75,7 +71,6 @@ CREATE FUNCTION public.film_not_in_stock(p_film_id integer, p_store_id integer, 
     AND store_id = $2
     AND NOT inventory_in_stock(inventory_id);
 $_$;
-ALTER FUNCTION public.film_not_in_stock(p_film_id integer, p_store_id integer, OUT p_film_count integer) OWNER TO postgres;
 
 CREATE FUNCTION public.get_customer_balance(p_customer_id integer, p_effective_date timestamp without time zone) RETURNS numeric
     LANGUAGE plpgsql
@@ -111,7 +106,6 @@ BEGIN
     RETURN v_rentfees + v_overfees - v_payments;
 END
 $$;
-ALTER FUNCTION public.get_customer_balance(p_customer_id integer, p_effective_date timestamp without time zone) OWNER TO postgres;
 
 CREATE FUNCTION public.inventory_held_by_customer(p_inventory_id integer) RETURNS integer
     LANGUAGE plpgsql
@@ -125,7 +119,6 @@ BEGIN
   AND inventory_id = p_inventory_id;
   RETURN v_customer_id;
 END $$;
-ALTER FUNCTION public.inventory_held_by_customer(p_inventory_id integer) OWNER TO postgres;
 
 CREATE FUNCTION public.inventory_in_stock(p_inventory_id integer) RETURNS boolean
     LANGUAGE plpgsql
@@ -152,7 +145,6 @@ BEGIN
       RETURN TRUE;
     END IF;
 END $$;
-ALTER FUNCTION public.inventory_in_stock(p_inventory_id integer) OWNER TO postgres;
 
 CREATE FUNCTION public.last_day(timestamp without time zone) RETURNS date
     LANGUAGE sql IMMUTABLE STRICT
@@ -164,7 +156,6 @@ CREATE FUNCTION public.last_day(timestamp without time zone) RETURNS date
       ((EXTRACT(YEAR FROM $1) operator(pg_catalog.||) '-' operator(pg_catalog.||) (EXTRACT(MONTH FROM $1) + 1) operator(pg_catalog.||) '-01')::date - INTERVAL '1 day')::date
     END
 $_$;
-ALTER FUNCTION public.last_day(timestamp without time zone) OWNER TO postgres;
 
 CREATE FUNCTION public.last_updated() RETURNS trigger
     LANGUAGE plpgsql
@@ -173,7 +164,6 @@ BEGIN
     NEW.last_update = CURRENT_TIMESTAMP;
     RETURN NEW;
 END $$;
-ALTER FUNCTION public.last_updated() OWNER TO postgres;
 
 CREATE SEQUENCE public.customer_customer_id_seq
     START WITH 1
@@ -181,7 +171,6 @@ CREATE SEQUENCE public.customer_customer_id_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-ALTER TABLE public.customer_customer_id_seq OWNER TO postgres;
 SET default_tablespace = '';
 SET default_with_oids = false;
 
@@ -197,7 +186,6 @@ CREATE TABLE public.customer (
     last_update timestamp without time zone DEFAULT now(),
     active integer
 );
-ALTER TABLE public.customer OWNER TO postgres;
 
 CREATE FUNCTION public.rewards_report(min_monthly_purchases integer, min_dollar_amount_purchased numeric) RETURNS SETOF public.customer
     LANGUAGE plpgsql SECURITY DEFINER
@@ -246,13 +234,11 @@ BEGIN
 RETURN;
 END
 $_$;
-ALTER FUNCTION public.rewards_report(min_monthly_purchases integer, min_dollar_amount_purchased numeric) OWNER TO postgres;
 
 CREATE AGGREGATE public.group_concat(text) (
     SFUNC = public._group_concat,
     STYPE = text
 );
-ALTER AGGREGATE public.group_concat(text) OWNER TO postgres;
 
 CREATE SEQUENCE public.actor_actor_id_seq
     START WITH 1
@@ -260,7 +246,6 @@ CREATE SEQUENCE public.actor_actor_id_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-ALTER TABLE public.actor_actor_id_seq OWNER TO postgres;
 
 CREATE TABLE public.actor (
     actor_id integer DEFAULT nextval('public.actor_actor_id_seq'::regclass) NOT NULL,
@@ -268,7 +253,6 @@ CREATE TABLE public.actor (
     last_name character varying(45) NOT NULL,
     last_update timestamp without time zone DEFAULT now() NOT NULL
 );
-ALTER TABLE public.actor OWNER TO postgres;
 
 CREATE SEQUENCE public.category_category_id_seq
     START WITH 1
@@ -276,14 +260,12 @@ CREATE SEQUENCE public.category_category_id_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-ALTER TABLE public.category_category_id_seq OWNER TO postgres;
 
 CREATE TABLE public.category (
     category_id integer DEFAULT nextval('public.category_category_id_seq'::regclass) NOT NULL,
     name character varying(25) NOT NULL,
     last_update timestamp without time zone DEFAULT now() NOT NULL
 );
-ALTER TABLE public.category OWNER TO postgres;
 
 CREATE SEQUENCE public.film_film_id_seq
     START WITH 1
@@ -291,7 +273,6 @@ CREATE SEQUENCE public.film_film_id_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-ALTER TABLE public.film_film_id_seq OWNER TO postgres;
 
 CREATE TABLE public.film (
     film_id integer DEFAULT nextval('public.film_film_id_seq'::regclass) NOT NULL,
@@ -308,21 +289,18 @@ CREATE TABLE public.film (
     special_features text[],
     fulltext tsvector NOT NULL
 );
-ALTER TABLE public.film OWNER TO postgres;
 
 CREATE TABLE public.film_actor (
     actor_id smallint NOT NULL,
     film_id smallint NOT NULL,
     last_update timestamp without time zone DEFAULT now() NOT NULL
 );
-ALTER TABLE public.film_actor OWNER TO postgres;
 
 CREATE TABLE public.film_category (
     film_id smallint NOT NULL,
     category_id smallint NOT NULL,
     last_update timestamp without time zone DEFAULT now() NOT NULL
 );
-ALTER TABLE public.film_category OWNER TO postgres;
 
 CREATE VIEW public.actor_info AS
  SELECT a.actor_id,
@@ -339,7 +317,6 @@ CREATE VIEW public.actor_info AS
      LEFT JOIN public.film_category fc ON ((fa.film_id = fc.film_id)))
      LEFT JOIN public.category c ON ((fc.category_id = c.category_id)))
   GROUP BY a.actor_id, a.first_name, a.last_name;
-ALTER TABLE public.actor_info OWNER TO postgres;
 
 CREATE SEQUENCE public.address_address_id_seq
     START WITH 1
@@ -347,7 +324,6 @@ CREATE SEQUENCE public.address_address_id_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-ALTER TABLE public.address_address_id_seq OWNER TO postgres;
 
 CREATE TABLE public.address (
     address_id integer DEFAULT nextval('public.address_address_id_seq'::regclass) NOT NULL,
@@ -359,7 +335,6 @@ CREATE TABLE public.address (
     phone character varying(20) NOT NULL,
     last_update timestamp without time zone DEFAULT now() NOT NULL
 );
-ALTER TABLE public.address OWNER TO postgres;
 
 CREATE SEQUENCE public.city_city_id_seq
     START WITH 1
@@ -367,7 +342,6 @@ CREATE SEQUENCE public.city_city_id_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-ALTER TABLE public.city_city_id_seq OWNER TO postgres;
 
 CREATE TABLE public.city (
     city_id integer DEFAULT nextval('public.city_city_id_seq'::regclass) NOT NULL,
@@ -375,7 +349,6 @@ CREATE TABLE public.city (
     country_id smallint NOT NULL,
     last_update timestamp without time zone DEFAULT now() NOT NULL
 );
-ALTER TABLE public.city OWNER TO postgres;
 
 CREATE SEQUENCE public.country_country_id_seq
     START WITH 1
@@ -383,14 +356,12 @@ CREATE SEQUENCE public.country_country_id_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-ALTER TABLE public.country_country_id_seq OWNER TO postgres;
 
 CREATE TABLE public.country (
     country_id integer DEFAULT nextval('public.country_country_id_seq'::regclass) NOT NULL,
     country character varying(50) NOT NULL,
     last_update timestamp without time zone DEFAULT now() NOT NULL
 );
-ALTER TABLE public.country OWNER TO postgres;
 
 CREATE VIEW public.customer_list AS
  SELECT cu.customer_id AS id,
@@ -409,7 +380,6 @@ CREATE VIEW public.customer_list AS
      JOIN public.address a ON ((cu.address_id = a.address_id)))
      JOIN public.city ON ((a.city_id = city.city_id)))
      JOIN public.country ON ((city.country_id = country.country_id)));
-ALTER TABLE public.customer_list OWNER TO postgres;
 
 CREATE VIEW public.film_list AS
  SELECT film.film_id AS fid,
@@ -426,7 +396,6 @@ CREATE VIEW public.film_list AS
      JOIN public.film_actor ON ((film.film_id = film_actor.film_id)))
      JOIN public.actor ON ((film_actor.actor_id = actor.actor_id)))
   GROUP BY film.film_id, film.title, film.description, category.name, film.rental_rate, film.length, film.rating;
-ALTER TABLE public.film_list OWNER TO postgres;
 
 CREATE SEQUENCE public.inventory_inventory_id_seq
     START WITH 1
@@ -434,7 +403,6 @@ CREATE SEQUENCE public.inventory_inventory_id_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-ALTER TABLE public.inventory_inventory_id_seq OWNER TO postgres;
 
 CREATE TABLE public.inventory (
     inventory_id integer DEFAULT nextval('public.inventory_inventory_id_seq'::regclass) NOT NULL,
@@ -442,7 +410,6 @@ CREATE TABLE public.inventory (
     store_id smallint NOT NULL,
     last_update timestamp without time zone DEFAULT now() NOT NULL
 );
-ALTER TABLE public.inventory OWNER TO postgres;
 
 CREATE SEQUENCE public.language_language_id_seq
     START WITH 1
@@ -450,14 +417,12 @@ CREATE SEQUENCE public.language_language_id_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-ALTER TABLE public.language_language_id_seq OWNER TO postgres;
 
 CREATE TABLE public.language (
     language_id integer DEFAULT nextval('public.language_language_id_seq'::regclass) NOT NULL,
     name character(20) NOT NULL,
     last_update timestamp without time zone DEFAULT now() NOT NULL
 );
-ALTER TABLE public.language OWNER TO postgres;
 
 CREATE VIEW public.nicer_but_slower_film_list AS
  SELECT film.film_id AS fid,
@@ -474,7 +439,6 @@ CREATE VIEW public.nicer_but_slower_film_list AS
      JOIN public.film_actor ON ((film.film_id = film_actor.film_id)))
      JOIN public.actor ON ((film_actor.actor_id = actor.actor_id)))
   GROUP BY film.film_id, film.title, film.description, category.name, film.rental_rate, film.length, film.rating;
-ALTER TABLE public.nicer_but_slower_film_list OWNER TO postgres;
 
 CREATE SEQUENCE public.payment_payment_id_seq
     START WITH 1
@@ -482,7 +446,6 @@ CREATE SEQUENCE public.payment_payment_id_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-ALTER TABLE public.payment_payment_id_seq OWNER TO postgres;
 
 CREATE TABLE public.payment (
     payment_id integer DEFAULT nextval('public.payment_payment_id_seq'::regclass) NOT NULL,
@@ -492,7 +455,6 @@ CREATE TABLE public.payment (
     amount numeric(5,2) NOT NULL,
     payment_date timestamp without time zone NOT NULL
 );
-ALTER TABLE public.payment OWNER TO postgres;
 
 CREATE SEQUENCE public.rental_rental_id_seq
     START WITH 1
@@ -500,7 +462,6 @@ CREATE SEQUENCE public.rental_rental_id_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-ALTER TABLE public.rental_rental_id_seq OWNER TO postgres;
 
 CREATE TABLE public.rental (
     rental_id integer DEFAULT nextval('public.rental_rental_id_seq'::regclass) NOT NULL,
@@ -511,7 +472,6 @@ CREATE TABLE public.rental (
     staff_id smallint NOT NULL,
     last_update timestamp without time zone DEFAULT now() NOT NULL
 );
-ALTER TABLE public.rental OWNER TO postgres;
 
 CREATE VIEW public.sales_by_film_category AS
  SELECT c.name AS category,
@@ -524,7 +484,6 @@ CREATE VIEW public.sales_by_film_category AS
      JOIN public.category c ON ((fc.category_id = c.category_id)))
   GROUP BY c.name
   ORDER BY (sum(p.amount)) DESC;
-ALTER TABLE public.sales_by_film_category OWNER TO postgres;
 
 CREATE SEQUENCE public.staff_staff_id_seq
     START WITH 1
@@ -532,7 +491,6 @@ CREATE SEQUENCE public.staff_staff_id_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-ALTER TABLE public.staff_staff_id_seq OWNER TO postgres;
 
 CREATE TABLE public.staff (
     staff_id integer DEFAULT nextval('public.staff_staff_id_seq'::regclass) NOT NULL,
@@ -547,7 +505,6 @@ CREATE TABLE public.staff (
     last_update timestamp without time zone DEFAULT now() NOT NULL,
     picture bytea
 );
-ALTER TABLE public.staff OWNER TO postgres;
 
 CREATE SEQUENCE public.store_store_id_seq
     START WITH 1
@@ -555,7 +512,6 @@ CREATE SEQUENCE public.store_store_id_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-ALTER TABLE public.store_store_id_seq OWNER TO postgres;
 
 CREATE TABLE public.store (
     store_id integer DEFAULT nextval('public.store_store_id_seq'::regclass) NOT NULL,
@@ -563,7 +519,6 @@ CREATE TABLE public.store (
     address_id smallint NOT NULL,
     last_update timestamp without time zone DEFAULT now() NOT NULL
 );
-ALTER TABLE public.store OWNER TO postgres;
 
 CREATE VIEW public.sales_by_store AS
  SELECT (((c.city)::text || ','::text) || (cy.country)::text) AS store,
@@ -579,7 +534,6 @@ CREATE VIEW public.sales_by_store AS
      JOIN public.staff m ON ((s.manager_staff_id = m.staff_id)))
   GROUP BY cy.country, c.city, s.store_id, m.first_name, m.last_name
   ORDER BY cy.country, c.city;
-ALTER TABLE public.sales_by_store OWNER TO postgres;
 
 CREATE VIEW public.staff_list AS
  SELECT s.staff_id AS id,
@@ -594,7 +548,6 @@ CREATE VIEW public.staff_list AS
      JOIN public.address a ON ((s.address_id = a.address_id)))
      JOIN public.city ON ((a.city_id = city.city_id)))
      JOIN public.country ON ((city.country_id = country.country_id)));
-ALTER TABLE public.staff_list OWNER TO postgres;
 
 SELECT pg_catalog.setval('public.actor_actor_id_seq', 200, true);
 
