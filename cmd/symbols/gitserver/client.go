@@ -74,7 +74,7 @@ func (c *gitserverClient) GitDiff(ctx context.Context, repo api.RepoName, commit
 	}})
 	defer endObservation(1, observation.Args{})
 
-	output, err := git.DiffSymbols(ctx, c.db, repo, commitA, commitB)
+	output, err := gitserver.NewClient(c.db).DiffSymbols(ctx, repo, commitA, commitB)
 
 	changes, err := parseGitDiffOutput(output)
 	if err != nil {
