@@ -14,13 +14,11 @@ import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SyncIcon from 'mdi-react/SyncIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import { useHistory } from 'react-router'
-import { delay, repeatWhen } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
-    useObservable,
     Badge,
     LoadingSpinner,
     Tab,
@@ -54,7 +52,7 @@ import {
 import { queryChangesetSpecFileDiffs } from '../preview/list/backend'
 import { ChangesetSpecFileDiffConnection } from '../preview/list/ChangesetSpecFileDiffConnection'
 
-import { fetchBatchSpecWorkspace, queryBatchSpecWorkspaceStepFileDiffs, retryWorkspaceExecution } from './backend'
+import { queryBatchSpecWorkspaceStepFileDiffs, retryWorkspaceExecution, useBatchSpecWorkspace } from './backend'
 import { TimelineModal } from './TimelineModal'
 import { WorkspaceStateIcon } from './WorkspaceStateIcon'
 
@@ -72,21 +70,21 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
     deselectWorkspace,
 }) => {
     // Fetch and poll latest workspace information.
-    const workspace = useObservable(
-        useMemo(() => fetchBatchSpecWorkspace(id).pipe(repeatWhen(notifier => notifier.pipe(delay(2500)))), [id])
-    )
+    const workspaceOrLoadingOrError = useBatchSpecWorkspace(id)
 
-    if (workspace === undefined) {
+    if (workspaceOrLoadingOrError === true) {
         return <LoadingSpinner />
     }
 
-    if (workspace === null) {
+    if (workspaceOrLoadingOrError === null) {
         return <NotFoundPage />
     }
 
-    if (isErrorLike(workspace)) {
-        return <ErrorAlert error={workspace} />
+    if (isErrorLike(workspaceOrLoadingOrError)) {
+        return <ErrorAlert error={workspaceOrLoadingOrError} />
     }
+
+    const workspace = workspaceOrLoadingOrError
 
     if (workspace.__typename === 'HiddenBatchSpecWorkspace') {
         return (

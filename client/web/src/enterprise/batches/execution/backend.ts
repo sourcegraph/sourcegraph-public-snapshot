@@ -1,7 +1,8 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { asError, ErrorLike } from '@sourcegraph/common'
+import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
 
 import { fileDiffFields } from '../../../backend/diff'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -235,37 +236,65 @@ export const fetchBatchSpecExecution = (id: Scalars['ID']): Observable<BatchSpec
         })
     )
 
-export const fetchBatchSpecWorkspace = (
+export const BATCH_SPEC_WORKSPACE_BY_ID = gql`
+    query BatchSpecWorkspaceByID($id: ID!) {
+        node(id: $id) {
+            __typename
+            ... on HiddenBatchSpecWorkspace {
+                ...HiddenBatchSpecWorkspaceFields
+            }
+            ... on VisibleBatchSpecWorkspace {
+                ...VisibleBatchSpecWorkspaceFields
+            }
+        }
+    }
+    ${batchSpecWorkspaceFieldsFragment}
+`
+
+export const useBatchSpecWorkspace = (
     id: Scalars['ID']
-): Observable<HiddenBatchSpecWorkspaceFields | VisibleBatchSpecWorkspaceFields | null> =>
-    requestGraphQL<BatchSpecWorkspaceByIDResult, BatchSpecWorkspaceByIDVariables>(
-        gql`
-            query BatchSpecWorkspaceByID($id: ID!) {
-                node(id: $id) {
-                    __typename
-                    ... on HiddenBatchSpecWorkspace {
-                        ...HiddenBatchSpecWorkspaceFields
-                    }
-                    ... on VisibleBatchSpecWorkspace {
-                        ...VisibleBatchSpecWorkspaceFields
-                    }
-                }
-            }
-            ${batchSpecWorkspaceFieldsFragment}
-        `,
-        { id }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(({ node }) => {
-            if (!node) {
-                return null
-            }
-            if (node.__typename !== 'HiddenBatchSpecWorkspace' && node.__typename !== 'VisibleBatchSpecWorkspace') {
-                throw new Error(`Node is a ${node.__typename}, not a BatchSpecWorkspace`)
-            }
-            return node
-        })
+): VisibleBatchSpecWorkspaceFields | HiddenBatchSpecWorkspaceFields | null | ErrorLike | true => {
+    const { loading, data, error } = useQuery<BatchSpecWorkspaceByIDResult, BatchSpecWorkspaceByIDVariables>(
+        BATCH_SPEC_WORKSPACE_BY_ID,
+        {
+            variables: { id },
+            // Cache this data but always re-request it in the background to pick up newer changes.
+            fetchPolicy: 'cache-and-network',
+            // We continuously poll for changes to the workspace. This isn't the most effective
+            // use of network bandwidth since many of these fields aren't changing and most of
+            // the time there will be no changes at all, but it's also the easiest way to
+            // keep this in sync for now at the cost of a bit of excess network resources.
+            pollInterval: 2500,
+            // For subsequent requests while this page is open, make additional network
+            // requests; this is necessary for `refetch` to actually use the network. (see
+            // https://github.com/apollographql/apollo-client/issues/5515)
+            nextFetchPolicy: 'cache-and-network',
+        }
     )
+
+    if (loading) {
+        return loading
+    }
+
+    if (error) {
+        return asError(error)
+    }
+
+    if (data) {
+        if (!data.node) {
+            return null
+        }
+        if (
+            data.node.__typename !== 'HiddenBatchSpecWorkspace' &&
+            data.node.__typename !== 'VisibleBatchSpecWorkspace'
+        ) {
+            throw new Error(`Node is a ${data.node.__typename}, not a BatchSpecWorkspace`)
+        }
+        return data.node
+    }
+
+    throw new Error('unreachable?')
+}
 
 export async function cancelBatchSpecExecution(id: Scalars['ID']): Promise<BatchSpecExecutionFields> {
     const result = await requestGraphQL<CancelBatchSpecExecutionResult, CancelBatchSpecExecutionVariables>(
@@ -338,7 +367,7 @@ export const queryBatchSpecWorkspaceStepFileDiffs = ({
                 throw new Error('No access to this workspace')
             }
             if (node.__typename !== 'VisibleBatchSpecWorkspace') {
-                throw new Error(`The given ID is a ${node.__typename}, not a BatchSpecWorkspace`)
+                throw new Error(`The given ID is a ${node.__typename}, not a VisibleBatchSpecWorkspace`)
             }
             if (!node.step) {
                 throw new Error('The given Step is not available')
