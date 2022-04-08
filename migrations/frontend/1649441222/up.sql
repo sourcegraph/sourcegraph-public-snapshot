@@ -59,8 +59,10 @@ CREATE OR REPLACE FUNCTION func_lsif_uploads_update() RETURNS TRIGGER AS $$
     END;
 $$ LANGUAGE plpgsql;
 
+-- CREATE OR REPLACE only supported in Postgres 14+
+DROP TRIGGER IF EXISTS trigger_lsif_uploads_update on lsif_uploads;
 
-CREATE OR REPLACE TRIGGER trigger_lsif_uploads_update
+CREATE TRIGGER trigger_lsif_uploads_update
 AFTER UPDATE OF state, num_resets, num_failures, worker_hostname, expired, committed_at
 ON lsif_uploads
 FOR EACH ROW
