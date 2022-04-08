@@ -47,17 +47,16 @@ func CheckOrgExternalServices(ctx context.Context, db database.DB, orgID int32) 
 	return errors.New("organization code host connections are not enabled")
 }
 
-// CheckExternalServicesQuota returns an error message if the maximum mumber of external services has been
-// reached for a given org or user on Cloud. Max of 2 services - one for GitHub, one for GitLab - can be added
+// CheckExternalServicesQuota checks if the maximum mumber of external services has been
+// reached. Max of 2 services - one for GitHub, one for GitLab - can be added per org or user
 func CheckExternalServicesQuota(ctx context.Context, db database.DB, kind string, orgID, userID int32) error {
-	// TODO: CONFIRM if there's a case when orgID and userID are both null
-	services, err := servicesMap(ctx, db, orgID, userID)
+	services, err := servicesCountPerKind(ctx, db, orgID, userID)
 	if err != nil {
 		return err
 	}
 
-	if (kind == extsvc.KindGitHub && services[extsvc.KindGitHub] >= 1) || (kind == extsvc.KindGitLab services[extsvc.KindGitLab] >= 1) {
-		return errors.New(fmt.Sprintf("a max of one %s external service is allowed", kind))
+	if (kind == extsvc.KindGitHub && services[extsvc.KindGitHub] >= 1) || (kind == extsvc.KindGitLab && services[extsvc.KindGitLab] >= 1) {
+		return errors.New(fmt.Sprintf("a maximum of one external service is allowed for type %s", kind))
 	}
 
 	if services[extsvc.KindGitHub] == 0 || services[extsvc.KindGitLab] == 0 {
@@ -67,8 +66,8 @@ func CheckExternalServicesQuota(ctx context.Context, db database.DB, kind string
 	return errors.New("maximum number of external services has been reached")
 }
 
-// servicesMap returns a dictionary with the total count for each type of service
-func servicesMap(ctx context.Context, db database.DB, orgID, userID int32) (map[string]int, error) {
+// servicesMap returns a map with the total count for each type of service
+func servicesCountPerKind(ctx context.Context, db database.DB, orgID, userID int32) (map[string]int, error) {
 	var services []*types.ExternalService
 	var err error
 
@@ -99,10 +98,10 @@ func servicesMap(ctx context.Context, db database.DB, orgID, userID int32) (map[
 
 // ExternalServiceSupported checks if a given external service is supported on Cloud mode.
 // Services currently supported are GitHub and GitLab
-func ExternalServiceSupported(kind string) error {
+func ExternalServiceKindSupported(kind string) error {
 	if kind == extsvc.KindGitHub || kind == extsvc.KindGitLab {
 		return nil
 	}
 
-	return errors.Errorf("external service of kind %v is currently not supported on Cloud mode", kind)
+	return errors.Errorf("external service of kind %v is not supported on Cloud mode", kind)
 }
