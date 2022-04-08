@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"golang.org/x/time/rate"
 )
 
 func TestExtractToken(t *testing.T) {
@@ -57,99 +58,77 @@ func TestExtractRateLimitConfig(t *testing.T) {
 		name   string
 		config string
 		kind   string
-		want   RateLimitConfig
+		want   rate.Limit
 	}{
 		{
 			name:   "GitLab default",
 			config: `{"url": "https://example.com/"}`,
 			kind:   KindGitLab,
-			want: RateLimitConfig{
-				Limit: 10.0,
-			},
+			want:   10.0,
 		},
 		{
 			name:   "GitHub default",
 			config: `{"url": "https://example.com/"}`,
 			kind:   KindGitHub,
-			want: RateLimitConfig{
-				Limit: 1.3888888888888888,
-			},
+			want:   1.3888888888888888,
 		},
 		{
 			name:   "Bitbucket Server default",
 			config: `{"url": "https://example.com/"}`,
 			kind:   KindBitbucketServer,
-			want: RateLimitConfig{
-				Limit: 8.0,
-			},
+			want:   8.0,
 		},
 		{
 			name:   "Bitbucket Cloud default",
 			config: `{"url": "https://example.com/"}`,
 			kind:   KindBitbucketCloud,
-			want: RateLimitConfig{
-				Limit: 2.0,
-			},
+			want:   2.0,
 		},
 		{
 			name:   "GitLab non-default",
 			config: `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
 			kind:   KindGitLab,
-			want: RateLimitConfig{
-				Limit: 1.0,
-			},
+			want:   1.0,
 		},
 		{
 			name:   "GitHub non-default",
 			config: `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
 			kind:   KindGitHub,
-			want: RateLimitConfig{
-				Limit: 1.0,
-			},
+			want:   1.0,
 		},
 		{
 			name:   "Bitbucket Server non-default",
 			config: `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
 			kind:   KindBitbucketServer,
-			want: RateLimitConfig{
-				Limit: 1.0,
-			},
+			want:   1.0,
 		},
 		{
 			name:   "Bitbucket Cloud non-default",
 			config: `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
 			kind:   KindBitbucketCloud,
-			want: RateLimitConfig{
-				Limit: 1.0,
-			},
+			want:   1.0,
 		},
 		{
 			name:   "NPM default",
 			config: `{"registry": "https://registry.npmjs.org"}`,
 			kind:   KindNpmPackages,
-			want: RateLimitConfig{
-				Limit: 3000.0 / 3600.0,
-			},
+			want:   3000.0 / 3600.0,
 		},
 		{
 			name:   "NPM non-default",
 			config: `{"registry": "https://registry.npmjs.org", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
 			kind:   KindNpmPackages,
-			want: RateLimitConfig{
-				Limit: 1.0,
-			},
+			want:   1.0,
 		},
 		{
 			name:   "No trailing slash",
 			config: `{"url": "https://example.com", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
 			kind:   KindBitbucketCloud,
-			want: RateLimitConfig{
-				Limit: 1.0,
-			},
+			want:   1.0,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			rlc, err := ExtractRateLimitConfig(tc.config, tc.kind)
+			rlc, err := ExtractRateLimit(tc.config, tc.kind)
 			if err != nil {
 				t.Fatal(err)
 			}
