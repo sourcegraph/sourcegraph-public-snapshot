@@ -92,6 +92,17 @@ func main() {
 					Format:  "tar",
 				})
 			},
+			FetchTarPaths: func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
+				pathspecs := make([]gitserver.Pathspec, len(paths))
+				for i, p := range paths {
+					pathspecs[i] = gitserver.PathspecLiteral(p)
+				}
+				return git.Archive(ctx, repo, gitserver.ArchiveOptions{
+					Treeish:   string(commit),
+					Format:    "tar",
+					Pathspecs: pathspecs,
+				})
+			},
 			FilterTar:         search.NewFilter,
 			Path:              filepath.Join(cacheDir, "searcher-archives"),
 			MaxCacheSizeBytes: cacheSizeBytes,

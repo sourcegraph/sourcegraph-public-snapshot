@@ -23,6 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- Code Insights: Series data is now sorted by semantic version then alphabetically.
 - Code Insights: Added locked insights overlays for frozen insights while in limited access mode. Restricted insight editing save change button for frozen insights. [#33062](https://github.com/sourcegraph/sourcegraph/pull/33062)
 - Code Insights: A global dashboard will now be automatically created while in limited access mode to provide consistent visibility for unlocked insights. This dashboard cannot be deleted or modified while in limited access mode. [#32992](https://github.com/sourcegraph/sourcegraph/pull/32992)
 - Update "getting started checklist for visitors" to a new design [TODO:]
@@ -38,6 +39,12 @@ All notable changes to Sourcegraph are documented in this file.
 ### Removed
 
 -
+
+## 3.38.1
+
+### Fixed
+
+- An issue introduced in 3.38 that caused alerts to not be delivered [#33398](https://github.com/sourcegraph/sourcegraph/pull/33398)
 
 ## 3.38.0
 

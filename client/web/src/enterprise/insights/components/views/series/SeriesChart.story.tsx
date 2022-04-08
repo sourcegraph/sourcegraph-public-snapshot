@@ -94,13 +94,15 @@ const SERIES: Series<StandardDatum>[] = [
     },
 ]
 
+const GET_X_VALUE = (datum: StandardDatum): Date => new Date(datum.x ?? 0)
+
 export const SeriesLineChart: Story = () => (
     <SeriesChart
         type={SeriesBasedChartTypes.Line}
         data={DATA}
         series={SERIES}
         stacked={false}
-        xAxisKey="x"
+        getXValue={GET_X_VALUE}
         width={400}
         height={400}
     />

@@ -8,7 +8,7 @@ import { retry } from '@sourcegraph/shared/src/testing/utils'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 
 import { BrowserIntegrationTestContext, createBrowserIntegrationTestContext } from './context'
-import { closeInstallPageTab, percySnapshot } from './shared'
+import { closeInstallPageTab } from './shared'
 
 describe('GitLab', () => {
     let driver: Driver
@@ -184,7 +184,5 @@ describe('GitLab', () => {
                 timeout: 6000,
             },
         })
-
-        await percySnapshot(driver.page, 'Browser extension: GitLab - blob view with code intel popup')
     })
 })

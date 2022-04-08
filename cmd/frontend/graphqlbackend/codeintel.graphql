@@ -588,7 +588,7 @@ type CodeIntelRepositorySummary {
     recently queued, and the most recently processed indexes for each distinct indexer
     and root.
     """
-    recentIndexes: [LSIFIndexesithRepositoryNamespace!]!
+    recentIndexes: [LSIFIndexesWithRepositoryNamespace!]!
 
     """
     The last time uploads of this repository were checked against data retention policies.
@@ -624,7 +624,7 @@ type LSIFUploadsWithRepositoryNamespace {
 """
 A group of indexes that share the same root and indexer values.
 """
-type LSIFIndexesithRepositoryNamespace {
+type LSIFIndexesWithRepositoryNamespace {
     """
     The root of all indexes in the associated connection.
     """
