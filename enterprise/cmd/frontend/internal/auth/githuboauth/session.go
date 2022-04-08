@@ -132,6 +132,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 }
 
 func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, token *oauth2.Token, providerID string) (safeErrMsg string, err error) {
+	log15.Info("CreateCodeHostConnection")
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
 		return "Must be authenticated to create code host connection from OAuth flow.", errors.New("unauthenticated request")

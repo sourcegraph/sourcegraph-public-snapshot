@@ -43,6 +43,8 @@ type addExternalServiceInput struct {
 }
 
 func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExternalServiceArgs) (*externalServiceResolver, error) {
+	log15.Info("AddExternalService")
+
 	start := time.Now()
 	// 🚨 SECURITY: Only site admins may add external services if user mode is disabled.
 	var namespaceUserID, namespaceOrgID int32
@@ -121,6 +123,8 @@ type updateExternalServiceInput struct {
 }
 
 func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *updateExternalServiceArgs) (*externalServiceResolver, error) {
+	log15.Info("UpdateExternalService")
+
 	start := time.Now()
 	var err error
 	var namespaceUserID, namespaceOrgID int32
@@ -225,6 +229,8 @@ type deleteExternalServiceArgs struct {
 }
 
 func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *deleteExternalServiceArgs) (*EmptyResponse, error) {
+	log15.Info("DeleteExternalService")
+
 	start := time.Now()
 	var err error
 	var namespaceUserID, namespaceOrgID int32

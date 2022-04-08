@@ -581,6 +581,7 @@ func upsertAuthorizationToExternalService(kind, config string) (string, error) {
 }
 
 func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.Unified, es *types.ExternalService) error {
+	log15.Info(">>>>> HERE  <<<<<<")
 	normalized, err := ValidateExternalServiceConfig(ctx, e, ValidateExternalServiceConfigOptions{
 		Kind:            es.Kind,
 		Config:          es.Config,
@@ -677,6 +678,8 @@ func (e *externalServiceStore) maybeDecryptConfig(ctx context.Context, config st
 }
 
 func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.ExternalService) (err error) {
+	log15.Info("HERE Upsert")
+
 	if len(svcs) == 0 {
 		return nil
 	}

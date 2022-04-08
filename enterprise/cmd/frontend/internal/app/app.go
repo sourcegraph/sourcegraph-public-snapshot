@@ -147,6 +147,8 @@ func EncryptWithPrivateKey(msg string, privateKey []byte) ([]byte, error) {
 
 func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githubClient) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log15.Info("newGitHubAppCloudSetupHandler: HERE")
+
 		if !envvar.SourcegraphDotComMode() {
 			w.WriteHeader(http.StatusNotFound)
 			_, _ = w.Write([]byte("Sourcegraph Cloud GitHub App setup is only available on sourcegraph.com"))
