@@ -30,7 +30,7 @@ func NewLockoutStore(failedThreshold int, lockoutPeriod, consecutivePeriod time.
 	return &lockoutStore{
 		failedThreshold: failedThreshold,
 		lockouts:        rcache.NewWithTTL("account_lockout:", int(lockoutPeriod.Seconds())),
-		failedAttempts:  rcache.NewWithTTL("failed_login_attempts:", int(consecutivePeriod.Seconds())),
+		failedAttempts:  rcache.NewWithTTL("account_failed_attempts:", int(consecutivePeriod.Seconds())),
 	}
 }
 

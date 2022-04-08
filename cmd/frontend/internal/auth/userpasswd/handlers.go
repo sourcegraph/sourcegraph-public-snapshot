@@ -256,7 +256,7 @@ func HandleSignIn(db database.DB, store LockoutStore) func(w http.ResponseWriter
 		signInResult = database.SecurityEventNameSignInFailed
 		defer func() {
 			logSignInEvent(r, db, &user, &signInResult)
-			checkAccountLockout(store, &user, signInResult)
+			checkAccountLockout(store, &user, &signInResult)
 		}()
 
 		if r.Method != http.MethodPost {
@@ -280,7 +280,7 @@ func HandleSignIn(db database.DB, store LockoutStore) func(w http.ResponseWriter
 		user = *u
 
 		if reason, locked := store.IsLockedOut(user.ID); locked {
-			httpLogAndError(w, fmt.Sprintf("Account has been locked out due to %q", reason), http.StatusBadRequest)
+			httpLogAndError(w, fmt.Sprintf("Account has been locked out due to %q", reason), http.StatusUnprocessableEntity)
 			return
 		}
 
@@ -325,14 +325,14 @@ func logSignInEvent(r *http.Request, db database.DB, user *types.User, name *dat
 	db.SecurityEventLogs().LogEvent(r.Context(), event)
 }
 
-func checkAccountLockout(store LockoutStore, user *types.User, event database.SecurityEventName) {
+func checkAccountLockout(store LockoutStore, user *types.User, event *database.SecurityEventName) {
 	if user.ID <= 0 {
 		return
 	}
 
-	if event == database.SecurityEventNameSignInSucceeded {
+	if *event == database.SecurityEventNameSignInSucceeded {
 		store.Reset(user.ID)
-	} else if event == database.SecurityEventNameSignInFailed {
+	} else if *event == database.SecurityEventNameSignInFailed {
 		store.IncreaseFailedAttempt(user.ID)
 	}
 }
