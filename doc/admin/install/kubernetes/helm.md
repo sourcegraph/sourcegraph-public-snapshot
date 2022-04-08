@@ -863,6 +863,16 @@ Then, display a diff between a live deployment and an upgrade, with 5 lines of c
 
 For more examples and configuration options, reference the [Helm Diff] plugin documentation.
 
+## Uninstalling Sourcegraph
+
+Sourcegraph can be uninstalled by running the following command:
+
+```sh
+helm uninstall sourcegraph
+```
+
+Some Persistent Volumes may be retained after the uninstall is complete. In your cloud provider, check for unattached disks and delete them as necessary.
+
 [backendconfig]: https://cloud.google.com/kubernetes-engine/docs/how-to/ingress-features#create_backendconfig
 [azure application gateway]: https://docs.microsoft.com/en-us/azure/application-gateway/overview
 [Container-native load balancing]: https://cloud.google.com/kubernetes-engine/docs/how-to/container-native-load-balancing
