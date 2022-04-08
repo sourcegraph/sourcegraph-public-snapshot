@@ -7,6 +7,7 @@ import LinkIcon from 'mdi-react/LinkIcon'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
+import { Icon } from '@sourcegraph/wildcard'
 
 import { WebviewPageProps } from '../../platform/context'
 
@@ -68,7 +69,7 @@ const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInf
             data-tooltip="Your search query is interpreted literally, including the quotes. Use the .* toggle to switch between literal and regular expression search."
         >
             <span>
-                <FormatQuoteOpenIcon className="icon-inline" />
+                <Icon className="mr-1" as={FormatQuoteOpenIcon} />
                 Searching literally <strong>(including quotes)</strong>
             </span>
         </small>
@@ -129,21 +130,20 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         searchParameters.set('q', fullQuery)
         searchParameters.set('trigger-query', `${fullQuery} patternType:${patternType}`)
         return (
-            <li
-                className={classNames('mr-2', styles.navItem)}
-                data-tooltip={
-                    !canCreateMonitorFromQuery
-                        ? 'Code monitors only support type:diff or type:commit searches.'
-                        : undefined
-                }
-            >
+            <li className={classNames('mr-2', styles.navItem)}>
                 <ExperimentalActionButton
+                    extensionCoreAPI={extensionCoreAPI}
                     showExperimentalVersion={showActionButtonExperimentalVersion}
                     onNonExperimentalLinkClick={onCreateCodeMonitorButtonClick}
                     className="test-save-search-link"
+                    data-tooltip={
+                        !canCreateMonitorFromQuery
+                            ? 'Code monitors only support type:diff or type:commit searches.'
+                            : undefined
+                    }
                     button={
                         <>
-                            <CodeMonitoringLogo className="icon-inline mr-1" />
+                            <Icon className="mr-1" as={CodeMonitoringLogo} />
                             Monitor
                         </>
                     }
@@ -156,30 +156,31 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     telemetryService={platformContext.telemetryService}
                     isNonExperimentalLinkDisabled={!canCreateMonitorFromQuery}
                     instanceURL={instanceURL}
-                    onToggle={onCreateCodeMonitorButtonClick}
                 />
             </li>
         )
     }, [
-        canCreateMonitorFromQuery,
         fullQuery,
-        instanceURL,
-        onCreateCodeMonitorButtonClick,
-        platformContext.telemetryService,
-        showActionButtonExperimentalVersion,
         patternType,
+        extensionCoreAPI,
+        showActionButtonExperimentalVersion,
+        onCreateCodeMonitorButtonClick,
+        canCreateMonitorFromQuery,
+        platformContext.telemetryService,
+        instanceURL,
     ])
 
     const saveSearchButton = useMemo(
         () => (
             <li className={classNames('mr-2', styles.navItem)}>
                 <ExperimentalActionButton
+                    extensionCoreAPI={extensionCoreAPI}
                     showExperimentalVersion={showActionButtonExperimentalVersion}
                     onNonExperimentalLinkClick={onSaveSearchButtonClick}
                     className="test-save-search-link"
                     button={
                         <>
-                            <BookmarkOutlineIcon className="icon-inline mr-1" />
+                            <Icon className="mr-1" as={BookmarkOutlineIcon} />
                             Save search
                         </>
                     }
@@ -192,35 +193,47 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     telemetryService={platformContext.telemetryService}
                     isNonExperimentalLinkDisabled={showActionButtonExperimentalVersion}
                     instanceURL={instanceURL}
-                    onToggle={onSaveSearchButtonClick}
+                    onToggle={() => setShowSavedSearchForm(!showSavedSearchForm)}
                 />
             </li>
         ),
-        [showActionButtonExperimentalVersion, onSaveSearchButtonClick, platformContext.telemetryService, instanceURL]
+        [
+            extensionCoreAPI,
+            showActionButtonExperimentalVersion,
+            onSaveSearchButtonClick,
+            platformContext.telemetryService,
+            instanceURL,
+            setShowSavedSearchForm,
+            showSavedSearchForm,
+        ]
+    )
+
+    const ShareLinkButton = useMemo(
+        () => (
+            <li className={classNames('mr-2', styles.navItem)} data-tooltip="Share results link">
+                <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary text-decoration-none"
+                    onClick={onShareResultsClick}
+                >
+                    <Icon className="mr-1" as={LinkIcon} />
+                    Share
+                </button>
+            </li>
+        ),
+        [onShareResultsClick]
     )
 
     return (
         <div className={classNames('flex-grow-1 my-2', styles.searchResultsInfoBar)} data-testid="results-info-bar">
             <div className={styles.row}>
                 {stats}
-
                 <QuotesInterpretedLiterallyNotice {...props} />
-
                 <div className={styles.expander} />
-
                 <ul className="nav align-items-center">
                     {createCodeMonitorButton}
                     {saveSearchButton}
-                    <li className={classNames('mr-2', styles.navItem)} data-tooltip="Share results link">
-                        <button
-                            type="button"
-                            className="btn btn-sm btn-outline-secondary text-decoration-none"
-                            onClick={onShareResultsClick}
-                        >
-                            <LinkIcon className="icon-inline mr-1" />
-                            Share
-                        </button>
-                    </li>
+                    {ShareLinkButton}
                 </ul>
             </div>
         </div>

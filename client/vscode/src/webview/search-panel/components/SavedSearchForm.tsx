@@ -1,5 +1,8 @@
-import classNames from 'classnames'
 import React, { useMemo, useState } from 'react'
+
+import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
+import classNames from 'classnames'
+import CloseIcon from 'mdi-react/CloseIcon'
 import { map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
@@ -7,7 +10,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, Icon, PageHeader } from '@sourcegraph/wildcard'
 
 import { CreateSavedSearchResult, CreateSavedSearchVariables, SavedSearchFields } from '../../../graphql-operations'
 import { WebviewPageProps } from '../../platform/context'
@@ -25,6 +28,13 @@ export interface SavedSearchFormProps extends Pick<WebviewPageProps, 'instanceUR
     loading: boolean
     error?: any
     fullQuery: string
+    onComplete: () => void
+}
+
+export interface SavedSearchCreateFormProps
+    extends Omit<SavedSearchFormProps, 'loading' | 'error' | 'onSubmit'>,
+        Pick<WebviewPageProps, 'platformContext' | 'instanceURL'> {
+    authenticatedUser: AuthenticatedUser
 }
 
 const savedSearchFragment = gql`
@@ -65,13 +75,6 @@ const createSavedSearchQuery = gql`
     }
     ${savedSearchFragment}
 `
-
-export interface SavedSearchCreateFormProps
-    extends Omit<SavedSearchFormProps, 'loading' | 'error' | 'onSubmit'>,
-        Pick<WebviewPageProps, 'platformContext' | 'instanceURL'> {
-    authenticatedUser: AuthenticatedUser
-    onComplete: () => void
-}
 
 export const SavedSearchCreateForm: React.FunctionComponent<SavedSearchCreateFormProps> = props => {
     const [loading, setLoading] = useState(false)
@@ -158,15 +161,21 @@ const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = props => 
     const { query, description, notify, notifySlack, slackWebhookURL } = values
 
     return (
-        <div className="saved-search-form">
-            <PageHeader
-                path={[{ text: props.title }]}
-                headingElement="h2"
-                description="Get notifications when there are new results for specific search queries."
-                className="mb-3"
+        <div className={classNames(styles.container, 'saved-search-form position-relative')}>
+            <Icon
+                className="position-absolute cursor-pointer"
+                style={{ top: '1rem', right: '1rem' }}
+                onClick={props.onComplete}
+                as={CloseIcon}
             />
             <Form onSubmit={handleSubmit}>
-                <Container className="mb-3">
+                <Container className={styles.container}>
+                    <PageHeader
+                        path={[{ text: props.title }]}
+                        headingElement="h2"
+                        description="Get notifications when there are new results for specific search queries."
+                        className="mb-3"
+                    />
                     <div className="form-group">
                         <label className={styles.label} htmlFor="saved-search-form-input-description">
                             Description
@@ -251,16 +260,13 @@ const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = props => 
                             server. {props.authenticatedUser && 'Contact your server admin to enable sending emails.'}
                         </div>
                     )}
+                    {props.error && !props.loading && <ErrorAlert className="my-3" error={props.error} />}
+                    <div className="form-group text-right mb-0">
+                        <VSCodeButton type="submit" disabled={props.loading}>
+                            {props.submitLabel}
+                        </VSCodeButton>
+                    </div>
                 </Container>
-                <button
-                    type="submit"
-                    disabled={props.loading}
-                    className={classNames(styles.submitButton, 'btn btn-primary test-saved-search-form-submit-button')}
-                >
-                    {props.submitLabel}
-                </button>
-
-                {props.error && !props.loading && <ErrorAlert className="mb-3" error={props.error} />}
             </Form>
         </div>
     )

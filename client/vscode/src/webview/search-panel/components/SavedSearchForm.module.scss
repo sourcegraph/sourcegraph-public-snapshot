@@ -1,13 +1,14 @@
+.container {
+    background-color: var(--vscode-editorWidget-background) !important;
+    padding: 0.5rem;
+}
+
 .checkbox {
     margin-right: 0.25rem;
 }
 
 .label {
     font-weight: bold;
-}
-
-.submit-button {
-    margin-bottom: 1rem;
 }
 
 // Hide icon in alert
