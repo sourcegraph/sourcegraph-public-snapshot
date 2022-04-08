@@ -1,16 +1,19 @@
 import React, { useMemo } from 'react'
 
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
+// Disable so we can create a separate store for the VS Code extension.
+// eslint-disable-next-line no-restricted-imports
 import create from 'zustand'
 
 import {
+    InitialParametersSource,
     SearchPatternType,
     SearchQueryState,
     SearchQueryStateStore,
     SearchQueryStateStoreProvider,
     updateQuery,
 } from '@sourcegraph/search'
-import { SearchSidebar } from '@sourcegraph/search-ui/src/results/sidebar/SearchSidebar'
+import { SearchSidebar } from '@sourcegraph/search-ui'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { Filter, LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { useObservable } from '@sourcegraph/wildcard'
@@ -29,6 +32,7 @@ export const SearchSidebarView: React.FunctionComponent<SearchSidebarViewProps> 
         const useSearchQueryState: SearchQueryStateStore = useMemo(
             () =>
                 create<SearchQueryState>((set, get) => ({
+                    parametersSource: InitialParametersSource.DEFAULT,
                     queryState: { query: '' },
                     searchCaseSensitivity: false,
                     searchPatternType: SearchPatternType.literal,
