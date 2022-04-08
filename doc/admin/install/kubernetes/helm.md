@@ -766,10 +766,16 @@ A new version of Sourcegraph is released every month (with patch releases in bet
 1.  Install the new version:
 
    ```bash
-      helm upgrade --install --wait -f override.yaml --version 0.7.0 sourcegraph sourcegraph/sourcegraph
+      helm upgrade --install -f override.yaml --version 0.7.0 sourcegraph sourcegraph/sourcegraph
    ```
 
-The --wait flag is optional and can be removed if you do not want to wait for the upgraded resources to become healthy.
+1.  Verify the installation has started:
+
+   ```bash
+      kubectl get pods --watch
+   ```
+
+   When all pods have restarted and show as Running, you can browse to your Sourcegraph deployment and login to verify the instance is working as expected. For troubleshooting, refer to the [Operations guide](https://docs.sourcegraph.com/admin/install/kubernetes/operations) for common commands to gather more information about failures.
 
 ### Rollback
 
