@@ -56,7 +56,7 @@
       "default": false
     },
     "defaultRateLimit" : {
-      "description": "The rate limit for the default rate limiter in the rate limiters registry",
+      "description": "The rate limit for the default rate limiter in the rate limiters registry. By default this is disabled and the default rate limit is infinity.",
       "type": "integer",
       "default": -1
     },
