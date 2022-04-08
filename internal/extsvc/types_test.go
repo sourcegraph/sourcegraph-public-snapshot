@@ -164,7 +164,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			want: RateLimitConfig{
 				BaseURL:     "https://registry.npmjs.org/",
 				DisplayName: "NPM 1",
-				Limit:       2.0,
+				Limit:       3000.0 / 3600.0,
 				IsDefault:   true,
 			},
 		},
