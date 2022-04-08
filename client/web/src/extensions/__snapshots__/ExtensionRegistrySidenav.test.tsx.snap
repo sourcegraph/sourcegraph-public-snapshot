@@ -8,7 +8,9 @@ exports[`ExtensionsQueryInputToolbar renders 1`] = `
     <div
       class="mb-3 sidebar"
     >
-      <h3>
+      <h3
+        class="a11y-ignore"
+      >
         Categories
       </h3>
       <button

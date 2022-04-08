@@ -39,7 +39,11 @@ export const SidebarNavItem: React.FunctionComponent<{
  *
  * Header of a `SideBarGroup`
  */
-export const SidebarGroupHeader: React.FunctionComponent<{ label: string }> = ({ label }) => <h3>{label}</h3>
+export const SidebarGroupHeader: React.FunctionComponent<{ label: string }> = ({ label }) => (
+    // Ignore Rule: "heading-order" (Heading levels should only increase by one)
+    //  To support accessibility rule here, we would need to use h2 tag, since PageHeader(on upper scope) renders h1
+    <h3 className="a11y-ignore">{label}</h3>
+)
 
 /**
  * Sidebar with collapsible items
