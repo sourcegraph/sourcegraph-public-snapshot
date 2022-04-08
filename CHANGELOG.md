@@ -38,6 +38,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Search patterns containing `and` and `not` expressions are now optimized to evaluate natively on the Zoekt backend for indexed code content and symbol search wherever possible. These kinds of queries are now typically an order of magnitude faster. Previous cases where no results were returned for expensive search expressions should now work and return results quickly. [#33308](https://github.com/sourcegraph/sourcegraph/pull/33308)
 - Fail to log extension activation event will no longer block extension from activating [#33300][https://github.com/sourcegraph/sourcegraph/pull/33300]
 - Fixed out-ouf-memory events for gitserver's janitor job "sg maintenance". [#33353](https://github.com/sourcegraph/sourcegraph/issues/33353)
+- Setting the publication state for changesets when previewing a batch spec now works correctly if all changesets are selected and there is more than one page of changesets. [#33619](https://github.com/sourcegraph/sourcegraph/issues/33619)
 
 ### Removed
 
