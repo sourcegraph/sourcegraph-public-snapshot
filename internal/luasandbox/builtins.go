@@ -2,7 +2,7 @@ package luasandbox
 
 import lua "github.com/yuin/gopher-lua"
 
-// Modified verison of the libs available from gopher-lua@linit.go:luaLibs
+// Modified version of the libs available from gopher-lua@linit.go:luaLibs
 var builtinLibs = []struct {
 	libName string
 	libFunc lua.LGFunction
