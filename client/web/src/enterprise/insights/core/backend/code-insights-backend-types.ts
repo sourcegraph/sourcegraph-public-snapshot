@@ -1,6 +1,7 @@
 import { Duration } from 'date-fns'
-import { LineChartContent } from 'sourcegraph'
+import { LineChartContent as LegacyLineChartContent } from 'sourcegraph'
 
+import { Series } from '../../../../charts'
 import {
     RuntimeInsight,
     InsightDashboard,
@@ -18,6 +19,12 @@ export interface PieChartContent<Datum> {
     getDatumName: (datum: Datum) => string
     getDatumColor: (datum: Datum) => string | undefined
     getDatumLink?: (datum: Datum) => string | undefined
+}
+
+export interface LineChartContent<Datum> {
+    data: Datum[]
+    series: Series<Datum>[]
+    getXValue: (datum: Datum) => Date
 }
 
 export interface DashboardCreateInput {
@@ -112,7 +119,7 @@ export interface BackendInsightData {
     view: {
         title: string
         subtitle?: string
-        content: LineChartContent<any, string>[]
+        content: LegacyLineChartContent<any, string>[]
         isFetchingHistoricalData: boolean
     }
 }

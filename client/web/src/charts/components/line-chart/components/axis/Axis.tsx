@@ -29,7 +29,7 @@ export const AxisLeft = memo(
                 <GridRows
                     top={top}
                     left={left}
-                    width={width - left}
+                    width={width}
                     height={height}
                     scale={scale}
                     tickValues={getYScaleTicks({ scale, space: height })}
