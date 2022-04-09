@@ -4,7 +4,7 @@ Get started and create your first [batch change](index.md) in 10 minutes or less
 
 ## Introduction
 
-In this guide, you'll create a Sourcegraph batch change that appends text to `README.md` files in all of your repositories.
+In this guide, you'll create a Sourcegraph batch change that appends text to `README.md` files in the root of all of your repositories.
 
 For more information about Batch Changes, watch the [Batch Changes demo video](https://www.youtube.com/watch?v=EfKwKFzOs3E).
 
@@ -51,13 +51,13 @@ Save the following batch spec as `hello-world.batch.yaml`:
 name: hello-world
 description: Add Hello World to READMEs
 
-# Find all repositories that contain a README.md file.
+# Find all repositories that contain a README.md file at the root of the repository.
 on:
-  - repositoriesMatchingQuery: file:README.md
+  - repositoriesMatchingQuery: file:^README.md
 
 # In each repository, run this command. Each repository's resulting diff is captured.
 steps:
-  - run: echo Hello World | tee -a $(find -name README.md)
+  - run: sed -i '$a\Hello World!' ./README.md
     container: alpine:3
 
 # Describe the changeset (e.g., GitHub pull request) you want for each repository.
@@ -66,7 +66,7 @@ changesetTemplate:
   body: My first batch change!
   branch: hello-world # Push the commit to this branch.
   commit:
-    message: Append Hello World to all README.md files
+    message: Append Hello World to all README.md files at the root of the repository
 ```
 
 The commits you create here will use the git config values for `user.name` and `user.email` from your local environment, or "batch-changes@sourcegraph.com" if no user is set. Alternatively, you can also [specify an `author`](./references/batch_spec_yaml_reference.md#changesettemplate-commit-author) in this spec.
