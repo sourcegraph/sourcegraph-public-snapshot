@@ -255,13 +255,13 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
 const INVALID_BATCH_SPEC_TOOLTIP = "There's a problem with your batch spec."
 const WORKSPACES_PREVIEW_SIZE = 'batch-changes.ssbc-workspaces-preview-size'
 
-// const EXECUTORS = gql`
-//     query Executors {
-//         executors {
-//             totalCount
-//         }
-//     }
-// `
+const EXECUTORS = gql`
+    query Executors {
+        executors {
+            totalCount
+        }
+    }
+`
 
 interface EditPageProps extends ThemeProps {
     batchChange: EditBatchChangeFields
@@ -387,27 +387,50 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
         resolutionState,
     ])
 
-    const actionButtons = (
-        <>
-            <ExecutionOptionsDropdown
-                execute={executeBatchSpec}
-                isExecutionDisabled={isExecutionDisabled}
-                executionTooltip={executionTooltip}
-                options={executionOptions}
-                onChangeOptions={setExecutionOptions}
-            />
+    const actionButtons =
+        EXECUTORS.length > 0 ? (
+            <>
+                <ExecutionOptionsDropdown
+                    execute={executeBatchSpec}
+                    isExecutionDisabled={isExecutionDisabled}
+                    executionTooltip={executionTooltip}
+                    options={executionOptions}
+                    onChangeOptions={setExecutionOptions}
+                />
 
-            {downloadSpecModalDismissed ? (
-                <BatchSpecDownloadLink name={batchChange.name} originalInput={code} isLightTheme={isLightTheme}>
-                    Download for src-cli
-                </BatchSpecDownloadLink>
-            ) : (
-                <Button className={styles.downloadLink} variant="link" onClick={() => setIsDownloadSpecModalOpen(true)}>
-                    Download for src-cli
-                </Button>
-            )}
-        </>
-    )
+                {downloadSpecModalDismissed ? (
+                    <BatchSpecDownloadLink name={batchChange.name} originalInput={code} isLightTheme={isLightTheme}>
+                        Download for src-cli
+                    </BatchSpecDownloadLink>
+                ) : (
+                    <Button
+                        className={styles.downloadLink}
+                        variant="link"
+                        onClick={() => setIsDownloadSpecModalOpen(true)}
+                    >
+                        Download for src-cli
+                    </Button>
+                )}
+            </>
+        ) : (
+            <>
+                {downloadSpecModalDismissed ? (
+                    <BatchSpecDownloadLink name={batchChange.name} originalInput={code} isLightTheme={isLightTheme}>
+                        Download for src-cli
+                    </BatchSpecDownloadLink>
+                ) : (
+                    <Button onClick={() => setIsDownloadSpecModalOpen(true)}>Download for src-cli</Button>
+                )}
+
+                <ExecutionOptionsDropdown
+                    execute={executeBatchSpec}
+                    isExecutionDisabled={isExecutionDisabled}
+                    executionTooltip={executionTooltip}
+                    options={executionOptions}
+                    onChangeOptions={setExecutionOptions}
+                />
+            </>
+        )
 
     return (
         <BatchChangePage
