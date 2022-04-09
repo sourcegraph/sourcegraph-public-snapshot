@@ -1,26 +1,27 @@
 import React, { useContext, useMemo } from 'react'
 
-import RefreshIcon from 'mdi-react/RefreshIcon'
-
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, useDeepMemo } from '@sourcegraph/wildcard'
+import { useDeepMemo } from '@sourcegraph/wildcard'
 
-import { getLineColor, LegendItem, LegendList, ParentSize } from '../../../../../../../../charts'
-import { getSanitizedRepositories, useLivePreview, StateStatus } from '../../../../../../components/creation-ui-kit'
 import {
-    InsightCard,
-    InsightCardBanner,
-    InsightCardLoading,
-    SeriesBasedChartTypes,
-    SeriesChart,
-} from '../../../../../../components/views'
+    getSanitizedRepositories,
+    useLivePreview,
+    StateStatus,
+    LivePreviewUpdateButton,
+    LivePreviewCard,
+    LivePreviewLoading,
+    LivePreviewChart,
+    LivePreviewBlurBackdrop,
+    LivePreviewBanner,
+    LivePreviewLegend,
+} from '../../../../../../components/creation-ui-kit'
+import { SeriesBasedChartTypes, SeriesChart } from '../../../../../../components/views'
 import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
+import { LineChartContent } from '../../../../../../core/backend/code-insights-backend-types'
 import { InsightStep } from '../../../search-insight'
 import { getSanitizedCaptureQuery } from '../../utils/capture-group-insight-sanitizer'
 
 import { MOCK_CHART_CONTENT } from './constants'
-
-import styles from './CaptureGroupCreationLivePreview.module.scss'
 
 interface CaptureGroupCreationLivePreviewProps {
     disabled: boolean
@@ -55,17 +56,15 @@ export const CaptureGroupCreationLivePreview: React.FunctionComponent<CaptureGro
 
     return (
         <aside className={className}>
-            <Button variant="icon" disabled={disabled} onClick={update}>
-                Live preview <RefreshIcon size="1rem" />
-            </Button>
+            <LivePreviewUpdateButton disabled={disabled} onClick={update} />
 
-            <InsightCard className={styles.insightCard}>
+            <LivePreviewCard>
                 {state.status === StateStatus.Loading ? (
-                    <InsightCardLoading>Loading code insight</InsightCardLoading>
+                    <LivePreviewLoading>Loading code insight</LivePreviewLoading>
                 ) : state.status === StateStatus.Error ? (
                     <ErrorAlert error={state.error} />
                 ) : (
-                    <ParentSize className={styles.chartBlock}>
+                    <LivePreviewChart>
                         {parent =>
                             state.status === StateStatus.Data ? (
                                 <SeriesChart
@@ -77,32 +76,29 @@ export const CaptureGroupCreationLivePreview: React.FunctionComponent<CaptureGro
                                 />
                             ) : (
                                 <>
-                                    <SeriesChart
+                                    <LivePreviewBlurBackdrop
+                                        as={SeriesChart}
                                         type={SeriesBasedChartTypes.Line}
                                         width={parent.width}
                                         height={parent.height}
-                                        className={styles.chartWithMock}
-                                        {...MOCK_CHART_CONTENT}
+                                        // We cast to unknown here because ForwardReferenceComponent
+                                        // doesn't support inferring as component with generic.
+                                        {...(MOCK_CHART_CONTENT as LineChartContent<unknown>)}
                                     />
-                                    <InsightCardBanner className={styles.disableBanner}>
+                                    <LivePreviewBanner>
                                         {isAllReposMode
                                             ? 'Live previews are currently not available for insights running over all repositories.'
                                             : 'The chart preview will be shown here once you have filled out the repositories and series fields.'}
-                                    </InsightCardBanner>
+                                    </LivePreviewBanner>
                                 </>
                             )
                         }
-                    </ParentSize>
+                    </LivePreviewChart>
                 )}
 
-                {state.status === StateStatus.Data && (
-                    <LegendList className="mt-3">
-                        {state.data.series.map(series => (
-                            <LegendItem key={series.dataKey} color={getLineColor(series)} name={series.name} />
-                        ))}
-                    </LegendList>
-                )}
-            </InsightCard>
+                {state.status === StateStatus.Data && <LivePreviewLegend series={state.data.series} />}
+            </LivePreviewCard>
+
             {isAllReposMode && (
                 <p className="mt-2">Previews are only displayed if you individually list up to 50 repositories.</p>
             )}

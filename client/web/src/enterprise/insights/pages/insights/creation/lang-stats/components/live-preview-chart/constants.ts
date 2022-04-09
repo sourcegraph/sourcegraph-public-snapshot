@@ -2,7 +2,7 @@ import { random } from 'lodash'
 
 import { PieChartContent } from '../../../../../../core/backend/code-insights-backend-types'
 
-interface PreviewDatum {
+export interface PreviewDatum {
     name: string
     value: number
     fill: string

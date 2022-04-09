@@ -1,24 +1,23 @@
 import React, { useContext, useMemo } from 'react'
 
-import RefreshIcon from 'mdi-react/RefreshIcon'
-
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, useDeepMemo } from '@sourcegraph/wildcard'
+import { useDeepMemo } from '@sourcegraph/wildcard'
 
-import { ParentSize } from '../../../../../../../../charts'
-import { useLivePreview, StateStatus } from '../../../../../../components/creation-ui-kit'
 import {
-    CategoricalBasedChartTypes,
-    CategoricalChart,
-    InsightCard,
-    InsightCardBanner,
-    InsightCardLoading,
-} from '../../../../../../components/views'
+    LivePreviewBanner,
+    LivePreviewBlurBackdrop,
+    LivePreviewCard,
+    LivePreviewChart,
+    LivePreviewLoading,
+    LivePreviewUpdateButton,
+    useLivePreview,
+    StateStatus,
+} from '../../../../../../components/creation-ui-kit'
+import { CategoricalBasedChartTypes, CategoricalChart } from '../../../../../../components/views'
 import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
+import { PieChartContent } from '../../../../../../core/backend/code-insights-backend-types'
 
-import { DEFAULT_PREVIEW_MOCK } from './live-preview-mock-data'
-
-import styles from './LangStatsInsightLivePreview.module.scss'
+import { DEFAULT_PREVIEW_MOCK } from './constants'
 
 export interface LangStatsInsightLivePreviewProps {
     /**
@@ -58,17 +57,15 @@ export const LangStatsInsightLivePreview: React.FunctionComponent<LangStatsInsig
 
     return (
         <aside className={className}>
-            <Button variant="icon" disabled={disabled} onClick={update}>
-                Live preview <RefreshIcon size="1rem" />
-            </Button>
+            <LivePreviewUpdateButton disabled={disabled} onClick={update} />
 
-            <InsightCard className={styles.insightCard}>
+            <LivePreviewCard>
                 {state.status === StateStatus.Loading ? (
-                    <InsightCardLoading>Loading code insight</InsightCardLoading>
+                    <LivePreviewLoading>Loading code insight</LivePreviewLoading>
                 ) : state.status === StateStatus.Error ? (
                     <ErrorAlert error={state.error} />
                 ) : (
-                    <ParentSize className={styles.chartBlock}>
+                    <LivePreviewChart>
                         {parent =>
                             state.status === StateStatus.Data ? (
                                 <CategoricalChart
@@ -79,23 +76,26 @@ export const LangStatsInsightLivePreview: React.FunctionComponent<LangStatsInsig
                                 />
                             ) : (
                                 <>
-                                    <CategoricalChart
+                                    <LivePreviewBlurBackdrop
+                                        as={CategoricalChart}
                                         type={CategoricalBasedChartTypes.Pie}
                                         width={parent.width}
                                         height={parent.height}
-                                        className={styles.chartWithMock}
-                                        {...DEFAULT_PREVIEW_MOCK}
+                                        // We cast to unknown here because ForwardReferenceComponent
+                                        // doesn't support inferring as component with generic.
+                                        {...(DEFAULT_PREVIEW_MOCK as PieChartContent<unknown>)}
                                     />
-                                    <InsightCardBanner className={styles.disableBanner}>
+
+                                    <LivePreviewBanner>
                                         The chart preview will be shown here once you have filled out the repository
                                         field.
-                                    </InsightCardBanner>
+                                    </LivePreviewBanner>
                                 </>
                             )
                         }
-                    </ParentSize>
+                    </LivePreviewChart>
                 )}
-            </InsightCard>
+            </LivePreviewCard>
         </aside>
     )
 }
