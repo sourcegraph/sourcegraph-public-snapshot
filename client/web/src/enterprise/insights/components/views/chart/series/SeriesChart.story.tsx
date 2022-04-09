@@ -8,7 +8,7 @@ import { SeriesBasedChartTypes } from '../../types'
 
 import { SeriesChart } from './SeriesChart'
 
-export const StoryConfig: Meta = {
+const StoryConfig: Meta = {
     title: 'web/insights/views/SeriesChart',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
 }

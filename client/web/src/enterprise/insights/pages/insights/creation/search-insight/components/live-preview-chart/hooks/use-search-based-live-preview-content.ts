@@ -1,51 +1,52 @@
 import { useContext, useEffect, useState } from 'react'
 
+import { Duration } from 'date-fns'
+
 import { asError } from '@sourcegraph/common'
 import { useDebounce } from '@sourcegraph/wildcard'
 
 import { CodeInsightsBackendContext } from '../../../../../../../core/backend/code-insights-backend-context'
-import { PieChartContent } from '../../../../../../../core/backend/code-insights-backend-types'
+import { LineChartContent } from '../../../../../../../core/backend/code-insights-backend-types'
+import { SearchBasedInsightSeries } from '../../../../../../../core/types'
 
-export interface UseLangStatsPreviewContentProps {
+export interface Input {
     /** Prop to turn off fetching and reset data for live preview chart. */
     disabled: boolean
-    /** Settings which needed to fetch data for live preview. */
-    repository: string
-    otherThreshold: number
+    series: SearchBasedInsightSeries[]
+    step: Duration
+    repositories: string[]
 }
 
-export interface UseLangStatsPreviewContentAPI {
+export interface Output {
     loading: boolean
-    dataOrError: PieChartContent<object> | Error | undefined
+    dataOrError: LineChartContent<unknown> | Error | undefined
     update: () => void
 }
 
-/**
- * Unified logic for fetching data for live preview chart of lang stats insight.
- */
-export function useLangStatsPreviewContent(input: UseLangStatsPreviewContentProps): UseLangStatsPreviewContentAPI {
-    const { getLangStatsInsightContent } = useContext(CodeInsightsBackendContext)
-
-    const [loading, setLoading] = useState<boolean>(false)
-    const [dataOrError, setDataOrError] = useState<PieChartContent<any> | Error | undefined>()
+export function useSearchBasedLivePreviewContent(input: Input): Output {
+    const { getSearchInsightContent } = useContext(CodeInsightsBackendContext)
 
     // Synthetic deps to trigger dry run for fetching live preview data
     const [lastPreviewVersion, setLastPreviewVersion] = useState(0)
+    const [loading, setLoading] = useState<boolean>(false)
+    const [dataOrError, setDataOrError] = useState<LineChartContent<unknown> | Error | undefined>()
 
-    const liveDebouncedSettings = useDebounce(input, 500)
+    const debouncedInput = useDebounce(input, 500)
 
     useEffect(() => {
         let hasRequestCanceled = false
         setLoading(true)
         setDataOrError(undefined)
 
-        if (liveDebouncedSettings.disabled) {
+        if (debouncedInput.disabled) {
             setLoading(false)
 
             return
         }
 
-        getLangStatsInsightContent({ insight: liveDebouncedSettings })
+        getSearchInsightContent({
+            insight: debouncedInput,
+        })
             .then(data => !hasRequestCanceled && setDataOrError(data))
             .catch(error => !hasRequestCanceled && setDataOrError(asError(error)))
             .finally(() => !hasRequestCanceled && setLoading(false))
@@ -53,7 +54,7 @@ export function useLangStatsPreviewContent(input: UseLangStatsPreviewContentProp
         return () => {
             hasRequestCanceled = true
         }
-    }, [lastPreviewVersion, getLangStatsInsightContent, liveDebouncedSettings])
+    }, [lastPreviewVersion, getSearchInsightContent, debouncedInput])
 
     return {
         loading,

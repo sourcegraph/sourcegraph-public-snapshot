@@ -1,6 +1,5 @@
 import React from 'react'
 
-import classNames from 'classnames'
 import RefreshIcon from 'mdi-react/RefreshIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -34,7 +33,7 @@ export interface LangStatsInsightLivePreviewProps {
 }
 
 /**
- * Displays live preview chart for creation UI with latest insights settings
+ * Displays live preview chart for creation UI with the latest insights settings
  * from creation UI form.
  */
 export const LangStatsInsightLivePreview: React.FunctionComponent<LangStatsInsightLivePreviewProps> = props => {
@@ -43,12 +42,13 @@ export const LangStatsInsightLivePreview: React.FunctionComponent<LangStatsInsig
     const previewSetting = useDeepMemo({
         repository: repository.trim(),
         otherThreshold: threshold / 100,
+        disabled,
     })
 
-    const { loading, dataOrError, update } = useLangStatsPreviewContent({ disabled, previewSetting })
+    const { loading, dataOrError, update } = useLangStatsPreviewContent(previewSetting)
 
     return (
-        <aside className={classNames(className)}>
+        <aside className={className}>
             <Button variant="icon" disabled={disabled} onClick={update}>
                 Live preview <RefreshIcon size="1rem" />
             </Button>
