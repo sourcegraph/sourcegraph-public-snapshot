@@ -7,6 +7,7 @@ import (
 
 	"github.com/grafana/regexp"
 	sitter "github.com/smacker/go-tree-sitter"
+	"github.com/smacker/go-tree-sitter/csharp"
 	"github.com/smacker/go-tree-sitter/golang"
 	"github.com/smacker/go-tree-sitter/java"
 )
@@ -55,8 +56,7 @@ type CommentStyle struct {
 	codeFenceName string
 }
 
-// Mapping from language name to language specification. Queries were copied from
-// nvim-treesitter@5b6f6ae30c1cf8fceefe08a9bcf799870558a878 as a starting point.
+// Mapping from language name to language specification.
 var langToLangSpec = map[string]LangSpec{
 	"java": {
 		language: java.GetLanguage(),
@@ -108,6 +108,30 @@ var langToLangSpec = map[string]LangSpec{
 (short_var_declaration left: (expression_list (identifier) @definition)) ; x, y := ...
 (range_clause          left: (expression_list (identifier) @definition)) ; for i := range ... { ... }
 (receive_statement     left: (expression_list (identifier) @definition)) ; case x := <-ch: ...
+`,
+	},
+	"csharp": {
+		language: csharp.GetLanguage(),
+		commentStyle: CommentStyle{
+			nodeTypes:     []string{"comment"},
+			stripRegex:    regexp.MustCompile(`(^//|^\s*\*|^/\*\*|\*/$)`),
+			ignoreRegex:   regexp.MustCompile(`^\s*(/\*\*|\*/)\s*$`),
+			codeFenceName: "csharp",
+		},
+		localsQuery: `
+(block)                   @scope ; { ... }
+(method_declaration)      @scope ; void f() { ... }
+(for_statement)           @scope ; for (...) ...
+(using_statement)         @scope ; using (...) ...
+(lambda_expression)       @scope ; (x, y) => ...
+(for_each_statement)      @scope ; foreach (int x in xs) ...
+(catch_clause)            @scope ; try { ... } catch (Exception e) { ... }
+(constructor_declaration) @scope ; public Foo() { ... }
+
+(parameter           name: (identifier) @definition) ; void f(x int) { ... }
+(variable_declarator (identifier) @definition)       ; int x = ...
+(for_each_statement  left: (identifier) @definition) ; foreach (int x in xs) ...
+(catch_declaration   name: (identifier) @definition) ; catch (Exception e) { ... }
 `,
 	},
 }

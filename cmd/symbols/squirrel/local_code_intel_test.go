@@ -87,6 +87,43 @@ func f1(p int) {
 	case x := <-ch:
 	}
 }
+`}, {
+		path: "test.cs",
+		contents: `
+namespace Foo {
+    class Bar {
+
+        //                  v Baz.p def
+        //                  v Baz.p ref
+        static void Baz(int p) {
+
+            //  v Baz.x def
+            //  v Baz.x ref
+            int x = 5;
+
+            //                       v Baz.p ref
+            //                          v Baz.x ref
+            System.Console.WriteLine(p, x);
+
+            //       v Baz.i def
+            //       v Baz.i ref
+            for (int i = 0; ; ) { }
+
+			//           v Baz.e def
+			//           v Baz.e ref
+			foreach (int e in es) { }
+
+            //         v Baz.r def
+            //         v Baz.r ref
+            using (var r = new StringReader("foo")) { }
+
+			try { }
+			//               v Baz.e def
+			//               v Baz.e ref
+			catch (Exception e) { }
+        }
+    }
+}
 `},
 	}
 
