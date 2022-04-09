@@ -56,14 +56,17 @@ type CommentStyle struct {
 	codeFenceName string
 }
 
+var javaStyleStripRegex = regexp.MustCompile(`^//|^\s*\*/?|^/\*\*|\*/$`)
+var javaStyleIgnoreRegex = regexp.MustCompile(`^\s*(/\*\*|\*/)\s*$`)
+
 // Mapping from language name to language specification.
 var langToLangSpec = map[string]LangSpec{
 	"java": {
 		language: java.GetLanguage(),
 		commentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
-			stripRegex:    regexp.MustCompile(`(^//|^\s*\*|^/\*\*|\*/$)`),
-			ignoreRegex:   regexp.MustCompile(`^\s*(/\*\*|\*/)\s*$`),
+			stripRegex:    javaStyleStripRegex,
+			ignoreRegex:   javaStyleIgnoreRegex,
 			codeFenceName: "java",
 			skipNodeTypes: []string{"modifiers"},
 		},
@@ -88,8 +91,7 @@ var langToLangSpec = map[string]LangSpec{
 		language: golang.GetLanguage(),
 		commentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
-			stripRegex:    regexp.MustCompile(`(^//|^\s*\*|^/\*\*|\*/$)`),
-			ignoreRegex:   regexp.MustCompile(`^\s*(/\*\*|\*/)\s*$`),
+			stripRegex:    regexp.MustCompile(`^//`),
 			codeFenceName: "go",
 		},
 		localsQuery: `
@@ -114,8 +116,8 @@ var langToLangSpec = map[string]LangSpec{
 		language: csharp.GetLanguage(),
 		commentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
-			stripRegex:    regexp.MustCompile(`(^//|^\s*\*|^/\*\*|\*/$)`),
-			ignoreRegex:   regexp.MustCompile(`^\s*(/\*\*|\*/)\s*$`),
+			stripRegex:    javaStyleStripRegex,
+			ignoreRegex:   javaStyleIgnoreRegex,
 			codeFenceName: "csharp",
 		},
 		localsQuery: `
