@@ -11,10 +11,9 @@ import (
 )
 
 var ErrNoAccessExternalService = errors.New("the authenticated user does not have access to this external service")
-var ErrExternalServiceMaxLimitReached = errors.New("maximum number of external services has been reached")
+var ErrExternalServicesQuotaReached = errors.New("maximum number of external services has been reached")
 var ErrExternalServiceLimitPerKindReached = errors.New("cannot add more than one external service of a given kind")
-
-var ErrExternalServiceTypeNotSupported = errors.New("external service type not supported on Cloud mode")
+var ErrExternalServiceKindNotSupported = errors.New("external service kind not supported on Cloud mode")
 
 // CheckExternalServiceAccess checks whether the current user is allowed to
 // access the supplied external service.
@@ -58,19 +57,19 @@ func CheckExternalServicesQuota(ctx context.Context, db database.DB, kind string
 		return err
 	}
 
-	if services[extsvc.KindGitHub] >= extsvc.LimitPerType && services[extsvc.KindGitLab] >= extsvc.LimitPerType {
-		return ErrExternalServiceMaxLimitReached
+	if services[extsvc.KindGitHub] >= extsvc.LimitPerKind && services[extsvc.KindGitLab] >= extsvc.LimitPerKind {
+		return ErrExternalServicesQuotaReached
 	}
 
 	if kind == extsvc.KindGitHub {
-		if services[extsvc.KindGitHub] >= extsvc.LimitPerType {
+		if services[extsvc.KindGitHub] >= extsvc.LimitPerKind {
 			return ErrExternalServiceLimitPerKindReached
 		}
 		return nil
 	}
 
 	if kind == extsvc.KindGitLab {
-		if services[extsvc.KindGitLab] >= extsvc.LimitPerType {
+		if services[extsvc.KindGitLab] >= extsvc.LimitPerKind {
 			return ErrExternalServiceLimitPerKindReached
 		}
 		return nil
@@ -116,5 +115,5 @@ func ExternalServiceKindSupported(kind string) error {
 		return nil
 	}
 
-	return ErrExternalServiceTypeNotSupported
+	return ErrExternalServiceKindNotSupported
 }

@@ -321,7 +321,7 @@ func TestAddExternalService(t *testing.T) {
 				},
 			})
 
-			if want := backend.ErrExternalServiceTypeNotSupported; err != want {
+			if want := backend.ErrExternalServiceKindNotSupported; err != want {
 				t.Errorf("got err %v, want %v", err, want)
 			}
 			if result != nil {
@@ -394,7 +394,7 @@ func TestAddExternalService(t *testing.T) {
 					Config:      "{\n  \"url\": \"https://gitlab.com\",\n  \"token\": \"dfdf\",\n  \"projectQuery\": [\n    \"projects?membership=true&archived=no\"\n  ]\n}",
 				},
 			})
-			if want := backend.ErrExternalServiceMaxLimitReached; err != want {
+			if want := backend.ErrExternalServicesQuotaReached; err != want {
 				t.Errorf("got err %v, want %v", err, want)
 			}
 			if result != nil {
@@ -450,7 +450,7 @@ func TestAddExternalService(t *testing.T) {
 				},
 			})
 
-			if want := backend.ErrExternalServiceTypeNotSupported; err != want {
+			if want := backend.ErrExternalServiceKindNotSupported; err != want {
 				t.Errorf("got err %v, want %v", err, want)
 			}
 			if result != nil {
@@ -523,7 +523,7 @@ func TestAddExternalService(t *testing.T) {
 					Config:      "{\n  \"url\": \"https://gitlab.com\",\n  \"token\": \"dfdf\",\n  \"projectQuery\": [\n    \"projects?membership=true&archived=no\"\n  ]\n}",
 				},
 			})
-			if want := backend.ErrExternalServiceMaxLimitReached; err != want {
+			if want := backend.ErrExternalServicesQuotaReached; err != want {
 				t.Errorf("got err %v, want %v", err, want)
 			}
 			if result != nil {
