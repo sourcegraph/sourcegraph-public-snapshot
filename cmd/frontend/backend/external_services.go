@@ -2,7 +2,6 @@ package backend
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -12,7 +11,9 @@ import (
 )
 
 var ErrNoAccessExternalService = errors.New("the authenticated user does not have access to this external service")
-var ErrExternalServiceQuotaReached = errors.New("maximum number of external services has been reached")
+var ErrExternalServiceMaxLimitReached = errors.New("maximum number of external services has been reached")
+var ErrExternalServiceLimitPerKindReached = errors.New("cannot add more than one external service of a given kind")
+
 var ErrExternalServiceTypeNotSupported = errors.New("external service type not supported on Cloud mode")
 
 // CheckExternalServiceAccess checks whether the current user is allowed to
@@ -57,15 +58,25 @@ func CheckExternalServicesQuota(ctx context.Context, db database.DB, kind string
 		return err
 	}
 
-	if (kind == extsvc.KindGitHub && services[extsvc.KindGitHub] >= 1) || (kind == extsvc.KindGitLab && services[extsvc.KindGitLab] >= 1) {
-		return errors.New(fmt.Sprintf("a maximum of one external service is allowed for type %s", kind))
+	if services[extsvc.KindGitHub] >= extsvc.LimitPerType && services[extsvc.KindGitLab] >= extsvc.LimitPerType {
+		return ErrExternalServiceMaxLimitReached
 	}
 
-	if services[extsvc.KindGitHub] == 0 || services[extsvc.KindGitLab] == 0 {
+	if kind == extsvc.KindGitHub {
+		if services[extsvc.KindGitHub] >= extsvc.LimitPerType {
+			return ErrExternalServiceLimitPerKindReached
+		}
 		return nil
 	}
 
-	return ErrExternalServiceQuotaReached
+	if kind == extsvc.KindGitLab {
+		if services[extsvc.KindGitLab] >= extsvc.LimitPerType {
+			return ErrExternalServiceLimitPerKindReached
+		}
+		return nil
+	}
+
+	return nil
 }
 
 // servicesMap returns a map with the total count for each type of service
