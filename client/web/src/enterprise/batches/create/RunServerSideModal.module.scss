@@ -1,0 +1,65 @@
+.modal {
+    width: 55rem;
+    height: 25rem;
+}
+
+.content {
+    display: flex;
+    height: 95%;
+    justify-content: space-between;
+}
+
+.close {
+    display: flex;
+    position: absolute;
+    padding: 0;
+    top: 1rem;
+    right: 1rem;
+    border: none;
+    background: transparent;
+}
+
+.icon {
+    height: 1.125rem;
+    width: 1.125rem;
+    color: var(--icon-color);
+}
+
+.left {
+    display: flex;
+    flex-direction: column;
+    width: 72%;
+}
+
+.heading {
+    height: 15%;
+    font-size: small;
+}
+
+.video-container {
+    height: 85%;
+    background-color: var(--body-bg);
+}
+
+.right {
+    width: 25%;
+    display: flex;
+    flex-direction: column;
+}
+
+.right-top {
+    background-color: var(--body-bg);
+    border: 1px solid var(--border-color);
+    padding: 0.8rem;
+    margin-bottom: 8%;
+}
+
+.right-bottom {
+    background-color: var(--body-bg);
+    border: 1px solid var(--border-color);
+    padding: 0.8rem;
+}
+
+ul {
+    padding-left: 5%;
+}

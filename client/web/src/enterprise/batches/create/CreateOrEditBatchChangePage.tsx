@@ -10,7 +10,7 @@ import { useHistory } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { useMutation, useQuery, gql } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import {
     SettingsCascadeProps,
@@ -255,6 +255,14 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
 const INVALID_BATCH_SPEC_TOOLTIP = "There's a problem with your batch spec."
 const WORKSPACES_PREVIEW_SIZE = 'batch-changes.ssbc-workspaces-preview-size'
 
+// const EXECUTORS = gql`
+//     query Executors {
+//         executors {
+//             totalCount
+//         }
+//     }
+// `
+
 interface EditPageProps extends ThemeProps {
     batchChange: EditBatchChangeFields
     refetchBatchChange: () => Promise<ApolloQueryResult<GetBatchChangeToEditResult>>
@@ -391,11 +399,11 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
 
             {downloadSpecModalDismissed ? (
                 <BatchSpecDownloadLink name={batchChange.name} originalInput={code} isLightTheme={isLightTheme}>
-                    or download for src-cli
+                    Download for src-cli
                 </BatchSpecDownloadLink>
             ) : (
                 <Button className={styles.downloadLink} variant="link" onClick={() => setIsDownloadSpecModalOpen(true)}>
-                    or download for src-cli
+                    Download for src-cli
                 </Button>
             )}
         </>
