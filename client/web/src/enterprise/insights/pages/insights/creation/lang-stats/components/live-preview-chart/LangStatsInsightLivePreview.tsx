@@ -14,8 +14,7 @@ import {
     StateStatus,
 } from '../../../../../../components/creation-ui-kit'
 import { CategoricalBasedChartTypes, CategoricalChart } from '../../../../../../components/views'
-import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
-import { PieChartContent } from '../../../../../../core/backend/code-insights-backend-types'
+import { CodeInsightsBackendContext, PieChartContent } from '../../../../../../core'
 
 import { DEFAULT_PREVIEW_MOCK } from './constants'
 

@@ -7,8 +7,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 
 import * as View from '../../../../../../views'
 import { LineChartSettingsContext } from '../../../../../../views'
-import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
-import { LangStatsInsight, SearchRuntimeBasedInsight } from '../../../../core/types'
+import { CodeInsightsBackendContext, LangStatsInsight, SearchRuntimeBasedInsight } from '../../../../core'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight'
 import { useDistinctValue } from '../../../../hooks/use-distinct-value'
 import { useRemoveInsightFromDashboard } from '../../../../hooks/use-remove-insight'

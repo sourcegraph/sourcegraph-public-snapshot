@@ -16,9 +16,7 @@ import {
     LivePreviewUpdateButton,
 } from '../../../../../../components/creation-ui-kit'
 import { SeriesBasedChartTypes, SeriesChart } from '../../../../../../components/views'
-import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
-import { LineChartContent } from '../../../../../../core/backend/code-insights-backend-types'
-import { SearchBasedInsightSeries } from '../../../../../../core/types'
+import { CodeInsightsBackendContext, LineChartContent, SearchBasedInsightSeries } from '../../../../../../core'
 import { EditableDataSeries, InsightStep } from '../../types'
 import { getSanitizedLine } from '../../utils/insight-sanitizer'
 

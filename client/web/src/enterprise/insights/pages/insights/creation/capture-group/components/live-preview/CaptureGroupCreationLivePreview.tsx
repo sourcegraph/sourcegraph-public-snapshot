@@ -16,8 +16,7 @@ import {
     LivePreviewLegend,
 } from '../../../../../../components/creation-ui-kit'
 import { SeriesBasedChartTypes, SeriesChart } from '../../../../../../components/views'
-import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
-import { LineChartContent } from '../../../../../../core/backend/code-insights-backend-types'
+import { CodeInsightsBackendContext, LineChartContent } from '../../../../../../core'
 import { InsightStep } from '../../../search-insight'
 import { getSanitizedCaptureQuery } from '../../utils/capture-group-insight-sanitizer'
 
