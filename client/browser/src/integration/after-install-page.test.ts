@@ -29,6 +29,16 @@ describe('After install page', () => {
                 response.sendStatus(200)
             })
 
+        testContext.overrideGraphQL({
+            SiteProductVersion: () => ({
+                site: {
+                    productVersion: '129819_2022-02-08_baac612f829f',
+                    buildVersion: '129819_2022-02-08_baac612f829f',
+                    hasCodeIntelligence: true,
+                },
+            }),
+        })
+
         // Ensure that the same assets are requested in all environments.
         await driver.page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }])
     })
