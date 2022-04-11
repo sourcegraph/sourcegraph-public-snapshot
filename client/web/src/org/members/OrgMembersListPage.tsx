@@ -4,6 +4,7 @@ import { useMutation, useQuery } from '@apollo/client'
 import classNames from 'classnames'
 import ChevronDown from 'mdi-react/ChevronDownIcon'
 import CogIcon from 'mdi-react/CogIcon'
+import { RouteComponentProps } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { pluralize } from '@sourcegraph/common'
@@ -40,7 +41,9 @@ import { getPaginatedItems, OrgMemberNotification } from './utils'
 
 import styles from './OrgMembersListPage.module.scss'
 
-interface Props extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {
+interface Props
+    extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'>,
+        RouteComponentProps {
     onOrgGetStartedRefresh: () => void
 }
 export interface Member {
@@ -64,7 +67,7 @@ interface MemberItemProps {
     isSelf: boolean
     onlyMember: boolean
     orgId: string
-    onMemberRemoved: (username: string) => void
+    onMemberRemoved: (username: string, isSelf: boolean) => void
 }
 
 const MemberItem: React.FunctionComponent<MemberItemProps> = ({
@@ -85,7 +88,7 @@ const MemberItem: React.FunctionComponent<MemberItemProps> = ({
         if (window.confirm(isSelf ? 'Leave the organization?' : `Remove the user ${member.username}?`)) {
             eventLogger.log('RemoveFromOrganizationConfirmed', { organizationId: orgId }, { organizationId: orgId })
             await removeUserFromOrganization({ variables: { organization: orgId, user: member.id } })
-            onMemberRemoved(member.username)
+            onMemberRemoved(member.username, isSelf)
         } else {
             eventLogger.log('RemoveFromOrganizationDismissed', { organizationId: orgId }, { organizationId: orgId })
         }
@@ -180,6 +183,7 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({
     org,
     authenticatedUser,
     onOrgGetStartedRefresh,
+    history,
 }) => {
     const [invite, setInvite] = useState<IModalInviteResult>()
     const [notification, setNotification] = useState<string>()
@@ -231,13 +235,17 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({
     )
 
     const onMemberRemoved = useCallback(
-        async (username: string) => {
-            setNotification(`${username} has been removed from the ${org.name} organization on Sourcegraph`)
-            setPage(1)
-            await onShouldRefetch()
-            onOrgGetStartedRefresh()
+        async (username: string, isSelf: boolean) => {
+            if (isSelf) {
+                history.push(userURL(authenticatedUser.username))
+            } else {
+                setNotification(`${username} has been removed from the ${org.name} organization on Sourcegraph`)
+                setPage(1)
+                await onShouldRefetch()
+                onOrgGetStartedRefresh()
+            }
         },
-        [setNotification, onShouldRefetch, org.name, onOrgGetStartedRefresh]
+        [org.name, onShouldRefetch, onOrgGetStartedRefresh, history, authenticatedUser.username]
     )
 
     const onNotificationDismiss = useCallback(() => {

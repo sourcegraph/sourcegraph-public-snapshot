@@ -15,6 +15,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sort"
+	"strings"
+	"sync"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -653,5 +655,83 @@ func TestClient_AddrForRepo_Rendezvous(t *testing.T) {
 			}
 			require.Equal(t, tc.wantAddr, addr)
 		})
+	}
+}
+
+func TestClient_BatchLog(t *testing.T) {
+	addrs := []string{"172.16.8.1:8080", "172.16.8.2:8080", "172.16.8.3:8080"}
+
+	cli := gitserver.NewTestClient(
+		httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
+			var req protocol.BatchLogRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				return nil, err
+			}
+
+			var results []protocol.BatchLogResult
+			for _, repoCommit := range req.RepoCommits {
+				results = append(results, protocol.BatchLogResult{
+					RepoCommit:    repoCommit,
+					CommandOutput: fmt.Sprintf("out<%s: %s@%s>", r.URL.String(), repoCommit.Repo, repoCommit.CommitID),
+					CommandError:  "",
+				})
+			}
+
+			encoded, _ := json.Marshal(protocol.BatchLogResponse{Results: results})
+			body := io.NopCloser(strings.NewReader(strings.TrimSpace(string(encoded))))
+			return &http.Response{StatusCode: 200, Body: body}, nil
+		}),
+		database.NewMockDB(),
+		addrs,
+	)
+
+	opts := gitserver.BatchLogOptions{
+		RepoCommits: []api.RepoCommit{
+			{Repo: api.RepoName("github.com/test/foo"), CommitID: api.CommitID("deadbeef01")},
+			{Repo: api.RepoName("github.com/test/bar"), CommitID: api.CommitID("deadbeef02")},
+			{Repo: api.RepoName("github.com/test/baz"), CommitID: api.CommitID("deadbeef03")},
+			{Repo: api.RepoName("github.com/test/bonk"), CommitID: api.CommitID("deadbeef04")},
+			{Repo: api.RepoName("github.com/test/quux"), CommitID: api.CommitID("deadbeef05")},
+			{Repo: api.RepoName("github.com/test/honk"), CommitID: api.CommitID("deadbeef06")},
+			{Repo: api.RepoName("github.com/test/xyzzy"), CommitID: api.CommitID("deadbeef07")},
+			{Repo: api.RepoName("github.com/test/lorem"), CommitID: api.CommitID("deadbeef08")},
+			{Repo: api.RepoName("github.com/test/ipsum"), CommitID: api.CommitID("deadbeef09")},
+			{Repo: api.RepoName("github.com/test/fnord"), CommitID: api.CommitID("deadbeef10")},
+		},
+		Format: "--format=test",
+	}
+
+	results := map[api.RepoCommit]gitserver.RawBatchLogResult{}
+	var mu sync.Mutex
+
+	if err := cli.BatchLog(context.Background(), opts, func(repoCommit api.RepoCommit, gitLogResult gitserver.RawBatchLogResult) error {
+		mu.Lock()
+		defer mu.Unlock()
+
+		results[repoCommit] = gitLogResult
+		return nil
+	}); err != nil {
+		t.Fatalf("unexpected error performing batch log: %s", err)
+	}
+
+	expectedResults := map[api.RepoCommit]gitserver.RawBatchLogResult{
+		// Shard 1
+		{Repo: "github.com/test/baz", CommitID: "deadbeef03"}:  {Stdout: "out<http://172.16.8.1:8080/batch-log: github.com/test/baz@deadbeef03>"},
+		{Repo: "github.com/test/quux", CommitID: "deadbeef05"}: {Stdout: "out<http://172.16.8.1:8080/batch-log: github.com/test/quux@deadbeef05>"},
+		{Repo: "github.com/test/honk", CommitID: "deadbeef06"}: {Stdout: "out<http://172.16.8.1:8080/batch-log: github.com/test/honk@deadbeef06>"},
+
+		// Shard 2
+		{Repo: "github.com/test/bar", CommitID: "deadbeef02"}:   {Stdout: "out<http://172.16.8.2:8080/batch-log: github.com/test/bar@deadbeef02>"},
+		{Repo: "github.com/test/xyzzy", CommitID: "deadbeef07"}: {Stdout: "out<http://172.16.8.2:8080/batch-log: github.com/test/xyzzy@deadbeef07>"},
+
+		// Shard 3
+		{Repo: "github.com/test/foo", CommitID: "deadbeef01"}:   {Stdout: "out<http://172.16.8.3:8080/batch-log: github.com/test/foo@deadbeef01>"},
+		{Repo: "github.com/test/bonk", CommitID: "deadbeef04"}:  {Stdout: "out<http://172.16.8.3:8080/batch-log: github.com/test/bonk@deadbeef04>"},
+		{Repo: "github.com/test/lorem", CommitID: "deadbeef08"}: {Stdout: "out<http://172.16.8.3:8080/batch-log: github.com/test/lorem@deadbeef08>"},
+		{Repo: "github.com/test/ipsum", CommitID: "deadbeef09"}: {Stdout: "out<http://172.16.8.3:8080/batch-log: github.com/test/ipsum@deadbeef09>"},
+		{Repo: "github.com/test/fnord", CommitID: "deadbeef10"}: {Stdout: "out<http://172.16.8.3:8080/batch-log: github.com/test/fnord@deadbeef10>"},
+	}
+	if diff := cmp.Diff(expectedResults, results); diff != "" {
+		t.Errorf("unexpected results (-want +got):\n%s", diff)
 	}
 }

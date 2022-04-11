@@ -20,6 +20,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 )
 
+const shardID = "test"
+
 func TestIterateRepoGitserverStatus(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -260,36 +262,14 @@ func TestGitserverReposGetByID(t *testing.T) {
 	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
-	_, err := GitserverRepos(db).GetByID(ctx, 1)
-	if err == nil {
-		t.Fatal("Expected an error")
-	}
-
-	repo1 := &types.Repo{
-		Name:         "github.com/sourcegraph/repo1",
-		URI:          "github.com/sourcegraph/repo1",
-		Description:  "",
-		ExternalRepo: api.ExternalRepoSpec{},
-		Sources:      nil,
-	}
-
 	// Create one test repo
-	err = Repos(db).Create(ctx, repo1)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	gitserverRepo := &types.GitserverRepo{
-		RepoID:        repo1.ID,
+	_, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
+		Name:          "github.com/sourcegraph/repo",
+		URI:           "github.com/sourcegraph/repo",
+		ExternalRepo:  api.ExternalRepoSpec{},
 		ShardID:       "test",
-		CloneStatus:   types.CloneStatusNotCloned,
 		RepoSizeBytes: 100,
-	}
-
-	// Create GitServerRepo
-	if err := GitserverRepos(db).Upsert(ctx, gitserverRepo); err != nil {
-		t.Fatal(err)
-	}
+	})
 
 	// GetByID should now work
 	fromDB, err := GitserverRepos(db).GetByID(ctx, gitserverRepo.RepoID)
@@ -310,44 +290,64 @@ func TestGitserverReposGetByName(t *testing.T) {
 	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
-	_, err := GitserverRepos(db).GetByID(ctx, 1)
-	if err == nil {
-		t.Fatal("Expected an error")
-	}
-
-	repo1 := &types.Repo{
-		Name:         "github.com/sourcegraph/repo1",
-		URI:          "github.com/sourcegraph/repo1",
-		Description:  "",
-		ExternalRepo: api.ExternalRepoSpec{},
-		Sources:      nil,
-	}
-
 	// Create one test repo
-	err = Repos(db).Create(ctx, repo1)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	gitserverRepo := &types.GitserverRepo{
-		RepoID:        repo1.ID,
+	repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
+		Name:          "github.com/sourcegraph/repo",
+		URI:           "github.com/sourcegraph/repo",
+		ExternalRepo:  api.ExternalRepoSpec{},
 		ShardID:       "test",
-		CloneStatus:   types.CloneStatusNotCloned,
 		RepoSizeBytes: 100,
-	}
+	})
 
-	// Create GitServerRepo
-	if err := GitserverRepos(db).Upsert(ctx, gitserverRepo); err != nil {
-		t.Fatal(err)
-	}
-
-	// GetByID should now work
-	fromDB, err := GitserverRepos(db).GetByName(ctx, repo1.Name)
+	// GetByName should now work
+	fromDB, err := GitserverRepos(db).GetByName(ctx, repo.Name)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestGitserverReposGetByNames(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	db := dbtest.NewDB(t)
+	ctx := context.Background()
+
+	// Creating 2 repos
+	repo1, gitserverRepo1 := createTestRepo(ctx, t, db, &createTestRepoPayload{
+		Name:         "github.com/sourcegraph/repo1",
+		URI:          "github.com/sourcegraph/repo1",
+		ExternalRepo: api.ExternalRepoSpec{},
+		ShardID:      "test1",
+	})
+
+	repo2, gitserverRepo2 := createTestRepo(ctx, t, db, &createTestRepoPayload{
+		Name:         "github.com/sourcegraph/repo2",
+		URI:          "github.com/sourcegraph/repo2",
+		ExternalRepo: api.ExternalRepoSpec{},
+		ShardID:      "test2",
+	})
+
+	idToExpectedRepo := map[api.RepoID]*types.GitserverRepo{
+		gitserverRepo1.RepoID: gitserverRepo1,
+		gitserverRepo2.RepoID: gitserverRepo2,
+	}
+
+	// GetByNames should now work
+	fromDB, err := GitserverRepos(db).GetByNames(ctx, repo1.Name, repo2.Name)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(idToExpectedRepo[fromDB[0].RepoID], fromDB[0], cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+		t.Fatal(diff)
+	}
+	if diff := cmp.Diff(idToExpectedRepo[fromDB[1].RepoID], fromDB[1], cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
 		t.Fatal(diff)
 	}
 }
@@ -359,49 +359,24 @@ func TestSetCloneStatus(t *testing.T) {
 
 	db := dbtest.NewDB(t)
 	ctx := context.Background()
-	const shardID = "test"
-
-	repo1 := &types.Repo{
-		Name:         "github.com/sourcegraph/repo1",
-		URI:          "github.com/sourcegraph/repo1",
-		ExternalRepo: api.ExternalRepoSpec{},
-	}
 
 	// Create one test repo
-	err := Repos(db).Create(ctx, repo1)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	gitserverRepo := &types.GitserverRepo{
-		RepoID:        repo1.ID,
+	repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
+		Name:          "github.com/sourcegraph/repo",
+		URI:           "github.com/sourcegraph/repo",
+		ExternalRepo:  api.ExternalRepoSpec{},
 		ShardID:       shardID,
-		CloneStatus:   types.CloneStatusNotCloned,
 		RepoSizeBytes: 100,
-	}
-
-	// Create GitServerRepo
-	if err := GitserverRepos(db).Upsert(ctx, gitserverRepo); err != nil {
-		t.Fatal(err)
-	}
-
-	// Get it back
-	fromDB, err := GitserverRepos(db).GetByID(ctx, gitserverRepo.RepoID)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
-		t.Fatal(diff)
-	}
+		CloneStatus:   types.CloneStatusNotCloned,
+	})
 
 	// Set cloned
-	err = GitserverRepos(db).SetCloneStatus(ctx, repo1.Name, types.CloneStatusCloned, shardID)
+	err := GitserverRepos(db).SetCloneStatus(ctx, repo.Name, types.CloneStatusCloned, shardID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	fromDB, err = GitserverRepos(db).GetByID(ctx, gitserverRepo.RepoID)
+	fromDB, err := GitserverRepos(db).GetByID(ctx, gitserverRepo.RepoID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -411,7 +386,7 @@ func TestSetCloneStatus(t *testing.T) {
 		t.Fatal(diff)
 	}
 
-	// Setting clone status should work even if no row exists
+	// Setting clone status should work even if no row exists in gitserver table
 	repo2 := &types.Repo{
 		Name:         "github.com/sourcegraph/repo2",
 		URI:          "github.com/sourcegraph/repo2",
@@ -460,37 +435,22 @@ func TestSetLastError(t *testing.T) {
 
 	db := dbtest.NewDB(t)
 	ctx := context.Background()
-	const shardID = "test"
-
-	repo1 := &types.Repo{
-		Name:         "github.com/sourcegraph/repo1",
-		URI:          "github.com/sourcegraph/repo1",
-		ExternalRepo: api.ExternalRepoSpec{},
-	}
 
 	// Create one test repo
-	err := Repos(db).Create(ctx, repo1)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	gitserverRepo := &types.GitserverRepo{
-		RepoID:        repo1.ID,
+	repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
+		Name:          "github.com/sourcegraph/repo",
+		URI:           "github.com/sourcegraph/repo",
+		ExternalRepo:  api.ExternalRepoSpec{},
 		ShardID:       shardID,
 		CloneStatus:   types.CloneStatusNotCloned,
 		RepoSizeBytes: 100,
-	}
-
-	// Create GitServerRepo
-	if err := GitserverRepos(db).Upsert(ctx, gitserverRepo); err != nil {
-		t.Fatal(err)
-	}
+	})
 
 	// Set error.
 	//
 	// We are using a null terminated string for the last_error column. See
 	// https://stackoverflow.com/a/38008565/1773961 on how to set null terminated strings in Go.
-	err = GitserverRepos(db).SetLastError(ctx, repo1.Name, "oops\x00", shardID)
+	err := GitserverRepos(db).SetLastError(ctx, repo.Name, "oops\x00", shardID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -506,7 +466,8 @@ func TestSetLastError(t *testing.T) {
 	}
 
 	// Remove error
-	err = GitserverRepos(db).SetLastError(ctx, repo1.Name, "", shardID)
+	const emptyErr = ""
+	err = GitserverRepos(db).SetLastError(ctx, repo.Name, emptyErr, shardID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -516,13 +477,13 @@ func TestSetLastError(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	gitserverRepo.LastError = ""
+	gitserverRepo.LastError = emptyErr
 	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
 		t.Fatal(diff)
 	}
 
 	// Set again to same value, updated_at should not change
-	err = GitserverRepos(db).SetLastError(ctx, repo1.Name, "", shardID)
+	err = GitserverRepos(db).SetLastError(ctx, repo.Name, emptyErr, shardID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -532,7 +493,7 @@ func TestSetLastError(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	gitserverRepo.LastError = ""
+	gitserverRepo.LastError = emptyErr
 	if diff := cmp.Diff(fromDB, after); diff != "" {
 		t.Fatal(diff)
 	}
@@ -555,48 +516,23 @@ func TestSetRepoSize(t *testing.T) {
 
 	db := dbtest.NewDB(t)
 	ctx := context.Background()
-	const shardID = "test"
-
-	repo1 := &types.Repo{
-		Name:         "github.com/sourcegraph/repo1",
-		URI:          "github.com/sourcegraph/repo1",
-		ExternalRepo: api.ExternalRepoSpec{},
-	}
 
 	// Create one test repo
-	err := Repos(db).Create(ctx, repo1)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	gitserverRepo := &types.GitserverRepo{
-		RepoID:        repo1.ID,
+	repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
+		Name:          "github.com/sourcegraph/repo",
+		URI:           "github.com/sourcegraph/repo",
+		ExternalRepo:  api.ExternalRepoSpec{},
 		ShardID:       shardID,
 		RepoSizeBytes: 100,
-	}
-
-	// Create GitServerRepo
-	if err := GitserverRepos(db).Upsert(ctx, gitserverRepo); err != nil {
-		t.Fatal(err)
-	}
-
-	// Get it back
-	fromDB, err := GitserverRepos(db).GetByID(ctx, gitserverRepo.RepoID)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
-		t.Fatal(diff)
-	}
+	})
 
 	// Set repo size
-	err = GitserverRepos(db).SetRepoSize(ctx, repo1.Name, 200, shardID)
+	err := GitserverRepos(db).SetRepoSize(ctx, repo.Name, 200, shardID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	fromDB, err = GitserverRepos(db).GetByID(ctx, gitserverRepo.RepoID)
+	fromDB, err := GitserverRepos(db).GetByID(ctx, gitserverRepo.RepoID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -691,48 +627,22 @@ func TestGitserverRepoUpsert(t *testing.T) {
 	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
-	repo1 := &types.Repo{
-		Name:         "github.com/sourcegraph/repo1",
-		URI:          "github.com/sourcegraph/repo1",
-		Description:  "",
-		ExternalRepo: api.ExternalRepoSpec{},
-		Sources:      nil,
-	}
-
-	// Create two test repos
-	err := Repos(db).Create(ctx, repo1)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	gitserverRepo := &types.GitserverRepo{
-		RepoID:        repo1.ID,
-		ShardID:       "abc",
+	// Create one test repo
+	repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
+		Name:          "github.com/sourcegraph/repo",
+		URI:           "github.com/sourcegraph/repo",
+		ExternalRepo:  api.ExternalRepoSpec{},
+		ShardID:       shardID,
 		CloneStatus:   types.CloneStatusNotCloned,
 		RepoSizeBytes: 100,
-	}
-
-	// Create one GitServerRepo
-	if err := GitserverRepos(db).Upsert(ctx, gitserverRepo); err != nil {
-		t.Fatal(err)
-	}
-
-	// Get it back from the db
-	fromDB, err := GitserverRepos(db).GetByID(ctx, repo1.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
-		t.Fatal(diff)
-	}
+	})
 
 	// Change clone status
 	gitserverRepo.CloneStatus = types.CloneStatusCloned
 	if err := GitserverRepos(db).Upsert(ctx, gitserverRepo); err != nil {
 		t.Fatal(err)
 	}
-	fromDB, err = GitserverRepos(db).GetByID(ctx, repo1.ID)
+	fromDB, err := GitserverRepos(db).GetByID(ctx, repo.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -749,7 +659,7 @@ func TestGitserverRepoUpsert(t *testing.T) {
 	if err := GitserverRepos(db).Upsert(ctx, gitserverRepo); err != nil {
 		t.Fatal(err)
 	}
-	fromDB, err = GitserverRepos(db).GetByID(ctx, repo1.ID)
+	fromDB, err = GitserverRepos(db).GetByID(ctx, repo.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -766,7 +676,7 @@ func TestGitserverRepoUpsert(t *testing.T) {
 	if err := GitserverRepos(db).Upsert(ctx, gitserverRepo); err != nil {
 		t.Fatal(err)
 	}
-	fromDB, err = GitserverRepos(db).GetByID(ctx, repo1.ID)
+	fromDB, err = GitserverRepos(db).GetByID(ctx, repo.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -788,6 +698,195 @@ func TestSanitizeToUTF8(t *testing.T) {
 			t.Fatalf("Failed to sanitize to UTF-8, got %q but wanted %q", got, expected)
 		}
 	}
+}
+
+func TestGitserverRepoListReposWithoutSize(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	db := dbtest.NewDB(t)
+	ctx := context.Background()
+
+	// Create one test repo
+	repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
+		Name:          "github.com/sourcegraph/repo",
+		URI:           "github.com/sourcegraph/repo",
+		ExternalRepo:  api.ExternalRepoSpec{},
+		ShardID:       shardID,
+		RepoSizeBytes: 100,
+	})
+
+	// Create one GitServerRepo without repo_size_bytes
+	if err := GitserverRepos(db).Upsert(ctx, gitserverRepo); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(fmt.Sprintf(
+		`update gitserver_repos set repo_size_bytes = null where repo_id = %d;`,
+		gitserverRepo.RepoID)); err != nil {
+		t.Fatalf("unexpected error while updating gitserver repo: %s", err)
+	}
+
+	// Get it back from the db
+	fromDB, err := GitserverRepos(db).GetByID(ctx, repo.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+		t.Fatal(diff)
+	}
+
+	// Check that this repo is returned from ListReposWithoutSize
+	if reposWithoutSize, err := GitserverRepos(db).ListReposWithoutSize(ctx); err != nil {
+		t.Fatal(err)
+	} else if len(reposWithoutSize) != 1 {
+		t.Fatal("One repo without size should be returned")
+	}
+
+	// Setting the size
+	gitserverRepo.RepoSizeBytes = 4040
+	if err := GitserverRepos(db).Upsert(ctx, gitserverRepo); err != nil {
+		t.Fatal(err)
+	}
+
+	// Check that this repo is not returned now from ListReposWithoutSize
+	if reposWithoutSize, err := GitserverRepos(db).ListReposWithoutSize(ctx); err != nil {
+		t.Fatal(err)
+	} else if len(reposWithoutSize) != 0 {
+		t.Fatal("There should be no repos without size")
+	}
+
+	// Check that nothing except UpdatedAt and RepoSizeBytes has been changed
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "RepoSizeBytes")); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestGitserverUpdateRepoSizes(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	db := dbtest.NewDB(t)
+	ctx := context.Background()
+
+	repo1, gitserverRepo1 := createTestRepo(ctx, t, db, &createTestRepoPayload{
+		Name:          "github.com/sourcegraph/repo1",
+		URI:           "github.com/sourcegraph/repo1",
+		ExternalRepo:  api.ExternalRepoSpec{},
+		ShardID:       shardID,
+		RepoSizeBytes: 100,
+	})
+
+	repo2, gitserverRepo2 := createTestRepo(ctx, t, db, &createTestRepoPayload{
+		Name:          "github.com/sourcegraph/repo2",
+		URI:           "github.com/sourcegraph/repo2",
+		ExternalRepo:  api.ExternalRepoSpec{},
+		ShardID:       shardID,
+		RepoSizeBytes: 100,
+	})
+
+	// Setting repo sizes in DB
+	sizes := map[api.RepoID]int64{
+		repo1.ID: 100,
+		repo2.ID: 500,
+	}
+	if err := GitserverRepos(db).UpdateRepoSizes(ctx, shardID, sizes); err != nil {
+		t.Fatal(err)
+	}
+
+	// Updating sizes in test data for further diff comparison
+	gitserverRepo1.RepoSizeBytes = sizes[gitserverRepo1.RepoID]
+	gitserverRepo2.RepoSizeBytes = sizes[gitserverRepo2.RepoID]
+
+	// Checking repo diffs, excluding UpdatedAt. This is to verify that nothing except repo_size_bytes
+	// has changed
+	after1, err := GitserverRepos(db).GetByID(ctx, repo1.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if diff := cmp.Diff(gitserverRepo1, after1, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+		t.Fatal(diff)
+	}
+
+	after2, err := GitserverRepos(db).GetByID(ctx, repo2.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if diff := cmp.Diff(gitserverRepo2, after2, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func createTestRepo(ctx context.Context, t *testing.T, db dbutil.DB, payload *createTestRepoPayload) (*types.Repo, *types.GitserverRepo) {
+	t.Helper()
+
+	repo := &types.Repo{
+		Name:         payload.Name,
+		URI:          payload.URI,
+		Description:  payload.Description,
+		ExternalRepo: payload.ExternalRepo,
+		Sources:      payload.Sources,
+	}
+
+	// Create Repo
+	err := Repos(db).Create(ctx, repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gitserverRepo := &types.GitserverRepo{
+		RepoID:  repo.ID,
+		ShardID: shardID,
+	}
+
+	// Create GitServerRepo
+	if err := GitserverRepos(db).Upsert(ctx, gitserverRepo); err != nil {
+		t.Fatal(err)
+	}
+
+	// Get it back and check whether it is not corrupted
+	fromDB, err := GitserverRepos(db).GetByID(ctx, gitserverRepo.RepoID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+		t.Fatal(diff)
+	}
+
+	return repo, gitserverRepo
+}
+
+type createTestRepoPayload struct {
+	// Repo related properties
+
+	// Name is the name for this repository (e.g., "github.com/user/repo"). It
+	// is the same as URI, unless the user configures a non-default
+	// repositoryPathPattern.
+	//
+	// Previously, this was called RepoURI.
+	Name api.RepoName
+	// URI is the full name for this repository (e.g.,
+	// "github.com/user/repo"). See the documentation for the Name field.
+	URI string
+	// Description is a brief description of the repository.
+	Description string
+	// ExternalRepo identifies this repository by its ID on the external service where it resides (and the external
+	// service itself).
+	ExternalRepo api.ExternalRepoSpec
+	// Sources identifies all the repo sources this Repo belongs to.
+	// The key is a URN created by extsvc.URN
+	Sources map[string]*types.SourceInfo
+
+	// Gitserver related properties
+
+	// Size of the repository in bytes.
+	RepoSizeBytes int64
+	// Usually represented by a gitserver hostname
+	ShardID     string
+	CloneStatus types.CloneStatus
 }
 
 func createTestRepos(ctx context.Context, t *testing.T, db dbutil.DB, repos types.Repos) {

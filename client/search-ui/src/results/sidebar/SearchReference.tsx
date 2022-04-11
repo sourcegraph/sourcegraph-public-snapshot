@@ -210,6 +210,14 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         showSuggestions: false,
     },
     {
+        ...createQueryExampleFromString('dependencies({regex-pattern})'),
+        field: FilterType.repo,
+        description:
+            'Search inside repositories that are dependencies of repositories matched by the provided regex pattern. This parameter is experimental.',
+        examples: ['repo:deps(^github\\.com/sourcegraph/sourcegraph$@3.36:3.35)'],
+        showSuggestions: false,
+    },
+    {
         ...createQueryExampleFromString('{revision}'),
         field: FilterType.rev,
         commonRank: 20,

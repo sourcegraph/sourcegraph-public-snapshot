@@ -532,3 +532,136 @@ deleted AS (
 )
 SELECT d.repository_id, COUNT(*) FROM deleted d GROUP BY d.repository_id
 `
+
+// LastIndexScanForRepository returns the last timestamp, if any, that the repository with the given
+// identifier was considered for auto-indexing scheduling.
+func (s *Store) LastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error) {
+	ctx, endObservation := s.operations.lastIndexScanForRepository.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	t, ok, err := basestore.ScanFirstTime(s.Query(ctx, sqlf.Sprintf(lastIndexScanForRepositoryQuery, repositoryID)))
+	if !ok {
+		return nil, err
+	}
+
+	return &t, nil
+}
+
+const lastIndexScanForRepositoryQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/indexes.go:LastIndexScanForRepository
+SELECT last_index_scan_at FROM lsif_last_index_scan WHERE repository_id = %s
+`
+
+type IndexesWithRepositoryNamespace struct {
+	Root    string
+	Indexer string
+	Indexes []Index
+}
+
+// RecentIndexesSummary returns the set of "interesting" indexes for the repository with the given identifier.
+// The return value is a list of indexes grouped by root and indexer. In each group, the set of indexes should
+// include the set of unprocessed records as well as the latest finished record. These values allow users to
+// quickly determine if a particular root/indexer pair os up-to-date or having issues processing.
+func (s *Store) RecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []IndexesWithRepositoryNamespace, err error) {
+	ctx, logger, endObservation := s.operations.recentIndexesSummary.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	indexes, err := scanIndexes(s.Query(ctx, sqlf.Sprintf(recentIndexesSummaryQuery, repositoryID, repositoryID)))
+	if err != nil {
+		return nil, err
+	}
+	logger.Log(log.Int("numIndexes", len(indexes)))
+
+	groupedIndexes := make([]IndexesWithRepositoryNamespace, 1, len(indexes)+1)
+	for _, index := range indexes {
+		if last := groupedIndexes[len(groupedIndexes)-1]; last.Root != index.Root || last.Indexer != index.Indexer {
+			groupedIndexes = append(groupedIndexes, IndexesWithRepositoryNamespace{
+				Root:    index.Root,
+				Indexer: index.Indexer,
+			})
+		}
+
+		n := len(groupedIndexes)
+		groupedIndexes[n-1].Indexes = append(groupedIndexes[n-1].Indexes, index)
+	}
+
+	return groupedIndexes[1:], nil
+}
+
+const recentIndexesSummaryQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/indexes.go:RecentIndexesSummary
+WITH ranked_completed AS (
+	SELECT
+		u.id,
+		u.root,
+		u.indexer,
+		u.finished_at,
+		RANK() OVER (PARTITION BY root, indexer ORDER BY finished_at DESC) AS rank
+	FROM lsif_indexes u
+	WHERE
+		u.repository_id = %s AND
+		u.state NOT IN ('queued', 'processing', 'deleted')
+),
+latest_indexes AS (
+	SELECT u.id, u.root, u.indexer, u.queued_at
+	FROM lsif_indexes u
+	WHERE
+		u.id IN (
+			SELECT rc.id
+			FROM ranked_completed rc
+			WHERE rc.rank = 1
+		)
+	ORDER BY u.root, u.indexer
+),
+new_indexes AS (
+	SELECT u.id
+	FROM lsif_indexes u
+	WHERE
+		u.repository_id = %s AND
+		u.state IN ('queued', 'processing') AND
+		u.queued_at >= (
+			SELECT lu.queued_at
+			FROM latest_indexes lu
+			WHERE
+				lu.root = u.root AND
+				lu.indexer = u.indexer
+			-- condition passes when latest_indexes is empty
+			UNION SELECT u.queued_at LIMIT 1
+		)
+)
+SELECT
+	u.id,
+	u.commit,
+	u.queued_at,
+	u.state,
+	u.failure_message,
+	u.started_at,
+	u.finished_at,
+	u.process_after,
+	u.num_resets,
+	u.num_failures,
+	u.repository_id,
+	u.repository_name,
+	u.docker_steps,
+	u.root,
+	u.indexer,
+	u.indexer_args,
+	u.outfile,
+	u.execution_logs,
+	s.rank,
+	u.local_steps,
+	` + indexAssociatedUploadIDQueryFragment + `
+FROM lsif_indexes_with_repository_name u
+LEFT JOIN (` + indexRankQueryFragment + `) s
+ON u.id = s.id
+WHERE u.id IN (
+	SELECT lu.id FROM latest_indexes lu
+	UNION
+	SELECT nu.id FROM new_indexes nu
+)
+ORDER BY u.root, u.indexer
+`

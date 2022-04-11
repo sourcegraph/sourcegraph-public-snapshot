@@ -32,6 +32,7 @@ var schemas = map[string]struct {
 }{
 	"frontend":  {"schema.md", connections.MigrateNewFrontendDB},
 	"codeintel": {"schema.codeintel.md", connections.MigrateNewCodeIntelDB},
+	"insights":  {"schema.codeinsights.md", connections.MigrateNewCodeInsightsDB},
 }
 
 // This script generates markdown formatted output containing descriptions of

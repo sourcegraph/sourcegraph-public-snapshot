@@ -17,6 +17,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tidwall/gjson"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -118,7 +120,13 @@ func main() {
 		DB:         db,
 		CloneQueue: server.NewCloneQueue(list.New()),
 	}
-	gitserver.RegisterMetrics(db)
+
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+	gitserver.RegisterMetrics(db, observationContext)
 
 	if tmpDir, err := gitserver.SetupAndClearTmp(); err != nil {
 		log.Fatalf("failed to setup temporary directory: %s", err)
@@ -207,6 +215,7 @@ func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
 		Retries:             10,
 		MaxChanges:          -1,
 		IncludeBinaries:     false,
+		FsyncEnable:         false,
 	}
 
 	if conn.FusionClient == nil {
@@ -237,6 +246,7 @@ func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
 		fc.MaxChanges = conn.FusionClient.MaxChanges
 	}
 	fc.IncludeBinaries = conn.FusionClient.IncludeBinaries
+	fc.FsyncEnable = conn.FusionClient.FsyncEnable
 
 	return fc
 }
@@ -283,6 +293,14 @@ func getRemoteURLFunc(
 		svc, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
 		if err != nil {
 			return "", err
+		}
+
+		if svc.CloudDefault && r.Private {
+			// We won't be able to use this remote URL, so we should skip it. This can happen
+			// if a repo moves from being public to private while belonging to both a cloud
+			// default external service and another external service with a token that has
+			// access to the private repo.
+			continue
 		}
 
 		dotcomConfig := conf.SiteConfig().Dotcom
@@ -360,28 +378,28 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 		return nil, errors.Wrap(err, "get repository")
 	}
 
-	extractOptions := func(connection interface{}) error {
+	extractOptions := func(connection interface{}) (string, error) {
 		for _, info := range r.Sources {
 			extSvc, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
 			if err != nil {
-				return errors.Wrap(err, "get external service")
+				return "", errors.Wrap(err, "get external service")
 			}
 			normalized, err := jsonc.Parse(extSvc.Config)
 			if err != nil {
-				return errors.Wrap(err, "normalize JSON")
+				return "", errors.Wrap(err, "normalize JSON")
 			}
 			if err = jsoniter.Unmarshal(normalized, connection); err != nil {
-				return errors.Wrap(err, "unmarshal JSON")
+				return "", errors.Wrap(err, "unmarshal JSON")
 			}
-			return nil
+			return extSvc.URN(), nil
 		}
-		return errors.Errorf("unexpected empty Sources map in %v", r)
+		return "", errors.Errorf("unexpected empty Sources map in %v", r)
 	}
 
 	switch r.ExternalRepo.ServiceType {
 	case extsvc.TypePerforce:
 		var c schema.PerforceConnection
-		if err := extractOptions(&c); err != nil {
+		if _, err := extractOptions(&c); err != nil {
 			return nil, err
 		}
 		return &server.PerforceDepotSyncer{
@@ -391,19 +409,20 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 		}, nil
 	case extsvc.TypeJVMPackages:
 		var c schema.JVMPackagesConnection
-		if err := extractOptions(&c); err != nil {
+		if _, err := extractOptions(&c); err != nil {
 			return nil, err
 		}
 		return &server.JVMPackagesSyncer{Config: &c, DepsStore: codeintelDB}, nil
 	case extsvc.TypeNpmPackages:
 		var c schema.NpmPackagesConnection
-		if err := extractOptions(&c); err != nil {
+		urn, err := extractOptions(&c)
+		if err != nil {
 			return nil, err
 		}
-		return server.NewNpmPackagesSyncer(c, codeintelDB, nil), nil
+		return server.NewNpmPackagesSyncer(c, codeintelDB, nil, urn), nil
 	case extsvc.TypeGoModules:
 		var c schema.GoModulesConnection
-		if err := extractOptions(&c); err != nil {
+		if _, err := extractOptions(&c); err != nil {
 			return nil, err
 		}
 		cli := gomodproxy.NewClient(&c, httpcli.ExternalDoer)

@@ -3,7 +3,7 @@ import React from 'react'
 export interface SeriesLikeChart<Datum> {
     data: Datum[]
     series: Series<Datum>[]
-    xAxisKey: keyof Datum
+    getXValue: (datum: Datum) => Date
     stacked?: boolean
 
     /**
@@ -18,7 +18,7 @@ export interface CategoricalLikeChart<Datum> {
     getDatumValue: (datum: Datum) => number
     getDatumName: (datum: Datum) => string
     getDatumColor: (datum: Datum) => string | undefined
-    getDatumLink: (datum: Datum) => string | undefined
+    getDatumLink?: (datum: Datum) => string | undefined | void
     onDatumLinkClick?: (event: React.MouseEvent) => void
 }
 
@@ -30,15 +30,15 @@ export interface Series<Datum> {
     dataKey: keyof Datum
 
     /**
-     * Link for data series point. It may be used to make datum points with links
-     * instead of plain visual svg elements.
-     */
-    getLinkURL?: (datum: Datum) => string | undefined
-
-    /**
      * The name of the line shown in the legend and tooltip
      */
     name: string
+
+    /**
+     * Link for data series point. It may be used to make datum points with links
+     * instead of plain visual svg elements.
+     */
+    getLinkURL?: (datum: Datum, index: number) => string | undefined
 
     /**
      * The CSS color of the series. If color wasn't provided the default (gray) color

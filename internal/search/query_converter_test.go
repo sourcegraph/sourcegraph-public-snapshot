@@ -108,7 +108,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 			b, _ := query.ToBasicQuery(sourceQuery)
 
 			types, _ := b.ToParseTree().StringValues(query.FieldType)
-			resultTypes := ComputeResultTypes(types, b.PatternString(), query.SearchTypeRegex)
+			resultTypes := ComputeResultTypes(types, b, query.SearchTypeRegex)
 			got, err := QueryToZoektQuery(b, resultTypes, &tt.Features, tt.Type)
 			if err != nil {
 				t.Fatal("QueryToZoektQuery failed:", err)
@@ -177,11 +177,7 @@ func TestToTextPatternInfo(t *testing.T) {
 		b := plan[0]
 		types, _ := b.ToParseTree().StringValues(query.FieldType)
 		mode := Batch
-		resultTypes := ComputeResultTypes(
-			types,
-			b.PatternString(),
-			query.SearchTypeLiteral,
-		)
+		resultTypes := ComputeResultTypes(types, b, query.SearchTypeLiteral)
 		p := ToTextPatternInfo(b, resultTypes, mode)
 		v, _ := json.Marshal(p)
 		return string(v)

@@ -43,14 +43,7 @@ export const logUserEvent = (
  * Log a raw user action on the associated Sourcegraph instance
  */
 export const logEvent = (
-    event: {
-        name: string
-        userCookieID: string
-        url: string
-        firstSourceURL?: string
-        argument?: string | {}
-        publicArgument?: string | {}
-    },
+    event: { name: string; userCookieID: string; url: string; argument?: string | {}; publicArgument?: string | {} },
     requestGraphQL: PlatformContext['requestGraphQL']
 ): void => {
     requestGraphQL<GQL.IMutation>({

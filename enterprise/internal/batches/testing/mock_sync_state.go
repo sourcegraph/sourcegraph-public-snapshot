@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -32,7 +33,7 @@ func MockChangesetSyncState(repo *protocol.RepoInfo) *MockedChangesetSyncState {
 		// This diff.Stat matches the testGitHubDiff below
 		DiffStat: &diff.Stat{Added: 1, Changed: 1, Deleted: 3},
 
-		execReader:      git.Mocks.ExecReader,
+		execReader:      gitserver.Mocks.ExecReader,
 		mockRepoLookup:  repoupdater.MockRepoLookup,
 		resolveRevision: git.Mocks.ResolveRevision,
 	}
@@ -43,7 +44,7 @@ func MockChangesetSyncState(repo *protocol.RepoInfo) *MockedChangesetSyncState {
 		}, nil
 	}
 
-	git.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
+	gitserver.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
 		// This provides a diff that will resolve to 1 added line, 1 changed
 		// line, and 3 deleted lines.
 		const testGitHubDiff = `
@@ -81,7 +82,7 @@ index 884601b..c4886d5 100644
 
 // Unmock resets the mocks set up by MockGitHubChangesetSync.
 func (state *MockedChangesetSyncState) Unmock() {
-	git.Mocks.ExecReader = state.execReader
+	gitserver.Mocks.ExecReader = state.execReader
 	git.Mocks.ResolveRevision = state.resolveRevision
 	repoupdater.MockRepoLookup = state.mockRepoLookup
 }

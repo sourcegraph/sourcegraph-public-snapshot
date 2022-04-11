@@ -24,7 +24,7 @@ export const RepositoryCompareHeader: React.FunctionComponent<RepositoryCompareH
         <PageHeader
             path={[{ text: 'Compare changes across revisions' }]}
             description={
-                <p>
+                <span className="mb-3">
                     Select a revision or provide a{' '}
                     <Link
                         to="https://git-scm.com/docs/git-rev-parse.html#_specifying_revisions"
@@ -34,7 +34,7 @@ export const RepositoryCompareHeader: React.FunctionComponent<RepositoryCompareH
                         Git revspec
                     </Link>{' '}
                     for more fine-grained comparisons
-                </p>
+                </span>
             }
         />
         <div className="d-flex align-items-center">

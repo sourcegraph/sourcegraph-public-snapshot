@@ -16,6 +16,7 @@ import (
 	sitter "github.com/smacker/go-tree-sitter"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Responds to /localCodeIntel
@@ -56,7 +57,12 @@ func LocalCodeIntelHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		_ = json.NewEncoder(w).Encode(nil)
-		log15.Error("failed to generate local code intel payload", "err", err)
+
+		// Log the error if it's not an unrecognized file extension or unsupported language error.
+		if !errors.Is(err, unrecognizedFileExtensionError) && !errors.Is(err, unsupportedLanguageError) {
+			log15.Error("failed to generate local code intel payload", "err", err)
+		}
+
 		return
 	}
 

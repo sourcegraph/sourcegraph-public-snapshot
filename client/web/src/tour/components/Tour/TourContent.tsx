@@ -31,6 +31,19 @@ const Header: React.FunctionComponent<{ onClose: () => void }> = ({ children, on
     </div>
 )
 
+const Footer: React.FunctionComponent<{ completedCount: number; totalCount: number }> = ({
+    completedCount,
+    totalCount,
+}) => (
+    <p className="text-right mt-2 mb-0">
+        <Icon
+            as={CheckCircleIcon}
+            className={classNames('mr-1', completedCount === 0 ? 'text-muted' : 'text-success')}
+        />
+        {completedCount} of {totalCount} completed
+    </p>
+)
+
 const CompletedItem: React.FunctionComponent = ({ children }) => (
     <div className="d-flex align-items-start">
         <Icon as={CheckCircleIcon} size="sm" className={classNames('text-success mr-1', styles.completedCheckIcon)} />
@@ -61,11 +74,7 @@ export const TourContent: React.FunctionComponent<TourContentProps> = ({
             {variant === 'horizontal' && <Header onClose={onClose}>Don't show again</Header>}
             <MarketingBlock
                 wrapperClassName={classNames('w-100 d-flex', variant !== 'horizontal' && styles.marketingBlockWrapper)}
-                contentClassName={classNames(
-                    styles.marketingBlockContent,
-                    'w-100 d-flex flex-column',
-                    variant === 'horizontal' ? 'pt-3 pb-1' : 'py-3'
-                )}
+                contentClassName={classNames(styles.marketingBlockContent, 'w-100 d-flex flex-column pt-3 pb-1')}
             >
                 {variant !== 'horizontal' && <Header onClose={onClose} />}
                 <div
@@ -97,11 +106,9 @@ export const TourContent: React.FunctionComponent<TourContentProps> = ({
                         </div>
                     )}
                 </div>
+                {variant !== 'horizontal' && <Footer completedCount={completedCount} totalCount={totalCount} />}
             </MarketingBlock>
-            <p className="text-right mt-2 mb-0">
-                <Icon as={CheckCircleIcon} className="text-success" />
-                {completedCount} of {totalCount} completed
-            </p>
+            {variant === 'horizontal' && <Footer completedCount={completedCount} totalCount={totalCount} />}
         </div>
     )
 }

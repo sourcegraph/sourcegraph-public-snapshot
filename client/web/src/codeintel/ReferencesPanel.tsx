@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
-import { capitalize, find } from 'lodash'
+import { capitalize } from 'lodash'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
@@ -12,6 +12,7 @@ import { MemoryRouter, useHistory, useLocation } from 'react-router'
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import {
     addLineRangeQueryParameter,
+    ErrorLike,
     formatSearchParameters,
     lprToRange,
     toPositionOrRangeQueryParameter,
@@ -41,25 +42,24 @@ import {
     Input,
     Icon,
     Badge,
-    useObservable,
     Collapse,
     CollapseHeader,
     CollapsePanel,
 } from '@sourcegraph/wildcard'
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
-import { resolveRevision } from '../repo/backend'
-import { fetchBlob } from '../repo/blob/backend'
 import { Blob } from '../repo/blob/Blob'
 import { HoverThresholdProps } from '../repo/RepoContainer'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { findLanguageSpec } from './language-specs/languages'
 import { LanguageSpec } from './language-specs/languagespec'
-import { Location, RepoLocationGroup, LocationGroup } from './location'
+import { Location, RepoLocationGroup, LocationGroup, locationGroupQuality, buildRepoLocationGroups } from './location'
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
+import { newSettingsGetter } from './settings'
 import { findSearchToken } from './token'
 import { useCodeIntel } from './useCodeIntel'
+import { useRepoAndBlob } from './useRepoAndBlob'
 import { isDefined } from './util/helpers'
 
 import styles from './ReferencesPanel.module.scss'
@@ -99,10 +99,7 @@ const ReferencesPanel: React.FunctionComponent<ReferencesPanelProps> = props => 
 
     const { hash, pathname, search } = location
     const { line, character } = parseQueryAndHash(search, hash)
-    const { filePath, repoName, ...parsedURL } = parseBrowserRepoURL(pathname)
-
-    const revision = parsedURL.revision
-    const commitID = parsedURL.commitID
+    const { filePath, repoName, revision } = parseBrowserRepoURL(pathname)
 
     // If we don't have enough information in the URL, we can't render the panel
     if (!(line && character && filePath)) {
@@ -114,11 +111,7 @@ const ReferencesPanel: React.FunctionComponent<ReferencesPanelProps> = props => 
 
     const token = { repoName, line, character, filePath }
 
-    if (commitID === undefined || revision === undefined) {
-        return <RevisionResolvingReferencesList {...props} {...token} jumpToFirst={jumpToFirst} />
-    }
-
-    return <FilterableReferencesList {...props} token={{ ...token, revision, commitID }} jumpToFirst={jumpToFirst} />
+    return <RevisionResolvingReferencesList {...props} {...token} revision={revision} jumpToFirst={jumpToFirst} />
 }
 
 export const RevisionResolvingReferencesList: React.FunctionComponent<
@@ -130,10 +123,17 @@ export const RevisionResolvingReferencesList: React.FunctionComponent<
         revision?: string
     }
 > = props => {
-    const resolvedRevision = useObservable(useMemo(() => resolveRevision(props), [props]))
+    const { data, loading, error } = useRepoAndBlob(props.repoName, props.filePath, props.revision)
+    if (loading && !data) {
+        return <LoadingCodeIntel />
+    }
 
-    if (!resolvedRevision) {
-        return null
+    if (error && !data) {
+        return <LoadingCodeIntelFailed error={error} />
+    }
+
+    if (!data) {
+        return <>Nothing found</>
     }
 
     const token = {
@@ -141,15 +141,26 @@ export const RevisionResolvingReferencesList: React.FunctionComponent<
         line: props.line,
         character: props.character,
         filePath: props.filePath,
-        revision: props.revision || resolvedRevision.defaultBranch,
-        commitID: resolvedRevision.commitID,
+        revision: data.revision,
+        commitID: data.commitID,
     }
 
-    return <FilterableReferencesList {...props} token={token} />
+    return (
+        <FilterableReferencesList
+            {...props}
+            token={token}
+            isFork={data.isFork}
+            isArchived={data.isArchived}
+            fileContent={data.fileContent}
+        />
+    )
 }
 
 interface ReferencesPanelPropsWithToken extends ReferencesPanelProps {
     token: Token
+    isFork: boolean
+    isArchived: boolean
+    fileContent: string
 }
 
 const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWithToken> = props => {
@@ -160,19 +171,10 @@ const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWith
         setFilter(undefined)
     }, [props.token])
 
-    const blobInfo = useObservable(
-        fetchBlob({
-            repoName: props.token.repoName,
-            commitID: props.token.commitID,
-            filePath: props.token.filePath,
-            disableTimeout: false,
-        })
-    )
-
     const languageId = getModeFromPath(props.token.filePath)
     const spec = findLanguageSpec(languageId)
     const tokenResult = findSearchToken({
-        text: blobInfo?.content ?? '',
+        text: props.fileContent,
         position: {
             line: props.token.line - 1,
             character: props.token.character - 1,
@@ -181,18 +183,6 @@ const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWith
         blockCommentStyles: spec.commentStyles.map(style => style.block).filter(isDefined),
         identCharPattern: spec.identCharPattern,
     })
-
-    // If the blobInfo observable hasn't emitted yet, we show the loading message
-    if (blobInfo === undefined) {
-        return <LoadingCodeIntel />
-    }
-    if (blobInfo === null) {
-        return (
-            <div>
-                <p className="text-danger">Could not load file content</p>
-            </div>
-        )
-    }
 
     if (!tokenResult?.searchToken) {
         return (
@@ -204,7 +194,7 @@ const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWith
 
     return (
         <>
-            <CardHeader>
+            <CardHeader className={styles.referencesToken}>
                 <code>{tokenResult.searchToken}</code>{' '}
                 <span className="text-muted ml-2">
                     <code>
@@ -225,7 +215,9 @@ const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWith
                 filter={debouncedFilter}
                 searchToken={tokenResult?.searchToken}
                 spec={spec}
-                fileContent={blobInfo.content}
+                fileContent={props.fileContent}
+                isFork={props.isFork}
+                isArchived={props.isArchived}
             />
         </>
     )
@@ -241,6 +233,8 @@ export const ReferencesList: React.FunctionComponent<
         fileContent: string
     }
 > = props => {
+    const getSetting = newSettingsGetter(props.settingsCascade)
+
     const {
         data,
         error,
@@ -269,6 +263,9 @@ export const ReferencesList: React.FunctionComponent<
         fileContent: props.fileContent,
         searchToken: props.searchToken,
         spec: props.spec,
+        isFork: props.isFork,
+        isArchived: props.isArchived,
+        getSetting,
     })
 
     // We only show the inline loading message if loading takes longer than
@@ -353,12 +350,7 @@ export const ReferencesList: React.FunctionComponent<
 
     // If we received an error before we had received any data
     if (error && !data) {
-        return (
-            <div>
-                <p className="text-danger">Loading code intel failed:</p>
-                <pre>{error.message}</pre>
-            </div>
-        )
+        return <LoadingCodeIntelFailed error={error} />
     }
 
     // If there weren't any errors and we just didn't receive any data
@@ -638,36 +630,7 @@ const LocationsList: React.FunctionComponent<LocationsListProps> = ({
     setActiveLocation,
     filter,
 }) => {
-    const repoLocationGroups = useMemo((): RepoLocationGroup[] => {
-        const byFile: Record<string, Location[]> = {}
-        for (const location of locations) {
-            if (byFile[location.file] === undefined) {
-                byFile[location.file] = []
-            }
-            byFile[location.file].push(location)
-        }
-
-        const locationsGroups: LocationGroup[] = []
-        Object.keys(byFile).map(path => {
-            const references = byFile[path]
-            const repoName = references[0].repo
-            locationsGroups.push({ path, locations: references, repoName })
-        })
-
-        const byRepo: Record<string, LocationGroup[]> = {}
-        for (const group of locationsGroups) {
-            if (byRepo[group.repoName] === undefined) {
-                byRepo[group.repoName] = []
-            }
-            byRepo[group.repoName].push(group)
-        }
-        const repoLocationGroups: RepoLocationGroup[] = []
-        Object.keys(byRepo).map(repoName => {
-            const referenceGroups = byRepo[repoName]
-            repoLocationGroups.push({ repoName, referenceGroups })
-        })
-        return repoLocationGroups
-    }, [locations])
+    const repoLocationGroups = useMemo(() => buildRepoLocationGroups(locations), [locations])
 
     return (
         <>
@@ -691,60 +654,43 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<{
     setActiveLocation: (reference: Location | undefined) => void
     getLineContent: (location: Location) => string
     filter: string | undefined
-}> = ({ repoLocationGroup, setActiveLocation, getLineContent, activeLocation, filter }) => {
-    const allSearchBased = useMemo(
-        () =>
-            find(
-                repoLocationGroup.referenceGroups.flatMap(reference => reference.locations),
-                location => !location.precise
-            ) !== undefined,
-        [repoLocationGroup]
-    )
+}> = ({ repoLocationGroup, setActiveLocation, getLineContent, activeLocation, filter }) => (
+    <Collapse openByDefault={true}>
+        {({ isOpen }) => (
+            <>
+                <CollapseHeader
+                    as={Button}
+                    aria-expanded={isOpen}
+                    type="button"
+                    className="bg-transparent py-1 border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
+                >
+                    <span className="p-0 mb-0">
+                        {isOpen ? (
+                            <Icon aria-label="Close" as={ChevronDownIcon} />
+                        ) : (
+                            <Icon aria-label="Expand" as={ChevronRightIcon} />
+                        )}
 
-    return (
-        <Collapse openByDefault={true}>
-            {({ isOpen }) => (
-                <>
-                    <CollapseHeader
-                        as={Button}
-                        aria-expanded={isOpen}
-                        type="button"
-                        className="bg-transparent py-1 border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
-                    >
-                        <span className="p-0 mb-0">
-                            {isOpen ? (
-                                <Icon aria-label="Close" as={ChevronDownIcon} />
-                            ) : (
-                                <Icon aria-label="Expand" as={ChevronRightIcon} />
-                            )}
+                        <Link to={`/${repoLocationGroup.repoName}`}>{displayRepoName(repoLocationGroup.repoName)}</Link>
+                    </span>
+                </CollapseHeader>
 
-                            <Link to={`/${repoLocationGroup.repoName}`}>
-                                {displayRepoName(repoLocationGroup.repoName)}
-                            </Link>
-
-                            <Badge pill={true} small={true} variant="secondary" className="ml-2">
-                                {allSearchBased ? 'SEARCH-BASED' : 'PRECISE'}
-                            </Badge>
-                        </span>
-                    </CollapseHeader>
-
-                    <CollapsePanel id={repoLocationGroup.repoName}>
-                        {repoLocationGroup.referenceGroups.map(group => (
-                            <ReferenceGroup
-                                key={group.path + group.repoName}
-                                group={group}
-                                activeLocation={activeLocation}
-                                setActiveLocation={setActiveLocation}
-                                getLineContent={getLineContent}
-                                filter={filter}
-                            />
-                        ))}
-                    </CollapsePanel>
-                </>
-            )}
-        </Collapse>
-    )
-}
+                <CollapsePanel id={repoLocationGroup.repoName}>
+                    {repoLocationGroup.referenceGroups.map(group => (
+                        <ReferenceGroup
+                            key={group.path + group.repoName}
+                            group={group}
+                            activeLocation={activeLocation}
+                            setActiveLocation={setActiveLocation}
+                            getLineContent={getLineContent}
+                            filter={filter}
+                        />
+                    ))}
+                </CollapsePanel>
+            </>
+        )}
+    </Collapse>
+)
 
 const ReferenceGroup: React.FunctionComponent<{
     group: LocationGroup
@@ -785,6 +731,9 @@ const ReferenceGroup: React.FunctionComponent<{
                                     group.path
                                 )}{' '}
                                 ({group.locations.length} references)
+                                <Badge pill={true} small={true} variant="secondary" className="ml-2">
+                                    {locationGroupQuality(group)}
+                                </Badge>
                             </span>
                         </CollapseHeader>
 
@@ -832,6 +781,15 @@ const LoadingCodeIntel: React.FunctionComponent<{}> = () => (
         <p className="text-muted text-center">
             <i>Loading code intel ...</i>
         </p>
+    </>
+)
+
+const LoadingCodeIntelFailed: React.FunctionComponent<{ error: ErrorLike }> = props => (
+    <>
+        <div>
+            <p className="text-danger">Loading code intel failed:</p>
+            <pre>{props.error.message}</pre>
+        </div>
     </>
 )
 
