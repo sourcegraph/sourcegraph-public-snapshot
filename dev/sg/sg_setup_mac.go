@@ -167,6 +167,25 @@ grep -s "legacy_version_file = yes" ~/.asdfrc >/dev/null || echo 'legacy_version
 asdf install nodejs
 `,
 			},
+			{
+				name:  "rust",
+				check: getCheck("rust"),
+				instructionsComment: `` +
+					`Souregraph requires Rust to be installed.
+
+Check the .tool-versions file for which version.
+
+We *highly recommend* using the asdf version manager to install and manage
+programming languages and tools. Find out how to install asdf here:
+
+	https://asdf-vm.com/guide/getting-started.html
+
+Once you have asdf, execute the commands below.`,
+				instructionsCommands: `
+asdf plugin-add rust https://github.com/asdf-community/asdf-rust.git
+asdf install rust
+`,
+			},
 		},
 	},
 	{

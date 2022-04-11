@@ -26,7 +26,7 @@ describe('SiteInitPage', () => {
                 isLightTheme={true}
                 needsSiteInit={false}
                 authenticatedUser={null}
-                context={{ authProviders: [], sourcegraphDotComMode: false }}
+                context={{ authProviders: [], sourcegraphDotComMode: false, experimentalFeatures: {} }}
                 featureFlags={EMPTY_FEATURE_FLAGS}
             />,
             { history }
@@ -41,7 +41,7 @@ describe('SiteInitPage', () => {
                     isLightTheme={true}
                     needsSiteInit={true}
                     authenticatedUser={{ username: 'alice' }}
-                    context={{ authProviders: [], sourcegraphDotComMode: false }}
+                    context={{ authProviders: [], sourcegraphDotComMode: false, experimentalFeatures: {} }}
                     featureFlags={EMPTY_FEATURE_FLAGS}
                 />
             ).asFragment()
@@ -54,7 +54,7 @@ describe('SiteInitPage', () => {
                     isLightTheme={true}
                     needsSiteInit={true}
                     authenticatedUser={null}
-                    context={{ authProviders: [], sourcegraphDotComMode: false }}
+                    context={{ authProviders: [], sourcegraphDotComMode: false, experimentalFeatures: {} }}
                     featureFlags={EMPTY_FEATURE_FLAGS}
                 />
             ).asFragment()

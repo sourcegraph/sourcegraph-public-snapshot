@@ -36,6 +36,7 @@ var checks = map[string]check.CheckFunc{
 	"yarn":                  check.Combine(check.InPath("yarn"), checkYarnVersion("~> 1.22.4")),
 	"go":                    check.Combine(check.InPath("go"), checkGoVersion("1.17.5")),
 	"node":                  check.Combine(check.InPath("node"), check.CommandOutputContains(`node -e "console.log(\"foobar\")"`, "foobar")),
+	"rust":                  check.Combine(check.InPath("cargo"), check.CommandOutputContains(`cargo version`, "1.58.0")),
 	"docker-installed":      check.WrapErrMessage(check.InPath("docker"), "if Docker is installed and the check fails, you might need to start Docker.app and restart terminal and 'sg setup'"),
 	"docker": check.WrapErrMessage(
 		check.Combine(check.InPath("docker"), check.CommandExitCode("docker info", 0)),

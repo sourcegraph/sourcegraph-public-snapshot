@@ -305,7 +305,7 @@ export const authenticatedTasks: TourTaskType[] = [
         ],
     },
     {
-        title: 'Quickly understand a new codebase',
+        title: 'Understand a new codebase',
         icon: <CursorPointerIcon size="2.3rem" />,
         steps: [
             {

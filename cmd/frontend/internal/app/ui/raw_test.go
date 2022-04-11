@@ -277,7 +277,7 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 			return &util.FileInfo{Mode_: os.ModeDir}, nil
 		}
 
-		git.Mocks.ReadDir = func(commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error) {
+		gitserver.Mocks.ReadDir = func(commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error) {
 			return []fs.FileInfo{
 				&util.FileInfo{Name_: "test/a", Mode_: os.ModeDir},
 				&util.FileInfo{Name_: "test/b", Mode_: os.ModeDir},
