@@ -169,7 +169,7 @@ func (s *StructuralSearch) Run(ctx context.Context, clients job.RuntimeClients, 
 		indexed, unindexed, err := zoektutil.PartitionRepos(
 			ctx,
 			page.RepoRevs,
-			s.ZoektArgs.Zoekt,
+			clients.Zoekt,
 			search.TextRequest,
 			s.UseIndex,
 			s.ContainsRefGlobs,

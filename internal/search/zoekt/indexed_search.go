@@ -244,8 +244,8 @@ func PartitionRepos(
 	return indexed, unindexed, nil
 }
 
-func DoZoektSearchGlobal(ctx context.Context, args *search.ZoektParameters, c streaming.Sender) error {
-	if args.Zoekt == nil {
+func DoZoektSearchGlobal(ctx context.Context, client zoekt.Streamer, args *search.ZoektParameters, c streaming.Sender) error {
+	if client == nil {
 		return nil
 	}
 
@@ -272,7 +272,7 @@ func DoZoektSearchGlobal(ctx context.Context, args *search.ZoektParameters, c st
 		defer cancel()
 	}
 
-	return args.Zoekt.StreamSearch(ctx, args.Query, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
+	return client.StreamSearch(ctx, args.Query, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 		sendMatches(event, func(file *zoekt.FileMatch) (types.MinimalRepo, []string) {
 			repo := types.MinimalRepo{
 				ID:   api.RepoID(file.RepositoryID),
@@ -583,7 +583,7 @@ func (t *GlobalSearch) Run(ctx context.Context, clients job.RuntimeClients, stre
 
 	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() error {
-		return DoZoektSearchGlobal(ctx, t.ZoektArgs, stream)
+		return DoZoektSearchGlobal(ctx, clients.Zoekt, t.ZoektArgs, stream)
 	})
 	return nil, g.Wait()
 }

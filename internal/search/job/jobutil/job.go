@@ -207,7 +207,6 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (job.Job, error) {
 				Typ:            typ,
 				FileMatchLimit: fileMatchLimit,
 				Select:         selector,
-				Zoekt:          jargs.Zoekt,
 			}
 
 			searcherArgs := &search.SearcherParameters{
@@ -442,7 +441,6 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 		Typ:            typ,
 		FileMatchLimit: b.fileMatchLimit,
 		Select:         b.selector,
-		Zoekt:          b.zoekt,
 	}
 
 	switch typ {

@@ -245,7 +245,7 @@ func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, clients job.RuntimeC
 	s.ZoektArgs.Query = s.GlobalZoektQuery.Generate()
 
 	// always search for symbols in indexed repositories when searching the repo universe.
-	err = zoektutil.DoZoektSearchGlobal(ctx, s.ZoektArgs, stream)
+	err = zoektutil.DoZoektSearchGlobal(ctx, clients.Zoekt, s.ZoektArgs, stream)
 	if err != nil {
 		tr.LogFields(otlog.Error(err))
 		// Only record error if we haven't timed out.

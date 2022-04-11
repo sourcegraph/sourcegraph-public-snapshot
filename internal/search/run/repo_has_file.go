@@ -100,7 +100,6 @@ func (s *RepoSearch) reposContainingPath(ctx context.Context, clients job.Runtim
 			Typ:            typ,
 			FileMatchLimit: newArgs.PatternInfo.FileMatchLimit,
 			Select:         newArgs.PatternInfo.Select,
-			Zoekt:          newArgs.Zoekt,
 		}
 
 		zoektJob := &zoektutil.ZoektRepoSubsetSearch{
