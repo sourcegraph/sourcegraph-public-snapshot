@@ -4,7 +4,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/zoekt"
 	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
@@ -12,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
@@ -31,12 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-type Args struct {
-	SearchInputs *run.SearchInputs
-	Zoekt        zoekt.Streamer
-	SearcherURLs *endpoint.Map
-}
 
 // ToSearchJob converts a query parse tree to the _internal_ representation
 // needed to run a search routine. To understand why this conversion matters, think

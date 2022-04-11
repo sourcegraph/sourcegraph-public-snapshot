@@ -439,15 +439,6 @@ func LogSearchLatency(ctx context.Context, db database.DB, wg *sync.WaitGroup, s
 	}
 }
 
-// JobArgs converts the parts of search resolver state to values needed to create search jobs.
-func (r *searchResolver) JobArgs() *jobutil.Args {
-	return &jobutil.Args{
-		SearchInputs: r.SearchInputs,
-		Zoekt:        r.zoekt,
-		SearcherURLs: r.searcherURLs,
-	}
-}
-
 func (r *searchResolver) JobClients() job.RuntimeClients {
 	return job.RuntimeClients{
 		DB:           r.db,
