@@ -55,7 +55,7 @@
       "type": "boolean",
       "default": false
     },
-    "defaultRateLimit" : {
+    "defaultRateLimit": {
       "description": "The rate limit (in requests per hour) for the default rate limiter in the rate limiters registry. By default this is disabled and the default rate limit is infinity.",
       "type": "number",
       "default": -1
