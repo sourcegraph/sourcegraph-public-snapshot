@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	search "github.com/sourcegraph/sourcegraph/internal/search"
-	job "github.com/sourcegraph/sourcegraph/internal/search/job"
+	job "github.com/sourcegraph/sourcegraph/internal/search/job/jobutil2"
 	run "github.com/sourcegraph/sourcegraph/internal/search/run"
 	streaming "github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	schema "github.com/sourcegraph/sourcegraph/schema"

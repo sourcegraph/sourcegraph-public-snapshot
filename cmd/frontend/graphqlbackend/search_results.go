@@ -29,7 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/execute"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	job "github.com/sourcegraph/sourcegraph/internal/search/job/jobutil2"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"

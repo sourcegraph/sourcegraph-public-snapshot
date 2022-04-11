@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/execute"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	job "github.com/sourcegraph/sourcegraph/internal/search/job/jobutil2"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/schema"
