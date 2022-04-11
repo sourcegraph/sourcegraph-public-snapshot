@@ -1,9 +1,9 @@
-import React from 'react'
+import React, { SVGProps } from 'react'
 
 import { LineChart, SeriesLikeChart } from '../../../../../../charts'
 import { SeriesBasedChartTypes } from '../../types'
 
-export interface SeriesChartProps<D> extends SeriesLikeChart<D> {
+export interface SeriesChartProps<D> extends SeriesLikeChart<D>, Omit<SVGProps<SVGSVGElement>, 'type'> {
     type: SeriesBasedChartTypes
     width: number
     height: number

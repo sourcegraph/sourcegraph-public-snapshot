@@ -1,8 +1,14 @@
 import { random } from 'lodash'
-import type { LineChartContent } from 'sourcegraph'
 
-export const DEFAULT_MOCK_CHART_CONTENT: LineChartContent<any, string> = {
-    chart: 'line' as const,
+import { LineChartContent } from '../../../../../../core/backend/code-insights-backend-types'
+
+interface LivePreviewDatum {
+    x: number
+    a: number
+    b: number
+}
+
+export const DEFAULT_MOCK_CHART_CONTENT: LineChartContent<LivePreviewDatum> = {
     data: [
         { x: 1588965700286 - 6 * 24 * 60 * 60 * 1000, a: 20, b: 200 },
         { x: 1588965700286 - 5 * 24 * 60 * 60 * 1000, a: 40, b: 177 },
@@ -16,19 +22,15 @@ export const DEFAULT_MOCK_CHART_CONTENT: LineChartContent<any, string> = {
         {
             dataKey: 'a',
             name: 'Old gql imports',
-            stroke: 'var(--oc-indigo-7)',
+            color: 'var(--oc-indigo-7)',
         },
         {
             dataKey: 'b',
             name: 'New gql operation imports',
-            stroke: 'var(--oc-orange-7)',
+            color: 'var(--oc-orange-7)',
         },
     ],
-    xAxis: {
-        dataKey: 'x',
-        scale: 'time' as const,
-        type: 'number',
-    },
+    getXValue: datum => new Date(datum.x),
 }
 
 export const getRandomDataForMock = (): unknown[] =>

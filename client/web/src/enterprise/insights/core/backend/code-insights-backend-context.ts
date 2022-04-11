@@ -1,10 +1,10 @@
 import React from 'react'
 
 import { throwError } from 'rxjs'
-import { LineChartContent } from 'sourcegraph'
+import { LineChartContent as LegacyChartContent } from 'sourcegraph'
 
 import { CodeInsightsBackend } from './code-insights-backend'
-import { PieChartContent, RepositorySuggestionData } from './code-insights-backend-types'
+import { LineChartContent, PieChartContent, RepositorySuggestionData } from './code-insights-backend-types'
 
 const errorMockMethod = (methodName: string) => () => throwError(new Error(`Implement ${methodName} method first`))
 
@@ -39,12 +39,12 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public assignInsightsToDashboard = errorMockMethod('assignInsightsToDashboard')
 
     // Live preview fetchers
-    public getSearchInsightContent = (): Promise<LineChartContent<any, string>> =>
+    public getSearchInsightContent = (): Promise<LineChartContent<unknown>> =>
         errorMockMethod('getSearchInsightContent')().toPromise()
-    public getLangStatsInsightContent = (): Promise<PieChartContent<any>> =>
+    public getLangStatsInsightContent = (): Promise<PieChartContent<unknown>> =>
         errorMockMethod('getLangStatsInsightContent')().toPromise()
 
-    public getCaptureInsightContent = (): Promise<LineChartContent<any, string>> =>
+    public getCaptureInsightContent = (): Promise<LegacyChartContent<any, string>> =>
         errorMockMethod('getCaptureInsightContent')().toPromise()
 
     // Repositories API
