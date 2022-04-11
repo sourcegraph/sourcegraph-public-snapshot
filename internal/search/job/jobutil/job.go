@@ -122,7 +122,6 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (job.Job, error) {
 				textSearchJobs = append(textSearchJobs, &searcher.Searcher{
 					PatternInfo:     patternInfo,
 					Indexed:         false,
-					SearcherURLs:    jargs.SearcherURLs,
 					UseFullDeadline: useFullDeadline,
 				})
 

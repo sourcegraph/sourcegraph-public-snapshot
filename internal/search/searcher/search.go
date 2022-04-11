@@ -34,8 +34,7 @@ type Searcher struct {
 	// Indexed represents whether the set of repositories are indexed (used
 	// to communicate whether searcher should call Zoekt search on these
 	// repos).
-	Indexed      bool
-	SearcherURLs *endpoint.Map
+	Indexed bool
 
 	// UseFullDeadline indicates that the search should try do as much work as
 	// it can within context.Deadline. If false the search should try and be
@@ -83,7 +82,7 @@ func (s *Searcher) Run(ctx context.Context, clients job.RuntimeClients, stream s
 	// The number of searcher endpoints can change over time. Inform our
 	// limiter of the new limit, which is a multiple of the number of
 	// searchers.
-	eps, err := s.SearcherURLs.Endpoints()
+	eps, err := clients.SearcherURLs.Endpoints()
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +112,7 @@ func (s *Searcher) Run(ctx context.Context, clients job.RuntimeClients, stream s
 					ctx, done := limitCtx, limitDone
 					defer done()
 
-					repoLimitHit, err := searchFilesInRepo(ctx, clients.DB, s.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], s.Indexed, s.PatternInfo, fetchTimeout, stream)
+					repoLimitHit, err := searchFilesInRepo(ctx, clients.DB, clients.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], s.Indexed, s.PatternInfo, fetchTimeout, stream)
 					if err != nil {
 						tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.Error(err), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
 						log15.Warn("searchFilesInRepo failed", "error", err, "repo", repoRev.Repo.Name)

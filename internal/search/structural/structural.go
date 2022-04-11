@@ -64,7 +64,6 @@ func (s *searchRepos) getJob(ctx context.Context) func() error {
 			PatternInfo:     s.args.PatternInfo,
 			Repos:           s.repoSet.AsList(),
 			Indexed:         s.repoSet.IsIndexed(),
-			SearcherURLs:    s.args.SearcherURLs,
 			UseFullDeadline: s.args.UseFullDeadline,
 		}
 

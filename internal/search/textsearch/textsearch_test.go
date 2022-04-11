@@ -484,7 +484,6 @@ func RunRepoSubsetTextSearch(
 			PatternInfo:     searcherArgs.PatternInfo,
 			Repos:           unindexed,
 			Indexed:         false,
-			SearcherURLs:    searcherArgs.SearcherURLs,
 			UseFullDeadline: searcherArgs.UseFullDeadline,
 		}
 
