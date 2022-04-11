@@ -218,27 +218,27 @@ func getPercyParallelTestsCount() int {
 	return len(getChunkedWebIntegrationFileNames(webTestsChunkSize)) + len(browsers)
 }
 
-func browserIntegrationTests(pipeline *bk.Pipeline) {
-	parallelTestCount := getPercyParallelTestsCount()
-	for _, browser := range browsers {
-		pipeline.AddStep(
-			fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
-			withYarnCache(),
-			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
-			bk.Env("BROWSER", browser),
-			bk.Env("LOG_BROWSER_CONSOLE", "true"),
-			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
-			bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
-			bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(parallelTestCount)),
-			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("yarn --cwd client/browser -s run build"),
-			bk.Cmd("yarn run cover-browser-integration"),
-			bk.Cmd("yarn nyc report -r json"),
-			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
-			bk.ArtifactPaths("./puppeteer/*.png"),
-		)
-	}
-}
+// func browserIntegrationTests(pipeline *bk.Pipeline) {
+// 	parallelTestCount := getPercyParallelTestsCount()
+// 	for _, browser := range browsers {
+// 		pipeline.AddStep(
+// 			fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
+// 			withYarnCache(),
+// 			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
+// 			bk.Env("BROWSER", browser),
+// 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
+// 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
+// 			bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
+// 			bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(parallelTestCount)),
+// 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+// 			bk.Cmd("yarn --cwd client/browser -s run build"),
+// 			bk.Cmd("yarn run cover-browser-integration"),
+// 			bk.Cmd("yarn nyc report -r json"),
+// 			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
+// 			bk.ArtifactPaths("./puppeteer/*.png"),
+// 		)
+// 	}
+// }
 
 func browserUnitTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest::chrome: Test (client/browser)",
@@ -275,6 +275,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 		pipeline.AddStep(
 			fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
 			withYarnCache(),
+			bk.DependsOn(prepStepKey),
 			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
 			bk.Env("BROWSER", browser),
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
