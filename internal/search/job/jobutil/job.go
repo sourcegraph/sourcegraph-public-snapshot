@@ -468,7 +468,6 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 			Query:          zoektQuery,
 			FileMatchLimit: b.fileMatchLimit,
 			Select:         b.selector,
-			Zoekt:          b.zoekt,
 		}, nil
 	case search.TextRequest:
 		return &zoektutil.ZoektRepoSubsetSearch{

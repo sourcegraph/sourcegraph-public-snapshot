@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	otlog "github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -18,7 +18,6 @@ type ZoektSymbolSearch struct {
 	Query          zoektquery.Q
 	FileMatchLimit int32
 	Select         filter.SelectPath
-	Zoekt          zoekt.Streamer
 	Since          func(time.Time) time.Duration `json:"-"` // since if non-nil will be used instead of time.Since. For tests
 }
 
@@ -42,7 +41,7 @@ func (z *ZoektSymbolSearch) Run(ctx context.Context, clients job.RuntimeClients,
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	err = zoektSearch(ctx, z.Repos, z.Query, search.SymbolRequest, z.Zoekt, z.FileMatchLimit, z.Select, since, stream)
+	err = zoektSearch(ctx, z.Repos, z.Query, search.SymbolRequest, clients.Zoekt, z.FileMatchLimit, z.Select, since, stream)
 	if err != nil {
 		tr.LogFields(otlog.Error(err))
 		// Only record error if we haven't timed out.
