@@ -46,7 +46,6 @@ func (s *RepoSearch) reposContainingPath(ctx context.Context, clients job.Runtim
 		RepoOptions:     s.RepoOptions,
 		Features:        s.Features,
 		Mode:            s.Mode,
-		SearcherURLs:    s.SearcherURLs,
 		UseFullDeadline: true,
 	}
 

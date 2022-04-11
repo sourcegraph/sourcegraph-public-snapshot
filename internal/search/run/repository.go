@@ -6,7 +6,6 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -38,8 +37,6 @@ type RepoSearch struct {
 	// repository if this field is true. Another example is we set this field
 	// to true if the user requests a specific timeout or maximum result size.
 	UseFullDeadline bool
-
-	SearcherURLs *endpoint.Map
 }
 
 func (s *RepoSearch) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
