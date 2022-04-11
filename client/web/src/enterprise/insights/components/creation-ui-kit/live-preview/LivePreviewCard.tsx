@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react'
+import React, { forwardRef, HTMLAttributes } from 'react'
 
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
@@ -7,12 +7,14 @@ import RefreshIcon from 'mdi-react/RefreshIcon'
 import { Button, ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
 import { getLineColor, LegendItem, LegendList, Series } from '../../../../../charts'
-import { InsightCard, InsightCardBanner, InsightCardLoading } from '../../views'
+import { InsightCard, InsightCardBanner, InsightCardHeader, InsightCardLoading } from '../../views'
 
 import styles from './LivePreviewCard.module.scss'
 
-const LivePreviewCard: React.FunctionComponent = props => (
-    <InsightCard className={styles.insightCard}>{props.children}</InsightCard>
+interface LivePreviewCardProps extends HTMLAttributes<HTMLElement> {}
+
+const LivePreviewCard: React.FunctionComponent<LivePreviewCardProps> = props => (
+    <InsightCard {...props} className={classNames(styles.insightCard, props.className)} />
 )
 
 export interface LivePreviewUpdateButtonProps {
@@ -31,6 +33,7 @@ const LivePreviewUpdateButton: React.FunctionComponent<LivePreviewUpdateButtonPr
 }
 
 const LivePreviewLoading = InsightCardLoading
+const LivePreviewHeader = InsightCardHeader
 
 const LivePreviewBlurBackdrop = forwardRef((props, reference) => {
     const { as: Component = 'svg', className, ...attributes } = props
@@ -66,6 +69,7 @@ const LivePreviewLegend: React.FunctionComponent<LivePreviewLegendProps> = props
 
 export {
     LivePreviewCard,
+    LivePreviewHeader,
     LivePreviewUpdateButton,
     LivePreviewLoading,
     LivePreviewChart,

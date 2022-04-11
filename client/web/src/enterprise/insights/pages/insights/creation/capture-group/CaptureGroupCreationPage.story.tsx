@@ -7,9 +7,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 
 import { WebStory } from '../../../../../../components/WebStory'
 import { LINE_CHART_WITH_HUGE_NUMBER_OF_LINES } from '../../../../../../views/mocks/charts-content'
-import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
-import { SeriesChartContent } from '../../../../core/backend/code-insights-backend-types'
-import { CodeInsightsGqlBackend } from '../../../../core/backend/gql-backend/code-insights-gql-backend'
+import { CodeInsightsBackendContext, SeriesChartContent, CodeInsightsGqlBackend } from '../../../../core'
 
 import { CaptureGroupCreationPage as CaptureGroupCreationPageComponent } from './CaptureGroupCreationPage'
 
