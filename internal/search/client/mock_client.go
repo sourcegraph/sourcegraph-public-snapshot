@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	search "github.com/sourcegraph/sourcegraph/internal/search"
-	jobutil "github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
+	job "github.com/sourcegraph/sourcegraph/internal/search/job"
 	run "github.com/sourcegraph/sourcegraph/internal/search/run"
 	streaming "github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	schema "github.com/sourcegraph/sourcegraph/schema"
@@ -21,9 +21,9 @@ type MockSearchClient struct {
 	// ExecuteFunc is an instance of a mock function object controlling the
 	// behavior of the method Execute.
 	ExecuteFunc *SearchClientExecuteFunc
-	// JobArgsFunc is an instance of a mock function object controlling the
-	// behavior of the method JobArgs.
-	JobArgsFunc *SearchClientJobArgsFunc
+	// JobClientsFunc is an instance of a mock function object controlling
+	// the behavior of the method JobClients.
+	JobClientsFunc *SearchClientJobClientsFunc
 	// PlanFunc is an instance of a mock function object controlling the
 	// behavior of the method Plan.
 	PlanFunc *SearchClientPlanFunc
@@ -38,9 +38,9 @@ func NewMockSearchClient() *MockSearchClient {
 				return nil, nil
 			},
 		},
-		JobArgsFunc: &SearchClientJobArgsFunc{
-			defaultHook: func(*run.SearchInputs) *jobutil.Args {
-				return nil
+		JobClientsFunc: &SearchClientJobClientsFunc{
+			defaultHook: func() job.RuntimeClients {
+				return job.RuntimeClients{}
 			},
 		},
 		PlanFunc: &SearchClientPlanFunc{
@@ -60,9 +60,9 @@ func NewStrictMockSearchClient() *MockSearchClient {
 				panic("unexpected invocation of MockSearchClient.Execute")
 			},
 		},
-		JobArgsFunc: &SearchClientJobArgsFunc{
-			defaultHook: func(*run.SearchInputs) *jobutil.Args {
-				panic("unexpected invocation of MockSearchClient.JobArgs")
+		JobClientsFunc: &SearchClientJobClientsFunc{
+			defaultHook: func() job.RuntimeClients {
+				panic("unexpected invocation of MockSearchClient.JobClients")
 			},
 		},
 		PlanFunc: &SearchClientPlanFunc{
@@ -81,8 +81,8 @@ func NewMockSearchClientFrom(i SearchClient) *MockSearchClient {
 		ExecuteFunc: &SearchClientExecuteFunc{
 			defaultHook: i.Execute,
 		},
-		JobArgsFunc: &SearchClientJobArgsFunc{
-			defaultHook: i.JobArgs,
+		JobClientsFunc: &SearchClientJobClientsFunc{
+			defaultHook: i.JobClients,
 		},
 		PlanFunc: &SearchClientPlanFunc{
 			defaultHook: i.Plan,
@@ -201,35 +201,35 @@ func (c SearchClientExecuteFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// SearchClientJobArgsFunc describes the behavior when the JobArgs method of
-// the parent MockSearchClient instance is invoked.
-type SearchClientJobArgsFunc struct {
-	defaultHook func(*run.SearchInputs) *jobutil.Args
-	hooks       []func(*run.SearchInputs) *jobutil.Args
-	history     []SearchClientJobArgsFuncCall
+// SearchClientJobClientsFunc describes the behavior when the JobClients
+// method of the parent MockSearchClient instance is invoked.
+type SearchClientJobClientsFunc struct {
+	defaultHook func() job.RuntimeClients
+	hooks       []func() job.RuntimeClients
+	history     []SearchClientJobClientsFuncCall
 	mutex       sync.Mutex
 }
 
-// JobArgs delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockSearchClient) JobArgs(v0 *run.SearchInputs) *jobutil.Args {
-	r0 := m.JobArgsFunc.nextHook()(v0)
-	m.JobArgsFunc.appendCall(SearchClientJobArgsFuncCall{v0, r0})
+// JobClients delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockSearchClient) JobClients() job.RuntimeClients {
+	r0 := m.JobClientsFunc.nextHook()()
+	m.JobClientsFunc.appendCall(SearchClientJobClientsFuncCall{r0})
 	return r0
 }
 
-// SetDefaultHook sets function that is called when the JobArgs method of
+// SetDefaultHook sets function that is called when the JobClients method of
 // the parent MockSearchClient instance is invoked and the hook queue is
 // empty.
-func (f *SearchClientJobArgsFunc) SetDefaultHook(hook func(*run.SearchInputs) *jobutil.Args) {
+func (f *SearchClientJobClientsFunc) SetDefaultHook(hook func() job.RuntimeClients) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// JobArgs method of the parent MockSearchClient instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *SearchClientJobArgsFunc) PushHook(hook func(*run.SearchInputs) *jobutil.Args) {
+// JobClients method of the parent MockSearchClient instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *SearchClientJobClientsFunc) PushHook(hook func() job.RuntimeClients) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -237,20 +237,20 @@ func (f *SearchClientJobArgsFunc) PushHook(hook func(*run.SearchInputs) *jobutil
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *SearchClientJobArgsFunc) SetDefaultReturn(r0 *jobutil.Args) {
-	f.SetDefaultHook(func(*run.SearchInputs) *jobutil.Args {
+func (f *SearchClientJobClientsFunc) SetDefaultReturn(r0 job.RuntimeClients) {
+	f.SetDefaultHook(func() job.RuntimeClients {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *SearchClientJobArgsFunc) PushReturn(r0 *jobutil.Args) {
-	f.PushHook(func(*run.SearchInputs) *jobutil.Args {
+func (f *SearchClientJobClientsFunc) PushReturn(r0 job.RuntimeClients) {
+	f.PushHook(func() job.RuntimeClients {
 		return r0
 	})
 }
 
-func (f *SearchClientJobArgsFunc) nextHook() func(*run.SearchInputs) *jobutil.Args {
+func (f *SearchClientJobClientsFunc) nextHook() func() job.RuntimeClients {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -263,43 +263,40 @@ func (f *SearchClientJobArgsFunc) nextHook() func(*run.SearchInputs) *jobutil.Ar
 	return hook
 }
 
-func (f *SearchClientJobArgsFunc) appendCall(r0 SearchClientJobArgsFuncCall) {
+func (f *SearchClientJobClientsFunc) appendCall(r0 SearchClientJobClientsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of SearchClientJobArgsFuncCall objects
+// History returns a sequence of SearchClientJobClientsFuncCall objects
 // describing the invocations of this function.
-func (f *SearchClientJobArgsFunc) History() []SearchClientJobArgsFuncCall {
+func (f *SearchClientJobClientsFunc) History() []SearchClientJobClientsFuncCall {
 	f.mutex.Lock()
-	history := make([]SearchClientJobArgsFuncCall, len(f.history))
+	history := make([]SearchClientJobClientsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// SearchClientJobArgsFuncCall is an object that describes an invocation of
-// method JobArgs on an instance of MockSearchClient.
-type SearchClientJobArgsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 *run.SearchInputs
+// SearchClientJobClientsFuncCall is an object that describes an invocation
+// of method JobClients on an instance of MockSearchClient.
+type SearchClientJobClientsFuncCall struct {
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *jobutil.Args
+	Result0 job.RuntimeClients
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c SearchClientJobArgsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+func (c SearchClientJobClientsFuncCall) Args() []interface{} {
+	return []interface{}{}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c SearchClientJobArgsFuncCall) Results() []interface{} {
+func (c SearchClientJobClientsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

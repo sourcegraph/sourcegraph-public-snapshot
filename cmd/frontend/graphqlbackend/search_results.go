@@ -515,7 +515,7 @@ func logBatch(ctx context.Context, db database.DB, searchInputs *run.SearchInput
 func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
 	start := time.Now()
 	agg := streaming.NewAggregatingStream()
-	alert, err := execute.Execute(ctx, r.db, agg, r.JobArgs())
+	alert, err := execute.Execute(ctx, agg, r.SearchInputs, r.JobClients())
 	srr := r.resultsToResolver(agg.Results, alert, agg.Stats)
 	srr.elapsed = time.Since(start)
 	logBatch(ctx, r.db, r.SearchInputs, srr, err)

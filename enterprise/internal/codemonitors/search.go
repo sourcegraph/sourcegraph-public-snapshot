@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -115,13 +114,7 @@ func Search(ctx context.Context, db database.DB, query string, monitorID int64, 
 	}
 
 	// Inline job creation so we can mutate the commit job before running it
-	jobArgs := searchClient.JobArgs(inputs)
-	clients := job.RuntimeClients{
-		DB:           db,
-		Zoekt:        jobArgs.Zoekt,
-		SearcherURLs: jobArgs.SearcherURLs,
-		Gitserver:    gitserver.NewClient(db),
-	}
+	clients := searchClient.JobClients()
 	plan, err := predicate.Expand(ctx, clients, inputs, inputs.Plan)
 	if err != nil {
 		return nil, err
@@ -171,13 +164,7 @@ func Snapshot(ctx context.Context, db database.DB, query string, monitorID int64
 		return err
 	}
 
-	jobArgs := searchClient.JobArgs(inputs)
-	clients := job.RuntimeClients{
-		DB:           db,
-		Zoekt:        jobArgs.Zoekt,
-		SearcherURLs: jobArgs.SearcherURLs,
-		Gitserver:    gitserver.NewClient(db),
-	}
+	clients := searchClient.JobClients()
 	plan, err := predicate.Expand(ctx, clients, inputs, inputs.Plan)
 	if err != nil {
 		return err
