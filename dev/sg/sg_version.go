@@ -6,11 +6,13 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -94,4 +96,53 @@ func changelogExec(ctx context.Context, args []string) error {
 	stdout.Out.WriteLine(output.Linef("", output.StyleSuggestion,
 		"Only showing %d entries - configure with 'sg version changelog -limit=50'", versionChangelogEntries))
 	return nil
+}
+
+const sgOneLineCmd = `curl --proto '=https' --tlsv1.2 -sSLf https://install.sg.dev | sh`
+
+func checkSgVersion(ctx context.Context) error {
+	_, err := root.RepositoryRoot()
+	if err != nil {
+		// Ignore the error, because we only want to check the version if we're
+		// in sourcegraph/sourcegraph
+		return nil
+	}
+
+	if BuildCommit == "dev" {
+		// If `sg` was built with a dirty `./dev/sg` directory it's a dev build
+		// and we don't need to display this message.
+		return nil
+	}
+
+	rev := strings.TrimPrefix(BuildCommit, "dev-")
+	out, err := run.GitCmd("rev-list", fmt.Sprintf("%s..origin/main", rev), "./dev/sg")
+	if err != nil {
+		fmt.Printf("error getting new commits since %s in ./dev/sg: %s\n", rev, err)
+		fmt.Printf("try reinstalling sg with `%s`.\n", sgOneLineCmd)
+		os.Exit(1)
+	}
+
+	out = strings.TrimSpace(out)
+	if out == "" {
+		// No newer commits found. sg is up to date.
+		return nil
+	}
+
+	if skipAutoUpdatesFlag {
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "╭──────────────────────────────────────────────────────────────────╮  "))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "│                                                                  │░░"))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "│ HEY! New version of sg available. Run 'sg update' to install it. │░░"))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "│       To see what's new, run 'sg version changelog -next'.       │░░"))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "│                                                                  │░░"))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "╰──────────────────────────────────────────────────────────────────╯░░"))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░"))
+		return nil
+	}
+
+	stdout.Out.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "Auto updating sg ..."))
+	newPath, err := updateToPrebuiltSG(ctx)
+	if err != nil {
+		return err
+	}
+	return syscall.Exec(newPath, os.Args, os.Environ())
 }

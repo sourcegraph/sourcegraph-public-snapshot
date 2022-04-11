@@ -5,27 +5,33 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
-	"syscall"
 	"time"
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
+
+func main() {
+	if err := loadSecrets(); err != nil {
+		fmt.Printf("failed to open secrets: %s\n", err)
+	}
+	ctx := secrets.WithContext(context.Background(), secretsStore)
+
+	if err := sg.RunContext(ctx, os.Args); err != nil {
+		fmt.Printf("error: %s\n", err)
+		os.Exit(1)
+	}
+}
 
 const (
 	defaultConfigFile          = "sg.config.yaml"
 	defaultConfigOverwriteFile = "sg.config.overwrite.yaml"
 	defaultSecretsFile         = "sg.secrets.json"
 )
-
-var secretsStore *secrets.Store
 
 var (
 	BuildCommit = "dev"
@@ -34,14 +40,18 @@ var (
 	// `parseConf` before.
 	globalConf *Config
 
+	secretsStore *secrets.Store
+
 	// Note that these are only available after the main sg CLI app has been run.
 	configFlag          string
 	overwriteConfigFlag string
 	verboseFlag         bool
 	skipAutoUpdatesFlag bool
-)
 
-var postInitHooks []cli.ActionFunc
+	// postInitHooks is useful for doing anything that requires flags to be set beforehand,
+	// e.g. generating help text based on parsed config
+	postInitHooks []cli.ActionFunc
+)
 
 var sg = &cli.App{
 	Usage:       "The Sourcegraph developer tool!",
@@ -145,90 +155,6 @@ var sg = &cli.App{
 	UseShortOptionHandling: true,
 }
 
-func main() {
-	if err := loadSecrets(); err != nil {
-		fmt.Printf("failed to open secrets: %s\n", err)
-	}
-	ctx := secrets.WithContext(context.Background(), secretsStore)
-
-	if err := sg.RunContext(ctx, os.Args); err != nil {
-		fmt.Printf("error: %s\n", err)
-		os.Exit(1)
-	}
-}
-
-// setMaxOpenFiles will bump the maximum opened files count.
-// It's harmless since the limit only persists for the lifetime of the process and it's quick too.
-func setMaxOpenFiles() error {
-	const maxOpenFiles = 10000
-
-	var rLimit syscall.Rlimit
-	if err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rLimit); err != nil {
-		return errors.Wrap(err, "getrlimit failed")
-	}
-
-	if rLimit.Cur < maxOpenFiles {
-		rLimit.Cur = maxOpenFiles
-
-		// This may not succeed, see https://github.com/golang/go/issues/30401
-		err := syscall.Setrlimit(syscall.RLIMIT_NOFILE, &rLimit)
-		if err != nil {
-			return errors.Wrap(err, "setrlimit failed")
-		}
-	}
-
-	return nil
-}
-
-const sgOneLineCmd = `curl --proto '=https' --tlsv1.2 -sSLf https://install.sg.dev | sh`
-
-func checkSgVersion(ctx context.Context) error {
-	_, err := root.RepositoryRoot()
-	if err != nil {
-		// Ignore the error, because we only want to check the version if we're
-		// in sourcegraph/sourcegraph
-		return nil
-	}
-
-	if BuildCommit == "dev" {
-		// If `sg` was built with a dirty `./dev/sg` directory it's a dev build
-		// and we don't need to display this message.
-		return nil
-	}
-
-	rev := strings.TrimPrefix(BuildCommit, "dev-")
-	out, err := run.GitCmd("rev-list", fmt.Sprintf("%s..origin/main", rev), "./dev/sg")
-	if err != nil {
-		fmt.Printf("error getting new commits since %s in ./dev/sg: %s\n", rev, err)
-		fmt.Printf("try reinstalling sg with `%s`.\n", sgOneLineCmd)
-		os.Exit(1)
-	}
-
-	out = strings.TrimSpace(out)
-	if out == "" {
-		// No newer commits found. sg is up to date.
-		return nil
-	}
-
-	if skipAutoUpdatesFlag {
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "╭──────────────────────────────────────────────────────────────────╮  "))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "│                                                                  │░░"))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "│ HEY! New version of sg available. Run 'sg update' to install it. │░░"))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "│       To see what's new, run 'sg version changelog -next'.       │░░"))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "│                                                                  │░░"))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "╰──────────────────────────────────────────────────────────────────╯░░"))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░"))
-		return nil
-	}
-
-	stdout.Out.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "Auto updating sg ..."))
-	newPath, err := updateToPrebuiltSG(ctx)
-	if err != nil {
-		return err
-	}
-	return syscall.Exec(newPath, os.Args, os.Environ())
-}
-
 func loadSecrets() error {
 	homePath, err := root.GetSGHomePath()
 	if err != nil {
@@ -276,15 +202,4 @@ func parseConf(confFile, overwriteFile string) (bool, output.FancyLine) {
 	}
 
 	return true, output.FancyLine{}
-}
-
-func fileExists(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return false, nil
-		}
-		return false, err
-	}
-	return true, nil
 }
