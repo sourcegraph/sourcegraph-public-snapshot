@@ -602,11 +602,10 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	attempts := 0
 	var v *SearchResultsResolver
 
-	args := r.JobArgs()
 	for {
 		// Query search results.
 		var err error
-		j, err := jobutil.ToSearchJob(args.SearchInputs, r.SearchInputs.Query, r.db)
+		j, err := jobutil.ToSearchJob(r.SearchInputs, r.SearchInputs.Query, r.db)
 		if err != nil {
 			return nil, err
 		}
