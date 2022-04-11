@@ -693,7 +693,7 @@ commands:
     cmd: env
 
   bext:
-    cmd: yarn workspace @sourcegraph/browser dev
+    cmd: yarn --cwd client/browser dev
     install: yarn
 
 defaultCommandset: enterprise
@@ -944,16 +944,16 @@ tests:
     install: ENTERPRISE=1 yarn build-web
 
   bext:
-    cmd: yarn workspace @sourcegraph/browser test
+    cmd: yarn --cwd client/browser test
 
   bext-build:
-    cmd: EXTENSION_PERMISSIONS_ALL_URLS=true yarn workspace @sourcegraph/browser build
+    cmd: EXTENSION_PERMISSIONS_ALL_URLS=true yarn --cwd client/browser build
 
   bext-integration:
-    cmd: yarn workspace @sourcegraph/browser test-integration
+    cmd: yarn --cwd client/browser test-integration
 
   bext-e2e:
-    cmd: yarn workspace @sourcegraph/browser mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts
+    cmd: yarn --cwd client/browser mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts
     env:
       SOURCEGRAPH_BASE_URL: https://sourcegraph.com
 
