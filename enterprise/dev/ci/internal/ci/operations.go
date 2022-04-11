@@ -142,14 +142,14 @@ func addCheck(pipeline *bk.Pipeline) {
 func addPrettier(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":lipstick: Prettier",
 		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-run.sh prettier-check"))
+		bk.Cmd("dev/ci/yarn-run.sh format:check"))
 }
 
 // yarn ~41s + ~1s
 func addGraphQLLint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":lipstick: :graphql: GraphQL lint",
 		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-run.sh graphql-lint"))
+		bk.Cmd("dev/ci/yarn-run.sh lint:graphql"))
 }
 
 func addSVGLint(pipeline *bk.Pipeline) {
@@ -167,7 +167,7 @@ func addClientLinters(pipeline *bk.Pipeline) {
 	// - ESLint ~9m
 	pipeline.AddStep(":eslint: ESLint",
 		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-run.sh all:eslint"))
+		bk.Cmd("dev/ci/yarn-run.sh lint:js:changed"))
 
 	// - build-ts ~4m
 	pipeline.AddStep(":typescript: Build TS",
@@ -177,7 +177,7 @@ func addClientLinters(pipeline *bk.Pipeline) {
 	// - Stylelint ~2m
 	pipeline.AddStep(":stylelint: Stylelint",
 		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-run.sh all:stylelint"))
+		bk.Cmd("dev/ci/yarn-run.sh lint:css:changed"))
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.

@@ -97,7 +97,7 @@
     }
   },
   "scripts": {
-    "eslint": "eslint --cache '**/*.[jt]s?(x)'",
+    "lint:js": "eslint --cache '**/*.[jt]s?(x)'",
     "test": "echo \"No tests exist yet\" && exit 1",
     "package": "echo \"package script not implemented yet\" && exit 1",
     "build": "webpack --mode=development --config-name extension:node --config-name extension:webworker --config-name webviews",
