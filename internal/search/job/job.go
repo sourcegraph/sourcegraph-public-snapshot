@@ -1,3 +1,6 @@
+// Package job contains the definitions and helpers for search jobs.
+// This imports of this package should stay minimal so it can be referenced
+// by other packages without pulling in a large set of transitive dependencies.
 package job
 
 import (
