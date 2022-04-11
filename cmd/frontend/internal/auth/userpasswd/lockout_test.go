@@ -46,8 +46,8 @@ func TestLockoutStore(t *testing.T) {
 		_, locked = s.IsLockedOut(1)
 		assert.True(t, locked)
 
-		// Should be unlocked after two seconds
-		time.Sleep(2 * time.Second)
+		// Should be unlocked after three seconds, wait for an extra second to eliminate flakiness
+		time.Sleep(3 * time.Second)
 		_, locked = s.IsLockedOut(1)
 		assert.False(t, locked)
 	})
@@ -62,7 +62,7 @@ func TestLockoutStore(t *testing.T) {
 
 		// Should not be locked out after the consecutive period
 		s.IncreaseFailedAttempt(1)
-		time.Sleep(time.Second)
+		time.Sleep(2 * time.Second) // Wait for an extra second to eliminate flakiness
 		s.IncreaseFailedAttempt(1)
 
 		_, locked = s.IsLockedOut(1)
