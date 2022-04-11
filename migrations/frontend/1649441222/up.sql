@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS lsif_uploads_audit_logs (
-    instant             timestamptz DEFAULT NOW(),
+    log_timestamp       timestamptz DEFAULT NOW(),
+    log_expiry          timestamptz,
     upload_id           integer not null,
     commit              text not null,
     root                text not null,
@@ -14,7 +15,7 @@ CREATE TABLE IF NOT EXISTS lsif_uploads_audit_logs (
 );
 
 CREATE INDEX IF NOT EXISTS lsif_uploads_audit_logs_upload_id ON lsif_uploads_audit_logs USING btree (upload_id);
-CREATE INDEX IF NOT EXISTS lsif_uploads_audit_logs_timestamp ON lsif_uploads_audit_logs USING brin (instant);
+CREATE INDEX IF NOT EXISTS lsif_uploads_audit_logs_timestamp ON lsif_uploads_audit_logs USING brin (log_timestamp);
 
 CREATE OR REPLACE FUNCTION func_lsif_uploads_update() RETURNS TRIGGER AS $$
     BEGIN
@@ -56,6 +57,19 @@ CREATE OR REPLACE FUNCTION func_lsif_uploads_update() RETURNS TRIGGER AS $$
                 END,
             NULL)
         );
+
+        RETURN NULL;
+    END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION func_lsif_uploads_delete() RETURNS TRIGGER AS $$
+    BEGIN
+        UPDATE lsif_uploads_audit_logs
+        SET log_expiry = NOW()
+        WHERE upload_id IN (
+            SELECT id FROM OLD
+        );
+
         RETURN NULL;
     END;
 $$ LANGUAGE plpgsql;
@@ -68,3 +82,10 @@ AFTER UPDATE OF state, num_resets, num_failures, worker_hostname, expired, commi
 ON lsif_uploads
 FOR EACH ROW
 EXECUTE FUNCTION func_lsif_uploads_update();
+
+CREATE TRIGGER trigger_lsif_uploads_delete
+AFTER DELETE
+ON lsif_uploads
+REFERENCING OLD TABLE AS OLD
+FOR EACH STATEMENT
+EXECUTE FUNCTION func_lsif_uploads_delete();
