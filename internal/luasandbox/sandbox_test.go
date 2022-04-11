@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	lua "github.com/yuin/gopher-lua"
 
@@ -41,6 +42,25 @@ func TestSandboxHasNoIO(t *testing.T) {
 			t.Fatalf("unexpected error running script: %s", err)
 		}
 	})
+}
+
+func TestSandboxMaxTimeout(t *testing.T) {
+	ctx := context.Background()
+
+	sandbox, err := newService(&observation.TestContext).CreateSandbox(ctx, CreateOptions{})
+	if err != nil {
+		t.Fatalf("unexpected error creating sandbox: %s", err)
+	}
+	defer sandbox.Close()
+
+	script := `
+		while true do end
+	`
+	if _, err := sandbox.RunScript(ctx, RunOptions{Timeout: time.Millisecond}, script); err == nil {
+		t.Fatalf("expected error running script")
+	} else if !strings.Contains(err.Error(), context.DeadlineExceeded.Error()) {
+		t.Fatalf("unexpected error running script: %#v", err)
+	}
 }
 
 func TestRunScript(t *testing.T) {
