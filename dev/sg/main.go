@@ -136,18 +136,16 @@ var sg = &cli.App{
 
 		// Company
 		teammateCommand,
-		// rfcCommand,
-		// liveCommand,
+		rfcCommand,
+		liveCommand,
 		opsCommand,
-		// auditCommand,
+		auditCommand,
 
 		// Util
 		versionCommand,
 		updateCommand,
-		// installCommand,
-
-		// Misc.
-		// funkyLogoCommand,
+		installCommand,
+		funkyLogoCommand,
 	},
 
 	HideVersion:            true,

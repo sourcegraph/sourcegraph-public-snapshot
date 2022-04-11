@@ -12,7 +12,7 @@ import (
 var doctorCommand = &cli.Command{
 	Name:      "doctor",
 	ArgsUsage: "[...checks]",
-	Usage:     "Run checks to test whether system is in correct state to run Sourcegraph.",
+	Usage:     "Run checks to test whether system is in correct state to run Sourcegraph",
 	Category:  CategoryEnv,
 	Action:    execAdapter(doctorExec),
 }

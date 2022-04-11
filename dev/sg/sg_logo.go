@@ -3,29 +3,25 @@ package main
 import (
 	"bytes"
 	"context"
-	"flag"
 	"fmt"
 	"io"
 	"math/rand"
 	"time"
 
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-var (
-	funkyLogoFlagSet = flag.NewFlagSet("sg logo", flag.ExitOnError)
-	funkyLogoCommand = &ffcli.Command{
-		Name:       "logo",
-		ShortUsage: "sg logo [classic]",
-		ShortHelp:  "Print the sg logo",
-		LongHelp:   "Prints the sg logo in different colors. When the 'classic' argument is passed it prints the classic logo.",
-		FlagSet:    funkyLogoFlagSet,
-		Exec:       logoExec,
-	}
-)
+var funkyLogoCommand = &cli.Command{
+	Name:        "logo",
+	ArgsUsage:   "[classic]",
+	Usage:       "Print the sg logo",
+	Description: "Prints the sg logo in different colors. When the 'classic' argument is passed it prints the classic logo.",
+	Category:    CategoryUtil,
+	Action:      execAdapter(logoExec),
+}
 
 var styleOrange = output.Fg256Color(202)
 

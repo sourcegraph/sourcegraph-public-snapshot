@@ -25,7 +25,7 @@ func init() {
 
 var runCommand = &cli.Command{
 	Name:        "run",
-	Usage:       "Run the given commands.",
+	Usage:       "Run the given commands",
 	ArgsUsage:   "[command]",
 	Description: constructRunCmdLongHelp(),
 	Category:    CategoryDev,

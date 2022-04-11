@@ -26,7 +26,7 @@ func init() {
 var testCommand = &cli.Command{
 	Name:      "test",
 	ArgsUsage: "<testsuite>",
-	Usage:     "Run the given test suite.",
+	Usage:     "Run the given test suite",
 	Category:  CategoryDev,
 	Action:    execAdapter(testExec),
 }

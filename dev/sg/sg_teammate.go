@@ -29,14 +29,14 @@ func getTeamResolver(ctx context.Context) (team.TeammateResolver, error) {
 var (
 	teammateCommand = &cli.Command{
 		Name:        "teammate",
-		Usage:       "Get information about Sourcegraph teammates.",
+		Usage:       "Get information about Sourcegraph teammates",
 		Description: `Get information about Sourcegraph teammates, such as their current time and handbook page!`,
 		Category:    CategoryCompany,
 		Action:      cli.ShowSubcommandHelp,
 		Subcommands: []*cli.Command{{
 			Name:      "time",
 			ArgsUsage: "<nickname>",
-			Usage:     "Get the current time of a Sourcegraph teammate.",
+			Usage:     "Get the current time of a Sourcegraph teammate",
 			Action: execAdapter(func(ctx context.Context, args []string) error {
 				if len(args) == 0 {
 					return errors.New("no nickname provided")
@@ -56,7 +56,7 @@ var (
 		}, {
 			Name:      "handbook",
 			ArgsUsage: "<nickname>",
-			Usage:     "Open the handbook page of a Sourcegraph teammate.",
+			Usage:     "Open the handbook page of a Sourcegraph teammate",
 			Action: execAdapter(func(ctx context.Context, args []string) error {
 				if len(args) == 0 {
 					return errors.New("no nickname provided")

@@ -22,9 +22,9 @@ var (
 
 	versionCommand = &cli.Command{
 		Name:     "version",
-		Usage:    "View details for this installation of sg.",
+		Usage:    "View details for this installation of sg",
 		Action:   execAdapter(versionExec),
-		Category: CategorySG,
+		Category: CategoryUtil,
 		Subcommands: []*cli.Command{
 			{
 				Name:    "changelog",

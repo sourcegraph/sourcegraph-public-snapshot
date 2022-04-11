@@ -36,7 +36,7 @@ var (
 	startCommand = &cli.Command{
 		Name:      "start",
 		ArgsUsage: "[commandset]",
-		Usage:     "🌟 Starts the given commandset. Without a commandset it starts the default Sourcegraph dev environment.",
+		Usage:     "🌟 Starts the given commandset. Without a commandset it starts the default Sourcegraph dev environment",
 		Category:  CategoryDev,
 		Flags: []cli.Flag{
 			&cli.StringSliceFlag{
