@@ -194,8 +194,12 @@ func TestCache_Increase(t *testing.T) {
 	assert.Equal(t, []byte("1"), got)
 
 	time.Sleep(time.Second)
-	_, ok = c.Get("a")
-	assert.False(t, ok)
+
+	// now wait upto another 5s. We do this because timing is hard.
+	assert.Eventually(t, func() bool {
+		_, ok = c.Get("a")
+		return !ok
+	}, 5*time.Second, 50*time.Millisecond, "rcache.increase did not respect expiration")
 }
 
 func bytes(s ...string) [][]byte {
