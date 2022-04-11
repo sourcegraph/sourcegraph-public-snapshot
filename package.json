@@ -12,7 +12,7 @@
   },
   "scripts": {
     "format": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --write --list-different --config prettier.config.js",
-    "format:check": "yarn -s run prettier --write=false --check --list-different=false --loglevel=warn",
+    "format:check": "yarn -s run format --write=false --check --list-different=false --loglevel=warn",
     "_lint:js": "DOCSITE_LIST=\"$(./dev/docsite.sh -config doc/docsite.json ls)\" NODE_OPTIONS=\"--max_old_space_size=16192\" eslint",
     "lint:js:changed": "yarn _lint:js $(git diff --diff-filter=d --name-only main | grep -E '.[tj]sx?$' | xargs)",
     "lint:js:all": "DOCSITE_LIST=\"$(./dev/docsite.sh -config doc/docsite.json ls)\" dev/foreach-ts-project.sh yarn -s run _lint:js --quiet",
