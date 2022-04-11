@@ -3,8 +3,6 @@ package jobutil
 import (
 	"context"
 
-	zoektstreamer "github.com/google/zoekt"
-
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -19,8 +17,6 @@ type repoPagerJob struct {
 	useIndex         query.YesNoOnly // whether to include indexed repos
 	containsRefGlobs bool            // whether to include repositories with refs
 	child            job.Job         // child job tree that need populating a repos field to run
-
-	zoekt zoektstreamer.Streamer
 }
 
 // setRepos populates the repos field for all jobs that need repos. Jobs are
@@ -71,7 +67,7 @@ func (p *repoPagerJob) Run(ctx context.Context, clients job.RuntimeClients, stre
 		indexed, unindexed, err := zoekt.PartitionRepos(
 			ctx,
 			page.RepoRevs,
-			p.zoekt,
+			clients.Zoekt,
 			search.TextRequest,
 			p.useIndex,
 			p.containsRefGlobs,

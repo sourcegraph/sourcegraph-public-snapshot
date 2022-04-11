@@ -128,7 +128,6 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (job.Job, error) {
 					repoOptions:      repoOptions,
 					useIndex:         b.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(q),
-					zoekt:            jargs.Zoekt,
 				})
 			}
 		}
@@ -167,7 +166,6 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (job.Job, error) {
 					repoOptions:      repoOptions,
 					useIndex:         q.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(q),
-					zoekt:            jargs.Zoekt,
 				})
 			}
 		}
@@ -736,7 +734,6 @@ func optimizeJobs(baseJob job.Job, jargs *Args, q query.Q, db database.DB) (job.
 				repoOptions:      toRepoOptions(q, jargs.SearchInputs.UserSettings),
 				useIndex:         q.Index(),
 				containsRefGlobs: query.ContainsRefGlobs(q),
-				zoekt:            jargs.Zoekt,
 			}
 		}
 	}
