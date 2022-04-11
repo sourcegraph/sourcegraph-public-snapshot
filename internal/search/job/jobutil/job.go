@@ -482,7 +482,6 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 			Typ:            typ,
 			FileMatchLimit: b.fileMatchLimit,
 			Select:         b.selector,
-			Zoekt:          b.zoekt,
 		}, nil
 	}
 	return nil, errors.Errorf("attempt to create unrecognized zoekt search with value %v", typ)

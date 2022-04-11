@@ -109,7 +109,6 @@ func (s *RepoSearch) reposContainingPath(ctx context.Context, clients job.Runtim
 			Typ:            search.TextRequest,
 			FileMatchLimit: zoektArgs.FileMatchLimit,
 			Select:         zoektArgs.Select,
-			Zoekt:          zoektArgs.Zoekt,
 			Since:          nil,
 		}
 

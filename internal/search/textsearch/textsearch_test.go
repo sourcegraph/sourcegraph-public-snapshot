@@ -468,7 +468,6 @@ func RunRepoSubsetTextSearch(
 			Typ:            search.TextRequest,
 			FileMatchLimit: patternInfo.FileMatchLimit,
 			Select:         patternInfo.Select,
-			Zoekt:          zoekt,
 			Since:          nil,
 		}
 

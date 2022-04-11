@@ -537,7 +537,6 @@ type ZoektRepoSubsetSearch struct {
 	Typ            search.IndexedRequestType
 	FileMatchLimit int32
 	Select         filter.SelectPath
-	Zoekt          zoekt.Streamer
 	Since          func(time.Time) time.Duration `json:"-"` // since if non-nil will be used instead of time.Since. For tests
 }
 
@@ -561,7 +560,7 @@ func (z *ZoektRepoSubsetSearch) Run(ctx context.Context, clients job.RuntimeClie
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	return nil, zoektSearch(ctx, z.Repos, z.Query, z.Typ, z.Zoekt, z.FileMatchLimit, z.Select, since, stream)
+	return nil, zoektSearch(ctx, z.Repos, z.Query, z.Typ, clients.Zoekt, z.FileMatchLimit, z.Select, since, stream)
 }
 
 func (*ZoektRepoSubsetSearch) Name() string {

@@ -305,7 +305,6 @@ func TestIndexedSearch(t *testing.T) {
 				Typ:            search.TextRequest,
 				FileMatchLimit: tt.args.fileMatchLimit,
 				Select:         tt.args.selectPath,
-				Zoekt:          zoekt,
 				Since:          tt.args.since,
 			}
 
