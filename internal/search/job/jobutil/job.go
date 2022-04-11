@@ -75,7 +75,6 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (job.Job, error) {
 		features:       &features,
 		fileMatchLimit: fileMatchLimit,
 		selector:       selector,
-		zoekt:          jargs.Zoekt,
 	}
 
 	repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, resultTypes, jargs.SearchInputs.PatternType, jargs.SearchInputs.OnSourcegraphDotCom)
@@ -408,9 +407,6 @@ type jobBuilder struct {
 	features       *search.Features
 	fileMatchLimit int32
 	selector       filter.SelectPath
-
-	// Just a handle to a Zoekt client, which we always want around.
-	zoekt zoekt.Streamer
 }
 
 func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Job, error) {
