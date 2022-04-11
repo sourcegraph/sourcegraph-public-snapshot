@@ -542,7 +542,7 @@ func toFeatures(flags featureflag.FlagSet) search.Features {
 }
 
 // toAndJob creates a new job from a basic query whose pattern is an And operator at the root.
-func toAndJob(args *Args, q query.Basic, db database.DB) (job.Job, error) {
+func toAndJob(inputs *run.SearchInputs, q query.Basic, db database.DB) (job.Job, error) {
 	// Invariant: this function is only reachable from callers that
 	// guarantee a root node with one or more queryOperands.
 	queryOperands := q.Pattern.(query.Operator).Operands
@@ -557,7 +557,7 @@ func toAndJob(args *Args, q query.Basic, db database.DB) (job.Job, error) {
 
 	operands := make([]job.Job, 0, len(queryOperands))
 	for _, queryOperand := range queryOperands {
-		operand, err := toPatternExpressionJob(args, q.MapPattern(queryOperand), db)
+		operand, err := toPatternExpressionJob(inputs, q.MapPattern(queryOperand), db)
 		if err != nil {
 			return nil, err
 		}
@@ -568,14 +568,14 @@ func toAndJob(args *Args, q query.Basic, db database.DB) (job.Job, error) {
 }
 
 // toOrJob creates a new job from a basic query whose pattern is an Or operator at the top level
-func toOrJob(args *Args, q query.Basic, db database.DB) (job.Job, error) {
+func toOrJob(inputs *run.SearchInputs, q query.Basic, db database.DB) (job.Job, error) {
 	// Invariant: this function is only reachable from callers that
 	// guarantee a root node with one or more queryOperands.
 	queryOperands := q.Pattern.(query.Operator).Operands
 
 	operands := make([]job.Job, 0, len(queryOperands))
 	for _, term := range queryOperands {
-		operand, err := toPatternExpressionJob(args, q.MapPattern(term), db)
+		operand, err := toPatternExpressionJob(inputs, q.MapPattern(term), db)
 		if err != nil {
 			return nil, err
 		}
@@ -584,7 +584,7 @@ func toOrJob(args *Args, q query.Basic, db database.DB) (job.Job, error) {
 	return NewOrJob(operands...), nil
 }
 
-func toPatternExpressionJob(args *Args, q query.Basic, db database.DB) (job.Job, error) {
+func toPatternExpressionJob(inputs *run.SearchInputs, q query.Basic, db database.DB) (job.Job, error) {
 	switch term := q.Pattern.(type) {
 	case query.Operator:
 		if len(term.Operands) == 0 {
@@ -593,14 +593,14 @@ func toPatternExpressionJob(args *Args, q query.Basic, db database.DB) (job.Job,
 
 		switch term.Kind {
 		case query.And:
-			return toAndJob(args, q, db)
+			return toAndJob(inputs, q, db)
 		case query.Or:
-			return toOrJob(args, q, db)
+			return toOrJob(inputs, q, db)
 		case query.Concat:
-			return ToSearchJob(args.SearchInputs, q.ToParseTree(), db)
+			return ToSearchJob(inputs, q.ToParseTree(), db)
 		}
 	case query.Pattern:
-		return ToSearchJob(args.SearchInputs, q.ToParseTree(), db)
+		return ToSearchJob(inputs, q.ToParseTree(), db)
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
 		return NewNoopJob(), nil
@@ -609,8 +609,8 @@ func toPatternExpressionJob(args *Args, q query.Basic, db database.DB) (job.Job,
 	return nil, errors.Errorf("unrecognized type %T in evaluatePatternExpression", q.Pattern)
 }
 
-func ToEvaluateJob(args *Args, q query.Basic, db database.DB) (job.Job, error) {
-	maxResults := q.ToParseTree().MaxResults(args.SearchInputs.DefaultLimit())
+func ToEvaluateJob(inputs *run.SearchInputs, q query.Basic, db database.DB) (job.Job, error) {
+	maxResults := q.ToParseTree().MaxResults(inputs.DefaultLimit())
 	timeout := search.TimeoutDuration(q)
 
 	var (
@@ -618,16 +618,16 @@ func ToEvaluateJob(args *Args, q query.Basic, db database.DB) (job.Job, error) {
 		err error
 	)
 	if q.Pattern == nil {
-		job, err = ToSearchJob(args.SearchInputs, query.ToNodes(q.Parameters), db)
+		job, err = ToSearchJob(inputs, query.ToNodes(q.Parameters), db)
 	} else {
-		job, err = toPatternExpressionJob(args, q, db)
+		job, err = toPatternExpressionJob(inputs, q, db)
 		if err != nil {
 			return nil, err
 		}
 		if _, ok := q.Pattern.(query.Pattern); !ok {
 			// This pattern is not an atomic Pattern, but an
 			// expression. Optimize the expression for backends.
-			job, err = optimizeJobs(job, args.SearchInputs, q.ToParseTree(), db)
+			job, err = optimizeJobs(job, inputs, q.ToParseTree(), db)
 		}
 	}
 	if err != nil {
@@ -749,16 +749,16 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Q, db datab
 
 // FromExpandedPlan takes a query plan that has had all predicates expanded,
 // and converts it to a job.
-func FromExpandedPlan(args *Args, plan query.Plan, db database.DB) (job.Job, error) {
+func FromExpandedPlan(inputs *run.SearchInputs, plan query.Plan, db database.DB) (job.Job, error) {
 	children := make([]job.Job, 0, len(plan))
 	for _, q := range plan {
-		child, err := ToEvaluateJob(args, q, db)
+		child, err := ToEvaluateJob(inputs, q, db)
 		if err != nil {
 			return nil, err
 		}
 		children = append(children, child)
 	}
-	return NewAlertJob(args.SearchInputs, NewOrJob(children...)), nil
+	return NewAlertJob(inputs, NewOrJob(children...)), nil
 }
 
 var metricFeatureFlagUnavailable = promauto.NewCounter(prometheus.CounterOpts{

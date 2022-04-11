@@ -33,7 +33,7 @@ func Execute(
 		return nil, err
 	}
 
-	planJob, err := jobutil.FromExpandedPlan(jobArgs, plan, db)
+	planJob, err := jobutil.FromExpandedPlan(jobArgs.SearchInputs, plan, db)
 	if err != nil {
 		return nil, err
 	}
