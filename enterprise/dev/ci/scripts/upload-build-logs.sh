@@ -37,4 +37,11 @@ echo "~~~ :file_cabinet: Uploading logs"
 # Because we are running this script in the buildkite post-exit hook, the state of the job is still "running".
 # Passing --state="" just overrides the default. It's not set to any specific state because this script caller
 # is responsible of making sure the job has failed.
-./enterprise/dev/ci/scripts/sentry-capture.sh ./sg ci logs --out="$BUILD_LOGS_LOKI_URL" --state="" --overwrite-state="failed" --build="$BUILDKITE_BUILD_NUMBER" --job="$BUILDKITE_JOB_ID"
+./enterprise/dev/ci/scripts/sentry-capture.sh ./sg ci logs --out="" --state="" --overwrite-state="failed" --build="$BUILDKITE_BUILD_NUMBER" --job="$BUILDKITE_JOB_ID"
+local_exit_code=$?
+if [[ $local_exit_code -ne 0 ]]; then
+  echo -e "\033[33m┌────────────────────────────────────────────────────────────────────┐\033[0m"
+  echo -e "\033[33m│ The failure in this hook does not impact the outcome of this build │\033[0m"
+  echo -e "\033[33m└────────────────────────────────────────────────────────────────────┘\033[0m"
+fi
+exit $local_exit_code
