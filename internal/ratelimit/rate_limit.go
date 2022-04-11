@@ -19,7 +19,7 @@ const defaultBurst = 10
 // rate limiter will be added.
 func NewRegistry() *Registry {
 	defaultRateLimit := conf.Get().DefaultRateLimit
-	fallbackRateLimit := rate.Limit(defaultRateLimit)
+	fallbackRateLimit := rate.Limit(defaultRateLimit / 3600.0)
 	if defaultRateLimit <= 0 {
 		fallbackRateLimit = rate.Inf
 	}
