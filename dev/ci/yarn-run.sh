@@ -2,8 +2,6 @@
 
 set -e
 
-exit 66
-
 echo "--- yarn"
 # mutex is necessary since CI runs various yarn installs in parallel
 yarn --mutex network --frozen-lockfile --network-timeout 60000
