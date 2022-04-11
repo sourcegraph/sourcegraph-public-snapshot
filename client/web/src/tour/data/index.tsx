@@ -260,7 +260,7 @@ export const authenticatedTasks: TourTaskType[] = [
             },
             {
                 id: 'DiffSearch',
-                label: 'Learn how to find and fix vulnerabilities faster',
+                label: 'Find problem code in diffs',
                 action: {
                     type: 'link',
                     value: {

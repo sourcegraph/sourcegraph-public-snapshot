@@ -94,7 +94,7 @@ export const TourTask: React.FunctionComponent<TourTaskProps> = ({ title, steps,
                     className={classNames(
                         styles.stepList,
                         'm-0',
-                        variant !== 'small' && 'flex-grow-1 d-flex flex-column justify-content-center',
+                        variant !== 'small' && 'flex-grow-1 d-flex flex-column',
                         isMultiStep && styles.isMultiStep
                     )}
                 >
