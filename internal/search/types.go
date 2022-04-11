@@ -7,7 +7,6 @@ import (
 
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -106,8 +105,7 @@ type ZoektParameters struct {
 // (cmd/searcher). Searcher fulfills (1) unindexed literal and regexp searches
 // and (2) structural search requests.
 type SearcherParameters struct {
-	SearcherURLs *endpoint.Map
-	PatternInfo  *TextPatternInfo
+	PatternInfo *TextPatternInfo
 
 	// UseFullDeadline indicates that the search should try do as much work as
 	// it can within context.Deadline. If false the search should try and be

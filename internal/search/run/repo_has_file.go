@@ -64,7 +64,6 @@ func (s *RepoSearch) reposContainingPath(ctx context.Context, clients job.Runtim
 	}
 
 	searcherArgs := &search.SearcherParameters{
-		SearcherURLs:    newArgs.SearcherURLs,
 		PatternInfo:     newArgs.PatternInfo,
 		UseFullDeadline: newArgs.UseFullDeadline,
 	}

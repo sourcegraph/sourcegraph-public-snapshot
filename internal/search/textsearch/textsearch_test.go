@@ -419,7 +419,6 @@ func RunRepoSubsetTextSearch(
 ) ([]*result.FileMatch, streaming.Stats, error) {
 	notSearcherOnly := mode != search.SearcherOnly
 	searcherArgs := &search.SearcherParameters{
-		SearcherURLs:    searcherURLs,
 		PatternInfo:     patternInfo,
 		UseFullDeadline: useFullDeadline,
 	}

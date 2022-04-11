@@ -85,7 +85,6 @@ func streamStructuralSearch(ctx context.Context, clients job.RuntimeClients, arg
 	jobs := []*searchRepos{}
 	for _, repoSet := range repos {
 		searcherArgs := &search.SearcherParameters{
-			SearcherURLs:    args.SearcherURLs,
 			PatternInfo:     args.PatternInfo,
 			UseFullDeadline: args.UseFullDeadline,
 		}

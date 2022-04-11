@@ -209,7 +209,6 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (job.Job, error) {
 			}
 
 			searcherArgs := &search.SearcherParameters{
-				SearcherURLs:    jargs.SearcherURLs,
 				PatternInfo:     patternInfo,
 				UseFullDeadline: useFullDeadline,
 			}
