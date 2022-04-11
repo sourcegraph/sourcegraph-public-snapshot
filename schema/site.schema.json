@@ -56,8 +56,8 @@
       "default": false
     },
     "defaultRateLimit" : {
-      "description": "The rate limit for the default rate limiter in the rate limiters registry. By default this is disabled and the default rate limit is infinity.",
-      "type": "integer",
+      "description": "The rate limit (in requests per hour) for the default rate limiter in the rate limiters registry. By default this is disabled and the default rate limit is infinity.",
+      "type": "number",
       "default": -1
     },
     "experimentalFeatures": {
