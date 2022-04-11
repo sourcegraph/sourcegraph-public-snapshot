@@ -20,51 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestHashArgs(t *testing.T) {
-	t.Parallel()
-
-	t.Run("same everything", func(t *testing.T) {
-		args1 := &gitprotocol.SearchRequest{
-			Repo:        "a",
-			Revisions:   []gitprotocol.RevisionSpecifier{{RevSpec: "b"}},
-			Query:       &gitprotocol.AuthorMatches{Expr: "camden"},
-			IncludeDiff: true,
-		}
-		args2 := &gitprotocol.SearchRequest{
-			Repo:        "a",
-			Revisions:   []gitprotocol.RevisionSpecifier{{RevSpec: "b"}},
-			Query:       &gitprotocol.AuthorMatches{Expr: "camden"},
-			IncludeDiff: true,
-		}
-		require.Equal(t, hashArgs(args1), hashArgs(args2))
-	})
-
-	// Requests that search different things should
-	// not have the same hash.
-
-	t.Run("different repos", func(t *testing.T) {
-		args1 := &gitprotocol.SearchRequest{Repo: "a"}
-		args2 := &gitprotocol.SearchRequest{Repo: "b"}
-		require.NotEqual(t, hashArgs(args1), hashArgs(args2))
-	})
-
-	t.Run("different revisions", func(t *testing.T) {
-		args1 := &gitprotocol.SearchRequest{
-			Revisions: []gitprotocol.RevisionSpecifier{{RevSpec: "a"}, {RefGlob: "b"}},
-		}
-		args2 := &gitprotocol.SearchRequest{
-			Revisions: []gitprotocol.RevisionSpecifier{{RevSpec: "a"}, {ExcludeRefGlob: "b"}},
-		}
-		require.NotEqual(t, hashArgs(args1), hashArgs(args2))
-	})
-
-	t.Run("different queries", func(t *testing.T) {
-		args1 := &gitprotocol.SearchRequest{Query: &gitprotocol.AuthorMatches{Expr: "a"}}
-		args2 := &gitprotocol.SearchRequest{Query: &gitprotocol.AuthorMatches{Expr: "b"}}
-		require.NotEqual(t, hashArgs(args1), hashArgs(args2))
-	})
-}
-
 func TestAddCodeMonitorHook(t *testing.T) {
 	t.Parallel()
 
@@ -84,10 +39,14 @@ func TestAddCodeMonitorHook(t *testing.T) {
 		}
 	})
 
+	t.Run("error on multiple commit search jobs", func(t *testing.T) {
+		_, err := addCodeMonitorHook(jobutil.NewAndJob(&commit.CommitSearch{}, &commit.CommitSearch{}), nil)
+		require.Error(t, err)
+	})
+
 	t.Run("no errors on only commit search", func(t *testing.T) {
 		nonErroringJobs := []job.Job{
-			jobutil.NewParallelJob(&commit.CommitSearch{}, &commit.CommitSearch{}),
-			jobutil.NewAndJob(&commit.CommitSearch{}, &commit.CommitSearch{}),
+			jobutil.NewLimitJob(1000, &commit.CommitSearch{}),
 			&commit.CommitSearch{},
 			jobutil.NewTimeoutJob(0, &commit.CommitSearch{}),
 		}

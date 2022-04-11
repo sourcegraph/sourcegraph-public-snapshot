@@ -3,9 +3,7 @@ package codemonitors
 import (
 	"bytes"
 	"context"
-	"encoding/binary"
 	"encoding/json"
-	"hash/fnv"
 	"net/http"
 	"net/url"
 
@@ -188,10 +186,17 @@ func Snapshot(ctx context.Context, db database.DB, query string, monitorID int64
 	return err
 }
 
+var ErrInvalidMonitorQuery = errors.New("code monitor cannot use different patterns for different repos")
+
 func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err error) {
+	commitSearchJobCount := 0
 	return jobutil.MapAtom(in, func(atom job.Job) job.Job {
 		switch typedAtom := atom.(type) {
 		case *commit.CommitSearch:
+			commitSearchJobCount++
+			if commitSearchJobCount > 1 {
+				err = errors.Append(err, ErrInvalidMonitorQuery)
+			}
 			jobCopy := *typedAtom
 			jobCopy.CodeMonitorSearchWrapper = hook
 			return &jobCopy
@@ -269,23 +274,6 @@ func snapshotHook(
 	}
 
 	return cm.UpsertLastSearched(ctx, monitorID, repoID, commitHashes)
-}
-
-func hashArgs(args *gitprotocol.SearchRequest) int64 {
-	hasher := fnv.New64()
-	hasher.Write([]byte(args.Repo))
-	for _, rev := range args.Revisions {
-		hasher.Write([]byte(rev.RevSpec))
-		hasher.Write([]byte{'|'})
-		hasher.Write([]byte(rev.RefGlob))
-		hasher.Write([]byte{'|'})
-		hasher.Write([]byte(rev.ExcludeRefGlob))
-	}
-	if args.Query != nil {
-		hasher.Write([]byte(args.Query.String()))
-	}
-	binary.Write(hasher, binary.LittleEndian, args.IncludeDiff)
-	return int64(hasher.Sum64())
 }
 
 func gqlURL(queryName string) (string, error) {
