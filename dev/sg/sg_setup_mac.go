@@ -43,11 +43,6 @@ Follow the instructions at https://brew.sh to install it, then rerun 'sg setup'.
 				check:                getCheck("docker-installed"),
 				instructionsCommands: `brew install --cask docker`,
 			},
-			{
-				name:                 "rust",
-				check:                check.InPath("cargo"),
-				instructionsCommands: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`,
-			},
 		},
 		autoFixing: true,
 	},
@@ -171,6 +166,11 @@ asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git
 grep -s "legacy_version_file = yes" ~/.asdfrc >/dev/null || echo 'legacy_version_file = yes' >> ~/.asdfrc
 asdf install nodejs
 `,
+			},
+			{
+				name:                 "rust",
+				check:                check.InPath("cargo"),
+				instructionsCommands: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`,
 			},
 		},
 	},
