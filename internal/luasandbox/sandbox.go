@@ -66,6 +66,45 @@ func (s *Sandbox) Call(ctx context.Context, opts RunOptions, luaFunction *lua.LF
 	return
 }
 
+// CallGenerator invokes the given coroutine bound to this sandbox within the sandbox.
+// Each yield from the coroutine will be collected in the output slide and returned to
+// the caller. This method does not pass values back into the coroutine when resuming
+// execution.
+func (s *Sandbox) CallGenerator(ctx context.Context, opts RunOptions, luaFunction *lua.LFunction, args ...interface{}) (retValues []lua.LValue, err error) {
+	ctx, endObservation := s.operations.callGenerator.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	f := func() error {
+		luaArgs := make([]lua.LValue, 0, len(args))
+		for _, arg := range args {
+			luaArgs = append(luaArgs, luar.New(s.state, arg))
+		}
+
+		co, _ := s.state.NewThread()
+
+	loop:
+		for {
+			state, err, yieldedValues := s.state.Resume(co, luaFunction, luaArgs...)
+			switch state {
+			case lua.ResumeError:
+				return err
+
+			case lua.ResumeYield:
+				retValues = append(retValues, yieldedValues...)
+				continue
+
+			case lua.ResumeOK:
+				retValues = append(retValues, yieldedValues...)
+				break loop
+			}
+		}
+
+		return nil
+	}
+	err = s.run(ctx, opts, f)
+	return
+}
+
 type RunOptions struct {
 	Timeout time.Duration
 }
