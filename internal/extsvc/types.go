@@ -443,6 +443,12 @@ func GetLimitFromConfig(kind string, config interface{}) (rate.Limit, error) {
 		if c != nil && c.RateLimit != nil {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
+	case *schema.GoModulesConnection:
+		// 3000 per hour is the same default we use in our schema
+		limit = rate.Limit(3000.0 / 3600.0)
+		if c != nil && c.RateLimit != nil {
+			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
+		}
 	default:
 		return limit, ErrRateLimitUnsupported{codehostKind: kind}
 	}

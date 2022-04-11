@@ -121,6 +121,18 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			want:   1.0,
 		},
 		{
+			name:   "Go mod default",
+			config: `{"urls": ["https://example.com"]}`,
+			kind:   KindGoModules,
+			want:   3000.0 / 3600.0,
+		},
+		{
+			name:   "Go mod non-default",
+			config: `{"urls": ["https://example.com"], "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
+			kind:   KindNpmPackages,
+			want:   1.0,
+		},
+		{
 			name:   "No trailing slash",
 			config: `{"url": "https://example.com", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
 			kind:   KindBitbucketCloud,
