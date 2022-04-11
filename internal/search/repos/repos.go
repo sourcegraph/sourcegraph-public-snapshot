@@ -441,6 +441,18 @@ func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex Excl
 		return ExcludedRepos{}, err
 	}
 
+	var depNames []string
+	if len(op.Dependencies) > 0 {
+		depNames, _, err = r.dependencies(ctx, &op)
+		if err != nil {
+			return ExcludedRepos{}, err
+		}
+
+		if len(depNames) == 0 {
+			return ExcludedRepos{}, ErrNoResolvedRepos
+		}
+	}
+
 	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.DB, op.SearchContextSpec)
 	if err != nil {
 		return ExcludedRepos{}, err
@@ -448,6 +460,7 @@ func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex Excl
 
 	options := database.ReposListOptions{
 		IncludePatterns: includePatterns,
+		Names:           depNames,
 		ExcludePattern:  search.UnionRegExps(excludePatterns),
 		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
 		LimitOffset:            &database.LimitOffset{Limit: limit + 1},
