@@ -31,13 +31,11 @@
     // Border should appear directly under the width of the icon
     // Halfway past the icon, minus half the border size
     margin-left: calc(
-        var(--icon-inline-size) / 2 - var(--streaming-skipped-item-message-border-size) / 2 +
-            var(--streaming-skipped-item-button-margin)
+        var(--icon-inline-size) / 2 - var(--streaming-skipped-item-message-border-size) / 2 + var(--streaming-skipped-item-button-margin)
     );
     // Halfway past the icon, minus half the border size, plus the icon's right margin
     padding-left: calc(
-        var(--icon-inline-size) / 2 - var(--streaming-skipped-item-message-border-size) / 2 +
-            var(--streaming-skipped-item-button-margin)
+        var(--icon-inline-size) / 2 - var(--streaming-skipped-item-message-border-size) / 2 + var(--streaming-skipped-item-button-margin)
     );
 
     margin-right: var(--streaming-skipped-item-button-margin);
