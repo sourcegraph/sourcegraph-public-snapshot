@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"os"
 	"os/exec"
@@ -16,7 +15,6 @@ import (
 )
 
 var (
-	versionChangelogFlagSet = flag.NewFlagSet("sg version changelog", flag.ExitOnError)
 	versionChangelogNext    bool
 	versionChangelogEntries int
 

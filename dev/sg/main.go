@@ -34,11 +34,14 @@ var (
 	// `parseConf` before.
 	globalConf *Config
 
-	verboseFlag         bool
+	// Note that these are only available after the main sg CLI app has been run.
 	configFlag          string
 	overwriteConfigFlag string
+	verboseFlag         bool
 	skipAutoUpdatesFlag bool
 )
+
+var postInitHooks []cli.ActionFunc
 
 var sg = &cli.App{
 	Usage:       "The Sourcegraph developer tool!",
@@ -77,6 +80,33 @@ var sg = &cli.App{
 			Destination: &skipAutoUpdatesFlag,
 			EnvVars:     []string{"SG_SKIP_AUTO_UPDATE"},
 		},
+	},
+	Before: func(ctx *cli.Context) error {
+		if verboseFlag {
+			stdout.Out.SetVerbose()
+		}
+
+		// We always try to set this, since we
+		// often want to watch files, start commands, etc...
+		if err := setMaxOpenFiles(); err != nil {
+			writeWarningLinef("Failed to set max open files: %s", err)
+		}
+
+		if ctx.Args().First() != "update" {
+			// If we're not running "sg update ...", we want to check the version first
+			err := checkSgVersion(ctx.Context)
+			if err != nil {
+				writeWarningLinef("Checking sg version and updating failed: %s", err)
+				// Do not exit here, so we don't break user flow when they want to
+				// run `sg` but updating fails
+			}
+		}
+
+		for _, hook := range postInitHooks {
+			hook(ctx)
+		}
+
+		return nil
 	},
 	Commands: []*cli.Command{
 		// Common dev tasks
@@ -121,27 +151,6 @@ func main() {
 	}
 	ctx := secrets.WithContext(context.Background(), secretsStore)
 
-	isUpdateCmd := len(os.Args) >= 2 && os.Args[1] == "update"
-	if !isUpdateCmd {
-		// If we're not running "sg update ...", we want to check the version first
-		err := checkSgVersion(ctx)
-		if err != nil {
-			writeWarningLinef("Checking sg version and updating failed: %s\n", err)
-			// Do not exit here, so we don't break user flow when they want to
-			// run `sg` but updating fails
-		}
-	}
-
-	if verboseFlag {
-		stdout.Out.SetVerbose()
-	}
-
-	// We always try to set this, since we
-	// often want to watch files, start commands, etc...
-	if err := setMaxOpenFiles(); err != nil {
-		fmt.Printf("failed to set max open files: %s\n", err)
-		os.Exit(1)
-	}
 	if err := sg.RunContext(ctx, os.Args); err != nil {
 		fmt.Printf("error: %s\n", err)
 		os.Exit(1)
@@ -228,15 +237,6 @@ func loadSecrets() error {
 	fp := filepath.Join(homePath, defaultSecretsFile)
 	secretsStore, err = secrets.LoadFile(fp)
 	return err
-}
-
-// parseConfAndReset parses the config file, return it and resets the global config.
-// It doesn't use the flagset because it needs to be called before the command.
-func parseConfAndReset() *Config {
-	_, _ = parseConf(defaultConfigFile, defaultConfigOverwriteFile)
-	cfg := globalConf
-	globalConf = nil
-	return cfg
 }
 
 // parseConf parses the config file and the optional overwrite file.

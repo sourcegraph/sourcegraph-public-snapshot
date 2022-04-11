@@ -18,6 +18,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
+func init() {
+	postInitHooks = append(postInitHooks, func(ctx *cli.Context) error {
+		// Create 'sg start' help text after flag (and config) initialization
+		startCommand.Description = constructStartCmdLongHelp()
+		return nil
+	})
+}
+
 var (
 	debugStartServices cli.StringSlice
 	infoStartServices  cli.StringSlice
@@ -26,11 +34,10 @@ var (
 	critStartServices  cli.StringSlice
 
 	startCommand = &cli.Command{
-		Name:        "start",
-		ArgsUsage:   "[commandset]",
-		Usage:       "🌟Starts the given commandset. Without a commandset it starts the default Sourcegraph dev environment.",
-		Description: constructStartCmdLongHelp(),
-		Category:    CategoryDev,
+		Name:      "start",
+		ArgsUsage: "[commandset]",
+		Usage:     "🌟 Starts the given commandset. Without a commandset it starts the default Sourcegraph dev environment.",
+		Category:  CategoryDev,
 		Flags: []cli.Flag{
 			&cli.StringSliceFlag{
 				Name:        "debug",
@@ -74,16 +81,13 @@ If no commandset is specified, it starts the commandset with the name 'default'.
 Use this to start your Sourcegraph environment!
 `)
 
-	// Attempt to parse config to list available commands, but don't fail on
-	// error, because we should never error when the user wants --help output.
-	cfg := parseConfAndReset()
-
-	if cfg != nil {
+	ok, warning := parseConf(configFlag, overwriteConfigFlag)
+	if ok {
 		fmt.Fprintf(&out, "\n")
 		fmt.Fprintf(&out, "AVAILABLE COMMANDSETS IN %s%s%s\n", output.StyleBold, configFlag, output.StyleReset)
 
 		var names []string
-		for name := range cfg.Commandsets {
+		for name := range globalConf.Commandsets {
 			switch name {
 			case "enterprise-codeintel":
 				names = append(names, fmt.Sprintf("  %s 🧠", name))
@@ -96,7 +100,8 @@ Use this to start your Sourcegraph environment!
 		sort.Strings(names)
 		fmt.Fprint(&out, strings.Join(names, "\n"))
 	} else {
-		fmt.Fprintf(&out, "\n%sNo commandsets found! Please change your current directory to the Sourcegraph repository.%s", output.StyleOrange, output.StyleReset)
+		out.Write([]byte("\n"))
+		output.NewOutput(&out, output.OutputOpts{}).WriteLine(warning)
 	}
 
 	return out.String()

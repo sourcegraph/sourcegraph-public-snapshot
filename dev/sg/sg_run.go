@@ -15,6 +15,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
+func init() {
+	postInitHooks = append(postInitHooks, func(ctx *cli.Context) error {
+		// Create 'sg run' help text after flag (and config) initialization
+		runCommand.Description = constructRunCmdLongHelp()
+		return nil
+	})
+}
+
 var runCommand = &cli.Command{
 	Name:        "run",
 	Usage:       "Run the given commands.",
@@ -56,21 +64,20 @@ func constructRunCmdLongHelp() string {
 
 	fmt.Fprintf(&out, "  Runs the given command. If given a whitespace-separated list of commands it runs the set of commands.\n")
 
-	// Attempt to parse config to list available commands, but don't fail on
-	// error, because we should never error when the user wants --help output.
-	cfg := parseConfAndReset()
-
-	if cfg != nil {
+	ok, warning := parseConf(configFlag, overwriteConfigFlag)
+	if ok {
 		fmt.Fprintf(&out, "\n")
 		fmt.Fprintf(&out, "AVAILABLE COMMANDS IN %s%s%s\n", output.StyleBold, configFlag, output.StyleReset)
 
 		var names []string
-		for name := range cfg.Commands {
+		for name := range globalConf.Commands {
 			names = append(names, name)
 		}
 		sort.Strings(names)
 		fmt.Fprint(&out, strings.Join(names, "\n"))
-
+	} else {
+		out.Write([]byte("\n"))
+		output.NewOutput(&out, output.OutputOpts{}).WriteLine(warning)
 	}
 
 	return out.String()
