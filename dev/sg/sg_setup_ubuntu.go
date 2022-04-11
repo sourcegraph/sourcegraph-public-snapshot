@@ -38,6 +38,11 @@ sudo apt-get install -y docker-ce docker-ce-cli
 `, runtime.GOARCH)
 				}),
 			},
+			{
+				name:                 "rust",
+				check:                check.InPath("cargo"),
+				instructionsCommands: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`,
+			},
 		},
 		autoFixing: true,
 	},

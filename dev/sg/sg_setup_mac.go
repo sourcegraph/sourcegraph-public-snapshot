@@ -43,6 +43,11 @@ Follow the instructions at https://brew.sh to install it, then rerun 'sg setup'.
 				check:                getCheck("docker-installed"),
 				instructionsCommands: `brew install --cask docker`,
 			},
+			{
+				name:                 "rust",
+				check:                check.InPath("cargo"),
+				instructionsCommands: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`,
+			},
 		},
 		autoFixing: true,
 	},
