@@ -31,7 +31,7 @@ export function generatePointsField<Datum>(input: PointsFieldInput<Datum>): Poin
                 x: xScale(data.x),
                 time: data.x,
                 color: series.color ?? 'green',
-                linkUrl: getLinkURL(data.datum),
+                linkUrl: getLinkURL(data.datum, index),
                 datum: data.datum,
             }
         })

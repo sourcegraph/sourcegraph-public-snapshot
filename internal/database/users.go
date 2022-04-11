@@ -282,9 +282,6 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 		avatarURL = &info.AvatarURL
 	}
 
-	dbEmailCode := sql.NullString{String: info.EmailVerificationCode}
-	dbEmailCode.Valid = info.EmailVerificationCode != ""
-
 	// Creating the initial site admin user is equivalent to initializing the
 	// site. ensureInitialized runs in the transaction, so we are guaranteed that the user account
 	// creation and site initialization operations occur atomically (to guarantee to the legitimate
