@@ -21,15 +21,13 @@ import (
 type Flags struct {
 	DryRun          bool
 	Environment     string
-	SlackToken      string
 	SlackWebhookURL string
 	SgDir           string
 }
 
 func (f *Flags) Parse() {
 	flag.BoolVar(&f.DryRun, "dry-run", false, "Print to stdout instead of sending to Slack")
-	flag.StringVar(&f.Environment, "env", Getenv("SG_ENVIRONMENT", "cloud"), "Environment to check against. Default: cloud")
-	flag.StringVar(&f.SlackToken, "slack-token", os.Getenv("SLACK_TOKEN"), "Slack token")
+	flag.StringVar(&f.Environment, "env", Getenv("SG_ENVIRONMENT", "cloud"), "Environment to check against")
 	flag.StringVar(&f.SlackWebhookURL, "slack-webhook-url", os.Getenv("SLACK_WEBHOOK_URL"), "Slack webhook URL to post to")
 	flag.Parse()
 }
@@ -93,7 +91,16 @@ func main() {
 
 	client := http.Client{}
 
-	version, err := getLiveVersion(&client, environments[flags.Environment])
+	url, ok := environments[flags.Environment]
+	if !ok {
+		var s string
+		for k, v := range environments {
+			s += fmt.Sprintf("\t%s: %s\n", k, v)
+		}
+		log.Fatalf("Environment \"%s\" not found. Valid options are: \n%s\n", flags.Environment, s)
+	}
+
+	version, err := getLiveVersion(&client, url)
 	if err != nil {
 		log.Fatal(err)
 	}
