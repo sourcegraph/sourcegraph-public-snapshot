@@ -6,7 +6,7 @@
     &:hover {
         background-color: var(--oc-blue-1);
 
-        :global(.theme-dark) > & {
+        :global(.theme-dark) & {
             background-color: var(--oc-blue-7);
         }
     }
