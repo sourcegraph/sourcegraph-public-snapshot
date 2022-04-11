@@ -116,7 +116,13 @@ func Search(ctx context.Context, db database.DB, query string, monitorID int64, 
 
 	// Inline job creation so we can mutate the commit job before running it
 	jobArgs := searchClient.JobArgs(inputs)
-	plan, err := predicate.Expand(ctx, db, jobArgs, inputs.Plan)
+	clients := job.RuntimeClients{
+		DB:           db,
+		Zoekt:        jobArgs.Zoekt,
+		SearcherURLs: jobArgs.SearcherURLs,
+		Gitserver:    gitserver.NewClient(db),
+	}
+	plan, err := predicate.Expand(ctx, clients, inputs, inputs.Plan)
 	if err != nil {
 		return nil, err
 	}
@@ -138,12 +144,6 @@ func Search(ctx context.Context, db database.DB, query string, monitorID int64, 
 
 	// Execute the search
 	agg := streaming.NewAggregatingStream()
-	clients := job.RuntimeClients{
-		DB:           db,
-		Zoekt:        jobArgs.Zoekt,
-		SearcherURLs: jobArgs.SearcherURLs,
-		Gitserver:    gitserver.NewClient(db),
-	}
 	_, err = planJob.Run(ctx, clients, agg)
 	if err != nil {
 		return nil, err
@@ -172,7 +172,13 @@ func Snapshot(ctx context.Context, db database.DB, query string, monitorID int64
 	}
 
 	jobArgs := searchClient.JobArgs(inputs)
-	plan, err := predicate.Expand(ctx, db, jobArgs, inputs.Plan)
+	clients := job.RuntimeClients{
+		DB:           db,
+		Zoekt:        jobArgs.Zoekt,
+		SearcherURLs: jobArgs.SearcherURLs,
+		Gitserver:    gitserver.NewClient(db),
+	}
+	plan, err := predicate.Expand(ctx, clients, inputs, inputs.Plan)
 	if err != nil {
 		return err
 	}
@@ -190,12 +196,6 @@ func Snapshot(ctx context.Context, db database.DB, query string, monitorID int64
 		return err
 	}
 
-	clients := job.RuntimeClients{
-		DB:           db,
-		Zoekt:        jobArgs.Zoekt,
-		SearcherURLs: jobArgs.SearcherURLs,
-		Gitserver:    gitserver.NewClient(db),
-	}
 	_, err = planJob.Run(ctx, clients, streaming.NewNullStream())
 	return err
 }

@@ -27,8 +27,15 @@ func Execute(
 		tr.Finish()
 	}()
 
+	clients := job.RuntimeClients{
+		DB:           db,
+		Zoekt:        jobArgs.Zoekt,
+		SearcherURLs: jobArgs.SearcherURLs,
+		Gitserver:    gitserver.NewClient(db),
+	}
+
 	plan := jobArgs.SearchInputs.Plan
-	plan, err = predicate.Expand(ctx, db, jobArgs, plan)
+	plan, err = predicate.Expand(ctx, clients, jobArgs.SearchInputs, plan)
 	if err != nil {
 		return nil, err
 	}
@@ -38,11 +45,5 @@ func Execute(
 		return nil, err
 	}
 
-	clients := job.RuntimeClients{
-		DB:           db,
-		Zoekt:        jobArgs.Zoekt,
-		SearcherURLs: jobArgs.SearcherURLs,
-		Gitserver:    gitserver.NewClient(db),
-	}
 	return planJob.Run(ctx, clients, stream)
 }
