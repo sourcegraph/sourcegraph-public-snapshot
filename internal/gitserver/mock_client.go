@@ -5,7 +5,7 @@ package gitserver
 import (
 	"context"
 	"io"
-	fs "io/fs"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"sync"
