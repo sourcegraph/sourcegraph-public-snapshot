@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // A Client to Go module proxies.
@@ -28,11 +27,11 @@ type Client struct {
 	limiter *rate.Limiter
 }
 
-// NewClient returns a new Client for the given configuration. urn represents the
+// NewClient returns a new Client for the given urls. urn represents the
 // unique urn of the external service this client's config is from.
-func NewClient(urn string, config *schema.GoModulesConnection, cli httpcli.Doer) *Client {
+func NewClient(urn string, urls []string, cli httpcli.Doer) *Client {
 	return &Client{
-		urls:    config.Urls,
+		urls:    urls,
 		cli:     cli,
 		limiter: ratelimit.DefaultRegistry.Get(urn),
 	}

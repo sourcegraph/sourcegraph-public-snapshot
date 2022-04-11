@@ -47,7 +47,7 @@ func NewGoModulesSource(svc *types.ExternalService, cf *httpcli.Factory) (*GoMod
 		svc:    svc,
 		config: &c,
 		/* dbStore initialized in SetDB */
-		client: gomodproxy.NewClient(svc.URN(), &c, cli),
+		client: gomodproxy.NewClient(svc.URN(), c.Urls, cli),
 	}, nil
 }
 

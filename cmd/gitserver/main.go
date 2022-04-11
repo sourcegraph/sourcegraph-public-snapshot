@@ -426,7 +426,7 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 		if err != nil {
 			return nil, err
 		}
-		cli := gomodproxy.NewClient(urn, &c, httpcli.ExternalDoer)
+		cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternalDoer)
 		return server.NewGoModulesSyncer(&c, codeintelDB, cli), nil
 	}
 	return &server.GitRepoSyncer{}, nil
