@@ -39,9 +39,8 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatis
 }
 
 func (srs *searchResultsStats) getResults(ctx context.Context) (result.Matches, error) {
-	args := srs.sr.JobArgs()
 	srs.once.Do(func() {
-		j, err := jobutil.ToSearchJob(args.SearchInputs, srs.sr.SearchInputs.Query, srs.sr.db)
+		j, err := jobutil.ToSearchJob(srs.sr.SearchInputs, srs.sr.SearchInputs.Query, srs.sr.db)
 		if err != nil {
 			srs.err = err
 			return
