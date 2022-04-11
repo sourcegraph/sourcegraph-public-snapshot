@@ -49,10 +49,11 @@ func NewNpmPackagesSyncer(
 	connection schema.NpmPackagesConnection,
 	dbStore repos.DependenciesStore,
 	customClient npm.Client,
+	urn string,
 ) *NpmPackagesSyncer {
 	var client = customClient
 	if client == nil {
-		client = npm.NewHTTPClient(connection.Registry, connection.Credentials)
+		client = npm.NewHTTPClient(urn, connection.Registry, connection.Credentials)
 	}
 	return &NpmPackagesSyncer{connection, dbStore, client}
 }
