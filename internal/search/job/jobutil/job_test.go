@@ -22,7 +22,7 @@ func TestToSearchInputs(t *testing.T) {
 			OnSourcegraphDotCom: true,
 		}
 
-		j, _ := ToSearchJob(inputs, q, database.NewMockDB())
+		j, _ := ToSearchJob(inputs, q)
 		return "\n" + PrettySexp(j) + "\n"
 	}
 

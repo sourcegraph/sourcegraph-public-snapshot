@@ -40,7 +40,7 @@ import (
 // query on all indexed repositories) then we need to convert our tree to
 // Zoekt's internal inputs and representation. These concerns are all handled by
 // toSearchJob.
-func ToSearchJob(searchInputs *run.SearchInputs, q query.Q, db database.DB) (job.Job, error) {
+func ToSearchJob(searchInputs *run.SearchInputs, q query.Q) (job.Job, error) {
 	maxResults := q.MaxResults(searchInputs.DefaultLimit())
 
 	b, err := query.ToBasicQuery(q)
@@ -589,10 +589,10 @@ func toPatternExpressionJob(inputs *run.SearchInputs, q query.Basic, db database
 		case query.Or:
 			return toOrJob(inputs, q, db)
 		case query.Concat:
-			return ToSearchJob(inputs, q.ToParseTree(), db)
+			return ToSearchJob(inputs, q.ToParseTree())
 		}
 	case query.Pattern:
-		return ToSearchJob(inputs, q.ToParseTree(), db)
+		return ToSearchJob(inputs, q.ToParseTree())
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
 		return NewNoopJob(), nil
@@ -610,7 +610,7 @@ func ToEvaluateJob(inputs *run.SearchInputs, q query.Basic, db database.DB) (job
 		err error
 	)
 	if q.Pattern == nil {
-		job, err = ToSearchJob(inputs, query.ToNodes(q.Parameters), db)
+		job, err = ToSearchJob(inputs, query.ToNodes(q.Parameters))
 	} else {
 		job, err = toPatternExpressionJob(inputs, q, db)
 		if err != nil {
@@ -640,7 +640,7 @@ func ToEvaluateJob(inputs *run.SearchInputs, q query.Basic, db database.DB) (job
 // is Zoekt. It removes unoptimized Zoekt jobs from the baseJob and repalces it
 // with the optimized ones.
 func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Q, db database.DB) (job.Job, error) {
-	candidateOptimizedJobs, err := ToSearchJob(inputs, q, db)
+	candidateOptimizedJobs, err := ToSearchJob(inputs, q)
 	if err != nil {
 		return nil, err
 	}
