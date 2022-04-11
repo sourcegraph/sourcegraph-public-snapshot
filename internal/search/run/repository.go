@@ -3,7 +3,6 @@ package run
 import (
 	"context"
 
-	"github.com/google/zoekt"
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -40,7 +39,6 @@ type RepoSearch struct {
 	// to true if the user requests a specific timeout or maximum result size.
 	UseFullDeadline bool
 
-	Zoekt        zoekt.Streamer
 	SearcherURLs *endpoint.Map
 }
 

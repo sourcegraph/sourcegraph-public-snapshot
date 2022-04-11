@@ -133,7 +133,6 @@ func repoShouldBeAdded(ctx context.Context, clients job.RuntimeClients, repo *se
 	repos := []*search.RepositoryRevisions{repo}
 	s := RepoSearch{
 		PatternInfo: pattern,
-		Zoekt:       clients.Zoekt,
 	}
 	rsta, err := s.reposToAdd(ctx, clients, repos)
 	if err != nil {

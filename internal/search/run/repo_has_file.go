@@ -46,7 +46,6 @@ func (s *RepoSearch) reposContainingPath(ctx context.Context, clients job.Runtim
 		RepoOptions:     s.RepoOptions,
 		Features:        s.Features,
 		Mode:            s.Mode,
-		Zoekt:           s.Zoekt,
 		SearcherURLs:    s.SearcherURLs,
 		UseFullDeadline: true,
 	}
@@ -54,7 +53,7 @@ func (s *RepoSearch) reposContainingPath(ctx context.Context, clients job.Runtim
 	indexed, unindexed, err := zoektutil.PartitionRepos(
 		ctx,
 		newArgs.Repos,
-		newArgs.Zoekt,
+		clients.Zoekt,
 		search.TextRequest,
 		newArgs.PatternInfo.Index,
 		query.ContainsRefGlobs(newArgs.Query),

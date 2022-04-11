@@ -301,7 +301,6 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (job.Job, error) {
 						mode = search.SkipUnindexed
 					}
 					addJob(true, &run.RepoSearch{
-						Zoekt:           jargs.Zoekt,
 						SearcherURLs:    jargs.SearcherURLs,
 						RepoOptions:     repoOptions,
 						Features:        features,
