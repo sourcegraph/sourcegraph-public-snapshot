@@ -6,7 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -36,7 +36,7 @@ func (r *PriorityJob) Name() string {
 }
 
 func (r *PriorityJob) Run(ctx context.Context, db database.DB, s streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx, s, finish := jobutil.StartSpan(ctx, s, r)
+	tr, ctx, s, finish := job.StartSpan(ctx, s, r)
 	defer func() { finish(alert, err) }()
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -102,7 +102,7 @@ func (p *ParallelJob) Name() string {
 }
 
 func (p *ParallelJob) Run(ctx context.Context, db database.DB, s streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, s, finish := jobutil.StartSpan(ctx, s, p)
+	_, ctx, s, finish := job.StartSpan(ctx, s, p)
 	defer func() { finish(alert, err) }()
 
 	var (
@@ -138,7 +138,7 @@ type TimeoutJob struct {
 }
 
 func (t *TimeoutJob) Run(ctx context.Context, db database.DB, s streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, s, finish := jobutil.StartSpan(ctx, s, t)
+	_, ctx, s, finish := job.StartSpan(ctx, s, t)
 	defer func() { finish(alert, err) }()
 
 	ctx, cancel := context.WithTimeout(ctx, t.timeout)
@@ -171,7 +171,7 @@ type LimitJob struct {
 }
 
 func (l *LimitJob) Run(ctx context.Context, db database.DB, s streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, s, finish := jobutil.StartSpan(ctx, s, l)
+	_, ctx, s, finish := job.StartSpan(ctx, s, l)
 	defer func() { finish(alert, err) }()
 
 	ctx, s, cancel := streaming.WithLimit(ctx, s, l.limit)

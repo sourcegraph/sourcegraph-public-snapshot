@@ -8,7 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -30,7 +30,7 @@ type AndJob struct {
 }
 
 func (a *AndJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, stream, finish := jobutil.StartSpan(ctx, stream, a)
+	_, ctx, stream, finish := job.StartSpan(ctx, stream, a)
 	defer func() { finish(alert, err) }()
 
 	var (
@@ -125,7 +125,7 @@ type OrJob struct {
 //   Additionally, a bias towards matching all subqueries is probably desirable, since it's more likely that
 //   a document matching all subqueries is what the user is looking for than a document matching only one.
 func (j *OrJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, stream, finish := jobutil.StartSpan(ctx, stream, j)
+	_, ctx, stream, finish := job.StartSpan(ctx, stream, j)
 	defer func() { finish(alert, err) }()
 
 	var (

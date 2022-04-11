@@ -7,7 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
@@ -62,7 +62,7 @@ func setRepos(job Job, indexed *zoekt.IndexedRepoRevs, unindexed []*search.Repos
 }
 
 func (p *repoPagerJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, stream, finish := jobutil.StartSpan(ctx, stream, p)
+	_, ctx, stream, finish := job.StartSpan(ctx, stream, p)
 	defer func() { finish(alert, err) }()
 
 	var maxAlerter search.MaxAlerter
