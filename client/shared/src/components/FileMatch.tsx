@@ -26,7 +26,7 @@ import { RepoIcon } from './RepoIcon'
 import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
 
 interface Props extends SettingsCascadeProps, TelemetryProps {
-    location?: H.Location
+    location: H.Location
     /**
      * The file match search result.
      */

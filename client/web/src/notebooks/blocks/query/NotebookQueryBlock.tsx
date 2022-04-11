@@ -5,7 +5,6 @@ import { noop } from 'lodash'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
 import * as Monaco from 'monaco-editor'
-import { useLocation } from 'react-router'
 import { Observable, of } from 'rxjs'
 
 import { HoverMerged } from '@sourcegraph/client-api'
@@ -74,7 +73,6 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
         const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
         const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
         const searchResults = useObservable(output ?? of(undefined))
-        const location = useLocation()
         const [executedQuery, setExecutedQuery] = useState<string>(input.query)
 
         const onInputChange = useCallback(
@@ -167,7 +165,6 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
                         <StreamingSearchResultsList
                             isSourcegraphDotCom={props.isSourcegraphDotCom}
                             searchContextsEnabled={props.searchContextsEnabled}
-                            location={location}
                             allExpanded={false}
                             results={searchResults}
                             isLightTheme={isLightTheme}
