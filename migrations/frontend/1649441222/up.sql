@@ -13,7 +13,8 @@ CREATE TABLE IF NOT EXISTS lsif_uploads_audit_logs (
     transition_columns  hstore[]
 );
 
-CREATE INDEX lsif_uploads_audit_logs_timestamp ON lsif_uploads_audit_logs USING brin (instant);
+CREATE INDEX IF NOT EXISTS lsif_uploads_audit_logs_upload_id ON lsif_uploads_audit_logs USING btree (upload_id);
+CREATE INDEX IF NOT EXISTS lsif_uploads_audit_logs_timestamp ON lsif_uploads_audit_logs USING brin (instant);
 
 CREATE OR REPLACE FUNCTION func_lsif_uploads_update() RETURNS TRIGGER AS $$
     BEGIN

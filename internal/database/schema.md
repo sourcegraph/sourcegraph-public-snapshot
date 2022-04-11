@@ -1600,12 +1600,13 @@ Stores metadata about an LSIF index uploaded by a user.
  uploaded_at         | timestamp with time zone |           | not null | 
  indexer             | text                     |           | not null | 
  indexer_version     | text                     |           |          | 
- upload_size         | integer                  |           | not null | 
- associated_index_id | integer                  |           | not null | 
+ upload_size         | integer                  |           |          | 
+ associated_index_id | integer                  |           |          | 
  committed_at        | timestamp with time zone |           |          | 
  transition_columns  | USER-DEFINED[]           |           |          | 
 Indexes:
     "lsif_uploads_audit_logs_timestamp" brin (instant)
+    "lsif_uploads_audit_logs_upload_id" btree (upload_id)
 
 ```
 
