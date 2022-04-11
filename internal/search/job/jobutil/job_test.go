@@ -224,7 +224,7 @@ func Test_optimizeJobs(t *testing.T) {
 
 		b, _ := query.ToBasicQuery(q)
 		baseJob, _ := toPatternExpressionJob(args, b, database.NewMockDB())
-		optimizedJob, _ := optimizeJobs(baseJob, args, b.ToParseTree(), database.NewMockDB())
+		optimizedJob, _ := optimizeJobs(baseJob, args.SearchInputs, b.ToParseTree(), database.NewMockDB())
 		return "\nBASE:\n\n" + PrettySexp(baseJob) + "\n\nOPTIMIZED:\n\n" + PrettySexp(optimizedJob) + "\n"
 	}
 

@@ -627,7 +627,7 @@ func ToEvaluateJob(args *Args, q query.Basic, db database.DB) (job.Job, error) {
 		if _, ok := q.Pattern.(query.Pattern); !ok {
 			// This pattern is not an atomic Pattern, but an
 			// expression. Optimize the expression for backends.
-			job, err = optimizeJobs(job, args, q.ToParseTree(), db)
+			job, err = optimizeJobs(job, args.SearchInputs, q.ToParseTree(), db)
 		}
 	}
 	if err != nil {
@@ -647,8 +647,8 @@ func ToEvaluateJob(args *Args, q query.Basic, db database.DB) (job.Job, error) {
 // converts them directly to native queries for a backed. Currently that backend
 // is Zoekt. It removes unoptimized Zoekt jobs from the baseJob and repalces it
 // with the optimized ones.
-func optimizeJobs(baseJob job.Job, jargs *Args, q query.Q, db database.DB) (job.Job, error) {
-	candidateOptimizedJobs, err := ToSearchJob(jargs.SearchInputs, q, db)
+func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Q, db database.DB) (job.Job, error) {
+	candidateOptimizedJobs, err := ToSearchJob(inputs, q, db)
 	if err != nil {
 		return nil, err
 	}
@@ -729,7 +729,7 @@ func optimizeJobs(baseJob job.Job, jargs *Args, q query.Q, db database.DB) (job.
 			*zoektutil.ZoektSymbolSearch:
 			optimizedJobs[i] = &repoPagerJob{
 				child:            job,
-				repoOptions:      toRepoOptions(q, jargs.SearchInputs.UserSettings),
+				repoOptions:      toRepoOptions(q, inputs.UserSettings),
 				useIndex:         q.Index(),
 				containsRefGlobs: query.ContainsRefGlobs(q),
 			}
