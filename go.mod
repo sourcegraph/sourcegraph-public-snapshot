@@ -176,6 +176,7 @@ require (
 	k8s.io/api v0.23.3
 	k8s.io/apimachinery v0.23.3
 	k8s.io/client-go v0.23.3
+	layeh.com/gopher-luar v1.0.10
 	sigs.k8s.io/kustomize/kyaml v0.13.3
 )
 

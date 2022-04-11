@@ -136,3 +136,41 @@ func TestModule(t *testing.T) {
 		t.Errorf("unexpected stashed value. want=%d have=%d", 18, stashedValue)
 	}
 }
+
+func TestCall(t *testing.T) {
+	ctx := context.Background()
+
+	sandbox, err := newService(&observation.TestContext).CreateSandbox(ctx, CreateOptions{})
+	if err != nil {
+		t.Fatalf("unexpected error creating sandbox: %s", err)
+	}
+	defer sandbox.Close()
+
+	script := `
+		local value = 0
+		local callback = function(multiplier)
+			value = value + 1
+			return value * multiplier
+		end
+		return callback
+	`
+	retValue, err := sandbox.RunScript(ctx, RunOptions{}, script)
+	if err != nil {
+		t.Fatalf("unexpected error running script: %s", err)
+	}
+	callback, ok := retValue.(*lua.LFunction)
+	if !ok {
+		t.Fatalf("unexpected return type")
+	}
+
+	multiplier := 6
+	for value := 1; value < 5; value++ {
+		expectedValue := value * multiplier
+
+		if retValue, err := sandbox.Call(ctx, RunOptions{}, callback, multiplier); err != nil {
+			t.Fatalf("unexpected error invoking callback: %s", err)
+		} else if int(lua.LVAsNumber(retValue)) != expectedValue {
+			t.Errorf("unexpected value from callback #%d. want=%d have=%v", value, expectedValue, retValue)
+		}
+	}
+}
