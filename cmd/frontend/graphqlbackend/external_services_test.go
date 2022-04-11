@@ -316,7 +316,7 @@ func TestAddExternalService(t *testing.T) {
 			result, err := newSchemaResolver(db).AddExternalService(ctx, &addExternalServiceArgs{
 				Input: addExternalServiceInput{
 					Namespace:   &marshaledOrgID,
-					Kind:        "BITBUCKET",
+					Kind:        extsvc.KindBitbucketCloud,
 					DisplayName: "Bitbucket",
 				},
 			})
@@ -341,7 +341,7 @@ func TestAddExternalService(t *testing.T) {
 			_, err := newSchemaResolver(db).AddExternalService(ctx, &addExternalServiceArgs{
 				Input: addExternalServiceInput{
 					Namespace:   &marshaledOrgID,
-					Kind:        "GITLAB",
+					Kind:        extsvc.KindGitLab,
 					DisplayName: "GitLab",
 					Config:      "{\n  \"url\": \"https://gitlab.com\",\n  \"token\": \"dfdf\",\n  \"projectQuery\": [\n    \"projects?membership=true&archived=no\"\n  ]\n}",
 				},
@@ -363,7 +363,7 @@ func TestAddExternalService(t *testing.T) {
 			result, err := newSchemaResolver(db).AddExternalService(ctx, &addExternalServiceArgs{
 				Input: addExternalServiceInput{
 					Namespace:   &marshaledOrgID,
-					Kind:        "GITLAB",
+					Kind:        extsvc.KindGitLab,
 					DisplayName: "GitLab",
 					Config:      "{\n  \"url\": \"https://gitlab.com\",\n  \"token\": \"dfdf\",\n  \"projectQuery\": [\n    \"projects?membership=true&archived=no\"\n  ]\n}",
 				},
@@ -389,7 +389,7 @@ func TestAddExternalService(t *testing.T) {
 			result, err := newSchemaResolver(db).AddExternalService(ctx, &addExternalServiceArgs{
 				Input: addExternalServiceInput{
 					Namespace:   &marshaledOrgID,
-					Kind:        "GITLAB",
+					Kind:        extsvc.KindGitLab,
 					DisplayName: "GitLab",
 					Config:      "{\n  \"url\": \"https://gitlab.com\",\n  \"token\": \"dfdf\",\n  \"projectQuery\": [\n    \"projects?membership=true&archived=no\"\n  ]\n}",
 				},
@@ -445,7 +445,7 @@ func TestAddExternalService(t *testing.T) {
 			result, err := newSchemaResolver(db).AddExternalService(ctx, &addExternalServiceArgs{
 				Input: addExternalServiceInput{
 					Namespace:   &marshaledUserID,
-					Kind:        "BITBUCKET",
+					Kind:        extsvc.KindBitbucketCloud,
 					DisplayName: "Bitbucket",
 				},
 			})
@@ -470,7 +470,7 @@ func TestAddExternalService(t *testing.T) {
 			_, err := newSchemaResolver(db).AddExternalService(ctx, &addExternalServiceArgs{
 				Input: addExternalServiceInput{
 					Namespace:   &marshaledUserID,
-					Kind:        "GITLAB",
+					Kind:        extsvc.KindGitLab,
 					DisplayName: "GitLab",
 					Config:      "{\n  \"url\": \"https://gitlab.com\",\n  \"token\": \"dfdf\",\n  \"projectQuery\": [\n    \"projects?membership=true&archived=no\"\n  ]\n}",
 				},
@@ -492,7 +492,7 @@ func TestAddExternalService(t *testing.T) {
 			result, err := newSchemaResolver(db).AddExternalService(ctx, &addExternalServiceArgs{
 				Input: addExternalServiceInput{
 					Namespace:   &marshaledUserID,
-					Kind:        "GITLAB",
+					Kind:        extsvc.KindGitLab,
 					DisplayName: "GitLab",
 					Config:      "{\n  \"url\": \"https://gitlab.com\",\n  \"token\": \"dfdf\",\n  \"projectQuery\": [\n    \"projects?membership=true&archived=no\"\n  ]\n}",
 				},
@@ -518,7 +518,7 @@ func TestAddExternalService(t *testing.T) {
 			result, err := newSchemaResolver(db).AddExternalService(ctx, &addExternalServiceArgs{
 				Input: addExternalServiceInput{
 					Namespace:   &marshaledUserID,
-					Kind:        "GITLAB",
+					Kind:        extsvc.KindGitLab,
 					DisplayName: "GitLab",
 					Config:      "{\n  \"url\": \"https://gitlab.com\",\n  \"token\": \"dfdf\",\n  \"projectQuery\": [\n    \"projects?membership=true&archived=no\"\n  ]\n}",
 				},

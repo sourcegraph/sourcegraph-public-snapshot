@@ -52,24 +52,26 @@ func CheckOrgExternalServices(ctx context.Context, db database.DB, orgID int32) 
 // CheckExternalServicesQuota checks if the maximum mumber of external services has been
 // reached. Max of 2 services - one for GitHub, one for GitLab - can be added per org or user
 func CheckExternalServicesQuota(ctx context.Context, db database.DB, kind string, orgID, userID int32) error {
+	const limitPerKind = 1
+
 	services, err := servicesCountPerKind(ctx, db, orgID, userID)
 	if err != nil {
 		return err
 	}
 
-	if services[extsvc.KindGitHub] >= extsvc.LimitPerKind && services[extsvc.KindGitLab] >= extsvc.LimitPerKind {
+	if services[extsvc.KindGitHub] >= limitPerKind && services[extsvc.KindGitLab] >= limitPerKind {
 		return ErrExternalServicesQuotaReached
 	}
 
 	if kind == extsvc.KindGitHub {
-		if services[extsvc.KindGitHub] >= extsvc.LimitPerKind {
+		if services[extsvc.KindGitHub] >= limitPerKind {
 			return ErrExternalServiceLimitPerKindReached
 		}
 		return nil
 	}
 
 	if kind == extsvc.KindGitLab {
-		if services[extsvc.KindGitLab] >= extsvc.LimitPerKind {
+		if services[extsvc.KindGitLab] >= limitPerKind {
 			return ErrExternalServiceLimitPerKindReached
 		}
 		return nil
@@ -78,7 +80,7 @@ func CheckExternalServicesQuota(ctx context.Context, db database.DB, kind string
 	return nil
 }
 
-// servicesMap returns a map with the total count for each type of service
+// servicesCountPerKind returns a map with the total count for each type of service
 func servicesCountPerKind(ctx context.Context, db database.DB, orgID, userID int32) (map[string]int, error) {
 	var services []*types.ExternalService
 	var err error
