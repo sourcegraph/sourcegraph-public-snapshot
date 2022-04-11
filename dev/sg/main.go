@@ -2,15 +2,14 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
+	"time"
 
-	"github.com/peterbourgon/ff/v3"
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
@@ -35,54 +34,119 @@ var (
 	// `parseConf` before.
 	globalConf *Config
 
-	rootFlagSet         = flag.NewFlagSet("sg", flag.ExitOnError)
-	verboseFlag         = rootFlagSet.Bool("v", false, "verbose mode")
-	configFlag          = rootFlagSet.String("config", defaultConfigFile, "configuration file")
-	overwriteConfigFlag = rootFlagSet.String("overwrite", defaultConfigOverwriteFile, "configuration overwrites file that is gitignored and can be used to, for example, add credentials")
-	skipAutoUpdatesFlag = rootFlagSet.Bool("skip-auto-update", false, "prevent sg from automatically updating itself")
-
-	rootCommand = &ffcli.Command{
-		ShortUsage: "sg [flags] <subcommand>",
-		FlagSet:    rootFlagSet,
-		Exec: func(ctx context.Context, args []string) error {
-			return flag.ErrHelp
-		},
-		Options: []ff.Option{
-			ff.WithEnvVarPrefix("SG"),
-		},
-		Subcommands: []*ffcli.Command{
-			// Common dev tasks
-			runCommand,
-			startCommand,
-			testCommand,
-			lintCommand,
-			dbCommand,
-			migrationCommand,
-			ciCommand,
-			generateCommand,
-
-			// Dev environment
-			doctorCommand,
-			secretCommand,
-			setupCommand,
-
-			// sg commands
-			versionCommand,
-			updateCommand,
-			installCommand,
-
-			// Company
-			liveCommand,
-			teammateCommand,
-			rfcCommand,
-
-			// Misc.
-			opsCommand,
-			auditCommand,
-			funkyLogoCommand,
-		},
-	}
+	verboseFlag         bool
+	configFlag          string
+	overwriteConfigFlag string
+	skipAutoUpdatesFlag bool
 )
+
+var sg = &cli.App{
+	Usage:       "The Sourcegraph developer tool!",
+	Description: "Learn more: https://docs.sourcegraph.com/dev/background-information/sg",
+	Version:     BuildCommit,
+	Compiled:    time.Now(),
+	Flags: []cli.Flag{
+		&cli.BoolFlag{
+			Name:        "verbose",
+			Usage:       "toggle verbose mode",
+			Value:       false,
+			Destination: &verboseFlag,
+		},
+		&cli.StringFlag{
+			Name:        "config",
+			Usage:       "specify a sg configuration file",
+			TakesFile:   true, // Enable completions
+			Value:       defaultConfigFile,
+			Destination: &configFlag,
+			DefaultText: "path",
+			EnvVars:     []string{"SG_CONFIG"},
+		},
+		&cli.StringFlag{
+			Name:        "overwrite",
+			Usage:       "configuration overwrites file that is gitignored and can be used to, for example, add credentials",
+			TakesFile:   true, // Enable completions
+			Value:       defaultConfigOverwriteFile,
+			Destination: &overwriteConfigFlag,
+			DefaultText: "path",
+			EnvVars:     []string{"SG_OVERWRITE"},
+		},
+		&cli.BoolFlag{
+			Name:        "skip-auto-update",
+			Usage:       "prevent sg from automatically updating itself",
+			Value:       BuildCommit == "dev", // Default to skip in dev, otherwise don't
+			Destination: &skipAutoUpdatesFlag,
+			EnvVars:     []string{"SG_SKIP_AUTO_UPDATE"},
+		},
+	},
+	Commands: []*cli.Command{
+		// Common dev tasks
+		runCommand,
+		startCommand,
+		testCommand,
+		// lintCommand,
+		// dbCommand,
+		// migrationCommand,
+		// ciCommand,
+		// generateCommand,
+
+		// Dev environment
+		doctorCommand,
+		secretCommand,
+		setupCommand,
+
+		// Company
+		teammateCommand,
+		// rfcCommand,
+		// liveCommand,
+
+		// sg commands
+		versionCommand,
+		updateCommand,
+		// installCommand,
+
+		// Misc.
+		opsCommand,
+		// auditCommand,
+		// funkyLogoCommand,
+	},
+
+	HideVersion:            true,
+	EnableBashCompletion:   true,
+	UseShortOptionHandling: true,
+}
+
+func main() {
+	if err := loadSecrets(); err != nil {
+		fmt.Printf("failed to open secrets: %s\n", err)
+	}
+	ctx := secrets.WithContext(context.Background(), secretsStore)
+
+	isUpdateCmd := len(os.Args) >= 2 && os.Args[1] == "update"
+	if !isUpdateCmd {
+		// If we're not running "sg update ...", we want to check the version first
+		err := checkSgVersion(ctx)
+		if err != nil {
+			writeWarningLinef("Checking sg version and updating failed: %s\n", err)
+			// Do not exit here, so we don't break user flow when they want to
+			// run `sg` but updating fails
+		}
+	}
+
+	if verboseFlag {
+		stdout.Out.SetVerbose()
+	}
+
+	// We always try to set this, since we
+	// often want to watch files, start commands, etc...
+	if err := setMaxOpenFiles(); err != nil {
+		fmt.Printf("failed to set max open files: %s\n", err)
+		os.Exit(1)
+	}
+	if err := sg.RunContext(ctx, os.Args); err != nil {
+		fmt.Printf("error: %s\n", err)
+		os.Exit(1)
+	}
+}
 
 // setMaxOpenFiles will bump the maximum opened files count.
 // It's harmless since the limit only persists for the lifetime of the process and it's quick too.
@@ -137,7 +201,7 @@ func checkSgVersion(ctx context.Context) error {
 		return nil
 	}
 
-	if *skipAutoUpdatesFlag {
+	if skipAutoUpdatesFlag {
 		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "╭──────────────────────────────────────────────────────────────────╮  "))
 		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "│                                                                  │░░"))
 		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "│ HEY! New version of sg available. Run 'sg update' to install it. │░░"))
@@ -164,44 +228,6 @@ func loadSecrets() error {
 	fp := filepath.Join(homePath, defaultSecretsFile)
 	secretsStore, err = secrets.LoadFile(fp)
 	return err
-}
-
-func main() {
-	if err := loadSecrets(); err != nil {
-		fmt.Printf("failed to open secrets: %s\n", err)
-	}
-	ctx := secrets.WithContext(context.Background(), secretsStore)
-
-	if err := rootCommand.Parse(os.Args[1:]); err != nil {
-		os.Exit(1)
-	}
-
-	isUpdateCmd := len(os.Args) >= 2 && os.Args[1] == "update"
-	if !isUpdateCmd {
-		// If we're not running "sg update ...", we want to check the version first
-		err := checkSgVersion(ctx)
-		if err != nil {
-			writeWarningLinef("Checking sg version and updating failed: %s\n", err)
-			// Do not exit here, so we don't break user flow when they want to
-			// run `sg` but updating fails
-		}
-	}
-
-	if *verboseFlag {
-		stdout.Out.SetVerbose()
-	}
-
-	// We always try to set this, since we
-	// often want to watch files, start commands, etc...
-	if err := setMaxOpenFiles(); err != nil {
-		fmt.Printf("failed to set max open files: %s\n", err)
-		os.Exit(1)
-	}
-
-	if err := rootCommand.Run(ctx); err != nil {
-		fmt.Printf("error: %s\n", err)
-		os.Exit(1)
-	}
 }
 
 // parseConfAndReset parses the config file, return it and resets the global config.

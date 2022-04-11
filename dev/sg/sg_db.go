@@ -69,7 +69,7 @@ var (
 
 func dbAddUserExec(ctx context.Context, args []string) error {
 	// Read the configuration.
-	ok, _ := parseConf(*configFlag, *overwriteConfigFlag)
+	ok, _ := parseConf(configFlag, overwriteConfigFlag)
 	if !ok {
 		return errors.New("failed to read sg.config.yaml. This command needs to be run in the `sourcegraph` repository")
 	}
@@ -119,7 +119,7 @@ func dbAddUserExec(ctx context.Context, args []string) error {
 
 func dbResetRedisExec(ctx context.Context, args []string) error {
 	// Read the configuration.
-	ok, _ := parseConf(*configFlag, *overwriteConfigFlag)
+	ok, _ := parseConf(configFlag, overwriteConfigFlag)
 	if !ok {
 		return errors.New("failed to read sg.config.yaml. This command needs to be run in the `sourcegraph` repository")
 	}
@@ -142,7 +142,7 @@ func dbResetRedisExec(ctx context.Context, args []string) error {
 
 func dbResetPGExec(ctx context.Context, args []string) error {
 	// Read the configuration.
-	ok, _ := parseConf(*configFlag, *overwriteConfigFlag)
+	ok, _ := parseConf(configFlag, overwriteConfigFlag)
 	if !ok {
 		return errors.New("failed to read sg.config.yaml. This command needs to be run in the `sourcegraph` repository")
 	}

@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
@@ -16,24 +16,33 @@ import (
 )
 
 var (
-	versionFlagSet = flag.NewFlagSet("sg version", flag.ExitOnError)
-
 	versionChangelogFlagSet = flag.NewFlagSet("sg version changelog", flag.ExitOnError)
-	versionChangelogNext    = versionChangelogFlagSet.Bool("next", false, "Show changelog for changes you would get if you upgrade.")
-	versionChangelogEntries = versionChangelogFlagSet.Int("limit", 20, "Number of changelog entries to show.")
+	versionChangelogNext    bool
+	versionChangelogEntries int
 
-	versionCommand = &ffcli.Command{
-		Name:       "version",
-		ShortUsage: "sg version",
-		ShortHelp:  "Prints the sg version",
-		FlagSet:    versionFlagSet,
-		Exec:       versionExec,
-		Subcommands: []*ffcli.Command{
+	versionCommand = &cli.Command{
+		Name:     "version",
+		Usage:    "View details for this installation of sg.",
+		Action:   execAdapter(versionExec),
+		Category: CategorySG,
+		Subcommands: []*cli.Command{
 			{
-				Name:      "changelog",
-				ShortHelp: "See what's changed in or since this version of sg",
-				FlagSet:   versionChangelogFlagSet,
-				Exec:      changelogExec,
+				Name:    "changelog",
+				Aliases: []string{"changes"},
+				Usage:   "See what's changed in or since this version of sg",
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:        "next",
+						Usage:       "Show changelog for changes you would get if you upgrade.",
+						Destination: &versionChangelogNext,
+					},
+					&cli.IntFlag{
+						Name:        "limit",
+						Usage:       "Number of changelog entries to show.",
+						Destination: &versionChangelogEntries,
+					},
+				},
+				Action: execAdapter(changelogExec),
 			},
 		},
 	}
@@ -52,12 +61,12 @@ func changelogExec(ctx context.Context, args []string) error {
 		// Filter out stuff we don't want
 		"--no-merges",
 		// Limit entries
-		fmt.Sprintf("--max-count=%d", *versionChangelogEntries),
+		fmt.Sprintf("--max-count=%d", versionChangelogEntries),
 	}
 	var title string
 	if BuildCommit != "dev" {
 		current := strings.TrimPrefix(BuildCommit, "dev-")
-		if *versionChangelogNext {
+		if versionChangelogNext {
 			logArgs = append(logArgs, current+"..origin/main")
 			title = fmt.Sprintf("Changes since sg release %s", BuildCommit)
 		} else {
@@ -84,6 +93,7 @@ func changelogExec(ctx context.Context, args []string) error {
 	}
 	block.Close()
 
-	stdout.Out.WriteLine(output.Linef("", output.StyleSuggestion, "Only showing %d entries - configure with 'sg version changelog -limit=50'", *versionChangelogEntries))
+	stdout.Out.WriteLine(output.Linef("", output.StyleSuggestion,
+		"Only showing %d entries - configure with 'sg version changelog -limit=50'", versionChangelogEntries))
 	return nil
 }

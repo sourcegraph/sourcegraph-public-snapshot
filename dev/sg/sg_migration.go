@@ -103,7 +103,7 @@ func makeRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, erro
 	// Try to read the `sg` configuration so we can read ENV vars from the
 	// configuration and use process env as fallback.
 	var getEnv func(string) string
-	ok, _ := parseConf(*configFlag, *overwriteConfigFlag)
+	ok, _ := parseConf(configFlag, overwriteConfigFlag)
 	if ok {
 		getEnv = globalConf.GetEnv
 	} else {

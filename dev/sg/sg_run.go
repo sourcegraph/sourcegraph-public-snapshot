@@ -8,28 +8,27 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-var (
-	runFlagSet              = flag.NewFlagSet("sg run", flag.ExitOnError)
-	runFlagAddToMacFirewall = runFlagSet.Bool("add-to-macos-firewall", true, "OSX only; Add required exceptions to the firewall")
-	runCommand              = &ffcli.Command{
-		Name:       "run",
-		ShortUsage: "sg run <command>...",
-		ShortHelp:  "Run the given commands.",
-		LongHelp:   constructRunCmdLongHelp(),
-		FlagSet:    runFlagSet,
-		Exec:       runExec,
-	}
-)
+var runCommand = &cli.Command{
+	Name:        "run",
+	Usage:       "Run the given commands.",
+	ArgsUsage:   "[command]",
+	Description: constructRunCmdLongHelp(),
+	Category:    CategoryDev,
+	Flags: []cli.Flag{
+		addToMacOSFirewallFlag,
+	},
+	Action: execAdapter(runExec),
+}
 
 func runExec(ctx context.Context, args []string) error {
-	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
+	ok, errLine := parseConf(configFlag, overwriteConfigFlag)
 	if !ok {
 		stdout.Out.WriteLine(errLine)
 		os.Exit(1)
@@ -50,7 +49,7 @@ func runExec(ctx context.Context, args []string) error {
 		cmds = append(cmds, cmd)
 	}
 
-	return run.Commands(ctx, globalConf.Env, *runFlagAddToMacFirewall, *verboseFlag, cmds...)
+	return run.Commands(ctx, globalConf.Env, addToMacOSFirewall, verboseFlag, cmds...)
 }
 func constructRunCmdLongHelp() string {
 	var out strings.Builder
@@ -63,7 +62,7 @@ func constructRunCmdLongHelp() string {
 
 	if cfg != nil {
 		fmt.Fprintf(&out, "\n")
-		fmt.Fprintf(&out, "AVAILABLE COMMANDS IN %s%s%s\n", output.StyleBold, *configFlag, output.StyleReset)
+		fmt.Fprintf(&out, "AVAILABLE COMMANDS IN %s%s%s\n", output.StyleBold, configFlag, output.StyleReset)
 
 		var names []string
 		for name := range cfg.Commands {
