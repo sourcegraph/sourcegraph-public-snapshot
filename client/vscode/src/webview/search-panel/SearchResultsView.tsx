@@ -377,7 +377,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                             authenticatedUser={authenticatedUser}
                             submitLabel="Add saved search"
                             title="Add saved search"
-                            fullQuery={fullQuery}
+                            fullQuery={`${fullQuery} patternType:${context.submittedSearchQueryState.searchPatternType}`}
                             onComplete={() => setShowSavedSearchForm(false)}
                             platformContext={platformContext}
                             instanceURL={instanceURL}

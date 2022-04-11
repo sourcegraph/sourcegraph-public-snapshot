@@ -1,15 +1,18 @@
 import React, { useCallback, useEffect, useState } from 'react'
+
+import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, Button } from '@sourcegraph/wildcard'
+
+import { WebviewPageProps } from '../../platform/context'
 
 import styles from './ButtonDropdownCta.module.scss'
 
 // Debt: this is a fork of the web <ButtonDropdownCta>.
 
-export interface ButtonDropdownCtaProps extends TelemetryProps {
+export interface ButtonDropdownCtaProps extends TelemetryProps, Pick<WebviewPageProps, 'extensionCoreAPI'> {
     button: JSX.Element
     icon: JSX.Element
     title: string
@@ -19,7 +22,7 @@ export interface ButtonDropdownCtaProps extends TelemetryProps {
     returnTo: string
     onToggle?: () => void
     className?: string
-    instanceURL: string
+    instanceURL?: string
 }
 
 export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> = ({
@@ -33,7 +36,7 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
     returnTo,
     onToggle,
     className,
-    instanceURL,
+    extensionCoreAPI,
 }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
@@ -41,10 +44,6 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
         setIsDropdownOpen(isOpen => !isOpen)
         onToggle?.()
     }, [onToggle])
-
-    const onClick = (): void => {
-        telemetryService.log(`VSCE${source}SignUpModalClick`)
-    }
 
     // Whenever dropdown opens, log view event
     useEffect(() => {
@@ -60,6 +59,13 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
     const signUpURL = `https://sourcegraph.com/sign-up?src=${source}&returnTo=${encodeURIComponent(
         returnTo
     )}&utm_medium=VSCODE&utm_source=sidebar&utm_campaign=vsce-sign-up&utm_content=sign-up`
+
+    const onClick = (): void => {
+        telemetryService.log(`VSCE${source}SignUpModalClick`)
+        extensionCoreAPI.openLink(signUpURL).catch(() => {
+            console.error('Error opening sign up link')
+        })
+    }
 
     return (
         <ButtonDropdown className="menu-nav-item" direction="down" isOpen={isDropdownOpen} toggle={toggleDropdownOpen}>
@@ -86,9 +92,9 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
                         <div className={classNames('text-muted', styles.copyText)}>{copyText}</div>
                     </div>
                 </div>
-                <Button to={signUpURL} onClick={onClick} variant="primary" as={Link}>
+                <VSCodeButton type="button" onClick={onClick} autofocus={true}>
                     Sign up for Sourcegraph
-                </Button>
+                </VSCodeButton>
             </DropdownMenu>
         </ButtonDropdown>
     )
