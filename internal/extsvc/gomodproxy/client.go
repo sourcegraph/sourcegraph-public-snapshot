@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"math"
 	"net/http"
 	"net/url"
 	"path"
@@ -29,19 +28,13 @@ type Client struct {
 	limiter *rate.Limiter
 }
 
-// NewClient returns a new Client for the given configuration.
-func NewClient(config *schema.GoModulesConnection, cli httpcli.Doer) *Client {
-	var requestsPerHour float64
-	if config.RateLimit == nil || !config.RateLimit.Enabled {
-		requestsPerHour = math.Inf(1)
-	} else {
-		requestsPerHour = config.RateLimit.RequestsPerHour
-	}
-
+// NewClient returns a new Client for the given configuration. urn represents the
+// unique urn of the external service this client's config is from.
+func NewClient(urn string, config *schema.GoModulesConnection, cli httpcli.Doer) *Client {
 	return &Client{
 		urls:    config.Urls,
 		cli:     cli,
-		limiter: rate.NewLimiter(rate.Limit(requestsPerHour/3600.0), 100),
+		limiter: ratelimit.DefaultRegistry.Get(urn),
 	}
 }
 
@@ -103,10 +96,8 @@ func (c *Client) get(ctx context.Context, mod string, paths ...string) (respBody
 	)
 
 	for _, baseURL := range c.urls {
-		limiter := ratelimit.DefaultRegistry.GetOrSet(baseURL, c.limiter)
-
 		startWait := time.Now()
-		if err = limiter.Wait(ctx); err != nil {
+		if err = c.limiter.Wait(ctx); err != nil {
 			return nil, err
 		}
 
