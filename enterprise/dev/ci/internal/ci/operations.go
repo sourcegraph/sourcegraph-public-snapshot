@@ -68,10 +68,11 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 		ops.Merge(operations.NewNamedSet("Client checks",
 			clientIntegrationTests,
 			clientChromaticTests(opts.ChromaticShouldAutoAccept),
-			frontendTests,     // ~4.5m
-			addWebApp,         // ~5.5m
-			addBrowserExt,     // ~4.5m
-			addClientLinters)) // ~9m
+			frontendTests,           // ~4.5m
+			addWebApp,               // ~5.5m
+			browserUnitTests,        // ~4.5m
+			browserIntegrationTests, // ~4.5m
+			addClientLinters))       // ~9m
 	}
 
 	if diff.Has(changed.Go | changed.GraphQL) {
@@ -210,10 +211,10 @@ func addWebApp(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
-// Builds and tests the browser extension.
-func addBrowserExt(pipeline *bk.Pipeline) {
-	// Browser extension integration tests
-	for _, browser := range []string{"chrome"} {
+var browsers = []string{"chrome"}
+
+func browserIntegrationTests(pipeline *bk.Pipeline) {
+	for _, browser := range browsers {
 		pipeline.AddStep(
 			fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
 			withYarnCache(),
@@ -230,8 +231,9 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 			bk.ArtifactPaths("./puppeteer/*.png"),
 		)
 	}
+}
 
-	// Browser extension unit tests
+func browserUnitTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest::chrome: Test (client/browser)",
 		withYarnCache(),
 		bk.AnnotatedCmd("dev/ci/yarn-test.sh client/browser", bk.AnnotatedCmdOpts{
@@ -243,6 +245,8 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 }
 
 func clientIntegrationTests(pipeline *bk.Pipeline) {
+	browserIntegrationTests(pipeline)
+
 	chunkSize := 2
 	prepStepKey := "puppeteer:prep"
 	// TODO check with Valery about this. Because we're running stateless agents,
@@ -261,7 +265,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 
 	// Chunk web integration tests to save time via parallel execution.
 	chunkedTestFiles := getChunkedWebIntegrationFileNames(chunkSize)
-	chunkCount := len(chunkedTestFiles)
+	parallelTestsCount := len(chunkedTestFiles) + len(browsers)
 
 	// Add pipeline step for each chunk of web integrations files.
 	for i, chunkTestFiles := range chunkedTestFiles {
@@ -274,7 +278,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 			bk.Env("PERCY_ON", "true"),
 			// If PERCY_PARALLEL_TOTAL is set, the API will wait for that many finalized builds to finalize the Percy build.
 			// https://docs.percy.io/docs/parallel-test-suites#how-it-works
-			bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(chunkCount)),
+			bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(parallelTestsCount)),
 			bk.Cmd(fmt.Sprintf(`dev/ci/yarn-web-integration.sh "%s"`, chunkTestFiles)),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
