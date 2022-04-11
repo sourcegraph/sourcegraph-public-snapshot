@@ -61,7 +61,6 @@ require (
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/google/go-cmp v0.5.7
 	github.com/google/go-github v17.0.0+incompatible
-	github.com/google/go-github/v28 v28.1.1
 	github.com/google/go-github/v31 v31.0.0
 	github.com/google/go-github/v43 v43.0.0
 	github.com/google/go-querystring v1.1.0
