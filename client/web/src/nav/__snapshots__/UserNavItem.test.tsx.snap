@@ -5,8 +5,9 @@ exports[`UserNavItem simple 1`] = `
   <button
     aria-controls=""
     aria-haspopup="true"
-    class="d-flex align-items-center text-decoration-none test-user-nav-item-toggle menuButton"
+    class="d-flex align-items-center text-decoration-none menuButton"
     data-reach-menu-button=""
+    data-testid="user-nav-item-toggle"
     id="menu-button-2"
     type="button"
   >
