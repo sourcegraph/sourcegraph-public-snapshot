@@ -214,8 +214,7 @@ func TestPrettyJSON(t *testing.T) {
               },
               "Typ": "text",
               "FileMatchLimit": 500,
-              "Select": [],
-              "Zoekt": null
+              "Select": []
             }
           },
           {
@@ -242,7 +241,6 @@ func TestPrettyJSON(t *testing.T) {
               },
               "Repos": null,
               "Indexed": false,
-              "SearcherURLs": null,
               "UseFullDeadline": true
             }
           }
@@ -352,9 +350,7 @@ func TestPrettyJSON(t *testing.T) {
             }
           }
         ],
-        "UseFullDeadline": true,
-        "Zoekt": null,
-        "SearcherURLs": null
+        "UseFullDeadline": true
       }
     },
     {

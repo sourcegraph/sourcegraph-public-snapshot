@@ -49,8 +49,7 @@ func Test_setRepos(t *testing.T) {
         "Query": null,
         "Typ": "",
         "FileMatchLimit": 0,
-        "Select": null,
-        "Zoekt": null
+        "Select": null
       }
     },
     {
@@ -67,7 +66,6 @@ func Test_setRepos(t *testing.T) {
           }
         ],
         "Indexed": false,
-        "SearcherURLs": null,
         "UseFullDeadline": false
       }
     }

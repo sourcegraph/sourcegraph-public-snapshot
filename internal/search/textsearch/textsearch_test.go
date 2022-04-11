@@ -486,7 +486,7 @@ func RunRepoSubsetTextSearch(
 			UseFullDeadline: searcherArgs.UseFullDeadline,
 		}
 
-		_, err := searcherJob.Run(ctx, job.RuntimeClients{Zoekt: zoekt}, agg)
+		_, err := searcherJob.Run(ctx, job.RuntimeClients{SearcherURLs: searcherURLs, Zoekt: zoekt}, agg)
 		return err
 	})
 
