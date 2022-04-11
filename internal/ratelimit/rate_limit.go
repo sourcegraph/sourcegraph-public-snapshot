@@ -23,7 +23,7 @@ func NewRegistry() *Registry {
 	if defaultRateLimit <= 0 {
 		fallbackRateLimit = rate.Inf
 	}
-	fallback := rate.NewLimiter(fallbackRateLimit, defaultBurst)
+	fallback := *rate.NewLimiter(fallbackRateLimit, defaultBurst)
 	return &Registry{
 		rateLimiters: make(map[string]*rate.Limiter),
 		fallBack:     fallback,
@@ -36,7 +36,7 @@ type Registry struct {
 	// rateLimiters contains mappings of external service to its *rate.Limiter. The
 	// key should be the URN of the external service.
 	rateLimiters map[string]*rate.Limiter
-	fallBack     *rate.Limiter
+	fallBack     rate.Limiter
 }
 
 // Get returns the rate limiter configured for the given URN of an external
@@ -46,7 +46,8 @@ type Registry struct {
 //
 // Modifications to the returned rate limiter takes effect on all call sites.
 func (r *Registry) Get(urn string) *rate.Limiter {
-	return r.GetOrSet(urn, r.fallBack)
+	fallbackCopy := r.fallBack
+	return r.GetOrSet(urn, &fallbackCopy)
 }
 
 // GetOrSet returns the rate limiter configured for the given URN of an external
