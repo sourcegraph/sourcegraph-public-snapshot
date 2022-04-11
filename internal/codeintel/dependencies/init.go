@@ -36,13 +36,15 @@ func GetService(db database.DB, syncer Syncer) *Service {
 
 		gitService := lockfiles.NewDefaultGitService(nil, db)
 		lockfilesService := lockfiles.GetService(gitService)
+		lockfilesSemaphore := semaphore.NewWeighted(int64(lockfilesSemaphoreWeight))
+		syncerSemaphore := semaphore.NewWeighted(int64(syncerSemaphoreWeight))
 
 		svc = newService(
 			store.GetStore(db),
 			lockfilesService,
-			semaphore.NewWeighted(int64(lockfilesSemaphoreWeight)),
+			lockfilesSemaphore,
 			syncer,
-			semaphore.NewWeighted(int64(syncerSemaphoreWeight)),
+			syncerSemaphore,
 			observationContext,
 		)
 	})
