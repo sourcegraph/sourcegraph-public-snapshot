@@ -39,10 +39,10 @@ type CommitIndexer struct {
 	maxHistoricalTime time.Time
 	background        context.Context
 	operations        *operations
-	commitsBatchSize  int
+	clock             func() time.Time
 }
 
-func NewCommitIndexer(background context.Context, base database.DB, insights dbutil.DB, observationContext *observation.Context) *CommitIndexer {
+func NewCommitIndexer(background context.Context, base database.DB, insights dbutil.DB, clock func() time.Time, observationContext *observation.Context) *CommitIndexer {
 	//TODO(insights): add a setting for historical index length
 	startTime := time.Now().AddDate(-1, 0, 0)
 
@@ -75,16 +75,14 @@ func NewCommitIndexer(background context.Context, base database.DB, insights dbu
 		background:        background,
 		getCommits:        getCommits,
 		operations:        operations,
+		clock:             clock,
 	}
-	// conf.Watch(func() {
-	// 	log15.Debug("Insights commit indexer page size updated")
-	indexer.commitsBatchSize = conf.Get().InsightsCommitIndexerBatchSize
-	// })
+
 	return &indexer
 }
 
-func NewCommitIndexerWorker(ctx context.Context, base database.DB, insights dbutil.DB, observationContext *observation.Context) goroutine.BackgroundRoutine {
-	indexer := NewCommitIndexer(ctx, base, insights, observationContext)
+func NewCommitIndexerWorker(ctx context.Context, base database.DB, insights dbutil.DB, clock func() time.Time, observationContext *observation.Context) goroutine.BackgroundRoutine {
+	indexer := NewCommitIndexer(ctx, base, insights, clock, observationContext)
 
 	return indexer.Handler(ctx, observationContext)
 }
@@ -111,16 +109,19 @@ func (i *CommitIndexer) indexAll(ctx context.Context) error {
 	return nil
 }
 
-// indexRepository attempts to index the commits given a repository name. This method will absorb any errors that
-// occur during execution and skip the index for this repository.
+// indexRepository attempts to index the commits given a repository name one page at a time.
+// This method will absorb any errors that occur during execution and skip any remaining pages.
 // If this repository already has some commits indexed, only commits made more recently than the previous index will be added.
 func (i *CommitIndexer) indexRepository(name string, id api.RepoID) error {
-	batchesProccssed := 0
-	additionalBatches := true
-	for additionalBatches && batchesProccssed < 25 {
+	pagesProccssed := 0
+	additionalPages := true
+	// It is important that the page size stays consistent during processing for each page
+	// so that it can correctly determine the time the repository has been indexed though
+	pageSize := conf.Get().InsightsCommitIndexerPageSize
+	for additionalPages && pagesProccssed < 25 {
 		var err error
-		additionalBatches, err = i.indexNextBatch(name, id)
-		batchesProccssed++
+		additionalPages, err = i.indexNextPage(name, id, pageSize)
+		pagesProccssed++
 		if err != nil {
 			log15.Error(err.Error())
 			return nil
@@ -130,7 +131,7 @@ func (i *CommitIndexer) indexRepository(name string, id api.RepoID) error {
 
 }
 
-func (i *CommitIndexer) indexNextBatch(name string, id api.RepoID) (moreBatches bool, err error) {
+func (i *CommitIndexer) indexNextPage(name string, id api.RepoID, pageSize int) (morePages bool, err error) {
 	ctx, cancel := context.WithTimeout(i.background, time.Second*45)
 	defer cancel()
 
@@ -155,10 +156,10 @@ func (i *CommitIndexer) indexNextBatch(name string, id api.RepoID) (moreBatches 
 	}
 
 	searchTime := max(i.maxHistoricalTime, metadata.LastIndexedAt)
-	startTime := time.Now().UTC()
+	commitLogRequestTime := i.clock().UTC()
 
 	logger.Debug("fetching commits", "repo_id", repoId, "after", searchTime)
-	commits, err := i.getCommits(ctx, i.db, repoName, searchTime, i.commitsBatchSize, i.operations.getCommits)
+	commits, err := i.getCommits(ctx, i.db, repoName, searchTime, pageSize, i.operations.getCommits)
 	if err != nil {
 		return false, errors.Wrapf(err, "error fetching commits from gitserver repo_id: %v", repoId)
 	}
@@ -168,7 +169,7 @@ func (i *CommitIndexer) indexNextBatch(name string, id api.RepoID) (moreBatches 
 	if len(commits) == 0 {
 		logger.Debug("commit index up to date", "repo_id", repoId)
 
-		if _, err = i.commitStore.UpsertMetadataStamp(ctx, repoId, startTime); err != nil {
+		if _, err = i.commitStore.UpsertMetadataStamp(ctx, repoId, commitLogRequestTime); err != nil {
 			return false, err
 
 		}
@@ -176,12 +177,14 @@ func (i *CommitIndexer) indexNextBatch(name string, id api.RepoID) (moreBatches 
 		return false, nil
 	}
 
-	indexedThrough := commits[len(commits)-1].Author.Date.UTC()
-	indexComplete := len(commits) < i.commitsBatchSize || i.commitsBatchSize == 0
+	indexedThrough := commits[len(commits)-1].Committer.Date.UTC()
+	// Index is up to date when there are fewer commits then the requested page size
+	// If the page size is 0 then all commits are fetched so the index is up to date
+	indexComplete := len(commits) < pageSize || pageSize == 0
 	if indexComplete {
-		indexedThrough = startTime
+		indexedThrough = commitLogRequestTime
 	}
-	log15.Debug("indexing commits", "repo_id", repoId, "count", len(commits), "indexedThrough", indexedThrough)
+	log15.Debug("indexing commits", "repo_id", repoId, "count", len(commits), "pageSize", pageSize, "indexedThrough", indexedThrough)
 	err = i.commitStore.InsertCommits(ctx, repoId, commits, indexedThrough, fmt.Sprintf("|repoName:%s|repoId:%d", repoName, repoId))
 	if err != nil {
 		return false, errors.Wrapf(err, "unable to update commit index repo_id: %v", repoId)
@@ -203,7 +206,7 @@ func getCommits(ctx context.Context, db database.DB, name api.RepoName, after ti
 func getMetadata(ctx context.Context, id api.RepoID, store CommitStore) (CommitIndexMetadata, error) {
 	metadata, err := store.GetMetadata(ctx, id)
 	if errors.Is(err, sql.ErrNoRows) {
-		metadata, err = store.UpsertMetadataStamp(ctx, id, time.Time{})
+		metadata, err = store.UpsertMetadataStamp(ctx, id, time.Time{}.UTC())
 	}
 	if err != nil {
 		return CommitIndexMetadata{}, err
