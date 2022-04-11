@@ -961,9 +961,7 @@ tests:
     cmd: yarn run jest --testPathIgnorePatterns end-to-end regression integration storybook
 
   frontend-e2e:
-    cmd: yarn run mocha ./client/web/src/end-to-end/end-to-end.test.ts
-    env:
-      TS_NODE_PROJECT: client/web/src/end-to-end/tsconfig.json
+    cmd: yarn run test-e2e
 
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc
