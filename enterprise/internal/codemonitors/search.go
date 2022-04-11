@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -137,7 +138,13 @@ func Search(ctx context.Context, db database.DB, query string, monitorID int64, 
 
 	// Execute the search
 	agg := streaming.NewAggregatingStream()
-	_, err = planJob.Run(ctx, db, agg)
+	clients := job.RuntimeClients{
+		DB:           db,
+		Zoekt:        jobArgs.Zoekt,
+		SearcherURLs: jobArgs.SearcherURLs,
+		Gitserver:    gitserver.NewClient(db),
+	}
+	_, err = planJob.Run(ctx, clients, agg)
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +190,13 @@ func Snapshot(ctx context.Context, db database.DB, query string, monitorID int64
 		return err
 	}
 
-	_, err = planJob.Run(ctx, db, streaming.NewNullStream())
+	clients := job.RuntimeClients{
+		DB:           db,
+		Zoekt:        jobArgs.Zoekt,
+		SearcherURLs: jobArgs.SearcherURLs,
+		Gitserver:    gitserver.NewClient(db),
+	}
+	_, err = planJob.Run(ctx, clients, streaming.NewNullStream())
 	return err
 }
 

@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -473,7 +474,7 @@ func RunRepoSubsetTextSearch(
 
 		// Run literal and regexp searches on indexed repositories.
 		g.Go(func() error {
-			_, err := zoektJob.Run(ctx, nil, agg)
+			_, err := zoektJob.Run(ctx, job.RuntimeClients{Zoekt: zoekt}, agg)
 			return err
 		})
 	}
@@ -488,7 +489,7 @@ func RunRepoSubsetTextSearch(
 			UseFullDeadline: searcherArgs.UseFullDeadline,
 		}
 
-		_, err := searcherJob.Run(ctx, nil, agg)
+		_, err := searcherJob.Run(ctx, job.RuntimeClients{Zoekt: zoekt}, agg)
 		return err
 	})
 

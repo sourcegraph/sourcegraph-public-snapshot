@@ -44,27 +44,27 @@ type RepoSearch struct {
 	SearcherURLs *endpoint.Map
 }
 
-func (s *RepoSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
+func (s *RepoSearch) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
 	tr.LogFields(otlog.String("pattern", s.PatternInfo.Pattern))
 
-	repos := &searchrepos.Resolver{DB: db, Opts: s.RepoOptions}
+	repos := &searchrepos.Resolver{DB: clients.DB, Opts: s.RepoOptions}
 	err = repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
 		tr.LogFields(otlog.Int("resolved.len", len(page.RepoRevs)))
 
 		// Filter the repos if there is a repohasfile: or -repohasfile field.
 		if len(s.PatternInfo.FilePatternsReposMustExclude) > 0 || len(s.PatternInfo.FilePatternsReposMustInclude) > 0 {
 			// Fallback to batch for reposToAdd
-			page.RepoRevs, err = s.reposToAdd(ctx, page.RepoRevs)
+			page.RepoRevs, err = s.reposToAdd(ctx, clients, page.RepoRevs)
 			if err != nil {
 				return err
 			}
 		}
 
 		stream.Send(streaming.SearchEvent{
-			Results: repoRevsToRepoMatches(ctx, db, page.RepoRevs),
+			Results: repoRevsToRepoMatches(ctx, clients.DB, page.RepoRevs),
 		})
 
 		return nil

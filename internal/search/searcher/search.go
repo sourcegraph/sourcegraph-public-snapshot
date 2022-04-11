@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -47,7 +48,7 @@ type Searcher struct {
 }
 
 // Run calls the searcher service on a set of repositories.
-func (s *Searcher) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
+func (s *Searcher) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "searcher.Run", fmt.Sprintf("query: %s", s.PatternInfo.Pattern))
 	defer func() {
 		tr.SetError(err)
@@ -95,7 +96,7 @@ func (s *Searcher) Run(ctx context.Context, db database.DB, stream streaming.Sen
 				continue
 			}
 
-			revSpecs, err := repoAllRevs.ExpandedRevSpecs(ctx, db)
+			revSpecs, err := repoAllRevs.ExpandedRevSpecs(ctx, clients.DB)
 			if err != nil {
 				return err
 			}
@@ -112,7 +113,7 @@ func (s *Searcher) Run(ctx context.Context, db database.DB, stream streaming.Sen
 					ctx, done := limitCtx, limitDone
 					defer done()
 
-					repoLimitHit, err := searchFilesInRepo(ctx, db, s.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], s.Indexed, s.PatternInfo, fetchTimeout, stream)
+					repoLimitHit, err := searchFilesInRepo(ctx, clients.DB, s.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], s.Indexed, s.PatternInfo, fetchTimeout, stream)
 					if err != nil {
 						tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.Error(err), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
 						log15.Warn("searchFilesInRepo failed", "error", err, "repo", repoRev.Repo.Name)

@@ -23,12 +23,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/execute"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -446,6 +448,15 @@ func (r *searchResolver) JobArgs() *jobutil.Args {
 	}
 }
 
+func (r *searchResolver) JobClients() job.RuntimeClients {
+	return job.RuntimeClients{
+		DB:           r.db,
+		Zoekt:        r.zoekt,
+		SearcherURLs: r.searcherURLs,
+		Gitserver:    gitserver.NewClient(r.db),
+	}
+}
+
 func logPrometheusBatch(status, alertType, requestSource, requestName string, elapsed time.Duration) {
 	searchResponseCounter.WithLabelValues(
 		status,
@@ -600,7 +611,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 			return nil, err
 		}
 		agg := streaming.NewAggregatingStream()
-		alert, err := j.Run(ctx, r.db, agg)
+		alert, err := j.Run(ctx, r.JobClients(), agg)
 		if err != nil {
 			return nil, err // do not cache errors.
 		}

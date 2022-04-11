@@ -49,12 +49,12 @@ type GitserverClient interface {
 	ResolveRevisions(context.Context, api.RepoName, []gitprotocol.RevisionSpecifier) ([]string, error)
 }
 
-func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
+func (j *CommitSearch) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, j)
 	defer func() { finish(alert, err) }()
 	tr.TagFields(trace.LazyFields(j.Tags))
 
-	if err := j.ExpandUsernames(ctx, db); err != nil {
+	if err := j.ExpandUsernames(ctx, clients.DB); err != nil {
 		return nil, err
 	}
 
@@ -69,7 +69,7 @@ func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming
 	}
 
 	var repoRevs []*search.RepositoryRevisions
-	repos := searchrepos.Resolver{DB: db, Opts: j.RepoOpts}
+	repos := searchrepos.Resolver{DB: clients.DB, Opts: j.RepoOpts}
 	err = repos.Paginate(ctx, &opts, func(page *searchrepos.Resolved) error {
 		if repoRevs = page.RepoRevs; page.Next != nil {
 			return newReposLimitError(opts.Limit, j.HasTimeFilter, resultType)
@@ -120,7 +120,7 @@ func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming
 
 		bounded.Go(func() error {
 			if j.CodeMonitorSearchWrapper != nil {
-				return j.CodeMonitorSearchWrapper(ctx, db, j.Gitserver, args, doSearch)
+				return j.CodeMonitorSearchWrapper(ctx, clients.DB, j.Gitserver, args, doSearch)
 			}
 			return doSearch(args)
 		})

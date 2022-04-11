@@ -8,6 +8,8 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -27,6 +29,13 @@ func Expand(ctx context.Context, db database.DB, jobArgs *jobutil.Args, oldPlan 
 		tr.Finish()
 	}()
 
+	clients := job.RuntimeClients{
+		DB:           db,
+		Zoekt:        jobArgs.Zoekt,
+		SearcherURLs: jobArgs.SearcherURLs,
+		Gitserver:    gitserver.NewClient(db),
+	}
+
 	var (
 		mu      sync.Mutex
 		newPlan = make(query.Plan, 0, len(oldPlan))
@@ -43,7 +52,7 @@ func Expand(ctx context.Context, db database.DB, jobArgs *jobutil.Args, oldPlan 
 				}
 
 				agg := streaming.NewAggregatingStream()
-				_, err = predicateJob.Run(ctx, db, agg)
+				_, err = predicateJob.Run(ctx, clients, agg)
 				if err != nil {
 					return nil, err
 				}

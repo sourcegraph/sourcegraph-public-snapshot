@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -35,7 +34,7 @@ func (r *PriorityJob) Name() string {
 	return "PriorityJob"
 }
 
-func (r *PriorityJob) Run(ctx context.Context, db database.DB, s streaming.Sender) (alert *search.Alert, err error) {
+func (r *PriorityJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, s, finish := job.StartSpan(ctx, s, r)
 	defer func() { finish(alert, err) }()
 
@@ -50,12 +49,12 @@ func (r *PriorityJob) Run(ctx context.Context, db database.DB, s streaming.Sende
 		requiredGroup errors.Group
 	)
 	requiredGroup.Go(func() error {
-		alert, err := r.required.Run(ctx, db, s)
+		alert, err := r.required.Run(ctx, clients, s)
 		maxAlerter.Add(alert)
 		return err
 	})
 	optionalGroup.Go(func() error {
-		alert, err := r.optional.Run(ctx, db, s)
+		alert, err := r.optional.Run(ctx, clients, s)
 		maxAlerter.Add(alert)
 		return err
 	})
@@ -101,7 +100,7 @@ func (p *ParallelJob) Name() string {
 	return "ParallelJob"
 }
 
-func (p *ParallelJob) Run(ctx context.Context, db database.DB, s streaming.Sender) (alert *search.Alert, err error) {
+func (p *ParallelJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, s, finish := job.StartSpan(ctx, s, p)
 	defer func() { finish(alert, err) }()
 
@@ -112,7 +111,7 @@ func (p *ParallelJob) Run(ctx context.Context, db database.DB, s streaming.Sende
 	for _, child := range p.children {
 		child := child
 		g.Go(func() error {
-			alert, err := child.Run(ctx, db, s)
+			alert, err := child.Run(ctx, clients, s)
 			maxAlerter.Add(alert)
 			return err
 		})
@@ -137,14 +136,14 @@ type TimeoutJob struct {
 	timeout time.Duration
 }
 
-func (t *TimeoutJob) Run(ctx context.Context, db database.DB, s streaming.Sender) (alert *search.Alert, err error) {
+func (t *TimeoutJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, s, finish := job.StartSpan(ctx, s, t)
 	defer func() { finish(alert, err) }()
 
 	ctx, cancel := context.WithTimeout(ctx, t.timeout)
 	defer cancel()
 
-	return t.child.Run(ctx, db, s)
+	return t.child.Run(ctx, clients, s)
 }
 
 func (t *TimeoutJob) Name() string {
@@ -170,14 +169,14 @@ type LimitJob struct {
 	limit int
 }
 
-func (l *LimitJob) Run(ctx context.Context, db database.DB, s streaming.Sender) (alert *search.Alert, err error) {
+func (l *LimitJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, s, finish := job.StartSpan(ctx, s, l)
 	defer func() { finish(alert, err) }()
 
 	ctx, s, cancel := streaming.WithLimit(ctx, s, l.limit)
 	defer cancel()
 
-	alert, err = l.child.Run(ctx, db, s)
+	alert, err = l.child.Run(ctx, clients, s)
 	if errors.Is(err, context.Canceled) {
 		// Ignore context canceled errors
 		err = nil
@@ -196,7 +195,7 @@ func NewNoopJob() *noopJob {
 
 type noopJob struct{}
 
-func (e *noopJob) Run(context.Context, database.DB, streaming.Sender) (*search.Alert, error) {
+func (e *noopJob) Run(context.Context, job.RuntimeClients, streaming.Sender) (*search.Alert, error) {
 	return nil, nil
 }
 

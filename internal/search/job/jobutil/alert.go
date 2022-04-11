@@ -5,7 +5,6 @@ import (
 	"math"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchalert "github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -31,17 +30,17 @@ type alertJob struct {
 	child  job.Job
 }
 
-func (j *alertJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
+func (j *alertJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, j)
 	defer func() { finish(alert, err) }()
 
 	start := time.Now()
 	countingStream := streaming.NewResultCountingStream(stream)
 	statsObserver := streaming.NewStatsObservingStream(countingStream)
-	jobAlert, err := j.child.Run(ctx, db, statsObserver)
+	jobAlert, err := j.child.Run(ctx, clients, statsObserver)
 
 	ao := searchalert.Observer{
-		Db:           db,
+		Db:           clients.DB,
 		SearchInputs: j.inputs,
 		HasResults:   countingStream.Count() > 0,
 	}

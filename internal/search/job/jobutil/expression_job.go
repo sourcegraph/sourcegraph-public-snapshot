@@ -6,7 +6,6 @@ import (
 	"go.uber.org/atomic"
 	"golang.org/x/sync/semaphore"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -29,7 +28,7 @@ type AndJob struct {
 	children []job.Job
 }
 
-func (a *AndJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
+func (a *AndJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, a)
 	defer func() { finish(alert, err) }()
 
@@ -62,7 +61,7 @@ func (a *AndJob) Run(ctx context.Context, db database.DB, stream streaming.Sende
 				}
 			})
 
-			alert, err := child.Run(ctx, db, intersectingStream)
+			alert, err := child.Run(ctx, clients, intersectingStream)
 			maxAlerter.Add(alert)
 			return err
 		})
@@ -124,7 +123,7 @@ type OrJob struct {
 // - The bias is towards documents that match all of our subqueries, so doesn't bias any individual subquery.
 //   Additionally, a bias towards matching all subqueries is probably desirable, since it's more likely that
 //   a document matching all subqueries is what the user is looking for than a document matching only one.
-func (j *OrJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
+func (j *OrJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, j)
 	defer func() { finish(alert, err) }()
 
@@ -149,7 +148,7 @@ func (j *OrJob) Run(ctx context.Context, db database.DB, stream streaming.Sender
 				}
 			})
 
-			alert, err := child.Run(ctx, db, unioningStream)
+			alert, err := child.Run(ctx, clients, unioningStream)
 			maxAlerter.Add(alert)
 			return err
 		})
