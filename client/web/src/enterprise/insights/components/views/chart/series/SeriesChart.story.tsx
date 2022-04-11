@@ -2,13 +2,13 @@ import React from 'react'
 
 import { Meta, Story } from '@storybook/react'
 
-import { Series } from '../../../../../charts'
-import { WebStory } from '../../../../../components/WebStory'
-import { SeriesBasedChartTypes } from '../types'
+import { Series } from '../../../../../../charts'
+import { WebStory } from '../../../../../../components/WebStory'
+import { SeriesBasedChartTypes } from '../../types'
 
 import { SeriesChart } from './SeriesChart'
 
-export const StoryConfig: Meta = {
+const StoryConfig: Meta = {
     title: 'web/insights/views/SeriesChart',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
 }

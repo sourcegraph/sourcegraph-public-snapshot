@@ -84,6 +84,9 @@ export const useCodeIntel = ({
     isArchived,
     getSetting,
 }: UseCodeIntelParameters): UseCodeIntelResult => {
+    const shouldMixPreciseAndSearchBasedReferences = (): boolean =>
+        getSetting<boolean>('codeIntel.mixPreciseAndSearchBasedReferences', false)
+
     const [codeIntelData, setCodeIntelData] = useState<CodeIntelData>()
 
     const setReferences = (references: Location[]): void => {
@@ -94,6 +97,30 @@ export const useCodeIntel = ({
                 nodes: references,
             },
         }))
+    }
+
+    const deduplicateAndAddReferences = (searchBasedReferences: Location[]): void => {
+        setCodeIntelData(previousData => {
+            const previous = previousData || EMPTY_CODE_INTEL_DATA
+
+            const lsifFiles = new Set(previous.references.nodes.map(location => location.file))
+
+            // Filter out any search results that occur in the same file as LSIF results. These
+            // results are definitely incorrect and will pollute the ordering of precise and fuzzy
+            // results in the references pane.
+            const searchResults = searchBasedReferences.filter(location => !lsifFiles.has(location.file))
+            if (searchResults.length === 0) {
+                return previous
+            }
+
+            return {
+                ...previous,
+                references: {
+                    endCursor: previous.references.endCursor,
+                    nodes: [...previous.references.nodes, ...searchResults],
+                },
+            }
+        })
     }
 
     const setDefinitions = (definitions: Location[]): void => {
@@ -127,6 +154,7 @@ export const useCodeIntel = ({
         loading: searchBasedLoading,
         error: searchBasedError,
         fetch: fetchSearchBasedCodeIntel,
+        fetchReferences: fetchSearchBasedReferences,
     } = useSearchBasedCodeIntel({
         repo: variables.repository,
         commit: variables.commit,
@@ -154,6 +182,11 @@ export const useCodeIntel = ({
                 const lsifData = result ? getLsifData({ data: result }) : undefined
                 if (lsifData) {
                     setCodeIntelData(lsifData)
+
+                    // If we've exhausted LSIF data and the flag is enabled, we add search-based data.
+                    if (lsifData.references.endCursor === null && shouldMixPreciseAndSearchBasedReferences()) {
+                        fetchSearchBasedReferences(deduplicateAndAddReferences)
+                    }
                 } else {
                     console.info('No LSIF data. Falling back to search-based code intelligence.')
                     fellBackToSearchBased.current = true
@@ -186,6 +219,11 @@ export const useCodeIntel = ({
                     nodes: [...previousData.references.nodes, ...newReferenceData.nodes.map(buildPreciseLocation)],
                 },
             })
+
+            // If we've exhausted LSIF data and the flag is enabled, we add search-based data.
+            if (newReferenceData.pageInfo.endCursor === null && shouldMixPreciseAndSearchBasedReferences()) {
+                fetchSearchBasedReferences(deduplicateAndAddReferences)
+            }
         },
     })
 
@@ -234,13 +272,15 @@ export const useCodeIntel = ({
     const fetchMoreImplementations = (): void => {
         const cursor = codeIntelData?.implementations.endCursor || null
 
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        fetchAdditionalImplementations({
-            variables: {
-                ...variables,
-                ...{ afterImplementations: cursor },
-            },
-        })
+        if (cursor !== null) {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+            fetchAdditionalImplementations({
+                variables: {
+                    ...variables,
+                    ...{ afterImplementations: cursor },
+                },
+            })
+        }
     }
 
     const combinedLoading = loading || (fellBackToSearchBased.current && searchBasedLoading)

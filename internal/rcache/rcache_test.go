@@ -4,6 +4,9 @@ import (
 	"reflect"
 	"strconv"
 	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCache_namespace(t *testing.T) {
@@ -178,6 +181,21 @@ func TestCache_deleteKeysWithPrefix(t *testing.T) {
 	if got, exp := vals, bytes("1", "3", "5", "7", "9"); !reflect.DeepEqual(exp, got) {
 		t.Errorf("Expected %v, but got %v", exp, got)
 	}
+}
+
+func TestCache_Increase(t *testing.T) {
+	SetupForTest(t)
+
+	c := NewWithTTL("some_prefix:", 1)
+	c.Increase("a")
+
+	got, ok := c.Get("a")
+	assert.True(t, ok)
+	assert.Equal(t, []byte("1"), got)
+
+	time.Sleep(time.Second)
+	_, ok = c.Get("a")
+	assert.False(t, ok)
 }
 
 func bytes(s ...string) [][]byte {

@@ -2,12 +2,12 @@ import React from 'react'
 
 import { Meta, Story } from '@storybook/react'
 
-import { WebStory } from '../../../../../components/WebStory'
-import { CategoricalBasedChartTypes } from '../types'
+import { WebStory } from '../../../../../../components/WebStory'
+import { CategoricalBasedChartTypes } from '../../types'
 
 import { CategoricalChart } from './CategoricalChart'
 
-export const StoryConfig: Meta = {
+const StoryConfig: Meta = {
     title: 'web/insights/views/CategoricalChart',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
 }

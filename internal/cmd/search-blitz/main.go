@@ -24,7 +24,7 @@ const (
 	envLogDir = "LOG_DIR"
 )
 
-func run(ctx context.Context, wg *sync.WaitGroup) {
+func run(ctx context.Context, wg *sync.WaitGroup, env string) {
 	defer wg.Done()
 
 	bc, err := newClient()
@@ -37,7 +37,7 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 		panic(err)
 	}
 
-	config, err := loadQueries()
+	config, err := loadQueries(env)
 	if err != nil {
 		panic(err)
 	}
@@ -188,9 +188,11 @@ func main() {
 	ctx, cleanup := SignalSensitiveContext()
 	defer cleanup()
 
+	env := os.Getenv("SEARCH_BLITZ_ENV")
+
 	wg := sync.WaitGroup{}
 	wg.Add(1)
-	go run(ctx, &wg)
+	go run(ctx, &wg, env)
 
 	wg.Add(1)
 	srv := startServer(&wg)
