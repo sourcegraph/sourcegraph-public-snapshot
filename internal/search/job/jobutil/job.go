@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -191,7 +190,6 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (job.Job, error) {
 				HasTimeFilter:        b.Exists("after") || b.Exists("before"),
 				Limit:                int(fileMatchLimit),
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
-				Gitserver:            gitserver.NewClient(db),
 			})
 		}
 

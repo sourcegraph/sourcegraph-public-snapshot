@@ -35,7 +35,6 @@ type CommitSearch struct {
 	Limit                int
 	CodeMonitorID        *int64
 	IncludeModifiedFiles bool
-	Gitserver            GitserverClient `json:"-"`
 
 	// CodeMonitorSearchWrapper, if set, will wrap the commit search with extra logic specific to code monitors.
 	CodeMonitorSearchWrapper CodeMonitorHook `json:"-"`
@@ -109,7 +108,7 @@ func (j *CommitSearch) Run(ctx context.Context, clients job.RuntimeClients, stre
 		}
 
 		doSearch := func(args *gitprotocol.SearchRequest) error {
-			limitHit, err := j.Gitserver.Search(ctx, args, onMatches)
+			limitHit, err := clients.Gitserver.Search(ctx, args, onMatches)
 			stream.Send(streaming.SearchEvent{
 				Stats: streaming.Stats{
 					IsLimitHit: limitHit,
@@ -120,7 +119,7 @@ func (j *CommitSearch) Run(ctx context.Context, clients job.RuntimeClients, stre
 
 		bounded.Go(func() error {
 			if j.CodeMonitorSearchWrapper != nil {
-				return j.CodeMonitorSearchWrapper(ctx, clients.DB, j.Gitserver, args, doSearch)
+				return j.CodeMonitorSearchWrapper(ctx, clients.DB, clients.Gitserver, args, doSearch)
 			}
 			return doSearch(args)
 		})
