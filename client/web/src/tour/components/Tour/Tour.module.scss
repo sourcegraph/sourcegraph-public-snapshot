@@ -24,15 +24,7 @@
 
 .task-list {
     &::-webkit-scrollbar {
-        /* stylelint-disable-next-line declaration-property-unit-allowed-list */
-        width: 4px;
-        /* stylelint-disable-next-line declaration-property-unit-allowed-list */
-        height: 4px;
-    }
-
-    &::-webkit-scrollbar-thumb {
-        border-radius: 3px;
-        box-shadow: inset 0 0 6px var(--text-muted);
+        display: none;
     }
 
     &.is-horizontal {
@@ -41,14 +33,6 @@
         scroll-snap-type: x mandatory;
         scroll-behavior: smooth;
         padding-bottom: 0.5rem;
-
-        &::-webkit-scrollbar-thumb {
-            visibility: hidden;
-        }
-
-        &:hover::-webkit-scrollbar-thumb {
-            visibility: visible;
-        }
 
         > * {
             flex: 1 0 19rem;
@@ -65,7 +49,6 @@
     &:not(.is-horizontal) {
         overflow-y: auto;
         flex-grow: 1;
-        padding-right: 0.25rem;
 
         > :not(:last-child)::after {
             content: ' ';
@@ -77,15 +60,7 @@
 
     // Firefox custom scrollbar
     @-moz-document url-prefix('') {
-        scrollbar-width: thin;
-        scrollbar-color: var(--text-muted);
-        &.is-horizontal {
-            padding-bottom: 1rem;
-        }
-
-        &:not(.is-horizontal) {
-            padding-right: 0.5rem;
-        }
+        scrollbar-width: none;
     }
 }
 
