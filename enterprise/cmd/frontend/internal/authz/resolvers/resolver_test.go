@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"sync/atomic"
 	"testing"
@@ -403,7 +402,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 						]
     				}
 				}
-			`, convertToBase64("Repository:1")),
+			`, graphqlbackend.MarshalRepositoryID(1)),
 				},
 			},
 		},
@@ -431,7 +430,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 						]
     				}
 				}
-			`, convertToBase64("Repository:1")),
+			`, graphqlbackend.MarshalRepositoryID(1)),
 				},
 			},
 		},
@@ -459,7 +458,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 						]
     				}
 				}
-			`, convertToBase64("Repository:2"), convertToBase64("Repository:3"), convertToBase64("Repository:4"), convertToBase64("Repository:5")),
+			`, graphqlbackend.MarshalRepositoryID(2), graphqlbackend.MarshalRepositoryID(3), graphqlbackend.MarshalRepositoryID(4), graphqlbackend.MarshalRepositoryID(5)),
 				},
 			},
 		},
@@ -487,7 +486,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 						]
     				}
 				}
-			`, convertToBase64("Repository:2"), convertToBase64("Repository:3"), convertToBase64("Repository:4"), convertToBase64("Repository:5")),
+			`, graphqlbackend.MarshalRepositoryID(2), graphqlbackend.MarshalRepositoryID(3), graphqlbackend.MarshalRepositoryID(4), graphqlbackend.MarshalRepositoryID(5)),
 				},
 			},
 		},
@@ -507,7 +506,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 						}
 					}
 				}
-			`, convertToBase64("Repository:2")),
+			`, graphqlbackend.MarshalRepositoryID(2)),
 					ExpectedResult: fmt.Sprintf(`
 				{
 					"authorizedUserRepositories": {
@@ -516,7 +515,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 						]
                     }
 				}
-			`, convertToBase64("Repository:3"), convertToBase64("Repository:4")),
+			`, graphqlbackend.MarshalRepositoryID(3), graphqlbackend.MarshalRepositoryID(4)),
 				},
 			},
 		},
@@ -536,7 +535,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 						}
 					}
 				}
-			`, convertToBase64("Repository:4")),
+			`, graphqlbackend.MarshalRepositoryID(4)),
 					ExpectedResult: fmt.Sprintf(`
 				{
 					"authorizedUserRepositories": {
@@ -545,7 +544,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 						]
     				}
 				}
-			`, convertToBase64("Repository:5")),
+			`, graphqlbackend.MarshalRepositoryID(5)),
 				},
 			},
 		},
@@ -565,7 +564,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 								}
 							}
 						}
-					`, convertToBase64("Repository:5")),
+					`, graphqlbackend.MarshalRepositoryID(5)),
 					ExpectedResult: `
 				{
 					"authorizedUserRepositories": {
@@ -723,7 +722,7 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 						}
     				}
 				}
-			`, convertToBase64("User:1"), convertToBase64("User:2"), convertToBase64("User:3"), convertToBase64("User:4"), convertToBase64("User:5")),
+			`, graphqlbackend.MarshalUserID(1), graphqlbackend.MarshalUserID(2), graphqlbackend.MarshalUserID(3), graphqlbackend.MarshalUserID(4), graphqlbackend.MarshalUserID(5)),
 				},
 			},
 		},
@@ -744,7 +743,7 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 						}
 					}
 				}
-			`, convertToBase64("User:1")),
+			`, graphqlbackend.MarshalUserID(1)),
 					ExpectedResult: fmt.Sprintf(`
 				{
 					"repository": {
@@ -755,7 +754,7 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 						}
     				}
 				}
-			`, convertToBase64("User:2"), convertToBase64("User:3")),
+			`, graphqlbackend.MarshalUserID(2), graphqlbackend.MarshalUserID(3)),
 				},
 			},
 		},
@@ -776,7 +775,7 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 						}
 					}
 				}
-			`, convertToBase64("User:3")),
+			`, graphqlbackend.MarshalUserID(3)),
 					ExpectedResult: fmt.Sprintf(`
 				{
 					"repository": {
@@ -787,7 +786,7 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 						}
     				}
 				}
-			`, convertToBase64("User:4"), convertToBase64("User:5")),
+			`, graphqlbackend.MarshalUserID(4), graphqlbackend.MarshalUserID(5)),
 				},
 			},
 		},
@@ -808,7 +807,7 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 						}
 					}
 				}
-			`, convertToBase64("User:5")),
+			`, graphqlbackend.MarshalUserID(5)),
 					ExpectedResult: `
 				{
 					"repository": {
@@ -1094,8 +1093,4 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 			t.Fatalf("Wanted 1 call, got %d", len(h))
 		}
 	})
-}
-
-func convertToBase64(input string) string {
-	return base64.StdEncoding.EncodeToString([]byte(input))
 }

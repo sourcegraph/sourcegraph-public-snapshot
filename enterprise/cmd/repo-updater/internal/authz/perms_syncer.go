@@ -629,6 +629,8 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	for i := range repoIDs {
 		p.IDs[int32(repoIDs[i])] = struct{}{}
 	}
+
+	// Looping over two slices individually in order to avoid unnecessary memory allocation.
 	for i := range externalAccountsRepoIDs {
 		p.IDs[int32(externalAccountsRepoIDs[i])] = struct{}{}
 	}
