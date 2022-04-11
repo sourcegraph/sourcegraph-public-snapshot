@@ -68,11 +68,10 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 		ops.Merge(operations.NewNamedSet("Client checks",
 			clientIntegrationTests,
 			clientChromaticTests(opts.ChromaticShouldAutoAccept),
-			frontendTests,           // ~4.5m
-			addWebApp,               // ~5.5m
-			browserUnitTests,        // ~4.5m
-			browserIntegrationTests, // ~4.5m
-			addClientLinters))       // ~9m
+			frontendTests,     // ~4.5m
+			addWebApp,         // ~5.5m
+			browserUnitTests,  // ~4.5m
+			addClientLinters)) // ~9m
 	}
 
 	if diff.Has(changed.Go | changed.GraphQL) {
