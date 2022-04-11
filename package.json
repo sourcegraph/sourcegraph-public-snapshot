@@ -186,7 +186,7 @@
     "@types/js-yaml": "4.0.3",
     "@types/jsdom": "12.2.4",
     "@types/lodash": "4.14.167",
-    "@types/marked": "4.0.0",
+    "@types/marked": "4.0.3",
     "@types/mime-types": "2.1.0",
     "@types/mini-css-extract-plugin": "2.0.1",
     "@types/mocha": "8.2.0",
