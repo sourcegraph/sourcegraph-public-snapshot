@@ -21,7 +21,7 @@ var (
 		Name:        "ops",
 		Usage:       "Commands used by operations teams to perform common tasks",
 		Description: constructOpsCmdLongHelp(),
-		Category:    CategoryMisc,
+		Category:    CategoryCompany,
 		Action:      cli.ShowSubcommandHelp,
 		Subcommands: []*cli.Command{opsUpdateImagesCommand},
 	}

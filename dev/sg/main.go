@@ -17,7 +17,7 @@ import (
 
 func main() {
 	if err := loadSecrets(); err != nil {
-		fmt.Printf("failed to open secrets: %s\n", err)
+		writeWarningLinef("failed to open secrets: %s", err)
 	}
 	ctx := secrets.WithContext(context.Background(), secretsStore)
 
@@ -120,8 +120,8 @@ var sg = &cli.App{
 	},
 	Commands: []*cli.Command{
 		// Common dev tasks
-		runCommand,
 		startCommand,
+		runCommand,
 		testCommand,
 		// lintCommand,
 		// dbCommand,
@@ -138,15 +138,15 @@ var sg = &cli.App{
 		teammateCommand,
 		// rfcCommand,
 		// liveCommand,
+		opsCommand,
+		// auditCommand,
 
-		// sg commands
+		// Util
 		versionCommand,
 		updateCommand,
 		// installCommand,
 
 		// Misc.
-		opsCommand,
-		// auditCommand,
 		// funkyLogoCommand,
 	},
 

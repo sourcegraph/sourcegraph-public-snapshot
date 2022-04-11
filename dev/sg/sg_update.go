@@ -22,7 +22,7 @@ var updateCommand = &cli.Command{
   sg version changelog -next
 
 Requires a local copy of the 'sourcegraph/sourcegraph' codebase.`,
-	Category: CategorySG,
+	Category: CategoryUtil,
 	Action: func(ctx *cli.Context) error {
 		_, err := updateToPrebuiltSG(ctx.Context)
 		return err

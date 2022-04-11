@@ -1,9 +1,8 @@
 package main
 
 const (
-	CategoryDev     = "DEVELOPMENT"
-	CategoryEnv     = "ENVIRONMENT"
-	CategoryCompany = "COMPANY"
-	CategorySG      = "SG MANAGEMENT"
-	CategoryMisc    = "MISCELLANEOUS"
+	CategoryDev     = "1 - Development"
+	CategoryCompany = "2 - Company"
+	CategoryEnv     = "3 - Environment"
+	CategoryUtil    = "4 - Utilities"
 )
