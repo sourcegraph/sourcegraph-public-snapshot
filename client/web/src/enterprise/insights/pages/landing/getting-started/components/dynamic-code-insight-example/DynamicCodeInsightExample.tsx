@@ -7,21 +7,19 @@ import { noop } from 'rxjs'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Card, Link, useObservable, useDebounce, Icon, Input } from '@sourcegraph/wildcard'
 
-import * as View from '../../../../../../../views'
 import { getDefaultInputProps } from '../../../../../components/form/getDefaultInputProps'
 import { useField } from '../../../../../components/form/hooks/useField'
 import { useForm } from '../../../../../components/form/hooks/useForm'
 import { InsightQueryInput } from '../../../../../components/form/query-input/InsightQueryInput'
 import { RepositoriesField } from '../../../../../components/form/repositories-field/RepositoriesField'
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
-import { useCodeInsightViewPings, CodeInsightTrackType } from '../../../../../pings'
-import { DATA_SERIES_COLORS, EditableDataSeries } from '../../../../insights/creation/search-insight'
-import { getQueryPatternTypeFilter } from '../../../../insights/creation/search-insight/components/form-series-input/get-pattern-type-filter'
-import { SearchInsightLivePreview } from '../../../../insights/creation/search-insight/components/live-preview-chart/SearchInsightLivePreview'
+import { getQueryPatternTypeFilter } from '../../../../insights/creation/search-insight'
 import {
     repositoriesExistValidator,
     repositoriesFieldValidator,
 } from '../../../../insights/creation/search-insight/components/search-insight-creation-content/validators'
+
+import { DynamicInsightPreview } from './DynamicInsightPreivew/DynamicInsightPreview'
 
 import styles from './DynamicCodeInsightExample.module.scss'
 
@@ -34,17 +32,6 @@ const INITIAL_INSIGHT_VALUES: CodeInsightExampleFormValues = {
     repositories: 'github.com/sourcegraph/sourcegraph',
     query: 'TODO archived:no fork:no',
 }
-
-const createExampleDataSeries = (query: string): EditableDataSeries[] => [
-    {
-        query,
-        valid: true,
-        edit: false,
-        id: '1',
-        name: 'TODOs',
-        stroke: DATA_SERIES_COLORS.ORANGE,
-    },
-]
 
 interface DynamicCodeInsightExampleProps extends TelemetryProps, React.HTMLAttributes<HTMLDivElement> {}
 
@@ -90,11 +77,6 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
         }
     }, [setRepositoryValue, derivedRepositoryURL])
 
-    const { trackMouseEnter, trackMouseLeave, trackDatumClicks } = useCodeInsightViewPings({
-        telemetryService,
-        insightType: CodeInsightTrackType.InProductLandingPageInsight,
-    })
-
     useEffect(() => {
         if (debouncedQuery !== INITIAL_INSIGHT_VALUES.query) {
             telemetryService.log('InsightsGetStartedPageQueryModification')
@@ -117,27 +99,13 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
         <Card {...otherProps} className={classNames(styles.wrapper, otherProps.className)}>
             {/* eslint-disable-next-line react/forbid-elements */}
             <form ref={form.ref} noValidate={true} onSubmit={form.handleSubmit} className={styles.chartSection}>
-                <SearchInsightLivePreview
-                    title="In-line TODO statements"
-                    withLivePreviewControls={false}
-                    repositories={repositories.input.value}
-                    series={createExampleDataSeries(query.input.value)}
-                    stepValue="2"
-                    step="months"
+                <DynamicInsightPreview
+                    telemetryService={telemetryService}
                     disabled={!hasValidLivePreview}
-                    isAllReposMode={false}
+                    repositories={repositories.input.value}
+                    query={query.input.value}
                     className={styles.chart}
-                >
-                    {data => (
-                        <View.Content
-                            onMouseEnter={trackMouseEnter}
-                            onMouseLeave={trackMouseLeave}
-                            onDatumLinkClick={trackDatumClicks}
-                            content={[data]}
-                            layout={View.ChartViewContentLayout.ByContentSize}
-                        />
-                    )}
-                </SearchInsightLivePreview>
+                />
 
                 <Input
                     label="Data series search query"

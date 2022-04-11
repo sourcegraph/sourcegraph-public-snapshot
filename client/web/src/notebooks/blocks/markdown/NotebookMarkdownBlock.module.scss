@@ -83,3 +83,19 @@
         border-radius: var(--border-radius);
     }
 }
+
+.heading-link {
+    color: var(--text-muted-transparent);
+    margin-right: 0.25rem;
+
+    &:hover {
+        color: var(--text-muted);
+        text-decoration: none;
+    }
+
+    // Anchor links are not useful in an embedded context (iframes)
+    // because you can't view the URL, so we hide them.
+    .is-embedded & {
+        display: none;
+    }
+}

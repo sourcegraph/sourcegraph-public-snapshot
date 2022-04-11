@@ -34,16 +34,6 @@ func IsAbsoluteRevision(s string) bool {
 	return true
 }
 
-func ensureAbsoluteCommit(commitID api.CommitID) error {
-	// We don't want to even be running commands on non-absolute
-	// commit IDs if we can avoid it, because we can't cache the
-	// expensive part of those computations.
-	if !IsAbsoluteRevision(string(commitID)) {
-		return errors.Errorf("non-absolute commit ID: %q", commitID)
-	}
-	return nil
-}
-
 // ResolveRevisionOptions configure how we resolve revisions.
 // The zero value should contain appropriate default values.
 type ResolveRevisionOptions struct {

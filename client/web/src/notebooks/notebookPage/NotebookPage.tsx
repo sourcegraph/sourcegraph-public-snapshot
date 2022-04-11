@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
@@ -24,7 +24,6 @@ import {
 
 import { Block } from '..'
 import { AuthenticatedUser } from '../../auth'
-import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { NotebookFields, NotebookInput, Scalars } from '../../graphql-operations'
@@ -99,6 +98,7 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
     const notebookId = match.params.id
     const [notebookTitle, setNotebookTitle] = useState('')
     const [updateQueue, setUpdateQueue] = useState<Partial<NotebookInput>[]>([])
+    const outlineContainerElement = useRef<HTMLDivElement | null>(null)
 
     const exportedFileName = useMemo(
         () => `${notebookTitle ? convertNotebookTitleToFileName(notebookTitle) : 'notebook'}.snb.md`,
@@ -181,123 +181,133 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
     )
 
     return (
-        <div className={classNames('w-100 p-2', styles.searchNotebookPage)}>
+        <div className={classNames('w-100', styles.searchNotebookPage)}>
             <PageTitle title={notebookTitle || 'Notebook'} />
-            <Page>
-                {isErrorLike(notebookOrError) && (
-                    <Alert variant="danger">
-                        Error while loading the notebook: <strong>{notebookOrError.message}</strong>
-                    </Alert>
-                )}
-                {isErrorLike(updatedNotebookOrError) && (
-                    <Alert variant="danger">
-                        Error while updating the notebook: <strong>{updatedNotebookOrError.message}</strong>
-                    </Alert>
-                )}
-                {notebookOrError === LOADING && (
-                    <div className="d-flex justify-content-center">
-                        <LoadingSpinner />
-                    </div>
-                )}
-                {isNotebookLoaded(notebookOrError) && (
-                    <>
-                        <PageHeader
-                            annotation={
-                                <FeedbackBadge status="beta" feedback={{ mailto: 'support@sourcegraph.com' }} />
-                            }
-                            path={[
-                                { icon: MagnifyIcon, to: '/search' },
-                                { to: '/notebooks', text: 'Notebooks' },
-                                {
-                                    text: (
-                                        <NotebookTitle
-                                            title={notebookOrError.title}
-                                            viewerCanManage={notebookOrError.viewerCanManage}
-                                            onUpdateTitle={onUpdateTitle}
-                                            telemetryService={telemetryService}
-                                        />
-                                    ),
-                                },
-                            ]}
-                            actions={
-                                <NotebookPageHeaderActions
-                                    isSourcegraphDotCom={isSourcegraphDotCom}
-                                    authenticatedUser={authenticatedUser}
-                                    notebookId={notebookId}
-                                    viewerCanManage={notebookOrError.viewerCanManage}
-                                    isPublic={notebookOrError.public}
-                                    namespace={notebookOrError.namespace}
-                                    onUpdateVisibility={onUpdateVisibility}
-                                    deleteNotebook={deleteNotebook}
-                                    starsCount={notebookOrError.stars.totalCount}
-                                    viewerHasStarred={notebookOrError.viewerHasStarred}
-                                    createNotebookStar={createNotebookStar}
-                                    deleteNotebookStar={deleteNotebookStar}
-                                    telemetryService={telemetryService}
-                                />
-                            }
-                        />
-                        <small className="d-flex align-items-center mt-2">
-                            <div className="mr-2">
-                                Created{' '}
-                                {notebookOrError.creator && (
-                                    <span>
-                                        by <strong>@{notebookOrError.creator.username}</strong>
-                                    </span>
-                                )}{' '}
-                                <Timestamp date={notebookOrError.createdAt} />
-                            </div>
-                            <div className="d-flex align-items-center">
-                                {latestNotebook === LOADING && (
-                                    <>
-                                        <LoadingSpinner className={classNames('m-1', styles.autoSaveIndicator)} />{' '}
-                                        Autosaving notebook...
-                                    </>
-                                )}
-                                {isNotebookLoaded(latestNotebook) && (
-                                    <>
-                                        <CheckCircleIcon
-                                            className={classNames('text-success m-1', styles.autoSaveIndicator)}
-                                        />
+            <div className={styles.columns}>
+                <div className={classNames(styles.sideColumn, styles.leftColumn)} ref={outlineContainerElement} />
+                <div className={styles.centerColumn}>
+                    {isErrorLike(notebookOrError) && (
+                        <Alert variant="danger">
+                            Error while loading the notebook: <strong>{notebookOrError.message}</strong>
+                        </Alert>
+                    )}
+                    {isErrorLike(updatedNotebookOrError) && (
+                        <Alert variant="danger">
+                            Error while updating the notebook: <strong>{updatedNotebookOrError.message}</strong>
+                        </Alert>
+                    )}
+                    {notebookOrError === LOADING && (
+                        <div className="d-flex justify-content-center">
+                            <LoadingSpinner />
+                        </div>
+                    )}
+                    {isNotebookLoaded(notebookOrError) && (
+                        <>
+                            <PageHeader
+                                className="mt-3"
+                                annotation={
+                                    <FeedbackBadge status="beta" feedback={{ mailto: 'support@sourcegraph.com' }} />
+                                }
+                                path={[
+                                    { icon: MagnifyIcon, to: '/search' },
+                                    { to: '/notebooks', text: 'Notebooks' },
+                                    {
+                                        text: (
+                                            <NotebookTitle
+                                                title={notebookOrError.title}
+                                                viewerCanManage={notebookOrError.viewerCanManage}
+                                                onUpdateTitle={onUpdateTitle}
+                                                telemetryService={telemetryService}
+                                            />
+                                        ),
+                                    },
+                                ]}
+                                actions={
+                                    <NotebookPageHeaderActions
+                                        isSourcegraphDotCom={isSourcegraphDotCom}
+                                        authenticatedUser={authenticatedUser}
+                                        notebookId={notebookId}
+                                        viewerCanManage={notebookOrError.viewerCanManage}
+                                        isPublic={notebookOrError.public}
+                                        namespace={notebookOrError.namespace}
+                                        onUpdateVisibility={onUpdateVisibility}
+                                        deleteNotebook={deleteNotebook}
+                                        starsCount={notebookOrError.stars.totalCount}
+                                        viewerHasStarred={notebookOrError.viewerHasStarred}
+                                        createNotebookStar={createNotebookStar}
+                                        deleteNotebookStar={deleteNotebookStar}
+                                        telemetryService={telemetryService}
+                                    />
+                                }
+                            />
+                            <small className="d-flex align-items-center mt-2">
+                                <div className="mr-2">
+                                    Created{' '}
+                                    {notebookOrError.creator && (
                                         <span>
-                                            Last updated{' '}
-                                            {latestNotebook.updater && (
-                                                <span>
-                                                    by <strong>@{latestNotebook.updater.username}</strong>
-                                                </span>
-                                            )}
-                                            &nbsp;
+                                            by <strong>@{notebookOrError.creator.username}</strong>
                                         </span>
-                                        <Timestamp date={latestNotebook.updatedAt} />
-                                    </>
-                                )}
-                            </div>
-                        </small>
-                        <hr className="mt-2 mb-3" />
-                        <NotebookContent
-                            viewerCanManage={notebookOrError.viewerCanManage}
-                            blocks={notebookOrError.blocks}
-                            onUpdateBlocks={onUpdateBlocks}
-                            onCopyNotebook={onCopyNotebook}
-                            exportedFileName={exportedFileName}
-                            globbing={globbing}
-                            streamSearch={streamSearch}
-                            isLightTheme={isLightTheme}
-                            telemetryService={telemetryService}
-                            searchContextsEnabled={searchContextsEnabled}
-                            isSourcegraphDotCom={isSourcegraphDotCom}
-                            location={location}
-                            fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                            authenticatedUser={authenticatedUser}
-                            showSearchContext={showSearchContext}
-                            settingsCascade={settingsCascade}
-                            platformContext={platformContext}
-                            extensionsController={extensionsController}
-                        />
-                        <div className={styles.spacer} />
-                    </>
-                )}
-            </Page>
+                                    )}{' '}
+                                    <Timestamp date={notebookOrError.createdAt} />
+                                </div>
+                                <div className="d-flex align-items-center">
+                                    {latestNotebook === LOADING && (
+                                        <>
+                                            <LoadingSpinner className={classNames('m-1', styles.autoSaveIndicator)} />{' '}
+                                            Autosaving notebook...
+                                        </>
+                                    )}
+                                    {isNotebookLoaded(latestNotebook) && (
+                                        <>
+                                            <CheckCircleIcon
+                                                className={classNames('text-success m-1', styles.autoSaveIndicator)}
+                                            />
+                                            <span>
+                                                Last updated{' '}
+                                                {latestNotebook.updater && (
+                                                    <span>
+                                                        by <strong>@{latestNotebook.updater.username}</strong>
+                                                    </span>
+                                                )}
+                                                &nbsp;
+                                            </span>
+                                            <Timestamp date={latestNotebook.updatedAt} />
+                                        </>
+                                    )}
+                                </div>
+                            </small>
+                            <hr className="mt-2 mb-3" />
+                        </>
+                    )}
+                    {isNotebookLoaded(notebookOrError) && (
+                        <>
+                            <NotebookContent
+                                viewerCanManage={notebookOrError.viewerCanManage}
+                                blocks={notebookOrError.blocks}
+                                onUpdateBlocks={onUpdateBlocks}
+                                onCopyNotebook={onCopyNotebook}
+                                exportedFileName={exportedFileName}
+                                globbing={globbing}
+                                streamSearch={streamSearch}
+                                isLightTheme={isLightTheme}
+                                telemetryService={telemetryService}
+                                searchContextsEnabled={searchContextsEnabled}
+                                isSourcegraphDotCom={isSourcegraphDotCom}
+                                location={location}
+                                fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                authenticatedUser={authenticatedUser}
+                                showSearchContext={showSearchContext}
+                                settingsCascade={settingsCascade}
+                                platformContext={platformContext}
+                                extensionsController={extensionsController}
+                                outlineContainerElement={outlineContainerElement.current}
+                            />
+                            <div className={styles.spacer} />
+                        </>
+                    )}
+                </div>
+                <div className={classNames(styles.sideColumn, styles.rightColumn)} />
+            </div>
         </div>
     )
 }
