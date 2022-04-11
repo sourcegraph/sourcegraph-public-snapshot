@@ -199,14 +199,13 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
     // This is only used to check for duplicate dashboards. Thi is not required for the new GQL API.
     // So we just return null to get the form to always accept.
-    public findDashboardByName = (name: string): Observable<InsightDashboard | null> => of(null)
+    public findDashboardByName = (name: string) => of(null)
 
-    public getDashboardOwners = (): Observable<InsightsDashboardOwner[]> => getDashboardOwners(this.apolloClient)
+    public getDashboardOwners = () => getDashboardOwners(this.apolloClient)
 
-    public createDashboard = (input: DashboardCreateInput): Observable<DashboardCreateResult> =>
-        createDashboard(this.apolloClient, input)
+    public createDashboard = (input: DashboardCreateInput) => createDashboard(this.apolloClient, input)
 
-    public deleteDashboard = ({ id }: DashboardDeleteInput): Observable<void> => {
+    public deleteDashboard = ({ id }: DashboardDeleteInput) => {
         if (!id) {
             throw new Error('`id` is required to delete a dashboard')
         }
