@@ -120,7 +120,7 @@ func Search(ctx context.Context, db database.DB, query string, monitorID int64, 
 		return nil, err
 	}
 
-	planJob, err := jobutil.FromExpandedPlan(inputs, plan, db)
+	planJob, err := jobutil.FromExpandedPlan(inputs, plan)
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +170,7 @@ func Snapshot(ctx context.Context, db database.DB, query string, monitorID int64
 		return err
 	}
 
-	planJob, err := jobutil.FromExpandedPlan(inputs, plan, db)
+	planJob, err := jobutil.FromExpandedPlan(inputs, plan)
 	if err != nil {
 		return err
 	}

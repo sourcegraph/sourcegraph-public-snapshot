@@ -38,7 +38,7 @@ func Expand(ctx context.Context, clients job.RuntimeClients, inputs *run.SearchI
 		q := q
 		g.Go(func() error {
 			predicatePlan, err := Substitute(q, func(plan query.Plan) (result.Matches, error) {
-				predicateJob, err := jobutil.FromExpandedPlan(inputs, plan, clients.DB)
+				predicateJob, err := jobutil.FromExpandedPlan(inputs, plan)
 				if err != nil {
 					return nil, err
 				}
