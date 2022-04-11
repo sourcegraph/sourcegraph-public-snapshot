@@ -1,4 +1,4 @@
-package jobutil2
+package jobutil
 
 import (
 	"fmt"
