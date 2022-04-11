@@ -21,6 +21,16 @@ interface NotebookOutlineProps {
     blocks: Block[]
 }
 
+function getHeadingStyle(depth: number): string {
+    switch (depth) {
+        case 1:
+            return styles.heading1
+        case 2:
+            return styles.heading2
+    }
+    return ''
+}
+
 export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = React.memo(
     ({ notebookElement, outlineContainerElement, blocks }) => {
         const scrollableContainer = useRef<HTMLUListElement>(null)
@@ -163,7 +173,7 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
                             data-id={heading.id}
                             className={classNames(
                                 styles.heading,
-                                `heading-${heading.depth}`,
+                                getHeadingStyle(heading.depth),
                                 highlightedHeading === heading.id && styles.highlight
                             )}
                             aria-current={highlightedHeading === heading.id}

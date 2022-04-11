@@ -9,9 +9,3 @@
         padding-right: 2.5rem;
     }
 }
-
-// Anchor links are not useful in an embedded context (iframes)
-// because you can't view the URL, so we hide them.
-.is-embedded :global(.notebook-markdown-heading-link) {
-    display: none;
-}

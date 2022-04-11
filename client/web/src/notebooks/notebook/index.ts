@@ -19,6 +19,8 @@ import { createNotebook } from '../backend'
 import { fetchSuggestions } from '../blocks/suggestions/suggestions'
 import { blockToGQLInput, serializeBlockToMarkdown } from '../serialize'
 
+import markdownBlockStyles from '../blocks/markdown/NotebookMarkdownBlock.module.scss'
+
 const DONE = 'DONE' as const
 
 export interface CopyNotebookProps {
@@ -83,7 +85,7 @@ export class NotebookHeadingMarkdownRenderer extends Renderer {
         const slug = slugger.slug(raw)
         const headingId = `${slug}-${headerPrefix}`
         return `<h${level} id="${headingId}">
-            <a class="notebook-markdown-heading-link" href="#${headingId}">#</a>
+            <a class="${markdownBlockStyles.headingLink}" href="#${headingId}">#</a>
             <span>${text}</span>
         </h${level}>\n`
     }

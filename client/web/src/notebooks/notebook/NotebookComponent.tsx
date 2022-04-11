@@ -424,7 +424,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
 
                 switch (block.type) {
                     case 'md':
-                        return <NotebookMarkdownBlock {...block} {...blockProps} />
+                        return <NotebookMarkdownBlock {...block} {...blockProps} isEmbedded={isEmbedded} />
                     case 'file':
                         return (
                             <NotebookFileBlock
@@ -476,6 +476,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                 onDeleteBlock,
                 onMoveBlock,
                 onDuplicateBlock,
+                isEmbedded,
                 isLightTheme,
                 isReadOnly,
                 selectedBlockId,
@@ -511,7 +512,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
         }
 
         return (
-            <div className={classNames(styles.searchNotebook, isEmbedded && styles.isEmbedded)} ref={notebookElement}>
+            <div className={classNames(styles.searchNotebook)} ref={notebookElement}>
                 <div className="pb-1">
                     <Button
                         className="mr-2"
