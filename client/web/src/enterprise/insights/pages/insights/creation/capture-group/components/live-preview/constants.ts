@@ -1,4 +1,4 @@
-import { LineChartContent } from '../../../../../../core/backend/code-insights-backend-types'
+import { SeriesChartContent } from '../../../../../../core/backend/code-insights-backend-types'
 
 interface MockDatum {
     x: number
@@ -6,7 +6,7 @@ interface MockDatum {
     b: number
 }
 
-export const MOCK_CHART_CONTENT: LineChartContent<MockDatum> = {
+export const MOCK_CHART_CONTENT: SeriesChartContent<MockDatum> = {
     data: [
         { x: 1588965700286 - 6 * 24 * 60 * 60 * 1000, a: 20, b: 200 },
         { x: 1588965700286 - 5 * 24 * 60 * 60 * 1000, a: 40, b: 177 },

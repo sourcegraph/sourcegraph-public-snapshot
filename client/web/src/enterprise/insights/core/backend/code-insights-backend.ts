@@ -22,14 +22,10 @@ import {
     AccessibleInsightInfo,
     RemoveInsightFromDashboardInput,
     RepositorySuggestionData,
-    PieChartContent,
-    LineChartContent,
+    CategoricalChartContent,
+    SeriesChartContent,
+    UiFeaturesConfig,
 } from './code-insights-backend-types'
-
-export interface UiFeaturesConfig {
-    licensed: boolean
-    insightsLimit: number | null
-}
 
 /**
  * The main interface for code insights backend. Each backend versions should
@@ -105,14 +101,14 @@ export interface CodeInsightsBackend {
     /**
      * Returns content for the search based insight live preview chart.
      */
-    getSearchInsightContent: (input: GetSearchInsightContentInput) => Promise<LineChartContent<unknown>>
+    getSearchInsightContent: (input: GetSearchInsightContentInput) => Promise<SeriesChartContent<unknown>>
 
     /**
      * Returns content for the code stats insight live preview chart.
      */
-    getLangStatsInsightContent: (input: GetLangStatsInsightContentInput) => Promise<PieChartContent<unknown>>
+    getLangStatsInsightContent: (input: GetLangStatsInsightContentInput) => Promise<CategoricalChartContent<unknown>>
 
-    getCaptureInsightContent: (input: CaptureInsightSettings) => Promise<LineChartContent<unknown>>
+    getCaptureInsightContent: (input: CaptureInsightSettings) => Promise<SeriesChartContent<unknown>>
 
     /**
      * Returns a list of suggestions for the repositories' field in the insight creation UI.

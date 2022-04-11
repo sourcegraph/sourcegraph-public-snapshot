@@ -16,7 +16,7 @@ import {
     LivePreviewLegend,
 } from '../../../../../../components/creation-ui-kit'
 import { SeriesBasedChartTypes, SeriesChart } from '../../../../../../components/views'
-import { CodeInsightsBackendContext, LineChartContent } from '../../../../../../core'
+import { CodeInsightsBackendContext, SeriesChartContent } from '../../../../../../core'
 import { InsightStep } from '../../../search-insight'
 import { getSanitizedCaptureQuery } from '../../utils/capture-group-insight-sanitizer'
 
@@ -82,7 +82,7 @@ export const CaptureGroupCreationLivePreview: React.FunctionComponent<CaptureGro
                                         height={parent.height}
                                         // We cast to unknown here because ForwardReferenceComponent
                                         // doesn't support inferring as component with generic.
-                                        {...(MOCK_CHART_CONTENT as LineChartContent<unknown>)}
+                                        {...(MOCK_CHART_CONTENT as SeriesChartContent<unknown>)}
                                     />
                                     <LivePreviewBanner>
                                         {isAllReposMode

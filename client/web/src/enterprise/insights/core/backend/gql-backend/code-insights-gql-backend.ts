@@ -17,15 +17,14 @@ import {
 import { fromObservableQuery } from '@sourcegraph/http-client'
 
 import { ALL_INSIGHTS_DASHBOARD } from '../../constants'
-import { BackendInsight, Insight, InsightDashboard, InsightsDashboardOwner } from '../../types'
-import { CodeInsightsBackend, UiFeaturesConfig } from '../code-insights-backend'
+import { BackendInsight, Insight, InsightDashboard } from '../../types'
+import { CodeInsightsBackend } from '../code-insights-backend'
 import {
     AccessibleInsightInfo,
     AssignInsightsToDashboardInput,
     BackendInsightData,
     CaptureInsightSettings,
     DashboardCreateInput,
-    DashboardCreateResult,
     DashboardDeleteInput,
     DashboardUpdateInput,
     DashboardUpdateResult,
@@ -34,8 +33,9 @@ import {
     InsightCreateInput,
     InsightUpdateInput,
     RemoveInsightFromDashboardInput,
-    PieChartContent,
-    LineChartContent,
+    CategoricalChartContent,
+    SeriesChartContent,
+    UiFeaturesConfig,
 } from '../code-insights-backend-types'
 import { getRepositorySuggestions } from '../core/api/get-repository-suggestions'
 import { getResolvedSearchRepositories } from '../core/api/get-resolved-search-repositories'
@@ -197,14 +197,13 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
     // This is only used to check for duplicate dashboards. Thi is not required for the new GQL API.
     // So we just return null to get the form to always accept.
-    public findDashboardByName = (name: string): Observable<InsightDashboard | null> => of(null)
+    public findDashboardByName = (name: string) => of(null)
 
-    public getDashboardOwners = (): Observable<InsightsDashboardOwner[]> => getDashboardOwners(this.apolloClient)
+    public getDashboardOwners = () => getDashboardOwners(this.apolloClient)
 
-    public createDashboard = (input: DashboardCreateInput): Observable<DashboardCreateResult> =>
-        createDashboard(this.apolloClient, input)
+    public createDashboard = (input: DashboardCreateInput) => createDashboard(this.apolloClient, input)
 
-    public deleteDashboard = ({ id }: DashboardDeleteInput): Observable<void> => {
+    public deleteDashboard = ({ id }: DashboardDeleteInput) => {
         if (!id) {
             throw new Error('`id` is required to delete a dashboard')
         }
@@ -227,7 +226,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         updateDashboard(this.apolloClient, input)
 
     // Live preview fetchers
-    public getSearchInsightContent = (input: GetSearchInsightContentInput): Promise<LineChartContent<any>> =>
+    public getSearchInsightContent = (input: GetSearchInsightContentInput): Promise<SeriesChartContent<any>> =>
         getSearchInsightContent(input).then(data => {
             const { data: datumList, series, xAxis } = data
 
@@ -244,7 +243,9 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             }
         })
 
-    public getLangStatsInsightContent = (input: GetLangStatsInsightContentInput): Promise<PieChartContent<any>> =>
+    public getLangStatsInsightContent = (
+        input: GetLangStatsInsightContentInput
+    ): Promise<CategoricalChartContent<any>> =>
         getLangStatsInsightContent(input).then(data => {
             const { data: dataList, dataKey, nameKey, fillKey = '', linkURLKey = '' } = data.pies[0]
 
@@ -258,7 +259,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             }
         })
 
-    public getCaptureInsightContent = (input: CaptureInsightSettings): Promise<LineChartContent<any>> =>
+    public getCaptureInsightContent = (input: CaptureInsightSettings): Promise<SeriesChartContent<any>> =>
         getCaptureGroupInsightsPreview(this.apolloClient, input).then(data => {
             const { data: datumList, series, xAxis } = data
 

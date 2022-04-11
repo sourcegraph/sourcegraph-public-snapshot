@@ -14,7 +14,7 @@ import {
     StateStatus,
 } from '../../../../../../components/creation-ui-kit'
 import { CategoricalBasedChartTypes, CategoricalChart } from '../../../../../../components/views'
-import { CodeInsightsBackendContext, PieChartContent } from '../../../../../../core'
+import { CodeInsightsBackendContext, CategoricalChartContent } from '../../../../../../core'
 
 import { DEFAULT_PREVIEW_MOCK } from './constants'
 
@@ -82,7 +82,7 @@ export const LangStatsInsightLivePreview: React.FunctionComponent<LangStatsInsig
                                         height={parent.height}
                                         // We cast to unknown here because ForwardReferenceComponent
                                         // doesn't support inferring as component with generic.
-                                        {...(DEFAULT_PREVIEW_MOCK as PieChartContent<unknown>)}
+                                        {...(DEFAULT_PREVIEW_MOCK as CategoricalChartContent<unknown>)}
                                     />
 
                                     <LivePreviewBanner>

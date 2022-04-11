@@ -1,6 +1,6 @@
 import { random } from 'lodash'
 
-import { LineChartContent } from '../../../../../../core/backend/code-insights-backend-types'
+import { SeriesChartContent } from '../../../../../../core/backend/code-insights-backend-types'
 
 interface LivePreviewDatum {
     x: number
@@ -8,7 +8,7 @@ interface LivePreviewDatum {
     b: number
 }
 
-export const DEFAULT_MOCK_CHART_CONTENT: LineChartContent<LivePreviewDatum> = {
+export const DEFAULT_MOCK_CHART_CONTENT: SeriesChartContent<LivePreviewDatum> = {
     data: [
         { x: 1588965700286 - 6 * 24 * 60 * 60 * 1000, a: 20, b: 200 },
         { x: 1588965700286 - 5 * 24 * 60 * 60 * 1000, a: 40, b: 177 },

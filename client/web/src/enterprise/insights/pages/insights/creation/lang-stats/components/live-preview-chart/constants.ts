@@ -1,6 +1,6 @@
 import { random } from 'lodash'
 
-import { PieChartContent } from '../../../../../../core/backend/code-insights-backend-types'
+import { CategoricalChartContent } from '../../../../../../core'
 
 export interface PreviewDatum {
     name: string
@@ -8,7 +8,7 @@ export interface PreviewDatum {
     fill: string
 }
 
-export const DEFAULT_PREVIEW_MOCK: PieChartContent<PreviewDatum> = {
+export const DEFAULT_PREVIEW_MOCK: CategoricalChartContent<PreviewDatum> = {
     data: [
         {
             name: 'Covered',
@@ -26,7 +26,7 @@ export const DEFAULT_PREVIEW_MOCK: PieChartContent<PreviewDatum> = {
     getDatumValue: datum => datum.value,
 }
 
-export function getRandomLangStatsMock(): PieChartContent<PreviewDatum> {
+export function getRandomLangStatsMock(): CategoricalChartContent<PreviewDatum> {
     const randomFirstPieValue = random(0, 0.6)
     const randomSecondPieValue = 1 - randomFirstPieValue
 

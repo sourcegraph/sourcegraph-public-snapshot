@@ -16,7 +16,7 @@ import {
     LivePreviewUpdateButton,
 } from '../../../../../../components/creation-ui-kit'
 import { SeriesBasedChartTypes, SeriesChart } from '../../../../../../components/views'
-import { CodeInsightsBackendContext, LineChartContent, SearchBasedInsightSeries } from '../../../../../../core'
+import { CodeInsightsBackendContext, SeriesChartContent, SearchBasedInsightSeries } from '../../../../../../core'
 import { EditableDataSeries, InsightStep } from '../../types'
 import { getSanitizedLine } from '../../utils/insight-sanitizer'
 
@@ -100,7 +100,7 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
                                         height={parent.height}
                                         // We cast to unknown here because ForwardReferenceComponent
                                         // doesn't support inferring as component with generic.
-                                        {...(DEFAULT_MOCK_CHART_CONTENT as LineChartContent<unknown>)}
+                                        {...(DEFAULT_MOCK_CHART_CONTENT as SeriesChartContent<unknown>)}
                                     />
                                     <LivePreviewBanner>
                                         {isAllReposMode
