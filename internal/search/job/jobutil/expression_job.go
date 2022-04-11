@@ -16,7 +16,7 @@ import (
 
 // NewAndJob creates a job that will run each of its child jobs and only
 // stream matches that were found in all of the child jobs.
-func NewAndJob(children ...Job) Job {
+func NewAndJob(children ...job.Job) job.Job {
 	if len(children) == 0 {
 		return NewNoopJob()
 	} else if len(children) == 1 {
@@ -26,7 +26,7 @@ func NewAndJob(children ...Job) Job {
 }
 
 type AndJob struct {
-	children []Job
+	children []job.Job
 }
 
 func (a *AndJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
@@ -82,7 +82,7 @@ func (a *AndJob) Name() string {
 
 // NewAndJob creates a job that will run each of its child jobs and stream
 // deduplicated matches that were streamed by at least one of the jobs.
-func NewOrJob(children ...Job) Job {
+func NewOrJob(children ...job.Job) job.Job {
 	if len(children) == 0 {
 		return NewNoopJob()
 	} else if len(children) == 1 {
@@ -94,7 +94,7 @@ func NewOrJob(children ...Job) Job {
 }
 
 type OrJob struct {
-	children []Job
+	children []job.Job
 }
 
 // For OR queries, there are two phases:

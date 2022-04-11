@@ -16,7 +16,7 @@ import (
 
 // NewAlertJob creates a job that translates errors from child jobs
 // into alerts when necessary.
-func NewAlertJob(inputs *run.SearchInputs, child Job) Job {
+func NewAlertJob(inputs *run.SearchInputs, child job.Job) job.Job {
 	if _, ok := child.(*noopJob); ok {
 		return child
 	}
@@ -28,7 +28,7 @@ func NewAlertJob(inputs *run.SearchInputs, child Job) Job {
 
 type alertJob struct {
 	inputs *run.SearchInputs
-	child  Job
+	child  job.Job
 }
 
 func (j *alertJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {

@@ -12,13 +12,13 @@ import (
 
 // NewSelectJob creates a job that transforms streamed results with
 // the given filter.SelectPath.
-func NewSelectJob(path filter.SelectPath, child Job) Job {
+func NewSelectJob(path filter.SelectPath, child job.Job) job.Job {
 	return &selectJob{path: path, child: child}
 }
 
 type selectJob struct {
 	path  filter.SelectPath
-	child Job
+	child job.Job
 }
 
 func (j *selectJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {

@@ -18,12 +18,12 @@ import (
 
 // NewFilterJob creates a job that filters the streamed results
 // of its child job using the default authz.DefaultSubRepoPermsChecker.
-func NewFilterJob(child Job) Job {
+func NewFilterJob(child job.Job) job.Job {
 	return &subRepoPermsFilterJob{child: child}
 }
 
 type subRepoPermsFilterJob struct {
-	child Job
+	child job.Job
 }
 
 func (s *subRepoPermsFilterJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {

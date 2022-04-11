@@ -19,14 +19,14 @@ type repoPagerJob struct {
 	repoOptions      search.RepoOptions
 	useIndex         query.YesNoOnly // whether to include indexed repos
 	containsRefGlobs bool            // whether to include repositories with refs
-	child            Job             // child job tree that need populating a repos field to run
+	child            job.Job         // child job tree that need populating a repos field to run
 
 	zoekt zoektstreamer.Streamer
 }
 
 // setRepos populates the repos field for all jobs that need repos. Jobs are
 // copied, ensuring this function is side-effect free.
-func setRepos(job Job, indexed *zoekt.IndexedRepoRevs, unindexed []*search.RepositoryRevisions) Job {
+func setRepos(job job.Job, indexed *zoekt.IndexedRepoRevs, unindexed []*search.RepositoryRevisions) job.Job {
 	setZoektRepos := func(job *zoekt.ZoektRepoSubsetSearch) *zoekt.ZoektRepoSubsetSearch {
 		jobCopy := *job
 		jobCopy.Repos = indexed

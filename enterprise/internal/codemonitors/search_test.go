@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
@@ -68,7 +69,7 @@ func TestAddCodeMonitorHook(t *testing.T) {
 	t.Parallel()
 
 	t.Run("errors on non-commit search", func(t *testing.T) {
-		erroringJobs := []jobutil.Job{
+		erroringJobs := []job.Job{
 			jobutil.NewParallelJob(&run.RepoSearch{}, &commit.CommitSearch{}),
 			&run.RepoSearch{},
 			jobutil.NewAndJob(&searcher.SymbolSearcher{}, &commit.CommitSearch{}),
@@ -84,7 +85,7 @@ func TestAddCodeMonitorHook(t *testing.T) {
 	})
 
 	t.Run("no errors on only commit search", func(t *testing.T) {
-		nonErroringJobs := []jobutil.Job{
+		nonErroringJobs := []job.Job{
 			jobutil.NewParallelJob(&commit.CommitSearch{}, &commit.CommitSearch{}),
 			jobutil.NewAndJob(&commit.CommitSearch{}, &commit.CommitSearch{}),
 			&commit.CommitSearch{},

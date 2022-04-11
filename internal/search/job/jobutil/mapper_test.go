@@ -4,15 +4,17 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold"
+
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 )
 
 func TestMap(t *testing.T) {
-	test := func(job Job, mapper Mapper) string {
+	test := func(job job.Job, mapper Mapper) string {
 		return "\n" + PrettySexp(mapper.Map(job)) + "\n"
 	}
 
 	andMapper := Mapper{
-		MapAndJob: func(children []Job) []Job {
+		MapAndJob: func(children []job.Job) []job.Job {
 			return append(children, NewOrJob(NewNoopJob(), NewNoopJob()))
 		},
 	}

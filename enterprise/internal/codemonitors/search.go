@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/predicate"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -186,8 +187,8 @@ func Snapshot(ctx context.Context, db database.DB, query string, monitorID int64
 	return err
 }
 
-func addCodeMonitorHook(in jobutil.Job, hook commit.CodeMonitorHook) (_ jobutil.Job, err error) {
-	return jobutil.MapAtom(in, func(atom jobutil.Job) jobutil.Job {
+func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err error) {
+	return jobutil.MapAtom(in, func(atom job.Job) job.Job {
 		switch typedAtom := atom.(type) {
 		case *commit.CommitSearch:
 			jobCopy := *typedAtom

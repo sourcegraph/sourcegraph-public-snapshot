@@ -10,13 +10,14 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type sender struct {
-	Job   Job
+	Job   job.Job
 	sendC chan streaming.SearchEvent
 }
 
@@ -43,8 +44,8 @@ func (ss senders) ExitAll() {
 	}
 }
 
-func (ss senders) Jobs() []Job {
-	jobs := make([]Job, 0, len(ss))
+func (ss senders) Jobs() []job.Job {
+	jobs := make([]job.Job, 0, len(ss))
 	for _, s := range ss {
 		jobs = append(jobs, s.Job)
 	}

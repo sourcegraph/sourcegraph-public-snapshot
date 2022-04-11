@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -48,7 +49,7 @@ type Args struct {
 // query on all indexed repositories) then we need to convert our tree to
 // Zoekt's internal inputs and representation. These concerns are all handled by
 // toSearchJob.
-func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
+func ToSearchJob(jargs *Args, q query.Q, db database.DB) (job.Job, error) {
 	maxResults := q.MaxResults(jargs.SearchInputs.DefaultLimit())
 
 	b, err := query.ToBasicQuery(q)
@@ -80,8 +81,8 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 
 	repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, resultTypes, jargs.SearchInputs.PatternType, jargs.SearchInputs.OnSourcegraphDotCom)
 
-	var requiredJobs, optionalJobs []Job
-	addJob := func(required bool, job Job) {
+	var requiredJobs, optionalJobs []job.Job
+	addJob := func(required bool, job job.Job) {
 		if required {
 			requiredJobs = append(requiredJobs, job)
 		} else {
@@ -109,7 +110,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 
 			// Create Text Search jobs over repo set.
 			if !skipRepoSubsetSearch {
-				var textSearchJobs []Job
+				var textSearchJobs []job.Job
 				if runZoektOverRepos {
 					job, err := builder.newZoektSearch(search.TextRequest)
 					if err != nil {
@@ -148,7 +149,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 
 			// Create Symbol Search jobs over repo set.
 			if !skipRepoSubsetSearch {
-				var symbolSearchJobs []Job
+				var symbolSearchJobs []job.Job
 
 				if runZoektOverRepos {
 					job, err := builder.newZoektSearch(search.SymbolRequest)
@@ -417,7 +418,7 @@ type jobBuilder struct {
 	zoekt zoekt.Streamer
 }
 
-func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (Job, error) {
+func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Job, error) {
 	zoektQuery, err := search.QueryToZoektQuery(b.query, b.resultTypes, b.features, typ)
 	if err != nil {
 		return nil, err
@@ -461,7 +462,7 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (Job, e
 	return nil, errors.Errorf("attempt to create unrecognized zoekt global search with value %v", typ)
 }
 
-func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (Job, error) {
+func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, error) {
 	zoektQuery, err := search.QueryToZoektQuery(b.query, b.resultTypes, b.features, typ)
 	if err != nil {
 		return nil, err
@@ -557,7 +558,7 @@ func toFeatures(flags featureflag.FlagSet) search.Features {
 }
 
 // toAndJob creates a new job from a basic query whose pattern is an And operator at the root.
-func toAndJob(args *Args, q query.Basic, db database.DB) (Job, error) {
+func toAndJob(args *Args, q query.Basic, db database.DB) (job.Job, error) {
 	// Invariant: this function is only reachable from callers that
 	// guarantee a root node with one or more queryOperands.
 	queryOperands := q.Pattern.(query.Operator).Operands
@@ -570,7 +571,7 @@ func toAndJob(args *Args, q query.Basic, db database.DB) (Job, error) {
 	// kept in memory otherwise.
 	maxTryCount := 40000
 
-	operands := make([]Job, 0, len(queryOperands))
+	operands := make([]job.Job, 0, len(queryOperands))
 	for _, queryOperand := range queryOperands {
 		operand, err := toPatternExpressionJob(args, q.MapPattern(queryOperand), db)
 		if err != nil {
@@ -583,12 +584,12 @@ func toAndJob(args *Args, q query.Basic, db database.DB) (Job, error) {
 }
 
 // toOrJob creates a new job from a basic query whose pattern is an Or operator at the top level
-func toOrJob(args *Args, q query.Basic, db database.DB) (Job, error) {
+func toOrJob(args *Args, q query.Basic, db database.DB) (job.Job, error) {
 	// Invariant: this function is only reachable from callers that
 	// guarantee a root node with one or more queryOperands.
 	queryOperands := q.Pattern.(query.Operator).Operands
 
-	operands := make([]Job, 0, len(queryOperands))
+	operands := make([]job.Job, 0, len(queryOperands))
 	for _, term := range queryOperands {
 		operand, err := toPatternExpressionJob(args, q.MapPattern(term), db)
 		if err != nil {
@@ -599,7 +600,7 @@ func toOrJob(args *Args, q query.Basic, db database.DB) (Job, error) {
 	return NewOrJob(operands...), nil
 }
 
-func toPatternExpressionJob(args *Args, q query.Basic, db database.DB) (Job, error) {
+func toPatternExpressionJob(args *Args, q query.Basic, db database.DB) (job.Job, error) {
 	switch term := q.Pattern.(type) {
 	case query.Operator:
 		if len(term.Operands) == 0 {
@@ -624,12 +625,12 @@ func toPatternExpressionJob(args *Args, q query.Basic, db database.DB) (Job, err
 	return nil, errors.Errorf("unrecognized type %T in evaluatePatternExpression", q.Pattern)
 }
 
-func ToEvaluateJob(args *Args, q query.Basic, db database.DB) (Job, error) {
+func ToEvaluateJob(args *Args, q query.Basic, db database.DB) (job.Job, error) {
 	maxResults := q.ToParseTree().MaxResults(args.SearchInputs.DefaultLimit())
 	timeout := search.TimeoutDuration(q)
 
 	var (
-		job Job
+		job job.Job
 		err error
 	)
 	if q.Pattern == nil {
@@ -662,15 +663,15 @@ func ToEvaluateJob(args *Args, q query.Basic, db database.DB) (Job, error) {
 // converts them directly to native queries for a backed. Currently that backend
 // is Zoekt. It removes unoptimized Zoekt jobs from the baseJob and repalces it
 // with the optimized ones.
-func optimizeJobs(baseJob Job, jargs *Args, q query.Q, db database.DB) (Job, error) {
+func optimizeJobs(baseJob job.Job, jargs *Args, q query.Q, db database.DB) (job.Job, error) {
 	candidateOptimizedJobs, err := ToSearchJob(jargs, q, db)
 	if err != nil {
 		return nil, err
 	}
 
-	var optimizedJobs []Job
+	var optimizedJobs []job.Job
 	collector := Mapper{
-		MapJob: func(currentJob Job) Job {
+		MapJob: func(currentJob job.Job) job.Job {
 			switch currentJob.(type) {
 			case
 				*zoektutil.GlobalSearch,
@@ -702,7 +703,7 @@ func optimizeJobs(baseJob Job, jargs *Args, q query.Q, db database.DB) (Job, err
 	}
 
 	trimmer := Mapper{
-		MapJob: func(currentJob Job) Job {
+		MapJob: func(currentJob job.Job) job.Job {
 			switch currentJob.(type) {
 			case *zoektutil.GlobalSearch:
 				if exists("ZoektGlobalSearch") {
@@ -765,8 +766,8 @@ func optimizeJobs(baseJob Job, jargs *Args, q query.Q, db database.DB) (Job, err
 
 // FromExpandedPlan takes a query plan that has had all predicates expanded,
 // and converts it to a job.
-func FromExpandedPlan(args *Args, plan query.Plan, db database.DB) (Job, error) {
-	children := make([]Job, 0, len(plan))
+func FromExpandedPlan(args *Args, plan query.Plan, db database.DB) (job.Job, error) {
+	children := make([]job.Job, 0, len(plan))
 	for _, q := range plan {
 		child, err := ToEvaluateJob(args, q, db)
 		if err != nil {
