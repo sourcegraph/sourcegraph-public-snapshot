@@ -422,10 +422,11 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 		return server.NewNpmPackagesSyncer(c, codeintelDB, nil, urn), nil
 	case extsvc.TypeGoModules:
 		var c schema.GoModulesConnection
-		if _, err := extractOptions(&c); err != nil {
+		urn, err := extractOptions(&c)
+		if err != nil {
 			return nil, err
 		}
-		cli := gomodproxy.NewClient(&c, httpcli.ExternalDoer)
+		cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternalDoer)
 		return server.NewGoModulesSyncer(&c, codeintelDB, cli), nil
 	}
 	return &server.GitRepoSyncer{}, nil

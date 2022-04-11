@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"strconv"
 	"time"
-	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"github.com/inconshreveable/log15"
@@ -26,8 +25,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
+	"github.com/sourcegraph/sourcegraph/internal/security"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -224,22 +223,9 @@ func (u *userStore) Create(ctx context.Context, info NewUser) (newUser *types.Us
 	return newUser, err
 }
 
-// maxPasswordRunes is the maximum number of UTF-8 runes that a password can contain.
-// This safety limit is to protect us from a DDOS attack caused by hashing very large passwords on Sourcegraph.com.
-const maxPasswordRunes = 256
-
-// CheckPasswordLength returns an error if the length of the password is not in the required range.
-func CheckPasswordLength(pw string) error {
-	if pw == "" {
-		return errors.New("password empty")
-	}
-	pwLen := utf8.RuneCountInString(pw)
-	minPasswordRunes := conf.AuthMinPasswordLength()
-	if pwLen < minPasswordRunes ||
-		pwLen > maxPasswordRunes {
-		return errcode.NewPresentationError(fmt.Sprintf("Password may not be less than %d or be more than %d characters.", minPasswordRunes, maxPasswordRunes))
-	}
-	return nil
+// CheckPassword returns an error depending on the method used for validation
+func CheckPassword(pw string) error {
+	return security.ValidatePassword(pw)
 }
 
 // CreateInTransaction is like Create, except it is expected to be run from within a
@@ -251,7 +237,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 	}
 
 	if info.EnforcePasswordLength {
-		if err := CheckPasswordLength(info.Password); err != nil {
+		if err := security.ValidatePassword(info.Password); err != nil {
 			return nil, err
 		}
 	}
@@ -930,7 +916,7 @@ func (u *userStore) RenewPasswordResetCode(ctx context.Context, id int32) (strin
 // SetPassword sets the user's password given a new password and a password reset code
 func (u *userStore) SetPassword(ctx context.Context, id int32, resetCode, newPassword string) (bool, error) {
 	// 🚨 SECURITY: Check min and max password length
-	if err := CheckPasswordLength(newPassword); err != nil {
+	if err := CheckPassword(newPassword); err != nil {
 		return false, err
 	}
 
@@ -979,7 +965,7 @@ func (u *userStore) UpdatePassword(ctx context.Context, id int32, oldPassword, n
 		return errors.New("wrong old password")
 	}
 
-	if err := CheckPasswordLength(newPassword); err != nil {
+	if err := CheckPassword(newPassword); err != nil {
 		return err
 	}
 
@@ -999,7 +985,7 @@ func (u *userStore) UpdatePassword(ctx context.Context, id int32, oldPassword, n
 // don't have any valid login connections.
 func (u *userStore) CreatePassword(ctx context.Context, id int32, password string) error {
 	// 🚨 SECURITY: Check min and max password length
-	if err := CheckPasswordLength(password); err != nil {
+	if err := CheckPassword(password); err != nil {
 		return err
 	}
 

@@ -1,3 +1,5 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .search-notebook-page {
     background: var(--color-bg-1);
     overflow: auto;
@@ -6,11 +8,50 @@
 .spacer {
     // Allows scrolling past last blocks in the notebook
     // for easier editing.
-    height: 30rem;
+    height: 80vh;
 }
 
 .auto-save-indicator {
     font-size: 1rem !important;
     width: 1rem !important;
     height: 1rem !important;
+}
+
+.columns {
+    display: flex;
+}
+
+.side-column {
+    flex: 2;
+
+    @media (--lg-breakpoint-down) {
+        display: none;
+    }
+}
+
+.right-column {
+    // Reduce the size of the right column if screen size is max calc($viewport-xl + 20rem) = 1520px,
+    // to give more space to the outline and the notebook.
+    @media (max-width: 1520px) {
+        flex: 1;
+    }
+}
+
+.left-column {
+    position: sticky;
+    top: 0;
+    // Subtract the height of the navbar
+    height: calc(100vh - 2.5rem);
+    margin-right: 1rem;
+}
+
+.center-column {
+    flex: 3;
+    min-width: #{$viewport-lg};
+    max-width: #{$viewport-xl};
+    padding: 0 1rem;
+
+    @media (--lg-breakpoint-down) {
+        min-width: 0;
+    }
 }
