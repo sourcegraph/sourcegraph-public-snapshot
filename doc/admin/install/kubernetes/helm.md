@@ -256,7 +256,7 @@ This section is aimed at providing high-level guidance on deploying Sourcegraph 
 1. You need to have a GKE cluster (>=1.19) with the `HTTP Load Balancing` addon enabled. Alternatively, you can use your own choice of Ingress Controller and disable the `HTTP Load Balancing` add-on, [learn more](https://cloud.google.com/kubernetes-engine/docs/how-to/custom-ingress-controller).
 1. Your account should have sufficient access rights, equivalent to the `cluster-admin` ClusterRole.
 1. Connect to your cluster (via either the console or the command line using `gcloud`) and ensure the cluster is up and running by running: `kubectl get nodes` (several `ready` nodes should be listed)
-1. Have the Helm CLI installed and run the following command to link to the Sourcegraph helm repository
+1. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository
 
 ```sh
 helm repo add sourcegraph https://sourcegraph.github.io/deploy-sourcegraph-helm/
@@ -390,7 +390,7 @@ Now the deployment is complete, more information on configuring the Sourcegraph 
 > You may consider deploying your own Ingress Controller instead of the ALB Ingress Controller, [learn more](https://kubernetes.github.io/ingress-nginx/)
 1. Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
 1. Connect to your cluster (via either the console or the command line using `eksctl`) and ensure the cluster is up and running using: `kubectl get nodes` (several `ready` nodes should be listed)
-1. Have the Helm CLI installed and run the following command to link to the Sourcegraph helm repository
+1. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository
 
 ```sh
 helm repo add sourcegraph https://sourcegraph.github.io/deploy-sourcegraph-helm/
@@ -472,7 +472,7 @@ Now the deployment is complete, more information on configuring the Sourcegraph 
 > You may consider using your custom Ingress Controller instead of Application Gateway, [learn more](https://docs.microsoft.com/en-us/azure/aks/ingress-basic)
 1. Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
 1. Connect to your cluster (via either the console or the command line using the Azure CLI) and ensure the cluster is up and running using: `kubectl get nodes` (several `ready` nodes should be listed)
-1. Have the Helm CLI installed and run the following command to link to the Sourcegraph helm repository:
+1. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository:
 
 ```sh
 helm repo add sourcegraph https://sourcegraph.github.io/deploy-sourcegraph-helm/
@@ -558,7 +558,7 @@ Now the deployment is complete, more information on configuring the Sourcegraph 
    - [x] Block Storage CSI driver
 1. Your account should have sufficient access privileges, equivalent to the `cluster-admin` ClusterRole.
 1. Connect to your cluster (via either the console or the command line using the relevant CLI tool) and ensure the cluster is up and running using: `kubectl get nodes` (several `ready` nodes should be listed)
-1. Have the Helm CLI installed and run the following command to link to the Sourcegraph helm repository:
+1. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository:
 
 ```sh
 helm repo add sourcegraph https://sourcegraph.github.io/deploy-sourcegraph-helm/
