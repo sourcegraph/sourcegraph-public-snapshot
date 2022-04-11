@@ -15,16 +15,14 @@ import (
 func TestToSearchInputs(t *testing.T) {
 	test := func(input string, protocol search.Protocol, parser func(string) (query.Q, error)) string {
 		q, _ := parser(input)
-		args := &Args{
-			SearchInputs: &run.SearchInputs{
-				UserSettings:        &schema.Settings{},
-				PatternType:         query.SearchTypeLiteral,
-				Protocol:            protocol,
-				OnSourcegraphDotCom: true,
-			},
+		inputs := &run.SearchInputs{
+			UserSettings:        &schema.Settings{},
+			PatternType:         query.SearchTypeLiteral,
+			Protocol:            protocol,
+			OnSourcegraphDotCom: true,
 		}
 
-		j, _ := ToSearchJob(args, q, database.NewMockDB())
+		j, _ := ToSearchJob(inputs, q, database.NewMockDB())
 		return "\n" + PrettySexp(j) + "\n"
 	}
 

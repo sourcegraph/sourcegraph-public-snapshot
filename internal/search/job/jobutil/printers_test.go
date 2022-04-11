@@ -189,13 +189,11 @@ func TestPrettyJSON(t *testing.T) {
 							NewNoopJob()))))))))
 	test := func(input string) string {
 		q, _ := query.ParseLiteral(input)
-		args := &Args{
-			SearchInputs: &run.SearchInputs{
-				UserSettings: &schema.Settings{},
-				Protocol:     search.Streaming,
-			},
+		inputs := &run.SearchInputs{
+			UserSettings: &schema.Settings{},
+			Protocol:     search.Streaming,
 		}
-		j, _ := ToSearchJob(args, q, database.NewMockDB())
+		j, _ := ToSearchJob(inputs, q, database.NewMockDB())
 		return PrettyJSONVerbose(j)
 	}
 

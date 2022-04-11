@@ -48,25 +48,25 @@ type Args struct {
 // query on all indexed repositories) then we need to convert our tree to
 // Zoekt's internal inputs and representation. These concerns are all handled by
 // toSearchJob.
-func ToSearchJob(jargs *Args, q query.Q, db database.DB) (job.Job, error) {
-	maxResults := q.MaxResults(jargs.SearchInputs.DefaultLimit())
+func ToSearchJob(searchInputs *run.SearchInputs, q query.Q, db database.DB) (job.Job, error) {
+	maxResults := q.MaxResults(searchInputs.DefaultLimit())
 
 	b, err := query.ToBasicQuery(q)
 	if err != nil {
 		return nil, err
 	}
 	types, _ := q.StringValues(query.FieldType)
-	resultTypes := search.ComputeResultTypes(types, b, jargs.SearchInputs.PatternType)
-	patternInfo := search.ToTextPatternInfo(b, resultTypes, jargs.SearchInputs.Protocol)
+	resultTypes := search.ComputeResultTypes(types, b, searchInputs.PatternType)
+	patternInfo := search.ToTextPatternInfo(b, resultTypes, searchInputs.Protocol)
 
 	// searcher to use full deadline if timeout: set or we are streaming.
-	useFullDeadline := q.Timeout() != nil || q.Count() != nil || jargs.SearchInputs.Protocol == search.Streaming
+	useFullDeadline := q.Timeout() != nil || q.Count() != nil || searchInputs.Protocol == search.Streaming
 
-	fileMatchLimit := int32(computeFileMatchLimit(b, jargs.SearchInputs.Protocol))
+	fileMatchLimit := int32(computeFileMatchLimit(b, searchInputs.Protocol))
 	selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
 
-	features := toFeatures(jargs.SearchInputs.Features)
-	repoOptions := toRepoOptions(q, jargs.SearchInputs.UserSettings)
+	features := toFeatures(searchInputs.Features)
+	repoOptions := toRepoOptions(q, searchInputs.UserSettings)
 
 	builder := &jobBuilder{
 		query:          b,
@@ -77,7 +77,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (job.Job, error) {
 		selector:       selector,
 	}
 
-	repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, resultTypes, jargs.SearchInputs.PatternType, jargs.SearchInputs.OnSourcegraphDotCom)
+	repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, resultTypes, searchInputs.PatternType, searchInputs.OnSourcegraphDotCom)
 
 	var requiredJobs, optionalJobs []job.Job
 	addJob := func(required bool, job job.Job) {
@@ -597,10 +597,10 @@ func toPatternExpressionJob(args *Args, q query.Basic, db database.DB) (job.Job,
 		case query.Or:
 			return toOrJob(args, q, db)
 		case query.Concat:
-			return ToSearchJob(args, q.ToParseTree(), db)
+			return ToSearchJob(args.SearchInputs, q.ToParseTree(), db)
 		}
 	case query.Pattern:
-		return ToSearchJob(args, q.ToParseTree(), db)
+		return ToSearchJob(args.SearchInputs, q.ToParseTree(), db)
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
 		return NewNoopJob(), nil
@@ -618,7 +618,7 @@ func ToEvaluateJob(args *Args, q query.Basic, db database.DB) (job.Job, error) {
 		err error
 	)
 	if q.Pattern == nil {
-		job, err = ToSearchJob(args, query.ToNodes(q.Parameters), db)
+		job, err = ToSearchJob(args.SearchInputs, query.ToNodes(q.Parameters), db)
 	} else {
 		job, err = toPatternExpressionJob(args, q, db)
 		if err != nil {
@@ -648,7 +648,7 @@ func ToEvaluateJob(args *Args, q query.Basic, db database.DB) (job.Job, error) {
 // is Zoekt. It removes unoptimized Zoekt jobs from the baseJob and repalces it
 // with the optimized ones.
 func optimizeJobs(baseJob job.Job, jargs *Args, q query.Q, db database.DB) (job.Job, error) {
-	candidateOptimizedJobs, err := ToSearchJob(jargs, q, db)
+	candidateOptimizedJobs, err := ToSearchJob(jargs.SearchInputs, q, db)
 	if err != nil {
 		return nil, err
 	}
