@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	lua "github.com/yuin/gopher-lua"
 
@@ -43,7 +44,47 @@ func TestSandboxHasNoIO(t *testing.T) {
 	})
 }
 
-func TestRunWithBasicModule(t *testing.T) {
+func TestSandboxMaxTimeout(t *testing.T) {
+	ctx := context.Background()
+
+	sandbox, err := newService(&observation.TestContext).CreateSandbox(ctx, CreateOptions{})
+	if err != nil {
+		t.Fatalf("unexpected error creating sandbox: %s", err)
+	}
+	defer sandbox.Close()
+
+	script := `
+		while true do end
+	`
+	if _, err := sandbox.RunScript(ctx, RunOptions{Timeout: time.Millisecond}, script); err == nil {
+		t.Fatalf("expected error running script")
+	} else if !strings.Contains(err.Error(), context.DeadlineExceeded.Error()) {
+		t.Fatalf("unexpected error running script: %#v", err)
+	}
+}
+
+func TestRunScript(t *testing.T) {
+	ctx := context.Background()
+
+	sandbox, err := newService(&observation.TestContext).CreateSandbox(ctx, CreateOptions{})
+	if err != nil {
+		t.Fatalf("unexpected error creating sandbox: %s", err)
+	}
+	defer sandbox.Close()
+
+	script := `
+		return 38 + 4
+	`
+	retValue, err := sandbox.RunScript(ctx, RunOptions{}, script)
+	if err != nil {
+		t.Fatalf("unexpected error running script: %s", err)
+	}
+	if lua.LVAsNumber(retValue) != 42 {
+		t.Errorf("unexpected return value. want=%d have=%v", 42, retValue)
+	}
+}
+
+func TestModule(t *testing.T) {
 	var stashedValue lua.LValue
 
 	api := map[string]lua.LGFunction{
@@ -93,5 +134,43 @@ func TestRunWithBasicModule(t *testing.T) {
 	}
 	if lua.LVAsNumber(stashedValue) != 18 {
 		t.Errorf("unexpected stashed value. want=%d have=%d", 18, stashedValue)
+	}
+}
+
+func TestCall(t *testing.T) {
+	ctx := context.Background()
+
+	sandbox, err := newService(&observation.TestContext).CreateSandbox(ctx, CreateOptions{})
+	if err != nil {
+		t.Fatalf("unexpected error creating sandbox: %s", err)
+	}
+	defer sandbox.Close()
+
+	script := `
+		local value = 0
+		local callback = function(multiplier)
+			value = value + 1
+			return value * multiplier
+		end
+		return callback
+	`
+	retValue, err := sandbox.RunScript(ctx, RunOptions{}, script)
+	if err != nil {
+		t.Fatalf("unexpected error running script: %s", err)
+	}
+	callback, ok := retValue.(*lua.LFunction)
+	if !ok {
+		t.Fatalf("unexpected return type")
+	}
+
+	multiplier := 6
+	for value := 1; value < 5; value++ {
+		expectedValue := value * multiplier
+
+		if retValue, err := sandbox.Call(ctx, RunOptions{}, callback, multiplier); err != nil {
+			t.Fatalf("unexpected error invoking callback: %s", err)
+		} else if int(lua.LVAsNumber(retValue)) != expectedValue {
+			t.Errorf("unexpected value from callback #%d. want=%d have=%v", value, expectedValue, retValue)
+		}
 	}
 }

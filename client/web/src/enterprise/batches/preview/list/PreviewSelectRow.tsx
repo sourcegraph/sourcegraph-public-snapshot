@@ -81,8 +81,17 @@ export const PreviewSelectRow: React.FunctionComponent<PreviewSelectRowProps> = 
                 const dropdownAction: Action = {
                     ...action,
                     onTrigger: onDone => {
+                        const specIDs = selected === 'all' ? allChangesetSpecIDs : [...selected]
+                        if (!specIDs) {
+                            // allChangesetSpecIDs hasn't populated yet: it
+                            // shouldn't be possible to set selected to 'all' if
+                            // that's the case, but to be safe, we'll just bail
+                            // early if that somehow happens.
+                            return
+                        }
+
                         updatePublicationStates(
-                            [...selected].map(changeSpecID => ({
+                            specIDs.map(changeSpecID => ({
                                 changesetSpec: changeSpecID,
                                 publicationState: getPublicationStateFromAction(action),
                             }))
@@ -94,7 +103,7 @@ export const PreviewSelectRow: React.FunctionComponent<PreviewSelectRowProps> = 
 
                 return dropdownAction
             }),
-        [deselectAll, selected, updatePublicationStates]
+        [allChangesetSpecIDs, deselectAll, selected, updatePublicationStates]
     )
 
     return (
