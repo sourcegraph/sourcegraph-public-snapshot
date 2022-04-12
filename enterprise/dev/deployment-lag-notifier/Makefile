@@ -1,6 +1,6 @@
 all: run
 
-build:
+build: clean
 	go build
 
 clean:

@@ -22,7 +22,7 @@ type Flags struct {
 	DryRun          bool
 	Environment     string
 	SlackWebhookURL string
-	SgDir           string
+	NumCommits      int
 }
 
 // Parse parses the CLI flags and stores them in a configuration struct
@@ -30,6 +30,7 @@ func (f *Flags) Parse() {
 	flag.BoolVar(&f.DryRun, "dry-run", false, "Print to stdout instead of sending to Slack")
 	flag.StringVar(&f.Environment, "env", Getenv("SG_ENVIRONMENT", "cloud"), "Environment to check against")
 	flag.StringVar(&f.SlackWebhookURL, "slack-webhook-url", os.Getenv("SLACK_WEBHOOK_URL"), "Slack webhook URL to post to")
+	flag.IntVar(&f.NumCommits, "num-commits", 20, "Number of commits to allow deployed version to drift from main")
 	flag.Parse()
 }
 
@@ -110,7 +111,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	commitLog, err := getCommitLog(&client)
+	commitLog, err := getCommitLog(&client, flags.NumCommits)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -123,8 +124,9 @@ func main() {
 	slack := NewSlackClient(flags.SlackWebhookURL)
 
 	current := checkForCommit(version, commitLog)
-	if !current {
-		msg, err := createMessage(version[:7], flags.Environment, currentCommit)
+	// Always at least print locally when running a dry-run
+	if !current || flags.DryRun {
+		msg, err := createMessage(version[:7], flags.Environment, currentCommit, flags.NumCommits)
 		if !flags.DryRun {
 			err = slack.PostMessage(msg)
 			if err != nil {
@@ -134,6 +136,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		log.Println(msg.String())
 	}
 
 	log.Printf("Cloud is current? %v\n", checkForCommit(version, commitLog))

@@ -79,12 +79,12 @@ func (s *SlackClient) PostMessage(b bytes.Buffer) error {
 
 // createMessage renders a template and returns teh result as a bytes.Buffer to either
 // be printed or posted to Slack
-func createMessage(version, environment string, current Commit) (bytes.Buffer, error) {
+func createMessage(version, environment string, current Commit, numCommits int) (bytes.Buffer, error) {
 	var msg bytes.Buffer
 
 	drift := time.Now().Sub(current.Date).Hours()
 
-	var slackTemplate = `:warning: *{{.Environment}}*'s version was not found in the last 20 commits.
+	var slackTemplate = `:warning: *{{.Environment}}*'s version was not found in the last {{.NumCommits}} commits.
 
 Current version: ` + "`{{ .Version }}`" + ` was committed *{{.Drift}} hours ago*. 
 
@@ -97,10 +97,10 @@ cc <!subteam^S02NFV6A536|devops-support>
 		Version     string
 		Environment string
 		Drift       string
+		NumCommits  int
 	}
 
-	td := templateData{Version: version, Environment: environment, Drift: fmt.Sprintf("%.2f", drift)}
-	// td := templateData{Version: version, Environment: environment}
+	td := templateData{Version: version, Environment: environment, Drift: fmt.Sprintf("%.2f", drift), NumCommits: numCommits}
 
 	tpl, err := template.New("slack-message").Parse(slackTemplate)
 	if err != nil {

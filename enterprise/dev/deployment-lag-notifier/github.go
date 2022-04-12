@@ -78,7 +78,7 @@ func getCommit(client *http.Client, sha string) (Commit, error) {
 }
 
 // getCommitLog fetches the last 20 commits of sourcegraph/sourcegraph@main from the Github API
-func getCommitLog(client *http.Client) ([]Commit, error) {
+func getCommitLog(client *http.Client, numCommits int) ([]Commit, error) {
 	var commits []Commit
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -93,7 +93,7 @@ func getCommitLog(client *http.Client) ([]Commit, error) {
 
 	q := req.URL.Query()
 	q.Add("branch", "main")
-	q.Add("per_page", "20")
+	q.Add("per_page", fmt.Sprintf("%v", numCommits))
 	q.Add("page", "1")
 
 	req.URL.RawQuery = q.Encode()
