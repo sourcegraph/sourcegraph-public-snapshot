@@ -514,7 +514,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 		Args:           c.args[1:],
 		NoTimeout:      c.noTimeout,
 	}
-	resp, err := c.httpPost(ctx, repoName, "exec", req)
+	resp, err := c.execFn(ctx, repoName, "exec", req)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -836,7 +836,7 @@ type Cmd struct {
 	args           []string
 	noTimeout      bool
 	exitStatus     int
-	httpPost       func(ctx context.Context, repo api.RepoName, op string, payload interface{}) (resp *http.Response, err error)
+	execFn         func(ctx context.Context, repo api.RepoName, op string, payload interface{}) (resp *http.Response, err error)
 }
 
 // DividedOutput runs the command and returns its standard output and standard error.
@@ -945,9 +945,9 @@ func (c *ClientImplementor) Command(repo api.RepoName, name string, arg ...strin
 		panic("gitserver: command name must be 'git'")
 	}
 	return &Cmd{
-		repo:     repo,
-		httpPost: c.httpPost,
-		args:     append([]string{"git"}, arg...),
+		repo:   repo,
+		execFn: c.httpPost,
+		args:   append([]string{"git"}, arg...),
 	}
 }
 
