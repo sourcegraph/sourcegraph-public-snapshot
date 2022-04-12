@@ -5,7 +5,6 @@ import (
 
 	"github.com/hexops/autogold"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -22,7 +21,7 @@ func TestToSearchInputs(t *testing.T) {
 			OnSourcegraphDotCom: true,
 		}
 
-		j, _ := ToSearchJob(inputs, q, database.NewMockDB())
+		j, _ := ToSearchJob(inputs, q)
 		return "\n" + PrettySexp(j) + "\n"
 	}
 
@@ -181,7 +180,7 @@ func TestToEvaluateJob(t *testing.T) {
 		}
 
 		b, _ := query.ToBasicQuery(q)
-		j, _ := ToEvaluateJob(inputs, b, database.NewMockDB())
+		j, _ := ToEvaluateJob(inputs, b)
 		return "\n" + PrettySexp(j) + "\n"
 	}
 
@@ -219,8 +218,8 @@ func Test_optimizeJobs(t *testing.T) {
 		}
 
 		b, _ := query.ToBasicQuery(q)
-		baseJob, _ := toPatternExpressionJob(inputs, b, database.NewMockDB())
-		optimizedJob, _ := optimizeJobs(baseJob, inputs, b.ToParseTree(), database.NewMockDB())
+		baseJob, _ := toPatternExpressionJob(inputs, b)
+		optimizedJob, _ := optimizeJobs(baseJob, inputs, b.ToParseTree())
 		return "\nBASE:\n\n" + PrettySexp(baseJob) + "\n\nOPTIMIZED:\n\n" + PrettySexp(optimizedJob) + "\n"
 	}
 

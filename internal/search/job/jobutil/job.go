@@ -10,7 +10,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
@@ -40,7 +39,7 @@ import (
 // query on all indexed repositories) then we need to convert our tree to
 // Zoekt's internal inputs and representation. These concerns are all handled by
 // toSearchJob.
-func ToSearchJob(searchInputs *run.SearchInputs, q query.Q, db database.DB) (job.Job, error) {
+func ToSearchJob(searchInputs *run.SearchInputs, q query.Q) (job.Job, error) {
 	maxResults := q.MaxResults(searchInputs.DefaultLimit())
 
 	b, err := query.ToBasicQuery(q)
@@ -534,7 +533,7 @@ func toFeatures(flags featureflag.FlagSet) search.Features {
 }
 
 // toAndJob creates a new job from a basic query whose pattern is an And operator at the root.
-func toAndJob(inputs *run.SearchInputs, q query.Basic, db database.DB) (job.Job, error) {
+func toAndJob(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
 	// Invariant: this function is only reachable from callers that
 	// guarantee a root node with one or more queryOperands.
 	queryOperands := q.Pattern.(query.Operator).Operands
@@ -549,7 +548,7 @@ func toAndJob(inputs *run.SearchInputs, q query.Basic, db database.DB) (job.Job,
 
 	operands := make([]job.Job, 0, len(queryOperands))
 	for _, queryOperand := range queryOperands {
-		operand, err := toPatternExpressionJob(inputs, q.MapPattern(queryOperand), db)
+		operand, err := toPatternExpressionJob(inputs, q.MapPattern(queryOperand))
 		if err != nil {
 			return nil, err
 		}
@@ -560,14 +559,14 @@ func toAndJob(inputs *run.SearchInputs, q query.Basic, db database.DB) (job.Job,
 }
 
 // toOrJob creates a new job from a basic query whose pattern is an Or operator at the top level
-func toOrJob(inputs *run.SearchInputs, q query.Basic, db database.DB) (job.Job, error) {
+func toOrJob(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
 	// Invariant: this function is only reachable from callers that
 	// guarantee a root node with one or more queryOperands.
 	queryOperands := q.Pattern.(query.Operator).Operands
 
 	operands := make([]job.Job, 0, len(queryOperands))
 	for _, term := range queryOperands {
-		operand, err := toPatternExpressionJob(inputs, q.MapPattern(term), db)
+		operand, err := toPatternExpressionJob(inputs, q.MapPattern(term))
 		if err != nil {
 			return nil, err
 		}
@@ -576,7 +575,7 @@ func toOrJob(inputs *run.SearchInputs, q query.Basic, db database.DB) (job.Job, 
 	return NewOrJob(operands...), nil
 }
 
-func toPatternExpressionJob(inputs *run.SearchInputs, q query.Basic, db database.DB) (job.Job, error) {
+func toPatternExpressionJob(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
 	switch term := q.Pattern.(type) {
 	case query.Operator:
 		if len(term.Operands) == 0 {
@@ -585,14 +584,14 @@ func toPatternExpressionJob(inputs *run.SearchInputs, q query.Basic, db database
 
 		switch term.Kind {
 		case query.And:
-			return toAndJob(inputs, q, db)
+			return toAndJob(inputs, q)
 		case query.Or:
-			return toOrJob(inputs, q, db)
+			return toOrJob(inputs, q)
 		case query.Concat:
-			return ToSearchJob(inputs, q.ToParseTree(), db)
+			return ToSearchJob(inputs, q.ToParseTree())
 		}
 	case query.Pattern:
-		return ToSearchJob(inputs, q.ToParseTree(), db)
+		return ToSearchJob(inputs, q.ToParseTree())
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
 		return NewNoopJob(), nil
@@ -601,7 +600,7 @@ func toPatternExpressionJob(inputs *run.SearchInputs, q query.Basic, db database
 	return nil, errors.Errorf("unrecognized type %T in evaluatePatternExpression", q.Pattern)
 }
 
-func ToEvaluateJob(inputs *run.SearchInputs, q query.Basic, db database.DB) (job.Job, error) {
+func ToEvaluateJob(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
 	maxResults := q.ToParseTree().MaxResults(inputs.DefaultLimit())
 	timeout := search.TimeoutDuration(q)
 
@@ -610,16 +609,16 @@ func ToEvaluateJob(inputs *run.SearchInputs, q query.Basic, db database.DB) (job
 		err error
 	)
 	if q.Pattern == nil {
-		job, err = ToSearchJob(inputs, query.ToNodes(q.Parameters), db)
+		job, err = ToSearchJob(inputs, query.ToNodes(q.Parameters))
 	} else {
-		job, err = toPatternExpressionJob(inputs, q, db)
+		job, err = toPatternExpressionJob(inputs, q)
 		if err != nil {
 			return nil, err
 		}
 		if _, ok := q.Pattern.(query.Pattern); !ok {
 			// This pattern is not an atomic Pattern, but an
 			// expression. Optimize the expression for backends.
-			job, err = optimizeJobs(job, inputs, q.ToParseTree(), db)
+			job, err = optimizeJobs(job, inputs, q.ToParseTree())
 		}
 	}
 	if err != nil {
@@ -639,8 +638,8 @@ func ToEvaluateJob(inputs *run.SearchInputs, q query.Basic, db database.DB) (job
 // converts them directly to native queries for a backed. Currently that backend
 // is Zoekt. It removes unoptimized Zoekt jobs from the baseJob and repalces it
 // with the optimized ones.
-func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Q, db database.DB) (job.Job, error) {
-	candidateOptimizedJobs, err := ToSearchJob(inputs, q, db)
+func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Q) (job.Job, error) {
+	candidateOptimizedJobs, err := ToSearchJob(inputs, q)
 	if err != nil {
 		return nil, err
 	}
@@ -741,10 +740,10 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Q, db datab
 
 // FromExpandedPlan takes a query plan that has had all predicates expanded,
 // and converts it to a job.
-func FromExpandedPlan(inputs *run.SearchInputs, plan query.Plan, db database.DB) (job.Job, error) {
+func FromExpandedPlan(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
 	children := make([]job.Job, 0, len(plan))
 	for _, q := range plan {
-		child, err := ToEvaluateJob(inputs, q, db)
+		child, err := ToEvaluateJob(inputs, q)
 		if err != nil {
 			return nil, err
 		}

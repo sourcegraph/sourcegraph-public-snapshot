@@ -32,7 +32,7 @@ func Execute(
 		return nil, err
 	}
 
-	planJob, err := jobutil.FromExpandedPlan(inputs, plan, clients.DB)
+	planJob, err := jobutil.FromExpandedPlan(inputs, plan)
 	if err != nil {
 		return nil, err
 	}
