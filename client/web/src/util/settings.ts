@@ -5,7 +5,6 @@ import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/setting
 
 import { AuthenticatedUser } from '../auth'
 import { LayoutProps } from '../Layout'
-import { parseSearchURLPatternType } from '../search'
 
 /** A fallback settings subject that can be constructed synchronously at initialization time. */
 export function siteSubjectNoAdmin(): Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'> {
@@ -28,32 +27,38 @@ export function viewerSubjectFromSettings(
     return siteSubjectNoAdmin()
 }
 
+/**
+ * Returns the user-configured search pattern type or undefined if not
+ * configured by the user.
+ */
 export function defaultPatternTypeFromSettings(settingsCascade: SettingsCascadeOrError): SearchPatternType | undefined {
-    // When the web app mounts, if the current page does not have a patternType URL
-    // parameter, set the search pattern type to the defaultPatternType from settings
-    // (if it is set), otherwise default to literal.
-    //
-    // For search result URLs that have no patternType= query parameter,
-    // the `SearchResults` component will append &patternType=regexp
-    // to the URL to ensure legacy search links continue to work.
-    if (!parseSearchURLPatternType(window.location.search)) {
-        const defaultPatternType =
-            settingsCascade.final &&
-            !isErrorLike(settingsCascade.final) &&
-            (settingsCascade.final['search.defaultPatternType'] as SearchPatternType.literal)
-        return defaultPatternType || SearchPatternType.literal
-    }
-    return
+    return getFromSettings(settingsCascade, 'search.defaultPatternType')
 }
 
-export function defaultCaseSensitiveFromSettings(settingsCascade: SettingsCascadeOrError): boolean {
-    // Analogous to defaultPatternTypeFromSettings, but for case sensitivity.
-    if (!parseSearchURLPatternType(window.location.search)) {
-        const defaultCaseSensitive =
-            settingsCascade.final &&
-            !isErrorLike(settingsCascade.final) &&
-            (settingsCascade.final['search.defaultCaseSensitive'] as boolean)
-        return defaultCaseSensitive || false
+/**
+ * Returns the user-configured case sensitivity setting or undefined if not
+ * configured by the user.
+ */
+export function defaultCaseSensitiveFromSettings(settingsCascade: SettingsCascadeOrError): boolean | undefined {
+    return getFromSettings(settingsCascade, 'search.defaultCaseSensitive')
+}
+
+/**
+ * Returns undefined if the settings cannot be loaded or if the setting doesn't
+ * exist.
+ */
+function getFromSettings<T>(settingsCascade: SettingsCascadeOrError, setting: string): T | undefined {
+    if (!settingsCascade.final) {
+        return undefined
     }
-    return false
+    if (isErrorLike(settingsCascade.final)) {
+        return undefined
+    }
+
+    const value = settingsCascade.final[setting]
+    if (value !== undefined) {
+        return value as T
+    }
+
+    return undefined
 }

@@ -11,6 +11,8 @@ import (
 // limit mappings for each instance of our services.
 var DefaultRegistry = NewRegistry()
 
+const defaultBurst = 10
+
 // NewRegistry creates and returns an empty rate limit registry.
 func NewRegistry() *Registry {
 	return &Registry{
@@ -46,7 +48,7 @@ func (r *Registry) GetOrSet(urn string, fallback *rate.Limiter) *rate.Limiter {
 	l := r.rateLimiters[urn]
 	if l == nil {
 		if fallback == nil {
-			fallback = rate.NewLimiter(rate.Inf, 1)
+			fallback = rate.NewLimiter(rate.Inf, defaultBurst)
 		}
 		r.rateLimiters[urn] = fallback
 		return fallback

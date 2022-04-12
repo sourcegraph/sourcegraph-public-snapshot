@@ -1,4 +1,7 @@
 import { escapeRegExp } from 'lodash'
+// We're using marked import here to access the `marked` package type definitions.
+// eslint-disable-next-line no-restricted-imports
+import { marked, Renderer } from 'marked'
 import { Observable, forkJoin, of } from 'rxjs'
 import { startWith, catchError, mapTo, map, switchMap } from 'rxjs/operators'
 import * as uuid from 'uuid'
@@ -15,6 +18,8 @@ import { parseBrowserRepoURL } from '../../util/url'
 import { createNotebook } from '../backend'
 import { fetchSuggestions } from '../blocks/suggestions/suggestions'
 import { blockToGQLInput, serializeBlockToMarkdown } from '../serialize'
+
+import markdownBlockStyles from '../blocks/markdown/NotebookMarkdownBlock.module.scss'
 
 const DONE = 'DONE' as const
 
@@ -68,6 +73,24 @@ function findSymbolAtRevision(
     )
 }
 
+export class NotebookHeadingMarkdownRenderer extends Renderer {
+    public heading(
+        this: marked.Renderer<never>,
+        text: string,
+        level: 1 | 2 | 3 | 4 | 5 | 6,
+        raw: string,
+        slugger: marked.Slugger
+    ): string {
+        const headerPrefix = this.options.headerPrefix ?? ''
+        const slug = slugger.slug(raw)
+        const headingId = `${slug}-${headerPrefix}`
+        return `<h${level} id="${headingId}">
+            <a class="${markdownBlockStyles.headingLink}" href="#${headingId}">#</a>
+            <span>${text}</span>
+        </h${level}>\n`
+    }
+}
+
 export class Notebook {
     private blocks: Map<string, Block>
     private blockOrder: string[]
@@ -115,7 +138,13 @@ export class Notebook {
         }
         switch (block.type) {
             case 'md':
-                this.blocks.set(block.id, { ...block, output: renderMarkdown(block.input.text) })
+                this.blocks.set(block.id, {
+                    ...block,
+                    output: renderMarkdown(block.input.text, {
+                        renderer: new NotebookHeadingMarkdownRenderer(),
+                        headerPrefix: block.id,
+                    }),
+                })
                 break
             case 'query':
                 this.blocks.set(block.id, {

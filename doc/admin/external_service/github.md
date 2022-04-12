@@ -103,7 +103,7 @@ Using webhooks is highly recommended when using [batch changes](../../batch_chan
 
 To set up webhooks:
 
-1. In Sourcegraph, go to **Site admin > Manage repositories** and edit the GitHub configuration.
+1. In Sourcegraph, go to **Site admin > Manage code hosts** and edit the GitHub configuration.
 1. Add the `"webhooks"` property to the configuration (you can generate a secret with `openssl rand -hex 32`):<br /> `"webhooks": [{"org": "your_org", "secret": "verylongrandomsecret"}]`
 1. Click **Update repositories**.
 1. Copy the webhook URL displayed below the **Update repositories** button.
