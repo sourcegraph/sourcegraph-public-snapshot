@@ -16,7 +16,7 @@ import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
 import FileDocumentOutlineIcon from 'mdi-react/FileDocumentOutlineIcon'
 import NotebookPlusIcon from 'mdi-react/NotebookPlusIcon'
-import PencilIcon from 'mdi-react/PencilIcon'
+import PenIcon from 'mdi-react/PenIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import TextBoxIcon from 'mdi-react/TextBoxIcon'
 import TrashIcon from 'mdi-react/TrashCanIcon'
@@ -291,7 +291,7 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({ initial
                 aria-expanded="true"
             >
                 <span>
-                    <Icon as={PencilIcon} />
+                    <Icon as={PenIcon} />
                     <h2 className="px-1 d-inline">Notepad</h2>
                     <small>
                         ({reversedEntries.length} note{reversedEntries.length === 1 ? '' : 's'})
