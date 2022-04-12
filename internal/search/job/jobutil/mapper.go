@@ -1,4 +1,4 @@
-package job
+package jobutil
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
@@ -15,7 +16,7 @@ import (
 )
 
 type Mapper struct {
-	MapJob func(job Job) Job
+	MapJob func(job job.Job) job.Job
 
 	// Search Jobs (leaf nodes)
 	MapZoektRepoSubsetSearchJob    func(*zoekt.ZoektRepoSubsetSearch) *zoekt.ZoektRepoSubsetSearch
@@ -33,31 +34,31 @@ type Mapper struct {
 	MapRepoPagerJob func(*repoPagerJob) *repoPagerJob
 
 	// Expression Jobs
-	MapAndJob func(children []Job) []Job
-	MapOrJob  func(children []Job) []Job
+	MapAndJob func(children []job.Job) []job.Job
+	MapOrJob  func(children []job.Job) []job.Job
 
 	// Combinator Jobs
-	MapParallelJob func(children []Job) []Job
-	MapPriorityJob func(required, optional Job) (Job, Job)
-	MapTimeoutJob  func(timeout time.Duration, child Job) (time.Duration, Job)
-	MapLimitJob    func(limit int, child Job) (int, Job)
-	MapSelectJob   func(path filter.SelectPath, child Job) (filter.SelectPath, Job)
-	MapAlertJob    func(inputs *run.SearchInputs, child Job) (*run.SearchInputs, Job)
+	MapParallelJob func(children []job.Job) []job.Job
+	MapPriorityJob func(required, optional job.Job) (job.Job, job.Job)
+	MapTimeoutJob  func(timeout time.Duration, child job.Job) (time.Duration, job.Job)
+	MapLimitJob    func(limit int, child job.Job) (int, job.Job)
+	MapSelectJob   func(path filter.SelectPath, child job.Job) (filter.SelectPath, job.Job)
+	MapAlertJob    func(inputs *run.SearchInputs, child job.Job) (*run.SearchInputs, job.Job)
 
 	// Filter Jobs
-	MapSubRepoPermsFilterJob func(child Job) Job
+	MapSubRepoPermsFilterJob func(child job.Job) job.Job
 }
 
-func (m *Mapper) Map(job Job) Job {
-	if job == nil {
+func (m *Mapper) Map(j job.Job) job.Job {
+	if j == nil {
 		return nil
 	}
 
 	if m.MapJob != nil {
-		job = m.MapJob(job)
+		j = m.MapJob(j)
 	}
 
-	switch j := job.(type) {
+	switch j := j.(type) {
 	case *zoekt.ZoektRepoSubsetSearch:
 		if m.MapZoektRepoSubsetSearchJob != nil {
 			j = m.MapZoektRepoSubsetSearchJob(j)
@@ -127,7 +128,7 @@ func (m *Mapper) Map(job Job) Job {
 		return j
 
 	case *AndJob:
-		children := make([]Job, 0, len(j.children))
+		children := make([]job.Job, 0, len(j.children))
 		for _, child := range j.children {
 			children = append(children, m.Map(child))
 		}
@@ -137,7 +138,7 @@ func (m *Mapper) Map(job Job) Job {
 		return NewAndJob(children...)
 
 	case *OrJob:
-		children := make([]Job, 0, len(j.children))
+		children := make([]job.Job, 0, len(j.children))
 		for _, child := range j.children {
 			children = append(children, m.Map(child))
 		}
@@ -147,7 +148,7 @@ func (m *Mapper) Map(job Job) Job {
 		return NewOrJob(children...)
 
 	case *ParallelJob:
-		children := make([]Job, 0, len(j.children))
+		children := make([]job.Job, 0, len(j.children))
 		for _, child := range j.children {
 			children = append(children, m.Map(child))
 		}
@@ -207,13 +208,13 @@ func (m *Mapper) Map(job Job) Job {
 		return j
 
 	default:
-		panic(fmt.Sprintf("unsupported job %T for job.Mapper", job))
+		panic(fmt.Sprintf("unsupported job %T for job.Mapper", j))
 	}
 }
 
-func MapAtom(j Job, f func(Job) Job) Job {
+func MapAtom(j job.Job, f func(job.Job) job.Job) job.Job {
 	mapper := Mapper{
-		MapJob: func(currentJob Job) Job {
+		MapJob: func(currentJob job.Job) job.Job {
 			switch typedJob := currentJob.(type) {
 			case
 				*zoekt.ZoektRepoSubsetSearch,

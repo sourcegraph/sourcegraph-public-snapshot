@@ -1,4 +1,4 @@
-package job
+package jobutil
 
 import (
 	"context"
@@ -7,8 +7,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/mockjob"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -16,8 +17,8 @@ import (
 
 func TestLimitJob(t *testing.T) {
 	t.Run("only send limit", func(t *testing.T) {
-		mockJob := NewMockJob()
-		mockJob.RunFunc.SetDefaultHook(func(ctx context.Context, db database.DB, s streaming.Sender) (*search.Alert, error) {
+		mockJob := mockjob.NewMockJob()
+		mockJob.RunFunc.SetDefaultHook(func(_ context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
 			for i := 0; i < 10; i++ {
 				s.Send(streaming.SearchEvent{
 					Results: []result.Match{&result.FileMatch{}},
@@ -32,7 +33,7 @@ func TestLimitJob(t *testing.T) {
 		})
 
 		limitJob := NewLimitJob(5, mockJob)
-		limitJob.Run(context.Background(), database.NewMockDB(), stream)
+		limitJob.Run(context.Background(), job.RuntimeClients{}, stream)
 
 		// The number sent is one more than the limit because
 		// the stream limiter only cancels after the limit is exceeded,
@@ -41,8 +42,8 @@ func TestLimitJob(t *testing.T) {
 	})
 
 	t.Run("send partial event", func(t *testing.T) {
-		mockJob := NewMockJob()
-		mockJob.RunFunc.SetDefaultHook(func(ctx context.Context, db database.DB, s streaming.Sender) (*search.Alert, error) {
+		mockJob := mockjob.NewMockJob()
+		mockJob.RunFunc.SetDefaultHook(func(ctx context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
 			for i := 0; i < 10; i++ {
 				s.Send(streaming.SearchEvent{
 					Results: []result.Match{
@@ -60,7 +61,7 @@ func TestLimitJob(t *testing.T) {
 		})
 
 		limitJob := NewLimitJob(5, mockJob)
-		limitJob.Run(context.Background(), database.NewMockDB(), stream)
+		limitJob.Run(context.Background(), job.RuntimeClients{}, stream)
 
 		// The number sent is one more than the limit because
 		// the stream limiter only cancels after the limit is exceeded,
@@ -69,8 +70,8 @@ func TestLimitJob(t *testing.T) {
 	})
 
 	t.Run("cancel after limit", func(t *testing.T) {
-		mockJob := NewMockJob()
-		mockJob.RunFunc.SetDefaultHook(func(ctx context.Context, db database.DB, s streaming.Sender) (*search.Alert, error) {
+		mockJob := mockjob.NewMockJob()
+		mockJob.RunFunc.SetDefaultHook(func(ctx context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
 			for i := 0; i < 10; i++ {
 				select {
 				case <-ctx.Done():
@@ -90,7 +91,7 @@ func TestLimitJob(t *testing.T) {
 		})
 
 		limitJob := NewLimitJob(5, mockJob)
-		limitJob.Run(context.Background(), database.NewMockDB(), stream)
+		limitJob.Run(context.Background(), job.RuntimeClients{}, stream)
 
 		// The number sent is one more than the limit because
 		// the stream limiter only cancels after the limit is exceeded,
@@ -106,13 +107,13 @@ func TestLimitJob(t *testing.T) {
 
 func TestTimeoutJob(t *testing.T) {
 	t.Run("timeout works", func(t *testing.T) {
-		timeoutWaiter := NewMockJob()
-		timeoutWaiter.RunFunc.SetDefaultHook(func(ctx context.Context, _ database.DB, _ streaming.Sender) (*search.Alert, error) {
+		timeoutWaiter := mockjob.NewMockJob()
+		timeoutWaiter.RunFunc.SetDefaultHook(func(ctx context.Context, _ job.RuntimeClients, _ streaming.Sender) (*search.Alert, error) {
 			<-ctx.Done()
 			return nil, ctx.Err()
 		})
 		timeoutJob := NewTimeoutJob(10*time.Millisecond, timeoutWaiter)
-		_, err := timeoutJob.Run(context.Background(), nil, nil)
+		_, err := timeoutJob.Run(context.Background(), job.RuntimeClients{}, nil)
 		require.ErrorIs(t, err, context.DeadlineExceeded)
 	})
 
@@ -124,14 +125,14 @@ func TestTimeoutJob(t *testing.T) {
 
 func TestParallelJob(t *testing.T) {
 	t.Run("jobs run in parallel", func(t *testing.T) {
-		waiter := NewMockJob()
-		waiter.RunFunc.SetDefaultHook(func(ctx context.Context, _ database.DB, _ streaming.Sender) (*search.Alert, error) {
+		waiter := mockjob.NewMockJob()
+		waiter.RunFunc.SetDefaultHook(func(ctx context.Context, _ job.RuntimeClients, _ streaming.Sender) (*search.Alert, error) {
 			time.Sleep(10 * time.Millisecond)
 			return nil, nil
 		})
 		parallelJob := NewParallelJob(waiter, waiter, waiter)
 		start := time.Now()
-		_, err := parallelJob.Run(context.Background(), nil, nil)
+		_, err := parallelJob.Run(context.Background(), job.RuntimeClients{}, nil)
 		require.NoError(t, err)
 		require.WithinDuration(t, time.Now(), start.Add(20*time.Millisecond), 10*time.Millisecond)
 	})
@@ -139,12 +140,12 @@ func TestParallelJob(t *testing.T) {
 	t.Run("errors are aggregated", func(t *testing.T) {
 		e1 := errors.New("error 1")
 		e2 := errors.New("error 2")
-		j1, j2 := NewMockJob(), NewMockJob()
+		j1, j2 := mockjob.NewMockJob(), mockjob.NewMockJob()
 		j1.RunFunc.SetDefaultReturn(nil, e1)
 		j2.RunFunc.SetDefaultReturn(nil, e2)
 
 		parallelJob := NewParallelJob(j1, j2)
-		_, err := parallelJob.Run(context.Background(), nil, nil)
+		_, err := parallelJob.Run(context.Background(), job.RuntimeClients{}, nil)
 		require.ErrorIs(t, err, e1)
 		require.ErrorIs(t, err, e2)
 	})
@@ -152,12 +153,12 @@ func TestParallelJob(t *testing.T) {
 	t.Run("alerts are aggregated", func(t *testing.T) {
 		a1 := &search.Alert{Priority: 1}
 		a2 := &search.Alert{Priority: 2}
-		j1, j2 := NewMockJob(), NewMockJob()
+		j1, j2 := mockjob.NewMockJob(), mockjob.NewMockJob()
 		j1.RunFunc.SetDefaultReturn(a1, nil)
 		j2.RunFunc.SetDefaultReturn(a2, nil)
 
 		parallelJob := NewParallelJob(j1, j2)
-		alert, err := parallelJob.Run(context.Background(), nil, nil)
+		alert, err := parallelJob.Run(context.Background(), job.RuntimeClients{}, nil)
 		require.NoError(t, err)
 		require.Equal(t, a2, alert)
 	})
@@ -168,7 +169,7 @@ func TestParallelJob(t *testing.T) {
 		})
 
 		t.Run("one child is simplified", func(t *testing.T) {
-			m := NewMockJob()
+			m := mockjob.NewMockJob()
 			require.Equal(t, m, NewParallelJob(m))
 		})
 	})
@@ -176,9 +177,9 @@ func TestParallelJob(t *testing.T) {
 
 func TestPriorityJob(t *testing.T) {
 	t.Run("optional job is canceled after required finishes", func(t *testing.T) {
-		required, optional := NewMockJob(), NewMockJob()
+		required, optional := mockjob.NewMockJob(), mockjob.NewMockJob()
 		required.RunFunc.SetDefaultReturn(nil, nil)
-		optional.RunFunc.SetDefaultHook(func(ctx context.Context, _ database.DB, _ streaming.Sender) (*search.Alert, error) {
+		optional.RunFunc.SetDefaultHook(func(ctx context.Context, _ job.RuntimeClients, _ streaming.Sender) (*search.Alert, error) {
 			select {
 			case <-ctx.Done():
 				return nil, ctx.Err()
@@ -188,16 +189,16 @@ func TestPriorityJob(t *testing.T) {
 		})
 
 		start := time.Now()
-		job := NewPriorityJob(required, optional)
-		_, err := job.Run(context.Background(), nil, nil)
+		j := NewPriorityJob(required, optional)
+		_, err := j.Run(context.Background(), job.RuntimeClients{}, nil)
 		require.ErrorIs(t, err, context.Canceled)
 		require.WithinDuration(t, time.Now(), start.Add(100*time.Millisecond), 40*time.Millisecond)
 	})
 
 	t.Run("optional job has some time to complete", func(t *testing.T) {
-		required, optional := NewMockJob(), NewMockJob()
+		required, optional := mockjob.NewMockJob(), mockjob.NewMockJob()
 		required.RunFunc.SetDefaultReturn(nil, nil)
-		optional.RunFunc.SetDefaultHook(func(ctx context.Context, _ database.DB, _ streaming.Sender) (*search.Alert, error) {
+		optional.RunFunc.SetDefaultHook(func(ctx context.Context, _ job.RuntimeClients, _ streaming.Sender) (*search.Alert, error) {
 			select {
 			case <-ctx.Done():
 				return nil, ctx.Err()
@@ -207,15 +208,15 @@ func TestPriorityJob(t *testing.T) {
 		})
 
 		start := time.Now()
-		job := NewPriorityJob(required, optional)
-		_, err := job.Run(context.Background(), nil, nil)
+		j := NewPriorityJob(required, optional)
+		_, err := j.Run(context.Background(), job.RuntimeClients{}, nil)
 		require.NoError(t, err, context.Canceled)
 		require.WithinDuration(t, time.Now(), start.Add(50*time.Millisecond), 30*time.Millisecond)
 	})
 
 	t.Run("NewPriorityJob", func(t *testing.T) {
 		t.Run("noop optional is simplified", func(t *testing.T) {
-			j := NewMockJob()
+			j := mockjob.NewMockJob()
 			require.Equal(t, j, NewPriorityJob(j, NewNoopJob()))
 		})
 	})

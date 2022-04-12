@@ -1,4 +1,4 @@
-package job
+package jobutil
 
 import (
 	"context"
@@ -6,9 +6,8 @@ import (
 	"go.uber.org/atomic"
 	"golang.org/x/sync/semaphore"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -16,7 +15,7 @@ import (
 
 // NewAndJob creates a job that will run each of its child jobs and only
 // stream matches that were found in all of the child jobs.
-func NewAndJob(children ...Job) Job {
+func NewAndJob(children ...job.Job) job.Job {
 	if len(children) == 0 {
 		return NewNoopJob()
 	} else if len(children) == 1 {
@@ -26,11 +25,11 @@ func NewAndJob(children ...Job) Job {
 }
 
 type AndJob struct {
-	children []Job
+	children []job.Job
 }
 
-func (a *AndJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, stream, finish := jobutil.StartSpan(ctx, stream, a)
+func (a *AndJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+	_, ctx, stream, finish := job.StartSpan(ctx, stream, a)
 	defer func() { finish(alert, err) }()
 
 	var (
@@ -62,7 +61,7 @@ func (a *AndJob) Run(ctx context.Context, db database.DB, stream streaming.Sende
 				}
 			})
 
-			alert, err := child.Run(ctx, db, intersectingStream)
+			alert, err := child.Run(ctx, clients, intersectingStream)
 			maxAlerter.Add(alert)
 			return err
 		})
@@ -82,7 +81,7 @@ func (a *AndJob) Name() string {
 
 // NewAndJob creates a job that will run each of its child jobs and stream
 // deduplicated matches that were streamed by at least one of the jobs.
-func NewOrJob(children ...Job) Job {
+func NewOrJob(children ...job.Job) job.Job {
 	if len(children) == 0 {
 		return NewNoopJob()
 	} else if len(children) == 1 {
@@ -94,7 +93,7 @@ func NewOrJob(children ...Job) Job {
 }
 
 type OrJob struct {
-	children []Job
+	children []job.Job
 }
 
 // For OR queries, there are two phases:
@@ -124,8 +123,8 @@ type OrJob struct {
 // - The bias is towards documents that match all of our subqueries, so doesn't bias any individual subquery.
 //   Additionally, a bias towards matching all subqueries is probably desirable, since it's more likely that
 //   a document matching all subqueries is what the user is looking for than a document matching only one.
-func (j *OrJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, stream, finish := jobutil.StartSpan(ctx, stream, j)
+func (j *OrJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+	_, ctx, stream, finish := job.StartSpan(ctx, stream, j)
 	defer func() { finish(alert, err) }()
 
 	var (
@@ -149,7 +148,7 @@ func (j *OrJob) Run(ctx context.Context, db database.DB, stream streaming.Sender
 				}
 			})
 
-			alert, err := child.Run(ctx, db, unioningStream)
+			alert, err := child.Run(ctx, clients, unioningStream)
 			maxAlerter.Add(alert)
 			return err
 		})

@@ -11,7 +11,7 @@ This allows to:
 - run large-scale batch changes that would be impractical to compute locally
 - speed up batch change creation time by distributing batch change computing over several executors
 - reduce the setup time required to onboard new users to Batch Changes
-- get a GUI-only experience if you want to
+- get a better experience: (nearly) real-time logs, integration with other Sourcegraph features (upcoming!), creating batch changes from templates in just a few clicks (also upcoming!)
 
 ## Setup
 
@@ -20,7 +20,7 @@ This is a one-time process. Once a site-admin of the Sourcegraph instance sets u
 Make sure that
 
 - [Executors are deployed and are online](../../admin/deploy_executors.md).
-- The feature flag `experimentalFeatures.batchChangesExecution` is set to `enabled` in the global config or for specific users.
+- The feature flag `experimentalFeatures.batchChangesExecution` is set to `true` in the global config or for specific users.
 
 ## Explanations
 

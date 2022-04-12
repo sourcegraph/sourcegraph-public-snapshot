@@ -1,4 +1,4 @@
-package job
+package jobutil
 
 import (
 	"context"
@@ -8,9 +8,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -18,16 +17,16 @@ import (
 
 // NewFilterJob creates a job that filters the streamed results
 // of its child job using the default authz.DefaultSubRepoPermsChecker.
-func NewFilterJob(child Job) Job {
+func NewFilterJob(child job.Job) job.Job {
 	return &subRepoPermsFilterJob{child: child}
 }
 
 type subRepoPermsFilterJob struct {
-	child Job
+	child job.Job
 }
 
-func (s *subRepoPermsFilterJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, stream, finish := jobutil.StartSpan(ctx, stream, s)
+func (s *subRepoPermsFilterJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
 	checker := authz.DefaultSubRepoPermsChecker
@@ -48,7 +47,7 @@ func (s *subRepoPermsFilterJob) Run(ctx context.Context, db database.DB, stream 
 		stream.Send(event)
 	})
 
-	alert, err = s.child.Run(ctx, db, filteredStream)
+	alert, err = s.child.Run(ctx, clients, filteredStream)
 	if err != nil {
 		errs = errors.Append(errs, err)
 	}

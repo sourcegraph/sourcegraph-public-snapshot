@@ -1,4 +1,4 @@
-package job
+package jobutil
 
 import (
 	"context"
@@ -8,15 +8,16 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/mockjob"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type sender struct {
-	Job   Job
+	Job   job.Job
 	sendC chan streaming.SearchEvent
 }
 
@@ -43,8 +44,8 @@ func (ss senders) ExitAll() {
 	}
 }
 
-func (ss senders) Jobs() []Job {
-	jobs := make([]Job, 0, len(ss))
+func (ss senders) Jobs() []job.Job {
+	jobs := make([]job.Job, 0, len(ss))
 	for _, s := range ss {
 		jobs = append(jobs, s.Job)
 	}
@@ -52,9 +53,9 @@ func (ss senders) Jobs() []Job {
 }
 
 func newMockSender() sender {
-	mj := NewMockJob()
+	mj := mockjob.NewMockJob()
 	send := make(chan streaming.SearchEvent)
-	mj.RunFunc.SetDefaultHook(func(_ context.Context, _ database.DB, s streaming.Sender) (*search.Alert, error) {
+	mj.RunFunc.SetDefaultHook(func(_ context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
 		for event := range send {
 			s.Send(event)
 		}
@@ -93,7 +94,7 @@ func TestAndJob(t *testing.T) {
 			require.Equal(t, NewNoopJob(), NewAndJob())
 		})
 		t.Run("one child is simplified", func(t *testing.T) {
-			j := NewMockJob()
+			j := mockjob.NewMockJob()
 			require.Equal(t, j, NewAndJob(j))
 		})
 	})
@@ -109,7 +110,7 @@ func TestAndJob(t *testing.T) {
 
 				finished := make(chan struct{})
 				go func() {
-					_, err := j.Run(context.Background(), nil, stream)
+					_, err := j.Run(context.Background(), job.RuntimeClients{}, stream)
 					require.NoError(t, err)
 					close(finished)
 				}()
@@ -125,7 +126,7 @@ func TestAndJob(t *testing.T) {
 	t.Run("result not returned from all subexpressions is not streamed", func(t *testing.T) {
 		for i := 2; i < 5; i++ {
 			t.Run(fmt.Sprintf("%d subexpressions", i), func(t *testing.T) {
-				noSender := NewMockJob()
+				noSender := mockjob.NewMockJob()
 				noSender.RunFunc.SetDefaultReturn(nil, nil)
 				senders := newMockSenders(i)
 				j := NewAndJob(append(senders.Jobs(), noSender)...)
@@ -135,7 +136,7 @@ func TestAndJob(t *testing.T) {
 
 				finished := make(chan struct{})
 				go func() {
-					_, err := j.Run(context.Background(), nil, stream)
+					_, err := j.Run(context.Background(), job.RuntimeClients{}, stream)
 					require.NoError(t, err)
 					close(finished)
 				}()
@@ -156,7 +157,7 @@ func TestOrJob(t *testing.T) {
 			require.Equal(t, NewNoopJob(), NewOrJob())
 		})
 		t.Run("one child is simplified", func(t *testing.T) {
-			j := NewMockJob()
+			j := mockjob.NewMockJob()
 			require.Equal(t, j, NewOrJob(j))
 		})
 	})
@@ -172,7 +173,7 @@ func TestOrJob(t *testing.T) {
 
 				finished := make(chan struct{})
 				go func() {
-					_, err := j.Run(context.Background(), nil, stream)
+					_, err := j.Run(context.Background(), job.RuntimeClients{}, stream)
 					require.NoError(t, err)
 					close(finished)
 				}()
@@ -186,12 +187,12 @@ func TestOrJob(t *testing.T) {
 	})
 
 	t.Run("result not streamed until all subexpression return the same result", func(t *testing.T) {
-		noSender := NewMockJob()
+		noSender := mockjob.NewMockJob()
 		noSender.RunFunc.SetDefaultReturn(nil, nil)
 
 		for i := 2; i < 5; i++ {
 			t.Run(fmt.Sprintf("%d subexpressions", i), func(t *testing.T) {
-				noSender := NewMockJob()
+				noSender := mockjob.NewMockJob()
 				noSender.RunFunc.SetDefaultReturn(nil, nil)
 				senders := newMockSenders(i)
 				j := NewOrJob(append(senders.Jobs(), noSender)...)
@@ -201,7 +202,7 @@ func TestOrJob(t *testing.T) {
 
 				finished := make(chan struct{})
 				go func() {
-					_, err := j.Run(context.Background(), nil, stream)
+					_, err := j.Run(context.Background(), job.RuntimeClients{}, stream)
 					require.NoError(t, err)
 					close(finished)
 				}()
@@ -216,7 +217,7 @@ func TestOrJob(t *testing.T) {
 	})
 
 	t.Run("partial error still eventually sends results", func(t *testing.T) {
-		errSender := NewMockJob()
+		errSender := mockjob.NewMockJob()
 		errSender.RunFunc.SetDefaultReturn(nil, errors.New("test error"))
 		senders := newMockSenders(2)
 		j := NewOrJob(append(senders.Jobs(), errSender)...)
@@ -224,7 +225,7 @@ func TestOrJob(t *testing.T) {
 		stream := streaming.NewAggregatingStream()
 		finished := make(chan struct{})
 		go func() {
-			_, err := j.Run(context.Background(), nil, stream)
+			_, err := j.Run(context.Background(), job.RuntimeClients{}, stream)
 			require.Error(t, err)
 			close(finished)
 		}()
