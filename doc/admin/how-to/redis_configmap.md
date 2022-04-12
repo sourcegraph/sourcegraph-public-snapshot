@@ -3,7 +3,7 @@
 
 
 ```
-Note: This is considered a workaround for a customer issue.
+Note: This document was prepared as guidance for a customer support inquiry.
 ```
 
 
@@ -25,7 +25,7 @@ Reference Materials
 
 
 
-* **‘... truncated for brevity …’** indicates that a portion of the code listing has been removed to improve readability. This means that the code listing will not work by itself. The code listing is intended for you to identify the areas of your existing code that need to be modified. \
+* **‘... truncated for brevity …’** indicates that a portion of the code listing has been removed to improve readability. This means that the code listing will not work by itself. The code listing is intended for you to identify the areas of your existing code that need to be modified.
 
 * Items in **BOLD** indicate an addition to an existing code file. It should be considered safe to copy and paste the text in **BOLD **directly into your existing code.
 
@@ -34,8 +34,7 @@ Reference Materials
 
 
 
-* **Note: **This procedure uses a ConfigMap, which stores values in plaintext. In order to improve security, we recommend using Kubernetes Secrets. \
-
+* **Note:** This procedure uses a ConfigMap, which stores values in plaintext. In order to improve security, we recommend using Kubernetes Secrets. 
 * **Note:** These instructions are generic and should be incorporated into your deployment tool (helm or Kustomize) as needed.
 * **Note:** This example uses the password “demopasswordchangeme123”. Please change this to another value that meets your organization’s security requirements.
 
@@ -177,10 +176,10 @@ metadata:
 ```
 
 
-7. Modify the manifests for all services listed in[ Configure custom Redis](https://docs.sourcegraph.com/admin/install/kubernetes/configure#configure-custom-redis). The listing below is an example of the two environment variables that must be added to the services listed in the documentation. \
+7. Modify the manifests for all services listed in[ Configure custom Redis](https://docs.sourcegraph.com/admin/install/kubernetes/configure#configure-custom-redis). The listing below is an example of the two environment variables that must be added to the services listed in the documentation.
 
 
-    ```
+```
 apiVersion: apps/v1
 kind: Deployment
 … truncated for brevity …
@@ -196,7 +195,7 @@ kind: Deployment
 
 
 
-**Note:  **Be sure to add both environment variables to all services listed in [Configure custom Redis](https://docs.sourcegraph.com/admin/install/kubernetes/configure#configure-custom-redis).
+**Note:** Be sure to add both environment variables to all services listed in [Configure custom Redis](https://docs.sourcegraph.com/admin/install/kubernetes/configure#configure-custom-redis).
 
 
 
