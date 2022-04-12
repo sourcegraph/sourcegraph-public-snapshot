@@ -784,11 +784,12 @@ func (c *ClientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 		})
 	}
 
-	// Perform each batch reqeuest concurrently, but only allow four requests to be in-flight at a
-	// time. This operation returns partial results in the case of a malformed or missing repository
-	// or a bad commit reference, but does not attempt to return partial results when an entire shard
-	// is down. Any of these operations failing will cause an error to be returned from the entire
-	// BatchLog function.
+	// Perform each batch request concurrently, but only allow four requests to be
+	// in-flight at a time. This operation returns partial results in the case of a
+	// malformed or missing repository or a bad commit reference, but does not
+	// attempt to return partial results when an entire shard is down. Any of these
+	// operations failing will cause an error to be returned from the entire BatchLog
+	// function.
 
 	limit := int64(4)
 	sem := semaphore.NewWeighted(limit)
