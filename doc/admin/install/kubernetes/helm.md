@@ -111,7 +111,6 @@ metadata:
   name: pgsql-credentials
 data:
   # notes: secrets data has to be base64-encoded
-
   database: ""
   host: "" # example: pgsql.database.example.com
   password: ""
@@ -142,7 +141,6 @@ data:
   port: ""
   user: ""
 ```
-
 
 The above Secrets should be deployed to the same namespace as the existing Sourcegraph deployment.
 
