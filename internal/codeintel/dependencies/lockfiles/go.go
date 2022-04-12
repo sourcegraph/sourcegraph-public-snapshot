@@ -1,62 +1,82 @@
 package lockfiles
 
 import (
-	"bufio"
 	"io"
-	"strings"
+
+	"github.com/inconshreveable/log15"
+	"golang.org/x/mod/modfile"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 //
-// go.sum
+// go.mod
 //
 
-func parseGoSumFile(r io.Reader) ([]reposource.PackageDependency, error) {
+// based on https://go.dev/ref/mod#go-mod-file.
+func parseGoModFile(r io.Reader) ([]reposource.PackageDependency, error) {
 	var (
-		errs errors.MultiError
-
-		// In some cases, two checksums occur for both the package itself and the go.mod
-		// file of the same version, as well as merging multiple go.sum files, thus we
-		// need to do deduplication.
-		deps  []reposource.PackageDependency
-		added = make(map[string]*reposource.GoDependency)
+		errs    errors.MultiError
+		deps    []reposource.PackageDependency
+		ignore  = make(map[string]string)
+		replace = make(map[string]*modfile.Replace)
 	)
 
-	scanner := bufio.NewScanner(r)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		fields := strings.Fields(line)
-		if len(fields) < 2 { // We do not consume the checksum so not required to be presented for now
+	data := make([]byte, 1024*1024)
+	n, err := r.Read(data)
+	if err == io.EOF {
+		if n == 0 {
+			return nil, nil
+		}
+		err = nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	log15.Debug("gomod", "size", n)
+
+	data = data[0:n]
+	f, err := modfile.Parse("go.mod", data, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, r := range f.Replace {
+		// According to https://go.dev/ref/mod#go-mod-file-replace, the replacement
+		// version is empty if and only if the replacement path is local.
+		if r.New.Version == "" {
+			// Ignore dependencies which point to local modules.
+			ignore[r.Old.Path] = r.Old.Version
+		} else {
+			replace[r.Old.Path] = r
+		}
+	}
+
+	for _, r := range f.Exclude {
+		ignore[r.Mod.Path] = r.Mod.Version
+	}
+
+	for _, r := range f.Require {
+		if v, ok := ignore[r.Mod.Path]; ok && v == r.Mod.Version {
 			continue
 		}
 
-		name := fields[0]
-		version := strings.TrimSuffix(fields[1], "/go.mod")
+		path := r.Mod.Path
+		version := r.Mod.Version
 
-		dep, err := reposource.ParseGoDependency(name + "@" + version)
+		if v, ok := replace[path]; ok && (v.Old.Version == "" || v.Old.Version == r.Mod.Version) {
+			path = v.New.Path
+			version = v.New.Version
+		}
+
+		dep, err := reposource.ParseGoDependency(path + "@" + version)
 		if err != nil {
 			errs = errors.Append(errs, err)
-		} else if last, ok := added[name]; ok {
-			// go.sum records and sorts all non-major versions with
-			// the latest version as last entry, which we pick, since
-			// it's correct most of the time as empirically observed in
-			// our own repository.
-			//
-			// for 100% accurate dependencies, we'll rely on lsif-go indexing
-			// running the Minimum Version Selection algorithm in the go toolchain.
-			//
-			*last = *dep // update previously appended dep in-place
 		} else {
-			added[name] = dep
 			deps = append(deps, dep)
 		}
 	}
-
-	if err := scanner.Err(); err != nil {
-		return nil, errors.Wrap(err, "scan")
-	}
-
-	return deps, nil
+	return deps, errs
 }
