@@ -7,7 +7,7 @@ Note: This document was prepared as guidance for a customer support inquiry.
 ```
 
 
-This procedure allows a Kuberenetes user to set a password for the Redis services included in the Sourcegraph deployment. 
+This procedure allows a Kubernetes user to set a password for the Redis services included in the Sourcegraph deployment. 
 
 In this approach, we store the redis.conf file for each service in a ConfigMap. The ConfigMap is then mounted as a volume into the corresponding Redis pod.
 
