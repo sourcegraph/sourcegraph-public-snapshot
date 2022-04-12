@@ -28,21 +28,6 @@ import (
 // The metric generated here will be named as "src_bitbucket_cloud_requests_total".
 var requestCounter = metrics.NewRequestMeter("bitbucket_cloud", "Total number of requests sent to the Bitbucket Cloud API.")
 
-// These fields define the self-imposed Bitbucket rate limit (since Bitbucket Cloud does
-// not have a concept of rate limiting in HTTP response headers).
-//
-// See https://godoc.org/golang.org/x/time/rate#Limiter for an explanation of these fields.
-//
-// The limits chosen here are based on the following logic: Bitbucket Cloud restricts
-// "List all repositories" requests (which are a good portion of our requests) to 1,000/hr,
-// and they restrict "List a user or team's repositories" requests (which are roughly equal
-// to our repository lookup requests) to 1,000/hr.
-// See `pkg/extsvc/bitbucketserver/client.go` for the calculations behind these limits`
-const (
-	rateLimitRequestsPerSecond = 2 // 120/min or 7200/hr
-	rateLimitMaxBurstRequests  = 500
-)
-
 // Client access a Bitbucket Cloud via the REST API 2.0.
 type Client struct {
 	// HTTP Client used to communicate with the API
@@ -57,13 +42,13 @@ type Client struct {
 
 	// RateLimit is the self-imposed rate limiter (since Bitbucket does not have a concept
 	// of rate limiting in HTTP response headers).
-	RateLimit *rate.Limiter
+	rateLimit *rate.Limiter
 }
 
 // NewClient creates a new Bitbucket Cloud API client from the given external
 // service configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
-func NewClient(config *schema.BitbucketCloudConnection, httpClient httpcli.Doer) (*Client, error) {
+func NewClient(urn string, config *schema.BitbucketCloudConnection, httpClient httpcli.Doer) (*Client, error) {
 	if httpClient == nil {
 		httpClient = httpcli.ExternalDoer
 	}
@@ -83,12 +68,6 @@ func NewClient(config *schema.BitbucketCloudConnection, httpClient httpcli.Doer)
 		return nil, err
 	}
 
-	// Normally our registry will return a default infinite limiter when nothing has been
-	// synced from config. However, we always want to ensure there is at least some form of rate
-	// limiting for Bitbucket.
-	defaultLimiter := rate.NewLimiter(rateLimitRequestsPerSecond, rateLimitMaxBurstRequests)
-	l := ratelimit.DefaultRegistry.GetOrSet(apiURL.String(), defaultLimiter)
-
 	return &Client{
 		httpClient: httpClient,
 		URL:        extsvc.NormalizeBaseURL(apiURL),
@@ -96,7 +75,8 @@ func NewClient(config *schema.BitbucketCloudConnection, httpClient httpcli.Doer)
 			Username: config.Username,
 			Password: config.AppPassword,
 		},
-		RateLimit: l,
+		// Default limits are defined in extsvc.GetLimitFromConfig
+		rateLimit: ratelimit.DefaultRegistry.Get(urn),
 	}, nil
 }
 
@@ -112,7 +92,7 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
 		httpClient: c.httpClient,
 		URL:        c.URL,
 		Auth:       a,
-		RateLimit:  c.RateLimit,
+		rateLimit:  c.rateLimit,
 	}
 }
 
@@ -189,7 +169,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	}
 
 	startWait := time.Now()
-	if err := c.RateLimit.Wait(ctx); err != nil {
+	if err := c.rateLimit.Wait(ctx); err != nil {
 		return err
 	}
 
