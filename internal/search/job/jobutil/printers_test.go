@@ -1,4 +1,4 @@
-package job
+package jobutil
 
 import (
 	"fmt"
@@ -6,7 +6,6 @@ import (
 
 	"github.com/hexops/autogold"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -189,13 +188,11 @@ func TestPrettyJSON(t *testing.T) {
 							NewNoopJob()))))))))
 	test := func(input string) string {
 		q, _ := query.ParseLiteral(input)
-		args := &Args{
-			SearchInputs: &run.SearchInputs{
-				UserSettings: &schema.Settings{},
-				Protocol:     search.Streaming,
-			},
+		inputs := &run.SearchInputs{
+			UserSettings: &schema.Settings{},
+			Protocol:     search.Streaming,
 		}
-		j, _ := ToSearchJob(args, q, database.NewMockDB())
+		j, _ := ToSearchJob(inputs, q)
 		return PrettyJSONVerbose(j)
 	}
 
@@ -216,8 +213,7 @@ func TestPrettyJSON(t *testing.T) {
               },
               "Typ": "text",
               "FileMatchLimit": 500,
-              "Select": [],
-              "Zoekt": null
+              "Select": []
             }
           },
           {
@@ -244,7 +240,6 @@ func TestPrettyJSON(t *testing.T) {
               },
               "Repos": null,
               "Indexed": false,
-              "SearcherURLs": null,
               "UseFullDeadline": true
             }
           }
@@ -354,9 +349,7 @@ func TestPrettyJSON(t *testing.T) {
             }
           }
         ],
-        "UseFullDeadline": true,
-        "Zoekt": null,
-        "SearcherURLs": null
+        "UseFullDeadline": true
       }
     },
     {

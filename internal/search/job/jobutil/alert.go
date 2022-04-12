@@ -1,14 +1,13 @@
-package job
+package jobutil
 
 import (
 	"context"
 	"math"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchalert "github.com/sourcegraph/sourcegraph/internal/search/alert"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -16,7 +15,7 @@ import (
 
 // NewAlertJob creates a job that translates errors from child jobs
 // into alerts when necessary.
-func NewAlertJob(inputs *run.SearchInputs, child Job) Job {
+func NewAlertJob(inputs *run.SearchInputs, child job.Job) job.Job {
 	if _, ok := child.(*noopJob); ok {
 		return child
 	}
@@ -28,20 +27,20 @@ func NewAlertJob(inputs *run.SearchInputs, child Job) Job {
 
 type alertJob struct {
 	inputs *run.SearchInputs
-	child  Job
+	child  job.Job
 }
 
-func (j *alertJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, stream, finish := jobutil.StartSpan(ctx, stream, j)
+func (j *alertJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+	_, ctx, stream, finish := job.StartSpan(ctx, stream, j)
 	defer func() { finish(alert, err) }()
 
 	start := time.Now()
 	countingStream := streaming.NewResultCountingStream(stream)
 	statsObserver := streaming.NewStatsObservingStream(countingStream)
-	jobAlert, err := j.child.Run(ctx, db, statsObserver)
+	jobAlert, err := j.child.Run(ctx, clients, statsObserver)
 
 	ao := searchalert.Observer{
-		Db:           db,
+		Db:           clients.DB,
 		SearchInputs: j.inputs,
 		HasResults:   countingStream.Count() > 0,
 	}

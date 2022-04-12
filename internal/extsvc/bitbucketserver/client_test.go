@@ -1090,7 +1090,7 @@ func TestAuth(t *testing.T) {
 		// Ensure that the different configuration types create the right
 		// implicit Authenticator.
 		t.Run("bearer token", func(t *testing.T) {
-			client, err := NewClient(&schema.BitbucketServerConnection{
+			client, err := NewClient("urn", &schema.BitbucketServerConnection{
 				Url:   "http://example.com/",
 				Token: "foo",
 			}, nil)
@@ -1107,7 +1107,7 @@ func TestAuth(t *testing.T) {
 		})
 
 		t.Run("basic auth", func(t *testing.T) {
-			client, err := NewClient(&schema.BitbucketServerConnection{
+			client, err := NewClient("urn", &schema.BitbucketServerConnection{
 				Url:      "http://example.com/",
 				Username: "foo",
 				Password: "bar",
@@ -1125,7 +1125,7 @@ func TestAuth(t *testing.T) {
 		})
 
 		t.Run("OAuth 1 error", func(t *testing.T) {
-			if _, err := NewClient(&schema.BitbucketServerConnection{
+			if _, err := NewClient("urn", &schema.BitbucketServerConnection{
 				Url: "http://example.com/",
 				Authorization: &schema.BitbucketServerAuthorization{
 					Oauth: schema.BitbucketServerOAuth{
@@ -1150,7 +1150,7 @@ func TestAuth(t *testing.T) {
 			pemKey := pem.EncodeToMemory(&pem.Block{Bytes: block})
 			signingKey := base64.StdEncoding.EncodeToString(pemKey)
 
-			client, err := NewClient(&schema.BitbucketServerConnection{
+			client, err := NewClient("urn", &schema.BitbucketServerConnection{
 				Url: "http://example.com/",
 				Authorization: &schema.BitbucketServerAuthorization{
 					Oauth: schema.BitbucketServerOAuth{
@@ -1229,7 +1229,7 @@ func TestClient_WithAuthenticator(t *testing.T) {
 
 	old := &Client{
 		URL:       uri,
-		RateLimit: rate.NewLimiter(defaultRateLimit, defaultRateLimitBurst),
+		rateLimit: rate.NewLimiter(10, 10),
 		Auth:      &auth.BasicAuth{Username: "johnsson", Password: "mothersmaidenname"},
 	}
 
@@ -1247,8 +1247,8 @@ func TestClient_WithAuthenticator(t *testing.T) {
 		t.Fatalf("url: want %q but got %q", old.URL, newClient.URL)
 	}
 
-	if newClient.RateLimit != old.RateLimit {
-		t.Fatalf("RateLimit: want %#v but got %#v", old.RateLimit, newClient.RateLimit)
+	if newClient.rateLimit != old.rateLimit {
+		t.Fatalf("RateLimit: want %#v but got %#v", old.rateLimit, newClient.rateLimit)
 	}
 }
 

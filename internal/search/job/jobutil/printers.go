@@ -1,4 +1,4 @@
-package job
+package jobutil
 
 import (
 	"bytes"
@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
@@ -30,15 +31,15 @@ func writeSep(b *bytes.Buffer, sep, indent string, depth int) {
 // prefixed the number of times corresponding to depth of the term in the tree.
 // See the `Sexp` and `PrettySexp` convenience functions to see how these
 // options are used.
-func SexpFormat(job Job, sep, indent string) string {
+func SexpFormat(j job.Job, sep, indent string) string {
 	b := new(bytes.Buffer)
 	depth := 0
-	var writeSexp func(Job)
-	writeSexp = func(job Job) {
-		if job == nil {
+	var writeSexp func(job.Job)
+	writeSexp = func(j job.Job) {
+		if j == nil {
 			return
 		}
-		switch j := job.(type) {
+		switch j := j.(type) {
 		case
 			*zoekt.ZoektRepoSubsetSearch,
 			*zoekt.ZoektSymbolSearch,
@@ -151,21 +152,21 @@ func SexpFormat(job Job, sep, indent string) string {
 			b.WriteString(")")
 			depth--
 		default:
-			panic(fmt.Sprintf("unsupported job %T for SexpFormat printer", job))
+			panic(fmt.Sprintf("unsupported job %T for SexpFormat printer", j))
 		}
 	}
-	writeSexp(job)
+	writeSexp(j)
 	return b.String()
 }
 
 // Sexp outputs the s-expression on a single line.
-func Sexp(job Job) string {
-	return SexpFormat(job, " ", "")
+func Sexp(j job.Job) string {
+	return SexpFormat(j, " ", "")
 }
 
 // PrettySexp outputs a formatted s-expression with two spaces of indentation, potentially spanning multiple lines.
-func PrettySexp(job Job) string {
-	return SexpFormat(job, "\n", "  ")
+func PrettySexp(j job.Job) string {
+	return SexpFormat(j, "\n", "  ")
 }
 
 type NodeStyle int
@@ -198,17 +199,17 @@ func writeNode(b *bytes.Buffer, depth int, style NodeStyle, id *int, label strin
 }
 
 // PrettyMermaid outputs a Mermaid flowchart. See https://mermaid-js.github.io.
-func PrettyMermaid(job Job) string {
+func PrettyMermaid(j job.Job) string {
 	depth := 0
 	id := 0
 	b := new(bytes.Buffer)
 	b.WriteString("flowchart TB\n")
-	var writeMermaid func(Job)
-	writeMermaid = func(job Job) {
-		if job == nil {
+	var writeMermaid func(job.Job)
+	writeMermaid = func(j job.Job) {
+		if j == nil {
 			return
 		}
-		switch j := job.(type) {
+		switch j := j.(type) {
 		case
 			*zoekt.ZoektRepoSubsetSearch,
 			*zoekt.ZoektSymbolSearch,
@@ -318,23 +319,23 @@ func PrettyMermaid(job Job) string {
 			writeMermaid(j.child)
 			depth--
 		default:
-			panic(fmt.Sprintf("unsupported job %T for PrettyMermaid printer", job))
+			panic(fmt.Sprintf("unsupported job %T for PrettyMermaid printer", j))
 		}
 	}
-	writeMermaid(job)
+	writeMermaid(j)
 	return b.String()
 }
 
 // toJSON returns a JSON object representing a job. If `verbose` is true, values
 // for all leaf jobs are emitted; if false, only the names of leaf nodes are
 // emitted.
-func toJSON(job Job, verbose bool) interface{} {
-	var emitJSON func(Job) interface{}
-	emitJSON = func(job Job) interface{} {
-		if job == nil {
+func toJSON(j job.Job, verbose bool) interface{} {
+	var emitJSON func(job.Job) interface{}
+	emitJSON = func(j job.Job) interface{} {
+		if j == nil {
 			return struct{}{}
 		}
-		switch j := job.(type) {
+		switch j := j.(type) {
 		case
 			*zoekt.ZoektRepoSubsetSearch,
 			*zoekt.ZoektSymbolSearch,
@@ -447,20 +448,20 @@ func toJSON(job Job, verbose bool) interface{} {
 				Alert: emitJSON(j.child),
 			}
 		default:
-			panic(fmt.Sprintf("unsupported job %T for toJSON converter", job))
+			panic(fmt.Sprintf("unsupported job %T for toJSON converter", j))
 		}
 	}
-	return emitJSON(job)
+	return emitJSON(j)
 }
 
 // PrettyJSON returns a summary of a job in formatted JSON.
-func PrettyJSON(job Job) string {
-	result, _ := json.MarshalIndent(toJSON(job, false), "", "  ")
+func PrettyJSON(j job.Job) string {
+	result, _ := json.MarshalIndent(toJSON(j, false), "", "  ")
 	return string(result)
 }
 
 // PrettyJSON returns the full fidelity of values that comprise a job in formatted JSON.
-func PrettyJSONVerbose(job Job) string {
-	result, _ := json.MarshalIndent(toJSON(job, true), "", "  ")
+func PrettyJSONVerbose(j job.Job) string {
+	result, _ := json.MarshalIndent(toJSON(j, true), "", "  ")
 	return string(result)
 }
