@@ -1,21 +1,22 @@
+import * as React from 'react'
+
 import * as H from 'history'
 import HistoryIcon from 'mdi-react/HistoryIcon'
-import * as React from 'react'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
-import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
-import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import {
     addLineRangeQueryParameter,
     formatSearchParameters,
     lprToRange,
-    parseQueryAndHash,
     toPositionOrRangeQueryParameter,
     toViewStateHash,
-} from '@sourcegraph/shared/src/util/url'
+} from '@sourcegraph/common'
+import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
+import { TooltipController, Icon } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
+import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../../RepoHeader'
 import { BlobPanelTabID } from '../panel/BlobPanel'
 
@@ -64,14 +65,14 @@ export class ToggleHistoryPanel extends React.PureComponent<
                 const visible = ToggleHistoryPanel.isVisible(this.props.location)
                 eventLogger.log(visible ? 'HideHistoryPanel' : 'ShowHistoryPanel')
                 this.props.history.push(ToggleHistoryPanel.locationWithVisibility(this.props.location, !visible))
-                Tooltip.forceUpdate()
+                TooltipController.forceUpdate()
             })
         )
 
         // Toggle when the user presses 'alt+h' or 'opt+h'.
         this.subscriptions.add(
             fromEvent<KeyboardEvent>(window, 'keydown')
-                .pipe(filter(event => event.altKey && event.key === 'h'))
+                .pipe(filter(event => event.altKey && event.code === 'KeyH'))
                 .subscribe(event => {
                     event.preventDefault()
                     this.toggles.next()
@@ -88,20 +89,21 @@ export class ToggleHistoryPanel extends React.PureComponent<
 
         if (this.props.actionType === 'dropdown') {
             return (
-                <ButtonLink className="btn repo-header__file-action" onSelect={this.onClick}>
-                    <HistoryIcon className="icon-inline" />
+                <RepoHeaderActionButtonLink file={true} onSelect={this.onClick}>
+                    <Icon as={HistoryIcon} />
                     <span>{visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)</span>
-                </ButtonLink>
+                </RepoHeaderActionButtonLink>
             )
         }
         return (
-            <ButtonLink
-                className="btn btn-icon repo-header__action"
+            <RepoHeaderActionButtonLink
+                className="btn-icon"
+                file={false}
                 onSelect={this.onClick}
                 data-tooltip={`${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`}
             >
-                <HistoryIcon className="icon-inline" />
-            </ButtonLink>
+                <Icon as={HistoryIcon} />
+            </RepoHeaderActionButtonLink>
         )
     }
 

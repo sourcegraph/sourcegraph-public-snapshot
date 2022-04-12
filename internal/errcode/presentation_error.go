@@ -1,6 +1,6 @@
 package errcode
 
-import "github.com/cockroachdb/errors"
+import "github.com/sourcegraph/sourcegraph/lib/errors"
 
 // A PresentationError is an error with a message (returned by the PresentationError method) that is
 // suitable for presentation to the user.

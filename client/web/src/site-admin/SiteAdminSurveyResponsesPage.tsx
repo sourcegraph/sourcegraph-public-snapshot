@@ -1,11 +1,21 @@
-import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
+import React, { useEffect } from 'react'
+
 import classNames from 'classnames'
-import React, { useCallback, useEffect } from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import {
+    Badge,
+    BADGE_VARIANTS,
+    Button,
+    useLocalStorage,
+    Link,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    Tabs,
+} from '@sourcegraph/wildcard'
 
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
@@ -24,8 +34,9 @@ import {
 import { eventLogger } from '../tracking/eventLogger'
 import { userURL } from '../user'
 
-import styles from './SiteAdminSurveyResponsesPage.module.scss'
 import { USER_ACTIVITY_FILTERS } from './SiteAdminUsageStatisticsPage'
+
+import styles from './SiteAdminSurveyResponsesPage.module.scss'
 
 interface SurveyResponseNodeProps {
     /**
@@ -36,17 +47,14 @@ interface SurveyResponseNodeProps {
 
 interface SurveyResponseNodeState {}
 
-function scoreToClassSuffix(score: number): string {
+function scoreToClassSuffix(score: number): typeof BADGE_VARIANTS[number] {
     return score > 8 ? 'success' : score > 6 ? 'info' : 'danger'
 }
 
 const ScoreBadge: React.FunctionComponent<{ score: number }> = props => (
-    <div
-        className={`ml-4 badge badge-pill badge-${scoreToClassSuffix(props.score)}`}
-        data-tooltip={`${props.score} out of 10`}
-    >
+    <Badge className="ml-4" pill={true} variant={scoreToClassSuffix(props.score)} tooltip={`${props.score} out of 10`}>
         Score: {props.score}
-    </div>
+    </Badge>
 )
 
 class SurveyResponseNode extends React.PureComponent<SurveyResponseNodeProps, SurveyResponseNodeState> {
@@ -152,9 +160,9 @@ class UserSurveyResponseNode extends React.PureComponent<UserSurveyResponseNodeP
                     </td>
                     <td>
                         {responses.length > 0 && (
-                            <button type="button" className="btn btn-sm btn-secondary" onClick={this.showMoreClicked}>
+                            <Button onClick={this.showMoreClicked} variant="secondary" size="sm">
                                 {this.state.displayAll ? 'Hide' : 'See all'}
-                            </button>
+                            </Button>
                         )}
                     </td>
                 </tr>
@@ -272,9 +280,7 @@ const LAST_TAB_STORAGE_KEY = 'site-admin-survey-responses-last-tab'
  */
 
 export const SiteAdminSurveyResponsesPage: React.FunctionComponent<Props> = props => {
-    const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
-
-    const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
+    const [persistedTabIndex, setPersistedTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
 
     useEffect(() => {
         eventLogger.logViewEvent('SiteAdminSurveyResponses')
@@ -294,10 +300,10 @@ export const SiteAdminSurveyResponsesPage: React.FunctionComponent<Props> = prop
 
             <h3>Responses</h3>
 
-            <Tabs defaultIndex={tabIndex} onChange={handleTabsChange}>
-                <TabList className="d-flex justify-content-around">
-                    <Tab className="flex-1">Chronological feed</Tab>
-                    <Tab className="flex-1">Sort by user</Tab>
+            <Tabs defaultIndex={persistedTabIndex} onChange={setPersistedTabIndex}>
+                <TabList>
+                    <Tab>Chronological feed</Tab>
+                    <Tab>Sort by user</Tab>
                 </TabList>
                 <TabPanels>
                     <TabPanel>

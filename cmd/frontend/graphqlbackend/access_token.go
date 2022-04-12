@@ -8,7 +8,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // accessTokenResolver resolves an access token.
@@ -21,16 +20,16 @@ import (
 // other services likely allow user accounts to do more than what access tokens
 // alone can via the API.
 type accessTokenResolver struct {
-	db          dbutil.DB
+	db          database.DB
 	accessToken database.AccessToken
 }
 
-func accessTokenByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*accessTokenResolver, error) {
+func accessTokenByID(ctx context.Context, db database.DB, id graphql.ID) (*accessTokenResolver, error) {
 	accessTokenID, err := unmarshalAccessTokenID(id)
 	if err != nil {
 		return nil, err
 	}
-	accessToken, err := database.AccessTokens(db).GetByID(ctx, accessTokenID)
+	accessToken, err := db.AccessTokens().GetByID(ctx, accessTokenID)
 	if err != nil {
 		return nil, err
 	}

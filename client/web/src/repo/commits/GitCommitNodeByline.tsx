@@ -1,5 +1,7 @@
 import React from 'react'
 
+import classNames from 'classnames'
+
 import { Timestamp } from '../../components/time/Timestamp'
 import { SignatureFields } from '../../graphql-operations'
 import { formatPersonName, PersonLink } from '../../person/PersonLink'
@@ -9,7 +11,9 @@ interface Props {
     author: SignatureFields
     committer: SignatureFields | null
     className?: string
+    avatarClassName?: string
     compact?: boolean
+    preferAbsoluteTimestamps?: boolean
     messageElement?: JSX.Element
     commitMessageBody?: JSX.Element
 }
@@ -21,7 +25,9 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
     author,
     committer,
     className = '',
+    avatarClassName,
     compact,
+    preferAbsoluteTimestamps,
     messageElement,
     commitMessageBody,
 }) => {
@@ -40,25 +46,27 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
         // The author and committer both exist and are different people.
         return (
             <div data-testid="git-commit-node-byline" className={className}>
-                <div>
+                <div className="flex-shrink-0">
                     <UserAvatar
-                        className="icon-inline"
+                        inline={true}
+                        className={avatarClassName}
                         user={author.person}
                         data-tooltip={`${formatPersonName(author.person)} (author)`}
                     />{' '}
                     <UserAvatar
-                        className="icon-inline mr-2"
+                        inline={true}
+                        className={classNames('mr-2', avatarClassName)}
                         user={committer.person}
                         data-tooltip={`${formatPersonName(committer.person)} (committer)`}
                     />
                 </div>
-                <div>
+                <div className="overflow-hidden">
                     {!compact ? (
                         <>
                             {messageElement}
-                            <PersonLink person={author.person} className="font-weight-bold" /> authored and{' '}
-                            <PersonLink person={committer.person} className="font-weight-bold" /> commited{' '}
-                            <Timestamp date={author.date} />
+                            <PersonLink person={author.person} className="font-weight-bold" /> authored and commited by{' '}
+                            <PersonLink person={committer.person} className="font-weight-bold" />{' '}
+                            <Timestamp date={committer.date} preferAbsolute={preferAbsoluteTimestamps} />
                             {commitMessageBody}
                         </>
                     ) : (
@@ -76,17 +84,18 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
         <div data-testid="git-commit-node-byline" className={className}>
             <div>
                 <UserAvatar
-                    className="icon-inline mr-1 mr-2"
+                    inline={true}
+                    className={classNames('mr-1 mr-2', avatarClassName)}
                     user={author.person}
                     data-tooltip={formatPersonName(author.person)}
                 />
             </div>
-            <div>
+            <div className="overflow-hidden">
                 {!compact && (
                     <>
                         {messageElement}
                         committed by <PersonLink person={author.person} className="font-weight-bold" />{' '}
-                        <Timestamp date={author.date} />
+                        <Timestamp date={author.date} preferAbsolute={preferAbsoluteTimestamps} />
                         {commitMessageBody}
                     </>
                 )}

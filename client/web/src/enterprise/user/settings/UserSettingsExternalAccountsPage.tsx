@@ -1,10 +1,11 @@
 import * as React from 'react'
+
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+import { createAggregateError } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
@@ -76,6 +77,7 @@ export class UserSettingsExternalAccountsPage extends React.Component<Props> {
                 query UserExternalAccounts($user: ID!, $first: Int) {
                     node(id: $user) {
                         ... on User {
+                            __typename
                             externalAccounts(first: $first) {
                                 ...ExternalAccountsConnectionFields
                             }
@@ -91,7 +93,7 @@ export class UserSettingsExternalAccountsPage extends React.Component<Props> {
                     throw createAggregateError(errors)
                 }
                 const user = data.node
-                if (!user.externalAccounts) {
+                if (user.__typename !== 'User' || !user.externalAccounts) {
                     throw createAggregateError(errors)
                 }
                 return user.externalAccounts

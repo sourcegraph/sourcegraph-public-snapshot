@@ -23,9 +23,3 @@ var matchCount = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Name: "search_blitz_match_count",
 	Help: "the match count where client is either stream or batch",
 }, []string{"group", "query_name", "client"})
-
-var fetchDurationSeconds = promauto.NewHistogramVec(prometheus.HistogramOpts{
-	Name:    "search_blitz_trace_fetch_seconds",
-	Help:    "The time taken to fetch a trace from Jaeger",
-	Buckets: Buckets,
-}, []string{"error", "attempts"})

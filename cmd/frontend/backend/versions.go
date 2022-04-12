@@ -9,8 +9,7 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 // UpgradeError is returned by UpdateServiceVersion when it faces an
@@ -35,9 +34,9 @@ func (e UpgradeError) Error() string {
 // GetFirstServiceVersion returns the first version registered for the given Sourcegraph service.
 // This method will return an error if UpdateServiceVersion has never been called for the given
 // service.
-func GetFirstServiceVersion(ctx context.Context, service string) (version string, err error) {
+func GetFirstServiceVersion(ctx context.Context, db database.DB, service string) (version string, err error) {
 	q := sqlf.Sprintf(getFirstVersionQuery, service)
-	row := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	row := db.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err = row.Scan(&version); err != nil {
 		return "", err
 	}
@@ -50,34 +49,38 @@ const getFirstVersionQuery = `SELECT first_version FROM versions WHERE service =
 // UpdateServiceVersion updates the latest version for the given Sourcegraph
 // service. It enforces our documented upgrade policy.
 // https://docs.sourcegraph.com/#upgrading-sourcegraph
-func UpdateServiceVersion(ctx context.Context, service, version string) error {
-	return dbutil.Transaction(ctx, dbconn.Global, func(tx *sql.Tx) (err error) {
-		var prev string
-
-		q := sqlf.Sprintf(getVersionQuery, service)
-		row := tx.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-		if err = row.Scan(&prev); err != nil && err != sql.ErrNoRows {
-			return err
-		}
-
-		latest, _ := semver.NewVersion(version)
-		previous, _ := semver.NewVersion(prev)
-
-		if !IsValidUpgrade(previous, latest) {
-			return &UpgradeError{Service: service, Previous: previous, Latest: latest}
-		}
-
-		q = sqlf.Sprintf(
-			upsertVersionQuery,
-			service,
-			version,
-			time.Now().UTC(),
-			prev,
-		)
-
-		_, err = tx.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+func UpdateServiceVersion(ctx context.Context, db database.DB, service, version string) (err error) {
+	var tx database.DB
+	tx, err = db.Transact(ctx)
+	if err != nil {
 		return err
-	})
+	}
+	defer func() { err = tx.Done(err) }()
+
+	var prev string
+	q := sqlf.Sprintf(getVersionQuery, service)
+	row := tx.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err = row.Scan(&prev); err != nil && err != sql.ErrNoRows {
+		return err
+	}
+
+	latest, _ := semver.NewVersion(version)
+	previous, _ := semver.NewVersion(prev)
+
+	if !IsValidUpgrade(previous, latest) {
+		return &UpgradeError{Service: service, Previous: previous, Latest: latest}
+	}
+
+	q = sqlf.Sprintf(
+		upsertVersionQuery,
+		service,
+		version,
+		time.Now().UTC(),
+		prev,
+	)
+
+	_, err = tx.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	return err
 }
 
 const getVersionQuery = `SELECT version FROM versions WHERE service = %s`

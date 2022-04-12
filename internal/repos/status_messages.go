@@ -4,11 +4,9 @@ import (
 	"context"
 	"os"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var MockStatusMessages func(context.Context, *types.User) ([]StatusMessage, error)
@@ -17,7 +15,7 @@ var MockStatusMessages func(context.Context, *types.User) ([]StatusMessage, erro
 // external service sync errors we'll fetch any external services owned by the
 // user. In addition, if the user is a site admin we'll also fetch site level
 // external services.
-func FetchStatusMessages(ctx context.Context, db dbutil.DB, u *types.User) ([]StatusMessage, error) {
+func FetchStatusMessages(ctx context.Context, db database.DB, u *types.User) ([]StatusMessage, error) {
 	if MockStatusMessages != nil {
 		return MockStatusMessages(ctx, u)
 	}
@@ -28,7 +26,7 @@ func FetchStatusMessages(ctx context.Context, db dbutil.DB, u *types.User) ([]St
 
 	// We first fetch affiliated sync errors since this will also find all the
 	// external services the user cares about.
-	externalServiceSyncErrors, err := database.ExternalServices(db).GetAffiliatedSyncErrors(ctx, u)
+	externalServiceSyncErrors, err := db.ExternalServices().GetAffiliatedSyncErrors(ctx, u)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching sync errors")
 	}
@@ -67,7 +65,7 @@ func FetchStatusMessages(ctx context.Context, db dbutil.DB, u *types.User) ([]St
 			Limit: 1,
 		},
 	}
-	notCloned, err := database.Repos(db).ListRepoNames(ctx, opts)
+	notCloned, err := db.Repos().ListMinimalRepos(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "listing not-cloned repos")
 	}
@@ -81,17 +79,17 @@ func FetchStatusMessages(ctx context.Context, db dbutil.DB, u *types.User) ([]St
 
 	// Look for any repository that we could not sync
 	opts = database.ReposListOptions{
-		ExternalServiceIDs: extsvcIDs,
 		FailedFetch:        true,
+		ExternalServiceIDs: extsvcIDs,
 		LimitOffset: &database.LimitOffset{
 			Limit: 1,
 		},
 	}
-	failedSync, err := database.Repos(db).Count(ctx, opts)
+	failedSync, err := db.Repos().ListMinimalRepos(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "counting repo sync failures")
 	}
-	if failedSync > 0 {
+	if len(failedSync) > 0 {
 		messages = append(messages, StatusMessage{
 			SyncError: &SyncError{
 				Message: "Some repositories could not be synced",

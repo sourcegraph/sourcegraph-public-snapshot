@@ -4,30 +4,39 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
 
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestGetIndexOptions(t *testing.T) {
-	vc := parseVersionContext
-	vcConf := func(contexts ...*schema.VersionContext) schema.SiteConfiguration {
-		return schema.SiteConfiguration{
-			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				VersionContexts: contexts,
-			},
-		}
+	const (
+		REPO = int32(iota + 1)
+		FOO
+		NOT_IN_VERSION_CONTEXT
+		PRIORITY
+		PUBLIC
+		FORK
+		ARCHIVED
+	)
+
+	name := func(repo int32) string {
+		return fmt.Sprintf("repo-%.2d", repo)
 	}
-	withBranches := func(c schema.SiteConfiguration, b map[string][]string) schema.SiteConfiguration {
+
+	withBranches := func(c schema.SiteConfiguration, repo int32, branches ...string) schema.SiteConfiguration {
 		if c.ExperimentalFeatures == nil {
 			c.ExperimentalFeatures = &schema.ExperimentalFeatures{}
 		}
-		c.ExperimentalFeatures.SearchIndexBranches = b
+		if c.ExperimentalFeatures.SearchIndexBranches == nil {
+			c.ExperimentalFeatures.SearchIndexBranches = map[string][]string{}
+		}
+		b := c.ExperimentalFeatures.SearchIndexBranches
+		b[name(repo)] = append(b[name(repo)], branches...)
 		return c
 	}
 
@@ -35,16 +44,17 @@ func TestGetIndexOptions(t *testing.T) {
 		name              string
 		conf              schema.SiteConfiguration
 		searchContextRevs []string
-		repo              string
+		repo              int32
 		want              zoektIndexOptions
 	}
 
 	cases := []caseT{{
 		name: "default",
 		conf: schema.SiteConfiguration{},
-		repo: "repo",
+		repo: REPO,
 		want: zoektIndexOptions{
 			RepoID:  1,
+			Name:    "repo-01",
 			Symbols: true,
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
@@ -53,9 +63,10 @@ func TestGetIndexOptions(t *testing.T) {
 	}, {
 		name: "public",
 		conf: schema.SiteConfiguration{},
-		repo: "public",
+		repo: PUBLIC,
 		want: zoektIndexOptions{
 			RepoID:  5,
+			Name:    "repo-05",
 			Public:  true,
 			Symbols: true,
 			Branches: []zoekt.RepositoryBranch{
@@ -65,9 +76,10 @@ func TestGetIndexOptions(t *testing.T) {
 	}, {
 		name: "fork",
 		conf: schema.SiteConfiguration{},
-		repo: "fork",
+		repo: FORK,
 		want: zoektIndexOptions{
 			RepoID:  6,
+			Name:    "repo-06",
 			Fork:    true,
 			Symbols: true,
 			Branches: []zoekt.RepositoryBranch{
@@ -77,9 +89,10 @@ func TestGetIndexOptions(t *testing.T) {
 	}, {
 		name: "archived",
 		conf: schema.SiteConfiguration{},
-		repo: "archived",
+		repo: ARCHIVED,
 		want: zoektIndexOptions{
 			RepoID:   7,
+			Name:     "repo-07",
 			Archived: true,
 			Symbols:  true,
 			Branches: []zoekt.RepositoryBranch{
@@ -89,10 +102,12 @@ func TestGetIndexOptions(t *testing.T) {
 	}, {
 		name: "nosymbols",
 		conf: schema.SiteConfiguration{
-			SearchIndexSymbolsEnabled: boolPtr(false)},
-		repo: "repo",
+			SearchIndexSymbolsEnabled: boolPtr(false),
+		},
+		repo: REPO,
 		want: zoektIndexOptions{
 			RepoID: 1,
+			Name:   "repo-01",
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
 			},
@@ -102,9 +117,10 @@ func TestGetIndexOptions(t *testing.T) {
 		conf: schema.SiteConfiguration{
 			SearchLargeFiles: []string{"**/*.jar", "*.bin"},
 		},
-		repo: "repo",
+		repo: REPO,
 		want: zoektIndexOptions{
 			RepoID:     1,
+			Name:       "repo-01",
 			Symbols:    true,
 			LargeFiles: []string{"**/*.jar", "*.bin"},
 			Branches: []zoekt.RepositoryBranch{
@@ -112,37 +128,30 @@ func TestGetIndexOptions(t *testing.T) {
 			},
 		},
 	}, {
-		name: "implicit HEAD",
-		conf: vcConf(vc("foo", "repo@b", "repo@a"), vc("bar", "repo@c", "repo@a", "other@d")),
-		repo: "repo",
+		name: "conf index branches",
+		conf: withBranches(schema.SiteConfiguration{}, REPO, "a", "", "b"),
+		repo: REPO,
 		want: zoektIndexOptions{
 			RepoID:  1,
+			Name:    "repo-01",
 			Symbols: true,
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
 				{Name: "a", Version: "!a"},
 				{Name: "b", Version: "!b"},
-				{Name: "c", Version: "!c"},
 			},
 		},
 	}, {
-		name: "implicit HEAD not in vc",
-		conf: vcConf(vc("foo", "repo@a")),
-		repo: "not_in_version_context",
-		want: zoektIndexOptions{
-			RepoID:  3,
-			Symbols: true,
-			Branches: []zoekt.RepositoryBranch{{
-				Name:    "HEAD",
-				Version: "!HEAD",
-			}},
-		},
-	}, {
-		name: "explicit HEAD",
-		conf: vcConf(vc("foo", "repo@HEAD", "repo@a")),
-		repo: "repo",
+		name: "conf index revisions",
+		conf: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
+			SearchIndexRevisions: []*schema.SearchIndexRevisionsRule{
+				{Name: "repo-.*", Revisions: []string{"a"}},
+			},
+		}},
+		repo: REPO,
 		want: zoektIndexOptions{
 			RepoID:  1,
+			Name:    "repo-01",
 			Symbols: true,
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
@@ -150,38 +159,19 @@ func TestGetIndexOptions(t *testing.T) {
 			},
 		},
 	}, {
-		// a revision can be the empty string, treat as HEAD
-		name: "explicit HEAD empty",
-		conf: vcConf(vc("foo", "repo", "repo@a")),
-		repo: "repo",
-		want: zoektIndexOptions{
-			RepoID:  1,
-			Symbols: true,
-			Branches: []zoekt.RepositoryBranch{
-				{Name: "HEAD", Version: "!HEAD"},
-				{Name: "a", Version: "!a"},
+		name: "conf index revisions and branches",
+		conf: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
+			SearchIndexBranches: map[string][]string{
+				"repo-01": {"a", "b"},
 			},
-		},
-	}, {
-		name: "conf index branches",
-		conf: withBranches(schema.SiteConfiguration{}, map[string][]string{"repo": {"a"}}),
-		repo: "repo",
-		want: zoektIndexOptions{
-			RepoID:  1,
-			Symbols: true,
-			Branches: []zoekt.RepositoryBranch{
-				{Name: "HEAD", Version: "!HEAD"},
-				{Name: "a", Version: "!a"},
+			SearchIndexRevisions: []*schema.SearchIndexRevisionsRule{
+				{Name: "repo-.*", Revisions: []string{"a", "c"}},
 			},
-		},
-	}, {
-		name: "conf index branches and vc",
-		conf: withBranches(
-			vcConf(vc("foo", "repo", "repo@a", "repo@b")),
-			map[string][]string{"repo": {"b", "c"}}),
-		repo: "repo",
+		}},
+		repo: REPO,
 		want: zoektIndexOptions{
 			RepoID:  1,
+			Name:    "repo-01",
 			Symbols: true,
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
@@ -193,10 +183,11 @@ func TestGetIndexOptions(t *testing.T) {
 	}, {
 		name:              "with search context revisions",
 		conf:              schema.SiteConfiguration{},
-		repo:              "repo",
+		repo:              REPO,
 		searchContextRevs: []string{"rev1", "rev2"},
 		want: zoektIndexOptions{
 			RepoID:  1,
+			Name:    "repo-01",
 			Symbols: true,
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
@@ -207,9 +198,10 @@ func TestGetIndexOptions(t *testing.T) {
 	}, {
 		name: "with a priority value",
 		conf: schema.SiteConfiguration{},
-		repo: "priority",
+		repo: PRIORITY,
 		want: zoektIndexOptions{
 			RepoID:  4,
+			Name:    "repo-04",
 			Symbols: true,
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
@@ -233,33 +225,28 @@ func TestGetIndexOptions(t *testing.T) {
 		}
 		cases = append(cases, caseT{
 			name: "limit branches",
-			conf: withBranches(schema.SiteConfiguration{}, map[string][]string{"repo": branches}),
-			repo: "repo",
+			conf: withBranches(schema.SiteConfiguration{}, REPO, branches...),
+			repo: REPO,
 			want: zoektIndexOptions{
 				RepoID:   1,
+				Name:     "repo-01",
 				Symbols:  true,
 				Branches: want,
 			},
 		})
 	}
 
-	getRepoIndexOptions := func(repo string) (*RepoIndexOptions, error) {
-		repoID := int32(1)
-		for _, r := range []string{"repo", "foo", "not_in_version_context", "priority", "public", "fork", "archived"} {
-			if r == repo {
-				break
-			}
-			repoID++
-		}
+	var getRepoIndexOptions getRepoIndexOptsFn = func(repo int32) (*RepoIndexOptions, error) {
 		var priority float64
-		if repo == "priority" {
+		if repo == PRIORITY {
 			priority = 10
 		}
 		return &RepoIndexOptions{
-			RepoID:   repoID,
-			Public:   repo == "public",
-			Fork:     repo == "fork",
-			Archived: repo == "archived",
+			RepoID:   repo,
+			Name:     name(repo),
+			Public:   repo == PUBLIC,
+			Fork:     repo == FORK,
+			Archived: repo == ARCHIVED,
 			Priority: priority,
 			GetVersion: func(branch string) (string, error) {
 				return "!" + branch, nil
@@ -286,13 +273,8 @@ func TestGetIndexOptions(t *testing.T) {
 }
 
 func TestGetIndexOptions_getVersion(t *testing.T) {
-	conf := schema.SiteConfiguration{
-		ExperimentalFeatures: &schema.ExperimentalFeatures{
-			VersionContexts: []*schema.VersionContext{
-				parseVersionContext("foo", "repo@b1", "repo@b2"),
-			},
-		},
-	}
+	conf := schema.SiteConfiguration{}
+	getSearchContextRevs := func(int32) ([]string, error) { return []string{"b1", "b2"}, nil }
 
 	boom := errors.New("boom")
 	cases := []struct {
@@ -342,15 +324,13 @@ func TestGetIndexOptions_getVersion(t *testing.T) {
 	}}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			getRepoIndexOptions := func(repo string) (*RepoIndexOptions, error) {
+			getRepoIndexOptions := func(repo int32) (*RepoIndexOptions, error) {
 				return &RepoIndexOptions{
 					GetVersion: tc.f,
 				}, nil
 			}
 
-			getSearchContextRevs := func(int32) ([]string, error) { return nil, nil }
-
-			b := GetIndexOptions(&conf, getRepoIndexOptions, getSearchContextRevs, "repo")
+			b := GetIndexOptions(&conf, getRepoIndexOptions, getSearchContextRevs, 1)
 
 			var got zoektIndexOptions
 			if err := json.Unmarshal(b, &got); err != nil {
@@ -372,32 +352,33 @@ func TestGetIndexOptions_getVersion(t *testing.T) {
 }
 
 func TestGetIndexOptions_batch(t *testing.T) {
+	isError := func(repo int32) bool {
+		return repo%20 == 0
+	}
 	var (
-		repos []string
+		repos []int32
 		want  []zoektIndexOptions
 	)
-	for i := 0; i < 100; i++ {
-		if i%20 == 0 {
-			repos = append(repos, fmt.Sprintf("error-%02d", i))
+	for repo := int32(1); repo < 100; repo++ {
+		repos = append(repos, repo)
+		if isError(repo) {
 			want = append(want, zoektIndexOptions{Error: "error"})
 		} else {
-			repo := fmt.Sprintf("repo-%02d", i)
-			repos = append(repos, repo)
 			want = append(want, zoektIndexOptions{
 				Symbols: true,
 				Branches: []zoekt.RepositoryBranch{
-					{Name: "HEAD", Version: "!HEAD-" + repo},
+					{Name: "HEAD", Version: fmt.Sprintf("!HEAD-%d", repo)},
 				},
 			})
 		}
 	}
-	getRepoIndexOptions := func(repo string) (*RepoIndexOptions, error) {
+	getRepoIndexOptions := func(repo int32) (*RepoIndexOptions, error) {
 		return &RepoIndexOptions{
 			GetVersion: func(branch string) (string, error) {
-				if strings.HasPrefix(repo, "error") {
+				if isError(repo) {
 					return "", errors.New("error")
 				}
-				return fmt.Sprintf("!%s-%s", branch, repo), nil
+				return fmt.Sprintf("!%s-%d", branch, repo), nil
 			},
 		}, nil
 	}
@@ -414,25 +395,6 @@ func TestGetIndexOptions_batch(t *testing.T) {
 	}
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Fatal("mismatch (-want, +got):\n", diff)
-	}
-}
-
-func parseVersionContext(name string, repoRevStrs ...string) *schema.VersionContext {
-	var repoRevs []*schema.VersionContextRevision
-	for _, repo := range repoRevStrs {
-		rev := ""
-		if idx := strings.LastIndex(repo, "@"); idx > 0 {
-			rev = repo[idx+1:]
-			repo = repo[:idx]
-		}
-		repoRevs = append(repoRevs, &schema.VersionContextRevision{
-			Repo: repo,
-			Rev:  rev,
-		})
-	}
-	return &schema.VersionContext{
-		Name:      name,
-		Revisions: repoRevs,
 	}
 }
 

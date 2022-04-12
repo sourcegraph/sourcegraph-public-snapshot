@@ -1,10 +1,12 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { CtaBanner } from '../components/CtaBanner'
 
-import styles from './ExtensionBanner.module.scss'
 import { extensionBannerIconURL } from './icons'
+
+import styles from './ExtensionBanner.module.scss'
 
 interface Props {
     className?: string

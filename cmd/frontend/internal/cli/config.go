@@ -6,31 +6,29 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/url"
 	"os"
-	"os/user"
 	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
 
-	"github.com/cockroachdb/errors"
 	"github.com/fsnotify/fsnotify"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/confdb"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
+	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -97,18 +95,22 @@ func readSiteConfigFile(paths []string) ([]byte, error) {
 	}
 
 	merged.WriteString("}\n")
-
-	return merged.Bytes(), nil
+	formatted, err := jsonc.Format(merged.String(), nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to format JSONC")
+	}
+	return []byte(formatted), nil
 }
 
-func overrideSiteConfig(ctx context.Context) error {
+func overrideSiteConfig(ctx context.Context, db database.DB) error {
 	path := os.Getenv("SITE_CONFIG_FILE")
 	if path == "" {
 		return nil
 	}
+	cs := &configurationSource{db: db}
 	paths := filepath.SplitList(path)
 	updateFunc := func(ctx context.Context) error {
-		raw, err := (&configurationSource{}).Read(ctx)
+		raw, err := cs.Read(ctx)
 		if err != nil {
 			return err
 		}
@@ -118,7 +120,7 @@ func overrideSiteConfig(ctx context.Context) error {
 		}
 		raw.Site = string(site)
 
-		err = (&configurationSource{}).Write(ctx, raw)
+		err = cs.Write(ctx, raw)
 		if err != nil {
 			return errors.Wrap(err, "writing site config overrides to database")
 		}
@@ -133,7 +135,7 @@ func overrideSiteConfig(ctx context.Context) error {
 	return nil
 }
 
-func overrideGlobalSettings(ctx context.Context, db dbutil.DB) error {
+func overrideGlobalSettings(ctx context.Context, db database.DB) error {
 	path := os.Getenv("GLOBAL_SETTINGS_FILE")
 	if path == "" {
 		return nil
@@ -171,16 +173,17 @@ func overrideGlobalSettings(ctx context.Context, db dbutil.DB) error {
 	return nil
 }
 
-func overrideExtSvcConfig(ctx context.Context, db dbutil.DB) error {
+func overrideExtSvcConfig(ctx context.Context, db database.DB) error {
 	log := log15.Root().New("svc", "config.file")
 	path := os.Getenv("EXTSVC_CONFIG_FILE")
 	if path == "" {
 		return nil
 	}
 	extsvcs := database.ExternalServices(db)
+	cs := &configurationSource{db: db}
 
 	update := func(ctx context.Context) error {
-		raw, err := (&configurationSource{}).Read(ctx)
+		raw, err := cs.Read(ctx)
 		if err != nil {
 			return err
 		}
@@ -390,12 +393,14 @@ func watchPaths(ctx context.Context, paths ...string) (<-chan error, error) {
 	return out, nil
 }
 
-type configurationSource struct{}
+type configurationSource struct {
+	db database.DB
+}
 
 func (c configurationSource) Read(ctx context.Context) (conftypes.RawUnified, error) {
-	site, err := confdb.SiteGetLatest(ctx)
+	site, err := c.db.Conf().SiteGetLatest(ctx)
 	if err != nil {
-		return conftypes.RawUnified{}, errors.Wrap(err, "confdb.SiteGetLatest")
+		return conftypes.RawUnified{}, errors.Wrap(err, "ConfStore.SiteGetLatest")
 	}
 
 	return conftypes.RawUnified{
@@ -406,13 +411,13 @@ func (c configurationSource) Read(ctx context.Context) (conftypes.RawUnified, er
 
 func (c configurationSource) Write(ctx context.Context, input conftypes.RawUnified) error {
 	// TODO(slimsag): future: pass lastID through for race prevention
-	site, err := confdb.SiteGetLatest(ctx)
+	site, err := c.db.Conf().SiteGetLatest(ctx)
 	if err != nil {
-		return errors.Wrap(err, "confdb.SiteGetLatest")
+		return errors.Wrap(err, "ConfStore.SiteGetLatest")
 	}
-	_, err = confdb.SiteCreateIfUpToDate(ctx, &site.ID, input.Site)
+	_, err = c.db.Conf().SiteCreateIfUpToDate(ctx, &site.ID, input.Site)
 	if err != nil {
-		return errors.Wrap(err, "confdb.SiteCreateIfUpToDate")
+		return errors.Wrap(err, "ConfStore.SiteCreateIfUpToDate")
 	}
 	return nil
 }
@@ -437,25 +442,15 @@ var (
 
 func serviceConnections() conftypes.ServiceConnections {
 	serviceConnectionsOnce.Do(func() {
-		username := ""
-		if user, err := user.Current(); err == nil {
-			username = user.Username
+		dsns, err := postgresdsn.DSNsBySchema(schemas.SchemaNames)
+		if err != nil {
+			panic(err.Error())
 		}
 
 		serviceConnectionsVal = conftypes.ServiceConnections{
-			PostgresDSN:              dbutil.PostgresDSN("", username, os.Getenv),
-			CodeIntelPostgresDSN:     dbutil.PostgresDSN("codeintel", username, os.Getenv),
-			CodeInsightsTimescaleDSN: dbutil.PostgresDSN("codeinsights", username, os.Getenv),
-		}
-
-		// We set this envvar in development to disable the following check
-		if os.Getenv("CODEINTEL_PG_ALLOW_SINGLE_DB") != "" {
-			return
-		}
-
-		// Ensure that the code intelligence database is not pointing at the frontend database
-		if err := comparePostgresDSNs(serviceConnectionsVal.PostgresDSN, serviceConnectionsVal.CodeIntelPostgresDSN); err != nil {
-			panic(err.Error())
+			PostgresDSN:          dsns["frontend"],
+			CodeIntelPostgresDSN: dsns["codeintel"],
+			CodeInsightsDSN:      dsns["codeinsights"],
 		}
 	})
 
@@ -465,35 +460,9 @@ func serviceConnections() conftypes.ServiceConnections {
 	}
 
 	return conftypes.ServiceConnections{
-		GitServers:               addrs,
-		PostgresDSN:              serviceConnectionsVal.PostgresDSN,
-		CodeIntelPostgresDSN:     serviceConnectionsVal.CodeIntelPostgresDSN,
-		CodeInsightsTimescaleDSN: serviceConnectionsVal.CodeInsightsTimescaleDSN,
+		GitServers:           addrs,
+		PostgresDSN:          serviceConnectionsVal.PostgresDSN,
+		CodeIntelPostgresDSN: serviceConnectionsVal.CodeIntelPostgresDSN,
+		CodeInsightsDSN:      serviceConnectionsVal.CodeInsightsDSN,
 	}
-}
-
-// comparePostgresDSNs returns an error if one of the given Postgres DSN values are
-// not a valid URL, or if they are both valid URLs but point to the same database.
-// We consider two DSNs to be the same when they specify the same host, port, and
-// path. It's possible that different hosts/ports map to the same physical machine,
-// so we could conceivably return false negatives here and the tricksy site-admin
-// may have pulled the wool over our eyes. This shouldn't actually affect anything
-// operationally in the near-term, but may just make migrations harder when we need
-// to have them manually separate the data.
-func comparePostgresDSNs(dsn1, dsn2 string) error {
-	url1, err := url.Parse(dsn1)
-	if err != nil {
-		return errors.Errorf("illegal Postgres DSN: %s", dsn1)
-	}
-
-	url2, err := url.Parse(dsn2)
-	if err != nil {
-		return errors.Errorf("illegal Postgres DSN: %s", dsn2)
-	}
-
-	if url1.Host == url2.Host && url1.Path == url2.Path {
-		return errors.Errorf("codeintel and frontend databases must be distinct: %s and %s seem to refer to the same database", dsn1, dsn2)
-	}
-
-	return nil
 }

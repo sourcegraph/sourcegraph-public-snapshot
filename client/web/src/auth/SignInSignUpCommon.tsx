@@ -1,6 +1,7 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import * as React from 'react'
 
 import { USERNAME_MAX_LENGTH, VALID_USERNAME_REGEXP } from '../user'
 
@@ -75,4 +76,24 @@ export function getReturnTo(location: H.Location): string {
 
     newURL.searchParams.append('toast', 'integrations')
     return newURL.pathname + newURL.search + newURL.hash
+}
+
+export function maybeAddPostSignUpRedirect(url?: string): string {
+    const enablePostSignupFlow = window.context?.experimentalFeatures?.enablePostSignupFlow
+    const isDotCom = window.context?.sourcegraphDotComMode
+    const shouldAddRedirect = isDotCom && enablePostSignupFlow
+
+    if (url) {
+        if (shouldAddRedirect) {
+            // second param to protect against relative urls
+            const urlObject = new URL(url, window.location.href)
+
+            urlObject.searchParams.append('redirect', '/welcome')
+            return urlObject.toString()
+        }
+
+        return url
+    }
+
+    return shouldAddRedirect ? '/welcome' : ''
 }

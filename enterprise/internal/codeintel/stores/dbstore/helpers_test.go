@@ -11,11 +11,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/shared"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -51,6 +53,9 @@ func insertUploads(t testing.TB, db *sql.DB, uploads ...Upload) {
 		if upload.Indexer == "" {
 			upload.Indexer = "lsif-go"
 		}
+		if upload.IndexerVersion == "" {
+			upload.IndexerVersion = "latest"
+		}
 		if upload.UploadedParts == nil {
 			upload.UploadedParts = []int{}
 		}
@@ -73,11 +78,12 @@ func insertUploads(t testing.TB, db *sql.DB, uploads ...Upload) {
 				num_failures,
 				repository_id,
 				indexer,
+				indexer_version,
 				num_parts,
 				uploaded_parts,
 				upload_size,
 				associated_index_id
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			upload.ID,
 			upload.Commit,
@@ -92,6 +98,7 @@ func insertUploads(t testing.TB, db *sql.DB, uploads ...Upload) {
 			upload.NumFailures,
 			upload.RepositoryID,
 			upload.Indexer,
+			upload.IndexerVersion,
 			upload.NumParts,
 			pq.Array(upload.UploadedParts),
 			upload.UploadSize,
@@ -241,7 +248,7 @@ func insertPackageReferences(t testing.TB, store *Store, packageReferences []sha
 
 // insertVisibleAtTip populates rows of the lsif_uploads_visible_at_tip table for the given repository
 // with the given identifiers. Each upload is assumed to refer to the tip of the default branch. To mark
-// an upload as protected (visible to _some_ branch) butn ot visible from teh default branch, use the
+// an upload as protected (visible to _some_ branch) butn ot visible from the default branch, use the
 // insertVisibleAtTipNonDefaultBranch method instead.
 func insertVisibleAtTip(t testing.TB, db *sql.DB, repositoryID int, uploadIDs ...int) {
 	insertVisibleAtTipInternal(t, db, repositoryID, true, uploadIDs...)
@@ -300,6 +307,7 @@ func insertNearestUploads(t testing.TB, db *sql.DB, repositoryID int, uploads ma
 	}
 }
 
+//nolint:unparam // unparam complains that `repositoryID` always has same value across call-sites, but that's OK
 func insertLinks(t testing.TB, db *sql.DB, repositoryID int, links map[string]commitgraph.LinkRelationship) {
 	if len(links) == 0 {
 		return
@@ -334,6 +342,7 @@ func toCommitGraphView(uploads []Upload) *commitgraph.CommitGraphView {
 	return commitGraphView
 }
 
+//nolint:unparam // unparam complains that `repositoryID` always has same value across call-sites, but that's OK
 func getVisibleUploads(t testing.TB, db *sql.DB, repositoryID int, commits []string) map[string][]int {
 	idsByCommit := map[string][]int{}
 	for _, commit := range commits {
@@ -355,6 +364,7 @@ func getVisibleUploads(t testing.TB, db *sql.DB, repositoryID int, commits []str
 	return idsByCommit
 }
 
+//nolint:unparam // unparam complains that `repositoryID` always has same value across call-sites, but that's OK
 func getUploadsVisibleAtTip(t testing.TB, db *sql.DB, repositoryID int) []int {
 	query := sqlf.Sprintf(
 		`SELECT upload_id FROM lsif_uploads_visible_at_tip WHERE repository_id = %s AND is_default_branch ORDER BY upload_id`,
@@ -393,7 +403,7 @@ func normalizeVisibleUploads(uploadMetas map[string][]commitgraph.UploadMeta) ma
 	return uploadMetas
 }
 
-func getUploadStates(db dbutil.DB, ids ...int) (map[int]string, error) {
+func getUploadStates(db database.DB, ids ...int) (map[int]string, error) {
 	if len(ids) == 0 {
 		return nil, nil
 	}
@@ -406,7 +416,7 @@ func getUploadStates(db dbutil.DB, ids ...int) (map[int]string, error) {
 	return scanStates(db.QueryContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...))
 }
 
-func getIndexStates(db dbutil.DB, ids ...int) (map[int]string, error) {
+func getIndexStates(db database.DB, ids ...int) (map[int]string, error) {
 	if len(ids) == 0 {
 		return nil, nil
 	}
@@ -456,6 +466,18 @@ func dumpToUpload(expected Dump) Upload {
 		RepositoryID:      expected.RepositoryID,
 		RepositoryName:    expected.RepositoryName,
 		Indexer:           expected.Indexer,
+		IndexerVersion:    expected.IndexerVersion,
 		AssociatedIndexID: expected.AssociatedIndexID,
+	}
+}
+
+func assertReferenceCounts(t *testing.T, store *Store, expectedReferenceCountsByID map[int]int) {
+	referenceCountsByID, err := scanIntPairs(store.Query(context.Background(), sqlf.Sprintf(`SELECT id, reference_count FROM lsif_uploads`)))
+	if err != nil {
+		t.Fatalf("unexpected error querying reference counts: %s", err)
+	}
+
+	if diff := cmp.Diff(expectedReferenceCountsByID, referenceCountsByID); diff != "" {
+		t.Errorf("unexpected reference count (-want +got):\n%s", diff)
 	}
 }

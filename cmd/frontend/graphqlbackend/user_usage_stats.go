@@ -77,57 +77,117 @@ func (*schemaResolver) LogUserEvent(ctx context.Context, args *struct {
 	return nil, usagestatsdeprecated.LogActivity(actor.IsAuthenticated(), actor.UID, args.UserCookieID, args.Event)
 }
 
-func (r *schemaResolver) LogEvent(ctx context.Context, args *struct {
+type Event struct {
 	Event          string
 	UserCookieID   string
 	FirstSourceURL *string
+	LastSourceURL  *string
 	URL            string
 	Source         string
 	Argument       *string
 	CohortID       *string
 	Referrer       *string
 	PublicArgument *string
-}) (*EmptyResponse, error) {
-	if !conf.EventLoggingEnabled() {
+	UserProperties *string
+	DeviceID       *string
+	InsertID       *string
+	EventID        *int32
+}
+
+type EventBatch struct {
+	Events *[]Event
+}
+
+func (r *schemaResolver) LogEvent(ctx context.Context, args *Event) (*EmptyResponse, error) {
+	if args == nil {
 		return nil, nil
 	}
 
-	var argumentPayload json.RawMessage
-	if args.Argument != nil {
-		if err := json.Unmarshal([]byte(*args.Argument), &argumentPayload); err != nil {
+	return r.LogEvents(ctx, &EventBatch{Events: &[]Event{*args}})
+}
+
+func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*EmptyResponse, error) {
+	if !conf.EventLoggingEnabled() || args.Events == nil {
+		return nil, nil
+	}
+
+	decode := func(v *string) (payload json.RawMessage, _ error) {
+		if v != nil {
+			if err := json.Unmarshal([]byte(*v), &payload); err != nil {
+				return nil, err
+			}
+		}
+
+		return payload, nil
+	}
+
+	events := make([]usagestats.Event, 0, len(*args.Events))
+	for _, args := range *args.Events {
+		if strings.HasPrefix(args.Event, "search.latencies.frontend.") {
+			argumentPayload, err := decode(args.Argument)
+			if err != nil {
+				return nil, err
+			}
+
+			if err := exportPrometheusSearchLatencies(args.Event, argumentPayload); err != nil {
+				log15.Error("export prometheus search latencies", "error", err)
+			}
+
+			// Future(slimsag): implement actual event logging for these events
+			continue
+		}
+
+		if strings.HasPrefix(args.Event, "search.ranking.") {
+			argumentPayload, err := decode(args.Argument)
+			if err != nil {
+				return nil, err
+			}
+			if err := exportPrometheusSearchRanking(argumentPayload); err != nil {
+				log15.Error("exportPrometheusSearchRanking", "error", err)
+			}
+			continue
+		}
+
+		argumentPayload, err := decode(args.Argument)
+		if err != nil {
 			return nil, err
 		}
-	}
 
-	if strings.HasPrefix(args.Event, "search.latencies.frontend.") {
-		if err := exportPrometheusSearchLatencies(args.Event, argumentPayload); err != nil {
-			log15.Error("export prometheus search latencies", "error", err)
-		}
-		return nil, nil // Future(slimsag): implement actual event logging for these events
-	}
-
-	var publicArgumentPayload json.RawMessage
-	if args.PublicArgument != nil {
-		if err := json.Unmarshal([]byte(*args.PublicArgument), &publicArgumentPayload); err != nil {
+		publicArgumentPayload, err := decode(args.PublicArgument)
+		if err != nil {
 			return nil, err
 		}
+
+		userPropertiesPayload, err := decode(args.UserProperties)
+		if err != nil {
+			return nil, err
+		}
+
+		events = append(events, usagestats.Event{
+			EventName:      args.Event,
+			URL:            args.URL,
+			UserID:         actor.FromContext(ctx).UID,
+			UserCookieID:   args.UserCookieID,
+			FirstSourceURL: args.FirstSourceURL,
+			LastSourceURL:  args.LastSourceURL,
+			Source:         args.Source,
+			Argument:       argumentPayload,
+			FeatureFlags:   featureflag.FromContext(ctx),
+			CohortID:       args.CohortID,
+			Referrer:       args.Referrer,
+			PublicArgument: publicArgumentPayload,
+			UserProperties: userPropertiesPayload,
+			DeviceID:       args.DeviceID,
+			EventID:        args.EventID,
+			InsertID:       args.InsertID,
+		})
 	}
 
-	actor := actor.FromContext(ctx)
-	ffs := featureflag.FromContext(ctx)
-	return nil, usagestats.LogEvent(ctx, r.db, usagestats.Event{
-		EventName:      args.Event,
-		URL:            args.URL,
-		UserID:         actor.UID,
-		UserCookieID:   args.UserCookieID,
-		FirstSourceURL: args.FirstSourceURL,
-		Source:         args.Source,
-		Argument:       argumentPayload,
-		FeatureFlags:   ffs,
-		CohortID:       args.CohortID,
-		Referrer:       args.Referrer,
-		PublicArgument: publicArgumentPayload,
-	})
+	if err := usagestats.LogEvents(ctx, r.db, events); err != nil {
+		return nil, err
+	}
+
+	return nil, nil
 }
 
 var (
@@ -159,5 +219,23 @@ func exportPrometheusSearchLatencies(event string, payload json.RawMessage) erro
 		searchType := strings.TrimSuffix(strings.TrimPrefix(event, "search.latencies.frontend."), ".first-result")
 		searchLatenciesFrontendFirstResult.WithLabelValues(searchType).Observe(v.DurationMS / 1000.0)
 	}
+	return nil
+}
+
+var searchRankingResultClicked = promauto.NewHistogramVec(prometheus.HistogramOpts{
+	Name:    "src_search_ranking_result_clicked",
+	Help:    "the index of the search result which was clicked on by the user",
+	Buckets: prometheus.LinearBuckets(1, 1, 10),
+}, []string{"type"})
+
+func exportPrometheusSearchRanking(payload json.RawMessage) error {
+	var v struct {
+		Index float64 `json:"index"`
+		Type  string  `json:"type"`
+	}
+	if err := json.Unmarshal([]byte(payload), &v); err != nil {
+		return err
+	}
+	searchRankingResultClicked.WithLabelValues(v.Type).Observe(v.Index)
 	return nil
 }

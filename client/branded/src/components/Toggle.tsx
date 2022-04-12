@@ -1,5 +1,8 @@
-import classnames from 'classnames'
 import * as React from 'react'
+
+import classNames from 'classnames'
+
+import { TOGGLE_DISPLAY } from './constants'
 
 import styles from './Toggle.module.scss'
 
@@ -9,6 +12,9 @@ interface Props {
 
     /** The DOM ID of the element. */
     id?: string
+
+    /** inline-center adds an extra margin-top to centralise text around toggle, defaults to inline-center */
+    display?: typeof TOGGLE_DISPLAY[number]
 
     /**
      * Called when the user changes the input's value.
@@ -23,13 +29,11 @@ interface Props {
     'aria-label'?: string
     'aria-labelledby'?: string
     'aria-describedby'?: string
+    'data-testid'?: string
 
     disabled?: boolean
     tabIndex?: number
     className?: string
-
-    /** Data attribute for testing */
-    dataTest?: string
 }
 
 /** A toggle switch input component. */
@@ -42,10 +46,11 @@ export const Toggle: React.FunctionComponent<Props> = ({
     tabIndex,
     onToggle,
     onClick,
-    dataTest,
+    display = 'inline-center',
     'aria-label': ariaLabel,
     'aria-labelledby': ariaLabelledby,
     'aria-describedby': ariaDescribedby,
+    'data-testid': dataTestId,
 }) => {
     function onButtonClick(event: React.MouseEvent<HTMLButtonElement>): void {
         event.stopPropagation()
@@ -60,7 +65,7 @@ export const Toggle: React.FunctionComponent<Props> = ({
     return (
         <button
             type="button"
-            className={classnames(styles.toggle, className)}
+            className={classNames(styles.toggle, className, display === 'inline-center' && styles.inlineCenter)}
             id={id}
             title={title}
             value={value ? 1 : 0}
@@ -72,15 +77,15 @@ export const Toggle: React.FunctionComponent<Props> = ({
             aria-label={ariaLabel}
             aria-labelledby={ariaLabelledby}
             aria-describedby={ariaDescribedby}
-            data-test={dataTest}
+            data-testid={dataTestId}
         >
             <span
-                className={classnames(styles.bar, {
+                className={classNames(styles.bar, {
                     [styles.barOn]: value,
                 })}
             />
             <span
-                className={classnames(styles.knob, {
+                className={classNames(styles.knob, {
                     [styles.knobOn]: value,
                 })}
             />

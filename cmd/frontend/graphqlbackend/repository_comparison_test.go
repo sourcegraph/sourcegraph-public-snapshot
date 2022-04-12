@@ -9,22 +9,60 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+func TestRepositoryComparisonNoMergeBase(t *testing.T) {
+	ctx := context.Background()
+	db := database.NewDB(nil)
+
+	wantBaseRevision := "ba5e"
+	wantHeadRevision := "1ead"
+
+	repo := &types.Repo{
+		ID:        api.RepoID(1),
+		Name:      api.RepoName("test"),
+		CreatedAt: time.Now(),
+	}
+
+	t.Cleanup(git.ResetMocks)
+	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+		if spec != wantBaseRevision && spec != wantHeadRevision {
+			t.Fatalf("ResolveRevision received wrong spec: %s", spec)
+		}
+		return api.CommitID(spec), nil
+	}
+	git.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
+		return "", errors.Errorf("merge base doesn't exist!")
+	}
+
+	input := &RepositoryComparisonInput{Base: &wantBaseRevision, Head: &wantHeadRevision}
+	repoResolver := NewRepositoryResolver(db, repo)
+
+	// There shouldn't be any error even when there is no merge base.
+	comp, err := NewRepositoryComparison(ctx, db, repoResolver, input)
+	require.Nil(t, err)
+	require.Equal(t, wantBaseRevision, comp.baseRevspec)
+	require.Equal(t, wantHeadRevision, comp.headRevspec)
+	require.Equal(t, "..", comp.rangeType)
+}
 
 func TestRepositoryComparison(t *testing.T) {
 	ctx := context.Background()
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 
 	wantBaseRevision := "24f7ca7c1190835519e261d7eefa09df55ceea4f"
 	wantMergeBaseRevision := "a7985dde7f92ad3490ec513be78fa2b365c7534c"
@@ -44,13 +82,13 @@ func TestRepositoryComparison(t *testing.T) {
 	}
 	t.Cleanup(func() { git.Mocks.ResolveRevision = nil })
 
-	git.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
+	gitserver.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
 		if len(args) < 1 && args[0] != "diff" {
 			t.Fatalf("gitserver.ExecReader received wrong args: %v", args)
 		}
 		return io.NopCloser(strings.NewReader(testDiff + testCopyDiff)), nil
 	}
-	t.Cleanup(func() { git.Mocks.ExecReader = nil })
+	t.Cleanup(func() { gitserver.Mocks.ExecReader = nil })
 
 	git.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
 		if string(a) != wantBaseRevision || string(b) != wantHeadRevision {
@@ -90,12 +128,12 @@ func TestRepositoryComparison(t *testing.T) {
 	})
 
 	t.Run("Commits", func(t *testing.T) {
-		commits := []*git.Commit{
+		commits := []*gitdomain.Commit{
 			{ID: api.CommitID(wantBaseRevision)},
 			{ID: api.CommitID(wantHeadRevision)},
 		}
 
-		git.Mocks.Commits = func(repo api.RepoName, opts git.CommitsOptions) ([]*git.Commit, error) {
+		git.Mocks.Commits = func(repo api.RepoName, opts git.CommitsOptions) ([]*gitdomain.Commit, error) {
 			wantRange := fmt.Sprintf("%s..%s", wantBaseRevision, wantHeadRevision)
 
 			if have, want := opts.Range, wantRange; have != want {
@@ -441,6 +479,8 @@ func TestDiffHunk2(t *testing.T) {
 	// https://github.com/sourcegraph/sourcegraph/pull/21068
 
 	ctx := context.Background()
+	// https://sourcegraph.com/github.com/dominikh/go-tools/-/blob/cmd/staticcheck/README.md
+	// was used to produce this test diff.
 	filediff := `diff --git cmd/staticcheck/README.md cmd/staticcheck/README.md
 index 4d14577..10ef458 100644
 --- cmd/staticcheck/README.md
@@ -510,6 +550,103 @@ index 4d14577..10ef458 100644
 		}
 		if body.Aborted() {
 			t.Fatal("highlighting is aborted")
+		}
+	})
+}
+
+func TestDiffHunk3(t *testing.T) {
+	// This test exists to protect against an edge case bug illustrated in
+	// https://github.com/sourcegraph/sourcegraph/pull/25866
+
+	ctx := context.Background()
+	// https://sourcegraph.com/github.com/dominikh/go-tools/-/blob/cmd/staticcheck/README.md
+	// was used to produce this test diff.
+	filediff := `diff --git cmd/staticcheck/README.md cmd/staticcheck/README.md
+index 4d14577..9fe9a4f 100644
+--- cmd/staticcheck/README.md
++++ cmd/staticcheck/README.md
+@@ -1,10 +1,6 @@
+ # staticcheck
+` + "-" + `
+-_staticcheck_ offers extensive analysis of Go code, covering a myriad
+-of categories. It will detect bugs, suggest code simplifications,
+-point out dead code, and more.
+` + "-" + `
+ ## Installation
++Wowza!
+` + "-" + `
+ See [the main README](https://github.com/dominikh/go-tools#installation) for installation instructions.`
+
+	dr := diff.NewMultiFileDiffReader(strings.NewReader(filediff))
+	// We only read the first file diff from testDiff
+	fileDiff, err := dr.ReadFile()
+	if err != nil && err != io.EOF {
+		t.Fatalf("parsing diff failed: %s", err)
+	}
+
+	hunk := &DiffHunk{hunk: fileDiff.Hunks[0]}
+
+	t.Run("Highlight", func(t *testing.T) {
+		hunk.highlighter = &dummyFileHighlighter{
+			// We don't care about the actual html formatting, just the number + order of
+			// the lines we get back after "applying" the diff to the highlighting.
+			highlightedBase: []template.HTML{
+				"# staticcheck",
+				"",
+				"_staticcheck_ offers extensive analysis of Go code, covering a myriad",
+				"of categories. It will detect bugs, suggest code simplifications,",
+				"point out dead code, and more.",
+				"",
+				"## Installation",
+				"",
+				"See [the main README](https://github.com/dominikh/go-tools#installation) for installation instructions.",
+			},
+			highlightedHead: []template.HTML{
+				"# staticcheck",
+				"## Installation",
+				"Wowza!",
+				"See [the main README](https://github.com/dominikh/go-tools#installation) for installation instructions.",
+			},
+		}
+
+		body, err := hunk.Highlight(ctx, &HighlightArgs{
+			DisableTimeout:     false,
+			HighlightLongLines: false,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if body.Aborted() {
+			t.Fatal("highlighting is aborted")
+		}
+
+		wantLines := []struct {
+			kind, html string
+		}{
+			{kind: "UNCHANGED", html: "# staticcheck"},
+			{kind: "DELETED", html: ""},
+			{kind: "DELETED", html: "_staticcheck_ offers extensive analysis of Go code, covering a myriad"},
+			{kind: "DELETED", html: "of categories. It will detect bugs, suggest code simplifications,"},
+			{kind: "DELETED", html: "point out dead code, and more."},
+			{kind: "DELETED", html: ""},
+			{kind: "UNCHANGED", html: "## Installation"},
+			{kind: "ADDED", html: "Wowza!"},
+			{kind: "DELETED", html: ""},
+			{kind: "UNCHANGED", html: "See [the main README](https://github.com/dominikh/go-tools#installation) for installation instructions."},
+		}
+
+		lines := body.Lines()
+		if have, want := len(lines), len(wantLines); have != want {
+			t.Fatalf("len(Highlight.Lines) is wrong. want = %d, have = %d", want, have)
+		}
+		for i, n := range lines {
+			wantedLine := wantLines[i]
+			if n.Kind() != wantedLine.kind {
+				t.Fatalf("Kind is wrong. want = %q, have = %q", wantedLine.kind, n.Kind())
+			}
+			if n.HTML() != wantedLine.html {
+				t.Fatalf("HTML is wrong. want = %q, have = %q", wantedLine.html, n.HTML())
+			}
 		}
 	})
 }
@@ -618,14 +755,16 @@ func TestFileDiffHighlighter(t *testing.T) {
 </span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#657b83;">new2
 </span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span style="color:#657b83;">new3</span></div></td></tr></tbody></table>`
 
-	highlight.Mocks.Code = func(p highlight.Params) (template.HTML, bool, error) {
+	highlight.Mocks.Code = func(p highlight.Params) (*highlight.HighlightedCode, bool, error) {
 		switch p.Filepath {
 		case file1.path:
-			return template.HTML(highlightedOld), false, nil
+			response := highlight.NewHighlightedCodeWithHTML(template.HTML(highlightedOld))
+			return &response, false, nil
 		case file2.path:
-			return template.HTML(highlightedNew), false, nil
+			response := highlight.NewHighlightedCodeWithHTML(template.HTML(highlightedNew))
+			return &response, false, nil
 		default:
-			return "", false, errors.Errorf("unknown file: %s", p.Filepath)
+			return nil, false, errors.Errorf("unknown file: %s", p.Filepath)
 		}
 	}
 	t.Cleanup(highlight.ResetMocks)

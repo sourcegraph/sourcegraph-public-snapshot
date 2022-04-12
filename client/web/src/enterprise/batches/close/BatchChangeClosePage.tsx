@@ -1,16 +1,16 @@
+import React, { useState, useMemo, useCallback } from 'react'
+
 import { subDays } from 'date-fns'
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React, { useState, useMemo, useCallback } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { HeroPage } from '../../../components/HeroPage'
@@ -31,7 +31,8 @@ export interface BatchChangeClosePageProps
     extends ThemeProps,
         TelemetryProps,
         PlatformContextProps,
-        ExtensionsControllerProps {
+        ExtensionsControllerProps,
+        SettingsCascadeProps {
     /**
      * The namespace ID.
      */
@@ -66,6 +67,7 @@ export const BatchChangeClosePage: React.FunctionComponent<BatchChangeClosePageP
     queryChangesets,
     queryExternalChangesetWithFileDiffs,
     closeBatchChange,
+    settingsCascade,
 }) => {
     const [closeChangesets, setCloseChangesets] = useState<boolean>(false)
     const createdAfter = useMemo(() => subDays(new Date(), 3).toISOString(), [])
@@ -96,7 +98,7 @@ export const BatchChangeClosePage: React.FunctionComponent<BatchChangeClosePageP
     if (batchChange === undefined) {
         return (
             <div className="text-center">
-                <LoadingSpinner className="icon-inline mx-auto my-4" />
+                <LoadingSpinner className="mx-auto my-4" />
             </div>
         )
     }
@@ -121,7 +123,7 @@ export const BatchChangeClosePage: React.FunctionComponent<BatchChangeClosePageP
                 byline={
                     <BatchChangeInfoByline
                         createdAt={batchChange.createdAt}
-                        initialApplier={batchChange.initialApplier}
+                        creator={batchChange.creator}
                         lastAppliedAt={batchChange.lastAppliedAt}
                         lastApplier={batchChange.lastApplier}
                     />
@@ -153,6 +155,7 @@ export const BatchChangeClosePage: React.FunctionComponent<BatchChangeClosePageP
                 queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                 willClose={closeChangesets}
                 onUpdate={onFetchChangesets}
+                settingsCascade={settingsCascade}
             />
         </>
     )

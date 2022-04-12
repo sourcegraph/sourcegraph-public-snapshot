@@ -3,21 +3,19 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type savedSearchResolver struct {
-	db dbutil.DB
+	db database.DB
 	s  types.SavedSearch
 }
 
@@ -36,7 +34,7 @@ func (r *schemaResolver) savedSearchByID(ctx context.Context, id graphql.ID) (*s
 		return nil, err
 	}
 
-	ss, err := database.SavedSearches(r.db).GetByID(ctx, intID)
+	ss, err := r.db.SavedSearches().GetByID(ctx, intID)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +117,7 @@ func (r *schemaResolver) SavedSearches(ctx context.Context) ([]*savedSearchResol
 		return nil, errors.New("no currently authenticated user")
 	}
 
-	allSavedSearches, err := database.SavedSearches(r.db).ListSavedSearchesByUserID(ctx, a.UID)
+	allSavedSearches, err := r.db.SavedSearches().ListSavedSearchesByUserID(ctx, a.UID)
 	if err != nil {
 		return nil, err
 	}
@@ -135,20 +133,6 @@ func (r *schemaResolver) SavedSearches(ctx context.Context) ([]*savedSearchResol
 func (r *schemaResolver) SendSavedSearchTestNotification(ctx context.Context, args *struct {
 	ID graphql.ID
 }) (*EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins should be able to send test notifications.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
-	}
-	id, err := unmarshalSavedSearchID(args.ID)
-	if err != nil {
-		return nil, err
-	}
-	savedSearch, err := database.SavedSearches(r.db).GetByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	go queryrunnerapi.Client.TestNotification(context.Background(), *savedSearch)
 	return &EmptyResponse{}, nil
 }
 
@@ -188,7 +172,7 @@ func (r *schemaResolver) CreateSavedSearch(ctx context.Context, args *struct {
 		return nil, errMissingPatternType
 	}
 
-	ss, err := database.SavedSearches(r.db).Create(ctx, &types.SavedSearch{
+	ss, err := r.db.SavedSearches().Create(ctx, &types.SavedSearch{
 		Description: args.Description,
 		Query:       args.Query,
 		Notify:      args.NotifyOwner,
@@ -245,7 +229,7 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 		return nil, errMissingPatternType
 	}
 
-	ss, err := database.SavedSearches(r.db).Update(ctx, &types.SavedSearch{
+	ss, err := r.db.SavedSearches().Update(ctx, &types.SavedSearch{
 		ID:          id,
 		Description: args.Description,
 		Query:       args.Query,
@@ -268,7 +252,7 @@ func (r *schemaResolver) DeleteSavedSearch(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	ss, err := database.SavedSearches(r.db).GetByID(ctx, id)
+	ss, err := r.db.SavedSearches().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -284,7 +268,7 @@ func (r *schemaResolver) DeleteSavedSearch(ctx context.Context, args *struct {
 	} else {
 		return nil, errors.New("failed to delete saved search: no Org ID or User ID associated with saved search")
 	}
-	err = database.SavedSearches(r.db).Delete(ctx, id)
+	err = r.db.SavedSearches().Delete(ctx, id)
 	if err != nil {
 		return nil, err
 	}

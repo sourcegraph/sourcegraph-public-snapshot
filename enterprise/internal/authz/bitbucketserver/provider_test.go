@@ -24,7 +24,7 @@ import (
 
 var update = flag.Bool("update", false, "update testdata")
 
-func TestProvider_Validate(t *testing.T) {
+func TestProvider_ValidateConnection(t *testing.T) {
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
 		instanceURL = "https://bitbucket.sgdev.org"
@@ -60,7 +60,7 @@ func TestProvider_Validate(t *testing.T) {
 				tc.problems[i] = strings.ReplaceAll(tc.problems[i], "${INSTANCEURL}", instanceURL)
 			}
 
-			problems := p.Validate()
+			problems := p.ValidateConnection(context.Background())
 			if have, want := problems, tc.problems; !reflect.DeepEqual(have, want) {
 				t.Error(cmp.Diff(have, want))
 			}

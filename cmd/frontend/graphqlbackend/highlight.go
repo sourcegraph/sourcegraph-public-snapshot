@@ -4,6 +4,8 @@ import (
 	"context"
 	"html/template"
 
+	"github.com/gogo/protobuf/jsonpb"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
@@ -36,14 +38,43 @@ type HighlightArgs struct {
 }
 
 type highlightedFileResolver struct {
-	aborted bool
-	html    template.HTML
+	aborted  bool
+	response *highlight.HighlightedCode
 }
 
 func (h *highlightedFileResolver) Aborted() bool { return h.aborted }
-func (h *highlightedFileResolver) HTML() string  { return string(h.html) }
+func (h *highlightedFileResolver) HTML() string {
+	html, err := h.response.HTML()
+	if err != nil {
+		return ""
+	}
+
+	return string(html)
+}
+func (h *highlightedFileResolver) LSIF() string {
+	if h.response == nil {
+		return "{}"
+	}
+
+	marshaller := &jsonpb.Marshaler{
+		EnumsAsInts:  true,
+		EmitDefaults: false,
+	}
+
+	// TODO(tjdevries): We could probably serialize the error, but it wouldn't do anything for now.
+	lsif, err := marshaller.MarshalToString(h.response.LSIF())
+	if err != nil {
+		return "{}"
+	}
+
+	return lsif
+}
 func (h *highlightedFileResolver) LineRanges(args *struct{ Ranges []highlight.LineRange }) ([][]string, error) {
-	return highlight.SplitLineRanges(h.html, args.Ranges)
+	if h.response != nil && h.response.LSIF() != nil {
+		return h.response.LinesForRanges(args.Ranges)
+	}
+
+	return highlight.SplitLineRanges(template.HTML(h.HTML()), args.Ranges)
 }
 
 func highlightContent(ctx context.Context, args *HighlightArgs, content, path string, metadata highlight.Metadata) (*highlightedFileResolver, error) {
@@ -52,7 +83,8 @@ func highlightContent(ctx context.Context, args *HighlightArgs, content, path st
 		err             error
 		simulateTimeout = metadata.RepoName == "github.com/sourcegraph/AlwaysHighlightTimeoutTest"
 	)
-	result.html, result.aborted, err = highlight.Code(ctx, highlight.Params{
+
+	response, aborted, err := highlight.Code(ctx, highlight.Params{
 		Content:            []byte(content),
 		Filepath:           path,
 		DisableTimeout:     args.DisableTimeout,
@@ -60,8 +92,13 @@ func highlightContent(ctx context.Context, args *HighlightArgs, content, path st
 		SimulateTimeout:    simulateTimeout,
 		Metadata:           metadata,
 	})
+
+	result.aborted = aborted
+	result.response = response
+
 	if err != nil {
 		return nil, err
 	}
+
 	return result, nil
 }

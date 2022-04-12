@@ -1,22 +1,17 @@
-import { action } from '@storybook/addon-actions'
-import { storiesOf } from '@storybook/react'
-import * as H from 'history'
 import React from 'react'
+
+import { action } from '@storybook/addon-actions'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
+import * as H from 'history'
 import { NEVER } from 'rxjs'
 
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+import { subtypeOf } from '@sourcegraph/common'
+// eslint-disable-next-line no-restricted-imports
+import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
-import { subtypeOf } from '../util/types'
 
 import { ActionItem, ActionItemComponentProps, ActionItemProps } from './ActionItem'
-
-const { add } = storiesOf('shared/ActionItem', module).addDecorator(story => (
-    <>
-        <div className="p-4">{story()}</div>
-        <style>{webStyles}</style>
-    </>
-))
 
 const EXTENSIONS_CONTROLLER: ActionItemComponentProps['extensionsController'] = {
     executeCommand: () => new Promise(resolve => setTimeout(resolve, 750)),
@@ -46,15 +41,25 @@ const commonProps = subtypeOf<Partial<ActionItemProps>>()({
     active: true,
 })
 
-add('Noop action', () => (
+const decorator: DecoratorFn = story => <WebStory>{() => <div className="p-4">{story()}</div>}</WebStory>
+
+const config: Meta = {
+    title: 'shared/ActionItem',
+    decorators: [decorator],
+}
+export default config
+
+export const NoopAction: Story = () => (
     <ActionItem
         {...commonProps}
         action={{ id: 'a', command: undefined, actionItem: { label: 'Hello' } }}
         variant="actionItem"
     />
-))
+)
 
-add('Command action', () => (
+NoopAction.storyName = 'Noop action'
+
+export const CommandAction: Story = () => (
     <ActionItem
         {...commonProps}
         action={{ id: 'a', command: 'c', title: 'Hello', iconURL: ICON_URL }}
@@ -64,9 +69,17 @@ add('Command action', () => (
         showInlineError={true}
         onDidExecute={onDidExecute}
     />
-))
+)
 
-add('Link action', () => (
+CommandAction.storyName = 'Command action'
+CommandAction.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+        disableSnapshot: false,
+    },
+}
+
+export const LinkAction: Story = () => (
     <ActionItem
         {...commonProps}
         action={{
@@ -78,12 +91,15 @@ add('Link action', () => (
         variant="actionItem"
         onDidExecute={onDidExecute}
     />
-))
+)
 
-add('Executing', () => {
+LinkAction.storyName = 'Link action'
+
+export const Executing: Story = () => {
     class ActionItemExecuting extends ActionItem {
         constructor(props: ActionItem['props']) {
             super(props)
+            // eslint-disable-next-line react/no-this-in-sfc
             this.state.actionOrError = 'loading'
         }
     }
@@ -96,12 +112,13 @@ add('Executing', () => {
             showInlineError={true}
         />
     )
-})
+}
 
-add('Error', () => {
+export const _Error: Story = () => {
     class ActionItemWithError extends ActionItem {
         constructor(props: ActionItem['props']) {
             super(props)
+            // eslint-disable-next-line react/no-this-in-sfc
             this.state.actionOrError = new Error('e')
         }
     }
@@ -114,4 +131,4 @@ add('Error', () => {
             showInlineError={true}
         />
     )
-})
+}

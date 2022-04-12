@@ -1,34 +1,61 @@
-import { InsightsDashboardType, InsightDashboardOwner } from './core'
-import { RealInsightDashboard, SettingsBasedInsightDashboard } from './real-dashboard'
-import { VirtualInsightsDashboard } from './virtual-dashboard'
+export type InsightDashboard = VirtualInsightsDashboard | CustomInsightDashboard
+
+export enum InsightsDashboardType {
+    Virtual = 'virtual',
+    Custom = 'custom',
+}
 
 /**
- * Main insight dashboard definition
+ * Special 'virtual' dashboard that includes all insights from the personal and organization and global
+ * level dashboards. Virtual dashboard doesn't exist in settings but lives only in a runtime.
  */
-export type InsightDashboard = RealInsightDashboard | VirtualInsightsDashboard
+export interface VirtualInsightsDashboard {
+    id: string
+    type: InsightsDashboardType.Virtual
+    title: string
+}
 
-export { InsightsDashboardType }
+export interface CustomInsightDashboard {
+    id: string
+    type: InsightsDashboardType.Custom
+    title: string
+    insightIds: string[]
+    owners: InsightsDashboardOwner[]
+}
 
-export type { RealInsightDashboard, VirtualInsightsDashboard, SettingsBasedInsightDashboard, InsightDashboardOwner }
+export enum InsightsDashboardOwnerType {
+    Personal = 'personal',
+    Organization = 'organization',
+    Global = 'global',
+}
 
-/**
- * Key for accessing insights dashboards in a subject settings.
- */
-export const INSIGHTS_DASHBOARDS_SETTINGS_KEY = 'insights.dashboards'
+export interface InsightsDashboardOwner {
+    type: InsightsDashboardOwnerType
+    id: string
+    title: string
+}
 
 // Type guards for code insights dashboards
-export const isOrganizationDashboard = (dashboard: InsightDashboard | undefined): dashboard is RealInsightDashboard =>
-    dashboard?.type === InsightsDashboardType.Organization
+export const isVirtualDashboard = (dashboard: InsightDashboard): dashboard is VirtualInsightsDashboard =>
+    dashboard.type === InsightsDashboardType.Virtual
 
-export const isPersonalDashboard = (dashboard: InsightDashboard | undefined): dashboard is RealInsightDashboard =>
-    dashboard?.type === InsightsDashboardType.Personal
+export const isCustomDashboard = (dashboard: InsightDashboard): dashboard is CustomInsightDashboard =>
+    dashboard.type === InsightsDashboardType.Custom
 
-export const isGlobalDashboard = (dashboard: InsightDashboard | undefined): dashboard is RealInsightDashboard =>
-    dashboard?.type === InsightsDashboardType.Global
+// Scope dashboard selectors
+export const isPersonalDashboard = (dashboard: CustomInsightDashboard): boolean =>
+    dashboard.owners.some(isPersonalOwner)
 
-export const isVirtualDashboard = (
-    dashboard: InsightDashboard | undefined | null
-): dashboard is VirtualInsightsDashboard => dashboard?.type === InsightsDashboardType.All
+export const isOrganizationDashboard = (dashboard: CustomInsightDashboard): boolean =>
+    dashboard.owners.some(isOrganizationOwner)
 
-export const isRealDashboard = (dashboard: InsightDashboard | undefined): dashboard is RealInsightDashboard =>
-    isOrganizationDashboard(dashboard) || isPersonalDashboard(dashboard) || isGlobalDashboard(dashboard)
+export const isGlobalDashboard = (dashboard: CustomInsightDashboard): boolean => dashboard.owners.some(isGlobalOwner)
+
+export const isPersonalOwner = (owner: InsightsDashboardOwner): boolean =>
+    owner.type === InsightsDashboardOwnerType.Personal
+
+export const isOrganizationOwner = (owner: InsightsDashboardOwner): boolean =>
+    owner.type === InsightsDashboardOwnerType.Organization
+
+export const isGlobalOwner = (owner: InsightsDashboardOwner): boolean =>
+    owner.type === InsightsDashboardOwnerType.Global

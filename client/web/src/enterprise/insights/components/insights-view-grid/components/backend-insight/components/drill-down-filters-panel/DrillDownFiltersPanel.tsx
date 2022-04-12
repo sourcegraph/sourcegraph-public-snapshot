@@ -1,8 +1,6 @@
 import React, { useState } from 'react'
 
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
-
-import { SearchBasedBackendFilters } from '../../../../../../core/types/insight/search-insight'
+import { InsightFilters } from '../../../../../../core/types'
 import { FormChangeEvent, SubmissionResult } from '../../../../../form/hooks/useForm'
 
 import {
@@ -13,6 +11,7 @@ import {
     DrillDownInsightCreationForm,
     DrillDownInsightCreationFormValues,
 } from './components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
+
 import styles from './DrillDownFiltersPanel.module.scss'
 
 enum DrillDownFiltersStep {
@@ -21,23 +20,15 @@ enum DrillDownFiltersStep {
 }
 
 export interface DrillDownFiltersPanelProps {
-    settings: Settings
-    initialFiltersValue: SearchBasedBackendFilters
-    originalFiltersValue: SearchBasedBackendFilters
-    onFiltersChange: (filters: SearchBasedBackendFilters) => void
-    onFilterSave: (filters: SearchBasedBackendFilters) => SubmissionResult
+    initialFiltersValue: InsightFilters
+    originalFiltersValue: InsightFilters
+    onFiltersChange: (filters: InsightFilters) => void
+    onFilterSave: (filters: InsightFilters) => SubmissionResult
     onInsightCreate: (values: DrillDownInsightCreationFormValues) => SubmissionResult
 }
 
 export const DrillDownFiltersPanel: React.FunctionComponent<DrillDownFiltersPanelProps> = props => {
-    const {
-        settings,
-        initialFiltersValue,
-        originalFiltersValue,
-        onFiltersChange,
-        onFilterSave,
-        onInsightCreate,
-    } = props
+    const { initialFiltersValue, originalFiltersValue, onFiltersChange, onFilterSave, onInsightCreate } = props
 
     const handleFilterChange = (event: FormChangeEvent<DrillDownFiltersFormValues>): void => {
         if (event.valid) {
@@ -72,7 +63,6 @@ export const DrillDownFiltersPanel: React.FunctionComponent<DrillDownFiltersPane
 
     return (
         <DrillDownInsightCreationForm
-            settings={settings}
             className={styles.filtersViewCreation}
             onCreateInsight={onInsightCreate}
             onCancel={() => setStep(DrillDownFiltersStep.Filters)}

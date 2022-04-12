@@ -20,9 +20,27 @@
             "pointer": true
           }
         },
+        "codeInsightsGqlApi": {
+          "deprecated": true,
+          "description": "DEPRECATED: Enables gql api instead of using setting cascade as a main storage fro code insights entities",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "codeInsightsAllRepos": {
           "deprecated": true,
           "description": "DEPRECATED: Enables the experimental ability to run an insight over all repositories on the instance.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "codeInsightsLandingPage": {
+          "deprecated": true,
+          "description": "DEPRECATED: Enables code insights landing page layout.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -46,7 +64,15 @@
           }
         },
         "showCodeMonitoringTestEmailButton": {
-          "description": "Enables the 'Send test email' debugging button for code monitoring.",
+          "description": "REMOVED. Previously, enabled the 'Send test email' button in the code monitoring list.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "searchContextsQuery": {
+          "description": "DEPRECATED: This feature is now permanently enabled. Enables query based search contexts",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -128,13 +154,21 @@
         "showSearchNotebook": {
           "description": "Enables the search notebook at search/notebook",
           "type": "boolean",
+          "default": true,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "showComputeComponent": {
+          "description": "Enables display of compute components (currently Notebook blocks)",
+          "type": "boolean",
           "default": false,
           "!go": {
             "pointer": true
           }
         },
         "showQueryBuilder": {
-          "description": "Enables the search query builder page at search/query-builder",
+          "description": "REMOVED. Previously, enabled the search query builder page. This page has been removed.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -158,9 +192,8 @@
           }
         },
         "fuzzyFinder": {
-          "description": "Enables fuzzy finder with keyboard shortcut `t`.",
+          "description": "Enables fuzzy finder with the keyboard shortcut `Cmd+K` on macOS and `Ctrl+K` on Linux/Windows.",
           "type": "boolean",
-          "default": false,
           "!go": {
             "pointer": true
           }
@@ -173,8 +206,8 @@
             "pointer": true
           }
         },
-        "acceptSearchSuggestionOnEnter": {
-          "description": "Whether the search bar should select completion suggestions when pressing enter",
+        "treeSitterEnabled": {
+          "description": "DEPRECATED: Enables tree sitter for enabled filetypes.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -185,6 +218,87 @@
           "description": "Enables/disables the Batch Changes server side execution feature.",
           "type": "boolean",
           "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "enableSearchStack": {
+          "description": "Enables search stack",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "clientSearchResultRanking": {
+          "description": "How to rank search results in the client",
+          "type": "string",
+          "default": "by-line-number",
+          "examples": ["by-line-number", "by-zoekt-ranking"],
+          "!go": {
+            "pointer": true
+          }
+        },
+        "codeMonitoringWebHooks": {
+          "description": "Shows code monitor webhook and Slack webhook actions in the UI, allowing users to configure them.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "coolCodeIntel": {
+          "description": "Use the (cool) experimental reference panel for code intelligence.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "codeIntelRepositoryBadge": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Show the code intelligence badge when viewing a repository.",
+              "type": "boolean",
+              "default": false,
+              "!go": {
+                "pointer": true
+              }
+            },
+            "forNerds": {
+              "description": "Show entirely too much information.",
+              "type": "boolean",
+              "default": false,
+              "!go": {
+                "pointer": true
+              }
+            }
+          },
+          "required": ["enabled"],
+          "additionalProperties": false
+        },
+        "showCodeMonitoringLogs": {
+          "description": "Shows code monitoring logs tab.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "homepageUserInvitation": {
+          "description": "Shows a panel to invite collaborators to Sourcegraph on home page.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "editor": {
+          "description": "Specifies which (code) editor to use for query and text input",
+          "type": "string",
+          "default": "monaco",
+          "enum": ["monaco", "codemirror6"],
           "!go": {
             "pointer": true
           }
@@ -228,7 +342,7 @@
       }
     },
     "search.globbing": {
-      "description": "Enables globbing for supported field values",
+      "description": "REMOVED. Previously an experimental setting to interpret file and repo patterns as glob syntax.",
       "type": "boolean",
       "default": false,
       "!go": {
@@ -243,7 +357,7 @@
       }
     },
     "search.repositoryGroups": {
-      "description": "Named groups of repositories that can be referenced in a search query using the `repogroup:` operator. The list can contain string literals (to include single repositories) and JSON objects with a \"regex\" field (to include all repositories matching the regular expression). Retrieving repogroups via the GQL interface will currently exclude repositories matched by regex patterns. #14208.",
+      "description": "DEPRECATED: Use search contexts instead.\n\nNamed groups of repositories that can be referenced in a search query using the `repogroup:` operator. The list can contain string literals (to include single repositories) and JSON objects with a \"regex\" field (to include all repositories matching the regular expression). Retrieving repogroups via the GQL interface will currently exclude repositories matched by regex patterns. #14208.",
       "type": "object",
       "additionalProperties": {
         "type": "array",
@@ -268,10 +382,19 @@
       }
     },
     "codeIntelligence.autoIndexPopularRepoLimit": {
-      "description": "Up to this number of repos are auto indexed automatically. Ordered by star count.",
+      "description": "Up to this number of repos are auto-indexed automatically. Ordered by star count.",
       "type": "integer",
       "minimum": 0,
       "default": 0
+    },
+    "codeIntelligence.maxPanelResults": {
+      "description": "Maximum number of references/definitions (or other code intelligence results provided by extensions) shown in the panel. If not set a default value will be used to ensure best performance.",
+      "type": "integer"
+    },
+    "codeIntelligence.clickToGoToDefinition": {
+      "description": "Enable click to go to definition.",
+      "type": "boolean",
+      "default": true
     },
     "search.contextLines": {
       "description": "The default number of lines to show as context below and above search results. Default is 1.",
@@ -312,12 +435,22 @@
         "$ref": "#/definitions/QuickLink"
       }
     },
+    "fileSidebarVisibleByDefault": {
+      "description": "Whether the sidebar on the repo view should be open by default.",
+      "type": "boolean",
+      "default": true
+    },
     "motd": {
       "description": "DEPRECATED: Use `notices` instead.\n\nAn array (often with just one element) of messages to display at the top of all pages, including for unauthenticated users. Users may dismiss a message (and any message with the same string value will remain dismissed for the user).\n\nMarkdown formatting is supported.\n\nUsually this setting is used in global and organization settings. If set in user settings, the message will only be displayed to that user. (This is useful for testing the correctness of the message's Markdown formatting.)\n\nMOTD stands for \"message of the day\" (which is the conventional Unix name for this type of message).",
       "type": "array",
       "items": {
         "type": "string"
       }
+    },
+    "history.preferAbsoluteTimestamps": {
+      "description": "Show absolute timestamps in the history panel and only show relative timestamps (e.g.: \"5 days ago\") in tooltip when hovering.",
+      "type": "boolean",
+      "default": false
     },
     "notices": {
       "description": "Custom informational messages to display to users at specific locations in the Sourcegraph user interface.\n\nUsually this setting is used in global and organization settings. If set in user settings, the message will only be displayed to that single user.",

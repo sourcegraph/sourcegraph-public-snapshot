@@ -1,13 +1,13 @@
-import classNames from 'classnames'
 import * as React from 'react'
+
+import classNames from 'classnames'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { createAggregateError, numberWithCommas, memoizeObservable } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
-import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
-import { numberWithCommas } from '@sourcegraph/shared/src/util/strings'
+import { Badge, Icon } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../backend/graphql'
 import { Timestamp } from '../components/time/Timestamp'
@@ -19,6 +19,8 @@ import {
     RepositoryGitRefsVariables,
     Scalars,
 } from '../graphql-operations'
+
+import styles from './GitReference.module.scss'
 
 export interface GitReferenceNodeProps {
     node: GitRefFields
@@ -45,7 +47,7 @@ export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = 
     children,
     className,
     onClick,
-    icon: Icon,
+    icon: ReferenceIcon,
 }) => {
     const mostRecentSig =
         node.target.commit &&
@@ -58,13 +60,14 @@ export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = 
     return (
         <LinkOrSpan
             key={node.id}
-            className={classNames('git-ref-node list-group-item', className)}
+            className={classNames('list-group-item', styles.gitRefNode, className)}
             to={!ancestorIsLink ? url : undefined}
             onClick={onClick}
+            data-testid="git-ref-node"
         >
             <span className="d-flex align-items-center">
-                {Icon && <Icon className="icon-inline mr-1" />}
-                <code className="badge">{node.displayName}</code>
+                {ReferenceIcon && <Icon className="mr-1" as={ReferenceIcon} />}
+                <Badge as="code">{node.displayName}</Badge>
                 {mostRecentSig && (
                     <small className="pl-2">
                         Updated <Timestamp date={mostRecentSig.date} />{' '}

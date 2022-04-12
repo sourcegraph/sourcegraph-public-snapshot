@@ -1,44 +1,36 @@
-import classNames from 'classnames'
-import { kebabCase, omit } from 'lodash'
 import React from 'react'
+
+import classNames from 'classnames'
+import { kebabCase } from 'lodash'
 import { NavLink, NavLinkProps } from 'react-router-dom'
 
-import { LinkProps, Link } from '@sourcegraph/shared/src/components/Link'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
-interface Props extends LinkProps, Pick<NavLinkProps, 'activeClassName'> {
+import styles from './LinkWithIcon.module.scss'
+
+interface LinkWithIconProps extends NavLinkProps {
     text: string
-}
-
-interface PropsWithIcon extends Props {
     icon: React.ComponentType<{ className?: string }>
-}
-
-interface PropsWithIconPlaceholder extends Props {
-    hasIconPlaceholder: true
 }
 
 /**
  * A link displaying an icon along with text.
- *
  */
-export const LinkWithIcon: React.FunctionComponent<PropsWithIcon | PropsWithIconPlaceholder> = props => {
-    const { to, text, className = '', activeClassName, ...restProps } = props
-    const LinkComponent = activeClassName ? NavLink : Link
-
-    // use `svg` element as a placeholder when `hasIconPlaceholder` is true
-    const Icon = 'hasIconPlaceholder' in props ? 'svg' : props.icon
-
-    const linkProps = {
-        to,
-        className: classNames('d-flex', 'align-items-center', className),
-        ...(activeClassName && { activeClassName }),
-        ...omit(restProps, ['hasIconPlaceholder', 'icon']),
-    }
+export const LinkWithIcon: React.FunctionComponent<LinkWithIconProps> = props => {
+    const { to, exact, text, className, activeClassName, icon: linkIcon } = props
 
     return (
-        <LinkComponent {...linkProps} data-testid={kebabCase(text)}>
-            <Icon className="icon-inline mr-1" />
+        <Button
+            as={NavLink}
+            to={to}
+            exact={exact}
+            className={classNames('d-flex', 'align-items-center', styles.linkWithIcon, className)}
+            activeClassName={activeClassName}
+            variant="link"
+            data-testid={kebabCase(text)}
+        >
+            <Icon className="mr-1" as={linkIcon} />
             <span className="inline-block">{text}</span>
-        </LinkComponent>
+        </Button>
     )
 }

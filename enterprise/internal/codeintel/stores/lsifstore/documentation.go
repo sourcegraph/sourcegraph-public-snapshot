@@ -5,15 +5,19 @@ import (
 	"database/sql"
 	"fmt"
 	"strconv"
+	"strings"
+	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore/apidocs"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // DocumentationPage returns the documentation page with the given PathID.
@@ -308,7 +312,7 @@ func (s *Store) documentationDefinitions(
 	limit,
 	offset int,
 ) (_ []Location, _ int, err error) {
-	ctx, traceLog, endObservation := operation.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := operation.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("resultID", string(resultID)),
 	}})
@@ -328,15 +332,18 @@ func (s *Store) documentationDefinitions(
 		return nil, 0, err
 	}
 
-	traceLog(log.Int("numRanges", len(documentData.Document.Ranges)))
+	trace.Log(log.Int("numRanges", len(documentData.Document.Ranges)))
 	var found *precise.RangeData
 	for _, rn := range documentData.Document.Ranges {
 		if rn.DocumentationResultID == resultID {
+			//nolint:exportloopref
+			// We immediately break, so there are no more loop iterations, which means
+			// the value of rn will not change.
 			found = &rn
 			break
 		}
 	}
-	traceLog(log.Bool("found", found == nil))
+	trace.Log(log.Bool("found", found == nil))
 	if found == nil {
 		return nil, 0, errors.New("not found")
 	}
@@ -346,7 +353,7 @@ func (s *Store) documentationDefinitions(
 	if err != nil {
 		return nil, 0, err
 	}
-	traceLog(log.Int("totalCount", totalCount))
+	trace.Log(log.Int("totalCount", totalCount))
 
 	locations := make([]Location, 0, limit)
 	for _, resultID := range orderedResultIDs {
@@ -354,4 +361,266 @@ func (s *Store) documentationDefinitions(
 	}
 
 	return locations, totalCount, nil
+}
+
+// documentationSearchRepoNameIDs searches API documentation repositories in either the "public" or
+// "private" table. It returns primary key IDs from the lsif_data_docs_search_repo_names_$SUFFIX
+// table.
+//
+// 🚨 SECURITY: If the input tableSuffix is "private", then it is the callers responsibility to
+// enforce that the user only has the ability to view results that are from repositories they have
+// access to.
+func (s *Store) documentationSearchRepoNameIDs(ctx context.Context, tableSuffix string, possibleRepos []string) (_ []int64, err error) {
+	ctx, _, endObservation := s.operations.documentationSearchRepoNameIDs.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("table", tableSuffix),
+		log.String("possibleRepos", fmt.Sprint(possibleRepos)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return basestore.ScanInt64s(s.Store.Query(ctx, sqlf.Sprintf(
+		strings.ReplaceAll(documentationSearchRepoNameIDsQuery, "$SUFFIX", tableSuffix),
+		// In the repo clause we forbid substring matches. Although performance would be fine, as user
+		// you often do not want e.g. "go net/http" to match a repo like github.com/jane/goexploration
+		// because then your search would be limited to those repos only. Note that substring matching
+		// only applies to lexemes, so e.g. `sourcegraph/sourcegraph` would still match
+		// `sourcegraph/sourcegraph-testing`
+		apidocs.RepoSearchQuery("tsv", possibleRepos),
+	)))
+}
+
+const documentationSearchRepoNameIDsQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/documentation.go:documentationSearchRepos
+SELECT id
+FROM lsif_data_docs_search_repo_names_$SUFFIX
+WHERE %s -- e.g. (tsv @@ '''gorilla'' <-> ''/'' <-> ''mux''')
+LIMIT 100
+`
+
+// maximum candidates we'll consider: the more candidates we have the better ranking we get, but the
+// slower searching is. See https://about.sourcegraph.com/blog/postgres-text-search-balancing-query-time-and-relevancy/
+// 10,000 is an arbitrary choice based on current Sourcegraph.com corpus size and performance, it'll
+// be tuned as we scale to more repos if perf gets worse or we find we need better relevance.
+var debugAPIDocsSearchCandidates, _ = strconv.ParseInt(env.Get("DEBUG_API_DOCS_SEARCH_CANDIDATES", "10000", "maximum candidates for consideration in API docs search"), 10, 64)
+
+// DocumentationSearch searches API documentation in either the "public" or "private" table.
+//
+// 🚨 SECURITY: If the input tableSuffix is "private", then it is the callers responsibility to
+// enforce that the user only has the ability to view results that are from repositories they have
+// access to.
+func (s *Store) DocumentationSearch(ctx context.Context, tableSuffix, query string, repos []string) (_ []precise.DocumentationSearchResult, err error) {
+	ctx, _, endObservation := s.operations.documentationSearch.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("table", tableSuffix),
+		log.String("query", query),
+		log.String("repos", fmt.Sprint(repos)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	// If a search would exceed 3 seconds, just give up. We'll issue a lo of searches, so we'd
+	// rather have this than the DB pressure.
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	q := apidocs.ParseQuery(query)
+	resultLimit := 10
+
+	// Can we find matching repository names? If so, we'll filter to just those. This helps reduce
+	// our search space, which means we can use more fuzzy matching (like substring matching) for
+	// better results - so this is ideal.
+	matchingRepoNameIDs, err := s.documentationSearchRepoNameIDs(ctx, tableSuffix, q.PossibleRepos)
+
+	var primary *sqlf.Query
+	if len(matchingRepoNameIDs) > 0 {
+		// Primary WHERE clauses to use when searching over a smaller subset of repositories.
+		var clauses []*sqlf.Query
+		clauses = append(clauses, apidocs.TextSearchQuery("result.search_key_tsv", q.MainTerms, q.SubStringMatches))
+		clauses = append(clauses, apidocs.TextSearchQuery("result.search_key_reverse_tsv", apidocs.Reverse(q.MainTerms), q.SubStringMatches))
+		clauses = append(clauses, apidocs.TextSearchQuery("result.label_tsv", q.MainTerms, q.SubStringMatches))
+		clauses = append(clauses, apidocs.TextSearchQuery("result.label_reverse_tsv", apidocs.Reverse(q.MainTerms), q.SubStringMatches))
+
+		// We found matching repo names, so filter to just those.
+		primaryClause := sqlf.Sprintf("(%s)", sqlf.Join(clauses, "OR"))
+		primary = sqlf.Sprintf("%s AND result.repo_name_id = ANY(%s)", primaryClause, pq.Array(matchingRepoNameIDs))
+	} else {
+		// Primary WHERE clauses to use when searching over ALL repositories. Because there is so
+		// much to search over in this case, we do not do prefix/suffix matching (so no reverse
+		// index lookups), and do not use ":*" tsquery prefix matching operators (which are very
+		// slow).
+		var clauses []*sqlf.Query
+		clauses = append(clauses, apidocs.TextSearchQuery("result.search_key_tsv", q.MainTerms, false))
+		clauses = append(clauses, apidocs.TextSearchQuery("result.label_tsv", q.MainTerms, false))
+		primary = sqlf.Sprintf("(%s)", sqlf.Join(clauses, "OR"))
+	}
+
+	langTagsClause := apidocs.TextSearchQuery("tsv", q.MetaTerms, q.SubStringMatches)
+	return s.scanDocumentationSearchResults(s.Store.Query(ctx, sqlf.Sprintf(
+		strings.ReplaceAll(documentationSearchQuery, "$SUFFIX", tableSuffix),
+		langTagsClause, // matching_lang_names CTE WHERE conditions
+		langTagsClause, // matching_tags CTE WHERE conditions
+
+		primary,                      // primary WHERE clause
+		debugAPIDocsSearchCandidates, // maximum candidates for consideration.
+
+		apidocs.TextSearchRank("search_key_tsv", q.MainTerms, q.SubStringMatches),                          // search_key_rank
+		apidocs.TextSearchRank("search_key_reverse_tsv", apidocs.Reverse(q.MainTerms), q.SubStringMatches), // search_key_reverse_rank
+		apidocs.TextSearchRank("label_tsv", q.MainTerms, q.SubStringMatches),                               // label_rank
+		apidocs.TextSearchRank("label_reverse_tsv", apidocs.Reverse(q.MainTerms), q.SubStringMatches),      // label_reverse_rank
+
+		resultLimit, // result limit
+	)))
+}
+
+const documentationSearchQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/documentation.go:DocumentationSearch
+WITH
+	-- Can we find a matching language name? If so, that could limit our search space greatly.
+	matching_lang_names AS (
+		SELECT id, lang_name
+		FROM lsif_data_docs_search_lang_names_$SUFFIX
+		WHERE %s -- e.g. (tsv @@ '''net'' <-> ''/'' <-> ''http'':*' OR tsv @@ '''Router'':*')
+		LIMIT 1
+	),
+
+	-- Can we find a matching sequence of documentation/symbol tags? e.g. "private variable".
+	-- If so, then we pick the top 10 and search only documentation nodes that have that same
+	-- sequence of tags.
+	matching_tags AS (
+		SELECT id, tags
+		FROM lsif_data_docs_search_tags_$SUFFIX
+		WHERE %s -- e.g. (tsv @@ '''net'' <-> ''/'' <-> ''http'':*' OR tsv @@ '''Router'':*')
+		LIMIT 10
+	)
+SELECT
+	result_id,
+	repo_id,
+	path_id,
+	detail,
+	search_key,
+	label,
+	lang_name,
+	repo_name,
+	tags
+FROM (
+	SELECT result.id::bigint AS result_id, *
+	FROM lsif_data_docs_search_$SUFFIX result
+	JOIN lsif_data_docs_search_lang_names_$SUFFIX langnames ON langnames.id = result.lang_name_id
+	JOIN lsif_data_docs_search_repo_names_$SUFFIX reponames ON reponames.id = result.repo_name_id
+	JOIN lsif_data_docs_search_tags_$SUFFIX tags ON tags.id = result.tags_id
+	WHERE
+		-- If we found matching repo names, then we're searching over a very limited subset of repos
+		-- and can afford to enable the (much) more expensive substring matching which makes search
+		-- fuzzier. This is very nice, but just too expensive to use when searching over all repos.
+		-- For example:
+		--
+		-- (
+		--   (
+		--     result.search_key_tsv @@ '''net'' <-> ''/'' <-> ''http'':*'
+		--     OR result.search_key_tsv @@ '''Router'':*'
+		--   ) OR (
+		--     result.search_key_reverse_tsv @@ '''ptth'' <-> ''/'' <-> ''ten'':*'
+		--     OR result.search_key_reverse_tsv @@ '''retuoR'':*'
+		--   ) OR (
+		--     result.label_tsv @@ '''net'' <-> ''/'' <-> ''http'':*'
+		--     OR result.label_tsv @@ '''Router'':*'
+		--   ) OR (
+		--     result.label_reverse_tsv @@ '''ptth'' <-> ''/'' <-> ''ten'':*'
+		--     OR result.label_reverse_tsv @@ '''retuoR'':*'
+		--   )
+		-- )
+		-- AND result.repo_name_id = ANY(...)
+		--
+		-- If we're matching over many repos, we choose a much lighter weight query that is very
+		-- strict and thus turns up worse results:
+		--
+		-- (
+		--   (
+		--     result.search_key_tsv @@ '''net'' <-> ''/'' <-> ''http'''
+		--     OR result.search_key_tsv @@ '''Router'''
+		--   ) OR (
+		--     result.label_tsv @@ '''net'' <-> ''/'' <-> ''http'''
+		--     OR result.label_tsv @@ '''Router'''
+		--   )
+		-- )
+		--
+		%s
+
+		-- If we found matching lang names, filter to just those.
+		AND (CASE WHEN (SELECT COUNT(*) FROM matching_lang_names) > 0 THEN
+			result.lang_name_id = ANY(array(SELECT id FROM matching_lang_names))
+		ELSE TRUE END)
+
+		-- If we found matching tags, filter to just those.
+		AND (CASE WHEN (SELECT COUNT(*) FROM matching_tags) > 0 THEN
+			result.tags_id = ANY(array(SELECT id FROM matching_tags))
+		ELSE TRUE END)
+
+	-- maximum candidates we'll consider: the more candidates we have the better ranking we get,
+	-- but the slower searching is. See https://about.sourcegraph.com/blog/postgres-text-search-balancing-query-time-and-relevancy/
+	LIMIT %s
+) sub
+-- Select only results that come from the latest upload, since lsif_data_docs_search_* may have
+-- results from multiple uploads (the table is cleaned up asynchronously in the background to avoid
+-- lock contention at insert time.) We cannot do this in the inner CTE above as it adds ~80ms per
+-- result to check, and the inner CTE selects ~10k results.
+WHERE sub.dump_id = (
+	SELECT dump_id FROM lsif_data_docs_search_current_$SUFFIX current
+	WHERE
+		current.dump_id = sub.dump_id
+		AND current.dump_root = sub.dump_root
+		AND lang_name_id = sub.lang_name_id
+	ORDER BY current.created_at DESC, id
+	LIMIT 1
+)
+ORDER BY
+	-- First rank by search keys, as those are ideally super specific if you write the correct
+	-- format.
+	--
+	-- e.g. for 1st arg: (ts_rank_cd(search_key_tsv, '''net'' <-> ''/'' <-> ''http'':*', 2) + ts_rank_cd(search_key_tsv, '''Router'':*', 2))
+	-- e.g. for 2nd arg: (ts_rank_cd(search_key_reverse_tsv, '''retuoR'':*', 2) + ts_rank_cd(search_key_reverse_tsv, '''ptth'' <-> ''/'' <-> ''ten'':*', 2))
+	GREATEST(%s, %s) DESC,
+
+	-- Secondarily rank by label, e.g. function signature. These contain less specific info and
+	-- due to e.g. containing arguments a function takes, have higher chance of collision with the
+	-- desired symbol result, producing a bad match.
+	--
+	-- e.g. for 1st arg: (ts_rank_cd(label_tsv, '''net'' <-> ''/'' <-> ''http'':*', 2) + ts_rank_cd(label_tsv, '''Router'':*', 2))
+	-- e.g. for 2nd arg: (ts_rank_cd(label_reverse_tsv, '''retuoR'':*', 2) + ts_rank_cd(label_reverse_tsv, '''ptth'' <-> ''/'' <-> ''ten'':*', 2))
+	GREATEST(%s, %s) DESC,
+
+	-- If all else failed, sort by something reasonable and deterministic.
+	repo_name DESC,
+	tags DESC,
+	result_id DESC
+LIMIT %s -- Maximum results we'll actually return.
+`
+
+// scanDocumentationSearchResults reads the documentation search results rows. If no rows matched, (nil, nil) is returned.
+func (s *Store) scanDocumentationSearchResults(rows *sql.Rows, queryErr error) (_ []precise.DocumentationSearchResult, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	var results []precise.DocumentationSearchResult
+	for rows.Next() {
+		var (
+			result precise.DocumentationSearchResult
+			tags   string
+		)
+		if err := rows.Scan(
+			&result.ID,
+			&result.RepoID,
+			&result.PathID,
+			&result.Detail,
+			&result.SearchKey,
+			&result.Label,
+			&result.Lang,
+			&result.RepoName,
+			&tags,
+		); err != nil {
+			return nil, err
+		}
+		result.Tags = strings.Fields(tags)
+		results = append(results, result)
+	}
+	return results, nil
 }

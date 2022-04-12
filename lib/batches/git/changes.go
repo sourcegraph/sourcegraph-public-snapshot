@@ -1,10 +1,10 @@
 package git
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Changes are the changes made to files in a repository.
@@ -26,7 +26,7 @@ func ParseGitStatus(out []byte) (Changes, error) {
 
 	for _, line := range strings.Split(stripped, "\n") {
 		if len(line) < 4 {
-			return result, fmt.Errorf("git status line has unrecognized format: %q", line)
+			return result, errors.Newf("git status line has unrecognized format: %q", line)
 		}
 
 		file := line[3:]

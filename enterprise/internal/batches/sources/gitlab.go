@@ -5,8 +5,6 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -16,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -26,6 +25,7 @@ type GitLabSource struct {
 
 var _ ChangesetSource = &GitLabSource{}
 var _ DraftChangesetSource = &GitLabSource{}
+var _ ForkableChangesetSource = &GitLabSource{}
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
 func NewGitLabSource(svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
@@ -33,10 +33,10 @@ func NewGitLabSource(svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSo
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGitLabSource(&c, cf, nil)
+	return newGitLabSource(svc.URN(), &c, cf)
 }
 
-func newGitLabSource(c *schema.GitLabConnection, cf *httpcli.Factory, au auth.Authenticator) (*GitLabSource, error) {
+func newGitLabSource(urn string, c *schema.GitLabConnection, cf *httpcli.Factory) (*GitLabSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -47,10 +47,7 @@ func newGitLabSource(c *schema.GitLabConnection, cf *httpcli.Factory, au auth.Au
 		cf = httpcli.ExternalClientFactory
 	}
 
-	var opts []httpcli.Opt
-	if c.Certificate != "" {
-		opts = append(opts, httpcli.NewCertPoolOpt(c.Certificate))
-	}
+	opts := httpClientCertificateOptions(nil, c.Certificate)
 
 	cli, err := cf.Doer(opts...)
 	if err != nil {
@@ -59,25 +56,23 @@ func newGitLabSource(c *schema.GitLabConnection, cf *httpcli.Factory, au auth.Au
 
 	// Don't modify passed-in parameter.
 	var authr auth.Authenticator
-	if au == nil && c.Token != "" {
+	if c.Token != "" {
 		switch c.TokenType {
 		case "oauth":
 			authr = &auth.OAuthBearerToken{Token: c.Token}
 		default:
 			authr = &gitlab.SudoableToken{Token: c.Token}
 		}
-	} else {
-		authr = au
 	}
 
-	provider := gitlab.NewClientProvider(baseURL, cli)
+	provider := gitlab.NewClientProvider(urn, baseURL, cli)
 	return &GitLabSource{
 		au:     authr,
 		client: provider.GetAuthenticatorClient(authr),
 	}, nil
 }
 
-func (s GitLabSource) GitserverPushConfig(ctx context.Context, store *database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
+func (s GitLabSource) GitserverPushConfig(ctx context.Context, store database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
 	return gitserverPushConfig(ctx, store, repo, s.au)
 }
 
@@ -105,22 +100,34 @@ func (s GitLabSource) ValidateAuthenticator(ctx context.Context) error {
 // CreateChangeset creates a GitLab merge request. If it already exists,
 // *Changeset will be populated and the return value will be true.
 func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
-	project := c.Repo.Metadata.(*gitlab.Project)
+	remoteProject := c.RemoteRepo.Metadata.(*gitlab.Project)
+	targetProject := c.TargetRepo.Metadata.(*gitlab.Project)
 	exists := false
 	source := git.AbbreviateRef(c.HeadRef)
 	target := git.AbbreviateRef(c.BaseRef)
+	targetProjectID := 0
+	if c.RemoteRepo != c.TargetRepo {
+		targetProjectID = c.TargetRepo.Metadata.(*gitlab.Project).ID
+	}
 
-	mr, err := s.client.CreateMergeRequest(ctx, project, gitlab.CreateMergeRequestOpts{
-		SourceBranch: source,
-		TargetBranch: target,
-		Title:        c.Title,
-		Description:  c.Body,
+	// We have to create the merge request against the remote project, not the
+	// target project, because that's how GitLab's API works: you provide the
+	// target project ID as one of the parameters. Yes, this is weird.
+	//
+	// Of course, we then have to use the targetProject for everything else,
+	// because that's what the merge request actually belongs to.
+	mr, err := s.client.CreateMergeRequest(ctx, remoteProject, gitlab.CreateMergeRequestOpts{
+		SourceBranch:    source,
+		TargetBranch:    target,
+		TargetProjectID: targetProjectID,
+		Title:           c.Title,
+		Description:     c.Body,
 	})
 	if err != nil {
 		if err == gitlab.ErrMergeRequestAlreadyExists {
 			exists = true
 
-			mr, err = s.client.GetOpenMergeRequestByRefs(ctx, project, source, target)
+			mr, err = s.client.GetOpenMergeRequestByRefs(ctx, targetProject, source, target)
 			if err != nil {
 				return exists, errors.Wrap(err, "retrieving an extant merge request")
 			}
@@ -130,7 +137,7 @@ func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool,
 	}
 
 	// These additional API calls can go away once we can use the GraphQL API.
-	if err := s.decorateMergeRequestData(ctx, project, mr); err != nil {
+	if err := s.decorateMergeRequestData(ctx, targetProject, mr); err != nil {
 		return exists, errors.Wrapf(err, "retrieving additional data for merge request %d", mr.IID)
 	}
 
@@ -166,7 +173,7 @@ func (s *GitLabSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (
 
 // CloseChangeset closes the merge request on GitLab, leaving it unlocked.
 func (s *GitLabSource) CloseChangeset(ctx context.Context, c *Changeset) error {
-	project := c.Repo.Metadata.(*gitlab.Project)
+	project := c.TargetRepo.Metadata.(*gitlab.Project)
 	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
 	if !ok {
 		return errors.New("Changeset is not a GitLab merge request")
@@ -196,7 +203,7 @@ func (s *GitLabSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 
 // LoadChangeset loads the given merge request from GitLab and updates it.
 func (s *GitLabSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
-	project := cs.Repo.Metadata.(*gitlab.Project)
+	project := cs.TargetRepo.Metadata.(*gitlab.Project)
 
 	iid, err := strconv.ParseInt(cs.ExternalID, 10, 64)
 	if err != nil {
@@ -225,7 +232,7 @@ func (s *GitLabSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 
 // ReopenChangeset closes the merge request on GitLab, leaving it unlocked.
 func (s *GitLabSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
-	project := c.Repo.Metadata.(*gitlab.Project)
+	project := c.TargetRepo.Metadata.(*gitlab.Project)
 	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
 	if !ok {
 		return errors.New("Changeset is not a GitLab merge request")
@@ -267,6 +274,24 @@ func (s *GitLabSource) decorateMergeRequestData(ctx context.Context, project *gi
 	pipelines, err := s.getMergeRequestPipelines(ctx, project, mr)
 	if err != nil {
 		return errors.Wrap(err, "retrieving pipelines")
+	}
+
+	if mr.SourceProjectID != mr.ProjectID {
+		project, err := s.client.GetProject(ctx, gitlab.GetProjectOp{
+			ID: int(mr.SourceProjectID),
+		})
+		if err != nil {
+			return errors.Wrap(err, "getting source project")
+		}
+
+		ns, err := project.Namespace()
+		if err != nil {
+			return errors.Wrap(err, "parsing project name")
+		}
+
+		mr.SourceProjectNamespace = ns
+	} else {
+		mr.SourceProjectNamespace = ""
 	}
 
 	mr.Notes = notes
@@ -390,7 +415,7 @@ func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error 
 	if !ok {
 		return errors.New("Changeset is not a GitLab merge request")
 	}
-	project := c.Repo.Metadata.(*gitlab.Project)
+	project := c.TargetRepo.Metadata.(*gitlab.Project)
 
 	// Avoid accidentally undrafting the changeset by checking its current
 	// status.
@@ -418,13 +443,23 @@ func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error 
 
 // UndraftChangeset marks the changeset as *not* work in progress anymore.
 func (s *GitLabSource) UndraftChangeset(ctx context.Context, c *Changeset) error {
+	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
+	if !ok {
+		return errors.New("Changeset is not a GitLab merge request")
+	}
+
+	// Remove WIP prefix from title.
 	c.Title = gitlab.UnsetWIP(c.Title)
+	// And mark the mr as not WorkInProgress anymore, otherwise UpdateChangeset
+	// will prepend the WIP: prefix again.
+	mr.WorkInProgress = false
+
 	return s.UpdateChangeset(ctx, c)
 }
 
 // CreateComment posts a comment on the Changeset.
 func (s *GitLabSource) CreateComment(ctx context.Context, c *Changeset, text string) error {
-	project := c.Repo.Metadata.(*gitlab.Project)
+	project := c.TargetRepo.Metadata.(*gitlab.Project)
 	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
 	if !ok {
 		return errors.New("Changeset is not a GitLab merge request")
@@ -440,7 +475,7 @@ func (s *GitLabSource) MergeChangeset(ctx context.Context, c *Changeset, squash 
 	if !ok {
 		return errors.New("Changeset is not a GitLab merge request")
 	}
-	project := c.Repo.Metadata.(*gitlab.Project)
+	project := c.TargetRepo.Metadata.(*gitlab.Project)
 
 	updated, err := s.client.MergeMergeRequest(ctx, project, mr, squash)
 	if err != nil {
@@ -456,4 +491,29 @@ func (s *GitLabSource) MergeChangeset(ctx context.Context, c *Changeset, squash 
 	}
 
 	return c.Changeset.SetMetadata(updated)
+}
+
+func (s *GitLabSource) GetNamespaceFork(ctx context.Context, targetRepo *types.Repo, namespace string) (*types.Repo, error) {
+	return s.getFork(ctx, targetRepo, &namespace)
+}
+
+func (s *GitLabSource) GetUserFork(ctx context.Context, targetRepo *types.Repo) (*types.Repo, error) {
+	return s.getFork(ctx, targetRepo, nil)
+}
+
+func (s *GitLabSource) getFork(ctx context.Context, targetRepo *types.Repo, namespace *string) (*types.Repo, error) {
+	project, ok := targetRepo.Metadata.(*gitlab.Project)
+	if !ok {
+		return nil, errors.New("target repo is not a GitLab project")
+	}
+
+	fork, err := s.client.ForkProject(ctx, project, namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "forking project")
+	}
+
+	remoteRepo := *targetRepo
+	remoteRepo.Metadata = fork
+
+	return &remoteRepo, nil
 }

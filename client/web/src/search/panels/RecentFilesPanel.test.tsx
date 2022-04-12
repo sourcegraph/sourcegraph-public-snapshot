@@ -1,8 +1,10 @@
-import { mount } from 'enzyme'
 import React from 'react'
-import { of } from 'rxjs'
+
+import { screen } from '@testing-library/react'
+import { noop } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { RecentFilesPanel } from './RecentFilesPanel'
 
@@ -35,15 +37,17 @@ describe('RecentFilesPanel', () => {
 
         const props = {
             authenticatedUser: null,
-            fetchRecentFileViews: () => of(recentFiles),
+            recentFilesFragment: { recentFilesLogs: recentFiles },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-explicit-any
+            fetchMore: noop as any,
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
-        const component = mount(<RecentFilesPanel {...props} />)
-        const listItems = component.find('.test-recent-files-item')
-        expect(listItems.length).toStrictEqual(2)
-        expect(listItems.at(0).text()).toStrictEqual('ghe.sgdev.org/sourcegraph/gorilla-mux › go.mod')
-        expect(listItems.at(1).text()).toStrictEqual('github.com/sourcegraph/sourcegraph › .eslintrc.js')
+        renderWithBrandedContext(<RecentFilesPanel {...props} />)
+        const listItems = screen.getAllByTestId('recent-files-item')
+        expect(listItems).toHaveLength(2)
+        expect(listItems[0]).toHaveTextContent('ghe.sgdev.org/sourcegraph/gorilla-mux › go.mod')
+        expect(listItems[1]).toHaveTextContent('github.com/sourcegraph/sourcegraph › .eslintrc.js')
     })
 
     test('files with missing data can extract it from the URL if available', () => {
@@ -74,15 +78,17 @@ describe('RecentFilesPanel', () => {
 
         const props = {
             authenticatedUser: null,
-            fetchRecentFileViews: () => of(recentFiles),
+            recentFilesFragment: { recentFilesLogs: recentFiles },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-explicit-any
+            fetchMore: noop as any,
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
-        const component = mount(<RecentFilesPanel {...props} />)
-        const listItems = component.find('.test-recent-files-item')
-        expect(listItems.length).toStrictEqual(2)
-        expect(listItems.at(0).text()).toStrictEqual('github.com/sourcegraph/sourcegraph › .eslintrc.js')
-        expect(listItems.at(1).text()).toStrictEqual('ghe.sgdev.org/sourcegraph/gorilla-mux › go.mod')
+        renderWithBrandedContext(<RecentFilesPanel {...props} />)
+        const listItems = screen.getAllByTestId('recent-files-item')
+        expect(listItems).toHaveLength(2)
+        expect(listItems[0]).toHaveTextContent('github.com/sourcegraph/sourcegraph › .eslintrc.js')
+        expect(listItems[1]).toHaveTextContent('ghe.sgdev.org/sourcegraph/gorilla-mux › go.mod')
     })
 
     test('Show More button shown when more items can be loaded', () => {
@@ -108,13 +114,14 @@ describe('RecentFilesPanel', () => {
 
         const props = {
             authenticatedUser: null,
-            fetchRecentFileViews: () => of(recentFiles),
+            recentFilesFragment: { recentFilesLogs: recentFiles },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-explicit-any
+            fetchMore: noop as any,
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
-        const component = mount(<RecentFilesPanel {...props} />)
-        const showMoreButton = component.getDOMNode().querySelectorAll('.test-recent-files-panel-show-more')
-        expect(showMoreButton.length).toStrictEqual(1)
+        renderWithBrandedContext(<RecentFilesPanel {...props} />)
+        expect(screen.getByTestId('recent-files-panel-show-more')).toBeInTheDocument()
     })
 
     test('Show More button not shown when more items cannot be loaded', () => {
@@ -140,12 +147,13 @@ describe('RecentFilesPanel', () => {
 
         const props = {
             authenticatedUser: null,
-            fetchRecentFileViews: () => of(recentFiles),
+            recentFilesFragment: { recentFilesLogs: recentFiles },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-explicit-any
+            fetchMore: noop as any,
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
-        const component = mount(<RecentFilesPanel {...props} />)
-        const showMoreButton = component.find('.test-recent-files-panel-show-more')
-        expect(showMoreButton.length).toStrictEqual(0)
+        renderWithBrandedContext(<RecentFilesPanel {...props} />)
+        expect(screen.queryByTestId('recent-files-panel-show-more')).not.toBeInTheDocument()
     })
 })

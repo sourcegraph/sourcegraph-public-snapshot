@@ -3,18 +3,17 @@ package enqueuer
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"golang.org/x/time/rate"
 
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/inference"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type IndexEnqueuer struct {
@@ -47,28 +46,49 @@ func NewIndexEnqueuer(
 
 // InferIndexConfiguration looks at the repository contents at the lastest commit on the default branch of the given
 // repository and determines an index configuration that is likely to succeed.
-func (s *IndexEnqueuer) InferIndexConfiguration(ctx context.Context, repositoryID int) (_ *config.IndexConfiguration, err error) {
-	ctx, traceLog, endObservation := s.operations.InferIndexConfiguration.WithAndLogger(ctx, &err, observation.Args{
+func (s *IndexEnqueuer) InferIndexConfiguration(ctx context.Context, repositoryID int, commit string) (_ *config.IndexConfiguration, hints []config.IndexJobHint, err error) {
+	ctx, trace, endObservation := s.operations.InferIndexConfiguration.WithAndLogger(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", repositoryID),
 		},
 	})
 	defer endObservation(1, observation.Args{})
 
-	commit, ok, err := s.gitserverClient.Head(ctx, repositoryID)
-	if err != nil || !ok {
-		return nil, errors.Wrap(err, "gitserver.Head")
+	if commit == "" {
+		var ok bool
+		commit, ok, err = s.gitserverClient.Head(ctx, repositoryID)
+		if err != nil || !ok {
+			return nil, nil, errors.Wrapf(err, "gitserver.Head: error resolving HEAD for %d", repositoryID)
+		}
+	} else {
+		exists, err := s.gitserverClient.CommitExists(ctx, repositoryID, commit)
+		if err != nil {
+			return nil, nil, errors.Wrapf(err, "gitserver.CommitExists: error checking %s for %d", commit, repositoryID)
+		}
+
+		if !exists {
+			return nil, nil, errors.Newf("revision %s not found for %d", commit, repositoryID)
+		}
 	}
-	traceLog(log.String("commit", commit))
+	trace.Log(log.String("commit", commit))
 
 	indexJobs, err := s.inferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit)
-	if err != nil || len(indexJobs) == 0 {
-		return nil, err
+	if err != nil {
+		return nil, nil, err
+	}
+
+	indexJobHints, err := s.inferIndexJobHintsFromRepositoryStructure(ctx, repositoryID, commit)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if len(indexJobs) == 0 {
+		return nil, indexJobHints, nil
 	}
 
 	return &config.IndexConfiguration{
 		IndexJobs: indexJobs,
-	}, nil
+	}, indexJobHints, nil
 }
 
 // QueueIndexes enqueues a set of index jobs for the following repository and commit. If a non-empty
@@ -82,7 +102,7 @@ func (s *IndexEnqueuer) InferIndexConfiguration(ctx context.Context, repositoryI
 // will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
 // when the flag is false.
 func (s *IndexEnqueuer) QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force bool) (_ []store.Index, err error) {
-	ctx, traceLog, endObservation := s.operations.QueueIndex.WithAndLogger(ctx, &err, observation.Args{
+	ctx, trace, endObservation := s.operations.QueueIndex.WithAndLogger(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", repositoryID),
 		},
@@ -94,15 +114,15 @@ func (s *IndexEnqueuer) QueueIndexes(ctx context.Context, repositoryID int, rev,
 		return nil, errors.Wrap(err, "gitserver.ResolveRevision")
 	}
 	commit := string(commitID)
-	traceLog(log.String("commit", commit))
+	trace.Log(log.String("commit", commit))
 
-	return s.queueIndexForRepositoryAndCommit(ctx, repositoryID, commit, configuration, force, traceLog)
+	return s.queueIndexForRepositoryAndCommit(ctx, repositoryID, commit, configuration, force, trace)
 }
 
 // QueueIndexesForPackage enqueues index jobs for a dependency of a recently-processed precise code
 // intelligence index.
 func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error) {
-	ctx, traceLog, endObservation := s.operations.QueueIndexForPackage.WithAndLogger(ctx, &err, observation.Args{
+	ctx, trace, endObservation := s.operations.QueueIndexForPackage.WithAndLogger(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.String("scheme", pkg.Scheme),
 			log.String("name", pkg.Name),
@@ -115,14 +135,14 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.
 	if !ok {
 		return nil
 	}
-	traceLog(log.String("repoName", repoName))
-	traceLog(log.String("revision", revision))
+	trace.Log(log.String("repoName", string(repoName)))
+	trace.Log(log.String("revision", revision))
 
 	if err := s.repoUpdaterLimiter.Wait(ctx); err != nil {
 		return err
 	}
 
-	resp, err := s.repoUpdater.EnqueueRepoUpdate(ctx, api.RepoName(repoName))
+	resp, err := s.repoUpdater.EnqueueRepoUpdate(ctx, repoName)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return nil
@@ -140,7 +160,7 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.
 		return errors.Wrap(err, "gitserverClient.ResolveRevision")
 	}
 
-	_, err = s.queueIndexForRepositoryAndCommit(ctx, int(resp.ID), string(commit), "", false, traceLog)
+	_, err = s.queueIndexForRepositoryAndCommit(ctx, int(resp.ID), string(commit), "", false, trace)
 	return err
 }
 
@@ -149,7 +169,7 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.
 // If the force flag is false, then the presence of an upload or index record for this given repository and commit
 // will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
 // when the flag is false.
-func (s *IndexEnqueuer) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commit, configuration string, force bool, traceLog observation.TraceLogger) ([]store.Index, error) {
+func (s *IndexEnqueuer) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commit, configuration string, force bool, trace observation.TraceLogger) ([]store.Index, error) {
 	if !force {
 		isQueued, err := s.dbStore.IsQueued(ctx, repositoryID, commit)
 		if err != nil {
@@ -167,7 +187,7 @@ func (s *IndexEnqueuer) queueIndexForRepositoryAndCommit(ctx context.Context, re
 	if len(indexes) == 0 {
 		return nil, nil
 	}
-	traceLog(log.Int("numIndexes", len(indexes)))
+	trace.Log(log.Int("numIndexes", len(indexes)))
 
 	return s.dbStore.InsertIndexes(ctx, indexes)
 }
@@ -187,12 +207,51 @@ func (s *IndexEnqueuer) inferIndexJobsFromRepositoryStructure(ctx context.Contex
 
 	var indexes []config.IndexJob
 	for _, recognizer := range inference.Recognizers {
-		indexes = append(indexes, recognizer.InferIndexJobs(gitclient, paths)...)
+		recognizedPaths := []string{}
+		pattern := inference.OrPattern(recognizer.Patterns())
+		for _, path := range paths {
+			if pattern.MatchString(path) {
+				recognizedPaths = append(recognizedPaths, path)
+			}
+		}
+		if len(recognizedPaths) > 0 {
+			indexes = append(indexes, recognizer.InferIndexJobs(gitclient, recognizedPaths)...)
+		}
 	}
 
 	if len(indexes) > s.config.MaximumIndexJobsPerInferredConfiguration {
 		log15.Info("Too many inferred roots. Scheduling no index jobs for repository.", "repository_id", repositoryID)
 		return nil, nil
+	}
+
+	return indexes, nil
+}
+
+// inferIndexJobsFromRepositoryStructure collects the result of  InferIndexJobHints over all registered recognizers.
+func (s *IndexEnqueuer) inferIndexJobHintsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string) ([]config.IndexJobHint, error) {
+	if err := s.gitserverLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	paths, err := s.gitserverClient.ListFiles(ctx, repositoryID, commit, inference.Patterns)
+	if err != nil {
+		return nil, errors.Wrap(err, "gitserver.ListFiles")
+	}
+
+	gitclient := newGitClient(s.gitserverClient, repositoryID, commit)
+
+	var indexes []config.IndexJobHint
+	for _, recognizer := range inference.Recognizers {
+		recognizedPaths := []string{}
+		pattern := inference.OrPattern(recognizer.Patterns())
+		for _, path := range paths {
+			if pattern.MatchString(path) {
+				recognizedPaths = append(recognizedPaths, path)
+			}
+		}
+		if len(recognizedPaths) > 0 {
+			indexes = append(indexes, recognizer.InferIndexJobHints(gitclient, recognizedPaths)...)
+		}
 	}
 
 	return indexes, nil

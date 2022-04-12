@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/gomodule/redigo/redis"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
@@ -20,18 +19,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // metricsRecorder records operational metrics for methods.
-var metricsRecorder = metrics.NewOperationMetrics(prometheus.DefaultRegisterer, "updatecheck_client", metrics.WithLabels("method"))
+var metricsRecorder = metrics.NewREDMetrics(prometheus.DefaultRegisterer, "updatecheck_client", metrics.WithLabels("method"))
 
 // Status of the check for software updates for Sourcegraph.
 type Status struct {
@@ -76,10 +76,9 @@ func recordOperation(method string) func(*error) {
 	}
 }
 
-func getAndMarshalSiteActivityJSON(ctx context.Context, db dbutil.DB, criticalOnly bool) (_ json.RawMessage, err error) {
+func getAndMarshalSiteActivityJSON(ctx context.Context, db database.DB, criticalOnly bool) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalSiteActivityJSON")(&err)
 	siteActivity, err := usagestats.GetSiteUsageStats(ctx, db, criticalOnly)
-
 	if err != nil {
 		return nil, err
 	}
@@ -97,14 +96,24 @@ func hasFindRefsOccurred(ctx context.Context) (_ bool, err error) {
 	return usagestats.HasFindRefsOccurred(ctx)
 }
 
-func getTotalUsersCount(ctx context.Context) (_ int, err error) {
+func getTotalUsersCount(ctx context.Context, db database.DB) (_ int, err error) {
 	defer recordOperation("getTotalUsersCount")(&err)
-	return database.GlobalUsers.Count(ctx, &database.UsersListOptions{})
+	return database.Users(db).Count(ctx, &database.UsersListOptions{})
 }
 
-func getTotalReposCount(ctx context.Context) (_ int, err error) {
-	defer recordOperation("getTotalReposCount")(&err)
-	return database.GlobalRepos.Count(ctx, database.ReposListOptions{})
+func getTotalOrgsCount(ctx context.Context, db database.DB) (_ int, err error) {
+	defer recordOperation("getTotalUsersCount")(&err)
+	return database.Orgs(db).Count(ctx, database.OrgsListOptions{})
+}
+
+// hasRepo returns true when the instance has at least one repository that isn't
+// soft-deleted nor blocked.
+func hasRepos(ctx context.Context, db database.DB) (_ bool, err error) {
+	defer recordOperation("hasRepos")(&err)
+	rs, err := database.Repos(db).List(ctx, database.ReposListOptions{
+		LimitOffset: &database.LimitOffset{Limit: 1},
+	})
+	return len(rs) > 0, err
 }
 
 func getUsersActiveTodayCount(ctx context.Context) (_ int, err error) {
@@ -112,12 +121,12 @@ func getUsersActiveTodayCount(ctx context.Context) (_ int, err error) {
 	return usagestatsdeprecated.GetUsersActiveTodayCount(ctx)
 }
 
-func getInitialSiteAdminEmail(ctx context.Context) (_ string, err error) {
-	defer recordOperation("getInitialSiteAdminEmail")(&err)
-	return database.GlobalUserEmails.GetInitialSiteAdminEmail(ctx)
+func getInitialSiteAdminInfo(ctx context.Context, db database.DB) (_ string, _ bool, err error) {
+	defer recordOperation("getInitialSiteAdminInfo")(&err)
+	return database.UserEmails(db).GetInitialSiteAdminInfo(ctx)
 }
 
-func getAndMarshalBatchChangesUsageJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
+func getAndMarshalBatchChangesUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalBatchChangesUsageJSON")(&err)
 
 	batchChangesUsage, err := usagestats.GetBatchChangesUsageStatistics(ctx, db)
@@ -127,7 +136,7 @@ func getAndMarshalBatchChangesUsageJSON(ctx context.Context, db dbutil.DB) (_ js
 	return json.Marshal(batchChangesUsage)
 }
 
-func getAndMarshalGrowthStatisticsJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
+func getAndMarshalGrowthStatisticsJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalGrowthStatisticsJSON")(&err)
 
 	growthStatistics, err := usagestats.GetGrowthStatistics(ctx, db)
@@ -137,7 +146,17 @@ func getAndMarshalGrowthStatisticsJSON(ctx context.Context, db dbutil.DB) (_ jso
 	return json.Marshal(growthStatistics)
 }
 
-func getAndMarshalSavedSearchesJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
+func getAndMarshalCTAUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalCTAUsageJSON")(&err)
+
+	ctaUsage, err := usagestats.GetCTAUsage(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(ctaUsage)
+}
+
+func getAndMarshalSavedSearchesJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalSavedSearchesJSON")(&err)
 
 	savedSearches, err := usagestats.GetSavedSearches(ctx, db)
@@ -147,7 +166,7 @@ func getAndMarshalSavedSearchesJSON(ctx context.Context, db dbutil.DB) (_ json.R
 	return json.Marshal(savedSearches)
 }
 
-func getAndMarshalHomepagePanelsJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
+func getAndMarshalHomepagePanelsJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalHomepagePanelsJSON")(&err)
 
 	homepagePanels, err := usagestats.GetHomepagePanels(ctx, db)
@@ -157,17 +176,17 @@ func getAndMarshalHomepagePanelsJSON(ctx context.Context, db dbutil.DB) (_ json.
 	return json.Marshal(homepagePanels)
 }
 
-func getAndMarshalRepositoriesJSON(ctx context.Context) (_ json.RawMessage, err error) {
+func getAndMarshalRepositoriesJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalRepositoriesJSON")(&err)
 
-	repos, err := usagestats.GetRepositories(ctx)
+	repos, err := usagestats.GetRepositories(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 	return json.Marshal(repos)
 }
 
-func getAndMarshalRetentionStatisticsJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
+func getAndMarshalRetentionStatisticsJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalRetentionStatisticsJSON")(&err)
 
 	retentionStatistics, err := usagestats.GetRetentionStatistics(ctx, db)
@@ -178,7 +197,7 @@ func getAndMarshalRetentionStatisticsJSON(ctx context.Context, db dbutil.DB) (_ 
 	return json.Marshal(retentionStatistics)
 }
 
-func getAndMarshalSearchOnboardingJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
+func getAndMarshalSearchOnboardingJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalSearchOnboardingJSON")(&err)
 
 	searchOnboarding, err := usagestats.GetSearchOnboarding(ctx, db)
@@ -189,7 +208,7 @@ func getAndMarshalSearchOnboardingJSON(ctx context.Context, db dbutil.DB) (_ jso
 	return json.Marshal(searchOnboarding)
 }
 
-func getAndMarshalAggregatedCodeIntelUsageJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
+func getAndMarshalAggregatedCodeIntelUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalAggregatedCodeIntelUsageJSON")(&err)
 
 	codeIntelUsage, err := usagestats.GetAggregatedCodeIntelStats(ctx, db)
@@ -200,7 +219,7 @@ func getAndMarshalAggregatedCodeIntelUsageJSON(ctx context.Context, db dbutil.DB
 	return json.Marshal(codeIntelUsage)
 }
 
-func getAndMarshalAggregatedSearchUsageJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
+func getAndMarshalAggregatedSearchUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalAggregatedSearchUsageJSON")(&err)
 
 	searchUsage, err := usagestats.GetAggregatedSearchStats(ctx, db)
@@ -211,7 +230,7 @@ func getAndMarshalAggregatedSearchUsageJSON(ctx context.Context, db dbutil.DB) (
 	return json.Marshal(searchUsage)
 }
 
-func getAndMarshalExtensionsUsageStatisticsJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
+func getAndMarshalExtensionsUsageStatisticsJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalExtensionsUsageStatisticsJSON")
 
 	extensionsUsage, err := usagestats.GetExtensionsUsageStatistics(ctx, db)
@@ -222,7 +241,7 @@ func getAndMarshalExtensionsUsageStatisticsJSON(ctx context.Context, db dbutil.D
 	return json.Marshal(extensionsUsage)
 }
 
-func getAndMarshalCodeInsightsUsageJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
+func getAndMarshalCodeInsightsUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalCodeInsightsUsageJSON")
 
 	codeInsightsUsage, err := usagestats.GetCodeInsightsUsageStatistics(ctx, db)
@@ -233,7 +252,18 @@ func getAndMarshalCodeInsightsUsageJSON(ctx context.Context, db dbutil.DB) (_ js
 	return json.Marshal(codeInsightsUsage)
 }
 
-func getAndMarshalCodeMonitoringUsageJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
+func getAndMarshalCodeInsightsCriticalTelemetryJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalCodeInsightsUsageJSON")
+
+	insightsCriticalTelemetry, err := usagestats.GetCodeInsightsCriticalTelemetry(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(insightsCriticalTelemetry)
+}
+
+func getAndMarshalCodeMonitoringUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalCodeMonitoringUsageJSON")
 
 	codeMonitoringUsage, err := usagestats.GetCodeMonitoringUsageStatistics(ctx, db)
@@ -244,7 +274,30 @@ func getAndMarshalCodeMonitoringUsageJSON(ctx context.Context, db dbutil.DB) (_ 
 	return json.Marshal(codeMonitoringUsage)
 }
 
-func getAndMarshalCodeHostVersionsJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
+func getAndMarshalCodeHostIntegrationUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalCodeHostIntegrationUsageJSON")
+
+	codeHostIntegrationUsage, err := usagestats.GetCodeHostIntegrationUsageStatistics(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(codeHostIntegrationUsage)
+}
+
+func getAndMarshalIDEExtensionsUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalIDEExtensionsUsageJSON")
+
+	ideExtensionsUsage, err := usagestats.GetIDEExtensionsUsageStatistics(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(ideExtensionsUsage)
+}
+
+func getAndMarshalCodeHostVersionsJSON(_ context.Context, _ database.DB) (_ json.RawMessage, err error) {
+
 	defer recordOperation("getAndMarshalCodeHostVersionsJSON")(&err)
 
 	versions, err := versions.GetVersions()
@@ -254,7 +307,7 @@ func getAndMarshalCodeHostVersionsJSON(ctx context.Context, db dbutil.DB) (_ jso
 	return json.Marshal(versions)
 }
 
-func getDependencyVersions(ctx context.Context, db dbutil.DB, logFunc func(string, ...interface{})) (json.RawMessage, error) {
+func getDependencyVersions(ctx context.Context, db database.DB, logFunc func(string, ...interface{})) (json.RawMessage, error) {
 	var (
 		err error
 		dv  dependencyVersions
@@ -291,8 +344,8 @@ func getRedisVersion(dialFunc func() (redis.Conn, error)) (string, error) {
 
 	m, err := parseRedisInfo(buf)
 	return m["redis_version"], err
-
 }
+
 func parseRedisInfo(buf []byte) (map[string]string, error) {
 	var (
 		lines = bytes.Split(buf, []byte("\n"))
@@ -315,45 +368,57 @@ func parseRedisInfo(buf []byte) (map[string]string, error) {
 	return m, nil
 }
 
-func updateBody(ctx context.Context, db dbutil.DB) (io.Reader, error) {
+func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 	logFunc := log15.Debug
 	if envvar.SourcegraphDotComMode() {
 		logFunc = log15.Warn
 	}
 
 	r := &pingRequest{
-		ClientSiteID:        siteid.Get(),
-		DeployType:          conf.DeployType(),
-		ClientVersionString: version.Version(),
-		LicenseKey:          conf.Get().LicenseKey,
-		CodeIntelUsage:      []byte("{}"),
-		NewCodeIntelUsage:   []byte("{}"),
-		SearchUsage:         []byte("{}"),
-		BatchChangesUsage:   []byte("{}"),
-		GrowthStatistics:    []byte("{}"),
-		SavedSearches:       []byte("{}"),
-		HomepagePanels:      []byte("{}"),
-		Repositories:        []byte("{}"),
-		RetentionStatistics: []byte("{}"),
-		SearchOnboarding:    []byte("{}"),
-		ExtensionsUsage:     []byte("{}"),
-		CodeInsightsUsage:   []byte("{}"),
-		CodeMonitoringUsage: []byte("{}"),
+		ClientSiteID:                  siteid.Get(),
+		DeployType:                    deploy.Type(),
+		ClientVersionString:           version.Version(),
+		LicenseKey:                    conf.Get().LicenseKey,
+		CodeIntelUsage:                []byte("{}"),
+		NewCodeIntelUsage:             []byte("{}"),
+		SearchUsage:                   []byte("{}"),
+		BatchChangesUsage:             []byte("{}"),
+		GrowthStatistics:              []byte("{}"),
+		CTAUsage:                      []byte("{}"),
+		SavedSearches:                 []byte("{}"),
+		HomepagePanels:                []byte("{}"),
+		Repositories:                  []byte("{}"),
+		RetentionStatistics:           []byte("{}"),
+		SearchOnboarding:              []byte("{}"),
+		ExtensionsUsage:               []byte("{}"),
+		CodeInsightsUsage:             []byte("{}"),
+		CodeInsightsCriticalTelemetry: []byte("{}"),
+		CodeMonitoringUsage:           []byte("{}"),
+		CodeHostIntegrationUsage:      []byte("{}"),
+		IDEExtensionsUsage:            []byte("{}"),
 	}
 
-	totalUsers, err := getTotalUsersCount(ctx)
+	totalUsers, err := getTotalUsersCount(ctx, db)
 	if err != nil {
 		logFunc("telemetry: database.Users.Count failed", "error", err)
 	}
 	r.TotalUsers = int32(totalUsers)
-	r.InitialAdminEmail, err = getInitialSiteAdminEmail(ctx)
+	r.InitialAdminEmail, r.TosAccepted, err = getInitialSiteAdminInfo(ctx, db)
 	if err != nil {
-		logFunc("telemetry: database.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
+		logFunc("telemetry: database.UserEmails.GetInitialSiteAdminInfo failed", "error", err)
 	}
 
 	r.DependencyVersions, err = getDependencyVersions(ctx, db, logFunc)
 	if err != nil {
 		logFunc("telemetry: getDependencyVersions failed", "error", err)
+	}
+
+	// Yes dear reader, this is a feature ping in critical telemetry. Why do you ask? Because for the purposes of
+	// licensing enforcement, we need to know how many insights our customers have created. Please see RFC 584
+	// for the original approval of this ping. (https://docs.google.com/document/d/1J-fnZzRtvcZ_NWweCZQ5ipDMh4NdgQ8rlxXsa8vHWlQ/edit#)
+	r.CodeInsightsCriticalTelemetry, err = getAndMarshalCodeInsightsCriticalTelemetryJSON(ctx, db)
+	if err != nil {
+		logFunc("telemetry: updatecheck.getAndMarshalCodeInsightsCriticalTelemetry failed", "error", err)
 	}
 
 	if !conf.Get().DisableNonCriticalTelemetry {
@@ -367,11 +432,17 @@ func updateBody(ctx context.Context, db dbutil.DB) (io.Reader, error) {
 			logFunc("telemetry: updatecheck.getUsersActiveToday failed", "error", err)
 		}
 		r.UniqueUsers = int32(count)
-		totalRepos, err := getTotalReposCount(ctx)
+
+		totalOrgs, err := getTotalOrgsCount(ctx, db)
 		if err != nil {
-			logFunc("telemetry: updatecheck.getTotalReposCount failed", "error", err)
+			logFunc("telemetry: database.Orgs.Count failed", "error", err)
 		}
-		r.HasRepos = totalRepos > 0
+		r.TotalOrgs = int32(totalOrgs)
+
+		r.HasRepos, err = hasRepos(ctx, db)
+		if err != nil {
+			logFunc("telemetry: updatecheck.hasRepos failed", "error", err)
+		}
 
 		r.EverSearched, err = hasSearchOccurred(ctx)
 		if err != nil {
@@ -390,6 +461,11 @@ func updateBody(ctx context.Context, db dbutil.DB) (io.Reader, error) {
 			logFunc("telemetry: updatecheck.getAndMarshalGrowthStatisticsJSON failed", "error", err)
 		}
 
+		r.CTAUsage, err = getAndMarshalCTAUsageJSON(ctx, db)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalCTAUsageJSON failed", "error", err)
+		}
+
 		r.SavedSearches, err = getAndMarshalSavedSearchesJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalSavedSearchesJSON failed", "error", err)
@@ -405,7 +481,7 @@ func updateBody(ctx context.Context, db dbutil.DB) (io.Reader, error) {
 			logFunc("telemetry: updatecheck.getAndMarshalSearchOnboardingJSON failed", "error", err)
 		}
 
-		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx)
+		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalRepositoriesJSON failed", "error", err)
 		}
@@ -428,6 +504,16 @@ func updateBody(ctx context.Context, db dbutil.DB) (io.Reader, error) {
 		r.CodeMonitoringUsage, err = getAndMarshalCodeMonitoringUsageJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalCodeMonitoringUsageJSON failed", "error", err)
+		}
+
+		r.CodeHostIntegrationUsage, err = getAndMarshalCodeHostIntegrationUsageJSON(ctx, db)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalCodeHostIntegrationUsageJSON failed", "error", err)
+		}
+
+		r.IDEExtensionsUsage, err = getAndMarshalIDEExtensionsUsageJSON(ctx, db)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalIDEExtensionsUsageJSON failed", "error", err)
 		}
 
 		r.CodeHostVersions, err = getAndMarshalCodeHostVersionsJSON(ctx, db)
@@ -478,7 +564,7 @@ func updateBody(ctx context.Context, db dbutil.DB) (io.Reader, error) {
 
 		wg.Wait()
 	} else {
-		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx)
+		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalRepositoriesJSON failed", "error", err)
 		}
@@ -516,14 +602,14 @@ func authProviderTypes() []string {
 	return types
 }
 
-func externalServiceKinds(ctx context.Context, db dbutil.DB) (kinds []string, err error) {
+func externalServiceKinds(ctx context.Context, db database.DB) (kinds []string, err error) {
 	defer recordOperation("externalServiceKinds")(&err)
 	kinds, err = database.ExternalServices(db).DistinctKinds(ctx)
 	return kinds, err
 }
 
 // check performs an update check and updates the global state.
-func check(db dbutil.DB) {
+func check(db database.DB) {
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
 
@@ -574,7 +660,6 @@ func check(db dbutil.DB) {
 	mu.Unlock()
 
 	updateVersion, err := doCheck()
-
 	if err != nil {
 		log15.Error("telemetry: updatecheck failed", "error", err)
 	}
@@ -594,7 +679,7 @@ func check(db dbutil.DB) {
 var started bool
 
 // Start starts checking for software updates periodically.
-func Start(db dbutil.DB) {
+func Start(db database.DB) {
 	if started {
 		panic("already started")
 	}

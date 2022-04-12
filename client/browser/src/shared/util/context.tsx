@@ -1,7 +1,7 @@
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
+import { isFirefox } from '@sourcegraph/common'
 
 import { observeStorageKey } from '../../browser-extension/web-extension-api/storage'
 
@@ -65,6 +65,6 @@ function isSafari(): boolean {
     return window.navigator.userAgent.includes('Safari') && !window.navigator.userAgent.includes('Chrome')
 }
 
-export function isDefaultSourcegraphUrl(url: string): boolean {
-    return url.replace(/\/$/, '') === DEFAULT_SOURCEGRAPH_URL
+export function isDefaultSourcegraphUrl(url?: string): boolean {
+    return url?.replace(/\/$/, '') === DEFAULT_SOURCEGRAPH_URL
 }

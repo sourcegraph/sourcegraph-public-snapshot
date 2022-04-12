@@ -1,21 +1,22 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
-import * as React from 'react'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { ActionContribution, Evaluated } from '@sourcegraph/client-api'
+import { asError, ErrorLike, isErrorLike, isExternalLink } from '@sourcegraph/common'
+import { LoadingSpinner, ButtonLink, ButtonLinkProps, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import { ExecuteCommandParameters } from '../api/client/mainthread-api'
-import { ActionContribution, Evaluated } from '../api/protocol'
 import { urlForOpenPanel } from '../commands/commands'
-import { ButtonLink } from '../components/LinkOrButton'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
-import { asError, ErrorLike, isErrorLike } from '../util/errors'
-import { isExternalLink } from '../util/url'
+
+import styles from './ActionItem.module.scss'
 
 export interface ActionItemAction {
     /**
@@ -32,6 +33,15 @@ export interface ActionItemAction {
 
     /** Whether the action item is active in the given context */
     active: boolean
+
+    /** Whether the action item should be disabled in the given context */
+    disabledWhen?: boolean
+}
+
+export interface ActionItemStyleProps {
+    actionItemVariant?: ButtonLinkProps['variant']
+    actionItemSize?: ButtonLinkProps['size']
+    actionItemOutline?: ButtonLinkProps['outline']
 }
 
 export interface ActionItemComponentProps
@@ -40,6 +50,8 @@ export interface ActionItemComponentProps
     location: H.Location
 
     iconClassName?: string
+
+    actionItemStyleProps?: ActionItemStyleProps
 }
 
 export interface ActionItemProps extends ActionItemAction, ActionItemComponentProps, TelemetryProps {
@@ -104,7 +116,10 @@ interface State {
     actionOrError: typeof LOADING | null | ErrorLike
 }
 
-export class ActionItem extends React.PureComponent<ActionItemProps, State> {
+export class ActionItem extends React.PureComponent<ActionItemProps, State, typeof WildcardThemeContext> {
+    public static contextType = WildcardThemeContext
+    public context!: React.ContextType<typeof WildcardThemeContext>
+
     public state: State = { actionOrError: null }
 
     private commandExecutions = new Subject<ExecuteCommandParameters>()
@@ -171,7 +186,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                     {this.props.action.actionItem.iconURL && (
                         <img
                             src={this.props.action.actionItem.iconURL}
-                            alt={this.props.action.actionItem.iconDescription}
+                            alt={this.props.action.actionItem.iconDescription || ''}
                             className={this.props.iconClassName}
                         />
                     )}
@@ -181,13 +196,15 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                 </>
             )
             tooltip = this.props.action.actionItem.description
+        } else if (this.props.disabledWhen) {
+            content = this.props.action.disabledTitle
         } else {
             content = (
                 <>
                     {this.props.action.iconURL && (
                         <img
                             src={this.props.action.iconURL}
-                            alt={this.props.action.description}
+                            alt={this.props.action.description || ''}
                             className={this.props.iconClassName}
                         />
                     )}{' '}
@@ -202,15 +219,13 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
             tooltip += ' (inactive)'
         }
 
-        const variantClassName = this.props.variant === 'actionItem' ? 'action-item--variant-action-item' : ''
-
         // Simple display if the action is a noop.
         if (!this.props.action.command) {
             return (
                 <span
                     data-tooltip={tooltip}
                     data-content={this.props.dataContent}
-                    className={classNames('action-item', this.props.className, variantClassName)}
+                    className={this.props.className}
                     tabIndex={this.props.tabIndex}
                 >
                     {content}
@@ -224,8 +239,8 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                 ? this.props.action.actionItem.pressed
                 : undefined
 
-        const altTo = this.props.altAction && urlForClientCommandOpen(this.props.altAction, this.props.location)
-        const primaryTo = urlForClientCommandOpen(this.props.action, this.props.location)
+        const altTo = this.props.altAction && urlForClientCommandOpen(this.props.altAction, this.props.location.hash)
+        const primaryTo = urlForClientCommandOpen(this.props.action, this.props.location.hash)
         const to = primaryTo || altTo
         // Open in new tab if an external link
         const newTabProps =
@@ -235,6 +250,13 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                       rel: 'noopener noreferrer',
                   }
                 : {}
+        const buttonLinkProps: Partial<ButtonLinkProps> = this.context.isBranded
+            ? {
+                  variant: this.props.actionItemStyleProps?.actionItemVariant ?? 'link',
+                  size: this.props.actionItemStyleProps?.actionItemSize,
+                  outline: this.props.actionItemStyleProps?.actionItemOutline,
+              }
+            : {}
 
         return (
             <ButtonLink
@@ -247,16 +269,17 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                 disabled={
                     !this.props.active ||
                     ((this.props.disabledDuringExecution || this.props.showLoadingSpinnerDuringExecution) &&
-                        this.state.actionOrError === LOADING)
+                        this.state.actionOrError === LOADING) ||
+                    this.props.disabledWhen
                 }
                 disabledClassName={this.props.inactiveClassName}
+                data-action-item-pressed={pressed}
                 className={classNames(
-                    'action-item',
                     'test-action-item',
                     this.props.className,
-                    showLoadingSpinner && 'action-item--loading',
-                    variantClassName,
-                    pressed && ['action-item--pressed', this.props.pressedClassName]
+                    showLoadingSpinner && styles.actionItemLoading,
+                    pressed && [this.props.pressedClassName],
+                    buttonLinkProps.variant === 'link' && styles.actionItemLink
                 )}
                 pressed={pressed}
                 onSelect={this.runAction}
@@ -264,6 +287,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                 // it as a button that executes the command.
                 to={to}
                 {...newTabProps}
+                {...buttonLinkProps}
                 tabIndex={this.props.tabIndex}
             >
                 {content}{' '}
@@ -271,8 +295,8 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                     <OpenInNewIcon className={this.props.iconClassName} />
                 )}
                 {showLoadingSpinner && (
-                    <div className="action-item__loader">
-                        <LoadingSpinner className={this.props.iconClassName} />
+                    <div className={styles.loader} data-testid="action-item-spinner">
+                        <LoadingSpinner inline={false} className={this.props.iconClassName} />
                     </div>
                 )}
             </ButtonLink>
@@ -291,7 +315,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
         // Record action ID (but not args, which might leak sensitive data).
         this.props.telemetryService.log(action.id)
 
-        if (urlForClientCommandOpen(action, this.props.location)) {
+        if (urlForClientCommandOpen(action, this.props.location.hash)) {
             if (event.currentTarget.tagName === 'A' && event.currentTarget.hasAttribute('href')) {
                 // Do not execute the command. The <LinkOrButton>'s default event handler will do what we want (which
                 // is to open a URL). The only case where this breaks is if both the action and alt action are "open"
@@ -321,7 +345,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
 
 export function urlForClientCommandOpen(
     action: Pick<Evaluated<ActionContribution>, 'command' | 'commandArguments'>,
-    location: H.Location
+    locationHash: string
 ): string | undefined {
     if (action.command === 'open' && action.commandArguments) {
         const url = action.commandArguments[0]
@@ -336,7 +360,7 @@ export function urlForClientCommandOpen(
         if (typeof url !== 'string') {
             return undefined
         }
-        return urlForOpenPanel(url, location.hash)
+        return urlForOpenPanel(url, locationHash)
     }
 
     return undefined

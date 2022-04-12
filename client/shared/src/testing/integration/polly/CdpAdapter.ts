@@ -1,11 +1,12 @@
 import PollyAdapter from '@pollyjs/adapter'
 import { Polly, Request as PollyRequest } from '@pollyjs/core'
 import Protocol from 'devtools-protocol'
+import { ProtocolMapping } from 'devtools-protocol/types/protocol-mapping'
 import { noop } from 'lodash'
 import Puppeteer from 'puppeteer'
 import { Observable, Subject } from 'rxjs'
 
-import { isErrorLike } from '../../../util/errors'
+import { isErrorLike } from '@sourcegraph/common'
 
 function toBase64(input: string): string {
     return Buffer.from(input).toString('base64')
@@ -114,7 +115,7 @@ export class CdpAdapter extends PollyAdapter {
      */
     public async onConnect(): Promise<void> {
         // Create CDP sessions for all existing targets
-        const targets = await this.browser.targets()
+        const targets = this.browser.targets()
 
         await Promise.all(
             targets.map(async target => {
@@ -253,7 +254,7 @@ export class CdpAdapter extends PollyAdapter {
         request?: object
     ): Promise<void> {
         try {
-            await cdpSession?.send(cdpRequestName, request)
+            await cdpSession?.send(cdpRequestName as keyof ProtocolMapping.Commands, request)
         } catch (error) {
             // TODO: also ignore "target closed" error
             if (
@@ -287,9 +288,9 @@ export class CdpAdapter extends PollyAdapter {
             throw new Error('Fetch.getResponseBody called before CDP session created')
         }
 
-        const body = (await cdpSession.send('Fetch.getResponseBody', {
+        const body = await cdpSession.send('Fetch.getResponseBody', {
             requestId: event.requestId,
-        })) as Protocol.Fetch.GetResponseBodyResponse
+        })
 
         return getBodyStringFromCdpBody(body)
     }
@@ -324,7 +325,14 @@ export class CdpAdapter extends PollyAdapter {
         event: Protocol.Fetch.RequestPausedEvent,
         cdpSession: Puppeteer.CDPSession
     ): void {
-        const { requestId } = event
+        const { requestId, request } = event
+
+        // Passthrough missing Chrome extension request because it's expected to fail if the extension is not installed.
+        if (request.url.includes('chrome-extension://invalid')) {
+            this.continuePausedRequest({ requestId: event.requestId }, cdpSession).catch(console.error)
+
+            return
+        }
 
         // First case: response was not received and encountered an error (for
         // example the connection was refused)

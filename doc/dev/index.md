@@ -1,67 +1,64 @@
 # Developing Sourcegraph
 
-This documentation is for developers contributing to the Sourcegraph code base.
+<style>
+.markdown-body h2 {
+  margin-top: 2em;
+}
+.markdown-body ul {
+  list-style:none;
+  padding-left: 1em;
+}
+.markdown-body ul li {
+  margin: 0.5em 0;
+}
+.markdown-body ul li:before {
+  content: '';
+  display: inline-block;
+  height: 1.2em;
+  width: 1em;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-image: url(../batch_changes/file-icon.svg);
+  margin-right: 0.5em;
+  margin-bottom: -0.29em;
+}
+body.theme-dark .markdown-body ul li:before {
+  filter: invert(50%);
+}
+</style>
 
-Sourcegraph development is open source at:
+<p class="subtitle">Documentation for <b>developers contributing to the Sourcegraph code base</b></p>
 
-- [GitHub repository](https://github.com/sourcegraph/sourcegraph)
-- [Issue tracker](https://github.com/sourcegraph/sourcegraph/issues)
+<div class="cta-group">
+<a class="btn btn-primary" href="setup/quickstart">★ Quickstart: develop Sourcegraph on your machine</a>
+<a class="btn" href="https://github.com/sourcegraph/sourcegraph">GitHub repository</a>
+<a class="btn" href="https://github.com/sourcegraph/sourcegraph/issues">Issue Tracker</a>
+</div>
 
-## [Getting started](getting-started/index.md)
 
-A hands-on introduction for setting up your local development environment.
+## [Setup](setup/index.md)
 
-- [Step 1: Install dependencies](getting-started/quickstart_1_install_dependencies.md)
-- [Step 2: Start Docker](getting-started/quickstart_2_start_docker.md)
-- [Step 3: Initialize your database](getting-started/quickstart_3_initialize_database.md)
-- [Step 4: Get the code](getting-started/quickstart_4_clone_repository.md)
-- [Step 5: Configure HTTPS reverse proxy](getting-started/quickstart_5_configure_https_reverse_proxy.md)
-- [Step 6: Start the server](getting-started/quickstart_6_start_server.md)
-- [Step 7: Additional resources](getting-started/quickstart_7_additional_resources.md)
+<p class="subtitle">Learn how to develop Sourcegraph on your machine.</p>
 
-## [How-to guides](how-to/index.md)
+<div class="getting-started">
+  <a href="setup/quickstart" class="btn" alt="Run through the Quickstart guide">
+   <span>★ Quickstart</span>
+   </br>
+   Run through the <b>step by step guide</b> and get your local environment ready.
+  </a>
 
-Guides to help with troubleshooting, configuring test instances, debugging, and more.
+  <a href="../dev/how-to" class="btn" alt="How-to guides">
+   <span>How-to guides</span>
+   </br>
+  <b>Context specific</b> guides: debugging live code
+  </a>
 
-### Local development
-
-- [How to debug live code](how-to/debug_live_code.md)
-- [Set up local development with Zoekt and Sourcegraph](how-to/zoekt_local_dev.md)
-- [Ignoring editor config files in Git](how-to/ignoring_editor_config_files.md)
-- [Use `golangci-lint`](how-to/use-golangci-lint.md)
-
-### New features
-
-- [How to add support for a language](how-to/add_support_for_a_language.md)
-- [How to use feature flags](how-to/use_feature_flags.md)
-
-### [Troubleshooting](how-to/troubleshooting_local_development.md)
-
-- [Problems with node_modules or Javascript packages](how-to/troubleshooting_local_development.md#problems-with-nodemodules-or-javascript-packages)
-- [dial tcp 127.0.0.1:3090: connect: connection refused](how-to/troubleshooting_local_development.md#dial-tcp-1270013090-connect-connection-refused)
-- [Database migration failures](how-to/troubleshooting_local_development.md#database-migration-failures)
-- [Internal Server Error](how-to/troubleshooting_local_development.md#internal-server-error)
-- [Increase maximum available file descriptors.](how-to/troubleshooting_local_development.md#increase-maximum-available-file-descriptors)
-- [Caddy 2 certificate problems](how-to/troubleshooting_local_development.md#caddy-2-certificate-problems)
-- [Running out of disk space](how-to/troubleshooting_local_development.md#running-out-of-disk-space)
-- [Certificate expiry](how-to/troubleshooting_local_development.md#certificate-expiry)
-- [CPU/RAM/bandwidth/battery usage](how-to/troubleshooting_local_development.md#cpurambandwidthbattery-usage)
-- [Permission errors for Grafana and Prometheus](how-to/troubleshooting_local_development.md#permission-errors-for-grafana-and-prometheus-containers)
-
-### Implementing Sourcegraph
-
-- [Developing the product documentation](how-to/documentation_implementation.md)
-- [Observability](background-information/observability/index.md)
-  - [How to find monitoring](how-to/find_monitoring.md)
-  - [How to add monitoring](how-to/add_monitoring.md)
-  - [Set up local Sourcegraph monitoring development](how-to/monitoring_local_dev.md)
-
-### Testing Sourcegraph & CI
-
-- [How to run tests](how-to/testing.md)
-- [Configure a test instance of Phabricator and Gitolite](how-to/configure_phabricator_gitolite.md)
-- [Test a Phabricator and Gitolite instance](how-to/test_phabricator.md)
-- [Adding or changing Buildkite secrets](how-to/adding_buildkite_secrets.md)
+  <a href="setup/troubleshooting" class="btn" alt="Troubleshooting">
+   <span>Troubleshooting</span>
+   </br>
+  Help for the <b>most common</b> problems.
+  </a>
+</div>
 
 ## [Background information](background-information/index.md)
 
@@ -70,7 +67,6 @@ Clarification and discussion about key concepts, architecture, and development s
 ### Overview
 
 - [Tech stack](background-information/tech_stack.md)
-- [Security Patterns](background-information/security_patterns.md)
 
 ### [Architecture](background-information/architecture/index.md)
 
@@ -79,6 +75,7 @@ Clarification and discussion about key concepts, architecture, and development s
 
 ### Development
 
+- [`sg` - the Sourcegraph developer tool](background-information/sg/index.md)
 - [Developing the web clients](background-information/web/index.md)
   - [Developing the web app](background-information/web/web_app.md)
   - [Developing the code host integrations](background-information/web/code_host_integrations.md)
@@ -96,13 +93,20 @@ Clarification and discussion about key concepts, architecture, and development s
 - [Developing observability](background-information/observability/index.md)
 - [Developing Sourcegraph extensions](background-information/sourcegraph_extensions.md)
 - [Dependencies and generated code](background-information/dependencies_and_codegen.md)
-- [Code reviews](background-information/code_reviews.md)
+- [Code reviews](background-information/pull_request_reviews.md)
 - [Commit messages](background-information/commit_messages.md)
 - [Exposing services](background-information/exposing-services.md)
 - [Developing a store](background-information/basestore.md)
 - [Developing a worker](background-information/workers.md)
 - [Developing an out-of-band migration](background-information/oobmigrations.md)
 - [Developing a background routine](background-information/backgroundroutine.md)
+- [Code host connections on local dev environment](background-information/code-host.md)
+- [Testing](#testing)
+  - [Testing principles and guidelines](background-information/testing_principles.md)
+  - [Continuous integration](background-information/ci/index.md)
+  - [How to write and run tests](how-to/testing.md)
+    - [Testing Go code](background-information/languages/testing_go_code.md)
+    - [Testing web code](background-information/testing_web_code.md)
 
 ### [Languages](background-information/languages/index.md)
 
@@ -111,22 +115,26 @@ Clarification and discussion about key concepts, architecture, and development s
 - [Bash](background-information/languages/bash.md)
 - [Terraform](background-information/languages/terraform.md)
 
-#### [Extended guides](background-information/languages/extended_guide/index.md)
+### [SQL](background-information/sql/index.md)
 
-- [Terraform Extended Guide](background-information/languages/extended_guide/terraform.md)
+- [Using PostgreSQL](background-information/postgresql.md)
+- [Migrations](background-information/sql/migrations.md)
+- High-performance guides
+  - [Batch operations](background-information/sql/batch_operations.md)
+  - [Materialized cache](background-information/sql/materialized_cache.md)
 
-### Testing
+### Security
 
-- [Continuous Integration](background-information/continuous_integration.md)
-- [Testing Principles](background-information/testing_principles.md)
-- [Testing Go code](background-information/languages/testing_go_code.md)
-- [Testing web code](background-information/testing_web_code.md)
+- [Security Patterns](background-information/security_patterns.md)
+- [Security policy](https://about.sourcegraph.com/security/)
+- [How to disclose vulnerabilities](https://about.sourcegraph.com/handbook/engineering/security/reporting-vulnerabilities).
+- [CSRF security model](security/csrf_security_model.md)
 
 ### Tools
 
 - [Renovate dependency updates](background-information/renovate.md)
 - [Honeycomb](background-information/honeycomb.md)
-- [Using PostgreSQL](background-information/postgresql.md)
+- [GoLand](background-information/goland.md)
 
 ### Other
 
@@ -135,6 +143,40 @@ Clarification and discussion about key concepts, architecture, and development s
 
 ## Guidelines
 
-- [Code reviews](background-information/code_reviews.md)
+- [Code reviews](background-information/pull_request_reviews.md)
 - [Open source FAQ](https://about.sourcegraph.com/community/faq)
 - [Code of conduct](https://about.sourcegraph.com/community/code_of_conduct)
+
+## [How-to guides](how-to/index.md)
+
+Guides to help with troubleshooting, configuring test instances, debugging, and more.
+
+### New features
+
+- [How to add support for a language](how-to/add_support_for_a_language.md)
+- [How to use feature flags](how-to/use_feature_flags.md)
+
+### Observability
+
+- [How to find monitoring](how-to/find_monitoring.md)
+- [How to add monitoring](how-to/add_monitoring.md)
+
+### Documentation
+
+- [Developing the product documentation](how-to/documentation_implementation.md)
+
+### Executors
+
+- [How to deploy a new executor image](how-to/deploy_executor_image.md)
+
+### Testing
+
+- [How to write and run tests](how-to/testing.md)
+- Testing against code hosts
+  - [Configure a test instance of Phabricator and Gitolite](how-to/configure_phabricator_gitolite.md)
+  - [Test a Phabricator and Gitolite instance](how-to/test_phabricator.md)
+
+## [Contributing](./contributing/index.md)
+
+- [Project setup and CI checks for frontend issues](./contributing/frontend_contribution.md).
+- [Accepting an external contribution guide](./contributing/accepting_contribution.md).

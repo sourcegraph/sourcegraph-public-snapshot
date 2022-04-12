@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { createLocation } from 'history'
-import React from 'react'
 import sinon from 'sinon'
 
 import { ConnectionNodes } from './ConnectionNodes'
@@ -132,9 +133,9 @@ describe('ConnectionNodes', () => {
         expect(screen.queryByText('(showing first 1)')).not.toBeInTheDocument()
 
         // Summary should come after the nodes.
-        expect(screen.getByTestId('summary')!.compareDocumentPosition(screen.getByTestId('nodes'))).toEqual(
-            Node.DOCUMENT_POSITION_PRECEDING
-        )
+        expect(
+            screen.getByTestId('summary')!.compareDocumentPosition(screen.getByTestId('filtered-connection-nodes'))
+        ).toEqual(Node.DOCUMENT_POSITION_PRECEDING)
     })
 
     it('shows a summary if nodes.length is 0', () => {
@@ -170,9 +171,9 @@ describe('ConnectionNodes', () => {
             />
         )
         // Summary should come _before_ the nodes.
-        expect(screen.getByTestId('summary')!.compareDocumentPosition(screen.getByTestId('nodes'))).toEqual(
-            Node.DOCUMENT_POSITION_FOLLOWING
-        )
+        expect(
+            screen.getByTestId('summary')!.compareDocumentPosition(screen.getByTestId('filtered-connection-nodes'))
+        ).toEqual(Node.DOCUMENT_POSITION_FOLLOWING)
     })
 
     it('shows the summary at the top if connectionQuery is specified', () => {
@@ -185,8 +186,8 @@ describe('ConnectionNodes', () => {
             />
         )
         // Summary should come _before_ the nodes.
-        expect(screen.getByTestId('summary')!.compareDocumentPosition(screen.getByTestId('nodes'))).toEqual(
-            Node.DOCUMENT_POSITION_FOLLOWING
-        )
+        expect(
+            screen.getByTestId('summary')!.compareDocumentPosition(screen.getByTestId('filtered-connection-nodes'))
+        ).toEqual(Node.DOCUMENT_POSITION_FOLLOWING)
     })
 })

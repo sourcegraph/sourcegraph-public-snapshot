@@ -1,27 +1,27 @@
-import { storiesOf } from '@storybook/react'
-import { createMemoryHistory } from 'history'
-import { SuiteFunction } from 'mocha'
 import React from 'react'
 
-import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
+import { storiesOf } from '@storybook/react'
+import { createMemoryHistory } from 'history'
 
-import { AuthenticatedUser } from '../auth'
-import { WebStory } from '../components/WebStory'
-import { SearchPatternType } from '../graphql-operations'
-import { SourcegraphContext } from '../jscontext'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
-} from '../searchContexts/testHelpers'
-import { ThemePreference } from '../theme'
+} from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
+import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+
+import { AuthenticatedUser } from '../auth'
+import { WebStory } from '../components/WebStory'
+import { SourcegraphContext } from '../jscontext'
+import { useExperimentalFeatures } from '../stores'
+import { ThemePreference } from '../stores/themeState'
 
 import { GlobalNavbar } from './GlobalNavbar'
 
 if (!window.context) {
-    window.context = {} as SourcegraphContext & SuiteFunction
+    window.context = {} as SourcegraphContext & Mocha.SuiteFunction
 }
 
 const history = createMemoryHistory()
@@ -43,40 +43,31 @@ const defaultProps = (
     telemetryService: NOOP_TELEMETRY_SERVICE,
     themePreference: ThemePreference.Light,
     onThemePreferenceChange: () => undefined,
-    setVersionContext: () => Promise.resolve(undefined),
-    availableVersionContexts: [],
     globbing: false,
-    parsedSearchQuery: 'r:golang/oauth2 test f:travis',
-    patternType: SearchPatternType.literal,
-    setPatternType: () => undefined,
-    caseSensitive: false,
-    setCaseSensitivity: () => undefined,
     platformContext: {} as any,
     keyboardShortcuts: [],
-    versionContext: undefined,
-    showSearchContext: false,
-    showSearchContextManagement: false,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,
     defaultSearchContextSpec: '',
-    showOnboardingTour: false,
     isLightTheme: props.isLightTheme,
     isExtensionAlertAnimating: false,
+    searchContextsEnabled: true,
     batchChangesEnabled: true,
     batchChangesExecutionEnabled: true,
-    enableCodeMonitoring: true,
+    batchChangesWebhookLogsEnabled: true,
     activation: undefined,
-    hideNavLinks: false,
     routes: [],
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
     hasUserAddedRepositories: false,
     hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
-    extensionViews: () => null,
 })
 
-const { add } = storiesOf('web/nav/GlobalNav', module)
+const { add } = storiesOf('web/nav/GlobalNav', module).addDecorator(Story => {
+    useExperimentalFeatures.setState({ codeMonitoring: true })
+    return <Story />
+})
 
 add('Anonymous viewer', () => (
     <WebStory>

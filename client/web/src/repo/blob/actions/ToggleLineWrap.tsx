@@ -1,13 +1,14 @@
-import WrapIcon from 'mdi-react/WrapIcon'
 import * as React from 'react'
+
+import WrapIcon from 'mdi-react/WrapIcon'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
-import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { WrapDisabledIcon } from '@sourcegraph/shared/src/components/icons'
-import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
+import { TooltipController, Icon } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
+import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../../RepoHeader'
 
 /**
@@ -51,7 +52,7 @@ export class ToggleLineWrap extends React.PureComponent<
                 ToggleLineWrap.setValue(value)
                 this.setState({ value })
                 this.props.onDidUpdate(value)
-                Tooltip.forceUpdate()
+                TooltipController.forceUpdate()
             })
         )
 
@@ -59,7 +60,7 @@ export class ToggleLineWrap extends React.PureComponent<
         this.subscriptions.add(
             fromEvent<KeyboardEvent>(window, 'keydown')
                 // Opt/alt+z shortcut
-                .pipe(filter(event => event.altKey && event.key === 'z'))
+                .pipe(filter(event => event.altKey && event.code === 'KeyZ'))
                 .subscribe(event => {
                     event.preventDefault()
                     this.updates.next(!this.state.value)
@@ -74,25 +75,22 @@ export class ToggleLineWrap extends React.PureComponent<
     public render(): JSX.Element | null {
         if (this.props.actionType === 'dropdown') {
             return (
-                <ButtonLink onSelect={this.onClick} className="btn repo-header__file-action">
-                    {this.state.value ? (
-                        <WrapDisabledIcon className="icon-inline" />
-                    ) : (
-                        <WrapIcon className="icon-inline" />
-                    )}
+                <RepoHeaderActionButtonLink file={true} onSelect={this.onClick}>
+                    <Icon as={this.state.value ? WrapDisabledIcon : WrapIcon} />
                     <span>{this.state.value ? 'Disable' : 'Enable'} wrapping long lines (Alt+Z/Opt+Z)</span>
-                </ButtonLink>
+                </RepoHeaderActionButtonLink>
             )
         }
 
         return (
-            <ButtonLink
+            <RepoHeaderActionButtonLink
+                className="btn-icon"
+                file={false}
                 onSelect={this.onClick}
                 data-tooltip={`${this.state.value ? 'Disable' : 'Enable'} wrapping long lines (Alt+Z/Opt+Z)`}
-                className="btn btn-icon repo-header__action"
             >
-                {this.state.value ? <WrapDisabledIcon className="icon-inline" /> : <WrapIcon className="icon-inline" />}
-            </ButtonLink>
+                <Icon as={this.state.value ? WrapDisabledIcon : WrapIcon} />
+            </RepoHeaderActionButtonLink>
         )
     }
 

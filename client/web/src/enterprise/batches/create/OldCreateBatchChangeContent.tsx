@@ -1,15 +1,15 @@
-import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Container } from '@sourcegraph/wildcard'
+import { Container, Button, Link } from '@sourcegraph/wildcard'
 
 import { SidebarGroup, SidebarGroupHeader } from '../../../components/Sidebar'
+import { getFileName } from '../BatchSpec'
 
-import combySample from './examples/comby.batch.yaml'
-import helloWorldSample from './examples/empty.batch.yaml'
-import goImportsSample from './examples/go-imports.batch.yaml'
-import minimalSample from './examples/minimal.batch.yaml'
+import combySample from './library/comby.batch.yaml'
+import goImportsSample from './library/go-imports.batch.yaml'
+import helloWorldSample from './library/hello-world.batch.yaml'
+import minimalSample from './library/minimal.batch.yaml'
 
 // SampleTabHeader is superseded by ExampleTabs and can be removed when SSBC is rolled out
 // at the same time as this exported component from this file is removed
@@ -28,13 +28,13 @@ const SampleTabHeader: React.FunctionComponent<SampleTabHeaderProps> = ({ sample
         [setSelectedSample, sample]
     )
     return (
-        <button
-            type="button"
+        <Button
             onClick={onClick}
-            className={classNames('btn text-left sidebar__link--inactive d-flex w-100', active && 'btn-primary')}
+            className="text-left sidebar__link--inactive d-flex w-100"
+            variant={active ? 'primary' : undefined}
         >
             {sample.name}
-        </button>
+        </Button>
     )
 }
 
@@ -59,13 +59,13 @@ export const OldBatchChangePageContent: React.FunctionComponent<{}> = () => {
             <Container className="mb-3">
                 <p className="mb-0">
                     The batch spec (
-                    <a
-                        href="https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference"
+                    <Link
+                        to="/help/batch_changes/references/batch_spec_yaml_reference"
                         rel="noopener noreferrer"
                         target="_blank"
                     >
                         syntax reference
-                    </a>
+                    </Link>
                     ) describes what the batch change does. You'll provide it when previewing, creating, and updating
                     batch changes. We recommend committing it to source control.
                 </p>
@@ -92,12 +92,16 @@ export const OldBatchChangePageContent: React.FunctionComponent<{}> = () => {
             <Container className="mb-3">
                 <p>
                     Use the{' '}
-                    <a href="https://github.com/sourcegraph/src-cli" rel="noopener noreferrer" target="_blank">
+                    <Link to="https://github.com/sourcegraph/src-cli" rel="noopener noreferrer" target="_blank">
                         Sourcegraph CLI (src)
-                    </a>{' '}
+                    </Link>{' '}
                     to preview the commits and changesets that your batch change will make:
                 </p>
-                <CodeSnippet code={`src batch preview -f ${selectedSample.name}`} language="bash" className="mb-3" />
+                <CodeSnippet
+                    code={`src batch preview -f ${getFileName(selectedSample.name)}`}
+                    language="bash"
+                    className="mb-3"
+                />
                 <p className="mb-0">
                     Follow the URL printed in your terminal to see the preview and (when you're ready) create the batch
                     change.

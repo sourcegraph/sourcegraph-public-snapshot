@@ -1,23 +1,23 @@
 # sourcegraph/prometheus - learn more about this image in https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 
 # Build monitoring definitions
-FROM sourcegraph/alpine-3.12:99212_2021-06-14_51f6e1e@sha256:0b98031f67bda9b088421f137a1d7d959b44ad360175cfac59c4d6ccd19a4e57 AS monitoring_builder
+FROM sourcegraph/alpine-3.12:137550_2022-03-17_32d45d6a2a7f@sha256:d67684c174c577e7d61b4d7ef9d173fb73973f5b941bd65401dad90fc5e74353 AS monitoring_builder
 RUN mkdir -p '/generated/prometheus'
 COPY ./.bin/monitoring-generator /bin/monitoring-generator
 RUN PROMETHEUS_DIR='/generated/prometheus' GRAFANA_DIR='' DOCS_DIR='' NO_PRUNE=true /bin/monitoring-generator
 RUN ls '/generated/prometheus'
 
 # To upgrade Prometheus or Alertmanager, see https://docs.sourcegraph.com/dev/background-information/observability/prometheus#upgrading-prometheus-or-alertmanager
-FROM prom/prometheus:v2.28.1@sha256:5c030438c1e4c86bdc7428f24ee1ad18476eefdfa8a7f76a8ccc9b74f1970d81 AS prom_upstream
-FROM prom/alertmanager:v0.22.2@sha256:624c1a5063c7c80635081a504c3e1b020d89809651978eb5d0b652a394f3022d AS am_upstream
+FROM prom/prometheus:v2.33.1@sha256:3a75763d209af6ef82aca8fb202a76092a690d25f24d2def7f4eff64e79b7ed9 AS prom_upstream
+FROM prom/alertmanager:v0.23.0@sha256:9ab73a421b65b80be072f96a88df756fc5b52a1bc8d983537b8ec5be8b624c5a AS am_upstream
 
 # Prepare final image
 # hadolint ignore=DL3007
-FROM quay.io/prometheus/busybox-linux-amd64:latest@sha256:de4af55df1f648a334e16437c550a2907e0aed4f0b0edf454b0b215a9349bdbb
+FROM quay.io/prometheus/busybox-linux-amd64:latest
 
 # Should reflect versions above
-LABEL com.sourcegraph.prometheus.version=v2.28.1
-LABEL com.sourcegraph.alertmanager.version=v0.22.2
+LABEL com.sourcegraph.prometheus.version=v2.33.1
+LABEL com.sourcegraph.alertmanager.version=v0.23.0
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"

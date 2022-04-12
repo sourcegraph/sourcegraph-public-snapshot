@@ -19,7 +19,7 @@
 //    If you have a need for this, it is a strong signal you should NOT be using the shared definition
 //    anymore and should instead copy it and apply your modifications.
 //
-// Learn more about monitoring in https://about.sourcegraph.com/handbook/engineering/observability/monitoring_pillars
+// Learn more about monitoring in https://handbook.sourcegraph.com/engineering/observability/monitoring_pillars
 package shared
 
 import (
@@ -88,9 +88,11 @@ func WarningOption(a *monitoring.ObservableAlertDefinition) ObservableOption {
 
 // CriticalOption creates an ObservableOption that overrides this Observable's
 // critical-level alert with the given alert.
-func CriticalOption(a *monitoring.ObservableAlertDefinition) ObservableOption {
+func CriticalOption(a *monitoring.ObservableAlertDefinition, possibleSolution string) ObservableOption {
 	return func(observable Observable) Observable {
-		return observable.WithCritical(a)
+		observable = observable.WithCritical(a)
+		observable.PossibleSolutions = possibleSolution
+		return observable
 	}
 }
 
@@ -102,9 +104,9 @@ func NoAlertsOption(interpretation string) ObservableOption {
 	}
 }
 
-// CadvisorNameMatcher generates Prometheus matchers that capture metrics that match the
+// CadvisorContainerNameMatcher generates Prometheus matchers that capture metrics that match the
 // given container name while excluding some irrelevant series.
-func CadvisorNameMatcher(containerName string) string {
+func CadvisorContainerNameMatcher(containerName string) string {
 	// Name must start with the container name exactly.
 	//
 	// In docker-compose:
@@ -117,6 +119,14 @@ func CadvisorNameMatcher(containerName string) string {
 	//   See https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/deploy-sourcegraph%24+target_label:+name&patternType=literal
 	// - because of above, suffix could be pod name in Kubernetes
 	return fmt.Sprintf(`name=~"^%s.*"`, containerName)
+}
+
+// CadvisorPodNameMatcher generates Prometheus matchers that capture metrics that match the
+// given pod name.
+func CadvisorPodNameMatcher(podName string) string {
+	// The regex handles values with arbitrary prefixes and suffixes around the core pod
+	// name.
+	return fmt.Sprintf("container_label_io_kubernetes_pod_name=~`.*%s.*`", podName)
 }
 
 func titlecase(s string) string {

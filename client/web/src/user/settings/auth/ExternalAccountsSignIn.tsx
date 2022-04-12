@@ -1,17 +1,18 @@
-import classNames from 'classnames'
 import React from 'react'
 
+import classNames from 'classnames'
+
+import { ErrorLike } from '@sourcegraph/common'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
-import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
-import { SourcegraphContext } from '../../../jscontext'
+import { AuthProvider } from '../../../jscontext'
 
 import { ExternalAccount } from './ExternalAccount'
-import styles from './ExternalAccountsSignIn.module.scss'
 import { ExternalAccountsByType, AuthProvidersByType } from './UserSettingsSecurityPage'
 
-type AuthProvider = SourcegraphContext['authProviders'][0]
+import styles from './ExternalAccountsSignIn.module.scss'
+
 type ServiceType = AuthProvider['serviceType']
 
 interface GitHubExternalData {

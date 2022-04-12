@@ -1,5 +1,6 @@
 @import './colors.scss';
 @import './border-radius.scss';
+@import './variables.scss';
 
 // Bootstrap configuration before Bootstrap is imported
 $border-radius: var(--border-radius);
@@ -7,12 +8,7 @@ $border-radius-sm: var(--border-radius);
 $border-radius-lg: var(--border-radius);
 $popover-border-radius: var(--popover-border-radius);
 
-$font-size-base: 0.875rem;
-$line-height-base: (20/14);
-
 $box-shadow: var(--box-shadow);
-
-$grid-gutter-width: 1.5rem;
 
 // No max width except for xl.
 $container-max-widths: (
@@ -25,20 +21,6 @@ $border-color: var(--border-color);
 
 $link-color: var(--link-color);
 $link-hover-color: var(--link-hover-color);
-
-// Badges
-
-$badge-font-size: var(--badge-font-size);
-$badge-font-weight: var(--badge-font-weight);
-$badge-padding-y: var(--badge-padding-y);
-$badge-padding-x: var(--badge-padding-x);
-$badge-border-radius: var(--badge-border-radius);
-
-// Tooltips
-
-$tooltip-bg: var(--tooltip-bg);
-$tooltip-opacity: 1;
-$tooltip-font-size: 0.75rem;
 
 // Forms
 
@@ -91,27 +73,11 @@ $dropdown-item-padding-y: 0.25rem;
 $dropdown-item-padding-x: 0.5rem;
 $dropdown-padding-y: $dropdown-item-padding-y;
 
-// Tables
-
-$table-cell-padding: 0.625rem;
-$table-border-color: var(--border-color);
-
-// Progress
-$progress-height: auto;
-
 $hr-border-color: var(--border-color);
 $hr-margin-y: 0.25rem;
 
-// Disable transitions
-$input-transition: none;
-$badge-transition: none; // Avoids setting transitions on badges that aren't links
-
-// Spacer
-$spacer: 1rem;
-
-:root {
-    --spacer: #{$spacer};
-}
+// Disable all Bootstrap transitions
+$enable-transitions: false;
 
 // Apply static variables before Bootstrap imports.
 @import 'bootstrap/scss/functions';
@@ -119,44 +85,31 @@ $spacer: 1rem;
 @import 'bootstrap/scss/mixins';
 @import 'bootstrap/scss/reboot';
 @import 'bootstrap/scss/utilities';
-@import 'bootstrap/scss/grid';
-@import 'bootstrap/scss/progress';
-@import 'bootstrap/scss/tooltip';
-@import 'bootstrap/scss/transitions';
 
 // Modified in `./buttons.scss`
 @import 'bootstrap/scss/buttons';
-@import 'bootstrap/scss/button-group';
-
-// Modified in `./forms.scss`
-@import 'bootstrap/scss/forms';
-@import 'bootstrap/scss/custom-forms';
-@import 'bootstrap/scss/input-group';
-
-// Global styles provided by @reach packages. Should be imported once in the global scope.
-@import '@reach/tabs/styles';
 
 @import 'wildcard/src/global-styles/breakpoints';
 @import 'shared/src/global-styles/icons';
 @import './background';
-@import './badge';
-@import './card';
 @import './dropdown';
-@import './modal';
 @import './meter';
 @import './popover';
 @import './nav';
 @import './list-group';
+@import './custom-forms';
 @import './typography';
 @import './tables';
 @import './code';
 @import './buttons';
-@import './alert';
+@import './button-group';
+@import './input-group';
 @import './forms';
 @import './highlight';
 @import './tabs';
-@import './tooltips';
-@import '@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
+@import './progress';
+@import './collapse';
+@import './grid';
 
 * {
     box-sizing: border-box;

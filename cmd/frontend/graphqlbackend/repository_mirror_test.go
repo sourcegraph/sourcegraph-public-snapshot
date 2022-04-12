@@ -14,13 +14,16 @@ import (
 )
 
 func TestCheckMirrorRepositoryConnection(t *testing.T) {
-	resetMocks()
-
 	const repoName = api.RepoName("my/repo")
 
-	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-		return &types.User{SiteAdmin: true}, nil
-	}
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+	repos := database.NewMockRepoStore()
+
+	db := database.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.ReposFunc.SetDefaultReturn(repos)
 
 	t.Run("repository arg", func(t *testing.T) {
 		backend.Mocks.Repos.Get = func(ctx context.Context, repoID api.RepoID) (*types.Repo, error) {
@@ -35,11 +38,14 @@ func TestCheckMirrorRepositoryConnection(t *testing.T) {
 			}
 			return nil
 		}
-		defer func() { gitserver.MockIsRepoCloneable = nil }()
+		defer func() {
+			backend.Mocks = backend.MockServices{}
+			gitserver.MockIsRepoCloneable = nil
+		}()
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t),
+				Schema: mustParseGraphQLSchema(t, db),
 				Query: `
 				mutation {
 					checkMirrorRepositoryConnection(repository: "UmVwb3NpdG9yeToxMjM=") {
@@ -76,11 +82,14 @@ func TestCheckMirrorRepositoryConnection(t *testing.T) {
 			}
 			return nil
 		}
-		defer func() { gitserver.MockIsRepoCloneable = nil }()
+		defer func() {
+			backend.Mocks = backend.MockServices{}
+			gitserver.MockIsRepoCloneable = nil
+		}()
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t),
+				Schema: mustParseGraphQLSchema(t, db),
 				Query: `
 				mutation {
 					checkMirrorRepositoryConnection(name: "my/repo") {
@@ -105,8 +114,6 @@ func TestCheckMirrorRepositoryConnection(t *testing.T) {
 }
 
 func TestCheckMirrorRepositoryRemoteURL(t *testing.T) {
-	resetMocks()
-
 	const repoName = "my/repo"
 
 	cases := []struct {
@@ -181,9 +188,11 @@ func TestCheckMirrorRepositoryRemoteURL(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.repoURL, func(t *testing.T) {
-			database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-				return &types.User{SiteAdmin: true}, nil
-			}
+			users := database.NewMockUserStore()
+			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+			db := database.NewMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
 
 			backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
 				return &types.Repo{
@@ -192,10 +201,13 @@ func TestCheckMirrorRepositoryRemoteURL(t *testing.T) {
 					Sources:   map[string]*types.SourceInfo{"1": {CloneURL: tc.repoURL}},
 				}, nil
 			}
+			defer func() {
+				backend.Mocks = backend.MockServices{}
+			}()
 
 			RunTests(t, []*Test{
 				{
-					Schema: mustParseGraphQLSchema(t),
+					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
 					{
 						repository(name: "my/repo") {

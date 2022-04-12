@@ -1,29 +1,31 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import { escapeRegExp, isEqual } from 'lodash'
-import * as React from 'react'
-import { Link, RouteComponentProps } from 'react-router-dom'
+import { RouteComponentProps } from 'react-router-dom'
 import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
-import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
-import { numberWithCommas, pluralize } from '@sourcegraph/shared/src/util/strings'
+import { createAggregateError, numberWithCommas, pluralize, memoizeObservable } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
+import { Scalars, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+import { Button, ButtonGroup, Link, CardHeader, CardBody, Card } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { PersonLink } from '../../person/PersonLink'
-import { quoteIfNeeded, searchQueryForRepoRevision, PatternTypeProps } from '../../search'
+import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
 
 import { RepositoryStatsAreaPageProps } from './RepositoryStatsArea'
+
+import styles from './RepositoryStatsContributorsPage.module.scss'
 
 interface QuerySpec {
     revisionRange: string | null
@@ -31,7 +33,7 @@ interface QuerySpec {
     path: string | null
 }
 
-interface RepositoryContributorNodeProps extends QuerySpec, Omit<PatternTypeProps, 'setPatternType'> {
+interface RepositoryContributorNodeProps extends QuerySpec {
     node: GQL.IRepositoryContributor
     repoName: string
     globbing: boolean
@@ -43,7 +45,6 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
     revisionRange,
     after,
     path,
-    patternType,
     globbing,
 }) => {
     const commit = node.commits.nodes[0] as GQL.IGitCommit | undefined
@@ -59,13 +60,13 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
         .replace(/\s+/, ' ')
 
     return (
-        <div className="repository-contributor-node list-group-item py-2">
-            <div className="repository-contributor-node__person">
-                <UserAvatar className="icon-inline mr-2" user={node.person} />
+        <div className={classNames('list-group-item py-2', styles.repositoryContributorNode)}>
+            <div className={styles.person}>
+                <UserAvatar inline={true} className="mr-2" user={node.person} />
                 <PersonLink userClassName="font-weight-bold" person={node.person} />
             </div>
-            <div className="repository-contributor-node__commits">
-                <div className="repository-contributor-node__commit">
+            <div className={styles.commits}>
+                <div className={styles.commit}>
                     {commit && (
                         <>
                             <Timestamp date={commit.author.date} />:{' '}
@@ -79,9 +80,9 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
                         </>
                     )}
                 </div>
-                <div className="repository-contributor-node__count">
+                <div className={styles.count}>
                     <Link
-                        to={`/search?${buildSearchURLQuery(query, patternType, false)}`}
+                        to={`/search?${buildSearchURLQuery(query, SearchPatternType.literal, false)}`}
                         className="font-weight-bold"
                         data-tooltip={
                             revisionRange?.includes('..') &&
@@ -164,16 +165,13 @@ const queryRepositoryContributors = memoizeObservable(
 
 const equalOrEmpty = (a: string | null, b: string | null): boolean => a === b || (!a && !b)
 
-interface Props
-    extends RepositoryStatsAreaPageProps,
-        RouteComponentProps<{}>,
-        Omit<PatternTypeProps, 'setPatternType'> {
+interface Props extends RepositoryStatsAreaPageProps, RouteComponentProps<{}> {
     globbing: boolean
 }
 
 class FilteredContributorsConnection extends FilteredConnection<
     GQL.IRepositoryContributor,
-    Pick<RepositoryContributorNodeProps, 'repoName' | 'revisionRange' | 'after' | 'path' | 'patternType' | 'globbing'>
+    Pick<RepositoryContributorNodeProps, 'repoName' | 'revisionRange' | 'after' | 'path' | 'globbing'>
 > {}
 
 interface State extends QuerySpec {}
@@ -222,13 +220,13 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
             !equalOrEmpty(this.state.path, path)
 
         return (
-            <div className="repository-stats-page">
+            <div>
                 <PageTitle title="Contributors" />
-                <div className="card repository-stats-page__card repository-stats-page__card--form">
-                    <div className="card-header">Contributions filter</div>
-                    <div className="card-body">
+                <Card className={styles.card}>
+                    <CardHeader>Contributions filter</CardHeader>
+                    <CardBody>
                         <Form onSubmit={this.onSubmit}>
-                            <div className="repository-stats-page__row form-inline">
+                            <div className={classNames(styles.row, 'form-inline')}>
                                 <div className="input-group mb-2 mr-sm-2">
                                     <div className="input-group-prepend">
                                         <label
@@ -249,53 +247,43 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                         onChange={this.onChange}
                                     />
                                     <div className="input-group-append">
-                                        <div className="btn-group">
-                                            <button
-                                                type="button"
+                                        <ButtonGroup>
+                                            <Button
                                                 className={classNames(
-                                                    'btn btn-secondary',
-                                                    this.state.after === '7 days ago' && 'active',
-                                                    'repository-stats-page__btn-no-left-rounded-corners'
+                                                    styles.btnNoLeftRoundedCorners,
+                                                    this.state.after === '7 days ago' && 'active'
                                                 )}
                                                 onClick={() => this.setStateAfterAndSubmit('7 days ago')}
+                                                variant="secondary"
                                             >
                                                 Last 7 days
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className={classNames(
-                                                    'btn btn-secondary',
-                                                    this.state.after === '30 days ago' && 'active'
-                                                )}
+                                            </Button>
+                                            <Button
+                                                className={classNames(this.state.after === '30 days ago' && 'active')}
                                                 onClick={() => this.setStateAfterAndSubmit('30 days ago')}
+                                                variant="secondary"
                                             >
                                                 Last 30 days
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className={classNames(
-                                                    'btn btn-secondary',
-                                                    this.state.after === '1 year ago' && 'active'
-                                                )}
+                                            </Button>
+                                            <Button
+                                                className={classNames(this.state.after === '1 year ago' && 'active')}
                                                 onClick={() => this.setStateAfterAndSubmit('1 year ago')}
+                                                variant="secondary"
                                             >
                                                 Last year
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className={classNames(
-                                                    'btn btn-secondary',
-                                                    !this.state.after && 'active'
-                                                )}
+                                            </Button>
+                                            <Button
+                                                className={classNames(!this.state.after && 'active')}
                                                 onClick={() => this.setStateAfterAndSubmit(null)}
+                                                variant="secondary"
                                             >
                                                 All time
-                                            </button>
-                                        </div>
+                                            </Button>
+                                        </ButtonGroup>
                                     </div>
                                 </div>
                             </div>
-                            <div className="repository-stats-page__row form-inline">
+                            <div className={classNames(styles.row, 'form-inline')}>
                                 <div className="input-group mt-2 mr-sm-2">
                                     <div className="input-group-prepend">
                                         <label
@@ -346,18 +334,23 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                 </div>
                                 {stateDiffers && (
                                     <div className="form-group mb-0">
-                                        <button type="submit" className="btn btn-primary mr-2 mt-2">
+                                        <Button type="submit" className="mr-2 mt-2" variant="primary">
                                             Update
-                                        </button>
-                                        <button type="reset" className="btn btn-secondary mt-2" onClick={this.onCancel}>
+                                        </Button>
+                                        <Button
+                                            type="reset"
+                                            className="mt-2"
+                                            onClick={this.onCancel}
+                                            variant="secondary"
+                                        >
                                             Cancel
-                                        </button>
+                                        </Button>
                                     </div>
                                 )}
                             </div>
                         </Form>
-                    </div>
-                </div>
+                    </CardBody>
+                </Card>
                 <FilteredContributorsConnection
                     listClassName="list-group list-group-flush"
                     noun="contributor"
@@ -369,7 +362,6 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                         revisionRange,
                         after,
                         path,
-                        patternType: this.props.patternType,
                         globbing: this.props.globbing,
                     }}
                     defaultFirst={20}

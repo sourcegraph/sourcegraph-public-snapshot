@@ -1,4 +1,5 @@
 import React from 'react'
+
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -6,12 +7,11 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { AuthenticatedUser } from '../../../auth'
-import { CodeMonitoringProps } from '../../../code-monitoring'
 import { Page } from '../../../components/Page'
 import { FeatureFlagProps } from '../../../featureFlags/featureFlags'
-import { lazyComponent } from '../../../util/lazyComponent'
 
 interface Props
     extends RouteComponentProps<{}>,
@@ -19,7 +19,6 @@ interface Props
         ExtensionsControllerProps,
         TelemetryProps,
         PlatformContextProps,
-        CodeMonitoringProps,
         SettingsCascadeProps,
         FeatureFlagProps {
     authenticatedUser: AuthenticatedUser | null
@@ -40,11 +39,6 @@ export const GlobalCodeMonitoringArea: React.FunctionComponent<Props> = ({ match
                 <Route
                     path={match.url}
                     render={props => <CodeMonitoringPage {...outerProps} {...props} />}
-                    exact={true}
-                />
-                <Route
-                    path={`${match.url}/getting-started`}
-                    render={props => <CodeMonitoringPage {...outerProps} {...props} showGettingStarted={true} />}
                     exact={true}
                 />
                 <Route

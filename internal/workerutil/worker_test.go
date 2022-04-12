@@ -3,15 +3,15 @@ package workerutil
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
-
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/derision-test/glock"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type TestRecord struct {
@@ -34,7 +34,7 @@ func TestWorkerHandlerSuccess(t *testing.T) {
 		WorkerHostname: "test",
 		NumHandlers:    1,
 		Interval:       time.Second,
-		Metrics:        NewMetrics(&observation.TestContext, "", nil),
+		Metrics:        NewMetrics(&observation.TestContext, ""),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, true, nil)
@@ -70,7 +70,7 @@ func TestWorkerHandlerFailure(t *testing.T) {
 		WorkerHostname: "test",
 		NumHandlers:    1,
 		Interval:       time.Second,
-		Metrics:        NewMetrics(&observation.TestContext, "", nil),
+		Metrics:        NewMetrics(&observation.TestContext, ""),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, true, nil)
@@ -114,7 +114,7 @@ func TestWorkerHandlerNonRetryableFailure(t *testing.T) {
 		WorkerHostname: "test",
 		NumHandlers:    1,
 		Interval:       time.Second,
-		Metrics:        NewMetrics(&observation.TestContext, "", nil),
+		Metrics:        NewMetrics(&observation.TestContext, ""),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, true, nil)
@@ -161,7 +161,7 @@ func TestWorkerConcurrent(t *testing.T) {
 				WorkerHostname: "test",
 				NumHandlers:    numHandlers,
 				Interval:       time.Second,
-				Metrics:        NewMetrics(&observation.TestContext, "", nil),
+				Metrics:        NewMetrics(&observation.TestContext, ""),
 			}
 
 			for i := 0; i < NumTestRecords; i++ {
@@ -250,7 +250,7 @@ func TestWorkerBlockingPreDequeueHook(t *testing.T) {
 		WorkerHostname: "test",
 		NumHandlers:    1,
 		Interval:       time.Second,
-		Metrics:        NewMetrics(&observation.TestContext, "", nil),
+		Metrics:        NewMetrics(&observation.TestContext, ""),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, true, nil)
@@ -280,7 +280,7 @@ func TestWorkerConditionalPreDequeueHook(t *testing.T) {
 		WorkerHostname: "test",
 		NumHandlers:    1,
 		Interval:       time.Second,
-		Metrics:        NewMetrics(&observation.TestContext, "", nil),
+		Metrics:        NewMetrics(&observation.TestContext, ""),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, true, nil)
@@ -356,7 +356,7 @@ func TestWorkerDequeueHeartbeat(t *testing.T) {
 		NumHandlers:       1,
 		HeartbeatInterval: heartbeatInterval,
 		Interval:          time.Second,
-		Metrics:           NewMetrics(&observation.TestContext, "", nil),
+		Metrics:           NewMetrics(&observation.TestContext, ""),
 	}
 
 	dequeued := make(chan struct{})
@@ -403,7 +403,7 @@ func TestWorkerNumTotalJobs(t *testing.T) {
 		NumHandlers:    1,
 		NumTotalJobs:   5,
 		Interval:       time.Second,
-		Metrics:        NewMetrics(&observation.TestContext, "", nil),
+		Metrics:        NewMetrics(&observation.TestContext, ""),
 	}
 
 	store.DequeueFunc.SetDefaultReturn(TestRecord{ID: 42}, true, nil)
@@ -431,7 +431,7 @@ func TestWorkerMaxActiveTime(t *testing.T) {
 		NumTotalJobs:   50,
 		MaxActiveTime:  time.Second * 5,
 		Interval:       time.Second,
-		Metrics:        NewMetrics(&observation.TestContext, "", nil),
+		Metrics:        NewMetrics(&observation.TestContext, ""),
 	}
 
 	called := make(chan struct{})
@@ -504,7 +504,7 @@ func TestWorkerCancel(t *testing.T) {
 		NumHandlers:       1,
 		HeartbeatInterval: time.Second,
 		Interval:          time.Second,
-		Metrics:           NewMetrics(&observation.TestContext, "", nil),
+		Metrics:           NewMetrics(&observation.TestContext, ""),
 	}
 
 	dequeued := make(chan struct{})
@@ -543,5 +543,71 @@ func TestWorkerCancel(t *testing.T) {
 	case <-markedFailedCalled:
 	case <-time.After(5 * time.Second):
 		t.Fatal("timeout waiting for markFailed call")
+	}
+}
+
+func TestWorkerDeadline(t *testing.T) {
+	recordID := 42
+	store := NewMockStore()
+	// Return one record from dequeue.
+	store.DequeueFunc.PushReturn(TestRecord{ID: recordID}, true, nil)
+	store.DequeueFunc.SetDefaultReturn(nil, false, nil)
+
+	// Record when markErrored is called.
+	markedErroredCalled := make(chan struct{})
+	store.MarkErroredFunc.SetDefaultHook(func(c context.Context, i int, s string) (bool, error) {
+		if !strings.Contains(s, "job exceeded maximum execution time of 10ms") {
+			t.Fatal("incorrect error message")
+		}
+		close(markedErroredCalled)
+		return true, nil
+	})
+
+	handler := NewMockHandler()
+	options := WorkerOptions{
+		Name:              "test",
+		WorkerHostname:    "test",
+		NumHandlers:       1,
+		HeartbeatInterval: time.Second,
+		Interval:          time.Second,
+		Metrics:           NewMetrics(&observation.TestContext, ""),
+		// The handler runs forever but should be canceled after 10ms.
+		MaximumRuntimePerJob: 10 * time.Millisecond,
+	}
+
+	dequeued := make(chan struct{})
+	doneHandling := make(chan struct{})
+	handler.HandleFunc.defaultHook = func(ctx context.Context, r Record) error {
+		close(dequeued)
+		select {
+		case <-ctx.Done():
+		case <-doneHandling:
+		}
+		return ctx.Err()
+	}
+
+	heartbeats := make(chan struct{})
+	store.HeartbeatFunc.SetDefaultHook(func(c context.Context, i []int) ([]int, error) {
+		heartbeats <- struct{}{}
+		return i, nil
+	})
+
+	clock := glock.NewMockClock()
+	worker := newWorker(context.Background(), store, handler, options, clock, clock, clock)
+	go func() { worker.Start() }()
+	t.Cleanup(func() {
+		// Keep the handler working until context is canceled.
+		close(doneHandling)
+		worker.Stop()
+	})
+
+	// Wait until a job has been dequeued.
+	<-dequeued
+
+	// Expect that markErrored is called eventually.
+	select {
+	case <-markedErroredCalled:
+	case <-time.After(5 * time.Second):
+		t.Fatal("timeout waiting for markErrored call")
 	}
 }

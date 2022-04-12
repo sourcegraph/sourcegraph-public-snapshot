@@ -1,8 +1,9 @@
-import classNames from 'classnames'
-import formatDistanceStrict from 'date-fns/formatDistanceStrict'
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import classNames from 'classnames'
+import formatDistanceStrict from 'date-fns/formatDistanceStrict'
+
+import { Link } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { isProductLicenseExpired, formatRelativeExpirationDate } from '../productSubscription/helpers'
@@ -18,7 +19,8 @@ export const LicenseExpirationAlert: React.FunctionComponent<{
 }> = ({ expiresAt, daysLeft, className }) => (
     <DismissibleAlert
         partialStorageKey={`licenseExpiring.${daysLeft}`}
-        className={classNames('alert-warning align-items-center', className)}
+        variant="warning"
+        className={classNames('align-items-center', className)}
     >
         Your Sourcegraph license{' '}
         {
@@ -31,8 +33,8 @@ export const LicenseExpirationAlert: React.FunctionComponent<{
             <span className="underline">Renew now</span>
         </Link>
         &nbsp;or&nbsp;
-        <a className="site-alert__link" href="https://about.sourcegraph.com/contact">
+        <Link className="site-alert__link" to="https://about.sourcegraph.com/contact">
             <span className="underline">contact Sourcegraph</span>
-        </a>
+        </Link>
     </DismissibleAlert>
 )

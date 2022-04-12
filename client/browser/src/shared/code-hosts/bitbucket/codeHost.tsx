@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { of } from 'rxjs'
 import { Omit } from 'utility-types'
 
@@ -12,7 +13,7 @@ import { createNotificationClassNameGetter } from '../shared/getNotificationClas
 import { ViewResolver } from '../shared/views'
 
 import { getContext } from './context'
-import { diffDOMFunctions, singleFileDOMFunctions } from './domFunctions'
+import { diffDOMFunctions, newDiffDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import {
     resolveCommitViewFileInfo,
     resolveCompareFileInfo,
@@ -22,16 +23,21 @@ import {
 } from './fileInfo'
 import { isCommitsView, isCompareView, isPullRequestView, isSingleFileView } from './scrape'
 
+import styles from './codeHost.module.scss'
+
 /**
  * Gets or creates the toolbar mount for allcode views.
  */
-export const getToolbarMount = (codeView: HTMLElement): HTMLElement => {
+export const getToolbarMount = (
+    codeView: HTMLElement,
+    fileToolbarSelector = '.file-toolbar .secondary'
+): HTMLElement => {
     const existingMount = codeView.querySelector<HTMLElement>('.sg-toolbar-mount')
     if (existingMount) {
         return existingMount
     }
 
-    const fileActions = codeView.querySelector<HTMLElement>('.file-toolbar .secondary')
+    const fileActions = codeView.querySelector<HTMLElement>(fileToolbarSelector)
     if (!fileActions) {
         throw new Error('Unable to find mount location')
     }
@@ -39,7 +45,7 @@ export const getToolbarMount = (codeView: HTMLElement): HTMLElement => {
     const mount = document.createElement('div')
     mount.classList.add('btn-group')
     mount.classList.add('sg-toolbar-mount')
-    mount.classList.add('sg-toolbar-mount-bitbucket-server')
+    mount.classList.add(styles.sgToolbarMount)
 
     fileActions.prepend(mount)
 
@@ -80,10 +86,6 @@ const createPositionAdjuster = (
     return of(newPosition)
 }
 
-const toolbarButtonProps = {
-    className: 'aui-button',
-}
-
 /**
  * A code view spec for single file code view in the "source" view (not diff).
  */
@@ -92,14 +94,14 @@ const singleFileSourceCodeView: Omit<CodeView, 'element'> = {
     dom: singleFileDOMFunctions,
     resolveFileInfo: resolveFileInfoForSingleFileSourceView,
     getPositionAdjuster: () => createPositionAdjuster(singleFileDOMFunctions),
-    toolbarButtonProps,
 }
 
 const baseDiffCodeView: Omit<CodeView, 'element' | 'resolveFileInfo'> = {
     getToolbarMount,
     dom: diffDOMFunctions,
     getPositionAdjuster: () => createPositionAdjuster(diffDOMFunctions),
-    toolbarButtonProps,
+    // Bitbucket diff views are not tokenized.
+    overrideTokenize: true,
 }
 /**
  * A code view spec for a single file "diff to previous" view
@@ -158,12 +160,37 @@ const codeViewResolver: ViewResolver<CodeView> = {
     },
 }
 
+/**
+ * New diff code view resolver.
+ * As of Bitbucket v7.11.2, this is only used for the pull request page.
+ */
+const diffCodeViewResolver: ViewResolver<CodeView> = {
+    selector: '.change-view',
+    resolveView: element => ({ element, ...newDiffCodeView }),
+}
+
+const newDiffToolbarButtonProps = {
+    listItemClass: styles.actionNavItemNewDiff,
+    actionItemClass: styles.actionItemNewDiff,
+}
+
+/**
+ * New diff code view element.
+ * As of Bitbucket v7.11.2, this is only used for the pull request page.
+ */
+const newDiffCodeView: Omit<CodeView, 'element'> = {
+    resolveFileInfo: resolvePullRequestFileInfo,
+    getToolbarMount: codeView => getToolbarMount(codeView, '.change-header .diff-actions'),
+    toolbarButtonProps: newDiffToolbarButtonProps,
+    dom: newDiffDOMFunctions,
+}
+
 const getCommandPaletteMount: MountGetter = (container: HTMLElement): HTMLElement | null => {
     const headerElement = querySelectorOrSelf(container, '.aui-header-primary .aui-nav')
     if (!headerElement) {
         return null
     }
-    const classNames = ['command-palette-button', 'command-palette-button--bitbucket-server']
+    const classNames = ['command-palette-button', styles.commandPaletteButton]
     const create = (): HTMLElement => {
         const mount = document.createElement('li')
         mount.className = classNames.join(' ')
@@ -185,7 +212,7 @@ function getViewContextOnSourcegraphMount(container: HTMLElement): HTMLElement |
     }
     const mount = document.createElement('span')
     mount.id = 'open-on-sourcegraph'
-    mount.className = 'open-on-sourcegraph--bitbucket-server'
+    mount.className = styles.openOnSourcegraph
     branchSelectorButtons.append(mount)
     return mount
 }
@@ -208,17 +235,21 @@ export const bitbucketServerCodeHost: CodeHost = {
     type: 'bitbucket-server',
     name: 'Bitbucket Server',
     check: checkIsBitbucket,
-    codeViewResolvers: [codeViewResolver],
+    codeViewResolvers: [codeViewResolver, diffCodeViewResolver],
     getCommandPaletteMount,
     notificationClassNames,
     commandPaletteClassProps: {
-        buttonClassName:
-            'command-list-popover-button--bitbucket-server aui-alignment-target aui-alignment-abutted aui-alignment-abutted-left aui-alignment-element-attached-top aui-alignment-element-attached-left aui-alignment-target-attached-bottom aui-alignment-target-attached-left',
+        buttonClassName: classNames(
+            styles.commandListPopoverButton,
+            'aui-alignment-target aui-alignment-abutted aui-alignment-abutted-left aui-alignment-element-attached-top aui-alignment-element-attached-left aui-alignment-target-attached-bottom aui-alignment-target-attached-left'
+        ),
         buttonElement: 'a',
         buttonOpenClassName: 'aui-dropdown2-active active aui-alignment-enabled',
         showCaret: false,
-        popoverClassName:
-            'command-palette-popover--bitbucket-server aui-dropdown2 aui-style-default aui-layer aui-dropdown2-in-header aui-alignment-element aui-alignment-side-bottom aui-alignment-snap-left aui-alignment-enabled aui-alignment-abutted aui-alignment-abutted-left aui-alignment-element-attached-top aui-alignment-element-attached-left aui-alignment-target-attached-bottom aui-alignment-target-attached-left',
+        popoverClassName: classNames(
+            styles.commandPalettePopover,
+            'aui-dropdown2 aui-style-default aui-layer aui-dropdown2-in-header aui-alignment-element aui-alignment-side-bottom aui-alignment-snap-left aui-alignment-enabled aui-alignment-abutted aui-alignment-abutted-left aui-alignment-element-attached-top aui-alignment-element-attached-left aui-alignment-target-attached-bottom aui-alignment-target-attached-left'
+        ),
         popoverInnerClassName: 'aui-dropdown2-section',
         formClassName: 'aui',
         inputClassName: 'text',
@@ -226,20 +257,19 @@ export const bitbucketServerCodeHost: CodeHost = {
         listClassName: 'results-list',
         listItemClassName: 'result',
         selectedListItemClassName: 'focused',
-        noResultsClassName: 'no-results',
+        noResultsClassName: styles.noResults,
         iconClassName,
     },
     codeViewToolbarClassProps: {
-        className: 'code-view-toolbar--bitbucket aui-buttons',
-        actionItemClass: 'aui-button action-item--bitbucket-server',
+        className: classNames(styles.codeViewToolbar, 'aui-buttons'),
+        actionItemClass: 'aui-button',
         // actionItemPressedClass is not needed because Bitbucket applies styling to aria-pressed="true"
         actionItemIconClass: 'aui-icon',
-        listItemClass: 'action-nav-item--bitbucket',
+        listItemClass: styles.actionNavItem,
     },
     hoverOverlayClassProps: {
         className: 'aui-dialog',
-        actionItemClassName: 'aui-button hover-action-item--bitbucket-server',
-        closeButtonClassName: 'aui-button btn-icon--bitbucket-server',
+        actionItemClassName: classNames('aui-button', styles.hoverActionItem),
         getAlertClassName: createNotificationClassNameGetter(notificationClassNames),
         iconClassName,
     },

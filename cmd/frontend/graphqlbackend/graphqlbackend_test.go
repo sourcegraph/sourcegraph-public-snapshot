@@ -14,18 +14,17 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func BenchmarkPrometheusFieldName(b *testing.B) {
@@ -49,11 +48,13 @@ func BenchmarkPrometheusFieldName(b *testing.B) {
 }
 
 func TestRepository(t *testing.T) {
-	resetMocks()
-	database.Mocks.Repos.MockGetByName(t, "github.com/gorilla/mux", 2)
+	db := database.NewMockDB()
+	repos := database.NewMockRepoStore()
+	repos.GetByNameFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
+	db.ReposFunc.SetDefaultReturn(repos)
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 				{
 					repository(name: "github.com/gorilla/mux") {
@@ -73,40 +74,63 @@ func TestRepository(t *testing.T) {
 }
 
 func TestResolverTo(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := database.NewMockDB()
 	// This test exists purely to remove some non determinism in our tests
 	// run. The To* resolvers are stored in a map in our graphql
 	// implementation => the order we call them is non deterministic =>
 	// codecov coverage reports are noisy.
 	resolvers := []interface{}{
 		&FileMatchResolver{db: db},
-		&GitTreeEntryResolver{db: db},
 		&NamespaceResolver{},
 		&NodeResolver{},
 		&RepositoryResolver{db: db},
 		&CommitSearchResultResolver{},
 		&gitRevSpec{},
-		&repositorySuggestionResolver{},
-		&symbolSuggestionResolver{},
-		&languageSuggestionResolver{},
 		&settingsSubject{},
 		&statusMessageResolver{db: db},
-		&versionContextResolver{},
 	}
 	for _, r := range resolvers {
 		typ := reflect.TypeOf(r)
-		for i := 0; i < typ.NumMethod(); i++ {
-			if name := typ.Method(i).Name; strings.HasPrefix(name, "To") {
-				reflect.ValueOf(r).MethodByName(name).Call(nil)
+		t.Run(typ.Name(), func(t *testing.T) {
+			for i := 0; i < typ.NumMethod(); i++ {
+				if name := typ.Method(i).Name; strings.HasPrefix(name, "To") {
+					reflect.ValueOf(r).MethodByName(name).Call(nil)
+				}
 			}
-		}
+		})
 	}
+
+	t.Run("GitTreeEntryResolver", func(t *testing.T) {
+		blobStat, err := os.Stat("graphqlbackend_test.go")
+		if err != nil {
+			t.Fatalf("unexpected error opening file: %s", err)
+		}
+		blobEntry := &GitTreeEntryResolver{db: db, stat: blobStat}
+		if _, isBlob := blobEntry.ToGitBlob(); !isBlob {
+			t.Errorf("expected blobEntry to be blob")
+		}
+		if _, isTree := blobEntry.ToGitTree(); isTree {
+			t.Errorf("expected blobEntry to be blob, but is tree")
+		}
+
+		treeStat, err := os.Stat(".")
+		if err != nil {
+			t.Fatalf("unexpected error opening directory: %s", err)
+		}
+		treeEntry := &GitTreeEntryResolver{db: db, stat: treeStat}
+		if _, isBlob := treeEntry.ToGitBlob(); isBlob {
+			t.Errorf("expected treeEntry to be tree, but is blob")
+		}
+		if _, isTree := treeEntry.ToGitTree(); !isTree {
+			t.Errorf("expected treeEntry to be tree")
+		}
+	})
 }
 
 func TestMain(m *testing.M) {
 	flag.Parse()
 	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.LvlFilterHandler(log15.LvlError, log15.Root().GetHandler()))
+		log15.Root().SetHandler(log15.DiscardHandler())
 		log.SetOutput(io.Discard)
 	}
 	os.Exit(m.Run())
@@ -115,11 +139,16 @@ func TestMain(m *testing.M) {
 func TestAffiliatedRepositories(t *testing.T) {
 	resetMocks()
 	rcache.SetupForTest(t)
-	database.Mocks.Users.Tags = func(ctx context.Context, userID int32) (map[string]bool, error) {
-		return map[string]bool{}, nil
-	}
-	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-		return []*types.ExternalService{
+	users := database.NewMockUserStore()
+	users.TagsFunc.SetDefaultReturn(map[string]bool{}, nil)
+	users.GetByIDFunc.SetDefaultHook(func(_ context.Context, userID int32) (*types.User, error) {
+		return &types.User{ID: userID, SiteAdmin: userID == 2}, nil
+	})
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+
+	externalServices := database.NewMockExternalServiceStore()
+	externalServices.ListFunc.SetDefaultReturn(
+		[]*types.ExternalService{
 			{
 				ID:          1,
 				Kind:        extsvc.KindGitHub,
@@ -134,9 +163,10 @@ func TestAffiliatedRepositories(t *testing.T) {
 				ID:   3,
 				Kind: extsvc.KindBitbucketCloud, // unsupported, should be ignored
 			},
-		}, nil
-	}
-	database.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
+		},
+		nil,
+	)
+	externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
 		switch id {
 		case 1:
 			return &types.ExternalService{
@@ -152,16 +182,11 @@ func TestAffiliatedRepositories(t *testing.T) {
 			}, nil
 		}
 		return nil, nil
-	}
-	database.Mocks.Users.GetByID = func(ctx context.Context, userID int32) (*types.User, error) {
-		return &types.User{
-			ID:        userID,
-			SiteAdmin: userID == 2,
-		}, nil
-	}
-	database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-		return &types.User{ID: 1, SiteAdmin: true}, nil
-	}
+	})
+
+	db := database.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 	// Map from path rou
 	httpResponder := map[string]roundTripFunc{
@@ -233,11 +258,11 @@ func TestAffiliatedRepositories(t *testing.T) {
 	RunTests(t, []*Test{
 		{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 			{
 				affiliatedRepositories(
-					user: "VXNlcjox"
+					namespace: "VXNlcjox"
 				) {
 					nodes {
 						name,
@@ -282,11 +307,11 @@ func TestAffiliatedRepositories(t *testing.T) {
 	RunTests(t, []*Test{
 		{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 			{
 				affiliatedRepositories(
-					user: "VXNlcjox"
+					namespace: "VXNlcjox"
 				) {
 					nodes {
 						name,
@@ -302,8 +327,8 @@ func TestAffiliatedRepositories(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Path:          []interface{}{"affiliatedRepositories"},
-					Message:       "Must be authenticated as user with id 1",
-					ResolverError: &backend.InsufficientAuthorizationError{Message: fmt.Sprintf("Must be authenticated as user with id %d", 1)},
+					Message:       "must be authenticated as user with id 1",
+					ResolverError: &backend.InsufficientAuthorizationError{Message: fmt.Sprintf("must be authenticated as user with id %d", 1)},
 				},
 			},
 		},
@@ -332,15 +357,17 @@ func TestAffiliatedRepositories(t *testing.T) {
 		}, nil
 	}
 
+	// When one code host fails, return its errors and also the nodes from the other code host.
 	RunTests(t, []*Test{
 		{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 			{
 				affiliatedRepositories(
-					user: "VXNlcjox"
+					namespace: "VXNlcjox"
 				) {
+					codeHostErrors
 					nodes {
 						name,
 						private,
@@ -354,6 +381,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 			ExpectedResult: `
 				{
 					"affiliatedRepositories": {
+						"codeHostErrors": ["Error from gitlab: unexpected response from GitLab API (/api/v4/projects?archived=no&membership=true&per_page=40): HTTP error status 401"],
 						"nodes": [
 							{
 								"name": "test-user/test",
@@ -391,12 +419,13 @@ func TestAffiliatedRepositories(t *testing.T) {
 	RunTests(t, []*Test{
 		{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 			{
 				affiliatedRepositories(
-					user: "VXNlcjox"
+					namespace: "VXNlcjox"
 				) {
+					codeHostErrors
 					nodes {
 						name,
 						private,
@@ -410,7 +439,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 			ExpectedResult: `null`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:          []interface{}{"affiliatedRepositories", "nodes"},
+					Path:          []interface{}{"affiliatedRepositories", "codeHostErrors"},
 					Message:       "failed to fetch from any code host",
 					ResolverError: errors.New("failed to fetch from any code host"),
 				},

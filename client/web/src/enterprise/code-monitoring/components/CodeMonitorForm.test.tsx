@@ -1,9 +1,13 @@
-import { mount } from 'enzyme'
-import { createMemoryHistory, createLocation } from 'history'
 import React from 'react'
+
+import { fireEvent, getByRole, screen } from '@testing-library/react'
+import { createMemoryHistory, createLocation } from 'history'
 import { NEVER } from 'rxjs'
 
-import { AuthenticatedUser } from '../../../auth'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+
+import { mockAuthenticatedUser, mockCodeMonitorFields } from '../testing/util'
 
 import { CodeMonitorForm, CodeMonitorFormProps } from './CodeMonitorForm'
 
@@ -12,19 +16,45 @@ const PROPS: CodeMonitorFormProps = {
     location: createLocation('/code-monitoring/new'),
     onSubmit: () => NEVER,
     submitButtonLabel: '',
-    authenticatedUser: {
-        id: 'userID',
-        username: 'username',
-        email: 'user@me.com',
-        siteAdmin: true,
-    } as AuthenticatedUser,
+    authenticatedUser: mockAuthenticatedUser,
+    isLightTheme: true,
+    isSourcegraphDotCom: false,
 }
 
 describe('CodeMonitorForm', () => {
     test('Uses trigger query when present', () => {
-        const component = mount(<CodeMonitorForm {...PROPS} triggerQuery="foo" />)
-        const triggerQuery = component.find('[data-testid="trigger-query-edit"]')
-        expect(triggerQuery.length).toStrictEqual(1)
-        expect(triggerQuery.at(0).prop('value')).toStrictEqual('foo')
+        renderWithBrandedContext(
+            <MockedTestProvider>
+                <CodeMonitorForm {...PROPS} triggerQuery="foo" />
+            </MockedTestProvider>
+        )
+
+        const triggerEdit = screen.getByTestId('trigger-query-edit')
+        expect(getByRole(triggerEdit, 'textbox')).toHaveValue('foo')
+    })
+
+    test('Submit button disabled if no actions are present', () => {
+        const { getByTestId } = renderWithBrandedContext(
+            <MockedTestProvider>
+                <CodeMonitorForm {...PROPS} codeMonitor={mockCodeMonitorFields} />
+            </MockedTestProvider>
+        )
+
+        fireEvent.click(getByTestId('form-action-toggle-email'))
+        fireEvent.click(getByTestId('delete-action-email'))
+
+        expect(getByTestId('submit-monitor')).toBeDisabled()
+    })
+
+    test('Submit button enabled if one action is present', () => {
+        const { getByTestId } = renderWithBrandedContext(
+            <MockedTestProvider>
+                <CodeMonitorForm {...PROPS} codeMonitor={{ ...mockCodeMonitorFields, actions: { nodes: [] } }} />
+            </MockedTestProvider>
+        )
+        fireEvent.click(getByTestId('form-action-toggle-email'))
+        fireEvent.click(getByTestId('submit-action-email'))
+
+        expect(getByTestId('submit-monitor')).toBeEnabled()
     })
 })

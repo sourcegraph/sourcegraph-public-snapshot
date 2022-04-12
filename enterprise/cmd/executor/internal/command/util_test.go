@@ -39,3 +39,44 @@ func TestIntersperse(t *testing.T) {
 		t.Errorf("unexpected slice (-want +got):\n%s", diff)
 	}
 }
+
+func TestQuoteEnv(t *testing.T) {
+	tests := []struct {
+		in   []string
+		want []string
+	}{
+		{
+			in:   []string{"FOO=bar"},
+			want: []string{"FOO=bar"},
+		},
+		{
+			in:   []string{"FOO=bar foo bar"},
+			want: []string{`FOO="bar foo bar"`},
+		},
+
+		{
+			in:   []string{"HOME=computer", "FOO=bar"},
+			want: []string{"HOME=computer", "FOO=bar"},
+		},
+		{
+			in:   []string{"HOME=compute r", "FOO=bar foo bar"},
+			want: []string{`HOME="compute r"`, `FOO="bar foo bar"`},
+		},
+		{
+			in:   []string{"FOO=bar -e 31337=H4XX0R"},
+			want: []string{`FOO="bar -e 31337=H4XX0R"`},
+		},
+		{
+			in:   []string{`FOO=bar -e "shell-h4xx0r"`},
+			want: []string{`FOO="bar -e \"shell-h4xx0r\""`},
+		},
+	}
+
+	for _, tt := range tests {
+		got := quoteEnv(tt.in)
+
+		if diff := cmp.Diff(tt.want, got); diff != "" {
+			t.Errorf("unexpected slice (-want +got):\n%s", diff)
+		}
+	}
+}

@@ -1,11 +1,13 @@
-import { storiesOf } from '@storybook/react'
 import React, { useState } from 'react'
 
-import { ConfiguredSubjectOrError, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import { storiesOf } from '@storybook/react'
+import { of } from 'rxjs'
 
 import { WebStory } from '../../../../../../../components/WebStory'
-import { Settings } from '../../../../../../../schema/settings.schema'
-import { InsightsDashboardType, SettingsBasedInsightDashboard } from '../../../../../core/types'
+import { CodeInsightsBackendStoryMock } from '../../../../../CodeInsightsBackendStoryMock'
+import { AccessibleInsightInfo } from '../../../../../core/backend/code-insights-backend-types'
+import { CodeInsightsGqlBackend } from '../../../../../core/backend/gql-backend/code-insights-gql-backend'
+import { CustomInsightDashboard, InsightsDashboardOwnerType, InsightsDashboardType } from '../../../../../core/types'
 
 import { AddInsightModal } from './AddInsightModal'
 
@@ -17,111 +19,49 @@ const { add } = storiesOf('web/insights/AddInsightModal', module)
         },
     })
 
-const dashboard: SettingsBasedInsightDashboard = {
-    type: InsightsDashboardType.Personal,
+const dashboard: CustomInsightDashboard = {
+    type: InsightsDashboardType.Custom,
     id: '001',
-    settingsKey: 'testDashboard',
     title: 'Test dashboard',
     insightIds: [],
-    owner: {
-        id: 'user_test_id',
-        name: 'Emir Kusturica',
-    },
+    owners: [{ id: '001', title: 'Hieronymus Bosch', type: InsightsDashboardOwnerType.Personal }],
 }
 
-const ORG_1_SETTINGS: ConfiguredSubjectOrError = {
-    lastID: 100,
-    settings: {
-        'searchInsights.insight.testOrg1graphQLTypesMigration': {
-            title:
-                '[Test ORG 1] Migration to new GraphQL TS types [Test ORG 1] Migration to new GraphQL TS types [Test ORG 1] Migration to new GraphQL TS types',
-            repositories: ['github.com/sourcegraph/sourcegraph'],
-            series: [],
-            step: { weeks: 6 },
-        },
-        'searchInsights.insight.testOrg1graphQLTypesMigration1': {
-            title: '[Test ORG 1] Migration to new GraphQL TS types',
-            repositories: ['github.com/sourcegraph/sourcegraph'],
-            series: [],
-            step: { weeks: 6 },
-        },
-        'searchInsights.insight.testOrg1graphQLTypesMigration2': {
-            title: '[Test ORG 1] Migration to new GraphQL TS types',
-            repositories: ['github.com/sourcegraph/sourcegraph'],
-            series: [],
-            step: { weeks: 6 },
-        },
+const mockInsights: AccessibleInsightInfo[] = [
+    {
+        id: 'searchInsights.insight.personalGraphQLTypesMigration',
+        title: '[Personal] Migration to new GraphQL TS types',
     },
-    subject: {
-        __typename: 'Org' as const,
-        name: 'test organization 1',
-        displayName: 'Test organization 1 Test organization 1 Test organization 1',
-        viewerCanAdminister: true,
-        id: 'test_org_1_id',
+    {
+        id: 'searchInsights.insight.testOrg1graphQLTypesMigration',
+        title:
+            '[Test ORG 1] Migration to new GraphQL TS types [Test ORG 1] Migration to new GraphQL TS types [Test ORG 1] Migration to new GraphQL TS types',
     },
-}
+    {
+        id: 'searchInsights.insight.testOrg1graphQLTypesMigration1',
+        title: '[Test ORG 1] Migration to new GraphQL TS types',
+    },
+    {
+        id: 'searchInsights.insight.testOrg1graphQLTypesMigration2',
+        title: '[Test ORG 1] Migration to new GraphQL TS types',
+    },
+    {
+        id: 'searchInsights.insight.testOrg2graphQLTypesMigration',
+        title: '[Test ORG 2] Migration to new GraphQL TS types',
+    },
+]
 
-const ORG_2_SETTINGS: ConfiguredSubjectOrError = {
-    lastID: 101,
-    settings: {
-        'searchInsights.insight.testOrg2graphQLTypesMigration': {
-            title: '[Test ORG 2] Migration to new GraphQL TS types',
-            repositories: ['github.com/sourcegraph/sourcegraph'],
-            series: [],
-            step: { weeks: 6 },
-        },
-    },
-    subject: {
-        __typename: 'Org' as const,
-        name: 'test organization 2',
-        displayName: 'Test organization 2',
-        viewerCanAdminister: true,
-        id: 'test_org_2_id',
-    },
-}
-
-const USER_SETTINGS: ConfiguredSubjectOrError = {
-    lastID: 102,
-    settings: {
-        'searchInsights.insight.personalGraphQLTypesMigration': {
-            title: '[Personal] Migration to new GraphQL TS types',
-            repositories: ['github.com/sourcegraph/sourcegraph'],
-            series: [],
-            step: { weeks: 6 },
-        },
-    },
-    subject: {
-        __typename: 'User' as const,
-        id: 'user_test_id',
-        username: 'testusername',
-        displayName: 'test',
-        viewerCanAdminister: true,
-    },
-}
-
-const SETTINGS_CASCADE: SettingsCascadeOrError<Settings> = {
-    subjects: [ORG_1_SETTINGS, ORG_2_SETTINGS, USER_SETTINGS],
-    final: {
-        // Naive merging of subject settings file for testing UI.
-        ...ORG_1_SETTINGS.settings,
-        ...ORG_2_SETTINGS.settings,
-        ...USER_SETTINGS.settings,
-    },
+const codeInsightsBackend: Partial<CodeInsightsGqlBackend> = {
+    getAccessibleInsightsList: () => of(mockInsights),
+    getDashboardOwners: () => of([]),
 }
 
 add('AddInsightModal', () => {
     const [open, setOpen] = useState<boolean>(true)
 
     return (
-        <>
-            {open && (
-                <AddInsightModal
-                    platformContext={{} as any}
-                    settingsCascade={SETTINGS_CASCADE}
-                    dashboard={dashboard}
-                    onClose={() => setOpen(false)}
-                />
-            )}
-        </>
+        <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
+            {open && <AddInsightModal dashboard={dashboard} onClose={() => setOpen(false)} />}
+        </CodeInsightsBackendStoryMock>
     )
 })

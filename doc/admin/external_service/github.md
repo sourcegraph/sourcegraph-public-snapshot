@@ -11,7 +11,7 @@ To connect GitHub to Sourcegraph:
 1. Configure the connection to GitHub using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
 1. Press **Add repositories**.
 
-**NOTE** That adding code hosts as a user is currently in private beta.
+> NOTE: Adding code hosts as a user is currently in private beta.
 
 ## Supported versions
 
@@ -22,10 +22,16 @@ To connect GitHub to Sourcegraph:
 
 There are four fields for configuring which repositories are mirrored/synchronized:
 
-- [`repos`](github.md#configuration)<br>A list of repositories in `owner/name` format.
+- [`repos`](github.md#configuration)<br>A list of repositories in `owner/name` format. The order determines the order in which we sync repository metadata and is safe to change.
 - [`orgs`](github.md#configuration)<br>A list of organizations (every repository belonging to the organization will be cloned).
 - [`repositoryQuery`](github.md#configuration)<br>A list of strings with three pre-defined options (`public`, `affiliated`, `none`, none of which are subject to result limitations), and/or a [GitHub advanced search query](https://github.com/search/advanced). Note: There is an existing limitation that requires the latter, GitHub advanced search queries, to return [less than 1000 results](#repositoryquery-returns-first-1000-results-only). See [this issue](https://github.com/sourcegraph/sourcegraph/issues/2562) for ongoing work to address this limitation.
 - [`exclude`](github.md#configuration)<br>A list of repositories to exclude which takes precedence over the `repos`, `orgs`, and `repositoryQuery` fields.
+
+### Private repositories
+
+A [token that has the prerequisite scopes](#github-api-token-and-access) is required in order to clone private repositories for search, as well as at least read access to the relevant private repositories.
+
+See [GitHub API token and access](#github-api-token-and-access) for more details.
 
 ## GitHub API token and access
 
@@ -34,15 +40,29 @@ The GitHub service requires a `token` in order to access their API. There are tw
 - **[Personal access token](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line)**:<br>This gives Sourcegraph the same level of access to repositories as the account that created the token. If you're not wanting to mix your personal repositories with your organizations repositories, you could add an entry to the `exclude` array, or you can use a machine user token.
 - **[Machine user token](https://developer.github.com/v3/guides/managing-deploy-keys/#machine-users)**:<br>Generates a token for a machine user that is affiliated with an organization instead of a user account.
 
-No token scopes are required if you only want to sync public repositories and don't want to use any of the following features. Otherwise, the following token scopes are required:
+No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps/scopes-for-oauth-apps#available-scopes) are required if you only want to sync public repositories and don't want to use any of the following features. Otherwise, the following token scopes are required for specific features:
 
-- `repo` to sync private repositories from GitHub to Sourcegraph.
-- `read:org` to use:
-  - the `"allowOrgs"` setting [with a GitHub authentication provider](../auth/index.md#github)
-  - GitHub external service [`"authorization.groupsCacheTTL"` (which also requires `"allowGroupsPermissionsSync"`) for permissions caching](../repo/permissions.md#teams-and-organizations-permissions-caching).
-- `repo`, `read:org`, `user:email`, and `read:discussion` to use [batch changes](../../batch_changes/index.md) with GitHub repositories. See "[Code host interactions in batch changes](../../batch_changes/explanations/permissions_in_batch_changes.md#code-host-interactions-in-batch-changes)" for details.
+| Feature                                               | Required token scopes                                                                                          |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| [Sync private repositories](#private-repositories)    | `repo`                                                                                                         |
+| [Sync repository permissions][permissions]            | `repo`                                                                                                         |
+| [Repository permissions caching][permissions-caching] | `repo`, `write:org`                                                                                            |
+| [Batch changes][batch-changes]                        | `repo`, `read:org`, `user:email`, `read:discussion`, and `workflow` ([learn more][batch-changes-interactions]) |
 
-> NOTE: If you plan to use repository permissions with [background permissions syncing](../repo/permissions.md#background-permissions-syncing), an access token that has admin access to all private repositories is required. It is because only admin can list all collaborators of a repository.
+[permissions]: ../repo/permissions.md#github
+[permissions-caching]: ../repo/permissions.md#teams-and-organizations-permissions-caching
+[batch-changes]: ../../batch_changes/index.md
+[batch-changes-interactions]: ../../batch_changes/explanations/permissions_in_batch_changes.md#code-host-interactions-in-batch-changes
+
+<span class="virtual-br"></span>
+
+> WARNING: In addition to the prerequisite token scopes, the account attached to the token must actually have the same level of access to the relevant resources that you are trying to grant. For example:
+>
+> - If read access to repositories is required, the token must have `repo` scope *and* the token's account must have read access to the relevant repositories. This can happen by being directly granted read access to repositories, being on a team with read access to the repository, and so on.
+> - If write access to repositories is required, the token must have `repo` scope *and* the token's account must have write access to all repositories. This can happen by being added as a direct contributor, being on a team with write access to the repository, being an admin for the repository's organization, and so on.
+> - If write access to organizations is required, the token must have `write:org` scope *and* the token's account must have write access for all organizations. This can happen by being an admin in all relevant organizations.
+>
+> Learn more about how the GitHub API is used and what level of access is required in the corresponding feature documentation.
 
 ## GitHub.com rate limits
 
@@ -52,7 +72,10 @@ You should always include a token in a configuration for a GitHub.com URL to avo
 
 Internal rate limiting can be configured to limit the rate at which requests are made from Sourcegraph to GitHub. 
 
-If enabled, the default rate is set at 5000 per hour which can be configured via the `requestsPerHour` field (see below). If rate limiting is configured more than once for the same code host instance, the most restrictive limit will be used.
+If enabled, the default rate is set at 5000 per hour which can be configured via the `requestsPerHour` field (see below):
+
+- For Sourcegraph <=3.38, if rate limiting is configured more than once for the same code host instance, the most restrictive limit will be used.
+- For Sourcegraph >=3.39, rate limiting should be enabled and configured for each individual code host connection.
 
 **NOTE** Internal rate limiting is only currently applied when synchronising changesets in [batch changes](../../batch_changes/index.md), repository permissions and repository metadata from code hosts.
 
@@ -80,7 +103,7 @@ Using webhooks is highly recommended when using [batch changes](../../batch_chan
 
 To set up webhooks:
 
-1. In Sourcegraph, go to **Site admin > Manage repositories** and edit the GitHub configuration.
+1. In Sourcegraph, go to **Site admin > Manage code hosts** and edit the GitHub configuration.
 1. Add the `"webhooks"` property to the configuration (you can generate a secret with `openssl rand -hex 32`):<br /> `"webhooks": [{"org": "your_org", "secret": "verylongrandomsecret"}]`
 1. Click **Update repositories**.
 1. Copy the webhook URL displayed below the **Update repositories** button.
@@ -108,6 +131,10 @@ Done! Sourcegraph will now receive webhook events from GitHub and use them to sy
 GitHub connections support the following configuration options, which are specified in the JSON editor in the site admin "Manage repositories" area.
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/github.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/github) to see rendered content.</div>
+
+## Default branch
+
+Sourcegraph displays search results from the default branch of a repository when no `revision:` [parameter](https://docs.sourcegraph.com/code_search/reference/queries#repository-revisions) is specified. If you'd like the search results to be displayed from another branch by default, you may [change a repo's default branch on the github repo settings page](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-branches-in-your-repository/changing-the-default-branch). If this is not an option, consider using [search contexts](https://docs.sourcegraph.com/code_search/how-to/search_contexts) instead. 
 
 ## Troubleshooting
 

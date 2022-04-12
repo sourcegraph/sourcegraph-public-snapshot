@@ -30,8 +30,8 @@ func TestGroupBundleData(t *testing.T) {
 						End:   protocol.Pos{Line: 3, Character: 4},
 					},
 				},
-				DefinitionResultID: 3001,
-				ReferenceResultID:  0,
+				DefinitionResultID: 0,
+				ReferenceResultID:  3006,
 			},
 			2002: {
 				Range: reader.Range{
@@ -40,8 +40,8 @@ func TestGroupBundleData(t *testing.T) {
 						End:   protocol.Pos{Line: 4, Character: 5},
 					},
 				},
-				DefinitionResultID: 0,
-				ReferenceResultID:  3006,
+				DefinitionResultID: 3001,
+				ReferenceResultID:  0,
 			},
 			2003: {
 				Range: reader.Range{
@@ -204,6 +204,14 @@ func TestGroupBundleData(t *testing.T) {
 				},
 				PackageInformationID: 5003,
 			},
+			4007: {
+				Moniker: reader.Moniker{
+					Kind:       "implementation",
+					Scheme:     "scheme F",
+					Identifier: "ident F",
+				},
+				PackageInformationID: 5002,
+			},
 		},
 		PackageInformationData: map[int]PackageInformation{
 			5001: {
@@ -267,8 +275,9 @@ func TestGroupBundleData(t *testing.T) {
 				},
 			},
 		},
-		ImportedMonikers: datastructures.IDSetWith(4001, 4006),
-		ExportedMonikers: datastructures.IDSetWith(4003, 4005),
+		ImportedMonikers:    datastructures.IDSetWith(4001, 4006),
+		ExportedMonikers:    datastructures.IDSetWith(4003, 4005),
+		ImplementedMonikers: datastructures.NewIDSet(),
 		Contains: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
 			1001: datastructures.IDSetWith(2001, 2002, 2003),
 			1002: datastructures.IDSetWith(2004, 2005, 2006),
@@ -276,7 +285,7 @@ func TestGroupBundleData(t *testing.T) {
 		}),
 		Monikers: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
 			2001: datastructures.IDSetWith(4001, 4002),
-			2002: datastructures.IDSetWith(4003, 4004),
+			2002: datastructures.IDSetWith(4003, 4004, 4007),
 		}),
 		Diagnostics: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
 			1001: datastructures.IDSetWith(1001, 1002),
@@ -344,8 +353,8 @@ func TestGroupBundleData(t *testing.T) {
 					StartCharacter:     2,
 					EndLine:            3,
 					EndCharacter:       4,
-					DefinitionResultID: "3001",
-					ReferenceResultID:  "",
+					DefinitionResultID: "",
+					ReferenceResultID:  "3006",
 					HoverResultID:      "",
 					MonikerIDs:         []precise.ID{"4001", "4002"},
 				},
@@ -354,10 +363,10 @@ func TestGroupBundleData(t *testing.T) {
 					StartCharacter:     3,
 					EndLine:            4,
 					EndCharacter:       5,
-					DefinitionResultID: "",
-					ReferenceResultID:  "3006",
+					DefinitionResultID: "3001",
+					ReferenceResultID:  "",
 					HoverResultID:      "",
-					MonikerIDs:         []precise.ID{"4003", "4004"},
+					MonikerIDs:         []precise.ID{"4003", "4004", "4007"},
 				},
 				"2003": {
 					StartLine:          3,
@@ -395,6 +404,12 @@ func TestGroupBundleData(t *testing.T) {
 					Scheme:               "scheme D",
 					Identifier:           "ident D",
 					PackageInformationID: "",
+				},
+				"4007": {
+					Kind:                 "implementation",
+					Scheme:               "scheme F",
+					Identifier:           "ident F",
+					PackageInformationID: "5002",
 				},
 			},
 			PackageInformation: map[precise.ID]precise.PackageInformationData{
@@ -600,8 +615,9 @@ func TestGroupBundleData(t *testing.T) {
 
 	expectedDefinitions := []precise.MonikerLocations{
 		{
-			Scheme:     "scheme A",
-			Identifier: "ident A",
+			Kind:       "export",
+			Scheme:     "scheme C",
+			Identifier: "ident C",
 			Locations: []precise.LocationData{
 				{URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
 				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
@@ -609,8 +625,9 @@ func TestGroupBundleData(t *testing.T) {
 			},
 		},
 		{
-			Scheme:     "scheme B",
-			Identifier: "ident B",
+			Kind:       "export",
+			Scheme:     "scheme D",
+			Identifier: "ident D",
 			Locations: []precise.LocationData{
 				{URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
 				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
@@ -630,8 +647,9 @@ func TestGroupBundleData(t *testing.T) {
 
 	expectedReferences := []precise.MonikerLocations{
 		{
-			Scheme:     "scheme C",
-			Identifier: "ident C",
+			Kind:       "import",
+			Scheme:     "scheme A",
+			Identifier: "ident A",
 			Locations: []precise.LocationData{
 				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
 				{URI: "baz.go", StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2},
@@ -639,8 +657,9 @@ func TestGroupBundleData(t *testing.T) {
 			},
 		},
 		{
-			Scheme:     "scheme D",
-			Identifier: "ident D",
+			Kind:       "import",
+			Scheme:     "scheme B",
+			Identifier: "ident B",
 			Locations: []precise.LocationData{
 				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
 				{URI: "baz.go", StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2},
@@ -650,6 +669,28 @@ func TestGroupBundleData(t *testing.T) {
 	}
 	if diff := cmp.Diff(expectedReferences, references); diff != "" {
 		t.Errorf("unexpected references (-want +got):\n%s", diff)
+	}
+
+	var implementations []precise.MonikerLocations
+	for v := range actualBundleData.Implementations {
+		implementations = append(implementations, v)
+	}
+	sortMonikerLocations(implementations)
+
+	expectedImplementations := []precise.MonikerLocations{
+		{
+			Kind:       "implementation",
+			Scheme:     "scheme F",
+			Identifier: "ident F",
+			Locations: []precise.LocationData{
+				{URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
+				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
+				{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
+			},
+		},
+	}
+	if diff := cmp.Diff(expectedImplementations, implementations); diff != "" {
+		t.Errorf("unexpected implementations (-want +got):\n%s", diff)
 	}
 }
 

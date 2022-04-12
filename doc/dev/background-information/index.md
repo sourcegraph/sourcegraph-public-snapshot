@@ -12,13 +12,14 @@
 
 ## Development
 
+- [`sg` - the Sourcegraph developer tool](./sg/index.md)
 - [Developing the web clients](web/index.md)
   - [Developing the web app](web/web_app.md)
   - [Developing the code host integrations](web/code_host_integrations.md)
   - [Working with GraphQL](web/graphql.md)
   - [Wildcard Component Library](web/wildcard.md)
   - [Styling UI](web/styling.md)
-  - [Accessibility](web/accessibility.md)
+  - [Accessibility](web/accessibility/index.md)
   - [Temporary settings](web/temporary_settings.md)
   - [Build process](web/build.md)
 - [Developing the GraphQL API](graphql_api.md)
@@ -29,14 +30,14 @@
 - [Developing observability](observability/index.md)
 - [Developing Sourcegraph extensions](sourcegraph_extensions.md)
 - [Dependencies and generated code](dependencies_and_codegen.md)
-- [Code reviews](code_reviews.md)
+- [Pull request reviews](pull_request_reviews.md)
 - [Commit messages](commit_messages.md)
 - [Exposing services](exposing-services.md)
 - [Developing a store](basestore.md)
 - [Developing a worker](workers.md)
 - [Developing an out-of-band migration](oobmigrations.md)
 - [Developing a background routine](backgroundroutine.md)
-- [High-performance SQL](sql.md)
+- [Code host connections on local dev environment](code-host.md)
 
 ## [Languages](languages/index.md)
 
@@ -46,13 +47,16 @@
 - [Bash](languages/bash.md)
 - [Terraform](languages/terraform.md)
 
-### [Extended guides](languages/extended_guide/index.md)
+## [SQL](sql/index.md)
 
-- [Terraform Extended Guide](languages/extended_guide/terraform.md)
+- [Migrations](sql/migrations.md)
+- High-performance guides
+  - [Batch operations](sql/batch_operations.md)
+  - [Materialized cache](sql/materialized_cache.md)
 
 ## Testing
 
-- [Continuous Integration](continuous_integration.md)
+- [Continuous Integration](ci/index.md)
 - [Testing Principles](testing_principles.md)
 - [Testing Go code](languages/testing_go_code.md)
 - [Testing web code](testing_web_code.md)
@@ -67,3 +71,4 @@
 
 - [Telemetry](telemetry.md)
 - [Adding, changing and debugging pings](adding_ping_data.md)
+- [Deploy Sourcegraph with Helm chart (BETA)](../../admin/install/kubernetes/helm.md)

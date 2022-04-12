@@ -11,33 +11,22 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-var requestCounter = metrics.NewRequestMeter("bitbucket_cloud_requests_count", "Total number of requests sent to the Bitbucket Cloud API.")
-
-// These fields define the self-imposed Bitbucket rate limit (since Bitbucket Cloud does
-// not have a concept of rate limiting in HTTP response headers).
-//
-// See https://godoc.org/golang.org/x/time/rate#Limiter for an explanation of these fields.
-//
-// The limits chosen here are based on the following logic: Bitbucket Cloud restricts
-// "List all repositories" requests (which are a good portion of our requests) to 1,000/hr,
-// and they restrict "List a user or team's repositories" requests (which are roughly equal
-// to our repository lookup requests) to 1,000/hr.
-// See `pkg/extsvc/bitbucketserver/client.go` for the calculations behind these limits`
-const (
-	rateLimitRequestsPerSecond = 2 // 120/min or 7200/hr
-	RateLimitMaxBurstRequests  = 500
-)
+// The metric generated here will be named as "src_bitbucket_cloud_requests_total".
+var requestCounter = metrics.NewRequestMeter("bitbucket_cloud", "Total number of requests sent to the Bitbucket Cloud API.")
 
 // Client access a Bitbucket Cloud via the REST API 2.0.
 type Client struct {
@@ -47,18 +36,19 @@ type Client struct {
 	// URL is the base URL of Bitbucket Cloud.
 	URL *url.URL
 
-	// The username and app password credentials for accessing the server.
-	Username, AppPassword string
+	// Auth is the authentication method used when accessing the server. Only
+	// auth.BasicAuth is currently supported.
+	Auth auth.Authenticator
 
 	// RateLimit is the self-imposed rate limiter (since Bitbucket does not have a concept
 	// of rate limiting in HTTP response headers).
-	RateLimit *rate.Limiter
+	rateLimit *rate.Limiter
 }
 
-// NewClient creates a new Bitbucket Cloud API client with given apiURL. If a nil httpClient
-// is provided, http.DefaultClient will be used. Both Username and AppPassword fields are
-// required to be set before calling any APIs.
-func NewClient(apiURL *url.URL, httpClient httpcli.Doer) *Client {
+// NewClient creates a new Bitbucket Cloud API client from the given external
+// service configuration. If a nil httpClient is provided, http.DefaultClient
+// will be used.
+func NewClient(urn string, config *schema.BitbucketCloudConnection, httpClient httpcli.Doer) (*Client, error) {
 	if httpClient == nil {
 		httpClient = httpcli.ExternalDoer
 	}
@@ -73,16 +63,36 @@ func NewClient(apiURL *url.URL, httpClient httpcli.Doer) *Client {
 		return category
 	})
 
-	// Normally our registry will return a default infinite limiter when nothing has been
-	// synced from config. However, we always want to ensure there is at least some form of rate
-	// limiting for Bitbucket.
-	defaultLimiter := rate.NewLimiter(rateLimitRequestsPerSecond, RateLimitMaxBurstRequests)
-	l := ratelimit.DefaultRegistry.GetOrSet(apiURL.String(), defaultLimiter)
+	apiURL, err := urlFromConfig(config)
+	if err != nil {
+		return nil, err
+	}
 
 	return &Client{
 		httpClient: httpClient,
-		URL:        apiURL,
-		RateLimit:  l,
+		URL:        extsvc.NormalizeBaseURL(apiURL),
+		Auth: &auth.BasicAuth{
+			Username: config.Username,
+			Password: config.AppPassword,
+		},
+		// Default limits are defined in extsvc.GetLimitFromConfig
+		rateLimit: ratelimit.DefaultRegistry.Get(urn),
+	}, nil
+}
+
+// WithAuthenticator returns a new Client that uses the same configuration,
+// HTTPClient, and RateLimiter as the current Client, except authenticated with
+// the given authenticator instance.
+//
+// Note that using an unsupported Authenticator implementation may result in
+// unexpected behaviour, or (more likely) errors. At present, only BasicAuth is
+// supported.
+func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
+	return &Client{
+		httpClient: c.httpClient,
+		URL:        c.URL,
+		Auth:       a,
+		rateLimit:  c.rateLimit,
 	}
 }
 
@@ -154,12 +164,12 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 
-	if err := c.authenticate(req); err != nil {
+	if err := c.Auth.Authenticate(req); err != nil {
 		return err
 	}
 
 	startWait := time.Now()
-	if err := c.RateLimit.Wait(ctx); err != nil {
+	if err := c.rateLimit.Wait(ctx); err != nil {
 		return err
 	}
 
@@ -191,11 +201,6 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		return json.Unmarshal(bs, result)
 	}
 
-	return nil
-}
-
-func (c *Client) authenticate(req *http.Request) error {
-	req.SetBasicAuth(c.Username, c.AppPassword)
 	return nil
 }
 
@@ -276,4 +281,11 @@ func (e *httpError) Unauthorized() bool {
 
 func (e *httpError) NotFound() bool {
 	return e.StatusCode == http.StatusNotFound
+}
+
+func urlFromConfig(config *schema.BitbucketCloudConnection) (*url.URL, error) {
+	if config.ApiURL == "" {
+		return url.Parse("https://api.bitbucket.org")
+	}
+	return url.Parse(config.ApiURL)
 }

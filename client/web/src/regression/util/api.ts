@@ -5,21 +5,21 @@
 import { zip, timer, concat, throwError, defer, Observable } from 'rxjs'
 import { map, tap, retryWhen, delayWhen, take, mergeMap } from 'rxjs/operators'
 
-import {
-    CloneInProgressError,
-    isCloneInProgressErrorLike,
-    isRepoNotFoundErrorLike,
-} from '@sourcegraph/shared/src/backend/errors'
+import { isErrorLike, createAggregateError } from '@sourcegraph/common'
 import {
     gql,
     dataOrThrowErrors,
     createInvalidGraphQLMutationResponseError,
     isErrorGraphQLResult,
-} from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+} from '@sourcegraph/http-client'
+import {
+    CloneInProgressError,
+    isCloneInProgressErrorLike,
+    isRepoNotFoundErrorLike,
+} from '@sourcegraph/shared/src/backend/errors'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { Config } from '@sourcegraph/shared/src/testing/config'
-import { isErrorLike, createAggregateError } from '@sourcegraph/shared/src/util/errors'
 
 import { GraphQLClient } from './GraphQlClient'
 import { ResourceDestructor } from './TestResourceManager'
@@ -66,8 +66,8 @@ export function waitForRepo(
     {
         logStatusMessages,
         shouldNotExist = false,
-        retryPeriod = 2000, // 2 seconds
-        timeout = 60000, // 1 minute
+        retryPeriod = 5000, // 5 seconds
+        timeout = 300000, // 5 minutes
         indexed: mustBeIndexed = false,
     }: WaitForRepoOptions = {}
 ): Observable<void> {
@@ -371,6 +371,21 @@ export async function setUserSiteAdmin(gqlClient: GraphQLClient, userID: GQL.ID,
                 }
             `,
             { userID, siteAdmin }
+        )
+        .toPromise()
+}
+
+export async function setTosAccepted(gqlClient: GraphQLClient, userID: GQL.ID): Promise<void> {
+    await gqlClient
+        .mutateGraphQL(
+            gql`
+                mutation SetTosAccepted($userID: ID!) {
+                    setTosAccepted(userID: $userID) {
+                        alwaysNil
+                    }
+                }
+            `,
+            { userID }
         )
         .toPromise()
 }
@@ -741,7 +756,6 @@ export function search(
                 results {
                     __typename
                     limitHit
-                    resultCount
                     matchCount
                     approximateResultCount
                     missing {

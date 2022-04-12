@@ -1,10 +1,11 @@
-import classNames from 'classnames'
-import * as H from 'history'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import UserIcon from 'mdi-react/UserIcon'
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import classNames from 'classnames'
+import * as H from 'history'
+import AccountIcon from 'mdi-react/AccountIcon'
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+
+import { Icon, Link } from '@sourcegraph/wildcard'
 
 import { ExternalServiceFields, ExternalServiceKind } from '../../graphql-operations'
 
@@ -34,7 +35,7 @@ interface ExternalServiceCardProps {
 
 export const ExternalServiceCard: React.FunctionComponent<ExternalServiceCardProps> = ({
     title,
-    icon: Icon,
+    icon: CardIcon,
     shortDescription,
     to,
     kind,
@@ -43,7 +44,7 @@ export const ExternalServiceCard: React.FunctionComponent<ExternalServiceCardPro
 }) => {
     const children = (
         <div className={classNames('p-3 d-flex align-items-start border', className)}>
-            <Icon className="icon-inline h3 mb-0 mr-3" />
+            <Icon className="h3 mb-0 mr-3" as={CardIcon} />
             <div className="flex-1">
                 <h3 className={shortDescription ? 'mb-0' : 'mt-1 mb-0'}>
                     {title}
@@ -51,7 +52,7 @@ export const ExternalServiceCard: React.FunctionComponent<ExternalServiceCardPro
                         <small>
                             {' '}
                             by
-                            <UserIcon className="icon-inline" />
+                            <Icon as={AccountIcon} />
                             <Link to={namespace.url}>{namespace.namespaceName}</Link>
                         </small>
                     )}

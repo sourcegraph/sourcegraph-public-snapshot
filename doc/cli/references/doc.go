@@ -1,7 +1,6 @@
-//go:build ignore
-// +build ignore
-
 package main
+
+//go:generate go run ./doc.go
 
 import (
 	"io/fs"
@@ -12,7 +11,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func clean(base string) error {
@@ -111,6 +110,10 @@ replace github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.202007141
 
 	src := path.Join(dir, "src")
 	srcDoc := exec.Command(src, "doc", "-o", ".")
+	srcDoc.Env = os.Environ()
+	// Always set this to 8 so the docs don't change when generated on
+	// different machines.
+	srcDoc.Env = append(srcDoc.Env, "GOMAXPROCS=8")
 	if out, err := srcDoc.CombinedOutput(); err != nil {
 		return errors.Wrapf(err, "running src doc:\n%s\n", string(out))
 	}

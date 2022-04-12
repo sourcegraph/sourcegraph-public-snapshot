@@ -60,6 +60,11 @@ A series of data about a code insight.
 """
 type InsightsSeries {
     """
+    Unique ID for the series.
+    """
+    seriesId: String!
+
+    """
     The label used to describe this series of data points.
     """
     label: String!
@@ -179,4 +184,810 @@ type InsightSeriesStatus {
     effectively be used as a status that the insight is still processing if returned null.
     """
     backfillQueuedAt: DateTime
+}
+
+extend type Query {
+    """
+    Return dashboards visible to the authenticated user.
+    """
+    insightsDashboards(first: Int, after: String, id: ID): InsightsDashboardConnection!
+
+    """
+    Return all insight views visible to the authenticated user.
+    """
+    insightViews(first: Int, after: String, id: ID, filters: InsightViewFiltersInput): InsightViewConnection!
+
+    """
+    Generate an ephemeral time series for a Search based code insight, generally for the purposes of live preview.
+    """
+    searchInsightLivePreview(input: SearchInsightLivePreviewInput!): [SearchInsightLivePreviewSeries!]!
+}
+
+extend type Mutation {
+    """
+    Create a new dashboard.
+    """
+    createInsightsDashboard(input: CreateInsightsDashboardInput!): InsightsDashboardPayload!
+
+    """
+    Edit an existing dashboard.
+    """
+    updateInsightsDashboard(id: ID!, input: UpdateInsightsDashboardInput!): InsightsDashboardPayload!
+
+    """
+    Delete a dashboard.
+    """
+    deleteInsightsDashboard(id: ID!): EmptyResponse!
+
+    """
+    Associate an existing insight view with this dashboard.
+    """
+    addInsightViewToDashboard(input: AddInsightViewToDashboardInput!): InsightsDashboardPayload!
+
+    """
+    Remove an insight view from a dashboard.
+    """
+    removeInsightViewFromDashboard(input: RemoveInsightViewFromDashboardInput!): InsightsDashboardPayload!
+}
+
+"""
+A paginated list of dashboards.
+"""
+type InsightsDashboardConnection {
+    """
+    A list of dashboards.
+    """
+    nodes: [InsightsDashboard!]!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A dashboard of insights.
+"""
+type InsightsDashboard implements Node {
+    """
+    The Dashboard ID.
+    """
+    id: ID!
+
+    """
+    The Dashboard Title.
+    """
+    title: String!
+
+    """
+    The list of associated insights to the dashboard.
+    """
+    views(first: Int, after: ID): InsightViewConnection
+
+    """
+    The permission grants assossiated with the dashboard.
+    """
+    grants: InsightsPermissionGrants!
+}
+
+"""
+Input object for creating a new dashboard.
+"""
+input CreateInsightsDashboardInput {
+    """
+    Dashboard title.
+    """
+    title: String!
+    """
+    Permissions to grant to the dashboard.
+    """
+    grants: InsightsPermissionGrantsInput!
+}
+
+"""
+Input object for updating a dashboard.
+"""
+input UpdateInsightsDashboardInput {
+    """
+    Dashboard title.
+    """
+    title: String
+    """
+    Permissions to grant to the dashboard.
+    """
+    grants: InsightsPermissionGrantsInput
+}
+
+"""
+Permissions object. Note: only organizations the user has access to will be included.
+"""
+type InsightsPermissionGrants {
+    """
+    Specific users that have permission.
+    """
+    users: [ID!]!
+    """
+    Organizations that have permission.
+    """
+    organizations: [ID!]!
+    """
+    True if the permission is set to global.
+    """
+    global: Boolean!
+}
+
+"""
+Input object for permissions to grant.
+"""
+input InsightsPermissionGrantsInput {
+    """
+    Specific users to grant permissions to.
+    """
+    users: [ID!]
+    """
+    Organizations to grant permissions to.
+    """
+    organizations: [ID!]
+    """
+    Set global to true to grant global permission.
+    """
+    global: Boolean
+}
+
+"""
+A dashboard of insight views.
+"""
+type InsightViewConnection {
+    """
+    A list of insights.
+    """
+    nodes: [InsightView!]!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+Response wrapper object for insight dashboard mutations.
+"""
+type InsightsDashboardPayload {
+    """
+    The result dashboard after mutation.
+    """
+    dashboard: InsightsDashboard!
+}
+
+"""
+Input object for adding insight view to dashboard.
+"""
+input AddInsightViewToDashboardInput {
+    """
+    ID of the insight view to attach to the dashboard
+    """
+    insightViewId: ID!
+
+    """
+    ID of the dashboard.
+    """
+    dashboardId: ID!
+}
+
+"""
+Input object for adding insight view to dashboard.
+"""
+input RemoveInsightViewFromDashboardInput {
+    """
+    ID of the insight view to remove from the dashboard
+    """
+    insightViewId: ID!
+
+    """
+    ID of the dashboard.
+    """
+    dashboardId: ID!
+}
+
+"""
+Metadata about a specific data series for an insight.
+"""
+type InsightSeriesMetadata {
+    """
+    Unique ID for the series.
+    """
+    seriesId: String!
+
+    """
+    Sourcegraph query string used to generate the series.
+    """
+    query: String!
+
+    """
+    Current status of the series.
+    """
+    enabled: Boolean!
+}
+
+extend type Mutation {
+    """
+    Update an insight series. Restricted to admins only.
+    """
+    updateInsightSeries(input: UpdateInsightSeriesInput!): InsightSeriesMetadataPayload
+}
+
+"""
+Wrapper payload object for insight series metadata.
+"""
+type InsightSeriesMetadataPayload {
+    """
+    The series metadata.
+    """
+    series: InsightSeriesMetadata!
+}
+
+"""
+Input object for update insight series mutation.
+"""
+input UpdateInsightSeriesInput {
+    """
+    Unique ID for the series.
+    """
+    seriesId: String!
+
+    """
+    The desired activity state (enabled or disabled) for the series.
+    """
+    enabled: Boolean
+}
+
+extend type Query {
+    """
+    Retrieve information about queued insights series and their breakout by status. Restricted to admins only.
+    """
+    insightSeriesQueryStatus: [InsightSeriesQueryStatus!]!
+}
+
+"""
+Information about queue status for insight series queries.
+"""
+type InsightSeriesQueryStatus {
+    """
+    Unique ID for the series.
+    """
+    seriesId: String!
+
+    """
+    Sourcegraph query string used to generate the series. This is the base query string that was input by the user,
+    and does not include each repository specific query that would be generated to backfill an entire series.
+    """
+    query: String!
+
+    """
+    The current activity status for this series.
+    """
+    enabled: Boolean!
+
+    """
+    The number of queries belonging to the series with errored status. Errored is a transient state representing a retryable error that has not
+    yet exceeded the max retry count. This count only represents the queries that have yet to be pruned by the background maintenance workers.
+    """
+    errored: Int!
+
+    """
+    The number of queries belonging to the series that are successfully completed.
+    This count only represents the queries that have yet to be pruned by the background maintenance workers.
+    """
+    completed: Int!
+
+    """
+    The number of queries belonging to the series that are currently processing.
+    This count only represents the queries that have yet to be pruned by the background maintenance workers.
+    """
+    processing: Int!
+
+    """
+    The number of queries belonging to the series that are terminally failed. These have either been marked as non-retryable or exceeded
+    the max retry limit. This count only represents the queries that have yet to be pruned by the background maintenance workers.
+    """
+    failed: Int!
+
+    """
+    The number of queries belonging to the series that are queued for processing.
+    This count only represents the queries that have yet to be pruned by the background maintenance workers.
+    """
+    queued: Int!
+}
+
+"""
+A custom time scope for an insight data series.
+"""
+input TimeScopeInput {
+    """
+    Sets a time scope using a step interval (intervals of time).
+    """
+    stepInterval: TimeIntervalStepInput
+}
+
+"""
+A time scope defined using a time interval (ex. 5 days)
+"""
+input TimeIntervalStepInput {
+    """
+    The time unit for the interval.
+    """
+    unit: TimeIntervalStepUnit!
+
+    """
+    The value for the interval.
+    """
+    value: Int!
+}
+
+"""
+Time interval units.
+"""
+enum TimeIntervalStepUnit {
+    HOUR
+    DAY
+    WEEK
+    MONTH
+    YEAR
+}
+
+"""
+A custom repository scope for an insight data series.
+"""
+input RepositoryScopeInput {
+    """
+    The list of repositories included in this scope.
+    """
+    repositories: [String!]!
+}
+
+"""
+Options for a line chart
+"""
+input LineChartOptionsInput {
+    """
+    The chart title.
+    """
+    title: String
+}
+
+"""
+Input for a line chart search insight.
+"""
+input LineChartSearchInsightInput {
+    """
+    The list of data series to create (or add) to this insight.
+    """
+    dataSeries: [LineChartSearchInsightDataSeriesInput!]!
+
+    """
+    The options for this line chart.
+    """
+    options: LineChartOptionsInput!
+
+    """
+    The dashboard IDs to associate this insight with once created.
+    """
+    dashboards: [ID!]
+
+    """
+    The default values for filters and aggregates for this line chart.
+    """
+    viewControls: InsightViewControlsInput
+}
+
+"""
+Input for updating a line chart search insight.
+"""
+input UpdateLineChartSearchInsightInput {
+    """
+    The complete list of data series on this line chart. Note: excluding a data series will remove it.
+    """
+    dataSeries: [LineChartSearchInsightDataSeriesInput!]!
+
+    """
+    The presentation options for this line chart.
+    """
+    presentationOptions: LineChartOptionsInput!
+
+    """
+    The default values for filters and aggregates for this line chart.
+    """
+    viewControls: InsightViewControlsInput!
+}
+
+"""
+Input for the default values for filters and aggregates for an insight.
+"""
+input InsightViewControlsInput {
+    """
+    Input for the default filters for an insight.
+    """
+    filters: InsightViewFiltersInput!
+}
+
+"""
+Input for the default values by which the insight is filtered.
+"""
+input InsightViewFiltersInput {
+    """
+    A regex string for which to include repositories in a filter.
+    """
+    includeRepoRegex: String
+    """
+    A regex string for which to exclude repositories in a filter.
+    """
+    excludeRepoRegex: String
+}
+
+"""
+Input for a line chart search insight data series.
+"""
+input LineChartSearchInsightDataSeriesInput {
+    """
+    Unique ID for the series. Omit this field if it's a new series.
+    """
+    seriesId: String
+    """
+    The query string.
+    """
+    query: String!
+    """
+    Options for this line chart data series.
+    """
+    options: LineChartDataSeriesOptionsInput!
+    """
+    The scope of repositories.
+    """
+    repositoryScope: RepositoryScopeInput!
+    """
+    The scope of time.
+    """
+    timeScope: TimeScopeInput!
+
+    """
+    Whether or not to generate the timeseries results from the query capture groups. Defaults to false if not provided.
+    """
+    generatedFromCaptureGroups: Boolean
+}
+
+"""
+Options for a line chart data series
+"""
+input LineChartDataSeriesOptionsInput {
+    """
+    The label for the data series.
+    """
+    label: String
+    """
+    The line color for the data series.
+    """
+    lineColor: String
+}
+
+"""
+Input for a pie chart search insight
+"""
+input PieChartSearchInsightInput {
+    """
+    The query string.
+    """
+    query: String!
+
+    """
+    The scope of repositories.
+    """
+    repositoryScope: RepositoryScopeInput!
+
+    """
+    Options for this pie chart.
+    """
+    presentationOptions: PieChartOptionsInput!
+
+    """
+    The dashboard IDs to associate this insight with once created.
+    """
+    dashboards: [ID!]
+}
+
+"""
+Input for updating a pie chart search insight
+"""
+input UpdatePieChartSearchInsightInput {
+    """
+    The query string.
+    """
+    query: String!
+
+    """
+    The scope of repositories.
+    """
+    repositoryScope: RepositoryScopeInput!
+
+    """
+    Options for this pie chart.
+    """
+    presentationOptions: PieChartOptionsInput!
+}
+
+"""
+Options for a pie chart
+"""
+input PieChartOptionsInput {
+    """
+    The title for the pie chart.
+    """
+    title: String!
+
+    """
+    The threshold for which groups fall into the "other category". Only categories with a percentage greater than
+    this value will be separately rendered.
+    """
+    otherThreshold: Float!
+}
+
+"""
+Response wrapper object for insight view mutations.
+"""
+type InsightViewPayload {
+    """
+    The resulting view.
+    """
+    view: InsightView!
+}
+
+extend type Mutation {
+    """
+    Create a line chart backed by search insights.
+    """
+    createLineChartSearchInsight(input: LineChartSearchInsightInput!): InsightViewPayload!
+
+    """
+    Create a pie chart backed by search insights.
+    """
+    createPieChartSearchInsight(input: PieChartSearchInsightInput!): InsightViewPayload!
+
+    """
+    Update a line chart backed by search insights.
+    """
+    updateLineChartSearchInsight(id: ID!, input: UpdateLineChartSearchInsightInput!): InsightViewPayload!
+
+    """
+    Update a pie chart backed by search insights.
+    """
+    updatePieChartSearchInsight(id: ID!, input: UpdatePieChartSearchInsightInput!): InsightViewPayload!
+
+    """
+    Delete an insight view given the graphql ID.
+    """
+    deleteInsightView(id: ID!): EmptyResponse!
+}
+
+"""
+An Insight View is a lens to view insight data series. In most cases this corresponds to a visualization of an insight, containing multiple series.
+"""
+type InsightView implements Node {
+    """
+    The View ID.
+    """
+    id: ID!
+
+    """
+    The default filters saved on the insight. This will differ from the applied filters if they are overwritten but not saved.
+    """
+    defaultFilters: InsightViewFilters!
+
+    """
+    The filters currently applied to the insight and the data.
+    """
+    appliedFilters: InsightViewFilters!
+
+    """
+    The time series data for this insight.
+    """
+    dataSeries: [InsightsSeries!]!
+
+    """
+    Presentation options for the insight.
+    """
+    presentation: InsightPresentation!
+
+    """
+    Information on how each data series was generated
+    """
+    dataSeriesDefinitions: [InsightDataSeriesDefinition!]!
+
+    """
+    The total number of dashboards on which this insight is referenced. The count is global and disregards permissions.
+    """
+    dashboardReferenceCount: Int!
+
+    """
+    Represents if this insight is in a frozen state or not. A frozen state is relevant when a license is downgraded and the number of insights exceed the free plan limits.
+    """
+    isFrozen: Boolean!
+}
+
+"""
+Defines how the data series is generated.
+"""
+union InsightDataSeriesDefinition = SearchInsightDataSeriesDefinition
+
+"""
+Defines presentation options for the insight.
+"""
+union InsightPresentation = LineChartInsightViewPresentation | PieChartInsightViewPresentation
+
+"""
+Defines a scope of time for which the insight data is generated.
+"""
+union InsightTimeScope = InsightIntervalTimeScope
+
+"""
+A custom repository scope for an insight. A scope with all empty fields implies a global scope.
+"""
+type InsightRepositoryScope {
+    """
+    The list of repositories in the scope.
+    """
+    repositories: [String!]!
+}
+"""
+Defines a time scope using an interval of time
+"""
+type InsightIntervalTimeScope {
+    """
+    The unit of time.
+    """
+    unit: TimeIntervalStepUnit!
+    """
+    The value of time.
+    """
+    value: Int!
+}
+
+"""
+Defines an insight data series that is constructed from a Sourcegraph search query.
+"""
+type SearchInsightDataSeriesDefinition {
+    """
+    Unique ID for the series.
+    """
+    seriesId: String!
+    """
+    The query string.
+    """
+    query: String!
+
+    """
+    A scope of repositories defined for this insight.
+    """
+    repositoryScope: InsightRepositoryScope!
+
+    """
+    The scope of time for which the insight data is generated.
+    """
+    timeScope: InsightTimeScope!
+
+    """
+    Whether or not the the time series are derived from the captured groups of the search results.
+    """
+    generatedFromCaptureGroups: Boolean!
+
+    """
+    Whether or not the series has been pre-calculated, or still needs to be resolved. This field is largely only used
+    for the code insights webapp, and should be considered unstable (planned to be deprecated in a future release).
+    """
+    isCalculated: Boolean!
+}
+
+"""
+View presentation for a line chart insight
+"""
+type LineChartInsightViewPresentation {
+    """
+    The title for the line chart.
+    """
+    title: String!
+
+    """
+    The presentation options for the line chart.
+    """
+    seriesPresentation: [LineChartDataSeriesPresentation!]!
+}
+
+"""
+View presentation for a single insight line chart data series
+"""
+type LineChartDataSeriesPresentation {
+    """
+    Unique ID for the series.
+    """
+    seriesId: String!
+    """
+    The label for the series.
+    """
+    label: String!
+    """
+    The color for the series.
+    """
+    color: String!
+}
+
+"""
+View presentation for an insight pie chart.
+"""
+type PieChartInsightViewPresentation {
+    """
+    The title for the pie chart.
+    """
+    title: String!
+    """
+    The threshold for which groups fall into the "other category". Only categories with a percentage greater than
+    this value will be separately rendered.
+    """
+    otherThreshold: Float!
+}
+
+"""
+The fields and values for which the insight is filtered.
+"""
+type InsightViewFilters {
+    """
+    A regex string for which to include repositories in a filter.
+    """
+    includeRepoRegex: String
+
+    """
+    A regex string for which to exclude repositories from a filter.
+    """
+    excludeRepoRegex: String
+}
+
+"""
+Required input to generate a time series for a search insight using live preview.
+"""
+input SearchInsightLivePreviewInput {
+    """
+    The query string.
+    """
+    query: String!
+
+    """
+    The desired label for the series. Will be overwritten when series are dynamically generated.
+    """
+    label: String!
+
+    """
+    The scope of repositories.
+    """
+    repositoryScope: RepositoryScopeInput!
+    """
+    The scope of time.
+    """
+    timeScope: TimeScopeInput!
+
+    """
+    Whether or not to generate the timeseries results from the query capture groups.
+    """
+    generatedFromCaptureGroups: Boolean!
+}
+
+"""
+Input object for a live preview search based code insight.
+"""
+type SearchInsightLivePreviewSeries {
+    """
+    The data points for the time series.
+    """
+    points: [InsightDataPoint!]!
+
+    """
+    The label for the data series.
+    """
+    label: String!
 }

@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs'
 import { map, mapTo } from 'rxjs/operators'
 
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../backend/graphql'
 import {
@@ -13,28 +13,8 @@ import {
     FetchSurveyResponsesVariables,
     RequestTrialResult,
     RequestTrialVariables,
-    SubmitSurveyResult,
-    SubmitSurveyVariables,
     UserActivePeriod,
 } from '../graphql-operations'
-
-import { SurveyResponse } from './SurveyPage'
-
-/**
- * Submits a user satisfaction survey.
- */
-export function submitSurvey(input: SurveyResponse): Observable<void> {
-    return requestGraphQL<SubmitSurveyResult, SubmitSurveyVariables>(
-        gql`
-            mutation SubmitSurvey($input: SurveySubmissionInput!) {
-                submitSurvey(input: $input) {
-                    alwaysNil
-                }
-            }
-        `,
-        { input }
-    ).pipe(map(dataOrThrowErrors), mapTo(undefined))
-}
 
 /**
  * Fetches survey responses.

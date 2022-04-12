@@ -1,15 +1,17 @@
+import React, { useState, useMemo, useEffect } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
+import { noop } from 'lodash'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
-import React, { useState, useMemo, useEffect, useCallback } from 'react'
-import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 
+import { ErrorLike } from '@sourcegraph/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { Menu, MenuItem, MenuList, Position, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { Breadcrumbs, BreadcrumbsProps } from '../components/Breadcrumbs'
@@ -19,6 +21,9 @@ import { ActionButtonDescriptor } from '../util/contributions'
 import { useBreakpoint } from '../util/dom'
 
 import { ResolvedRevision } from './backend'
+import { RepoHeaderActionDropdownToggle } from './components/RepoHeaderActions'
+
+import styles from './RepoHeader.module.scss'
 
 /**
  * Stores the list of RepoHeaderContributions, manages addition/deletion, and ensures they are sorted.
@@ -158,9 +163,6 @@ interface Props extends PlatformContextProps, TelemetryProps, BreadcrumbsProps, 
 
     location: H.Location
     history: H.History
-
-    /** Whether or not an alert is displayed directly above RepoHeader */
-    isAlertDisplayed: boolean
 }
 
 /**
@@ -168,13 +170,7 @@ interface Props extends PlatformContextProps, TelemetryProps, BreadcrumbsProps, 
  *
  * Other components can contribute items to the repository header using RepoHeaderContribution.
  */
-export const RepoHeader: React.FunctionComponent<Props> = ({
-    onLifecyclePropsChange,
-    resolvedRev,
-    repo,
-    isAlertDisplayed,
-    ...props
-}) => {
+export const RepoHeader: React.FunctionComponent<Props> = ({ onLifecyclePropsChange, resolvedRev, repo, ...props }) => {
     const [repoHeaderContributions, setRepoHeaderContributions] = useState<RepoHeaderContribution[]>([])
     const repoHeaderContributionStore = useMemo(
         () => new RepoHeaderContributionStore(contributions => setRepoHeaderContributions(contributions)),
@@ -212,15 +208,8 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
         [context, repoHeaderContributions, isLarge]
     )
 
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-    const toggleDropdownOpen = useCallback(() => setIsDropdownOpen(isOpen => !isOpen), [])
-
     return (
-        <nav
-            className={classNames('repo-header navbar navbar-expand', {
-                'repo-header--alert': isAlertDisplayed,
-            })}
-        >
+        <nav data-testid="repo-header" className={classNames('navbar navbar-expand', styles.repoHeader)}>
             <div className="d-flex align-items-center flex-shrink-past-contents">
                 {/* Breadcrumb for the nav elements */}
                 <Breadcrumbs breadcrumbs={props.breadcrumbs} location={props.location} />
@@ -232,14 +221,14 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
                     </li>
                 ))}
             </ul>
-            <div className="repo-header__spacer" />
+            <div className={styles.spacer} />
             <ErrorBoundary
                 location={props.location}
                 // To be clear to users that this isn't an error reported by extensions
                 // about e.g. the code they're viewing.
                 render={error => (
                     <ul className="navbar-nav">
-                        <li className="nav-item repo-header__action-list-item">
+                        <li className={classNames('nav-item', styles.actionListItem)}>
                             <span>Component error: {error.message}</span>
                         </li>
                     </ul>
@@ -248,7 +237,7 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
                 {isLarge ? (
                     <ul className="navbar-nav">
                         {rightActions.map((a, index) => (
-                            <li className="nav-item repo-header__action-list-item" key={a.id || index}>
+                            <li className={classNames('nav-item', styles.actionListItem)} key={a.id || index}>
                                 {a.element}
                             </li>
                         ))}
@@ -256,23 +245,18 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
                 ) : (
                     <ul className="navbar-nav">
                         <li className="nav-item">
-                            <ButtonDropdown
-                                className="menu-nav-item"
-                                direction="down"
-                                isOpen={isDropdownOpen}
-                                toggle={toggleDropdownOpen}
-                            >
-                                <DropdownToggle className="btn btn-icon repo-header__action" nav={true}>
-                                    <DotsVerticalIcon className="icon-inline" />
-                                </DropdownToggle>
-                                <DropdownMenu>
+                            <Menu>
+                                <RepoHeaderActionDropdownToggle>
+                                    <Icon as={DotsVerticalIcon} />
+                                </RepoHeaderActionDropdownToggle>
+                                <MenuList position={Position.bottomEnd}>
                                     {rightActions.map((a, index) => (
-                                        <DropdownItem className="p-0" key={a.id || index}>
+                                        <MenuItem className="p-0" key={a.id || index} onSelect={noop}>
                                             {a.element}
-                                        </DropdownItem>
+                                        </MenuItem>
                                     ))}
-                                </DropdownMenu>
-                            </ButtonDropdown>
+                                </MenuList>
+                            </Menu>
                         </li>
                     </ul>
                 )}

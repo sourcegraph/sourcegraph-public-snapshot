@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
+
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // EndpointMap is the subset of endpoint.Map (consistent hashmap) methods we
@@ -37,7 +38,7 @@ type Indexers struct {
 // indexed is the set of repositories currently indexed by hostname.
 //
 // An error is returned if hostname is not part of the Indexers endpoints.
-func (c *Indexers) ReposSubset(ctx context.Context, hostname string, indexed map[uint32]*zoekt.MinimalRepoListEntry, repos []types.RepoName) ([]types.RepoName, error) {
+func (c *Indexers) ReposSubset(ctx context.Context, hostname string, indexed map[uint32]*zoekt.MinimalRepoListEntry, repos []types.MinimalRepo) ([]types.MinimalRepo, error) {
 	if !c.Enabled() {
 		return repos, nil
 	}
@@ -56,7 +57,7 @@ func (c *Indexers) ReposSubset(ctx context.Context, hostname string, indexed map
 	// it should drop. We will only drop them if the assigned endpoint has
 	// indexed it. This is to prevent dropping a computed index until
 	// rebalancing is finished.
-	other := map[string][]types.RepoName{}
+	other := map[string][]types.MinimalRepo{}
 
 	subset := repos[:0]
 	for _, r := range repos {

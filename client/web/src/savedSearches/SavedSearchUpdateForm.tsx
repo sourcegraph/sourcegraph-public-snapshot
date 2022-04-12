@@ -1,4 +1,5 @@
 import * as React from 'react'
+
 import { RouteComponentProps } from 'react-router'
 import { concat, of, Subject, Subscription } from 'rxjs'
 import {
@@ -13,10 +14,10 @@ import {
     tap,
 } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { Alert, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { NamespaceProps } from '../namespaces'
@@ -113,7 +114,7 @@ export class SavedSearchUpdateForm extends React.Component<Props, State> {
 
         return (
             <div>
-                {this.state.savedSearchOrError === LOADING && <LoadingSpinner className="icon-inline" />}
+                {this.state.savedSearchOrError === LOADING && <LoadingSpinner />}
                 {this.props.authenticatedUser && savedSearch && (
                     <SavedSearchForm
                         {...this.props}
@@ -135,7 +136,9 @@ export class SavedSearchUpdateForm extends React.Component<Props, State> {
                     />
                 )}
                 {this.state.updatedOrError === true && (
-                    <p className="alert alert-success user-settings-profile-page__alert">Updated!</p>
+                    <Alert variant="success" as="p">
+                        Updated!
+                    </Alert>
                 )}
             </div>
         )

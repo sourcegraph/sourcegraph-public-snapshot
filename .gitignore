@@ -1,11 +1,12 @@
-/vagrant_ansible_inventory_default
-.vagrant
+# Temporary directory for whatever you want
+.tmp/
 
 # Vim
 *.swp
 
 # JetBrains/IntelliJ
 .idea
+.graphqlconfig
 
 # Emacs
 *~
@@ -19,6 +20,9 @@
 *.o
 *.a
 *.so
+
+# C
+*.dylib
 
 # Mac OS X
 .DS_Store
@@ -64,6 +68,10 @@ yarn-error.log
 /ui/assets/extension
 /ui/.tmp
 /ui/assets/scripts/
+/ui/assets/styles/
+/ui/assets/*.br
+/ui/assets/*.gz
+
 *.json.actual
 
 eb-bundle.zip
@@ -99,8 +107,8 @@ package-lock.json
 .nyc_output/
 coverage/
 out/
-client/shared/src/graphql/schema.ts
-client/web/src/schema/*
+client/shared/src/schema.ts
+client/shared/src/schema/*
 puppeteer/
 package-lock.json
 /dist
@@ -109,13 +117,13 @@ sourcegraph-webapp-*.tgz
 graphql-operations.ts
 *.module.scss.d.ts
 dll-bundle
+elm-stuff
 
 # Extensions
 /client/extension-api/dist
 
-# Symbols service: PCRE extension to sqlite3
-libsqlite3-pcre.dylib
-libsqlite3-pcre.so
+# Compute Component
+/client/web/src/notebooks/blocks/compute/component/public/dist
 
 # Direnv
 .envrc
@@ -148,3 +156,17 @@ sg.config.overwrite.yaml
 # Generated sitemaps are not committed, they're hosted in a GCS bucket.
 sitemap/
 sitemap_query.db
+
+# Lighthouse CI reports
+.lighthouseci/
+
+# Trivy security vulnerability reports
+*-security-report.html
+
+# CI annotations
+.annotate
+.annotate.lock
+annotations/
+
+# Buildkite analytics files
+test-reports/

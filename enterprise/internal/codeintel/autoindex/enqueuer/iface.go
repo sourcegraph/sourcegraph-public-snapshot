@@ -2,7 +2,8 @@ package enqueuer
 
 import (
 	"context"
-	"regexp"
+
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -21,7 +22,6 @@ type DBStore interface {
 	DirtyRepositories(ctx context.Context) (map[int]int, error)
 	IsQueued(ctx context.Context, repositoryID int, commit string) (bool, error)
 	InsertIndexes(ctx context.Context, index []dbstore.Index) ([]dbstore.Index, error)
-	GetRepositoriesWithIndexConfiguration(ctx context.Context) ([]int, error)
 	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (dbstore.IndexConfiguration, bool, error)
 }
 
@@ -45,6 +45,7 @@ type RepoUpdaterClient interface {
 
 type GitserverClient interface {
 	Head(ctx context.Context, repositoryID int) (string, bool, error)
+	CommitExists(ctx context.Context, repositoryID int, commit string) (bool, error)
 	ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error)
 	FileExists(ctx context.Context, repositoryID int, commit, file string) (bool, error)
 	RawContents(ctx context.Context, repositoryID int, commit, file string) ([]byte, error)

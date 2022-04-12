@@ -35,6 +35,7 @@ export type MetaToken =
     | MetaRegexp
     | MetaStructural
     | MetaField
+    | MetaFilterSeparator
     | MetaRepoRevisionSeparator
     | MetaRevision
     | MetaContextPrefix
@@ -101,6 +102,13 @@ export enum MetaStructuralKind {
  */
 export interface MetaField extends BaseMetaToken {
     type: 'field'
+}
+
+/**
+ * The ':' part of a filter like "repo:foo"
+ */
+export interface MetaFilterSeparator extends BaseMetaToken {
+    type: 'metaFilterSeparator'
 }
 
 /**
@@ -936,6 +944,14 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
                 value: body,
                 kind: PatternKind.Regexp,
             })
+        case 'dependencies':
+        case 'deps':
+            return mapRegexpMetaSucceed({
+                type: 'pattern',
+                range: { start: offset, end: body.length },
+                value: body,
+                kind: PatternKind.Regexp,
+            })
     }
     decorated.push({
         type: 'literal',
@@ -1009,8 +1025,13 @@ export const decorate = (token: Token): DecoratedToken[] => {
         case 'filter': {
             decorated.push({
                 type: 'field',
-                range: token.field.range,
+                range: { start: token.field.range.start, end: token.field.range.end - 1 },
                 value: token.field.value,
+            })
+            decorated.push({
+                type: 'metaFilterSeparator',
+                range: { start: token.field.range.end, end: token.field.range.end + 1 },
+                value: ':',
             })
             const predicate = scanPredicate(token.field.value, token.value?.value || '')
             if (predicate && token.value) {
@@ -1056,6 +1077,7 @@ const decoratedToMonaco = (token: DecoratedToken): Monaco.languages.IToken => {
         case 'comment':
         case 'openingParen':
         case 'closingParen':
+        case 'metaFilterSeparator':
         case 'metaRepoRevisionSeparator':
         case 'metaContextPrefix':
             return {

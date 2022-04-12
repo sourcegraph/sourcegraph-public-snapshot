@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
@@ -22,11 +21,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
 	searchDoer, _ = httpcli.NewInternalClientFactory("search").Doer()
-	MockSearch    func(ctx context.Context, repo api.RepoName, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatches func([]*protocol.FileMatch)) (limitHit bool, err error)
+	MockSearch    func(ctx context.Context, repo api.RepoName, repoID api.RepoID, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatches func([]*protocol.FileMatch)) (limitHit bool, err error)
 )
 
 // Search searches repo@commit with p.
@@ -34,6 +34,7 @@ func Search(
 	ctx context.Context,
 	searcherURLs *endpoint.Map,
 	repo api.RepoName,
+	repoID api.RepoID,
 	branch string,
 	commit api.CommitID,
 	indexed bool,
@@ -43,7 +44,7 @@ func Search(
 	onMatches func([]*protocol.FileMatch),
 ) (limitHit bool, err error) {
 	if MockSearch != nil {
-		return MockSearch(ctx, repo, commit, p, fetchTimeout, onMatches)
+		return MockSearch(ctx, repo, repoID, commit, p, fetchTimeout, onMatches)
 	}
 
 	tr, ctx := trace.New(ctx, "searcher.client", fmt.Sprintf("%s@%s", repo, commit))
@@ -54,6 +55,7 @@ func Search(
 
 	r := protocol.Request{
 		Repo:   repo,
+		RepoID: repoID,
 		Commit: commit,
 		Branch: branch,
 		PatternInfo: protocol.PatternInfo{
@@ -79,13 +81,6 @@ func Search(
 		IndexerEndpoints: indexerEndpoints,
 	}
 
-	if deadline, ok := ctx.Deadline(); ok {
-		t, err := deadline.MarshalText()
-		if err != nil {
-			return false, err
-		}
-		r.Deadline = string(t)
-	}
 	body, err := json.Marshal(r)
 	if err != nil {
 		return false, err
@@ -180,9 +175,6 @@ func textSearchStream(ctx context.Context, url string, body []byte, cb func([]*p
 	}
 	if ed.Error != "" {
 		return false, errors.New(ed.Error)
-	}
-	if ed.DeadlineHit {
-		err = context.DeadlineExceeded
 	}
 	return ed.LimitHit, err
 }

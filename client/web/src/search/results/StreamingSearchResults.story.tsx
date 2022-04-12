@@ -1,10 +1,11 @@
+import React from 'react'
+
 import { storiesOf } from '@storybook/react'
 import { createBrowserHistory } from 'history'
-import React from 'react'
-import { NEVER, of } from 'rxjs'
+import { EMPTY, NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { SearchQueryStateStoreProvider } from '@sourcegraph/search'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -12,11 +13,12 @@ import {
     HIGHLIGHTED_FILE_LINES_LONG,
     MULTIPLE_SEARCH_RESULT,
     REPO_MATCH_RESULTS_WITH_METADATA,
-} from '@sourcegraph/shared/src/util/searchTestHelpers'
+} from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'
 import { EMPTY_FEATURE_FLAGS } from '../../featureFlags/featureFlags'
+import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
 
 import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
 
@@ -35,13 +37,6 @@ const streamingSearchResult: AggregateStreamingSearchResults = {
 }
 
 const defaultProps: StreamingSearchResultsProps = {
-    parsedSearchQuery: 'r:golang/oauth2 test f:travis',
-    caseSensitive: false,
-    patternType: SearchPatternType.literal,
-    versionContext: undefined,
-    availableVersionContexts: [],
-    previousVersionContext: null,
-
     extensionsController,
     telemetryService: NOOP_TELEMETRY_SERVICE,
 
@@ -55,30 +50,48 @@ const defaultProps: StreamingSearchResultsProps = {
     } as AuthenticatedUser,
     isLightTheme: true,
 
-    isSourcegraphDotCom: false,
-
     settingsCascade: {
         subjects: null,
         final: null,
     },
-    platformContext: { forceUpdateTooltip: sinon.spy(), settings: NEVER },
+    platformContext: { forceUpdateTooltip: sinon.spy(), settings: NEVER, requestGraphQL: () => EMPTY },
 
     streamSearch: () => of(streamingSearchResult),
 
     fetchHighlightedFileLineRanges: () => of(HIGHLIGHTED_FILE_LINES_LONG),
-    enableCodeMonitoring: true,
     featureFlags: EMPTY_FEATURE_FLAGS,
-    extensionViews: () => null,
+    isSourcegraphDotCom: false,
+    searchContextsEnabled: true,
 }
 
-const { add } = storiesOf('web/search/results/StreamingSearchResults', module).addParameters({
-    chromatic: { viewports: [577, 769, 993] },
-})
+const { add } = storiesOf('web/search/results/StreamingSearchResults', module)
+    .addParameters({
+        chromatic: { viewports: [577, 769, 993], disableSnapshot: false },
+    })
+    .addDecorator(Story => {
+        useExperimentalFeatures.setState({ codeMonitoring: true, showSearchContext: true })
+        useNavbarQueryState.setState({ searchQueryFromURL: 'r:golang/oauth2 test f:travis' })
+        return <Story />
+    })
 
-add('standard render', () => <WebStory>{() => <StreamingSearchResults {...defaultProps} />}</WebStory>)
+add('standard render', () => (
+    <WebStory>
+        {() => (
+            <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
+                <StreamingSearchResults {...defaultProps} />
+            </SearchQueryStateStoreProvider>
+        )}
+    </WebStory>
+))
 
 add('unauthenticated user standard render', () => (
-    <WebStory>{() => <StreamingSearchResults {...defaultProps} authenticatedUser={null} />}</WebStory>
+    <WebStory>
+        {() => (
+            <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
+                <StreamingSearchResults {...defaultProps} authenticatedUser={null} />
+            </SearchQueryStateStoreProvider>
+        )}
+    </WebStory>
 ))
 
 add('no results', () => {
@@ -93,38 +106,42 @@ add('no results', () => {
         },
     }
 
-    return <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />}</WebStory>
+    return (
+        <WebStory>
+            {() => (
+                <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
+                    <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />
+                </SearchQueryStateStoreProvider>
+            )}
+        </WebStory>
+    )
 })
 
-add('diffs tab selected, code monitoring enabled, user logged in', () => (
-    <WebStory>
-        {() => (
-            <StreamingSearchResults
-                {...defaultProps}
-                parsedSearchQuery="r:golang/oauth2 test f:travis type:diff"
-                enableCodeMonitoring={true}
-            />
-        )}
-    </WebStory>
-))
+add('search with quotes', () => {
+    useNavbarQueryState.setState({ searchQueryFromURL: 'r:golang/oauth2 test f:travis "test"' })
+    return (
+        <WebStory>
+            {() => (
+                <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
+                    <StreamingSearchResults {...defaultProps} />
+                </SearchQueryStateStoreProvider>
+            )}
+        </WebStory>
+    )
+})
 
-add('code tab selected, code monitoring enabled, user logged in', () => (
-    <WebStory>
-        {() => (
-            <StreamingSearchResults
-                {...defaultProps}
-                parsedSearchQuery="r:golang/oauth2 test f:travis"
-                enableCodeMonitoring={true}
-            />
-        )}
-    </WebStory>
-))
-
-add('search with quotes', () => (
-    <WebStory>
-        {() => <StreamingSearchResults {...defaultProps} parsedSearchQuery='r:golang/oauth2 test f:travis "test"' />}
-    </WebStory>
-))
+add('did you mean', () => {
+    useNavbarQueryState.setState({ searchQueryFromURL: 'javascript test' })
+    return (
+        <WebStory>
+            {() => (
+                <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
+                    <StreamingSearchResults {...defaultProps} />
+                </SearchQueryStateStoreProvider>
+            )}
+        </WebStory>
+    )
+})
 
 add('progress with warnings', () => {
     const result: AggregateStreamingSearchResults = {
@@ -169,33 +186,25 @@ add('progress with warnings', () => {
         },
     }
 
-    return <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />}</WebStory>
-})
-
-add('show version context warning', () => {
-    const history = createBrowserHistory()
-    history.replace({ search: 'q=r:golang/oauth2+test+f:travis&c=test' })
-
     return (
         <WebStory>
             {() => (
-                <StreamingSearchResults
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    previousVersionContext={null}
-                    availableVersionContexts={[
-                        { name: 'test', revisions: [] },
-                        { name: 'other', revisions: [] },
-                    ]}
-                />
+                <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
+                    <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />
+                </SearchQueryStateStoreProvider>
             )}
         </WebStory>
     )
 })
 
 add('loading with no results', () => (
-    <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => NEVER} />}</WebStory>
+    <WebStory>
+        {() => (
+            <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
+                <StreamingSearchResults {...defaultProps} streamSearch={() => NEVER} />
+            </SearchQueryStateStoreProvider>
+        )}
+    </WebStory>
 ))
 
 add('loading with some results', () => {
@@ -210,7 +219,15 @@ add('loading with some results', () => {
         },
     }
 
-    return <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />}</WebStory>
+    return (
+        <WebStory>
+            {() => (
+                <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
+                    <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />
+                </SearchQueryStateStoreProvider>
+            )}
+        </WebStory>
+    )
 })
 
 add('server-side alert', () => {
@@ -230,7 +247,15 @@ add('server-side alert', () => {
         },
     }
 
-    return <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />}</WebStory>
+    return (
+        <WebStory>
+            {() => (
+                <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
+                    <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />
+                </SearchQueryStateStoreProvider>
+            )}
+        </WebStory>
+    )
 })
 
 add('server-side alert with no results', () => {
@@ -250,7 +275,15 @@ add('server-side alert with no results', () => {
         },
     }
 
-    return <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />}</WebStory>
+    return (
+        <WebStory>
+            {() => (
+                <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
+                    <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />
+                </SearchQueryStateStoreProvider>
+            )}
+        </WebStory>
+    )
 })
 
 add('error with no results', () => {
@@ -266,7 +299,15 @@ add('error with no results', () => {
         error: new Error('test error'),
     }
 
-    return <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />}</WebStory>
+    return (
+        <WebStory>
+            {() => (
+                <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
+                    <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />
+                </SearchQueryStateStoreProvider>
+            )}
+        </WebStory>
+    )
 })
 
 add('error with some results', () => {
@@ -282,7 +323,15 @@ add('error with some results', () => {
         error: new Error('test error'),
     }
 
-    return <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />}</WebStory>
+    return (
+        <WebStory>
+            {() => (
+                <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
+                    <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />
+                </SearchQueryStateStoreProvider>
+            )}
+        </WebStory>
+    )
 })
 
 add('limit hit with some results', () => {
@@ -304,25 +353,12 @@ add('limit hit with some results', () => {
         },
     }
 
-    return <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />}</WebStory>
-})
-
-add('results with signup CTA', () => {
-    const result: AggregateStreamingSearchResults = {
-        state: 'complete',
-        results: MULTIPLE_SEARCH_RESULT.results,
-        filters: MULTIPLE_SEARCH_RESULT.filters,
-        progress: {
-            durationMs: 500,
-            matchCount: MULTIPLE_SEARCH_RESULT.progress.matchCount,
-            skipped: [],
-        },
-    }
-
     return (
         <WebStory>
             {() => (
-                <StreamingSearchResults {...defaultProps} authenticatedUser={null} streamSearch={() => of(result)} />
+                <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
+                    <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />
+                </SearchQueryStateStoreProvider>
             )}
         </WebStory>
     )

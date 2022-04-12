@@ -1,5 +1,6 @@
-import { storiesOf } from '@storybook/react'
 import React from 'react'
+
+import { storiesOf } from '@storybook/react'
 
 import { WebStory } from '../components/WebStory'
 
@@ -22,6 +23,7 @@ add(
                     isSourcegraphDotCom={false}
                     batchChangesEnabled={false}
                     batchChangesExecutionEnabled={false}
+                    batchChangesWebhookLogsEnabled={false}
                 />
             )}
         </WebStory>

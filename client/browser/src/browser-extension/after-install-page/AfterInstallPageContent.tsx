@@ -1,3 +1,6 @@
+import React, { VideoHTMLAttributes } from 'react'
+
+import classNames from 'classnames'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import BookOpenPageVariantIcon from 'mdi-react/BookOpenPageVariantIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
@@ -5,13 +8,15 @@ import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import LockIcon from 'mdi-react/LockIcon'
-import React, { VideoHTMLAttributes } from 'react'
 
 import { SourcegraphLogo } from '@sourcegraph/branded/src/components/SourcegraphLogo'
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Link, Icon } from '@sourcegraph/wildcard'
 
 import { getPlatformName } from '../../shared/util/context'
+
+import styles from './AfterInstallPageContent.module.scss'
 
 const Video: React.FunctionComponent<
     { name: string } & Pick<VideoHTMLAttributes<HTMLVideoElement>, 'width' | 'height'> & ThemeProps
@@ -48,14 +53,14 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
     const showSearchShortcut = !isSafari
 
     return (
-        <div className="after-install-page-content">
+        <div className="after-install-page-content" data-testid="after-install-page-content">
             <div className="d-flex w-100 p-3 justify-content-between align-items-center">
-                <a href="https://sourcegraph.com/search" target="_blank" rel="noopener">
-                    <SourcegraphLogo className="after-install-page-content__sourcegraph-logo" />
-                </a>
-                <a href="https://docs.sourcegraph.com/integration/browser_extension" target="_blank" rel="noopener">
-                    Browser extension docs <ExternalLinkIcon className="icon-inline" />
-                </a>
+                <Link to="https://sourcegraph.com/search" target="_blank" rel="noopener">
+                    <SourcegraphLogo className={styles.sourcegraphLogo} />
+                </Link>
+                <Link to="https://docs.sourcegraph.com/integration/browser_extension" target="_blank" rel="noopener">
+                    Browser extension docs <Icon as={ExternalLinkIcon} />
+                </Link>
             </div>
 
             <div className="container mt-3">
@@ -96,32 +101,26 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                         <div className="col-md-6 d-flex flex-column">
                             <h2 className="mb-4">Make it work on your codehost</h2>
                             <div className="bg-2 rounded p-3 mb-3 d-flex flex-column justify-content-center">
-                                <h3 className="mb-3 after-install-page-content__code-host-titles">
-                                    <GithubIcon className="icon-inline after-install-page-content__code-host-logo" />{' '}
-                                    github.com
+                                <h3 className={classNames('mb-3', styles.codeHostTitles)}>
+                                    <Icon className={styles.codeHostLogo} as={GithubIcon} /> github.com
                                 </h3>
                                 <p className="m-0">
-                                    <CheckIcon className="icon-inline" /> No action required.Your extension works here
-                                    by default.
+                                    <Icon as={CheckIcon} /> No action required.Your extension works here by default.
                                 </p>
                             </div>
                             <div className="bg-2 rounded p-3 d-flex flex-column justify-content-center">
-                                <h3 className="d-flex flex-wrap after-install-page-content__code-host-titles">
+                                <h3 className={classNames('d-flex flex-wrap', styles.codeHostTitles)}>
                                     <div className="mr-5 mb-3">
-                                        <GithubIcon className="icon-inline after-install-page-content__code-host-logo" />{' '}
-                                        GitHub Enterprise
+                                        <Icon className={styles.codeHostLogo} as={GithubIcon} /> GitHub Enterprise
                                     </div>
                                     <div className="mr-5 mb-3">
-                                        <GitlabIcon className="icon-inline after-install-page-content__code-host-logo" />{' '}
-                                        GitLab
+                                        <Icon className={styles.codeHostLogo} as={GitlabIcon} /> GitLab
                                     </div>
                                     <div className="mr-5 mb-3">
-                                        <BitbucketIcon className="icon-inline after-install-page-content__code-host-logo" />{' '}
-                                        Bitbucket Server
+                                        <Icon className={styles.codeHostLogo} as={BitbucketIcon} /> Bitbucket Server
                                     </div>
                                     <div className="mr-5 mb-3">
-                                        <PhabricatorIcon className="icon-inline after-install-page-content__code-host-logo" />{' '}
-                                        Phabricator
+                                        <Icon className={styles.codeHostLogo} as={PhabricatorIcon} /> Phabricator
                                     </div>
                                 </h3>
                                 <p>Your extension needs explicit permissions to your code host:</p>
@@ -159,7 +158,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                             <p>By default, the browser extension works only for public code.</p>
                             <div className="d-flex align-items-center">
                                 <div className="bg-3 rounded-circle p-2">
-                                    <LockIcon className="icon-inline" />
+                                    <Icon as={LockIcon} />
                                 </div>
                                 <p className="m-0 ml-3">
                                     To use the browser extension with your private repositories, you need to set up a{' '}
@@ -171,20 +170,20 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                                 <ol className="m-0 d-flex flex-column justify-content-around">
                                     <li>
                                         <strong>Install Sourcegraph</strong> (
-                                        <a
-                                            href="https://docs.sourcegraph.com/admin/install"
+                                        <Link
+                                            to="https://docs.sourcegraph.com/admin/install"
                                             target="_blank"
                                             rel="noopener"
                                         >
                                             visit our docs for instructions
-                                        </a>
+                                        </Link>
                                         ).Skip this step if you already have a private Sourcegraph instance.
                                     </li>
                                     <li>
                                         Click the Sourcegraph extension icon in the browser toolbar to{' '}
-                                        <a href="./options.html" rel="noopener" target="_blank">
+                                        <Link to="./options.html" rel="noopener" target="_blank">
                                             open the settings page
-                                        </a>
+                                        </Link>
                                         .
                                     </li>
                                     <li>
@@ -207,17 +206,17 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                     <h2 className="mb-4">Additional resources</h2>
                     <div className="d-flex w-100 align-items-center">
                         <div className="bg-3 rounded-circle p-2">
-                            <BookOpenPageVariantIcon className="icon-inline" />
+                            <Icon as={BookOpenPageVariantIcon} />
                         </div>
                         <p className="m-0 ml-3">
                             Read the{' '}
-                            <a
-                                href="https://docs.sourcegraph.com/integration/browser_extension"
+                            <Link
+                                to="https://docs.sourcegraph.com/integration/browser_extension"
                                 rel="noopener"
                                 target="_blank"
                             >
                                 Sourcegraph docs
-                            </a>{' '}
+                            </Link>{' '}
                             to learn more about how we respect your privacy, troubleshooting and extension features.
                         </p>
                     </div>

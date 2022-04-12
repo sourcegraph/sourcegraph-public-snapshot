@@ -10,16 +10,18 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -29,6 +31,7 @@ var (
 	coursierCacheDir   string
 	observationContext *observation.Context
 	operations         *Operations
+	invocTimeout, _    = time.ParseDuration(env.Get("SRC_COURSIER_TIMEOUT", "2m", "Time limit per Coursier invocation, which is used to resolve JVM/Java dependencies."))
 )
 
 func init() {
@@ -37,7 +40,7 @@ func init() {
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
-	operations = NewOperationsFromMetrics(observationContext)
+	operations = NewOperations(observationContext)
 
 	// Should only be set for gitserver for persistence, repo-updater will use ephemeral storage.
 	// repo-updater only performs existence checks which doesnt involve downloading any JARs (except for JDK),
@@ -50,9 +53,9 @@ func init() {
 	}
 }
 
-func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.MavenDependency) (_ []string, err error) {
+func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenDependency) (sourceCodeJarPath string, err error) {
 	ctx, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("dependency", dependency.CoursierSyntax()),
+		otlog.String("dependency", dependency.PackageManagerSyntax()),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -64,7 +67,7 @@ func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dep
 			dependency.Version,
 		)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 		for _, outputPath := range output {
 			for _, srcPath := range []string{
@@ -73,13 +76,13 @@ func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dep
 			} {
 				stat, err := os.Stat(srcPath)
 				if !os.IsNotExist(err) && stat.Mode().IsRegular() {
-					return []string{srcPath}, nil
+					return srcPath, nil
 				}
 			}
 		}
-		return nil, errors.Errorf("failed to find src.zip for JVM dependency %s", dependency)
+		return "", errors.Errorf("failed to find src.zip for JVM dependency %s", dependency)
 	}
-	return runCoursierCommand(
+	paths, err := runCoursierCommand(
 		ctx,
 		config,
 		// NOTE: make sure to update the method `coursierScript` in
@@ -88,16 +91,35 @@ func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dep
 		// arguments appears at a specific index.
 		"fetch",
 		"--quiet", "--quiet",
-		"--intransitive", dependency.CoursierSyntax(),
+		"--intransitive", dependency.PackageManagerSyntax(),
 		"--classifier", "sources",
 	)
+	if err != nil {
+		return "", err
+	}
+	if len(paths) == 0 || (len(paths) == 1 && paths[0] == "") {
+		return "", &ErrNoSources{Dependency: dependency}
+	}
+	if len(paths) > 1 {
+		return "", errors.Errorf("expected single JAR path but found multiple: %v", paths)
+	}
+	return paths[0], nil
 }
 
-func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.MavenDependency) (_ []string, err error) {
+// ErrNoSources indicates that a dependency has no sources
+type ErrNoSources struct {
+	Dependency *reposource.MavenDependency
+}
+
+func (e ErrNoSources) Error() string {
+	return fmt.Sprintf("no sources for dependency %v", e.Dependency)
+}
+
+func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenDependency) (byteCodeJarPath string, err error) {
 	ctx, endObservation := operations.fetchByteCode.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return runCoursierCommand(
+	paths, err := runCoursierCommand(
 		ctx,
 		config,
 		// NOTE: make sure to update the method `coursierScript` in
@@ -106,34 +128,45 @@ func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, de
 		// arguments appears at a specific index.
 		"fetch",
 		"--quiet", "--quiet",
-		"--intransitive", dependency.CoursierSyntax(),
+		"--intransitive", dependency.PackageManagerSyntax(),
 	)
+	if err != nil {
+		return "", err
+	}
+	if len(paths) == 0 || (paths[0] == "") {
+		return "", errors.Errorf("no bytecode jar for dependency %s", dependency)
+	}
+	if len(paths) > 1 {
+		return "", errors.Errorf("expected single JAR path but found multiple: %v", paths)
+	}
+	return paths[0], nil
 }
 
-func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.MavenDependency) bool {
-	var err error
+func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenDependency) (exists bool, err error) {
 	ctx, endObservation := operations.exists.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("dependency", dependency.CoursierSyntax()),
+		otlog.String("dependency", dependency.PackageManagerSyntax()),
 	}})
 	defer endObservation(1, observation.Args{})
 
 	if dependency.IsJDK() {
-		var sources []string
-		sources, err = FetchSources(ctx, config, dependency)
-		return err == nil && len(sources) == 1
+		_, err = FetchSources(ctx, config, dependency)
+		return err == nil, err
 	}
 	_, err = runCoursierCommand(
 		ctx,
 		config,
 		"resolve",
 		"--quiet", "--quiet",
-		"--intransitive", dependency.CoursierSyntax(),
+		"--intransitive", dependency.PackageManagerSyntax(),
 	)
-	return err == nil
+	return err == nil, err
 }
 
-func runCoursierCommand(ctx context.Context, config *schema.JVMPackagesConnection, args ...string) (_ []string, err error) {
-	ctx, traceLog, endObservation := operations.runCommand.WithAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
+func runCoursierCommand(ctx context.Context, config *schema.JVMPackagesConnection, args ...string) (stdoutLines []string, err error) {
+	ctx, cancel := context.WithTimeout(ctx, invocTimeout)
+	defer cancel()
+
+	ctx, trace, endObservation := operations.runCommand.WithAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("repositories", strings.Join(config.Maven.Repositories, "|")),
 		otlog.String("args", strings.Join(args, ", ")),
 	}})
@@ -159,7 +192,7 @@ func runCoursierCommand(ctx context.Context, config *schema.JVMPackagesConnectio
 	if err := cmd.Run(); err != nil {
 		return nil, errors.Wrapf(err, "coursier command %q failed with stderr %q and stdout %q", cmd, stderr, &stdout)
 	}
-	traceLog(otlog.String("stdout", stdout.String()), otlog.String("stderr", stderr.String()))
+	trace.Log(otlog.String("stdout", stdout.String()), otlog.String("stderr", stderr.String()))
 
 	if stdout.String() == "" {
 		return []string{}, nil

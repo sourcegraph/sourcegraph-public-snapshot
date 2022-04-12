@@ -58,12 +58,12 @@ func TestDiff(t *testing.T) {
 		{
 			name: "experimental_features",
 			before: &Unified{SiteConfiguration: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
-				AndOrQuery: "enabled",
+				ApidocsSearchIndexing: "enabled",
 			}}},
 			after: &Unified{SiteConfiguration: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
-				AndOrQuery: "disabled",
+				ApidocsSearchIndexing: "disabled",
 			}}},
-			want: []string{"experimentalFeatures::andOrQuery"},
+			want: []string{"experimentalFeatures::apidocs.search.indexing"},
 		},
 		{
 			name:   "experimental_features_noop",

@@ -10,7 +10,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/gomodule/oauth1/oauth"
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
@@ -24,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestUserCredential_Authenticator(t *testing.T) {
@@ -159,7 +159,7 @@ func TestUserCredential_SetAuthenticator(t *testing.T) {
 
 func TestUserCredentials_CreateUpdate(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	// Versions of Go before 1.14.x (where 3 < x < 11) cannot diff *big.Int
@@ -247,7 +247,7 @@ func TestUserCredentials_CreateUpdate(t *testing.T) {
 
 func TestUserCredentials_Delete(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	t.Run("nonextant", func(t *testing.T) {
@@ -292,7 +292,7 @@ func TestUserCredentials_Delete(t *testing.T) {
 
 func TestUserCredentials_GetByID(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	t.Run("nonextant", func(t *testing.T) {
@@ -339,7 +339,7 @@ func TestUserCredentials_GetByID(t *testing.T) {
 
 func TestUserCredentials_GetByScope(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	scope := UserCredentialScope{
@@ -386,7 +386,7 @@ func TestUserCredentials_GetByScope(t *testing.T) {
 
 func TestUserCredentials_List(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	githubScope := UserCredentialScope{
@@ -524,7 +524,7 @@ func TestUserCredentials_List(t *testing.T) {
 
 func TestUserCredentials_Invalid(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	t.Run("marshal", func(t *testing.T) {

@@ -1,11 +1,11 @@
-import { ComboboxList, ComboboxOption, ComboboxOptionText } from '@reach/combobox'
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import React from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { ComboboxList, ComboboxOption, ComboboxOptionText } from '@reach/combobox'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
-import { ErrorAlert } from '../../../../../../../components/alerts'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { isErrorLike } from '@sourcegraph/common'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import styles from './SuggestionPanel.module.scss'
 
@@ -28,7 +28,7 @@ export const SuggestionsPanel: React.FunctionComponent<SuggestionsPanelProps> = 
     if (suggestions === undefined) {
         return (
             <div className={styles.loadingPanel}>
-                <LoadingSpinner />
+                <LoadingSpinner inline={false} />
             </div>
         )
     }

@@ -1,15 +1,16 @@
-import classNames from 'classnames'
-import * as H from 'history'
 import * as React from 'react'
 
+import classNames from 'classnames'
+import * as H from 'history'
+
+import { ContributableMenu } from '@sourcegraph/client-api'
+import { ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { isHTTPAuthError } from '@sourcegraph/http-client'
 import { ActionNavItemsClassProps, ActionsNavItems } from '@sourcegraph/shared/src/actions/ActionsNavItems'
 import { ContributionScope } from '@sourcegraph/shared/src/api/extension/api/context/context'
-import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
-import { isHTTPAuthError } from '@sourcegraph/shared/src/backend/fetch'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { DiffOrBlobInfo, FileInfoWithContent } from '../code-hosts/shared/codeHost'
 import { SignInButton } from '../code-hosts/shared/SignInButton'
@@ -18,8 +19,11 @@ import { defaultRevisionToCommitID } from '../code-hosts/shared/util/fileInfo'
 import { OpenDiffOnSourcegraph } from './OpenDiffOnSourcegraph'
 import { OpenOnSourcegraph } from './OpenOnSourcegraph'
 
+import styles from './CodeViewToolbar.module.scss'
+
 export interface ButtonProps {
-    className?: string
+    listItemClass?: string
+    actionItemClass?: string
 }
 
 export interface CodeViewToolbarClassProps extends ActionNavItemsClassProps {
@@ -46,6 +50,9 @@ export interface CodeViewToolbarProps
      */
     fileInfoOrError: DiffOrBlobInfo<FileInfoWithContent> | ErrorLike
 
+    /**
+     * Code-view specific className overrides.
+     */
     buttonProps?: ButtonProps
     onSignInClose: () => void
     location: H.Location
@@ -53,11 +60,12 @@ export interface CodeViewToolbarProps
 }
 
 export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = props => (
-    <ul className={classNames('code-view-toolbar', props.className)}>
+    <ul className={classNames(styles.codeViewToolbar, props.className)} data-testid="code-view-toolbar">
         {!props.hideActions && (
             <ActionsNavItems
                 {...props}
-                listItemClass={classNames('code-view-toolbar__item', props.listItemClass)}
+                listItemClass={classNames(styles.item, props.buttonProps?.listItemClass ?? props.listItemClass)}
+                actionItemClass={classNames(props.buttonProps?.actionItemClass ?? props.actionItemClass)}
                 menu={ContributableMenu.EditorTitle}
                 extensionsController={props.extensionsController}
                 platformContext={props.platformContext}
@@ -70,18 +78,18 @@ export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = pr
                 <SignInButton
                     sourcegraphURL={props.sourcegraphURL}
                     onSignInClose={props.onSignInClose}
-                    className={props.actionItemClass}
+                    className={classNames(props.buttonProps?.actionItemClass ?? props.actionItemClass)}
                     iconClassName={props.actionItemIconClass}
                 />
             ) : null
         ) : (
             <>
                 {!('blob' in props.fileInfoOrError) && props.fileInfoOrError.head && props.fileInfoOrError.base && (
-                    <li className={classNames('code-view-toolbar__item', props.listItemClass)}>
+                    <li className={classNames(styles.item, props.buttonProps?.listItemClass ?? props.listItemClass)}>
                         <OpenDiffOnSourcegraph
                             ariaLabel="View file diff on Sourcegraph"
                             platformContext={props.platformContext}
-                            className={props.actionItemClass}
+                            className={classNames(props.buttonProps?.actionItemClass ?? props.actionItemClass)}
                             iconClassName={props.actionItemIconClass}
                             openProps={{
                                 sourcegraphURL: props.sourcegraphURL,
@@ -100,10 +108,15 @@ export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = pr
                     // Only show the "View file" button if we were able to fetch the file contents
                     // from the Sourcegraph instance
                     'blob' in props.fileInfoOrError && props.fileInfoOrError.blob.content !== undefined && (
-                        <li className={classNames('code-view-toolbar__item', props.listItemClass)}>
+                        <li
+                            className={classNames(
+                                styles.item,
+                                props.buttonProps?.actionItemClass ?? props.listItemClass
+                            )}
+                        >
                             <OpenOnSourcegraph
                                 ariaLabel="View file on Sourcegraph"
-                                className={props.actionItemClass}
+                                className={classNames(props.buttonProps?.actionItemClass ?? props.actionItemClass)}
                                 iconClassName={props.actionItemIconClass}
                                 openProps={{
                                     sourcegraphURL: props.sourcegraphURL,

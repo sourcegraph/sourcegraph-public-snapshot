@@ -1,12 +1,16 @@
+import React, { useEffect, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { partition } from 'lodash'
 import GithubIcon from 'mdi-react/GithubIcon'
-import React, { useEffect, useState } from 'react'
-import { Link, Redirect } from 'react-router-dom'
+import GitlabIcon from 'mdi-react/GitlabIcon'
+import { Redirect } from 'react-router-dom'
+
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
-import { ErrorAlert } from '../components/alerts'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { SourcegraphContext } from '../jscontext'
@@ -14,9 +18,10 @@ import { eventLogger } from '../tracking/eventLogger'
 
 import { SourcegraphIcon } from './icons'
 import { OrDivider } from './OrDivider'
-import { getReturnTo } from './SignInSignUpCommon'
-import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
+import { getReturnTo, maybeAddPostSignUpRedirect } from './SignInSignUpCommon'
 import { UsernamePasswordSignInForm } from './UsernamePasswordSignInForm'
+
+import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 
 interface SignInPageProps {
     location: H.Location
@@ -45,9 +50,9 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
 
     const body =
         !builtInAuthProvider && thirdPartyAuthProviders.length === 0 ? (
-            <div className="alert alert-info mt-3">
+            <Alert className="mt-3" variant="info">
                 No authentication providers are available. Contact a site administrator for help.
-            </div>
+            </Alert>
         ) : (
             <div className={classNames('mb-4 pb-5', signInSignUpCommonStyles.signinPageContainer)}>
                 {error && <ErrorAlert className="mt-4 mb-0 text-left" error={error} icon={false} />}
@@ -71,19 +76,24 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
                         // here because this list will not be updated during this component's lifetime.
                         /* eslint-disable react/no-array-index-key */
                         <div className="mb-2" key={index}>
-                            <a
-                                href={`${provider.authenticationURL || ''}${
-                                    props.context.sourcegraphDotComMode ? '&redirect=/welcome' : ''
-                                }`}
-                                className="btn btn-secondary btn-block"
+                            <Button
+                                href={maybeAddPostSignUpRedirect(provider.authenticationURL)}
+                                className="btn-block"
+                                variant="secondary"
+                                as="a"
                             >
-                                {provider.displayName === 'GitHub' && (
+                                {provider.serviceType === 'github' && (
                                     <>
-                                        <GithubIcon className="icon-inline" />{' '}
+                                        <Icon as={GithubIcon} />{' '}
+                                    </>
+                                )}
+                                {provider.serviceType === 'gitlab' && (
+                                    <>
+                                        <Icon as={GitlabIcon} />{' '}
                                     </>
                                 )}
                                 Continue with {provider.displayName}
-                            </a>
+                            </Button>
                         </div>
                     ))}
                 </div>

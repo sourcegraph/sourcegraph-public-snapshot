@@ -3,7 +3,7 @@
 # This script is a wrapper around `universal-ctags`.
 #
 # To use your own `universal-ctags` binary instead of this wrapper in your local dev server, use
-# `CTAGS_COMMAND=path/to/ctags dev/start.sh`.
+# `CTAGS_COMMAND=path/to/ctags sg start`.
 
 exec docker run --rm -i \
     -a stdin -a stdout -a stderr \

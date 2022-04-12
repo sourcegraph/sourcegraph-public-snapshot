@@ -1,22 +1,23 @@
 package bitbucketserver
 
 import (
-	"fmt"
-
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // NewAuthzProviders returns the set of Bitbucket Server authz providers derived from the connections.
-// It also returns any validation problems with the config, separating these into "serious problems" and
-// "warnings". "Serious problems" are those that should make Sourcegraph set authz.allowAccessByDefault
+//
+// It also returns any simple validation problems with the config, separating these into "serious problems"
+// and "warnings". "Serious problems" are those that should make Sourcegraph set authz.allowAccessByDefault
 // to false. "Warnings" are all other validation problems.
+//
+// This constructor does not and should not directly check connectivity to external services - if
+// desired, callers should use `(*Provider).ValidateConnection` directly to get warnings related
+// to connection issues.
 func NewAuthzProviders(
 	conns []*types.BitbucketServerConnection,
 ) (ps []authz.Provider, problems []string, warnings []string) {
@@ -31,12 +32,6 @@ func NewAuthzProviders(
 		}
 	}
 
-	for _, p := range ps {
-		for _, problem := range p.Validate() {
-			warnings = append(warnings, fmt.Sprintf("BitbucketServer config for %s was invalid: %s", p.ServiceID(), problem))
-		}
-	}
-
 	return ps, problems, warnings
 }
 
@@ -48,12 +43,12 @@ func newAuthzProvider(
 		return nil, nil
 	}
 
-	errs := new(multierror.Error)
+	var errs error
 
-	cli, err := bitbucketserver.NewClient(c.BitbucketServerConnection, nil)
+	cli, err := bitbucketserver.NewClient(c.URN, c.BitbucketServerConnection, nil)
 	if err != nil {
-		errs = multierror.Append(errs, err)
-		return nil, errs.ErrorOrNil()
+		errs = errors.Append(errs, err)
+		return nil, errs
 	}
 
 	var p authz.Provider
@@ -61,10 +56,10 @@ func newAuthzProvider(
 	case idp.Username != nil:
 		p = NewProvider(cli, c.URN, pluginPerm)
 	default:
-		errs = multierror.Append(errs, errors.Errorf("No identityProvider was specified"))
+		errs = errors.Append(errs, errors.Errorf("No identityProvider was specified"))
 	}
 
-	return p, errs.ErrorOrNil()
+	return p, errs
 }
 
 // ValidateAuthz validates the authorization fields of the given BitbucketServer external

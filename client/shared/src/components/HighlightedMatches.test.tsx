@@ -1,12 +1,13 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
+
+import { render } from '@testing-library/react'
 
 import { fuzzyMatches, HighlightedMatches, Span } from './HighlightedMatches'
 
 describe('Markdown', () => {
     test('render', () => {
-        const component = renderer.create(<HighlightedMatches text="abcabcabc" pattern="aab" />)
-        expect(component.toJSON()).toMatchSnapshot()
+        const component = render(<HighlightedMatches text="abcabcabc" pattern="aab" />)
+        expect(component.asFragment()).toMatchSnapshot()
     })
 })
 

@@ -1,20 +1,18 @@
-import classNames from 'classnames'
-import * as H from 'history'
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
-import { Link } from 'react-router-dom'
+
+import * as H from 'history'
 import { ReactStripeElements } from 'react-stripe-elements'
 import { from, of, throwError, Observable } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Button, LoadingSpinner, useEventObservable, Link } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../components/alerts'
 import { StripeWrapper } from '../../dotcom/billing/StripeWrapper'
 import { ProductPlanFormControl } from '../../dotcom/productPlans/ProductPlanFormControl'
 import {
@@ -103,7 +101,6 @@ const _ProductSubscriptionForm: React.FunctionComponent<Props & ReactStripeEleme
     afterPrimaryButton,
     isLightTheme,
     stripe,
-    history,
 }) => {
     if (!stripe) {
         throw new Error('billing service is not available')
@@ -221,16 +218,19 @@ const _ProductSubscriptionForm: React.FunctionComponent<Props & ReactStripeEleme
                         />
                         {!accountID && (
                             <div className="form-group mt-3">
-                                <Link
+                                <Button
                                     to={`/sign-up?returnTo=${encodeURIComponent(
                                         `/subscriptions/new${productSubscriptionInputForLocationHash(
                                             productSubscriptionInput
                                         )}`
                                     )}`}
-                                    className="btn btn-lg btn-primary w-100 center"
+                                    className="w-100 center"
+                                    variant="primary"
+                                    size="lg"
+                                    as={Link}
                                 >
                                     Create account or sign in to continue
-                                </Link>
+                                </Button>
                                 <small className="form-text text-muted">
                                     A user account on Sourcegraph.com is required to create a subscription so you can
                                     view the license key and invoice.
@@ -248,25 +248,23 @@ const _ProductSubscriptionForm: React.FunctionComponent<Props & ReactStripeEleme
                             isLightTheme={isLightTheme}
                         />
                         <div className="form-group mt-3">
-                            <button
+                            <Button
                                 type="submit"
                                 disabled={disableForm || !accountID}
-                                className={classNames(
-                                    'btn btn-lg',
-                                    disableForm || !accountID ? 'btn-secondary' : 'btn-success',
-                                    'w-100 d-flex align-items-center justify-content-center'
-                                )}
+                                className="w-100 d-flex align-items-center justify-content-center"
+                                variant={disableForm || !accountID ? 'secondary' : 'success'}
+                                size="lg"
                             >
                                 {paymentToken === LOADING || submissionState === LOADING ? (
                                     <>
-                                        <LoadingSpinner className="icon-inline mr-2" /> Processing...
+                                        <LoadingSpinner className="mr-2" /> Processing...
                                     </>
                                 ) : paymentValidity !== PaymentValidity.NoPaymentRequired ? (
                                     primaryButtonText
                                 ) : (
                                     primaryButtonTextNoPaymentRequired
                                 )}
-                            </button>
+                            </Button>
                             {afterPrimaryButton}
                         </div>
                     </div>

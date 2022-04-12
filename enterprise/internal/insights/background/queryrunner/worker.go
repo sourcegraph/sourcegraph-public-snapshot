@@ -6,27 +6,24 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-
-	"github.com/prometheus/client_golang/prometheus"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-
-	"golang.org/x/time/rate"
-
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/prometheus/client_golang/prometheus"
+	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // This file contains all the methods required to:
@@ -84,6 +81,7 @@ func NewWorker(ctx context.Context, workerStore dbworkerstore.Store, insightsSto
 		limiter:         limiter,
 		metadadataStore: store.NewInsightStore(insightsStore.Handle().DB()),
 		seriesCache:     sharedCache,
+		computeSearch:   query.ComputeSearch,
 	}, options)
 }
 
@@ -127,7 +125,7 @@ func CreateDBWorkerStore(s *basestore.Store, observationContext *observation.Con
 		// enterprise/internal/insights/background:newInsightEnqueuer.
 		StalledMaxAge:     60 * time.Second,
 		RetryAfter:        30 * time.Minute,
-		MaxNumRetries:     100,
+		MaxNumRetries:     10,
 		MaxNumResets:      10,
 		OrderByExpression: sqlf.Sprintf("priority, id"),
 	}, observationContext)
@@ -313,6 +311,48 @@ const queryJobsStatusFmtStr = `
 SELECT COUNT(*) FROM insights_query_runner_jobs WHERE series_id=%s AND state=%s
 `
 
+func QueryAllSeriesStatus(ctx context.Context, workerBaseStore *basestore.Store) (_ []types.InsightSeriesStatus, err error) {
+	q := sqlf.Sprintf(queryAllSeriesStatusSql)
+	query, err := workerBaseStore.Query(ctx, q)
+	return scanAllSeriesStatusRows(query, err)
+}
+func scanAllSeriesStatusRows(rows *sql.Rows, queryErr error) (_ []types.InsightSeriesStatus, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	var results []types.InsightSeriesStatus
+	for rows.Next() {
+		var temp types.InsightSeriesStatus
+		if err := rows.Scan(
+			&temp.SeriesId,
+			&temp.Errored,
+			&temp.Processing,
+			&temp.Failed,
+			&temp.Completed,
+			&temp.Queued,
+		); err != nil {
+			return []types.InsightSeriesStatus{}, err
+		}
+		results = append(results, temp)
+	}
+	return results, nil
+}
+
+const queryAllSeriesStatusSql = `
+select
+       series_id,
+       sum(case when state = 'errored' then 1 else 0 end) as errored,
+       sum(case when state = 'processing' then 1 else 0 end) as processing,
+       sum(case when state = 'failed' then 1 else 0 end) as failed,
+       sum(case when state = 'completed' then 1 else 0 end) as completed,
+       sum(case when state = 'queued' then 1 else 0 end) as queued
+from insights_query_runner_jobs
+group by series_id
+order by series_id;
+`
+
 // Job represents a single job for the query runner worker to perform. When enqueued, it is stored
 // in the insights_query_runner_jobs table - then the worker dequeues it by reading it from that
 // table.
@@ -415,4 +455,18 @@ var jobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("num_resets"),
 	sqlf.Sprintf("num_failures"),
 	sqlf.Sprintf("execution_logs"),
+}
+
+// ToQueueJob converts the query execution into a queueable job with it's relevant dependent times.
+func ToQueueJob(q *compression.QueryExecution, seriesID string, query string, cost priority.Cost, jobPriority priority.Priority) *Job {
+	return &Job{
+		SeriesID:        seriesID,
+		SearchQuery:     query,
+		RecordTime:      &q.RecordingTime,
+		Cost:            int(cost),
+		Priority:        int(jobPriority),
+		DependentFrames: q.SharedRecordings,
+		State:           "queued",
+		PersistMode:     string(store.RecordMode),
+	}
 }

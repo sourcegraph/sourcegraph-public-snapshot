@@ -1,18 +1,21 @@
+import React, { useMemo } from 'react'
+
 import * as H from 'history'
 import ArchiveIcon from 'mdi-react/ArchiveIcon'
 import ChartLineVariantIcon from 'mdi-react/ChartLineVariantIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import MonitorStarIcon from 'mdi-react/MonitorStarIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
-import React from 'react'
 
+import { isErrorLike } from '@sourcegraph/common'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Container } from '@sourcegraph/wildcard'
+import { Badge, Container, Icon } from '@sourcegraph/wildcard'
 
-import { BatchChangeFields } from '../../../graphql-operations'
+import { BatchSpecState, BatchChangeFields } from '../../../graphql-operations'
 import {
     BatchChangeTab,
     BatchChangeTabList,
@@ -20,23 +23,27 @@ import {
     BatchChangeTabPanels,
     BatchChangeTabs,
 } from '../BatchChangeTabs'
-import { BatchSpec, BatchSpecDownloadLink, BatchSpecMeta } from '../BatchSpec'
+import { BatchSpec, BatchSpecDownloadButton, BatchSpecMeta } from '../BatchSpec'
+import { BatchChangeBatchSpecList } from '../BatchSpecsPage'
 
 import {
-    queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
-    queryBulkOperations as _queryBulkOperations,
     queryAllChangesetIDs as _queryAllChangesetIDs,
 } from './backend'
 import { BatchChangeBurndownChart } from './BatchChangeBurndownChart'
 import { BulkOperationsTab } from './BulkOperationsTab'
 import { BatchChangeChangesets } from './changesets/BatchChangeChangesets'
 
+import styles from './BatchChangeDetailsTabs.module.scss'
+
 export enum TabName {
     Changesets = 'changesets',
     Chart = 'chart',
+    // Non-SSBC
     Spec = 'spec',
+    // SSBC-only
+    Executions = 'executions',
     Archived = 'archived',
     BulkOperations = 'bulkoperations',
 }
@@ -49,21 +56,20 @@ export interface BatchChangeDetailsProps
         TelemetryProps {
     history: H.History
     location: H.Location
+    /** The name of the tab that should be initially open */
+    initialTab?: TabName
 
-    /** For testing only. */
-    queryChangesets?: typeof _queryChangesets
     /** For testing only. */
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
     /** For testing only. */
     queryChangesetCountsOverTime?: typeof _queryChangesetCountsOverTime
     /** For testing only. */
-    queryBulkOperations?: typeof _queryBulkOperations
-    /** For testing only. */
     queryAllChangesetIDs?: typeof _queryAllChangesetIDs
 }
 
-interface BatchChangeDetailsTabsProps extends BatchChangeDetailsProps {
+interface BatchChangeDetailsTabsProps extends BatchChangeDetailsProps, SettingsCascadeProps<Settings> {
     batchChange: BatchChangeFields
+    refetchBatchChange: () => void
 }
 
 export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsTabsProps> = ({
@@ -73,128 +79,185 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
     isLightTheme,
     location,
     platformContext,
-    queryBulkOperations,
+    settingsCascade,
+    initialTab = TabName.Changesets,
     queryChangesetCountsOverTime,
-    queryChangesets,
     queryExternalChangesetWithFileDiffs,
     queryAllChangesetIDs,
+    refetchBatchChange,
     telemetryService,
-}) => (
-    <BatchChangeTabs history={history} location={location}>
-        <BatchChangeTabList>
-            <BatchChangeTab index={0} name={TabName.Changesets}>
-                <span>
-                    <SourceBranchIcon className="icon-inline text-muted mr-1" />
-                    <span className="text-content" data-tab-content="Changesets">
-                        Changesets
-                    </span>{' '}
-                    <span className="badge badge-pill badge-secondary ml-1">
-                        {batchChange.changesetsStats.total - batchChange.changesetsStats.archived}
+}) => {
+    const isExecutionEnabled =
+        (settingsCascade.final &&
+            !isErrorLike(settingsCascade.final) &&
+            settingsCascade.final.experimentalFeatures?.batchChangesExecution) ??
+        false
+
+    const executingCount = useMemo(
+        () =>
+            batchChange.batchSpecs.nodes.filter(
+                node => node.state === BatchSpecState.PROCESSING || node.state === BatchSpecState.QUEUED
+            ).length,
+        [batchChange.batchSpecs.nodes]
+    )
+
+    return (
+        <BatchChangeTabs history={history} location={location} initialTab={initialTab}>
+            <BatchChangeTabList>
+                <BatchChangeTab index={0} name={TabName.Changesets}>
+                    <span>
+                        <Icon className="text-muted mr-1" as={SourceBranchIcon} />
+                        <span className="text-content" data-tab-content="Changesets">
+                            Changesets
+                        </span>{' '}
+                        <Badge variant="secondary" pill={true} className="ml-1">
+                            {batchChange.changesetsStats.total - batchChange.changesetsStats.archived}
+                        </Badge>
                     </span>
-                </span>
-            </BatchChangeTab>
-            <BatchChangeTab index={1} name={TabName.Chart}>
-                <span>
-                    <ChartLineVariantIcon className="icon-inline text-muted mr-1" />{' '}
-                    <span className="text-content" data-tab-content="Burndown chart">
-                        Burndown chart
+                </BatchChangeTab>
+                <BatchChangeTab index={1} name={TabName.Chart}>
+                    <span>
+                        <Icon className="text-muted mr-1" as={ChartLineVariantIcon} />{' '}
+                        <span className="text-content" data-tab-content="Burndown chart">
+                            Burndown chart
+                        </span>
                     </span>
-                </span>
-            </BatchChangeTab>
-            <BatchChangeTab index={2} name={TabName.Spec}>
-                <span>
-                    <FileDocumentIcon className="icon-inline text-muted mr-1" />{' '}
-                    <span className="text-content" data-tab-content="Spec">
-                        Spec
+                </BatchChangeTab>
+                {!isExecutionEnabled && (
+                    <BatchChangeTab index={2} name={TabName.Spec}>
+                        <span>
+                            <Icon className="text-muted mr-1" as={FileDocumentIcon} />{' '}
+                            <span className="text-content" data-tab-content="Spec">
+                                Spec
+                            </span>
+                        </span>
+                    </BatchChangeTab>
+                )}
+                {isExecutionEnabled && (
+                    <BatchChangeTab index={2} name={TabName.Executions} customPath="/executions">
+                        <span>
+                            <Icon className="text-muted mr-1" as={FileDocumentIcon} />{' '}
+                            <span className="text-content" data-tab-content="Executions">
+                                Executions
+                            </span>{' '}
+                            <Badge
+                                variant={executingCount === 0 ? 'secondary' : 'warning'}
+                                pill={true}
+                                className="ml-1"
+                            >
+                                {executingCount} {batchChange.batchSpecs.pageInfo.hasNextPage && <>+</>}
+                            </Badge>
+                        </span>
+                    </BatchChangeTab>
+                )}
+                <BatchChangeTab index={3} name={TabName.Archived}>
+                    <span>
+                        <Icon className="text-muted mr-1" as={ArchiveIcon} />{' '}
+                        <span className="text-content" data-tab-content="Archived">
+                            Archived
+                        </span>{' '}
+                        <Badge variant="secondary" pill={true} className="ml-1">
+                            {batchChange.changesetsStats.archived}
+                        </Badge>
                     </span>
-                </span>
-            </BatchChangeTab>
-            <BatchChangeTab index={3} name={TabName.Archived}>
-                <span>
-                    <ArchiveIcon className="icon-inline text-muted mr-1" />{' '}
-                    <span className="text-content" data-tab-content="Archived">
-                        Archived
-                    </span>{' '}
-                    <span className="badge badge-pill badge-secondary ml-1">
-                        {batchChange.changesetsStats.archived}
+                </BatchChangeTab>
+                <BatchChangeTab index={4} name={TabName.BulkOperations}>
+                    <span>
+                        <Icon className="text-muted mr-1" as={MonitorStarIcon} />{' '}
+                        <span className="text-content" data-tab-content="Bulk operations">
+                            Bulk operations
+                        </span>{' '}
+                        <Badge variant="secondary" pill={true} className="ml-1">
+                            {batchChange.bulkOperations.totalCount}
+                        </Badge>
                     </span>
-                </span>
-            </BatchChangeTab>
-            <BatchChangeTab index={4} name={TabName.BulkOperations}>
-                <span>
-                    <MonitorStarIcon className="icon-inline text-muted mr-1" />{' '}
-                    <span className="text-content" data-tab-content="Bulk operations">
-                        Bulk operations
-                    </span>{' '}
-                    <span className="badge badge-pill badge-secondary ml-1">
-                        {batchChange.bulkOperations.totalCount}
-                    </span>
-                </span>
-            </BatchChangeTab>
-        </BatchChangeTabList>
-        <BatchChangeTabPanels>
-            <BatchChangeTabPanel index={0}>
-                <BatchChangeChangesets
-                    batchChangeID={batchChange.id}
-                    viewerCanAdminister={batchChange.viewerCanAdminister}
-                    history={history}
-                    location={location}
-                    isLightTheme={isLightTheme}
-                    extensionsController={extensionsController}
-                    platformContext={platformContext}
-                    telemetryService={telemetryService}
-                    queryChangesets={queryChangesets}
-                    queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
-                    queryAllChangesetIDs={queryAllChangesetIDs}
-                    onlyArchived={false}
-                />
-            </BatchChangeTabPanel>
-            <BatchChangeTabPanel index={1}>
-                <BatchChangeBurndownChart
-                    batchChangeID={batchChange.id}
-                    queryChangesetCountsOverTime={queryChangesetCountsOverTime}
-                    history={history}
-                />
-            </BatchChangeTabPanel>
-            <BatchChangeTabPanel index={2}>
-                <div className="d-flex flex-wrap justify-content-between align-items-baseline mb-2 test-batches-spec">
-                    <BatchSpecMeta
-                        createdAt={batchChange.createdAt}
-                        lastApplier={batchChange.lastApplier}
-                        lastAppliedAt={batchChange.lastAppliedAt}
+                </BatchChangeTab>
+            </BatchChangeTabList>
+            <BatchChangeTabPanels>
+                <BatchChangeTabPanel>
+                    <BatchChangeChangesets
+                        batchChangeID={batchChange.id}
+                        batchChangeState={batchChange.state}
+                        viewerCanAdminister={batchChange.viewerCanAdminister}
+                        refetchBatchChange={refetchBatchChange}
+                        history={history}
+                        location={location}
+                        isLightTheme={isLightTheme}
+                        extensionsController={extensionsController}
+                        platformContext={platformContext}
+                        telemetryService={telemetryService}
+                        queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
+                        queryAllChangesetIDs={queryAllChangesetIDs}
+                        onlyArchived={false}
+                        settingsCascade={settingsCascade}
+                        isExecutionEnabled={isExecutionEnabled}
                     />
-                    <BatchSpecDownloadLink
-                        name={batchChange.name}
-                        originalInput={batchChange.currentSpec.originalInput}
+                </BatchChangeTabPanel>
+                <BatchChangeTabPanel>
+                    <BatchChangeBurndownChart
+                        batchChangeID={batchChange.id}
+                        queryChangesetCountsOverTime={queryChangesetCountsOverTime}
+                        history={history}
                     />
-                </div>
-                <Container>
-                    <BatchSpec originalInput={batchChange.currentSpec.originalInput} />
-                </Container>
-            </BatchChangeTabPanel>
-            <BatchChangeTabPanel index={3}>
-                <BatchChangeChangesets
-                    batchChangeID={batchChange.id}
-                    viewerCanAdminister={batchChange.viewerCanAdminister}
-                    history={history}
-                    location={location}
-                    isLightTheme={isLightTheme}
-                    extensionsController={extensionsController}
-                    platformContext={platformContext}
-                    telemetryService={telemetryService}
-                    queryChangesets={queryChangesets}
-                    queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
-                    onlyArchived={true}
-                />
-            </BatchChangeTabPanel>
-            <BatchChangeTabPanel index={4}>
-                <BulkOperationsTab
-                    batchChangeID={batchChange.id}
-                    history={history}
-                    location={location}
-                    queryBulkOperations={queryBulkOperations}
-                />
-            </BatchChangeTabPanel>
-        </BatchChangeTabPanels>
-    </BatchChangeTabs>
-)
+                </BatchChangeTabPanel>
+                <BatchChangeTabPanel>
+                    {!isExecutionEnabled ? (
+                        <>
+                            <div className="d-flex flex-wrap justify-content-between align-items-baseline mb-2 test-batches-spec">
+                                <BatchSpecMeta
+                                    createdAt={batchChange.createdAt}
+                                    lastApplier={batchChange.lastApplier}
+                                    lastAppliedAt={batchChange.lastAppliedAt}
+                                />
+                                <BatchSpecDownloadButton
+                                    name={batchChange.name}
+                                    isLightTheme={isLightTheme}
+                                    originalInput={batchChange.currentSpec.originalInput}
+                                />
+                            </div>
+                            <Container>
+                                <BatchSpec
+                                    name={batchChange.name}
+                                    originalInput={batchChange.currentSpec.originalInput}
+                                    isLightTheme={isLightTheme}
+                                    className={styles.batchSpec}
+                                />
+                            </Container>
+                        </>
+                    ) : (
+                        <Container>
+                            <BatchChangeBatchSpecList
+                                history={history}
+                                location={location}
+                                batchChangeID={batchChange.id}
+                                currentSpecID={batchChange.currentSpec.id}
+                                isLightTheme={isLightTheme}
+                            />
+                        </Container>
+                    )}
+                </BatchChangeTabPanel>
+                <BatchChangeTabPanel>
+                    <BatchChangeChangesets
+                        batchChangeID={batchChange.id}
+                        batchChangeState={batchChange.state}
+                        viewerCanAdminister={batchChange.viewerCanAdminister}
+                        history={history}
+                        location={location}
+                        isLightTheme={isLightTheme}
+                        extensionsController={extensionsController}
+                        platformContext={platformContext}
+                        telemetryService={telemetryService}
+                        queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
+                        onlyArchived={true}
+                        refetchBatchChange={refetchBatchChange}
+                        settingsCascade={settingsCascade}
+                        isExecutionEnabled={isExecutionEnabled}
+                    />
+                </BatchChangeTabPanel>
+                <BatchChangeTabPanel>
+                    <BulkOperationsTab batchChangeID={batchChange.id} />
+                </BatchChangeTabPanel>
+            </BatchChangeTabPanels>
+        </BatchChangeTabs>
+    )
+}

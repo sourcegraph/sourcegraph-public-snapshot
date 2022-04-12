@@ -1,6 +1,6 @@
 # Product documentation implementation
 
-The [documentation guidelines](https://about.sourcegraph.com/handbook/engineering/product_documentation) apply to product documentation. This page has information specific to this repository's documentation.
+The [documentation guidelines](https://handbook.sourcegraph.com/engineering/product_documentation) apply to product documentation. This page has information specific to this repository's documentation.
 
 ## Documentation directory structure
 
@@ -21,7 +21,7 @@ This structure is inspired by the [Divio documentation system](https://documenta
 
 ## Previewing changes locally
 
-You can preview the documentation site at http://localhost:5080 when running Sourcegraph in [local development](../getting-started/index.md) (using `dev/start.sh` or `enterprise/dev/start.sh`). It uses content, templates, and assets from the local disk. There is no caching or background build process, so you'll see all changes reflected immediately after you reload the page in your browser.
+You can preview the documentation site at http://localhost:5080 when running Sourcegraph in [local development](../setup/index.md) (using `sg start`). It uses content, templates, and assets from the local disk. There is no caching or background build process, so you'll see all changes reflected immediately after you reload the page in your browser.
 
 You can also run the docsite on its own with the following command:
 
@@ -56,6 +56,31 @@ Our documentation site (https://docs.sourcegraph.com) runs [docsite](https://git
 
 See "[Updating documentation](#updating-documentation)" and "[Previewing changes locally](#previewing-changes-locally)" for the most common workflows involving the documentation site.
 
+## SEO
+
+Every markdown document can be prefixed with front matter, which comes with a specific set of fields that are used
+to generate metatags and opengraph tags that improve our ranking. The excerpt below highlights all available fields, which are all optional. Invalid fields will raise an error at runtime but can be caught ahead by running `docsite check`
+
+```
+---
+title: "That current page title"
+description: "A brief description of what that page is about"
+category: "Which category of the content does this belong"
+type: "article (will default to website otherwise)"
+imageURL: "https://sourcegraph.com/.assets/img/sourcegraph-logo-dark.svg"
+tags: 
+  - A list of tags such as
+  - Code Search
+  - How to
+---
+
+# My markdown title 
+
+My content
+```
+
+See [the Open Graph protocl](https://ogp.me) to learn more about these tags.
+
 ## Forcing immediate reload of data
 
 The docs.sourcegraph.com site reloads content, templates, and assets every 5 minutes. After you push a [documentation update](#updating-documentation), just wait up to 5 minutes to see your changes reflected on docs.sourcegraph.com.
@@ -64,7 +89,7 @@ If you need to force a reload — either because your change is _extremely_ urge
 
 >WARNING: There may be a few seconds of downtime when restarting the docs cluster this way. This shouldn't be a routine part of your workflow!
 
-To do this, follow the ["Restarting about.sourcegraph.com and docs.sourcegraph.com" playbook](https://about.sourcegraph.com/handbook/engineering/deployments/playbooks#restarting-about-sourcegraph-com-and-docs-sourcegraph-com).
+To do this, follow the ["Restarting about.sourcegraph.com and docs.sourcegraph.com" playbook](https://handbook.sourcegraph.com/engineering/deployments/playbooks#restarting-about-sourcegraph-com-and-docs-sourcegraph-com).
 
 ## Other ways of previewing changes locally (very rare)
 

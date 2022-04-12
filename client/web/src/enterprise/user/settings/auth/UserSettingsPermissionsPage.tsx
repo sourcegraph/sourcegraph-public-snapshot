@@ -1,26 +1,26 @@
-import * as H from 'history'
 import React, { useEffect, useMemo } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import * as H from 'history'
+
+import { Container, PageHeader, LoadingSpinner, useObservable, Alert, Link } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../components/PageTitle'
 import { Timestamp } from '../../../../components/time/Timestamp'
-import { UserAreaUserFields } from '../../../../graphql-operations'
+import { UserSettingsAreaUserFields } from '../../../../graphql-operations'
 import { ActionContainer } from '../../../../repo/settings/components/ActionContainer'
 import { eventLogger } from '../../../../tracking/eventLogger'
 
 import { scheduleUserPermissionsSync, userPermissionsInfo } from './backend'
+
 import styles from './UserSettingsPermissionsPage.module.scss'
 
 /**
  * The user settings permissions page.
  */
-export const UserSettingsPermissionsPage: React.FunctionComponent<{ user: UserAreaUserFields; history: H.History }> = ({
-    user,
-    history,
-}) => {
+export const UserSettingsPermissionsPage: React.FunctionComponent<{
+    user: UserSettingsAreaUserFields
+    history: H.History
+}> = ({ user, history }) => {
     useEffect(() => eventLogger.logViewEvent('UserSettingsPermissions'))
     const permissionsInfo = useObservable(useMemo(() => userPermissionsInfo(user.id), [user.id]))
 
@@ -37,9 +37,9 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<{ user: UserAr
                 description={
                     <>
                         Learn more about{' '}
-                        <a href="/help/admin/repo/permissions#background-permissions-syncing">
+                        <Link to="/help/admin/repo/permissions#background-permissions-syncing">
                             background permissions syncing
-                        </a>
+                        </Link>
                         .
                     </>
                 }
@@ -47,14 +47,14 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<{ user: UserAr
             />
             <Container className="mb-3">
                 {user.siteAdmin && !window.context.site['authz.enforceForSiteAdmins'] ? (
-                    <div className="alert alert-info mb-0">
+                    <Alert className="mb-0" variant="info">
                         Site admin can access all repositories in the Sourcegraph instance.
-                    </div>
+                    </Alert>
                 ) : !permissionsInfo ? (
-                    <div className="alert alert-info mb-0">
+                    <Alert className="mb-0" variant="info">
                         This user is queued to sync permissions, it can only access non-private repositories until
                         syncing is finished.
-                    </div>
+                    </Alert>
                 ) : (
                     <>
                         <table className="table">
@@ -88,7 +88,7 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<{ user: UserAr
 }
 
 interface ScheduleUserPermissionsSyncActionContainerProps {
-    user: UserAreaUserFields
+    user: UserSettingsAreaUserFields
     history: H.History
 }
 

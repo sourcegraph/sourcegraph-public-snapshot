@@ -8,9 +8,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/machinebox/graphql"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const costPerSearch = 30
@@ -77,7 +77,7 @@ func LoadIssues(ctx context.Context, cli *graphql.Client, queries []string) (iss
 		if err == nil {
 			err = e
 		} else {
-			err = multierror.Append(err, e)
+			err = errors.Append(err, e)
 		}
 	}
 

@@ -93,12 +93,14 @@ const registryExtensionNodes: RegistryExtensionFieldsForList[] = [
 
 const extensionNodes: ExtensionsResult['extensionRegistry']['extensions']['nodes'] = [
     {
+        id: 'typescript',
         extensionID: 'sourcegraph/typescript',
         manifest: {
             jsonFields: typescriptRawManifest,
         },
     },
     {
+        id: 'count',
         extensionID: 'sqs/word-count',
         manifest: {
             jsonFields: wordCountRawManifest,
@@ -178,11 +180,13 @@ describe('Extension Registry', () => {
                     displayName: 'test',
                     siteAdmin: true,
                     tags: [],
+                    tosAccepted: true,
                     url: '/users/test',
                     settingsURL: '/users/test/settings',
                     organizations: { nodes: [] },
                     session: { canSignOut: true },
                     viewerCanAdminister: true,
+                    searchable: true,
                 },
             }),
             RegistryExtensions: () => ({
@@ -222,7 +226,7 @@ describe('Extension Registry', () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/extensions')
 
         //  wait for initial set of extensions
-        await driver.page.waitForSelector('[data-test="extension-toggle-sqs/word-count"]')
+        await driver.page.waitForSelector('[data-testid="extension-toggle-sqs/word-count"]')
 
         await percySnapshotWithVariants(driver.page, 'Extension registry page')
     })
@@ -233,13 +237,13 @@ describe('Extension Registry', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/extensions')
 
             //  wait for initial set of extensions
-            await driver.page.waitForSelector('[data-test="extension-toggle-sqs/word-count"]')
+            await driver.page.waitForSelector('[data-testid="extension-toggle-sqs/word-count"]')
             assert(
-                await driver.page.$('[data-test="extension-toggle-sqs/word-count"]'),
+                await driver.page.$('[data-testid="extension-toggle-sqs/word-count"]'),
                 'Expected non-language extensions to be displayed by default'
             )
             assert(
-                !(await driver.page.$('[data-test="extension-toggle-sourcegraph/typescript"]')),
+                !(await driver.page.$('[data-testid="extension-toggle-sourcegraph/typescript"]')),
                 'Expected language extensions to not be displayed by default'
             )
             // Toggle programming language extension category
@@ -247,11 +251,11 @@ describe('Extension Registry', () => {
             // Wait for the category header to change
             await driver.page.waitForSelector('[data-test-extension-category-header="Programming languages"]')
             assert(
-                !(await driver.page.$('[data-test="extension-toggle-sqs/word-count"]')),
+                !(await driver.page.$('[data-testid="extension-toggle-sqs/word-count"]')),
                 "Expected non-language extensions to not be displayed when only 'Programming languages' are toggled"
             )
             assert(
-                await driver.page.$('[data-test="extension-toggle-sourcegraph/typescript"]'),
+                await driver.page.$('[data-testid="extension-toggle-sourcegraph/typescript"]'),
                 "Expected language extensions to be displayed by when 'Programming languages' are toggled"
             )
         })
@@ -289,8 +293,8 @@ describe('Extension Registry', () => {
 
             // toggle typescript extension on
             const request = await testContext.waitForGraphQLRequest(async () => {
-                await driver.page.waitForSelector("[data-test='extension-toggle-sqs/word-count']")
-                await driver.page.click("[data-test='extension-toggle-sqs/word-count']")
+                await driver.page.waitForSelector("[data-testid='extension-toggle-sqs/word-count']")
+                await driver.page.click("[data-testid='extension-toggle-sqs/word-count']")
             }, 'EditSettings')
 
             assert.deepStrictEqual(request, {
@@ -311,8 +315,8 @@ describe('Extension Registry', () => {
 
             // toggle typescript extension off
             const request = await testContext.waitForGraphQLRequest(async () => {
-                await driver.page.waitForSelector("[data-test='extension-toggle-sqs/word-count']")
-                await driver.page.click("[data-test='extension-toggle-sqs/word-count']")
+                await driver.page.waitForSelector("[data-testid='extension-toggle-sqs/word-count']")
+                await driver.page.click("[data-testid='extension-toggle-sqs/word-count']")
             }, 'EditSettings')
 
             assert.deepStrictEqual(request, {

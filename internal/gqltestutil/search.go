@@ -5,15 +5,16 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
-
-	"github.com/cockroachdb/errors"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type SearchRepositoryResult struct {
 	Name string `json:"name"`
+	URL  string `json:"url"`
 }
 
 type SearchRepositoryResults []*SearchRepositoryResult
@@ -54,6 +55,7 @@ query Search($query: String!) {
 			results {
 				... on Repository {
 					name
+					url
 				}
 			}
 		}
@@ -421,6 +423,23 @@ func (srr *SearchSuggestionsResult) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (srr *SearchSuggestionsResult) String() string {
+	switch v := srr.inner.(type) {
+	case FileSuggestionResult:
+		return "file:" + v.Path
+	case RepositorySuggestionResult:
+		return "repo:" + v.Name
+	case SymbolSuggestionResult:
+		return "sym:" + v.Name
+	case LanguageSuggestionResult:
+		return "lang:" + v.Name
+	case SearchContextSuggestionResult:
+		return "context:" + v.Spec
+	default:
+		return fmt.Sprintf("UNKNOWN(%T)", srr.inner)
+	}
+}
+
 type RepositorySuggestionResult struct {
 	Name string
 }
@@ -522,7 +541,7 @@ query SearchSuggestions($query: String!) {
 }
 
 type SearchStreamClient struct {
-	Client *Client
+	*Client
 }
 
 func (s *SearchStreamClient) SearchRepositories(query string) (SearchRepositoryResults, error) {
@@ -534,10 +553,18 @@ func (s *SearchStreamClient) SearchRepositories(query string) (SearchRepositoryR
 				if !ok {
 					continue
 				}
-				results = append(results, &SearchRepositoryResult{
-					Name: r.Repository,
-				})
+
+				result := &SearchRepositoryResult{Name: r.Repository}
+
+				if len(r.Branches) > 0 {
+					result.URL = "/" + r.Repository + "@" + r.Branches[0]
+				}
+
+				results = append(results, result)
 			}
+		},
+		OnError: func(e *streamhttp.EventError) {
+			panic(e.Message)
 		},
 	})
 	return results, err
@@ -662,18 +689,14 @@ func (s *SearchStreamClient) SearchAll(query string) ([]*AnyResult, error) {
 	return ar, nil
 }
 
-func (s *SearchStreamClient) OverwriteSettings(subjectID, contents string) error {
-	return s.Client.OverwriteSettings(subjectID, contents)
-}
-func (s *SearchStreamClient) AuthenticatedUserID() string {
-	return s.Client.AuthenticatedUserID()
-}
-
 func (s *SearchStreamClient) search(query string, dec streamhttp.FrontendStreamDecoder) error {
-	req, err := streamhttp.NewRequest(s.Client.baseURL, query)
+	req, err := streamhttp.NewRequest(strings.TrimRight(s.Client.baseURL, "/")+"/.api", query)
 	if err != nil {
 		return err
 	}
+	// Note: Sending this header enables us to use session cookie auth without sending a trusted Origin header.
+	// https://docs.sourcegraph.com/dev/security/csrf_security_model#authentication-in-api-endpoints
+	req.Header.Set("X-Requested-With", "Sourcegraph")
 	s.Client.addCookies(req)
 
 	resp, err := http.DefaultClient.Do(req)

@@ -41,8 +41,8 @@ func CreateFilter(identifiers []string) ([]byte, error) {
 	return encodeFilter(buckets, int32(BloomFilterNumHashFunctions))
 }
 
-// Decode decodes the filter and returns a function that can be called to test if a specific value
-// is a member of the underlying set. This method returns an error if the encoded filter cannot be
+// Decode decodes the filter and returns a function that can be called to test if a specific value is
+// probably a member of the underlying set. This method returns an error if the encoded filter cannot be
 // decoded (improperly compressed or invalid JSON).
 func Decode(encodedFilter []byte) (func(identifier string) bool, error) {
 	r, err := gzip.NewReader(bytes.NewReader(encodedFilter))
@@ -107,7 +107,7 @@ func addToFilter(buckets []int32, numHashFunctions int32, identifier string) {
 	}
 }
 
-// testFilter determines i the k bits representing the k hash locations for the given identifier
+// testFilter determines if the k bits representing the k hash locations for the given identifier
 // have been set.
 func testFilter(buckets []int32, numHashFunctions int32, identifier string) bool {
 	for _, b := range hashLocations(identifier, int32(len(buckets))*32, numHashFunctions) {

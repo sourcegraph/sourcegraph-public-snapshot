@@ -4,22 +4,17 @@ import path from 'path'
 import * as esbuild from 'esbuild'
 
 import { STATIC_ASSETS_PATH } from '../utils'
+import { WebpackManifest } from '../webpack/get-html-webpack-plugins'
 
 export const assetPathPrefix = '/.assets'
 
-interface Manifest {
-    'app.js': string
-    'app.css': string
-    isModule: boolean
-}
-
-export const getManifest = (): Manifest => ({
+export const getManifest = (): WebpackManifest => ({
     'app.js': path.join(assetPathPrefix, 'scripts/app.js'),
     'app.css': path.join(assetPathPrefix, 'scripts/app.css'),
     isModule: true,
 })
 
-const writeManifest = async (manifest: Manifest): Promise<void> => {
+const writeManifest = async (manifest: WebpackManifest): Promise<void> => {
     const manifestPath = path.join(STATIC_ASSETS_PATH, 'webpack.manifest.json')
     await fs.promises.writeFile(manifestPath, JSON.stringify(manifest, null, 2))
 }

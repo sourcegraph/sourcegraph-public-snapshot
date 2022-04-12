@@ -389,25 +389,27 @@ func (rs Repos) Filter(pred func(*Repo) bool) (fs Repos) {
 	return fs
 }
 
-// RepoName represents a source code repository name and its ID.
-type RepoName struct {
-	ID   api.RepoID
-	Name api.RepoName
+// MinimalRepo represents a source code repository name, its ID and number of stars.
+type MinimalRepo struct {
+	ID    api.RepoID
+	Name  api.RepoName
+	Stars int
 }
 
-func (r *RepoName) ToRepo() *Repo {
+func (r *MinimalRepo) ToRepo() *Repo {
 	return &Repo{
-		ID:   r.ID,
-		Name: r.Name,
+		ID:    r.ID,
+		Name:  r.Name,
+		Stars: r.Stars,
 	}
 }
 
-// RepoNames is an utility type with convenience methods for operating on lists of repo names
-type RepoNames []RepoName
+// MinimalRepos is an utility type with convenience methods for operating on lists of repo names
+type MinimalRepos []MinimalRepo
 
-func (rs RepoNames) Len() int           { return len(rs) }
-func (rs RepoNames) Less(i, j int) bool { return rs[i].ID < rs[j].ID }
-func (rs RepoNames) Swap(i, j int)      { rs[i], rs[j] = rs[j], rs[i] }
+func (rs MinimalRepos) Len() int           { return len(rs) }
+func (rs MinimalRepos) Less(i, j int) bool { return rs[i].ID < rs[j].ID }
+func (rs MinimalRepos) Swap(i, j int)      { rs[i], rs[j] = rs[j], rs[i] }
 
 type CodeHostRepository struct {
 	Name       string
@@ -452,12 +454,15 @@ type GitserverRepo struct {
 	// Usually represented by a gitserver hostname
 	ShardID     string
 	CloneStatus CloneStatus
-	// The last external service used to sync or clone this repo
-	LastExternalService int64
 	// The last error that occurred or empty if the last action was successful
-	LastError   string
+	LastError string
+	// The last time fetch was called.
 	LastFetched time.Time
-	UpdatedAt   time.Time
+	// The last time a fetch updated the repository.
+	LastChanged time.Time
+	// Size of the repository in bytes.
+	RepoSizeBytes int64
+	UpdatedAt     time.Time
 }
 
 // ExternalService is a connection to an external service.
@@ -472,8 +477,11 @@ type ExternalService struct {
 	LastSyncAt      time.Time
 	NextSyncAt      time.Time
 	NamespaceUserID int32
-	Unrestricted    bool // Whether access to repositories belong to this external service is unrestricted.
-	CloudDefault    bool // Whether this external service is our default public service on Cloud
+	NamespaceOrgID  int32
+	Unrestricted    bool       // Whether access to repositories belong to this external service is unrestricted.
+	CloudDefault    bool       // Whether this external service is our default public service on Cloud
+	HasWebhooks     *bool      // Whether this external service has webhooks configured; calculated from Config
+	TokenExpiresAt  *time.Time // Whether the token in this external services expires, nil indicates never expires.
 }
 
 // ExternalServiceSyncJob represents an sync job for an external service
@@ -497,6 +505,9 @@ func (e *ExternalService) URN() string {
 
 // IsDeleted returns true if the external service is deleted.
 func (e *ExternalService) IsDeleted() bool { return !e.DeletedAt.IsZero() }
+
+// IsSiteOwned returns true if the external service is owned by the site.
+func (e *ExternalService) IsSiteOwned() bool { return e.NamespaceUserID == 0 && e.NamespaceOrgID == 0 }
 
 // Update updates ExternalService e with the fields from the given newer ExternalService n,
 // returning true if modified.
@@ -652,6 +663,16 @@ type User struct {
 	BuiltinAuth           bool
 	Tags                  []string
 	InvalidatedSessionsAt time.Time
+	TosAccepted           bool
+	Searchable            bool
+}
+
+type OrgMemberAutocompleteSearchItem struct {
+	ID          int32
+	Username    string
+	DisplayName string
+	AvatarURL   string
+	InOrg       int32
 }
 
 type Org struct {
@@ -668,6 +689,11 @@ type OrgMembership struct {
 	UserID    int32
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+type OrgStats struct {
+	OrgID             int32
+	CodeHostRepoCount int32
 }
 
 type PhabricatorRepo struct {
@@ -888,6 +914,7 @@ type SearchUsagePeriod struct {
 	RepoContainsFile        *SearchCountStatistics
 	RepoContainsContent     *SearchCountStatistics
 	RepoContainsCommitAfter *SearchCountStatistics
+	RepoDependencies        *SearchCountStatistics
 	CountAll                *SearchCountStatistics
 	NonGlobalContext        *SearchCountStatistics
 	OnlyPatterns            *SearchCountStatistics
@@ -1021,6 +1048,97 @@ type GrowthStatistics struct {
 	RetainedUsers    int32
 }
 
+// IDEExtensionsUsage represents the daily, weekly and monthly numbers
+// of search performed and user state events from all IDE extensions,
+// and all inbound traffic from the extension to Sourcegraph instance
+type IDEExtensionsUsage struct {
+	IDEs []*IDEExtensionsUsageStatistics
+}
+
+// Usage statistics from each IDE extension
+type IDEExtensionsUsageStatistics struct {
+	IdeKind string
+	Month   IDEExtensionsUsageRegularPeriod
+	Week    IDEExtensionsUsageRegularPeriod
+	Day     IDEExtensionsUsageDailyPeriod
+}
+
+// Monthly and Weekly usage from each IDE extension
+type IDEExtensionsUsageRegularPeriod struct {
+	StartTime         time.Time
+	SearchesPerformed IDEExtensionsUsageSearchesPerformed
+}
+
+// Daily usage from each IDE extension
+type IDEExtensionsUsageDailyPeriod struct {
+	StartTime         time.Time
+	SearchesPerformed IDEExtensionsUsageSearchesPerformed
+	UserState         IDEExtensionsUsageUserState
+	RedirectsCount    int32
+}
+
+// Count of unique users who performed searches & total searches performed
+type IDEExtensionsUsageSearchesPerformed struct {
+	UniquesCount int32
+	TotalCount   int32
+}
+
+// Count of unique users who installed & uninstalled each extension
+type IDEExtensionsUsageUserState struct {
+	Installs   int32
+	Uninstalls int32
+}
+
+// CodeHostIntegrationUsage represents the daily, weekly and monthly
+// number of unique users and events for code host integration usage
+// and inbound traffic from code host integration to Sourcegraph instance
+type CodeHostIntegrationUsage struct {
+	Month CodeHostIntegrationUsagePeriod
+	Week  CodeHostIntegrationUsagePeriod
+	Day   CodeHostIntegrationUsagePeriod
+}
+
+type CodeHostIntegrationUsagePeriod struct {
+	StartTime         time.Time
+	BrowserExtension  CodeHostIntegrationUsageType
+	NativeIntegration CodeHostIntegrationUsageType
+}
+
+type CodeHostIntegrationUsageType struct {
+	UniquesCount        int32
+	TotalCount          int32
+	InboundTrafficToWeb CodeHostIntegrationUsageInboundTrafficToWeb
+}
+
+type CodeHostIntegrationUsageInboundTrafficToWeb struct {
+	UniquesCount int32
+	TotalCount   int32
+}
+
+// UserAndEventCount represents the number of events triggered in a given
+// time frame per user and overall.
+type UserAndEventCount struct {
+	UserCount  int32
+	EventCount int32
+}
+
+// FileAndSearchPageUserAndEventCounts represents the number of events triggered
+// on the "search result" and "file" pages in a given time frame.
+type FileAndSearchPageUserAndEventCounts struct {
+	StartTime             time.Time
+	DisplayedOnFilePage   UserAndEventCount
+	DisplayedOnSearchPage UserAndEventCount
+	ClickedOnFilePage     UserAndEventCount
+	ClickedOnSearchPage   UserAndEventCount
+}
+
+// CTAUsage represents the total number of CTAs displayed and clicked
+// on the "search result" and "file" pages over the current month.
+type CTAUsage struct {
+	DailyBrowserExtensionCTA FileAndSearchPageUserAndEventCounts
+	DailyIDEExtensionCTA     FileAndSearchPageUserAndEventCounts
+}
+
 // SavedSearches represents the total number of saved searches, users
 // using saved searches, and usage of saved searches.
 type SavedSearches struct {
@@ -1102,17 +1220,29 @@ type ExtensionUsageStatistics struct {
 }
 
 type CodeInsightsUsageStatistics struct {
-	WeeklyUsageStatisticsByInsight []*InsightUsageStatistics
-	WeeklyInsightsPageViews        *int32
-	WeeklyInsightsUniquePageViews  *int32
-	WeeklyInsightConfigureClick    *int32
-	WeeklyInsightAddMoreClick      *int32
-	WeekStart                      time.Time
-	WeeklyInsightCreators          *int32
-	WeeklyFirstTimeInsightCreators *int32
-	WeeklyAggregatedUsage          []AggregatedPingStats
-	InsightTimeIntervals           []InsightTimeIntervalPing
-	InsightOrgVisible              []OrgVisibleInsightPing
+	WeeklyUsageStatisticsByInsight          []*InsightUsageStatistics
+	WeeklyInsightsPageViews                 *int32
+	WeeklyInsightsGetStartedPageViews       *int32
+	WeeklyInsightsUniquePageViews           *int32
+	WeeklyInsightsGetStartedUniquePageViews *int32
+	WeeklyInsightConfigureClick             *int32
+	WeeklyInsightAddMoreClick               *int32
+	WeekStart                               time.Time
+	WeeklyInsightCreators                   *int32
+	WeeklyFirstTimeInsightCreators          *int32
+	WeeklyAggregatedUsage                   []AggregatedPingStats
+	WeeklyGetStartedTabClickByTab           []InsightGetStartedTabClickPing
+	WeeklyGetStartedTabMoreClickByTab       []InsightGetStartedTabClickPing
+	InsightTimeIntervals                    []InsightTimeIntervalPing
+	InsightOrgVisible                       []OrgVisibleInsightPing
+	InsightTotalCounts                      InsightTotalCounts
+	TotalOrgsWithDashboard                  *int32
+	TotalDashboardCount                     *int32
+	InsightsPerDashboard                    InsightsPerDashboardPing
+}
+
+type CodeInsightsCriticalTelemetry struct {
+	TotalInsights int32
 }
 
 // Usage statistics for a type of code insight
@@ -1143,6 +1273,41 @@ type InsightTimeIntervalPing struct {
 type OrgVisibleInsightPing struct {
 	Type       string
 	TotalCount int
+}
+
+type InsightViewsCountPing struct {
+	ViewType   string
+	TotalCount int
+}
+
+type InsightSeriesCountPing struct {
+	GenerationType string
+	TotalCount     int
+}
+
+type InsightViewSeriesCountPing struct {
+	GenerationType string
+	ViewType       string
+	TotalCount     int
+}
+
+type InsightGetStartedTabClickPing struct {
+	TabName    string
+	TotalCount int
+}
+
+type InsightTotalCounts struct {
+	ViewCounts       []InsightViewsCountPing
+	SeriesCounts     []InsightSeriesCountPing
+	ViewSeriesCounts []InsightViewSeriesCountPing
+}
+
+type InsightsPerDashboardPing struct {
+	Avg    float32
+	Max    int
+	Min    int
+	StdDev float32
+	Median float32
 }
 
 type CodeMonitoringUsageStatistics struct {
@@ -1196,8 +1361,12 @@ type SearchContext struct {
 
 	// NamespaceUserName is the name of the user if NamespaceUserID is present.
 	NamespaceUserName string
-	// NamespaceUserName is the name of the org if NamespaceOrgID is present.
+	// NamespaceOrgName is the name of the org if NamespaceOrgID is present.
 	NamespaceOrgName string
+
+	// Query is the Sourcegraph query that defines this search context
+	// e.g. repo:^github\.com/org rev:bar archive:no f:sub/dir
+	Query string
 }
 
 // SearchContextRepositoryRevisions is a simple wrapper for a repository and its revisions
@@ -1205,6 +1374,6 @@ type SearchContext struct {
 // converted when needed. We could use search.RepositoryRevisions directly instead, but it
 // introduces an import cycle with `internal/vcs/git` package when used in `internal/database/search_contexts.go`.
 type SearchContextRepositoryRevisions struct {
-	Repo      RepoName
+	Repo      MinimalRepo
 	Revisions []string
 }

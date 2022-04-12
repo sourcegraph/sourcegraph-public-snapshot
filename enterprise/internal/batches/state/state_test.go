@@ -168,7 +168,7 @@ func TestComputeBitbucketBuildStatus(t *testing.T) {
 
 	now := timeutil.Now()
 	sha := "abcdef"
-	statusEvent := func(minutesSinceSync int, key, state string) *btypes.ChangesetEvent {
+	statusEvent := func(key, state string) *btypes.ChangesetEvent {
 		commit := &bitbucketserver.CommitStatus{
 			Commit: sha,
 			Status: bitbucketserver.BuildStatus{
@@ -206,61 +206,61 @@ func TestComputeBitbucketBuildStatus(t *testing.T) {
 		{
 			name: "single success",
 			events: []*btypes.ChangesetEvent{
-				statusEvent(1, "ctx1", "SUCCESSFUL"),
+				statusEvent("ctx1", "SUCCESSFUL"),
 			},
 			want: btypes.ChangesetCheckStatePassed,
 		},
 		{
 			name: "single pending",
 			events: []*btypes.ChangesetEvent{
-				statusEvent(1, "ctx1", "INPROGRESS"),
+				statusEvent("ctx1", "INPROGRESS"),
 			},
 			want: btypes.ChangesetCheckStatePending,
 		},
 		{
 			name: "single error",
 			events: []*btypes.ChangesetEvent{
-				statusEvent(1, "ctx1", "FAILED"),
+				statusEvent("ctx1", "FAILED"),
 			},
 			want: btypes.ChangesetCheckStateFailed,
 		},
 		{
 			name: "pending + error",
 			events: []*btypes.ChangesetEvent{
-				statusEvent(1, "ctx1", "INPROGRESS"),
-				statusEvent(1, "ctx2", "FAILED"),
+				statusEvent("ctx1", "INPROGRESS"),
+				statusEvent("ctx2", "FAILED"),
 			},
 			want: btypes.ChangesetCheckStatePending,
 		},
 		{
 			name: "pending + success",
 			events: []*btypes.ChangesetEvent{
-				statusEvent(1, "ctx1", "INPROGRESS"),
-				statusEvent(1, "ctx2", "SUCCESSFUL"),
+				statusEvent("ctx1", "INPROGRESS"),
+				statusEvent("ctx2", "SUCCESSFUL"),
 			},
 			want: btypes.ChangesetCheckStatePending,
 		},
 		{
 			name: "success + error",
 			events: []*btypes.ChangesetEvent{
-				statusEvent(1, "ctx1", "SUCCESSFUL"),
-				statusEvent(1, "ctx2", "FAILED"),
+				statusEvent("ctx1", "SUCCESSFUL"),
+				statusEvent("ctx2", "FAILED"),
 			},
 			want: btypes.ChangesetCheckStateFailed,
 		},
 		{
 			name: "success x2",
 			events: []*btypes.ChangesetEvent{
-				statusEvent(1, "ctx1", "SUCCESSFUL"),
-				statusEvent(1, "ctx2", "SUCCESSFUL"),
+				statusEvent("ctx1", "SUCCESSFUL"),
+				statusEvent("ctx2", "SUCCESSFUL"),
 			},
 			want: btypes.ChangesetCheckStatePassed,
 		},
 		{
 			name: "later events have precedence",
 			events: []*btypes.ChangesetEvent{
-				statusEvent(1, "ctx1", "INPROGRESS"),
-				statusEvent(1, "ctx1", "SUCCESSFUL"),
+				statusEvent("ctx1", "INPROGRESS"),
+				statusEvent("ctx1", "SUCCESSFUL"),
 			},
 			want: btypes.ChangesetCheckStatePassed,
 		},
@@ -833,6 +833,7 @@ func TestComputeLabels(t *testing.T) {
 	}
 }
 
+//nolint:unparam // unparam complains that `state` always has same value across call-sites, but that's OK
 func bitbucketChangeset(updatedAt time.Time, state, reviewStatus string) *btypes.Changeset {
 	return &btypes.Changeset{
 		ExternalServiceType: extsvc.TypeBitbucketServer,

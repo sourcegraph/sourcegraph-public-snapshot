@@ -1,5 +1,8 @@
-import classNames from 'classnames'
 import React, { useCallback } from 'react'
+
+import classNames from 'classnames'
+
+import { Select } from '@sourcegraph/wildcard'
 
 import { RadioButtons } from '../RadioButtons'
 
@@ -60,12 +63,13 @@ export const FilterControl: React.FunctionComponent<FilterControlProps> = ({
     )
 
     return (
-        <div className="filtered-connection-filter-control">
+        <div className={styles.filterControl}>
             {filters.map(filter => {
                 if (filter.type === 'radio') {
                     return (
                         <RadioButtons
                             key={filter.id}
+                            name={filter.id}
                             className="d-inline-flex flex-row"
                             selected={values.get(filter.id)?.value}
                             nodes={filter.values.map(({ value, label, tooltip }) => ({
@@ -86,15 +90,17 @@ export const FilterControl: React.FunctionComponent<FilterControlProps> = ({
                         >
                             <div className="d-inline-flex flex-row mr-3 align-items-baseline">
                                 <p className="text-xl-center text-nowrap mr-2">{filter.label}:</p>
-                                <select
-                                    className="form-control"
+                                <Select
+                                    aria-label=""
+                                    id=""
                                     name={filter.id}
                                     onChange={event => onChange(filter, event.currentTarget.value)}
+                                    className="mb-0"
                                 >
                                     {filter.values.map(value => (
                                         <option key={value.value} value={value.value} label={value.label} />
                                     ))}
-                                </select>
+                                </Select>
                             </div>
                         </div>
                     )

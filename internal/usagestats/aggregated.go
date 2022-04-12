@@ -4,11 +4,10 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func GetSiteUsageStats(ctx context.Context, db dbutil.DB, monthsOnly bool) (*types.SiteUsageStatistics, error) {
+func GetSiteUsageStats(ctx context.Context, db database.DB, monthsOnly bool) (*types.SiteUsageStatistics, error) {
 	summary, err := database.EventLogs(db).SiteUsage(ctx)
 	if err != nil {
 		return nil, err

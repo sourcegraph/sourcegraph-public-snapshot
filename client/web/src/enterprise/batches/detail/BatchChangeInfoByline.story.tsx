@@ -1,8 +1,9 @@
-import { storiesOf } from '@storybook/react'
-import { subDays } from 'date-fns'
 import React from 'react'
 
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { storiesOf } from '@storybook/react'
+import { subDays } from 'date-fns'
+
+import { WebStory } from '../../../components/WebStory'
 
 import { BatchChangeInfoByline } from './BatchChangeInfoByline'
 
@@ -13,43 +14,57 @@ const { add } = storiesOf('web/batches/BatchChangeInfoByline', module).addDecora
 const THREE_DAYS_AGO = subDays(new Date(), 3).toISOString()
 
 add('Never updated', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <BatchChangeInfoByline
                 {...props}
                 createdAt={THREE_DAYS_AGO}
-                initialApplier={{ url: 'http://test.test/alice', username: 'alice' }}
+                creator={{ url: 'http://test.test/alice', username: 'alice' }}
                 lastAppliedAt={THREE_DAYS_AGO}
                 lastApplier={{ url: 'http://test.test/alice', username: 'alice' }}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 
-add('Updated (same user)', () => (
-    <EnterpriseWebStory>
+add('Never updated (SSBC)', () => (
+    <WebStory>
         {props => (
             <BatchChangeInfoByline
                 {...props}
                 createdAt={THREE_DAYS_AGO}
-                initialApplier={{ url: 'http://test.test/alice', username: 'alice' }}
+                creator={{ url: 'http://test.test/alice', username: 'alice' }}
+                lastAppliedAt={null}
+                lastApplier={null}
+            />
+        )}
+    </WebStory>
+))
+
+add('Updated (same user)', () => (
+    <WebStory>
+        {props => (
+            <BatchChangeInfoByline
+                {...props}
+                createdAt={THREE_DAYS_AGO}
+                creator={{ url: 'http://test.test/alice', username: 'alice' }}
                 lastAppliedAt={subDays(new Date(), 1).toISOString()}
                 lastApplier={{ url: 'http://test.test/alice', username: 'alice' }}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 
 add('Updated (different users)', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <BatchChangeInfoByline
                 {...props}
                 createdAt={THREE_DAYS_AGO}
-                initialApplier={{ url: 'http://test.test/alice', username: 'alice' }}
+                creator={{ url: 'http://test.test/alice', username: 'alice' }}
                 lastAppliedAt={subDays(new Date(), 1).toISOString()}
                 lastApplier={{ url: 'http://test.test/bob', username: 'bob' }}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))

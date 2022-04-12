@@ -1,1346 +1,477 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`RecentSearchesPanel Show More button is shown if more pages are available 1`] = `
-<RecentSearchesPanel
-  authenticatedUser={null}
-  fetchRecentSearches={[Function]}
-  telemetryService={
-    Object {
-      "log": [Function],
-      "logViewEvent": [Function],
-    }
-  }
->
-  <PanelContainer
-    className="recent-searches-panel"
-    emptyContent={
-      <div
-        className="panel-container__empty-container text-muted"
-      >
-        <small
-          className="mb-2"
-        >
-          Your recent searches will be displayed here. Here are a few searches to get you started:
-        </small>
-        <ul
-          className="recent-searches-panel__examples-list"
-        >
-          <li
-            className="recent-searches-panel__examples-list-item"
-          >
-            <small>
-              <AnchorLink
-                className="text-monospace"
-                to="/search?q=lang:c+if%28:%5Beval_match%5D%29+%7B+:%5Bstatement_match%5D+%7D&patternType=structural"
-              >
-                <SyntaxHighlightedSearchQuery
-                  query="lang:c if(:[eval_match]) { :[statement_match] }"
-                />
-              </AnchorLink>
-            </small>
-          </li>
-          <li
-            className="recent-searches-panel__examples-list-item"
-          >
-            <small>
-              <AnchorLink
-                className="text-monospace"
-                to="/search?q=lang:java+type:diff+after:%221+week+ago%22&patternType=literal"
-              >
-                <SyntaxHighlightedSearchQuery
-                  query="lang:java type:diff after:\\"1 week ago\\""
-                />
-              </AnchorLink>
-            </small>
-          </li>
-          <li
-            className="recent-searches-panel__examples-list-item"
-          >
-            <small>
-              <AnchorLink
-                className="text-monospace"
-                to="/search?q=lang:java&patternType=literal"
-              >
-                <SyntaxHighlightedSearchQuery
-                  query="lang:java"
-                />
-              </AnchorLink>
-            </small>
-          </li>
-        </ul>
-      </div>
-    }
-    loadingContent={
-      <LoadingPanelView
-        text="Loading recent searches"
-      />
-    }
-    populatedContent={
-      <React.Fragment>
-        <table
-          className="recent-searches-panel__results-table mt-2"
-        >
-          <thead>
-            <tr
-              className="recent-searches-panel__results-table-row"
-            >
-              <th>
-                <small>
-                  Search
-                </small>
-              </th>
-              <th>
-                <small>
-                  Date
-                </small>
-              </th>
-            </tr>
-          </thead>
-          <tbody
-            className="recent-searches-panel__results-table-body"
-          >
-            <tr
-              className="recent-searches-panel__results-table-row"
-            >
-              <td>
-                <small>
-                  <AnchorLink
-                    onClick={[Function]}
-                    to="/search?q=test&patternType=literal"
-                  >
-                    <SyntaxHighlightedSearchQuery
-                      query="test"
-                    />
-                  </AnchorLink>
-                </small>
-              </td>
-              <td
-                className="recent-searches-panel__results-table-date-col"
-              >
-                <Timestamp
-                  date="2020-09-08T17:36:52Z"
-                  noAbout={true}
-                  strict={true}
-                />
-              </td>
-            </tr>
-            <tr
-              className="recent-searches-panel__results-table-row"
-            >
-              <td>
-                <small>
-                  <AnchorLink
-                    onClick={[Function]}
-                    to="/search?q=r:sourcegraph&patternType=literal"
-                  >
-                    <SyntaxHighlightedSearchQuery
-                      query="r:sourcegraph"
-                    />
-                  </AnchorLink>
-                </small>
-              </td>
-              <td
-                className="recent-searches-panel__results-table-date-col"
-              >
-                <Timestamp
-                  date="2020-09-04T18:44:39Z"
-                  noAbout={true}
-                  strict={true}
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <ShowMoreButton
-          className="test-recent-searches-panel-show-more"
-          onClick={[Function]}
-        />
-      </React.Fragment>
-    }
-    state="populated"
-    title="Recent searches"
+<DocumentFragment>
+  <div
+    class="recent-searches-panel panelContainer d-flex flex-column"
   >
     <div
-      className="recent-searches-panel panel-container d-flex flex-column"
+      class="d-flex border-bottom header"
     >
-      <div
-        className="panel-container__header d-flex border-bottom"
+      <h4
+        class="headerText"
       >
-        <h4
-          className="panel-container__header-text"
-        >
-          Recent searches
-        </h4>
-      </div>
-      <div
-        className="panel-container__content h-100"
+        Recent searches
+      </h4>
+    </div>
+    <div
+      class="h-100 content"
+    >
+      <table
+        class="mt-2 resultsTable"
       >
-        <table
-          className="recent-searches-panel__results-table mt-2"
-        >
-          <thead>
-            <tr
-              className="recent-searches-panel__results-table-row"
-            >
-              <th>
-                <small>
-                  Search
-                </small>
-              </th>
-              <th>
-                <small>
-                  Date
-                </small>
-              </th>
-            </tr>
-          </thead>
-          <tbody
-            className="recent-searches-panel__results-table-body"
+        <thead>
+          <tr
+            class="resultsTableRow"
           >
-            <tr
-              className="recent-searches-panel__results-table-row"
-              key="0"
-            >
-              <td>
-                <small>
-                  <AnchorLink
-                    onClick={[Function]}
-                    to="/search?q=test&patternType=literal"
-                  >
-                    <a
-                      href="/search?q=test&patternType=literal"
-                      onClick={[Function]}
-                    >
-                      <SyntaxHighlightedSearchQuery
-                        query="test"
-                      >
-                        <span
-                          className="text-monospace search-query-link"
-                        >
-                          test
-                        </span>
-                      </SyntaxHighlightedSearchQuery>
-                    </a>
-                  </AnchorLink>
-                </small>
-              </td>
-              <td
-                className="recent-searches-panel__results-table-date-col"
+            <th>
+              <small>
+                Search
+              </small>
+            </th>
+            <th>
+              <small>
+                Date
+              </small>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            class="resultsTableRow"
+          >
+            <td>
+              <small
+                class="recentQuery"
               >
-                <Timestamp
-                  date="2020-09-08T17:36:52Z"
-                  noAbout={true}
-                  strict={true}
+                <a
+                  class="anchorLink"
+                  href="/search?q=test&patternType=literal"
                 >
                   <span
-                    className="timestamp"
-                    data-tooltip="2020-09-08T17:36:52Z"
+                    class="text-monospace search-query-link"
                   >
-                    in 15 years
+                    test
                   </span>
-                </Timestamp>
-              </td>
-            </tr>
-            <tr
-              className="recent-searches-panel__results-table-row"
-              key="1"
+                </a>
+              </small>
+            </td>
+            <td
+              class="resultsTableDateCol"
             >
-              <td>
-                <small>
-                  <AnchorLink
-                    onClick={[Function]}
-                    to="/search?q=r:sourcegraph&patternType=literal"
-                  >
-                    <a
-                      href="/search?q=r:sourcegraph&patternType=literal"
-                      onClick={[Function]}
-                    >
-                      <SyntaxHighlightedSearchQuery
-                        query="r:sourcegraph"
-                      >
-                        <span
-                          className="text-monospace search-query-link"
-                        >
-                          <span
-                            className="search-filter-keyword"
-                          >
-                            r
-                            :
-                          </span>
-                          sourcegraph
-                        </span>
-                      </SyntaxHighlightedSearchQuery>
-                    </a>
-                  </AnchorLink>
-                </small>
-              </td>
-              <td
-                className="recent-searches-panel__results-table-date-col"
+              <span
+                class="timestamp"
+                data-tooltip="2020-09-08 5:36:52 PM"
               >
-                <Timestamp
-                  date="2020-09-04T18:44:39Z"
-                  noAbout={true}
-                  strict={true}
+                in 15 years
+              </span>
+            </td>
+          </tr>
+          <tr
+            class="resultsTableRow"
+          >
+            <td>
+              <small
+                class="recentQuery"
+              >
+                <a
+                  class="anchorLink"
+                  href="/search?q=r:sourcegraph&patternType=literal"
                 >
                   <span
-                    className="timestamp"
-                    data-tooltip="2020-09-04T18:44:39Z"
+                    class="text-monospace search-query-link"
                   >
-                    in 15 years
+                    <span
+                      class="search-filter-keyword"
+                    >
+                      r
+                    </span>
+                    <span
+                      class="search-filter-separator"
+                    >
+                      :
+                    </span>
+                    sourcegraph
                   </span>
-                </Timestamp>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <ShowMoreButton
-          className="test-recent-searches-panel-show-more"
-          onClick={[Function]}
-        >
-          <div
-            className="text-center py-3"
-          >
-            <button
-              className="btn btn-link test-recent-searches-panel-show-more"
-              onClick={[Function]}
-              type="button"
+                </a>
+              </small>
+            </td>
+            <td
+              class="resultsTableDateCol"
             >
-              Show more
-            </button>
-          </div>
-        </ShowMoreButton>
+              <span
+                class="timestamp"
+                data-tooltip="2020-09-04 6:44:39 PM"
+              >
+                in 15 years
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div
+        class="text-center py-3"
+      >
+        <button
+          class="btn btnLink"
+          type="button"
+        >
+          Show more
+        </button>
       </div>
     </div>
-  </PanelContainer>
-</RecentSearchesPanel>
+  </div>
+</DocumentFragment>
 `;
 
 exports[`RecentSearchesPanel Show More button loads more items 1`] = `
-<RecentSearchesPanel
-  authenticatedUser={null}
-  className=""
-  fetchRecentSearches={[Function]}
-  telemetryService={
-    Object {
-      "log": [Function],
-      "logViewEvent": [Function],
-    }
-  }
->
-  <PanelContainer
-    className="recent-searches-panel"
-    emptyContent={
-      <div
-        className="panel-container__empty-container text-muted"
-      >
-        <small
-          className="mb-2"
-        >
-          Your recent searches will be displayed here. Here are a few searches to get you started:
-        </small>
-        <ul
-          className="recent-searches-panel__examples-list"
-        >
-          <li
-            className="recent-searches-panel__examples-list-item"
-          >
-            <small>
-              <AnchorLink
-                className="text-monospace"
-                to="/search?q=lang:c+if%28:%5Beval_match%5D%29+%7B+:%5Bstatement_match%5D+%7D&patternType=structural"
-              >
-                <SyntaxHighlightedSearchQuery
-                  query="lang:c if(:[eval_match]) { :[statement_match] }"
-                />
-              </AnchorLink>
-            </small>
-          </li>
-          <li
-            className="recent-searches-panel__examples-list-item"
-          >
-            <small>
-              <AnchorLink
-                className="text-monospace"
-                to="/search?q=lang:java+type:diff+after:%221+week+ago%22&patternType=literal"
-              >
-                <SyntaxHighlightedSearchQuery
-                  query="lang:java type:diff after:\\"1 week ago\\""
-                />
-              </AnchorLink>
-            </small>
-          </li>
-          <li
-            className="recent-searches-panel__examples-list-item"
-          >
-            <small>
-              <AnchorLink
-                className="text-monospace"
-                to="/search?q=lang:java&patternType=literal"
-              >
-                <SyntaxHighlightedSearchQuery
-                  query="lang:java"
-                />
-              </AnchorLink>
-            </small>
-          </li>
-        </ul>
-      </div>
-    }
-    loadingContent={
-      <LoadingPanelView
-        text="Loading recent searches"
-      />
-    }
-    populatedContent={
-      <React.Fragment>
-        <table
-          className="recent-searches-panel__results-table mt-2"
-        >
-          <thead>
-            <tr
-              className="recent-searches-panel__results-table-row"
-            >
-              <th>
-                <small>
-                  Search
-                </small>
-              </th>
-              <th>
-                <small>
-                  Date
-                </small>
-              </th>
-            </tr>
-          </thead>
-          <tbody
-            className="recent-searches-panel__results-table-body"
-          >
-            <tr
-              className="recent-searches-panel__results-table-row"
-            >
-              <td>
-                <small>
-                  <AnchorLink
-                    onClick={[Function]}
-                    to="/search?q=test&patternType=literal"
-                  >
-                    <SyntaxHighlightedSearchQuery
-                      query="test"
-                    />
-                  </AnchorLink>
-                </small>
-              </td>
-              <td
-                className="recent-searches-panel__results-table-date-col"
-              >
-                <Timestamp
-                  date="2020-09-08T17:36:52Z"
-                  noAbout={true}
-                  strict={true}
-                />
-              </td>
-            </tr>
-            <tr
-              className="recent-searches-panel__results-table-row"
-            >
-              <td>
-                <small>
-                  <AnchorLink
-                    onClick={[Function]}
-                    to="/search?q=r:sourcegraph&patternType=literal"
-                  >
-                    <SyntaxHighlightedSearchQuery
-                      query="r:sourcegraph"
-                    />
-                  </AnchorLink>
-                </small>
-              </td>
-              <td
-                className="recent-searches-panel__results-table-date-col"
-              >
-                <Timestamp
-                  date="2020-09-04T18:44:39Z"
-                  noAbout={true}
-                  strict={true}
-                />
-              </td>
-            </tr>
-            <tr
-              className="recent-searches-panel__results-table-row"
-            >
-              <td>
-                <small>
-                  <AnchorLink
-                    onClick={[Function]}
-                    to="/search?q=test&patternType=literal"
-                  >
-                    <SyntaxHighlightedSearchQuery
-                      query="test"
-                    />
-                  </AnchorLink>
-                </small>
-              </td>
-              <td
-                className="recent-searches-panel__results-table-date-col"
-              >
-                <Timestamp
-                  date="2020-09-08T17:36:52Z"
-                  noAbout={true}
-                  strict={true}
-                />
-              </td>
-            </tr>
-            <tr
-              className="recent-searches-panel__results-table-row"
-            >
-              <td>
-                <small>
-                  <AnchorLink
-                    onClick={[Function]}
-                    to="/search?q=r:sourcegraph&patternType=literal"
-                  >
-                    <SyntaxHighlightedSearchQuery
-                      query="r:sourcegraph"
-                    />
-                  </AnchorLink>
-                </small>
-              </td>
-              <td
-                className="recent-searches-panel__results-table-date-col"
-              >
-                <Timestamp
-                  date="2020-09-04T18:44:39Z"
-                  noAbout={true}
-                  strict={true}
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </React.Fragment>
-    }
-    state="populated"
-    title="Recent searches"
+<DocumentFragment>
+  <div
+    class="recent-searches-panel panelContainer d-flex flex-column"
   >
     <div
-      className="recent-searches-panel panel-container d-flex flex-column"
+      class="d-flex border-bottom header"
     >
-      <div
-        className="panel-container__header d-flex border-bottom"
+      <h4
+        class="headerText"
       >
-        <h4
-          className="panel-container__header-text"
-        >
-          Recent searches
-        </h4>
-      </div>
-      <div
-        className="panel-container__content h-100"
+        Recent searches
+      </h4>
+    </div>
+    <div
+      class="h-100 content"
+    >
+      <table
+        class="mt-2 resultsTable"
       >
-        <table
-          className="recent-searches-panel__results-table mt-2"
-        >
-          <thead>
-            <tr
-              className="recent-searches-panel__results-table-row"
-            >
-              <th>
-                <small>
-                  Search
-                </small>
-              </th>
-              <th>
-                <small>
-                  Date
-                </small>
-              </th>
-            </tr>
-          </thead>
-          <tbody
-            className="recent-searches-panel__results-table-body"
+        <thead>
+          <tr
+            class="resultsTableRow"
           >
-            <tr
-              className="recent-searches-panel__results-table-row"
-              key="0"
-            >
-              <td>
-                <small>
-                  <AnchorLink
-                    onClick={[Function]}
-                    to="/search?q=test&patternType=literal"
-                  >
-                    <a
-                      href="/search?q=test&patternType=literal"
-                      onClick={[Function]}
-                    >
-                      <SyntaxHighlightedSearchQuery
-                        query="test"
-                      >
-                        <span
-                          className="text-monospace search-query-link"
-                        >
-                          test
-                        </span>
-                      </SyntaxHighlightedSearchQuery>
-                    </a>
-                  </AnchorLink>
-                </small>
-              </td>
-              <td
-                className="recent-searches-panel__results-table-date-col"
+            <th>
+              <small>
+                Search
+              </small>
+            </th>
+            <th>
+              <small>
+                Date
+              </small>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            class="resultsTableRow"
+          >
+            <td>
+              <small
+                class="recentQuery"
               >
-                <Timestamp
-                  date="2020-09-08T17:36:52Z"
-                  noAbout={true}
-                  strict={true}
+                <a
+                  class="anchorLink"
+                  href="/search?q=test&patternType=literal"
                 >
                   <span
-                    className="timestamp"
-                    data-tooltip="2020-09-08T17:36:52Z"
+                    class="text-monospace search-query-link"
                   >
-                    in 15 years
+                    test
                   </span>
-                </Timestamp>
-              </td>
-            </tr>
-            <tr
-              className="recent-searches-panel__results-table-row"
-              key="1"
+                </a>
+              </small>
+            </td>
+            <td
+              class="resultsTableDateCol"
             >
-              <td>
-                <small>
-                  <AnchorLink
-                    onClick={[Function]}
-                    to="/search?q=r:sourcegraph&patternType=literal"
-                  >
-                    <a
-                      href="/search?q=r:sourcegraph&patternType=literal"
-                      onClick={[Function]}
-                    >
-                      <SyntaxHighlightedSearchQuery
-                        query="r:sourcegraph"
-                      >
-                        <span
-                          className="text-monospace search-query-link"
-                        >
-                          <span
-                            className="search-filter-keyword"
-                          >
-                            r
-                            :
-                          </span>
-                          sourcegraph
-                        </span>
-                      </SyntaxHighlightedSearchQuery>
-                    </a>
-                  </AnchorLink>
-                </small>
-              </td>
-              <td
-                className="recent-searches-panel__results-table-date-col"
+              <span
+                class="timestamp"
+                data-tooltip="2020-09-08 5:36:52 PM"
               >
-                <Timestamp
-                  date="2020-09-04T18:44:39Z"
-                  noAbout={true}
-                  strict={true}
+                in 15 years
+              </span>
+            </td>
+          </tr>
+          <tr
+            class="resultsTableRow"
+          >
+            <td>
+              <small
+                class="recentQuery"
+              >
+                <a
+                  class="anchorLink"
+                  href="/search?q=r:sourcegraph&patternType=literal"
                 >
                   <span
-                    className="timestamp"
-                    data-tooltip="2020-09-04T18:44:39Z"
+                    class="text-monospace search-query-link"
                   >
-                    in 15 years
-                  </span>
-                </Timestamp>
-              </td>
-            </tr>
-            <tr
-              className="recent-searches-panel__results-table-row"
-              key="2"
-            >
-              <td>
-                <small>
-                  <AnchorLink
-                    onClick={[Function]}
-                    to="/search?q=test&patternType=literal"
-                  >
-                    <a
-                      href="/search?q=test&patternType=literal"
-                      onClick={[Function]}
+                    <span
+                      class="search-filter-keyword"
                     >
-                      <SyntaxHighlightedSearchQuery
-                        query="test"
-                      >
-                        <span
-                          className="text-monospace search-query-link"
-                        >
-                          test
-                        </span>
-                      </SyntaxHighlightedSearchQuery>
-                    </a>
-                  </AnchorLink>
-                </small>
-              </td>
-              <td
-                className="recent-searches-panel__results-table-date-col"
-              >
-                <Timestamp
-                  date="2020-09-08T17:36:52Z"
-                  noAbout={true}
-                  strict={true}
-                >
-                  <span
-                    className="timestamp"
-                    data-tooltip="2020-09-08T17:36:52Z"
-                  >
-                    in 15 years
-                  </span>
-                </Timestamp>
-              </td>
-            </tr>
-            <tr
-              className="recent-searches-panel__results-table-row"
-              key="3"
-            >
-              <td>
-                <small>
-                  <AnchorLink
-                    onClick={[Function]}
-                    to="/search?q=r:sourcegraph&patternType=literal"
-                  >
-                    <a
-                      href="/search?q=r:sourcegraph&patternType=literal"
-                      onClick={[Function]}
+                      r
+                    </span>
+                    <span
+                      class="search-filter-separator"
                     >
-                      <SyntaxHighlightedSearchQuery
-                        query="r:sourcegraph"
-                      >
-                        <span
-                          className="text-monospace search-query-link"
-                        >
-                          <span
-                            className="search-filter-keyword"
-                          >
-                            r
-                            :
-                          </span>
-                          sourcegraph
-                        </span>
-                      </SyntaxHighlightedSearchQuery>
-                    </a>
-                  </AnchorLink>
-                </small>
-              </td>
-              <td
-                className="recent-searches-panel__results-table-date-col"
-              >
-                <Timestamp
-                  date="2020-09-04T18:44:39Z"
-                  noAbout={true}
-                  strict={true}
-                >
-                  <span
-                    className="timestamp"
-                    data-tooltip="2020-09-04T18:44:39Z"
-                  >
-                    in 15 years
+                      :
+                    </span>
+                    sourcegraph
                   </span>
-                </Timestamp>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                </a>
+              </small>
+            </td>
+            <td
+              class="resultsTableDateCol"
+            >
+              <span
+                class="timestamp"
+                data-tooltip="2020-09-04 6:44:39 PM"
+              >
+                in 15 years
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div
+        class="text-center py-3"
+      >
+        <button
+          class="btn btnLink"
+          type="button"
+        >
+          Show more
+        </button>
       </div>
     </div>
-  </PanelContainer>
-</RecentSearchesPanel>
+  </div>
+</DocumentFragment>
 `;
 
 exports[`RecentSearchesPanel consecutive identical searches are correctly merged when rendered 1`] = `
-<RecentSearchesPanel
-  authenticatedUser={null}
-  fetchRecentSearches={[Function]}
-  telemetryService={
-    Object {
-      "log": [Function],
-      "logViewEvent": [Function],
-    }
-  }
->
-  <PanelContainer
-    className="recent-searches-panel"
-    emptyContent={
-      <div
-        className="panel-container__empty-container text-muted"
-      >
-        <small
-          className="mb-2"
-        >
-          Your recent searches will be displayed here. Here are a few searches to get you started:
-        </small>
-        <ul
-          className="recent-searches-panel__examples-list"
-        >
-          <li
-            className="recent-searches-panel__examples-list-item"
-          >
-            <small>
-              <AnchorLink
-                className="text-monospace"
-                to="/search?q=lang:c+if%28:%5Beval_match%5D%29+%7B+:%5Bstatement_match%5D+%7D&patternType=structural"
-              >
-                <SyntaxHighlightedSearchQuery
-                  query="lang:c if(:[eval_match]) { :[statement_match] }"
-                />
-              </AnchorLink>
-            </small>
-          </li>
-          <li
-            className="recent-searches-panel__examples-list-item"
-          >
-            <small>
-              <AnchorLink
-                className="text-monospace"
-                to="/search?q=lang:java+type:diff+after:%221+week+ago%22&patternType=literal"
-              >
-                <SyntaxHighlightedSearchQuery
-                  query="lang:java type:diff after:\\"1 week ago\\""
-                />
-              </AnchorLink>
-            </small>
-          </li>
-          <li
-            className="recent-searches-panel__examples-list-item"
-          >
-            <small>
-              <AnchorLink
-                className="text-monospace"
-                to="/search?q=lang:java&patternType=literal"
-              >
-                <SyntaxHighlightedSearchQuery
-                  query="lang:java"
-                />
-              </AnchorLink>
-            </small>
-          </li>
-        </ul>
-      </div>
-    }
-    loadingContent={
-      <LoadingPanelView
-        text="Loading recent searches"
-      />
-    }
-    populatedContent={
-      <React.Fragment>
-        <table
-          className="recent-searches-panel__results-table mt-2"
-        >
-          <thead>
-            <tr
-              className="recent-searches-panel__results-table-row"
-            >
-              <th>
-                <small>
-                  Search
-                </small>
-              </th>
-              <th>
-                <small>
-                  Date
-                </small>
-              </th>
-            </tr>
-          </thead>
-          <tbody
-            className="recent-searches-panel__results-table-body"
-          >
-            <tr
-              className="recent-searches-panel__results-table-row"
-            >
-              <td>
-                <small>
-                  <AnchorLink
-                    onClick={[Function]}
-                    to="/search?q=test&patternType=literal"
-                  >
-                    <SyntaxHighlightedSearchQuery
-                      query="test"
-                    />
-                  </AnchorLink>
-                </small>
-              </td>
-              <td
-                className="recent-searches-panel__results-table-date-col"
-              >
-                <Timestamp
-                  date="2020-09-08T17:36:52Z"
-                  noAbout={true}
-                  strict={true}
-                />
-              </td>
-            </tr>
-            <tr
-              className="recent-searches-panel__results-table-row"
-            >
-              <td>
-                <small>
-                  <AnchorLink
-                    onClick={[Function]}
-                    to="/search?q=r:sourcegraph&patternType=literal"
-                  >
-                    <SyntaxHighlightedSearchQuery
-                      query="r:sourcegraph"
-                    />
-                  </AnchorLink>
-                </small>
-              </td>
-              <td
-                className="recent-searches-panel__results-table-date-col"
-              >
-                <Timestamp
-                  date="2020-09-04T18:44:39Z"
-                  noAbout={true}
-                  strict={true}
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </React.Fragment>
-    }
-    state="populated"
-    title="Recent searches"
+<DocumentFragment>
+  <div
+    class="recent-searches-panel panelContainer d-flex flex-column"
   >
     <div
-      className="recent-searches-panel panel-container d-flex flex-column"
+      class="d-flex border-bottom header"
     >
-      <div
-        className="panel-container__header d-flex border-bottom"
+      <h4
+        class="headerText"
       >
-        <h4
-          className="panel-container__header-text"
-        >
-          Recent searches
-        </h4>
-      </div>
-      <div
-        className="panel-container__content h-100"
-      >
-        <table
-          className="recent-searches-panel__results-table mt-2"
-        >
-          <thead>
-            <tr
-              className="recent-searches-panel__results-table-row"
-            >
-              <th>
-                <small>
-                  Search
-                </small>
-              </th>
-              <th>
-                <small>
-                  Date
-                </small>
-              </th>
-            </tr>
-          </thead>
-          <tbody
-            className="recent-searches-panel__results-table-body"
-          >
-            <tr
-              className="recent-searches-panel__results-table-row"
-              key="0"
-            >
-              <td>
-                <small>
-                  <AnchorLink
-                    onClick={[Function]}
-                    to="/search?q=test&patternType=literal"
-                  >
-                    <a
-                      href="/search?q=test&patternType=literal"
-                      onClick={[Function]}
-                    >
-                      <SyntaxHighlightedSearchQuery
-                        query="test"
-                      >
-                        <span
-                          className="text-monospace search-query-link"
-                        >
-                          test
-                        </span>
-                      </SyntaxHighlightedSearchQuery>
-                    </a>
-                  </AnchorLink>
-                </small>
-              </td>
-              <td
-                className="recent-searches-panel__results-table-date-col"
-              >
-                <Timestamp
-                  date="2020-09-08T17:36:52Z"
-                  noAbout={true}
-                  strict={true}
-                >
-                  <span
-                    className="timestamp"
-                    data-tooltip="2020-09-08T17:36:52Z"
-                  >
-                    in 15 years
-                  </span>
-                </Timestamp>
-              </td>
-            </tr>
-            <tr
-              className="recent-searches-panel__results-table-row"
-              key="1"
-            >
-              <td>
-                <small>
-                  <AnchorLink
-                    onClick={[Function]}
-                    to="/search?q=r:sourcegraph&patternType=literal"
-                  >
-                    <a
-                      href="/search?q=r:sourcegraph&patternType=literal"
-                      onClick={[Function]}
-                    >
-                      <SyntaxHighlightedSearchQuery
-                        query="r:sourcegraph"
-                      >
-                        <span
-                          className="text-monospace search-query-link"
-                        >
-                          <span
-                            className="search-filter-keyword"
-                          >
-                            r
-                            :
-                          </span>
-                          sourcegraph
-                        </span>
-                      </SyntaxHighlightedSearchQuery>
-                    </a>
-                  </AnchorLink>
-                </small>
-              </td>
-              <td
-                className="recent-searches-panel__results-table-date-col"
-              >
-                <Timestamp
-                  date="2020-09-04T18:44:39Z"
-                  noAbout={true}
-                  strict={true}
-                >
-                  <span
-                    className="timestamp"
-                    data-tooltip="2020-09-04T18:44:39Z"
-                  >
-                    in 15 years
-                  </span>
-                </Timestamp>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        Recent searches
+      </h4>
     </div>
-  </PanelContainer>
-</RecentSearchesPanel>
+    <div
+      class="h-100 content"
+    >
+      <table
+        class="mt-2 resultsTable"
+      >
+        <thead>
+          <tr
+            class="resultsTableRow"
+          >
+            <th>
+              <small>
+                Search
+              </small>
+            </th>
+            <th>
+              <small>
+                Date
+              </small>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            class="resultsTableRow"
+          >
+            <td>
+              <small
+                class="recentQuery"
+              >
+                <a
+                  class="anchorLink"
+                  href="/search?q=test&patternType=literal"
+                >
+                  <span
+                    class="text-monospace search-query-link"
+                  >
+                    test
+                  </span>
+                </a>
+              </small>
+            </td>
+            <td
+              class="resultsTableDateCol"
+            >
+              <span
+                class="timestamp"
+                data-tooltip="2020-09-08 5:36:52 PM"
+              >
+                in 15 years
+              </span>
+            </td>
+          </tr>
+          <tr
+            class="resultsTableRow"
+          >
+            <td>
+              <small
+                class="recentQuery"
+              >
+                <a
+                  class="anchorLink"
+                  href="/search?q=r:sourcegraph&patternType=literal"
+                >
+                  <span
+                    class="text-monospace search-query-link"
+                  >
+                    <span
+                      class="search-filter-keyword"
+                    >
+                      r
+                    </span>
+                    <span
+                      class="search-filter-separator"
+                    >
+                      :
+                    </span>
+                    sourcegraph
+                  </span>
+                </a>
+              </small>
+            </td>
+            <td
+              class="resultsTableDateCol"
+            >
+              <span
+                class="timestamp"
+                data-tooltip="2020-09-04 6:44:39 PM"
+              >
+                in 15 years
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</DocumentFragment>
 `;
 
 exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
-<RecentSearchesPanel
-  authenticatedUser={null}
-  fetchRecentSearches={[Function]}
-  telemetryService={
-    Object {
-      "log": [Function],
-      "logViewEvent": [Function],
-    }
-  }
->
-  <PanelContainer
-    className="recent-searches-panel"
-    emptyContent={
-      <div
-        className="panel-container__empty-container text-muted"
-      >
-        <small
-          className="mb-2"
-        >
-          Your recent searches will be displayed here. Here are a few searches to get you started:
-        </small>
-        <ul
-          className="recent-searches-panel__examples-list"
-        >
-          <li
-            className="recent-searches-panel__examples-list-item"
-          >
-            <small>
-              <AnchorLink
-                className="text-monospace"
-                to="/search?q=lang:c+if%28:%5Beval_match%5D%29+%7B+:%5Bstatement_match%5D+%7D&patternType=structural"
-              >
-                <SyntaxHighlightedSearchQuery
-                  query="lang:c if(:[eval_match]) { :[statement_match] }"
-                />
-              </AnchorLink>
-            </small>
-          </li>
-          <li
-            className="recent-searches-panel__examples-list-item"
-          >
-            <small>
-              <AnchorLink
-                className="text-monospace"
-                to="/search?q=lang:java+type:diff+after:%221+week+ago%22&patternType=literal"
-              >
-                <SyntaxHighlightedSearchQuery
-                  query="lang:java type:diff after:\\"1 week ago\\""
-                />
-              </AnchorLink>
-            </small>
-          </li>
-          <li
-            className="recent-searches-panel__examples-list-item"
-          >
-            <small>
-              <AnchorLink
-                className="text-monospace"
-                to="/search?q=lang:java&patternType=literal"
-              >
-                <SyntaxHighlightedSearchQuery
-                  query="lang:java"
-                />
-              </AnchorLink>
-            </small>
-          </li>
-        </ul>
-      </div>
-    }
-    loadingContent={
-      <LoadingPanelView
-        text="Loading recent searches"
-      />
-    }
-    populatedContent={
-      <React.Fragment>
-        <table
-          className="recent-searches-panel__results-table mt-2"
-        >
-          <thead>
-            <tr
-              className="recent-searches-panel__results-table-row"
-            >
-              <th>
-                <small>
-                  Search
-                </small>
-              </th>
-              <th>
-                <small>
-                  Date
-                </small>
-              </th>
-            </tr>
-          </thead>
-          <tbody
-            className="recent-searches-panel__results-table-body"
-          >
-            <tr
-              className="recent-searches-panel__results-table-row"
-            >
-              <td>
-                <small>
-                  <AnchorLink
-                    onClick={[Function]}
-                    to="/search?q=test&patternType=literal"
-                  >
-                    <SyntaxHighlightedSearchQuery
-                      query="test"
-                    />
-                  </AnchorLink>
-                </small>
-              </td>
-              <td
-                className="recent-searches-panel__results-table-date-col"
-              >
-                <Timestamp
-                  date="2020-09-08T17:36:52Z"
-                  noAbout={true}
-                  strict={true}
-                />
-              </td>
-            </tr>
-            <tr
-              className="recent-searches-panel__results-table-row"
-            >
-              <td>
-                <small>
-                  <AnchorLink
-                    onClick={[Function]}
-                    to="/search?q=r:sourcegraph&patternType=literal"
-                  >
-                    <SyntaxHighlightedSearchQuery
-                      query="r:sourcegraph"
-                    />
-                  </AnchorLink>
-                </small>
-              </td>
-              <td
-                className="recent-searches-panel__results-table-date-col"
-              >
-                <Timestamp
-                  date="2020-09-04T18:44:30Z"
-                  noAbout={true}
-                  strict={true}
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </React.Fragment>
-    }
-    state="populated"
-    title="Recent searches"
+<DocumentFragment>
+  <div
+    class="recent-searches-panel panelContainer d-flex flex-column"
   >
     <div
-      className="recent-searches-panel panel-container d-flex flex-column"
+      class="d-flex border-bottom header"
     >
-      <div
-        className="panel-container__header d-flex border-bottom"
+      <h4
+        class="headerText"
       >
-        <h4
-          className="panel-container__header-text"
-        >
-          Recent searches
-        </h4>
-      </div>
-      <div
-        className="panel-container__content h-100"
-      >
-        <table
-          className="recent-searches-panel__results-table mt-2"
-        >
-          <thead>
-            <tr
-              className="recent-searches-panel__results-table-row"
-            >
-              <th>
-                <small>
-                  Search
-                </small>
-              </th>
-              <th>
-                <small>
-                  Date
-                </small>
-              </th>
-            </tr>
-          </thead>
-          <tbody
-            className="recent-searches-panel__results-table-body"
-          >
-            <tr
-              className="recent-searches-panel__results-table-row"
-              key="0"
-            >
-              <td>
-                <small>
-                  <AnchorLink
-                    onClick={[Function]}
-                    to="/search?q=test&patternType=literal"
-                  >
-                    <a
-                      href="/search?q=test&patternType=literal"
-                      onClick={[Function]}
-                    >
-                      <SyntaxHighlightedSearchQuery
-                        query="test"
-                      >
-                        <span
-                          className="text-monospace search-query-link"
-                        >
-                          test
-                        </span>
-                      </SyntaxHighlightedSearchQuery>
-                    </a>
-                  </AnchorLink>
-                </small>
-              </td>
-              <td
-                className="recent-searches-panel__results-table-date-col"
-              >
-                <Timestamp
-                  date="2020-09-08T17:36:52Z"
-                  noAbout={true}
-                  strict={true}
-                >
-                  <span
-                    className="timestamp"
-                    data-tooltip="2020-09-08T17:36:52Z"
-                  >
-                    in 15 years
-                  </span>
-                </Timestamp>
-              </td>
-            </tr>
-            <tr
-              className="recent-searches-panel__results-table-row"
-              key="1"
-            >
-              <td>
-                <small>
-                  <AnchorLink
-                    onClick={[Function]}
-                    to="/search?q=r:sourcegraph&patternType=literal"
-                  >
-                    <a
-                      href="/search?q=r:sourcegraph&patternType=literal"
-                      onClick={[Function]}
-                    >
-                      <SyntaxHighlightedSearchQuery
-                        query="r:sourcegraph"
-                      >
-                        <span
-                          className="text-monospace search-query-link"
-                        >
-                          <span
-                            className="search-filter-keyword"
-                          >
-                            r
-                            :
-                          </span>
-                          sourcegraph
-                        </span>
-                      </SyntaxHighlightedSearchQuery>
-                    </a>
-                  </AnchorLink>
-                </small>
-              </td>
-              <td
-                className="recent-searches-panel__results-table-date-col"
-              >
-                <Timestamp
-                  date="2020-09-04T18:44:30Z"
-                  noAbout={true}
-                  strict={true}
-                >
-                  <span
-                    className="timestamp"
-                    data-tooltip="2020-09-04T18:44:30Z"
-                  >
-                    in 15 years
-                  </span>
-                </Timestamp>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        Recent searches
+      </h4>
     </div>
-  </PanelContainer>
-</RecentSearchesPanel>
+    <div
+      class="h-100 content"
+    >
+      <table
+        class="mt-2 resultsTable"
+      >
+        <thead>
+          <tr
+            class="resultsTableRow"
+          >
+            <th>
+              <small>
+                Search
+              </small>
+            </th>
+            <th>
+              <small>
+                Date
+              </small>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            class="resultsTableRow"
+          >
+            <td>
+              <small
+                class="recentQuery"
+              >
+                <a
+                  class="anchorLink"
+                  href="/search?q=test&patternType=literal"
+                >
+                  <span
+                    class="text-monospace search-query-link"
+                  >
+                    test
+                  </span>
+                </a>
+              </small>
+            </td>
+            <td
+              class="resultsTableDateCol"
+            >
+              <span
+                class="timestamp"
+                data-tooltip="2020-09-08 5:36:52 PM"
+              >
+                in 15 years
+              </span>
+            </td>
+          </tr>
+          <tr
+            class="resultsTableRow"
+          >
+            <td>
+              <small
+                class="recentQuery"
+              >
+                <a
+                  class="anchorLink"
+                  href="/search?q=r:sourcegraph&patternType=literal"
+                >
+                  <span
+                    class="text-monospace search-query-link"
+                  >
+                    <span
+                      class="search-filter-keyword"
+                    >
+                      r
+                    </span>
+                    <span
+                      class="search-filter-separator"
+                    >
+                      :
+                    </span>
+                    sourcegraph
+                  </span>
+                </a>
+              </small>
+            </td>
+            <td
+              class="resultsTableDateCol"
+            >
+              <span
+                class="timestamp"
+                data-tooltip="2020-09-04 6:44:30 PM"
+              >
+                in 15 years
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</DocumentFragment>
 `;

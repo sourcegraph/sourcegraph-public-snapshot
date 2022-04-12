@@ -1,64 +1,57 @@
+import { useContext, useMemo } from 'react'
+
 import { useHistory } from 'react-router-dom'
 
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { asError } from '@sourcegraph/shared/src/util/errors'
+import { asError } from '@sourcegraph/common'
+import { useObservable } from '@sourcegraph/wildcard'
 
-import { Settings } from '../../../../../../schema/settings.schema'
+import { eventLogger } from '../../../../../../tracking/eventLogger'
 import { FORM_ERROR, SubmissionErrors } from '../../../../components/form/hooks/useForm'
-import { Insight, isVirtualDashboard } from '../../../../core/types'
-import { useDashboard } from '../../../../hooks/use-dashboard'
+import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
+import { CreationInsightInput } from '../../../../core/backend/code-insights-backend-types'
+import { ALL_INSIGHTS_DASHBOARD } from '../../../../core/constants'
 import { useQueryParameters } from '../../../../hooks/use-query-parameters'
-
-import { useUpdateSettingsSubject } from './use-update-settings-subjects/use-update-settings-subjects'
-
-export interface UseHandleSubmitProps extends PlatformContextProps<'updateSettings'>, SettingsCascadeProps<Settings> {
-    originalInsight: Insight | null
-}
+import { getTrackingTypeByInsightType } from '../../../../pings'
 
 export interface useHandleSubmitOutput {
-    handleSubmit: (newInsight: Insight) => Promise<SubmissionErrors>
+    handleSubmit: (newInsight: CreationInsightInput) => Promise<SubmissionErrors>
     handleCancel: () => void
 }
 
 /**
  * Returns submit and cancel handlers for the insight edit submit page.
  */
-export function useEditPageHandlers(props: UseHandleSubmitProps): useHandleSubmitOutput {
-    const { originalInsight, platformContext, settingsCascade } = props
-
-    const { updateSettingSubjects } = useUpdateSettingsSubject({ platformContext })
+export function useEditPageHandlers(props: { id: string | undefined }): useHandleSubmitOutput {
+    const { id } = props
+    const { updateInsight, getDashboardById } = useContext(CodeInsightsBackendContext)
     const history = useHistory()
 
     const { dashboardId } = useQueryParameters(['dashboardId'])
-    const dashboard = useDashboard({ settingsCascade, dashboardId })
+    const dashboard = useObservable(useMemo(() => getDashboardById({ dashboardId }), [getDashboardById, dashboardId]))
 
-    const handleSubmit = async (newInsight: Insight): Promise<SubmissionErrors> => {
-        if (!originalInsight) {
+    const handleSubmit = async (newInsight: CreationInsightInput): Promise<SubmissionErrors> => {
+        if (!id) {
             return
         }
 
         try {
-            await updateSettingSubjects({
-                oldInsight: originalInsight,
-                newInsight,
-                settingsCascade,
-            })
+            await updateInsight({
+                insightId: id,
+                nextInsightData: newInsight,
+            }).toPromise()
 
-            if (!dashboard || isVirtualDashboard(dashboard)) {
+            const insightType = getTrackingTypeByInsightType(newInsight.type)
+
+            eventLogger.log('InsightEdit', { insightType }, { insightType })
+
+            if (!dashboard) {
                 // Navigate user to the dashboard page with new created dashboard
-                history.push(`/insights/dashboards/${newInsight.visibility}`)
+                history.push(`/insights/dashboards/${ALL_INSIGHTS_DASHBOARD.id}`)
 
                 return
             }
 
-            // If insight's visible area has been changed explicit redirect to new
-            // scope dashboard page
-            if (dashboard.owner.id !== newInsight.visibility) {
-                history.push(`/insights/dashboards/${newInsight.visibility}`)
-            } else {
-                history.push(`/insights/dashboards/${dashboard.id}`)
-            }
+            history.push(`/insights/dashboards/${dashboard.id}`)
         } catch (error) {
             return { [FORM_ERROR]: asError(error) }
         }
@@ -67,7 +60,12 @@ export function useEditPageHandlers(props: UseHandleSubmitProps): useHandleSubmi
     }
 
     const handleCancel = (): void => {
-        history.push(`/insights/dashboards/${dashboard?.id ?? 'all'}`)
+        if (!dashboard) {
+            history.push(`/insights/dashboards/${ALL_INSIGHTS_DASHBOARD.id}`)
+            return
+        }
+
+        history.push(`/insights/dashboards/${dashboard.id}`)
     }
 
     return { handleSubmit, handleCancel }

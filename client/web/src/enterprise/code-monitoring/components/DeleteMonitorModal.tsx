@@ -1,11 +1,10 @@
-import Dialog from '@reach/dialog'
 import React, { useCallback } from 'react'
+
 import { Observable, throwError } from 'rxjs'
 import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { asError, isErrorLike } from '@sourcegraph/common'
+import { Button, LoadingSpinner, useEventObservable, Modal, Alert } from '@sourcegraph/wildcard'
 
 import { CodeMonitorFormProps } from './CodeMonitorForm'
 
@@ -49,11 +48,12 @@ export const DeleteMonitorModal: React.FunctionComponent<DeleteModalProps> = ({
     )
 
     return (
-        <Dialog
+        <Modal
+            position="center"
             isOpen={isOpen}
-            className="modal-body modal-body--centered p-4 rounded border test-delete-modal"
             onDismiss={toggleDeleteModal}
             aria-labelledby={deleteLabelId}
+            data-testid="delete-modal"
         >
             <h3 className="text-danger" id={deleteLabelId}>
                 Delete code monitor?
@@ -65,20 +65,18 @@ export const DeleteMonitorModal: React.FunctionComponent<DeleteModalProps> = ({
             </p>
             {(!deleteCompletedOrError || isErrorLike(deleteCompletedOrError)) && (
                 <div className="text-right">
-                    <button type="button" className="btn btn-outline-secondary mr-2" onClick={toggleDeleteModal}>
+                    <Button className="mr-2" onClick={toggleDeleteModal} outline={true} variant="secondary">
                         Cancel
-                    </button>
-                    <button type="button" className="btn btn-danger test-confirm-delete-monitor" onClick={onDelete}>
+                    </Button>
+                    <Button onClick={onDelete} data-testid="confirm-delete-monitor" variant="danger">
                         Yes, delete code monitor
-                    </button>
+                    </Button>
                     {isErrorLike(deleteCompletedOrError) && (
-                        <div className="alert-danger">Error deleting monitor: {deleteCompletedOrError.message}</div>
+                        <Alert variant="danger">Error deleting monitor: {deleteCompletedOrError.message}</Alert>
                     )}
                 </div>
             )}
-            {deleteCompletedOrError && (
-                <div>{deleteCompletedOrError === 'loading' && <LoadingSpinner className="icon-inline" />}</div>
-            )}
-        </Dialog>
+            {deleteCompletedOrError && <div>{deleteCompletedOrError === 'loading' && <LoadingSpinner />}</div>}
+        </Modal>
     )
 }

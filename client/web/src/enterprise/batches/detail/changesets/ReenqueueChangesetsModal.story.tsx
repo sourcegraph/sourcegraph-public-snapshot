@@ -1,9 +1,10 @@
+import React from 'react'
+
 import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
-import React from 'react'
 
-import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
+import { WebStory } from '../../../../components/WebStory'
 
 import { ReenqueueChangesetsModal } from './ReenqueueChangesetsModal'
 
@@ -17,7 +18,7 @@ const reenqueueChangesets = () => {
 }
 
 add('Confirmation', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <ReenqueueChangesetsModal
                 {...props}
@@ -28,5 +29,5 @@ add('Confirmation', () => (
                 reenqueueChangesets={reenqueueChangesets}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))

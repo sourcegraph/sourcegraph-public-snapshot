@@ -3,15 +3,16 @@ package compression
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type DBCommitStore struct {
@@ -19,11 +20,11 @@ type DBCommitStore struct {
 }
 
 type CommitStore interface {
-	Save(ctx context.Context, id api.RepoID, commit *git.Commit) error
+	Save(ctx context.Context, id api.RepoID, commit *gitdomain.Commit, debugInfo string) error
 	Get(ctx context.Context, id api.RepoID, start time.Time, end time.Time) ([]CommitStamp, error)
 	GetMetadata(ctx context.Context, id api.RepoID) (CommitIndexMetadata, error)
 	UpsertMetadataStamp(ctx context.Context, id api.RepoID) (CommitIndexMetadata, error)
-	InsertCommits(ctx context.Context, id api.RepoID, commits []*git.Commit) error
+	InsertCommits(ctx context.Context, id api.RepoID, commits []*gitdomain.Commit, debugInfo string) error
 }
 
 func NewCommitStore(db dbutil.DB) *DBCommitStore {
@@ -41,16 +42,17 @@ func (c *DBCommitStore) Transact(ctx context.Context) (*DBCommitStore, error) {
 	return &DBCommitStore{Store: txBase}, err
 }
 
-func (c *DBCommitStore) Save(ctx context.Context, id api.RepoID, commit *git.Commit) error {
+func (c *DBCommitStore) Save(ctx context.Context, id api.RepoID, commit *gitdomain.Commit, debugInfo string) error {
 	commitID := commit.ID
-	if err := c.Exec(ctx, sqlf.Sprintf(insertCommitIndexStr, id, dbutil.CommitBytea(commitID), commit.Committer.Date)); err != nil {
+	debugMsg := fmt.Sprintf("author:%s|msgSub:%s|msgBody:%s|commitTime:%s|authorTime:%s|debugInfo:%s", commit.Author.Name, commit.Message.Subject(), commit.Message.Body(), commit.Committer.Date, commit.Author.Date, debugInfo)
+	if err := c.Exec(ctx, sqlf.Sprintf(insertCommitIndexStr, id, dbutil.CommitBytea(commitID), commit.Committer.Date, debugMsg)); err != nil {
 		return errors.Errorf("error saving commit for repo_id: %v commit_id %v: %w", id, commitID, err)
 	}
 
 	return nil
 }
 
-func (c *DBCommitStore) InsertCommits(ctx context.Context, id api.RepoID, commits []*git.Commit) (err error) {
+func (c *DBCommitStore) InsertCommits(ctx context.Context, id api.RepoID, commits []*gitdomain.Commit, debugInfo string) (err error) {
 	tx, err := c.Transact(ctx)
 	if err != nil {
 		return err
@@ -59,7 +61,7 @@ func (c *DBCommitStore) InsertCommits(ctx context.Context, id api.RepoID, commit
 	defer func() { err = tx.Store.Done(err) }()
 
 	for _, commit := range commits {
-		if err = tx.Save(ctx, id, commit); err != nil {
+		if err = tx.Save(ctx, id, commit, debugInfo); err != nil {
 			return err
 		}
 	}
@@ -95,10 +97,10 @@ func (c *DBCommitStore) Get(ctx context.Context, id api.RepoID, start time.Time,
 
 // GetMetadata Returns commit index metadata for a given repository
 func (c *DBCommitStore) GetMetadata(ctx context.Context, id api.RepoID) (CommitIndexMetadata, error) {
-	row := c.QueryRow(ctx, sqlf.Sprintf(getCommitIndexMetadataStr, id))
+	row := c.QueryRow(ctx, sqlf.Sprintf(getCommitIndexMetadataStr, id, id))
 
 	var metadata CommitIndexMetadata
-	if err := row.Scan(&metadata.RepoId, &metadata.Enabled, &metadata.LastIndexedAt); err != nil {
+	if err := row.Scan(&metadata.RepoId, &metadata.Enabled, &metadata.LastIndexedAt, &metadata.OldestIndexedAt); err != nil {
 		return CommitIndexMetadata{}, err
 	}
 
@@ -124,9 +126,10 @@ type CommitStamp struct {
 }
 
 type CommitIndexMetadata struct {
-	RepoId        int
-	Enabled       bool
-	LastIndexedAt time.Time
+	RepoId          int
+	Enabled         bool
+	LastIndexedAt   time.Time
+	OldestIndexedAt *time.Time
 }
 
 const getCommitsInRangeStr = `
@@ -136,12 +139,14 @@ SELECT repo_id, commit_bytea, committed_at FROM commit_index WHERE repo_id = %s 
 
 const insertCommitIndexStr = `
 -- source: enterprise/internal/insights/compression/commits.go:Save
-INSERT INTO commit_index(repo_id, commit_bytea, committed_at) VALUES (%s, %s, %s);
+INSERT INTO commit_index(repo_id, commit_bytea, committed_at, debug_field) VALUES (%s, %s, %s, %s);
 `
 
 const getCommitIndexMetadataStr = `
 -- source: enterprise/internal/insights/compression/commits.go:GetMetadata
-SELECT repo_id, enabled, last_indexed_at FROM commit_index_metadata WHERE repo_id = %s;
+SELECT repo_id, enabled, last_indexed_at, (select min(committed_at) from commit_index where repo_id = %s) oldest_indexed_at
+FROM commit_index_metadata
+WHERE repo_id = %s;
 `
 
 const upsertCommitIndexMetadataStampStr = `

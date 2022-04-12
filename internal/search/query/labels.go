@@ -7,7 +7,7 @@ type labels uint16
 
 const (
 	None    labels = 0
-	Literal        = 1 << iota
+	Literal labels = 1 << iota
 	Regexp
 	Quoted
 	HeuristicParensAsPatterns
@@ -15,6 +15,9 @@ const (
 	HeuristicHoisted
 	Structural
 	IsPredicate
+	// IsAlias flags whether the original syntax referred to an alias rather
+	// than canonical form (r: instead of repo:)
+	IsAlias
 )
 
 var allLabels = map[labels]string{
@@ -27,6 +30,7 @@ var allLabels = map[labels]string{
 	HeuristicHoisted:          "HeuristicHoisted",
 	Structural:                "Structural",
 	IsPredicate:               "IsPredicate",
+	IsAlias:                   "IsAlias",
 }
 
 func (l *labels) IsSet(label labels) bool {

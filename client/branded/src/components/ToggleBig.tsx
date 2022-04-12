@@ -1,6 +1,7 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import Check from 'mdi-react/CheckIcon'
-import * as React from 'react'
 
 import styles from './ToggleBig.module.scss'
 
@@ -34,7 +35,7 @@ interface Props {
     className?: string
 
     /** Data attribute for testing */
-    dataTest?: string
+    'data-testid'?: string
 }
 
 /** A big toggle switch input component. */
@@ -48,7 +49,7 @@ export const ToggleBig: React.FunctionComponent<Props> = ({
     onToggle,
     onHover,
     onFocus,
-    dataTest,
+    'data-testid': dataTestId,
 }) => {
     function onClick(): void {
         if (!disabled && onToggle) {
@@ -82,7 +83,7 @@ export const ToggleBig: React.FunctionComponent<Props> = ({
             disabled={!!disabled}
             role="switch"
             aria-checked={value}
-            data-test={dataTest}
+            data-testid={dataTestId}
         >
             <span
                 className={classNames(styles.bar, {

@@ -6,14 +6,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/efritz/pentimento"
-
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/validation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 var updateInterval = time.Second / 4
-var ticker = pentimento.NewAnimatedString([]string{"⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏", "⠋", "⠙", "⠹"}, updateInterval)
 
 func validate(indexFile *os.File) error {
 	ctx := validation.NewValidationContext()
@@ -28,7 +26,7 @@ func validate(indexFile *os.File) error {
 		}
 	}()
 
-	if err := printProgress(ctx, validator, errs); err != nil {
+	if err := printProgress(ctx, errs); err != nil {
 		return err
 	}
 
@@ -43,32 +41,29 @@ func validate(indexFile *os.File) error {
 	return nil
 }
 
-func printProgress(ctx *validation.ValidationContext, validator *validation.Validator, errs <-chan error) error {
-	return pentimento.PrintProgress(func(printer *pentimento.Printer) error {
-		defer func() {
-			_ = printer.Reset()
-		}()
+func printProgress(ctx *validation.ValidationContext, errs <-chan error) error {
+	out := output.NewOutput(os.Stdout, output.OutputOpts{})
+	pending := out.Pending(output.Linef("", output.StylePending, "%d vertices, %d edges", atomic.LoadUint64(&ctx.NumVertices), atomic.LoadUint64(&ctx.NumEdges)))
+	defer func() {
+		pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Done!"))
+	}()
 
-		for {
-			ctx.ErrorsLock.RLock()
-			numErrors := len(ctx.Errors)
-			ctx.ErrorsLock.RUnlock()
+	for {
+		ctx.ErrorsLock.RLock()
+		numErrors := len(ctx.Errors)
+		ctx.ErrorsLock.RUnlock()
 
-			content := pentimento.NewContent()
-			content.AddLine(
-				"%s %d vertices, %d edges, %d errors",
-				ticker,
-				atomic.LoadUint64(&ctx.NumVertices),
-				atomic.LoadUint64(&ctx.NumEdges),
-				numErrors,
-			)
-			printer.WriteContent(content)
+		pending.Updatef(
+			"%d vertices, %d edges, %d errors",
+			atomic.LoadUint64(&ctx.NumVertices),
+			atomic.LoadUint64(&ctx.NumEdges),
+			numErrors,
+		)
 
-			select {
-			case err := <-errs:
-				return err
-			case <-time.After(updateInterval):
-			}
+		select {
+		case err := <-errs:
+			return err
+		case <-time.After(updateInterval):
 		}
-	})
+	}
 }

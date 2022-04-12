@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -15,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Provider is an implementation of AuthzProvider that provides repository permissions as
@@ -49,8 +49,8 @@ func NewProvider(cli *bitbucketserver.Client, urn string, pluginPerm bool) *Prov
 
 // Validate validates that the Provider has access to the Bitbucket Server API
 // with the OAuth credentials it was configured with.
-func (p *Provider) Validate() []string {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+func (p *Provider) ValidateConnection(ctx context.Context) []string {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	username, err := p.client.Username()
@@ -153,6 +153,12 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	return &authz.ExternalUserPermissions{
 		Exacts: extIDs,
 	}, err
+}
+
+// FetchUserPermsByToken is the same as FetchUserPerms, but it only requires a
+// token.
+func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+	return nil, errors.New("not implemented")
 }
 
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to

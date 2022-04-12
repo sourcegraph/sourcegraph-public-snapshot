@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
@@ -18,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -105,7 +105,7 @@ func (h Webhook) upsertChangesetEvent(
 
 	r, err := h.getRepoForPR(ctx, tx, pr, externalServiceID)
 	if err != nil {
-		log15.Debug("Webhook event could not be matched to repo", "err", err)
+		log15.Warn("Webhook event could not be matched to repo", "err", err)
 		return nil
 	}
 

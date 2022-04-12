@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -18,25 +18,59 @@ import (
 
 var _ graphqlbackend.InsightsResolver = &Resolver{}
 
+// baseInsightResolver is a "super" resolver for all other insights resolvers. Since insights interacts with multiple
+// database and multiple Stores, this is a convenient way to propagate those stores without having to drill individual
+// references all over the place, but still allow interfaces at the individual resolver level for mocking.
+type baseInsightResolver struct {
+	insightStore    *store.InsightStore
+	timeSeriesStore *store.Store
+	dashboardStore  *store.DBDashboardStore
+	workerBaseStore *basestore.Store
+
+	// including the DB references for any one off stores that may need to be created.
+	insightsDB dbutil.DB
+	postgresDB dbutil.DB
+}
+
+func WithBase(insightsDB dbutil.DB, primaryDB dbutil.DB, clock func() time.Time) *baseInsightResolver {
+	insightStore := store.NewInsightStore(insightsDB)
+	timeSeriesStore := store.NewWithClock(insightsDB, store.NewInsightPermissionStore(primaryDB), clock)
+	dashboardStore := store.NewDashboardStore(insightsDB)
+	workerBaseStore := basestore.NewWithDB(primaryDB, sql.TxOptions{})
+
+	return &baseInsightResolver{
+		insightStore:    insightStore,
+		timeSeriesStore: timeSeriesStore,
+		dashboardStore:  dashboardStore,
+		workerBaseStore: workerBaseStore,
+		insightsDB:      insightsDB,
+		postgresDB:      primaryDB,
+	}
+}
+
 // Resolver is the GraphQL resolver of all things related to Insights.
 type Resolver struct {
-	insightsStore        store.Interface
-	workerBaseStore      *basestore.Store
+	timeSeriesStore      store.Interface
 	insightMetadataStore store.InsightMetadataStore
+	dataSeriesStore      store.DataSeriesStore
+
+	baseInsightResolver
 }
 
-// New returns a new Resolver whose store uses the given Timescale and Postgres DBs.
-func New(timescale, postgres dbutil.DB) graphqlbackend.InsightsResolver {
-	return newWithClock(timescale, postgres, timeutil.Now)
+// New returns a new Resolver whose store uses the given Postgres DBs.
+func New(db, postgres dbutil.DB) graphqlbackend.InsightsResolver {
+	return newWithClock(db, postgres, timeutil.Now)
 }
 
-// newWithClock returns a new Resolver whose store uses the given Timescale and Postgres DBs, and the given
-// clock for timestamps.
-func newWithClock(timescale, postgres dbutil.DB, clock func() time.Time) *Resolver {
+// newWithClock returns a new Resolver whose store uses the given Postgres DBs and the given clock
+// for timestamps.
+func newWithClock(db, postgres dbutil.DB, clock func() time.Time) *Resolver {
+	base := WithBase(db, postgres, clock)
 	return &Resolver{
-		insightsStore:        store.NewWithClock(timescale, store.NewInsightPermissionStore(postgres), clock),
-		workerBaseStore:      basestore.NewWithDB(postgres, sql.TxOptions{}),
-		insightMetadataStore: store.NewInsightStore(timescale),
+		baseInsightResolver:  *base,
+		timeSeriesStore:      base.timeSeriesStore,
+		insightMetadataStore: base.insightStore,
+		dataSeriesStore:      base.insightStore,
 	}
 }
 
@@ -49,7 +83,7 @@ func (r *Resolver) Insights(ctx context.Context, args *graphqlbackend.InsightsAr
 		}
 	}
 	return &insightConnectionResolver{
-		insightsStore:        r.insightsStore,
+		insightsStore:        r.timeSeriesStore,
 		workerBaseStore:      r.workerBaseStore,
 		insightMetadataStore: r.insightMetadataStore,
 		ids:                  idList,
@@ -57,14 +91,30 @@ func (r *Resolver) Insights(ctx context.Context, args *graphqlbackend.InsightsAr
 	}, nil
 }
 
-type disabledResolver struct {
-	reason string
+func (r *Resolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.InsightsDashboardsArgs) (graphqlbackend.InsightsDashboardConnectionResolver, error) {
+	return &dashboardConnectionResolver{
+		baseInsightResolver: r.baseInsightResolver,
+		orgStore:            database.Orgs(r.postgresDB),
+		args:                args,
+	}, nil
 }
 
-func NewDisabledResolver(reason string) graphqlbackend.InsightsResolver {
-	return &disabledResolver{reason}
-}
-
-func (r *disabledResolver) Insights(ctx context.Context, args *graphqlbackend.InsightsArgs) (graphqlbackend.InsightConnectionResolver, error) {
-	return nil, errors.New(r.reason)
+// 🚨 SECURITY
+// only add users / orgs if the user is non-anonymous. This will restrict anonymous users to only see
+// dashboards with a global grant.
+func getUserPermissions(ctx context.Context, orgStore database.OrgStore) (userIds []int, orgIds []int, err error) {
+	userId := actor.FromContext(ctx).UID
+	if userId != 0 {
+		var orgs []*types.Org
+		orgs, err = orgStore.GetByUserID(ctx, userId)
+		if err != nil {
+			return
+		}
+		userIds = []int{int(userId)}
+		orgIds = make([]int, 0, len(orgs))
+		for _, org := range orgs {
+			orgIds = append(orgIds, int(org.ID))
+		}
+	}
+	return
 }

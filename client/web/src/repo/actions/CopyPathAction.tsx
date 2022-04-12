@@ -1,10 +1,10 @@
-import classNames from 'classnames'
+import React, { useState, useLayoutEffect } from 'react'
+
 import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
-import React, { useState, useLayoutEffect } from 'react'
 import { useLocation } from 'react-router'
 
-import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
+import { Button, TooltipController, Icon } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { parseBrowserRepoURL } from '../../util/url'
@@ -19,7 +19,7 @@ export const CopyPathAction: React.FunctionComponent = () => {
     const [copied, setCopied] = useState(false)
 
     useLayoutEffect(() => {
-        Tooltip.forceUpdate()
+        TooltipController.forceUpdate()
     }, [copied])
 
     const onClick = (event: React.MouseEvent<HTMLButtonElement>): void => {
@@ -35,14 +35,15 @@ export const CopyPathAction: React.FunctionComponent = () => {
     }
 
     return (
-        <button
-            type="button"
-            className="btn btn-icon btn-sm p-2"
+        <Button
+            variant="icon"
+            className="p-2"
             data-tooltip={copied ? 'Copied!' : 'Copy path to clipboard'}
             aria-label="Copy path"
             onClick={onClick}
+            size="sm"
         >
-            <ContentCopyIcon className={classNames('icon-inline', styles.copyIcon)} />
-        </button>
+            <Icon className={styles.copyIcon} as={ContentCopyIcon} />
+        </Button>
     )
 }

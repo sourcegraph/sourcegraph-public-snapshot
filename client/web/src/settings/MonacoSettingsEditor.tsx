@@ -1,16 +1,19 @@
+import * as React from 'react'
+
 import * as jsonc from '@sqs/jsonc-parser'
 import classNames from 'classnames'
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
-import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, distinctUntilKeyChanged, map, startWith } from 'rxjs/operators'
 
+import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import jsonSchemaMetaSchema from '../../../../schema/json-schema-draft-07.schema.json'
 import settingsSchema from '../../../../schema/settings.schema.json'
-import { MonacoEditor } from '../components/MonacoEditor'
+
+import styles from './MonacoSettingsEditor.module.scss'
 
 /**
  * Minimal shape of a JSON Schema. These values are treated as opaque, so more specific types are
@@ -99,7 +102,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
         return (
             <MonacoEditor
                 id={this.props.id}
-                className={classNames('monaco-settings-editor', this.props.className)}
+                className={classNames(styles.monacoSettingsEditor, this.props.className)}
                 language={this.props.language || 'json'}
                 height={this.props.height || 400}
                 isLightTheme={this.props.isLightTheme}
@@ -147,7 +150,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
 
         this.disposables.push(registerRedactedHover(monaco))
 
-        setDiagnosticsOptions(monaco, this.props)
+        setDiagnosticsOptions(monaco, this.props.jsonSchema)
 
         // Only listen to 1 event each to avoid receiving events from other Monaco editors on the
         // same page (if there are multiple).
@@ -260,7 +263,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
     }
 }
 
-function setDiagnosticsOptions(editor: typeof monaco, jsonSchema: any): void {
+function setDiagnosticsOptions(editor: typeof monaco, jsonSchema: JSONSchema | undefined): void {
     editor.languages.json.jsonDefaults.setDiagnosticsOptions({
         validate: true,
         allowComments: true,

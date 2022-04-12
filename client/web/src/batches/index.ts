@@ -1,5 +1,5 @@
+import { isErrorLike } from '@sourcegraph/common'
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 /**
  * Utility for checking if a user has the experimental feature, batch change server-side
@@ -19,4 +19,5 @@ export const isBatchChangesExecutionEnabled = (settingsCascade: SettingsCascadeO
 export interface BatchChangesProps {
     batchChangesExecutionEnabled: boolean
     batchChangesEnabled: boolean
+    batchChangesWebhookLogsEnabled: boolean
 }

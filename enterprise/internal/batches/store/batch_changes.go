@@ -4,7 +4,6 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/go-diff/diff"
@@ -14,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // batchChangeColumns are used by the batch change related Store methods to insert,
@@ -22,7 +22,7 @@ var batchChangeColumns = []*sqlf.Query{
 	sqlf.Sprintf("batch_changes.id"),
 	sqlf.Sprintf("batch_changes.name"),
 	sqlf.Sprintf("batch_changes.description"),
-	sqlf.Sprintf("batch_changes.initial_applier_id"),
+	sqlf.Sprintf("batch_changes.creator_id"),
 	sqlf.Sprintf("batch_changes.last_applier_id"),
 	sqlf.Sprintf("batch_changes.last_applied_at"),
 	sqlf.Sprintf("batch_changes.namespace_user_id"),
@@ -39,7 +39,7 @@ var batchChangeColumns = []*sqlf.Query{
 var batchChangeInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("name"),
 	sqlf.Sprintf("description"),
-	sqlf.Sprintf("initial_applier_id"),
+	sqlf.Sprintf("creator_id"),
 	sqlf.Sprintf("last_applier_id"),
 	sqlf.Sprintf("last_applied_at"),
 	sqlf.Sprintf("namespace_user_id"),
@@ -57,7 +57,7 @@ func (s *Store) CreateBatchChange(ctx context.Context, c *btypes.BatchChange) (e
 
 	q := s.createBatchChangeQuery(c)
 
-	return s.query(ctx, q, func(sc scanner) (err error) {
+	return s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		return scanBatchChange(c, sc)
 	})
 }
@@ -83,9 +83,9 @@ func (s *Store) createBatchChangeQuery(c *btypes.BatchChange) *sqlf.Query {
 		sqlf.Join(batchChangeInsertColumns, ", "),
 		c.Name,
 		c.Description,
-		nullInt32Column(c.InitialApplierID),
+		nullInt32Column(c.CreatorID),
 		nullInt32Column(c.LastApplierID),
-		c.LastAppliedAt,
+		nullTimeColumn(c.LastAppliedAt),
 		nullInt32Column(c.NamespaceUserID),
 		nullInt32Column(c.NamespaceOrgID),
 		c.CreatedAt,
@@ -105,7 +105,7 @@ func (s *Store) UpdateBatchChange(ctx context.Context, c *btypes.BatchChange) (e
 
 	q := s.updateBatchChangeQuery(c)
 
-	return s.query(ctx, q, func(sc scanner) (err error) { return scanBatchChange(c, sc) })
+	return s.query(ctx, q, func(sc dbutil.Scanner) (err error) { return scanBatchChange(c, sc) })
 }
 
 var updateBatchChangeQueryFmtstr = `
@@ -124,9 +124,9 @@ func (s *Store) updateBatchChangeQuery(c *btypes.BatchChange) *sqlf.Query {
 		sqlf.Join(batchChangeInsertColumns, ", "),
 		c.Name,
 		c.Description,
-		nullInt32Column(c.InitialApplierID),
+		nullInt32Column(c.CreatorID),
 		nullInt32Column(c.LastApplierID),
-		c.LastAppliedAt,
+		nullTimeColumn(c.LastAppliedAt),
 		nullInt32Column(c.NamespaceUserID),
 		nullInt32Column(c.NamespaceOrgID),
 		c.CreatedAt,
@@ -157,13 +157,15 @@ DELETE FROM batch_changes WHERE id = %s
 // counting batches.
 type CountBatchChangesOpts struct {
 	ChangesetID int64
-	State       btypes.BatchChangeState
+	States      []btypes.BatchChangeState
 	RepoID      api.RepoID
 
-	InitialApplierID int32
+	CreatorID int32
 
 	NamespaceUserID int32
 	NamespaceOrgID  int32
+
+	ExcludeDraftsNotOwnedByUserID int32
 }
 
 // CountBatchChanges returns the number of batch changes in the database.
@@ -171,7 +173,7 @@ func (s *Store) CountBatchChanges(ctx context.Context, opts CountBatchChangesOpt
 	ctx, endObservation := s.operations.countBatchChanges.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	repoAuthzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
+	repoAuthzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Handle().DB()))
 	if err != nil {
 		return 0, errors.Wrap(err, "CountBatchChanges generating authz query conds")
 	}
@@ -202,19 +204,44 @@ func countBatchChangesQuery(opts *CountBatchChangesOpts, repoAuthzConds *sqlf.Qu
 		preds = append(preds, sqlf.Sprintf("changesets.id = %s", opts.ChangesetID))
 	}
 
-	switch opts.State {
-	case btypes.BatchChangeStateOpen:
-		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NULL"))
-	case btypes.BatchChangeStateClosed:
-		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NOT NULL"))
+	if len(opts.States) > 0 {
+		stateConds := []*sqlf.Query{}
+		for _, state := range opts.States {
+			switch state {
+			case btypes.BatchChangeStateOpen:
+				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.closed_at IS NULL AND batch_changes.last_applied_at IS NOT NULL"))
+			case btypes.BatchChangeStateClosed:
+				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.closed_at IS NOT NULL"))
+			case btypes.BatchChangeStateDraft:
+				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.last_applied_at IS NULL"))
+			}
+		}
+		if len(stateConds) > 0 {
+			preds = append(preds, sqlf.Sprintf("(%s)", sqlf.Join(stateConds, "OR")))
+		}
 	}
 
-	if opts.InitialApplierID != 0 {
-		preds = append(preds, sqlf.Sprintf("batch_changes.initial_applier_id = %d", opts.InitialApplierID))
+	if opts.CreatorID != 0 {
+		preds = append(preds, sqlf.Sprintf("batch_changes.creator_id = %d", opts.CreatorID))
 	}
 
 	if opts.NamespaceUserID != 0 {
 		preds = append(preds, sqlf.Sprintf("batch_changes.namespace_user_id = %s", opts.NamespaceUserID))
+
+		// If it's not my namespace and I can't see other users' drafts, filter out
+		// unapplied (draft) batch changes from this list.
+		if opts.ExcludeDraftsNotOwnedByUserID != 0 && opts.ExcludeDraftsNotOwnedByUserID != opts.NamespaceUserID {
+			preds = append(preds, sqlf.Sprintf("batch_changes.last_applied_at IS NOT NULL"))
+		}
+		// For batch changes filtered by org namespace, or not filtered by namespace at
+		// all, if I can't see other users' drafts, filter out unapplied (draft) batch
+		// changes except those that I authored the batch spec of from this list.
+	} else if opts.ExcludeDraftsNotOwnedByUserID != 0 {
+		cond := sqlf.Sprintf(`(batch_changes.last_applied_at IS NOT NULL
+		OR
+		EXISTS (SELECT 1 FROM batch_specs WHERE batch_specs.id = batch_changes.batch_spec_id AND batch_specs.user_id = %s))
+		`, opts.ExcludeDraftsNotOwnedByUserID)
+		preds = append(preds, cond)
 	}
 
 	if opts.NamespaceOrgID != 0 {
@@ -262,7 +289,7 @@ func (s *Store) GetBatchChange(ctx context.Context, opts GetBatchChangeOpts) (bc
 	q := getBatchChangeQuery(&opts)
 
 	var c btypes.BatchChange
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		return scanBatchChange(&c, sc)
 	})
 	if err != nil {
@@ -331,14 +358,14 @@ func (s *Store) GetBatchChangeDiffStat(ctx context.Context, opts GetBatchChangeD
 	}})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Handle().DB()))
 	if err != nil {
 		return nil, errors.Wrap(err, "GetBatchChangeDiffStat generating authz query conds")
 	}
 	q := getBatchChangeDiffStatQuery(opts, authzConds)
 
 	var diffStat diff.Stat
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		return sc.Scan(&diffStat.Added, &diffStat.Changed, &diffStat.Deleted)
 	})
 	if err != nil {
@@ -374,14 +401,14 @@ func (s *Store) GetRepoDiffStat(ctx context.Context, repoID api.RepoID) (stat *d
 	}})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Handle().DB()))
 	if err != nil {
 		return nil, errors.Wrap(err, "GetRepoDiffStat generating authz query conds")
 	}
 	q := getRepoDiffStatQuery(int64(repoID), authzConds)
 
 	var diffStat diff.Stat
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		return sc.Scan(&diffStat.Added, &diffStat.Changed, &diffStat.Deleted)
 	})
 	if err != nil {
@@ -416,14 +443,16 @@ type ListBatchChangesOpts struct {
 	LimitOpts
 	ChangesetID int64
 	Cursor      int64
-	State       btypes.BatchChangeState
+	States      []btypes.BatchChangeState
 
-	InitialApplierID int32
+	CreatorID int32
 
 	NamespaceUserID int32
 	NamespaceOrgID  int32
 
 	RepoID api.RepoID
+
+	ExcludeDraftsNotOwnedByUserID int32
 }
 
 // ListBatchChanges lists batch changes with the given filters.
@@ -431,14 +460,14 @@ func (s *Store) ListBatchChanges(ctx context.Context, opts ListBatchChangesOpts)
 	ctx, endObservation := s.operations.listBatchChanges.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	repoAuthzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
+	repoAuthzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Handle().DB()))
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "ListBatchChanges generating authz query conds")
 	}
 	q := listBatchChangesQuery(&opts, repoAuthzConds)
 
 	cs = make([]*btypes.BatchChange, 0, opts.DBLimit())
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		var c btypes.BatchChange
 		if err := scanBatchChange(&c, sc); err != nil {
 			return err
@@ -482,19 +511,43 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Quer
 		preds = append(preds, sqlf.Sprintf("changesets.id = %s", opts.ChangesetID))
 	}
 
-	switch opts.State {
-	case btypes.BatchChangeStateOpen:
-		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NULL"))
-	case btypes.BatchChangeStateClosed:
-		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NOT NULL"))
+	if len(opts.States) > 0 {
+		stateConds := []*sqlf.Query{}
+		for i := 0; i < len(opts.States); i++ {
+			switch opts.States[i] {
+			case btypes.BatchChangeStateOpen:
+				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.closed_at IS NULL AND batch_changes.last_applied_at IS NOT NULL"))
+			case btypes.BatchChangeStateClosed:
+				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.closed_at IS NOT NULL"))
+			case btypes.BatchChangeStateDraft:
+				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.last_applied_at IS NULL"))
+			}
+		}
+		if len(stateConds) > 0 {
+			preds = append(preds, sqlf.Sprintf("(%s)", sqlf.Join(stateConds, "OR")))
+		}
 	}
 
-	if opts.InitialApplierID != 0 {
-		preds = append(preds, sqlf.Sprintf("batch_changes.initial_applier_id = %d", opts.InitialApplierID))
+	if opts.CreatorID != 0 {
+		preds = append(preds, sqlf.Sprintf("batch_changes.creator_id = %d", opts.CreatorID))
 	}
 
 	if opts.NamespaceUserID != 0 {
 		preds = append(preds, sqlf.Sprintf("batch_changes.namespace_user_id = %s", opts.NamespaceUserID))
+		// If it's not my namespace and I can't see other users' drafts, filter out
+		// unapplied (draft) batch changes from this list.
+		if opts.ExcludeDraftsNotOwnedByUserID != 0 && opts.ExcludeDraftsNotOwnedByUserID != opts.NamespaceUserID {
+			preds = append(preds, sqlf.Sprintf("batch_changes.last_applied_at IS NOT NULL"))
+		}
+		// For batch changes filtered by org namespace, or not filtered by namespace at
+		// all, if I can't see other users' drafts, filter out unapplied (draft) batch
+		// changes except those that I authored the batch spec of from this list.
+	} else if opts.ExcludeDraftsNotOwnedByUserID != 0 {
+		cond := sqlf.Sprintf(`(batch_changes.last_applied_at IS NOT NULL
+		OR
+		EXISTS (SELECT 1 FROM batch_specs WHERE batch_specs.id = batch_changes.batch_spec_id AND batch_specs.user_id = %s))
+		`, opts.ExcludeDraftsNotOwnedByUserID)
+		preds = append(preds, cond)
 	}
 
 	if opts.NamespaceOrgID != 0 {
@@ -526,14 +579,14 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Quer
 	)
 }
 
-func scanBatchChange(c *btypes.BatchChange, s scanner) error {
+func scanBatchChange(c *btypes.BatchChange, s dbutil.Scanner) error {
 	return s.Scan(
 		&c.ID,
 		&c.Name,
 		&dbutil.NullString{S: &c.Description},
-		&dbutil.NullInt32{N: &c.InitialApplierID},
+		&dbutil.NullInt32{N: &c.CreatorID},
 		&dbutil.NullInt32{N: &c.LastApplierID},
-		&c.LastAppliedAt,
+		&dbutil.NullTime{Time: &c.LastAppliedAt},
 		&dbutil.NullInt32{N: &c.NamespaceUserID},
 		&dbutil.NullInt32{N: &c.NamespaceOrgID},
 		&c.CreatedAt,

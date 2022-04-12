@@ -1,32 +1,26 @@
-import classnames from 'classnames'
-import PlusIcon from 'mdi-react/PlusIcon'
 import React from 'react'
-import { Link } from 'react-router-dom'
 
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Button } from '@sourcegraph/wildcard'
+import PlusIcon from 'mdi-react/PlusIcon'
 
-import { Settings } from '../../../../../../../../../schema/settings.schema'
+import { Button, Link, Card } from '@sourcegraph/wildcard'
+
+import { ALL_INSIGHTS_DASHBOARD } from '../../../../../../../core/constants'
 import { InsightDashboard } from '../../../../../../../core/types'
-import { getTooltipMessage, useDashboardPermissions } from '../../../../hooks/use-dashboard-permissions'
+import { useUiFeatures } from '../../../../../../../hooks/use-ui-features'
 import { isDashboardConfigurable } from '../../utils/is-dashboard-configurable'
 
 import styles from './EmptyInsightDashboard.module.scss'
 
-interface EmptyInsightDashboardProps extends SettingsCascadeProps<Settings> {
+interface EmptyInsightDashboardProps {
     dashboard: InsightDashboard
     onAddInsight: () => void
 }
 
 export const EmptyInsightDashboard: React.FunctionComponent<EmptyInsightDashboardProps> = props => {
-    const { onAddInsight, dashboard, settingsCascade } = props
+    const { onAddInsight, dashboard } = props
 
     return isDashboardConfigurable(dashboard) ? (
-        <EmptySettingsBasedDashboard
-            dashboard={dashboard}
-            settingsCascade={settingsCascade}
-            onAddInsight={onAddInsight}
-        />
+        <EmptySettingsBasedDashboard dashboard={dashboard} onAddInsight={onAddInsight} />
     ) : (
         <EmptyBuiltInDashboard dashboard={dashboard} />
     )
@@ -39,15 +33,17 @@ export const EmptyInsightDashboard: React.FunctionComponent<EmptyInsightDashboar
  */
 export const EmptyBuiltInDashboard: React.FunctionComponent<{ dashboard: InsightDashboard }> = props => (
     <section className={styles.emptySection}>
-        <Link to={`/insights/create?dashboardId=${props.dashboard.id}`} className={classnames(styles.itemCard, 'card')}>
+        <Card as={Link} to={`/insights/create?dashboardId=${props.dashboard.id}`} className={styles.itemCard}>
             <PlusIcon size="2rem" />
-            <span>Create new insight</span>
-        </Link>
-        <span className="d-flex justify-content-center mt-3">
-            <span>
-                or, add existing insights from <Link to="/insights/dashboards/all">All Insights</Link>
+            <span>Create an insight</span>
+        </Card>
+        {props.dashboard.id !== ALL_INSIGHTS_DASHBOARD.id && (
+            <span className="d-flex justify-content-center mt-3">
+                <span>
+                    or, add existing insights from <Link to="/insights/dashboards/all">All Insights</Link>
+                </span>
             </span>
-        </span>
+        )}
     </section>
 )
 
@@ -56,26 +52,29 @@ export const EmptyBuiltInDashboard: React.FunctionComponent<{ dashboard: Insight
  * Since it is possible with settings based dashboard to add existing insights to it.
  */
 export const EmptySettingsBasedDashboard: React.FunctionComponent<EmptyInsightDashboardProps> = props => {
-    const { onAddInsight, settingsCascade, dashboard } = props
-    const permissions = useDashboardPermissions(dashboard, settingsCascade)
+    const { onAddInsight, dashboard } = props
+    const {
+        dashboard: { getAddRemoveInsightsPermission },
+    } = useUiFeatures()
+    const addRemoveInsightPermissions = getAddRemoveInsightsPermission(dashboard)
 
     return (
         <section className={styles.emptySection}>
             <Button
                 type="button"
-                disabled={!permissions.isConfigurable}
+                disabled={addRemoveInsightPermissions.disabled}
                 onClick={onAddInsight}
                 variant="secondary"
                 className="p-0 w-100 border-0"
             >
-                <div
-                    data-tooltip={!permissions.isConfigurable ? getTooltipMessage(dashboard, permissions) : undefined}
+                <Card
+                    data-tooltip={addRemoveInsightPermissions.tooltip}
                     data-placement="right"
-                    className={classnames(styles.itemCard, 'card')}
+                    className={styles.itemCard}
                 >
                     <PlusIcon size="2rem" />
                     <span>Add insights</span>
-                </div>
+                </Card>
             </Button>
             <span className="d-flex justify-content-center mt-3">
                 <Link to={`/insights/create?dashboardId=${dashboard.id}`}>or, create new insight</Link>

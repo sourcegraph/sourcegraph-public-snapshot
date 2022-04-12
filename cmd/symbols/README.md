@@ -6,4 +6,4 @@ The ctags output is stored in SQLite files on disk (one per repository@commit). 
 
 It is used by [basic-code-intel](https://github.com/sourcegraph/sourcegraph-basic-code-intel) to provide the jump-to-definition feature.
 
-It supports regex queries, with queries of the form `^foo$` optimized to perform an index lookup (basic-code-intel takes advantage of this).
+It supports regex queries, with prefix queries (`^foo`) and exact match queries (`^foo$`) optimized to perform index lookups. The symbols sidebar and search-based code intel benefit from these optimizations.

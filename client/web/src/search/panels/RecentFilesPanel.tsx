@@ -1,15 +1,18 @@
+import React, { useCallback, useEffect, useState } from 'react'
+
 import classNames from 'classnames'
 import FileCodeIcon from 'mdi-react/FileCodeIcon'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { Observable } from 'rxjs'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { gql } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { RecentFilesFragment } from '../../graphql-operations'
 import { EventLogResult } from '../backend'
 
+import { EmptyPanelContainer } from './EmptyPanelContainer'
+import { HomePanelsFetchMore, RECENT_FILES_TO_LOAD } from './HomePanels'
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
 import { ShowMoreButton } from './ShowMoreButton'
@@ -17,25 +20,40 @@ import { ShowMoreButton } from './ShowMoreButton'
 interface Props extends TelemetryProps {
     className?: string
     authenticatedUser: AuthenticatedUser | null
-    fetchRecentFileViews: (userId: string, first: number) => Observable<EventLogResult | null>
+    recentFilesFragment: RecentFilesFragment | null
+    fetchMore: HomePanelsFetchMore
 }
+
+export const recentFilesFragment = gql`
+    fragment RecentFilesFragment on User {
+        recentFilesLogs: eventLogs(first: $firstRecentFiles, eventName: "ViewBlob") {
+            nodes {
+                argument
+                timestamp
+                url
+            }
+            pageInfo {
+                hasNextPage
+            }
+            totalCount
+        }
+    }
+`
 
 export const RecentFilesPanel: React.FunctionComponent<Props> = ({
     className,
-    authenticatedUser,
-    fetchRecentFileViews,
+    recentFilesFragment,
     telemetryService,
+    fetchMore,
 }) => {
-    const pageSize = 20
-
-    const [itemsToLoad, setItemsToLoad] = useState(pageSize)
-    const recentFiles = useObservable(
-        useMemo(() => fetchRecentFileViews(authenticatedUser?.id || '', itemsToLoad), [
-            authenticatedUser?.id,
-            fetchRecentFileViews,
-            itemsToLoad,
-        ])
+    const [recentFiles, setRecentFiles] = useState<null | RecentFilesFragment['recentFilesLogs']>(
+        recentFilesFragment?.recentFilesLogs ?? null
     )
+    useEffect(() => setRecentFiles(recentFilesFragment?.recentFilesLogs ?? null), [
+        recentFilesFragment?.recentFilesLogs,
+    ])
+
+    const [itemsToLoad, setItemsToLoad] = useState(RECENT_FILES_TO_LOAD)
 
     const [processedResults, setProcessedResults] = useState<RecentFile[] | null>(null)
 
@@ -49,7 +67,7 @@ export const RecentFilesPanel: React.FunctionComponent<Props> = ({
 
     useEffect(() => {
         // Only log the first load (when items to load is equal to the page size)
-        if (processedResults && itemsToLoad === pageSize) {
+        if (processedResults && itemsToLoad === RECENT_FILES_TO_LOAD) {
             telemetryService.log(
                 'RecentFilesPanelLoaded',
                 { empty: processedResults.length === 0 },
@@ -63,15 +81,29 @@ export const RecentFilesPanel: React.FunctionComponent<Props> = ({
     const loadingDisplay = <LoadingPanelView text="Loading recent files" />
 
     const emptyDisplay = (
-        <div className="panel-container__empty-container align-items-center text-muted">
+        <EmptyPanelContainer className="align-items-center text-muted">
             <FileCodeIcon className="mb-2" size="2rem" />
             <small className="mb-2">This panel will display your most recently viewed files.</small>
-        </div>
+        </EmptyPanelContainer>
     )
 
-    function loadMoreItems(): void {
-        setItemsToLoad(current => current + pageSize)
+    async function loadMoreItems(): Promise<void> {
         telemetryService.log('RecentFilesPanelShowMoreClicked')
+        const newItemsToLoad = itemsToLoad + RECENT_FILES_TO_LOAD
+        setItemsToLoad(newItemsToLoad)
+
+        const { data } = await fetchMore({
+            firstRecentFiles: newItemsToLoad,
+        })
+
+        if (data === undefined) {
+            return
+        }
+        const node = data.node
+        if (node === null || node.__typename !== 'User') {
+            return
+        }
+        setRecentFiles(node.recentFilesLogs)
     }
 
     const contentDisplay = (
@@ -81,9 +113,9 @@ export const RecentFilesPanel: React.FunctionComponent<Props> = ({
             </div>
             <dl className="list-group-flush">
                 {processedResults?.map((recentFile, index) => (
-                    <dd key={index} className="text-monospace test-recent-files-item">
+                    <dd key={index} className="text-monospace">
                         <small>
-                            <Link to={recentFile.url} onClick={logFileClicked}>
+                            <Link to={recentFile.url} onClick={logFileClicked} data-testid="recent-files-item">
                                 {recentFile.repoName} › {recentFile.filePath}
                             </Link>
                         </small>
@@ -91,8 +123,8 @@ export const RecentFilesPanel: React.FunctionComponent<Props> = ({
                 ))}
             </dl>
             {recentFiles?.pageInfo.hasNextPage && (
-                <div className="test-recent-files-show-more-container">
-                    <ShowMoreButton onClick={loadMoreItems} className="test-recent-files-panel-show-more" />
+                <div>
+                    <ShowMoreButton onClick={loadMoreItems} dataTestid="recent-files-panel-show-more" />
                 </div>
             )}
         </div>
@@ -125,7 +157,7 @@ function processRecentFiles(eventLogResult?: EventLogResult): RecentFile[] | nul
     const recentFiles: RecentFile[] = []
 
     for (const node of eventLogResult.nodes) {
-        if (node.argument) {
+        if (node.argument && node.url) {
             const parsedArguments = JSON.parse(node.argument)
             let repoName = parsedArguments?.repoName as string
             let filePath = parsedArguments?.filePath as string

@@ -1,8 +1,9 @@
-import { storiesOf } from '@storybook/react'
-import { subDays } from 'date-fns'
 import React from 'react'
 
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { storiesOf } from '@storybook/react'
+import { subDays } from 'date-fns'
+
+import { WebStory } from '../../../components/WebStory'
 
 import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
 
@@ -11,7 +12,7 @@ const { add } = storiesOf('web/batches/details/SupersedingBatchSpecAlert', modul
 ))
 
 add('None published', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {() => (
             <SupersedingBatchSpecAlert
                 spec={{
@@ -20,5 +21,5 @@ add('None published', () => (
                 }}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))

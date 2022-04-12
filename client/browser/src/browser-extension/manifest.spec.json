@@ -7,13 +7,13 @@
   "browser_action": {
     "default_title": "Sourcegraph",
     "default_icon": {
-      "16": "img/icon-16.png",
+      "32": "img/icon-32.png",
       "48": "img/icon-48.png",
       "128": "img/icon-128.png"
     }
   },
   "icons": {
-    "16": "img/icon-16.png",
+    "32": "img/icon-32.png",
     "48": "img/icon-48.png",
     "128": "img/icon-128.png"
   },
@@ -29,7 +29,7 @@
   },
   "optional_permissions": ["tabs", "http://*/*", "https://*/*"],
   "content_security_policy": "script-src 'self' blob:; object-src 'self'",
-  "web_accessible_resources": ["img/*", "css/style.bundle.css", "css/branded-style.bundle.css"],
+  "web_accessible_resources": ["img/*", "css/*"],
   "omnibox": {
     "keyword": "src"
   },
@@ -39,18 +39,6 @@
     }
   },
   "dev": {
-    "content_scripts": [
-      {
-        "matches": [
-          "https://github.com/*",
-          "https://sourcegraph.com/*",
-          "https://localhost:3443/*",
-          "http://localhost:32773/*"
-        ],
-        "run_at": "document_end",
-        "js": ["/js/inject.bundle.js"]
-      }
-    ],
     "permissions": [
       "storage",
       "activeTab",
@@ -64,13 +52,6 @@
     "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvyGmcOkw4cTnhO0bgl3fQLAdv1jZp8T1ZHYI+4d8FgwwVKLYWE+pAuJ/0LrI69ibed4Nnnw5YleB1xCpI+mzB56xfXWboKp6lljevKqWJ5TpJk/Vam3kSSoZwpmJRXnzmcM3qKpL6viUhTfwGmQO6WVTsN4YCx+KWXv97IyF6yDTgd6hwFsvCZY2n1ADgurrQkE6AcJ3kK4xZ14jaHllXEdFcqwh0+Am5qLcIJ1cNo5iFD35exXsjwdQbmpt8sEk5f95pK5FEEbJFmOTguu2fOZycqIoTgoDrbbhT5k9TUogZaN5Lup0Iwh0Cv60i4C1f7IdPrxHuaYmYCfoUezXnQIDAQAB"
   },
   "prod": {
-    "content_scripts": [
-      {
-        "matches": ["https://github.com/*", "https://sourcegraph.com/*"],
-        "run_at": "document_end",
-        "js": ["js/inject.bundle.js"]
-      }
-    ],
     "permissions": ["activeTab", "storage", "contextMenus", "https://github.com/*", "https://sourcegraph.com/*"]
   }
 }

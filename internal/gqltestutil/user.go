@@ -1,8 +1,6 @@
 package gqltestutil
 
-import (
-	"github.com/cockroachdb/errors"
-)
+import "github.com/sourcegraph/sourcegraph/lib/errors"
 
 // CreateUser creates a new user with the given username and email.
 // It returns the GraphQL node ID of newly created user.
@@ -58,6 +56,34 @@ mutation DeleteUser($user: ID!, $hard: Boolean) {
 	if err != nil {
 		return errors.Wrap(err, "request GraphQL")
 	}
+	return nil
+}
+
+// SetUserEmailVerified sets the given user's email address verification status.
+//
+// This method requires the authenticated user to be a site admin.
+func (c *Client) SetUserEmailVerified(user, email string, verified bool) error {
+	const query = `
+mutation setUserEmailVerified($user: ID!, $email: String!, $verified: Boolean!) {
+	setUserEmailVerified(user: $user, email: $email, verified: $verified) {
+      alwaysNil
+	}
+}
+`
+	variables := map[string]interface{}{
+		"user":     user,
+		"email":    email,
+		"verified": verified,
+	}
+	var resp struct {
+		Data struct {
+		} `json:"data"`
+	}
+	err := c.GraphQL("", query, variables, &resp)
+	if err != nil {
+		return errors.Wrap(err, "request GraphQL")
+	}
+
 	return nil
 }
 

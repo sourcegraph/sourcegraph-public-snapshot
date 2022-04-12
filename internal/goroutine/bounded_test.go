@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestBounded(t *testing.T) {

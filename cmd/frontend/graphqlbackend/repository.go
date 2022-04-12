@@ -3,10 +3,10 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
@@ -15,15 +15,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -37,7 +38,7 @@ type RepositoryResolver struct {
 	// because it may cause a race during hydration.
 	result.RepoMatch
 
-	db dbutil.DB
+	db database.DB
 
 	// innerRepo may only contain ID and Name information.
 	// To access any other repo information, use repo() instead.
@@ -48,7 +49,7 @@ type RepositoryResolver struct {
 	defaultBranchErr  error
 }
 
-func NewRepositoryResolver(db dbutil.DB, repo *types.Repo) *RepositoryResolver {
+func NewRepositoryResolver(db database.DB, repo *types.Repo) *RepositoryResolver {
 	// Protect against a nil repo
 	var name api.RepoName
 	var id api.RepoID
@@ -171,9 +172,9 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 		return nil, err
 	}
 
-	commitID, err := backend.Repos.ResolveRev(ctx, repo, args.Rev)
+	commitID, err := backend.NewRepos(r.db).ResolveRev(ctx, repo, args.Rev)
 	if err != nil {
-		if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
+		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			return nil, nil
 		}
 		return nil, err
@@ -183,7 +184,7 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 }
 
 func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryCommitArgs, commitID api.CommitID) (*GitCommitResolver, error) {
-	resolver := toGitCommitResolver(r, r.db, commitID, nil)
+	resolver := NewGitCommitResolver(r.db, r, commitID, nil)
 	if args.InputRevspec != nil {
 		resolver.inputRev = args.InputRevspec
 	} else {
@@ -194,7 +195,7 @@ func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryC
 
 func (r *RepositoryResolver) DefaultBranch(ctx context.Context) (*GitRefResolver, error) {
 	do := func() (*GitRefResolver, error) {
-		refName, _, err := git.GetDefaultBranch(ctx, r.RepoName())
+		refName, _, err := git.GetDefaultBranch(ctx, r.db, r.RepoName())
 		if err != nil {
 			return nil, err
 		}
@@ -219,13 +220,13 @@ func (r *RepositoryResolver) Language(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	commitID, err := backend.Repos.ResolveRev(ctx, repo, "")
+	commitID, err := backend.NewRepos(r.db).ResolveRev(ctx, repo, "")
 	if err != nil {
 		// Comment: Should we return a nil error?
 		return "", err
 	}
 
-	inventory, err := backend.Repos.GetInventory(ctx, repo, commitID, false)
+	inventory, err := backend.NewRepos(r.db).GetInventory(ctx, repo, commitID, false)
 	if err != nil {
 		return "", err
 	}
@@ -250,7 +251,11 @@ func (r *RepositoryResolver) UpdatedAt() *DateTime {
 }
 
 func (r *RepositoryResolver) URL() string {
-	return r.RepoMatch.URL().String()
+	return r.url().String()
+}
+
+func (r *RepositoryResolver) url() *url.URL {
+	return r.RepoMatch.URL()
 }
 
 func (r *RepositoryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
@@ -317,7 +322,7 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 		log15.Debug("RepositoryResolver.hydrate", "repo.ID", r.IDInt32())
 
 		var repo *types.Repo
-		repo, r.err = database.Repos(r.db).Get(ctx, r.IDInt32())
+		repo, r.err = r.db.Repos().Get(ctx, r.IDInt32())
 		if r.err == nil {
 			r.innerRepo = repo
 		}
@@ -346,6 +351,14 @@ func (r *RepositoryResolver) IndexConfiguration(ctx context.Context) (IndexConfi
 
 func (r *RepositoryResolver) CodeIntelligenceCommitGraph(ctx context.Context) (CodeIntelligenceCommitGraphResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.CommitGraph(ctx, r.ID())
+}
+
+func (r *RepositoryResolver) CodeIntelSummary(ctx context.Context) (CodeIntelRepositorySummaryResolver, error) {
+	return EnterpriseResolvers.codeIntelResolver.RepositorySummary(ctx, r.ID())
+}
+
+func (r *RepositoryResolver) PreviewGitObjectFilter(ctx context.Context, args *PreviewGitObjectFilterArgs) ([]GitObjectFilterPreviewResolver, error) {
+	return EnterpriseResolvers.codeIntelResolver.PreviewGitObjectFilter(ctx, r.ID(), args)
 }
 
 type AuthorizedUserArgs struct {
@@ -399,7 +412,8 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 	Description *string
 	Date        *string
 }) (*GitCommitResolver, error) {
-	repo, err := database.Repos(r.db).GetByName(ctx, api.RepoName(args.RepoName))
+	db := r.db
+	repo, err := db.Repos().GetByName(ctx, api.RepoName(args.RepoName))
 	if err != nil {
 		return nil, err
 	}
@@ -409,23 +423,23 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		// NoEnsureRevision. We do this, otherwise RepositoryResolver.Commit
 		// will try and fetch it from the remote host. However, this is not on
 		// the remote host since we created it.
-		_, err = git.ResolveRevision(ctx, repo.Name, targetRef, git.ResolveRevisionOptions{
+		_, err = git.ResolveRevision(ctx, db, repo.Name, targetRef, git.ResolveRevisionOptions{
 			NoEnsureRevision: true,
 		})
 		if err != nil {
 			return nil, err
 		}
-		r := NewRepositoryResolver(r.db, repo)
+		r := NewRepositoryResolver(db, repo)
 		return r.Commit(ctx, &RepositoryCommitArgs{Rev: targetRef})
 	}
 
 	// If we already created the commit
-	if commit, err := getCommit(); commit != nil || (err != nil && !errors.HasType(err, &gitserver.RevisionNotFoundError{})) {
+	if commit, err := getCommit(); commit != nil || (err != nil && !errors.HasType(err, &gitdomain.RevisionNotFoundError{})) {
 		return commit, err
 	}
 
 	origin := ""
-	if phabRepo, err := database.Phabricator(r.db).GetByName(ctx, api.RepoName(args.RepoName)); err == nil {
+	if phabRepo, err := database.Phabricator(db).GetByName(ctx, api.RepoName(args.RepoName)); err == nil {
 		origin = phabRepo.URL
 	}
 
@@ -433,7 +447,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		return nil, errors.New("unable to resolve the origin of the phabricator instance")
 	}
 
-	client, clientErr := makePhabClientForOrigin(ctx, r.db, origin)
+	client, clientErr := makePhabClientForOrigin(ctx, db, origin)
 
 	patch := ""
 	if args.Patch != nil {
@@ -481,7 +495,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		}
 	}
 
-	_, err = gitserver.DefaultClient.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
+	_, err = gitserver.NewClient(db).CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
 		Repo:       api.RepoName(args.RepoName),
 		BaseCommit: api.CommitID(args.BaseRev),
 		TargetRef:  targetRef,
@@ -500,7 +514,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 	return getCommit()
 }
 
-func makePhabClientForOrigin(ctx context.Context, db dbutil.DB, origin string) (*phabricator.Client, error) {
+func makePhabClientForOrigin(ctx context.Context, db database.DB, origin string) (*phabricator.Client, error) {
 	opt := database.ExternalServicesListOptions{
 		Kinds: []string{extsvc.KindPhabricator},
 		LimitOffset: &database.LimitOffset{
@@ -508,7 +522,7 @@ func makePhabClientForOrigin(ctx context.Context, db dbutil.DB, origin string) (
 		},
 	}
 	for {
-		svcs, err := database.ExternalServices(db).List(ctx, opt)
+		svcs, err := db.ExternalServices().List(ctx, opt)
 		if err != nil {
 			return nil, errors.Wrap(err, "list")
 		}

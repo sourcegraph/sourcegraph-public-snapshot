@@ -1,14 +1,14 @@
-import classNames from 'classnames'
 import React, { useContext, useMemo } from 'react'
 
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import classNames from 'classnames'
+
+import { Badge, useObservable } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../components/diff/DiffStat'
 import { ApplyPreviewStatsFields, DiffStatFields, Scalars } from '../../../graphql-operations'
 
 import { queryApplyPreviewStats as _queryApplyPreviewStats } from './backend'
 import { BatchChangePreviewContext } from './BatchChangePreviewContext'
-import styles from './BatchChangePreviewStatsBar.module.scss'
 import { ChangesetAddedIcon, ChangesetModifiedIcon, ChangesetRemovedIcon } from './icons'
 import {
     PreviewActionArchive,
@@ -19,6 +19,8 @@ import {
     PreviewActionUndraft,
     PreviewActionUpdate,
 } from './list/PreviewActions'
+
+import styles from './BatchChangePreviewStatsBar.module.scss'
 
 const actionClassNames = classNames(
     styles.batchChangePreviewStatsBarStat,
@@ -56,7 +58,9 @@ export const BatchChangePreviewStatsBar: React.FunctionComponent<BatchChangePrev
     return (
         <div className="d-flex flex-wrap mb-3 align-items-center">
             <h2 className="m-0 align-self-center">
-                <span className="badge badge-info text-uppercase mb-0">Preview</span>
+                <Badge variant="info" className="text-uppercase mb-0">
+                    Preview
+                </Badge>
             </h2>
             <div className={classNames(styles.batchChangePreviewStatsBarDivider, 'd-none d-sm-block mx-3')} />
             <DiffStatStack className={styles.batchChangePreviewStatsBarDiff} {...diffStat} />

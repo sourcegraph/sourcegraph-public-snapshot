@@ -3,15 +3,15 @@ package registry
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry/stores"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func init() {
@@ -22,21 +22,19 @@ func init() {
 	frontendregistry.ExtensionRegistry.PublishExtensionFunc = extensionRegistryPublishExtension
 }
 
-func registryExtensionByIDInt32(ctx context.Context, db dbutil.DB, id int32) (graphqlbackend.RegistryExtension, error) {
+func registryExtensionByIDInt32(ctx context.Context, db database.DB, id int32) (graphqlbackend.RegistryExtension, error) {
 	if conf.Extensions() == nil {
 		return nil, graphqlbackend.ErrExtensionsDisabled
 	}
-	x, err := dbExtensions{}.GetByID(ctx, id)
+	x, err := stores.Extensions(db).GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	if err := prefixLocalExtensionID(x); err != nil {
-		return nil, err
-	}
+	prefixLocalExtensionID(x)
 	return &extensionDBResolver{db: db, v: x}, nil
 }
 
-func extensionRegistryCreateExtension(ctx context.Context, db dbutil.DB, args *graphqlbackend.ExtensionRegistryCreateExtensionArgs) (graphqlbackend.ExtensionRegistryMutationResult, error) {
+func extensionRegistryCreateExtension(ctx context.Context, db database.DB, args *graphqlbackend.ExtensionRegistryCreateExtensionArgs) (graphqlbackend.ExtensionRegistryMutationResult, error) {
 	if err := licensing.Check(licensing.FeatureExtensionRegistry); err != nil {
 		return nil, err
 	}
@@ -51,25 +49,25 @@ func extensionRegistryCreateExtension(ctx context.Context, db dbutil.DB, args *g
 	}
 
 	// Create the extension.
-	id, err := dbExtensions{}.Create(ctx, publisher.userID, publisher.orgID, args.Name)
+	id, err := stores.Extensions(db).Create(ctx, publisher.userID, publisher.orgID, args.Name)
 	if err != nil {
 		return nil, err
 	}
 	return &frontendregistry.ExtensionRegistryMutationResult{DB: db, ID: id}, nil
 }
 
-func viewerCanAdministerExtension(ctx context.Context, db dbutil.DB, id frontendregistry.RegistryExtensionID) error {
+func viewerCanAdministerExtension(ctx context.Context, db database.DB, id frontendregistry.RegistryExtensionID) error {
 	if id.LocalID == 0 {
 		return errors.New("unable to administer extension on remote registry")
 	}
-	extension, err := dbExtensions{}.GetByID(ctx, id.LocalID)
+	extension, err := stores.Extensions(db).GetByID(ctx, id.LocalID)
 	if err != nil {
 		return err
 	}
 	return toRegistryPublisherID(extension).viewerCanAdminister(ctx, db)
 }
 
-func extensionRegistryUpdateExtension(ctx context.Context, db dbutil.DB, args *graphqlbackend.ExtensionRegistryUpdateExtensionArgs) (graphqlbackend.ExtensionRegistryMutationResult, error) {
+func extensionRegistryUpdateExtension(ctx context.Context, db database.DB, args *graphqlbackend.ExtensionRegistryUpdateExtensionArgs) (graphqlbackend.ExtensionRegistryMutationResult, error) {
 	id, err := frontendregistry.UnmarshalRegistryExtensionID(args.Extension)
 	if err != nil {
 		return nil, err
@@ -80,13 +78,13 @@ func extensionRegistryUpdateExtension(ctx context.Context, db dbutil.DB, args *g
 		return nil, err
 	}
 
-	if err := (dbExtensions{}).Update(ctx, id.LocalID, args.Name); err != nil {
+	if err := stores.Extensions(db).Update(ctx, id.LocalID, args.Name); err != nil {
 		return nil, err
 	}
 	return &frontendregistry.ExtensionRegistryMutationResult{DB: db, ID: id.LocalID}, nil
 }
 
-func extensionRegistryDeleteExtension(ctx context.Context, db dbutil.DB, args *graphqlbackend.ExtensionRegistryDeleteExtensionArgs) (*graphqlbackend.EmptyResponse, error) {
+func extensionRegistryDeleteExtension(ctx context.Context, db database.DB, args *graphqlbackend.ExtensionRegistryDeleteExtensionArgs) (*graphqlbackend.EmptyResponse, error) {
 	id, err := frontendregistry.UnmarshalRegistryExtensionID(args.Extension)
 	if err != nil {
 		return nil, err
@@ -97,13 +95,13 @@ func extensionRegistryDeleteExtension(ctx context.Context, db dbutil.DB, args *g
 		return nil, err
 	}
 
-	if err := (dbExtensions{}).Delete(ctx, id.LocalID); err != nil {
+	if err := stores.Extensions(db).Delete(ctx, id.LocalID); err != nil {
 		return nil, err
 	}
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func extensionRegistryPublishExtension(ctx context.Context, db dbutil.DB, args *graphqlbackend.ExtensionRegistryPublishExtensionArgs) (graphqlbackend.ExtensionRegistryMutationResult, error) {
+func extensionRegistryPublishExtension(ctx context.Context, db database.DB, args *graphqlbackend.ExtensionRegistryPublishExtensionArgs) (graphqlbackend.ExtensionRegistryMutationResult, error) {
 	if err := licensing.Check(licensing.FeatureExtensionRegistry); err != nil {
 		return nil, err
 	}
@@ -139,7 +137,7 @@ func extensionRegistryPublishExtension(ctx context.Context, db dbutil.DB, args *
 		if err != nil {
 			return nil, err
 		}
-		publisher, err := dbExtensions{}.GetPublisher(ctx, publisherName)
+		publisher, err := stores.Extensions(db).GetPublisher(ctx, publisherName)
 		if err != nil {
 			return nil, err
 		}
@@ -150,7 +148,7 @@ func extensionRegistryPublishExtension(ctx context.Context, db dbutil.DB, args *
 		}
 
 		// Create the extension.
-		xid, err := dbExtensions{}.Create(ctx, publisherID.userID, publisherID.orgID, extensionName)
+		xid, err := stores.Extensions(db).Create(ctx, publisherID.userID, publisherID.orgID, extensionName)
 		if err != nil {
 			return nil, err
 		}
@@ -175,7 +173,7 @@ func extensionRegistryPublishExtension(ctx context.Context, db dbutil.DB, args *
 		}
 	}
 
-	release := dbRelease{
+	release := stores.Release{
 		RegistryExtensionID: id.LocalID,
 		CreatorUserID:       actor.FromContext(ctx).UID,
 		ReleaseTag:          "release",
@@ -183,7 +181,7 @@ func extensionRegistryPublishExtension(ctx context.Context, db dbutil.DB, args *
 		Bundle:              args.Bundle,
 		SourceMap:           args.SourceMap,
 	}
-	if _, err := (dbReleases{}).Create(ctx, &release); err != nil {
+	if _, err := stores.Releases(db).Create(ctx, &release); err != nil {
 		return nil, err
 	}
 	return &frontendregistry.ExtensionRegistryMutationResult{DB: db, ID: id.LocalID}, nil

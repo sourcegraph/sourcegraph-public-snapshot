@@ -6,6 +6,9 @@
             display: inline;
         }
     }
+    &--force-wrap {
+        overflow-wrap: anywhere;
+    }
     &--active {
         background-color: var(--code-line-highlight-color) !important;
     }

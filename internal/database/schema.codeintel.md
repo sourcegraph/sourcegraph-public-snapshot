@@ -1,11 +1,40 @@
-# Table "public.codeintel_schema_migrations"
+# Table "public.lsif_data_apidocs_num_dumps"
 ```
- Column  |  Type   | Collation | Nullable | Default 
----------+---------+-----------+----------+---------
- version | bigint  |           | not null | 
- dirty   | boolean |           | not null | 
-Indexes:
-    "codeintel_schema_migrations_pkey" PRIMARY KEY, btree (version)
+ Column |  Type  | Collation | Nullable | Default 
+--------+--------+-----------+----------+---------
+ count  | bigint |           |          | 
+
+```
+
+# Table "public.lsif_data_apidocs_num_dumps_indexed"
+```
+ Column |  Type  | Collation | Nullable | Default 
+--------+--------+-----------+----------+---------
+ count  | bigint |           |          | 
+
+```
+
+# Table "public.lsif_data_apidocs_num_pages"
+```
+ Column |  Type  | Collation | Nullable | Default 
+--------+--------+-----------+----------+---------
+ count  | bigint |           |          | 
+
+```
+
+# Table "public.lsif_data_apidocs_num_search_results_private"
+```
+ Column |  Type  | Collation | Nullable | Default 
+--------+--------+-----------+----------+---------
+ count  | bigint |           |          | 
+
+```
+
+# Table "public.lsif_data_apidocs_num_search_results_public"
+```
+ Column |  Type  | Collation | Nullable | Default 
+--------+--------+-----------+----------+---------
+ count  | bigint |           |          | 
 
 ```
 
@@ -62,6 +91,362 @@ Tracks the range of schema_versions for each upload in the lsif_data_definitions
 
 **min_schema_version**: A lower-bound on the `lsif_data_definitions.schema_version` where `lsif_data_definitions.dump_id = dump_id`.
 
+# Table "public.lsif_data_docs_search_current_private"
+```
+        Column        |           Type           | Collation | Nullable |                              Default                              
+----------------------+--------------------------+-----------+----------+-------------------------------------------------------------------
+ repo_id              | integer                  |           | not null | 
+ dump_root            | text                     |           | not null | 
+ lang_name_id         | integer                  |           | not null | 
+ dump_id              | integer                  |           | not null | 
+ last_cleanup_scan_at | timestamp with time zone |           | not null | now()
+ created_at           | timestamp with time zone |           | not null | now()
+ id                   | integer                  |           | not null | nextval('lsif_data_docs_search_current_private_id_seq'::regclass)
+Indexes:
+    "lsif_data_docs_search_current_private_pkey" PRIMARY KEY, btree (id)
+    "lsif_data_docs_search_current_private_last_cleanup_scan_at" btree (last_cleanup_scan_at)
+    "lsif_data_docs_search_current_private_lookup" btree (repo_id, dump_root, lang_name_id, created_at) INCLUDE (dump_id)
+
+```
+
+A table indicating the most current search index for a unique repository, root, and language.
+
+**created_at**: The time this record was inserted. The records with the latest created_at value for the same repository, root, and language is the only visible one and others will be deleted asynchronously.
+
+**dump_id**: The associated dump identifier.
+
+**dump_root**: The root of the associated dump.
+
+**lang_name_id**: The interned index name of the associated dump.
+
+**last_cleanup_scan_at**: The last time this record was checked as part of a data retention scan.
+
+**repo_id**: The repository identifier of the associated dump.
+
+# Table "public.lsif_data_docs_search_current_public"
+```
+        Column        |           Type           | Collation | Nullable |                             Default                              
+----------------------+--------------------------+-----------+----------+------------------------------------------------------------------
+ repo_id              | integer                  |           | not null | 
+ dump_root            | text                     |           | not null | 
+ lang_name_id         | integer                  |           | not null | 
+ dump_id              | integer                  |           | not null | 
+ last_cleanup_scan_at | timestamp with time zone |           | not null | now()
+ created_at           | timestamp with time zone |           | not null | now()
+ id                   | integer                  |           | not null | nextval('lsif_data_docs_search_current_public_id_seq'::regclass)
+Indexes:
+    "lsif_data_docs_search_current_public_pkey" PRIMARY KEY, btree (id)
+    "lsif_data_docs_search_current_public_last_cleanup_scan_at" btree (last_cleanup_scan_at)
+    "lsif_data_docs_search_current_public_lookup" btree (repo_id, dump_root, lang_name_id, created_at) INCLUDE (dump_id)
+
+```
+
+A table indicating the most current search index for a unique repository, root, and language.
+
+**created_at**: The time this record was inserted. The records with the latest created_at value for the same repository, root, and language is the only visible one and others will be deleted asynchronously.
+
+**dump_id**: The associated dump identifier.
+
+**dump_root**: The root of the associated dump.
+
+**lang_name_id**: The interned index name of the associated dump.
+
+**last_cleanup_scan_at**: The last time this record was checked as part of a data retention scan.
+
+**repo_id**: The repository identifier of the associated dump.
+
+# Table "public.lsif_data_docs_search_lang_names_private"
+```
+  Column   |   Type   | Collation | Nullable |                               Default                                
+-----------+----------+-----------+----------+----------------------------------------------------------------------
+ id        | bigint   |           | not null | nextval('lsif_data_docs_search_lang_names_private_id_seq'::regclass)
+ lang_name | text     |           | not null | 
+ tsv       | tsvector |           | not null | 
+Indexes:
+    "lsif_data_docs_search_lang_names_private_pkey" PRIMARY KEY, btree (id)
+    "lsif_data_docs_search_lang_names_private_lang_name_key" UNIQUE CONSTRAINT, btree (lang_name)
+    "lsif_data_docs_search_lang_names_private_tsv_idx" gin (tsv)
+Referenced by:
+    TABLE "lsif_data_docs_search_private" CONSTRAINT "lsif_data_docs_search_private_lang_name_id_fk" FOREIGN KEY (lang_name_id) REFERENCES lsif_data_docs_search_lang_names_private(id)
+
+```
+
+Each unique language name being stored in the API docs search index.
+
+**id**: The ID of the language name.
+
+**lang_name**: The lowercase language name (go, java, etc.) OR, if unknown, the LSIF indexer name.
+
+**tsv**: Indexed tsvector for the lang_name field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+# Table "public.lsif_data_docs_search_lang_names_public"
+```
+  Column   |   Type   | Collation | Nullable |                               Default                               
+-----------+----------+-----------+----------+---------------------------------------------------------------------
+ id        | bigint   |           | not null | nextval('lsif_data_docs_search_lang_names_public_id_seq'::regclass)
+ lang_name | text     |           | not null | 
+ tsv       | tsvector |           | not null | 
+Indexes:
+    "lsif_data_docs_search_lang_names_public_pkey" PRIMARY KEY, btree (id)
+    "lsif_data_docs_search_lang_names_public_lang_name_key" UNIQUE CONSTRAINT, btree (lang_name)
+    "lsif_data_docs_search_lang_names_public_tsv_idx" gin (tsv)
+Referenced by:
+    TABLE "lsif_data_docs_search_public" CONSTRAINT "lsif_data_docs_search_public_lang_name_id_fk" FOREIGN KEY (lang_name_id) REFERENCES lsif_data_docs_search_lang_names_public(id)
+
+```
+
+Each unique language name being stored in the API docs search index.
+
+**id**: The ID of the language name.
+
+**lang_name**: The lowercase language name (go, java, etc.) OR, if unknown, the LSIF indexer name.
+
+**tsv**: Indexed tsvector for the lang_name field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+# Table "public.lsif_data_docs_search_private"
+```
+         Column         |   Type   | Collation | Nullable |                          Default                          
+------------------------+----------+-----------+----------+-----------------------------------------------------------
+ id                     | bigint   |           | not null | nextval('lsif_data_docs_search_private_id_seq'::regclass)
+ repo_id                | integer  |           | not null | 
+ dump_id                | integer  |           | not null | 
+ dump_root              | text     |           | not null | 
+ path_id                | text     |           | not null | 
+ detail                 | text     |           | not null | 
+ lang_name_id           | integer  |           | not null | 
+ repo_name_id           | integer  |           | not null | 
+ tags_id                | integer  |           | not null | 
+ search_key             | text     |           | not null | 
+ search_key_tsv         | tsvector |           | not null | 
+ search_key_reverse_tsv | tsvector |           | not null | 
+ label                  | text     |           | not null | 
+ label_tsv              | tsvector |           | not null | 
+ label_reverse_tsv      | tsvector |           | not null | 
+Indexes:
+    "lsif_data_docs_search_private_pkey" PRIMARY KEY, btree (id)
+    "lsif_data_docs_search_private_dump_id_idx" btree (dump_id)
+    "lsif_data_docs_search_private_dump_root_idx" btree (dump_root)
+    "lsif_data_docs_search_private_label_reverse_tsv_idx" gin (label_reverse_tsv)
+    "lsif_data_docs_search_private_label_tsv_idx" gin (label_tsv)
+    "lsif_data_docs_search_private_repo_id_idx" btree (repo_id)
+    "lsif_data_docs_search_private_search_key_reverse_tsv_idx" gin (search_key_reverse_tsv)
+    "lsif_data_docs_search_private_search_key_tsv_idx" gin (search_key_tsv)
+Foreign-key constraints:
+    "lsif_data_docs_search_private_lang_name_id_fk" FOREIGN KEY (lang_name_id) REFERENCES lsif_data_docs_search_lang_names_private(id)
+    "lsif_data_docs_search_private_repo_name_id_fk" FOREIGN KEY (repo_name_id) REFERENCES lsif_data_docs_search_repo_names_private(id)
+    "lsif_data_docs_search_private_tags_id_fk" FOREIGN KEY (tags_id) REFERENCES lsif_data_docs_search_tags_private(id)
+Triggers:
+    lsif_data_docs_search_private_delete AFTER DELETE ON lsif_data_docs_search_private REFERENCING OLD TABLE AS oldtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_docs_search_private_delete()
+    lsif_data_docs_search_private_insert AFTER INSERT ON lsif_data_docs_search_private REFERENCING NEW TABLE AS newtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_docs_search_private_insert()
+
+```
+
+A tsvector search index over API documentation (private repos only)
+
+**detail**: The detail string (e.g. the full function signature and its docs). See protocol/documentation.go:Documentation
+
+**dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
+
+**dump_root**: Identical to lsif_dumps.root; The working directory of the indexer image relative to the repository root.
+
+**id**: The row ID of the search result.
+
+**label**: The label string of the result, e.g. a one-line function signature. See protocol/documentation.go:Documentation
+
+**label_reverse_tsv**: Indexed tsvector for the reverse of the label field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+**label_tsv**: Indexed tsvector for the label field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+**lang_name_id**: The programming language (or indexer name) that produced the result. Foreign key into lsif_data_docs_search_lang_names_private.
+
+**path_id**: The fully qualified documentation page path ID, e.g. including "#section". See GraphQL codeintel.schema:documentationPage for what this is.
+
+**repo_id**: The repo ID, from the main app DB repo table. Used to search over a select set of repos by ID.
+
+**repo_name_id**: The repository name that produced the result. Foreign key into lsif_data_docs_search_repo_names_private.
+
+**search_key**: The search key generated by the indexer, e.g. mux.Router.ServeHTTP. It is language-specific, and likely unique within a repository (but not always.) See protocol/documentation.go:Documentation.SearchKey
+
+**search_key_reverse_tsv**: Indexed tsvector for the reverse of the search_key field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+**search_key_tsv**: Indexed tsvector for the search_key field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+**tags_id**: The tags from the documentation node. Foreign key into lsif_data_docs_search_tags_private.
+
+# Table "public.lsif_data_docs_search_public"
+```
+         Column         |   Type   | Collation | Nullable |                         Default                          
+------------------------+----------+-----------+----------+----------------------------------------------------------
+ id                     | bigint   |           | not null | nextval('lsif_data_docs_search_public_id_seq'::regclass)
+ repo_id                | integer  |           | not null | 
+ dump_id                | integer  |           | not null | 
+ dump_root              | text     |           | not null | 
+ path_id                | text     |           | not null | 
+ detail                 | text     |           | not null | 
+ lang_name_id           | integer  |           | not null | 
+ repo_name_id           | integer  |           | not null | 
+ tags_id                | integer  |           | not null | 
+ search_key             | text     |           | not null | 
+ search_key_tsv         | tsvector |           | not null | 
+ search_key_reverse_tsv | tsvector |           | not null | 
+ label                  | text     |           | not null | 
+ label_tsv              | tsvector |           | not null | 
+ label_reverse_tsv      | tsvector |           | not null | 
+Indexes:
+    "lsif_data_docs_search_public_pkey" PRIMARY KEY, btree (id)
+    "lsif_data_docs_search_public_dump_id_idx" btree (dump_id)
+    "lsif_data_docs_search_public_dump_root_idx" btree (dump_root)
+    "lsif_data_docs_search_public_label_reverse_tsv_idx" gin (label_reverse_tsv)
+    "lsif_data_docs_search_public_label_tsv_idx" gin (label_tsv)
+    "lsif_data_docs_search_public_repo_id_idx" btree (repo_id)
+    "lsif_data_docs_search_public_search_key_reverse_tsv_idx" gin (search_key_reverse_tsv)
+    "lsif_data_docs_search_public_search_key_tsv_idx" gin (search_key_tsv)
+Foreign-key constraints:
+    "lsif_data_docs_search_public_lang_name_id_fk" FOREIGN KEY (lang_name_id) REFERENCES lsif_data_docs_search_lang_names_public(id)
+    "lsif_data_docs_search_public_repo_name_id_fk" FOREIGN KEY (repo_name_id) REFERENCES lsif_data_docs_search_repo_names_public(id)
+    "lsif_data_docs_search_public_tags_id_fk" FOREIGN KEY (tags_id) REFERENCES lsif_data_docs_search_tags_public(id)
+Triggers:
+    lsif_data_docs_search_public_delete AFTER DELETE ON lsif_data_docs_search_public REFERENCING OLD TABLE AS oldtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_docs_search_public_delete()
+    lsif_data_docs_search_public_insert AFTER INSERT ON lsif_data_docs_search_public REFERENCING NEW TABLE AS newtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_docs_search_public_insert()
+
+```
+
+A tsvector search index over API documentation (public repos only)
+
+**detail**: The detail string (e.g. the full function signature and its docs). See protocol/documentation.go:Documentation
+
+**dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
+
+**dump_root**: Identical to lsif_dumps.root; The working directory of the indexer image relative to the repository root.
+
+**id**: The row ID of the search result.
+
+**label**: The label string of the result, e.g. a one-line function signature. See protocol/documentation.go:Documentation
+
+**label_reverse_tsv**: Indexed tsvector for the reverse of the label field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+**label_tsv**: Indexed tsvector for the label field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+**lang_name_id**: The programming language (or indexer name) that produced the result. Foreign key into lsif_data_docs_search_lang_names_public.
+
+**path_id**: The fully qualified documentation page path ID, e.g. including "#section". See GraphQL codeintel.schema:documentationPage for what this is.
+
+**repo_id**: The repo ID, from the main app DB repo table. Used to search over a select set of repos by ID.
+
+**repo_name_id**: The repository name that produced the result. Foreign key into lsif_data_docs_search_repo_names_public.
+
+**search_key**: The search key generated by the indexer, e.g. mux.Router.ServeHTTP. It is language-specific, and likely unique within a repository (but not always.) See protocol/documentation.go:Documentation.SearchKey
+
+**search_key_reverse_tsv**: Indexed tsvector for the reverse of the search_key field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+**search_key_tsv**: Indexed tsvector for the search_key field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+**tags_id**: The tags from the documentation node. Foreign key into lsif_data_docs_search_tags_public.
+
+# Table "public.lsif_data_docs_search_repo_names_private"
+```
+   Column    |   Type   | Collation | Nullable |                               Default                                
+-------------+----------+-----------+----------+----------------------------------------------------------------------
+ id          | bigint   |           | not null | nextval('lsif_data_docs_search_repo_names_private_id_seq'::regclass)
+ repo_name   | text     |           | not null | 
+ tsv         | tsvector |           | not null | 
+ reverse_tsv | tsvector |           | not null | 
+Indexes:
+    "lsif_data_docs_search_repo_names_private_pkey" PRIMARY KEY, btree (id)
+    "lsif_data_docs_search_repo_names_private_repo_name_key" UNIQUE CONSTRAINT, btree (repo_name)
+    "lsif_data_docs_search_repo_names_private_reverse_tsv_idx" gin (reverse_tsv)
+    "lsif_data_docs_search_repo_names_private_tsv_idx" gin (tsv)
+Referenced by:
+    TABLE "lsif_data_docs_search_private" CONSTRAINT "lsif_data_docs_search_private_repo_name_id_fk" FOREIGN KEY (repo_name_id) REFERENCES lsif_data_docs_search_repo_names_private(id)
+
+```
+
+Each unique repository name being stored in the API docs search index.
+
+**id**: The ID of the repository name.
+
+**repo_name**: The fully qualified name of the repository.
+
+**reverse_tsv**: Indexed tsvector for the reverse of the lang_name field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+**tsv**: Indexed tsvector for the lang_name field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+# Table "public.lsif_data_docs_search_repo_names_public"
+```
+   Column    |   Type   | Collation | Nullable |                               Default                               
+-------------+----------+-----------+----------+---------------------------------------------------------------------
+ id          | bigint   |           | not null | nextval('lsif_data_docs_search_repo_names_public_id_seq'::regclass)
+ repo_name   | text     |           | not null | 
+ tsv         | tsvector |           | not null | 
+ reverse_tsv | tsvector |           | not null | 
+Indexes:
+    "lsif_data_docs_search_repo_names_public_pkey" PRIMARY KEY, btree (id)
+    "lsif_data_docs_search_repo_names_public_repo_name_key" UNIQUE CONSTRAINT, btree (repo_name)
+    "lsif_data_docs_search_repo_names_public_reverse_tsv_idx" gin (reverse_tsv)
+    "lsif_data_docs_search_repo_names_public_tsv_idx" gin (tsv)
+Referenced by:
+    TABLE "lsif_data_docs_search_public" CONSTRAINT "lsif_data_docs_search_public_repo_name_id_fk" FOREIGN KEY (repo_name_id) REFERENCES lsif_data_docs_search_repo_names_public(id)
+
+```
+
+Each unique repository name being stored in the API docs search index.
+
+**id**: The ID of the repository name.
+
+**repo_name**: The fully qualified name of the repository.
+
+**reverse_tsv**: Indexed tsvector for the reverse of the lang_name field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+**tsv**: Indexed tsvector for the lang_name field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+# Table "public.lsif_data_docs_search_tags_private"
+```
+ Column |   Type   | Collation | Nullable |                            Default                             
+--------+----------+-----------+----------+----------------------------------------------------------------
+ id     | bigint   |           | not null | nextval('lsif_data_docs_search_tags_private_id_seq'::regclass)
+ tags   | text     |           | not null | 
+ tsv    | tsvector |           | not null | 
+Indexes:
+    "lsif_data_docs_search_tags_private_pkey" PRIMARY KEY, btree (id)
+    "lsif_data_docs_search_tags_private_tags_key" UNIQUE CONSTRAINT, btree (tags)
+    "lsif_data_docs_search_tags_private_tsv_idx" gin (tsv)
+Referenced by:
+    TABLE "lsif_data_docs_search_private" CONSTRAINT "lsif_data_docs_search_private_tags_id_fk" FOREIGN KEY (tags_id) REFERENCES lsif_data_docs_search_tags_private(id)
+
+```
+
+Each uniques sequence of space-separated tags being stored in the API docs search index.
+
+**id**: The ID of the tags.
+
+**tags**: The full sequence of space-separated tags. See protocol/documentation.go:Documentation
+
+**tsv**: Indexed tsvector for the tags field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+# Table "public.lsif_data_docs_search_tags_public"
+```
+ Column |   Type   | Collation | Nullable |                            Default                            
+--------+----------+-----------+----------+---------------------------------------------------------------
+ id     | bigint   |           | not null | nextval('lsif_data_docs_search_tags_public_id_seq'::regclass)
+ tags   | text     |           | not null | 
+ tsv    | tsvector |           | not null | 
+Indexes:
+    "lsif_data_docs_search_tags_public_pkey" PRIMARY KEY, btree (id)
+    "lsif_data_docs_search_tags_public_tags_key" UNIQUE CONSTRAINT, btree (tags)
+    "lsif_data_docs_search_tags_public_tsv_idx" gin (tsv)
+Referenced by:
+    TABLE "lsif_data_docs_search_public" CONSTRAINT "lsif_data_docs_search_public_tags_id_fk" FOREIGN KEY (tags_id) REFERENCES lsif_data_docs_search_tags_public(id)
+
+```
+
+Each uniques sequence of space-separated tags being stored in the API docs search index.
+
+**id**: The ID of the tags.
+
+**tags**: The full sequence of space-separated tags. See protocol/documentation.go:Documentation
+
+**tsv**: Indexed tsvector for the tags field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
 # Table "public.lsif_data_documentation_mappings"
 ```
   Column   |  Type   | Collation | Nullable | Default 
@@ -88,13 +473,19 @@ Maps documentation path IDs to their corresponding integral documentationResult 
 
 # Table "public.lsif_data_documentation_pages"
 ```
- Column  |  Type   | Collation | Nullable | Default 
----------+---------+-----------+----------+---------
- dump_id | integer |           | not null | 
- path_id | text    |           | not null | 
- data    | bytea   |           |          | 
+     Column     |  Type   | Collation | Nullable | Default 
+----------------+---------+-----------+----------+---------
+ dump_id        | integer |           | not null | 
+ path_id        | text    |           | not null | 
+ data           | bytea   |           |          | 
+ search_indexed | boolean |           |          | false
 Indexes:
     "lsif_data_documentation_pages_pkey" PRIMARY KEY, btree (dump_id, path_id)
+    "lsif_data_documentation_pages_dump_id_unindexed" btree (dump_id) WHERE NOT search_indexed
+Triggers:
+    lsif_data_documentation_pages_delete AFTER DELETE ON lsif_data_documentation_pages REFERENCING OLD TABLE AS oldtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_documentation_pages_delete()
+    lsif_data_documentation_pages_insert AFTER INSERT ON lsif_data_documentation_pages REFERENCING NEW TABLE AS newtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_documentation_pages_insert()
+    lsif_data_documentation_pages_update AFTER UPDATE ON lsif_data_documentation_pages REFERENCING OLD TABLE AS oldtbl NEW TABLE AS newtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_documentation_pages_update()
 
 ```
 
@@ -191,6 +582,59 @@ Tracks the range of schema_versions for each upload in the lsif_data_documents t
 
 **min_schema_version**: A lower-bound on the `lsif_data_documents.schema_version` where `lsif_data_documents.dump_id = dump_id`.
 
+# Table "public.lsif_data_implementations"
+```
+     Column     |  Type   | Collation | Nullable | Default 
+----------------+---------+-----------+----------+---------
+ dump_id        | integer |           | not null | 
+ scheme         | text    |           | not null | 
+ identifier     | text    |           | not null | 
+ data           | bytea   |           |          | 
+ schema_version | integer |           | not null | 
+ num_locations  | integer |           | not null | 
+Indexes:
+    "lsif_data_implementations_pkey" PRIMARY KEY, btree (dump_id, scheme, identifier)
+    "lsif_data_implementations_dump_id_schema_version" btree (dump_id, schema_version)
+Triggers:
+    lsif_data_implementations_schema_versions_insert AFTER INSERT ON lsif_data_implementations REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_lsif_data_implementations_schema_versions_insert()
+
+```
+
+Associates (document, range) pairs with the implementation monikers attached to the range.
+
+**data**: A gob-encoded payload conforming to an array of [LocationData](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L106:6) types.
+
+**dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
+
+**identifier**: The moniker identifier.
+
+**num_locations**: The number of locations stored in the data field.
+
+**schema_version**: The schema version of this row - used to determine presence and encoding of data.
+
+**scheme**: The moniker scheme.
+
+# Table "public.lsif_data_implementations_schema_versions"
+```
+       Column       |  Type   | Collation | Nullable | Default 
+--------------------+---------+-----------+----------+---------
+ dump_id            | integer |           | not null | 
+ min_schema_version | integer |           |          | 
+ max_schema_version | integer |           |          | 
+Indexes:
+    "lsif_data_implementations_schema_versions_pkey" PRIMARY KEY, btree (dump_id)
+    "lsif_data_implementations_schema_versions_dump_id_schema_versio" btree (dump_id, min_schema_version, max_schema_version)
+
+```
+
+Tracks the range of schema_versions for each upload in the lsif_data_implementations table.
+
+**dump_id**: The identifier of the associated dump in the lsif_uploads table.
+
+**max_schema_version**: An upper-bound on the `lsif_data_implementations.schema_version` where `lsif_data_implementations.dump_id = dump_id`.
+
+**min_schema_version**: A lower-bound on the `lsif_data_implementations.schema_version` where `lsif_data_implementations.dump_id = dump_id`.
+
 # Table "public.lsif_data_metadata"
 ```
       Column       |  Type   | Collation | Nullable | Default 
@@ -280,3 +724,69 @@ Associates result set identifiers with the (document path, range identifier) pai
 **dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
 
 **idx**: The unique result chunk index within the associated dump. Every result set identifier present should hash to this index (modulo lsif_data_metadata.num_result_chunks).
+
+# Table "public.migration_logs"
+```
+            Column             |           Type           | Collation | Nullable |                  Default                   
+-------------------------------+--------------------------+-----------+----------+--------------------------------------------
+ id                            | integer                  |           | not null | nextval('migration_logs_id_seq'::regclass)
+ migration_logs_schema_version | integer                  |           | not null | 
+ schema                        | text                     |           | not null | 
+ version                       | integer                  |           | not null | 
+ up                            | boolean                  |           | not null | 
+ started_at                    | timestamp with time zone |           | not null | 
+ finished_at                   | timestamp with time zone |           |          | 
+ success                       | boolean                  |           |          | 
+ error_message                 | text                     |           |          | 
+Indexes:
+    "migration_logs_pkey" PRIMARY KEY, btree (id)
+
+```
+
+# Table "public.rockskip_ancestry"
+```
+  Column   |         Type          | Collation | Nullable |                    Default                    
+-----------+-----------------------+-----------+----------+-----------------------------------------------
+ id        | integer               |           | not null | nextval('rockskip_ancestry_id_seq'::regclass)
+ repo_id   | integer               |           | not null | 
+ commit_id | character varying(40) |           | not null | 
+ height    | integer               |           | not null | 
+ ancestor  | integer               |           | not null | 
+Indexes:
+    "rockskip_ancestry_pkey" PRIMARY KEY, btree (id)
+    "rockskip_ancestry_repo_id_commit_id_key" UNIQUE CONSTRAINT, btree (repo_id, commit_id)
+    "rockskip_ancestry_repo_commit_id" btree (repo_id, commit_id)
+
+```
+
+# Table "public.rockskip_repos"
+```
+      Column      |           Type           | Collation | Nullable |                  Default                   
+------------------+--------------------------+-----------+----------+--------------------------------------------
+ id               | integer                  |           | not null | nextval('rockskip_repos_id_seq'::regclass)
+ repo             | text                     |           | not null | 
+ last_accessed_at | timestamp with time zone |           | not null | 
+Indexes:
+    "rockskip_repos_pkey" PRIMARY KEY, btree (id)
+    "rockskip_repos_repo_key" UNIQUE CONSTRAINT, btree (repo)
+    "rockskip_repos_last_accessed_at" btree (last_accessed_at)
+    "rockskip_repos_repo" btree (repo)
+
+```
+
+# Table "public.rockskip_symbols"
+```
+ Column  |   Type    | Collation | Nullable |                   Default                    
+---------+-----------+-----------+----------+----------------------------------------------
+ id      | integer   |           | not null | nextval('rockskip_symbols_id_seq'::regclass)
+ added   | integer[] |           | not null | 
+ deleted | integer[] |           | not null | 
+ repo_id | integer   |           | not null | 
+ path    | text      |           | not null | 
+ name    | text      |           | not null | 
+Indexes:
+    "rockskip_symbols_pkey" PRIMARY KEY, btree (id)
+    "rockskip_symbols_gin" gin (singleton_integer(repo_id) gin__int_ops, added gin__int_ops, deleted gin__int_ops, name gin_trgm_ops, singleton(name), singleton(lower(name)), path gin_trgm_ops, singleton(path), path_prefixes(path), singleton(lower(path)), path_prefixes(lower(path)), singleton(get_file_extension(path)), singleton(get_file_extension(lower(path))))
+    "rockskip_symbols_repo_id_path_name" btree (repo_id, path, name)
+
+```

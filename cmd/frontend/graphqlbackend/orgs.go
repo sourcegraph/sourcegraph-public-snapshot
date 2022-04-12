@@ -4,9 +4,10 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (r *schemaResolver) Organizations(args *struct {
@@ -22,17 +23,22 @@ func (r *schemaResolver) Organizations(args *struct {
 }
 
 type orgConnectionResolver struct {
-	db  dbutil.DB
+	db  database.DB
 	opt database.OrgsListOptions
 }
 
 func (r *orgConnectionResolver) Nodes(ctx context.Context) ([]*OrgResolver, error) {
+	// 🚨 SECURITY: Not allowed on Cloud.
+	if envvar.SourcegraphDotComMode() {
+		return nil, errors.New("listing organizations is not allowed")
+	}
+
 	// 🚨 SECURITY: Only site admins can list organisations.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	orgs, err := database.Orgs(r.db).List(ctx, &r.opt)
+	orgs, err := r.db.Orgs().List(ctx, &r.opt)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +59,7 @@ func (r *orgConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 		return 0, err
 	}
 
-	count, err := database.Orgs(r.db).Count(ctx, r.opt)
+	count, err := r.db.Orgs().Count(ctx, r.opt)
 	return int32(count), err
 }
 

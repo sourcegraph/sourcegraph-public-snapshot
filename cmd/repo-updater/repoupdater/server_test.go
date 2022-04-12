@@ -13,13 +13,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -27,11 +28,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmpackages"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestServer_handleRepoLookup(t *testing.T) {
@@ -135,8 +139,6 @@ func TestServer_handleRepoLookup(t *testing.T) {
 }
 
 func TestServer_EnqueueRepoUpdate(t *testing.T) {
-	db := dbtest.NewDB(t, "")
-	store := repos.NewStore(db, sql.TxOptions{})
 	ctx := context.Background()
 
 	svc := types.ExternalService{
@@ -147,11 +149,8 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 }`,
 	}
 
-	if err := store.ExternalServiceStore.Upsert(ctx, &svc); err != nil {
-		t.Fatal(err)
-	}
-
 	repo := types.Repo{
+		ID:   1,
 		Name: "github.com/foo/bar",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "bar",
@@ -161,64 +160,58 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 		Metadata: new(github.Repository),
 	}
 
-	if err := store.RepoStore.Create(ctx, &repo); err != nil {
-		t.Fatal(err)
+	initStore := func(db database.DB) *repos.Store {
+		store := repos.NewStore(db, sql.TxOptions{})
+		if err := store.ExternalServiceStore.Upsert(ctx, &svc); err != nil {
+			t.Fatal(err)
+		}
+		if err := store.RepoStore.Create(ctx, &repo); err != nil {
+			t.Fatal(err)
+		}
+		return store
 	}
 
 	type testCase struct {
-		name     string
-		store    *repos.Store
-		repo     api.RepoName
-		res      *protocol.RepoUpdateResponse
-		err      string
-		teardown func()
+		name string
+		repo api.RepoName
+		res  *protocol.RepoUpdateResponse
+		err  string
+		init func(database.DB) *repos.Store
 	}
 
-	var testCases []testCase
-	testCases = append(testCases,
-		func() testCase {
-			database.Mocks.Repos.List = func(v0 context.Context, v1 database.ReposListOptions) ([]*types.Repo, error) {
-				return nil, errors.New("boom")
-			}
-			return testCase{
-				name:  "returns an error on store failure",
-				store: store,
-				err:   `store.list-repos: boom`,
-				teardown: func() {
-					database.Mocks.Repos = database.MockRepos{}
-				},
-			}
-		}(),
-		testCase{
-			name:  "missing repo",
-			store: store,
-			repo:  "foo",
-			err:   `repo foo not found with response: repo "foo" not found in store`,
+	testCases := []testCase{{
+		name: "returns an error on store failure",
+		init: func(realDB database.DB) *repos.Store {
+			repos := database.NewMockRepoStoreFrom(realDB.Repos())
+			repos.ListFunc.SetDefaultReturn(nil, errors.New("boom"))
+			store := initStore(realDB)
+			store.RepoStore = repos
+			return store
 		},
-		func() testCase {
-			repo := repo.Clone()
-			return testCase{
-				name:  "existing repo",
-				store: store,
-				repo:  repo.Name,
-				res: &protocol.RepoUpdateResponse{
-					ID:   repo.ID,
-					Name: string(repo.Name),
-				},
-			}
-		}(),
-	)
+		err: `store.list-repos: boom`,
+	}, {
+		name: "missing repo",
+		init: initStore,
+		repo: "foo",
+		err:  `repo foo not found with response: repo "foo" not found in store`,
+	}, {
+		name: "existing repo",
+		repo: repo.Name,
+		init: initStore,
+		res: &protocol.RepoUpdateResponse{
+			ID:   repo.ID,
+			Name: string(repo.Name),
+		},
+	}}
 
 	for _, tc := range testCases {
 		tc := tc
 		ctx := context.Background()
 
 		t.Run(tc.name, func(t *testing.T) {
-			if tc.teardown != nil {
-				defer tc.teardown()
-			}
-
-			s := &Server{Store: tc.store, Scheduler: &fakeScheduler{}}
+			sqlDB := dbtest.NewDB(t)
+			store := tc.init(database.NewDB(sqlDB))
+			s := &Server{Store: store, Scheduler: &fakeScheduler{}}
 			srv := httptest.NewServer(s.Handler())
 			defer srv.Close()
 			cli := repoupdater.NewClient(srv.URL)
@@ -240,7 +233,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 }
 
 func TestServer_RepoLookup(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	store := repos.NewStore(db, sql.TxOptions{})
 	ctx := context.Background()
 	clock := timeutil.NewFakeClock(time.Now(), 0)
@@ -261,7 +254,12 @@ func TestServer_RepoLookup(t *testing.T) {
 		Config:       `{}`,
 	}
 
-	if err := store.ExternalServiceStore.Upsert(ctx, &githubSource, &awsSource, &gitlabSource); err != nil {
+	npmSource := types.ExternalService{
+		Kind:   extsvc.KindNpmPackages,
+		Config: `{}`,
+	}
+
+	if err := store.ExternalServiceStore.Upsert(ctx, &githubSource, &awsSource, &gitlabSource, &npmSource); err != nil {
 		t.Fatal(err)
 	}
 
@@ -351,58 +349,38 @@ func TestServer_RepoLookup(t *testing.T) {
 		},
 	}
 
+	npmRepository := &types.Repo{
+		Name: "npm/package",
+		URI:  "npm/package",
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "npm/package",
+			ServiceType: extsvc.TypeNpmPackages,
+			ServiceID:   extsvc.TypeNpmPackages,
+		},
+		Sources: map[string]*types.SourceInfo{
+			npmSource.URN(): {
+				ID:       npmSource.URN(),
+				CloneURL: "npm/package",
+			},
+		},
+		Metadata: &npmpackages.Metadata{Package: func() *reposource.NpmPackage {
+			p, _ := reposource.NewNpmPackage("", "package")
+			return p
+		}()},
+	}
+
 	testCases := []struct {
 		name        string
 		args        protocol.RepoLookupArgs
 		stored      types.Repos
 		result      *protocol.RepoLookupResult
 		src         repos.Source
-		assert      types.ReposAssertion
+		assert      typestest.ReposAssertion
 		assertDelay time.Duration
 		err         string
 	}{
 		{
-			name: "not found",
-			args: protocol.RepoLookupArgs{
-				Repo: api.RepoName("github.com/a/b"),
-			},
-			result: &protocol.RepoLookupResult{ErrorNotFound: true},
-			err:    fmt.Sprintf("repository not found (name=%s notfound=%v)", api.RepoName("github.com/a/b"), true),
-		},
-		{
-			name: "not found from non public codehost",
-			args: protocol.RepoLookupArgs{
-				Repo: api.RepoName("github.private.corp/a/b"),
-			},
-			src:    repos.NewFakeSource(&githubSource, nil),
-			result: &protocol.RepoLookupResult{ErrorNotFound: true},
-			err:    fmt.Sprintf("repository not found (name=%s notfound=%v)", api.RepoName("github.private.corp/a/b"), true),
-		},
-		{
-			name: "found - GitHub",
-			args: protocol.RepoLookupArgs{
-				Repo: api.RepoName("github.com/foo/bar"),
-			},
-			stored: []*types.Repo{githubRepository},
-			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
-				ExternalRepo: api.ExternalRepoSpec{
-					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-					ServiceType: extsvc.TypeGitHub,
-					ServiceID:   "https://github.com/",
-				},
-				Name:        "github.com/foo/bar",
-				Description: "The description",
-				VCS:         protocol.VCSInfo{URL: "git@github.com:foo/bar.git"},
-				Links: &protocol.RepoLinks{
-					Root:   "github.com/foo/bar",
-					Tree:   "github.com/foo/bar/tree/{rev}/{path}",
-					Blob:   "github.com/foo/bar/blob/{rev}/{path}",
-					Commit: "github.com/foo/bar/commit/{commit}",
-				},
-			}},
-		},
-		{
-			name: "found - AWS CodeCommit",
+			name: "found - aws code commit",
 			args: protocol.RepoLookupArgs{
 				Repo: api.RepoName("git-codecommit.us-west-1.amazonaws.com/stripe-go"),
 			},
@@ -425,7 +403,33 @@ func TestServer_RepoLookup(t *testing.T) {
 			}},
 		},
 		{
-			name: "found - GitHub.com on Sourcegraph.com",
+			name: "not synced from non public codehost",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("github.private.corp/a/b"),
+			},
+			src:    repos.NewFakeSource(&githubSource, nil),
+			result: &protocol.RepoLookupResult{ErrorNotFound: true},
+			err:    fmt.Sprintf("repository not found (name=%s notfound=%v)", api.RepoName("github.private.corp/a/b"), true),
+		},
+		{
+			name: "synced - npm package host",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("npm/package"),
+				// In order for new versions of package repos to be synced quickly, it's necessary to enqueue
+				// a high priority git update.
+				Update: true,
+			},
+			stored: []*types.Repo{},
+			src:    repos.NewFakeSource(&npmSource, nil, npmRepository),
+			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
+				ExternalRepo: npmRepository.ExternalRepo,
+				Name:         npmRepository.Name,
+				VCS:          protocol.VCSInfo{URL: string(npmRepository.Name)},
+			}},
+			assert: typestest.Assert.ReposEqual(npmRepository),
+		},
+		{
+			name: "synced - github.com cloud default",
 			args: protocol.RepoLookupArgs{
 				Repo: api.RepoName("github.com/foo/bar"),
 			},
@@ -447,10 +451,10 @@ func TestServer_RepoLookup(t *testing.T) {
 					Commit: "github.com/foo/bar/commit/{commit}",
 				},
 			}},
-			assert: types.Assert.ReposEqual(githubRepository),
+			assert: typestest.Assert.ReposEqual(githubRepository),
 		},
 		{
-			name: "found - GitHub.com on Sourcegraph.com already exists",
+			name: "found - github.com already exists",
 			args: protocol.RepoLookupArgs{
 				Repo: api.RepoName("github.com/foo/bar"),
 			},
@@ -474,27 +478,27 @@ func TestServer_RepoLookup(t *testing.T) {
 			}},
 		},
 		{
-			name: "not found - GitHub.com on Sourcegraph.com",
+			name: "not found - github.com",
 			args: protocol.RepoLookupArgs{
 				Repo: api.RepoName("github.com/foo/bar"),
 			},
 			src:    repos.NewFakeSource(&githubSource, github.ErrRepoNotFound),
 			result: &protocol.RepoLookupResult{ErrorNotFound: true},
 			err:    fmt.Sprintf("repository not found (name=%s notfound=%v)", api.RepoName("github.com/foo/bar"), true),
-			assert: types.Assert.ReposEqual(),
+			assert: typestest.Assert.ReposEqual(),
 		},
 		{
-			name: "unauthorized - GitHub.com on Sourcegraph.com",
+			name: "unauthorized - github.com",
 			args: protocol.RepoLookupArgs{
 				Repo: api.RepoName("github.com/foo/bar"),
 			},
 			src:    repos.NewFakeSource(&githubSource, &github.APIError{Code: http.StatusUnauthorized}),
 			result: &protocol.RepoLookupResult{ErrorUnauthorized: true},
 			err:    fmt.Sprintf("not authorized (name=%s noauthz=%v)", api.RepoName("github.com/foo/bar"), true),
-			assert: types.Assert.ReposEqual(),
+			assert: typestest.Assert.ReposEqual(),
 		},
 		{
-			name: "temporarily unavailable - GitHub.com on Sourcegraph.com",
+			name: "temporarily unavailable - github.com",
 			args: protocol.RepoLookupArgs{
 				Repo: api.RepoName("github.com/foo/bar"),
 			},
@@ -505,10 +509,10 @@ func TestServer_RepoLookup(t *testing.T) {
 				api.RepoName("github.com/foo/bar"),
 				true,
 			),
-			assert: types.Assert.ReposEqual(),
+			assert: typestest.Assert.ReposEqual(),
 		},
 		{
-			name:   "found - gitlab.com on Sourcegraph.com",
+			name:   "synced - gitlab.com",
 			args:   protocol.RepoLookupArgs{Repo: gitlabRepository.Name},
 			stored: []*types.Repo{},
 			src:    repos.NewFakeSource(&gitlabSource, nil, gitlabRepository),
@@ -528,10 +532,10 @@ func TestServer_RepoLookup(t *testing.T) {
 				},
 				ExternalRepo: gitlabRepository.ExternalRepo,
 			}},
-			assert: types.Assert.ReposEqual(gitlabRepository),
+			assert: typestest.Assert.ReposEqual(gitlabRepository),
 		},
 		{
-			name:   "found - gitlab.com on Sourcegraph.com already exists",
+			name:   "found - gitlab.com",
 			args:   protocol.RepoLookupArgs{Repo: gitlabRepository.Name},
 			stored: []*types.Repo{gitlabRepository},
 			src:    repos.NewFakeSource(&gitlabSource, nil, gitlabRepository),
@@ -589,7 +593,7 @@ func TestServer_RepoLookup(t *testing.T) {
 				},
 			}},
 			assertDelay: time.Second,
-			assert:      types.Assert.ReposEqual(),
+			assert:      typestest.Assert.ReposEqual(),
 		},
 	}
 
@@ -617,10 +621,12 @@ func TestServer_RepoLookup(t *testing.T) {
 				Sourcer: repos.NewFakeSourcer(nil, tc.src),
 			}
 
+			scheduler := repos.NewUpdateScheduler(database.NewMockDB())
+
 			s := &Server{
-				Syncer:                syncer,
-				Store:                 store,
-				SourcegraphDotComMode: tc.src != nil,
+				Syncer:    syncer,
+				Store:     store,
+				Scheduler: scheduler,
 			}
 
 			srv := httptest.NewServer(s.Handler())
@@ -634,15 +640,18 @@ func TestServer_RepoLookup(t *testing.T) {
 
 			res, err := cli.RepoLookup(ctx, tc.args)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("have err: %q, want: %q", have, want)
+				t.Fatalf("have err: %q, want: %q", have, want)
 			}
 
-			if have, want := res, tc.result; !reflect.DeepEqual(have, want) {
-				t.Errorf("response: %s", cmp.Diff(have, want))
+			if diff := cmp.Diff(res, tc.result, cmpopts.IgnoreFields(protocol.RepoInfo{}, "ID")); diff != "" {
+				t.Fatalf("response mismatch(-have, +want): %s", diff)
 			}
 
-			if diff := cmp.Diff(res, tc.result); diff != "" {
-				t.Fatalf("RepoLookup:\n%s", diff)
+			if tc.args.Update {
+				scheduleInfo := scheduler.ScheduleInfo(res.Repo.ID)
+				if have, want := scheduleInfo.Queue.Priority, 1; have != want { // highPriority
+					t.Fatalf("scheduler update priority mismatch: have %d, want %d", have, want)
+				}
 			}
 
 			if tc.assert != nil {
@@ -699,7 +708,7 @@ func TestServer_handleSchedulePermsSync(t *testing.T) {
 			permsSyncer:    &fakePermsSyncer{},
 			body:           "{}",
 			wantStatusCode: http.StatusBadRequest,
-			wantBody:       "neither user and repo ids provided",
+			wantBody:       "neither user IDs nor repo IDs was provided in request (must provide at least one)",
 		},
 
 		{
@@ -741,6 +750,46 @@ func TestServer_handleSchedulePermsSync(t *testing.T) {
 				t.Fatalf("Code: want %v but got %v", test.wantStatusCode, w.Code)
 			} else if diff := cmp.Diff(test.wantBody, w.Body.String()); diff != "" {
 				t.Fatalf("Body mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestServer_handleExternalServiceSync(t *testing.T) {
+	tests := []struct {
+		name        string
+		err         error
+		wantErrCode int
+	}{
+		{
+			name:        "unauthorized",
+			err:         &repoupdater.ErrUnauthorized{NoAuthz: true},
+			wantErrCode: 401,
+		},
+		{
+			name:        "forbidden",
+			err:         repos.ErrForbidden{},
+			wantErrCode: 403,
+		},
+		{
+			name:        "other",
+			err:         errors.Errorf("Any error"),
+			wantErrCode: 500,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			src := testSource{
+				fn: func() error {
+					return test.err
+				},
+			}
+			r := httptest.NewRequest("POST", "/sync-external-service", strings.NewReader(`{"ExternalService": {"ID":1,"kind":"GITHUB"}}}`))
+			w := httptest.NewRecorder()
+			s := &Server{Syncer: &repos.Syncer{Sourcer: repos.NewFakeSourcer(nil, src)}}
+			s.handleExternalServiceSync(w, r)
+			if w.Code != test.wantErrCode {
+				t.Errorf("Code: want %v but got %v", test.wantErrCode, w.Code)
 			}
 		})
 	}

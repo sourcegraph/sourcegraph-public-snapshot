@@ -24,7 +24,7 @@ const (
 	envLogDir = "LOG_DIR"
 )
 
-func run(ctx context.Context, wg *sync.WaitGroup) {
+func run(ctx context.Context, wg *sync.WaitGroup, env string) {
 	defer wg.Done()
 
 	bc, err := newClient()
@@ -37,7 +37,7 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 		panic(err)
 	}
 
-	config, err := loadQueries()
+	config, err := loadQueries(env)
 	if err != nil {
 		panic(err)
 	}
@@ -86,18 +86,6 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 				durationSearchSeconds.WithLabelValues(group, qc.Name, c.clientType()).Observe(tookSeconds)
 				firstResultSearchSeconds.WithLabelValues(group, qc.Name, c.clientType()).Observe(firstResultSeconds)
 				matchCount.WithLabelValues(group, qc.Name, c.clientType()).Set(float64(m.matchCount))
-
-				go func() {
-					select {
-					case <-ctx.Done():
-						return
-					case <-time.After(qc.Interval / 2):
-					}
-
-					if err := traces.Fetch(ctx, m.trace); err != nil {
-						log.Error("failed to store trace", "error", err)
-					}
-				}()
 			}
 
 			select {
@@ -171,8 +159,7 @@ func (t *tsvLogger) Log(a ...interface{}) {
 }
 
 var (
-	tsv    *tsvLogger
-	traces *traceStore
+	tsv *tsvLogger
 )
 
 func main() {
@@ -201,18 +188,11 @@ func main() {
 	ctx, cleanup := SignalSensitiveContext()
 	defer cleanup()
 
-	traces = &traceStore{
-		Dir:                filepath.Join(logDir, "traces"),
-		Token:              os.Getenv(envToken),
-		JaegerServerURL:    os.Getenv("JAEGER_SERVER_URL"),
-		MaxTotalTraceBytes: 10 * 1024 * 1024 * 1024, // 10 GiB
-		MaxFetchAttempts:   10,
-	}
-	go traces.CleanupLoop(ctx)
+	env := os.Getenv("SEARCH_BLITZ_ENV")
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
-	go run(ctx, &wg)
+	go run(ctx, &wg, env)
 
 	wg.Add(1)
 	srv := startServer(&wg)

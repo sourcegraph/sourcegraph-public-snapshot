@@ -1,13 +1,15 @@
+import * as React from 'react'
+
 import format from 'date-fns/format'
 import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
-import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { UserActivePeriod } from '@sourcegraph/shared/src/graphql-operations'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../components/alerts'
 import { BarChart } from '../components/d3/BarChart'
 import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
@@ -16,6 +18,7 @@ import { Timestamp } from '../components/time/Timestamp'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { fetchSiteUsageStatistics, fetchUserUsageStatistics } from './backend'
+
 import styles from './SiteAdminUsageStatisticsPage.module.scss'
 
 interface ChartData {
@@ -247,14 +250,15 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
                 <h2>Usage statistics</h2>
                 {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
 
-                <a
+                <Button
                     href="/site-admin/usage-statistics/archive"
-                    className="btn btn-secondary"
                     data-tooltip="Download usage stats archive"
                     download="true"
+                    variant="secondary"
+                    as="a"
                 >
-                    <FileDownloadIcon className="icon-inline" /> Download usage stats archive
-                </a>
+                    <Icon as={FileDownloadIcon} /> Download usage stats archive
+                </Button>
 
                 {this.state.stats && (
                     <>
@@ -263,6 +267,7 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
                                 label,
                                 id: key,
                             }))}
+                            name="chart-options"
                             onChange={this.onChartIndexChange}
                             selected={this.state.chartID}
                         />

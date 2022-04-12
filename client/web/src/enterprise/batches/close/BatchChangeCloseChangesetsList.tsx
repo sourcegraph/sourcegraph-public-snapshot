@@ -1,22 +1,21 @@
-import * as H from 'history'
 import React, { useCallback, useMemo, useEffect } from 'react'
+
+import * as H from 'history'
 import { Subject } from 'rxjs'
 import { repeatWhen, withLatestFrom, filter, map, delay } from 'rxjs/operators'
 
+import { HoverMerged } from '@sourcegraph/client-api'
 import { createHoverifier } from '@sourcegraph/codeintellify'
+import { ErrorLike, isDefined, property } from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { isDefined, property } from '@sourcegraph/shared/src/util/types'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container } from '@sourcegraph/wildcard'
+import { Container, useObservable } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../../backend/features'
 import { FilteredConnectionQueryArguments, FilteredConnection } from '../../../components/FilteredConnection'
@@ -28,7 +27,6 @@ import {
 } from '../detail/backend'
 import { getLSPTextDocumentPositionParameters } from '../utils'
 
-import styles from './BatchChangeCloseChangesetsList.module.scss'
 import {
     BatchChangeCloseHeaderWillCloseChangesets,
     BatchChangeCloseHeaderWillKeepChangesets,
@@ -36,7 +34,14 @@ import {
 import { ChangesetCloseNodeProps, ChangesetCloseNode } from './ChangesetCloseNode'
 import { CloseChangesetsListEmptyElement } from './CloseChangesetsListEmptyElement'
 
-interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
+import styles from './BatchChangeCloseChangesetsList.module.scss'
+
+interface Props
+    extends ThemeProps,
+        PlatformContextProps,
+        TelemetryProps,
+        ExtensionsControllerProps,
+        SettingsCascadeProps {
     batchChangeID: Scalars['ID']
     viewerCanAdminister: boolean
     history: H.History
@@ -68,14 +73,13 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
     onUpdate,
     queryChangesets = _queryChangesets,
     queryExternalChangesetWithFileDiffs,
+    settingsCascade,
 }) => {
     const queryChangesetsConnection = useCallback(
         (args: FilteredConnectionQueryArguments) =>
             queryChangesets({
-                // TODO: This doesn't account for draft changesets. Ideally, this would
-                // use the delta API and apply an empty batch spec, but then changesets
-                // would currently be lost.
-                state: ChangesetState.OPEN,
+                state: null,
+                onlyClosable: true,
                 checkState: null,
                 reviewState: null,
                 first: args.first ?? null,
@@ -96,17 +100,11 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
         hoverOverlayElements,
     ])
 
-    const closeButtonClicks = useMemo(() => new Subject<MouseEvent>(), [])
-    const nextCloseButtonClick = useCallback((event: MouseEvent): void => closeButtonClicks.next(event), [
-        closeButtonClicks,
-    ])
-
     const componentRerenders = useMemo(() => new Subject<void>(), [])
 
     const hoverifier = useMemo(
         () =>
             createHoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>({
-                closeButtonClicks,
                 hoverOverlayElements,
                 hoverOverlayRerenders: componentRerenders.pipe(
                     withLatestFrom(hoverOverlayElements, containerElements),
@@ -124,16 +122,8 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
                 getDocumentHighlights: hoveredToken =>
                     getDocumentHighlights(getLSPTextDocumentPositionParameters(hoveredToken), { extensionsController }),
                 getActions: context => getHoverActions({ extensionsController, platformContext }, context),
-                pinningEnabled: true,
             }),
-        [
-            closeButtonClicks,
-            containerElements,
-            extensionsController,
-            hoverOverlayElements,
-            platformContext,
-            componentRerenders,
-        ]
+        [containerElements, extensionsController, hoverOverlayElements, platformContext, componentRerenders]
     )
     useEffect(() => () => hoverifier.unsubscribe(), [hoverifier])
 
@@ -177,18 +167,20 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
                     noSummaryIfAllNodesVisible={true}
                     onUpdate={onUpdate}
                     emptyElement={<CloseChangesetsListEmptyElement />}
-                    className="filtered-connection__centered-summary"
+                    withCenteredSummary={true}
                 />
                 {hoverState?.hoverOverlayProps && (
                     <WebHoverOverlay
                         {...hoverState.hoverOverlayProps}
+                        nav={url => history.push(url)}
+                        hoveredTokenElement={hoverState.hoveredTokenElement}
                         telemetryService={telemetryService}
                         extensionsController={extensionsController}
                         isLightTheme={isLightTheme}
                         location={location}
                         platformContext={platformContext}
                         hoverRef={nextOverlayElement}
-                        onCloseButtonClick={nextCloseButtonClick}
+                        settingsCascade={settingsCascade}
                     />
                 )}
             </Container>

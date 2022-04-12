@@ -1,36 +1,51 @@
-import classNames from 'classnames'
-import { upperFirst } from 'lodash'
 import React from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import classNames from 'classnames'
+import { upperFirst } from 'lodash'
 
-import { isErrorLike } from '../../util/errors'
+import { isErrorLike } from '@sourcegraph/common'
+import { Alert, AlertProps, LoadingSpinner } from '@sourcegraph/wildcard'
+
 import { HoverOverlayBaseProps } from '../HoverOverlay.types'
 
 import { HoverOverlayContent } from './HoverOverlayContent'
+
+import hoverOverlayStyle from '../HoverOverlay.module.scss'
 
 interface HoverOverlayContentsProps extends Pick<HoverOverlayBaseProps, 'hoverOrError'> {
     iconClassName?: string
     badgeClassName?: string
     errorAlertClassName?: string
+    errorAlertVariant?: AlertProps['variant']
+    contentClassName?: string
 }
 
 export const HoverOverlayContents: React.FunctionComponent<HoverOverlayContentsProps> = props => {
-    const { hoverOrError, iconClassName, errorAlertClassName, badgeClassName } = props
+    const {
+        hoverOrError,
+        iconClassName,
+        errorAlertClassName,
+        errorAlertVariant,
+        badgeClassName,
+        contentClassName,
+    } = props
 
     if (hoverOrError === 'loading') {
         return (
-            <div className="hover-overlay__loader-row">
-                <LoadingSpinner className={iconClassName} />
+            <div className={classNames(hoverOverlayStyle.loaderRow)}>
+                <LoadingSpinner inline={false} className={iconClassName} />
             </div>
         )
     }
 
     if (isErrorLike(hoverOrError)) {
         return (
-            <div className={classNames(errorAlertClassName, 'hover-overlay__hover-error')}>
+            <Alert
+                className={classNames(errorAlertClassName, hoverOverlayStyle.hoverError)}
+                variant={errorAlertVariant}
+            >
                 {upperFirst(hoverOrError.message)}
-            </div>
+            </Alert>
         )
     }
 
@@ -41,7 +56,7 @@ export const HoverOverlayContents: React.FunctionComponent<HoverOverlayContentsP
     if (hoverOrError === null || (hoverOrError.contents.length === 0 && hoverOrError.alerts?.length)) {
         return (
             // Show some content to give the close button space and communicate to the user we couldn't find a hover.
-            <small className="hover-overlay__hover-empty">No hover information available.</small>
+            <small className={classNames(hoverOverlayStyle.hoverEmpty)}>No hover information available.</small>
         )
     }
 
@@ -54,7 +69,9 @@ export const HoverOverlayContents: React.FunctionComponent<HoverOverlayContentsP
                     content={content}
                     aggregatedBadges={hoverOrError.aggregatedBadges}
                     errorAlertClassName={errorAlertClassName}
+                    errorAlertVariant={errorAlertVariant}
                     badgeClassName={badgeClassName}
+                    contentClassName={contentClassName}
                 />
             ))}
         </>

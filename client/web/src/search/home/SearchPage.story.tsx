@@ -1,21 +1,38 @@
+import React from 'react'
+
 import { storiesOf } from '@storybook/react'
 import { parseISO } from 'date-fns'
 import { createMemoryHistory } from 'history'
-import React from 'react'
 
+import { getDocumentNode } from '@sourcegraph/http-client'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
-
-import { WebStory } from '../../components/WebStory'
-import { SearchPatternType } from '../../graphql-operations'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
-} from '../../searchContexts/testHelpers'
-import { ThemePreference } from '../../theme'
-import { _fetchRecentFileViews, _fetchRecentSearches, _fetchSavedSearches, authUser } from '../panels/utils'
+} from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
+import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+
+import { WebStory } from '../../components/WebStory'
+import { FeatureFlagName } from '../../featureFlags/featureFlags'
+import { SourcegraphContext } from '../../jscontext'
+import { useExperimentalFeatures } from '../../stores'
+import { ThemePreference } from '../../stores/themeState'
+import {
+    HOME_PANELS_QUERY,
+    RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD,
+    RECENT_FILES_TO_LOAD,
+    RECENT_SEARCHES_TO_LOAD,
+} from '../panels/HomePanels'
+import {
+    authUser,
+    collaboratorsPayload,
+    recentFilesPayload,
+    recentSearchesPayload,
+    savedSearchesPayload,
+} from '../panels/utils'
 
 import { SearchPage, SearchPageProps } from './SearchPage'
 
@@ -33,91 +50,135 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     themePreference: ThemePreference.Light,
     onThemePreferenceChange: () => undefined,
     authenticatedUser: authUser,
-    setVersionContext: () => Promise.resolve(undefined),
-    availableVersionContexts: [],
     globbing: false,
-    parsedSearchQuery: 'r:golang/oauth2 test f:travis',
-    patternType: SearchPatternType.literal,
-    setPatternType: () => undefined,
-    caseSensitive: false,
-    setCaseSensitivity: () => undefined,
     platformContext: {} as any,
     keyboardShortcuts: [],
-    versionContext: undefined,
-    showSearchContext: false,
-    showSearchContextManagement: false,
+    searchContextsEnabled: true,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => {},
     defaultSearchContextSpec: '',
-    showRepogroupHomepage: false,
-    showEnterpriseHomePanels: false,
-    showOnboardingTour: false,
-    showQueryBuilder: false,
     isLightTheme: props.isLightTheme,
-    fetchSavedSearches: _fetchSavedSearches,
-    fetchRecentSearches: _fetchRecentSearches,
-    fetchRecentFileViews: _fetchRecentFileViews,
     now: () => parseISO('2020-09-16T23:15:01Z'),
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
     hasUserAddedRepositories: false,
     hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
-    featureFlags: new Map(),
-    extensionViews: () => null,
+    featureFlags: new Map<FeatureFlagName, boolean>(),
 })
 
-const { add } = storiesOf('web/search/home/SearchPage', module).addParameters({
-    design: {
-        type: 'figma',
-        url: 'https://www.figma.com/file/sPRyyv3nt5h0284nqEuAXE/12192-Sourcegraph-server-page-v1?node-id=255%3A3',
-    },
-    chromatic: { viewports: [544, 577, 769, 993, 1200] },
-})
+if (!window.context) {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    window.context = {} as SourcegraphContext & Mocha.SuiteFunction
+}
+window.context.allowSignup = true
+
+const { add } = storiesOf('web/search/home/SearchPage', module)
+    .addParameters({
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/sPRyyv3nt5h0284nqEuAXE/12192-Sourcegraph-server-page-v1?node-id=255%3A3',
+        },
+        chromatic: { viewports: [544, 577, 769, 993], disableSnapshot: false },
+    })
+    .addDecorator(Story => {
+        useExperimentalFeatures.setState({ showSearchContext: false, showEnterpriseHomePanels: false })
+        return <Story />
+    })
+
+function getMocks({
+    enableSavedSearches,
+    enableCollaborators,
+}: {
+    enableSavedSearches: boolean
+    enableCollaborators: boolean
+}) {
+    return [
+        {
+            request: {
+                query: getDocumentNode(HOME_PANELS_QUERY),
+                variables: {
+                    userId: '0',
+                    firstRecentlySearchedRepositories: RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD,
+                    firstRecentSearches: RECENT_SEARCHES_TO_LOAD,
+                    firstRecentFiles: RECENT_FILES_TO_LOAD,
+                    enableSavedSearches,
+                    enableCollaborators,
+                },
+            },
+            result: {
+                data: {
+                    node: {
+                        __typename: 'User',
+                        recentlySearchedRepositoriesLogs: recentSearchesPayload(),
+                        recentSearchesLogs: recentSearchesPayload(),
+                        recentFilesLogs: recentFilesPayload(),
+                        collaborators: enableCollaborators ? collaboratorsPayload() : undefined,
+                    },
+                    savedSearches: enableSavedSearches ? savedSearchesPayload() : undefined,
+                },
+            },
+        },
+    ]
+}
 
 add('Cloud with panels', () => (
     <WebStory>
-        {webProps => (
-            <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} showEnterpriseHomePanels={true} />
-        )}
+        {webProps => {
+            useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
+            return (
+                <MockedTestProvider
+                    mocks={getMocks({
+                        enableSavedSearches: false,
+                        enableCollaborators: false,
+                    })}
+                >
+                    <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} />
+                </MockedTestProvider>
+            )
+        }}
     </WebStory>
 ))
 
-add('Cloud without repogroups or panels', () => (
-    <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} />}</WebStory>
-))
-
-add('Cloud with repogroups', () => (
+add('Cloud with panels and collaborators', () => (
     <WebStory>
-        {webProps => <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} showRepogroupHomepage={true} />}
+        {webProps => {
+            useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
+            useExperimentalFeatures.setState({ homepageUserInvitation: true })
+            return (
+                <MockedTestProvider
+                    mocks={getMocks({
+                        enableSavedSearches: false,
+                        enableCollaborators: true,
+                    })}
+                >
+                    <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} />
+                </MockedTestProvider>
+            )
+        }}
     </WebStory>
 ))
 
-add('Cloud with notebook onboarding', () => (
+add('Cloud marketing home', () => (
     <WebStory>
-        {webProps => (
-            <SearchPage
-                {...defaultProps(webProps)}
-                isSourcegraphDotCom={true}
-                showRepogroupHomepage={true}
-                featureFlags={new Map([['search-notebook-onboarding', true]])}
-            />
-        )}
+        {webProps => <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} authenticatedUser={null} />}
     </WebStory>
-))
-
-add('Server without panels', () => <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} />}</WebStory>)
-
-add('Server without panels, with query builder', () => (
-    <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} showQueryBuilder={true} />}</WebStory>
 ))
 
 add('Server with panels', () => (
-    <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} showEnterpriseHomePanels={true} />}</WebStory>
-))
-
-add('Server with panels and query builder', () => (
     <WebStory>
-        {webProps => <SearchPage {...defaultProps(webProps)} showEnterpriseHomePanels={true} showQueryBuilder={true} />}
+        {webProps => {
+            useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
+            return (
+                <MockedTestProvider
+                    mocks={getMocks({
+                        enableSavedSearches: true,
+                        enableCollaborators: false,
+                    })}
+                >
+                    <SearchPage {...defaultProps(webProps)} />
+                </MockedTestProvider>
+            )
+        }}
     </WebStory>
 ))

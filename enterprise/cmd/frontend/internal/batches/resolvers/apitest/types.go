@@ -75,8 +75,9 @@ type BatchChange struct {
 	ID                      string
 	Name                    string
 	Description             string
+	State                   btypes.BatchChangeState
 	SpecCreator             *User
-	InitialApplier          *User
+	Creator                 *User
 	LastApplier             *User
 	LastAppliedAt           string
 	ViewerCanAdminister     bool
@@ -90,6 +91,7 @@ type BatchChange struct {
 	ChangesetCountsOverTime []ChangesetCounts
 	DiffStat                DiffStat
 	BulkOperations          BulkOperationConnection
+	BatchSpecs              BatchSpecConnection
 }
 
 type BatchChangeConnection struct {
@@ -136,6 +138,7 @@ type Changeset struct {
 	State              string
 	ExternalID         string
 	ExternalURL        ExternalURL
+	ForkNamespace      string
 	ReviewState        string
 	CheckState         string
 	Events             ChangesetEventConnection
@@ -193,7 +196,7 @@ type BatchSpec struct {
 	OriginalInput string
 	ParsedInput   graphqlbackend.JSONValue
 
-	ApplyURL string
+	ApplyURL *string
 
 	Namespace UserOrg
 	Creator   *User
@@ -216,6 +219,24 @@ type BatchSpec struct {
 	// NEW
 	SupersedingBatchSpec *BatchSpec
 	AppliesToBatchChange BatchChange
+
+	State               string
+	WorkspaceResolution BatchSpecWorkspaceResolution
+
+	StartedAt      graphqlbackend.DateTime
+	FinishedAt     graphqlbackend.DateTime
+	FailureMessage string
+	ViewerCanRetry bool
+}
+
+type BatchSpecConnection struct {
+	Nodes      []BatchSpec
+	TotalCount int
+	PageInfo   PageInfo
+}
+
+type BatchSpecWorkspaceResolution struct {
+	State string
 }
 
 // ChangesetSpecDelta is the delta between two ChangesetSpecs describing the same Changeset.
@@ -368,22 +389,40 @@ type BulkOperationConnection struct {
 	PageInfo   PageInfo
 }
 
-type BatchSpecExecution struct {
-	ID           string
-	InputSpec    string
-	State        string
-	CreatedAt    graphqlbackend.DateTime
-	StartedAt    graphqlbackend.DateTime
-	FinishedAt   graphqlbackend.DateTime
-	Failure      string
-	PlaceInQueue int
-	BatchSpec    BatchSpec
-	Initiator    User
-	Namespace    UserOrg
+type GitRef struct {
+	Name        string
+	DisplayName string
+	AbbrevName  string
+	Target      GitTarget
 }
 
-type BatchSpecExecutionConnection struct {
-	Nodes      []BatchSpecExecution
-	TotalCount int
-	PageInfo   PageInfo
+type BatchSpecWorkspace struct {
+	Typename string `json:"__typename"`
+	ID       string
+
+	Repository Repository
+	BatchSpec  BatchSpec
+
+	ChangesetSpecs []ChangesetSpec
+
+	Branch            GitRef
+	Path              string
+	SearchResultPaths []string
+	Steps             []BatchSpecWorkspaceStep
+
+	CachedResultFound  bool
+	OnlyFetchWorkspace bool
+	Ignored            bool
+	Unsupported        bool
+
+	State          string
+	StartedAt      graphqlbackend.DateTime
+	FinishedAt     graphqlbackend.DateTime
+	FailureMessage string
+	PlaceInQueue   int
+}
+
+type BatchSpecWorkspaceStep struct {
+	Run       string
+	Container string
 }

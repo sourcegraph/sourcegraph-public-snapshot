@@ -3,23 +3,20 @@ package batch
 import (
 	"context"
 	"database/sql"
-	"sync"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 func init() {
-	dbtesting.DBNameSuffix = "batch"
+	checkBatchInserterInvariants = true
 }
 
 func TestBatchInserter(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	setupTestTable(t, db)
 
 	expectedValues := makeTestValues(2, 0)
@@ -48,14 +45,11 @@ func TestBatchInserter(t *testing.T) {
 }
 
 func TestBatchInserterWithReturn(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	setupTestTable(t, db)
 
 	tableSizeFactor := 2
-	numRows := maxNumParameters * tableSizeFactor
+	numRows := MaxNumPostgresParameters * tableSizeFactor
 	expectedValues := makeTestValues(tableSizeFactor, 0)
 
 	var expectedIDs []int
@@ -68,8 +62,27 @@ func TestBatchInserterWithReturn(t *testing.T) {
 	}
 }
 
+func TestBatchInserterWithReturnWithConflicts(t *testing.T) {
+	db := dbtest.NewDB(t)
+	setupTestTable(t, db)
+
+	tableSizeFactor := 2
+	duplicationFactor := 2
+	numRows := MaxNumPostgresParameters * tableSizeFactor
+	expectedValues := makeTestValues(tableSizeFactor, 0)
+
+	var expectedIDs []int
+	for i := 0; i < numRows; i++ {
+		expectedIDs = append(expectedIDs, i+1)
+	}
+
+	if diff := cmp.Diff(expectedIDs, testInsertWithReturnWithConflicts(t, db, duplicationFactor, expectedValues)); diff != "" {
+		t.Errorf("unexpected returned ids (-want +got):\n%s", diff)
+	}
+}
+
 func BenchmarkBatchInserter(b *testing.B) {
-	db := dbtesting.GetDB(b)
+	db := dbtest.NewDB(b)
 	setupTestTable(b, db)
 	expectedValues := makeTestValues(10, 0)
 
@@ -82,7 +95,7 @@ func BenchmarkBatchInserter(b *testing.B) {
 }
 
 func BenchmarkBatchInserterLargePayload(b *testing.B) {
-	db := dbtesting.GetDB(b)
+	db := dbtest.NewDB(b)
 	setupTestTable(b, db)
 	expectedValues := makeTestValues(10, 4096)
 
@@ -94,29 +107,25 @@ func BenchmarkBatchInserterLargePayload(b *testing.B) {
 	}
 }
 
-var setup sync.Once
-
 func setupTestTable(t testing.TB, db *sql.DB) {
-	setup.Do(func() {
-		createTableQuery := `
-			CREATE TABLE batch_inserter_test (
-				id SERIAL,
-				col1 integer NOT NULL,
-				col2 integer NOT NULL,
-				col3 integer NOT NULL,
-				col4 integer NOT NULL,
-				col5 text
-			)
-		`
-		if _, err := db.Exec(createTableQuery); err != nil {
-			t.Fatalf("unexpected error creating test table: %s", err)
-		}
-	})
+	createTableQuery := `
+		CREATE TABLE batch_inserter_test (
+			id SERIAL,
+			col1 integer NOT NULL UNIQUE,
+			col2 integer NOT NULL,
+			col3 integer NOT NULL,
+			col4 integer NOT NULL,
+			col5 text
+		)
+	`
+	if _, err := db.Exec(createTableQuery); err != nil {
+		t.Fatalf("unexpected error creating test table: %s", err)
+	}
 }
 
 func makeTestValues(tableSizeFactor, payloadSize int) [][]interface{} {
 	var expectedValues [][]interface{}
-	for i := 0; i < maxNumParameters*tableSizeFactor; i++ {
+	for i := 0; i < MaxNumPostgresParameters*tableSizeFactor; i++ {
 		expectedValues = append(expectedValues, []interface{}{
 			i,
 			i + 1,
@@ -141,7 +150,7 @@ func makePayload(size int) string {
 func testInsert(t testing.TB, db *sql.DB, expectedValues [][]interface{}) {
 	ctx := context.Background()
 
-	inserter := NewInserter(ctx, db, "batch_inserter_test", "col1", "col2", "col3", "col4", "col5")
+	inserter := NewInserter(ctx, db, "batch_inserter_test", MaxNumPostgresParameters, "col1", "col2", "col3", "col4", "col5")
 	for _, values := range expectedValues {
 		if err := inserter.Insert(ctx, values...); err != nil {
 			t.Fatalf("unexpected error inserting values: %s", err)
@@ -160,9 +169,11 @@ func testInsertWithReturn(t testing.TB, db *sql.DB, expectedValues [][]interface
 		ctx,
 		db,
 		"batch_inserter_test",
+		MaxNumPostgresParameters,
 		[]string{"col1", "col2", "col3", "col4", "col5"},
+		"",
 		[]string{"id"},
-		func(rows *sql.Rows) error {
+		func(rows dbutil.Scanner) error {
 			var id int
 			if err := rows.Scan(&id); err != nil {
 				return err
@@ -176,6 +187,43 @@ func testInsertWithReturn(t testing.TB, db *sql.DB, expectedValues [][]interface
 	for _, values := range expectedValues {
 		if err := inserter.Insert(ctx, values...); err != nil {
 			t.Fatalf("unexpected error inserting values: %s", err)
+		}
+	}
+
+	if err := inserter.Flush(ctx); err != nil {
+		t.Fatalf("unexpected error flushing: %s", err)
+	}
+
+	return insertedIDs
+}
+
+func testInsertWithReturnWithConflicts(t testing.TB, db *sql.DB, n int, expectedValues [][]interface{}) (insertedIDs []int) {
+	ctx := context.Background()
+
+	inserter := NewInserterWithReturn(
+		ctx,
+		db,
+		"batch_inserter_test",
+		MaxNumPostgresParameters,
+		[]string{"id", "col1", "col2", "col3", "col4", "col5"},
+		"ON CONFLICT DO NOTHING",
+		[]string{"id"},
+		func(rows dbutil.Scanner) error {
+			var id int
+			if err := rows.Scan(&id); err != nil {
+				return err
+			}
+
+			insertedIDs = append(insertedIDs, id)
+			return nil
+		},
+	)
+
+	for i := 0; i < n; i++ {
+		for j, values := range expectedValues {
+			if err := inserter.Insert(ctx, append([]interface{}{j + 1}, values...)...); err != nil {
+				t.Fatalf("unexpected error inserting values: %s", err)
+			}
 		}
 	}
 

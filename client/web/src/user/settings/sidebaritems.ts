@@ -42,10 +42,21 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = [
         condition: userExternalServicesEnabled,
     },
     {
-        label: 'Repositories',
+        label: 'Your repositories',
         to: '/repositories',
         condition: userExternalServicesEnabled,
-        status: 'beta',
+    },
+    {
+        label: 'Your organizations',
+        to: '/organizations',
+        condition: context => context.openBetaEnabled,
+        status: 'new',
+        exact: true,
+    },
+    {
+        label: 'Privacy',
+        to: '/privacy',
+        exact: true,
     },
     {
         label: 'Product research',

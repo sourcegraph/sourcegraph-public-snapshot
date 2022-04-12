@@ -87,7 +87,7 @@ type Mutation {
 
     Only authenticated users may perform this mutation.
     """
-    createOrganization(name: String!, displayName: String): Org!
+    createOrganization(name: String!, displayName: String, statsID: ID): Org!
     """
     Updates an organization.
 
@@ -95,9 +95,14 @@ type Mutation {
     """
     updateOrganization(id: ID!, displayName: String): Org!
     """
-    Deletes an organization. Only site admins may perform this mutation.
+    Soft or hard deletes an organization.
+    - When the second argument is not provided, it soft deletes an organization, marking it as deleted.
+    Only site admins may perform this mutation.
+    - When the second argument is true, it hard deletes an organization and its associated resources.
+    Hard deletion is currently only supported on cloud. Only org members may perform this mutation
     """
-    deleteOrganization(organization: ID!): EmptyResponse
+    deleteOrganization(organization: ID!, hard: Boolean): EmptyResponse
+
     """
     Adds a external service. Only site admins may perform this mutation.
     """
@@ -218,6 +223,17 @@ type Mutation {
     """
     createPassword(newPassword: String!): EmptyResponse
     """
+    Sets the user to accept the site's Terms of Service and Privacy Policy.
+    If the ID is ommitted, the current user is assumed.
+
+    Only the user or site admins may perform this mutation.
+    """
+    setTosAccepted(userID: ID): EmptyResponse!
+    """
+    Current user opt in/out from being searchable in the users picker.
+    """
+    setSearchable(searchable: Boolean!): EmptyResponse!
+    """
     Creates an access token that grants the privileges of the specified user (referred to as the access token's
     "subject" user after token creation). The result is the access token value, which the caller is responsible
     for storing (it is not accessible by Sourcegraph after creation).
@@ -246,12 +262,20 @@ type Mutation {
     """
     deleteExternalAccount(externalAccount: ID!): EmptyResponse!
     """
+    Sends an invitation to join Sourcegraph to the given email address.
+
+    Returns instantly regardless of whether or not an invitation email was actually sent. For example, the email
+    may fail to send if there is a typo or it is invalid, or Sourcegraph may refuse to send it due to spam concerns
+    or if the user has been invited too recently.
+    """
+    inviteEmailToSourcegraph(email: String!): EmptyResponse!
+    """
     Invite the user with the given username to join the organization. The invited user account must already
     exist.
 
     Only site admins and any organization member may perform this mutation.
     """
-    inviteUserToOrganization(organization: ID!, username: String!): InviteUserToOrganizationResult!
+    inviteUserToOrganization(organization: ID!, username: String, email: String): InviteUserToOrganizationResult!
     """
     Accept or reject an existing organization invitation.
 
@@ -410,6 +434,10 @@ type Mutation {
         """
         firstSourceURL: String
         """
+        The last sourcegraph URL visited by the user, stored in a browser cookie.
+        """
+        lastSourceURL: String
+        """
         The URL when the event was logged.
         """
         url: String!
@@ -437,19 +465,26 @@ type Mutation {
         such as search queries or repository names.
         """
         publicArgument: String
+        """
+        Device ID used for Amplitude analytics. Used on Sourcegraph Cloud only.
+        """
+        deviceID: String
+        """
+        Event ID used to deduplicate events that occur simultaneously in Amplitude analytics.
+        See https://developers.amplitude.com/docs/http-api-v2#optional-keys. Used on Sourcegraph Cloud only.
+        """
+        eventID: Int
+        """
+        Insert ID used to deduplicate events that re-occur in the event of retries or
+        backfills in Amplitude analytics. See https://developers.amplitude.com/docs/http-api-v2#optional-keys.
+        Used on Sourcegraph Cloud only.
+        """
+        insertID: String
     ): EmptyResponse
     """
-    Sends a test notification for the saved search. Be careful: this will send a notifcation (email and other
-    types of notifications, if configured) to all subscribers of the saved search, which could be bothersome.
-
-    Only subscribers to this saved search may perform this action.
+    Logs a batch of events.
     """
-    sendSavedSearchTestNotification(
-        """
-        ID of the saved search.
-        """
-        id: ID!
-    ): EmptyResponse
+    logEvents(events: [Event!]): EmptyResponse
     """
     All mutations that update settings (global, organization, and user settings) are under this field.
 
@@ -589,48 +624,6 @@ type Mutation {
     SetUserPublicRepos(userID: ID!, repoURIs: [String!]!): EmptyResponse!
 
     """
-    Converts a version context to an equivalent instance-level search context. Only available to site admins.
-    """
-    convertVersionContextToSearchContext(name: String!): SearchContext!
-
-    """
-    Create search context.
-    """
-    createSearchContext(
-        """
-        Search context input.
-        """
-        searchContext: SearchContextInput!
-        """
-        List of search context repository revisions.
-        """
-        repositories: [SearchContextRepositoryRevisionsInput!]!
-    ): SearchContext!
-
-    """
-    Delete search context.
-    """
-    deleteSearchContext(id: ID!): EmptyResponse!
-
-    """
-    Update search context.
-    """
-    updateSearchContext(
-        """
-        Search context ID.
-        """
-        id: ID!
-        """
-        Search context input.
-        """
-        searchContext: SearchContextEditInput!
-        """
-        List of search context repository revisions.
-        """
-        repositories: [SearchContextRepositoryRevisionsInput!]!
-    ): SearchContext!
-
-    """
     (experimental) Create a new feature flag
     """
     createFeatureFlag(
@@ -740,6 +733,91 @@ type Mutation {
         """
         contents: String!
     ): EmptyResponse!
+
+    """
+    Merges the given settings edit with the current temporary settings for the current user.
+    Keys in the given edit take priority over key in the temporary settings. The merge is
+    not recursive.
+    If temporary settings for the user do not exist, they are created.
+    """
+    editTemporarySettings(
+        """
+        The settings to merge with the current temporary settings for the current user, as a JSON string.
+        """
+        settingsToEdit: String!
+    ): EmptyResponse!
+
+    """
+    Sends an email for testing Sourcegraph's email configuration.
+
+    Only administrators can use this API.
+    """
+    sendTestEmail(to: String!): String!
+}
+
+"""
+A description of a user event.
+"""
+input Event {
+    """
+    The name of the event.
+    """
+    event: String!
+    """
+    The randomly generated unique user ID stored in a browser cookie.
+    """
+    userCookieID: String!
+    """
+    The first sourcegraph URL visited by the user, stored in a browser cookie.
+    """
+    firstSourceURL: String
+    """
+    The last sourcegraph URL visited by the user, stored in a browser cookie.
+    """
+    lastSourceURL: String
+    """
+    The URL when the event was logged.
+    """
+    url: String!
+    """
+    The source of the event.
+    """
+    source: EventSource!
+    """
+    An optional cohort ID to identify the user as part of a specific A/B test.
+    The cohort ID is expected to be a date in the form YYYY-MM-DD
+    """
+    cohortID: String
+    """
+    An optional referrer parameter for the user's current session.
+    Only captured and stored on Sourcegraph Cloud.
+    """
+    referrer: String
+    """
+    The additional argument information.
+    """
+    argument: String
+    """
+    Public argument information. PRIVACY: Do NOT include any potentially private information in this field.
+    These properties get sent to our analytics tools for Cloud, so must not include private information,
+    such as search queries or repository names.
+    """
+    publicArgument: String
+    """
+    Device ID used for Amplitude analytics. Used on Sourcegraph Cloud only.
+    """
+    deviceID: String
+    """
+    Event ID used to deduplicate events that occur simultaneously in Amplitude analytics.
+    See https://developers.amplitude.com/docs/http-api-v2#optional-keys. Used on Sourcegraph Cloud only.
+    """
+    eventID: Int
+    """
+    Insert ID used to deduplicate events that re-occur in the event of retries or
+    backfills in Amplitude analytics. See https://developers.amplitude.com/docs/http-api-v2#optional-keys.
+    Used on Sourcegraph Cloud only.
+    """
+    insertID: String
 }
 
 """
@@ -760,7 +838,7 @@ input AddExternalServiceInput {
     config: String!
     """
     The namespace this external service belongs to.
-    Currently, this can only be used for a user.
+    This can be used both for a user and an organization.
     """
     namespace: ID
 }
@@ -800,6 +878,8 @@ enum EventSource {
     WEB
     CODEHOSTINTEGRATION
     BACKEND
+    STATICWEB
+    IDEEXTENSION
 }
 
 """
@@ -1051,7 +1131,7 @@ type Query {
         uri: String
     ): Repository
     """
-    Looks up a repository by either name or cloneURL. When the repository does not exist on the server
+    Looks up a repository by either name or cloneURL or hashedName. When the repository does not exist on the server
     and "disablePublicRepoRedirects" is "false" in the site configuration, it returns a Redirect to
     an external Sourcegraph URL that may have this repository instead. Otherwise, this query returns
     null.
@@ -1067,6 +1147,12 @@ type Query {
         Will not actually check the code host to see if the repository actually exists.
         """
         cloneURL: String
+        """
+        Query the repository by hashed name.
+        Hashed name is a SHA256 checksum of the absolute repo name in lower case,
+        for example "github.com/sourcegraph/sourcegraph" -> "a6c905ceb7dec9a565945ceded8c7fa4154250df8b928fb40673b535d9a24c2f"
+        """
+        hashedName: String
     ): RepositoryRedirect
     """
     Lists external services under given namespace.
@@ -1238,10 +1324,6 @@ type Query {
     """
     clientConfiguration: ClientConfigurationDetails!
     """
-    Fetch search filter suggestions for autocompletion.
-    """
-    searchFilterSuggestions: SearchFilterSuggestions!
-    """
     Runs a search.
     """
     search(
@@ -1259,71 +1341,11 @@ type Query {
         The search query (such as "foo" or "repo:myrepo foo").
         """
         query: String = ""
-
-        """
-        (experimental) Optionally specify the versionContext. If not specified the
-        default version context is used (all repositories on the default branch).
-        """
-        versionContext: String
     ): Search
     """
     All saved searches configured for the current user, merged from all configurations.
     """
     savedSearches: [SavedSearch!]!
-    """
-    All repository groups for the current user, merged from all configurations.
-    """
-    repoGroups: [RepoGroup!]!
-    """
-    (experimental) All version contexts.
-    """
-    versionContexts: [VersionContext!]!
-    """
-    Auto-defined search contexts available to the current user.
-    """
-    autoDefinedSearchContexts: [SearchContext!]!
-    """
-    All available user-defined search contexts. Excludes auto-defined contexts.
-    """
-    searchContexts(
-        """
-        Returns the first n search contexts from the list.
-        """
-        first: Int = 50
-        """
-        Opaque pagination cursor.
-        """
-        after: String
-        """
-        Query to filter the search contexts by spec.
-        """
-        query: String
-        """
-        Include search contexts matching the provided namespaces. A union of all matching search contexts is returned.
-        ID can either be a user ID, org ID, or nil to match instance-level contexts. Empty namespaces list
-        defaults to returning all available search contexts.
-        Example: `namespaces: [user1, org1, org2, nil]` will return search contexts created by user1 + contexts
-        created by org1 + contexts created by org2 + all instance-level contexts.
-        """
-        namespaces: [ID] = []
-        """
-        Sort field.
-        """
-        orderBy: SearchContextsOrderBy = SEARCH_CONTEXT_SPEC
-        """
-        Sort direction.
-        """
-        descending: Boolean = false
-    ): SearchContextConnection!
-    """
-    Fetch search context by spec (global, @username, @username/ctx, etc.).
-    """
-    searchContextBySpec(spec: String!): SearchContext
-    """
-    Determines whether the search context is within the set of search contexts available to the current user.
-    The set consists of contexts created by the user, contexts created by the users' organizations, and instance-level contexts.
-    """
-    isSearchContextAvailable(spec: String!): Boolean!
     """
     (experimental) Return the parse tree of a search query.
     """
@@ -1379,10 +1401,10 @@ type Query {
     ): Namespace
 
     """
-    Repos affiliated with the user & code hosts, these repos are not necessarily synced, but ones that
-    the configured code hosts are able to see.
+    Repos affiliated with the namespace (a user or an organization) & code hosts, these repos are not necessarily synced,
+    but ones that the configured code hosts are able to see.
     """
-    affiliatedRepositories(user: ID!, codeHost: ID, query: String): CodeHostRepositoryConnection!
+    affiliatedRepositories(namespace: ID!, codeHost: ID, query: String): CodeHostRepositoryConnection!
 
     """
     Returns true if any of the code hosts supplied are syncing now or within "seconds" from now.
@@ -1405,9 +1427,219 @@ type Query {
     viewerFeatureFlags: [EvaluatedFeatureFlag!]!
 
     """
+    Retrieve the value of a feature flag for the organization
+    """
+    organizationFeatureFlagValue(orgID: ID!, flagName: String!): Boolean!
+
+    """
+    Retrieve all organization feature flag overrides for the current user
+    """
+    organizationFeatureFlagOverrides: [FeatureFlagOverride!]!
+
+    """
     Retrieves the temporary settings for the current user.
     """
     temporarySettings: TemporarySettings!
+
+    """
+    Returns recently received webhooks across all external services, optionally
+    limiting the returned values to only those that didn't match any external
+    service.
+
+    Only site admins can access this field.
+    """
+    webhookLogs(
+        """
+        Returns the first n webhook logs.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+
+        """
+        Only include webhook logs that resulted in errors.
+        """
+        onlyErrors: Boolean
+
+        """
+        Only include webhook logs that were not matched to an external service.
+        """
+        onlyUnmatched: Boolean
+
+        """
+        Only include webhook logs on or after this time.
+        """
+        since: DateTime
+
+        """
+        Only include webhook logs on or before this time.
+        """
+        until: DateTime
+    ): WebhookLogConnection!
+
+    """
+    Retrieve active executor compute instances.
+    """
+    executors(
+        """
+        An (optional) search query that searches over the hostname, queue name, os, architecture, and
+        version properties.
+        """
+        query: String
+
+        """
+        Whether to show only executors that have sent a heartbeat in the last fifteen minutes.
+        """
+        active: Boolean
+
+        """
+        Returns the first n executors.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): ExecutorConnection!
+
+    """
+    (experimental)
+    Get invitation based on the JWT in the invitation URL
+    """
+    invitationByToken(
+        """
+        The token that uniquely identifies the invitation
+        """
+        token: String!
+    ): OrganizationInvitation!
+
+    """
+    Get pending invitations for the specific organization
+    """
+    pendingInvitations(
+        """
+        The organization ID
+        """
+        organization: ID!
+    ): [OrganizationInvitation!]!
+
+    """
+    Search for users that opt-in to search autocomplete.
+    """
+    autocompleteMembersSearch(
+        """
+        The organization ID
+        """
+        organization: ID!
+        """
+        Return users whose usernames or display names match the query.
+        """
+        query: String!
+    ): [AutocompleteMemberSearchItem!]!
+
+    """
+    Get started organization summary
+    """
+    orgMembersSummary(
+        """
+        The organization ID
+        """
+        organization: ID!
+    ): OrgMembersSummary!
+}
+
+"""
+A list of active executors compute instances.
+"""
+type ExecutorConnection {
+    """
+    A list of executors.
+    """
+    nodes: [Executor!]!
+
+    """
+    The total number of executors in this result set.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+An active executor compute instance.
+"""
+type Executor implements Node {
+    """
+    The unique identifier of this executor.
+    """
+    id: ID!
+
+    """
+    The hostname of the executor instance.
+    """
+    hostname: String!
+
+    """
+    The queue name that the executor polls for work.
+    """
+    queueName: String!
+
+    """
+    Active is true, if a heartbeat from the executor has been received at most three heartbeat intervals ago.
+    """
+    active: Boolean!
+
+    """
+    The operating system running the executor.
+    """
+    os: String!
+
+    """
+    The machine architure running the executor.
+    """
+    architecture: String!
+
+    """
+    The version of Git used by the executor.
+    """
+    dockerVersion: String!
+
+    """
+    The version of the executor.
+    """
+    executorVersion: String!
+
+    """
+    The version of Docker used by the executor.
+    """
+    gitVersion: String!
+
+    """
+    The version of Ignite used by the executor.
+    """
+    igniteVersion: String!
+
+    """
+    The version of src-cli used by the executor.
+    """
+    srcCliVersion: String!
+
+    """
+    The first time the executor sent a heartbeat to the Sourcegraph instance.
+    """
+    firstSeenAt: DateTime!
+
+    """
+    The last time the executor sent a heartbeat to the Sourcegraph instance.
+    """
+    lastSeenAt: DateTime!
 }
 
 """
@@ -1648,29 +1880,11 @@ type Search {
     """
     results: SearchResults!
     """
-    The suggestions.
-    """
-    suggestions(first: Int): [SearchSuggestion!]!
-    """
     A subset of results (excluding actual search results) which are heavily
     cached and thus quicker to query. Useful for e.g. querying sparkline
     data.
     """
     stats: SearchResultsStats!
-}
-
-"""
-Predefined suggestions for search filters when backfill.
-"""
-type SearchFilterSuggestions {
-    """
-    The suggestions for search filter "repogroup:".
-    """
-    repogroup: [String!]!
-    """
-    The suggestions for search filter "repo:".
-    """
-    repo: [String!]!
 }
 
 """
@@ -1777,11 +1991,11 @@ type SearchResults {
     """
     sparkline: [Int!]!
     """
-    Repositories that were eligible to be searched.
+    Repositories from results.
     """
     repositories: [Repository!]!
     """
-    The number of repositories that were eligible to be searched (for clients
+    The number of repositories that had results (for clients
     that just wish to know how many without querying the, sometimes extremely
     large, list).
     """
@@ -1810,6 +2024,7 @@ type SearchResults {
     """
     timedout: [Repository!]!
     """
+    DEPRECATED: This field is not used in known clients, and will always return `false`.
     True if indexed search is enabled but was not available during this search.
     """
     indexUnavailable: Boolean!
@@ -1884,11 +2099,6 @@ type Language {
 }
 
 """
-A search suggestion.
-"""
-union SearchSuggestion = Repository | File | Symbol | Language | SearchContext
-
-"""
 A search-related alert message.
 """
 type SearchAlert {
@@ -1953,20 +2163,6 @@ type SearchQueryDescription {
     The query.
     """
     query: String!
-}
-
-"""
-A group of repositories.
-"""
-type RepoGroup {
-    """
-    The name.
-    """
-    name: String!
-    """
-    The repositories.
-    """
-    repositories: [String!]!
 }
 
 """
@@ -2087,10 +2283,13 @@ enum ExternalServiceKind {
     GITHUB
     GITLAB
     GITOLITE
+    GOMODULES
     JVMPACKAGES
+    NPMPACKAGES
+    OTHER
+    PAGURE
     PERFORCE
     PHABRICATOR
-    OTHER
 }
 
 """
@@ -2163,6 +2362,52 @@ type ExternalService implements Node {
     so it should be used sparingly.
     """
     grantedScopes: [String!]
+
+    """
+    Returns recently received webhooks on this external service.
+
+    Only site admins may access this field.
+    """
+    webhookLogs(
+        """
+        Returns the first n webhook logs.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+
+        """
+        Only include webhook logs that resulted in errors.
+        """
+        onlyErrors: Boolean
+
+        """
+        Only include webhook logs on or after this time.
+        """
+        since: DateTime
+
+        """
+        Only include webhook logs on or before this time.
+        """
+        until: DateTime
+    ): WebhookLogConnection!
+
+    """
+    EXPERIMENTAL: Collaborators who can be invited to Sourcegraph. This typically comes from a few
+    repositories included by this external service, and is derived from commit history (because that
+    for example gives more accurate collaborator work email addresses than the contributors API which
+    often returns personal emails.
+
+    Importantly, this API works when repositories are not cloned on Sourcegraph yet so as to allow
+    inviting collaborators while repositories are cloning.
+
+    In general, this API should NOT be used once repositories are cloned on to Sourcegraph as it
+    reaches out to the code host directly which is wasteful if repositories are already cloned.
+    """
+    invitableCollaborators: [Person!]!
 }
 
 """
@@ -2585,185 +2830,6 @@ type ExternalRepository {
 }
 
 """
-(experimental) A version context. Used to change the set of default repository and revisions searched.
-Note: We do not expose the list of repositories and revisions in the version context. This is intentional. However, if a need arises we can add it in.
-"""
-type VersionContext {
-    """
-    The name of the version context.
-    """
-    name: String!
-
-    """
-    The description of the version context.
-    """
-    description: String!
-}
-
-"""
-A search context. Specifies a set of repositories to be searched.
-"""
-type SearchContext implements Node {
-    """
-    The unique id of the search context.
-    """
-    id: ID!
-    """
-    The name of the search context.
-    """
-    name: String!
-    """
-    The owner (user or org) of the search context. If nil, search context is considered instance-level.
-    """
-    namespace: Namespace
-    """
-    The description of the search context.
-    """
-    description: String!
-    """
-    Fully-qualified search context spec for use when querying.
-    Examples: global, @username, @username/ctx, and @org/ctx.
-    """
-    spec: String!
-    """
-    Whether the search context is autodefined by Sourcegraph. Current examples include:
-    global search context ("global"), default user search context ("@user"), and
-    default organization search context ("@org").
-    """
-    autoDefined: Boolean!
-    """
-    Repositories and their revisions that will be searched when querying.
-    """
-    repositories: [SearchContextRepositoryRevisions!]!
-    """
-    Public property controls the visibility of the search context. Public search context is available to
-    any user on the instance. If a public search context contains private repositories, those are filtered out
-    for unauthorized users. Private search contexts are only available to their owners. Private user search context
-    is available only to the user, private org search context is available only to the members of the org, and private
-    instance-level search contexts are available only to site-admins.
-    """
-    public: Boolean!
-    """
-    Date and time the search context was last updated.
-    """
-    updatedAt: DateTime!
-    """
-    If current viewer can manage (edit, delete) the search context.
-    """
-    viewerCanManage: Boolean!
-}
-
-"""
-Specifies a set of revisions to be searched within a repository.
-"""
-type SearchContextRepositoryRevisions {
-    """
-    The repository to be searched.
-    """
-    repository: Repository!
-    """
-    The set of revisions to be searched.
-    """
-    revisions: [String!]!
-}
-
-"""
-SearchContextsOrderBy enumerates the ways a search contexts list can be ordered.
-"""
-enum SearchContextsOrderBy {
-    SEARCH_CONTEXT_SPEC
-    SEARCH_CONTEXT_UPDATED_AT
-}
-
-"""
-A list of search contexts
-"""
-type SearchContextConnection {
-    """
-    A list of search contexts.
-    """
-    nodes: [SearchContext!]!
-
-    """
-    The total number of search contexts in the connection.
-    """
-    totalCount: Int!
-
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
-}
-
-"""
-Input for a new search context.
-"""
-input SearchContextInput {
-    """
-    Search context name. Not the same as the search context spec. Search context namespace and search context name
-    are used to construct the fully-qualified search context spec.
-    Example mappings from search context spec to search context name: global -> global, @user -> user, @org -> org,
-    @user/ctx1 -> ctx1, @org/ctxs/ctx -> ctxs/ctx.
-    """
-    name: String!
-    """
-    Search context description.
-    """
-    description: String!
-    """
-    Public property controls the visibility of the search context. Public search context is available to
-    any user on the instance. If a public search context contains private repositories, those are filtered out
-    for unauthorized users. Private search contexts are only available to their owners. Private user search context
-    is available only to the user, private org search context is available only to the members of the org, and private
-    instance-level search contexts are available only to site-admins.
-    """
-    public: Boolean!
-    """
-    Namespace of the search context (user or org). If not set, search context is considered instance-level.
-    """
-    namespace: ID
-}
-
-"""
-Input for editing an existing search context.
-"""
-input SearchContextEditInput {
-    """
-    Search context name. Not the same as the search context spec. Search context namespace and search context name
-    are used to construct the fully-qualified search context spec.
-    Example mappings from search context spec to search context name: global -> global, @user -> user, @org -> org,
-    @user/ctx1 -> ctx1, @org/ctxs/ctx -> ctxs/ctx.
-    """
-    name: String!
-    """
-    Search context description.
-    """
-    description: String!
-    """
-    Public property controls the visibility of the search context. Public search context is available to
-    any user on the instance. If a public search context contains private repositories, those are filtered out
-    for unauthorized users. Private search contexts are only available to their owners. Private user search context
-    is available only to the user, private org search context is available only to the members of the org, and private
-    instance-level search contexts are available only to site-admins.
-    """
-    public: Boolean!
-}
-
-"""
-Input for a set of revisions to be searched within a repository.
-"""
-input SearchContextRepositoryRevisionsInput {
-    """
-    ID of the repository to be searched.
-    """
-    repositoryID: ID!
-    """
-    Revisions in the repository to be searched.
-    """
-    revisions: [String!]!
-}
-
-"""
 Information about a repository's text search index.
 """
 type RepositoryTextSearchIndex {
@@ -2792,7 +2858,7 @@ type RepositoryTextSearchIndexStatus {
     """
     The byte size of the original content.
     """
-    contentByteSize: Int!
+    contentByteSize: BigInt!
     """
     The number of files in the original content.
     """
@@ -3702,6 +3768,15 @@ type GitCommit implements Node {
     """
     externalURLs: [ExternalLink!]!
     """
+    The Git tree or blob in this commit at the given path.
+    """
+    path(
+        """
+        The path of the tree or blob.
+        """
+        path: String = ""
+    ): GitTreeOrBlob
+    """
     The Git tree in this commit at the given path.
     """
     tree(
@@ -3781,6 +3856,11 @@ type GitCommit implements Node {
         includePatterns: [String!]
     ): SymbolConnection!
 }
+
+"""
+Either a git tree or blob.
+"""
+union GitTreeOrBlob = GitTree | GitBlob
 
 """
 A set of Git behind/ahead counts for one commit relative to another.
@@ -4337,6 +4417,10 @@ type HighlightedFile {
     """
     html: String!
     """
+    Base64 encoded JSON payload of LSIF Typed with syntax highlighting data.
+    """
+    lsif: String!
+    """
     A list of the desired line ranges. Each list is a list of lines, where each element is an HTML
     table row '<tr>...</tr>' string. This is useful if you only need to display specific subsets of
     the file.
@@ -4436,6 +4520,13 @@ type Hunk {
     The commit that contains the hunk.
     """
     commit: GitCommit!
+    """
+    The original filename at the commit. Use this filename if you're reading the
+    text contents of the file at the `commit` field of this hunk. The file may
+    have been renamed after the commit so name of file where this hunk got computed
+    may not exist.
+    """
+    filename: String!
 }
 
 """
@@ -4560,6 +4651,14 @@ type User implements Node & SettingsSubject & Namespace {
     """
     tags: [String!]!
     """
+    Whether the user has already accepted the terms of service or not.
+    """
+    tosAccepted: Boolean!
+    """
+    Whether the user accepted to be searched in the users picker or not.
+    """
+    searchable: Boolean!
+    """
     The user's usage statistics on Sourcegraph.
     """
     usageStatistics: UserUsageStatistics!
@@ -4633,7 +4732,6 @@ type User implements Node & SettingsSubject & Namespace {
     The name of this user namespace's component. For users, this is the username.
     """
     namespaceName: String!
-
     """
     Repositories from external services owned by this user.
     """
@@ -4676,6 +4774,12 @@ type User implements Node & SettingsSubject & Namespace {
     publicRepositories returns the repos listed in user_public_repos for this user
     """
     publicRepositories: [Repository!]!
+
+    """
+    EXPERIMENTAL: Collaborators who can be invited to Sourcegraph. This typically comes from a few
+    repositories this user has access to, and is derived from recent commit history of those.
+    """
+    invitableCollaborators: [Person!]!
 }
 
 """
@@ -4986,9 +5090,13 @@ type Org implements Node & SettingsSubject & Namespace {
             reason: "Use settingsCascade instead. This field is a deprecated alias for it and will be removed in a future release."
         )
     """
+    DEPRECATED
     A pending invitation for the viewer to join this organization, if any.
     """
     viewerPendingInvitation: OrganizationInvitation
+        @deprecated(
+            reason: "Use invitationByToken operation instead. This field is deprecated and will be removed in a future release."
+        )
     """
     Whether the viewer has admin privileges on this organization. Currently, all of an organization's members
     have admin privileges on the organization.
@@ -4998,6 +5106,10 @@ type Org implements Node & SettingsSubject & Namespace {
     Whether the viewer is a member of this organization.
     """
     viewerIsMember: Boolean!
+    """
+    Whether the viewer needs to update their code host connection.
+    """
+    viewerNeedsCodeHostUpdate: Boolean!
     """
     The URL to the organization.
     """
@@ -5047,7 +5159,11 @@ type OrganizationInvitation implements Node {
     """
     The user who received the invitation.
     """
-    recipient: User!
+    recipient: User
+    """
+    The email address that the invitation was sent to.
+    """
+    recipientEmail: String
     """
     The date when this invitation was created.
     """
@@ -5072,6 +5188,57 @@ type OrganizationInvitation implements Node {
     The date when this invitation was revoked.
     """
     revokedAt: DateTime
+    """
+    The date when this invitation is going to expire.
+    """
+    expiresAt: DateTime
+    """
+    Boolean flag which returns true if the email on the invite matches a verified email of the user
+    """
+    isVerifiedEmail: Boolean
+}
+"""
+Result user returned by invite members autocomplete search.
+"""
+type AutocompleteMemberSearchItem {
+    """
+    The unique ID for the user.
+    """
+    id: ID!
+    """
+    The user's username.
+    """
+    username: String!
+    """
+    The display name chosen by the user.
+    """
+    displayName: String
+    """
+    The URL of the user's avatar image.
+    """
+    avatarURL: String
+    """
+    If the user belongs to current Organization.
+    """
+    inOrg: Boolean
+}
+
+"""
+Result organization members count and pending invitations count.
+"""
+type OrgMembersSummary {
+    """
+    The unique ID for the Org.
+    """
+    id: ID!
+    """
+    Total number of members for the org.
+    """
+    membersCount: Int!
+    """
+    Total number of pending invites for the org.
+    """
+    invitesCount: Int!
 }
 
 """
@@ -6166,6 +6333,11 @@ type CodeIntelligenceRange {
     references: LocationConnection!
 
     """
+    A list of implementations of the symbol occurring within the range.
+    """
+    implementations: LocationConnection!
+
+    """
     The hover result of the symbol occurring within the range.
     """
     hover: Hover
@@ -6368,6 +6540,11 @@ A list of code host repositories
 """
 type CodeHostRepositoryConnection {
     """
+    Errors returned from the code host.
+    """
+    codeHostErrors: [String!]!
+
+    """
     A list of repositories affiliated with a code host.
     """
     nodes: [CodeHostRepository!]!
@@ -6434,4 +6611,134 @@ type TemporarySettings {
     A JSON string representing the temporary settings.
     """
     contents: String!
+}
+
+"""
+A list of logged webhook deliveries.
+"""
+type WebhookLogConnection {
+    """
+    A list of webhook logs.
+    """
+    nodes: [WebhookLog!]!
+
+    """
+    The total number of webhook logs in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A single logged webhook delivery.
+"""
+type WebhookLog implements Node {
+    """
+    The webhook log ID.
+    """
+    id: ID!
+
+    """
+    The time the webhook was received at.
+    """
+    receivedAt: DateTime!
+
+    """
+    The external service the webhook was matched to, if any.
+    """
+    externalService: ExternalService
+
+    """
+    The HTTP status code returned from the webhook handler.
+    """
+    statusCode: Int!
+
+    """
+    The received webhook request.
+    """
+    request: WebhookLogRequest!
+
+    """
+    The response sent by the webhook handler.
+    """
+    response: WebhookLogResponse!
+}
+
+"""
+A HTTP message (request or response) within a webhook log.
+"""
+interface WebhookLogMessage {
+    """
+    The headers in the HTTP message.
+    """
+    headers: [WebhookLogHeader!]!
+
+    """
+    The body content of the HTTP message.
+    """
+    body: String!
+}
+
+"""
+A HTTP request within a webhook log.
+"""
+type WebhookLogRequest implements WebhookLogMessage {
+    """
+    The headers in the HTTP message.
+    """
+    headers: [WebhookLogHeader!]!
+
+    """
+    The body content of the HTTP message.
+    """
+    body: String!
+
+    """
+    The method used in the HTTP request.
+    """
+    method: String!
+
+    """
+    The requested URL.
+    """
+    url: String!
+
+    """
+    The HTTP version in use.
+    """
+    version: String!
+}
+
+"""
+A HTTP response within a webhook log.
+"""
+type WebhookLogResponse implements WebhookLogMessage {
+    """
+    The headers in the HTTP message.
+    """
+    headers: [WebhookLogHeader!]!
+
+    """
+    The body content of the HTTP message.
+    """
+    body: String!
+}
+
+"""
+A single HTTP header within a webhook log.
+"""
+type WebhookLogHeader {
+    """
+    The header name.
+    """
+    name: String!
+
+    """
+    The header values.
+    """
+    values: [String!]!
 }

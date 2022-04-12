@@ -13,7 +13,7 @@ const issueFields = `
 	author { login }
 	assignees(first: 25) { nodes { login } }
 	labels(first: 25) { nodes { name } }
-	milestone { title }
+	milestone { title, number }
 `
 
 const pullRequestFields = issueFields + `
@@ -65,8 +65,11 @@ type SearchNode struct {
 	Author    struct{ Login string }
 	Assignees struct{ Nodes []struct{ Login string } }
 	Labels    struct{ Nodes []struct{ Name string } }
-	Milestone struct{ Title string }
-	Commits   struct {
+	Milestone struct {
+		Title  string
+		Number int
+	}
+	Commits struct {
 		Nodes []struct {
 			Commit struct{ AuthoredDate time.Time }
 		}
@@ -94,19 +97,20 @@ func unmarshalSearchNodes(nodes []SearchNode) (issues []*Issue, prs []*PullReque
 // unmarshalIssue unmarshals the given node into an issue object.
 func unmarshalIssue(n SearchNode) *Issue {
 	issue := &Issue{
-		ID:         n.ID,
-		Title:      n.Title,
-		Body:       n.Body,
-		State:      n.State,
-		Number:     n.Number,
-		URL:        n.URL,
-		Repository: n.Repository.NameWithOwner,
-		Private:    n.Repository.IsPrivate,
-		Milestone:  n.Milestone.Title,
-		Author:     n.Author.Login,
-		CreatedAt:  n.CreatedAt,
-		UpdatedAt:  n.UpdatedAt,
-		ClosedAt:   n.ClosedAt,
+		ID:              n.ID,
+		Title:           n.Title,
+		Body:            n.Body,
+		State:           n.State,
+		Number:          n.Number,
+		URL:             n.URL,
+		Repository:      n.Repository.NameWithOwner,
+		Private:         n.Repository.IsPrivate,
+		Milestone:       n.Milestone.Title,
+		MilestoneNumber: n.Milestone.Number,
+		Author:          n.Author.Login,
+		CreatedAt:       n.CreatedAt,
+		UpdatedAt:       n.UpdatedAt,
+		ClosedAt:        n.ClosedAt,
 	}
 
 	for _, assignee := range n.Assignees.Nodes {

@@ -2,39 +2,43 @@ package batch
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 	"sync"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
+	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Inserter allows for bulk updates to a single Postgres table.
 type Inserter struct {
-	db               dbutil.DB
-	numColumns       int
-	maxBatchSize     int
-	batch            []interface{}
-	queryPrefix      string
-	querySuffix      string
-	returningSuffix  string
-	returningScanner ReturningScanner
+	db                   dbutil.DB
+	numColumns           int
+	maxBatchSize         int
+	batch                []interface{}
+	cumulativeValueSizes []int
+	queryPrefix          string
+	querySuffix          string
+	onConflictSuffix     string
+	returningSuffix      string
+	returningScanner     ReturningScanner
+	operations           *operations
+	commonLogFields      []log.Field
 }
 
-type ReturningScanner func(rows *sql.Rows) error
+type ReturningScanner func(rows dbutil.Scanner) error
 
 // InsertValues creates a new batch inserter using the given database handle, table name, and
 // column names, then reads from the given channel as if they specify values for a single row.
 // The inserter will be flushed and any error that occurred during insertion or flush will be
 // returned.
-func InsertValues(ctx context.Context, db dbutil.DB, tableName string, columnNames []string, values <-chan []interface{}) error {
-	return WithInserter(ctx, db, tableName, columnNames, func(inserter *Inserter) error {
+func InsertValues(ctx context.Context, db dbutil.DB, tableName string, maxNumParameters int, columnNames []string, values <-chan []interface{}) error {
+	return WithInserter(ctx, db, tableName, maxNumParameters, columnNames, func(inserter *Inserter) error {
 	outer:
 		for {
 			select {
@@ -65,10 +69,11 @@ func WithInserter(
 	ctx context.Context,
 	db dbutil.DB,
 	tableName string,
+	maxNumParameters int,
 	columnNames []string,
 	f func(inserter *Inserter) error,
 ) (err error) {
-	inserter := NewInserter(ctx, db, tableName, columnNames...)
+	inserter := NewInserter(ctx, db, tableName, maxNumParameters, columnNames...)
 	return with(ctx, inserter, f)
 }
 
@@ -81,19 +86,21 @@ func WithInserterWithReturn(
 	ctx context.Context,
 	db dbutil.DB,
 	tableName string,
+	maxNumParameters int,
 	columnNames []string,
+	onConflictClause string,
 	returningColumnNames []string,
 	returningScanner ReturningScanner,
 	f func(inserter *Inserter) error,
 ) (err error) {
-	inserter := NewInserterWithReturn(ctx, db, tableName, columnNames, returningColumnNames, returningScanner)
+	inserter := NewInserterWithReturn(ctx, db, tableName, maxNumParameters, columnNames, onConflictClause, returningColumnNames, returningScanner)
 	return with(ctx, inserter, f)
 }
 
 func with(ctx context.Context, inserter *Inserter, f func(inserter *Inserter) error) (err error) {
 	defer func() {
 		if flushErr := inserter.Flush(ctx); flushErr != nil {
-			err = multierror.Append(err, errors.Wrap(flushErr, "inserter.Flush"))
+			err = errors.Append(err, errors.Wrap(flushErr, "inserter.Flush"))
 		}
 	}()
 
@@ -102,8 +109,8 @@ func with(ctx context.Context, inserter *Inserter, f func(inserter *Inserter) er
 
 // NewInserter creates a new batch inserter using the given database handle, table name,
 // and column names. For performance and atomicity, handle should be a transaction.
-func NewInserter(ctx context.Context, db dbutil.DB, tableName string, columnNames ...string) *Inserter {
-	return NewInserterWithReturn(ctx, db, tableName, columnNames, nil, nil)
+func NewInserter(ctx context.Context, db dbutil.DB, tableName string, maxNumParameters int, columnNames ...string) *Inserter {
+	return NewInserterWithReturn(ctx, db, tableName, maxNumParameters, columnNames, "", nil, nil)
 }
 
 // NewInserterWithReturn creates a new batch inserter using the given database handle, table
@@ -116,35 +123,68 @@ func NewInserterWithReturn(
 	ctx context.Context,
 	db dbutil.DB,
 	tableName string,
+	maxNumParameters int,
 	columnNames []string,
+	onConflictClause string,
 	returningColumnNames []string,
 	returningScanner ReturningScanner,
 ) *Inserter {
 	numColumns := len(columnNames)
-	maxBatchSize := getMaxBatchSize(numColumns)
+	maxBatchSize := getMaxBatchSize(numColumns, maxNumParameters)
 	queryPrefix := makeQueryPrefix(tableName, columnNames)
-	querySuffix := makeQuerySuffix(numColumns)
+	querySuffix := makeQuerySuffix(numColumns, maxNumParameters)
+	onConflictSuffix := makeOnConflictSuffix(onConflictClause)
 	returningSuffix := makeReturningSuffix(returningColumnNames)
 
 	return &Inserter{
-		db:               db,
-		numColumns:       numColumns,
-		maxBatchSize:     maxBatchSize,
-		batch:            make([]interface{}, 0, maxBatchSize),
-		queryPrefix:      queryPrefix,
-		querySuffix:      querySuffix,
-		returningSuffix:  returningSuffix,
-		returningScanner: returningScanner,
+		db:                   db,
+		numColumns:           numColumns,
+		maxBatchSize:         maxBatchSize,
+		batch:                make([]interface{}, 0, maxBatchSize),
+		cumulativeValueSizes: make([]int, 0, maxBatchSize),
+		queryPrefix:          queryPrefix,
+		querySuffix:          querySuffix,
+		onConflictSuffix:     onConflictSuffix,
+		returningSuffix:      returningSuffix,
+		returningScanner:     returningScanner,
+		operations:           getOperations(),
+		commonLogFields: []log.Field{
+			log.String("tableName", tableName),
+			log.String("columnNames", strings.Join(columnNames, ",")),
+			log.Int("numColumns", numColumns),
+			log.Int("maxBatchSize", maxBatchSize),
+		},
 	}
 }
 
 // Insert submits a single row of values to be inserted on the next flush.
 func (i *Inserter) Insert(ctx context.Context, values ...interface{}) error {
+	i.checkInvariants()
+	defer i.checkInvariants()
+
 	if len(values) != i.numColumns {
 		return errors.Errorf("expected %d values, got %d", i.numColumns, len(values))
 	}
 
+	currentCumulativeValueSize := 0
+	if n := len(i.cumulativeValueSizes); n != 0 {
+		currentCumulativeValueSize = i.cumulativeValueSizes[n-1]
+	}
+
+	valueSizes := make([]int, 0, len(values))
+	for _, value := range values {
+		switch v := value.(type) {
+		case string:
+			currentCumulativeValueSize += len(v)
+		default:
+			currentCumulativeValueSize += 1
+		}
+
+		valueSizes = append(valueSizes, currentCumulativeValueSize)
+	}
+
 	i.batch = append(i.batch, values...)
+	i.cumulativeValueSizes = append(i.cumulativeValueSizes, valueSizes...)
 
 	if len(i.batch) >= i.maxBatchSize {
 		// Flush full batch
@@ -157,36 +197,85 @@ func (i *Inserter) Insert(ctx context.Context, values ...interface{}) error {
 // Flush ensures that all queued rows are inserted. This method must be invoked at the end
 // of insertion to ensure that all records are flushed to the underlying Execable.
 func (i *Inserter) Flush(ctx context.Context) (err error) {
-	if batch := i.pop(); len(batch) != 0 {
-		// Create a query with enough placeholders to match the current batch size. This should
-		// generally be the full querySuffix string, except for the last call to Flush which
-		// may be a partial batch.
-		rows, err := i.db.QueryContext(dbconn.WithBulkInsertion(ctx, true), i.makeQuery(len(batch)), batch...)
-		if err != nil {
-			return err
-		}
-		defer func() { err = basestore.CloseRows(rows, err) }()
+	i.checkInvariants()
+	defer i.checkInvariants()
 
-		for rows.Next() {
-			if err := i.returningScanner(rows); err != nil {
-				return err
-			}
+	batch, payloadSize := i.pop()
+	if len(batch) == 0 {
+		return nil
+	}
+
+	operationlogFields := []log.Field{
+		log.Int("batchSize", len(batch)),
+		log.Int("payloadSize", payloadSize),
+	}
+	combinedLogFields := append(operationlogFields, i.commonLogFields...)
+	ctx, endObservation := i.operations.flush.With(ctx, &err, observation.Args{LogFields: combinedLogFields})
+	defer endObservation(1, observation.Args{})
+
+	// Create a query with enough placeholders to match the current batch size. This should
+	// generally be the full querySuffix string, except for the last call to Flush which
+	// may be a partial batch.
+	rows, err := i.db.QueryContext(dbconn.WithBulkInsertion(ctx, true), i.makeQuery(len(batch)), batch...)
+	if err != nil {
+		return err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		if err := i.returningScanner(rows); err != nil {
+			return err
 		}
 	}
 
 	return nil
 }
 
+// checkBatchInserterInvariants is set to true in tests to enable invariant detection
+// at the start and end of public methods. This ensures that the batch and payload size
+// lists remain equivalent size whenever the caller can initiate an operation.
+var checkBatchInserterInvariants = false
+
+func (i *Inserter) checkInvariants() {
+	if checkBatchInserterInvariants && len(i.batch) != len(i.cumulativeValueSizes) {
+		panic(fmt.Sprintf("broken invariant: len(i.batch) != len(i.cumulativeValueSizes): %d != %d", len(i.batch), len(i.cumulativeValueSizes)))
+	}
+}
+
 // pop removes and returns as many values from the current batch that can be attached to a single
 // insert statement. The returned values are the oldest values submitted to the batch (in order).
-func (i *Inserter) pop() (batch []interface{}) {
-	if len(i.batch) < i.maxBatchSize {
-		batch, i.batch = i.batch, i.batch[:0]
-		return batch
+// This method additionally returns the total (approximate) size of the batch being inserted.
+func (i *Inserter) pop() (batch []interface{}, payloadSize int) {
+	if len(i.batch) == 0 {
+		return nil, 0
 	}
 
+	if len(i.batch) < i.maxBatchSize {
+		// Grab size before overwriting it
+		payloadSize = i.cumulativeValueSizes[len(i.cumulativeValueSizes)-1]
+
+		// Use entire batch. This allows us to cleanly reset the sizes we were tracking for value
+		// payloads by just cutting the length of the slice back to zero.
+		batch, i.batch = i.batch, i.batch[:0]
+		i.cumulativeValueSizes = i.cumulativeValueSizes[:0]
+		return batch, payloadSize
+	}
+
+	// Grab size before altering containing slice
+	payloadSize = i.cumulativeValueSizes[i.maxBatchSize-1]
+
+	// Extract partial batch along with the size tracking data for each elemetn
 	batch, i.batch = i.batch[:i.maxBatchSize], i.batch[i.maxBatchSize:]
-	return batch
+	i.cumulativeValueSizes = i.cumulativeValueSizes[i.maxBatchSize:]
+
+	for idx := range i.cumulativeValueSizes {
+		// Remove the size of the batch we've just extracted from every value remaining in the slice.
+		// This should generally only be a handful of elements and shouldn't be anywhere near a dominating
+		// loop.
+		i.cumulativeValueSizes[idx] -= payloadSize
+	}
+
+	return batch, payloadSize
 }
 
 // makeQuery returns a parameterized SQL query that has the given number of values worth of
@@ -207,16 +296,20 @@ func (i *Inserter) makeQuery(numValues int) string {
 	suffixLength := numTuples*sizeOfTuple + numTuples - 1
 
 	// Construct the query
-	return i.queryPrefix + i.querySuffix[:suffixLength] + i.returningSuffix
+	return i.queryPrefix + i.querySuffix[:suffixLength] + i.onConflictSuffix + i.returningSuffix
 }
 
-// maxNumPostgresParameters is the maximum number of placeholder variables allowed by Postgres
+// MaxNumPostgresParameters is the maximum number of placeholder variables allowed by Postgres
 // in a single insert statement.
-const maxNumParameters = 32767
+const MaxNumPostgresParameters = 32767
+
+// MaxNumSQLiteParameters is the maximum number of placeholder variables allowed by SQLite
+// in a single insert statement.
+const MaxNumSQLiteParameters = 999
 
 // getMaxBatchSize returns the number of rows that can be inserted into a single table with the
 // given number of columns via a single insert statement.
-func getMaxBatchSize(numColumns int) int {
+func getMaxBatchSize(numColumns, maxNumParameters int) int {
 	return (maxNumParameters / numColumns) * numColumns
 }
 
@@ -244,7 +337,7 @@ var querySuffixCacheMutex sync.Mutex
 // substring index is efficient.
 //
 // This method is memoized.
-func makeQuerySuffix(numColumns int) string {
+func makeQuerySuffix(numColumns, maxNumParameters int) string {
 	querySuffixCacheMutex.Lock()
 	defer querySuffixCacheMutex.Unlock()
 	if cache, ok := querySuffixCache[numColumns]; ok {
@@ -272,12 +365,23 @@ func makeQuerySuffix(numColumns int) string {
 	return querySuffix
 }
 
+// makeOnConflictSuffix creates a ON CONFLICT ... clause of the batch inserter statement, if
+// any on conflict command was supplied to the batch inserter.
+func makeOnConflictSuffix(command string) string {
+	if command == "" {
+		return ""
+	}
+
+	// Command assumed to be full clause
+	return fmt.Sprintf(" %s", command)
+}
+
 // makeReturningSuffix creates a RETURNING ... clause of the batch insert statement, if any
-// returning column names were supplied to the batcher inserter.
+// returning column names were supplied to the batch inserter.
 func makeReturningSuffix(columnNames []string) string {
 	if len(columnNames) == 0 {
 		return ""
 	}
 
-	return fmt.Sprintf("RETURNING %s", strings.Join(columnNames, ", "))
+	return fmt.Sprintf(" RETURNING %s", strings.Join(columnNames, ", "))
 }

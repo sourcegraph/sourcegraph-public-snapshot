@@ -2,11 +2,49 @@ package highlight
 
 import (
 	"context"
+	"encoding/base64"
 	"html/template"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
+
+	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsiftyped"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+func TestIdentifyError(t *testing.T) {
+	errs := []error{gosyntect.ErrPanic, gosyntect.ErrHSSWorkerTimeout, gosyntect.ErrRequestTooLarge}
+	for _, err := range errs {
+		wrappedErr := errors.Wrap(err, "some other information")
+		known, problem := identifyError(wrappedErr)
+		require.True(t, known)
+		require.NotEqual(t, "", problem)
+	}
+}
+
+func TestDeserialize(t *testing.T) {
+	original := new(lsiftyped.Document)
+	original.Occurrences = append(original.Occurrences, &lsiftyped.Occurrence{
+		SyntaxKind: lsiftyped.SyntaxKind_IdentifierAttribute,
+	})
+
+	marshaled, _ := proto.Marshal(original)
+	data, _ := base64.StdEncoding.DecodeString(base64.StdEncoding.EncodeToString(marshaled))
+
+	roundtrip := new(lsiftyped.Document)
+	err := proto.Unmarshal(data, roundtrip)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(original.String(), roundtrip.String()); diff != "" {
+		t.Fatalf("Round trip encode and decode should return the same data: %s", diff)
+	}
+}
 
 func TestGeneratePlainTable(t *testing.T) {
 	input := `line 1
@@ -16,10 +54,12 @@ line 2
 	want := template.HTML(`<table><tr><td class="line" data-line="1"></td><td class="code"><span>line 1</span></td></tr><tr><td class="line" data-line="2"></td><td class="code"><span>line 2</span></td></tr><tr><td class="line" data-line="3"></td><td class="code"><span>
 </span></td></tr><tr><td class="line" data-line="4"></td><td class="code"><span>
 </span></td></tr></table>`)
-	got, err := generatePlainTable(input)
+	response, err := generatePlainTable(input)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	got, _ := response.HTML()
 	if got != want {
 		t.Fatalf("\ngot:\n%s\nwant:\n%s\n", got, want)
 	}
@@ -33,10 +73,12 @@ func TestGeneratePlainTableSecurity(t *testing.T) {
 	want := template.HTML(`<table><tr><td class="line" data-line="1"></td><td class="code"><span>&lt;strong&gt;line 1&lt;/strong&gt;</span></td></tr><tr><td class="line" data-line="2"></td><td class="code"><span>&lt;script&gt;alert(&#34;line 2&#34;)&lt;/script&gt;</span></td></tr><tr><td class="line" data-line="3"></td><td class="code"><span>
 </span></td></tr><tr><td class="line" data-line="4"></td><td class="code"><span>
 </span></td></tr></table>`)
-	got, err := generatePlainTable(input)
+	response, err := generatePlainTable(input)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	got, _ := response.HTML()
 	if got != want {
 		t.Fatalf("\ngot:\n%s\nwant:\n%s\n", got, want)
 	}
@@ -68,7 +110,9 @@ func TestSplitHighlightedLines(t *testing.T) {
 		`<div><span style="color:#323232;">
 </span></div>`,
 		`<div></div>`}
-	have, err := SplitHighlightedLines(template.HTML(input), false)
+
+	response := &HighlightedCode{html: template.HTML(input)}
+	have, err := response.SplitHighlightedLines(false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,8 +128,10 @@ line3`
 	highlightedCode := `<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color:#657b83;">line 1
 </span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#657b83;">line 2
 </span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span style="color:#657b83;">line 3</span></div></td></tr></tbody></table>`
-	Mocks.Code = func(p Params) (h template.HTML, aborted bool, err error) {
-		return template.HTML(highlightedCode), false, nil
+	Mocks.Code = func(p Params) (response *HighlightedCode, aborted bool, err error) {
+		return &HighlightedCode{
+			html: template.HTML(highlightedCode),
+		}, false, nil
 	}
 	t.Cleanup(ResetMocks)
 

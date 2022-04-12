@@ -9,8 +9,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func (r *GitTreeEntryResolver) IsRoot() bool {
@@ -42,8 +43,10 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 	span, ctx := ot.StartSpanFromContext(ctx, "tree.entries")
 	defer span.Finish()
 
-	entries, err := git.ReadDir(
+	entries, err := gitserver.NewClient(r.db).ReadDir(
 		ctx,
+		r.db,
+		authz.DefaultSubRepoPermsChecker,
 		r.commit.repoResolver.RepoName(),
 		api.CommitID(r.commit.OID()),
 		r.Path(),
@@ -63,17 +66,18 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 		entries = entries[:int(*args.First)]
 	}
 
-	hasSingleChild := len(entries) == 1
-	var l []*GitTreeEntryResolver
+	l := make([]*GitTreeEntryResolver, 0, len(entries))
 	for _, entry := range entries {
+		// Apply any additional filtering
 		if filter == nil || filter(entry) {
-			l = append(l, &GitTreeEntryResolver{
-				db:            r.db,
-				commit:        r.commit,
-				stat:          entry,
-				isSingleChild: &hasSingleChild,
-			})
+			l = append(l, NewGitTreeEntryResolver(r.db, r.commit, entry))
 		}
+	}
+
+	// Update after filtering
+	hasSingleChild := len(l) == 1
+	for i := range l {
+		l[i].isSingleChild = &hasSingleChild
 	}
 
 	if !args.Recursive && args.RecursiveSingleChild && len(l) == 1 {

@@ -1,14 +1,17 @@
+import * as React from 'react'
+
 import { Accordion, AccordionItem, AccordionButton, AccordionPanel } from '@reach/accordion'
 import classNames from 'classnames'
 import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import * as React from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { Button, LoadingSpinner, Icon } from '@sourcegraph/wildcard'
 
 import { ActivationCompletionStatus, ActivationStep } from './Activation'
+
+import styles from './ActivationChecklist.module.scss'
 
 interface ActivationChecklistItemProps extends ActivationStep {
     done: boolean
@@ -22,21 +25,21 @@ export const ActivationChecklistItem: React.FunctionComponent<ActivationChecklis
     className = '',
     ...props
 }: ActivationChecklistItemProps) => (
-    <div className={classNames('activation-checklist-item d-flex justify-content-between', className)}>
+    <div className={classNames('d-flex justify-content-between', styles.activationChecklistItem, className)}>
         <div className="d-flex align-items-center">
-            <span className="activation-checklist-item__icon-container icon-inline icon-down">
-                <ChevronDownIcon className="activation-checklist-item__icon" />
-            </span>
-            <span className="activation-checklist-item__icon-container icon-inline icon-right">
-                <ChevronRightIcon className="activation-checklist-item__icon" />
-            </span>
+            <Icon className={classNames(styles.iconContainer, styles.iconDown)} as="span">
+                <ChevronDownIcon className={styles.icon} />
+            </Icon>
+            <Icon className={classNames(styles.iconContainer, styles.iconRight)} as="span">
+                <ChevronRightIcon className={styles.icon} />
+            </Icon>
             <span>{props.title}</span>
         </div>
         <div>
             {props.done ? (
-                <CheckCircleIcon className="icon-inline text-success" />
+                <Icon className="text-success" as={CheckCircleIcon} />
             ) : (
-                <CheckboxBlankCircleOutlineIcon className="icon-inline text-muted" />
+                <Icon className="text-muted" as={CheckboxBlankCircleOutlineIcon} />
             )}
         </div>
     </div>
@@ -59,24 +62,28 @@ export const ActivationChecklist: React.FunctionComponent<ActivationChecklistPro
     buttonClassName,
 }) => {
     if (!completed) {
-        return <LoadingSpinner className="icon-inline my-2" />
+        return <LoadingSpinner className="my-2" />
     }
 
     return (
-        <div className={classNames('activation-checklist list-group list-group-flush', className)}>
+        <div className={classNames('list-group list-group-flush', styles.activationChecklist, className)}>
             <Accordion collapsible={true}>
                 {steps.map(step => (
-                    <AccordionItem key={step.id} className="activation-checklist__container list-group-item">
-                        <AccordionButton className="activation-checklist__button list-group-item list-group-item-action btn-link">
+                    <AccordionItem key={step.id} className={classNames('list-group-item', styles.container)}>
+                        <Button
+                            as={AccordionButton}
+                            variant="link"
+                            className={classNames('list-group-item list-group-item-action', styles.button)}
+                        >
                             <ActivationChecklistItem
                                 key={step.id}
                                 {...step}
                                 done={completed?.[step.id] || false}
                                 className={buttonClassName}
                             />
-                        </AccordionButton>
+                        </Button>
                         <AccordionPanel className="px-2">
-                            <div className="activation-checklist__detail pb-1">{step.detail}</div>
+                            <div className={classNames('pb-1', styles.detail)}>{step.detail}</div>
                         </AccordionPanel>
                     </AccordionItem>
                 ))}

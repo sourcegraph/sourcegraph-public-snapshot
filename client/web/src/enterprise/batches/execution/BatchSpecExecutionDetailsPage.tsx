@@ -1,91 +1,95 @@
-import { parseISO } from 'date-fns'
-import { formatDistance } from 'date-fns/esm'
-import { isArray, isEqual } from 'lodash'
+import React, { useCallback, useState } from 'react'
+
+import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import CheckIcon from 'mdi-react/CheckIcon'
-import ErrorIcon from 'mdi-react/ErrorIcon'
-import InformationIcon from 'mdi-react/InformationIcon'
-import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
-import TimerSandIcon from 'mdi-react/TimerSandIcon'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import { Redirect, Route, RouteComponentProps, Switch, useHistory, useLocation } from 'react-router'
+import { NavLink as RouterLink } from 'react-router-dom'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { BatchSpecExecutionState } from '@sourcegraph/shared/src/graphql-operations'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { isDefined } from '@sourcegraph/shared/src/util/types'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { asError, isErrorLike } from '@sourcegraph/common'
+import { useQuery } from '@sourcegraph/http-client'
+import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import { BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import {
+    Button,
+    LoadingSpinner,
+    PageHeader,
+    FeedbackBadge,
+    ButtonGroup,
+    Link,
+    CardBody,
+    Card,
+    Icon,
+    Panel,
+} from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../../auth'
 import { BatchChangesIcon } from '../../../batches/icons'
-import { ErrorAlert } from '../../../components/alerts'
-import { ExecutionLogEntry } from '../../../components/ExecutionLogEntry'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
-import { Timeline, TimelineStage } from '../../../components/Timeline'
-import { BatchSpecExecutionFields, Scalars } from '../../../graphql-operations'
+import { Duration } from '../../../components/time/Duration'
+import { Timestamp } from '../../../components/time/Timestamp'
+import {
+    BatchSpecExecutionByIDResult,
+    BatchSpecExecutionByIDVariables,
+    BatchSpecExecutionFields,
+    Scalars,
+} from '../../../graphql-operations'
 import { BatchSpec } from '../BatchSpec'
+import { NewBatchChangePreviewPage } from '../preview/BatchChangePreviewPage'
 
-import { cancelBatchSpecExecution, fetchBatchSpecExecution as _fetchBatchSpecExecution } from './backend'
+import { cancelBatchSpecExecution, FETCH_BATCH_SPEC_EXECUTION, retryBatchSpecExecution } from './backend'
+import { BatchSpecStateBadge } from './BatchSpecStateBadge'
+import { WorkspaceDetails } from './WorkspaceDetails'
+import { Workspaces } from './workspaces/Workspaces'
 
-export interface BatchSpecExecutionDetailsPageProps {
-    executionID: Scalars['ID']
+import styles from './BatchSpecExecutionDetailsPage.module.scss'
 
-    /** For testing only. */
-    fetchBatchSpecExecution?: typeof _fetchBatchSpecExecution
-    /** For testing only. */
-    now?: () => Date
-    /** For testing only. */
-    expandStage?: string
+export interface BatchSpecExecutionDetailsPageProps extends ThemeProps, TelemetryProps, RouteComponentProps<{}> {
+    batchSpecID: Scalars['ID']
+    authenticatedUser: AuthenticatedUser
 }
 
 export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExecutionDetailsPageProps> = ({
-    executionID,
-    now = () => new Date(),
-    fetchBatchSpecExecution = _fetchBatchSpecExecution,
-    expandStage,
+    batchSpecID,
+    isLightTheme,
+    authenticatedUser,
+    telemetryService,
+    match,
 }) => {
-    const [batchSpecExecution, setBatchSpecExecution] = useState<BatchSpecExecutionFields | null | undefined>()
-
-    useEffect(() => {
-        const subscription = fetchBatchSpecExecution(executionID)
-            .pipe(
-                repeatWhen(notifier => notifier.pipe(delay(2500))),
-                distinctUntilChanged((a, b) => isEqual(a, b))
-            )
-            .subscribe(execution => {
-                setBatchSpecExecution(execution)
-            })
-
-        return () => subscription.unsubscribe()
-    }, [fetchBatchSpecExecution, executionID])
-
-    const [isCanceling, setIsCanceling] = useState<boolean | Error>(false)
-    const cancelExecution = useCallback(async () => {
-        try {
-            const execution = await cancelBatchSpecExecution(executionID)
-            setBatchSpecExecution(execution)
-        } catch (error) {
-            setIsCanceling(asError(error))
+    const { data, error, loading } = useQuery<BatchSpecExecutionByIDResult, BatchSpecExecutionByIDVariables>(
+        FETCH_BATCH_SPEC_EXECUTION,
+        {
+            variables: { id: batchSpecID },
+            fetchPolicy: 'cache-and-network',
+            pollInterval: 2500,
+            nextFetchPolicy: 'network-only',
         }
-    }, [executionID])
+    )
 
-    // Is loading.
-    if (batchSpecExecution === undefined) {
+    if (loading) {
         return (
             <div className="text-center">
-                <LoadingSpinner className="icon-inline mx-auto my-4" />
+                <LoadingSpinner className="mx-auto my-4" />
             </div>
         )
     }
-    // Is not found.
-    if (batchSpecExecution === null) {
+
+    if (error) {
+        return <HeroPage icon={AlertCircleIcon} title={String(error)} />
+    }
+
+    if (!data?.node || data.node.__typename !== 'BatchSpec') {
         return <HeroPage icon={AlertCircleIcon} title="Execution not found" />
     }
 
+    const batchSpec = data.node
+
     return (
-        <>
+        <div className="d-flex flex-column p-4 w-100 h-100">
             <PageTitle title="Batch spec execution" />
             <PageHeader
                 path={[
@@ -94,369 +98,369 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
                         to: '/batch-changes',
                     },
                     {
-                        to: `${batchSpecExecution.namespace.url}/batch-changes`,
-                        text: batchSpecExecution.namespace.namespaceName,
+                        to: `${batchSpec.namespace.url}/batch-changes`,
+                        text: batchSpec.namespace.namespaceName,
                     },
+                    // If a matching batch change already exists, link to it.
                     {
-                        text: (
-                            <>
-                                Execution <span className="badge badge-secondary">{batchSpecExecution.state}</span>
-                            </>
-                        ),
+                        to: batchSpec.appliesToBatchChange?.url ?? undefined,
+                        text: batchSpec.description.name,
                     },
                 ]}
-                actions={
-                    (batchSpecExecution.state === BatchSpecExecutionState.QUEUED ||
-                        batchSpecExecution.state === BatchSpecExecutionState.PROCESSING) && (
-                        <>
-                            <button
-                                type="button"
-                                className="btn btn-outline-secondary"
-                                onClick={cancelExecution}
-                                disabled={isCanceling === true}
-                            >
-                                Cancel
-                            </button>
-                            {isErrorLike(isCanceling) && <ErrorAlert error={isCanceling} />}
-                        </>
-                    )
+                annotation={<FeedbackBadge status="experimental" feedback={{ mailto: 'support@sourcegraph.com' }} />}
+                byline={
+                    <>
+                        Created <Timestamp date={batchSpec.createdAt} /> by{' '}
+                        <LinkOrSpan to={batchSpec.creator?.url}>
+                            {batchSpec.creator?.displayName || batchSpec.creator?.username || 'a deleted user'}
+                        </LinkOrSpan>
+                    </>
                 }
+                actions={<BatchSpecActions batchSpec={batchSpec} executionURL={match.url} />}
                 className="mb-3"
             />
 
-            {batchSpecExecution.failure && <ErrorAlert error={batchSpecExecution.failure} />}
+            <TabBar url={match.url} batchSpec={batchSpec} />
 
-            <h2>Input spec</h2>
-            <Container className="mb-3">
-                <BatchSpec originalInput={batchSpecExecution.inputSpec} />
-            </Container>
+            <Switch>
+                <Route render={() => <Redirect to={`${match.url}/execution`} />} path={match.url} exact={true} />
+                <Route
+                    path={`${match.url}/spec`}
+                    render={() => (
+                        <EditPage
+                            name={batchSpec.description.name}
+                            content={batchSpec.originalInput}
+                            isLightTheme={isLightTheme}
+                        />
+                    )}
+                    exact={true}
+                />
+                <Route
+                    path={`${match.url}/execution`}
+                    render={props => <ExecutionPage {...props} batchSpec={batchSpec} isLightTheme={isLightTheme} />}
+                />
+                <Route
+                    path={`${match.url}/preview`}
+                    render={() => (
+                        <PreviewPage
+                            batchSpec={batchSpec}
+                            authenticatedUser={authenticatedUser}
+                            batchSpecID={batchSpec.id}
+                            isLightTheme={isLightTheme}
+                            telemetryService={telemetryService}
+                        />
+                    )}
+                    exact={true}
+                />
+                <Route component={NotFoundPage} key="hardcoded-key" />
+            </Switch>
+        </div>
+    )
+}
 
-            <h2>Timeline</h2>
-            <ExecutionTimeline execution={batchSpecExecution} now={now} expandStage={expandStage} className="mb-3" />
+const TabBar: React.FunctionComponent<{ url: string; batchSpec: BatchSpecExecutionFields }> = ({ url, batchSpec }) => (
+    <div className="mb-3">
+        <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
+            <li className="nav-item">
+                <RouterLink to={`${url}/spec`} role="button" activeClassName="active" className="nav-link">
+                    {/* TODO: Rename to edit once this IS an editor. */}
+                    <span className="text-content" data-tab-content="1. Batch spec">
+                        1. Batch spec
+                    </span>
+                </RouterLink>
+            </li>
+            <li className="nav-item">
+                <RouterLink to={`${url}/execution`} role="button" activeClassName="active" className="nav-link">
+                    <span className="text-content" data-tab-content="2. Execution">
+                        2. Execution
+                    </span>
+                </RouterLink>
+            </li>
+            <li className="nav-item">
+                {!batchSpec.applyURL && (
+                    <span
+                        aria-disabled="true"
+                        className="nav-link text-muted"
+                        data-tooltip="Wait for the execution to finish"
+                    >
+                        <span className="text-content" data-tab-content="3. Preview">
+                            3. Preview
+                        </span>
+                    </span>
+                )}
+                {batchSpec.applyURL && (
+                    <RouterLink to={`${url}/preview`} role="button" activeClassName="active" className="nav-link">
+                        <span className="text-content" data-tab-content="3. Preview">
+                            3. Preview
+                        </span>
+                    </RouterLink>
+                )}
+            </li>
+        </ul>
+    </div>
+)
 
-            {batchSpecExecution.batchSpec && (
+interface BatchSpecActionsProps {
+    batchSpec: BatchSpecExecutionFields
+    executionURL: string
+}
+
+const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batchSpec, executionURL }) => {
+    const location = useLocation()
+
+    const [isCanceling, setIsCanceling] = useState<boolean | Error>(false)
+    const cancelExecution = useCallback(async () => {
+        try {
+            // This reloads all the fields so apollo will rerender the parent component with new details too.
+            // TODO: Actually use apollo here.
+            await cancelBatchSpecExecution(batchSpec.id)
+        } catch (error) {
+            setIsCanceling(asError(error))
+        }
+    }, [batchSpec.id])
+
+    const [isRetrying, setIsRetrying] = useState<boolean | Error>(false)
+    const retryExecution = useCallback(async () => {
+        try {
+            // This reloads all the fields so apollo will rerender the parent component with new details too.
+            // TODO: Actually use apollo here.
+            await retryBatchSpecExecution(batchSpec.id)
+        } catch (error) {
+            setIsRetrying(asError(error))
+        }
+    }, [batchSpec.id])
+
+    return (
+        <div className="d-flex">
+            <span className="align-self-center mr-2">
+                <BatchSpecStateBadge state={batchSpec.state} />
+            </span>
+            {batchSpec.startedAt && (
+                <div className="mx-2 text-center text-muted">
+                    <h3>
+                        <Duration start={batchSpec.startedAt} end={batchSpec.finishedAt ?? undefined} />
+                    </h3>
+                    Total time
+                </div>
+            )}
+            {batchSpec.workspaceResolution?.workspaces.stats && (
                 <>
-                    <h2>Execution result</h2>
-                    <div className="alert alert-info d-flex justify-space-between align-items-center">
-                        <span className="flex-grow-1">Batch spec has been created.</span>
-                        <Link to={batchSpecExecution.batchSpec.applyURL} className="btn btn-primary">
-                            Preview changes
-                        </Link>
-                    </div>
+                    <WorkspaceStat
+                        stat={batchSpec.workspaceResolution.workspaces.stats.errored}
+                        label="Errors"
+                        iconClassName="text-danger"
+                    />
+                    <WorkspaceStat
+                        stat={batchSpec.workspaceResolution.workspaces.stats.completed}
+                        label="Complete"
+                        iconClassName="text-success"
+                    />
+                    <WorkspaceStat stat={batchSpec.workspaceResolution.workspaces.stats.processing} label="Working" />
+                    <WorkspaceStat stat={batchSpec.workspaceResolution.workspaces.stats.queued} label="Queued" />
+                    <WorkspaceStat stat={batchSpec.workspaceResolution.workspaces.stats.ignored} label="Ignored" />
                 </>
             )}
+            <span>
+                <ButtonGroup direction="vertical" className="ml-2">
+                    {(batchSpec.state === BatchSpecState.QUEUED || batchSpec.state === BatchSpecState.PROCESSING) && (
+                        <Button
+                            onClick={cancelExecution}
+                            disabled={isCanceling === true}
+                            outline={true}
+                            variant="secondary"
+                        >
+                            {isCanceling !== true && <>Cancel</>}
+                            {isCanceling === true && (
+                                <>
+                                    <LoadingSpinner /> Canceling
+                                </>
+                            )}
+                        </Button>
+                    )}
+                    {!location.pathname.endsWith('preview') &&
+                        batchSpec.applyURL &&
+                        batchSpec.state === BatchSpecState.COMPLETED && (
+                            <Button to={`${executionURL}/preview`} variant="primary" as={Link}>
+                                Preview
+                            </Button>
+                        )}
+                    {batchSpec.viewerCanRetry && batchSpec.state !== BatchSpecState.COMPLETED && (
+                        // TODO: Add a second button to allow retrying an entire batch spec,
+                        // including completed jobs.
+                        <Button
+                            onClick={retryExecution}
+                            disabled={isRetrying === true}
+                            data-tooltip={isRetrying !== true ? 'Retry all failed workspaces' : undefined}
+                            outline={true}
+                            variant="secondary"
+                        >
+                            {isRetrying !== true && <>Retry</>}
+                            {isRetrying === true && (
+                                <>
+                                    <LoadingSpinner /> Retrying
+                                </>
+                            )}
+                        </Button>
+                    )}
+                    {!location.pathname.endsWith('preview') &&
+                        batchSpec.applyURL &&
+                        batchSpec.state === BatchSpecState.FAILED && (
+                            <Button
+                                to={`${executionURL}/preview`}
+                                data-tooltip="Execution didn't finish successfully in all workspaces. The batch spec might have less changeset specs than expected."
+                                variant="warning"
+                                outline={true}
+                                as={Link}
+                            >
+                                <Icon className="mb-0 mr-2 text-warning" as={AlertCircleIcon} />
+                                Preview
+                            </Button>
+                        )}
+                </ButtonGroup>
+                {isErrorLike(isCanceling) && <ErrorAlert error={isCanceling} />}
+                {isErrorLike(isRetrying) && <ErrorAlert error={isRetrying} />}
+            </span>
+        </div>
+    )
+}
+
+const WorkspaceStat: React.FunctionComponent<{ stat: number; label: string; iconClassName?: string }> = ({
+    stat,
+    label,
+    iconClassName,
+}) => (
+    <div className="mx-2 text-center text-muted">
+        <h3 className={iconClassName}>{stat}</h3>
+        {label}
+    </div>
+)
+
+interface EditPageProps extends ThemeProps {
+    name: string
+    content: string
+}
+
+const EditPage: React.FunctionComponent<EditPageProps> = ({ name, content, isLightTheme }) => (
+    <div className={classNames(styles.layoutContainer, 'h-100')}>
+        <BatchSpec name={name} originalInput={content} isLightTheme={isLightTheme} className={styles.batchSpec} />
+    </div>
+)
+
+const WORKSPACES_LIST_SIZE = 'batch-changes.ssbc-workspaces-list-size'
+
+interface ExecutionPageProps extends ThemeProps, RouteComponentProps<{}> {
+    batchSpec: BatchSpecExecutionFields
+}
+
+const ExecutionPage: React.FunctionComponent<ExecutionPageProps> = ({ match, ...props }) => (
+    <Switch>
+        <Route
+            path={`${match.url}/workspaces/:workspaceID`}
+            render={({
+                match: {
+                    params: { workspaceID },
+                },
+            }: RouteComponentProps<{ workspaceID: string }>) => (
+                <ExecutionWorkspacesPage {...props} executionURL={match.url} selectedWorkspaceID={workspaceID} />
+            )}
+            exact={true}
+        />
+        <Route
+            path={match.url}
+            render={() => <ExecutionWorkspacesPage {...props} executionURL={match.url} />}
+            exact={true}
+        />
+        <Route component={NotFoundPage} key="hardcoded-key" />
+    </Switch>
+)
+
+interface ExecutionWorkspacesPageProps extends ThemeProps {
+    executionURL: string
+    batchSpec: BatchSpecExecutionFields
+    selectedWorkspaceID?: string
+}
+
+const ExecutionWorkspacesPage: React.FunctionComponent<ExecutionWorkspacesPageProps> = ({
+    batchSpec,
+    selectedWorkspaceID,
+    executionURL,
+    isLightTheme,
+}) => {
+    const history = useHistory()
+    const deselectWorkspace = useCallback(() => history.push(executionURL), [executionURL, history])
+
+    return (
+        <>
+            {batchSpec.failureMessage && <ErrorAlert error={batchSpec.failureMessage} />}
+            <div className={classNames(styles.layoutContainer, 'd-flex flex-1')}>
+                <Panel defaultSize={500} minSize={405} maxSize={1400} position="left" storageKey={WORKSPACES_LIST_SIZE}>
+                    <Workspaces
+                        batchSpecID={batchSpec.id}
+                        selectedNode={selectedWorkspaceID}
+                        executionURL={executionURL}
+                    />
+                </Panel>
+                <SelectedWorkspace
+                    workspace={selectedWorkspaceID ?? null}
+                    isLightTheme={isLightTheme}
+                    deselectWorkspace={deselectWorkspace}
+                />
+            </div>
         </>
     )
 }
 
-interface ExecutionTimelineProps {
-    execution: BatchSpecExecutionFields
-    className?: string
-
-    /** For testing only. */
-    now?: () => Date
-    expandStage?: string
+interface PreviewPageProps extends TelemetryProps, ThemeProps {
+    batchSpecID: Scalars['ID']
+    batchSpec: BatchSpecExecutionFields
+    authenticatedUser: AuthenticatedUser
 }
-
-const ExecutionTimeline: React.FunctionComponent<ExecutionTimelineProps> = ({
-    execution,
-    className,
-    now,
-    expandStage,
+const PreviewPage: React.FunctionComponent<PreviewPageProps> = ({
+    authenticatedUser,
+    telemetryService,
+    isLightTheme,
+    batchSpec,
+    batchSpecID,
 }) => {
-    const stages = useMemo(
-        () => [
-            { icon: <TimerSandIcon />, text: 'Queued', date: execution.createdAt, className: 'bg-success' },
-            {
-                icon: <CheckIcon />,
-                text: 'Began processing',
-                date: execution.startedAt,
-                className: 'bg-success',
-            },
+    const history = useHistory()
 
-            setupStage(execution, expandStage === 'setup', now),
-            batchPreviewStage(execution, expandStage === 'srcPreview', now),
-            teardownStage(execution, expandStage === 'teardown', now),
-
-            execution.state === BatchSpecExecutionState.COMPLETED
-                ? { icon: <CheckIcon />, text: 'Finished', date: execution.finishedAt, className: 'bg-success' }
-                : execution.state === BatchSpecExecutionState.CANCELED
-                ? { icon: <ErrorIcon />, text: 'Canceled', date: execution.finishedAt, className: 'bg-secondary' }
-                : { icon: <ErrorIcon />, text: 'Failed', date: execution.finishedAt, className: 'bg-danger' },
-        ],
-        [execution, now, expandStage]
-    )
-    return <Timeline stages={stages.filter(isDefined)} now={now} className={className} />
-}
-
-const setupStage = (
-    execution: BatchSpecExecutionFields,
-    expand: boolean,
-    now?: () => Date
-): TimelineStage | undefined =>
-    execution.steps.setup.length === 0
-        ? undefined
-        : {
-              text: 'Setup',
-              details: execution.steps.setup.map(logEntry => (
-                  <ExecutionLogEntry key={logEntry.key} logEntry={logEntry} now={now} />
-              )),
-              ...genericStage(execution.steps.setup, expand),
-          }
-
-const batchPreviewStage = (
-    execution: BatchSpecExecutionFields,
-    expand: boolean,
-    now?: () => Date
-): TimelineStage | undefined =>
-    !execution.steps.srcPreview
-        ? undefined
-        : {
-              text: 'Create batch spec preview',
-              details: (
-                  <ExecutionLogEntry logEntry={execution.steps.srcPreview} now={now}>
-                      {execution.steps.srcPreview.out && <ParsedJsonOutput out={execution.steps.srcPreview.out} />}
-                  </ExecutionLogEntry>
-              ),
-              ...genericStage(execution.steps.srcPreview, expand),
-          }
-
-const teardownStage = (
-    execution: BatchSpecExecutionFields,
-    expand: boolean,
-    now?: () => Date
-): TimelineStage | undefined =>
-    execution.steps.teardown.length === 0
-        ? undefined
-        : {
-              text: 'Teardown',
-              details: execution.steps.teardown.map(logEntry => (
-                  <ExecutionLogEntry key={logEntry.key} logEntry={logEntry} now={now} />
-              )),
-              ...genericStage(execution.steps.teardown, expand),
-          }
-
-const genericStage = <E extends { startTime: string; exitCode: number | null }>(
-    value: E | E[],
-    expand: boolean
-): Pick<TimelineStage, 'icon' | 'date' | 'className' | 'expanded'> => {
-    const finished = isArray(value) ? value.every(logEntry => logEntry.exitCode !== null) : value.exitCode !== null
-    const success = isArray(value) ? value.every(logEntry => logEntry.exitCode === 0) : value.exitCode === 0
-
-    return {
-        icon: !finished ? <ProgressClockIcon /> : success ? <CheckIcon /> : <ErrorIcon />,
-        date: isArray(value) ? value[0].startTime : value.startTime,
-        className: success || !finished ? 'bg-success' : 'bg-danger',
-        expanded: expand || !(success || !finished),
+    if (!batchSpec.applyURL) {
+        return <Redirect to="./execution" />
     }
-}
-
-enum JSONLogLineOperation {
-    PARSING_BATCH_SPEC = 'PARSING_BATCH_SPEC',
-    RESOLVING_NAMESPACE = 'RESOLVING_NAMESPACE',
-    PREPARING_DOCKER_IMAGES = 'PREPARING_DOCKER_IMAGES',
-    DETERMINING_WORKSPACE_TYPE = 'DETERMINING_WORKSPACE_TYPE',
-    RESOLVING_REPOSITORIES = 'RESOLVING_REPOSITORIES',
-    DETERMINING_WORKSPACES = 'DETERMINING_WORKSPACES',
-    CHECKING_CACHE = 'CHECKING_CACHE',
-    EXECUTING_TASKS = 'EXECUTING_TASKS',
-    LOG_FILE_KEPT = 'LOG_FILE_KEPT',
-    UPLOADING_CHANGESET_SPECS = 'UPLOADING_CHANGESET_SPECS',
-    CREATING_BATCH_SPEC = 'CREATING_BATCH_SPEC',
-    APPLYING_BATCH_SPEC = 'APPLYING_BATCH_SPEC',
-    BATCH_SPEC_EXECUTION = 'BATCH_SPEC_EXECUTION',
-    EXECUTING_TASK = 'EXECUTING_TASK',
-    TASK_BUILD_CHANGESET_SPECS = 'TASK_BUILD_CHANGESET_SPECS',
-    TASK_DOWNLOADING_ARCHIVE = 'TASK_DOWNLOADING_ARCHIVE',
-    TASK_INITIALIZING_WORKSPACE = 'TASK_INITIALIZING_WORKSPACE',
-    TASK_SKIPPING_STEPS = 'TASK_SKIPPING_STEPS',
-    TASK_STEP_SKIPPED = 'TASK_STEP_SKIPPED',
-    TASK_PREPARING_STEP = 'TASK_PREPARING_STEP',
-    TASK_STEP = 'TASK_STEP',
-    TASK_CALCULATING_DIFF = 'TASK_CALCULATING_DIFF',
-}
-
-const prettyOperationNames: Record<JSONLogLineOperation, string> = {
-    PARSING_BATCH_SPEC: 'Parsing batch spec',
-    RESOLVING_NAMESPACE: 'Resolving namespace',
-    PREPARING_DOCKER_IMAGES: 'Preparing docker images',
-    DETERMINING_WORKSPACE_TYPE: 'Determining workspace type',
-    RESOLVING_REPOSITORIES: 'Resolving repositories',
-    DETERMINING_WORKSPACES: 'Determining workspaces',
-    CHECKING_CACHE: 'Checking cache',
-    EXECUTING_TASKS: 'Executing tasks',
-    EXECUTING_TASK: 'Executing task',
-    UPLOADING_CHANGESET_SPECS: 'Uploading changeset specs',
-    CREATING_BATCH_SPEC: 'Creating batch spec',
-    APPLYING_BATCH_SPEC: 'Applying batch spec',
-    BATCH_SPEC_EXECUTION: 'Batch spec execution',
-    LOG_FILE_KEPT: 'Log file kept',
-    TASK_BUILD_CHANGESET_SPECS: 'Building changeset specs',
-    TASK_CALCULATING_DIFF: 'Calculating diff',
-    TASK_DOWNLOADING_ARCHIVE: 'Downloading archive',
-    TASK_INITIALIZING_WORKSPACE: 'Initializing workspace',
-    TASK_PREPARING_STEP: 'Preparing step',
-    TASK_SKIPPING_STEPS: 'Skipping steps',
-    TASK_STEP: 'Running step',
-    TASK_STEP_SKIPPED: 'Step skipped',
-}
-
-enum JSONLogLineStatus {
-    STARTED = 'STARTED',
-    PROGRESS = 'PROGRESS',
-    SUCCESS = 'SUCCESS',
-    FAILURE = 'FAILURE',
-}
-
-interface ExecutingTaskJSONLogLine {
-    operation: JSONLogLineOperation.EXECUTING_TASK
-    timestamp: string
-    status: JSONLogLineStatus
-    metadata: {
-        task: Task
-    }
-}
-
-type JSONLogLine =
-    | {
-          operation: JSONLogLineOperation
-          timestamp: string
-          status: JSONLogLineStatus
-      }
-    | ExecutingTaskJSONLogLine
-
-interface Step {
-    run: string
-    container: string
-}
-
-interface Task {
-    repository: string
-    workspace: string
-    steps: Step[]
-    cachedStepResultsFound: boolean
-}
-
-const ParsedJsonOutput: React.FunctionComponent<{ out: string }> = ({ out }) => {
-    const parsed = useMemo<JSONLogLine[]>(
-        () =>
-            out
-                .split('\n')
-                .map(line => line.replace(/^std(out|err): /, ''))
-                .map(line => {
-                    try {
-                        return JSON.parse(line) as JSONLogLine
-                    } catch (error) {
-                        return String(error)
-                    }
-                })
-                .filter((line): line is JSONLogLine => typeof line !== 'string'),
-        [out]
-    )
-
-    const parsedExecutingTaskLines = useMemo<ExecutingTaskJSONLogLine[]>(
-        () =>
-            parsed.filter(
-                (line): line is ExecutingTaskJSONLogLine => line.operation === JSONLogLineOperation.EXECUTING_TASK
-            ),
-        [parsed]
-    )
 
     return (
-        <ul className="list-group w-100 mt-3">
-            {Object.values<JSONLogLineOperation>(JSONLogLineOperation).map(operation => {
-                const tuple = findLogLineTuple(parsed, operation)
-                if (tuple === undefined) {
-                    return null
-                }
-                const completionStatus = tuple[1]?.status
-                return (
-                    <li className="list-group-item p-2" key={operation}>
-                        <div className="d-flex justify-content-between">
-                            <p>
-                                {completionStatus === JSONLogLineStatus.SUCCESS && (
-                                    <CheckCircleIcon className="icon-inline text-success mr-1" />
-                                )}
-                                {completionStatus === JSONLogLineStatus.FAILURE && (
-                                    <ErrorIcon className="icon-inline text-danger mr-1" />
-                                )}
-                                {prettyOperationNames[tuple[0].operation]}
-                            </p>
-                            <span>
-                                {formatDistance(
-                                    parseISO(tuple[0].timestamp),
-                                    parseISO(tuple[1]?.timestamp ?? new Date().toISOString()),
-                                    { includeSeconds: true }
-                                )}
-                            </span>
-                        </div>
-                        {operation === JSONLogLineOperation.EXECUTING_TASKS && (
-                            <ParsedTaskExecutionOutput lines={parsedExecutingTaskLines} />
-                        )}
-                    </li>
-                )
-            })}
-        </ul>
+        <div className="mt-3">
+            <NewBatchChangePreviewPage
+                authenticatedUser={authenticatedUser}
+                telemetryService={telemetryService}
+                history={history}
+                isLightTheme={isLightTheme}
+                batchSpecID={batchSpecID}
+                location={history.location}
+            />
+        </div>
     )
 }
 
-const ParsedTaskExecutionOutput: React.FunctionComponent<{ lines: ExecutingTaskJSONLogLine[] }> = ({ lines }) => (
-    <ul className="list-group w-100 mt-3">
-        {lines.map((line, index) => {
-            const repo = line.metadata.task.repository
-            const key = `${repo}-${index}`
+interface SelectedWorkspaceProps extends ThemeProps {
+    deselectWorkspace: () => void
+    workspace: Scalars['ID'] | null
+}
 
-            if (line.status === JSONLogLineStatus.STARTED) {
-                return (
-                    <li className="list-group-item p-2" key={key}>
-                        <InformationIcon className="icon-inline mr-1" />
-                        <b>{repo}</b>: Starting execution of {line.metadata?.task?.steps?.length}
-                    </li>
-                )
-            }
-            if (line.status === JSONLogLineStatus.SUCCESS) {
-                return (
-                    <li className="list-group-item p-2" key={key}>
-                        <CheckCircleIcon className="icon-inline text-success mr-1" />
-                        <b>{repo}</b>: Success! All steps executed.
-                    </li>
-                )
-            }
-            if (line.status === JSONLogLineStatus.FAILURE) {
-                return (
-                    <li className="list-group-item p-2" key={key}>
-                        <ErrorIcon className="icon-inline text-danger mr-1" />
-                        <b>{repo}</b>: Failed :(
-                    </li>
-                )
-            }
-            return null
-        })}
-    </ul>
+const SelectedWorkspace: React.FunctionComponent<SelectedWorkspaceProps> = ({
+    workspace,
+    deselectWorkspace,
+    isLightTheme,
+}) => (
+    <Card className="w-100 overflow-auto flex-grow-1">
+        <CardBody>
+            {workspace ? (
+                <WorkspaceDetails id={workspace} isLightTheme={isLightTheme} deselectWorkspace={deselectWorkspace} />
+            ) : (
+                <h3 className="text-center my-3">Select a workspace to view details.</h3>
+            )}
+        </CardBody>
+    </Card>
 )
 
-function findLogLine(
-    lines: JSONLogLine[],
-    operation: JSONLogLineOperation,
-    status: JSONLogLineStatus
-): JSONLogLine | undefined {
-    return lines.find(line => line.operation === operation && line.status === status)
-}
-
-function findLogLineTuple(
-    lines: JSONLogLine[],
-    operation: JSONLogLineOperation
-): [JSONLogLine] | [JSONLogLine, JSONLogLine] | undefined {
-    const start = findLogLine(lines, operation, JSONLogLineStatus.STARTED)
-    if (!start) {
-        return undefined
-    }
-    let end = findLogLine(lines, operation, JSONLogLineStatus.SUCCESS)
-    if (!end) {
-        end = findLogLine(lines, operation, JSONLogLineStatus.FAILURE)
-    }
-    if (end) {
-        return [start, end]
-    }
-    return [start]
-}
+const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />

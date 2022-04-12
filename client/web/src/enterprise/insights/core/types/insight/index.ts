@@ -1,41 +1,56 @@
-import { InsightType } from './common'
-import { isLangStatsdInsightId, LangStatsInsight, LangStatsInsightConfiguration } from './lang-stat-insight'
+import { InsightExecutionType, InsightType, InsightFilters } from './common'
+import { CaptureGroupInsight } from './types/capture-group-insight'
+import { LangStatsInsight } from './types/lang-stat-insight'
 import {
-    isSearchBasedInsightId,
+    SearchBackendBasedInsight,
     SearchBasedInsight,
-    SearchBasedInsightConfiguration,
-    SearchBasedExtensionInsightSettings,
-    SearchExtensionBasedInsight,
-} from './search-insight'
+    SearchBasedInsightSeries,
+    SearchRuntimeBasedInsight,
+} from './types/search-insight'
 
-export * from './common'
+export { InsightType, InsightExecutionType }
 
-export const INSIGHTS_ALL_REPOS_SETTINGS_KEY = 'insights.allrepos'
-
-export type Insight = SearchBasedInsight | LangStatsInsight
-export type ExtensionInsight = SearchExtensionBasedInsight | LangStatsInsight
-
-export type InsightExtensionBasedConfiguration =
-    // Since lang stat insight doesn't have be version
-    LangStatsInsightConfiguration | SearchBasedExtensionInsightSettings
-
-export type InsightConfiguration = SearchBasedInsightConfiguration | LangStatsInsightConfiguration
-export type { SearchBasedInsight, LangStatsInsight }
-
-// Type and settings insight guards.
-
-export function isInsightSettingKey(key: string): boolean {
-    return isSearchBasedInsightId(key) || isLangStatsdInsightId(key)
+export type {
+    SearchBasedInsight,
+    SearchBackendBasedInsight,
+    SearchRuntimeBasedInsight,
+    SearchBasedInsightSeries,
+    LangStatsInsight,
+    CaptureGroupInsight,
+    InsightFilters,
 }
 
-export function isExtensionInsight(insight: Insight): insight is ExtensionInsight {
-    return insight.type === InsightType.Extension
+/**
+ * Main insight model. Union of all different insights by execution type (backend, runtime)
+ * and insight type (lang-stats, search based, capture group) insights.
+ */
+export type Insight = SearchBasedInsight | LangStatsInsight | CaptureGroupInsight
+
+/**
+ * Backend insights - insights that have all data series points already in gql API.
+ */
+export type BackendInsight = SearchBackendBasedInsight | CaptureGroupInsight
+
+/**
+ * Extension insights - insights that are processed in FE runtime via search API.
+ */
+export type RuntimeInsight = SearchRuntimeBasedInsight | LangStatsInsight
+
+export function isBackendInsight(insight: Insight): insight is BackendInsight {
+    return insight.executionType === InsightExecutionType.Backend
 }
 
-export function isSearchBasedInsight(possibleInsight: { id: string }): possibleInsight is SearchBasedInsight {
-    return isSearchBasedInsightId(possibleInsight.id)
+export function isSearchBasedInsight(insight: Insight): insight is SearchBasedInsight {
+    return insight.type === InsightType.SearchBased
+}
+
+export const isSearchBackendBasedInsight = (insight: SearchBasedInsight): insight is SearchBackendBasedInsight =>
+    insight.executionType === InsightExecutionType.Backend
+
+export function isCaptureGroupInsight(insight: Insight): insight is CaptureGroupInsight {
+    return insight.type === InsightType.CaptureGroup
 }
 
 export function isLangStatsInsight(insight: Insight): insight is LangStatsInsight {
-    return isLangStatsdInsightId(insight.id)
+    return insight.type === InsightType.LangStats
 }

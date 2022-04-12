@@ -10,7 +10,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/google/go-cmp/cmp"
 	"github.com/sergi/go-diff/diffmatchpatch"
@@ -22,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func Test_GitLab_FetchAccount(t *testing.T) {
@@ -92,16 +92,16 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 				{
 					description: "1 account, matches",
 					user:        &types.User{ID: 123},
-					current:     []*extsvc.Account{acct(t, 1, "saml", "https://okta.mine/", "bl", "")},
-					expMine:     acct(t, 123, extsvc.TypeGitLab, "https://gitlab.mine/", "101", ""),
+					current:     []*extsvc.Account{acct(t, 1, "saml", "https://okta.mine/", "bl")},
+					expMine:     acct(t, 123, extsvc.TypeGitLab, "https://gitlab.mine/", "101"),
 				},
 				{
 					description: "many accounts, none match",
 					user:        &types.User{ID: 123},
 					current: []*extsvc.Account{
-						acct(t, 1, "saml", "https://okta.mine/", "nomatch", ""),
-						acct(t, 1, "saml", "nomatch", "bl", ""),
-						acct(t, 1, "nomatch", "https://okta.mine/", "bl", ""),
+						acct(t, 1, "saml", "https://okta.mine/", "nomatch"),
+						acct(t, 1, "saml", "nomatch", "bl"),
+						acct(t, 1, "nomatch", "https://okta.mine/", "bl"),
 					},
 					expMine: nil,
 				},
@@ -109,11 +109,11 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 					description: "many accounts, 1 match",
 					user:        &types.User{ID: 123},
 					current: []*extsvc.Account{
-						acct(t, 1, "saml", "nomatch", "bl", ""),
-						acct(t, 1, "nomatch", "https://okta.mine/", "bl", ""),
-						acct(t, 1, "saml", "https://okta.mine/", "bl", ""),
+						acct(t, 1, "saml", "nomatch", "bl"),
+						acct(t, 1, "nomatch", "https://okta.mine/", "bl"),
+						acct(t, 1, "saml", "https://okta.mine/", "bl"),
 					},
-					expMine: acct(t, 123, extsvc.TypeGitLab, "https://gitlab.mine/", "101", ""),
+					expMine: acct(t, 123, extsvc.TypeGitLab, "https://gitlab.mine/", "101"),
 				},
 				{
 					description: "no user",
@@ -134,7 +134,7 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 				{
 					description: "username match",
 					user:        &types.User{ID: 123, Username: "b.l"},
-					expMine:     acct(t, 123, extsvc.TypeGitLab, "https://gitlab.mine/", "101", ""),
+					expMine:     acct(t, 123, extsvc.TypeGitLab, "https://gitlab.mine/", "101"),
 				},
 				{
 					description: "no username match",
@@ -182,13 +182,13 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 				{
 					description: "1 authn provider matches",
 					user:        &types.User{ID: 123},
-					current:     []*extsvc.Account{acct(t, 1, "openidconnect", "https://onelogin.mine/", "bl", "")},
-					expMine:     acct(t, 123, extsvc.TypeGitLab, "https://gitlab.mine/", "101", ""),
+					current:     []*extsvc.Account{acct(t, 1, "openidconnect", "https://onelogin.mine/", "bl")},
+					expMine:     acct(t, 123, extsvc.TypeGitLab, "https://gitlab.mine/", "101"),
 				},
 				{
 					description: "0 authn providers match",
 					user:        &types.User{ID: 123},
-					current:     []*extsvc.Account{acct(t, 1, "openidconnect", "https://onelogin.mine/", "nomatch", "")},
+					current:     []*extsvc.Account{acct(t, 1, "openidconnect", "https://onelogin.mine/", "nomatch")},
 					expMine:     nil,
 				},
 			},

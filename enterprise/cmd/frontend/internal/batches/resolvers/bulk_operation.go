@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -12,6 +11,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const bulkOperationIDKind = "BulkOperation"
@@ -89,7 +89,7 @@ func (r *bulkOperationResolver) Errors(ctx context.Context) ([]graphqlbackend.Ch
 }
 
 func (r *bulkOperationResolver) Initiator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	return graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.bulkOperation.UserID)
+	return graphqlbackend.UserByIDInt32(ctx, r.store.DatabaseDB(), r.bulkOperation.UserID)
 }
 
 func (r *bulkOperationResolver) ChangesetCount() int32 {

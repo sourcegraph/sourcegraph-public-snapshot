@@ -1,20 +1,22 @@
-import Dialog from '@reach/dialog'
+import React, { useState, useEffect } from 'react'
+
+import { ApolloError } from '@apollo/client'
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
-import React, { useState } from 'react'
 
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { pluralize } from '@sourcegraph/common'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { useLocalStorage, Button, Modal, Icon } from '@sourcegraph/wildcard'
 
 import { CaseInsensitiveFuzzySearch } from '../../fuzzyFinder/CaseInsensitiveFuzzySearch'
 import { FuzzySearch, FuzzySearchResult, SearchIndexing, SearchValue } from '../../fuzzyFinder/FuzzySearch'
 import { WordSensitiveFuzzySearch } from '../../fuzzyFinder/WordSensitiveFuzzySearch'
 import { parseBrowserRepoURL } from '../../util/url'
 
-import { FuzzyFinderProps, Indexing, FuzzyFSM } from './FuzzyFinder'
-import styles from './FuzzyModal.module.scss'
+import { Indexing, FuzzyFSM } from './FuzzyFinder'
 import { HighlightedLink } from './HighlightedLink'
+
+import styles from './FuzzyModal.module.scss'
 
 // The default value of 80k filenames is picked from the following observations:
 // - case-insensitive search is slow but works in the torvalds/linux repo (72k files)
@@ -32,27 +34,17 @@ const lastFuzzySearchResult = new Map<string, FuzzySearchResult>()
 // The number of results to jump by on PageUp/PageDown keyboard shortcuts.
 const PAGE_DOWN_INCREMENT = 10
 
-export interface FuzzyModalProps extends FuzzyFinderProps {
+export interface FuzzyModalProps {
+    repoName: string
+    commitID: string
     initialMaxResults: number
     initialQuery: string
-    downloadFilenames: () => Promise<string[]>
-
-    isVisible: boolean
+    downloadFilenames: string[]
+    isLoading: boolean
+    isError: ApolloError | undefined
     onClose: () => void
-
     fsm: FuzzyFSM
     setFsm: (fsm: FuzzyFSM) => void
-}
-
-interface FuzzyModalState {
-    query: string
-    setQuery: (query: string) => void
-
-    focusIndex: number
-    setFocusIndex: (focusIndex: number) => void
-
-    maxResults: number
-    increaseMaxResults: () => void
 }
 
 /**
@@ -77,55 +69,159 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
     // on a button at the bottom of the result list.
     const [maxResults, setMaxResults] = useState(props.initialMaxResults)
 
-    const state: FuzzyModalState = {
-        query,
-        setQuery,
-        focusIndex,
-        setFocusIndex,
-        maxResults,
-        increaseMaxResults: () => {
-            setMaxResults(maxResults + props.initialMaxResults)
-        },
-    }
+    const [resultsCount, setResultsCount] = useState(0)
+    const [isComplete, setIsComplete] = useState<boolean>(false)
+    const [totalFileCount, setTotalFileCount] = useState(0)
+    const [fuzzyResultElement, setFuzzyResultElement] = useState<JSX.Element>()
 
-    const fuzzyResult = renderFuzzyResult(props, state)
+    useEffect(() => {
+        function handleEmpty(props: FuzzyModalProps): void {
+            props.setFsm(handleFilenames(props.downloadFilenames))
+            cleanLegacyCacheStorage()
+        }
+
+        function onError(what: string): (error: Error) => void {
+            return error => {
+                props.setFsm({ key: 'failed', errorMessage: JSON.stringify(error) })
+                throw new Error(what)
+            }
+        }
+
+        function empty(element: JSX.Element): void {
+            setFuzzyResultElement(element)
+            setResultsCount(0)
+            setIsComplete(true)
+            setTotalFileCount(0)
+        }
+
+        function renderFiles(search: FuzzySearch, indexing?: SearchIndexing): void {
+            // Parse the URL here instead of accepting it as a React prop because the
+            // URL can change based on shortcuts like `y` that won't trigger a re-render
+            // in React. By parsing the URL here, we avoid the risk of rendering links to a revision that
+            // doesn't match the active revision in the browser's address bar.
+            const repoUrl = parseBrowserRepoURL(location.pathname + location.search + location.hash)
+            const indexedFileCount = indexing ? indexing.indexedFileCount : ''
+            const cacheKey = `${query}-${maxResults}${indexedFileCount}-${repoUrl.revision || ''}`
+            let fuzzyResult = lastFuzzySearchResult.get(cacheKey)
+            if (!fuzzyResult) {
+                const start = window.performance.now()
+                fuzzyResult = search.search({
+                    query,
+                    maxResults,
+                    createUrl: filename =>
+                        toPrettyBlobURL({
+                            filePath: filename,
+                            revision: repoUrl.revision,
+                            repoName: props.repoName,
+                            commitID: props.commitID,
+                        }),
+                    onClick: () => props.onClose(),
+                })
+                fuzzyResult.elapsedMilliseconds = window.performance.now() - start
+                lastFuzzySearchResult.clear() // Only cache the last query.
+                lastFuzzySearchResult.set(cacheKey, fuzzyResult)
+            }
+            const links = fuzzyResult.links
+            if (links.length === 0) {
+                setFuzzyResultElement(<p>No files matching '{query}'</p>)
+                setResultsCount(0)
+                setTotalFileCount(search.totalFileCount)
+                return setIsComplete(fuzzyResult.isComplete)
+            }
+
+            const linksToRender = links.slice(0, maxResults)
+            const element = (
+                <ul
+                    id={FUZZY_MODAL_RESULTS}
+                    className={styles.results}
+                    role="listbox"
+                    aria-label="Fuzzy finder results"
+                >
+                    {linksToRender.map((file, fileIndex) => (
+                        <li
+                            id={fuzzyResultId(fileIndex)}
+                            key={file.text}
+                            role="option"
+                            aria-selected={fileIndex === focusIndex}
+                            className={classNames('p-1', fileIndex === focusIndex && styles.focused)}
+                        >
+                            <HighlightedLink {...file} />
+                        </li>
+                    ))}
+                </ul>
+            )
+            setFuzzyResultElement(element)
+            setResultsCount(linksToRender.length)
+            setTotalFileCount(search.totalFileCount)
+            return setIsComplete(fuzzyResult.isComplete)
+        }
+
+        if (props.isLoading) {
+            return empty(<p>Downloading...</p>)
+        }
+
+        if (props.isError) {
+            return empty(<p>Error: {JSON.stringify(props.isError)}</p>)
+        }
+
+        switch (props.fsm.key) {
+            case 'empty':
+                handleEmpty(props)
+                return empty(<></>)
+            case 'downloading':
+                return empty(<p>Downloading...</p>)
+            case 'failed':
+                return empty(<p>Error: {props.fsm.errorMessage}</p>)
+            case 'indexing': {
+                const loader = props.fsm.indexing
+                later()
+                    .then(() => continueIndexing(loader))
+                    .then(next => props.setFsm(next), onError('onIndexing'))
+
+                return renderFiles(props.fsm.indexing.partialFuzzy, props.fsm.indexing)
+            }
+            case 'ready':
+                return renderFiles(props.fsm.fuzzy)
+            default:
+                return empty(<p>ERROR</p>)
+        }
+    }, [props, focusIndex, maxResults, query])
 
     // Sets the new "focus index" so that it's rounded by the number of
     // displayed filenames.  Cycles so that the user can press-hold the down
     // arrow and it goes all the way down and back up to the top result.
     function setRoundedFocusIndex(increment: number): void {
-        const newNumber = state.focusIndex + increment
-        const index = newNumber % fuzzyResult.resultsCount
-        const nextIndex = index < 0 ? fuzzyResult.resultsCount + index : index
-        state.setFocusIndex(nextIndex)
+        const newNumber = focusIndex + increment
+        const index = newNumber % resultsCount
+        const nextIndex = index < 0 ? resultsCount + index : index
+        setFocusIndex(nextIndex)
         document.querySelector(`#fuzzy-modal-result-${nextIndex}`)?.scrollIntoView(false)
     }
 
     function onInputKeyDown(event: React.KeyboardEvent): void {
-        switch (event.key) {
-            case 'Escape':
+        switch (true) {
+            case event.key === 'Escape':
                 props.onClose()
                 break
-            case 'ArrowDown':
+            case event.key === 'ArrowDown':
                 event.preventDefault() // Don't move the cursor to the end of the input.
                 setRoundedFocusIndex(1)
                 break
-            case 'PageDown':
+            case event.key === 'PageDown':
                 setRoundedFocusIndex(PAGE_DOWN_INCREMENT)
                 break
-            case 'ArrowUp':
+            case event.key === 'ArrowUp':
                 event.preventDefault() // Don't move the cursor to the start of input.
                 setRoundedFocusIndex(-1)
                 break
-            case 'PageUp':
+            case event.key === 'PageUp':
                 setRoundedFocusIndex(-PAGE_DOWN_INCREMENT)
                 break
-            case 'Enter':
-                if (state.focusIndex < fuzzyResult.resultsCount) {
-                    const fileAnchor = document.querySelector<HTMLAnchorElement>(
-                        `#fuzzy-modal-result-${state.focusIndex} a`
-                    )
+            case event.key === 'Enter':
+                if (focusIndex < resultsCount) {
+                    const fileAnchor = document.querySelector<HTMLAnchorElement>(`#fuzzy-modal-result-${focusIndex} a`)
                     fileAnchor?.click()
+                    setQuery('')
                     props.onClose()
                 }
                 break
@@ -134,8 +230,9 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
     }
 
     return (
-        <Dialog
-            className={classNames(styles.modal, 'modal-body p-4 rounded border')}
+        <Modal
+            position="center"
+            className={styles.modal}
             onDismiss={() => props.onClose()}
             aria-labelledby={FUZZY_MODAL_TITLE}
         >
@@ -144,45 +241,51 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                     <h3 className="mb-0" id={FUZZY_MODAL_TITLE}>
                         Find file
                     </h3>
-                    <button type="button" className="btn btn-icon" onClick={() => props.onClose()} aria-label="Close">
-                        <CloseIcon className={classNames('icon-inline', styles.closeIcon)} />
-                    </button>
+                    <Button variant="icon" onClick={() => props.onClose()} aria-label="Close">
+                        <Icon className={styles.closeIcon} as={CloseIcon} />
+                    </Button>
                 </div>
                 <input
                     autoComplete="off"
                     spellCheck="false"
                     role="combobox"
+                    autoFocus={true}
                     aria-autocomplete="list"
                     aria-controls={FUZZY_MODAL_RESULTS}
                     aria-owns={FUZZY_MODAL_RESULTS}
                     aria-expanded={props.fsm.key !== 'downloading'}
-                    aria-activedescendant={fuzzyResultId(state.focusIndex)}
+                    aria-activedescendant={fuzzyResultId(focusIndex)}
                     id="fuzzy-modal-input"
                     className={classNames('form-control py-1', styles.input)}
                     placeholder="Enter a partial file path or name"
-                    value={state.query}
-                    onChange={event => {
-                        state.setQuery(event.target.value)
-                        state.setFocusIndex(0)
+                    value={query}
+                    onChange={({ target: { value } }) => {
+                        setQuery(value)
+                        setFocusIndex(0)
                     }}
                     type="text"
                     onKeyDown={onInputKeyDown}
                 />
                 <div className={styles.summary}>
-                    <FuzzyResultsSummary fsm={props.fsm} files={fuzzyResult} />
+                    <FuzzyResultsSummary
+                        fsm={props.fsm}
+                        resultsCount={resultsCount}
+                        isComplete={isComplete}
+                        totalFileCount={totalFileCount}
+                    />
                 </div>
-                {fuzzyResult.element}
-                {!fuzzyResult.isComplete && (
-                    <button
-                        className={classNames('btn btn-secondary', styles.showMore)}
-                        type="button"
-                        onClick={() => state.increaseMaxResults()}
+                {fuzzyResultElement}
+                {!isComplete && (
+                    <Button
+                        className={styles.showMore}
+                        onClick={() => setMaxResults(maxResults + props.initialMaxResults)}
+                        variant="secondary"
                     >
                         Show more
-                    </button>
+                    </Button>
                 )}
             </div>
-        </Dialog>
+        </Modal>
     )
 }
 
@@ -191,14 +294,21 @@ function plural(what: string, count: number, isComplete: boolean): string {
 }
 interface FuzzyResultsSummaryProps {
     fsm: FuzzyFSM
-    files: RenderedFuzzyResult
+    resultsCount: number
+    isComplete: boolean
+    totalFileCount: number
 }
 
-const FuzzyResultsSummary: React.FunctionComponent<FuzzyResultsSummaryProps> = ({ fsm, files }) => (
+const FuzzyResultsSummary: React.FunctionComponent<FuzzyResultsSummaryProps> = ({
+    fsm,
+    resultsCount,
+    isComplete,
+    totalFileCount,
+}) => (
     <>
         <span className={styles.resultCount}>
-            {plural('result', files.resultsCount, files.isComplete)} -{' '}
-            {fsm.key === 'indexing' && indexingProgressBar(fsm)} {plural('total file', files.totalFileCount, true)}
+            {plural('result', resultsCount, isComplete)} - {fsm.key === 'indexing' && indexingProgressBar(fsm)}{' '}
+            {plural('total file', totalFileCount, true)}
         </span>
         <i className="text-muted">
             <kbd>↑</kbd> and <kbd>↓</kbd> arrow keys browse. <kbd>⏎</kbd> selects.
@@ -217,120 +327,6 @@ function indexingProgressBar(indexing: Indexing): JSX.Element {
     )
 }
 
-interface RenderedFuzzyResult {
-    element: JSX.Element
-    resultsCount: number
-    isComplete: boolean
-    totalFileCount: number
-    elapsedMilliseconds?: number
-    falsePositiveRatio?: number
-}
-
-function renderFuzzyResult(props: FuzzyModalProps, state: FuzzyModalState): RenderedFuzzyResult {
-    function empty(element: JSX.Element): RenderedFuzzyResult {
-        return {
-            element,
-            resultsCount: 0,
-            isComplete: true,
-            totalFileCount: 0,
-        }
-    }
-
-    function onError(what: string): (error: Error) => void {
-        return error => {
-            props.setFsm({ key: 'failed', errorMessage: JSON.stringify(error) })
-            throw new Error(what)
-        }
-    }
-
-    switch (props.fsm.key) {
-        case 'empty':
-            handleEmpty(props).then(() => {}, onError('onEmpty'))
-            return empty(<></>)
-        case 'downloading':
-            return empty(<p>Downloading...</p>)
-        case 'failed':
-            return empty(<p>Error: {props.fsm.errorMessage}</p>)
-        case 'indexing': {
-            const loader = props.fsm.indexing
-            later()
-                .then(() => continueIndexing(loader))
-                .then(next => props.setFsm(next), onError('onIndexing'))
-            return renderFiles(props, state, props.fsm.indexing.partialFuzzy, props.fsm.indexing)
-        }
-        case 'ready':
-            return renderFiles(props, state, props.fsm.fuzzy)
-        default:
-            return empty(<p>ERROR</p>)
-    }
-}
-
-function renderFiles(
-    props: FuzzyModalProps,
-    state: FuzzyModalState,
-    search: FuzzySearch,
-    indexing?: SearchIndexing
-): RenderedFuzzyResult {
-    // Parse the URL here instead of accepting it as a React prop because the
-    // URL can change based on shortcuts like `y` that won't trigger a re-render
-    // in React. By parsing the URL here, we avoid the risk of rendering links to a revision that
-    // doesn't match the active revision in the browser's address bar.
-    const repoUrl = parseBrowserRepoURL(location.pathname + location.search + location.hash)
-    const indexedFileCount = indexing ? indexing.indexedFileCount : ''
-    const cacheKey = `${state.query}-${state.maxResults}${indexedFileCount}-${repoUrl.revision || ''}`
-    let fuzzyResult = lastFuzzySearchResult.get(cacheKey)
-    if (!fuzzyResult) {
-        const start = window.performance.now()
-        fuzzyResult = search.search({
-            query: state.query,
-            maxResults: state.maxResults,
-            createUrl: filename =>
-                toPrettyBlobURL({
-                    filePath: filename,
-                    revision: repoUrl.revision,
-                    repoName: props.repoName,
-                    commitID: props.commitID,
-                }),
-            onClick: () => props.onClose(),
-        })
-        fuzzyResult.elapsedMilliseconds = window.performance.now() - start
-        lastFuzzySearchResult.clear() // Only cache the last query.
-        lastFuzzySearchResult.set(cacheKey, fuzzyResult)
-    }
-    const links = fuzzyResult.links
-    if (links.length === 0) {
-        return {
-            element: <p>No files matching '{state.query}'</p>,
-            resultsCount: 0,
-            totalFileCount: search.totalFileCount,
-            isComplete: fuzzyResult.isComplete,
-        }
-    }
-    const linksToRender = links.slice(0, state.maxResults)
-    return {
-        element: (
-            <ul id={FUZZY_MODAL_RESULTS} className={styles.results} role="listbox" aria-label="Fuzzy finder results">
-                {linksToRender.map((file, fileIndex) => (
-                    <li
-                        id={fuzzyResultId(fileIndex)}
-                        key={file.text}
-                        role="option"
-                        aria-selected={fileIndex === state.focusIndex}
-                        className={classNames('p-1', fileIndex === state.focusIndex && styles.focused)}
-                    >
-                        <HighlightedLink {...file} />
-                    </li>
-                ))}
-            </ul>
-        ),
-        resultsCount: linksToRender.length,
-        totalFileCount: search.totalFileCount,
-        isComplete: fuzzyResult.isComplete,
-        elapsedMilliseconds: fuzzyResult.elapsedMilliseconds,
-        falsePositiveRatio: fuzzyResult.falsePositiveRatio,
-    }
-}
-
 async function later(): Promise<void> {
     return new Promise(resolve => setTimeout(() => resolve(), 0))
 }
@@ -344,20 +340,6 @@ async function continueIndexing(indexing: SearchIndexing): Promise<FuzzyFSM> {
         key: 'ready',
         fuzzy: next.value,
     }
-}
-
-async function handleEmpty(props: FuzzyModalProps): Promise<void> {
-    props.setFsm({ key: 'downloading' })
-    try {
-        const filenames = await props.downloadFilenames()
-        props.setFsm(handleFilenames(filenames))
-    } catch (error) {
-        props.setFsm({
-            key: 'failed',
-            errorMessage: JSON.stringify(error),
-        })
-    }
-    cleanLegacyCacheStorage()
 }
 
 function handleFilenames(filenames: string[]): FuzzyFSM {

@@ -5,10 +5,9 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type StreamDecoder struct {
@@ -52,7 +51,6 @@ func (rr StreamDecoder) ReadAll(r io.Reader) error {
 }
 
 type EventDone struct {
-	LimitHit    bool   `json:"limit_hit"`
-	DeadlineHit bool   `json:"deadline_hit"`
-	Error       string `json:"error"`
+	LimitHit bool   `json:"limit_hit"`
+	Error    string `json:"error"`
 }

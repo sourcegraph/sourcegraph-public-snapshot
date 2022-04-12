@@ -1,5 +1,10 @@
 package command
 
+import (
+	"fmt"
+	"strings"
+)
+
 // flatten combines string values and (non-recursive) string slice values
 // into a single string slice.
 func flatten(values ...interface{}) []string {
@@ -24,4 +29,20 @@ func intersperse(flag string, values []string) []string {
 	}
 
 	return interspersed
+}
+
+// quoteEnv returns a slice of env vars in which env vars that contain a whitespace have been quoted
+func quoteEnv(env []string) []string {
+	quotedEnv := make([]string, len(env))
+
+	for i, e := range env {
+		if strings.Contains(e, " ") {
+			elems := strings.SplitN(e, "=", 2)
+			quotedEnv[i] = fmt.Sprintf(`%s=%q`, elems[0], elems[1])
+		} else {
+			quotedEnv[i] = e
+		}
+	}
+
+	return quotedEnv
 }

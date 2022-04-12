@@ -1,11 +1,13 @@
-import classNames from 'classnames'
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import classNames from 'classnames'
+
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Link } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../components/branding/BrandLogo'
+import { PageRoutes } from '../../routes.constants'
 
 import styles from './SearchPageFooter.module.scss'
 
@@ -33,7 +35,7 @@ const footerLinkSections: { name: string; links: { name: string; to: string; eve
         name: 'Company',
         links: [
             { name: 'About', to: 'https://about.sourcegraph.com/' },
-            { name: 'Careers', to: 'https://boards.greenhouse.io/sourcegraph91' },
+            { name: 'Careers', to: 'https://about.sourcegraph.com/jobs/' },
             { name: 'Contact', to: 'https://about.sourcegraph.com/contact' },
         ],
     },
@@ -74,7 +76,7 @@ export const SearchPageFooter: React.FunctionComponent<
 
     return isSourcegraphDotCom ? (
         <footer className={styles.footer}>
-            <Link to="/search" aria-label="Home" className="flex-shrink-0">
+            <Link to={PageRoutes.Search} aria-label="Home" className="flex-shrink-0">
                 <BrandLogo isLightTheme={isLightTheme} variant="symbol" className={styles.logo} />
             </Link>
 
@@ -85,21 +87,21 @@ export const SearchPageFooter: React.FunctionComponent<
                         <ul className="list-unstyled">
                             {section.links.map(link => (
                                 <li key={link.name}>
-                                    <a
-                                        href={link.to}
+                                    <Link
+                                        to={link.to}
                                         onClick={() => logLinkClicked(link.eventName ?? link.name)}
                                         className={styles.link}
                                     >
                                         {link.name}
-                                    </a>
+                                    </Link>
                                 </li>
                             ))}
                         </ul>
                     </li>
                 ))}
                 <li>
-                    <a
-                        href="https://info.sourcegraph.com/dev-tool-time"
+                    <Link
+                        to="https://info.sourcegraph.com/dev-tool-time"
                         className={styles.devToolTimeWrapper}
                         onClick={logDevelopmentToolTimeClicked}
                     >
@@ -112,7 +114,7 @@ export const SearchPageFooter: React.FunctionComponent<
                             <h2 className={styles.linkSectionHeading}>Dev tool time</h2>
                             <div>The show where developers talk about dev tools, productivity hacks, and more.</div>
                         </div>
-                    </a>
+                    </Link>
                 </li>
             </ul>
         </footer>

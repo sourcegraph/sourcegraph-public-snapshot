@@ -11,9 +11,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type executionLogEntryStore interface {
+type ExecutionLogEntryStore interface {
 	AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry) (int, error)
 	UpdateExecutionLogEntry(ctx context.Context, id, entryID int, entry workerutil.ExecutionLogEntry) error
 }
@@ -29,8 +30,10 @@ type entryHandle struct {
 
 	done chan struct{}
 
-	mu  sync.Mutex
-	buf *bytes.Buffer
+	mu         sync.Mutex
+	buf        *bytes.Buffer
+	exitCode   *int
+	durationMs *int
 }
 
 func (h *entryHandle) Write(p []byte) (n int, err error) {
@@ -39,10 +42,13 @@ func (h *entryHandle) Write(p []byte) (n int, err error) {
 	return h.buf.Write(p)
 }
 
-func (h *entryHandle) Read() string {
+func (h *entryHandle) Finalize(exitCode int) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	return h.buf.String()
+
+	durationMs := int(time.Since(h.logEntry.StartTime) / time.Millisecond)
+	h.exitCode = &exitCode
+	h.durationMs = &durationMs
 }
 
 func (h *entryHandle) Close() error {
@@ -51,16 +57,26 @@ func (h *entryHandle) Close() error {
 }
 
 func (h *entryHandle) CurrentLogEntry() workerutil.ExecutionLogEntry {
-	logEntry := h.logEntry
-	logEntry.Out = h.Read()
+	logEntry := h.currentLogEntry()
 	redact(&logEntry, h.replacer)
+	return logEntry
+}
+
+func (h *entryHandle) currentLogEntry() workerutil.ExecutionLogEntry {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	logEntry := h.logEntry
+	logEntry.ExitCode = h.exitCode
+	logEntry.Out = h.buf.String()
+	logEntry.DurationMs = h.durationMs
 	return logEntry
 }
 
 // Logger tracks command invocations and stores the command's output and
 // error stream values.
 type Logger struct {
-	store   executionLogEntryStore
+	store   ExecutionLogEntryStore
 	done    chan struct{}
 	handles chan *entryHandle
 
@@ -68,6 +84,9 @@ type Logger struct {
 	recordID int
 
 	replacer *strings.Replacer
+
+	errs   error
+	errsMu sync.Mutex
 }
 
 // logEntryBufSize is the maximum number of log entries that are logged by the
@@ -80,7 +99,7 @@ const logEntryBufsize = 50
 // replace with a non-sensitive value.
 // Each log message is written to the store in a goroutine. The Flush method
 // must be called to ensure all entries are written.
-func NewLogger(store executionLogEntryStore, job executor.Job, recordID int, replacements map[string]string) *Logger {
+func NewLogger(store ExecutionLogEntryStore, job executor.Job, recordID int, replacements map[string]string) *Logger {
 	oldnew := make([]string, 0, len(replacements)*2)
 	for k, v := range replacements {
 		oldnew = append(oldnew, k, v)
@@ -93,6 +112,7 @@ func NewLogger(store executionLogEntryStore, job executor.Job, recordID int, rep
 		done:     make(chan struct{}),
 		handles:  make(chan *entryHandle, logEntryBufsize),
 		replacer: strings.NewReplacer(oldnew...),
+		errs:     nil,
 	}
 
 	go l.writeEntries()
@@ -103,14 +123,29 @@ func NewLogger(store executionLogEntryStore, job executor.Job, recordID int, rep
 // Flush waits until all entries have been written to the store and all
 // background goroutines that watch a log entry and possibly update it have
 // exited.
-func (l *Logger) Flush() {
+func (l *Logger) Flush() error {
 	close(l.handles)
 	<-l.done
+
+	l.errsMu.Lock()
+	defer l.errsMu.Unlock()
+
+	return l.errs
 }
 
 // Log redacts secrets from the given log entry and stores it.
-func (l *Logger) Log(logEntry *workerutil.ExecutionLogEntry) *entryHandle {
-	handle := &entryHandle{logEntry: *logEntry, replacer: l.replacer, buf: &bytes.Buffer{}, done: make(chan struct{})}
+func (l *Logger) Log(key string, command []string) *entryHandle {
+	handle := &entryHandle{
+		logEntry: workerutil.ExecutionLogEntry{
+			Key:       key,
+			Command:   command,
+			StartTime: time.Now(),
+		},
+		replacer: l.replacer,
+		buf:      &bytes.Buffer{},
+		done:     make(chan struct{}),
+	}
+
 	l.handles <- handle
 	return handle
 }
@@ -120,7 +155,6 @@ func (l *Logger) writeEntries() {
 
 	var wg sync.WaitGroup
 	for handle := range l.handles {
-
 		initialLogEntry := handle.CurrentLogEntry()
 		entryID, err := l.store.AddExecutionLogEntry(context.Background(), l.recordID, initialLogEntry)
 		if err != nil {
@@ -128,9 +162,12 @@ func (l *Logger) writeEntries() {
 			// writing these logs as users will often want to see how far something
 			// progressed prior to a timeout.
 			log15.Warn("Failed to upload executor log entry for job", "id", l.recordID, "repositoryName", l.job.RepositoryName, "commit", l.job.Commit, "error", err)
+
+			l.appendError(err)
+
 			continue
 		}
-		log15.Info("Writing log entry", "jobID", l.job.ID, "entryID", entryID, "repositoryName", l.job.RepositoryName, "commit", l.job.Commit)
+		log15.Debug("Writing log entry", "jobID", l.job.ID, "entryID", entryID, "repositoryName", l.job.RepositoryName, "commit", l.job.Commit)
 
 		wg.Add(1)
 		go func(handle *entryHandle, entryID int, initialLogEntry workerutil.ExecutionLogEntry) {
@@ -177,12 +214,15 @@ func (l *Logger) syncLogEntry(handle *entryHandle, entryID int, old workerutil.E
 			logArgs = append(logArgs, "durationMs", current.DurationMs)
 		}
 
-		log15.Info("Updating executor log entry", logArgs...)
+		log15.Debug("Updating executor log entry", logArgs...)
 
 		if err := l.store.UpdateExecutionLogEntry(context.Background(), l.recordID, entryID, current); err != nil {
 			logMethod := log15.Warn
 			if lastWrite {
 				logMethod = log15.Error
+				// If lastWrite, this MUST complete for the job to be considered successful,
+				// so we want to hard-fail otherwise. We store away the error.
+				l.appendError(err)
 			}
 
 			logMethod(
@@ -198,6 +238,12 @@ func (l *Logger) syncLogEntry(handle *entryHandle, entryID int, old workerutil.E
 			old = current
 		}
 	}
+}
+
+func (l *Logger) appendError(err error) {
+	l.errsMu.Lock()
+	l.errs = errors.Append(l.errs, err)
+	l.errsMu.Unlock()
 }
 
 // If old didn't have exit code or duration and current does, update; we're finished.

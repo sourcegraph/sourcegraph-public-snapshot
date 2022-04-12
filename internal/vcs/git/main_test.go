@@ -21,10 +21,17 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
 var root string
+
+// This is a default gitserver test client currently used for RequestRepoUpdate
+// gitserver calls during invocation of MakeGitRepository function
+var testGitserverClient *gitserver.ClientImplementor
 
 func TestMain(m *testing.M) {
 	flag.Parse()
@@ -74,8 +81,10 @@ func init() {
 		}
 	}()
 
-	gitserver.DefaultClient.Addrs = func() []string {
-		return []string{l.Addr().String()}
+	serverAddress := l.Addr().String()
+	testGitserverClient = gitserver.NewTestClient(httpcli.InternalDoer, database.NewMockDB(), []string{serverAddress})
+	gitserver.AddrsMock = func() []string {
+		return []string{serverAddress}
 	}
 }
 
@@ -129,7 +138,7 @@ func MakeGitRepository(t testing.TB, cmds ...string) api.RepoName {
 	t.Helper()
 	dir := InitGitRepository(t, cmds...)
 	repo := api.RepoName(filepath.Base(dir))
-	if resp, err := gitserver.DefaultClient.RequestRepoUpdate(context.Background(), repo, 0); err != nil {
+	if resp, err := testGitserverClient.RequestRepoUpdate(context.Background(), repo, 0); err != nil {
 		t.Fatal(err)
 	} else if resp.Error != "" {
 		t.Fatal(resp.Error)
@@ -137,7 +146,7 @@ func MakeGitRepository(t testing.TB, cmds ...string) api.RepoName {
 	return repo
 }
 
-func CommitsEqual(a, b *Commit) bool {
+func CommitsEqual(a, b *gitdomain.Commit) bool {
 	if (a == nil) != (b == nil) {
 		return false
 	}

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func snapshot(logger *log.Logger, src, dst string) error {

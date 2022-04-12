@@ -33,7 +33,20 @@ export async function injectCodeIntelligence(
             childList: true,
             subtree: true,
         }).pipe(startWith([{ addedNodes: [document.body], removedNodes: [] }]))
-        subscriptions.add(injectCodeIntelligenceToCodeHost(mutations, codeHost, urls, isExtension))
+
+        let previousSubscription: Subscription
+
+        subscriptions.add(
+            codeHost.routeChange
+                ? codeHost.routeChange(mutations).subscribe(() => {
+                      if (previousSubscription) {
+                          previousSubscription.unsubscribe()
+                      }
+
+                      previousSubscription = injectCodeIntelligenceToCodeHost(mutations, codeHost, urls, isExtension)
+                  })
+                : injectCodeIntelligenceToCodeHost(mutations, codeHost, urls, isExtension)
+        )
     }
     return subscriptions
 }

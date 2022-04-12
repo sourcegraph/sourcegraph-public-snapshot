@@ -1,6 +1,6 @@
 import '@sourcegraph/shared/src/polyfills'
 
-import { setLinkComponent, AnchorLink } from '@sourcegraph/shared/src/components/Link'
+import { setLinkComponent, AnchorLink } from '@sourcegraph/wildcard'
 
 import { injectCodeIntelligence } from '../shared/code-hosts/shared/inject'
 import {
@@ -13,6 +13,21 @@ import { getAssetsURL } from '../shared/util/context'
 const IS_EXTENSION = false
 
 setLinkComponent(AnchorLink)
+
+interface InsertStyleSheetOptions {
+    id: string
+    path: string
+    assetsURL: string
+}
+
+function insertStyleSheet({ id, path, assetsURL }: InsertStyleSheetOptions): void {
+    const link = document.createElement('link')
+    link.setAttribute('rel', 'stylesheet')
+    link.setAttribute('type', 'text/css')
+    link.setAttribute('href', new URL(path, assetsURL).href)
+    link.id = id
+    document.head.append(link)
+}
 
 function init(): void {
     console.log('Sourcegraph native integration is running')
@@ -30,12 +45,8 @@ function init(): void {
     } else {
         injectExtensionMarker()
     }
-    const link = document.createElement('link')
-    link.setAttribute('rel', 'stylesheet')
-    link.setAttribute('type', 'text/css')
-    link.setAttribute('href', new URL('css/style.bundle.css', assetsURL).href)
-    link.id = 'sourcegraph-styles'
-    document.head.append(link)
+    insertStyleSheet({ id: 'sourcegraph-styles', path: 'css/style.bundle.css', assetsURL })
+    insertStyleSheet({ id: 'sourcegraph-styles-css-modules', path: 'css/inject.bundle.css', assetsURL })
     window.localStorage.setItem('SOURCEGRAPH_URL', sourcegraphURL)
     window.SOURCEGRAPH_URL = sourcegraphURL
     // TODO handle subscription

@@ -1,7 +1,9 @@
-import { createMemoryHistory, createLocation } from 'history'
 import React from 'react'
+
+import { createMemoryHistory, createLocation } from 'history'
 import { MemoryRouter } from 'react-router'
-import renderer from 'react-test-renderer'
+
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { AuthenticatedUser } from '../auth'
 import { SourcegraphContext } from '../jscontext'
@@ -28,45 +30,41 @@ describe('SignInPage', () => {
 
     it('renders sign in page (server)', () => {
         expect(
-            renderer
-                .create(
-                    <MemoryRouter>
-                        <SignInPage
-                            {...commonProps}
-                            authenticatedUser={null}
-                            context={{
-                                allowSignup: true,
-                                sourcegraphDotComMode: false,
-                                authProviders,
-                                resetPasswordEnabled: true,
-                                xhrHeaders: {},
-                            }}
-                        />
-                    </MemoryRouter>
-                )
-                .toJSON()
+            renderWithBrandedContext(
+                <MemoryRouter>
+                    <SignInPage
+                        {...commonProps}
+                        authenticatedUser={null}
+                        context={{
+                            allowSignup: true,
+                            sourcegraphDotComMode: false,
+                            authProviders,
+                            resetPasswordEnabled: true,
+                            xhrHeaders: {},
+                        }}
+                    />
+                </MemoryRouter>
+            ).asFragment()
         ).toMatchSnapshot()
     })
 
     it('renders sign in page (cloud)', () => {
         expect(
-            renderer
-                .create(
-                    <MemoryRouter>
-                        <SignInPage
-                            {...commonProps}
-                            authenticatedUser={null}
-                            context={{
-                                allowSignup: true,
-                                sourcegraphDotComMode: true,
-                                authProviders,
-                                resetPasswordEnabled: true,
-                                xhrHeaders: {},
-                            }}
-                        />
-                    </MemoryRouter>
-                )
-                .toJSON()
+            renderWithBrandedContext(
+                <MemoryRouter>
+                    <SignInPage
+                        {...commonProps}
+                        authenticatedUser={null}
+                        context={{
+                            allowSignup: true,
+                            sourcegraphDotComMode: true,
+                            authProviders,
+                            resetPasswordEnabled: true,
+                            xhrHeaders: {},
+                        }}
+                    />
+                </MemoryRouter>
+            ).asFragment()
         ).toMatchSnapshot()
     })
 
@@ -80,23 +78,21 @@ describe('SignInPage', () => {
         } as AuthenticatedUser
 
         expect(
-            renderer
-                .create(
-                    <MemoryRouter>
-                        <SignInPage
-                            {...commonProps}
-                            authenticatedUser={mockUser}
-                            context={{
-                                allowSignup: true,
-                                sourcegraphDotComMode: false,
-                                authProviders,
-                                xhrHeaders: {},
-                                resetPasswordEnabled: true,
-                            }}
-                        />
-                    </MemoryRouter>
-                )
-                .toJSON()
+            renderWithBrandedContext(
+                <MemoryRouter>
+                    <SignInPage
+                        {...commonProps}
+                        authenticatedUser={mockUser}
+                        context={{
+                            allowSignup: true,
+                            sourcegraphDotComMode: false,
+                            authProviders,
+                            xhrHeaders: {},
+                            resetPasswordEnabled: true,
+                        }}
+                    />
+                </MemoryRouter>
+            ).asFragment()
         ).toMatchSnapshot()
     })
 })

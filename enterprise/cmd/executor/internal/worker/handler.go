@@ -8,10 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
-	"github.com/hashicorp/go-multierror"
-	"github.com/honeycombio/libhoney-go"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
@@ -20,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type handler struct {
@@ -30,8 +28,10 @@ type handler struct {
 	runnerFactory func(dir string, logger *command.Logger, options command.Options, operations *command.Operations) command.Runner
 }
 
-var _ workerutil.Handler = &handler{}
-var _ workerutil.WithPreDequeue = &handler{}
+var (
+	_ workerutil.Handler        = &handler{}
+	_ workerutil.WithPreDequeue = &handler{}
+)
 
 // PreDequeue determines if the number of VMs with the current instance's VM Prefix is less than
 // the maximum number of concurrent handlers. If so, then a new job can be dequeued. Otherwise,
@@ -61,16 +61,6 @@ func (h *handler) PreDequeue(ctx context.Context) (dequeueable bool, extraDequeu
 // fresh docker container, and uploads the results to the external frontend API.
 func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err error) {
 	job := record.(executor.Job)
-	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(h.options.MaximumRuntimePerJob))
-	defer cancel()
-
-	wrapError := func(err error, message string) error {
-		if errors.Is(err, context.DeadlineExceeded) {
-			err = errors.Errorf("job exceeded maximum execution time of %s", h.options.MaximumRuntimePerJob)
-		}
-
-		return errors.Wrap(err, message)
-	}
 
 	start := time.Now()
 	defer func() {
@@ -86,7 +76,16 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 	// variables, and the user-specified commands (which could leak their environment) are
 	// run in a clean VM.
 	logger := command.NewLogger(h.store, job, record.RecordID(), union(h.options.RedactedValues, job.RedactedValues))
-	defer logger.Flush()
+	defer func() {
+		flushErr := logger.Flush()
+		if flushErr != nil {
+			if err != nil {
+				err = errors.Append(err, flushErr)
+			} else {
+				err = flushErr
+			}
+		}
+	}()
 
 	// Create a working directory for this job which will be removed once the job completes.
 	// If a repository is supplied as part of the job configuration, it will be cloned into
@@ -97,27 +96,11 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 	hostRunner := h.runnerFactory("", logger, command.Options{}, h.operations)
 	workingDirectory, err := h.prepareWorkspace(ctx, hostRunner, job.RepositoryName, job.Commit)
 	if err != nil {
-		return wrapError(err, "failed to prepare workspace")
+		return errors.Wrap(err, "failed to prepare workspace")
 	}
 	defer func() {
 		_ = os.RemoveAll(workingDirectory)
 	}()
-
-	// Copy the file contents from the job record into the working directory
-	for relativePath, content := range job.VirtualMachineFiles {
-		path, err := filepath.Abs(filepath.Join(workingDirectory, relativePath))
-		if err != nil {
-			return err
-		}
-
-		if !strings.HasPrefix(path, workingDirectory) {
-			return errors.Errorf("refusing to write outside of working directory")
-		}
-
-		if err := os.WriteFile(path, []byte(content), os.ModePerm); err != nil {
-			return err
-		}
-	}
 
 	vmNameSuffix, err := uuid.NewRandom()
 	if err != nil {
@@ -143,30 +126,48 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 	}
 	runner := h.runnerFactory(workingDirectory, logger, options, h.operations)
 
+	// Construct a map from filenames to file content that should be accessible to jobs
+	// within the workspace. This consists of files supplied within the job record itself,
+	// as well as file-version of each script step.
+	workspaceFileContentsByPath := map[string][]byte{}
+
+	for relativePath, content := range job.VirtualMachineFiles {
+		path, err := filepath.Abs(filepath.Join(workingDirectory, relativePath))
+		if err != nil {
+			return err
+		}
+		if !strings.HasPrefix(path, workingDirectory) {
+			return errors.Errorf("refusing to write outside of working directory")
+		}
+
+		workspaceFileContentsByPath[path] = []byte(content)
+	}
+
 	scriptNames := make([]string, 0, len(job.DockerSteps))
 	for i, dockerStep := range job.DockerSteps {
 		scriptName := scriptNameFromJobStep(job, i)
-		scriptPath := filepath.Join(workingDirectory, command.ScriptsPath, scriptName)
-
-		if err := os.WriteFile(scriptPath, buildScript(dockerStep), os.ModePerm); err != nil {
-			return err
-		}
-
 		scriptNames = append(scriptNames, scriptName)
+
+		path := filepath.Join(workingDirectory, command.ScriptsPath, scriptName)
+		workspaceFileContentsByPath[path] = buildScript(dockerStep)
+	}
+
+	if err := writeFiles(workspaceFileContentsByPath, logger); err != nil {
+		return errors.Wrap(err, "failed to write virtual machine files")
 	}
 
 	log15.Info("Setting up VM", "jobID", job.ID, "repositoryName", job.RepositoryName, "commit", job.Commit)
 
 	// Setup Firecracker VM (if enabled)
 	if err := runner.Setup(ctx); err != nil {
-		return wrapError(err, "failed to setup virtual machine")
+		return errors.Wrap(err, "failed to setup virtual machine")
 	}
 	defer func() {
 		// Perform this outside of the task execution context. If there is a timeout or
 		// cancellation error we don't want to skip cleaning up the resources that we've
 		// allocated for the current task.
 		if teardownErr := runner.Teardown(context.Background()); teardownErr != nil {
-			err = multierror.Append(err, teardownErr)
+			err = errors.Append(err, teardownErr)
 		}
 	}()
 
@@ -184,7 +185,7 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 		log15.Info(fmt.Sprintf("Running docker step #%d", i), "jobID", job.ID, "repositoryName", job.RepositoryName, "commit", job.Commit)
 
 		if err := runner.Run(ctx, dockerStepCommand); err != nil {
-			return wrapError(err, "failed to perform docker step")
+			return errors.Wrap(err, "failed to perform docker step")
 		}
 	}
 
@@ -201,7 +202,7 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 		}
 
 		if err := runner.Run(ctx, cliStepCommand); err != nil {
-			return wrapError(err, "failed to perform src-cli step")
+			return errors.Wrap(err, "failed to perform src-cli step")
 		}
 	}
 
@@ -233,7 +234,29 @@ func scriptNameFromJobStep(job executor.Job, i int) string {
 	return fmt.Sprintf("%d.%d_%s@%s.sh", job.ID, i, strings.ReplaceAll(job.RepositoryName, "/", "_"), job.Commit)
 }
 
-func createHoneyEvent(ctx context.Context, job executor.Job, err error, duration time.Duration) *libhoney.Event {
+// writeFiles writes to the filesystem the content in the given map.
+func writeFiles(workspaceFileContentsByPath map[string][]byte, logger *command.Logger) (err error) {
+	handle := logger.Log("setup.fs", nil)
+	defer func() {
+		if err == nil {
+			handle.Finalize(0)
+		} else {
+			handle.Finalize(1)
+		}
+
+		handle.Close()
+	}()
+
+	for path, content := range workspaceFileContentsByPath {
+		if err := os.WriteFile(path, content, os.ModePerm); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func createHoneyEvent(_ context.Context, job executor.Job, err error, duration time.Duration) honey.Event {
 	fields := map[string]interface{}{
 		"duration_ms":    duration.Milliseconds(),
 		"recordID":       job.RecordID(),
@@ -247,5 +270,5 @@ func createHoneyEvent(ctx context.Context, job executor.Job, err error, duration
 		fields["error"] = err.Error()
 	}
 
-	return honey.EventWithFields("executor", fields)
+	return honey.NewEventWithFields("executor", fields)
 }

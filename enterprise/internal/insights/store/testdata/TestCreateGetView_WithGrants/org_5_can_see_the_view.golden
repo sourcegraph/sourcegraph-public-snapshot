@@ -1,4 +1,5 @@
-[]types.InsightViewSeries{types.InsightViewSeries{
+[]types.InsightViewSeries{{
+	ViewID:             1,
 	UniqueID:           "user1viewonly",
 	SeriesID:           "series1",
 	Title:              "user 1 view only",
@@ -11,5 +12,8 @@
 	LastSnapshotAt:     time.Time{ext: 63713433600},
 	NextSnapshotAfter:  time.Time{ext: 63713433600},
 	Label:              "label1",
-	Stroke:             "blue",
+	LineColor:          "blue",
+	SampleIntervalUnit: "MONTH",
+	PresentationType:   types.PresentationType("LINE"),
+	GenerationMethod:   types.GenerationMethod("search"),
 }}

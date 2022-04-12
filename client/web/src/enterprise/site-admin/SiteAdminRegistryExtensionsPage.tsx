@@ -1,17 +1,18 @@
+import * as React from 'react'
+
 import * as H from 'history'
 import AddIcon from 'mdi-react/AddIcon'
-import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { Button, ButtonLink, Link, Icon } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
-import { ErrorAlert } from '../../components/alerts'
 import { FilteredConnection, FilteredConnectionFilter } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
@@ -94,33 +95,38 @@ class RegistryExtensionNodeSiteAdminRow extends React.PureComponent<
                     </div>
                     <div className="d-flex align-items-center">
                         {this.props.node.viewerCanAdminister && (
-                            <Link
+                            <Button
                                 to={`${this.props.node.url}/-/manage`}
-                                className="btn btn-secondary btn-sm"
                                 title="Manage extension"
+                                variant="secondary"
+                                size="sm"
+                                as={Link}
                             >
                                 Manage
-                            </Link>
+                            </Button>
                         )}
                         {!this.props.node.isLocal && this.props.node.remoteURL && this.props.node.registryName && (
-                            <a
-                                href={this.props.node.remoteURL}
-                                className="btn btn-link text-info btn-sm ml-1"
+                            <ButtonLink
+                                to={this.props.node.remoteURL}
+                                className="text-info ml-1"
                                 title={`View extension on ${this.props.node.registryName}`}
+                                variant="link"
+                                size="sm"
                             >
                                 Visit
-                            </a>
+                            </ButtonLink>
                         )}
                         {this.props.node.viewerCanAdminister && (
-                            <button
-                                type="button"
-                                className="btn btn-danger btn-sm ml-1"
+                            <Button
+                                className="ml-1"
                                 onClick={this.deleteExtension}
                                 disabled={loading}
                                 title="Delete extension"
+                                variant="danger"
+                                size="sm"
                             >
                                 Delete
-                            </button>
+                            </Button>
                         )}
                     </div>
                 </div>
@@ -184,12 +190,12 @@ export class SiteAdminRegistryExtensionsPage extends React.PureComponent<Props> 
                 <div className="d-flex justify-content-between align-items-center mb-3">
                     <h2 className="mb-0">Registry extensions</h2>
                     <div>
-                        <Link className="btn btn-link mr-sm-2" to="/extensions">
+                        <Button className="mr-sm-2" to="/extensions" variant="link" as={Link}>
                             View extensions
-                        </Link>
-                        <Link className="btn btn-primary" to="/extensions/registry/new">
-                            <AddIcon className="icon-inline" /> Publish new extension
-                        </Link>
+                        </Button>
+                        <Button to="/extensions/registry/new" variant="primary" as={Link}>
+                            <Icon as={AddIcon} /> Publish new extension
+                        </Button>
                     </div>
                 </div>
                 <p>

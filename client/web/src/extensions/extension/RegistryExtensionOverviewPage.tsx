@@ -1,16 +1,15 @@
+import React, { useMemo, useEffect } from 'react'
+
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import maxDate from 'date-fns/max'
 import { isObject } from 'lodash'
 import GithubIcon from 'mdi-react/GithubIcon'
-import React, { useMemo, useEffect } from 'react'
-import { Link } from 'react-router-dom'
 
+import { isErrorLike, isDefined, isEncodedImage } from '@sourcegraph/common'
 import { splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionCategory, ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { isEncodedImage } from '@sourcegraph/shared/src/util/icon'
-import { isDefined } from '@sourcegraph/shared/src/util/types'
+import { Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
@@ -18,9 +17,10 @@ import { DefaultExtensionIcon, DefaultSourcegraphExtensionIcon, SourcegraphExten
 
 import { extensionsQuery, urlToExtensionsQuery, validCategories } from './extension'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
-import styles from './RegistryExtensionOverviewPage.module.scss'
 import { ExtensionReadme } from './RegistryExtensionReadme'
 import { SourcegraphExtensionFeedback } from './SourcegraphExtensionFeedback'
+
+import styles from './RegistryExtensionOverviewPage.module.scss'
 
 interface Props extends Pick<ExtensionAreaRouteContext, 'extension' | 'telemetryService' | 'isLightTheme'> {}
 
@@ -146,26 +146,26 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                             </Link>
                         )}
                         {extension.manifest && !isErrorLike(extension.manifest) && extension.manifest.url && (
-                            <a
-                                href={extension.manifest.url}
+                            <Link
+                                to={extension.manifest.url}
                                 target="_blank"
                                 rel="nofollow noopener noreferrer"
                                 className="d-block mb-1"
                             >
                                 Source code (JavaScript)
-                            </a>
+                            </Link>
                         )}
                         {repositoryURL && (
                             <div className="d-flex">
-                                {repositoryURL.hostname === 'github.com' && <GithubIcon className="icon-inline mr-1" />}
-                                <a
-                                    href={repositoryURL.href}
+                                {repositoryURL.hostname === 'github.com' && <Icon className="mr-1" as={GithubIcon} />}
+                                <Link
+                                    to={repositoryURL.href}
                                     rel="nofollow noreferrer noopener"
                                     target="_blank"
                                     className="d-block"
                                 >
                                     Repository
-                                </a>
+                                </Link>
                             </div>
                         )}
                     </small>
@@ -179,15 +179,18 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                 {categories && (
                     <div className={classNames('pb-0', styles.sidebarSection)}>
                         <h3>Categories</h3>
-                        <ul className="list-inline test-registry-extension-categories">
+                        <ul className="list-inline" data-testid="test-registry-extension-categories">
                             {categories.map(category => (
                                 <li key={category} className="list-inline-item mb-2">
-                                    <Link
+                                    <Button
                                         to={urlToExtensionsQuery({ category })}
-                                        className="btn btn-outline-secondary btn-sm"
+                                        variant="secondary"
+                                        outline={true}
+                                        size="sm"
+                                        as={Link}
                                     >
                                         {category}
-                                    </Link>
+                                    </Button>
                                 </li>
                             ))}
                         </ul>
@@ -203,12 +206,16 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                             <ul className="list-inline">
                                 {extension.manifest.tags.map(tag => (
                                     <li key={tag} className="list-inline-item mb-2">
-                                        <Link
+                                        <Button
                                             to={urlToExtensionsQuery({ query: extensionsQuery({ tag }) })}
-                                            className={classNames('btn btn-outline-secondary btn-sm', styles.tag)}
+                                            className={styles.tag}
+                                            variant="secondary"
+                                            outline={true}
+                                            size="sm"
+                                            as={Link}
                                         >
                                             {tag}
-                                        </Link>
+                                        </Button>
                                     </li>
                                 ))}
                             </ul>

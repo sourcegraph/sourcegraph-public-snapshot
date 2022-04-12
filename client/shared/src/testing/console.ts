@@ -6,7 +6,7 @@ import { ConsoleMessage, ConsoleMessageType, Page } from 'puppeteer'
 import stringWidth from 'string-width'
 import terminalSize from 'term-size'
 
-import { asError } from '../util/errors'
+import { asError } from '@sourcegraph/common'
 
 const colors: Partial<Record<ConsoleMessageType, Chalk>> = {
     error: chalk.red,
@@ -57,7 +57,7 @@ export async function formatPuppeteerConsoleMessage(
           []
         : await Promise.allSettled(
               message.args().map(async argumentHandle => {
-                  const json = (await (
+                  const json = await (
                       await argumentHandle.evaluateHandle(value =>
                           JSON.stringify(value, (key, value: unknown) => {
                               // Check if value is error, because Errors are not serializable but commonly logged
@@ -67,8 +67,8 @@ export async function formatPuppeteerConsoleMessage(
                               return value
                           })
                       )
-                  ).jsonValue()) as string
-                  const parsed: unknown = JSON.parse(json)
+                  ).jsonValue()
+                  const parsed: unknown = JSON.parse(json as string)
                   return parsed
               })
           )

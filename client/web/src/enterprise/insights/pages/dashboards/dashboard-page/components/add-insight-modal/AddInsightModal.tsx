@@ -1,35 +1,32 @@
-import Dialog from '@reach/dialog'
-import { VisuallyHidden } from '@reach/visually-hidden'
-import classnames from 'classnames'
-import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useContext, useMemo } from 'react'
 
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { asError } from '@sourcegraph/shared/src/util/errors'
+import { VisuallyHidden } from '@reach/visually-hidden'
+import CloseIcon from 'mdi-react/CloseIcon'
+
+import { asError } from '@sourcegraph/common'
+import { Button, LoadingSpinner, useObservable, Modal } from '@sourcegraph/wildcard'
 
 import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
-import { InsightsApiContext } from '../../../../../core/backend/api-provider'
-import { updateDashboardInsightIds } from '../../../../../core/settings-action/dashboards'
-import { SettingsBasedInsightDashboard } from '../../../../../core/types'
+import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
+import { CustomInsightDashboard } from '../../../../../core/types'
 
-import styles from './AddInsightModal.module.scss'
 import {
     AddInsightFormValues,
     AddInsightModalContent,
 } from './components/add-insight-modal-content/AddInsightModalContent'
-import { useReachableInsights } from './hooks/use-reachable-insights'
 
-export interface AddInsightModalProps extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {
-    dashboard: SettingsBasedInsightDashboard
+import styles from './AddInsightModal.module.scss'
+
+export interface AddInsightModalProps {
+    dashboard: CustomInsightDashboard
     onClose: () => void
 }
 
 export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = props => {
-    const { dashboard, settingsCascade, platformContext, onClose } = props
-    const { getSubjectSettings, updateSubjectSettings } = useContext(InsightsApiContext)
+    const { dashboard, onClose } = props
+    const { getAccessibleInsightsList, assignInsightsToDashboard } = useContext(CodeInsightsBackendContext)
 
-    const insights = useReachableInsights({ ownerId: dashboard.owner.id, settingsCascade })
+    const insights = useObservable(useMemo(() => getAccessibleInsightsList(), [getAccessibleInsightsList]))
 
     const initialValues = useMemo<AddInsightFormValues>(
         () => ({
@@ -42,23 +39,33 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
     const handleSubmit = async (values: AddInsightFormValues): Promise<void | SubmissionErrors> => {
         try {
             const { insightIds } = values
-            const settings = await getSubjectSettings(dashboard.owner.id).toPromise()
 
-            const editedSettings = updateDashboardInsightIds(settings.contents, dashboard.settingsKey, insightIds)
+            await assignInsightsToDashboard({
+                id: dashboard.id,
+                prevInsightIds: dashboard.insightIds ?? [],
+                nextInsightIds: insightIds,
+            }).toPromise()
 
-            await updateSubjectSettings(platformContext, dashboard.owner.id, editedSettings).toPromise()
             onClose()
         } catch (error) {
             return { [FORM_ERROR]: asError(error) }
         }
     }
 
+    if (insights === undefined) {
+        return (
+            <Modal className={styles.modal} aria-label="Add insights to dashboard modal">
+                <LoadingSpinner inline={false} />
+            </Modal>
+        )
+    }
+
     return (
-        <Dialog className={styles.modal} onDismiss={onClose} aria-label="Add insights to dashboard modal">
-            <button type="button" className={classnames('btn btn-icon', styles.closeButton)} onClick={onClose}>
+        <Modal className={styles.modal} onDismiss={onClose} aria-label="Add insights to dashboard modal">
+            <Button variant="icon" className={styles.closeButton} onClick={onClose}>
                 <VisuallyHidden>Close</VisuallyHidden>
                 <CloseIcon />
-            </button>
+            </Button>
 
             <h2 className="mb-3">
                 Add insight to <q>{dashboard.title}</q>
@@ -70,10 +77,11 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
                 <AddInsightModalContent
                     initialValues={initialValues}
                     insights={insights}
+                    dashboardID={dashboard.id}
                     onCancel={onClose}
                     onSubmit={handleSubmit}
                 />
             )}
-        </Dialog>
+        </Modal>
     )
 }

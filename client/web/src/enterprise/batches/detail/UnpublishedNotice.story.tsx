@@ -1,7 +1,8 @@
-import { storiesOf } from '@storybook/react'
 import React from 'react'
 
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { storiesOf } from '@storybook/react'
+
+import { WebStory } from '../../../components/WebStory'
 
 import { UnpublishedNotice } from './UnpublishedNotice'
 
@@ -9,6 +10,4 @@ const { add } = storiesOf('web/batches/details/UnpublishedNotice', module).addDe
     <div className="p-3 container">{story()}</div>
 ))
 
-add('None published', () => (
-    <EnterpriseWebStory>{() => <UnpublishedNotice unpublished={10} total={10} />}</EnterpriseWebStory>
-))
+add('None published', () => <WebStory>{() => <UnpublishedNotice unpublished={10} total={10} />}</WebStory>)

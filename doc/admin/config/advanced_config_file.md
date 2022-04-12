@@ -1,39 +1,59 @@
-# Loading configuration via the file system (advanced)
+# Loading configuration via the file system (declarative config)
 
-Some teams require Sourcegraph configuration to be stored in version control as opposed to editing via the Site admin UI.
+Some teams require Sourcegraph configuration to be stored in version control as opposed to editing via the Site admin
+UI.
 
-As of Sourcegraph v3.4+, this is possible for [site configuration](site_config.md), [code host configuration](../external_service/index.md), and global settings.
+As of Sourcegraph v3.4+, this is possible for [site configuration](site_config.md)
+, [code host configuration](../external_service/index.md), and global settings. As of Sourcegraph v3.34+, Sourcegraph
+supports merging multiple site config files.
 
 ## Benefits
 
 1. Configuration can be checked into version control (e.g., Git).
-1. Configuration is enforced across the entire instance, and edits cannot be made via the web UI (by default).
+2. Configuration is enforced across the entire instance, and edits cannot be made via the web UI (by default).
+3. Declarative site-config
+4. Sourcegraph watches the config file for changes and applies any new updates to the corresponding external services.
 
 ## Drawbacks
 
 Loading configuration in this manner has two significant drawbacks:
 
-1. You will no longer be able to save configuration edits through the web UI by default (you can use the web UI as scratch space, though).
-1. Sourcegraph sometimes performs automatic migrations of configuration when upgrading versions. This process will now be more manual for you (see below).
+1. You will no longer be able to save configuration edits through the web UI by default (you can use the web UI as
+   scratch space, though).
+2. Sourcegraph sometimes performs automatic migrations of configuration when upgrading versions. This process will now
+   be more manual for you (see below).
+3. Site-config contains **sensitive information** (see [Merging site config](#merging-site-configuration) for
+   mitigations)
 
 ## Site configuration
 
 Set `SITE_CONFIG_FILE=site.json` on:
 
-- [Docker Compose](../install/docker-compose/index.md) and [Kubernetes](../install/kubernetes/index.md): all `frontend` containers
+- [Docker Compose](../install/docker-compose/index.md) and [Kubernetes](../install/kubernetes/index.md): all `frontend`
+  containers
 - [Single-container](../install/docker/index.md): the `sourcegraph/server` container
 
-Where `site.json` is a file that contains the [site configuration](site_config.md), which you would otherwise edit through the in-app site configuration editor.
+Where `site.json` is a file that contains the [site configuration](site_config.md), which you would otherwise edit
+through the in-app site configuration editor.
 
-If you want to _allow_ edits to be made through the web UI (which will be overwritten with what is in the file on a subsequent restart), you may additionally set `SITE_CONFIG_ALLOW_EDITS=true`.
+If you want to _allow_ edits to be made through the web UI (which will be overwritten with what is in the file on a
+subsequent restart), you may additionally set `SITE_CONFIG_ALLOW_EDITS=true`.
 
 > NOTE: If you do enable this, it is your responsibility to ensure the configuration on your instance and in the file remain in sync.
+
+### Merging site-configuration
+
+You may separate your site-config into a sensitive and non-sensitive `jsonc` / `json`. Set the env
+var `SITE_CONFIG_FILE=/etc/site.json:/other/sensitive-site-config.json`. Note the path separator of `:`
+
+This will merge both files. Sourcegraph will need access both files.
 
 ## Code host configuration
 
 Set `EXTSVC_CONFIG_FILE=extsvc.json` on:
 
-- [Docker Compose](../install/docker-compose/index.md) and [Kubernetes](../install/kubernetes/index.md): all `frontend` containers
+- [Docker Compose](../install/docker-compose/index.md) and [Kubernetes](../install/kubernetes/index.md): all `frontend`
+  containers
 - [Single-container](../install/docker/index.md): the `sourcegraph/server` container
 
 Where `extsvc.json` contains a JSON object that specifies _all_ of your code hosts in a single JSONC file:
@@ -202,5 +222,57 @@ site.json
 ```
 
 Similarly, because we set the environment variables to use those configuration files, the frontend should have loaded them into the database upon startup. You should now see Sourcegraph configured!
+
+## Transitioning to configuration via the file system
+
+Transitioning from a UI based configuration to file system based configuration can be accomplished following the steps above but there are some things to be considered.
+
+Sourcegraph reads from the new `extsvc.json` file and creates a new entry in the database for any _new_ code host config it finds there. **This will not cause a reclone of the repositories synced via the UI based configs**. However it is still advised that admins prevent the generation of duplicate code host configurations.
+
+As Sourcegraph reads from an `extsvc.json` file it reads from the top level schema and creates a new config with display name `<codehost type> #<position in json>` For example in the `extsvc.config` below GITHUB #1, GITHUB #2, GITHUB #3, and GITLAB #1 external service configs will be generated.
+
+```json
+    {
+      "GITHUB": [
+        {
+          "url": "https://github.com",
+          "token": "secret",
+          "repos": [
+            "latveria/doombot",
+            "latveria/darkhold",
+            "latveria/timemachine"
+          ]
+        },
+        {
+          "url": "https://github.com",
+          "token": "secret",
+          "orgs": ["sourcegraph"]
+        },
+        {
+          "url": "https://github.com",
+          "token": "secret",
+          "orgs": [],
+          "repos": [
+            "grafana/grafana",
+            "sourcegraph/deploy-sourcegraph-twit-test",
+            "kubernetes/kubernetes",
+          ]
+        }
+      ],
+      "GITLAB": [
+        {
+          "url": "https://gitlab.com",
+          "token": "secret",
+          "projectQuery": [
+            "projects?membership=true&archived=no"
+          ]
+        }
+      ]
+    } 
+```
+
+You can avoid generation of a new config by changing the display name of your UI based config to match the relative display name which will be generated by the new `extsvc.json` file. For Sourcegraph to view a codehost config as already present its `display_name`, `kind`, and `config` **must not** change. You can take a look at these values in the database by running the following SQL query:
+
+`sg=# select id, display_name, kind, config from external_services order by id;`
 
 If you encounter any issues, please [contact us](mailto:support@sourcegraph.com).

@@ -7,14 +7,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // SudoProvider is an implementation of AuthzProvider that provides repository permissions as
@@ -67,7 +66,7 @@ func newSudoProvider(op SudoProviderOp, cli httpcli.Doer) *SudoProvider {
 		sudoToken: op.SudoToken,
 
 		urn:               op.URN,
-		clientProvider:    gitlab.NewClientProvider(op.BaseURL, cli),
+		clientProvider:    gitlab.NewClientProvider(op.URN, op.BaseURL, cli),
 		clientURL:         op.BaseURL,
 		codeHost:          extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
 		authnConfigID:     op.AuthnConfigID,
@@ -76,8 +75,8 @@ func newSudoProvider(op SudoProviderOp, cli httpcli.Doer) *SudoProvider {
 	}
 }
 
-func (p *SudoProvider) Validate() (problems []string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+func (p *SudoProvider) ValidateConnection(ctx context.Context) (problems []string) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	if _, _, err := p.clientProvider.GetPATClient(p.sudoToken, "1").ListProjects(ctx, "projects"); err != nil {
 		if err == ctx.Err() {
@@ -209,6 +208,13 @@ func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Accou
 	}
 
 	client := p.clientProvider.GetPATClient(p.sudoToken, strconv.Itoa(int(user.ID)))
+	return listProjects(ctx, client)
+}
+
+// FetchUserPermsByToken is the same as FetchUserPerms, but it only requires a
+// token.
+func (p *SudoProvider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+	client := p.clientProvider.GetOAuthClient(token)
 	return listProjects(ctx, client)
 }
 

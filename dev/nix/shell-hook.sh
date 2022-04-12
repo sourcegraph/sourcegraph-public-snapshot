@@ -10,9 +10,6 @@
 
 pushd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null || exit
 
-# TODO build with nix
-NIX_ENFORCE_PURITY=0 ../libsqlite3-pcre/build.sh
-
 . ./start-postgres.sh
 . ./start-redis.sh
 

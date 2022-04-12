@@ -15,7 +15,7 @@ func TestIntegration(t *testing.T) {
 
 	t.Parallel()
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	t.Run("Store", func(t *testing.T) {
 		t.Run("BatchChanges", storeTest(db, nil, testStoreBatchChanges))
@@ -34,10 +34,10 @@ func TestIntegration(t *testing.T) {
 		t.Run("UserDeleteCascades", storeTest(db, nil, testUserDeleteCascades))
 		t.Run("ChangesetJobs", storeTest(db, nil, testStoreChangesetJobs))
 		t.Run("BulkOperations", storeTest(db, nil, testStoreBulkOperations))
-		t.Run("BatchSpecExecutions", storeTest(db, nil, testStoreBatchSpecExecutions))
 		t.Run("BatchSpecWorkspaces", storeTest(db, nil, testStoreBatchSpecWorkspaces))
 		t.Run("BatchSpecWorkspaceExecutionJobs", storeTest(db, nil, testStoreBatchSpecWorkspaceExecutionJobs))
 		t.Run("BatchSpecResolutionJobs", storeTest(db, nil, testStoreBatchSpecResolutionJobs))
+		t.Run("BatchSpecExecutionCacheEntries", storeTest(db, nil, testStoreBatchSpecExecutionCacheEntries))
 
 		for name, key := range map[string]encryption.Key{
 			"no key":   nil,

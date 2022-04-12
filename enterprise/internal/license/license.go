@@ -16,8 +16,9 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/cockroachdb/errors"
 	"golang.org/x/crypto/ssh"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Info contains information about a license key. In the signed license key that Sourcegraph

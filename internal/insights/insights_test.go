@@ -8,21 +8,20 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hexops/autogold"
+	"github.com/hexops/valast"
+
 	"github.com/inconshreveable/log15"
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
-
-func init() {
-	dbtesting.DBNameSuffix = "insights"
-}
 
 func TestGetSearchInsights(t *testing.T) {
 	ctx := context.Background()
 
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	_, err := db.Exec(`INSERT INTO orgs(id, name) VALUES (1, 'first-org'), (2, 'second-org');`)
 	if err != nil {
 		t.Fatal(err)
@@ -61,10 +60,82 @@ func TestGetSearchInsights(t *testing.T) {
 	}
 }
 
-func TestGetIntegrationInsights(t *testing.T) {
+func TestGetSearchInsightsMulti(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
+	_, err := db.Exec(`INSERT INTO orgs(id, name) VALUES (1, 'first-org'), (2, 'second-org');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = db.Exec(`
+
+			INSERT INTO settings (id, org_id, contents, created_at, user_id, author_user_id)
+			VALUES  (1, 1, $1, CURRENT_TIMESTAMP, NULL, NULL)`, insightSettingNotSoSimple)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = db.Exec(`
+
+			INSERT INTO settings (id, org_id, contents, created_at, user_id, author_user_id)
+			VALUES  (2, 2, $1, CURRENT_TIMESTAMP, NULL, NULL)`, insightSettingThree)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := GetSearchInsights(ctx, db, All)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// sorting results for test determinism
+	sort.Slice(got, func(i, j int) bool {
+		return got[i].ID < got[j].ID
+	})
+
+	autogold.Want("testGetSearchInsightsMulti", []SearchInsight{
+		{
+			ID:           "searchInsights.insight.global.simple",
+			Title:        "my insight",
+			Repositories: []string{"github.com/sourcegraph/sourcegraph"},
+			Series: []TimeSeries{{
+				Name:   "Redis",
+				Stroke: "var(--oc-red-7)",
+				Query:  "redis",
+			}},
+			Step: Interval{Weeks: valast.Addr(2).(*int)},
+		},
+		{
+			ID:           "searchInsights.insight.numbertwo",
+			Title:        "numbertwo title",
+			Repositories: []string{"github.com/sourcegraph/numbertwo"},
+			Series: []TimeSeries{{
+				Name:   "numbertwo series name",
+				Stroke: "numbertwo var(--oc-red-7)",
+				Query:  "numbertwo query",
+			}},
+			Step: Interval{Weeks: valast.Addr(2).(*int)},
+		},
+		{
+			ID:           "searchInsights.insight.three",
+			Title:        "three title",
+			Repositories: []string{"github.com/sourcegraph/three"},
+			Series: []TimeSeries{{
+				Name:   "three series name",
+				Stroke: "three var(--oc-red-7)",
+				Query:  "three query",
+			}},
+			Step: Interval{Weeks: valast.Addr(4).(*int)},
+		},
+	}).Equal(t, got)
+}
+
+func TestGetIntegrationInsights(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	db := dbtest.NewDB(t)
 	_, err := db.Exec(`INSERT INTO orgs(id, name) VALUES (1, 'first-org'), (2, 'second-org');`)
 	if err != nil {
 		t.Fatal(err)
@@ -179,6 +250,54 @@ const insightSettingSimple = `{"searchInsights.insight.global.simple": {
       "weeks": 2
     }
   }}`
+
+const insightSettingThree = `{
+	"searchInsights.insight.three": {
+		"title": "three title",
+		"repositories": ["github.com/sourcegraph/three"],
+		"series": [
+		  {
+			"name": "three series name",
+			"query": "three query",
+			"stroke": "three var(--oc-red-7)"
+		  }
+		],
+		"step": {
+		  "weeks": 4
+		}
+	  }
+}`
+
+const insightSettingNotSoSimple = `{
+  "searchInsights.insight.global.simple": {
+    "title": "my insight",
+    "repositories": ["github.com/sourcegraph/sourcegraph"],
+    "series": [
+      {
+        "name": "Redis",
+        "query": "redis",
+        "stroke": "var(--oc-red-7)"
+      }
+    ],
+    "step": {
+      "weeks": 2
+    }
+  },
+	"searchInsights.insight.numbertwo": {
+		"title": "numbertwo title",
+		"repositories": ["github.com/sourcegraph/numbertwo"],
+		"series": [
+		  {
+			"name": "numbertwo series name",
+			"query": "numbertwo query",
+			"stroke": "numbertwo var(--oc-red-7)"
+		  }
+		],
+		"step": {
+		  "weeks": 2
+		}
+	  }
+}`
 
 func TestNextRecording(t *testing.T) {
 	type args struct {

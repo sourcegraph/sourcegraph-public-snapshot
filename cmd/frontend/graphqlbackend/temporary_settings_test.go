@@ -4,22 +4,21 @@ import (
 	"context"
 	"testing"
 
-	"github.com/cockroachdb/errors"
+	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	ts "github.com/sourcegraph/sourcegraph/internal/temporarysettings"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestTemporarySettingsNotSignedIn(t *testing.T) {
-	resetMocks()
+	t.Parallel()
 
-	calledGetTemporarySettings := false
-	database.Mocks.TemporarySettings.GetTemporarySettings = func(ctx context.Context, userID int32) (*ts.TemporarySettings, error) {
-		calledGetTemporarySettings = true
-		return &ts.TemporarySettings{Contents: "{\"search.collapsedSidebarSections\": {\"types\": false}}"}, nil
-	}
+	db := database.NewMockDB()
+	tss := database.NewMockTemporarySettingsStore()
+	db.TemporarySettingsFunc.SetDefaultReturn(tss)
 
 	wantErr := errors.New("not authenticated")
 
@@ -27,7 +26,7 @@ func TestTemporarySettingsNotSignedIn(t *testing.T) {
 		{
 			// No actor set on context.
 			Context: context.Background(),
-			Schema:  mustParseGraphQLSchema(t),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 				query {
 					temporarySettings {
@@ -46,26 +45,26 @@ func TestTemporarySettingsNotSignedIn(t *testing.T) {
 		},
 	})
 
-	if calledGetTemporarySettings {
-		t.Fatal("should not call GetTemporarySettings")
-	}
+	mockrequire.NotCalled(t, tss.GetTemporarySettingsFunc)
 }
 
 func TestTemporarySettings(t *testing.T) {
-	resetMocks()
+	t.Parallel()
 
-	calledGetTemporarySettings := false
-	var calledGetTemporarySettingsUserID int32
-	database.Mocks.TemporarySettings.GetTemporarySettings = func(ctx context.Context, userID int32) (*ts.TemporarySettings, error) {
-		calledGetTemporarySettings = true
-		calledGetTemporarySettingsUserID = userID
+	tss := database.NewMockTemporarySettingsStore()
+	tss.GetTemporarySettingsFunc.SetDefaultHook(func(ctx context.Context, userID int32) (*ts.TemporarySettings, error) {
+		if userID != 1 {
+			t.Fatalf("should call GetTemporarySettings with userID=1, got=%d", userID)
+		}
 		return &ts.TemporarySettings{Contents: "{\"search.collapsedSidebarSections\": {\"types\": false}}"}, nil
-	}
+	})
+	db := database.NewMockDB()
+	db.TemporarySettingsFunc.SetDefaultReturn(tss)
 
 	RunTests(t, []*Test{
 		{
 			Context: actor.WithActor(context.Background(), actor.FromUser(1)),
-			Schema:  mustParseGraphQLSchema(t),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 				query {
 					temporarySettings {
@@ -83,22 +82,15 @@ func TestTemporarySettings(t *testing.T) {
 		},
 	})
 
-	if !calledGetTemporarySettings {
-		t.Fatal("should call GetTemporarySettings")
-	}
-	if calledGetTemporarySettingsUserID != 1 {
-		t.Fatalf("should call GetTemporarySettings with userID=1, got=%d", calledGetTemporarySettingsUserID)
-	}
+	mockrequire.Called(t, tss.GetTemporarySettingsFunc)
 }
 
 func TestOverwriteTemporarySettingsNotSignedIn(t *testing.T) {
-	resetMocks()
+	t.Parallel()
 
-	calledUpsertTemporarySettings := false
-	database.Mocks.TemporarySettings.UpsertTemporarySettings = func(ctx context.Context, userID int32, contents string) error {
-		calledUpsertTemporarySettings = true
-		return nil
-	}
+	db := database.NewMockDB()
+	tss := database.NewMockTemporarySettingsStore()
+	db.TemporarySettingsFunc.SetDefaultReturn(tss)
 
 	wantErr := errors.New("not authenticated")
 
@@ -106,7 +98,7 @@ func TestOverwriteTemporarySettingsNotSignedIn(t *testing.T) {
 		{
 			// No actor set on context.
 			Context: context.Background(),
-			Schema:  mustParseGraphQLSchema(t),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 				mutation ModifyTemporarySettings {
 					overwriteTemporarySettings(
@@ -127,28 +119,28 @@ func TestOverwriteTemporarySettingsNotSignedIn(t *testing.T) {
 		},
 	})
 
-	if calledUpsertTemporarySettings {
-		t.Fatal("should not call UpsertTemporarySettings")
-	}
+	mockrequire.NotCalled(t, tss.OverwriteTemporarySettingsFunc)
 }
 
 func TestOverwriteTemporarySettings(t *testing.T) {
-	resetMocks()
+	t.Parallel()
 
-	calledUpsertTemporarySettings := false
-	var calledUpsertTemporarySettingsUserID int32
-	database.Mocks.TemporarySettings.UpsertTemporarySettings = func(ctx context.Context, userID int32, contents string) error {
-		calledUpsertTemporarySettingsUserID = userID
-		calledUpsertTemporarySettings = true
+	db := database.NewMockDB()
+	tss := database.NewMockTemporarySettingsStore()
+	tss.OverwriteTemporarySettingsFunc.SetDefaultHook(func(ctx context.Context, userID int32, contents string) error {
+		if userID != 1 {
+			t.Fatalf("should call OverwriteTemporarySettings with userID=1, got=%d", userID)
+		}
 		return nil
-	}
+	})
+	db.TemporarySettingsFunc.SetDefaultReturn(tss)
 
 	RunTests(t, []*Test{
 		{
 			Context: actor.WithActor(context.Background(), actor.FromUser(1)),
-			Schema:  mustParseGraphQLSchema(t),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
-				mutation ModifyTemporarySettings {
+				mutation OverwriteTemporarySettings {
 					overwriteTemporarySettings(
 						contents: "{\"search.collapsedSidebarSections\": []}"
 					) {
@@ -160,10 +152,38 @@ func TestOverwriteTemporarySettings(t *testing.T) {
 		},
 	})
 
-	if !calledUpsertTemporarySettings {
-		t.Fatal("should call UpsertTemporarySettings")
-	}
-	if calledUpsertTemporarySettingsUserID != 1 {
-		t.Fatalf("should call UpsertTemporarySettings with userID=1, got=%d", calledUpsertTemporarySettingsUserID)
-	}
+	mockrequire.Called(t, tss.OverwriteTemporarySettingsFunc)
+}
+
+func TestEditTemporarySettings(t *testing.T) {
+	t.Parallel()
+
+	db := database.NewMockDB()
+	tss := database.NewMockTemporarySettingsStore()
+	tss.EditTemporarySettingsFunc.SetDefaultHook(func(ctx context.Context, userID int32, settingsToEdit string) error {
+		if userID != 1 {
+			t.Fatalf("should call OverwriteTemporarySettings with userID=1, got=%d", userID)
+		}
+		return nil
+	})
+	db.TemporarySettingsFunc.SetDefaultReturn(tss)
+
+	RunTests(t, []*Test{
+		{
+			Context: actor.WithActor(context.Background(), actor.FromUser(1)),
+			Schema:  mustParseGraphQLSchema(t, db),
+			Query: `
+				mutation EditTemporarySettings {
+					editTemporarySettings(
+						settingsToEdit: "{\"search.collapsedSidebarSections\": []}"
+					) {
+						alwaysNil
+					}
+				}
+			`,
+			ExpectedResult: "{\"editTemporarySettings\":{\"alwaysNil\":null}}",
+		},
+	})
+
+	mockrequire.Called(t, tss.EditTemporarySettingsFunc)
 }

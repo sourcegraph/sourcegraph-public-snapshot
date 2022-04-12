@@ -1,16 +1,19 @@
-import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
-import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useEffect } from 'react'
 
+import CloseIcon from 'mdi-react/CloseIcon'
+
 import { GitRefType, Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { Button, useLocalStorage, Tab, TabList, TabPanel, TabPanels, Icon } from '@sourcegraph/wildcard'
 
 import { GitCommitAncestorFields, GitRefFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { replaceRevisionInURL } from '../../util/url'
 
+import { ConnectionPopoverTabs } from './components'
 import { RevisionsPopoverCommits } from './RevisionsPopoverCommits'
 import { RevisionsPopoverReferences } from './RevisionsPopoverReferences'
+
+import styles from './RevisionsPopover.module.scss'
 
 export interface RevisionsPopoverProps {
     repo: Scalars['ID']
@@ -73,24 +76,31 @@ export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = 
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
 
     return (
-        <Tabs defaultIndex={tabIndex} className="revisions-popover connection-popover" onChange={handleTabsChange}>
-            <div className="tablist-wrapper revisions-popover__tabs">
-                <TabList>
-                    {TABS.map(({ label, id }) => (
-                        <Tab key={id} data-tab-content={id}>
-                            <span className="tablist-wrapper--tab-label">{label}</span>
-                        </Tab>
-                    ))}
-                </TabList>
-                <button
-                    onClick={props.togglePopover}
-                    type="button"
-                    className="btn btn-icon revisions-popover__tabs-close"
-                    aria-label="Close"
-                >
-                    <CloseIcon className="icon-inline" />
-                </button>
-            </div>
+        <ConnectionPopoverTabs
+            className={styles.revisionsPopover}
+            data-testid="revisions-popover"
+            defaultIndex={tabIndex}
+            onChange={handleTabsChange}
+        >
+            <TabList
+                wrapperClassName={styles.tabs}
+                actions={
+                    <Button
+                        onClick={props.togglePopover}
+                        variant="icon"
+                        className={styles.tabsClose}
+                        aria-label="Close"
+                    >
+                        <Icon as={CloseIcon} />
+                    </Button>
+                }
+            >
+                {TABS.map(({ label, id }) => (
+                    <Tab key={id} data-tab-content={id}>
+                        <span className="tablist-wrapper--tab-label">{label}</span>
+                    </Tab>
+                ))}
+            </TabList>
             <TabPanels>
                 {TABS.map(tab => (
                     <TabPanel key={tab.id}>
@@ -124,6 +134,6 @@ export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = 
                     </TabPanel>
                 ))}
             </TabPanels>
-        </Tabs>
+        </ConnectionPopoverTabs>
     )
 }

@@ -1,8 +1,9 @@
 import { NEVER, of } from 'rxjs'
 import { first, take, toArray } from 'rxjs/operators'
 
+import { ContributableViewContainer } from '@sourcegraph/client-api'
+
 import { wrapRemoteObservable } from '../client/api/common'
-import { ContributableViewContainer } from '../protocol'
 
 import { assertToJSON, integrationTestContext } from './testHelpers'
 
@@ -25,6 +26,7 @@ describe('Views (integration)', () => {
                     title: 't',
                     content: 'c',
                     priority: 3,
+                    selector: null,
                     component: null,
                 },
             ])
@@ -54,6 +56,7 @@ describe('Views (integration)', () => {
                     title: 't',
                     content: 'c',
                     priority: 3,
+                    selector: null,
                     component: {
                         locationProvider: LOCATION_PROVIDER_ID,
                     },

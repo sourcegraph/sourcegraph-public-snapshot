@@ -28,7 +28,7 @@ See our [query syntax](../reference/queries.md#diff-and-commit-searches-only) do
 
 ## Symbol search
 
-Searching for symbols makes it easier to find specific functions, variables, and more. Use the `type:symbol` filter to search for symbol results. Symbol results also appear in typeahead suggestions, so you can jump directly to symbols by name.
+Searching for symbols makes it easier to find specific functions, variables, and more. Use the `type:symbol` filter to search for symbol results. Symbol results also appear in typeahead suggestions, so you can jump directly to symbols by name. When on an [indexed](../../admin/search.md#indexed-search) commit it uses Zoekt, otherwise it uses the [symbols service](../../code_intelligence/explanations/features.md#symbol-search)
 
 ## Saved searches
 
@@ -36,64 +36,41 @@ Saved searches let you save and describe search queries so you can easily monito
 
 See the [saved searches](../how-to/saved_searches.md) documentation for instructions for setting up and configuring saved searches.
 
-## Search scopes
-
-Every project and team has a different set of repositories they commonly work with and search over. Custom search scopes enable users and organizations to quickly filter their searches to predefined subsets of files and repositories. Instead of typing out the subset of repositories or files you want to search, you can save and select scopes using the search scope buttons whenever you need.
-
 ## Suggestions
 
 As you type a query, the menu below will contain suggestions based on the query. Use the keyboard or mouse to select a suggestion. For example, if your query is `repo:foo file:\.js$ hello`, the suggestions will consist of the list of files that match your query.
 
 You can also type in the partial name of a repository or filename to quickly jump to it. For example, typing in just `foo` would show you a list of repositories (first) and files with names containing _foo_.
 
-## Statistics
+## Search contexts
 
-> NOTE: To enable this experimental feature, set `{"experimentalFeatures": {"searchStats": true} }` in user settings.
+Search contexts help you search the code you care about on Sourcegraph. A search context represents a set of repositories at specific revisions on a Sourcegraph instance that will be targeted by search queries by default.
 
-On a search results page, press the **Stats** button to view a language breakdown of all results matching the query. Each matching file is analyzed to detect its language, and line count statistics are computed as follows:
+Every search on Sourcegraph uses a search context. Search contexts can be defined with the contexts selector shown in the search input, or entered directly in a search query.
 
-- Query matches entire repositories (e.g., using only `repo:`): all lines (in all files) in matching repositories are counted.
-- Query matches entire files (e.g., using only `file:` or `lang:`): all lines in all matching files are counted.
-- Query matches text in files (e.g., using a term such as `foo`): all lines that match the query are counted.
+**Sourcegraph Cloud** currently supports two pre-set search contexts: 
 
-Examples:
+- Your personal context, `context:@username`, which automatically includes all repositories you add to Sourcegraph Cloud.
+- The global context, `context:global`, which includes all repositories on Sourcegraph Cloud.
 
-- If your search query was `file:test` and you had a single 100-line Java test file (and no other files whose name contains `test`), the statistics would show 100 Java lines.
-- If your search query was `foo` and that term appeared on 3 lines in Java files and on 1 line in a Python file, the statistics would show 3 Java lines and 1 Python line.
+If no search context is specified, `context:global` is used.
 
-Tip: On the statistics page, you can enter an empty query to see statistics across all repositories.
+**Private Sourcegraph instances** support custom search contexts:
 
-## Version contexts <span class="badge badge-primary">sunsetting</span>
+- Contexts owned by a user, such as `context:@username/context-name`, which can be private to the user or public to all users on the Sourcegraph instance.
+- Contexts at the global level, such as `context:example-context`, which can be private to site admins or public to all users on the Sourcegraph instance.
+- The global context, `context:global`, which includes all repositories on the Sourcegraph instance.
 
-The version contexts feature is being sunset and will be replaced by [search contexts](#search-contexts). Search contexts support all features and capabilities of version contexts.
+This feature is currently under active development for self-hosted Sourcegraph instances and is disabled by default.
 
-Existing version contexts are managed by site admins in site configuration under the `experimentalFeatures.versionContexts` setting. For example:
+Your site admin can enable search contexts on your private instance in **global settings** using the following:
 
 ```json
-"experimentalFeatures": {
-  "versionContexts": [
-   {
-      "name": "srcgraph 3.15",
-      "revisions": [
-        {
-          "repo": "github.com/sourcegraph/sourcegraph",
-          "rev": "3.15"
-        },
-        {
-          "repo": "github.com/sourcegraph/src-cli",
-          "rev": "3.11.2"
-        }
-      ]
-    }
-  ]
+"experimentalFeatures": {  
+  "showSearchContext": true,
+  "showSearchContextManagement": true
 }
 ```
-
-To specify the default branch, you can set `"rev"` to `"HEAD"` or `""`.
-
-After setting some version contexts, users can select version contexts in the dropdown to the left of the search bar.
-
-> NOTE: All revisions specified in version contexts [will be indexed](#multi-branch-indexing-experimental).
 
 ## Multi-branch indexing <span class="badge badge-primary">experimental</span>
 
@@ -117,36 +94,6 @@ Indexing multiple branches will add additional resource requirements to Sourcegr
 > NOTE: The default branch (`HEAD`) is always indexed.
 
 > NOTE: All revisions specified in version contexts are also indexed.
-
-## Search contexts
-
-Search contexts help you search the code you care about on Sourcegraph. A search context represents a set of repositories at specific revisions on a Sourcegraph instance that will be targeted by search queries by default.
-
-Every search on Sourcegraph uses a search context. Search contexts can be defined with the contexts selector shown in the search input, or entered directly in a search query.
-
-**Sourcegraph cloud** currently supports two pre-set search contexts: 
-
-- Your personal context, `context:@username`, which automatically includes all repositories you add to Sourcegraph cloud.
-- The global context, `context:global`, which includes all repositories on Sourcegraph cloud.
-
-If no search context is specified, `context:global` is used.
-
-**Private Sourcegraph instances** support custom search contexts:
-
-- Contexts owned by a user, such as `context:@username/context-name`, which can be private to the user or public to all users on the Sourcegraph instance.
-- Contexts at the global level, such as `context:example-context`, which can be private to site admins or public to all users on the Sourcegraph instance.
-- The global context, `context:global`, which includes all repositories on the Sourcegraph instance.
-
-This feature is currently under active development for self-hosted Sourcegraph instances and is disabled by default.
-
-Your site admin can enable search contexts on your private instance in **global settings** using the following:
-
-```json
-"experimentalFeatures": {  
-  "showSearchContext": true,
-  "showSearchContextManagement": true
-}
-```
 
 **Note**: While version contexts are located in the site configuration, search contexts are enabled through the global settings.
 

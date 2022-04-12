@@ -3,7 +3,7 @@ package result
 // deduper deduplicates matches added to it with Add(). Matches are deduplicated by their key,
 // and the return value of Results() is ordered in the same order results are added with Add().
 type deduper struct {
-	results []Match
+	results Matches
 	seen    map[Key]Match
 }
 
@@ -36,6 +36,6 @@ func (d *deduper) Seen(m Match) bool {
 	return ok
 }
 
-func (d *deduper) Results() []Match {
+func (d *deduper) Results() Matches {
 	return d.results
 }

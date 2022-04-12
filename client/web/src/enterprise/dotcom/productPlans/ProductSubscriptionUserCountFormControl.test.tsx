@@ -1,12 +1,13 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
+
+import { render } from '@testing-library/react'
 
 import { ProductSubscriptionUserCountFormControl } from './ProductSubscriptionUserCountFormControl'
 
 describe('ProductSubscriptionUserCountFormControl', () => {
     test('renders', () => {
         expect(
-            renderer.create(<ProductSubscriptionUserCountFormControl value={123} onChange={() => undefined} />).toJSON()
+            render(<ProductSubscriptionUserCountFormControl value={123} onChange={() => undefined} />).asFragment()
         ).toMatchSnapshot()
     })
 })

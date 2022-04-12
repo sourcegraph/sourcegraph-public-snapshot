@@ -1,17 +1,21 @@
-import classNames from 'classnames'
 import React, { useState, FunctionComponent, useCallback } from 'react'
 
+import classNames from 'classnames'
+
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { Select } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
-import { ErrorAlert } from '../../../components/alerts'
 import { LoaderButton } from '../../../components/LoaderButton'
 import { SetUserEmailPrimaryResult, SetUserEmailPrimaryVariables, UserEmailsResult } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 
-type UserEmail = NonNullable<UserEmailsResult['node']>['emails'][number]
+import styles from './SetUserPrimaryEmailForm.module.scss'
+
+type UserEmail = (NonNullable<UserEmailsResult['node']> & { __typename: 'User' })['emails'][number]
 
 interface Props {
     user: string
@@ -72,29 +76,37 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
 
     return (
         <div className={classNames('add-user-email-form', className)}>
-            <label htmlFor="setUserPrimaryEmailForm-email">Primary email address</label>
-            <Form className="form-inline" onSubmit={onSubmit}>
-                <select
-                    id="setUserPrimaryEmailForm-email"
-                    className="custom-select form-control-lg mr-sm-2"
-                    value={primaryEmail}
-                    onChange={onPrimaryEmailSelect}
-                    required={true}
-                    disabled={options.length === 1 || statusOrError === 'loading'}
-                >
-                    {options.map(email => (
-                        <option key={email} value={email}>
-                            {email}
-                        </option>
-                    ))}
-                </select>
-                <LoaderButton
-                    loading={statusOrError === 'loading'}
-                    label="Save"
-                    type="submit"
-                    disabled={options.length === 1 || statusOrError === 'loading'}
-                    className="btn btn-primary"
-                />
+            <Form onSubmit={onSubmit}>
+                <div className={styles.formLine}>
+                    <div className={styles.formSelect}>
+                        <Select
+                            label="Primary email address"
+                            labelVariant="block"
+                            id="setUserPrimaryEmailForm-email"
+                            isCustomStyle={true}
+                            selectClassName="mr-sm-2"
+                            value={primaryEmail}
+                            onChange={onPrimaryEmailSelect}
+                            required={true}
+                            disabled={options.length === 1 || statusOrError === 'loading'}
+                        >
+                            {options.map(email => (
+                                <option key={email} value={email}>
+                                    {email}
+                                </option>
+                            ))}
+                        </Select>
+                    </div>
+                    <div className={styles.formButton}>
+                        <LoaderButton
+                            loading={statusOrError === 'loading'}
+                            label="Save"
+                            type="submit"
+                            disabled={options.length === 1 || statusOrError === 'loading'}
+                            variant="primary"
+                        />
+                    </div>
+                </div>
             </Form>
             {isErrorLike(statusOrError) && <ErrorAlert className="mt-2" error={statusOrError} />}
         </div>

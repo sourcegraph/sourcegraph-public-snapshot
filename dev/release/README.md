@@ -1,7 +1,7 @@
 # Sourcegraph release tool
 
 This directory contains scripts and code to automate our releases. Refer to
-[the handbook](https://about.sourcegraph.com/handbook/engineering/releases) for details
+[the handbook](https://handbook.sourcegraph.com/engineering/releases) for details
 on our release process and how this tool is used.
 
 To see all available steps:

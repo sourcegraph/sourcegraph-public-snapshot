@@ -1,4 +1,4 @@
-import { RawRepoSpec } from '@sourcegraph/shared/src/util/url'
+import { RawRepoSpec, RepoSpec } from '@sourcegraph/shared/src/util/url'
 
 import { DiffResolvedRevisionSpec } from '../../repo'
 import { RepoURLParseError } from '../shared/errors'
@@ -58,25 +58,25 @@ function getPathNamesFromElement(element: HTMLElement): { headFilePath: string; 
  */
 export function getDiffResolvedRevision(codeView: HTMLElement): DiffResolvedRevisionSpec | null {
     const { pageType } = parseURL()
+
     if (!isDiffPageType(pageType)) {
         return null
     }
 
     let baseCommitID = ''
     let headCommitID = ''
-    const fetchContainers = document.querySelectorAll('.js-socket-channel.js-updatable-content.js-pull-refresh-on-pjax')
-    const isCommentedSnippet = codeView.classList.contains('js-comment-container')
+
     if (pageType === 'pull') {
-        if (fetchContainers && fetchContainers.length === 1) {
-            for (const element of fetchContainers) {
-                // for conversation view of pull request
-                const url = element.getAttribute('data-url')
-                if (!url) {
-                    continue
-                }
-                const parsed = new URL(url, window.location.href)
-                baseCommitID = parsed.searchParams.get('base_commit_oid') || ''
-                headCommitID = parsed.searchParams.get('end_commit_oid') || ''
+        const commitsHashes = document.querySelector("details-menu[src*='sha1='][src*='sha2=']")?.getAttribute('src')
+        const isCommentedSnippet = codeView.classList.contains('js-comment-container')
+
+        if (commitsHashes) {
+            const searchParameters = new URLSearchParams(commitsHashes)
+            const baseCommitSHA = searchParameters.get('sha1')
+            const headCommitSHA = searchParameters.get('sha2')
+
+            if (baseCommitSHA && headCommitSHA) {
+                return { baseCommitID: baseCommitSHA, headCommitID: headCommitSHA }
             }
         } else if (isCommentedSnippet) {
             const resolvedDiffSpec = getResolvedDiffFromCommentedSnippet(codeView)
@@ -129,7 +129,7 @@ const COMMENTED_SNIPPET_DIFF_REGEX = /\/files\/((\w+)\.\.)?(\w+)#diff-\w+$/
 function getResolvedDiffFromCommentedSnippet(codeView: HTMLElement): DiffResolvedRevisionSpec | null {
     // For commented snippets, try to get the HEAD commit ID from the file header,
     // as it will always be the most accurate (for example in the case of outdated snippets).
-    const linkToFile: HTMLLinkElement | null = codeView.querySelector('.file-header a')
+    const linkToFile: HTMLLinkElement | null = codeView.querySelector(`summary a[href^="${location.pathname}"`)
     if (!linkToFile) {
         return null
     }
@@ -225,6 +225,7 @@ export function getFilePath(): string {
 }
 
 type GitHubURL = RawRepoSpec &
+    RepoSpec &
     (
         | { pageType: 'commit' | 'pull' | 'compare' | 'other' }
         | {
@@ -251,7 +252,8 @@ export function parseURL(location: Pick<Location, 'host' | 'pathname' | 'href'> 
     if (!user || !ghRepoName) {
         throw new RepoURLParseError(`Could not parse repoName from GitHub url: ${location.href}`)
     }
-    const rawRepoName = `${host}/${user}/${ghRepoName}`
+    const repoName = `${user}/${ghRepoName}`
+    const rawRepoName = `${host}/${repoName}`
     switch (pageType) {
         case 'blob':
         case 'tree':
@@ -259,12 +261,13 @@ export function parseURL(location: Pick<Location, 'host' | 'pathname' | 'href'> 
                 pageType,
                 rawRepoName,
                 revisionAndFilePath: decodeURIComponent(rest.join('/')),
+                repoName,
             }
         case 'pull':
         case 'commit':
         case 'compare':
-            return { pageType, rawRepoName }
+            return { pageType, rawRepoName, repoName }
         default:
-            return { pageType: 'other', rawRepoName }
+            return { pageType: 'other', rawRepoName, repoName }
     }
 }

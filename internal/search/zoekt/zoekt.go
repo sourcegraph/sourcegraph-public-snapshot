@@ -2,7 +2,7 @@ package zoekt
 
 import (
 	"context"
-	"regexp/syntax"
+	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
 	"time"
 
 	"github.com/google/zoekt"
@@ -10,7 +10,8 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 
-	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/filter"
+	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -68,23 +69,28 @@ func getSpanContext(ctx context.Context) (shouldTrace bool, spanContext map[stri
 	return true, spanContext
 }
 
-func SearchOpts(ctx context.Context, k int, fileMatchLimit int32) zoekt.SearchOptions {
+func SearchOpts(ctx context.Context, k int, fileMatchLimit int32, selector filter.SelectPath) zoekt.SearchOptions {
 	shouldTrace, spanContext := getSpanContext(ctx)
 	searchOpts := zoekt.SearchOptions{
-		Trace:                  shouldTrace,
-		SpanContext:            spanContext,
-		MaxWallTime:            defaultTimeout,
-		ShardMaxMatchCount:     100 * k,
-		TotalMaxMatchCount:     100 * k,
-		ShardMaxImportantMatch: 15 * k,
-		TotalMaxImportantMatch: 25 * k,
-		// Ask for 2000 more results so we have results to populate
-		// RepoStatusLimitHit.
-		MaxDocDisplayCount: int(fileMatchLimit) + 2000,
+		Trace:       shouldTrace,
+		SpanContext: spanContext,
+		MaxWallTime: defaultTimeout,
 	}
 
-	if userProbablyWantsToWaitLonger := fileMatchLimit > search.DefaultMaxSearchResults; userProbablyWantsToWaitLonger {
-		searchOpts.MaxWallTime *= time.Duration(3 * float64(fileMatchLimit) / float64(search.DefaultMaxSearchResults))
+	if userProbablyWantsToWaitLonger := fileMatchLimit > limits.DefaultMaxSearchResults; userProbablyWantsToWaitLonger {
+		searchOpts.MaxWallTime *= time.Duration(3 * float64(fileMatchLimit) / float64(limits.DefaultMaxSearchResults))
+	}
+
+	if selector.Root() == filter.Repository {
+		searchOpts.ShardRepoMaxMatchCount = 1
+	} else {
+		searchOpts.ShardMaxMatchCount = 100 * k
+		searchOpts.TotalMaxMatchCount = 100 * k
+		searchOpts.ShardMaxImportantMatch = 15 * k
+		searchOpts.TotalMaxImportantMatch = 25 * k
+		// Ask for 2000 more results so we have results to populate
+		// RepoStatusLimitHit.
+		searchOpts.MaxDocDisplayCount = int(fileMatchLimit) + 2000
 	}
 
 	return searchOpts
@@ -115,12 +121,12 @@ func ResultCountFactor(numRepos int, fileMatchLimit int32, globalSearch bool) (k
 			k = 1
 		}
 	}
-	if fileMatchLimit > search.DefaultMaxSearchResults {
-		k = int(float64(k) * 3 * float64(fileMatchLimit) / float64(search.DefaultMaxSearchResults))
+	if fileMatchLimit > limits.DefaultMaxSearchResults {
+		k = int(float64(k) * 3 * float64(fileMatchLimit) / float64(limits.DefaultMaxSearchResults))
 	}
 	return k
 }
 
 // repoRevFunc is a function which maps repository names returned from Zoekt
 // into the Sourcegraph's resolved repository revisions for the search.
-type repoRevFunc func(file *zoekt.FileMatch) (repo types.RepoName, revs []string)
+type repoRevFunc func(file *zoekt.FileMatch) (repo types.MinimalRepo, revs []string)

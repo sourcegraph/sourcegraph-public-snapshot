@@ -2,7 +2,7 @@ import { Remote } from 'comlink'
 import { from } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 
-import { memoizeObservable } from '../util/memoizeObservable'
+import { memoizeObservable } from '@sourcegraph/common'
 
 import { wrapRemoteObservable } from './client/api/common'
 import { FlatExtensionHostAPI } from './contract'

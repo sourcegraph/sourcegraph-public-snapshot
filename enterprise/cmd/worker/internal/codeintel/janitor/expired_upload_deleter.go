@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type expiredUploadDeleter struct {
@@ -38,7 +38,7 @@ func (e *expiredUploadDeleter) Handle(ctx context.Context) error {
 		return errors.Wrap(err, "SoftDeleteExpiredUploads")
 	}
 	if count > 0 {
-		log15.Debug("Deleted expired upload uploads", "count", count)
+		log15.Info("Deleted expired codeintel uploads", "count", count)
 		e.metrics.numUploadRecordsRemoved.Add(float64(count))
 	}
 

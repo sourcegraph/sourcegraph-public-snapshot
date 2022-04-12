@@ -4,10 +4,10 @@ import (
 	"io"
 	"os"
 
-	"github.com/cockroachdb/errors"
 	"gopkg.in/yaml.v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func ParseConfigFile(name string) (*Config, error) {
@@ -46,11 +46,6 @@ func ParseConfig(data []byte) (*Config, error) {
 		conf.Tests[name] = cmd
 	}
 
-	for name, check := range conf.Checks {
-		check.Name = name
-		conf.Checks[name] = check
-	}
-
 	return &conf, nil
 }
 
@@ -59,6 +54,10 @@ type Commandset struct {
 	Commands []string          `yaml:"commands"`
 	Checks   []string          `yaml:"checks"`
 	Env      map[string]string `yaml:"env"`
+
+	// If this is set to true, then the commandset requires the dev-private
+	// repository to be cloned at the same level as the sourcegraph repository.
+	RequiresDevPrivate bool `yaml:"requiresDevPrivate"`
 }
 
 // UnmarshalYAML implements the Unmarshaler interface.
@@ -81,12 +80,36 @@ func (c *Commandset) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
+func (c *Commandset) Merge(other *Commandset) *Commandset {
+	merged := c
+
+	if other.Name != merged.Name && other.Name != "" {
+		merged.Name = other.Name
+	}
+
+	if !equal(merged.Commands, other.Commands) && len(other.Commands) != 0 {
+		merged.Commands = other.Commands
+	}
+
+	if !equal(merged.Checks, other.Checks) && len(other.Checks) != 0 {
+		merged.Checks = other.Checks
+	}
+
+	for k, v := range other.Env {
+		merged.Env[k] = v
+	}
+
+	merged.RequiresDevPrivate = other.RequiresDevPrivate
+
+	return merged
+}
+
 type Config struct {
-	Env         map[string]string      `yaml:"env"`
-	Commands    map[string]run.Command `yaml:"commands"`
-	Commandsets map[string]*Commandset `yaml:"commandsets"`
-	Tests       map[string]run.Command `yaml:"tests"`
-	Checks      map[string]run.Check   `yaml:"checks"`
+	Env               map[string]string      `yaml:"env"`
+	Commands          map[string]run.Command `yaml:"commands"`
+	Commandsets       map[string]*Commandset `yaml:"commandsets"`
+	DefaultCommandset string                 `yaml:"defaultCommandset"`
+	Tests             map[string]run.Command `yaml:"tests"`
 }
 
 // Merges merges the top-level entries of two Config objects, with the receiver
@@ -105,7 +128,15 @@ func (c *Config) Merge(other *Config) {
 	}
 
 	for k, v := range other.Commandsets {
-		c.Commandsets[k] = v
+		if original, ok := c.Commandsets[k]; ok {
+			c.Commandsets[k] = original.Merge(v)
+		} else {
+			c.Commandsets[k] = v
+		}
+	}
+
+	if other.DefaultCommandset != "" {
+		c.DefaultCommandset = other.DefaultCommandset
 	}
 
 	for k, v := range other.Tests {
@@ -115,4 +146,38 @@ func (c *Config) Merge(other *Config) {
 			c.Tests[k] = v
 		}
 	}
+}
+
+func equal(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (c *Config) GetEnv(key string) string {
+	// First look into process env, emulating the logic in makeEnv used
+	// in internal/run/run.go
+	val, ok := os.LookupEnv(key)
+	if ok {
+		return val
+	}
+	// Otherwise check in globalConf.Env and *expand* the key, because a value might refer to another env var.
+	return os.Expand(c.Env[key], func(lookup string) string {
+		if lookup == key {
+			return os.Getenv(lookup)
+		}
+
+		if e, ok := c.Env[lookup]; ok {
+			return e
+		}
+		return os.Getenv(lookup)
+	})
 }

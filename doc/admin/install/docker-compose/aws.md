@@ -2,8 +2,9 @@
 
 This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://docs.docker.com/compose/) to a single EC2 instance on AWS.
 
-> NOTE: Trying to decide how to deploy Sourcegraph? See [our recommendations](../index.md) for how to chose a deployment type that suits your needs.
+> NOTE: Trying to decide how to deploy Sourcegraph? See [our recommendations](../index.md) for how to choose a deployment type that suits your needs.
 
+> WARNING: To configure your Sourcegraph instance, you must create and use a fork of the reference repository - refer to [Configuring Sourcegraph with Docker Compose](./operations.md#configure) for more details.
 ---
 
 ## Deploy to EC2
@@ -12,9 +13,12 @@ This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://d
 * Select the **Amazon Linux 2 AMI (HVM), SSD Volume Type**.
 * Select an appropriate instance size (use the [resource estimator](../resource_estimator.md) to find a good starting point for your deployment), then **Next: Configure Instance Details.**
 * Ensure the **Auto-assign Public IP** option is "Enable". This ensures your instance is accessible to the Internet.
+* Place the following script in the **User Data** text box at the bottom of the **Configure Instance Details** page
 
-> WARNING: To configure your Sourcegraph instance, you must create and use a fork of the reference repository - refer to [Configuring Sourcegraph with Docker Compose](./operations.md#configure) for more details. Then update the following variables in the script below:
->
+![Screen Shot 2021-12-28 at 1 05 07 PM](https://user-images.githubusercontent.com/13024338/147607360-5b76e122-479d-44aa-9e71-0b282cbc243a.png)
+
+> WARNING: If working from a fork of the reference repository, update the following variables in the script below:
+> 
 > * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: Your fork's git clone URL
 > * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The git revision containing your fork's customizations to the base Sourcegraph Docker Compose YAML. Most likely, `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='release'` if you followed our branching recommendations in the [Configuration guide](./operations.md#configure)
 
@@ -26,12 +30,12 @@ set -euxo pipefail
 EBS_VOLUME_DEVICE_NAME='/dev/sdb'
 DOCKER_DATA_ROOT='/mnt/docker-data'
 
-DOCKER_COMPOSE_VERSION='1.25.3'
+DOCKER_COMPOSE_VERSION='1.29.2'
 DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/home/ec2-user/deploy-sourcegraph-docker'
 
 # 🚨 Update these variables with the correct values from your fork!
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.31.2'
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.38.1'
 
 # Install git
 yum update -y
@@ -107,9 +111,10 @@ docker-compose up -d
   * **Delete on Termination**: Leave this setting unchecked
 
 * Select **Next: ...** until you get to the **Configure Security Group** page. Then add the following rules:
-
   * Default **HTTP** rule: port range `80`, source `0.0.0.0/0, ::/0`
   * Default **HTTPS** rule: port range `443`, source `0.0.0.0/0, ::/0`<br>(NOTE: additional work will be required later on to [configure SSL in the Docker Compose deployment](../../../admin/http_https_configuration.md#sourcegraph-via-docker-compose-caddy-2))
+
+> ℹ️ Please note that while the above will work, this provides open access of the ports specified. If possible, replace the IP address ranges specified with the IPs from which you actually want to allow access.
 
 * Launch your instance, then navigate to its public IP in your browser. (This can be found by navigating to the instance page on EC2 and looking in the "Description" panel for the "IPv4 Public IP" value.) You may have to wait a minute or two for the instance to finish initializing before Sourcegraph becomes accessible. You can monitor the status by SSHing into the instance and using the following diagnostic commands:
 
@@ -139,6 +144,6 @@ And refer to the [Upgrade guide](./operations.md#upgrade).
 
 The [Sourcegraph Docker Compose definition](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) uses [Docker volumes](https://docs.docker.com/storage/volumes/) to store its data. The script above [configures Docker](https://docs.docker.com/engine/reference/commandline/dockerd/#daemon-configuration-file) to store all Docker data on the additional EBS volume that was attached to the instance (mounted at `/mnt/docker-data` - the volumes themselves are stored under `/mnt/docker-data/volumes`) There are a few different ways to backup this data:
 
-* (**recommended**) The most straightfoward method to backup this data is to [snapshot the entire `/mnt/docker-data` EBS disk](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-creating-snapshot.html) on an [automatic, scheduled basis](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshot-lifecycle.html).
+* (**recommended**) The most straightforward method to backup this data is to [snapshot the entire `/mnt/docker-data` EBS disk](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-creating-snapshot.html) on an [automatic, scheduled basis](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshot-lifecycle.html).
 
 * Using an external Postgres instance (see below) lets a service such as [AWS RDS for PostgreSQL](https://aws.amazon.com/rds/) take care of backing up all of Sourcegraph's user data for you. If the EC2 instance running Sourcegraph ever dies or is destroyed, creating a fresh instance that's connected to that external Postgres will leave Sourcegraph in the same state that it was before.

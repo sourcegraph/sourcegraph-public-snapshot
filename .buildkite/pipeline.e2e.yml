@@ -1,9 +1,0 @@
-env:
-  VAGRANT_RUN_ENV: 'CI'
-steps:
-  - label: ':chromium: Sourcegraph E2E'
-    artifact_paths: ./*.png;./*.mp4;./ffmpeg.log
-    command:
-      - .buildkite/vagrant-run.sh sourcegraph-e2e
-    agents:
-      queue: 'baremetal'

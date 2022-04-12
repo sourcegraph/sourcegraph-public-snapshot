@@ -14,6 +14,18 @@
    "Login": "chrismwendt",
    "URL": "https://github.com/chrismwendt"
   },
+  "BaseRepository": {
+   "ID": "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
+   "Owner": {
+    "Login": "sourcegraph"
+   }
+  },
+  "HeadRepository": {
+   "ID": "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
+   "Owner": {
+    "Login": "sourcegraph"
+   }
+  },
   "Participants": [
    {
     "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
@@ -4470,7 +4482,7 @@
       "URL": "https://github.com/chrismwendt"
      },
      "Editor": null,
-     "AuthorAssociation": "CONTRIBUTOR",
+     "AuthorAssociation": "MEMBER",
      "Body": "@felixfbecker Yup, this is still a WIP, but I'll need help identifying broken parts (more of what you have done already).\r\n\r\n@ijsnow I'll create a `packages/` directory and put the new repos in there. As a follow up, I'll try moving the web app there too.",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-434419090",
      "CreatedAt": "2018-10-30T18:33:06Z",
@@ -4628,7 +4640,7 @@
       "URL": "https://github.com/chrismwendt"
      },
      "Editor": null,
-     "AuthorAssociation": "CONTRIBUTOR",
+     "AuthorAssociation": "MEMBER",
      "Body": "I ran into a mysterious yarn error where it couldn't find a `node_modules/` directory upon fresh installation, and @ggilmore and @ijsnow figured out that it was caused by workspaces and that moving the web app into the `workspaces` field solves the issue.\r\n\r\nThat means I'm also going to move the web app into `workspaces` as a part of this PR.",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-434878252",
      "CreatedAt": "2018-10-31T23:09:20Z",
@@ -5219,7 +5231,7 @@
       "Login": "chrismwendt",
       "URL": "https://github.com/chrismwendt"
      },
-     "AuthorAssociation": "CONTRIBUTOR",
+     "AuthorAssociation": "MEMBER",
      "Body": "Ready for review, but don't review the first commit (it's massive! And all I did was `git clone` the 3 other repos and `mv src packages/webapp/src`). cc @felixfbecker @ijsnow \r\n\r\nI'd like some :eyes: on the relationship between the gulpfile, `packages/webapp`, and `enterprise`.",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435026930",
      "CreatedAt": "2018-11-01T12:34:26Z",
@@ -5306,7 +5318,7 @@
       "URL": "https://github.com/chrismwendt"
      },
      "Editor": null,
-     "AuthorAssociation": "CONTRIBUTOR",
+     "AuthorAssociation": "MEMBER",
      "Body": "CI is green! ✅ It's aliiiive",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435230801",
      "CreatedAt": "2018-11-02T00:23:01Z",
@@ -5378,7 +5390,7 @@
       "URL": "https://github.com/chrismwendt"
      },
      "Editor": null,
-     "AuthorAssociation": "CONTRIBUTOR",
+     "AuthorAssociation": "MEMBER",
      "Body": "@felixfbecker Thanks for the review - I'll squash the fixup commits and make one more commit to address your feedback here.",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435487633",
      "CreatedAt": "2018-11-02T19:41:58Z",
@@ -5396,7 +5408,7 @@
       "URL": "https://github.com/chrismwendt"
      },
      "Editor": null,
-     "AuthorAssociation": "CONTRIBUTOR",
+     "AuthorAssociation": "MEMBER",
      "Body": "I've seen Cypress e2e tests hang twice now (out of ~6 builds), for example https://buildkite.com/sourcegraph/sourcegraph/builds/22660#083cf18f-2045-4994-b75e-021f8b0e44bf\r\n\r\n```\r\nRunning: github_repository_spec.ts...                                                    (1 of 1)\r\n--\r\n  |  \r\n  | Warning: Cypress can only record videos when using the built in 'electron' browser.\r\n  |  \r\n  | You have set the browser to: 'chrome'\r\n  |  \r\n  | A video will not be recorded when using this browser.\r\n  |  \r\n  |  \r\n  | GitHub\r\n  | ✓ .should() - assert that Sourcegraph View Repository is injected (950ms)\r\n  | The automation client disconnected. Cannot continue running tests.\r\n```\r\n\r\nIt usually passes on retry, so it's is something to keep an eye on.",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435562830",
      "CreatedAt": "2018-11-03T05:44:04Z",
@@ -5414,7 +5426,7 @@
       "URL": "https://github.com/chrismwendt"
      },
      "Editor": null,
-     "AuthorAssociation": "CONTRIBUTOR",
+     "AuthorAssociation": "MEMBER",
      "Body": "It looks like mocha types are overriding other types:\r\n\r\n![image](https://user-images.githubusercontent.com/1387653/47949163-7a9bf980-defb-11e8-9e1a-1259e53258f6.png)\r\n\r\n@felixfbecker Is there a way to tell TypeScript that certain types only apply to files by glob pattern (e.g. test files only)?",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435565882",
      "CreatedAt": "2018-11-03T07:00:59Z",
@@ -5450,7 +5462,7 @@
       "URL": "https://github.com/chrismwendt"
      },
      "Editor": null,
-     "AuthorAssociation": "CONTRIBUTOR",
+     "AuthorAssociation": "MEMBER",
      "Body": "Gotcha, I'll try that next time I see the problem. The problem disappeared through some more refactoring that I just did.",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435570583",
      "CreatedAt": "2018-11-03T08:32:42Z",
@@ -5468,7 +5480,7 @@
       "URL": "https://github.com/chrismwendt"
      },
      "Editor": null,
-     "AuthorAssociation": "CONTRIBUTOR",
+     "AuthorAssociation": "MEMBER",
      "Body": "I noticed extensions are no longer working on this branch, and I suspect something is wrong with the worker-loader.\r\n\r\nIf I add a console log to `extensionHost.worker.ts` like this:\r\n\r\n```diff\r\n+console.log('.worker.ts')\r\nimport { extensionHostWorkerMain } from 'sourcegraph/module/extension/workerMain'\r\n\r\n// We're running in a Web Worker, so `self` is a DedicatedWorkerGlobalScope. For simplicity, our TypeScript config\r\n// doesn't include lib.webworker.d.ts, so `self` here is actually not the correct type and requires this cast.\r\nextensionHostWorkerMain(self as any)\r\n```\r\n\r\nI do not see the log statement, but if I delete the rest so that this is the whole worker:\r\n\r\n```diff\r\nconsole.log('.worker.ts')\r\n```\r\n\r\nI see the log statement. Any ideas on how to debug this further? I'm currently trying to bisect this by stripping code from `extensionHostWorkerMain` in an attempt to find some function or variable that breaks it.",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435570968",
      "CreatedAt": "2018-11-03T08:39:12Z",
@@ -5486,7 +5498,7 @@
       "URL": "https://github.com/chrismwendt"
      },
      "Editor": null,
-     "AuthorAssociation": "CONTRIBUTOR",
+     "AuthorAssociation": "MEMBER",
      "Body": "I narrowed the problem to the use of `async` functions. The worker runs when there are no `async` functions and doesn't run when there are. I'm going to compare the compilation output from both master and this branch. That should point to some difference that's probably caused by differences in config related to the regenerator runtime, browserslist, and webpack looking for discrepancies.",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435572244",
      "CreatedAt": "2018-11-03T09:02:39Z",
@@ -5504,7 +5516,7 @@
       "URL": "https://github.com/chrismwendt"
      },
      "Editor": null,
-     "AuthorAssociation": "CONTRIBUTOR",
+     "AuthorAssociation": "MEMBER",
      "Body": "The regenerator runtime is the culprit. It's present on this `monorepo` branch, but not on `master`. I'm going to look around to see why this could be happening. @ijsnow I recall you encountered a similar in the past - wasn't the fix to change `browserslist`?",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435573493",
      "CreatedAt": "2018-11-03T09:22:32Z",
@@ -5558,7 +5570,7 @@
       "URL": "https://github.com/chrismwendt"
      },
      "Editor": null,
-     "AuthorAssociation": "CONTRIBUTOR",
+     "AuthorAssociation": "MEMBER",
      "Body": "I tried a bunch of different things:\r\n\r\n- Restore `babel.config.js` at the top level\r\n- Copy `babel.config.js` to the `packages/webapp/` directory\r\n- Update `browserslist`\r\n- Set `\"browserslist\": [\"last 1 version\"]` in `package.json` and each of `packages/*/package.json`\r\n\r\nNone of these seemed to drop `regeneratorRuntime` from the resulting JavaScript (I used `write-file-webpack-plugin` and added a new key to `entry` to the webpack config to put the file on disk).\r\n\r\nThe only change that dropped `regeneratorRuntime` was to remove the `babelLoader` from the `/\\.tsx?$/` rule, but understandably that caused a lot of other problems.\r\n\r\nIs there any way to debug `babel-preset-env` and its interaction with `browserslist`? Is there a way to eliminate `browserslist` as an unknown and hard-code the target in `babel.config.js` just to see if it drops `regeneratorRuntime`?",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435624864",
      "CreatedAt": "2018-11-03T22:10:32Z",
@@ -5576,7 +5588,7 @@
       "URL": "https://github.com/chrismwendt"
      },
      "Editor": null,
-     "AuthorAssociation": "CONTRIBUTOR",
+     "AuthorAssociation": "MEMBER",
      "Body": "I've settled for copying `\"browserslist\"` from `packages/webapp/package.json` into `babel.config.js` for now. If anyone has other ideas on how to avoid that small duplication, I'll try them out.",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435630027",
      "CreatedAt": "2018-11-03T23:51:36Z",
@@ -5804,7 +5816,7 @@
       "URL": "https://github.com/chrismwendt"
      },
      "Editor": null,
-     "AuthorAssociation": "CONTRIBUTOR",
+     "AuthorAssociation": "MEMBER",
      "Body": "The symlinks are not checked into the repo. They are automatically created by running `yarn` as a part of yarn workspaces https://yarnpkg.com/blog/2017/08/02/introducing-workspaces/",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435704409",
      "CreatedAt": "2018-11-04T20:47:02Z",
@@ -6144,7 +6156,7 @@
       "URL": "https://github.com/chrismwendt"
      },
      "Editor": null,
-     "AuthorAssociation": "CONTRIBUTOR",
+     "AuthorAssociation": "MEMBER",
      "Body": "Here's a diagram showing the merge commits I made to retain the history of the other repositories:\r\n\r\n![image](https://user-images.githubusercontent.com/1387653/47972135-f3ab6600-e04d-11e8-82f1-a9225fd38018.png)\r\n",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435723040",
      "CreatedAt": "2018-11-05T00:23:31Z",

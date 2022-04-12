@@ -78,10 +78,10 @@ async function addPhabricatorRepo(driver: Driver): Promise<void> {
     // Activate the repo and wait for it to clone
     await driver.page.goto(PHABRICATOR_BASE_URL + '/source/jrpc/manage/')
     const activateButton = await driver.page.waitForSelector('a[href="/source/jrpc/edit/activate/"]')
-    const buttonLabel = ((await (await activateButton.getProperty('textContent')).jsonValue()) as string).trim()
+    const buttonLabel = ((await (await activateButton!.getProperty('textContent')).jsonValue()) as string).trim()
     // Don't click if it says "Deactivate Repository"
     if (buttonLabel === 'Activate Repository') {
-        await activateButton.click()
+        await activateButton!.click()
         await driver.page.waitForSelector('form[action="/source/jrpc/edit/activate/"]')
         await (await driver.page.$x('//button[text()="Activate Repository"]'))[0].click()
         await driver.page.waitForNavigation()
@@ -177,11 +177,11 @@ describe('Sourcegraph Phabricator extension', () => {
         await driver.page.goto(
             PHABRICATOR_BASE_URL + '/source/jrpc/browse/master/call_opt.go;35a74f039c6a54af5bf0402d8f7da046c3f63ba2'
         )
-        await driver.page.waitForSelector('.code-view-toolbar .open-on-sourcegraph')
-        expect(await driver.page.$$('.code-view-toolbar .open-on-sourcegraph')).toHaveLength(1)
+        await driver.page.waitForSelector('[data-testid="code-view-toolbar"] .open-on-sourcegraph')
+        expect(await driver.page.$$('[data-testid="code-view-toolbar"] .open-on-sourcegraph')).toHaveLength(1)
         await Promise.all([
             driver.page.waitForNavigation(),
-            driver.page.click('.code-view-toolbar .open-on-sourcegraph'),
+            driver.page.click('[data-testid="code-view-toolbar"] .open-on-sourcegraph'),
         ])
         expect(driver.page.url()).toBe(
             sourcegraphBaseUrl +
@@ -193,7 +193,7 @@ describe('Sourcegraph Phabricator extension', () => {
         await driver.page.goto(
             PHABRICATOR_BASE_URL + '/source/jrpc/browse/master/call_opt.go;35a74f039c6a54af5bf0402d8f7da046c3f63ba2'
         )
-        await driver.page.waitForSelector('.code-view-toolbar .open-on-sourcegraph')
+        await driver.page.waitForSelector('[data-testid="code-view-toolbar"] .open-on-sourcegraph')
 
         // Pause to give codeintellify time to register listeners for
         // tokenization (only necessary in CI, not sure why).
@@ -204,11 +204,11 @@ describe('Sourcegraph Phabricator extension', () => {
         const codeLine = await driver.page.waitForSelector(
             `.diffusion-source > tbody > tr:nth-child(${lineNumber}) > td`
         )
-        await codeLine.hover()
+        await codeLine!.hover()
 
         // Once the line is tokenized, we can click on the individual token we want a hover for.
         const codeElement = await driver.page.waitForXPath(`//tbody/tr[${lineNumber}]//span[text()="CallOption"]`)
-        await codeElement.click()
+        await codeElement!.click()
         await driver.page.waitForSelector('.test-tooltip-go-to-definition')
     })
 

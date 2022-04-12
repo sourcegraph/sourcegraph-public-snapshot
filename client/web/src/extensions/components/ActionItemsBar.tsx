@@ -1,3 +1,5 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { head, last } from 'lodash'
@@ -6,29 +8,31 @@ import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { BehaviorSubject } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { focusable, FocusableElement } from 'tabbable'
 import { Key } from 'ts-key-enum'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { ContributableMenu } from '@sourcegraph/client-api'
+import { LocalStorageSubject } from '@sourcegraph/common'
 import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
-import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
-import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LocalStorageSubject } from '@sourcegraph/shared/src/util/LocalStorageSubject'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Button, LoadingSpinner, useObservable, Link, ButtonLink, Icon } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
 
-const scrollButtonClassName = 'action-items__scroll'
+import styles from './ActionItemsBar.module.scss'
+
+const scrollButtonClassName = styles.scroll
+
+function getIconClassName(index: number): string | undefined {
+    return (styles as Record<string, string>)[`icon${index % 5}`]
+}
 
 function arrowable(element: HTMLElement): FocusableElement[] {
     return focusable(element).filter(
@@ -184,7 +188,10 @@ export interface ActionItemsToggleProps extends ExtensionsControllerProps<'extHo
     className?: string
 }
 
-const actionItemClassName = 'action-items__action d-flex justify-content-center align-items-center text-decoration-none'
+const actionItemClassName = classNames(
+    'd-flex justify-content-center align-items-center text-decoration-none',
+    styles.action
+)
 
 /**
  *
@@ -205,23 +212,23 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
     )
 
     if (!isOpen) {
-        return <div className="action-items__bar--collapsed " />
+        return <div className={styles.barCollapsed} />
     }
 
     return (
-        <div className="action-items__bar p-0 mr-2 position-relative d-flex flex-column" ref={barReference}>
+        <div className={classNames('p-0 mr-2 position-relative d-flex flex-column', styles.bar)} ref={barReference}>
             {/* To be clear to users that this isn't an error reported by extensions about e.g. the code they're viewing. */}
             <ErrorBoundary location={props.location} render={error => <span>Component error: {error.message}</span>}>
                 <ActionItemsDivider />
                 {canScrollNegative && (
-                    <button
-                        type="button"
-                        className="btn btn-link action-items__scroll action-items__list-item p-0 border-0"
+                    <Button
+                        className={classNames('p-0 border-0', styles.scroll, styles.listItem)}
                         onClick={onNegativeClicked}
                         tabIndex={-1}
+                        variant="link"
                     >
-                        <MenuUpIcon className="icon-inline" />
-                    </button>
+                        <Icon as={MenuUpIcon} />
+                    </Button>
                 )}
                 <ActionsContainer
                     menu={ContributableMenu.EditorTitle}
@@ -233,20 +240,19 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
                     telemetryService={props.telemetryService}
                 >
                     {items => (
-                        <ul className="action-items__list list-unstyled m-0" ref={carouselReference}>
+                        <ul className={classNames('list-unstyled m-0', styles.list)} ref={carouselReference}>
                             {items.map((item, index) => {
                                 const hasIconURL = !!item.action.actionItem?.iconURL
                                 const className = classNames(
                                     actionItemClassName,
-                                    !hasIconURL &&
-                                        `action-items__action--no-icon action-items__icon-${(index % 5) + 1} text-sm`
+                                    !hasIconURL && classNames(styles.actionNoIcon, getIconClassName(index), 'text-sm')
                                 )
                                 const inactiveClassName = classNames(
-                                    'action-items__action--inactive',
-                                    !hasIconURL && 'action-items__action--no-icon-inactive'
+                                    styles.actionInactive,
+                                    !hasIconURL && styles.actionNoIconInactive
                                 )
                                 const listItemClassName = classNames(
-                                    'action-items__list-item',
+                                    styles.listItem,
                                     index !== items.length - 1 && 'mb-1'
                                 )
 
@@ -260,8 +266,8 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
                                             className={className}
                                             dataContent={dataContent}
                                             variant="actionItem"
-                                            iconClassName="action-items__icon"
-                                            pressedClassName="action-items__action--pressed"
+                                            iconClassName={styles.icon}
+                                            pressedClassName={styles.actionPressed}
                                             inactiveClassName={inactiveClassName}
                                             hideLabel={true}
                                             tabIndex={-1}
@@ -275,27 +281,25 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
                     )}
                 </ActionsContainer>
                 {canScrollPositive && (
-                    <button
-                        type="button"
-                        className="btn btn-link action-items__scroll action-items__list-item p-0 border-0"
+                    <Button
+                        className={classNames('p-0 border-0', styles.scroll, styles.listItem)}
                         onClick={onPositiveClicked}
                         tabIndex={-1}
+                        variant="link"
                     >
-                        <MenuDownIcon className="icon-inline" />
-                    </button>
+                        <Icon as={MenuDownIcon} />
+                    </Button>
                 )}
                 {haveExtensionsLoaded && <ActionItemsDivider />}
                 <ul className="list-unstyled m-0">
-                    <li className="action-items__list-item">
+                    <li className={styles.listItem}>
                         <Link
                             to="/extensions"
-                            className={classNames(
-                                actionItemClassName,
-                                'action-items__list-item action-items__aux-icon'
-                            )}
+                            className={classNames(styles.listItem, styles.auxIcon, actionItemClassName)}
                             data-tooltip="Add extensions"
+                            aria-label="Add extensions"
                         >
-                            <PlusIcon className="icon-inline" />
+                            <Icon as={PlusIcon} />
                         </Link>
                     </li>
                 </ul>
@@ -317,32 +321,21 @@ export const ActionItemsToggle: React.FunctionComponent<ActionItemsToggleProps> 
 
     return barInPage ? (
         <>
-            <div className="action-items__divider-vertical" />
-            <li
-                data-tooltip={`${isOpen ? 'Close' : 'Open'} extensions panel`}
-                className={classNames('nav-item mr-2', className)}
-            >
-                <div
-                    className={classNames(
-                        'action-items__toggle-container',
-                        isOpen && 'action-items__toggle-container--open'
-                    )}
-                >
+            <div className={styles.dividerVertical} />
+            <li className={classNames('nav-item mr-2', className)}>
+                <div className={classNames(styles.toggleContainer, isOpen && styles.toggleContainerOpen)}>
                     <ButtonLink
-                        className={classNames(
-                            actionItemClassName,
-                            'action-items__aux-icon',
-                            'action-items__action--toggle'
-                        )}
+                        data-tooltip={`${isOpen ? 'Close' : 'Open'} extensions panel`}
+                        className={classNames(actionItemClassName, styles.auxIcon, styles.actionToggle)}
                         onSelect={toggle}
-                        buttonLinkRef={toggleReference}
+                        ref={toggleReference}
                     >
                         {!haveExtensionsLoaded ? (
-                            <LoadingSpinner className="icon-inline" />
+                            <LoadingSpinner />
                         ) : isOpen ? (
-                            <ChevronDoubleUpIcon className="icon-inline" />
+                            <Icon data-testid="action-items-toggle-open" as={ChevronDoubleUpIcon} />
                         ) : (
-                            <PuzzleOutlineIcon className="icon-inline" />
+                            <Icon as={PuzzleOutlineIcon} />
                         )}
                     </ButtonLink>
                 </div>
@@ -352,5 +345,5 @@ export const ActionItemsToggle: React.FunctionComponent<ActionItemsToggleProps> 
 }
 
 const ActionItemsDivider: React.FunctionComponent<{ className?: string }> = ({ className }) => (
-    <li className={classNames(className, 'action-items__divider-horizontal position-relative rounded-sm d-flex')} />
+    <li className={classNames('position-relative rounded-sm d-flex', styles.dividerHorizontal, className)} />
 )

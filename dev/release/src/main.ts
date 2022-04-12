@@ -1,5 +1,6 @@
 import { loadConfig } from './config'
 import { runStep, StepID } from './release'
+import { ensureMainBranchUpToDate } from './util'
 
 /**
  * Release captain automation
@@ -15,6 +16,7 @@ async function main(): Promise<void> {
 
     const step = args[0] as StepID
     const stepArguments = args.slice(1)
+    ensureMainBranchUpToDate()
     await runStep(config, step, ...stepArguments)
 }
 

@@ -1,5 +1,4 @@
-import chalk from 'chalk'
-import { RequestHandler } from 'express'
+import compression from 'compression'
 import { createProxyMiddleware, Options as HTTPProxyMiddlewareOptions } from 'http-proxy-middleware'
 import { once } from 'lodash'
 import signale from 'signale'
@@ -9,26 +8,34 @@ import WebpackDevServer, { ProxyConfigArrayItem } from 'webpack-dev-server'
 import { getManifest } from '../esbuild/manifestPlugin'
 import { esbuildDevelopmentServer } from '../esbuild/server'
 import {
-    getCSRFTokenCookieMiddleware,
-    PROXY_ROUTES,
     environmentConfig,
     getAPIProxySettings,
-    getCSRFTokenAndCookie,
+    shouldCompressResponse,
     STATIC_ASSETS_PATH,
     STATIC_ASSETS_URL,
-    WEB_SERVER_URL,
+    HTTPS_WEB_SERVER_URL,
+    HTTP_WEB_SERVER_URL,
+    PROXY_ROUTES,
 } from '../utils'
 import { getHTMLPage } from '../webpack/get-html-webpack-plugins'
 
 // TODO: migrate webpack.config.js to TS to use `import` in this file.
 // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
 const webpackConfig = require('../../webpack.config') as Configuration
-const { SOURCEGRAPH_API_URL, SOURCEGRAPH_HTTPS_PORT, IS_HOT_RELOAD_ENABLED } = environmentConfig
+// TODO: migrate webpack.config.js to TS to use `import` in this file.
+// eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
+const printSuccessBanner = require('../utils/success-banner') as (lines: string[], log: () => void) => void
+
+const {
+    SOURCEGRAPH_API_URL,
+    SOURCEGRAPH_HTTPS_PORT,
+    CLIENT_PROXY_DEVELOPMENT_PORT,
+    IS_HOT_RELOAD_ENABLED,
+} = environmentConfig
 
 interface DevelopmentServerInit {
     proxyRoutes: string[]
     proxyMiddlewareOptions: HTTPProxyMiddlewareOptions
-    csrfTokenCookieMiddleware: RequestHandler
 }
 
 async function startDevelopmentServer(): Promise<void> {
@@ -41,16 +48,11 @@ async function startDevelopmentServer(): Promise<void> {
         throw new Error('development.server.ts only supports *web-standalone* usage')
     }
 
-    // Get CSRF token value from the `SOURCEGRAPH_API_URL`.
-    const { csrfContextValue, csrfCookieValue } = await getCSRFTokenAndCookie(SOURCEGRAPH_API_URL)
-
     const init: DevelopmentServerInit = {
         proxyRoutes: PROXY_ROUTES,
         proxyMiddlewareOptions: getAPIProxySettings({
-            csrfContextValue,
             apiURL: SOURCEGRAPH_API_URL,
         }),
-        csrfTokenCookieMiddleware: getCSRFTokenCookieMiddleware(csrfCookieValue),
     }
 
     switch (environmentConfig.DEV_WEB_BUILDER) {
@@ -67,7 +69,6 @@ async function startDevelopmentServer(): Promise<void> {
 async function startWebpackDevelopmentServer({
     proxyRoutes,
     proxyMiddlewareOptions,
-    csrfTokenCookieMiddleware,
 }: DevelopmentServerInit): Promise<void> {
     const proxyConfig: ProxyConfigArrayItem = {
         context: proxyRoutes,
@@ -79,53 +80,60 @@ async function startWebpackDevelopmentServer({
         liveReload: false,
         allowedHosts: 'all',
         hot: IS_HOT_RELOAD_ENABLED,
-        // TODO: resolve https://github.com/webpack/webpack-dev-server/issues/2313 and enable HTTPS.
-        https: false,
         historyApiFallback: {
             disableDotRule: true,
         },
-        port: SOURCEGRAPH_HTTPS_PORT,
+        port: CLIENT_PROXY_DEVELOPMENT_PORT,
         client: {
             overlay: false,
+            webSocketTransport: 'ws',
+            logging: 'verbose',
+            webSocketURL: {
+                port: SOURCEGRAPH_HTTPS_PORT,
+                protocol: 'wss',
+            },
         },
         static: {
             directory: STATIC_ASSETS_PATH,
             publicPath: [STATIC_ASSETS_URL, '/'],
         },
         proxy: [proxyConfig],
+        // Disable default DevServer compression. We need more fine grained compression to support streaming search.
+        compress: false,
         onBeforeSetupMiddleware: developmentServer => {
-            developmentServer.app.use(csrfTokenCookieMiddleware)
+            // Re-enable gzip compression using our own `compression` filter.
+            developmentServer.app.use(compression({ filter: shouldCompressResponse }))
         },
     }
 
     const compiler = createWebpackCompiler(webpackConfig)
     const server = new WebpackDevServer(developmentServerConfig, compiler)
 
-    compiler.hooks.afterEmit.tap(
+    compiler.hooks.done.tap(
         'development-server-logger',
         once(() => {
-            signale.success('Webpack build is ready!')
+            printSuccessBanner(
+                [
+                    'Webpack build is ready!',
+                    `Development HTTP server is ready at ${HTTP_WEB_SERVER_URL}`,
+                    `Development HTTPS server is ready at ${HTTPS_WEB_SERVER_URL}`,
+                ],
+                signale.log.bind(signale)
+            )
         })
     )
 
     await server.start()
-    signale.success(`Development server is ready at ${chalk.blue.bold(WEB_SERVER_URL)}`)
-    signale.await('Waiting for Webpack to compile assets')
 }
 
 async function startEsbuildDevelopmentServer({
     proxyRoutes,
     proxyMiddlewareOptions,
-    csrfTokenCookieMiddleware,
 }: DevelopmentServerInit): Promise<void> {
     const manifest = getManifest()
-    const htmlPage = getHTMLPage({
-        head: `<link rel="stylesheet" href="${manifest['app.css']}">`,
-        bodyEnd: `<script src="${manifest['app.js']}" type="module"></script>`,
-    })
+    const htmlPage = getHTMLPage(manifest)
 
     await esbuildDevelopmentServer({ host: '0.0.0.0', port: SOURCEGRAPH_HTTPS_PORT }, app => {
-        app.use(csrfTokenCookieMiddleware)
         app.use(createProxyMiddleware(proxyRoutes, proxyMiddlewareOptions))
         app.get(/.*/, (_request, response) => {
             response.send(htmlPage)

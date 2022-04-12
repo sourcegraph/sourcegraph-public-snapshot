@@ -1,4 +1,4 @@
-// Package overridable provides data types representing values in campaign
+// Package overridable provides data types representing values in batch
 // specs that can be overridden for specific repositories.
 package overridable
 
@@ -6,8 +6,9 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/gobwas/glob"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // allPattern is used to define default rules for the simple scalar case.

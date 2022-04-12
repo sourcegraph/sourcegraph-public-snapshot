@@ -1,8 +1,9 @@
+import React from 'react'
+
 import { storiesOf } from '@storybook/react'
 import { parseISO } from 'date-fns'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
-import ErrorIcon from 'mdi-react/ErrorIcon'
-import React from 'react'
 
 import { Timeline } from './Timeline'
 import { WebStory } from './WebStory'
@@ -24,7 +25,7 @@ add('Basic', () => (
                         date: '2020-06-15T11:15:00+00:00',
                     },
                     {
-                        icon: <ErrorIcon />,
+                        icon: <AlertCircleIcon />,
                         className: 'bg-danger',
                         text: 'Second event description',
                         date: '2020-06-15T12:20:00+00:00',
@@ -36,7 +37,7 @@ add('Basic', () => (
                         date: '2020-06-15T13:25:00+00:00',
                     },
                     {
-                        icon: <ErrorIcon />,
+                        icon: <AlertCircleIcon />,
                         className: 'bg-danger',
                         text: 'Fourth event description',
                         date: '2020-06-15T14:30:00+00:00',
@@ -66,7 +67,7 @@ add('Details', () => (
                         date: '2020-06-15T11:15:00+00:00',
                     },
                     {
-                        icon: <ErrorIcon />,
+                        icon: <AlertCircleIcon />,
                         className: 'bg-danger',
                         text: 'Second event description',
                         date: '2020-06-15T12:20:00+00:00',

@@ -8,10 +8,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/ctxvfs"
 	"golang.org/x/tools/godoc/vfs"
 	"golang.org/x/tools/godoc/vfs/zipfs"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // archiveReader is like zip.ReadCloser, but it allows us to use a custom

@@ -1,21 +1,21 @@
 ---
 name: Request patch release
-about: Sourcegraph teams, use this issue to request the Distribution team perform a patch release or include your changes in a patch release..
+about: Sourcegraph teams, use this issue to request the Delivery team perform a patch release or include your changes in a patch release..
 title: ''
-labels: 'team/distribution,patch-release-request'
+labels: 'team/delivery,patch-release-request'
 assignees: ''
 
 ---
 
-@sourcegraph/distribution I am requesting the following commits be included in a patch release. They are already merged into `main`:
+@sourcegraph/delivery I am requesting the following commits be included in a patch release. They are already merged into `main`:
 
 - <!-- LINK TO EXACT MERGED COMMITS HERE -->
 
 ---
 
-The intent of the questions below is to ensure we keep Sourcegraph high quality and [only create patch releases based on a strict criteria.](https://about.sourcegraph.com/handbook/engineering/releases#when-are-patch-releases-performed) If you can answer yes to many or most of these questions, we will be happy to create the patch release.
+The intent of the questions below is to ensure we keep Sourcegraph high quality and [only create patch releases based on a strict criteria.](https://handbook.sourcegraph.com/engineering/releases#patch-releases) If you can answer yes to many or most of these questions, we will be happy to create the patch release.
 
-I have read [when and why we perform patch releases](https://about.sourcegraph.com/handbook/engineering/releases#when-are-patch-releases-performed) and answer the questions as follows:
+I have read [when and why we perform patch releases](https://handbook.sourcegraph.com/engineering/releases#patch-releases) and answer the questions as follows:
 
 > Are users/customers actively asking us for these changes and cannot wait until the next full release?
 
@@ -41,13 +41,21 @@ I have read [when and why we perform patch releases](https://about.sourcegraph.c
 
 ---
 
-**For the [release captain](https://about.sourcegraph.com/handbook/engineering/releases#release-captain)** - after reviewing this request:
+**For the [Release Captain]** - after reviewing this request:
 
 - [ ] **Comment on this issue** with a decision regarding the request.
+- [ ] If you are a first-time [Release Captain], please review the high-level overview of the [patch release process].
 - [ ] If approved, **add it to a patch release**:
   - If there is [already an upcoming patch release](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aissue+label%3Arelease-tracking+), add the listed commits alongside a link to this issue
   - If there is no upcoming patch release, create a new one:
-    - Update [`dev/release/release-config.jsonc`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/release/release-config.jsonc) with the patch release in `upcomingRelease` and `releaseDate` (and open a PR to `main` to update it)
-    - `yarn release tracking:issues`
-    - Add the listed commits alongside a link to this issue to the generated [release tracking issue](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aissue+label%3Arelease-tracking+)
+    - [ ] Update [`dev/release/release-config.jsonc`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/release/release-config.jsonc) and open a PR to `main` to update it
+      - [ ] Change `upcomingRelease` to the current patch release
+      - [ ] Change `previousRelease` to the previous patch release version
+      - [ ] Change `releaseDate` to the current date (time is optional) along with `oneWorkingDayAfterRelease` and `oneWorkingDayBeforeRelease`
+      - [ ] Change `captainSlackUsername` and `captainGitHubUsername` accordingly
+    - [ ] `yarn release tracking:issues` 
+    - [ ] Add the listed commits alongside a link to this issue to the generated [release tracking issue](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aissue+label%3Arelease-tracking+)
 - [ ] **Comment and close this issue once the relevant commit(s) have been cherry-picked into the release branch**.
+
+[release captain]: https://handbook.sourcegraph.com/engineering/releases#release-captain
+[patch release process]: https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/releases#patch-release-process

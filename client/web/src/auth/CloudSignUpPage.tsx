@@ -1,19 +1,27 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import GithubIcon from 'mdi-react/GithubIcon'
-import React from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 
+import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { ProductStatusBadge, Link, Icon } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
-import { SourcegraphContext } from '../jscontext'
+import { FeatureFlagProps } from '../featureFlags/featureFlags'
+import { UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../graphql-operations'
+import { AuthProvider, SourcegraphContext } from '../jscontext'
+import { USER_AREA_USER_PROFILE } from '../user/area/UserArea'
+import { UserAvatar } from '../user/UserAvatar'
 
-import styles from './CloudSignUpPage.module.scss'
+import { ExternalsAuth } from './ExternalsAuth'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
 
-interface Props extends ThemeProps, TelemetryProps {
+import styles from './CloudSignUpPage.module.scss'
+
+interface Props extends ThemeProps, TelemetryProps, FeatureFlagProps {
     source: string | null
     showEmailForm: boolean
     /** Called to perform the signup on the server. */
@@ -45,6 +53,7 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
     onSignUp,
     context,
     telemetryService,
+    featureFlags,
 }) => {
     const location = useLocation()
 
@@ -56,55 +65,110 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
     }
 
     const assetsRoot = window.context?.assetsRoot || ''
-
-    // Since this page is only intended for use on Sourcegraph.com, it's OK to hardcode
-    // GitHub and GitLab auth providers here as they are the only ones used on Sourcegraph.com.
-    // In the future if this page is intended for use in Sourcegraph Sever, this would need to be generalized
-    // for other auth providers such SAML, OpenID, Okta, Azure AD, etc.
-    const githubProvider = context.authProviders.find(provider =>
-        provider.authenticationURL?.startsWith('/.auth/github/login?pc=https%3A%2F%2Fgithub.com%2F')
-    )
-    const gitlabProvider = context.authProviders.find(provider =>
-        provider.authenticationURL?.startsWith('/.auth/gitlab/login?pc=https%3A%2F%2Fgitlab.com%2F')
-    )
-
-    const maybeRedirectToWelcome = (url?: string): string =>
-        url ? `${url}${context.experimentalFeatures.enablePostSignupFlow ? '&redirect=/welcome' : ''}` : ''
-
     const sourceIsValid = source && Object.keys(SourceToTitleMap).includes(source)
-    const title = sourceIsValid ? SourceToTitleMap[source as CloudSignUpSource] : SourceToTitleMap.Context // Use Context as default
+    const defaultTitle = SourceToTitleMap.Context
+    const title = sourceIsValid ? SourceToTitleMap[source as CloudSignUpSource] : defaultTitle
 
-    const logEvent = (): void => {
-        if (sourceIsValid) {
-            telemetryService.log(`SignUpPLG${source || ''}_2_ClickedSignUp`)
-        }
+    const invitedBy = queryWithUseEmailToggled.get('invitedBy')
+    const { data } = useQuery<UserAreaUserProfileResult, UserAreaUserProfileVariables>(USER_AREA_USER_PROFILE, {
+        variables: { username: invitedBy || '', siteAdmin: false },
+        skip: !invitedBy,
+    })
+    const invitedByUser = data?.user
+
+    const logEvent = (type: AuthProvider['serviceType']): void => {
+        const eventType = type === 'builtin' ? 'form' : type
+        telemetryService.log('SignupInitiated', { type: eventType }, { type: eventType })
     }
+
+    const signUpForm = (
+        <SignUpForm
+            featureFlags={featureFlags}
+            onSignUp={args => {
+                logEvent('builtin')
+                return onSignUp(args)
+            }}
+            context={{
+                authProviders: [],
+                sourcegraphDotComMode: true,
+                experimentalFeatures: context.experimentalFeatures,
+            }}
+            buttonLabel="Sign up"
+            experimental={true}
+            className="my-3"
+        />
+    )
+
+    const renderCodeHostAuth = (): JSX.Element => (
+        <>
+            <ExternalsAuth
+                context={context}
+                githubLabel="Continue with GitHub"
+                gitlabLabel="Continue with GitLab"
+                onClick={logEvent}
+            />
+
+            <div className="mb-4">
+                Or, <Link to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}>continue with email</Link>
+            </div>
+        </>
+    )
+
+    const renderEmailAuthForm = (): JSX.Element => (
+        <>
+            <small className="d-block mt-3">
+                <Link
+                    className="d-flex align-items-center"
+                    to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}
+                >
+                    <Icon className={styles.backIcon} as={ChevronLeftIcon} />
+                    Go back
+                </Link>
+            </small>
+
+            {signUpForm}
+        </>
+    )
+
+    const renderAuthMethod = (): JSX.Element => (showEmailForm ? renderEmailAuthForm() : renderCodeHostAuth())
 
     return (
         <div className={styles.page}>
-            <header>
-                <div className="position-relative">
-                    <div className={styles.headerBackground1} />
-                    <div className={styles.headerBackground2} />
-                    <div className={styles.headerBackground3} />
-
-                    <div className={styles.limitWidth}>
-                        <BrandLogo isLightTheme={isLightTheme} variant="logo" className={styles.logo} />
-                    </div>
-                </div>
-
-                <div className={styles.limitWidth}>
-                    <h2 className={styles.pageHeading}>{title}</h2>
-                </div>
+            <header className="position-relative">
+                <div className={styles.headerBackground1} />
+                <div className={styles.headerBackground2} />
             </header>
+            <div className={classNames('d-flex', 'justify-content-center', 'mb-5', styles.leftOrRightContainer)}>
+                <div className={styles.leftOrRight}>
+                    <BrandLogo isLightTheme={isLightTheme} variant="logo" className={styles.logo} />
+                    <h2
+                        className={classNames(
+                            'd-flex',
+                            'align-items-center',
+                            'mb-4',
+                            'mt-1',
+                            invitedBy ? styles.pageHeadingInvitedBy : styles.pageHeading
+                        )}
+                    >
+                        {invitedByUser ? (
+                            <>
+                                <UserAvatar
+                                    inline={true}
+                                    className={classNames('mr-3', styles.avatar)}
+                                    user={invitedByUser}
+                                />
+                                <strong className="mr-1">{invitedBy}</strong> has invited you to join Sourcegraph
+                            </>
+                        ) : (
+                            title
+                        )}
+                    </h2>
 
-            <div className={classNames(styles.contents, styles.limitWidth)}>
-                <div className={styles.contentsLeft}>
-                    With a Sourcegraph account, you can also:
+                    {invitedBy ? 'With a Sourcegraph account, you can:' : 'With a Sourcegraph account, you can also:'}
                     <ul className={styles.featureList}>
                         <li>
                             <div className="d-flex align-items-center">
-                                <span className="badge badge-info text-uppercase mr-1">Beta</span> Search across all
+                                <ProductStatusBadge status="beta" className="text-uppercase mr-1" /> Search across all
                                 your public and private repositories
                             </div>
                         </li>
@@ -118,73 +182,23 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
                     <img
                         src={`${assetsRoot}/img/customer-logos-${isLightTheme ? 'light' : 'dark'}.svg`}
                         alt="Cloudflare, Uber, SoFi, Dropbox, Plaid, Toast"
+                        className={styles.customerLogos}
                     />
                 </div>
 
-                <div className={styles.signUpWrapper}>
+                <div className={classNames(styles.leftOrRight, styles.signUpWrapper)}>
                     <h2>Create a free account</h2>
-                    {!showEmailForm ? (
-                        <>
-                            {githubProvider && (
-                                <a
-                                    href={maybeRedirectToWelcome(githubProvider.authenticationURL)}
-                                    className={classNames(styles.signUpButton, styles.githubButton)}
-                                    onClick={logEvent}
-                                >
-                                    <GithubIcon className="mr-3" /> Continue with GitHub
-                                </a>
-                            )}
-                            {gitlabProvider && (
-                                <a
-                                    href={maybeRedirectToWelcome(gitlabProvider.authenticationURL)}
-                                    className={classNames(styles.signUpButton, styles.gitlabButton)}
-                                    onClick={logEvent}
-                                >
-                                    <GitlabColorIcon className="mr-3" /> Continue with GitLab
-                                </a>
-                            )}
-
-                            <div className="mb-4">
-                                Or,{' '}
-                                <Link to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}>
-                                    continue with email
-                                </Link>
-                            </div>
-                        </>
-                    ) : (
-                        <>
-                            <small className="d-block mt-3">
-                                <Link
-                                    className="d-flex align-items-center"
-                                    to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}
-                                >
-                                    <ChevronLeftIcon className={classNames('icon-inline', styles.backIcon)} />
-                                    Go back
-                                </Link>
-                            </small>
-
-                            <SignUpForm
-                                onSignUp={args => {
-                                    logEvent()
-                                    return onSignUp(args)
-                                }}
-                                context={{ authProviders: [], sourcegraphDotComMode: true }}
-                                buttonLabel="Sign up"
-                                experimental={true}
-                                className="my-3"
-                            />
-                        </>
-                    )}
+                    {renderAuthMethod()}
 
                     <small className="text-muted">
                         By registering, you agree to our{' '}
-                        <a href="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
+                        <Link to="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
                             Terms of Service
-                        </a>{' '}
+                        </Link>{' '}
                         and{' '}
-                        <a href="https://about.sourcegraph.com/privacy" target="_blank" rel="noopener">
+                        <Link to="https://about.sourcegraph.com/privacy" target="_blank" rel="noopener">
                             Privacy Policy
-                        </a>
+                        </Link>
                         .
                     </small>
 
@@ -198,34 +212,3 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
         </div>
     )
 }
-
-const GitlabColorIcon: React.FunctionComponent<{ className?: string }> = ({ className }) => (
-    <svg
-        className={className}
-        width="24"
-        height="24"
-        viewBox="-2 -2 26 26"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-    >
-        <path d="M9.99944 19.2025L13.684 7.86902H6.32031L9.99944 19.2025Z" fill="#E24329" />
-        <path
-            d="M1.1594 7.8689L0.037381 11.3121C-0.0641521 11.6248 0.0454967 11.9699 0.313487 12.1648L9.99935 19.2023L1.1594 7.8689Z"
-            fill="#FCA326"
-        />
-        <path
-            d="M1.15918 7.86873H6.31995L4.0989 1.04315C3.98522 0.693949 3.48982 0.693949 3.37206 1.04315L1.15918 7.86873Z"
-            fill="#E24329"
-        />
-        <path
-            d="M18.8444 7.8689L19.9624 11.3121C20.0639 11.6248 19.9542 11.9699 19.6862 12.1648L9.99902 19.2023L18.8444 7.8689Z"
-            fill="#FCA326"
-        />
-        <path
-            d="M18.8449 7.86873H13.6841L15.901 1.04315C16.0147 0.693949 16.5101 0.693949 16.6279 1.04315L18.8449 7.86873Z"
-            fill="#E24329"
-        />
-        <path d="M9.99902 19.2023L13.6835 7.8689H18.8444L9.99902 19.2023Z" fill="#FC6D26" />
-        <path d="M9.99907 19.2023L1.15918 7.8689H6.31995L9.99907 19.2023Z" fill="#FC6D26" />
-    </svg>
-)

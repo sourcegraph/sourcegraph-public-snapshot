@@ -11,41 +11,47 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
+	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // StreamHandler is an http handler which streams back search results.
-func StreamHandler(db dbutil.DB) http.Handler {
+func StreamHandler(db database.DB) http.Handler {
 	return &streamHandler{
 		db:                  db,
-		newSearchResolver:   defaultNewSearchResolver,
+		searchClient:        client.NewSearchClient(db, search.Indexed(), search.SearcherURLs()),
 		flushTickerInternal: 100 * time.Millisecond,
 		pingTickerInterval:  5 * time.Second,
 	}
 }
 
 type streamHandler struct {
-	db                  dbutil.DB
-	newSearchResolver   func(context.Context, dbutil.DB, *graphqlbackend.SearchArgs) (searchResolver, error)
+	db                  database.DB
+	searchClient        client.SearchClient
 	flushTickerInternal time.Duration
 	pingTickerInterval  time.Duration
 }
@@ -63,7 +69,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	tr, ctx := trace.New(ctx, "search.ServeStream", args.Query,
 		trace.Tag{Key: "version", Value: args.Version},
 		trace.Tag{Key: "pattern_type", Value: args.PatternType},
-		trace.Tag{Key: "version_context", Value: args.VersionContext},
 	)
 	defer func() {
 		tr.SetError(err)
@@ -84,7 +89,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	eventWriter.StatHook = eventStreamOTHook(tr.LogFields)
 
 	events, inputs, results := h.startSearch(ctx, args)
-	events = batchEvents(events, 50*time.Millisecond)
 
 	// Display is the number of results we send down. If display is < 0 we
 	// want to send everything we find before hitting a limit. Otherwise we
@@ -104,16 +108,13 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	progress := progressAggregator{
 		Start:        start,
 		Limit:        inputs.MaxResults(),
-		Trace:        trace.URL(trace.ID(ctx)),
+		Trace:        trace.URL(trace.ID(ctx), conf.ExternalURL()),
 		DisplayLimit: displayLimit,
+		RepoNamer:    repoNamer(ctx, h.db),
 	}
 
 	sendProgress := func() {
 		_ = eventWriter.Event("progress", progress.Current())
-	}
-
-	filters := &streaming.SearchFilters{
-		Globbing: false, // TODO
 	}
 
 	// Store marshalled matches and flush periodically or when we go over
@@ -138,36 +139,57 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	pingTicker := time.NewTicker(h.pingTickerInterval)
 	defer pingTicker.Stop()
 
+	filters := &streaming.SearchFilters{}
+	filtersFlush := func() {
+		if fs := filters.Compute(); len(fs) > 0 {
+			buf := make([]streamhttp.EventFilter, 0, len(fs))
+			for _, f := range fs {
+				buf = append(buf, streamhttp.EventFilter{
+					Value:    f.Value,
+					Label:    f.Label,
+					Count:    f.Count,
+					LimitHit: f.IsLimitHit,
+					Kind:     f.Kind,
+				})
+			}
+
+			if err := eventWriter.Event("filters", buf); err != nil {
+				// EOF
+				return
+			}
+		}
+	}
+
+	var wgLogLatency sync.WaitGroup
+	defer wgLogLatency.Wait()
+
 	first := true
 	handleEvent := func(event streaming.SearchEvent) {
 		progress.Update(event)
 		filters.Update(event)
 
 		// Truncate the event to the match limit before fetching repo metadata
-		for i, match := range event.Results {
-			if display <= 0 {
-				event.Results = event.Results[:i]
-				break
-			}
-
-			display = match.Limit(display)
-		}
+		display = event.Results.Limit(display)
 
 		repoMetadata, err := getEventRepoMetadata(ctx, h.db, event)
 		if err != nil {
 			log15.Error("failed to get repo metadata", "error", err)
 			return
 		}
+
 		for i, match := range event.Results {
+			repo := match.RepoName()
+
 			// Don't send matches which we cannot map to a repo the actor has access to. This
 			// check is expected to always pass. Missing metadata is a sign that we have
 			// searched repos that user shouldn't have access to.
-			if md, ok := repoMetadata[match.RepoName().ID]; !ok || md.Name != match.RepoName().Name {
+			if md, ok := repoMetadata[repo.ID]; !ok || md.Name != repo.Name {
 				continue
 			}
+
 			eventMatch := fromMatch(match, repoMetadata)
 			if args.DecorationLimit == -1 || args.DecorationLimit > i {
-				eventMatch = withDecoration(ctx, eventMatch, match, args.DecorationKind, args.DecorationContextLines)
+				eventMatch = withDecoration(ctx, h.db, eventMatch, match, args.DecorationKind, args.DecorationContextLines)
 			}
 			_ = matchesBuf.Append(eventMatch)
 		}
@@ -176,13 +198,13 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if first && matchesBuf.Len() > 0 {
 			first = false
 			matchesFlush()
+			filtersFlush()
 
 			metricLatency.WithLabelValues(string(GuessSource(r))).
 				Observe(time.Since(start).Seconds())
 
-			graphqlbackend.LogSearchLatency(ctx, h.db, &inputs, int32(time.Since(start).Milliseconds()))
+			graphqlbackend.LogSearchLatency(ctx, h.db, &wgLogLatency, inputs, int32(time.Since(start).Milliseconds()))
 		}
-
 	}
 
 LOOP:
@@ -194,53 +216,33 @@ LOOP:
 			}
 			handleEvent(event)
 		case <-flushTicker.C:
+			filtersFlush()
 			matchesFlush()
 		case <-pingTicker.C:
 			sendProgress()
 		}
 	}
 
+	filtersFlush()
 	matchesFlush()
 
-	// Send dynamic filters once.
-	if filters := filters.Compute(); len(filters) > 0 {
-		buf := make([]streamhttp.EventFilter, 0, len(filters))
-		for _, f := range filters {
-			buf = append(buf, streamhttp.EventFilter{
-				Value:    f.Value,
-				Label:    f.Label,
-				Count:    f.Count,
-				LimitHit: f.IsLimitHit,
-				Kind:     f.Kind,
-			})
-		}
-
-		if err := eventWriter.Event("filters", buf); err != nil {
-			// EOF
-			return
-		}
-	}
-
-	resultsResolver, err := results()
+	alert, err := results()
 	if err != nil {
 		_ = eventWriter.Event("error", streamhttp.EventError{Message: err.Error()})
 		return
 	}
 
-	alert := resultsResolver.Alert()
 	if alert != nil {
 		var pqs []streamhttp.ProposedQuery
-		if proposed := alert.ProposedQueries(); proposed != nil {
-			for _, pq := range *proposed {
-				pqs = append(pqs, streamhttp.ProposedQuery{
-					Description: fromStrPtr(pq.Description()),
-					Query:       pq.Query(),
-				})
-			}
+		for _, pq := range alert.ProposedQueries {
+			pqs = append(pqs, streamhttp.ProposedQuery{
+				Description: pq.Description,
+				Query:       pq.QueryString(),
+			})
 		}
 		_ = eventWriter.Event("alert", streamhttp.EventAlert{
-			Title:           alert.Title(),
-			Description:     fromStrPtr(alert.Description()),
+			Title:           alert.Title,
+			Description:     alert.Description,
 			ProposedQueries: pqs,
 		})
 	}
@@ -248,14 +250,14 @@ LOOP:
 	_ = eventWriter.Event("progress", progress.Final())
 
 	var status, alertType string
-	status = graphqlbackend.DetermineStatusForLogs(resultsResolver, err)
+	status = graphqlbackend.DetermineStatusForLogs(alert, progress.Stats, err)
 	if alert != nil {
-		alertType = alert.PrometheusType()
+		alertType = alert.PrometheusType
 	}
 
 	isSlow := time.Since(start) > searchlogs.LogSlowSearchesThreshold()
 	if honey.Enabled() || isSlow {
-		ev := honey.SearchEvent(ctx, honey.SearchEventArgs{
+		ev := searchhoney.SearchEvent(ctx, searchhoney.SearchEventArgs{
 			OriginalQuery: inputs.OriginalQuery,
 			Typ:           "stream",
 			Source:        string(trace.RequestSource(ctx)),
@@ -279,60 +281,60 @@ LOOP:
 // startSearch will start a search. It returns the events channel which
 // streams out search events. Once events is closed you can call results which
 // will return the results resolver and error.
-func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan streaming.SearchEvent, inputs run.SearchInputs, results func() (*graphqlbackend.SearchResultsResolver, error)) {
+func (h *streamHandler) startSearch(ctx context.Context, a *args) (<-chan streaming.SearchEvent, *run.SearchInputs, func() (*search.Alert, error)) {
 	eventsC := make(chan streaming.SearchEvent)
-
-	search, err := h.newSearchResolver(ctx, h.db, &graphqlbackend.SearchArgs{
-		Query:          a.Query,
-		Version:        a.Version,
-		PatternType:    strPtr(a.PatternType),
-		VersionContext: strPtr(a.VersionContext),
-
-		Stream: streaming.StreamFunc(func(event streaming.SearchEvent) {
-			eventsC <- event
-		}),
+	stream := streaming.StreamFunc(func(event streaming.SearchEvent) {
+		eventsC <- event
 	})
+	batchedStream := streaming.NewBatchingStream(50*time.Millisecond, stream)
+
+	settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, h.db)
 	if err != nil {
 		close(eventsC)
-		return eventsC, run.SearchInputs{}, func() (*graphqlbackend.SearchResultsResolver, error) {
+		return eventsC, &run.SearchInputs{}, func() (*search.Alert, error) {
+			return nil, err
+		}
+	}
+
+	inputs, err := h.searchClient.Plan(ctx, a.Version, strPtr(a.PatternType), a.Query, search.Streaming, settings, envvar.SourcegraphDotComMode())
+	if err != nil {
+		close(eventsC)
+		var queryErr *run.QueryError
+		if errors.As(err, &queryErr) {
+			return eventsC, &run.SearchInputs{}, func() (*search.Alert, error) {
+				return search.AlertForQuery(queryErr.Query, queryErr.Err), nil
+			}
+		}
+		return eventsC, &run.SearchInputs{}, func() (*search.Alert, error) {
 			return nil, err
 		}
 	}
 
 	type finalResult struct {
-		resultsResolver *graphqlbackend.SearchResultsResolver
-		err             error
+		alert *search.Alert
+		err   error
 	}
 	final := make(chan finalResult, 1)
 	go func() {
 		defer close(final)
 		defer close(eventsC)
+		defer batchedStream.Done()
 
-		r, err := search.Results(ctx)
-		final <- finalResult{resultsResolver: r, err: err}
+		alert, err := h.searchClient.Execute(ctx, batchedStream, inputs)
+		final <- finalResult{alert: alert, err: err}
 	}()
 
-	return eventsC, search.Inputs(), func() (*graphqlbackend.SearchResultsResolver, error) {
+	return eventsC, inputs, func() (*search.Alert, error) {
 		f := <-final
-		return f.resultsResolver, f.err
+		return f.alert, f.err
 	}
 }
 
-type searchResolver interface {
-	Results(context.Context) (*graphqlbackend.SearchResultsResolver, error)
-	Inputs() run.SearchInputs
-}
-
-func defaultNewSearchResolver(ctx context.Context, db dbutil.DB, args *graphqlbackend.SearchArgs) (searchResolver, error) {
-	return graphqlbackend.NewSearchImplementer(ctx, db, args)
-}
-
 type args struct {
-	Query          string
-	Version        string
-	PatternType    string
-	VersionContext string
-	Display        int
+	Query       string
+	Version     string
+	PatternType string
+	Display     int
 
 	// Optional decoration parameters for server-side rendering a result set
 	// or subset. Decorations may specify, e.g., highlighting results with
@@ -355,7 +357,6 @@ func parseURLQuery(q url.Values) (*args, error) {
 		Query:          get("q", ""),
 		Version:        get("v", "V2"),
 		PatternType:    get("t", ""),
-		VersionContext: get("vc", ""),
 		DecorationKind: get("dk", "html"),
 	}
 
@@ -389,15 +390,10 @@ func strPtr(s string) *string {
 	return &s
 }
 
-func fromStrPtr(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
-}
-
 // withDecoration hydrates event match with decorated hunks for a corresponding file match.
-func withDecoration(ctx context.Context, eventMatch streamhttp.EventMatch, internalResult result.Match, kind string, contextLines int) streamhttp.EventMatch {
+func withDecoration(ctx context.Context, db database.DB, eventMatch streamhttp.EventMatch, internalResult result.Match, kind string, contextLines int) streamhttp.EventMatch {
+	// FIXME: Use contextLines to constrain hunks.
+	_ = contextLines
 	if _, ok := internalResult.(*result.FileMatch); !ok {
 		return eventMatch
 	}
@@ -408,7 +404,7 @@ func withDecoration(ctx context.Context, eventMatch streamhttp.EventMatch, inter
 	}
 
 	if kind == "html" {
-		event.Hunks = DecorateFileHunksHTML(ctx, internalResult.(*result.FileMatch))
+		event.Hunks = DecorateFileHunksHTML(ctx, db, internalResult.(*result.FileMatch))
 	}
 
 	// TODO(team/search-product): support additional decoration for terminal clients #24617.
@@ -553,11 +549,9 @@ func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.Search
 }
 
 func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventCommitMatch {
-	content := commit.Body.Value
-
-	highlights := commit.Body.Highlights
-	ranges := make([][3]int32, len(highlights))
-	for i, h := range highlights {
+	hls := commit.Body().ToHighlightedString()
+	ranges := make([][3]int32, len(hls.Highlights))
+	for i, h := range hls.Highlights {
 		ranges[i] = [3]int32{h.Line, h.Character, h.Length}
 	}
 
@@ -567,7 +561,11 @@ func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.Sear
 		URL:        commit.URL().String(),
 		Detail:     commit.Detail(),
 		Repository: string(commit.Repo.Name),
-		Content:    content,
+		OID:        string(commit.Commit.ID),
+		Message:    string(commit.Commit.Message),
+		AuthorName: commit.Commit.Author.Name,
+		AuthorDate: commit.Commit.Author.Date,
+		Content:    hls.Value,
 		Ranges:     ranges,
 	}
 
@@ -597,7 +595,7 @@ func eventStreamOTHook(log func(...otlog.Field)) func(streamhttp.WriterStat) {
 var metricLatency = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Name:    "src_search_streaming_latency_seconds",
 	Help:    "Histogram with time to first result in seconds",
-	Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+	Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 20, 30},
 }, []string{"source"})
 
 var searchBlitzUserAgentRegexp = lazyregexp.New(`^SearchBlitz \(([^\)]+)\)$`)
@@ -624,57 +622,7 @@ func GuessSource(r *http.Request) trace.SourceType {
 		return trace.SourceType("searchblitz_" + match[1])
 	}
 
-	if userAgent == "sourcegraph/query-runner" {
-		return trace.SourceQueryRunner
-	}
-
 	return trace.SourceOther
-}
-
-// batchEvents takes an event stream and merges events that come through close in time into a single event.
-// This makes downstream database and network operations more efficient by enabling batch reads.
-func batchEvents(source <-chan streaming.SearchEvent, delay time.Duration) <-chan streaming.SearchEvent {
-	results := make(chan streaming.SearchEvent)
-	go func() {
-		defer close(results)
-
-		// Send the first event without a delay
-		firstEvent, ok := <-source
-		if !ok {
-			return
-		}
-		results <- firstEvent
-
-	OUTER:
-		for {
-			// Wait for a first event
-			event, ok := <-source
-			if !ok {
-				return
-			}
-
-			// Wait up to the delay for more events to come through,
-			// and merge any that do into the first event
-			timer := time.After(delay)
-			for {
-				select {
-				case newEvent, ok := <-source:
-					if !ok {
-						// Flush the buffered event and exit
-						results <- event
-						return
-					}
-					event.Results = append(event.Results, newEvent.Results...)
-					event.Stats.Update(&newEvent.Stats)
-				case <-timer:
-					results <- event
-					continue OUTER
-				}
-			}
-		}
-
-	}()
-	return results
 }
 
 func repoIDs(results []result.Match) []api.RepoID {

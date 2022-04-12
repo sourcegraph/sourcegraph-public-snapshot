@@ -1,8 +1,9 @@
-import { isEqual } from 'lodash'
 import { useCallback, useEffect, useRef, useState } from 'react'
+
+import { isEqual } from 'lodash'
 import { Subscription } from 'rxjs'
 
-import { observeResize } from '../util/dom'
+import { observeResize } from '@sourcegraph/common'
 
 interface CarouselOptions {
     amountToScroll?: number

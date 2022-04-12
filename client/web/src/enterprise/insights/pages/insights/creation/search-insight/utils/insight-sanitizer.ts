@@ -1,18 +1,11 @@
-import { camelCase } from 'lodash'
-
-import { InsightType, InsightTypePrefix, SearchBasedInsight } from '../../../../../core/types'
-import { SearchBasedInsightSeries } from '../../../../../core/types/insight/search-insight'
+import { getSanitizedRepositories } from '../../../../../components/creation-ui-kit'
+import { MinimalSearchBasedInsightData } from '../../../../../core/backend/code-insights-backend-types'
+import { InsightExecutionType, InsightType, SearchBasedInsightSeries } from '../../../../../core/types'
 import { CreateInsightFormFields, EditableDataSeries } from '../types'
-
-export function getSanitizedRepositories(rawRepositories: string): string[] {
-    return rawRepositories
-        .trim()
-        .split(/\s*,\s*/)
-        .filter(repo => repo)
-}
 
 export function getSanitizedLine(line: EditableDataSeries): SearchBasedInsightSeries {
     return {
+        id: line.id,
         name: line.name.trim(),
         stroke: line.stroke,
         // Query field is a reg exp field for code insight query setting
@@ -31,25 +24,25 @@ export function getSanitizedSeries(rawSeries: EditableDataSeries[]): SearchBased
  * Function converter from form shape insight to insight as it is
  * presented in user/org settings.
  */
-export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): SearchBasedInsight {
-    // Backend type of insight.
+export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): MinimalSearchBasedInsightData {
     if (rawInsight.allRepos) {
         return {
-            type: InsightType.Backend,
-            id: `${InsightTypePrefix.search}.${camelCase(rawInsight.title)}`,
+            executionType: InsightExecutionType.Backend,
+            type: InsightType.SearchBased,
             title: rawInsight.title,
             series: getSanitizedSeries(rawInsight.series),
-            visibility: rawInsight.visibility,
+            step: { [rawInsight.step]: +rawInsight.stepValue },
+            filters: {
+                excludeRepoRegexp: '',
+                includeRepoRegexp: '',
+                repositories: [],
+            },
         }
     }
 
     return {
-        type: InsightType.Extension,
-
-        // ID generated according to our naming insight convention
-        // <Type of insight>.insight.<name of insight>
-        id: `${InsightTypePrefix.search}.${camelCase(rawInsight.title)}`,
-        visibility: rawInsight.visibility,
+        executionType: InsightExecutionType.Runtime,
+        type: InsightType.SearchBased,
         title: rawInsight.title,
         repositories: getSanitizedRepositories(rawInsight.repositories),
         series: getSanitizedSeries(rawInsight.series),

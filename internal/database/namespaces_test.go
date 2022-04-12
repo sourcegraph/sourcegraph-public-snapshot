@@ -13,7 +13,7 @@ func TestNamespaces(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	// Create user and organization to test lookups.

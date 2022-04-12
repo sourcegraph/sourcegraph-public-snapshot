@@ -5,9 +5,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/cockroachdb/errors"
-
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var operationPrecedence = map[btypes.ReconcilerOperation]int{

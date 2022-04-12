@@ -1,20 +1,31 @@
-import classNames from 'classnames'
 import React from 'react'
 
-import {
-    LoadingSpinner as ReactLoadingSpinner,
-    LoadingSpinnerProps as ReactLoadingSpinnerProps,
-} from '@sourcegraph/react-loading-spinner'
+import classNames from 'classnames'
 
-interface LoadingSpinnerProps extends ReactLoadingSpinnerProps {
+import { Icon } from '../Icon'
+
+import styles from './LoadingSpinner.module.scss'
+
+export interface LoadingSpinnerProps {
+    className?: string
+    /**
+     * Whether to show loading spinner with icon-inline
+     *
+     * @default true
+     */
     inline?: boolean
 }
 
-/**
- * A simple wrapper around the generic Sourcegraph React loading spinner
- *
- * Supports additional custom styling relevant to this codebase.
- */
-export const LoadingSpinner: React.FunctionComponent<LoadingSpinnerProps> = ({ className, inline }) => (
-    <ReactLoadingSpinner className={classNames(inline && 'icon-inline', className)} />
-)
+export const LoadingSpinner: React.FunctionComponent<LoadingSpinnerProps> = ({
+    inline = true,
+    className,
+    ...props
+}) => {
+    const finalClassName = classNames(styles.loadingSpinner, className)
+
+    if (inline) {
+        return <Icon className={finalClassName} as="div" {...props} />
+    }
+
+    return <div className={finalClassName} {...props} />
+}

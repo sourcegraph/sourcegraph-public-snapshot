@@ -5,20 +5,50 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/xeonx/timeago"
+
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/xeonx/timeago"
 )
 
 type CommitMatch struct {
-	Commit         git.Commit
-	Repo           types.RepoName
-	Refs           []string
-	SourceRefs     []string
-	MessagePreview *HighlightedString
-	DiffPreview    *HighlightedString
-	Body           HighlightedString
+	Commit gitdomain.Commit
+	Repo   types.MinimalRepo
+
+	// Refs is a set of git references that point to this commit. For example,
+	// for a search like `repo:sourcegraph@abcd123`, if the `refs/heads/main`
+	// branch currently points to commit `abcd123`, Refs will contain `main`.
+	// Note: this might be empty because finding refs that point to a commit
+	// is an expensive operation that may be disabled.
+	Refs []string
+
+	// SourceRefs is the set of input refs that were used to find this commit.
+	// For example, with a search like `repo:sourcegraph@my-branch`, SourceRefs
+	// should be set to []string{"my-branch"}
+	SourceRefs []string
+
+	// MessagePreview and DiffPreview are mutually exclusive. Only one should be set
+	MessagePreview *MatchedString
+	DiffPreview    *MatchedString
+
+	// ModifiedFiles will include the list of files modified in the commit when
+	// sub-repo permissions filtering has been enabled.
+	ModifiedFiles []string
+}
+
+func (cm *CommitMatch) Body() MatchedString {
+	if cm.DiffPreview != nil {
+		return MatchedString{
+			Content:       "```diff\n" + cm.DiffPreview.Content + "\n```",
+			MatchedRanges: cm.DiffPreview.MatchedRanges.Add(Location{Line: 1, Offset: len("```diff\n")}),
+		}
+	}
+
+	return MatchedString{
+		Content:       "```COMMIT_EDITMSG\n" + cm.MessagePreview.Content + "\n```",
+		MatchedRanges: cm.MessagePreview.MatchedRanges.Add(Location{Line: 1, Offset: len("```COMMIT_EDITMSG\n")}),
+	}
 }
 
 // ResultCount for CommitSearchResult returns the number of highlights if there
@@ -26,51 +56,69 @@ type CommitMatch struct {
 // return a more meaningful result count for streaming while maintaining backward
 // compatibility for our GraphQL API. The GraphQL API calls ResultCount on the
 // resolver, while streaming calls ResultCount on CommitSearchResult.
-func (r *CommitMatch) ResultCount() int {
-	if n := len(r.Body.Highlights); n > 0 {
-		return n
+func (cm *CommitMatch) ResultCount() int {
+	matchCount := 0
+	switch {
+	case cm.DiffPreview != nil:
+		matchCount = len(cm.DiffPreview.MatchedRanges)
+	case cm.MessagePreview != nil:
+		matchCount = len(cm.MessagePreview.MatchedRanges)
+	}
+	if matchCount > 0 {
+		return matchCount
 	}
 	// Queries such as type:commit after:"1 week ago" don't have highlights. We count
 	// those results as 1.
 	return 1
 }
 
-func (r *CommitMatch) RepoName() types.RepoName {
-	return r.Repo
+func (cm *CommitMatch) RepoName() types.MinimalRepo {
+	return cm.Repo
 }
 
-func (r *CommitMatch) Limit(limit int) int {
-	if len(r.Body.Highlights) == 0 {
-		return limit - 1 // just counting the commit
-	} else if len(r.Body.Highlights) > limit {
-		r.Body.Highlights = r.Body.Highlights[:limit]
-		return 0
+func (cm *CommitMatch) Limit(limit int) int {
+	limitMatchedString := func(ms *MatchedString) int {
+		if len(ms.MatchedRanges) == 0 {
+			return limit - 1
+		} else if len(ms.MatchedRanges) > limit {
+			ms.MatchedRanges = ms.MatchedRanges[:limit]
+			return 0
+		}
+		return limit - len(ms.MatchedRanges)
 	}
-	return limit - len(r.Body.Highlights)
+
+	switch {
+	case cm.DiffPreview != nil:
+		return limitMatchedString(cm.DiffPreview)
+	case cm.MessagePreview != nil:
+		return limitMatchedString(cm.MessagePreview)
+	default:
+		panic("exactly one of DiffPreview or Message must be set")
+	}
 }
 
-func (r *CommitMatch) Select(path filter.SelectPath) Match {
+func (cm *CommitMatch) Select(path filter.SelectPath) Match {
 	switch path.Root() {
 	case filter.Repository:
 		return &RepoMatch{
-			Name: r.Repo.Name,
-			ID:   r.Repo.ID,
+			Name: cm.Repo.Name,
+			ID:   cm.Repo.ID,
 		}
 	case filter.Commit:
 		fields := path[1:]
 		if len(fields) > 0 && fields[0] == "diff" {
-			if r.DiffPreview == nil {
+			if cm.DiffPreview == nil {
 				return nil // Not a diff result.
 			}
 			if len(fields) == 1 {
-				return r
+				return cm
 			}
 			if len(fields) == 2 {
-				return selectCommitDiffKind(r, fields[1])
+				return selectCommitDiffKind(cm, fields[1])
 			}
 			return nil
 		}
-		return r
+		return cm
 	}
 	return nil
 }
@@ -79,45 +127,45 @@ func (r *CommitMatch) Select(path filter.SelectPath) Match {
 // are not currently supported. TODO(@team/search): Diff highlight information
 // cannot reliably merge this way because of offset issues with markdown
 // rendering.
-func (r *CommitMatch) AppendMatches(src *CommitMatch) {
-	if r.MessagePreview != nil && src.MessagePreview != nil {
-		r.MessagePreview.Highlights = append(r.MessagePreview.Highlights, src.MessagePreview.Highlights...)
-		r.Body.Highlights = append(r.Body.Highlights, src.Body.Highlights...)
+func (cm *CommitMatch) AppendMatches(src *CommitMatch) {
+	if cm.MessagePreview != nil && src.MessagePreview != nil {
+		cm.MessagePreview.MatchedRanges = append(cm.MessagePreview.MatchedRanges, src.MessagePreview.MatchedRanges...)
 	}
 }
 
 // Key implements Match interface's Key() method
-func (r *CommitMatch) Key() Key {
+func (cm *CommitMatch) Key() Key {
 	typeRank := rankCommitMatch
-	if r.DiffPreview != nil {
+	if cm.DiffPreview != nil {
 		typeRank = rankDiffMatch
 	}
 	return Key{
-		TypeRank: typeRank,
-		Repo:     r.Repo.Name,
-		Commit:   r.Commit.ID,
+		TypeRank:   typeRank,
+		Repo:       cm.Repo.Name,
+		AuthorDate: cm.Commit.Author.Date,
+		Commit:     cm.Commit.ID,
 	}
 }
 
-func (r *CommitMatch) Label() string {
-	message := r.Commit.Message.Subject()
-	author := r.Commit.Author.Name
-	repoName := displayRepoName(string(r.Repo.Name))
-	repoURL := (&RepoMatch{Name: r.Repo.Name, ID: r.Repo.ID}).URL().String()
-	commitURL := r.URL().String()
+func (cm *CommitMatch) Label() string {
+	message := cm.Commit.Message.Subject()
+	author := cm.Commit.Author.Name
+	repoName := displayRepoName(string(cm.Repo.Name))
+	repoURL := (&RepoMatch{Name: cm.Repo.Name, ID: cm.Repo.ID}).URL().String()
+	commitURL := cm.URL().String()
 
 	return fmt.Sprintf("[%s](%s) › [%s](%s): [%s](%s)", repoName, repoURL, author, commitURL, message, commitURL)
 }
 
-func (r *CommitMatch) Detail() string {
-	commitHash := r.Commit.ID.Short()
+func (cm *CommitMatch) Detail() string {
+	commitHash := cm.Commit.ID.Short()
 	timeagoConfig := timeago.NoMax(timeago.English)
-	return fmt.Sprintf("[`%v` %v](%v)", commitHash, timeagoConfig.Format(r.Commit.Author.Date), r.URL())
+	return fmt.Sprintf("[`%v` %v](%v)", commitHash, timeagoConfig.Format(cm.Commit.Author.Date), cm.URL())
 }
 
-func (r *CommitMatch) URL() *url.URL {
-	u := (&RepoMatch{Name: r.Repo.Name, ID: r.Repo.ID}).URL()
-	u.Path = u.Path + "/-/commit/" + string(r.Commit.ID)
+func (cm *CommitMatch) URL() *url.URL {
+	u := (&RepoMatch{Name: cm.Repo.Name, ID: cm.Repo.ID}).URL()
+	u.Path = u.Path + "/-/commit/" + string(cm.Commit.ID)
 	return u
 }
 
@@ -131,17 +179,17 @@ func displayRepoName(repoPath string) string {
 
 // selectModifiedLines extracts the highlight ranges that correspond to lines
 // that have a `+` or `-` prefix (corresponding to additions resp. removals).
-func selectModifiedLines(lines []string, highlights []HighlightedRange, prefix string, offset int32) []HighlightedRange {
+func selectModifiedLines(lines []string, highlights []Range, prefix string) []Range {
 	if len(lines) == 0 {
 		return highlights
 	}
-	include := make([]HighlightedRange, 0, len(highlights))
+	include := make([]Range, 0, len(highlights))
 	for _, h := range highlights {
-		if h.Line-offset < 0 {
+		if h.Start.Line < 0 {
 			// Skip negative line numbers. See: https://github.com/sourcegraph/sourcegraph/issues/20286.
 			continue
 		}
-		if strings.HasPrefix(lines[h.Line-offset], prefix) {
+		if strings.HasPrefix(lines[h.Start.Line], prefix) {
 			include = append(include, h)
 		}
 	}
@@ -175,28 +223,18 @@ func selectCommitDiffKind(c *CommitMatch, field string) Match {
 	if field == "removed" {
 		prefix = "-"
 	}
-	if len(diff.Highlights) == 0 {
+	if len(diff.MatchedRanges) == 0 {
 		// No highlights, implying no pattern was specified. Filter by
 		// whether there exists lines corresponding to additions or
-		// removals. Inspect c.Body, which is the diff markdown in the
-		// format ```diff <...>``` and which doesn't contain a unified
-		// diff header with +++ or --- in diff.Value, which would would
-		// otherwise confuse this check.
-		if modifiedLinesExist(strings.Split(c.Body.Value, "\n"), prefix) {
+		// removals.
+		if modifiedLinesExist(strings.Split(diff.Content, "\n"), prefix) {
 			return c
 		}
 		return nil
 	}
-	// We have two data structures storing highlight information for diff
-	// results. We must keep these in sync. Additionally the diff highlights
-	// line number is offset by 1.
-	bodyHighlights := selectModifiedLines(strings.Split(c.Body.Value, "\n"), c.Body.Highlights, prefix, 0)
-	diffHighlights := selectModifiedLines(strings.Split(diff.Value, "\n"), diff.Highlights, prefix, 1)
-	if len(bodyHighlights) > 0 {
-		// Only rely on bodyHighlights since the header in diff.Value
-		// will create bogus highlights due to `+++` or `---`.
-		c.Body.Highlights = bodyHighlights
-		c.DiffPreview.Highlights = diffHighlights
+	diffHighlights := selectModifiedLines(strings.Split(diff.Content, "\n"), diff.MatchedRanges, prefix)
+	if len(diffHighlights) > 0 {
+		c.DiffPreview.MatchedRanges = diffHighlights
 		return c
 	}
 	return nil // No matching lines.

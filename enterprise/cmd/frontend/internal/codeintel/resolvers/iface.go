@@ -4,18 +4,27 @@ import (
 	"context"
 	"time"
 
+	"github.com/grafana/regexp"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	gs "github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 type GitserverClient interface {
-	CommitExists(ctx context.Context, repositoryID int, commit string) (bool, error)
-	CommitGraph(ctx context.Context, repositoryID int, options gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error)
+	ResolveRevision(ctx context.Context, repositoryID int, versionString string) (api.CommitID, error)
+	CommitDate(ctx context.Context, repositoryID int, commit string) (string, time.Time, bool, error)
+	RefDescriptions(ctx context.Context, repositoryID int, gitOjbs ...string) (map[string][]gitdomain.RefDescription, error)
+	CommitsUniqueToBranch(ctx context.Context, repositoryID int, branchName string, isDefaultBranch bool, maxAge *time.Time) (map[string]time.Time, error)
+	CommitsExist(ctx context.Context, commits []gitserver.RepositoryCommit) ([]bool, error)
+	CommitGraph(ctx context.Context, repositoryID int, options gs.CommitGraphOptions) (*gitdomain.CommitGraph, error)
+	ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error)
 }
 
 type DBStore interface {
@@ -27,7 +36,7 @@ type DBStore interface {
 	DeleteUploadByID(ctx context.Context, id int) (bool, error)
 	GetDumpsByIDs(ctx context.Context, ids []int) ([]dbstore.Dump, error)
 	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) ([]dbstore.Dump, error)
-	FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, graph *gitserver.CommitGraph) ([]dbstore.Dump, error)
+	FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, graph *gitdomain.CommitGraph) ([]dbstore.Dump, error)
 	DefinitionDumps(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []dbstore.Dump, err error)
 	ReferenceIDsAndFilters(ctx context.Context, repositoryID int, commit string, monikers []precise.QualifiedMonikerData, limit, offset int) (_ dbstore.PackageReferenceScanner, _ int, err error)
 	HasRepository(ctx context.Context, repositoryID int) (bool, error)
@@ -38,20 +47,28 @@ type DBStore interface {
 	GetIndexesByIDs(ctx context.Context, ids ...int) ([]dbstore.Index, error)
 	GetIndexes(ctx context.Context, opts dbstore.GetIndexesOptions) ([]dbstore.Index, int, error)
 	DeleteIndexByID(ctx context.Context, id int) (bool, error)
-	GetConfigurationPolicies(ctx context.Context, opts store.GetConfigurationPoliciesOptions) ([]store.ConfigurationPolicy, error)
-	GetConfigurationPolicyByID(ctx context.Context, id int) (store.ConfigurationPolicy, bool, error)
-	CreateConfigurationPolicy(ctx context.Context, configurationPolicy store.ConfigurationPolicy) (store.ConfigurationPolicy, error)
-	UpdateConfigurationPolicy(ctx context.Context, policy store.ConfigurationPolicy) (err error)
+	GetConfigurationPolicies(ctx context.Context, opts dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error)
+	GetConfigurationPolicyByID(ctx context.Context, id int) (dbstore.ConfigurationPolicy, bool, error)
+	CreateConfigurationPolicy(ctx context.Context, configurationPolicy dbstore.ConfigurationPolicy) (dbstore.ConfigurationPolicy, error)
+	UpdateConfigurationPolicy(ctx context.Context, policy dbstore.ConfigurationPolicy) (err error)
 	DeleteConfigurationPolicyByID(ctx context.Context, id int) (err error)
-	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (store.IndexConfiguration, bool, error)
+	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (dbstore.IndexConfiguration, bool, error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) error
+	RepoIDsByGlobPatterns(ctx context.Context, patterns []string, limit, offset int) ([]int, int, error)
+	CommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error)
+	RecentUploadsSummary(ctx context.Context, repositoryID int) ([]dbstore.UploadsWithRepositoryNamespace, error)
+	RecentIndexesSummary(ctx context.Context, repositoryID int) ([]dbstore.IndexesWithRepositoryNamespace, error)
+	LastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error)
+	LastIndexScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error)
 }
 
 type LSIFStore interface {
 	Exists(ctx context.Context, bundleID int, path string) (bool, error)
+	Stencil(ctx context.Context, bundelID int, path string) ([]lsifstore.Range, error)
 	Ranges(ctx context.Context, bundleID int, path string, startLine, endLine int) ([]lsifstore.CodeIntelligenceRange, error)
 	Definitions(ctx context.Context, bundleID int, path string, line, character, limit, offset int) ([]lsifstore.Location, int, error)
 	References(ctx context.Context, bundleID int, path string, line, character, limit, offset int) ([]lsifstore.Location, int, error)
+	Implementations(ctx context.Context, bundleID int, path string, line, character, limit, offset int) ([]lsifstore.Location, int, error)
 	Hover(ctx context.Context, bundleID int, path string, line, character int) (string, lsifstore.Range, bool, error)
 	Diagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) ([]lsifstore.Diagnostic, int, error)
 	MonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) ([][]precise.MonikerData, error)
@@ -61,13 +78,16 @@ type LSIFStore interface {
 	DocumentationPathInfo(ctx context.Context, bundleID int, pathID string) (*precise.DocumentationPathInfoData, error)
 	DocumentationDefinitions(ctx context.Context, bundleID int, pathID string, limit, offset int) ([]lsifstore.Location, int, error)
 	DocumentationAtPosition(ctx context.Context, bundleID int, path string, line, character int) ([]string, error)
+	DocumentationSearch(ctx context.Context, table, query string, repos []string) ([]precise.DocumentationSearchResult, error)
 }
 
 type IndexEnqueuer interface {
 	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force bool) ([]dbstore.Index, error)
-	InferIndexConfiguration(ctx context.Context, repositoryID int) (*config.IndexConfiguration, error)
+	InferIndexConfiguration(ctx context.Context, repositoryID int, commit string) (*config.IndexConfiguration, []config.IndexJobHint, error)
 }
 
-type RepoUpdaterClient = enqueuer.RepoUpdaterClient
-type EnqueuerDBStore = enqueuer.DBStore
-type EnqueuerGitserverClient = enqueuer.GitserverClient
+type (
+	RepoUpdaterClient       = enqueuer.RepoUpdaterClient
+	EnqueuerDBStore         = enqueuer.DBStore
+	EnqueuerGitserverClient = enqueuer.GitserverClient
+)

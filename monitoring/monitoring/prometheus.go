@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/prometheus/common/model"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const (

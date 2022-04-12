@@ -1,10 +1,13 @@
-import classNames from 'classnames'
-import * as H from 'history'
 import * as React from 'react'
 
-import { asError } from '@sourcegraph/shared/src/util/errors'
+import classNames from 'classnames'
+import * as H from 'history'
 
-import { ErrorAlert } from '../../../components/alerts'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { asError } from '@sourcegraph/common'
+import { Button } from '@sourcegraph/wildcard'
+
+import styles from './ActionContainer.module.scss'
 
 export const BaseActionContainer: React.FunctionComponent<{
     title: React.ReactFragment
@@ -13,15 +16,15 @@ export const BaseActionContainer: React.FunctionComponent<{
     details?: React.ReactFragment
     className?: string
 }> = ({ title, description, action, details, className }) => (
-    <div className={classNames('action-container', className)}>
-        <div className="action-container__row">
-            <div className="action-container__description">
-                <h4 className="action-container__title">{title}</h4>
+    <div className={classNames(styles.actionContainer, className)}>
+        <div className={styles.row}>
+            <div>
+                <h4 className={styles.title}>{title}</h4>
                 {description}
             </div>
-            <div className="action-container__btn-container">{action}</div>
+            <div className={styles.btnContainer}>{action}</div>
         </div>
-        {details && <div className="action-container__row">{details}</div>}
+        {details && <div className={styles.row}>{details}</div>}
     </div>
 )
 
@@ -73,30 +76,22 @@ export class ActionContainer extends React.PureComponent<Props, State> {
                 className={this.props.className}
                 action={
                     <>
-                        <button
-                            type="button"
-                            className={classNames(
-                                'btn action-container__btn',
-                                this.props.buttonClassName || 'btn-primary'
-                            )}
+                        <Button
+                            className={classNames(styles.btn, this.props.buttonClassName)}
+                            variant={this.props.buttonClassName ? undefined : 'primary'}
                             onClick={this.onClick}
                             data-tooltip={this.props.buttonSubtitle}
                             disabled={this.props.buttonDisabled || this.state.loading}
                         >
                             {this.props.buttonLabel}
-                        </button>
+                        </Button>
                         {this.props.buttonSubtitle && (
-                            <div className="action-container__btn-subtitle">
+                            <div className={styles.btnSubtitle}>
                                 <small>{this.props.buttonSubtitle}</small>
                             </div>
                         )}
                         {!this.props.buttonSubtitle && this.props.flashText && (
-                            <div
-                                className={
-                                    'action-container__flash' +
-                                    (this.state.flash ? ' action-container__flash--visible' : '')
-                                }
-                            >
+                            <div className={classNames(styles.flash, this.state.flash && styles.flashVisible)}>
                                 <small>{this.props.flashText}</small>
                             </div>
                         )}

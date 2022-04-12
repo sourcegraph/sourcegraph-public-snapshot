@@ -1,6 +1,8 @@
-import classnames from 'classnames'
 import React from 'react'
-import { Link } from 'react-router-dom'
+
+import classNames from 'classnames'
+
+import { Link } from '@sourcegraph/wildcard'
 
 import styles from './HighlightedLink.module.scss'
 
@@ -45,7 +47,7 @@ export const HighlightedLink: React.FunctionComponent<HighlightedLinkProps> = pr
         const key = `${startOffset}-${endOffset}`
         if (kind === 'mark') {
             spans.push(
-                <mark key={key} className={classnames(styles.mark, 'px-0')}>
+                <mark key={key} className={classNames(styles.mark, 'px-0')}>
                     {text}
                 </mark>
             )

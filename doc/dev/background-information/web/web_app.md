@@ -1,46 +1,55 @@
 # Developing the Sourcegraph web app
 
-Guide to contribute to the Sourcegraph web app. Please also see our general [TypeScript documentation](https://about.sourcegraph.com/handbook/engineering/languages/typescript).
+Guide to contribute to the Sourcegraph web app. Please also see our general [TypeScript documentation](../languages/typescript.md).
 
 ## Local development
 
-Common commands for local development are located [here](../../getting-started/quickstart_6_start_server.md).
+See [common commands for local development](../../setup/quickstart.md).
 Commands specifically useful for the web team can be found in the root [package.json](https://github.com/sourcegraph/sourcegraph/blob/main/package.json).
 Also, check out the web app [README](https://github.com/sourcegraph/sourcegraph/blob/main/client/web/README.md).
 
 ### Prerequisites
 
-The `sg` CLI tool is required for key local development commands. Check out the `sg` [README](https://github.com/sourcegraph/sourcegraph/blob/main/dev/sg/README.md).
-To install it, use the following command.
+The `sg` CLI tool is required for key local development commands. Check out [the `sg` documentation](../sg/index.md).
 
-```sh
-./dev/sg/install.sh
-```
+To install it, [see the instructions](../../setup/quickstart.md).
 
 ### Commands
 
 1. Start the web server and point it to any deployed API instance. See more info in the web app [README](https://github.com/sourcegraph/sourcegraph/blob/main/client/web/README.md).
 
     ```sh
-    sg run web-standalone
+    sg start web-standalone
     ```
 
-    For the enterprise version:
+    For the open-source version:
 
     ```sh
-    sg run enterprise-web-standalone
+    sg start oss-web-standalone
+    ```
+
+    To use a public API that doesn't require authentication for most of the functionality:
+
+    ```sh
+    SOURCEGRAPH_API_URL=https://sourcegraph.com sg start web-standalone
+    ```
+
+    For open-source version:
+
+    ```sh
+    SOURCEGRAPH_API_URL=https://sourcegraph.com sg start oss-web-standalone
     ```
 
 2. Start all backend services with the frontend server.
 
     ```sh
-    ./dev/start.sh
+    sg start # which defaults to `sg start enterprise`
     ```
 
-    For the enterprise version:
+    For the open-source version:
 
     ```sh
-    ./enterprise/dev/start.sh
+    sg start oss
     ```
 
 3. Regenerate GraphQL schema, Typescript types for GraphQL operations and CSS Modules.

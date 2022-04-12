@@ -1,9 +1,8 @@
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { gql } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import * as GQL from '@sourcegraph/shared/src/schema'
 
 import { UserEvent, EventSource } from '../../graphql-operations'
-import { DEFAULT_SOURCEGRAPH_URL } from '../util/context'
 
 /**
  * Log a user action on the associated self-hosted Sourcegraph instance (allows site admins on a private
@@ -41,18 +40,12 @@ export const logUserEvent = (
 }
 
 /**
- * Log a raw user action on the associated self-hosted Sourcegraph instance (allows site admins on a private
- * Sourcegraph instance to see a count of unique users on a daily, weekly, and monthly basis).
+ * Log a raw user action on the associated Sourcegraph instance
  */
 export const logEvent = (
-    event: { name: string; userCookieID: string; url: string; argument?: string | {} },
+    event: { name: string; userCookieID: string; url: string; argument?: string | {}; publicArgument?: string | {} },
     requestGraphQL: PlatformContext['requestGraphQL']
 ): void => {
-    // Only send the request if this is a private, self-hosted Sourcegraph instance.
-    if (event.url === DEFAULT_SOURCEGRAPH_URL) {
-        return
-    }
-
     requestGraphQL<GQL.IMutation>({
         request: gql`
             mutation logEvent(
@@ -61,8 +54,16 @@ export const logEvent = (
                 $url: String!
                 $source: EventSource!
                 $argument: String
+                $publicArgument: String
             ) {
-                logEvent(event: $name, userCookieID: $userCookieID, url: $url, source: $source, argument: $argument) {
+                logEvent(
+                    event: $name
+                    userCookieID: $userCookieID
+                    url: $url
+                    source: $source
+                    argument: $argument
+                    publicArgument: $publicArgument
+                ) {
                     alwaysNil
                 }
             }
@@ -71,6 +72,7 @@ export const logEvent = (
             ...event,
             source: EventSource.CODEHOSTINTEGRATION,
             argument: event.argument && JSON.stringify(event.argument),
+            publicArgument: event.publicArgument && JSON.stringify(event.publicArgument),
         },
         mightContainPrivateInfo: false,
         // eslint-disable-next-line rxjs/no-ignored-subscription

@@ -1,5 +1,8 @@
-import { storiesOf } from '@storybook/react'
 import React from 'react'
+
+import { storiesOf } from '@storybook/react'
+
+import { Card } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../components/WebStory'
 
@@ -10,9 +13,9 @@ const { add } = storiesOf('web/OrDivider', module).addDecorator(story => <div cl
 add('Alone', () => (
     <WebStory>
         {() => (
-            <div className="card border-0">
+            <Card className="border-0">
                 <OrDivider />
-            </div>
+            </Card>
         )}
     </WebStory>
 ))

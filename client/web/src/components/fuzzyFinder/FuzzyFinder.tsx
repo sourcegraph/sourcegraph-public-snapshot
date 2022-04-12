@@ -1,23 +1,28 @@
-import { Shortcut } from '@slimsag/react-shortcuts'
-import React, { useState } from 'react'
+import React, { useState, useEffect, Dispatch, SetStateAction } from 'react'
 
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { ApolloError, useQuery } from '@apollo/client'
+import * as H from 'history'
+import { useHistory } from 'react-router-dom'
 
-import { requestGraphQL } from '../../backend/graphql'
+import { gql, getDocumentNode } from '@sourcegraph/http-client'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
 import { FuzzySearch, SearchIndexing } from '../../fuzzyFinder/FuzzySearch'
 import { FileNamesResult, FileNamesVariables } from '../../graphql-operations'
-import {
-    KEYBOARD_SHORTCUT_CLOSE_FUZZY_FINDER,
-    KEYBOARD_SHORTCUT_FUZZY_FINDER,
-} from '../../keyboardShortcuts/keyboardShortcuts'
+import { parseBrowserRepoURL } from '../../util/url'
 
 import { FuzzyModal } from './FuzzyModal'
 
 const DEFAULT_MAX_RESULTS = 100
 
-export interface FuzzyFinderProps {
-    repoName: string
-    commitID: string
+export interface FuzzyFinderProps extends TelemetryProps {
+    setIsVisible: Dispatch<SetStateAction<boolean>>
+
+    isVisible: boolean
+
+    location: H.Location
+
+    setCacheRetention: Dispatch<SetStateAction<boolean>>
 
     /**
      * The maximum number of files a repo can have to use case-insensitive fuzzy finding.
@@ -30,38 +35,55 @@ export interface FuzzyFinderProps {
     caseInsensitiveFileCountThreshold?: number
 }
 
-export const FuzzyFinder: React.FunctionComponent<FuzzyFinderProps> = props => {
-    const [isVisible, setIsVisible] = useState(false)
-
+export const FuzzyFinder: React.FunctionComponent<FuzzyFinderProps> = ({
+    location: { search, pathname, hash },
+    setCacheRetention,
+    setIsVisible,
+    isVisible,
+    telemetryService,
+}) => {
     // The state machine of the fuzzy finder. See `FuzzyFSM` for more details
     // about the state transititions.
     const [fsm, setFsm] = useState<FuzzyFSM>({ key: 'empty' })
+    const { repoName = '', commitID = '', rawRevision = '' } = parseBrowserRepoURL(pathname + search + hash)
+    const { downloadFilename, isLoadingFilename, filenameError } = useFilename(repoName, commitID || rawRevision)
+
+    const history = useHistory()
+    useEffect(
+        () =>
+            history.listen(location => {
+                const url = location.pathname + location.search + location.hash
+                const { repoName: repo = '', commitID: commit = '', rawRevision: raw = '' } = parseBrowserRepoURL(url)
+                if (repo !== repoName || commit !== commitID || raw !== rawRevision) {
+                    setCacheRetention(false)
+                }
+            }),
+        [history, repoName, commitID, rawRevision, setCacheRetention]
+    )
+
+    useEffect(() => {
+        if (isVisible) {
+            telemetryService.log('FuzzyFinderViewed', { action: 'shortcut open' })
+        }
+    }, [telemetryService, isVisible])
+
+    if (!isVisible) {
+        return null
+    }
 
     return (
-        <>
-            <Shortcut
-                {...KEYBOARD_SHORTCUT_FUZZY_FINDER.keybindings[0]}
-                onMatch={() => {
-                    setIsVisible(true)
-                    const input = document.querySelector<HTMLInputElement>('#fuzzy-modal-input')
-                    input?.focus()
-                    input?.select()
-                }}
-            />
-            <Shortcut {...KEYBOARD_SHORTCUT_CLOSE_FUZZY_FINDER.keybindings[0]} onMatch={() => setIsVisible(false)} />
-            {isVisible && (
-                <FuzzyModal
-                    {...props}
-                    isVisible={isVisible}
-                    onClose={() => setIsVisible(false)}
-                    initialQuery=""
-                    initialMaxResults={DEFAULT_MAX_RESULTS}
-                    fsm={fsm}
-                    setFsm={setFsm}
-                    downloadFilenames={() => downloadFilenames(props)}
-                />
-            )}
-        </>
+        <FuzzyModal
+            repoName={repoName}
+            commitID={commitID}
+            initialMaxResults={DEFAULT_MAX_RESULTS}
+            initialQuery=""
+            downloadFilenames={downloadFilename}
+            isLoading={isLoadingFilename}
+            isError={filenameError}
+            onClose={() => setIsVisible(false)}
+            fsm={fsm}
+            setFsm={setFsm}
+        />
     )
 }
 
@@ -107,25 +129,32 @@ export interface Failed {
     errorMessage: string
 }
 
-async function downloadFilenames(props: FuzzyFinderProps): Promise<string[]> {
-    const gqlResult = await requestGraphQL<FileNamesResult, FileNamesVariables>(
-        gql`
-            query FileNames($repository: String!, $commit: String!) {
-                repository(name: $repository) {
-                    commit(rev: $commit) {
-                        fileNames
-                    }
-                }
+const FILE_NAMES = gql`
+    query FileNames($repository: String!, $commit: String!) {
+        repository(name: $repository) {
+            id
+            commit(rev: $commit) {
+                id
+                fileNames
             }
-        `,
-        {
-            repository: props.repoName,
-            commit: props.commitID,
         }
-    ).toPromise()
-    const filenames = gqlResult.data?.repository?.commit?.fileNames
-    if (!filenames) {
-        throw new Error(JSON.stringify(gqlResult))
     }
-    return filenames
+`
+
+interface FilenameResult {
+    downloadFilename: string[]
+    isLoadingFilename: boolean
+    filenameError: ApolloError | undefined
+}
+
+const useFilename = (repository: string, commit: string): FilenameResult => {
+    const { data, loading, error } = useQuery<FileNamesResult, FileNamesVariables>(getDocumentNode(FILE_NAMES), {
+        variables: { repository, commit },
+    })
+
+    return {
+        downloadFilename: data?.repository?.commit?.fileNames || [],
+        isLoadingFilename: loading,
+        filenameError: error,
+    }
 }

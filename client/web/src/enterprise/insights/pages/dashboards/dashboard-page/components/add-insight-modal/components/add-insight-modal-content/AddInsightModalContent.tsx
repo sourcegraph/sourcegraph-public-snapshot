@@ -1,25 +1,24 @@
-import classnames from 'classnames'
-import { escapeRegExp } from 'lodash'
 import React from 'react'
-import { Link } from 'react-router-dom'
 
-import { Button } from '@sourcegraph/wildcard'
+import classNames from 'classnames'
+import { escapeRegExp } from 'lodash'
 
-import { ErrorAlert } from '../../../../../../../../../components/alerts'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Button, Input, Link } from '@sourcegraph/wildcard'
+
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
-import { FormInput } from '../../../../../../../components/form/form-input/FormInput'
 import { useCheckboxes } from '../../../../../../../components/form/hooks/useCheckboxes'
 import { useField } from '../../../../../../../components/form/hooks/useField'
 import { SubmissionErrors, useForm, FORM_ERROR } from '../../../../../../../components/form/hooks/useForm'
-import { Badge } from '../../../dashboard-select/components/badge/Badge'
+import { AccessibleInsightInfo } from '../../../../../../../core/backend/code-insights-backend-types'
 import { TruncatedText } from '../../../dashboard-select/components/trancated-text/TrancatedText'
-import { ReachableInsight } from '../../hooks/use-reachable-insights'
 
 import styles from './AddInsightModalContent.module.scss'
 
 interface AddInsightModalContentProps {
-    insights: ReachableInsight[]
+    insights: AccessibleInsightInfo[]
     initialValues: AddInsightFormValues
+    dashboardID: string
     onSubmit: (values: AddInsightFormValues) => SubmissionErrors | Promise<SubmissionErrors> | void
     onCancel: () => void
 }
@@ -30,7 +29,7 @@ export interface AddInsightFormValues {
 }
 
 export const AddInsightModalContent: React.FunctionComponent<AddInsightModalContentProps> = props => {
-    const { initialValues, insights, onSubmit, onCancel } = props
+    const { initialValues, insights, dashboardID, onSubmit, onCancel } = props
 
     const { formAPI, ref, handleSubmit } = useForm({
         initialValues,
@@ -53,19 +52,19 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
     return (
         // eslint-disable-next-line react/forbid-elements
         <form ref={ref} onSubmit={handleSubmit}>
-            <FormInput
+            <Input
                 autoFocus={true}
-                description={
+                message={
                     <span className="">
                         Don't see an insight? Check the insight's visibility settings or{' '}
-                        <Link to="/insights/create">create a new insight</Link>
+                        <Link to={`/insights/create?dashboardId=${dashboardID}`}>create a new insight</Link>
                     </span>
                 }
                 placeholder="Search insights..."
                 {...searchInput.input}
             />
 
-            <fieldset className={classnames('mt-2', styles.insightsContainer)}>
+            <fieldset className={classNames('mt-2', styles.insightsContainer)}>
                 {filteredInsights.map(insight => (
                     <label key={insight.id} className={styles.insightItem}>
                         <input
@@ -79,7 +78,6 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
                         />
 
                         <TruncatedText>{insight.title}</TruncatedText>
-                        <Badge value={insight.owner.name} className={styles.insightOwnerName} />
                     </label>
                 ))}
             </fieldset>
@@ -101,7 +99,7 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
                     label={formAPI.submitting ? 'Saving' : 'Save'}
                     type="submit"
                     disabled={formAPI.submitting}
-                    className="btn btn-primary"
+                    variant="primary"
                 />
             </div>
         </form>

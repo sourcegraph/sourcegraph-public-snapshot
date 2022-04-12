@@ -1,109 +1,111 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`DiffStat expandedCounts 1`] = `
-<div
-  className="diffStat"
-  data-tooltip="1 addition, 2 changes, 3 deletions"
->
-  <strong
-    className="text-success mr-1"
-  >
-    +
-    1
-  </strong>
-  <strong
-    className="text-warning mr-1"
-  >
-    •
-    2
-  </strong>
-  <strong
-    className="text-danger"
-  >
-    −
-    3
-  </strong>
-</div>
-`;
-
-exports[`DiffStat standard 1`] = `
-<div
-  className="diffStat"
-  data-tooltip="1 addition, 2 changes, 3 deletions"
->
-  <small>
-    8
-  </small>
-</div>
-`;
-
-exports[`DiffStatSquares 1`] = `
-<div
-  className="squares"
->
+<DocumentFragment>
   <div
-    className="square bg-success"
-  />
-  <div
-    className="square bg-warning"
-  />
-  <div
-    className="square bg-danger"
-  />
-  <div
-    className="square bg-danger"
-  />
-  <div
-    className="square bg-danger"
-  />
-</div>
-`;
-
-exports[`DiffStatStack 1`] = `
-<div
-  className="d-flex flex-column align-items-center"
->
-  <div
-    className="diffStat pb-1"
+    class="diffStat"
     data-tooltip="1 addition, 2 changes, 3 deletions"
   >
     <strong
-      className="text-success mr-1"
+      class="text-success mr-1"
     >
-      +
-      1
+      +1
     </strong>
     <strong
-      className="text-warning mr-1"
+      class="text-warning mr-1"
     >
-      •
-      2
+      •2
     </strong>
     <strong
-      className="text-danger"
+      class="text-danger"
     >
-      −
-      3
+      −3
     </strong>
   </div>
+</DocumentFragment>
+`;
+
+exports[`DiffStat standard 1`] = `
+<DocumentFragment>
   <div
-    className="squares"
+    class="diffStat"
+    data-tooltip="1 addition, 2 changes, 3 deletions"
+  >
+    <small>
+      8
+    </small>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`DiffStatSquares 1`] = `
+<DocumentFragment>
+  <div
+    class="squares"
   >
     <div
-      className="square bg-success"
+      class="square bg-success"
     />
     <div
-      className="square bg-warning"
+      class="square bg-warning"
     />
     <div
-      className="square bg-danger"
+      class="square bg-danger"
     />
     <div
-      className="square bg-danger"
+      class="square bg-danger"
     />
     <div
-      className="square bg-danger"
+      class="square bg-danger"
     />
   </div>
-</div>
+</DocumentFragment>
+`;
+
+exports[`DiffStatStack 1`] = `
+<DocumentFragment>
+  <div
+    class="d-flex flex-column align-items-center"
+  >
+    <div
+      class="diffStat pb-1"
+      data-tooltip="1 addition, 2 changes, 3 deletions"
+    >
+      <strong
+        class="text-success mr-1"
+      >
+        +1
+      </strong>
+      <strong
+        class="text-warning mr-1"
+      >
+        •2
+      </strong>
+      <strong
+        class="text-danger"
+      >
+        −3
+      </strong>
+    </div>
+    <div
+      class="squares"
+    >
+      <div
+        class="square bg-success"
+      />
+      <div
+        class="square bg-warning"
+      />
+      <div
+        class="square bg-danger"
+      />
+      <div
+        class="square bg-danger"
+      />
+      <div
+        class="square bg-danger"
+      />
+    </div>
+  </div>
+</DocumentFragment>
 `;

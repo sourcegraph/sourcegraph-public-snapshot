@@ -4,18 +4,18 @@ import (
 	"context"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const slowHoverRequestThreshold = time.Second
 
 // Hover returns the hover text and range for the symbol at the given position.
 func (r *queryResolver) Hover(ctx context.Context, line, character int) (_ string, _ lsifstore.Range, _ bool, err error) {
-	ctx, traceLog, endObservation := observeResolver(ctx, &err, "Hover", r.operations.hover, slowHoverRequestThreshold, observation.Args{
+	ctx, trace, endObservation := observeResolver(ctx, &err, "Hover", r.operations.hover, slowHoverRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),
@@ -43,7 +43,7 @@ func (r *queryResolver) Hover(ctx context.Context, line, character int) (_ strin
 
 	for i := range adjustedUploads {
 		adjustedUpload := adjustedUploads[i]
-		traceLog(log.Int("uploadID", adjustedUpload.Upload.ID))
+		trace.Log(log.Int("uploadID", adjustedUpload.Upload.ID))
 
 		// Fetch hover text from the index
 		text, rn, exists, err := r.lsifStore.Hover(
@@ -93,7 +93,7 @@ func (r *queryResolver) Hover(ctx context.Context, line, character int) (_ strin
 	if err != nil {
 		return "", lsifstore.Range{}, false, err
 	}
-	traceLog(
+	trace.Log(
 		log.Int("numMonikers", len(orderedMonikers)),
 		log.String("monikers", monikersToString(orderedMonikers)),
 	)
@@ -105,7 +105,7 @@ func (r *queryResolver) Hover(ctx context.Context, line, character int) (_ strin
 	if err != nil {
 		return "", lsifstore.Range{}, false, err
 	}
-	traceLog(
+	trace.Log(
 		log.Int("numDefinitionUploads", len(uploads)),
 		log.String("definitionUploads", uploadIDsToString(uploads)),
 	)
@@ -116,7 +116,7 @@ func (r *queryResolver) Hover(ctx context.Context, line, character int) (_ strin
 	if err != nil {
 		return "", lsifstore.Range{}, false, err
 	}
-	traceLog(log.Int("numLocations", len(locations)))
+	trace.Log(log.Int("numLocations", len(locations)))
 
 	for i := range locations {
 		// Fetch hover text attached to a definition in the defining index

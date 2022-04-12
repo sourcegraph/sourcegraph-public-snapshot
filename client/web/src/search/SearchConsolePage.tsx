@@ -1,27 +1,34 @@
-import * as H from 'history'
-import * as Monaco from 'monaco-editor'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { BehaviorSubject, noop } from 'rxjs'
+
+import classNames from 'classnames'
+import * as H from 'history'
+import { noop } from 'lodash'
+import * as Monaco from 'monaco-editor'
+import { BehaviorSubject } from 'rxjs'
 import { debounceTime } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { useQueryIntelligence, useQueryDiagnostics } from '@sourcegraph/search'
+import { StreamingSearchResultsList, StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
+import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
+import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import { LoadingSpinner, Button, useObservable } from '@sourcegraph/wildcard'
 
-import { MonacoEditor } from '../components/MonacoEditor'
 import { PageTitle } from '../components/PageTitle'
 import { SearchPatternType } from '../graphql-operations'
+import { useExperimentalFeatures } from '../stores'
+import { SearchUserNeedsCodeHost } from '../user/settings/codeHosts/OrgUserNeedsCodeHost'
 
-import { fetchSuggestions } from './backend'
 import { LATEST_VERSION } from './results/StreamingSearchResults'
-import { StreamingSearchResultsList, StreamingSearchResultsListProps } from './results/StreamingSearchResultsList'
-import { useQueryIntelligence, useQueryDiagnostics } from './useQueryIntelligence'
 
 import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
 
+import styles from './SearchConsolePage.module.scss'
+
 interface SearchConsolePageProps
     extends SearchStreamingProps,
-        Omit<StreamingSearchResultsListProps, 'allExpanded'>,
+        Omit<StreamingSearchResultsListProps, 'allExpanded' | 'extensionsController' | 'executedQuery'>,
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI'> {
     globbing: boolean
     isMacPlatform: boolean
@@ -52,7 +59,13 @@ const options: Monaco.editor.IStandaloneEditorConstructionOptions = {
 }
 
 export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> = props => {
-    const { globbing, streamSearch } = props
+    const {
+        globbing,
+        streamSearch,
+        extensionsController: { extHostAPI: extensionHostAPI },
+    } = props
+
+    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
 
     const searchQuery = useMemo(() => new BehaviorSubject<string>(parseSearchURLQuery(props.location.search) ?? ''), [
         props.location.search,
@@ -67,22 +80,29 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         props.history.push('/search/console?q=' + encodeURIComponent(searchQuery.value))
     }, [props.history, searchQuery])
 
+    const transformedQuery = useMemo(() => {
+        const query = parseSearchURLQuery(props.location.search)
+        return transformSearchQuery({
+            query: query?.replace(/\/\/.*/g, '') || '',
+            extensionHostAPIPromise: extensionHostAPI,
+        })
+    }, [props.location.search, extensionHostAPI])
+
     // Fetch search results when the `q` URL query parameter changes
     const results = useObservable(
-        useMemo(() => {
-            const query = parseSearchURLQuery(props.location.search)
-            return streamSearch({
-                query: query?.replace(/\/\/.*/g, '') || '',
-                version: LATEST_VERSION,
-                patternType: patternType ?? SearchPatternType.literal,
-                caseSensitive: false,
-                versionContext: undefined,
-                trace: undefined,
-            }).pipe(debounceTime(500))
-        }, [patternType, props.location.search, streamSearch])
+        useMemo(
+            () =>
+                streamSearch(transformedQuery, {
+                    version: LATEST_VERSION,
+                    patternType: patternType ?? SearchPatternType.literal,
+                    caseSensitive: false,
+                    trace: undefined,
+                }).pipe(debounceTime(500)),
+            [patternType, transformedQuery, streamSearch]
+        )
     )
 
-    const sourcegraphSearchLanguageId = useQueryIntelligence(fetchSuggestions, {
+    const sourcegraphSearchLanguageId = useQueryIntelligence(fetchStreamSuggestions, {
         patternType,
         globbing,
         interpretComments: true,
@@ -115,6 +135,12 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         return () => disposable.dispose()
     }, [editorInstance, triggerSearch])
 
+    // Register dummy onCompletionSelected handler to prevent console errors
+    useEffect(() => {
+        const disposable = Monaco.editor.registerCommand('completionItemSelected', noop)
+        return () => disposable.dispose()
+    }, [])
+
     return (
         <div className="w-100 p-2">
             <PageTitle title="Search console" />
@@ -122,9 +148,9 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                 <div className="flex-1 p-1">
                     <div className="mb-1 d-flex align-items-center justify-content-between">
                         <div />
-                        <button className="btn btn-lg btn-primary" type="button" onClick={triggerSearch}>
+                        <Button onClick={triggerSearch} variant="primary" size="lg">
                             Search &nbsp; {props.isMacPlatform ? <kbd>⌘</kbd> : <kbd>Ctrl</kbd>}+<kbd>⏎</kbd>
-                        </button>
+                        </Button>
                     </div>
                     <MonacoEditor
                         {...props}
@@ -136,12 +162,20 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                         value={searchQuery.value}
                     />
                 </div>
-                <div className="flex-1 p-1 search-console-page__results">
+                <div className={classNames('flex-1 p-1', styles.results)}>
                     {results &&
                         (results.state === 'loading' ? (
                             <LoadingSpinner />
                         ) : (
-                            <StreamingSearchResultsList {...props} allExpanded={false} results={results} />
+                            <StreamingSearchResultsList
+                                {...props}
+                                allExpanded={false}
+                                results={results}
+                                showSearchContext={showSearchContext}
+                                assetsRoot={window.context?.assetsRoot || ''}
+                                renderSearchUserNeedsCodeHost={user => <SearchUserNeedsCodeHost user={user} />}
+                                executedQuery={props.location.search}
+                            />
                         ))}
                 </div>
             </div>

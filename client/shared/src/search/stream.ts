@@ -1,13 +1,15 @@
 /* eslint-disable id-length */
 import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
-import { defaultIfEmpty, map, materialize, scan } from 'rxjs/operators'
+import { defaultIfEmpty, map, materialize, scan, switchMap } from 'rxjs/operators'
 import { AggregableBadge } from 'sourcegraph'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 
-import { displayRepoName } from '../components/RepoFileLink'
 import { SearchPatternType } from '../graphql-operations'
-import { SymbolKind } from '../graphql/schema'
+import { SymbolKind } from '../schema'
+
+/** All values that are valid for the `type:` filter. `null` represents default code search. */
+export type SearchType = 'file' | 'repo' | 'path' | 'symbol' | 'diff' | 'commit' | null
 
 export type SearchEvent =
     | { type: 'matches'; data: SearchMatch[] }
@@ -82,7 +84,7 @@ export interface SymbolMatch {
     symbols: MatchedSymbol[]
 }
 
-interface MatchedSymbol {
+export interface MatchedSymbol {
     url: string
     name: string
     containerName: string
@@ -99,10 +101,12 @@ type MarkdownText = string
  */
 export interface CommitMatch {
     type: 'commit'
-    label: MarkdownText
     url: string
-    detail: MarkdownText
     repository: string
+    oid: string
+    message: string
+    authorName: string
+    authorDate: string
     repoStars?: number
     repoLastFetched?: string
 
@@ -251,7 +255,7 @@ export const emptyAggregateResults: AggregateStreamingSearchResults = {
 /**
  * Converts a stream of SearchEvents into AggregateStreamingSearchResults
  */
-const switchAggregateSearchResults: OperatorFunction<SearchEvent, AggregateStreamingSearchResults> = pipe(
+export const switchAggregateSearchResults: OperatorFunction<SearchEvent, AggregateStreamingSearchResults> = pipe(
     materialize(),
     scan(
         (
@@ -325,27 +329,27 @@ const switchAggregateSearchResults: OperatorFunction<SearchEvent, AggregateStrea
     defaultIfEmpty(emptyAggregateResults as AggregateStreamingSearchResults)
 )
 
-const observeMessages = <T extends SearchEvent>(
+export const observeMessages = <T extends SearchEvent>(type: T['type'], eventSource: EventSource): Observable<T> =>
+    fromEvent(eventSource, type).pipe(
+        map((event: Event) => {
+            if (!(event instanceof MessageEvent)) {
+                throw new TypeError(`internal error: expected MessageEvent in streaming search ${type}`)
+            }
+            try {
+                const parsedData = JSON.parse(event.data) as T['data']
+                return parsedData
+            } catch {
+                throw new Error(`Could not parse ${type} message data in streaming search`)
+            }
+        }),
+        map(data => ({ type, data } as T))
+    )
+
+const observeMessagesHandler = <T extends SearchEvent>(
     type: T['type'],
     eventSource: EventSource,
     observer: Subscriber<SearchEvent>
-): Subscription =>
-    fromEvent(eventSource, type)
-        .pipe(
-            map((event: Event) => {
-                if (!(event instanceof MessageEvent)) {
-                    throw new TypeError(`internal error: expected MessageEvent in streaming search ${type}`)
-                }
-                try {
-                    const parsedData = JSON.parse(event.data) as T['data']
-                    return parsedData
-                } catch {
-                    throw new Error(`Could not parse ${type} message data in streaming search`)
-                }
-            }),
-            map(data => ({ type, data } as T))
-        )
-        .subscribe(observer)
+): Subscription => observeMessages(type, eventSource).subscribe(observer)
 
 type MessageHandler<EventType extends SearchEvent['type'] = SearchEvent['type']> = (
     type: EventType,
@@ -353,9 +357,11 @@ type MessageHandler<EventType extends SearchEvent['type'] = SearchEvent['type']>
     observer: Subscriber<SearchEvent>
 ) => Subscription
 
-const messageHandlers: {
+export type MessageHandlers = {
     [EventType in SearchEvent['type']]: MessageHandler<EventType>
-} = {
+}
+
+export const messageHandlers: MessageHandlers = {
     done: (type, eventSource, observer) =>
         fromEvent(eventSource, type).subscribe(() => {
             observer.complete()
@@ -386,40 +392,38 @@ const messageHandlers: {
             }
             eventSource.close()
         }),
-    matches: observeMessages,
-    progress: observeMessages,
-    filters: observeMessages,
-    alert: observeMessages,
+    matches: observeMessagesHandler,
+    progress: observeMessagesHandler,
+    filters: observeMessagesHandler,
+    alert: observeMessagesHandler,
 }
 
 export interface StreamSearchOptions {
-    query: string
     version: string
     patternType: SearchPatternType
     caseSensitive: boolean
-    versionContext: string | undefined
     trace: string | undefined
+    sourcegraphURL?: string
     decorationKinds?: string[]
     decorationContextLines?: number
 }
 
-/**
- * Initiates a streaming search. This is a type safe wrapper around Sourcegraph's streaming search API (using Server Sent Events).
- * The observable will emit each event returned from the backend.
- *
- * @param query the search query to send to Sourcegraph's backend.
- */
-function search({
-    query,
-    version,
-    patternType,
-    caseSensitive,
-    versionContext,
-    trace,
-    decorationKinds,
-    decorationContextLines,
-}: StreamSearchOptions): Observable<SearchEvent> {
+function initiateSearchStream(
+    query: string,
+    {
+        version,
+        patternType,
+        caseSensitive,
+        trace,
+        decorationKinds,
+        decorationContextLines,
+        sourcegraphURL = '',
+    }: StreamSearchOptions,
+    messageHandlers: MessageHandlers
+): Observable<SearchEvent> {
     return new Observable<SearchEvent>(observer => {
+        const subscriptions = new Subscription()
+
         const parameters = [
             ['q', `${query} ${caseSensitive ? 'case:yes' : ''}`],
             ['v', version],
@@ -429,31 +433,48 @@ function search({
             ['dc', (decorationContextLines || '1').toString()],
             ['display', '1500'],
         ]
-        if (versionContext) {
-            parameters.push(['vc', versionContext])
-        }
         if (trace) {
             parameters.push(['trace', trace])
         }
         const parameterEncoded = parameters.map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&')
 
-        const eventSource = new EventSource('/search/stream?' + parameterEncoded)
-        const subscriptions = new Subscription()
+        const eventSource = new EventSource(`${sourcegraphURL}/search/stream?${parameterEncoded}`)
+        subscriptions.add(() => eventSource.close())
+
         for (const [eventType, handleMessages] of Object.entries(messageHandlers)) {
             subscriptions.add(
                 (handleMessages as MessageHandler)(eventType as SearchEvent['type'], eventSource, observer)
             )
         }
+
         return () => {
             subscriptions.unsubscribe()
-            eventSource.close()
         }
     })
 }
 
-/** Initiate a streaming search and aggregate the results */
-export function aggregateStreamingSearch(options: StreamSearchOptions): Observable<AggregateStreamingSearchResults> {
-    return search(options).pipe(switchAggregateSearchResults)
+/**
+ * Initiates a streaming search.
+ * This is a type safe wrapper around Sourcegraph's streaming search API (using Server Sent Events). The observable will emit each event returned from the backend.
+ *
+ * @param queryObservable is an observables that resolves to a query string
+ * @param options contains the search query and the necessary context to perform the search (version, patternType, caseSensitive, etc.)
+ * @param messageHandlers provide handler functions for each possible `SearchEvent` type
+ */
+export function search(
+    queryObservable: Observable<string>,
+    options: StreamSearchOptions,
+    messageHandlers: MessageHandlers
+): Observable<SearchEvent> {
+    return queryObservable.pipe(switchMap(query => initiateSearchStream(query, options, messageHandlers)))
+}
+
+/** Initiates a streaming search with and aggregates the results. */
+export function aggregateStreamingSearch(
+    queryObservable: Observable<string>,
+    options: StreamSearchOptions
+): Observable<AggregateStreamingSearchResults> {
+    return search(queryObservable, options, messageHandlers).pipe(switchAggregateSearchResults)
 }
 
 export function getRepositoryUrl(repository: string, branches?: string[]): string {
@@ -493,6 +514,10 @@ export function getRepoMatchUrl(repoMatch: RepositoryMatch): string {
     return '/' + encodeURI(label)
 }
 
+export function getCommitMatchUrl(commitMatch: CommitMatch): string {
+    return '/' + encodeURI(commitMatch.repository) + '/-/commit/' + commitMatch.oid
+}
+
 export function getMatchUrl(match: SearchMatch): string {
     switch (match.type) {
         case 'path':
@@ -500,16 +525,16 @@ export function getMatchUrl(match: SearchMatch): string {
         case 'symbol':
             return getFileMatchUrl(match)
         case 'commit':
-            return match.url
+            return getCommitMatchUrl(match)
         case 'repo':
             return getRepoMatchUrl(match)
     }
 }
 
-export function getMatchTitle(match: RepositoryMatch | CommitMatch): MarkdownText {
-    if (match.type === 'commit') {
-        return match.label
-    }
+export type SearchMatchOfType<T extends SearchMatch['type']> = Extract<SearchMatch, { type: T }>
 
-    return `[${displayRepoName(getRepoMatchLabel(match))}](${getRepoMatchUrl(match)})`
+export function isSearchMatchOfType<T extends SearchMatch['type']>(
+    type: T
+): (match: SearchMatch) => match is SearchMatchOfType<T> {
+    return (match): match is SearchMatchOfType<T> => match.type === type
 }

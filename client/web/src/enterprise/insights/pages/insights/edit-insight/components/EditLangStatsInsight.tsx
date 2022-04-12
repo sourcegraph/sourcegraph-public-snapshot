@@ -1,31 +1,27 @@
 import React, { useMemo } from 'react'
 
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
-
 import { SubmissionErrors } from '../../../../components/form/hooks/useForm'
+import { MinimalLangStatsInsightData } from '../../../../core/backend/code-insights-backend-types'
 import { LangStatsInsight } from '../../../../core/types'
-import { SupportedInsightSubject } from '../../../../core/types/subjects'
 import { LangStatsInsightCreationContent } from '../../creation/lang-stats/components/lang-stats-insight-creation-content/LangStatsInsightCreationContent'
 import { LangStatsCreationFormFields } from '../../creation/lang-stats/types'
 import { getSanitizedLangStatsInsight } from '../../creation/lang-stats/utils/insight-sanitizer'
 
 export interface EditLangStatsInsightProps {
     insight: LangStatsInsight
-    finalSettings: Settings
-    subjects: SupportedInsightSubject[]
-    onSubmit: (insight: LangStatsInsight) => SubmissionErrors | Promise<SubmissionErrors> | void
+    onSubmit: (insight: MinimalLangStatsInsightData) => SubmissionErrors | Promise<SubmissionErrors> | void
     onCancel: () => void
 }
 
 export const EditLangStatsInsight: React.FunctionComponent<EditLangStatsInsightProps> = props => {
-    const { insight, finalSettings, subjects, onSubmit, onCancel } = props
+    const { insight, onSubmit, onCancel } = props
 
     const insightFormValues = useMemo<LangStatsCreationFormFields>(
         () => ({
             title: insight.title,
             repository: insight.repository,
             threshold: insight.otherThreshold * 100,
-            visibility: insight.visibility,
+            dashboardReferenceCount: insight.dashboardReferenceCount,
         }),
         [insight]
     )
@@ -42,8 +38,7 @@ export const EditLangStatsInsight: React.FunctionComponent<EditLangStatsInsightP
             mode="edit"
             className="pb-5"
             initialValues={insightFormValues}
-            settings={finalSettings}
-            subjects={subjects}
+            insight={insight}
             onSubmit={handleSubmit}
             onCancel={onCancel}
         />

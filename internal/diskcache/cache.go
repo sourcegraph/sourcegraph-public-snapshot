@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"io"
 	"io/fs"
 	"log"
@@ -13,29 +14,82 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go/ext"
+	otelog "github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Store is an on disk cache, with items cached via calls to Open.
-type Store struct {
-	// Dir is the directory to cache items.
-	Dir string
+// Store is an on-disk cache, with items cached via calls to Open.
+type Store interface {
+	// Open will open a file from the local cache with key. If missing, fetcher
+	// will fill the cache first. Open also performs single-flighting for fetcher.
+	Open(ctx context.Context, key []string, fetcher Fetcher) (file *File, err error)
+	// OpenWithPath will open a file from the local cache with key. If missing, fetcher
+	// will fill the cache first. OpenWithPath also performs single-flighting for fetcher.
+	OpenWithPath(ctx context.Context, key []string, fetcher FetcherWithPath) (file *File, err error)
+	// Evict will remove files from store.Dir until it is smaller than
+	// maxCacheSizeBytes. It evicts files with the oldest modification time first.
+	Evict(maxCacheSizeBytes int64) (stats EvictStats, err error)
+}
 
-	// Component when set is reported to OpenTracing as the component.
-	Component string
+type store struct {
+	// dir is the directory to cache items.
+	dir string
 
-	// BackgroundTimeout when non-zero will do fetches in the background with
+	// component when set is reported to OpenTracing as the component.
+	component string
+
+	// backgroundTimeout when non-zero will do fetches in the background with
 	// a timeout. This means the context passed to fetch will be
-	// context.WithTimeout(context.Background(), BackgroundTimeout). When not
+	// context.WithTimeout(context.Background(), backgroundTimeout). When not
 	// set fetches are done with the passed in context.
-	BackgroundTimeout time.Duration
+	backgroundTimeout time.Duration
 
-	// BeforeEvict, when non-nil, is a function to call before evicting a file.
-	// It is passed the path to the file to be evicted.
-	BeforeEvict func(string)
+	// beforeEvict, when non-nil, is a function to call before evicting a file.
+	// It is passed the path to the file to be evicted and an observation.TraceLogger
+	// which can be used to attach fields to a Honeycomb event.
+	beforeEvict func(string, observation.TraceLogger)
+
+	observe *operations
+}
+
+// NewStore returns a new on-disk cache, which caches data under dir.
+//
+// It can optionally be configured with a background timeout
+// (with `diskcache.WithBackgroundTimeout`), a pre-evict callback
+// (with `diskcache.WithBeforeEvict`) and with a configured observation context
+// (with `diskcache.WithObservationContext`).
+func NewStore(dir, component string, opts ...StoreOpt) Store {
+	s := &store{
+		dir:       dir,
+		component: component,
+	}
+
+	for _, opt := range opts {
+		opt(s)
+	}
+
+	if s.observe == nil {
+		s.observe = newOperations(&observation.Context{}, component)
+	}
+
+	return s
+}
+
+type StoreOpt func(*store)
+
+func WithBackgroundTimeout(t time.Duration) func(*store) {
+	return func(s *store) { s.backgroundTimeout = t }
+}
+
+func WithBeforeEvict(f func(string, observation.TraceLogger)) func(*store) {
+	return func(s *store) { s.beforeEvict = f }
+}
+
+func WithObservationContext(ctx *observation.Context) func(*store) {
+	return func(s *store) { s.observe = newOperations(ctx, s.component) }
 }
 
 // File is an os.File, but includes the Path
@@ -54,9 +108,7 @@ type Fetcher func(context.Context) (io.ReadCloser, error)
 // is not in the cache.
 type FetcherWithPath func(context.Context, string) error
 
-// Open will open a file from the local cache with key. If missing, fetcher
-// will fill the cache first. Open also performs single-flighting for fetcher.
-func (s *Store) Open(ctx context.Context, key string, fetcher Fetcher) (file *File, err error) {
+func (s *store) Open(ctx context.Context, key []string, fetcher Fetcher) (file *File, err error) {
 	return s.OpenWithPath(ctx, key, func(ctx context.Context, path string) error {
 		readCloser, err := fetcher(ctx)
 		if err != nil {
@@ -75,42 +127,41 @@ func (s *Store) Open(ctx context.Context, key string, fetcher Fetcher) (file *Fi
 	})
 }
 
-// OpenWithPath will open a file from the local cache with key. If missing, fetcher
-// will fill the cache first. Open also performs single-flighting for fetcher.
-func (s *Store) OpenWithPath(ctx context.Context, key string, fetcher FetcherWithPath) (file *File, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Cached Fetch")
-	if s.Component != "" {
-		ext.Component.Set(span, s.Component)
-	}
+func (s *store) OpenWithPath(ctx context.Context, key []string, fetcher FetcherWithPath) (file *File, err error) {
+	ctx, trace, endObservation := s.observe.cachedFetch.WithAndLogger(ctx, &err, observation.Args{LogFields: []otelog.Field{
+		otelog.String(string(ext.Component), s.component),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
 		if file != nil {
 			// Update modified time. Modified time is used to decide which
 			// files to evict from the cache.
 			touch(file.Path)
 		}
-		span.Finish()
 	}()
 
-	if s.Dir == "" {
-		return nil, errors.New("diskcache.Store.Dir must be set")
+	if s.dir == "" {
+		return nil, errors.New("diskcache.store.Dir must be set")
 	}
 
 	path := s.path(key)
-	span.LogKV("key", key, "path", path)
+	trace.Log(otelog.String("key", fmt.Sprint(key)), otelog.String("path", path))
+
+	err = os.MkdirAll(filepath.Dir(path), os.ModePerm)
+	if err != nil {
+		return nil, err
+	}
 
 	// First do a fast-path, assume already on disk
 	f, err := os.Open(path)
 	if err == nil {
-		span.SetTag("source", "fast")
+		trace.Tag(otelog.String("source", "fast"))
 		return &File{File: f, Path: path}, nil
 	}
 
 	// We (probably) have to fetch
-	span.SetTag("source", "fetch")
+	trace.Tag(otelog.String("source", "fetch"))
 
 	// Do the fetch in another goroutine so we can respect ctx cancellation.
 	type result struct {
@@ -119,12 +170,19 @@ func (s *Store) OpenWithPath(ctx context.Context, key string, fetcher FetcherWit
 	}
 	ch := make(chan result, 1)
 	go func(ctx context.Context) {
-		if s.BackgroundTimeout != 0 {
+		var err error
+		var f *File
+		ctx, trace, endObservation := s.observe.backgroundFetch.WithAndLogger(ctx, &err, observation.Args{LogFields: []otelog.Field{
+			otelog.Bool("withBackgroundTimeout", s.backgroundTimeout != 0),
+		}})
+		defer endObservation(1, observation.Args{})
+
+		if s.backgroundTimeout != 0 {
 			var cancel context.CancelFunc
-			ctx, cancel = context.WithTimeout(context.Background(), s.BackgroundTimeout)
+			ctx, cancel = withIsolatedTimeout(ctx, s.backgroundTimeout)
 			defer cancel()
 		}
-		f, err := doFetch(ctx, path, fetcher)
+		f, err = doFetch(ctx, path, fetcher, trace)
 		ch <- result{f, err}
 	}(ctx)
 
@@ -140,19 +198,33 @@ func (s *Store) OpenWithPath(ctx context.Context, key string, fetcher FetcherWit
 }
 
 // path returns the path for key.
-func (s *Store) path(key string) string {
-	// path uses a sha256 hash of the key since we want to use it for the
-	// disk name.
-	h := sha256.Sum256([]byte(key))
-	return filepath.Join(s.Dir, hex.EncodeToString(h[:])) + ".zip"
+func (s *store) path(key []string) string {
+	encoded := append([]string{s.dir}, EncodeKeyComponents(key)...)
+	return filepath.Join(encoded...) + ".zip"
 }
 
-func doFetch(ctx context.Context, path string, fetcher FetcherWithPath) (file *File, err error) {
+// EncodeKeyComponents uses a sha256 hash of the key since we want to use it for the disk name.
+func EncodeKeyComponents(components []string) []string {
+	encoded := []string{}
+	for _, component := range components {
+		h := sha256.Sum256([]byte(component))
+		encoded = append(encoded, hex.EncodeToString(h[:]))
+	}
+	return encoded
+}
+
+func doFetch(ctx context.Context, path string, fetcher FetcherWithPath, trace observation.TraceLogger) (file *File, err error) {
 	// We have to grab the lock for this key, so we can fetch or wait for
 	// someone else to finish fetching.
 	urlMu := urlMu(path)
+	t := time.Now()
 	urlMu.Lock()
 	defer urlMu.Unlock()
+
+	trace.Log(
+		otelog.Event("acquired url lock"),
+		otelog.Int64("urlLock.durationMs", time.Since(t).Milliseconds()),
+	)
 
 	// Since we acquired the lock we may have timed out.
 	if ctx.Err() != nil {
@@ -223,37 +295,41 @@ type EvictStats struct {
 	Evicted int
 }
 
-// Evict will remove files from Store.Dir until it is smaller than
-// maxCacheSizeBytes. It evicts files with the oldest modification time first.
-func (s *Store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
+func (s *store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
+	_, trace, endObservation := s.observe.evict.WithAndLogger(context.Background(), &err, observation.Args{LogFields: []otelog.Field{
+		otelog.Int64("maxCacheSizeBytes", maxCacheSizeBytes),
+	}})
+	endObservation(1, observation.Args{})
+
 	isZip := func(fi fs.FileInfo) bool {
 		return strings.HasSuffix(fi.Name(), ".zip")
 	}
 
-	entries, err := os.ReadDir(s.Dir)
+	type absFileInfo struct {
+		absPath string
+		info    fs.FileInfo
+	}
+	entries := []absFileInfo{}
+	err = filepath.Walk(s.dir,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			entries = append(entries, absFileInfo{absPath: path, info: info})
+			return nil
+		})
 	if err != nil {
 		if os.IsNotExist(err) {
-			return EvictStats{
-				CacheSize: 0,
-				Evicted:   0,
-			}, nil
+			return stats, nil
 		}
-		return stats, errors.Wrapf(err, "failed to ReadDir %s", s.Dir)
-	}
-
-	list := make([]fs.FileInfo, len(entries))
-	for i := range entries {
-		list[i], err = entries[i].Info()
-		if err != nil {
-			return stats, err
-		}
+		return stats, errors.Wrapf(err, "failed to ReadDir %s", s.dir)
 	}
 
 	// Sum up the total size of all zips
 	var size int64
-	for _, fi := range list {
-		if isZip(fi) {
-			size += fi.Size()
+	for _, entry := range entries {
+		if isZip(entry.info) {
+			size += entry.info.Size()
 		}
 	}
 	stats.CacheSize = size
@@ -265,28 +341,35 @@ func (s *Store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 
 	// Keep removing files until we are under the cache size. Remove the
 	// oldest first.
-	sort.Slice(list, func(i, j int) bool {
-		return list[i].ModTime().Before(list[j].ModTime())
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].info.ModTime().Before(entries[j].info.ModTime())
 	})
-	for _, fi := range list {
+	for _, entry := range entries {
 		if size <= maxCacheSizeBytes {
 			break
 		}
-		if !isZip(fi) {
+		if !isZip(entry.info) {
 			continue
 		}
-		path := filepath.Join(s.Dir, fi.Name())
-		if s.BeforeEvict != nil {
-			s.BeforeEvict(path)
+		path := entry.absPath
+		if s.beforeEvict != nil {
+			s.beforeEvict(path, trace)
 		}
 		err = os.Remove(path)
 		if err != nil {
+			trace.Log(otelog.Message("failed to remove disk cache entry"), otelog.String("path", path), otelog.Error(err))
 			log.Printf("failed to remove %s: %s", path, err)
 			continue
 		}
 		stats.Evicted++
-		size -= fi.Size()
+		size -= entry.info.Size()
 	}
+
+	trace.Tag(
+		otelog.Int("evicted", stats.Evicted),
+		otelog.Int64("beforeSizeBytes", stats.CacheSize),
+		otelog.Int64("afterSizeBytes", size),
+	)
 
 	return stats, nil
 }

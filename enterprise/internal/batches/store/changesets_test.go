@@ -25,11 +25,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	user := ct.CreateTestUser(t, s.DB(), false)
+	user := ct.CreateTestUser(t, s.DatabaseDB(), false)
 	githubActor := github.Actor{
 		AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
 		Login:     "mrnugget",
@@ -58,7 +59,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 	if err := rs.Create(ctx, repo, otherRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
 	}
-	deletedRepo := otherRepo.With(types.Opt.RepoDeletedAt(clock.Now()))
+	deletedRepo := otherRepo.With(typestest.Opt.RepoDeletedAt(clock.Now()))
 	if err := rs.Delete(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}
@@ -414,7 +415,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 		t.Run("EnforceAuthz", func(t *testing.T) {
 			// No access to repos.
-			ct.MockRepoPermissions(t, s.DB(), user.ID)
+			ct.MockRepoPermissions(t, s.DatabaseDB(), user.ID)
 			countAccessible, err := s.CountChangesets(ctx, CountChangesetsOpts{EnforceAuthz: true})
 			if err != nil {
 				t.Fatal(err)
@@ -679,7 +680,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 		t.Run("EnforceAuthz", func(t *testing.T) {
 			// No access to repos.
-			ct.MockRepoPermissions(t, s.DB(), user.ID)
+			ct.MockRepoPermissions(t, s.DatabaseDB(), user.ID)
 			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{EnforceAuthz: true})
 			if err != nil {
 				t.Fatal(err)
@@ -1528,9 +1529,9 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 	}
 
 	// We need batch changes attached to each changeset
-	for _, cs := range changesets {
+	for i, cs := range changesets {
 		c := &btypes.BatchChange{
-			Name:           "ListChangesetSyncData test",
+			Name:           fmt.Sprintf("ListChangesetSyncData-test-%d", i),
 			NamespaceOrgID: 23,
 			LastApplierID:  1,
 			LastAppliedAt:  time.Now(),
@@ -1620,6 +1621,25 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 				UpdatedAt:             clock.Now(),
 				ExternalUpdatedAt:     clock.Now(),
 				RepoExternalServiceID: "https://gitlab.com/",
+			},
+		}
+		if diff := cmp.Diff(want, hs); diff != "" {
+			t.Fatal(diff)
+		}
+	})
+
+	t.Run("only for subset of changesets", func(t *testing.T) {
+		hs, err := s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{ChangesetIDs: []int64{changesets[0].ID}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := []*btypes.ChangesetSyncData{
+			{
+				ChangesetID:           changesets[0].ID,
+				UpdatedAt:             clock.Now(),
+				LatestEvent:           clock.Now(),
+				ExternalUpdatedAt:     clock.Now(),
+				RepoExternalServiceID: "https://github.com/",
 			},
 		}
 		if diff := cmp.Diff(want, hs); diff != "" {
@@ -2138,7 +2158,7 @@ func TestCancelQueuedBatchChangeChangesets(t *testing.T) {
 	// integration/store tests all execute in a single transaction.
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t, "")
+	db := database.NewDB(dbtest.NewDB(t))
 
 	s := New(db, &observation.TestContext, nil)
 
@@ -2272,7 +2292,7 @@ func TestEnqueueChangesetsToClose(t *testing.T) {
 	// integration/store tests all execute in a single transaction.
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t, "")
+	db := database.NewDB(dbtest.NewDB(t))
 
 	s := New(db, &observation.TestContext, nil)
 

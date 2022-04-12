@@ -1,7 +1,8 @@
 import { sortBy } from 'lodash'
 
+import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/client-api'
+
 import { ActionItemAction } from '../actions/ActionItem'
-import { ContributableMenu, Contributions, Evaluated } from '../api/protocol'
 
 const MENU_ITEMS_PROP_SORT_ORDER = ['group', 'id']
 
@@ -21,11 +22,14 @@ export function getContributedActionItems(
     const allItems: ActionItemAction[] = []
     const menuItems = contributions.menus?.[menu]
     if (menuItems) {
-        for (const { action: actionID, alt: altActionID, when } of sortBy(menuItems, MENU_ITEMS_PROP_SORT_ORDER)) {
+        for (const { action: actionID, alt: altActionID, when, disabledWhen } of sortBy(
+            menuItems,
+            MENU_ITEMS_PROP_SORT_ORDER
+        )) {
             const action = contributions.actions.find(a => a.id === actionID)
             const altAction = contributions.actions.find(a => a.id === altActionID)
             if (action) {
-                allItems.push({ action, altAction, active: when === undefined || !!when })
+                allItems.push({ action, altAction, active: when === undefined || !!when, disabledWhen: !!disabledWhen })
             }
         }
     }

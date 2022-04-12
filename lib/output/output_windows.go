@@ -3,22 +3,23 @@ package output
 import (
 	"time"
 
-	"github.com/hashicorp/go-multierror"
 	"golang.org/x/sys/windows"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func init() {
 	newOutputPlatformQuirks = func(o *Output) error {
-		var errs *multierror.Error
+		var errs error
 
 		if err := setConsoleMode(windows.Stdout, windows.ENABLE_VIRTUAL_TERMINAL_PROCESSING); err != nil {
-			errs = multierror.Append(errs, err)
+			errs = errors.Append(errs, err)
 		}
 		if err := setConsoleMode(windows.Stderr, windows.ENABLE_VIRTUAL_TERMINAL_PROCESSING); err != nil {
-			errs = multierror.Append(errs, err)
+			errs = errors.Append(errs, err)
 		}
 
-		return errs.ErrorOrNil()
+		return errs
 	}
 
 	// Windows doesn't have a particularly good way of notifying console

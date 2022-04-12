@@ -1,30 +1,33 @@
-import classNames from 'classnames'
 import React, { FunctionComponent, useState, useEffect, useCallback, useRef } from 'react'
+
+import classNames from 'classnames'
 import { useLocation, useHistory } from 'react-router'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import { ErrorLike } from '@sourcegraph/common'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
-import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
+import { Alert, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
+import { BrandLogo } from '../components/branding/BrandLogo'
+import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { SourcegraphContext } from '../jscontext'
+import { PageRoutes } from '../routes.constants'
 import { eventLogger } from '../tracking/eventLogger'
 import { SelectAffiliatedRepos } from '../user/settings/repositories/SelectAffiliatedRepos'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../util'
 
-import styles from './PostSignUpPage.module.scss'
 import { getReturnTo } from './SignInSignUpCommon'
-import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
-import { Steps, Step, StepList, StepPanels, StepPanel, StepActions } from './Steps'
+import { Steps, Step, StepList, StepPanels, StepPanel } from './Steps'
 import { useExternalServices } from './useExternalServices'
 import { CodeHostsConnection } from './welcome/CodeHostsConnection'
 import { Footer } from './welcome/Footer'
-import { StartSearching } from './welcome/StartSearching'
+import { InviteCollaborators } from './welcome/InviteCollaborators/InviteCollaborators'
+import { TeamsBeta } from './welcome/TeamsBeta'
+
+import styles from './PostSignUpPage.module.scss'
+import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 
 interface PostSignUpPage {
     authenticatedUser: AuthenticatedUser
@@ -51,8 +54,6 @@ export type FinishWelcomeFlow = (event: React.MouseEvent<HTMLElement>, payload: 
 
 export const getPostSignUpEvent = (action?: string): string => `PostSignUp${action ? '_' + action : ''}`
 
-const USER_FINISHED_WELCOME_FLOW = 'finished-welcome-flow'
-
 export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
     authenticatedUser: user,
     context,
@@ -60,10 +61,16 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
     onUserExternalServicesOrRepositoriesUpdate,
     setSelectedSearchContextSpec,
 }) => {
-    const [didUserFinishWelcomeFlow, setUserFinishedWelcomeFlow] = useLocalStorage(USER_FINISHED_WELCOME_FLOW, false)
+    const [didUserFinishWelcomeFlow, setUserFinishedWelcomeFlow] = useTemporarySetting(
+        'signup.finishedWelcomeFlow',
+        false
+    )
+
     const isOAuthCall = useRef(false)
     const location = useLocation()
     const history = useHistory()
+
+    const debug = new URLSearchParams(location.search).get('debug')
 
     const goToSearch = (): void => history.push(getReturnTo(location))
 
@@ -71,8 +78,10 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
         eventLogger.logViewEvent(getPostSignUpEvent())
     }, [])
 
-    // if the welcome flow was already finished - navigate to search
-    if (didUserFinishWelcomeFlow) {
+    if (debug && !didUserFinishWelcomeFlow) {
+        setUserFinishedWelcomeFlow(false)
+    } else if (didUserFinishWelcomeFlow) {
+        // if the welcome flow was already finished - navigate to search
         goToSearch()
     }
 
@@ -119,56 +128,52 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
     const onError = useCallback((error: ErrorLike) => setError(error), [])
 
     return (
-        <>
-            <LinkOrSpan to={getReturnTo(location)} className={styles.logoLink}>
-                <BrandLogo
-                    className={classNames('ml-3 mt-3', styles.logo)}
-                    isLightTheme={true}
-                    variant="symbol"
-                    onClick={event => finishWelcomeFlow(event, { eventName: 'BrandLogo_Clicked' })}
-                />
-            </LinkOrSpan>
-
+        <div className={styles.wrapper}>
+            <BrandLogo className={styles.logo} isLightTheme={true} variant="symbol" />
             <div className={classNames(signInSignUpCommonStyles.signinSignupPage, styles.postSignupPage)}>
                 <PageTitle title="Welcome" />
                 <HeroPage
-                    lessPadding={true}
+                    lessPadding={false}
                     className="text-left"
                     body={
-                        <div className={classNames('pb-1', styles.container)}>
-                            {hasErrors && (
-                                <div className="alert alert-danger mb-4" role="alert">
-                                    Sorry, something went wrong. Try refreshing the page or{' '}
-                                    <Link to="/search">skip to code search</Link>.
-                                </div>
-                            )}
-                            <h2>Get started with Sourcegraph</h2>
-                            <p className="text-muted pb-3">
-                                Three quick steps to add your repositories and get searching with Sourcegraph
-                            </p>
-                            <div className="mt-4 pb-3">
-                                <Steps initialStep={1}>
-                                    <StepList numeric={true}>
+                        <div className="pb-1 d-flex flex-column align-items-center w-100">
+                            <div className={styles.progress}>
+                                {hasErrors && (
+                                    <Alert className="mb-4" role="alert" variant="danger">
+                                        Sorry, something went wrong. Try refreshing the page or{' '}
+                                        <Link to={PageRoutes.Search}>skip to code search</Link>.
+                                    </Alert>
+                                )}
+                                <h2>Get started with Sourcegraph</h2>
+                                <p className="text-muted pb-3">Follow these steps to set up your account</p>
+                            </div>
+                            <div className="mt-2 pb-3 d-flex flex-column align-items-center w-100">
+                                <Steps initialStep={debug ? parseInt(debug, 10) : 1} totalSteps={4}>
+                                    <StepList numeric={true} className={styles.progress}>
                                         <Step borderColor="purple">Connect with code hosts</Step>
                                         <Step borderColor="blue">Add repositories</Step>
-                                        <Step borderColor="orange">Start searching</Step>
+                                        <Step borderColor="orange">Teams beta</Step>
+                                        <Step borderColor="green">Invite collaborators</Step>
                                     </StepList>
                                     <StepPanels>
                                         <StepPanel>
-                                            <CodeHostsConnection
-                                                user={user}
-                                                onNavigation={(called: boolean) => {
-                                                    isOAuthCall.current = called
-                                                }}
-                                                loading={loadingServices}
-                                                onError={onError}
-                                                externalServices={externalServices}
-                                                context={context}
-                                                refetch={refetchExternalServices}
-                                            />
+                                            <div className={styles.container}>
+                                                <CodeHostsConnection
+                                                    user={user}
+                                                    onNavigation={(called: boolean) => {
+                                                        isOAuthCall.current = called
+                                                    }}
+                                                    loading={loadingServices}
+                                                    onError={onError}
+                                                    externalServices={externalServices}
+                                                    context={context}
+                                                    refetch={refetchExternalServices}
+                                                />
+                                                <Footer onFinish={finishWelcomeFlow} />
+                                            </div>
                                         </StepPanel>
                                         <StepPanel>
-                                            <div className="mt-5">
+                                            <div className={classNames('mt-3', styles.container)}>
                                                 <h3>Add repositories</h3>
                                                 <p className="text-muted mb-4">
                                                     Choose repositories you own or collaborate on from your code hosts.
@@ -190,10 +195,19 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                                     telemetryService={telemetryService}
                                                     onError={onError}
                                                 />
+                                                <Footer onFinish={finishWelcomeFlow} isSkippable={true} />
                                             </div>
                                         </StepPanel>
                                         <StepPanel>
-                                            <StartSearching
+                                            <TeamsBeta
+                                                onFinish={finishWelcomeFlow}
+                                                onError={onError}
+                                                username={user.username}
+                                            />
+                                        </StepPanel>
+                                        <StepPanel>
+                                            <InviteCollaborators
+                                                className={styles.container}
                                                 user={user}
                                                 repoSelectionMode={repoSelectionMode}
                                                 onUserExternalServicesOrRepositoriesUpdate={
@@ -201,18 +215,16 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                                 }
                                                 setSelectedSearchContextSpec={setSelectedSearchContextSpec}
                                                 onError={onError}
+                                                onFinish={finishWelcomeFlow}
                                             />
                                         </StepPanel>
                                     </StepPanels>
-                                    <StepActions>
-                                        <Footer onFinish={finishWelcomeFlow} />
-                                    </StepActions>
                                 </Steps>
                             </div>
                         </div>
                     }
                 />
             </div>
-        </>
+        </div>
     )
 }

@@ -1,4 +1,4 @@
-import { Contributions, Raw } from '../api/protocol/contribution'
+import { Contributions, Raw } from '@sourcegraph/client-api'
 
 /**
  * See the extensions.schema.json JSON Schema for canonical documentation on these types.

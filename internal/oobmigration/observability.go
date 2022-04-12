@@ -14,7 +14,7 @@ type operations struct {
 }
 
 func newOperations(observationContext *observation.Context) *operations {
-	metrics := metrics.NewOperationMetrics(
+	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"oobmigration",
 		metrics.WithLabels("op", "migration"),

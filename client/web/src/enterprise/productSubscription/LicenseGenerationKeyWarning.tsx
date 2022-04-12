@@ -1,9 +1,10 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import { Alert, Link } from '@sourcegraph/wildcard'
 
 /**
  * Displays a warning in debug mode (which is on for local dev) that generated license keys aren't
- * actually valid. Local dev (in dev/start.sh) uses a test private key that does NOT correspond to
+ * actually valid. Local dev (with `sg start`) uses a test private key that does NOT correspond to
  * the license validation public key shipped with Sourcegraph instances.
  *
  * Technically it's possible to generate valid license keys in debug mode (if you manually configure
@@ -12,10 +13,10 @@ import React from 'react'
  */
 export const LicenseGenerationKeyWarning: React.FunctionComponent<{ className?: string }> = ({ className = '' }) =>
     window.context?.debug ? (
-        <div className={classNames('alert alert-warning', className)}>
+        <Alert className={className} variant="warning">
             License keys generated in dev mode are <strong>NOT VALID</strong>.{' '}
-            <a href="https://sourcegraph.com/site-admin/dotcom/product/subscriptions">
+            <Link to="https://sourcegraph.com/site-admin/dotcom/product/subscriptions">
                 Use Sourcegraph.com to generate valid license keys.
-            </a>
-        </div>
+            </Link>
+        </Alert>
     ) : null

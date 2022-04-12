@@ -2,7 +2,7 @@ import { parseISO } from 'date-fns'
 import formatDistanceStrict from 'date-fns/formatDistanceStrict'
 import isAfter from 'date-fns/isAfter'
 
-import { numberWithCommas, pluralize } from '@sourcegraph/shared/src/util/strings'
+import { numberWithCommas, pluralize } from '@sourcegraph/common'
 
 /**
  * Returns "N users" (properly pluralized and with commas added to N as needed).

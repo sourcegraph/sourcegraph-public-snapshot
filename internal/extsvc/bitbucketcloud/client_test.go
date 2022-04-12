@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"net/url"
 	"reflect"
 	"testing"
 	"time"
@@ -15,41 +14,41 @@ import (
 var update = flag.Bool("update", false, "update testdata")
 
 func TestClient_Repos(t *testing.T) {
-	cli, save := NewTestClient(t, "Repos", *update, &url.URL{Scheme: "https", Host: "api.bitbucket.org"})
+	cli, save := NewTestClient(t, "Repos", *update)
 	defer save()
 
 	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
 	defer cancel()
 
 	repos := map[string]*Repo{
-		"mux": {
-			Slug:      "mux",
-			Name:      "mux",
-			FullName:  "sglocal/mux",
-			UUID:      "{e1e75436-05e6-4c38-8543-9c36ec26fad1}",
+		"src-cli": {
+			Slug:      "src-cli",
+			Name:      "src-cli",
+			FullName:  "sourcegraph-testing/src-cli",
+			UUID:      "{b090a669-ac7b-44cd-9610-02d027cb39f3}",
 			SCM:       "git",
 			IsPrivate: true,
 			Links: Links{
 				Clone: CloneLinks{
-					{"https://Unknwon@bitbucket.org/sglocal/mux.git", "https"},
-					{"git@bitbucket.org:sglocal/mux.git", "ssh"},
+					{"https://sourcegraph-testing@bitbucket.org/sourcegraph-testing/src-cli.git", "https"},
+					{"git@bitbucket.org:sourcegraph-testing/src-cli.git", "ssh"},
 				},
-				HTML: Link{"https://bitbucket.org/sglocal/mux"},
+				HTML: Link{"https://bitbucket.org/sourcegraph-testing/src-cli"},
 			},
 		},
-		"python-langserver": {
-			Slug:      "python-langserver",
-			Name:      "python-langserver",
-			FullName:  "sglocal/python-langserver",
-			UUID:      "{421b93e9-1f00-4054-8156-4d821d4a768b}",
+		"sourcegraph": {
+			Slug:      "sourcegraph",
+			Name:      "sourcegraph",
+			FullName:  "sourcegraph-testing/sourcegraph",
+			UUID:      "{f46afc56-15a7-4579-9429-1b9329ad4c09}",
 			SCM:       "git",
-			IsPrivate: false,
+			IsPrivate: true,
 			Links: Links{
 				Clone: CloneLinks{
-					{"https://Unknwon@bitbucket.org/sglocal/python-langserver.git", "https"},
-					{"git@bitbucket.org:sglocal/python-langserver.git", "ssh"},
+					{"https://sourcegraph-testing@bitbucket.org/sourcegraph-testing/sourcegraph.git", "https"},
+					{"git@bitbucket.org:sourcegraph-testing/sourcegraph.git", "ssh"},
 				},
-				HTML: Link{"https://bitbucket.org/sglocal/python-langserver"},
+				HTML: Link{"https://bitbucket.org/sourcegraph-testing/sourcegraph"},
 			},
 		},
 	}
@@ -71,25 +70,26 @@ func TestClient_Repos(t *testing.T) {
 		{
 			name:    "pagination: first page",
 			page:    &PageToken{Pagelen: 1},
-			account: "sglocal",
-			repos:   []*Repo{repos["mux"]},
+			account: "sourcegraph-testing",
+			repos:   []*Repo{repos["src-cli"]},
 			next: &PageToken{
-				Size:    3,
+				Size:    2,
 				Page:    1,
 				Pagelen: 1,
-				Next:    "https://api.bitbucket.org/2.0/repositories/sglocal?pagelen=1&page=2",
+				Next:    "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing?pagelen=1&page=2",
 			},
 		},
 		{
 			name: "pagination: last page",
 			page: &PageToken{
 				Pagelen: 1,
-				Next:    "https://api.bitbucket.org/2.0/repositories/sglocal?pagelen=1&page=3",
+				Next:    "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing?pagelen=1&page=2",
 			},
-			repos: []*Repo{repos["python-langserver"]},
+			account: "sourcegraph-testing",
+			repos:   []*Repo{repos["sourcegraph"]},
 			next: &PageToken{
-				Size:    3,
-				Page:    3,
+				Size:    2,
+				Page:    2,
 				Pagelen: 1,
 			},
 		},

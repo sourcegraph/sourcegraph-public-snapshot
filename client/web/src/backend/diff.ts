@@ -1,4 +1,4 @@
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql } from '@sourcegraph/http-client'
 
 export const fileDiffHunkRangeFields = gql`
     fragment FileDiffHunkRangeFields on FileDiffHunkRange {
@@ -9,6 +9,7 @@ export const fileDiffHunkRangeFields = gql`
 
 export const diffStatFields = gql`
     fragment DiffStatFields on DiffStat {
+        __typename
         added
         changed
         deleted

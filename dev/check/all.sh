@@ -11,20 +11,18 @@ go version
 go env
 
 CHECKS=(
-  ./yarn-deduplicate.sh
-  ./docsite.sh
   ./gofmt.sh
   ./template-inlines.sh
   ./go-enterprise-import.sh
   ./go-dbconn-import.sh
   ./go-generate.sh
   ./go-lint.sh
-  ./no-alpine-guard.sh
   ./no-localhost-guard.sh
   ./bash-syntax.sh
   ./shfmt.sh
   ./shellcheck.sh
   ./ts-enterprise-import.sh
+  ./submodule.sh
 )
 
 echo "--- 🚨 Buildkite's timing information is misleading! Only consider the job timing that's printed after 'done'"

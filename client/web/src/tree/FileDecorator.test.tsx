@@ -1,5 +1,6 @@
-import { render } from 'enzyme'
 import React from 'react'
+
+import { render } from '@testing-library/react'
 
 import { FileDecorator } from './FileDecorator'
 
@@ -13,7 +14,7 @@ describe('FileDecorator', () => {
                     ]}
                     isLightTheme={true}
                 />
-            )
+            ).asFragment()
         ).toMatchSnapshot()
     })
 
@@ -29,7 +30,7 @@ describe('FileDecorator', () => {
                     ]}
                     isLightTheme={true}
                 />
-            )
+            ).asFragment()
         ).toMatchSnapshot()
     })
 
@@ -46,7 +47,7 @@ describe('FileDecorator', () => {
                     ]}
                     isLightTheme={true}
                 />
-            )
+            ).asFragment()
         ).toMatchSnapshot()
     })
 
@@ -60,7 +61,7 @@ describe('FileDecorator', () => {
                     isLightTheme={true}
                     isActive={true}
                 />
-            )
+            ).asFragment()
         ).toMatchSnapshot()
     })
 

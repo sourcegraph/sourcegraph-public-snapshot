@@ -11,15 +11,17 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type RepositoryComparisonInput struct {
@@ -60,7 +62,7 @@ type FileDiff interface {
 	InternalID() string
 }
 
-func NewRepositoryComparison(ctx context.Context, db dbutil.DB, r *RepositoryResolver, args *RepositoryComparisonInput) (*RepositoryComparisonResolver, error) {
+func NewRepositoryComparison(ctx context.Context, db database.DB, r *RepositoryResolver, args *RepositoryComparisonInput) (*RepositoryComparisonResolver, error) {
 	var baseRevspec, headRevspec string
 	if args.Base == nil {
 		baseRevspec = "HEAD"
@@ -84,12 +86,12 @@ func NewRepositoryComparison(ctx context.Context, db dbutil.DB, r *RepositoryRes
 
 		// Call ResolveRevision to trigger fetches from remote (in case base/head commits don't
 		// exist).
-		commitID, err := git.ResolveRevision(ctx, repo, revspec, opt)
+		commitID, err := git.ResolveRevision(ctx, db, repo, revspec, opt)
 		if err != nil {
 			return nil, err
 		}
 
-		return toGitCommitResolver(r, db, commitID, nil), nil
+		return NewGitCommitResolver(db, r, commitID, nil), nil
 	}
 
 	head, err := getCommit(ctx, r.RepoName(), headRevspec)
@@ -99,14 +101,18 @@ func NewRepositoryComparison(ctx context.Context, db dbutil.DB, r *RepositoryRes
 
 	// Find the common merge-base for the diff. That's the revision the diff applies to,
 	// not the baseRevspec.
-	mergeBaseCommit, err := git.MergeBase(ctx, r.RepoName(), api.CommitID(baseRevspec), api.CommitID(headRevspec))
-	if err != nil {
-		return nil, err
-	}
+	mergeBaseCommit, err := git.MergeBase(ctx, db, r.RepoName(), api.CommitID(baseRevspec), api.CommitID(headRevspec))
 
-	// We use the merge-base as the base commit here, as the diff will only be guaranteed to be
+	// If possible, use the merge-base as the base commit, as the diff will only be guaranteed to be
 	// applicable to the file from that revision.
 	commitString := strings.TrimSpace(string(mergeBaseCommit))
+	rangeType := "..."
+	if err != nil {
+		// Fallback option which should work even if there is no merge base.
+		commitString = baseRevspec
+		rangeType = ".."
+	}
+
 	base, err := getCommit(ctx, r.RepoName(), commitString)
 	if err != nil {
 		return nil, err
@@ -119,6 +125,7 @@ func NewRepositoryComparison(ctx context.Context, db dbutil.DB, r *RepositoryRes
 		base:        base,
 		head:        head,
 		repo:        r,
+		rangeType:   rangeType,
 	}, nil
 }
 
@@ -127,9 +134,10 @@ func (r *RepositoryResolver) Comparison(ctx context.Context, args *RepositoryCom
 }
 
 type RepositoryComparisonResolver struct {
-	db                       dbutil.DB
+	db                       database.DB
 	baseRevspec, headRevspec string
 	base, head               *GitCommitResolver
+	rangeType                string
 	repo                     *RepositoryResolver
 }
 
@@ -181,12 +189,8 @@ func (r *RepositoryComparisonResolver) FileDiffs(ctx context.Context, args *File
 
 // repositoryComparisonNewFile is the default NewFileFunc used by
 // RepositoryComparisonResolver to produce the new file in a FileDiffResolver.
-func repositoryComparisonNewFile(db dbutil.DB, r *FileDiffResolver) FileResolver {
-	return &GitTreeEntryResolver{
-		db:     db,
-		commit: r.Head,
-		stat:   CreateFileInfo(r.FileDiff.NewName, false),
-	}
+func repositoryComparisonNewFile(db database.DB, r *FileDiffResolver) FileResolver {
+	return NewGitTreeEntryResolver(db, r.Head, CreateFileInfo(r.FileDiff.NewName, false))
 }
 
 // computeRepositoryComparisonDiff returns a ComputeDiffFunc for the given
@@ -221,11 +225,12 @@ func computeRepositoryComparisonDiff(cmp *RepositoryComparisonResolver) ComputeD
 				base = string(cmp.base.OID())
 			}
 
-			var iter *git.DiffFileIterator
-			iter, err = git.Diff(ctx, git.DiffOptions{
-				Repo: cmp.repo.RepoName(),
-				Base: base,
-				Head: string(cmp.head.OID()),
+			var iter *gitserver.DiffFileIterator
+			iter, err = gitserver.NewClient(cmp.db).Diff(ctx, gitserver.DiffOptions{
+				Repo:      cmp.repo.RepoName(),
+				Base:      base,
+				Head:      string(cmp.head.OID()),
+				RangeType: cmp.rangeType,
 			})
 			if err != nil {
 				return
@@ -272,10 +277,10 @@ type ComputeDiffFunc func(ctx context.Context, args *FileDiffsConnectionArgs) ([
 
 // NewFileFunc is a function that returns the "new" file in a FileDiff as a
 // FileResolver.
-type NewFileFunc func(db dbutil.DB, r *FileDiffResolver) FileResolver
+type NewFileFunc func(db database.DB, r *FileDiffResolver) FileResolver
 
 func NewFileDiffConnectionResolver(
-	db dbutil.DB,
+	db database.DB,
 	base, head *GitCommitResolver,
 	args *FileDiffsConnectionArgs,
 	compute ComputeDiffFunc,
@@ -293,7 +298,7 @@ func NewFileDiffConnectionResolver(
 }
 
 type fileDiffConnectionResolver struct {
-	db      dbutil.DB
+	db      database.DB
 	base    *GitCommitResolver
 	head    *GitCommitResolver
 	first   *int32
@@ -383,7 +388,7 @@ type FileDiffResolver struct {
 	Base     *GitCommitResolver
 	Head     *GitCommitResolver
 
-	db      dbutil.DB
+	db      database.DB
 	newFile NewFileFunc
 }
 
@@ -411,11 +416,7 @@ func (r *FileDiffResolver) OldFile() FileResolver {
 	if diffPathOrNull(r.FileDiff.OrigName) == nil {
 		return nil
 	}
-	return &GitTreeEntryResolver{
-		db:     r.db,
-		commit: r.Base,
-		stat:   CreateFileInfo(r.FileDiff.OrigName, false),
-	}
+	return NewGitTreeEntryResolver(r.db, r.Base, CreateFileInfo(r.FileDiff.OrigName, false))
 }
 
 func (r *FileDiffResolver) NewFile() FileResolver {
@@ -526,6 +527,9 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 
 	hunkLines := strings.Split(string(r.hunk.Body), "\n")
 
+	// TODO: Clean up trailing newline logic:
+	// https://github.com/sourcegraph/sourcegraph/issues/20704
+
 	// Remove final empty line on files that end with a newline, as most code hosts do.
 	if hunkLines[len(hunkLines)-1] == "" {
 		hunkLines = hunkLines[:len(hunkLines)-1]
@@ -541,9 +545,11 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 
 	// Now do the same thing for trailing "-" lines. But only if they're not
 	// followed by an "unchanged" line.
+	// See https://github.com/sourcegraph/sourcegraph/pull/20673
 	var lastMinus = -1
 	for i, hunkLine := range hunkLines {
-		if hunkLine == " " {
+		// An "unchanged" line should start with an empty space.
+		if hunkLine[0:1] == " " {
 			lastMinus = -1
 		} else if hunkLine == "-" {
 			lastMinus = i

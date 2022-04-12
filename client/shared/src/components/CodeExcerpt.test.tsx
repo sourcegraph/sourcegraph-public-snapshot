@@ -1,5 +1,6 @@
-import { cleanup, getByText, render } from '@testing-library/react'
 import * as React from 'react'
+
+import { cleanup, getByText, render } from '@testing-library/react'
 import _VisibilitySensor from 'react-visibility-sensor'
 import { of } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -8,7 +9,7 @@ import {
     HIGHLIGHTED_FILE_LINES,
     HIGHLIGHTED_FILE_LINES_LONG,
     HIGHLIGHTED_FILE_LINES_SIMPLE,
-} from '../util/searchTestHelpers'
+} from '../testing/searchTestHelpers'
 
 import { CodeExcerpt } from './CodeExcerpt'
 
@@ -56,7 +57,7 @@ describe('CodeExcerpt', () => {
 
     it('renders correct number of rows', () => {
         const { container } = render(<CodeExcerpt {...defaultProps} />)
-        expect(container.querySelectorAll('.code-excerpt tr').length).toBe(3)
+        expect(container.querySelectorAll('[data-testid="code-excerpt"] tr').length).toBe(3)
     })
 
     it('renders the line number container on each row', () => {
@@ -77,7 +78,7 @@ describe('CodeExcerpt', () => {
 
     it('highlights matches correctly', () => {
         const { container } = render(<CodeExcerpt {...defaultProps} />)
-        const highlightedSpans = container.querySelectorAll('.selection-highlight')
+        const highlightedSpans = container.querySelectorAll('.match-highlight')
         expect(highlightedSpans.length).toBe(3)
         for (const span of highlightedSpans) {
             expect(span.textContent === 'line')
@@ -99,7 +100,7 @@ describe('CodeExcerpt', () => {
                 }
             />
         )
-        const highlightedSpans = container.querySelectorAll('.selection-highlight')
+        const highlightedSpans = container.querySelectorAll('.match-highlight')
         expect(highlightedSpans.length).toBe(1)
         for (const span of highlightedSpans) {
             expect(span.textContent === 'test')

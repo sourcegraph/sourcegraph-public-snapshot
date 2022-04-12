@@ -12,7 +12,7 @@ import (
 
 // DefaultReverseProxy is the default ReverseProxy. It uses the same transport and HTTP
 // limiter as the default client.
-var DefaultReverseProxy = NewReverseProxy(defaultClient.Transport, DefaultClient.HTTPLimiter)
+var DefaultReverseProxy = NewReverseProxy(defaultClient.Transport, defaultLimiter)
 
 var defaultClient, _ = clientFactory.Client()
 

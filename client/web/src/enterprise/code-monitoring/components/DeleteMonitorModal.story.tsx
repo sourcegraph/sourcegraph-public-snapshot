@@ -1,29 +1,33 @@
-import { storiesOf } from '@storybook/react'
 import React from 'react'
+
+import { storiesOf } from '@storybook/react'
 import { NEVER } from 'rxjs'
 import sinon from 'sinon'
 
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { WebStory } from '../../../components/WebStory'
+import { CodeMonitorFields } from '../../../graphql-operations'
 import { mockCodeMonitor } from '../testing/util'
 
 import { DeleteMonitorModal } from './DeleteMonitorModal'
 
-const { add } = storiesOf('web/enterprise/code-monitoring/DeleteMonitorModal', module)
+const { add } = storiesOf('web/enterprise/code-monitoring/DeleteMonitorModal', module).addParameters({
+    chromatic: { disableSnapshot: false },
+})
 
 add(
-    'Example',
+    'DeleteMonitorModal',
     () => (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <DeleteMonitorModal
                     {...props}
                     isOpen={true}
-                    codeMonitor={mockCodeMonitor.node}
+                    codeMonitor={mockCodeMonitor.node as CodeMonitorFields}
                     toggleDeleteModal={sinon.fake()}
                     deleteCodeMonitor={sinon.fake(() => NEVER)}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     ),
     {
         design: {

@@ -1,17 +1,19 @@
-FROM sourcegraph/alpine-3.12:107969_2021-09-10_80f5edc@sha256:ce1ba2f16ec56e5e8007da53e0e6449bc0fa1fe1f972bffbc33dea1ae410b86d as libsqlite3-pcre
-
-COPY libsqlite3-pcre-install-alpine.sh /libsqlite3-pcre-install-alpine.sh
-RUN /libsqlite3-pcre-install-alpine.sh
-
 # Install p4 CLI (keep this up to date with cmd/gitserver/Dockerfile)
-FROM sourcegraph/alpine-3.12:107969_2021-09-10_80f5edc@sha256:ce1ba2f16ec56e5e8007da53e0e6449bc0fa1fe1f972bffbc33dea1ae410b86d AS p4cli
+FROM sourcegraph/alpine-3.12:137550_2022-03-17_32d45d6a2a7f@sha256:d67684c174c577e7d61b4d7ef9d173fb73973f5b941bd65401dad90fc5e74353 AS p4cli
 
 # hadolint ignore=DL3003
 RUN wget http://cdist2.perforce.com/perforce/r20.1/bin.linux26x86_64/p4 && \
     mv p4 /usr/local/bin/p4 && \
     chmod +x /usr/local/bin/p4
 
-FROM sourcegraph/alpine-3.12:107969_2021-09-10_80f5edc@sha256:ce1ba2f16ec56e5e8007da53e0e6449bc0fa1fe1f972bffbc33dea1ae410b86d AS coursier
+# Install p4-fusion (keep this up to date with cmd/gitserver/Dockerfile)
+FROM sourcegraph/alpine-3.12:137550_2022-03-17_32d45d6a2a7f@sha256:d67684c174c577e7d61b4d7ef9d173fb73973f5b941bd65401dad90fc5e74353 AS p4-fusion
+
+COPY p4-fusion-install-alpine.sh /p4-fusion-install-alpine.sh
+RUN /p4-fusion-install-alpine.sh
+
+# Install coursier (keep this up to date with cmd/gitserver/Dockerfile)
+FROM sourcegraph/alpine-3.12:137550_2022-03-17_32d45d6a2a7f@sha256:d67684c174c577e7d61b4d7ef9d173fb73973f5b941bd65401dad90fc5e74353 AS coursier
 
 # TODO(code-intel): replace with official streams when musl builds are upstreamed
 RUN wget -O coursier.zip https://github.com/sourcegraph/lsif-java/releases/download/v0.5.6/cs-musl.zip && \
@@ -19,7 +21,7 @@ RUN wget -O coursier.zip https://github.com/sourcegraph/lsif-java/releases/downl
     mv cs-musl /usr/local/bin/coursier && \
     chmod +x /usr/local/bin/coursier
 
-FROM sourcegraph/alpine-3.12:107969_2021-09-10_80f5edc@sha256:ce1ba2f16ec56e5e8007da53e0e6449bc0fa1fe1f972bffbc33dea1ae410b86d
+FROM sourcegraph/alpine-3.12:137550_2022-03-17_32d45d6a2a7f@sha256:d67684c174c577e7d61b4d7ef9d173fb73973f5b941bd65401dad90fc5e74353
 # TODO(security): This container should not be running as root!
 #
 # The default user in sourcegraph/alpine is a non-root `sourcegraph` user but because old deployments
@@ -37,25 +39,26 @@ LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
-# hadolint ignore=DL3018
-RUN apk update && apk add --no-cache \
+RUN apk add --no-cache --verbose \
+    # [NOTE: git-version-min-requirement]
+    # We require git 2.34.1 because we use git-repack with flag --write-midx.
+    'git>=2.34.1' \
+    git-p4 \
+    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.15/main  \
     # NOTE that the Postgres version we run is different
     # from our *Minimum Supported Version* which alone dictates
     # the features we can depend on. See this link for more information:
     # https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/postgresql.md#version-requirements
-    'bash=5.0.17-r0' \
-    'redis=5.0.13-r0' \
-    # Gitserver requires Git protocol v2 https://github.com/sourcegraph/sourcegraph/issues/13168
-    'git>=2.18' \
-    git-p4 \
+    && apk add --no-cache --verbose \
+    'bash>=5.0.17' \
+    'redis>=5.0' \
     python2 \
-    'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs-current=14.5.0-r0' \
-    postgresql=12.8-r0 \
-    postgresql-contrib
-
-# This is installed separately due to the upstream edge repo requirement
-RUN apk update && apk add --no-cache \
-    'python3>=3.9.5' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main
+    python3 \
+    'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs-current>=14.5.0' \
+    postgresql>=12.10-r0 \
+    postgresql-contrib \
+    # We require libstdc++ for p4-fusion
+    libstdc++
 
 # IMPORTANT: If you update the syntect_server version below, you MUST confirm
 # the ENV variables from its Dockerfile (https://github.com/sourcegraph/syntect_server/blob/master/Dockerfile)
@@ -67,7 +70,7 @@ COPY --from=docker.io/sourcegraph/syntect_server:21-08-31_c330964@sha256:759f331
 
 
 # install minio (keep this up to date with docker-images/minio/Dockerfile)
-ENV MINIO_VERSION=RELEASE.2021-08-31T05-46-54Z
+ENV MINIO_VERSION=RELEASE.2021-12-10T23-03-39Z
 RUN wget "https://dl.min.io/server/minio/release/linux-amd64/archive/minio.$MINIO_VERSION" && \
     chmod +x "minio.$MINIO_VERSION" && \
     mv "minio.$MINIO_VERSION" /usr/local/bin/minio
@@ -88,7 +91,6 @@ COPY --from=sourcegraph/prometheus:server /prometheus.sh /prometheus.sh
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/prometheus:server /usr/share/prometheus /usr/share/prometheus
 
-# hadolint ignore=DL3018
 RUN set -ex && \
     addgroup -S grafana && \
     adduser -S -G grafana grafana && \
@@ -97,13 +99,12 @@ RUN set -ex && \
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/grafana:server /usr/share/grafana /usr/share/grafana
 
-# hadolint ignore=DL3022
-COPY --from=libsqlite3-pcre /sqlite3-pcre/pcre.so /libsqlite3-pcre.so
-ENV LIBSQLITE3_PCRE /libsqlite3-pcre.so
 COPY . /
 
 # hadolint ignore=DL3022
 COPY --from=p4cli /usr/local/bin/p4 /usr/local/bin/p4
+
+COPY --from=p4-fusion /usr/local/bin/p4-fusion /usr/local/bin/p4-fusion
 
 COPY --from=coursier /usr/local/bin/coursier /usr/local/bin/coursier
 
@@ -119,6 +120,8 @@ COPY --from=sourcegraph/grafana:server /sg_config_grafana/provisioning/dashboard
 COPY --from=sourcegraph/postgres_exporter:server /usr/local/bin/postgres_exporter /usr/local/bin/postgres_exporter
 
 RUN echo "hosts: files dns" > /etc/nsswitch.conf
+
+WORKDIR /
 
 ENV GO111MODULES=on LANG=en_US.utf8
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/server"]

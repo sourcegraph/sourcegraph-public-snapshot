@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -17,22 +16,25 @@ import (
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/dnaeon/go-vcr/recorder"
 	"github.com/google/go-cmp/cmp"
+	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSources_ListRepos(t *testing.T) {
 	conf.Mock(&conf.Unified{
-		ServiceConnections: conftypes.ServiceConnections{
+		ServiceConnectionConfig: conftypes.ServiceConnections{
 			GitServers: []string{"127.0.0.1:3178"},
 		},
 	})
@@ -42,7 +44,7 @@ func TestSources_ListRepos(t *testing.T) {
 		name   string
 		ctx    context.Context
 		svcs   types.ExternalServices
-		assert func(*types.ExternalService) types.ReposAssertion
+		assert func(*types.ExternalService) typestest.ReposAssertion
 		err    string
 	}
 
@@ -138,7 +140,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "excluded repos are never yielded",
 			svcs: svcs,
-			assert: func(s *types.ExternalService) types.ReposAssertion {
+			assert: func(s *types.ExternalService) typestest.ReposAssertion {
 				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
@@ -284,7 +286,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "included repos that exist are yielded",
 			svcs: svcs,
-			assert: func(s *types.ExternalService) types.ReposAssertion {
+			assert: func(s *types.ExternalService) typestest.ReposAssertion {
 				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
@@ -391,7 +393,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "repositoryPathPattern determines the repo name",
 			svcs: svcs,
-			assert: func(s *types.ExternalService) types.ReposAssertion {
+			assert: func(s *types.ExternalService) typestest.ReposAssertion {
 				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
@@ -492,7 +494,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "nameTransformations updates the repo name",
 			svcs: svcs,
-			assert: func(s *types.ExternalService) types.ReposAssertion {
+			assert: func(s *types.ExternalService) typestest.ReposAssertion {
 				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
@@ -531,7 +533,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "phabricator",
 			svcs: svcs,
-			assert: func(*types.ExternalService) types.ReposAssertion {
+			assert: func(*types.ExternalService) typestest.ReposAssertion {
 				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
@@ -586,7 +588,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "bitbucketserver archived",
 			svcs: svcs,
-			assert: func(s *types.ExternalService) types.ReposAssertion {
+			assert: func(s *types.ExternalService) typestest.ReposAssertion {
 				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
@@ -620,7 +622,7 @@ func TestSources_ListRepos(t *testing.T) {
 				lg.SetHandler(log15.DiscardHandler())
 
 				obs := ObservedSource(lg, NewSourceMetrics())
-				src, err := NewSourcer(cf, obs)(svc)
+				src, err := NewSourcer(database.NewMockDB(), cf, obs)(svc)
 				if err != nil {
 					t.Fatal(err)
 				}

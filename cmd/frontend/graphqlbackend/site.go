@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -15,16 +14,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 )
 
 const singletonSiteGQLID = "site"
 
-func (r *schemaResolver) siteByGQLID(ctx context.Context, id graphql.ID) (Node, error) {
+func (r *schemaResolver) siteByGQLID(_ context.Context, id graphql.ID) (Node, error) {
 	siteGQLID, err := unmarshalSiteGQLID(id)
 	if err != nil {
 		return nil, err
@@ -51,7 +50,7 @@ func (r *schemaResolver) Site() *siteResolver {
 }
 
 type siteResolver struct {
-	db    dbutil.DB
+	db    database.DB
 	gqlID string // == singletonSiteGQLID, not the site ID
 }
 
@@ -123,7 +122,7 @@ func (r *siteResolver) AllowSiteSettingsEdits() bool {
 }
 
 type siteConfigurationResolver struct {
-	db dbutil.DB
+	db database.DB
 }
 
 func (r *siteConfigurationResolver) ID(ctx context.Context) (int32, error) {
@@ -141,8 +140,8 @@ func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (JSON
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return "", err
 	}
-	siteConfig := globals.ConfigurationServerFrontendOnly.Raw().Site
-	return JSONCString(siteConfig), nil
+	siteConfig, err := conf.RedactSecrets(globals.ConfigurationServerFrontendOnly.Raw())
+	return JSONCString(siteConfig.Site), err
 }
 
 func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]string, error) {
@@ -176,7 +175,11 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 	}
 
 	prev := globals.ConfigurationServerFrontendOnly.Raw()
-	prev.Site = args.Input
+	unredacted, err := conf.UnredactSecrets(args.Input, prev)
+	if err != nil {
+		return false, errors.Errorf("error unredacting secrets: %s", err)
+	}
+	prev.Site = unredacted
 	// TODO(slimsag): future: actually pass lastID through to prevent race conditions
 	if err := globals.ConfigurationServerFrontendOnly.Write(ctx, prev); err != nil {
 		return false, err

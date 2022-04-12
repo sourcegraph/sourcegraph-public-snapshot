@@ -3,7 +3,7 @@
 exports[`PageHeader renders correctly 1`] = `
 <body>
   <div>
-    <header
+    <div
       class="container"
     >
       <div>
@@ -11,7 +11,7 @@ exports[`PageHeader renders correctly 1`] = `
           class="heading"
         >
           <a
-            class="path"
+            class="anchorLink path"
             href="/link-0"
           >
             <svg
@@ -32,7 +32,7 @@ exports[`PageHeader renders correctly 1`] = `
             /
           </span>
           <a
-            class="path"
+            class="anchorLink path"
             href="/link-1"
           >
             <span
@@ -47,7 +47,7 @@ exports[`PageHeader renders correctly 1`] = `
             /
           </span>
           <a
-            class="path"
+            class="anchorLink path"
             href="/link-2"
           >
             <span
@@ -72,7 +72,7 @@ exports[`PageHeader renders correctly 1`] = `
           </span>
         </h1>
       </div>
-    </header>
+    </div>
   </div>
 </body>
 `;

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -15,9 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmpackages"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/pagure"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -63,13 +65,23 @@ func CloneURL(kind, config string, repo *types.Repo) (string, error) {
 		if r, ok := repo.Metadata.(*phabricator.Repo); ok {
 			return phabricatorCloneURL(r, t), nil
 		}
+	case *schema.PagureConnection:
+		if r, ok := repo.Metadata.(*pagure.Project); ok {
+			return r.FullURL, nil
+		}
 	case *schema.OtherExternalServiceConnection:
 		if r, ok := repo.Metadata.(*extsvc.OtherRepoMetadata); ok {
 			return otherCloneURL(repo, r), nil
 		}
+	case *schema.GoModulesConnection:
+		return string(repo.Name), nil
 	case *schema.JVMPackagesConnection:
 		if r, ok := repo.Metadata.(*jvmpackages.Metadata); ok {
 			return r.Module.CloneURL(), nil
+		}
+	case *schema.NpmPackagesConnection:
+		if r, ok := repo.Metadata.(*npmpackages.Metadata); ok {
+			return r.Package.CloneURL(), nil
 		}
 	default:
 		return "", errors.Errorf("unknown external service kind %q for repo %d", kind, repo.ID)
@@ -165,7 +177,12 @@ func githubCloneURL(repo *github.Repository, cfg *schema.GitHubConnection) (stri
 		log15.Warn("Error adding authentication to GitHub repository Git remote URL.", "url", repo.URL, "error", err)
 		return repo.URL, nil
 	}
-	u.User = url.User(cfg.Token)
+
+	if cfg.GithubAppInstallationID != "" {
+		u.User = url.UserPassword("x-access-token", cfg.Token)
+	} else {
+		u.User = url.User(cfg.Token)
+	}
 	return u.String(), nil
 }
 

@@ -1,14 +1,14 @@
+import React, { useEffect, useCallback } from 'react'
+
 import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import CloudOutlineIcon from 'mdi-react/CloudOutlineIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
-import React, { useEffect, useCallback } from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { LoadingSpinner, Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
 
 import {
     FilteredConnection,
@@ -36,7 +36,7 @@ const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({ node }) 
                 <RepoLink repoName={node.name} to={node.url} />
                 {node.mirrorInfo.cloneInProgress && (
                     <small className="ml-2 text-success">
-                        <LoadingSpinner className="icon-inline" /> Cloning
+                        <LoadingSpinner /> Cloning
                     </small>
                 )}
                 {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
@@ -44,24 +44,26 @@ const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({ node }) 
                         className="ml-2 text-muted"
                         data-tooltip="Visit the repository to clone it. See its mirroring settings for diagnostics."
                     >
-                        <CloudOutlineIcon className="icon-inline" /> Not yet cloned
+                        <Icon as={CloudOutlineIcon} /> Not yet cloned
                     </small>
                 )}
             </div>
             <div className="repository-node__actions">
                 {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
-                    <Link className="btn btn-sm btn-secondary" to={node.url}>
-                        <CloudDownloadIcon className="icon-inline" /> Clone now
-                    </Link>
+                    <Button to={node.url} variant="secondary" size="sm" as={Link}>
+                        <Icon as={CloudDownloadIcon} /> Clone now
+                    </Button>
                 )}{' '}
                 {
-                    <Link
-                        className="btn btn-secondary btn-sm"
+                    <Button
                         to={`/${node.name}/-/settings`}
                         data-tooltip="Repository settings"
+                        variant="secondary"
+                        size="sm"
+                        as={Link}
                     >
-                        <SettingsIcon className="icon-inline" /> Settings
-                    </Link>
+                        <Icon as={SettingsIcon} /> Settings
+                    </Button>
                 }{' '}
             </div>
         </div>
@@ -140,10 +142,10 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<Props> = ({ hist
         <div className="site-admin-repositories-page">
             <PageTitle title="Repositories - Admin" />
             {showRepositoriesAddedBanner && (
-                <p className="alert alert-success">
+                <Alert variant="success" as="p">
                     Updating repositories. It may take a few moments to clone and index each repository. Repository
                     statuses are displayed below.
-                </p>
+                </Alert>
             )}
             <h2>Repositories</h2>
             <p>

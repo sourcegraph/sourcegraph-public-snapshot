@@ -1,19 +1,18 @@
 package executorqueue
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 )
 
-func init() {
-	sharedConfig.FrontendUsername = "test"
-	sharedConfig.FrontendPassword = "hunter2"
-}
-
 func TestInternalProxyAuthTokenMiddleware(t *testing.T) {
-	ts := httptest.NewServer(basicAuthMiddleware(
+	accessToken := "hunter2"
+
+	ts := httptest.NewServer(authMiddleware(
+		func() string { return accessToken },
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusTeapot)
 		}),
@@ -26,6 +25,7 @@ func TestInternalProxyAuthTokenMiddleware(t *testing.T) {
 	}
 
 	// no auth
+	req.Header.Del("Authorization")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("unexpected error performing request: %s", err)
@@ -33,22 +33,19 @@ func TestInternalProxyAuthTokenMiddleware(t *testing.T) {
 	if resp.StatusCode != http.StatusUnauthorized {
 		t.Errorf("unexpected status code. want=%d have=%d", http.StatusUnauthorized, resp.StatusCode)
 	}
-	if value := resp.Header.Get("WWW-Authenticate"); value != `Basic realm="Sourcegraph"` {
-		t.Errorf("unexpected www-authenticate header. want=%q have=%q", `Basic realm="Sourcegraph"`, value)
-	}
 
-	// wrong username
-	req.SetBasicAuth(strings.ToUpper(sharedConfig.FrontendUsername), sharedConfig.FrontendPassword)
+	// malformed token
+	req.Header.Set("Authorization", fmt.Sprintf("token-unknown %s", strings.ToUpper(accessToken)))
 	resp, err = http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("unexpected error performing request: %s", err)
 	}
-	if resp.StatusCode != http.StatusForbidden {
-		t.Errorf("unexpected status code. want=%d have=%d", http.StatusForbidden, resp.StatusCode)
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Errorf("unexpected status code. want=%d have=%d", http.StatusUnauthorized, resp.StatusCode)
 	}
 
-	// wrong password
-	req.SetBasicAuth(sharedConfig.FrontendUsername, strings.ToUpper(sharedConfig.FrontendPassword))
+	// wrong token
+	req.Header.Set("Authorization", fmt.Sprintf("token-executor %s", strings.ToUpper(accessToken)))
 	resp, err = http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("unexpected error performing request: %s", err)
@@ -58,7 +55,7 @@ func TestInternalProxyAuthTokenMiddleware(t *testing.T) {
 	}
 
 	// correct token
-	req.SetBasicAuth(sharedConfig.FrontendUsername, sharedConfig.FrontendPassword)
+	req.Header.Set("Authorization", fmt.Sprintf("token-executor %s", accessToken))
 	resp, err = http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("unexpected error performing request: %s", err)

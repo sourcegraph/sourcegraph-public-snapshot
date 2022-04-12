@@ -1,5 +1,18 @@
-import classNames from 'classnames'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
+import VisuallyHidden from '@reach/visually-hidden'
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
+
+import {
+    ProductStatusBadge,
+    Button,
+    ButtonGroup,
+    Menu,
+    MenuButton,
+    MenuList,
+    Position,
+    MenuItem,
+} from '@sourcegraph/wildcard'
 
 import styles from './DropdownButton.module.scss'
 
@@ -8,6 +21,8 @@ export interface Action {
     type: string
     /* The button label for the action. */
     buttonLabel: string
+    /* Whether or not the action is disabled. */
+    disabled?: boolean
     /* The title in the dropdown menu item. */
     dropdownTitle: string
     /* The description in the dropdown menu item. */
@@ -27,7 +42,6 @@ export interface Props {
     defaultAction?: number
     disabled?: boolean
     dropdownMenuPosition?: 'left' | 'right'
-    initiallyOpen?: boolean
     onLabel?: (label: string | undefined) => void
     placeholder?: string
     tooltip?: string
@@ -37,16 +51,11 @@ export const DropdownButton: React.FunctionComponent<Props> = ({
     actions,
     defaultAction,
     disabled,
-    dropdownMenuPosition,
-    initiallyOpen,
     onLabel,
     placeholder = 'Select action',
     tooltip,
 }) => {
     const [isDisabled, setIsDisabled] = useState(!!disabled)
-
-    const [isOpen, setIsOpen] = useState(!!initiallyOpen)
-    const toggleIsOpen = useCallback(() => setIsOpen(open => !open), [])
 
     const [selected, setSelected] = useState<number | undefined>(undefined)
     const selectedAction = useMemo(() => {
@@ -69,10 +78,8 @@ export const DropdownButton: React.FunctionComponent<Props> = ({
             } else {
                 setSelected(undefined)
             }
-
-            setIsOpen(false)
         },
-        [actions, setIsOpen, setSelected]
+        [actions, setSelected]
     )
 
     const [renderedElement, setRenderedElement] = useState<JSX.Element | undefined>()
@@ -120,46 +127,35 @@ export const DropdownButton: React.FunctionComponent<Props> = ({
     return (
         <>
             {renderedElement}
-            <div className="btn-group">
-                <button
-                    type="button"
-                    className="btn btn-primary text-nowrap"
-                    onClick={onTriggerAction}
-                    disabled={isDisabled || actions.length === 0 || selectedAction === undefined}
-                    data-tooltip={tooltip}
-                >
-                    {label}
-                </button>
+            <Menu>
+                <ButtonGroup>
+                    <Button
+                        className="text-nowrap"
+                        onClick={onTriggerAction}
+                        disabled={isDisabled || actions.length === 0 || selectedAction === undefined}
+                        data-tooltip={tooltip}
+                        variant="primary"
+                    >
+                        {label}
+                    </Button>
+                    {actions.length > 1 && (
+                        <MenuButton variant="primary" className={styles.dropdownButton}>
+                            <ChevronDownIcon />
+                            <VisuallyHidden>Actions</VisuallyHidden>
+                        </MenuButton>
+                    )}
+                </ButtonGroup>
                 {actions.length > 1 && (
-                    <>
-                        <button
-                            type="button"
-                            onClick={toggleIsOpen}
-                            disabled={isDisabled}
-                            className="btn btn-primary dropdown-toggle dropdown-toggle-split"
-                        />
-                        <div
-                            className={classNames(
-                                'dropdown-menu',
-                                isOpen && 'show',
-                                dropdownMenuPosition === 'left'
-                                    ? 'dropdown-menu-left'
-                                    : dropdownMenuPosition === 'right'
-                                    ? 'dropdown-menu-right'
-                                    : null,
-                                styles.dropdownButtonItem
-                            )}
-                        >
-                            {actions.map((action, index) => (
-                                <React.Fragment key={action.type}>
-                                    <DropdownItem action={action} setSelectedType={onSelectedTypeSelect} />
-                                    {index !== actions.length - 1 && <div className="dropdown-divider" />}
-                                </React.Fragment>
-                            ))}
-                        </div>
-                    </>
+                    <MenuList className={styles.menuList} position={Position.bottomEnd}>
+                        {actions.map((action, index) => (
+                            <React.Fragment key={action.type}>
+                                <DropdownItem action={action} setSelectedType={onSelectedTypeSelect} />
+                                {index !== actions.length - 1 && <div className="dropdown-divider" />}
+                            </React.Fragment>
+                        ))}
+                    </MenuList>
                 )}
-            </div>
+            </Menu>
         </>
     )
 }
@@ -170,25 +166,23 @@ interface DropdownItemProps {
 }
 
 const DropdownItem: React.FunctionComponent<DropdownItemProps> = ({ action, setSelectedType }) => {
-    const onClick = useCallback<React.MouseEventHandler>(() => {
+    const onSelect = useCallback(() => {
         setSelectedType(action.type)
     }, [setSelectedType, action.type])
     return (
-        <div className="dropdown-item">
-            <button type="button" className="btn text-left" onClick={onClick}>
-                <h4 className="mb-1">
-                    {action.dropdownTitle}
-                    {action.experimental && (
-                        <>
-                            {' '}
-                            <small className="badge badge-info">Experimental</small>
-                        </>
-                    )}
-                </h4>
-                <p className="text-wrap text-muted mb-0">
-                    <small>{action.dropdownDescription}</small>
-                </p>
-            </button>
-        </div>
+        <MenuItem className={styles.menuListItem} onSelect={onSelect} disabled={action.disabled}>
+            <h4 className="mb-1">
+                {action.dropdownTitle}
+                {action.experimental && (
+                    <>
+                        {' '}
+                        <ProductStatusBadge status="experimental" as="small" />
+                    </>
+                )}
+            </h4>
+            <p className="text-wrap text-muted mb-0">
+                <small>{action.dropdownDescription}</small>
+            </p>
+        </MenuItem>
     )
 }

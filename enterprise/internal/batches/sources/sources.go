@@ -6,12 +6,9 @@ import (
 	"net/url"
 	"sort"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -20,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -27,7 +25,7 @@ import (
 // if the user that applied the last batch change/changeset spec doesn't have
 // UserCredentials for the given repository and is not a site-admin (so no
 // fallback to the global credentials is possible).
-var ErrMissingCredentials = errors.New("no credential found to authenticate ChangesetSource")
+var ErrMissingCredentials = errors.New("no credential found that can authenticate to the code host")
 
 // ErrNoPushCredentials is returned by gitserverPushConfig if the
 // authenticator cannot be used by git to authenticate a `git push`.
@@ -43,12 +41,12 @@ func (e ErrNoPushCredentials) Error() string {
 var ErrNoSSHCredential = errors.New("authenticator doesn't support SSH")
 
 type SourcerStore interface {
-	DB() dbutil.DB
+	DatabaseDB() database.DB
 	GetSiteCredential(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error)
 	GetExternalServiceIDs(ctx context.Context, opts store.GetExternalServiceIDsOpts) ([]int64, error)
-	Repos() *database.RepoStore
-	ExternalServices() *database.ExternalServiceStore
-	UserCredentials() *database.UserCredentialsStore
+	Repos() database.RepoStore
+	ExternalServices() database.ExternalServiceStore
+	UserCredentials() database.UserCredentialsStore
 }
 
 // Sourcer exposes methods to get a ChangesetSource based on a changeset, repo or
@@ -110,7 +108,7 @@ func (s *sourcer) loadBatchesSource(ctx context.Context, tx SourcerStore, extern
 	if err != nil {
 		return nil, errors.Wrap(err, "loading external service")
 	}
-	css, err := buildChangesetSource(tx, s.cf, extSvc)
+	css, err := buildChangesetSource(s.cf, extSvc)
 	if err != nil {
 		return nil, errors.Wrap(err, "building changeset source")
 	}
@@ -126,7 +124,7 @@ func (s *sourcer) loadBatchesSource(ctx context.Context, tx SourcerStore, extern
 	return css, nil
 }
 
-func gitserverPushConfig(ctx context.Context, store *database.ExternalServiceStore, repo *types.Repo, au auth.Authenticator) (*protocol.PushConfig, error) {
+func gitserverPushConfig(ctx context.Context, store database.ExternalServiceStore, repo *types.Repo, au auth.Authenticator) (*protocol.PushConfig, error) {
 	// Empty authenticators are not allowed.
 	if au == nil {
 		return nil, ErrNoPushCredentials{}
@@ -234,7 +232,7 @@ func WithSiteAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSo
 // loadExternalService looks up all external services that are connected to the given repo.
 // The first external service to have a token configured will be returned then.
 // If no external service matching the above criteria is found, an error is returned.
-func loadExternalService(ctx context.Context, s *database.ExternalServiceStore, opts database.ExternalServicesListOptions) (*types.ExternalService, error) {
+func loadExternalService(ctx context.Context, s database.ExternalServiceStore, opts database.ExternalServicesListOptions) (*types.ExternalService, error) {
 	es, err := s.List(ctx, opts)
 	if err != nil {
 		return nil, err
@@ -274,7 +272,7 @@ func loadExternalService(ctx context.Context, s *database.ExternalServiceStore, 
 
 // buildChangesetSource get an authenticated ChangesetSource for the given repo
 // to load the changeset state from.
-func buildChangesetSource(store SourcerStore, cf *httpcli.Factory, externalService *types.ExternalService) (ChangesetSource, error) {
+func buildChangesetSource(cf *httpcli.Factory, externalService *types.ExternalService) (ChangesetSource, error) {
 	switch externalService.Kind {
 	case extsvc.KindGitHub:
 		return NewGithubSource(externalService, cf)
@@ -357,7 +355,7 @@ func setBasicAuth(u *vcs.URL, extSvcType, username, password string) error {
 }
 
 // extractCloneURL returns a remote URL from the repo, preferring HTTPS over SSH.
-func extractCloneURL(ctx context.Context, s *database.ExternalServiceStore, repo *types.Repo) (string, error) {
+func extractCloneURL(ctx context.Context, s database.ExternalServiceStore, repo *types.Repo) (string, error) {
 	if len(repo.Sources) == 0 {
 		return "", errors.New("no clone URL found for repo")
 	}

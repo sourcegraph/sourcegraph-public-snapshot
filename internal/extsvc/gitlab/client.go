@@ -13,7 +13,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"golang.org/x/time/rate"
 
@@ -24,9 +23,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
+	// The metric generated here will be named as "src_gitlab_requests_total".
 	requestCounter = metrics.NewRequestMeter("gitlab", "Total number of requests sent to the GitLab API.")
 
 	// Whether debug logging is turned on
@@ -68,6 +69,9 @@ const (
 // separate cache, but they share an underlying HTTP client and rate limiter. Callers who want a simple
 // unauthenticated API client should use `NewClientProvider(baseURL, transport).GetClient()`.
 type ClientProvider struct {
+	// The URN of the external service that the client is derived from.
+	urn string
+
 	// baseURL is the base URL of GitLab; e.g., https://gitlab.com or https://gitlab.example.com
 	baseURL *url.URL
 
@@ -83,7 +87,7 @@ type CommonOp struct {
 	NoCache bool
 }
 
-func NewClientProvider(baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
+func NewClientProvider(urn string, baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
 	if cli == nil {
 		cli = httpcli.ExternalDoer
 	}
@@ -98,6 +102,7 @@ func NewClientProvider(baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
 	})
 
 	return &ClientProvider{
+		urn:           urn,
 		baseURL:       baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, "api/v4") + "/"}),
 		httpClient:    cli,
 		gitlabClients: make(map[string]*Client),
@@ -162,6 +167,9 @@ func (p *ClientProvider) getClient(a auth.Authenticator) *Client {
 // same cache. However, two Client instances sharing the exact same values for
 // those fields WILL share a cache.
 type Client struct {
+	// The URN of the external service that the client is derived from.
+	urn string
+
 	baseURL          *url.URL
 	httpClient       httpcli.Doer
 	projCache        *rcache.Cache
@@ -192,10 +200,11 @@ func (p *ClientProvider) newClient(baseURL *url.URL, a auth.Authenticator, httpC
 	}
 	projCache := rcache.NewWithTTL(key, int(cacheTTL/time.Second))
 
-	rl := ratelimit.DefaultRegistry.Get(baseURL.String())
+	rl := ratelimit.DefaultRegistry.Get(p.urn)
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
 
 	return &Client{
+		urn:              p.urn,
 		baseURL:          baseURL,
 		httpClient:       httpClient,
 		projCache:        projCache,
@@ -275,7 +284,7 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
 	tokenHash := a.Hash()
 
 	cc := *c
-	cc.rateLimiter = ratelimit.DefaultRegistry.Get(cc.baseURL.String())
+	cc.rateLimiter = ratelimit.DefaultRegistry.Get(c.urn)
 	cc.rateLimitMonitor = ratelimit.DefaultMonitorRegistry.GetOrSet(cc.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
 	cc.Auth = a
 

@@ -7,21 +7,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	// Create user with initially verified email
-	user, err := database.GlobalUsers.Create(ctx, database.NewUser{
+	user, err := database.Users(db).Create(ctx, database.NewUser{
 		Email:           "alice@example.com",
 		Username:        "alice",
 		EmailIsVerified: true,
@@ -33,17 +30,17 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 	code := "verify-code"
 
 	// Add and verify the second email
-	err = database.GlobalUserEmails.Add(ctx, user.ID, "alice2@example.com", &code)
+	err = database.UserEmails(db).Add(ctx, user.ID, "alice2@example.com", &code)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = database.GlobalUserEmails.SetVerified(ctx, user.ID, "alice2@example.com", true)
+	err = database.UserEmails(db).SetVerified(ctx, user.ID, "alice2@example.com", true)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Add third email and leave as unverified
-	err = database.GlobalUserEmails.Add(ctx, user.ID, "alice3@example.com", &code)
+	err = database.UserEmails(db).Add(ctx, user.ID, "alice3@example.com", &code)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -190,7 +187,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			defer cleanupPermsTables(t, s.store)
+			defer cleanupPermsTables(t, s.store.(*permsStore))
 
 			globals.SetPermissionsUserMapping(test.config)
 
@@ -203,7 +200,6 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-
 			err := s.GrantPendingPermissions(ctx, test.args)
 			if err != nil {
 				t.Fatal(err)
@@ -219,23 +215,20 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			equal(t, "p.IDs", test.expectRepoIDs, bitmapToArray(p.IDs))
+			equal(t, "p.IDs", test.expectRepoIDs, mapsetToArray(p.IDs))
 		})
 	}
 }
 
 func TestAuthzStore_AuthorizedRepos(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	s := NewAuthzStore(db, clock).(*authzStore)
 
 	type update struct {
 		repoID  int32
-		userIDs []uint32
+		userIDs []int32
 	}
 	tests := []struct {
 		name        string
@@ -262,13 +255,13 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 			updates: []update{
 				{
 					repoID:  1,
-					userIDs: []uint32{1},
+					userIDs: []int32{1},
 				}, {
 					repoID:  2,
-					userIDs: []uint32{1},
+					userIDs: []int32{1},
 				}, {
 					repoID:  3,
-					userIDs: []uint32{1},
+					userIDs: []int32{1},
 				},
 			},
 			expectRepos: []*types.Repo{
@@ -290,7 +283,7 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 			updates: []update{
 				{
 					repoID:  1,
-					userIDs: []uint32{1},
+					userIDs: []int32{1},
 				},
 			},
 			expectRepos: []*types.Repo{},
@@ -298,13 +291,13 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			defer cleanupPermsTables(t, s.store)
+			defer cleanupPermsTables(t, s.store.(*permsStore))
 
 			for _, update := range test.updates {
 				err := s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
 					RepoID:  update.repoID,
 					Perm:    authz.Read,
-					UserIDs: toBitmap(update.userIDs...),
+					UserIDs: toMapset(update.userIDs...),
 				})
 				if err != nil {
 					t.Fatal(err)
@@ -322,10 +315,7 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 }
 
 func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	s := NewAuthzStore(db, clock).(*authzStore)
@@ -334,7 +324,7 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 	if err := s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
 		RepoID:  1,
 		Perm:    authz.Read,
-		UserIDs: toBitmap(1),
+		UserIDs: toMapset(1),
 	}); err != nil {
 		t.Fatal(err)
 	}

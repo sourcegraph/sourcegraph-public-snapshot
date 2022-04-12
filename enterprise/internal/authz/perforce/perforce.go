@@ -9,17 +9,17 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/cockroachdb/errors"
-	"github.com/inconshreveable/log15"
 	jsoniter "github.com/json-iterator/go"
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var _ authz.Provider = (*Provider)(nil)
@@ -28,6 +28,7 @@ var _ authz.Provider = (*Provider)(nil)
 type Provider struct {
 	urn      string
 	codeHost *extsvc.CodeHost
+	depots   []extsvc.RepoID
 
 	host     string
 	user     string
@@ -49,15 +50,16 @@ type p4Execer interface {
 // host, user and password to talk to a Perforce Server that is the source of
 // truth for permissions. It assumes emails of Sourcegraph accounts match 1-1
 // with emails of Perforce Server users. It uses our default gitserver client.
-func NewProvider(urn, host, user, password string) *Provider {
+func NewProvider(urn, host, user, password string, depots []extsvc.RepoID, db database.DB) *Provider {
 	baseURL, _ := url.Parse(host)
 	return &Provider{
 		urn:                urn,
 		codeHost:           extsvc.NewCodeHost(baseURL, extsvc.TypePerforce),
+		depots:             depots,
 		host:               host,
 		user:               user,
 		password:           password,
-		p4Execer:           gitserver.DefaultClient,
+		p4Execer:           gitserver.NewClient(db),
 		cachedGroupMembers: make(map[string][]string),
 	}
 }
@@ -138,41 +140,6 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 	return nil, nil
 }
 
-// canRevokeReadAccess returns true if the given access level is able to revoke
-// read account for a depot prefix.
-func (p *Provider) canRevokeReadAccess(level string) bool {
-	_, canRevokeReadAccess := map[string]struct{}{
-		"list":   {},
-		"read":   {},
-		"=read":  {},
-		"open":   {},
-		"write":  {},
-		"review": {},
-		"owner":  {},
-		"admin":  {},
-		"super":  {},
-	}[level]
-	return canRevokeReadAccess
-}
-
-// canGrantReadAccess returns true if the given access level is able to grant
-// read account for a depot prefix.
-func (p *Provider) canGrantReadAccess(level string) bool {
-	_, canGrantReadAccess := map[string]struct{}{
-		"read":   {},
-		"=read":  {},
-		"open":   {},
-		"=open":  {},
-		"write":  {},
-		"=write": {},
-		"review": {},
-		"owner":  {},
-		"admin":  {},
-		"super":  {},
-	}[level]
-	return canGrantReadAccess
-}
-
 // FetchUserPerms returns a list of depot prefixes that the given user has
 // access to on the Perforce Server.
 func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
@@ -198,109 +165,25 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	}
 	defer func() { _ = rc.Close() }()
 
-	const (
-		wildcardMatchAll       = "%"     // for Perforce '...'
-		wildcardMatchDirectory = "[^/]+" // for Perforce '*'
-	)
-
-	var includeContains, excludeContains []extsvc.RepoID
-	scanner := bufio.NewScanner(rc)
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		// Skip comments
-		if strings.HasPrefix(line, "##") {
-			continue
-		}
-
-		// Trim comments
-		i := strings.Index(line, "##")
-		if i > -1 {
-			line = line[:i]
-		}
-
-		// e.g. read user alice * //Sourcegraph/...
-		fields := strings.Fields(line)
-		if len(fields) < 5 {
-			continue
-		}
-		level := fields[0]      // e.g. read
-		depotMatch := fields[4] // e.g. //Sourcegraph/*/dir/...
-
-		// NOTE: Manipulations made to `depotContains` will affect the behaviour of
-		// `(*RepoStore).ListRepoNames` - make sure to test new changes there as well.
-		depotContains := depotMatch
-
-		// '...' matches all files under the current working directory and all subdirectories.
-		// Matches anything, including slashes, and does so across subdirectories.
-		// Replace with '%' for PostgreSQL's LIKE and SIMILAR TO.
-		//
-		// At first, we drop trailing '...' so that we can check for prefixes (see below).
-		// We assume all paths are prefixes, so add 'wildcardMatchAll' to all contains
-		// later on.
-		depotContains = strings.TrimRight(depotContains, ".")
-		depotContains = strings.ReplaceAll(depotContains, "...", wildcardMatchAll)
-
-		// '*' matches all characters except slashes within one directory.
-		// Replace with character class that matches anything except another '/' supported
-		// by PostgreSQL's SIMILAR TO.
-		depotContains = strings.ReplaceAll(depotContains, "*", wildcardMatchDirectory)
-
-		// Rule that starts with a "-" in depot prefix means exclusion (i.e. revoke access)
-		if strings.HasPrefix(depotContains, "-") {
-			depotContains = depotContains[1:]
-
-			if !p.canRevokeReadAccess(level) {
-				continue
-			}
-
-			if strings.Contains(depotContains, wildcardMatchAll) ||
-				strings.Contains(depotContains, wildcardMatchDirectory) {
-				// Always include wildcard matches, because we don't know what they might
-				// be matching on.
-				excludeContains = append(excludeContains, extsvc.RepoID(depotContains))
-			} else {
-				// Otherwise, only include an exclude if a corresponding include exists.
-				for i, prefix := range includeContains {
-					if !strings.HasPrefix(depotContains, string(prefix)) {
-						continue
-					}
-
-					// Perforce ACLs can have conflict rules and the later one wins. So if there is
-					// an exact match for an include prefix, we take it out.
-					if depotContains == string(prefix) {
-						includeContains = append(includeContains[:i], includeContains[i+1:]...)
-						break
-					}
-
-					excludeContains = append(excludeContains, extsvc.RepoID(depotContains))
-					break
-				}
-			}
-
-		} else {
-			if !p.canGrantReadAccess(level) {
-				continue
-			}
-
-			includeContains = append(includeContains, extsvc.RepoID(depotContains))
-		}
-	}
-
-	// Treat all paths as prefixes.
-	for i, include := range includeContains {
-		includeContains[i] = extsvc.RepoID(string(include) + wildcardMatchAll)
-	}
-	for i, exclude := range excludeContains {
-		excludeContains[i] = extsvc.RepoID(string(exclude) + wildcardMatchAll)
+	// Pull permissions from protects file.
+	perms := &authz.ExternalUserPermissions{}
+	if len(p.depots) == 0 {
+		err = errors.Wrap(scanProtects(rc, repoIncludesExcludesScanner(perms)), "repoIncludesExcludesScanner")
+	} else {
+		// SubRepoPermissions-enabled code path
+		perms.SubRepoPermissions = make(map[extsvc.RepoID]*authz.SubRepoPermissions, len(p.depots))
+		err = errors.Wrap(scanProtects(rc, fullRepoPermsScanner(perms, p.depots)), "fullRepoPermsScanner")
 	}
 
 	// As per interface definition for this method, implementation should return
 	// partial but valid results even when something went wrong.
-	return &authz.ExternalUserPermissions{
-		IncludeContains: includeContains,
-		ExcludeContains: excludeContains,
-	}, errors.Wrap(scanner.Err(), "scanner.Err")
+	return perms, errors.Wrap(err, "FetchUserPerms")
+}
+
+// FetchUserPermsByToken is the same as FetchUserPerms, but it only requires a
+// token.
+func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+	return nil, &authz.ErrUnimplemented{Feature: "perforce.FetchUserPermsByToken"}
 }
 
 // getAllUserEmails returns a set of username <-> email pairs of all users in the Perforce server.
@@ -404,6 +287,11 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 			repo.ServiceID, p.codeHost.ServiceID)
 	}
 
+	// Disable FetchRepoPerms until we implement sub-repo permissions for it.
+	if len(p.depots) > 0 {
+		return nil, &authz.ErrUnimplemented{Feature: "perforce.FetchRepoPerms for sub-repo permissions"}
+	}
+
 	// -a : Displays protection lines for all users. This option requires super
 	// access.
 	rc, _, err := p.p4Execer.P4Exec(ctx, p.host, p.user, p.password, "protects", "-a", repo.ID)
@@ -412,8 +300,8 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 	}
 	defer func() { _ = rc.Close() }()
 
-	users, err := p.scanAllUsers(ctx, rc)
-	if err != nil {
+	users := make(map[string]struct{})
+	if err := scanProtects(rc, allUsersScanner(ctx, p, users)); err != nil {
 		return nil, errors.Wrap(err, "scanning protects")
 	}
 
@@ -432,103 +320,6 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 	return extIDs, nil
 }
 
-// scanAllUsers is intended to scan the output of `protects -a` and will
-// return a map of users
-func (p *Provider) scanAllUsers(ctx context.Context, rc io.ReadCloser) (map[string]struct{}, error) {
-	users := make(map[string]struct{})
-	scanner := bufio.NewScanner(rc)
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		// Skip comments
-		if strings.HasPrefix(line, "##") {
-			continue
-		}
-
-		// Trim trailing comments
-		i := strings.Index(line, "##")
-		if i > -1 {
-			line = line[:i]
-		}
-
-		// Trim whitespace
-		line = strings.TrimSpace(line)
-
-		// e.g. write user alice * //Sourcegraph/...
-		fields := strings.Fields(line)
-		if len(fields) < 5 {
-			continue
-		}
-		level := fields[0]                              // e.g. read
-		typ := fields[1]                                // e.g. user
-		name := fields[2]                               // e.g. alice
-		depotMatch := strings.TrimRight(fields[4], ".") // e.g. //Sourcegraph/
-
-		// Rule that starts with a "-" in depot match means exclusion (i.e. revoke access)
-		if strings.HasPrefix(depotMatch, "-") {
-			if !p.canRevokeReadAccess(level) {
-				continue
-			}
-
-			switch typ {
-			case "user":
-				if name == "*" {
-					users = make(map[string]struct{})
-				} else {
-					delete(users, name)
-				}
-			case "group":
-				members, err := p.getGroupMembers(ctx, name)
-				if err != nil {
-					return nil, errors.Wrapf(err, "list members of group %q", name)
-				}
-				for _, member := range members {
-					delete(users, member)
-				}
-
-			default:
-				log15.Warn("authz.perforce.Provider.FetchRepoPerms.unrecognizedType", "type", typ)
-			}
-		} else {
-			if !p.canGrantReadAccess(level) {
-				continue
-			}
-
-			switch typ {
-			case "user":
-				if name == "*" {
-					all, err := p.getAllUsers(ctx)
-					if err != nil {
-						return nil, errors.Wrap(err, "list all users")
-					}
-					for _, user := range all {
-						users[user] = struct{}{}
-					}
-				} else {
-					users[name] = struct{}{}
-				}
-			case "group":
-				members, err := p.getGroupMembers(ctx, name)
-				if err != nil {
-					return nil, errors.Wrapf(err, "list members of group %q", name)
-				}
-				for _, member := range members {
-					users[member] = struct{}{}
-				}
-
-			default:
-				log15.Warn("authz.perforce.Provider.FetchRepoPerms.unrecognizedType", "type", typ)
-			}
-		}
-
-	}
-	if err := scanner.Err(); err != nil {
-		return nil, errors.Wrap(err, "scanner.Err")
-	}
-
-	return users, nil
-}
-
 func (p *Provider) ServiceType() string {
 	return p.codeHost.ServiceType
 }
@@ -541,7 +332,7 @@ func (p *Provider) URN() string {
 	return p.urn
 }
 
-func (p *Provider) Validate() (problems []string) {
+func (p *Provider) ValidateConnection(ctx context.Context) (problems []string) {
 	// Validate the user has "super" access with "-u" option, see https://www.perforce.com/perforce/r12.1/manuals/cmdref/protects.html
 	rc, _, err := p.p4Execer.P4Exec(context.Background(), p.host, p.user, p.password, "protects", "-u", p.user)
 	if err == nil {

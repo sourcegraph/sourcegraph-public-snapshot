@@ -1,9 +1,10 @@
-import * as H from 'history'
-import ArchiveIcon from 'mdi-react/ArchiveIcon'
 import React, { useEffect, useState } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import * as H from 'history'
+import ArchiveIcon from 'mdi-react/ArchiveIcon'
+
+import { pluralize } from '@sourcegraph/common'
+import { Link, Icon } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
 
@@ -40,10 +41,10 @@ export const ChangesetsArchivedNotice: React.FunctionComponent<ChangesetsArchive
     }
 
     return (
-        <DismissibleAlert className="alert-info" partialStorageKey={`changesets-archived-by-${archivedBy}`}>
+        <DismissibleAlert variant="info" partialStorageKey={`changesets-archived-by-${archivedBy}`}>
             <div className="d-flex align-items-center">
                 <div className="d-none d-md-block">
-                    <ArchiveIcon className="icon icon-inline mr-2" />
+                    <Icon className="icon mr-2" as={ArchiveIcon} />
                 </div>
                 <div className="flex-grow-1">
                     {archivedCount} {pluralize('changeset', archivedCount)} {pluralize('has', archivedCount, 'have')}{' '}

@@ -6,16 +6,16 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -39,13 +39,24 @@ func (e ErrRepoSeeOther) Error() string {
 	return fmt.Sprintf("repo not found at this location, but might exist at %s", e.RedirectURL)
 }
 
-var Repos = &repos{
-	store: database.GlobalRepos,
-	cache: dbcache.NewIndexableReposLister(database.GlobalRepos),
+// NewRepos uses the provided `database.RepoStore` to initialize a new repos
+// store for the backend.
+//
+// NOTE: The underlying cache is reused from Repos global variable to actually
+// make cache be useful. This is mostly a workaround for now until we come up a
+// more idiomatic solution.
+func NewRepos(db database.DB) *repos {
+	repoStore := db.Repos()
+	return &repos{
+		db:    db,
+		store: repoStore,
+		cache: dbcache.NewIndexableReposLister(repoStore),
+	}
 }
 
 type repos struct {
-	store *database.RepoStore
+	db    database.DB
+	store database.RepoStore
 	cache *dbcache.IndexableReposLister
 }
 
@@ -60,10 +71,8 @@ func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err er
 	return s.store.Get(ctx, repo)
 }
 
-// GetByName retrieves the repository with the given name. On sourcegraph.com,
-// if the name refers to a repository on a github.com or gitlab.com that is not
-// yet present in the database, it will automatically look up the
-// repository externally and add it to the database before returning it.
+// GetByName retrieves the repository with the given name. It will lazy sync a repo
+// not yet present in the database under certain conditions. See repos.Syncer.SyncRepo.
 func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo, err error) {
 	if Mocks.Repos.GetByName != nil {
 		return Mocks.Repos.GetByName(ctx, name)
@@ -72,28 +81,30 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 	ctx, done := trace(ctx, "Repos", "GetByName", name, &err)
 	defer done()
 
-	switch repo, err := s.store.GetByName(ctx, name); {
-	case err == nil:
+	repo, err := s.store.GetByName(ctx, name)
+	if err == nil {
 		return repo, nil
-	case !errcode.IsNotFound(err):
+	}
+
+	if !errcode.IsNotFound(err) {
 		return nil, err
-	case envvar.SourcegraphDotComMode():
-		// Automatically add repositories on Sourcegraph.com.
-		newName, err := s.Add(ctx, name)
-		if err != nil {
-			return nil, err
-		}
+	}
+
+	newName, err := s.Add(ctx, name)
+	if err == nil {
 		return s.store.GetByName(ctx, newName)
-	case shouldRedirect(name):
+	}
+
+	if errcode.IsNotFound(err) && shouldRedirect(name) {
 		return nil, ErrRepoSeeOther{RedirectURL: (&url.URL{
 			Scheme:   "https",
 			Host:     "sourcegraph.com",
 			Path:     string(name),
-			RawQuery: url.Values{"utm_source": []string{conf.DeployType()}}.Encode(),
+			RawQuery: url.Values{"utm_source": []string{deploy.Type()}}.Encode(),
 		}).String()}
-	default:
-		return nil, err
 	}
+
+	return nil, err
 }
 
 func shouldRedirect(name api.RepoName) bool {
@@ -116,7 +127,8 @@ func (s *repos) Add(ctx context.Context, name api.RepoName) (addedName api.RepoN
 	// Avoid hitting repo-updater (and incurring a hit against our GitHub/etc. API rate
 	// limit) for repositories that don't exist or private repositories that people attempt to
 	// access.
-	if host := extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...); host == nil {
+	codehost := extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...)
+	if codehost == nil {
 		return "", &database.RepoNotFoundErr{Name: name}
 	}
 
@@ -125,14 +137,17 @@ func (s *repos) Add(ctx context.Context, name api.RepoName) (addedName api.RepoN
 		metricIsRepoCloneable.WithLabelValues(status).Inc()
 	}()
 
-	if err := gitserver.DefaultClient.IsRepoCloneable(ctx, name); err != nil {
-		if ctx.Err() != nil {
-			status = "timeout"
-		} else {
-			status = "fail"
+	if !codehost.IsPackageHost() {
+		if err := gitserver.NewClient(s.db).IsRepoCloneable(ctx, name); err != nil {
+			if ctx.Err() != nil {
+				status = "timeout"
+			} else {
+				status = "fail"
+			}
+			return "", err
 		}
-		return "", err
 	}
+
 	status = "success"
 
 	// Looking up the repo in repo-updater makes it sync that repo to the
@@ -163,7 +178,7 @@ func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos 
 
 // ListIndexable calls database.IndexableRepos.List, with tracing. It lists ALL
 // indexable repos which could include private user added repos.
-func (s *repos) ListIndexable(ctx context.Context) (repos []types.RepoName, err error) {
+func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, err error) {
 	ctx, done := trace(ctx, "Repos", "ListIndexable", nil, &err)
 	defer func() {
 		if err == nil {
@@ -178,43 +193,7 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.RepoName, err 
 	}
 
 	trueP := true
-	return s.store.ListRepoNames(ctx, database.ReposListOptions{Index: &trueP})
-}
-
-// ListSearchable calls database.IndexableRepos.ListPublic, with tracing.
-// It lists all public indexable repos and also any private repos added by the
-// current user. Only used on sourcegraph.com where we don't have every repo indexed.
-func (s *repos) ListSearchable(ctx context.Context) (repos []types.RepoName, err error) {
-	ctx, done := trace(ctx, "Repos", "ListSearchable", nil, &err)
-	defer func() {
-		if err == nil {
-			span := opentracing.SpanFromContext(ctx)
-			span.LogFields(otlog.Int("result.len", len(repos)))
-		}
-		done()
-	}()
-
-	span := opentracing.SpanFromContext(ctx)
-	repos, err = s.cache.ListPublic(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "listing default public repos")
-	}
-	span.LogFields(otlog.Int("public.len", len(repos)))
-
-	// For authenticated users we also want to include any private repos they may have added
-	if a := actor.FromContext(ctx); a.IsAuthenticated() {
-		privateRepos, err := database.GlobalRepos.ListRepoNames(ctx, database.ReposListOptions{
-			UserID:      a.UID,
-			OnlyPrivate: true,
-		})
-		if err != nil {
-			return nil, errors.Wrap(err, "getting user private repos")
-		}
-		span.LogFields(otlog.Int("private.len", len(privateRepos)))
-		repos = append(repos, privateRepos...)
-	}
-
-	return repos, nil
+	return s.store.ListMinimalRepos(ctx, database.ReposListOptions{Index: &trueP})
 }
 
 func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID, forceEnhancedLanguageDetection bool) (res *inventory.Inventory, err error) {
@@ -229,12 +208,12 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 	defer cancel()
 
-	invCtx, err := InventoryContext(repo.Name, commitID, forceEnhancedLanguageDetection)
+	invCtx, err := InventoryContext(repo.Name, s.db, commitID, forceEnhancedLanguageDetection)
 	if err != nil {
 		return nil, err
 	}
 
-	root, err := git.Stat(ctx, repo.Name, commitID, "")
+	root, err := git.Stat(ctx, s.db, authz.DefaultSubRepoPermsChecker, repo.Name, commitID, "")
 	if err != nil {
 		return nil, err
 	}

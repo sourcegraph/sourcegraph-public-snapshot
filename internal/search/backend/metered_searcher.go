@@ -14,6 +14,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -58,22 +59,37 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		}
 	}
 
-	tr, ctx := trace.New(ctx, "zoekt."+cat, queryString(q), tags...)
+	qStr := queryString(q)
+
+	event := honey.NoopEvent()
+	if honey.Enabled() && cat == "SearchAll" {
+		event = honey.NewEvent("search-zoekt")
+		event.AddField("category", cat)
+		event.AddField("query", qStr)
+		for _, t := range tags {
+			event.AddField(t.Key, t.Value)
+		}
+	}
+
+	tr, ctx := trace.New(ctx, "zoekt."+cat, qStr, tags...)
 	defer func() {
 		tr.SetErrorIfNotContext(err)
 		tr.Finish()
 	}()
 	if opts != nil {
-		tr.LogFields(
+		fields := []log.Field{
 			log.Bool("opts.estimate_doc_count", opts.EstimateDocCount),
 			log.Bool("opts.whole", opts.Whole),
 			log.Int("opts.shard_max_match_count", opts.ShardMaxMatchCount),
+			log.Int("opts.shard_repo_max_match_count", opts.ShardRepoMaxMatchCount),
 			log.Int("opts.total_max_match_count", opts.TotalMaxMatchCount),
 			log.Int("opts.shard_max_important_match", opts.ShardMaxImportantMatch),
 			log.Int("opts.total_max_important_match", opts.TotalMaxImportantMatch),
 			log.Int64("opts.max_wall_time_ms", opts.MaxWallTime.Milliseconds()),
 			log.Int("opts.max_doc_display_count", opts.MaxDocDisplayCount),
-		)
+		}
+		tr.LogFields(fields...)
+		event.AddLogFields(fields)
 	}
 
 	if isLeaf && opts != nil && ot.ShouldTrace(ctx) {
@@ -155,7 +171,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		code = "error"
 	}
 
-	tr.LogFields(
+	fields := []log.Field{
 		log.Int("filematches", nFilesMatches),
 		log.Int("events", nEvents),
 		log.Int64("stream.total_send_time_ms", totalSendTimeMs),
@@ -171,9 +187,19 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		log.Int("stats.match_count", statsAgg.MatchCount),
 		log.Int("stats.ngram_matches", statsAgg.NgramMatches),
 		log.Int("stats.shard_files_considered", statsAgg.ShardFilesConsidered),
+		log.Int("stats.shards_scanned", statsAgg.ShardsScanned),
 		log.Int("stats.shards_skipped", statsAgg.ShardsSkipped),
+		log.Int("stats.shards_skipped_filter", statsAgg.ShardsSkippedFilter),
 		log.Int64("stats.wait_ms", statsAgg.Wait.Milliseconds()),
-	)
+		log.Int("stats.regexps_considered", statsAgg.RegexpsConsidered),
+	}
+	tr.LogFields(fields...)
+	event.AddField("duration_ms", time.Since(start).Milliseconds())
+	if err != nil {
+		event.AddField("error", err)
+	}
+	event.AddLogFields(fields)
+	event.Send()
 
 	// Record total duration of stream
 	requestDuration.WithLabelValues(m.hostname, cat, code).Observe(time.Since(start).Seconds())
@@ -190,10 +216,15 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 
 	var cat string
 	var tags []trace.Tag
+
 	if m.hostname == "" {
 		cat = "ListAll"
 	} else {
-		cat = "List"
+		if opts == nil || !opts.Minimal {
+			cat = "List"
+		} else {
+			cat = "ListMinimal"
+		}
 		tags = []trace.Tag{
 			{Key: "span.kind", Value: "client"},
 			{Key: "peer.address", Value: m.hostname},
@@ -201,8 +232,21 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 		}
 	}
 
-	tr, ctx := trace.New(ctx, "zoekt."+cat, queryString(q), tags...)
+	qStr := queryString(q)
+
+	tr, ctx := trace.New(ctx, "zoekt."+cat, qStr, tags...)
 	tr.LogFields(trace.Stringer("opts", opts))
+
+	event := honey.NoopEvent()
+	if honey.Enabled() && cat == "ListAll" {
+		event = honey.NewEvent("search-zoekt")
+		event.AddField("category", cat)
+		event.AddField("query", qStr)
+		event.AddField("opts.minimal", opts != nil && opts.Minimal)
+		for _, t := range tags {
+			event.AddField(t.Key, t.Value)
+		}
+	}
 
 	zsl, err := m.Streamer.List(ctx, q, opts)
 
@@ -210,6 +254,16 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 	if err != nil {
 		code = "error"
 	}
+
+	event.AddField("duration_ms", time.Since(start).Milliseconds())
+	if zsl != nil {
+		event.AddField("repos", len(zsl.Repos))
+		event.AddField("minimal_repos", len(zsl.Minimal))
+	}
+	if err != nil {
+		event.AddField("error", err)
+	}
+	event.Send()
 
 	requestDuration.WithLabelValues(m.hostname, cat, code).Observe(time.Since(start).Seconds())
 

@@ -7,7 +7,6 @@ import (
 	"sort"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -23,7 +22,7 @@ import (
 // - Organization settings
 // - Current user settings
 type settingsCascade struct {
-	db dbutil.DB
+	db database.DB
 	// At most 1 of these fields is set.
 	unauthenticatedActor bool
 	subject              *settingsSubject
@@ -50,7 +49,7 @@ func (r *settingsCascade) Subjects(ctx context.Context) ([]*settingsSubject, err
 		subjects = append(subjects, r.subject)
 
 	case r.subject.user != nil:
-		orgs, err := database.Orgs(r.db).GetByUserID(ctx, r.subject.user.user.ID)
+		orgs, err := r.db.Orgs().GetByUserID(ctx, r.subject.user.user.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -150,6 +149,7 @@ var settingsFieldMergeDepths = map[string]int{
 	"Quicklinks":             1,
 	"Motd":                   1,
 	"Extensions":             1,
+	"ExperimentalFeatures":   1,
 }
 
 func mergeSettingsLeft(left, right *schema.Settings) *schema.Settings {

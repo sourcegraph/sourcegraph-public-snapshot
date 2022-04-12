@@ -1,11 +1,11 @@
+import React, { useCallback, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { useCallback, useState } from 'react'
-import { Link } from 'react-router-dom'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { asError } from '@sourcegraph/shared/src/util/errors'
+import { asError } from '@sourcegraph/common'
+import { Button, LoadingSpinner, Link } from '@sourcegraph/wildcard'
 
 import { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
@@ -76,6 +76,8 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({
                         }
                     } else if (response.status === 401) {
                         throw new Error('User or password was incorrect')
+                    } else if (response.status === 422) {
+                        throw new Error('The account has been locked out')
                     } else {
                         throw new Error('Unknown Error')
                     }
@@ -135,9 +137,9 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({
                         'mb-0': noThirdPartyProviders,
                     })}
                 >
-                    <button className="btn btn-primary btn-block" type="submit" disabled={loading}>
-                        {loading ? <LoadingSpinner className="icon-inline" /> : 'Sign in'}
-                    </button>
+                    <Button className="btn-block" type="submit" disabled={loading} variant="primary">
+                        {loading ? <LoadingSpinner /> : 'Sign in'}
+                    </Button>
                 </div>
             </Form>
         </>

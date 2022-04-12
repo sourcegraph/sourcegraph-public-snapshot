@@ -15,7 +15,7 @@ import (
 
 func TestEditorRev(t *testing.T) {
 	repoName := api.RepoName("myRepo")
-	backend.Mocks.Repos.ResolveRev = func(v0 context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+	backend.Mocks.Repos.ResolveRev = func(_ context.Context, _ *types.Repo, rev string) (api.CommitID, error) {
 		if rev == "branch" {
 			return api.CommitID(strings.Repeat("b", 40)), nil
 		}
@@ -48,10 +48,7 @@ func TestEditorRev(t *testing.T) {
 		{strings.Repeat("d", 40), "@" + strings.Repeat("d", 40), true}, // default revision, explicit
 	}
 	for _, c := range cases {
-		got, err := editorRev(ctx, repoName, c.inputRev, c.beExplicit)
-		if err != nil {
-			t.Fatal(err)
-		}
+		got := editorRev(ctx, database.NewMockDB(), repoName, c.inputRev, c.beExplicit)
 		if got != c.expEditorRev {
 			t.Errorf("On input rev %q: got %q, want %q", c.inputRev, got, c.expEditorRev)
 		}
@@ -59,15 +56,12 @@ func TestEditorRev(t *testing.T) {
 }
 
 func TestEditorRedirect(t *testing.T) {
-	database.Mocks.Repos.GetFirstRepoNamesByCloneURL = func(ctx context.Context, cloneURL string) (api.RepoName, error) {
-		return "", nil
-	}
-	t.Cleanup(func() {
-		database.Mocks.Repos = database.MockRepos{}
-	})
+	repos := database.NewMockRepoStore()
+	repos.GetFirstRepoNamesByCloneURLFunc.SetDefaultReturn("", nil)
 
-	database.Mocks.ExternalServices.List = func(database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-		return []*types.ExternalService{
+	externalServices := database.NewMockExternalServiceStore()
+	externalServices.ListFunc.SetDefaultReturn(
+		[]*types.ExternalService{
 			{
 				ID:          1,
 				Kind:        extsvc.KindGitHub,
@@ -101,11 +95,13 @@ func TestEditorRedirect(t *testing.T) {
 				DisplayName: "OtherSCP",
 				Config:      `{"url":"ssh://git@git.codehost.com"}`,
 			},
-		}, nil
-	}
-	t.Cleanup(func() {
-		database.Mocks.ExternalServices = database.MockExternalServices{}
-	})
+		},
+		nil,
+	)
+
+	db := database.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(repos)
+	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 	cases := []struct {
 		name            string
@@ -128,7 +124,7 @@ func TestEditorRedirect(t *testing.T) {
 				"end_row":    []string{"123"},
 				"end_col":    []string{"10"},
 			},
-			wantRedirectURL: "/github.com/a/b@0ad12f/-/blob/mux.go?utm_source=Atom-v1.2.1#L124:2-124:11",
+			wantRedirectURL: "/github.com/a/b@0ad12f/-/blob/mux.go?L124%3A2-124%3A11=&utm_source=Atom-v1.2.1",
 		},
 		{
 			name: "open file no selection",
@@ -140,7 +136,7 @@ func TestEditorRedirect(t *testing.T) {
 				"revision":   []string{"0ad12f"},
 				"file":       []string{"mux.go"},
 			},
-			wantRedirectURL: "/github.com/a/b@0ad12f/-/blob/mux.go?utm_source=Atom-v1.2.1#L1:1", // L1:1 is expected (but could be nicer by omitting it)
+			wantRedirectURL: "/github.com/a/b@0ad12f/-/blob/mux.go?L1%3A1=&utm_source=Atom-v1.2.1", // L1:1 is expected (but could be nicer by omitting it)
 		},
 		{
 			name: "open file in repository (Phabricator mirrored)",
@@ -156,7 +152,7 @@ func TestEditorRedirect(t *testing.T) {
 				"end_row":    []string{"123"},
 				"end_col":    []string{"10"},
 			},
-			wantRedirectURL: "/default.com/foo/bar@0ad12f/-/blob/mux.go?utm_source=Atom-v1.2.1#L124:2-124:11",
+			wantRedirectURL: "/default.com/foo/bar@0ad12f/-/blob/mux.go?L124%3A2-124%3A11=&utm_source=Atom-v1.2.1",
 		},
 		{
 			name: "open file (generic code host with repositoryPathPattern)",
@@ -172,7 +168,7 @@ func TestEditorRedirect(t *testing.T) {
 				"end_row":    []string{"123"},
 				"end_col":    []string{"10"},
 			},
-			wantRedirectURL: "/pretty/a/b@0ad12f/-/blob/mux.go?utm_source=Atom-v1.2.1#L124:2-124:11",
+			wantRedirectURL: "/pretty/a/b@0ad12f/-/blob/mux.go?L124%3A2-124%3A11=&utm_source=Atom-v1.2.1",
 		},
 		{
 			name: "open file (generic code host without repositoryPathPattern)",
@@ -188,7 +184,7 @@ func TestEditorRedirect(t *testing.T) {
 				"end_row":    []string{"123"},
 				"end_col":    []string{"10"},
 			},
-			wantRedirectURL: "/default.com/a/b@0ad12f/-/blob/mux.go?utm_source=Atom-v1.2.1#L124:2-124:11",
+			wantRedirectURL: "/default.com/a/b@0ad12f/-/blob/mux.go?L124%3A2-124%3A11=&utm_source=Atom-v1.2.1",
 		},
 		{
 			name: "open file (generic git host with slash prefix in path)",
@@ -204,7 +200,7 @@ func TestEditorRedirect(t *testing.T) {
 				"end_row":    []string{"123"},
 				"end_col":    []string{"10"},
 			},
-			wantRedirectURL: "/git.codehost.com/owner/repo@0ad12f/-/blob/mux.go?utm_source=Atom-v1.2.1#L124:2-124:11",
+			wantRedirectURL: "/git.codehost.com/owner/repo@0ad12f/-/blob/mux.go?L124%3A2-124%3A11=&utm_source=Atom-v1.2.1",
 		},
 		{
 			name: "open file (generic git host without slash prefix in path)",
@@ -220,7 +216,7 @@ func TestEditorRedirect(t *testing.T) {
 				"end_row":    []string{"123"},
 				"end_col":    []string{"10"},
 			},
-			wantRedirectURL: "/git.codehost.com/owner/repo@0ad12f/-/blob/mux.go?utm_source=Atom-v1.2.1#L124:2-124:11",
+			wantRedirectURL: "/git.codehost.com/owner/repo@0ad12f/-/blob/mux.go?L124%3A2-124%3A11=&utm_source=Atom-v1.2.1",
 		},
 		{
 			name: "search",
@@ -323,7 +319,7 @@ func TestEditorRedirect(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			editorRequest, parseErr := parseEditorRequest(nil, c.q)
+			editorRequest, parseErr := parseEditorRequest(db, c.q)
 			if errStr(parseErr) != c.wantParseErr {
 				t.Fatalf("got parseErr %q want %q", parseErr, c.wantParseErr)
 			}

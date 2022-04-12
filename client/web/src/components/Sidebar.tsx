@@ -1,13 +1,13 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
-import React, { useCallback, useState } from 'react'
-import { NavLink } from 'react-router-dom'
-import { Collapse } from 'reactstrap'
+import { useRouteMatch } from 'react-router-dom'
+
+import { AnchorLink, ButtonLink, Icon, Collapse, CollapseHeader, CollapsePanel } from '@sourcegraph/wildcard'
 
 import styles from './Sidebar.module.scss'
-
-export const SIDEBAR_BUTTON_CLASS = classNames('btn text-left w-100', styles.linkInactive)
 
 /**
  * Item of `SideBarGroup`.
@@ -18,25 +18,21 @@ export const SidebarNavItem: React.FunctionComponent<{
     exact?: boolean
     source?: string
 }> = ({ children, className, to, exact, source }) => {
-    const buttonClassNames = classNames('btn text-left d-flex', styles.linkInactive)
+    const buttonClassNames = classNames('text-left d-flex', styles.linkInactive, className)
+    const routeMatch = useRouteMatch({ path: to, exact })
 
     if (source === 'server') {
         return (
-            <a href={to} className={classNames(buttonClassNames, className)}>
+            <ButtonLink as={AnchorLink} to={to} className={classNames(buttonClassNames, className)}>
                 {children}
-            </a>
+            </ButtonLink>
         )
     }
 
     return (
-        <NavLink
-            to={to}
-            exact={exact}
-            className={classNames(buttonClassNames, className)}
-            activeClassName="btn-primary"
-        >
+        <ButtonLink to={to} className={buttonClassNames} variant={routeMatch?.isExact ? 'primary' : undefined}>
             {children}
-        </NavLink>
+        </ButtonLink>
     )
 }
 /**
@@ -53,33 +49,28 @@ export const SidebarCollapseItems: React.FunctionComponent<{
     icon?: React.ComponentType<{ className?: string }>
     label?: string
     openByDefault?: boolean
-}> = ({ children, label, icon: Icon, openByDefault = false }) => {
-    const [isOpen, setOpen] = useState<boolean>(openByDefault)
-    const handleOpen = useCallback(() => setOpen(!isOpen), [isOpen])
-    return (
-        <>
-            <button
-                aria-expanded={isOpen}
-                aria-controls={label}
-                type="button"
-                onClick={handleOpen}
-                className="bg-2 border-0 d-flex justify-content-between list-group-item-action py-2 w-100"
-            >
-                <span>
-                    {Icon && <Icon className="icon-inline mr-1" />} {label}
-                </span>
-                {isOpen ? (
-                    <MenuUpIcon className={classNames('icon-inline', styles.chevron)} />
-                ) : (
-                    <MenuDownIcon className={classNames('icon-inline', styles.chevron)} />
-                )}
-            </button>
-            <Collapse id={label} isOpen={isOpen} className="border-top">
-                {children}
-            </Collapse>
-        </>
-    )
-}
+}> = ({ children, label, icon: CollapseItemIcon, openByDefault = false }) => (
+    <Collapse openByDefault={openByDefault}>
+        {({ isOpen }) => (
+            <>
+                <CollapseHeader
+                    aria-expanded={isOpen}
+                    aria-controls={label}
+                    type="button"
+                    className="bg-2 border-0 d-flex justify-content-between list-group-item-action py-2 w-100"
+                >
+                    <span>
+                        {CollapseItemIcon && <Icon className="mr-1" as={CollapseItemIcon} />} {label}
+                    </span>
+                    <Icon className={styles.chevron} as={isOpen ? MenuUpIcon : MenuDownIcon} />
+                </CollapseHeader>
+                <CollapsePanel id={label} className="border-top">
+                    {children}
+                </CollapsePanel>
+            </>
+        )}
+    </Collapse>
+)
 
 interface SidebarGroupProps {
     className?: string

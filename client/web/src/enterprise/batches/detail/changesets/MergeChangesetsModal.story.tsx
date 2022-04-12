@@ -1,9 +1,10 @@
+import React from 'react'
+
 import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
-import React from 'react'
 
-import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
+import { WebStory } from '../../../../components/WebStory'
 
 import { MergeChangesetsModal } from './MergeChangesetsModal'
 
@@ -17,7 +18,7 @@ const mergeChangesets = () => {
 }
 
 add('Confirmation', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <MergeChangesetsModal
                 {...props}
@@ -28,5 +29,5 @@ add('Confirmation', () => (
                 mergeChangesets={mergeChangesets}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))

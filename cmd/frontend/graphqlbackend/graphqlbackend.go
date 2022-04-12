@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/introspection"
@@ -25,11 +24,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
@@ -47,14 +46,14 @@ var (
 )
 
 type prometheusTracer struct {
-	trace.OpenTracingTracer
+	tracer trace.OpenTracingTracer
 }
 
 func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]interface{}, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
 	start := time.Now()
 	var finish trace.TraceQueryFinishFunc
 	if ot.ShouldTrace(ctx) {
-		ctx, finish = trace.OpenTracingTracer{}.TraceQuery(ctx, queryString, operationName, variables, varTypes)
+		ctx, finish = t.tracer.TraceQuery(ctx, queryString, operationName, variables, varTypes)
 	}
 
 	ctx = context.WithValue(ctx, sgtrace.GraphQLQueryKey, queryString)
@@ -122,6 +121,7 @@ VARIABLES
 }
 
 func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldName string, trivial bool, args map[string]interface{}) (context.Context, trace.TraceFieldFinishFunc) {
+	// We don't call into t.OpenTracingTracer.TraceField since it generates too many spans which is really hard to read.
 	start := time.Now()
 	return ctx, func(err *gqlerrors.QueryError) {
 		isErrStr := strconv.FormatBool(err != nil)
@@ -137,6 +137,18 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 		if origin != "unknown" && (fieldName == "search" || fieldName == "lsif") {
 			isExact := strconv.FormatBool(fieldName == "lsif")
 			codeIntelSearchHistogram.WithLabelValues(isExact, isErrStr).Observe(time.Since(start).Seconds())
+		}
+	}
+}
+
+func (t prometheusTracer) TraceValidation(ctx context.Context) trace.TraceValidationFinishFunc {
+	var finish trace.TraceValidationFinishFunc
+	if ot.ShouldTrace(ctx) {
+		finish = t.tracer.TraceValidation(ctx)
+	}
+	return func(queryErrors []*gqlerrors.QueryError) {
+		if finish != nil {
+			finish(queryErrors)
 		}
 	}
 }
@@ -330,7 +342,20 @@ func prometheusGraphQLRequestName(requestName string) string {
 	return "other"
 }
 
-func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIntelResolver, insights InsightsResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver, dotcom DotcomRootResolver) (*graphql.Schema, error) {
+func NewSchema(
+	db database.DB,
+	batchChanges BatchChangesResolver,
+	codeIntel CodeIntelResolver,
+	insights InsightsResolver,
+	authz AuthzResolver,
+	codeMonitors CodeMonitorsResolver,
+	license LicenseResolver,
+	dotcom DotcomRootResolver,
+	searchContexts SearchContextsResolver,
+	orgRepositoryResolver OrgRepositoryResolver,
+	notebooks NotebooksResolver,
+	compute ComputeResolver,
+) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db)
 	schemas := []string{mainSchema}
 
@@ -393,7 +418,37 @@ func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIn
 		}
 	}
 
-	schemas = append(schemas, computeSchema)
+	if searchContexts != nil {
+		EnterpriseResolvers.searchContextsResolver = searchContexts
+		resolver.SearchContextsResolver = searchContexts
+		schemas = append(schemas, searchContextsSchema)
+		// Register NodeByID handlers.
+		for kind, res := range searchContexts.NodeResolvers() {
+			resolver.nodeByIDFns[kind] = res
+		}
+	}
+
+	if orgRepositoryResolver != nil {
+		EnterpriseResolvers.orgRepositoryResolver = orgRepositoryResolver
+		resolver.OrgRepositoryResolver = orgRepositoryResolver
+		schemas = append(schemas, orgSchema)
+	}
+
+	if notebooks != nil {
+		EnterpriseResolvers.notebooksResolver = notebooks
+		resolver.NotebooksResolver = notebooks
+		schemas = append(schemas, notebooksSchema)
+		// Register NodeByID handlers.
+		for kind, res := range notebooks.NodeResolvers() {
+			resolver.nodeByIDFns[kind] = res
+		}
+	}
+
+	if compute != nil {
+		EnterpriseResolvers.computeResolver = compute
+		resolver.ComputeResolver = compute
+		schemas = append(schemas, computeSchema)
+	}
 
 	return graphql.ParseSchema(
 		strings.Join(schemas, "\n"),
@@ -415,15 +470,17 @@ type schemaResolver struct {
 	CodeMonitorsResolver
 	LicenseResolver
 	DotcomRootResolver
+	SearchContextsResolver
+	OrgRepositoryResolver
+	NotebooksResolver
 
-	db                dbutil.DB
+	db                database.DB
 	repoupdaterClient *repoupdater.Client
 	nodeByIDFns       map[string]NodeByIDFunc
 }
 
 // newSchemaResolver will return a new schemaResolver using repoupdater.DefaultClient.
-func newSchemaResolver(db dbutil.DB) *schemaResolver {
-
+func newSchemaResolver(db database.DB) *schemaResolver {
 	r := &schemaResolver{
 		db:                db,
 		repoupdaterClient: repoupdater.DefaultClient,
@@ -469,8 +526,11 @@ func newSchemaResolver(db dbutil.DB) *schemaResolver {
 		"OutOfBandMigration": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.OutOfBandMigrationByID(ctx, id)
 		},
-		"SearchContext": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return r.SearchContextByID(ctx, id)
+		"WebhookLog": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return webhookLogByID(ctx, db, id)
+		},
+		"Executor": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return executorByID(ctx, db, id, r)
 		},
 	}
 	return r
@@ -479,14 +539,17 @@ func newSchemaResolver(db dbutil.DB) *schemaResolver {
 // EnterpriseResolvers holds the instances of resolvers which are enabled only
 // in enterprise mode. These resolver instances are nil when running as OSS.
 var EnterpriseResolvers = struct {
-	codeIntelResolver    CodeIntelResolver
-	computeResolver      ComputeResolver
-	insightsResolver     InsightsResolver
-	authzResolver        AuthzResolver
-	batchChangesResolver BatchChangesResolver
-	codeMonitorsResolver CodeMonitorsResolver
-	licenseResolver      LicenseResolver
-	dotcomResolver       DotcomRootResolver
+	codeIntelResolver      CodeIntelResolver
+	computeResolver        ComputeResolver
+	insightsResolver       InsightsResolver
+	authzResolver          AuthzResolver
+	batchChangesResolver   BatchChangesResolver
+	codeMonitorsResolver   CodeMonitorsResolver
+	licenseResolver        LicenseResolver
+	dotcomResolver         DotcomRootResolver
+	searchContextsResolver SearchContextsResolver
+	orgRepositoryResolver  OrgRepositoryResolver
+	notebooksResolver      NotebooksResolver
 }{}
 
 // DEPRECATED
@@ -504,10 +567,7 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 	if args.URI != nil && args.Name == nil {
 		args.Name = args.URI
 	}
-	resolver, err := r.RepositoryRedirect(ctx, &struct {
-		Name     *string
-		CloneURL *string
-	}{args.Name, args.CloneURL})
+	resolver, err := r.RepositoryRedirect(ctx, &repositoryRedirectArgs{args.Name, args.CloneURL, nil})
 	if err != nil {
 		return nil, err
 	}
@@ -522,7 +582,7 @@ func (r *schemaResolver) repositoryByID(ctx context.Context, id graphql.ID) (*Re
 	if err := relay.UnmarshalSpec(id, &repoID); err != nil {
 		return nil, err
 	}
-	repo, err := database.Repos(r.db).Get(ctx, repoID)
+	repo, err := r.db.Repos().Get(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
@@ -542,6 +602,12 @@ type repositoryRedirect struct {
 	redirect *RedirectResolver
 }
 
+type repositoryRedirectArgs struct {
+	Name       *string
+	CloneURL   *string
+	HashedName *string
+}
+
 func (r *repositoryRedirect) ToRepository() (*RepositoryResolver, bool) {
 	return r.repo, r.repo != nil
 }
@@ -550,10 +616,15 @@ func (r *repositoryRedirect) ToRedirect() (*RedirectResolver, bool) {
 	return r.redirect, r.redirect != nil
 }
 
-func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *struct {
-	Name     *string
-	CloneURL *string
-}) (*repositoryRedirect, error) {
+func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *repositoryRedirectArgs) (*repositoryRedirect, error) {
+	if args.HashedName != nil {
+		// Query by repository hashed name
+		repo, err := r.db.Repos().GetByHashedName(ctx, api.RepoHashedName(*args.HashedName))
+		if err != nil {
+			return nil, err
+		}
+		return &repositoryRedirect{repo: NewRepositoryResolver(r.db, repo)}, nil
+	}
 	var name api.RepoName
 	if args.Name != nil {
 		// Query by name
@@ -573,7 +644,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *struct {
 		return nil, errors.New("neither name nor cloneURL given")
 	}
 
-	repo, err := backend.Repos.GetByName(ctx, name)
+	repo, err := backend.NewRepos(r.db).GetByName(ctx, name)
 	if err != nil {
 		var e backend.ErrRepoSeeOther
 		if errors.As(err, &e) {
@@ -608,21 +679,30 @@ func (r *schemaResolver) CurrentUser(ctx context.Context) (*UserResolver, error)
 }
 
 func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struct {
-	User     graphql.ID
-	CodeHost *graphql.ID
-	Query    *string
+	Namespace graphql.ID
+	CodeHost  *graphql.ID
+	Query     *string
 }) (*affiliatedRepositoriesConnection, error) {
-	userID, err := UnmarshalUserID(args.User)
+	var userID, orgID int32
+	err := UnmarshalNamespaceID(args.Namespace, &userID, &orgID)
 	if err != nil {
 		return nil, err
 	}
-	// 🚨 SECURITY: Make sure the user is the same user being requested
-	if err := backend.CheckSameUser(ctx, userID); err != nil {
-		return nil, err
+	if userID > 0 {
+		// 🚨 SECURITY: Make sure the user is the same user being requested
+		if err := backend.CheckSameUser(ctx, userID); err != nil {
+			return nil, err
+		}
+	}
+	if orgID > 0 {
+		// 🚨 SECURITY: Make sure the user can access the organization
+		if err := backend.CheckOrgAccess(ctx, r.db, orgID); err != nil {
+			return nil, err
+		}
 	}
 	var codeHost int64
 	if args.CodeHost != nil {
-		codeHost, err = unmarshalExternalServiceID(*args.CodeHost)
+		codeHost, err = UnmarshalExternalServiceID(*args.CodeHost)
 		if err != nil {
 			return nil, err
 		}
@@ -635,6 +715,7 @@ func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struc
 	return &affiliatedRepositoriesConnection{
 		db:       r.db,
 		userID:   userID,
+		orgID:    orgID,
 		codeHost: codeHost,
 		query:    query,
 	}, nil
@@ -651,7 +732,7 @@ func (r *schemaResolver) CodeHostSyncDue(ctx context.Context, args *struct {
 	}
 	ids := make([]int64, len(args.IDs))
 	for i, gqlID := range args.IDs {
-		id, err := unmarshalExternalServiceID(gqlID)
+		id, err := UnmarshalExternalServiceID(gqlID)
 		if err != nil {
 			return false, errors.New("unable to unmarshal id")
 		}

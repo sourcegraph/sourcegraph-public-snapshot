@@ -2,19 +2,18 @@ package app
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/NYTimes/gziphandler"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
-	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -22,7 +21,7 @@ import (
 //
 // 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
 // and sets the actor in the request context.
-func NewHandler(db dbutil.DB) http.Handler {
+func NewHandler(db database.DB, githubAppCloudSetupHandler http.Handler) http.Handler {
 	session.SetSessionStore(session.NewRedisStore(func() bool {
 		return globals.ExternalURL().Scheme == "https"
 	}))
@@ -38,7 +37,7 @@ func NewHandler(db dbutil.DB) http.Handler {
 	r.Get(router.Favicon).Handler(trace.Route(http.HandlerFunc(favicon)))
 	r.Get(router.OpenSearch).Handler(trace.Route(http.HandlerFunc(openSearch)))
 
-	r.Get(router.RepoBadge).Handler(trace.Route(errorutil.Handler(serveRepoBadge)))
+	r.Get(router.RepoBadge).Handler(trace.Route(errorutil.Handler(serveRepoBadge(db))))
 
 	// Redirects
 	r.Get(router.OldToolsRedirect).Handler(trace.Route(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -49,15 +48,12 @@ func NewHandler(db dbutil.DB) http.Handler {
 		http.Redirect(w, r, "https://about.sourcegraph.com/go", http.StatusFound)
 	})))
 
-	if envvar.SourcegraphDotComMode() {
-		r.Get(router.GoSymbolURL).Handler(trace.Route(errorutil.Handler(serveGoSymbolURL)))
-	}
-
 	r.Get(router.UI).Handler(ui.Router())
 
-	r.Get(router.SignUp).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleSignUp)))
-	r.Get(router.SiteInit).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleSiteInit)))
-	r.Get(router.SignIn).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleSignIn(db))))
+	lockoutStore := userpasswd.NewLockoutStore(5, 30*time.Minute, time.Hour)
+	r.Get(router.SignUp).Handler(trace.Route(userpasswd.HandleSignUp(db)))
+	r.Get(router.SiteInit).Handler(trace.Route(userpasswd.HandleSiteInit(db)))
+	r.Get(router.SignIn).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleSignIn(db, lockoutStore))))
 	r.Get(router.SignOut).Handler(trace.Route(http.HandlerFunc(serveSignOutHandler(db))))
 	r.Get(router.ResetPasswordInit).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleResetPasswordInit(db))))
 	r.Get(router.ResetPasswordCode).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleResetPasswordCode(db))))
@@ -65,7 +61,7 @@ func NewHandler(db dbutil.DB) http.Handler {
 
 	r.Get(router.CheckUsernameTaken).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleCheckUsernameTaken(db))))
 
-	r.Get(router.RegistryExtensionBundle).Handler(trace.Route(gziphandler.GzipHandler(http.HandlerFunc(registry.HandleRegistryExtensionBundle))))
+	r.Get(router.RegistryExtensionBundle).Handler(trace.Route(gziphandler.GzipHandler(registry.HandleRegistryExtensionBundle(db))))
 
 	// Usage statistics ZIP download
 	r.Get(router.UsageStatsDownload).Handler(trace.Route(http.HandlerFunc(usageStatsArchiveHandler(db))))
@@ -73,7 +69,9 @@ func NewHandler(db dbutil.DB) http.Handler {
 	// Ping retrieval
 	r.Get(router.LatestPing).Handler(trace.Route(http.HandlerFunc(latestPingHandler(db))))
 
-	r.Get(router.GDDORefs).Handler(trace.Route(errorutil.Handler(serveGDDORefs)))
+	// Sourcegraph Cloud GitHub App setup
+	r.Get(router.SetupGitHubAppCloud).Handler(trace.Route(githubAppCloudSetupHandler))
+
 	r.Get(router.Editor).Handler(trace.Route(errorutil.Handler(serveEditor(db))))
 
 	r.Get(router.DebugHeaders).Handler(trace.Route(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

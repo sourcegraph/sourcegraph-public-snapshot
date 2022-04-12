@@ -54,11 +54,9 @@ func TestNewPreCreateExternalServiceHook(t *testing.T) {
 			}
 			defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 
-			database.Mocks.ExternalServices.Count = func(ctx context.Context, opt database.ExternalServicesListOptions) (int, error) {
-				return test.externalServiceCount, nil
-			}
-			t.Cleanup(func() { database.Mocks.ExternalServices.Count = nil })
-			err := NewBeforeCreateExternalServiceHook()(context.Background(), nil)
+			externalServices := database.NewMockExternalServiceStore()
+			externalServices.CountFunc.SetDefaultReturn(test.externalServiceCount, nil)
+			err := NewBeforeCreateExternalServiceHook()(context.Background(), externalServices)
 			if gotErr := err != nil; gotErr != test.wantErr {
 				t.Errorf("got error %v, want %v", gotErr, test.wantErr)
 			}

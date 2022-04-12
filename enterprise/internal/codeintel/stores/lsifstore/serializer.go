@@ -7,9 +7,8 @@ import (
 	"io"
 	"sync"
 
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func init() {
@@ -152,7 +151,7 @@ func (s *Serializer) decode(data []byte, target interface{}) (err error) {
 	}
 	defer func() {
 		if closeErr := r.Close(); closeErr != nil {
-			err = multierror.Append(err, closeErr)
+			err = errors.Append(err, closeErr)
 		}
 	}()
 

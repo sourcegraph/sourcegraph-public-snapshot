@@ -1,8 +1,9 @@
 import * as React from 'react'
 
-import { appendSubtreeQueryParameter } from '../util/url'
+import classNames from 'classnames'
 
-import { Link } from './Link'
+import { appendSubtreeQueryParameter } from '@sourcegraph/common'
+import { useIsTruncated, Link } from '@sourcegraph/wildcard'
 
 /**
  * Returns the friendly display form of the repository name (e.g., removing "github.com/").
@@ -45,8 +46,20 @@ export const RepoFileLink: React.FunctionComponent<Props> = ({
     className,
 }) => {
     const [fileBase, fileName] = splitPath(filePath)
+    /**
+     * Use the custom hook useIsTruncated to check if overflow: ellipsis is activated for the element
+     * We want to do it on mouse enter as browser window size might change after the element has been
+     * loaded initially
+     */
+    const [titleReference, truncated, checkTruncation] = useIsTruncated()
+
     return (
-        <div className={className}>
+        <div
+            ref={titleReference}
+            onMouseEnter={checkTruncation}
+            className={classNames(className)}
+            data-tooltip={truncated ? (fileBase ? `${fileBase}/${fileName}` : fileName) : null}
+        >
             <Link to={repoURL}>{repoDisplayName || displayRepoName(repoName)}</Link> ›{' '}
             <Link to={appendSubtreeQueryParameter(fileURL)}>
                 {fileBase ? `${fileBase}/` : null}

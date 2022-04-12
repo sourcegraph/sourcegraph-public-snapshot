@@ -82,9 +82,7 @@ interface DataAnnotation<Value, Data> {
      *      }
      *    }
      */
-    $data:
-        | ((value: Value, context: MatchContext<Data>) => void)
-        | (Data extends any[] ? never : DataMapper<Value, Data>)
+    $data: DataMapper<Value, Data>
 }
 
 /**
@@ -99,9 +97,11 @@ interface DataAnnotation<Value, Data> {
  *   }
  * }
  */
-type DataMapper<Value, Data> = {
-    [K in keyof Data]?: ((value: Value, context: MatchContext<Data>) => Data[K]) | Data[K]
-}
+export type DataMapper<Value, Data> =
+    | ((value: Value, context: MatchContext<Data>) => void)
+    | (Data extends any[]
+          ? never
+          : { [K in keyof Data]?: ((value: Value, context: MatchContext<Data>) => Data[K]) | Data[K] })
 
 /**
  * Creates the union of all keys of each member.
@@ -175,6 +175,10 @@ interface WrapperPattern<Value, Data> extends DataAnnotation<Value, Data> {
     $pattern: PatternFunction<Value, Data> | PrimitivePattern<Value>
 }
 
+function isWrapperPattern(value: any): value is WrapperPattern<any, any> {
+    return typeof value === 'object' && '$pattern' in value
+}
+
 /**
  * A PatternFunction accepts the value to match against, the current match
  * context (which also holds the extracted data) and the internal match function
@@ -189,7 +193,7 @@ export type PatternFunction<Value, Data> = (value: Value, context: MatchContext<
  */
 type PrimitivePattern<Value> = Value extends string
     ? RegExp | Value
-    : Value extends number | boolean | null
+    : Value extends number | boolean | null | undefined
     ? Value
     : never
 
@@ -212,25 +216,24 @@ export type PatternOf<Value, Data = unknown> =
     // A pattern function is always a valid value. The function receives the
     // value to be matched as argument.
     | PatternFunction<Value, Data>
+    | WrapperPattern<Value, Data>
     | (// Arrays always have to matched with a pattern function
       // The [...] around the types are necessary to avoid
       // distributing union types.
       [Value] extends [any[]]
           ? never
-          :
-                | WrapperPattern<Value, Data>
-                // Note that we are not checking types here (Value extends ...). For
-                // one, union types of mixed types (e.g. number|{x: number}) makes
-                // this a bit annoying, and what we really want to do do here is
-                // _filter_ 'Value' and allow/create an ObjectPattern for the objects in
-                // the union, and PrimitivePatterns for the primtives.
-                // ObjectMembers does the object filtering and PrimitivePattern
-                // includes type checks itself.
-                | ObjectPattern<ObjectMembers<Value>, Data>
-                | PrimitivePattern<Value>)
+          : // Note that we are not checking types here (Value extends ...). For
+            // one, union types of mixed types (e.g. number|{x: number}) makes
+            // this a bit annoying, and what we really want to do do here is
+            // _filter_ 'Value' and allow/create an ObjectPattern for the objects in
+            // the union, and PrimitivePatterns for the primtives.
+            // ObjectMembers does the object filtering and PrimitivePattern
+            // includes type checks itself.
+            ObjectPattern<ObjectMembers<Value>, Data> | PrimitivePattern<Value>)
 
 /**
  * Utility type to prevent TS from inferring the type from a function parameter
+ *
  * @see https://stackoverflow.com/questions/56687668
  */
 type NoInfer<A extends any> = [A][A extends any ? 0 : never]
@@ -245,7 +248,7 @@ export type PatternOfNoInfer<Value, Data> = PatternOf<NoInfer<Value>, NoInfer<Da
  * Context that is passed to all pattern functions during a single pattern
  * application. Currently only holds the extracted data.
  */
-interface MatchContext<Data> {
+export interface MatchContext<Data> {
     data: Data
 }
 
@@ -288,16 +291,25 @@ function matches<Value, Data>(
     pattern: PatternOfNoInfer<Value, Data> | undefined
 ): boolean {
     if (typeof pattern === 'function') {
-        return pattern(value, context, matches)
+        const result = pattern(value, context, matches)
+        return result
     }
     if (pattern instanceof RegExp) {
         return typeof value === 'string' && pattern.test(value)
     }
     if (pattern && typeof pattern === 'object') {
-        // 'pattern' can be a wrapper pattern or an object pattern
-        let match = true
+        let match = false
+        let matchKeys = value && typeof value === 'object'
 
-        if (value && typeof value === 'object') {
+        if (isWrapperPattern(pattern)) {
+            // TS2345:  Type 'RegExp' is not assignable to type '[NoInfer<Value>] extends [any[]] ? never : WrapperPattern<NoInfer<Value>, NoInfer<Data>> | ObjectPattern<ObjectMembers<NoInfer<Value>>, NoInfer<Data>> | PrimitivePattern<NoInfer<Value>>'
+            // @ts-expect-error TBH I don't know why RegExp is causing problems here
+            match = matches(context, value, pattern.$pattern)
+            // There is no point in looking at the remaining properties if the
+            // $pattern function didn't match.
+            matchKeys = match
+        }
+        if (matchKeys) {
             const keys = Object.getOwnPropertyNames(pattern).filter(key => !specialKeys.has(key))
             if (keys.length > 0) {
                 match = keys.every(
@@ -308,15 +320,7 @@ function matches<Value, Data>(
                 )
             }
         }
-
-        // In case of object patterns, "real" keys have priority and we only
-        // check $pattern if the real keys match.  Otherwise the context might
-        // get polluted with values that shouldn't exist.
-        if (match && pattern.$pattern) {
-            // TS2345:  Type 'RegExp' is not assignable to type '[NoInfer<Value>] extends [any[]] ? never : WrapperPattern<NoInfer<Value>, NoInfer<Data>> | ObjectPattern<ObjectMembers<NoInfer<Value>>, NoInfer<Data>> | PrimitivePattern<NoInfer<Value>>'
-            // @ts-expect-error TBH I don't know why RegExp is causing problems here
-            match = matches(context, value, pattern.$pattern)
-        }
+        // else: either no match or value isn't an object (but pattern is) so there can't be a match
 
         // Special property to capture values
         if (match && pattern.$data) {

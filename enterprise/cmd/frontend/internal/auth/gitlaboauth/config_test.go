@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -22,7 +23,7 @@ func TestParseConfig(t *testing.T) {
 	spew.Config.SortKeys = true
 	spew.Config.SpewKeys = true
 
-	db := dbtest.NewDB(t, "")
+	db := database.NewDB(dbtest.NewDB(t))
 
 	type args struct {
 		cfg *conf.Unified
@@ -69,6 +70,41 @@ func TestParseConfig(t *testing.T) {
 						TokenURL: "https://gitlab.com/oauth/token",
 					},
 					Scopes: []string{"read_user", "api"},
+				}),
+			},
+		},
+		{
+			name: "1 GitLab.com config with scope override",
+			args: args{cfg: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+				ExternalURL: "https://sourcegraph.example.com",
+				AuthProviders: []schema.AuthProviders{{
+					Gitlab: &schema.GitLabAuthProvider{
+						ApiScope:     "read_api",
+						ClientID:     "my-client-id",
+						ClientSecret: "my-client-secret",
+						DisplayName:  "GitLab",
+						Type:         extsvc.TypeGitLab,
+						Url:          "https://gitlab.com",
+					},
+				}},
+			}}},
+			wantProviders: map[schema.GitLabAuthProvider]providers.Provider{
+				{
+					ApiScope:     "read_api",
+					ClientID:     "my-client-id",
+					ClientSecret: "my-client-secret",
+					DisplayName:  "GitLab",
+					Type:         extsvc.TypeGitLab,
+					Url:          "https://gitlab.com",
+				}: provider("https://gitlab.com/", oauth2.Config{
+					RedirectURL:  "https://sourcegraph.example.com/.auth/gitlab/callback",
+					ClientID:     "my-client-id",
+					ClientSecret: "my-client-secret",
+					Endpoint: oauth2.Endpoint{
+						AuthURL:  "https://gitlab.com/oauth/authorize",
+						TokenURL: "https://gitlab.com/oauth/token",
+					},
+					Scopes: []string{"read_user", "read_api"},
 				}),
 			},
 		},

@@ -1,18 +1,21 @@
-import { storiesOf } from '@storybook/react'
 import React from 'react'
+
+import { storiesOf } from '@storybook/react'
 import sinon from 'sinon'
 
 import { AuthenticatedUser } from '../../auth'
-import { EnterpriseWebStory } from '../components/EnterpriseWebStory'
+import { WebStory } from '../../components/WebStory'
 
 import { CreateCodeMonitorPage } from './CreateCodeMonitorPage'
 
-const { add } = storiesOf('web/enterprise/code-monitoring/CreateCodeMonitorPage', module)
+const { add } = storiesOf('web/enterprise/code-monitoring/CreateCodeMonitorPage', module).addParameters({
+    chromatic: { disableSnapshot: false },
+})
 
 add(
-    'Example',
+    'CreateCodeMonitorPage',
     () => (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <CreateCodeMonitorPage
                     {...props}
@@ -20,9 +23,10 @@ add(
                         { id: 'foobar', username: 'alice', email: 'alice@alice.com' } as AuthenticatedUser
                     }
                     createCodeMonitor={sinon.fake()}
+                    isSourcegraphDotCom={false}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     ),
     {
         design: {

@@ -1,7 +1,7 @@
 import { Observable, from } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
-import { asObservable } from '@sourcegraph/shared/src/util/rxjs/asObservable'
+import { asObservable } from '@sourcegraph/common'
 
 import { DiffInfo, BlobInfo } from '../shared/codeHost'
 

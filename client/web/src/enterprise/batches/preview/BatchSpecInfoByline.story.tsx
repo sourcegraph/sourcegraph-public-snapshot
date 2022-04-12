@@ -1,8 +1,9 @@
-import { storiesOf } from '@storybook/react'
-import { subDays } from 'date-fns'
 import React from 'react'
 
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { storiesOf } from '@storybook/react'
+import { subDays } from 'date-fns'
+
+import { WebStory } from '../../../components/WebStory'
 
 import { BatchSpecInfoByline } from './BatchSpecInfoByline'
 
@@ -11,12 +12,12 @@ const { add } = storiesOf('web/batches/preview/BatchSpecInfoByline', module).add
 ))
 
 add('Default', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {() => (
             <BatchSpecInfoByline
                 createdAt={subDays(new Date(), 3).toISOString()}
                 creator={{ url: 'http://test.test/alice', username: 'alice' }}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))

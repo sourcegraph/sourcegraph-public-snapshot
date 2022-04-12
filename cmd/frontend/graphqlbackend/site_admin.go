@@ -5,17 +5,17 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (r *schemaResolver) DeleteUser(ctx context.Context, args *struct {
@@ -41,14 +41,14 @@ func (r *schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	// Collect username, verified email addresses, and external accounts to be used
 	// for revoking user permissions later, otherwise they will be removed from database
 	// if it's a hard delete.
-	user, err := database.Users(r.db).GetByID(ctx, userID)
+	user, err := r.db.Users().GetByID(ctx, userID)
 	if err != nil {
 		return nil, errors.Wrap(err, "get user by ID")
 	}
 
 	var accounts []*extsvc.Accounts
 
-	extAccounts, err := database.ExternalAccounts(r.db).List(ctx, database.ExternalAccountsListOptions{UserID: userID})
+	extAccounts, err := r.db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{UserID: userID})
 	if err != nil {
 		return nil, errors.Wrap(err, "list external accounts")
 	}
@@ -60,7 +60,7 @@ func (r *schemaResolver) DeleteUser(ctx context.Context, args *struct {
 		})
 	}
 
-	verifiedEmails, err := database.UserEmails(r.db).ListByUser(ctx, database.UserEmailsListOptions{
+	verifiedEmails, err := r.db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
 		UserID:       user.ID,
 		OnlyVerified: true,
 	})
@@ -78,11 +78,11 @@ func (r *schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	})
 
 	if args.Hard != nil && *args.Hard {
-		if err := database.Users(r.db).HardDelete(ctx, user.ID); err != nil {
+		if err := r.db.Users().HardDelete(ctx, user.ID); err != nil {
 			return nil, err
 		}
 	} else {
-		if err := database.Users(r.db).Delete(ctx, user.ID); err != nil {
+		if err := r.db.Users().Delete(ctx, user.ID); err != nil {
 			return nil, err
 		}
 	}
@@ -90,7 +90,7 @@ func (r *schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	// NOTE: Practically, we don't reuse the ID for any new users, and the situation of left-over pending permissions
 	// is possible but highly unlikely. Therefore, there is no need to roll back user deletion even if this step failed.
 	// This call is purely for the purpose of cleanup.
-	if err := database.GlobalAuthz.RevokeUserPermissions(ctx, &database.RevokeUserPermissionsArgs{
+	if err := r.db.Authz().RevokeUserPermissions(ctx, &database.RevokeUserPermissionsArgs{
 		UserID:   user.ID,
 		Accounts: accounts,
 	}); err != nil {
@@ -102,20 +102,67 @@ func (r *schemaResolver) DeleteUser(ctx context.Context, args *struct {
 
 func (r *schemaResolver) DeleteOrganization(ctx context.Context, args *struct {
 	Organization graphql.ID
+	Hard         *bool
 }) (*EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins can delete orgs.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
+
+	if args.Hard != nil && *args.Hard {
+		return r.hardDelete(ctx, args.Organization)
+	} else {
+		return r.softDelete(ctx, args.Organization)
+	}
+}
+
+func (r *schemaResolver) hardDelete(ctx context.Context, org graphql.ID) (*EmptyResponse, error) {
+	if !envvar.SourcegraphDotComMode() {
+		return nil, errors.New("hard deleting organization is only supported on Sourcegraph.com")
 	}
 
-	orgID, err := UnmarshalOrgID(args.Organization)
+	orgID, err := UnmarshalOrgID(org)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := database.Orgs(r.db).Delete(ctx, orgID); err != nil {
+	//🚨 SECURITY: Only org members can hard delete orgs.
+	if err := backend.CheckOrgAccess(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
+
+	orgDeletionFlag, err := r.db.FeatureFlags().GetFeatureFlag(ctx, "org-deletion")
+	if err != nil {
+		return nil, err
+	}
+
+	if orgDeletionFlag == nil || !orgDeletionFlag.Bool.Value {
+		return nil, errors.New("hard deleting organization is not supported")
+	}
+
+	if err := r.db.Orgs().HardDelete(ctx, orgID); err != nil {
+		return nil, err
+	}
+
+	return &EmptyResponse{}, nil
+}
+
+func (r *schemaResolver) softDelete(ctx context.Context, org graphql.ID) (*EmptyResponse, error) {
+	// For Cloud, orgs can only be hard deleted.
+	if envvar.SourcegraphDotComMode() {
+		return nil, errors.New("soft deleting organization in not supported on Sourcegraph.com")
+	}
+
+	// 🚨 SECURITY: For On-premise, only site admins can soft delete orgs.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	orgID, err := UnmarshalOrgID(org)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.db.Orgs().Delete(ctx, orgID); err != nil {
+		return nil, err
+	}
+
 	return &EmptyResponse{}, nil
 }
 
@@ -203,14 +250,13 @@ func (r *schemaResolver) InvalidateSessionsByID(ctx context.Context, args *struc
 	if err != nil {
 		return nil, err
 	}
-	if err := session.InvalidateSessionsByID(ctx, userID); err != nil {
+	if err := session.InvalidateSessionsByID(ctx, r.db, userID); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
-
 }
 
-func logRoleChangeAttempt(ctx context.Context, db dbutil.DB, name *database.SecurityEventName, eventArgs *roleChangeEventArgs, parentErr *error) {
+func logRoleChangeAttempt(ctx context.Context, db database.DB, name *database.SecurityEventName, eventArgs *roleChangeEventArgs, parentErr *error) {
 	// To avoid a panic, it's important to check for a nil parentErr before we dereference it.
 	if parentErr != nil && *parentErr != nil {
 		eventArgs.Reason = (*parentErr).Error()

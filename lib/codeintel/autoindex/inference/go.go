@@ -2,7 +2,8 @@ package inference
 
 import (
 	"path/filepath"
-	"regexp"
+
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
@@ -14,16 +15,6 @@ func GoPatterns() []*regexp.Regexp {
 		// *.go file in root directory
 		prefixPattern(suffixPattern(extensionPattern(rawPattern("go")))),
 	}
-}
-
-func CanIndexGoRepo(gitclient GitClient, paths []string) bool {
-	for _, path := range paths {
-		if isGoModulePath(path) || isPreModuleGoProjectPath(path) {
-			return true
-		}
-	}
-
-	return false
 }
 
 const lsifGoImage = "sourcegraph/lsif-go:latest"

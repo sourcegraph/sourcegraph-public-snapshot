@@ -15,9 +15,12 @@ type symbols struct{}
 
 // ListTags returns symbols in a repository from ctags.
 func (symbols) ListTags(ctx context.Context, args search.SymbolsParameters) (result.Symbols, error) {
-	result, err := symbolsclient.DefaultClient.Search(ctx, args)
-	if result == nil {
+	symbols, err := symbolsclient.DefaultClient.Search(ctx, args)
+	if err != nil {
 		return nil, err
 	}
-	return *result, err
+	for i := range symbols {
+		symbols[i].Line += 1 // callers expect 1-indexed lines
+	}
+	return symbols, nil
 }

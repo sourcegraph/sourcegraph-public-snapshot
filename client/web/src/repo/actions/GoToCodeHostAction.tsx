@@ -1,22 +1,23 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import { upperFirst, toLower } from 'lodash'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import ExportIcon from 'mdi-react/ExportIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 import { merge, of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Position, Range } from '@sourcegraph/extension-api-types'
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons' // TODO: Switch mdi icon
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useObservable, useLocalStorage, Popover, PopoverTrigger, PopoverOpenEvent, Icon } from '@sourcegraph/wildcard'
 
 import { ExternalLinkFields, RepositoryFields, ExternalServiceKind } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchFileExternalLinks } from '../backend'
+import { RepoHeaderActionAnchor, RepoHeaderActionAnchorProps } from '../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../RepoHeader'
 
 import { InstallBrowserExtensionPopover } from './InstallBrowserExtensionPopover'
@@ -54,7 +55,16 @@ const HAS_PERMANENTLY_DISMISSED_POPUP_KEY = 'has-dismissed-browser-ext-popup'
  * A repository header action that goes to the corresponding URL on an external code host.
  */
 export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderContext> = props => {
-    const [showPopover, setShowPopover] = useState(false)
+    const [isPopoverOpen, setIsPopoverOpen] = useState(false)
+
+    const showPopover = useCallback(() => {
+        eventLogger.log('BrowserExtensionPopupOpened')
+        setIsPopoverOpen(true)
+    }, [])
+
+    const closePopover = useCallback(() => {
+        setIsPopoverOpen(false)
+    }, [])
 
     const { onPopoverDismissed, repo, revision, filePath } = props
 
@@ -64,7 +74,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
     )
 
     // Popover won't work with dropdown
-    const hijackLink = !hasPermanentlyDismissedPopup && props.canShowPopover && !(props.actionType === 'dropdown')
+    const hijackLink = !hasPermanentlyDismissedPopup && props.canShowPopover && props.actionType !== 'dropdown'
 
     /**
      * The external links for the current file/dir, or undefined while loading, null while not
@@ -85,58 +95,65 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
     )
 
     /** This is a hard rejection. Never ask the user again. */
-    const onRejection = useCallback(() => {
+    const onReject = useCallback(() => {
         setHasPermanentlyDismissedPopup(true)
-        setShowPopover(false)
+        closePopover()
         onPopoverDismissed()
 
         eventLogger.log('BrowserExtensionPopupRejected')
-    }, [onPopoverDismissed, setHasPermanentlyDismissedPopup])
+    }, [closePopover, onPopoverDismissed, setHasPermanentlyDismissedPopup])
 
     /** This is a soft rejection. Called when user clicks 'Remind me later', ESC, or outside of the modal body */
     const onClose = useCallback(() => {
         onPopoverDismissed()
-        setShowPopover(false)
+        closePopover()
 
         eventLogger.log('BrowserExtensionPopupClosed')
-    }, [onPopoverDismissed])
+    }, [closePopover, onPopoverDismissed])
 
     /** The user is likely to install the browser extension at this point, so don't show it again. */
-    const onClickInstall = useCallback(() => {
+    const onInstall = useCallback(() => {
         setHasPermanentlyDismissedPopup(true)
-        setShowPopover(false)
+        closePopover()
         onPopoverDismissed()
 
         eventLogger.log('BrowserExtensionPopupClickedInstall')
-    }, [onPopoverDismissed, setHasPermanentlyDismissedPopup])
+    }, [closePopover, onPopoverDismissed, setHasPermanentlyDismissedPopup])
 
-    const toggle = useCallback(() => {
-        if (showPopover) {
-            setShowPopover(false)
-            return
-        }
+    const onToggle = useCallback(
+        (event: PopoverOpenEvent) => {
+            if (event.isOpen === isPopoverOpen) {
+                return
+            }
 
-        if (hijackLink) {
-            setShowPopover(true)
-        }
-    }, [hijackLink, showPopover])
+            if (isPopoverOpen) {
+                closePopover()
+                return
+            }
+
+            if (hijackLink) {
+                showPopover()
+            }
+        },
+        [closePopover, hijackLink, isPopoverOpen, showPopover]
+    )
 
     const onClick = useCallback(
-        (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+        (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
             eventLogger.log('GoToCodeHostClicked')
 
-            if (showPopover) {
+            if (isPopoverOpen) {
                 event.preventDefault()
-                setShowPopover(false)
+                closePopover()
                 return
             }
 
             if (hijackLink) {
                 event.preventDefault()
-                setShowPopover(true)
+                showPopover()
             }
         },
-        [hijackLink, showPopover]
+        [hijackLink, isPopoverOpen, showPopover, closePopover]
     )
 
     // If the default branch is undefined, set to HEAD
@@ -172,7 +189,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
     const externalURL = externalURLs[0]
 
     const { displayName, icon } = serviceKindDisplayNameAndIcon(externalURL.serviceKind)
-    const Icon = icon || ExportIcon
+    const exportIcon = icon || ExportIcon
 
     // Extract url to add branch, line numbers or commit range.
     let url = externalURL.url
@@ -199,54 +216,61 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
 
     const TARGET_ID = 'go-to-code-host'
 
+    const descriptiveText = `View on ${displayName}`
+
     // Don't show browser extension popover on small screens
     if (props.actionType === 'dropdown') {
         return (
-            // eslint-disable-next-line jsx-a11y/anchor-is-valid
-            <a
-                className="btn repo-header__file-action test-go-to-code-host"
+            <RepoHeaderActionAnchor
+                className="test-go-to-code-host"
                 // empty href is OK because we always set tabindex=0
-                href={hijackLink ? '' : url}
+                to={hijackLink ? '' : url}
                 target="_blank"
+                file={true}
                 rel="noopener noreferrer"
                 id={TARGET_ID}
                 onClick={onClick}
                 onAuxClick={onClick}
             >
-                <Icon className="icon-inline" />
-                <span>View on {displayName}</span>
-            </a>
+                <Icon as={exportIcon} />
+                <span>{descriptiveText}</span>
+            </RepoHeaderActionAnchor>
+        )
+    }
+
+    const commonProps: Partial<RepoHeaderActionAnchorProps> = {
+        to: hijackLink ? '' : url,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+        id: TARGET_ID,
+        onClick,
+        onAuxClick: onClick,
+        'data-tooltip': descriptiveText,
+        'aria-label': descriptiveText,
+        className: 'btn-icon test-go-to-code-host',
+    }
+
+    if (hijackLink) {
+        return (
+            <Popover isOpen={isPopoverOpen} onOpenChange={onToggle}>
+                <PopoverTrigger as={RepoHeaderActionAnchor} {...commonProps}>
+                    <Icon as={exportIcon} />
+                </PopoverTrigger>
+                <InstallBrowserExtensionPopover
+                    url={url}
+                    serviceKind={externalURL.serviceKind}
+                    onClose={onClose}
+                    onReject={onReject}
+                    onInstall={onInstall}
+                />
+            </Popover>
         )
     }
 
     return (
-        <>
-            {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-            <a
-                className="btn btn-icon repo-header__action test-go-to-code-host"
-                // empty href is OK because we always set tabindex=0
-                href={hijackLink ? '' : url}
-                target="_blank"
-                rel="noopener noreferrer"
-                data-tooltip={`View on ${displayName}`}
-                id={TARGET_ID}
-                onClick={onClick}
-                onAuxClick={onClick}
-            >
-                <Icon className="icon-inline" />
-            </a>
-
-            <InstallBrowserExtensionPopover
-                url={url}
-                toggle={toggle}
-                isOpen={showPopover}
-                serviceKind={externalURL.serviceKind}
-                onClose={onClose}
-                onRejection={onRejection}
-                onClickInstall={onClickInstall}
-                targetID={TARGET_ID}
-            />
-        </>
+        <RepoHeaderActionAnchor {...commonProps}>
+            <Icon as={exportIcon} />
+        </RepoHeaderActionAnchor>
     )
 }
 
@@ -264,6 +288,8 @@ export function serviceKindDisplayNameAndIcon(
             return { displayName: 'GitLab', icon: GitlabIcon }
         case ExternalServiceKind.BITBUCKETSERVER:
             return { displayName: 'Bitbucket Server', icon: BitbucketIcon }
+        case ExternalServiceKind.BITBUCKETCLOUD:
+            return { displayName: 'Bitbucket Cloud', icon: BitbucketIcon }
         case ExternalServiceKind.PHABRICATOR:
             return { displayName: 'Phabricator', icon: PhabricatorIcon }
         case ExternalServiceKind.AWSCODECOMMIT:

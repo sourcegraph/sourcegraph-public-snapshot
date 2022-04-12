@@ -1,3 +1,5 @@
+import React from 'react'
+
 import {
     Tab as ReachTab,
     TabList as ReachTabList,
@@ -9,21 +11,47 @@ import {
     TabProps as ReachTabProps,
     Tabs as ReachTabs,
     TabsProps as ReachTabsProps,
+    useTabsContext,
 } from '@reach/tabs'
 import classNames from 'classnames'
-import React from 'react'
 
-import { TabsContext, useTabsContext } from './context'
+import { ForwardReferenceComponent } from '../../types'
+
+import { TabPanelIndexContext, TabsSettingsContext, useTabsSettings } from './context'
+import { useShouldPanelRender } from './useShouldPanelRender'
+
 import styles from './Tabs.module.scss'
-import { useTabPanelBehavior } from './useTabPanelBehavior'
-import { useTabPanelsState } from './useTabPanelsState'
-import { TabsState, useTabs } from './useTabs'
 
-interface TabsProps extends ReachTabsProps, TabsState {
+export { useTabsContext }
+
+export interface TabsSettings {
+    /**
+     * Tab component font size.
+     * Default is "small"
+     */
+    size?: 'small' | 'medium' | 'large'
+    /**
+     * true: only load the initial tab when tab component mounts
+     * false: render all the TabPanel children when tab component mounts
+     * Default is false
+     */
+    lazy?: boolean
+    /**
+     * This prop is lazy dependant, only should be used when lazy is true
+     * memoize: Once a selected tabPanel is rendered this will keep mounted
+     * forceRender: Each time a tab is selected the associated tabPanel is mounted
+     * and the rest is unmounted.
+     * Default is "forceRender"
+     */
+    behavior?: 'memoize' | 'forceRender'
+}
+
+export interface TabsProps extends ReachTabsProps, TabsSettings {
     className?: string
 }
 
-interface TabListProps extends ReachTabListProps {
+export interface TabListProps extends ReachTabListProps {
+    wrapperClassName?: string
     /*
      * action is used to render content in the left side of
      * the component. e.g. a close button or a list of links.
@@ -31,62 +59,76 @@ interface TabListProps extends ReachTabListProps {
     actions?: React.ReactNode
 }
 
-interface TabProps extends ReachTabProps {}
-interface TabPanelsProps extends ReachTabPanelsProps {}
-interface TabPanelProps extends ReachTabPanelProps {}
+export interface TabProps extends ReachTabProps {}
 
-export type { TabsProps, TabPanelsProps, TabPanelProps }
+export interface TabPanelsProps extends ReachTabPanelsProps {}
+
+export interface TabPanelProps extends ReachTabPanelProps {}
 
 /**
- *
  * reach UI tabs component with steroids, this tabs handles how the data should be loaded
  * in terms of a11y tabs are following all the WAI-ARIA Tabs Design Pattern.
  *
  * See: https://reach.tech/tabs/
- *
  */
-export const Tabs: React.FunctionComponent<TabsProps> = props => {
-    const { lazy, size, behavior, className, ...reachProps } = props
-    const { contextValue } = useTabs({ lazy, size, behavior })
-
+export const Tabs = React.forwardRef((props, reference) => {
+    const { lazy = false, size, behavior = 'forceRender', className, as = 'div', ...reachProps } = props
     return (
-        <TabsContext.Provider value={contextValue}>
-            <div className={classNames(styles.wildcardTabs, className)} data-testid="wildcard-tabs">
-                <ReachTabs {...reachProps} />
-            </div>
-        </TabsContext.Provider>
+        <TabsSettingsContext.Provider value={{ lazy, size, behavior }}>
+            <ReachTabs
+                className={classNames(styles.wildcardTabs, className)}
+                data-testid="wildcard-tabs"
+                ref={reference}
+                as={as}
+                {...reachProps}
+            />
+        </TabsSettingsContext.Provider>
     )
-}
+}) as ForwardReferenceComponent<'div', TabsProps>
 
-export const TabList: React.FunctionComponent<TabListProps> = props => {
-    const { actions, ...reachProps } = props
+export const TabList = React.forwardRef((props, reference) => {
+    const { actions, as = 'div', wrapperClassName, className, ...reachProps } = props
     return (
-        <div className={styles.tablistWrapper}>
-            <ReachTabList data-testid="wildcard-tab-list" {...reachProps} />
+        <div className={classNames(styles.tablistWrapper, wrapperClassName)}>
+            <ReachTabList
+                data-testid="wildcard-tab-list"
+                as={as}
+                ref={reference}
+                className={classNames(className, styles.tabList)}
+                {...reachProps}
+            />
             {actions}
         </div>
     )
-}
+}) as ForwardReferenceComponent<'div', TabListProps>
 
-export const Tab: React.FunctionComponent<TabProps> = props => {
-    const { state } = useTabsContext()
-
-    const { size = 'small' } = state
-    const styleSize = styles[size]
-
+export const Tab = React.forwardRef((props, reference) => {
+    const { as = 'button', ...reachProps } = props
+    const { size = 'small' } = useTabsSettings()
     return (
-        <ReachTab className={styleSize} data-testid="wildcard-tab" {...props}>
+        <ReachTab className={styles[size]} data-testid="wildcard-tab" as={as} ref={reference} {...reachProps}>
             <span className={styles.tabLabel}>{props.children}</span>
         </ReachTab>
     )
-}
+}) as ForwardReferenceComponent<'button', TabProps>
 
-export const TabPanels: React.FunctionComponent<TabPanelsProps> = ({ children }) => {
-    const { show, element } = useTabPanelsState(children)
-    return show ? <ReachTabPanels data-testid="wildcard-tab-panels">{element}</ReachTabPanels> : null
-}
+export const TabPanels = React.forwardRef((props, reference) => {
+    const { as = 'div', ...reachProps } = props
+    return (
+        <ReachTabPanels data-testid="wildcard-tab-panel-list" as={as} ref={reference} {...reachProps}>
+            {React.Children.map(props.children, (child, index) => (
+                <TabPanelIndexContext.Provider value={index}>{child}</TabPanelIndexContext.Provider>
+            ))}
+        </ReachTabPanels>
+    )
+}) as ForwardReferenceComponent<'div', TabPanelsProps>
 
-export const TabPanel: React.FunctionComponent = ({ children }) => {
-    const { isMounted } = useTabPanelBehavior()
-    return <ReachTabPanel data-testid="wildcard-tab-panel">{isMounted ? children : null}</ReachTabPanel>
-}
+export const TabPanel = React.forwardRef((props, reference) => {
+    const { as = 'div', children, ...reachProps } = props
+    const shouldRender = useShouldPanelRender(children)
+    return (
+        <ReachTabPanel data-testid="wildcard-tab-panel" as={as} ref={reference} {...reachProps}>
+            {shouldRender ? children : null}
+        </ReachTabPanel>
+    )
+}) as ForwardReferenceComponent<'div', TabPanelProps>

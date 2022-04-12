@@ -1,0 +1,10 @@
+.normal {
+    list-style-type: none;
+    padding: 0;
+}
+
+.compact {
+    margin-bottom: 0;
+    flex: 1 1;
+    overflow-y: auto;
+}

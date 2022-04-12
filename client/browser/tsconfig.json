@@ -1,11 +1,19 @@
 {
   "extends": "../../tsconfig.json",
-  "references": [{ "path": "../shared" }, { "path": "../branded" }, { "path": "../../schema" }],
+  "references": [
+    { "path": "../shared" },
+    { "path": "../branded" },
+    { "path": "../../schema" },
+    { "path": "../http-client" },
+    { "path": "../common" },
+    { "path": "../codeintellify" },
+    { "path": "../client-api" },
+  ],
   "compilerOptions": {
     "module": "commonjs",
     "baseUrl": ".",
     "paths": {
-      "*": ["src/types/*", "../shared/src/types/*", "*"],
+      "*": ["src/types/*", "../shared/src/types/*", "../common/src/types/*", "*"],
     },
     "jsx": "react",
     "resolveJsonModule": true,

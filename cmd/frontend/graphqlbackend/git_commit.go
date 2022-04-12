@@ -2,11 +2,11 @@ package graphqlbackend
 
 import (
 	"context"
+	"io/fs"
 	"net/url"
 	"os"
 	"sync"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -14,9 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (r *schemaResolver) gitCommitByID(ctx context.Context, id graphql.ID) (*GitCommitResolver, error) {
@@ -31,8 +34,11 @@ func (r *schemaResolver) gitCommitByID(ctx context.Context, id graphql.ID) (*Git
 	return repo.Commit(ctx, &RepositoryCommitArgs{Rev: string(commitID)})
 }
 
+// GitCommitResolver resolves git commits.
+//
+// Prefer using NewGitCommitResolver to create an instance of the commit resolver.
 type GitCommitResolver struct {
-	db           dbutil.DB
+	db           database.DB
 	repoResolver *RepositoryResolver
 
 	// inputRev is the Git revspec that the user originally requested that resolved to this Git commit. It is used
@@ -49,14 +55,15 @@ type GitCommitResolver struct {
 
 	// commit should not be accessed directly since it might not be initialized.
 	// Use the resolver methods instead.
-	commit     *git.Commit
+	commit     *gitdomain.Commit
 	commitOnce sync.Once
 	commitErr  error
 }
 
-// When set to nil, commit will be loaded lazily as needed by the resolver. Pass in a commit when you have batch loaded
-// a bunch of them and already have them at hand.
-func toGitCommitResolver(repo *RepositoryResolver, db dbutil.DB, id api.CommitID, commit *git.Commit) *GitCommitResolver {
+// NewGitCommitResolver returns a new CommitResolver. When commit is set to nil,
+// commit will be loaded lazily as needed by the resolver. Pass in a commit when
+// you have batch-loaded a bunch of them and already have them at hand.
+func NewGitCommitResolver(db database.DB, repo *RepositoryResolver, id api.CommitID, commit *gitdomain.Commit) *GitCommitResolver {
 	return &GitCommitResolver{
 		db:              db,
 		repoResolver:    repo,
@@ -67,14 +74,14 @@ func toGitCommitResolver(repo *RepositoryResolver, db dbutil.DB, id api.CommitID
 	}
 }
 
-func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*git.Commit, error) {
+func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*gitdomain.Commit, error) {
 	r.commitOnce.Do(func() {
 		if r.commit != nil {
 			return
 		}
 
 		opts := git.ResolveRevisionOptions{}
-		r.commit, r.commitErr = git.GetCommit(ctx, r.gitRepo, api.CommitID(r.oid), opts)
+		r.commit, r.commitErr = git.GetCommit(ctx, r.db, r.gitRepo, api.CommitID(r.oid), opts, authz.DefaultSubRepoPermsChecker)
 	})
 	return r.commit, r.commitErr
 }
@@ -176,11 +183,15 @@ func (r *GitCommitResolver) Parents(ctx context.Context) ([]*GitCommitResolver, 
 }
 
 func (r *GitCommitResolver) URL() string {
-	return r.repoResolver.URL() + "/-/commit/" + r.inputRevOrImmutableRev()
+	url := r.repoResolver.url()
+	url.Path += "/-/commit/" + r.inputRevOrImmutableRev()
+	return url.String()
 }
 
 func (r *GitCommitResolver) CanonicalURL() string {
-	return r.repoResolver.URL() + "/-/commit/" + string(r.oid)
+	url := r.repoResolver.url()
+	url.Path += "/-/commit/" + string(r.oid)
+	return url.String()
 }
 
 func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
@@ -196,43 +207,32 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	Path      string
 	Recursive bool
 }) (*GitTreeEntryResolver, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "commit.tree")
-	defer span.Finish()
-	span.SetTag("path", args.Path)
+	treeEntry, err := r.path(ctx, args.Path, func(stat fs.FileInfo) error {
+		if !stat.Mode().IsDir() {
+			return errors.Errorf("not a directory: %q", args.Path)
+		}
 
-	stat, err := git.Stat(ctx, r.gitRepo, api.CommitID(r.oid), args.Path)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	if !stat.Mode().IsDir() {
-		return nil, errors.Errorf("not a directory: %q", args.Path)
-	}
-	return &GitTreeEntryResolver{
-		db:          r.db,
-		commit:      r,
-		stat:        stat,
-		isRecursive: args.Recursive,
-	}, nil
+
+	// Note: args.Recursive is deprecated
+	treeEntry.isRecursive = args.Recursive
+	return treeEntry, nil
 }
 
 func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 	Path string
 }) (*GitTreeEntryResolver, error) {
-	stat, err := git.Stat(ctx, r.gitRepo, api.CommitID(r.oid), args.Path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
+	return r.path(ctx, args.Path, func(stat fs.FileInfo) error {
+		if mode := stat.Mode(); !(mode.IsRegular() || mode.Type()&fs.ModeSymlink != 0) {
+			return errors.Errorf("not a blob: %q", args.Path)
 		}
-		return nil, err
-	}
-	if !stat.Mode().IsRegular() {
-		return nil, errors.Errorf("not a blob: %q", args.Path)
-	}
-	return &GitTreeEntryResolver{
-		db:     r.db,
-		commit: r,
-		stat:   stat,
-	}, nil
+
+		return nil
+	})
 }
 
 func (r *GitCommitResolver) File(ctx context.Context, args *struct {
@@ -241,8 +241,33 @@ func (r *GitCommitResolver) File(ctx context.Context, args *struct {
 	return r.Blob(ctx, args)
 }
 
+func (r *GitCommitResolver) Path(ctx context.Context, args *struct {
+	Path string
+}) (*GitTreeEntryResolver, error) {
+	return r.path(ctx, args.Path, func(_ fs.FileInfo) error { return nil })
+}
+
+func (r *GitCommitResolver) path(ctx context.Context, path string, validate func(fs.FileInfo) error) (*GitTreeEntryResolver, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "commit.path")
+	defer span.Finish()
+	span.SetTag("path", path)
+
+	stat, err := git.Stat(ctx, r.db, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	if err := validate(stat); err != nil {
+		return nil, err
+	}
+
+	return NewGitTreeEntryResolver(r.db, r, stat), nil
+}
+
 func (r *GitCommitResolver) FileNames(ctx context.Context) ([]string, error) {
-	return git.LsFiles(ctx, r.gitRepo, api.CommitID(r.oid))
+	return git.LsFiles(ctx, r.db, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid))
 }
 
 func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
@@ -251,7 +276,7 @@ func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 
-	inventory, err := backend.Repos.GetInventory(ctx, repo, api.CommitID(r.oid), false)
+	inventory, err := backend.NewRepos(r.db).GetInventory(ctx, repo, api.CommitID(r.oid), false)
 	if err != nil {
 		return nil, err
 	}
@@ -269,7 +294,7 @@ func (r *GitCommitResolver) LanguageStatistics(ctx context.Context) ([]*language
 		return nil, err
 	}
 
-	inventory, err := backend.Repos.GetInventory(ctx, repo, api.CommitID(r.oid), false)
+	inventory, err := backend.NewRepos(r.db).GetInventory(ctx, repo, api.CommitID(r.oid), false)
 	if err != nil {
 		return nil, err
 	}
@@ -302,7 +327,7 @@ func (r *GitCommitResolver) Ancestors(ctx context.Context, args *struct {
 func (r *GitCommitResolver) BehindAhead(ctx context.Context, args *struct {
 	Revspec string
 }) (*behindAheadCountsResolver, error) {
-	counts, err := git.GetBehindAhead(ctx, r.gitRepo, args.Revspec, string(r.oid))
+	counts, err := git.GetBehindAhead(ctx, r.db, r.gitRepo, args.Revspec, string(r.oid))
 	if err != nil {
 		return nil, err
 	}
@@ -322,7 +347,7 @@ func (r *behindAheadCountsResolver) Ahead() int32  { return r.ahead }
 // canonical OID for the revision.
 func (r *GitCommitResolver) inputRevOrImmutableRev() string {
 	if r.inputRev != nil && *r.inputRev != "" {
-		return escapePathForURL(*r.inputRev)
+		return *r.inputRev
 	}
 	return string(r.oid)
 }

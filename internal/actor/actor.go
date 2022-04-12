@@ -6,15 +6,31 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Actor represents an agent that accesses resources. It can represent an anonymous user, an
 // authenticated user, or an internal Sourcegraph service.
+//
+// Actor can be propagated across services by using actor.HTTPTransport (used by
+// httpcli.InternalClientFactory) and actor.HTTPMiddleware. Before assuming this, ensure
+// that actor propagation is enabled on both ends of the request.
+//
+// To learn more about actor propagation, see: https://sourcegraph.com/notebooks/Tm90ZWJvb2s6OTI=
+//
+// At most one of UID, AnonymousUID, or Internal must be set.
 type Actor struct {
-	// UID is the unique ID of the authenticated user, or 0 for anonymous actors.
+	// UID is the unique ID of the authenticated user.
+	// Only set if the current actor is an authenticated user.
 	UID int32 `json:",omitempty"`
+
+	// AnonymousUID is the user's semi-stable anonymousID from the request cookie.
+	// Only set if the user is unauthenticated and the request contains an anonymousID.
+	AnonymousUID string `json:",omitempty"`
 
 	// Internal is true if the actor represents an internal Sourcegraph service (and is therefore
 	// not tied to a specific user).
@@ -24,10 +40,24 @@ type Actor struct {
 	// to selectively display a logout link. (If the actor wasn't authenticated with a session
 	// cookie, logout would be ineffective.)
 	FromSessionCookie bool `json:"-"`
+
+	// user is populated lazily by (*Actor).User()
+	user     *types.User
+	userErr  error
+	userOnce sync.Once
+
+	// mockUser indicates this user was created in the context of a test.
+	mockUser bool
 }
 
-// FromUser returns an actor corresponding to a user
+// FromUser returns an actor corresponding to the user with the given ID
 func FromUser(uid int32) *Actor { return &Actor{UID: uid} }
+
+// FromAnonymousUser returns an actor corresponding to an unauthenticated user with the given anonymous ID
+func FromAnonymousUser(anonymousUID string) *Actor { return &Actor{AnonymousUID: anonymousUID} }
+
+// FromMockUser returns an actor corresponding to a test user. Do not use outside of tests.
+func FromMockUser(uid int32) *Actor { return &Actor{UID: uid, mockUser: true} }
 
 // UIDString is a helper method that returns the UID as a string.
 func (a *Actor) UIDString() string { return strconv.Itoa(int(a.UID)) }
@@ -46,9 +76,30 @@ func (a *Actor) IsInternal() bool {
 	return a != nil && a.Internal
 }
 
-type key int
+// IsMockUser returns true if the Actor is a test user.
+func (a *Actor) IsMockUser() bool {
+	return a != nil && a.mockUser
+}
 
-const actorKey key = iota
+type userFetcher interface {
+	GetByID(context.Context, int32) (*types.User, error)
+}
+
+// User returns the expanded types.User for the actor's ID. The ID is expanded to a full
+// types.User using the fetcher, which is likely a *database.UserStore.
+func (a *Actor) User(ctx context.Context, fetcher userFetcher) (*types.User, error) {
+	a.userOnce.Do(func() {
+		a.user, a.userErr = fetcher.GetByID(ctx, a.UID)
+	})
+	if a.user != nil && a.user.ID != a.UID {
+		return nil, errors.Errorf("actor UID (%d) and the ID of the cached User (%d) do not match", a.UID, a.user.ID)
+	}
+	return a.user, a.userErr
+}
+
+type contextKey int
+
+const actorKey contextKey = iota
 
 // FromContext returns a new Actor instance from a given context.
 func FromContext(ctx context.Context) *Actor {

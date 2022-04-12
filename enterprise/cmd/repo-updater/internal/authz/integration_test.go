@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"regexp"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/grafana/regexp"
 
 	authzGitHub "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -38,8 +37,6 @@ func update(name string) bool {
 	}
 	return regexp.MustCompile(*updateRegex).MatchString(name)
 }
-
-var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
 
 // NOTE: To update VCR for these tests, please use the token of "sourcegraph-vcr"
 // for GITHUB_TOKEN, which can be found in 1Password.
@@ -88,9 +85,9 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := extsvcGitHub.NewV3Client(svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
 
-			testDB := dbtest.NewDB(t, *dsn)
+			testDB := dbtest.NewDB(t)
 			ctx := actor.WithInternalActor(context.Background())
 
 			reposStore := repos.NewStore(testDB, sql.TxOptions{})
@@ -130,14 +127,14 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			dbconn.Global = testDB
 			userID, err := database.ExternalAccounts(testDB).CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
 			if err != nil {
 				t.Fatal(err)
 			}
 
+			db := database.NewDB(testDB)
 			permsStore := edb.Perms(testDB, timeutil.Now)
-			syncer := NewPermsSyncer(reposStore, permsStore, timeutil.Now, nil)
+			syncer := NewPermsSyncer(db, reposStore, permsStore, timeutil.Now, nil)
 
 			err = syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
@@ -154,8 +151,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			wantIDs := []uint32{1}
-			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+			wantIDs := []int32{1}
+			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 		})
@@ -169,9 +166,9 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := extsvcGitHub.NewV3Client(svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
 
-			testDB := dbtest.NewDB(t, *dsn)
+			testDB := dbtest.NewDB(t)
 			ctx := actor.WithInternalActor(context.Background())
 
 			reposStore := repos.NewStore(testDB, sql.TxOptions{})
@@ -211,14 +208,14 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			dbconn.Global = testDB
 			userID, err := database.ExternalAccounts(testDB).CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
 			if err != nil {
 				t.Fatal(err)
 			}
 
+			db := database.NewDB(testDB)
 			permsStore := edb.Perms(testDB, timeutil.Now)
-			syncer := NewPermsSyncer(reposStore, permsStore, timeutil.Now, nil)
+			syncer := NewPermsSyncer(db, reposStore, permsStore, timeutil.Now, nil)
 
 			err = syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
@@ -235,8 +232,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			wantIDs := []uint32{1}
-			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+			wantIDs := []int32{1}
+			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 
@@ -249,7 +246,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 		})
@@ -273,9 +270,9 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := extsvcGitHub.NewV3Client(svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
 
-			testDB := dbtest.NewDB(t, *dsn)
+			testDB := dbtest.NewDB(t)
 			ctx := actor.WithInternalActor(context.Background())
 
 			reposStore := repos.NewStore(testDB, sql.TxOptions{})
@@ -315,8 +312,6 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			dbconn.Global = testDB
-
 			authData := json.RawMessage(fmt.Sprintf(`{"access_token": "%s"}`, token))
 			userID, err := database.ExternalAccounts(testDB).CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
 				AuthData: &authData,
@@ -325,8 +320,9 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			db := database.NewDB(testDB)
 			permsStore := edb.Perms(testDB, timeutil.Now)
-			syncer := NewPermsSyncer(reposStore, permsStore, timeutil.Now, nil)
+			syncer := NewPermsSyncer(db, reposStore, permsStore, timeutil.Now, nil)
 
 			err = syncer.syncUserPerms(ctx, userID, false, authz.FetchPermsOptions{})
 			if err != nil {
@@ -343,8 +339,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			wantIDs := []uint32{1}
-			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+			wantIDs := []int32{1}
+			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 		})
@@ -358,9 +354,9 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := extsvcGitHub.NewV3Client(svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
 
-			testDB := dbtest.NewDB(t, *dsn)
+			testDB := dbtest.NewDB(t)
 			ctx := actor.WithInternalActor(context.Background())
 
 			reposStore := repos.NewStore(testDB, sql.TxOptions{})
@@ -400,8 +396,6 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			dbconn.Global = testDB
-
 			authData := json.RawMessage(fmt.Sprintf(`{"access_token": "%s"}`, token))
 			userID, err := database.ExternalAccounts(testDB).CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
 				AuthData: &authData,
@@ -410,8 +404,9 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			db := database.NewDB(testDB)
 			permsStore := edb.Perms(testDB, timeutil.Now)
-			syncer := NewPermsSyncer(reposStore, permsStore, timeutil.Now, nil)
+			syncer := NewPermsSyncer(db, reposStore, permsStore, timeutil.Now, nil)
 
 			err = syncer.syncUserPerms(ctx, userID, false, authz.FetchPermsOptions{})
 			if err != nil {
@@ -428,8 +423,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			wantIDs := []uint32{1}
-			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+			wantIDs := []int32{1}
+			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 
@@ -442,7 +437,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 		})

@@ -2,6 +2,8 @@
 
 Batch changes are created by writing a [batch spec](../references/batch_spec_yaml_reference.md) and executing that batch spec with the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli) `src`.
 
+Batch changes can also be used on [multiple projects within a monorepo](./creating_changesets_per_project_in_monorepos.md) by using the `workspaces` key in your batch spec.
+
 ## Requirements
 
 - Sourcegraph instance with repositories in it. See the "[Quickstart](../../index.md#quick-install)" guide on how to setup a Sourcegraph instance.

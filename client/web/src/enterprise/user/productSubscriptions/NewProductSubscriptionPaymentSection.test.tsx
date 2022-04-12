@@ -1,18 +1,15 @@
 import React from 'react'
-import renderer, { act } from 'react-test-renderer'
+
+import { render, act } from '@testing-library/react'
 import { of } from 'rxjs'
 
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 
 import { NewProductSubscriptionPaymentSection } from './NewProductSubscriptionPaymentSection'
 
-jest.mock('./ProductSubscriptionBeforeAfterInvoiceItem', () => ({
-    ProductSubscriptionBeforeAfterInvoiceItem: 'ProductSubscriptionBeforeAfterInvoiceItem',
-}))
-
 describe('NewProductSubscriptionPaymentSection', () => {
     test('new subscription', () => {
-        const component = renderer.create(
+        const component = render(
             <NewProductSubscriptionPaymentSection
                 accountID={null}
                 subscriptionID={null}
@@ -36,11 +33,11 @@ describe('NewProductSubscriptionPaymentSection', () => {
             />
         )
         act(() => undefined)
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component.asFragment()).toMatchSnapshot()
     })
 
     test('valid change to existing subscription', () => {
-        const component = renderer.create(
+        const component = render(
             <NewProductSubscriptionPaymentSection
                 accountID="a"
                 subscriptionID="s"
@@ -69,11 +66,11 @@ describe('NewProductSubscriptionPaymentSection', () => {
             />
         )
         act(() => undefined)
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component.asFragment()).toMatchSnapshot()
     })
 
     test('no change to existing subscription', () => {
-        const component = renderer.create(
+        const component = render(
             <NewProductSubscriptionPaymentSection
                 accountID="a"
                 subscriptionID="s"
@@ -102,11 +99,11 @@ describe('NewProductSubscriptionPaymentSection', () => {
             />
         )
         act(() => undefined)
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component.asFragment()).toMatchSnapshot()
     })
 
     test('downgrade to existing subscription', () => {
-        const component = renderer.create(
+        const component = render(
             <NewProductSubscriptionPaymentSection
                 accountID="a"
                 subscriptionID="s"
@@ -135,6 +132,6 @@ describe('NewProductSubscriptionPaymentSection', () => {
             />
         )
         act(() => undefined)
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component.asFragment()).toMatchSnapshot()
     })
 })

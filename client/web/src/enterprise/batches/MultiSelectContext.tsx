@@ -1,5 +1,6 @@
-import { noop } from 'lodash'
 import React, { useCallback, useState } from 'react'
+
+import { noop } from 'lodash'
 
 /**
  * The current selection state: either a set of IDs or "all", in which case all

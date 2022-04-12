@@ -1,11 +1,12 @@
+import React, { useCallback, useEffect, useState, FunctionComponent, Dispatch, SetStateAction } from 'react'
+
 import { FetchResult } from '@apollo/client'
 import classNames from 'classnames'
 import { isEqual } from 'lodash'
-import React, { useCallback, useEffect, useState, FunctionComponent, Dispatch, SetStateAction } from 'react'
 
+import { ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { Container, PageSelector } from '@sourcegraph/wildcard'
+import { Container, PageSelector, RadioButton, Select, Link } from '@sourcegraph/wildcard'
 
 import { RepoSelectionMode } from '../../../auth/PostSignUpPage'
 import { useSteps } from '../../../auth/Steps'
@@ -20,7 +21,17 @@ import {
     SetExternalServiceReposResult,
 } from '../../../graphql-operations'
 
+import {
+    FilterInput,
+    ListItemContainer,
+    RepositoryNodeContainer,
+    ShimmerContainer,
+    UserSettingReposContainer,
+} from './components'
 import { CheckboxRepositoryNode } from './RepositoryNode'
+
+import styles from './SelectAffiliatedRepos.module.scss'
+
 export interface AffiliatedReposReference {
     submit: () => Promise<FetchResult<SetExternalServiceReposResult>[] | void>
 }
@@ -93,12 +104,18 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
         telemetryService.logViewEvent('UserSettingsRepositories')
     }, [telemetryService])
 
-    const { setComplete, resetToTheRight, currentIndex } = useSteps()
+    const { setComplete, resetToTheRight, currentIndex, setStep } = useSteps()
     const { externalServices, errorServices } = useExternalServices(authenticatedUser.id)
     const { affiliatedRepos, errorAffiliatedRepos } = useAffiliatedRepos(authenticatedUser.id)
     const { selectedRepos, errorSelectedRepos } = useSelectedRepos(authenticatedUser.id)
 
-    const fetchingError = errorServices || errorAffiliatedRepos || errorSelectedRepos
+    const fetchingError =
+        errorServices ||
+        // The affliliated repos query will always return an error on the GraphQL API when no
+        // external services are set up. In this case we allow the user to go back to the previous
+        // step and set up code hosts.
+        (externalServices !== undefined && externalServices.length !== 0 && errorAffiliatedRepos) ||
+        errorSelectedRepos
 
     useEffect(() => {
         if (fetchingError) {
@@ -304,26 +321,37 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
 
     const modeSelect: JSX.Element = (
         <>
-            <label className="d-flex flex-row align-items-baseline">
-                <input type="radio" value="all" checked={selectionState.radio === 'all'} onChange={handleRadioSelect} />
-                <div className="d-flex flex-column ml-2">
-                    <p className="mb-0">Sync all repositories</p>
-                    <p className="user-settings-repos__text-light text-muted">
-                        Will sync all current and future public and private repositories
-                    </p>
-                </div>
-            </label>
-            <label className="d-flex flex-row align-items-baseline mb-0">
-                <input
-                    type="radio"
+            <div className="d-flex flex-row align-items-baseline">
+                <RadioButton
+                    id="sync_all_repositories"
+                    name="all_repositories"
+                    value="all"
+                    checked={selectionState.radio === 'all'}
+                    onChange={handleRadioSelect}
+                    label={
+                        <div className="d-flex flex-column ml-2">
+                            <p className="mb-0">Sync all repositories</p>
+                            <p className="font-weight-normal text-muted">
+                                Will sync all current and future public and private repositories
+                            </p>
+                        </div>
+                    }
+                />
+            </div>
+            <div className="d-flex flex-row align-items-baseline mb-0">
+                <RadioButton
+                    id="sync_selected_repositories"
+                    name="selected_repositories"
                     value="selected"
                     checked={selectionState.radio === 'selected'}
                     onChange={handleRadioSelect}
+                    label={
+                        <div className="d-flex flex-column ml-2">
+                            <p className="mb-0">Sync selected repositories</p>
+                        </div>
+                    }
                 />
-                <div className="d-flex flex-column ml-2">
-                    <p className="mb-0">Sync selected repositories</p>
-                </div>
-            </label>
+            </div>
         </>
     )
 
@@ -331,8 +359,7 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
         <div className="w-100 d-inline-flex justify-content-between flex-row mt-3">
             <div className="d-inline-flex flex-row mr-3 align-items-baseline">
                 <p className="text-xl-center text-nowrap mr-2">Code Host:</p>
-                <select
-                    className="form-control"
+                <Select
                     name="code-host"
                     aria-label="select code host type"
                     onChange={event => setCodeHostFilter(event.target.value)}
@@ -341,12 +368,12 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                     {externalServices?.map(value => (
                         <option key={value.id} value={value.id} label={value.displayName} />
                     ))}
-                </select>
+                </Select>
             </div>
-            <input
-                className="form-control user-settings-repos__filter-input"
+            <FilterInput
+                className="form-control"
                 type="search"
-                placeholder="Search..."
+                placeholder="Filter..."
                 name="query"
                 autoComplete="off"
                 autoCorrect="off"
@@ -455,7 +482,10 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
     const rows: JSX.Element = (
         <tbody>
             <tr className="align-items-baseline d-flex" key="header">
-                <td className="user-settings-repos__repositorynode p-2 w-100 d-flex align-items-center border-top-0 border-bottom">
+                <RepositoryNodeContainer
+                    as="td"
+                    className="p-2 w-100 d-flex align-items-center border-top-0 border-bottom"
+                >
                     <input
                         id="select-all-repos"
                         className="mr-3"
@@ -477,7 +507,7 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                             } selected`}</small>
                         )) || <small>Select all</small>}
                     </label>
-                </td>
+                </RepositoryNodeContainer>
             </tr>
             {filteredRepos.map((repo, index) => {
                 if (index < (currentPage - 1) * PER_PAGE || index >= currentPage * PER_PAGE) {
@@ -503,49 +533,67 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
     const modeSelectShimmer: JSX.Element = (
         <div className="container">
             <div className="mt-2 row">
-                <div className="user-settings-repos__shimmer-circle mr-2" />
-                <div className="user-settings-repos__shimmer mb-1 p-2 border-top-0 col-sm-2" />
+                <ShimmerContainer circle={true} className="mr-2" />
+                <ShimmerContainer className="mb-1 p-2 border-top-0 col-sm-2" />
             </div>
             <div className="mt-1 ml-2 row">
-                <div className="user-settings-repos__shimmer mb-3 p-2 ml-1 border-top-0 col-sm-6" />
+                <ShimmerContainer className="mb-3 p-2 ml-1 border-top-0 col-sm-6" />
             </div>
             <div className="mt-2 row">
-                <div className="user-settings-repos__shimmer-circle mr-2" />
-                <div className="user-settings-repos__shimmer p-2 mb-1 border-top-0 col-sm-3" />
+                <ShimmerContainer circle={true} className="mr-2" />
+                <ShimmerContainer className="p-2 mb-1 border-top-0 col-sm-3" />
             </div>
         </div>
     )
 
     return (
-        <div className="user-settings-repos mb-0">
+        <UserSettingReposContainer className="mb-0">
             <Container>
                 <ul className="list-group">
-                    <li className="list-group-item user-settings-repos__container" key="from-code-hosts">
-                        <div>
-                            {/* display type of repo sync radio buttons or shimmer when appropriate */}
-                            {hasCodeHosts && selectionState.loaded ? modeSelect : modeSelectShimmer}
+                    <ListItemContainer key="from-code-hosts">
+                        {externalServices && !hasCodeHosts ? (
+                            <div className={styles.noCodeHosts}>
+                                <p>
+                                    <Link
+                                        to="/welcome"
+                                        onClick={event => {
+                                            event.preventDefault()
+                                            event.stopPropagation()
+                                            setStep(Math.max(0, currentIndex - 1))
+                                        }}
+                                    >
+                                        Add a code host
+                                    </Link>{' '}
+                                    to add repositories.
+                                </p>
+                            </div>
+                        ) : (
+                            <div>
+                                {/* display type of repo sync radio buttons or shimmer when appropriate */}
+                                {hasCodeHosts && selectionState.loaded ? modeSelect : modeSelectShimmer}
 
-                            {hasCodeHosts && selectionState.radio === 'selected' && (
-                                <div className="ml-4">
-                                    {filterControls}
-                                    <table role="grid" className="table">
-                                        {
-                                            // if the repos are loaded display the rows of repos
-                                            repoState.loaded && rows
-                                        }
-                                    </table>
-                                    {filteredRepos.length > 0 && (
-                                        <PageSelector
-                                            currentPage={currentPage}
-                                            onPageChange={setPage}
-                                            totalPages={Math.ceil(filteredRepos.length / PER_PAGE)}
-                                            className="pt-4"
-                                        />
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    </li>
+                                {hasCodeHosts && selectionState.radio === 'selected' && (
+                                    <div className="ml-4">
+                                        {filterControls}
+                                        <table role="grid" className="table">
+                                            {
+                                                // if the repos are loaded display the rows of repos
+                                                repoState.loaded && rows
+                                            }
+                                        </table>
+                                        {filteredRepos.length > 0 && (
+                                            <PageSelector
+                                                currentPage={currentPage}
+                                                onPageChange={setPage}
+                                                totalPages={Math.ceil(filteredRepos.length / PER_PAGE)}
+                                                className="pt-4"
+                                            />
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </ListItemContainer>
                 </ul>
             </Container>
             <AwayPrompt
@@ -554,6 +602,6 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                 button_ok_text="Discard"
                 when={didSelectionChange}
             />
-        </div>
+        </UserSettingReposContainer>
     )
 }

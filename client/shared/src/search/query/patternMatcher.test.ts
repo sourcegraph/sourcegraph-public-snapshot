@@ -82,11 +82,14 @@ describe('matchValue', () => {
 
             // @ts-expect-error cannot use a non-existing field to match an object
             expect({ field1: 42, field2: 21 }).not.toBeMatchedBy({ field3: 42 })
+            expect({ field1: undefined } as { field1: undefined | { field2: number } }).not.toBeMatchedBy({
+                field1: { field2: 42 },
+            })
         })
 
-        it('allows self reference objects as patterns', () => {
+        it('allows wrapper patterns ', () => {
             expect(42).toBeMatchedBy({ $pattern: 42, $data: {} })
-            // Self referenced objects must use a function as pattern
+            // Wrapper patterns for objects must use a function as pattern
             expect({ field1: 0 }).toBeMatchedBy({ $pattern: ({ field1 }) => field1 === 0 })
             expect({ field1: 0, field2: 21 }).toBeMatchedBy({ $pattern: ({ field1 }) => field1 === 0, field2: 21 })
             expect({ field1: 0, field2: 21 }).not.toBeMatchedBy({ $pattern: ({ field1 }) => field1 === 0, field2: 42 })

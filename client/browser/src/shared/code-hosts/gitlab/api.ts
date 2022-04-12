@@ -3,8 +3,8 @@ import { Observable, zip, of } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { map, switchMap } from 'rxjs/operators'
 
-import { checkOk } from '@sourcegraph/shared/src/backend/fetch'
-import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
+import { memoizeObservable } from '@sourcegraph/common'
+import { checkOk } from '@sourcegraph/http-client'
 
 import { GitLabInfo } from './scrape'
 

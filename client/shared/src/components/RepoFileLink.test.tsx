@@ -1,11 +1,12 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
+
+import { renderWithBrandedContext } from '../testing'
 
 import { RepoFileLink } from './RepoFileLink'
 
 describe('RepoFileLink', () => {
     test('renders', () => {
-        const component = renderer.create(
+        const component = renderWithBrandedContext(
             <RepoFileLink
                 repoName="example.com/my/repo"
                 repoURL="https://example.com"
@@ -13,6 +14,6 @@ describe('RepoFileLink', () => {
                 fileURL="https://example.com/file"
             />
         )
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component.asFragment()).toMatchSnapshot()
     })
 })

@@ -1,0 +1,46 @@
+{"id":1,"version":"0.4.3","projectRoot":"file:/root","positionEncoding":"utf-8","toolInfo":{"name":"reprolang","version":"1.0.0"},"type":"vertex","label":"metaData"}
+{"id":2,"type":"vertex","label":"definitionResult"}
+{"id":3,"type":"vertex","label":"resultSet"}
+{"id":4,"type":"vertex","label":"referenceResult"}
+{"id":5,"type":"vertex","label":"hoverResult","result":{"contents":{"kind":"markdown","value":"signature of hello()."}}}
+{"id":6,"type":"edge","label":"textDocument/definition","inV":2,"outV":3}
+{"id":7,"type":"edge","label":"textDocument/references","inV":4,"outV":3}
+{"id":8,"type":"edge","label":"textDocument/hover","inV":5,"outV":3}
+{"id":9,"type":"vertex","label":"moniker","identifier":"reprolang repro_manager cyclic-reference 1.0.0 cycle1.repro/hello().","kind":"export","scheme":"reprolang"}
+{"id":10,"type":"edge","label":"moniker","inV":9,"outV":3}
+{"id":11,"name":"cyclic-reference","version":"1.0.0","manager":"repro_manager","type":"vertex","label":"packageInformation"}
+{"id":12,"type":"edge","label":"packageInformation","inV":11,"outV":9}
+{"id":13,"type":"vertex","label":"definitionResult"}
+{"id":14,"type":"vertex","label":"resultSet"}
+{"id":15,"type":"vertex","label":"referenceResult"}
+{"id":16,"type":"vertex","label":"hoverResult","result":{"contents":{"kind":"markdown","value":"signature of hello2()."}}}
+{"id":17,"type":"edge","label":"textDocument/definition","inV":13,"outV":14}
+{"id":18,"type":"edge","label":"textDocument/references","inV":15,"outV":14}
+{"id":19,"type":"edge","label":"textDocument/hover","inV":16,"outV":14}
+{"id":20,"type":"vertex","label":"moniker","identifier":"reprolang repro_manager cyclic-reference 1.0.0 cycle2.repro/hello2().","kind":"export","scheme":"reprolang"}
+{"id":21,"type":"edge","label":"moniker","inV":20,"outV":14}
+{"id":22,"type":"edge","label":"packageInformation","inV":11,"outV":20}
+{"id":23,"type":"vertex","label":"document","uri":"file:/root/cycle1.repro"}
+{"id":24,"type":"vertex","label":"range","start":{"line":1,"character":11},"end":{"line":1,"character":19}}
+{"id":25,"type":"edge","label":"next","inV":3,"outV":24}
+{"id":26,"type":"edge","label":"item","inVs":[24],"outV":2,"document":23}
+{"id":27,"type":"edge","label":"item","inVs":[24],"outV":4,"document":23}
+{"id":28,"type":"vertex","label":"range","start":{"line":2,"character":10},"end":{"line":2,"character":18}}
+{"id":29,"type":"edge","label":"next","inV":3,"outV":28}
+{"id":30,"type":"edge","label":"item","inVs":[28],"outV":4,"document":23}
+{"id":31,"type":"vertex","label":"range","start":{"line":3,"character":10},"end":{"line":3,"character":19}}
+{"id":32,"type":"edge","label":"next","inV":14,"outV":31}
+{"id":33,"type":"edge","label":"item","inVs":[31],"outV":15,"document":23}
+{"id":34,"type":"edge","label":"contains","inVs":[24,28,31],"outV":23}
+{"id":35,"type":"vertex","label":"document","uri":"file:/root/cycle2.repro"}
+{"id":36,"type":"vertex","label":"range","start":{"line":1,"character":11},"end":{"line":1,"character":20}}
+{"id":37,"type":"edge","label":"next","inV":14,"outV":36}
+{"id":38,"type":"edge","label":"item","inVs":[36],"outV":13,"document":35}
+{"id":39,"type":"edge","label":"item","inVs":[36],"outV":15,"document":35}
+{"id":40,"type":"vertex","label":"range","start":{"line":2,"character":10},"end":{"line":2,"character":18}}
+{"id":41,"type":"edge","label":"next","inV":3,"outV":40}
+{"id":42,"type":"edge","label":"item","inVs":[40],"outV":4,"document":35}
+{"id":43,"type":"vertex","label":"range","start":{"line":3,"character":10},"end":{"line":3,"character":19}}
+{"id":44,"type":"edge","label":"next","inV":14,"outV":43}
+{"id":45,"type":"edge","label":"item","inVs":[43],"outV":15,"document":35}
+{"id":46,"type":"edge","label":"contains","inVs":[36,40,43],"outV":35}

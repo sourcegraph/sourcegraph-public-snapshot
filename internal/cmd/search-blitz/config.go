@@ -1,16 +1,17 @@
 package main
 
 import (
+	"bytes"
+	"embed"
 	_ "embed"
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"gopkg.in/yaml.v2"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-//go:embed config.yaml
-var configRaw []byte
+//go:embed queries*.txt
+var queriesFS embed.FS
 
 type Config struct {
 	Groups []*QueryGroupConfig
@@ -42,43 +43,59 @@ const (
 	Stream
 )
 
-func (s *Protocol) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var v string
-	if err := unmarshal(&v); err != nil {
-		return err
+func loadQueries(env string) (_ *Config, err error) {
+	if env == "" {
+		env = "cloud"
 	}
 
-	switch v {
-	case "stream", "streaming":
-		*s = Stream
-	case "batch":
-		*s = Batch
-	default:
-		return errors.Errorf("invalid search type %s", v)
-	}
-
-	return nil
-}
-
-func loadQueries() (*Config, error) {
-	var config Config
-	err := yaml.UnmarshalStrict(configRaw, &config)
+	queriesRaw, err := queriesFS.ReadFile("queries.txt")
 	if err != nil {
 		return nil, err
 	}
-	massageYaml(&config)
-	return &config, nil
-}
 
-func massageYaml(c *Config) {
-	for _, group := range c.Groups {
-		for _, q := range group.Queries {
-			// Remove newlines and extra space from "readable" yaml
-			parts := strings.Split(q.Query, "\n")
-			for i := range parts {
-				parts[i] = strings.TrimSpace(parts[i])
-			}
-			q.Query = strings.TrimSpace(strings.Join(parts, " "))
+	if env != "cloud" {
+		extra, err := queriesFS.ReadFile("queries_" + env + ".txt")
+		if err != nil {
+			return nil, err
+		}
+		queriesRaw = append(queriesRaw, '\n')
+		queriesRaw = append(queriesRaw, extra...)
+	}
+
+	var queries []*QueryConfig
+	var current QueryConfig
+	add := func() {
+		q := &QueryConfig{
+			Name:  strings.TrimSpace(current.Name),
+			Query: strings.TrimSpace(current.Query),
+		}
+		current = QueryConfig{} // reset
+		if q.Query == "" {
+			return
+		}
+		if q.Name == "" {
+			err = errors.Errorf("no name set for query %q", q.Query)
+		}
+		queries = append(queries, q)
+	}
+	for _, line := range bytes.Split(queriesRaw, []byte("\n")) {
+		line = bytes.TrimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
+		if line[0] == '#' {
+			add()
+			current.Name = string(line[1:])
+		} else {
+			current.Query += " " + string(line)
 		}
 	}
+	add()
+
+	return &Config{
+		Groups: []*QueryGroupConfig{{
+			Name:    "monitoring_queries",
+			Queries: queries,
+		}},
+	}, err
 }

@@ -5,65 +5,52 @@ import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin'
 import { remove } from 'lodash'
 import signale from 'signale'
 import SpeedMeasurePlugin from 'speed-measure-webpack-plugin'
-import TerserPlugin from 'terser-webpack-plugin'
-import webpack, {
-    DllReferencePlugin,
-    Configuration,
-    DefinePlugin,
-    ProgressPlugin,
-    RuleSetUseItem,
-    RuleSetUse,
-    RuleSetRule,
-} from 'webpack'
-import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer'
+import { DllReferencePlugin, Configuration, DefinePlugin, ProgressPlugin, RuleSetRule } from 'webpack'
+
+import {
+    NODE_MODULES_PATH,
+    ROOT_PATH,
+    getCSSLoaders,
+    getCSSModulesLoader,
+    getCacheConfig,
+    getMonacoCSSRule,
+    getMonacoTTFRule,
+    getMonacoWebpackPlugin,
+    getProvidePlugin,
+    getTerserPlugin,
+    getBabelLoader,
+    getBasicCSSLoader,
+    getStatoscopePlugin,
+} from '@sourcegraph/build-config'
 
 import { ensureDllBundleIsReady } from './dllPlugin'
 import { environment } from './environment-config'
 import {
-    rootPath,
     monacoEditorPath,
     dllPluginConfig,
     dllBundleManifestPath,
-    getMonacoCSSRule,
-    getMonacoTTFRule,
-    getMonacoWebpackPlugin,
-    nodeModulesPath,
-    getBasicCSSLoader,
     readJsonFile,
     storybookWorkspacePath,
 } from './webpack.config.common'
 
 const getStoriesGlob = (): string[] => {
     if (process.env.STORIES_GLOB) {
-        return [path.resolve(rootPath, process.env.STORIES_GLOB)]
+        return [path.resolve(ROOT_PATH, process.env.STORIES_GLOB)]
     }
 
     // Stories in `Chromatic.story.tsx` are guarded by the `isChromatic()` check. It will result in noop in all other environments.
-    const chromaticStoriesGlob = path.resolve(rootPath, 'client/storybook/src/chromatic-story/Chromatic.story.tsx')
+    const chromaticStoriesGlob = path.resolve(ROOT_PATH, 'client/storybook/src/chromatic-story/Chromatic.story.tsx')
 
     // Due to an issue with constant recompiling (https://github.com/storybookjs/storybook/issues/14342)
     // we need to make the globs more specific (`(web|shared..)` also doesn't work). Once the above issue
     // is fixed, this can be removed and watched for `client/**/*.story.tsx` again.
-    const directoriesWithStories = ['branded', 'browser', 'shared', 'web', 'wildcard']
+    const directoriesWithStories = ['branded', 'browser', 'shared', 'web', 'wildcard', 'search-ui']
     const storiesGlobs = directoriesWithStories.map(packageDirectory =>
-        path.resolve(rootPath, `client/${packageDirectory}/src/**/*.story.tsx`)
+        path.resolve(ROOT_PATH, `client/${packageDirectory}/src/**/*.story.tsx`)
     )
 
     return [...storiesGlobs, chromaticStoriesGlob]
 }
-
-const getCSSLoaders = (...loaders: RuleSetUseItem[]): RuleSetUse => [
-    ...loaders,
-    'postcss-loader',
-    {
-        loader: 'sass-loader',
-        options: {
-            sassOptions: {
-                includePaths: [path.resolve(rootPath, 'node_modules'), path.resolve(rootPath, 'client')],
-            },
-        },
-    },
-]
 
 const getDllScriptTag = (): string => {
     ensureDllBundleIsReady()
@@ -125,11 +112,7 @@ const config = {
                 NODE_ENV: JSON.stringify(config.mode),
                 'process.env.NODE_ENV': JSON.stringify(config.mode),
             }),
-            new webpack.ProvidePlugin({
-                process: 'process/browser',
-                // Based on the issue: https://github.com/webpack/changelog-v5/issues/10
-                Buffer: ['buffer', 'Buffer'],
-            })
+            getProvidePlugin()
         )
 
         if (environment.shouldMinify) {
@@ -137,46 +120,25 @@ const config = {
                 throw new Error('The structure of the config changed, expected config.optimization to be not-null')
             }
             config.optimization.minimize = true
-            config.optimization.minimizer = [
-                new TerserPlugin({
-                    terserOptions: {
-                        compress: {
-                            // Don't inline functions, which causes name collisions with uglify-es:
-                            // https://github.com/mishoo/UglifyJS2/issues/2842
-                            inline: 1,
-                        },
-                    },
-                }),
-            ]
+            config.optimization.minimizer = [getTerserPlugin()]
         } else {
             // Use cache only in `development` mode to speed up production build.
-            config.cache = {
-                type: 'filesystem',
-                buildDependencies: {
-                    // Invalidate cache on config change.
-                    config: [
-                        __filename,
-                        path.resolve(storybookWorkspacePath, 'babel.config.js'),
-                        path.resolve(rootPath, 'babel.config.js'),
-                        path.resolve(rootPath, 'postcss.config.js'),
-                        path.resolve(__dirname, './webpack.config.dll.ts'),
-                    ],
-                },
-            }
+            config.cache = getCacheConfig({
+                invalidateCacheFiles: [
+                    path.resolve(storybookWorkspacePath, 'babel.config.js'),
+                    path.resolve(__dirname, './webpack.config.dll.ts'),
+                ],
+            })
         }
 
         // We don't use Storybook's default Babel config for our repo, it doesn't include everything we need.
         config.module.rules.splice(0, 1)
         config.module.rules.unshift({
             test: /\.tsx?$/,
-            loader: require.resolve('babel-loader'),
-            options: {
-                cacheDirectory: true,
-                configFile: path.resolve(rootPath, 'babel.config.js'),
-            },
+            ...getBabelLoader(),
         })
 
-        const storybookPath = path.resolve(nodeModulesPath, '@storybook')
+        const storybookPath = path.resolve(NODE_MODULES_PATH, '@storybook')
 
         // Put our style rules at the beginning so they're processed by the time it
         // gets to storybook's style rules.
@@ -191,17 +153,10 @@ const config = {
             test: /\.(sass|scss)$/,
             include: /\.module\.(sass|scss)$/,
             exclude: storybookPath,
-            use: getCSSLoaders('style-loader', {
-                loader: 'css-loader',
-                options: {
-                    sourceMap: !environment.shouldMinify,
-                    modules: {
-                        exportLocalsConvention: 'camelCase',
-                        localIdentName: '[name]__[local]_[hash:base64:5]',
-                    },
-                    url: false,
-                },
-            }),
+            use: getCSSLoaders(
+                'style-loader',
+                getCSSModulesLoader({ sourceMap: !environment.shouldMinify, url: false })
+            ),
         })
 
         // Make sure Storybook style loaders are only evaluated for Storybook styles.
@@ -226,6 +181,19 @@ const config = {
             type: 'asset/source',
         })
 
+        config.module.rules.push({
+            test: /\.elm$/,
+            exclude: /elm-stuff/,
+            use: {
+                loader: 'elm-webpack-loader',
+                options: {
+                    cwd: path.resolve(ROOT_PATH, 'client/web/src/notebooks/blocks/compute/component'),
+                    report: 'json',
+                    pathToElm: path.resolve(ROOT_PATH, 'node_modules/.bin/elm'),
+                },
+            },
+        })
+
         // Disable `CaseSensitivePathsPlugin` by default to speed up development build.
         // Similar discussion: https://github.com/vercel/next.js/issues/6927#issuecomment-480579191
         remove(config.plugins, plugin => plugin instanceof CaseSensitivePathsPlugin)
@@ -246,15 +214,10 @@ const config = {
         } else {
             config.plugins.push(getMonacoWebpackPlugin())
             config.module.rules.push(getMonacoCSSRule(), getMonacoTTFRule())
-
-            Object.assign(config.entry, {
-                'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
-                'json.worker': 'monaco-editor/esm/vs/language/json/json.worker',
-            })
         }
 
         if (environment.isBundleAnalyzerEnabled) {
-            config.plugins.push(new BundleAnalyzerPlugin())
+            config.plugins.push(getStatoscopePlugin())
         }
 
         if (environment.isSpeedAnalyzerEnabled) {

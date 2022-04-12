@@ -19,16 +19,15 @@ interactions:
       - '*'
       Access-Control-Expose-Headers:
       - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Used, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes,
-        X-Poll-Interval, X-GitHub-Media-Type, Deprecation, Sunset
-      Cache-Control:
-      - no-cache
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
       Content-Security-Policy:
       - default-src 'none'
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 15 Apr 2021 01:03:27 GMT
+      - Thu, 30 Dec 2021 22:43:33 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -46,17 +45,20 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - C0EC:F0ED:C0B70A:CEF33B:607790DF
+      - DCB4:3D8A:1B3AA2D:51869CE:61CE3613
       X-Oauth-Scopes:
-      - read:discussion, read:org, repo, workflow
+      - read:discussion, read:org, read:packages, read:public_key, read:repo_hook,
+        read:user, repo, workflow
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4987"
+      - "4874"
       X-Ratelimit-Reset:
-      - "1618450390"
+      - "1640906777"
+      X-Ratelimit-Resource:
+      - graphql
       X-Ratelimit-Used:
-      - "13"
+      - "126"
       X-Xss-Protection:
       - "0"
     status: 200 OK

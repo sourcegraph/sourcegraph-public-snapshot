@@ -1,14 +1,15 @@
+import React, { useEffect, useMemo, useCallback, useState } from 'react'
+
 import * as H from 'history'
 import AddIcon from 'mdi-react/AddIcon'
-import React, { useEffect, useMemo, useCallback, useState } from 'react'
 import { Redirect } from 'react-router'
 import { Subject } from 'rxjs'
 import { tap } from 'rxjs/operators'
 
+import { isErrorLike, ErrorLike } from '@sourcegraph/common'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { isErrorLike, ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { Link, Button, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { ListExternalServiceFields, Scalars, ExternalServicesResult } from '../../graphql-operations'
@@ -89,12 +90,14 @@ export const ExternalServicesPage: React.FunctionComponent<Props> = ({
             <div className="d-flex justify-content-between align-items-center mb-3">
                 <h2 className="mb-0">Manage code hosts</h2>
                 {!isManagingOtherUser && (
-                    <Link
-                        className="btn btn-primary test-goto-add-external-service-page"
+                    <Button
+                        className="test-goto-add-external-service-page"
                         to={`${routingPrefix}/external-services/new`}
+                        variant="primary"
+                        as={Link}
                     >
-                        <AddIcon className="icon-inline" /> Add code host
-                    </Link>
+                        <Icon as={AddIcon} /> Add code host
+                    </Button>
                 )}
             </div>
             <p className="mt-2">Manage code host connections to sync repositories.</p>

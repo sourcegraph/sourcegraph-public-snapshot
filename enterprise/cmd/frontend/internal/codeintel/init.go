@@ -4,52 +4,48 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/cockroachdb/errors"
-	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
-	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/symbols"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services) error {
-	observationContext := &observation.Context{
-		Logger:     log15.Root(),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		Registerer: prometheus.DefaultRegisterer,
+func Init(ctx context.Context, db database.DB, config *Config, enterpriseServices *enterprise.Services, observationContext *observation.Context, services *Services) error {
+	resolverObservationContext := &observation.Context{
+		Logger:     observationContext.Logger,
+		Tracer:     observationContext.Tracer,
+		Registerer: observationContext.Registerer,
+		Sentry:     services.hub,
+		HoneyDataset: &honey.Dataset{
+			Name:       "codeintel-graphql",
+			SampleRate: 4,
+		},
 	}
 
-	if err := initServices(ctx, db); err != nil {
-		return err
-	}
-
-	if err := registerMigrations(ctx, db, outOfBandMigrationRunner); err != nil {
-		return err
-	}
-
-	resolver, err := newResolver(ctx, db, observationContext)
-	if err != nil {
-		return err
-	}
-
-	uploadHandler, err := newUploadHandler(ctx, db)
+	resolver, err := newResolver(db, config, resolverObservationContext, services)
 	if err != nil {
 		return err
 	}
 
 	enterpriseServices.CodeIntelResolver = resolver
-	enterpriseServices.NewCodeIntelUploadHandler = uploadHandler
+	enterpriseServices.NewCodeIntelUploadHandler = newUploadHandler(services)
 	return nil
 }
 
-func newResolver(ctx context.Context, db dbutil.DB, observationContext *observation.Context) (gql.CodeIntelResolver, error) {
+func newResolver(db database.DB, config *Config, observationContext *observation.Context, services *Services) (gql.CodeIntelResolver, error) {
+	policyMatcher := policies.NewMatcher(
+		services.gitserverClient,
+		policies.NoopExtractor,
+		false,
+		false,
+	)
+
 	hunkCache, err := codeintelresolvers.NewHunkCache(config.HunkCacheSize)
 	if err != nil {
 		return nil, errors.Errorf("failed to initialize hunk cache: %s", err)
@@ -59,33 +55,26 @@ func newResolver(ctx context.Context, db dbutil.DB, observationContext *observat
 		services.dbStore,
 		services.lsifStore,
 		services.gitserverClient,
+		policyMatcher,
 		services.indexEnqueuer,
 		hunkCache,
+		symbols.DefaultClient,
+		config.MaximumIndexesPerMonikerSearch,
 		observationContext,
+		db,
 	)
-	resolver := codeintelgqlresolvers.NewResolver(db, innerResolver)
 
-	return resolver, err
+	return codeintelgqlresolvers.NewResolver(db, services.gitserverClient, innerResolver, &observation.Context{Sentry: observationContext.Sentry}), nil
 }
 
-func newUploadHandler(ctx context.Context, db dbutil.DB) (func(internal bool) http.Handler, error) {
-	internalHandler, err := NewCodeIntelUploadHandler(ctx, db, true)
-	if err != nil {
-		return nil, err
-	}
-
-	externalHandler, err := NewCodeIntelUploadHandler(ctx, db, false)
-	if err != nil {
-		return nil, err
-	}
-
+func newUploadHandler(services *Services) func(internal bool) http.Handler {
 	uploadHandler := func(internal bool) http.Handler {
 		if internal {
-			return internalHandler
+			return services.InternalUploadHandler
 		}
 
-		return externalHandler
+		return services.ExternalUploadHandler
 	}
 
-	return uploadHandler, nil
+	return uploadHandler
 }

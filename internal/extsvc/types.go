@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -82,7 +82,10 @@ const (
 	KindGitolite        = "GITOLITE"
 	KindPerforce        = "PERFORCE"
 	KindPhabricator     = "PHABRICATOR"
+	KindGoModules       = "GOMODULES"
 	KindJVMPackages     = "JVMPACKAGES"
+	KindPagure          = "PAGURE"
+	KindNpmPackages     = "NPMPACKAGES"
 	KindOther           = "OTHER"
 )
 
@@ -122,10 +125,17 @@ const (
 	// TypeJVMPackages is the (api.ExternalRepoSpec).ServiceType value for Maven packages (Java/JVM ecosystem libraries).
 	TypeJVMPackages = "jvmPackages"
 
+	// TypePagure is the (api.ExternalRepoSpec).ServiceType value for Pagure projects.
+	TypePagure = "pagure"
+
+	// TypeNpmPackages is the (api.ExternalRepoSpec).ServiceType value for Npm packages (JavaScript/TypeScript ecosystem libraries).
+	TypeNpmPackages = "npmPackages"
+
+	// TypeGoModules is the (api.ExternalRepoSpec).ServiceType value Go modules.
+	TypeGoModules = "goModules"
+
 	// TypeOther is the (api.ExternalRepoSpec).ServiceType value for other projects.
 	TypeOther = "other"
-
-	defaultRateLimit = rate.Limit(2)
 )
 
 // KindToType returns a Type constants given a Kind
@@ -150,6 +160,10 @@ func KindToType(kind string) string {
 		return TypePerforce
 	case KindJVMPackages:
 		return TypeJVMPackages
+	case KindGoModules:
+		return TypeGoModules
+	case KindPagure:
+		return TypePagure
 	case KindOther:
 		return TypeOther
 	default:
@@ -177,8 +191,14 @@ func TypeToKind(t string) string {
 		return KindPerforce
 	case TypePhabricator:
 		return KindPhabricator
+	case TypeNpmPackages:
+		return KindNpmPackages
 	case TypeJVMPackages:
 		return KindJVMPackages
+	case TypeGoModules:
+		return KindGoModules
+	case TypePagure:
+		return KindPagure
 	case TypeOther:
 		return KindOther
 	default:
@@ -191,6 +211,8 @@ var (
 	bbsLower = strings.ToLower(TypeBitbucketServer)
 	bbcLower = strings.ToLower(TypeBitbucketCloud)
 	jvmLower = strings.ToLower(TypeJVMPackages)
+	npmLower = strings.ToLower(TypeNpmPackages)
+	goLower  = strings.ToLower(TypeGoModules)
 )
 
 // ParseServiceType will return a ServiceType constant after doing a case insensitive match on s.
@@ -213,8 +235,14 @@ func ParseServiceType(s string) (string, bool) {
 		return TypePerforce, true
 	case TypePhabricator:
 		return TypePhabricator, true
+	case goLower:
+		return TypeGoModules, true
 	case jvmLower:
 		return TypeJVMPackages, true
+	case npmLower:
+		return TypeNpmPackages, true
+	case TypePagure:
+		return TypePagure, true
 	case TypeOther:
 		return TypeOther, true
 	default:
@@ -242,8 +270,12 @@ func ParseServiceKind(s string) (string, bool) {
 		return KindPerforce, true
 	case KindPhabricator:
 		return KindPhabricator, true
+	case KindGoModules:
+		return KindGoModules, true
 	case KindJVMPackages:
 		return KindJVMPackages, true
+	case KindPagure:
+		return KindPagure, true
 	case KindOther:
 		return KindOther, true
 	default:
@@ -283,8 +315,14 @@ func ParseConfig(kind, config string) (cfg interface{}, _ error) {
 		cfg = &schema.PerforceConnection{}
 	case KindPhabricator:
 		cfg = &schema.PhabricatorConnection{}
+	case KindGoModules:
+		cfg = &schema.GoModulesConnection{}
 	case KindJVMPackages:
 		cfg = &schema.JVMPackagesConnection{}
+	case KindPagure:
+		cfg = &schema.PagureConnection{}
+	case KindNpmPackages:
+		cfg = &schema.NpmPackagesConnection{}
 	case KindOther:
 		cfg = &schema.OtherExternalServiceConnection{}
 	default:
@@ -326,102 +364,94 @@ func ExtractToken(config string, kind string) (string, error) {
 		return c.Token, nil
 	case *schema.PhabricatorConnection:
 		return c.Token, nil
+	case *schema.PagureConnection:
+		return c.Token, nil
 	default:
 		return "", errors.Errorf("unable to extract token for service kind %q", kind)
 	}
 }
 
-// ExtractRateLimitConfig extracts the rate limit config from the given args. If rate limiting is not
+// ExtractRateLimit extracts the rate limit from the given args. If rate limiting is not
 // supported the error returned will be an ErrRateLimitUnsupported.
-func ExtractRateLimitConfig(config, kind, displayName string) (RateLimitConfig, error) {
+func ExtractRateLimit(config, kind string) (rate.Limit, error) {
 	parsed, err := ParseConfig(kind, config)
 	if err != nil {
-		return RateLimitConfig{}, errors.Wrap(err, "loading service configuration")
+		return rate.Inf, errors.Wrap(err, "loading service configuration")
 	}
 
 	rlc, err := GetLimitFromConfig(kind, parsed)
 	if err != nil {
-		return RateLimitConfig{}, err
+		return rate.Inf, err
 	}
-	rlc.DisplayName = displayName
 
 	return rlc, nil
 }
 
-// RateLimitConfig represents the internal rate limit configured for an external service
-type RateLimitConfig struct {
-	BaseURL     string
-	DisplayName string
-	Limit       rate.Limit
-	IsDefault   bool
-}
-
 // GetLimitFromConfig gets RateLimitConfig from an already parsed config schema.
-func GetLimitFromConfig(kind string, config interface{}) (rlc RateLimitConfig, err error) {
+func GetLimitFromConfig(kind string, config interface{}) (rate.Limit, error) {
 	// Rate limit config can be in a few states:
 	// 1. Not defined: We fall back to default specified in code.
 	// 2. Defined and enabled: We use their defined limit.
 	// 3. Defined and disabled: We use an infinite limiter.
 
-	rlc.IsDefault = true
+	var limit rate.Limit
 	switch c := config.(type) {
 	case *schema.GitLabConnection:
 		// 10/s is the default enforced by GitLab on their end
-		rlc.Limit = rate.Limit(10)
+		limit = rate.Limit(10)
 		if c != nil && c.RateLimit != nil {
-			rlc.Limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
-			rlc.IsDefault = false
+			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
-		rlc.BaseURL = c.Url
 	case *schema.GitHubConnection:
 		// 5000 per hour is the default enforced by GitHub on their end
-		rlc.Limit = rate.Limit(5000.0 / 3600.0)
+		limit = rate.Limit(5000.0 / 3600.0)
 		if c != nil && c.RateLimit != nil {
-			rlc.Limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
-			rlc.IsDefault = false
+			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
-		rlc.BaseURL = c.Url
 	case *schema.BitbucketServerConnection:
 		// 8/s is the default limit we enforce
-		rlc.Limit = rate.Limit(8)
+		limit = rate.Limit(8)
 		if c != nil && c.RateLimit != nil {
-			rlc.Limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
-			rlc.IsDefault = false
+			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
-		rlc.BaseURL = c.Url
 	case *schema.BitbucketCloudConnection:
-		rlc.Limit = defaultRateLimit
+		limit = rate.Limit(2)
 		if c != nil && c.RateLimit != nil {
-			rlc.Limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
-			rlc.IsDefault = false
+			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
-		rlc.BaseURL = c.Url
 	case *schema.PerforceConnection:
-		rlc.Limit = rate.Limit(5000.0 / 3600.0)
+		limit = rate.Limit(5000.0 / 3600.0)
 		if c != nil && c.RateLimit != nil {
-			rlc.Limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
-			rlc.IsDefault = false
+			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
-		rlc.BaseURL = c.P4Port
 	case *schema.JVMPackagesConnection:
-		rlc.Limit = defaultRateLimit
+		limit = rate.Limit(2)
 		if c != nil && c.Maven.RateLimit != nil {
-			rlc.Limit = limitOrInf(c.Maven.RateLimit.Enabled, c.Maven.RateLimit.RequestsPerHour)
-			rlc.IsDefault = false
+			limit = limitOrInf(c.Maven.RateLimit.Enabled, c.Maven.RateLimit.RequestsPerHour)
 		}
-		rlc.BaseURL = "maven"
+	case *schema.PagureConnection:
+		// 8/s is the default limit we enforce
+		limit = rate.Limit(8)
+		if c != nil && c.RateLimit != nil {
+			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
+		}
+	case *schema.NpmPackagesConnection:
+		// 3000 per hour is the same default we use in our schema
+		limit = rate.Limit(3000.0 / 3600.0)
+		if c != nil && c.RateLimit != nil {
+			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
+		}
+	case *schema.GoModulesConnection:
+		// 3000 per hour is the same default we use in our schema
+		limit = rate.Limit(3000.0 / 3600.0)
+		if c != nil && c.RateLimit != nil {
+			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
+		}
 	default:
-		return rlc, ErrRateLimitUnsupported{codehostKind: kind}
+		return limit, ErrRateLimitUnsupported{codehostKind: kind}
 	}
 
-	u, err := url.Parse(rlc.BaseURL)
-	if err != nil {
-		return rlc, errors.Wrap(err, "parsing external service URL")
-	}
-
-	rlc.BaseURL = NormalizeBaseURL(u).String()
-
-	return rlc, nil
+	return limit, nil
 }
 
 func limitOrInf(enabled bool, perHour float64) rate.Limit {
@@ -438,6 +468,13 @@ type ErrRateLimitUnsupported struct {
 func (e ErrRateLimitUnsupported) Error() string {
 	return fmt.Sprintf("internal rate limiting not supported for %s", e.codehostKind)
 }
+
+const (
+	URNGitHubAppCloud = "GitHubAppCloud"
+	URNGitHubOAuth    = "GitHubOAuth"
+	URNGitLabOAuth    = "GitLabOAuth"
+	URNCodeIntel      = "CodeIntel"
+)
 
 // URN returns a unique resource identifier of an external service by given kind and ID.
 func URN(kind string, id int64) string {
@@ -505,8 +542,14 @@ func UniqueCodeHostIdentifier(kind, config string) (string, error) {
 	case *schema.PerforceConnection:
 		// Perforce uses the P4PORT to specify the instance, so we use that
 		return c.P4Port, nil
+	case *schema.GoModulesConnection:
+		return KindGoModules, nil
 	case *schema.JVMPackagesConnection:
 		return KindJVMPackages, nil
+	case *schema.NpmPackagesConnection:
+		return KindNpmPackages, nil
+	case *schema.PagureConnection:
+		rawURL = c.Url
 	default:
 		return "", errors.Errorf("unknown external service kind: %s", kind)
 	}

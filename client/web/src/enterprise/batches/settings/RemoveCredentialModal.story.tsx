@@ -1,10 +1,11 @@
+import React from 'react'
+
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
-import React from 'react'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { WebStory } from '../../../components/WebStory'
 
 import { RemoveCredentialModal } from './RemoveCredentialModal'
 
@@ -25,7 +26,7 @@ const credential = {
 }
 
 add('No ssh', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <RemoveCredentialModal
                 {...props}
@@ -40,11 +41,11 @@ add('No ssh', () => (
                 onCancel={noop}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 
 add('Requires ssh', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <RemoveCredentialModal
                 {...props}
@@ -59,5 +60,5 @@ add('Requires ssh', () => (
                 onCancel={noop}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))

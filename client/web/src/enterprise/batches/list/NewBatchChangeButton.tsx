@@ -1,12 +1,13 @@
-import PlusIcon from 'mdi-react/PlusIcon'
 import React from 'react'
 
-import { Link, LinkProps } from '@sourcegraph/shared/src/components/Link'
+import PlusIcon from 'mdi-react/PlusIcon'
+
+import { Link, LinkProps, Button, Icon } from '@sourcegraph/wildcard'
 
 interface NewBatchChangeButtonProps extends Pick<LinkProps, 'to'> {}
 
 export const NewBatchChangeButton: React.FunctionComponent<NewBatchChangeButtonProps> = ({ to }) => (
-    <Link to={to} className="btn btn-primary">
-        <PlusIcon className="icon-inline" /> Create
-    </Link>
+    <Button to={to} variant="primary" as={Link}>
+        <Icon as={PlusIcon} /> Create batch change
+    </Button>
 )

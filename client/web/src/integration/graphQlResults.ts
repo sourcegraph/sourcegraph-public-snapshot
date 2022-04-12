@@ -1,14 +1,23 @@
+import { SearchGraphQlOperations } from '@sourcegraph/search'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { testUserID, sharedGraphQlResults } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 
 import { WebGraphQlOperations } from '../graphql-operations'
+import {
+    collaboratorsPayload,
+    recentFilesPayload,
+    recentSearchesPayload,
+    savedSearchesPayload,
+} from '../search/panels/utils'
 
 import { builtinAuthProvider, siteGQLID, siteID } from './jscontext'
 
 /**
  * Predefined results for GraphQL requests that are made on almost every page.
  */
-export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
+export const commonWebGraphQlResults: Partial<
+    WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations
+> = {
     ...sharedGraphQlResults,
     CurrentAuthState: () => ({
         currentUser: {
@@ -21,11 +30,13 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
             displayName: null,
             siteAdmin: true,
             tags: [],
+            tosAccepted: true,
             url: '/users/test',
             settingsURL: '/users/test/settings',
             organizations: { nodes: [] },
             session: { canSignOut: true },
             viewerCanAdminister: true,
+            searchable: true,
         },
     }),
     ViewerSettings: () => ({
@@ -127,6 +138,7 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
     }),
     EventLogsData: () => ({
         node: {
+            __typename: 'User',
             eventLogs: {
                 nodes: [],
                 totalCount: 0,
@@ -140,8 +152,8 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
     savedSearches: () => ({
         savedSearches: [],
     }),
-    LogEvent: () => ({
-        logEvent: {
+    LogEvents: () => ({
+        logEvents: {
             alwaysNil: null,
         },
     }),
@@ -163,6 +175,7 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
                 description: 'All repositories on Sourcegraph',
                 updatedAt: '2021-03-15T19:39:11Z',
                 repositories: [],
+                query: '',
                 viewerCanManage: false,
             },
             {
@@ -180,6 +193,7 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
                 description: 'Your repositories on Sourcegraph',
                 updatedAt: '2021-03-15T19:39:11Z',
                 repositories: [],
+                query: '',
                 viewerCanManage: false,
             },
         ],
@@ -196,6 +210,7 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
     }),
     UserRepositories: () => ({
         node: {
+            __typename: 'User',
             repositories: {
                 totalCount: 0,
                 nodes: [],
@@ -218,9 +233,35 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
     FetchFeatureFlags: () => ({
         viewerFeatureFlags: [],
     }),
+    OrgFeatureFlagValue: () => ({
+        organizationFeatureFlagValue: false,
+    }),
+    OrgFeatureFlagOverrides: () => ({
+        organizationFeatureFlagOverrides: [],
+    }),
     GetTemporarySettings: () => ({
         temporarySettings: {
-            contents: '{}',
+            __typename: 'TemporarySettings',
+            contents: JSON.stringify({
+                'user.daysActiveCount': 1,
+                'user.lastDayActive': new Date().toDateString(),
+                'search.usedNonGlobalContext': true,
+            }),
         },
+    }),
+    EditTemporarySettings: () => ({
+        editTemporarySettings: {
+            alwaysNil: null,
+        },
+    }),
+    HomePanelsQuery: () => ({
+        node: {
+            __typename: 'User',
+            recentlySearchedRepositoriesLogs: recentSearchesPayload(),
+            recentSearchesLogs: recentSearchesPayload(),
+            recentFilesLogs: recentFilesPayload(),
+            collaborators: collaboratorsPayload(),
+        },
+        savedSearches: savedSearchesPayload(),
     }),
 }

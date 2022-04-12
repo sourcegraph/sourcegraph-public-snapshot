@@ -1,15 +1,17 @@
 import React, { useMemo, useState } from 'react'
+
+import classNames from 'classnames'
 import { Omit } from 'utility-types'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, ProductStatusBadge, Button, Link, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
-import { ErrorAlert } from '../components/alerts'
-import { Badge } from '../components/Badge'
 import { NamespaceProps } from '../namespaces'
+
+import styles from './SavedSearchForm.module.scss'
 
 export interface SavedQueryFields {
     id: Scalars['ID']
@@ -77,7 +79,7 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
     const { query, description, notify, notifySlack, slackWebhookURL } = values
 
     return (
-        <div className="saved-search-form">
+        <div className="saved-search-form" data-testid="saved-search-form">
             <PageHeader
                 path={[{ text: props.title }]}
                 headingElement="h2"
@@ -87,7 +89,7 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
             <Form onSubmit={handleSubmit}>
                 <Container className="mb-3">
                     <div className="form-group">
-                        <label className="saved-search-form__label" htmlFor="saved-search-form-input-description">
+                        <label className={styles.label} htmlFor="saved-search-form-input-description">
                             Description
                         </label>
                         <input
@@ -102,7 +104,7 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
                         />
                     </div>
                     <div className="form-group">
-                        <label className="saved-search-form__label" htmlFor="saved-search-form-input-query">
+                        <label className={styles.label} htmlFor="saved-search-form-input-query">
                             Query
                         </label>
                         <input
@@ -121,7 +123,7 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
                         <div className="form-group mb-0">
                             {/* Label is for visual benefit, input has more specific label attached */}
                             {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                            <label className="saved-search-form__label" id="saved-search-form-email-notifications">
+                            <label className={styles.label} id="saved-search-form-email-notifications">
                                 Email notifications
                             </label>
                             <div aria-labelledby="saved-search-form-email-notifications">
@@ -129,7 +131,7 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
                                     <input
                                         type="checkbox"
                                         name="Notify owner"
-                                        className="saved-search-form__checkbox"
+                                        className={styles.checkbox}
                                         defaultChecked={notify}
                                         onChange={createInputChangeHandler('notify')}
                                     />{' '}
@@ -143,21 +145,21 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
                                 </label>
                             </div>
 
-                            <div className="alert alert-primary p-3 mb-0 saved-search-form__code-monitoring-alert">
+                            <Alert variant="primary" className={classNames(styles.codeMonitoringAlert, 'p-3 mb-0')}>
                                 <div className="mb-2">
                                     <strong>New:</strong> Watch your code for changes with code monitoring to get
                                     notifications.
                                 </div>
-                                <Link to={codeMonitoringUrl} className="btn btn-primary">
+                                <Button to={codeMonitoringUrl} variant="primary" as={Link}>
                                     Go to code monitoring →
-                                </Link>
-                            </div>
+                                </Button>
+                            </Alert>
                         </div>
                     )}
 
                     {notifySlack && slackWebhookURL && (
                         <div className="form-group mt-3 mb-0">
-                            <label className="saved-search-form__label" htmlFor="saved-search-form-input-slack">
+                            <label className={styles.label} htmlFor="saved-search-form-input-slack">
                                 Slack notifications
                             </label>
                             <input
@@ -175,36 +177,35 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
                         </div>
                     )}
                     {isUnsupportedNotifyQuery && (
-                        <div className="alert alert-warning mt-3 mb-0">
+                        <Alert className="mt-3 mb-0" variant="warning">
                             <strong>Warning:</strong> non-commit searches do not currently support notifications.
                             Consider adding <code>type:diff</code> or <code>type:commit</code> to your query.
-                        </div>
+                        </Alert>
                     )}
                     {notify && !window.context.emailEnabled && !isUnsupportedNotifyQuery && (
-                        <div className="alert alert-warning mt-3 mb-0">
+                        <Alert className="mt-3 mb-0" variant="warning">
                             <strong>Warning:</strong> Sending emails is not currently configured on this Sourcegraph
                             server.{' '}
                             {props.authenticatedUser?.siteAdmin
                                 ? 'Use the email.smtp site configuration setting to enable sending emails.'
                                 : 'Contact your server admin for more information.'}
-                        </div>
+                        </Alert>
                     )}
                 </Container>
-                <button
+                <Button
                     type="submit"
                     disabled={props.loading}
-                    className="btn btn-primary saved-search-form__submit-button test-saved-search-form-submit-button"
+                    className={classNames(styles.submitButton, 'test-saved-search-form-submit-button')}
+                    variant="primary"
                 >
                     {props.submitLabel}
-                </button>
+                </Button>
 
                 {props.error && !props.loading && <ErrorAlert className="mb-3" error={props.error} />}
 
                 {!props.defaultValues?.notify && (
                     <Container className="d-flex p-3 align-items-start">
-                        <Badge status="new" className="mr-3">
-                            New
-                        </Badge>
+                        <ProductStatusBadge status="new" className="mr-3" />
                         <span>
                             Watch for changes to your code and trigger email notifications, webhooks, and more with{' '}
                             <Link to="/code-monitoring">code monitoring →</Link>

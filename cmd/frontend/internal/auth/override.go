@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
@@ -27,7 +26,7 @@ const (
 //
 // It is used to enable our e2e tests to authenticate to https://sourcegraph.sgdev.org without
 // needing to give them Google Workspace access.
-func OverrideAuthMiddleware(db dbutil.DB, next http.Handler) http.Handler {
+func OverrideAuthMiddleware(db database.DB, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		secret := envOverrideAuthSecret
 		// Accept both old header (X-Oidc-Override, deprecated) and new overrideSecretHeader for now.
@@ -57,13 +56,13 @@ func OverrideAuthMiddleware(db dbutil.DB, next http.Handler) http.Handler {
 
 			// Make the user a site admin because that is more useful for e2e tests and local dev
 			// scripting (which are the use cases of this override auth provider).
-			if err := database.GlobalUsers.SetIsSiteAdmin(r.Context(), userID, true); err != nil {
+			if err := db.Users().SetIsSiteAdmin(r.Context(), userID, true); err != nil {
 				log15.Error("Error setting auth-override user as site admin.", "error", err)
 				http.Error(w, "", http.StatusInternalServerError)
 				return
 			}
 
-			user, err := database.GlobalUsers.GetByID(r.Context(), userID)
+			user, err := db.Users().GetByID(r.Context(), userID)
 			if err != nil {
 				log15.Error("Error retrieving user from database.", "error", err)
 				http.Error(w, "", http.StatusInternalServerError)

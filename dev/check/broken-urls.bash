@@ -3,13 +3,15 @@
 set -e
 cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
-# Skip on non-default branches to avoid preventing us from building historical commits (eg when
+# When running on the CI, skip on non-default branches to avoid preventing us from building historical commits (eg when
 # backporting fixes).
-if [[ ! "$BUILDKITE_BRANCH" =~ ^(master|main)$ ]]; then
-    exit 0
+if [[ -n "$BUILDKITE_BRANCH" ]]; then
+    if [[ ! "$BUILDKITE_BRANCH" =~ ^main$ ]]; then
+        exit 0
+    fi
 fi
 
-URL_MATCHES=$(git grep -h -e https://about.sourcegraph.com --and --not -e '^\s*//' --and --not -e 'CI\:URL_OK' -- '*.go' '*.js' '*.jsx' '*.ts' '*.tsx' '*.json' ':(exclude)vendor' | grep -Eo 'https://about.sourcegraph.com[^'"'"'`)>" ]+' | sed 's/\.$//' | sort -u)
+URL_MATCHES=$(git grep -h -e https://about.sourcegraph.com --and --not -e '^\s*//' --and --not -e 'CI\:URL_OK' -- '*.go' '*.js' '*.jsx' '*.ts' '*.tsx' '*.json' ':(exclude)vendor' ':(exclude)*testdata*' | grep -Eo 'https://about.sourcegraph.com[^'"'"'`)>" ]+' | sed 's/\.$//' | sort -u)
 
 for url in $URL_MATCHES; do
     if ! curl -fsSL -o /dev/null --max-time 5 --retry 3 --retry-max-time 5 --retry-delay 1 "$url"; then

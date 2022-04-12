@@ -10,11 +10,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cockroachdb/errors"
-
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestUnmarshal(t *testing.T) {
@@ -196,10 +197,13 @@ func TestCreatePullRequest(t *testing.T) {
 	defer save()
 
 	// Repository used: sourcegraph/automation-testing
-	// The requests here cannot be easily rerun with `-update` since you can
-	// only open a pull request once.
-	// In order to update specific tests, comment out the other ones and then
-	// run with -update.
+	//
+	// The requests here cannot be easily rerun with `-update` since you can only
+	// open a pull request once. To update, push two new branches to
+	// automation-testing, and put their branch names into the `success` and
+	// `draft-pr` cases below.
+	//
+	// You can update just this test with `-update CreatePullRequest`.
 	for i, tc := range []struct {
 		name  string
 		ctx   context.Context
@@ -211,7 +215,7 @@ func TestCreatePullRequest(t *testing.T) {
 			input: &CreatePullRequestInput{
 				RepositoryID: "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
 				BaseRefName:  "master",
-				HeadRefName:  "test-pr-3",
+				HeadRefName:  "test-pr-8",
 				Title:        "This is a test PR, feel free to ignore",
 				Body:         "I'm opening this PR to test something. Please ignore.",
 			},
@@ -242,7 +246,7 @@ func TestCreatePullRequest(t *testing.T) {
 			input: &CreatePullRequestInput{
 				RepositoryID: "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
 				BaseRefName:  "master",
-				HeadRefName:  "test-pr-4",
+				HeadRefName:  "test-pr-9",
 				Title:        "This is a test PR, feel free to ignore",
 				Body:         "I'm opening this PR to test something. Please ignore.",
 				Draft:        true,
@@ -282,10 +286,15 @@ func TestClosePullRequest(t *testing.T) {
 	defer save()
 
 	// Repository used: sourcegraph/automation-testing
-	// The requests here cannot be easily rerun with `-update` since you can
-	// only close a pull request once.
-	// In order to update specific tests, comment out the other ones and then
-	// run with -update.
+	//
+	// The requests here can be rerun with `-update` provided you have two PRs
+	// set up properly:
+	//
+	// 1. https://github.com/sourcegraph/automation-testing/pull/44 must be open.
+	// 2. https://github.com/sourcegraph/automation-testing/pull/29 must be
+	//    closed, but _not_ merged.
+	//
+	// You can update just this test with `-update ClosePullRequest`.
 	for i, tc := range []struct {
 		name string
 		ctx  context.Context
@@ -337,10 +346,16 @@ func TestReopenPullRequest(t *testing.T) {
 	defer save()
 
 	// Repository used: sourcegraph/automation-testing
-	// The requests here cannot be easily rerun with `-update` since you can
-	// only reopen a pull request once.
-	// In order to update specific tests, comment out the other ones and then
-	// run with -update.
+	//
+	// The requests here can be rerun with `-update` provided you have two PRs
+	// set up properly:
+	//
+	// 1. https://github.com/sourcegraph/automation-testing/pull/355 must be
+	//    open.
+	// 2. https://github.com/sourcegraph/automation-testing/pull/356 must be
+	//    closed, but _not_ merged.
+	//
+	// You can update just this test with `-update ReopenPullRequest`.
 	for i, tc := range []struct {
 		name string
 		ctx  context.Context
@@ -382,8 +397,16 @@ func TestMarkPullRequestReadyForReview(t *testing.T) {
 	defer save()
 
 	// Repository used: sourcegraph/automation-testing
-	// The requests here cannot be easily rerun with `-update` since you can
-	// only get the success response if the changeset is in draft mode.
+	//
+	// The requests here can be rerun with `-update` provided you have two PRs
+	// set up properly:
+	//
+	// 1. https://github.com/sourcegraph/automation-testing/pull/467 must be
+	//    open as a draft.
+	// 2. https://github.com/sourcegraph/automation-testing/pull/466 must be
+	//    open and ready for review.
+	//
+	// You can update just this test with `-update MarkPullRequestReadyForReview`.
 	for i, tc := range []struct {
 		name string
 		ctx  context.Context
@@ -391,13 +414,13 @@ func TestMarkPullRequestReadyForReview(t *testing.T) {
 	}{
 		{
 			name: "success",
-			// https://github.com/sourcegraph/automation-testing/pull/361
-			pr: &PullRequest{ID: "MDExOlB1bGxSZXF1ZXN0NTA0NDczNDU1"},
+			// https://github.com/sourcegraph/automation-testing/pull/467
+			pr: &PullRequest{ID: "PR_kwDODS5xec4waL43"},
 		},
 		{
 			name: "already ready for review",
-			// https://github.com/sourcegraph/automation-testing/pull/362
-			pr: &PullRequest{ID: "MDExOlB1bGxSZXF1ZXN0NTA2MDg0ODU2"},
+			// https://github.com/sourcegraph/automation-testing/pull/466
+			pr: &PullRequest{ID: "PR_kwDODS5xec4waL4w"},
 		},
 	} {
 		tc := tc
@@ -441,8 +464,8 @@ func TestMergePullRequest(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		pr := &PullRequest{
-			// https://github.com/sourcegraph/automation-testing/pull/424
-			ID: "MDExOlB1bGxSZXF1ZXN0NTc3Nzc3NzEy",
+			// https://github.com/sourcegraph/automation-testing/pull/465
+			ID: "PR_kwDODS5xec4waLb5",
 		}
 
 		err := cli.MergePullRequest(context.Background(), pr, true)
@@ -621,6 +644,81 @@ query{
 	}
 }
 
+func TestRecentCommitters(t *testing.T) {
+	cli, save := newV4Client(t, "RecentCommitters")
+	t.Cleanup(save)
+
+	recentCommitters, err := cli.RecentCommitters(context.Background(), &RecentCommittersParams{
+		Owner: "sourcegraph-testing",
+		Name:  "etcd",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testutil.AssertGolden(t,
+		"testdata/golden/RecentCommitters",
+		update("SearchRepos-Enterprise"),
+		recentCommitters,
+	)
+}
+
+func TestV4Client_SearchRepos_Enterprise(t *testing.T) {
+	cli, save := newEnterpriseV4Client(t, "SearchRepos-Enterprise")
+	t.Cleanup(save)
+
+	testCases := []struct {
+		name   string
+		ctx    context.Context
+		params SearchReposParams
+		err    string
+	}{
+		{
+			name: "narrow-query-enterprise",
+			params: SearchReposParams{
+				Query: "repo:admiring-austin-120/fluffy-enigma",
+				First: 1,
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{
+					EnableGithubInternalRepoVisibility: true,
+				},
+			},
+		})
+
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.ctx == nil {
+				tc.ctx = context.Background()
+			}
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			results, err := cli.SearchRepos(tc.ctx, tc.params)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if err != nil {
+				return
+			}
+
+			testutil.AssertGolden(t,
+				fmt.Sprintf("testdata/golden/SearchRepos-Enterprise-%s", tc.name),
+				update("SearchRepos-Enterprise"),
+				results,
+			)
+		})
+	}
+}
+
 func TestV4Client_WithAuthenticator(t *testing.T) {
 	uri, err := url.Parse("https://github.com")
 	if err != nil {
@@ -657,5 +755,23 @@ func newV4Client(t testing.TB, name string) (*V4Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV4Client(uri, vcrToken, doer), save
+	return NewV4Client("Test", uri, vcrToken, doer), save
+}
+
+func newEnterpriseV4Client(t testing.TB, name string) (*V4Client, func()) {
+	t.Helper()
+
+	cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
+	uri, err := url.Parse("https://ghe.sgdev.org/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	uri, _ = APIRoot(uri)
+
+	doer, err := cf.Doer()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return NewV4Client("Test", uri, gheToken, doer), save
 }

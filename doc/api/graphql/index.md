@@ -41,7 +41,7 @@ You should see a response like this:
 
 Sourcegraph includes a built-in API console that lets you write queries and view API documentation in your browser.
 
-You can find the API console at any time by clicking **your profile picture** and clicking **API console** in the bottom left of the page (next to **Sign out**), or by visiting it directly at `https://sourcegraph.example.com/api/console`.
+You can find the API console at any time by going to **Settings**, and then clicking **API console** from the left sidebar, or by visiting it directly at `https://sourcegraph.example.com/api/console`.
 
 If you have not yet set up a Sourcegraph server, you can also test out the API on the [Sourcegraph.com API console](https://sourcegraph.com/api/console) (which always uses the latest version of the API).
 
@@ -86,7 +86,7 @@ The entire API can be used via `curl` (or any HTTP library), just the same as an
   We want line breaks for readability, but backslashes to escape them do not work cross-platform.
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
-<pre class="pre-wrap"><code>curl<span class="virtual-br"></span> -H 'Authorization: token YOUR_TOKEN'<span class="virtual-br"></span> -d '{"query":"query($query: String!) { search(query: $query) { results { resultCount } } }","variables":{"query":"Router"}}'<span class="virtual-br"></span> https://sourcegraph.com/.api/graphql</code></pre>
+<pre class="pre-wrap"><code>curl<span class="virtual-br"></span> -H 'Authorization: token YOUR_TOKEN'<span class="virtual-br"></span> -d '{"query":"query($query: String!) { search(query: $query) { results { matchCount } } }","variables":{"query":"Router"}}'<span class="virtual-br"></span> https://sourcegraph.com/.api/graphql</code></pre>
 
 i.e. you just need to send the `Authorization` header and a JSON object like `{"query": "my query string", "variables": {"var1": "val1"}}`.
 

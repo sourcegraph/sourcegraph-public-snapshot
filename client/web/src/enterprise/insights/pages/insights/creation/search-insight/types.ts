@@ -1,10 +1,8 @@
-import { InsightVisibility } from '../../../../core/types'
-import { SearchBasedInsightSeries } from '../../../../core/types/insight/search-insight'
+import { SearchBasedInsightSeries } from '../../../../core/types'
 
 export type InsightStep = 'hours' | 'days' | 'weeks' | 'months' | 'years'
 
 export interface EditableDataSeries extends SearchBasedInsightSeries {
-    id: string
     valid: boolean
     edit: boolean
 }
@@ -26,12 +24,6 @@ export interface CreateInsightFormFields {
     repositories: string
 
     /**
-     * Visibility setting which responsible for where insight will appear.
-     * possible value 'personal' | '<org id 1> ... | ... <org id N>'
-     */
-    visibility: InsightVisibility
-
-    /**
      * Setting for set chart step - how often do we collect data.
      */
     step: InsightStep
@@ -42,8 +34,13 @@ export interface CreateInsightFormFields {
     stepValue: string
 
     /**
-     * This settings stands for turn on/off all repos mode that means this insight
+     * This setting stands for turning on/off all repos mode that means this insight
      * will be run over all repos on BE (BE insight)
      */
     allRepos: boolean
+
+    /**
+     * The total number of dashboards on which this insight is referenced.
+     */
+    dashboardReferenceCount: number
 }

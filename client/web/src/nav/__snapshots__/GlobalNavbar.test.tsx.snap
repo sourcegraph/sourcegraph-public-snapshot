@@ -14,7 +14,7 @@ exports[`GlobalNavbar default 1`] = `
         href="/search"
       >
         <brandlogo
-          class="global-navbar__logo"
+          class="logo"
           variant="symbol"
         />
       </a>
@@ -31,7 +31,7 @@ exports[`GlobalNavbar default 1`] = `
         type="button"
       >
         <svg
-          class="mdi-icon icon-inline"
+          class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -42,7 +42,7 @@ exports[`GlobalNavbar default 1`] = `
           />
         </svg>
         <svg
-          class="mdi-icon icon-inline"
+          class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -57,7 +57,69 @@ exports[`GlobalNavbar default 1`] = `
         class="list menuClose"
       >
         <li
-          class="item"
+          class="item d-none d-md-flex position-relative"
+        >
+          <div
+            class="link d-flex align-items-center p-0"
+          >
+            <div
+              class="h-100 d-flex linkContent navDropdownWrapper"
+            >
+              <a
+                class="anchorLink navDropdownLink itemFocusable"
+                href="/search"
+              >
+                <span
+                  class="itemFocusableContent"
+                >
+                  <svg
+                    class="mdi-icon iconInline icon"
+                    fill="currentColor"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    width="24"
+                  >
+                    <path
+                      d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"
+                    />
+                  </svg>
+                  <span
+                    class="text iconIncluded"
+                  >
+                    Code Search
+                  </span>
+                </span>
+              </a>
+              <button
+                aria-controls=""
+                aria-haspopup="true"
+                aria-label="Show search menu"
+                class="btn navDropdownIconButton itemFocusable"
+                data-reach-menu-button=""
+                id="menu-button-2"
+                type="button"
+              >
+                <span
+                  class="itemFocusableContent"
+                >
+                  <svg
+                    class="mdi-icon iconInline icon"
+                    fill="currentColor"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    width="24"
+                  >
+                    <path
+                      d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+                    />
+                  </svg>
+                </span>
+              </button>
+            </div>
+          </div>
+        </li>
+        <li
+          class="item d-flex d-md-none"
         >
           <a
             class="link"
@@ -67,7 +129,7 @@ exports[`GlobalNavbar default 1`] = `
               class="linkContent"
             >
               <svg
-                class="mdi-icon icon-inline icon"
+                class="mdi-icon iconInline icon"
                 fill="currentColor"
                 height="24"
                 viewBox="0 0 24 24"
@@ -86,6 +148,24 @@ exports[`GlobalNavbar default 1`] = `
           </a>
         </li>
         <li
+          class="item d-flex d-md-none"
+        >
+          <a
+            class="link"
+            href="/contexts"
+          >
+            <span
+              class="linkContent pl-2"
+            >
+              <span
+                class="text iconIncluded"
+              >
+                Contexts
+              </span>
+            </span>
+          </a>
+        </li>
+        <li
           class="item"
         >
           <a
@@ -96,7 +176,7 @@ exports[`GlobalNavbar default 1`] = `
               class="linkContent"
             >
               <svg
-                class="mdi-icon icon-inline icon"
+                class="mdi-icon iconInline icon"
                 fill="currentColor"
                 height="24"
                 viewBox="0 0 24 24"
@@ -123,8 +203,8 @@ exports[`GlobalNavbar default 1`] = `
         class="action"
       >
         <a
-          class="global-navbar__link"
-          to="https://about.sourcegraph.com"
+          class="anchorLink link"
+          href="https://about.sourcegraph.com"
         >
           About 
           <span
@@ -139,16 +219,17 @@ exports[`GlobalNavbar default 1`] = `
       >
         <div>
           <a
-            class="btn btn-sm btn-outline-secondary mr-1"
-            to="/sign-in"
+            class="anchorLink btn btnOutlineSecondary btnSm mr-1"
+            href="/sign-in"
           >
             Log in
           </a>
           <a
-            class="btn btn-sm global-navbar__sign-up"
-            to="/sign-up"
+            class="anchorLink btn btnSm signUp"
+            href="https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=nav&utm_campaign=inproduct-cta"
+            tabindex="0"
           >
-            Sign up
+            Get started
           </a>
         </div>
       </li>
@@ -161,15 +242,11 @@ exports[`GlobalNavbar default 1`] = `
       class="pb-2 border-bottom"
     >
       <searchnavbaritem
-        availableversioncontexts=""
         defaultsearchcontextspec=""
         extensionscontroller="[object Object]"
-        fetchautodefinedsearchcontexts="[object Object]"
         history="[object Object]"
         keyboardshortcuts=""
         location="[object Object]"
-        parsedsearchquery="r:golang/oauth2 test f:travis"
-        patterntype="literal"
         platformcontext="[object Object]"
         routes=""
         selectedsearchcontextspec=""
@@ -196,7 +273,7 @@ exports[`GlobalNavbar low-profile 1`] = `
         href="/search"
       >
         <brandlogo
-          class="global-navbar__logo"
+          class="logo"
           variant="symbol"
         />
       </a>
@@ -213,7 +290,7 @@ exports[`GlobalNavbar low-profile 1`] = `
         type="button"
       >
         <svg
-          class="mdi-icon icon-inline"
+          class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -224,7 +301,7 @@ exports[`GlobalNavbar low-profile 1`] = `
           />
         </svg>
         <svg
-          class="mdi-icon icon-inline"
+          class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -239,7 +316,69 @@ exports[`GlobalNavbar low-profile 1`] = `
         class="list menuClose"
       >
         <li
-          class="item"
+          class="item d-none d-md-flex position-relative"
+        >
+          <div
+            class="link d-flex align-items-center p-0"
+          >
+            <div
+              class="h-100 d-flex linkContent navDropdownWrapper"
+            >
+              <a
+                class="anchorLink navDropdownLink itemFocusable"
+                href="/search"
+              >
+                <span
+                  class="itemFocusableContent"
+                >
+                  <svg
+                    class="mdi-icon iconInline icon"
+                    fill="currentColor"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    width="24"
+                  >
+                    <path
+                      d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"
+                    />
+                  </svg>
+                  <span
+                    class="text iconIncluded"
+                  >
+                    Code Search
+                  </span>
+                </span>
+              </a>
+              <button
+                aria-controls=""
+                aria-haspopup="true"
+                aria-label="Show search menu"
+                class="btn navDropdownIconButton itemFocusable"
+                data-reach-menu-button=""
+                id="menu-button-4"
+                type="button"
+              >
+                <span
+                  class="itemFocusableContent"
+                >
+                  <svg
+                    class="mdi-icon iconInline icon"
+                    fill="currentColor"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    width="24"
+                  >
+                    <path
+                      d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+                    />
+                  </svg>
+                </span>
+              </button>
+            </div>
+          </div>
+        </li>
+        <li
+          class="item d-flex d-md-none"
         >
           <a
             class="link"
@@ -249,7 +388,7 @@ exports[`GlobalNavbar low-profile 1`] = `
               class="linkContent"
             >
               <svg
-                class="mdi-icon icon-inline icon"
+                class="mdi-icon iconInline icon"
                 fill="currentColor"
                 height="24"
                 viewBox="0 0 24 24"
@@ -268,6 +407,24 @@ exports[`GlobalNavbar low-profile 1`] = `
           </a>
         </li>
         <li
+          class="item d-flex d-md-none"
+        >
+          <a
+            class="link"
+            href="/contexts"
+          >
+            <span
+              class="linkContent pl-2"
+            >
+              <span
+                class="text iconIncluded"
+              >
+                Contexts
+              </span>
+            </span>
+          </a>
+        </li>
+        <li
           class="item"
         >
           <a
@@ -278,7 +435,7 @@ exports[`GlobalNavbar low-profile 1`] = `
               class="linkContent"
             >
               <svg
-                class="mdi-icon icon-inline icon"
+                class="mdi-icon iconInline icon"
                 fill="currentColor"
                 height="24"
                 viewBox="0 0 24 24"
@@ -305,8 +462,8 @@ exports[`GlobalNavbar low-profile 1`] = `
         class="action"
       >
         <a
-          class="global-navbar__link"
-          to="https://about.sourcegraph.com"
+          class="anchorLink link"
+          href="https://about.sourcegraph.com"
         >
           About 
           <span
@@ -321,16 +478,17 @@ exports[`GlobalNavbar low-profile 1`] = `
       >
         <div>
           <a
-            class="btn btn-sm btn-outline-secondary mr-1"
-            to="/sign-in"
+            class="anchorLink btn btnOutlineSecondary btnSm mr-1"
+            href="/sign-in"
           >
             Log in
           </a>
           <a
-            class="btn btn-sm global-navbar__sign-up"
-            to="/sign-up"
+            class="anchorLink btn btnSm signUp"
+            href="https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=nav&utm_campaign=inproduct-cta"
+            tabindex="0"
           >
-            Sign up
+            Get started
           </a>
         </div>
       </li>
@@ -343,15 +501,11 @@ exports[`GlobalNavbar low-profile 1`] = `
       class="pb-2 border-bottom"
     >
       <searchnavbaritem
-        availableversioncontexts=""
         defaultsearchcontextspec=""
         extensionscontroller="[object Object]"
-        fetchautodefinedsearchcontexts="[object Object]"
         history="[object Object]"
         keyboardshortcuts=""
         location="[object Object]"
-        parsedsearchquery="r:golang/oauth2 test f:travis"
-        patterntype="literal"
         platformcontext="[object Object]"
         routes=""
         selectedsearchcontextspec=""

@@ -2,11 +2,13 @@ package resolvers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -31,7 +33,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t, "")
+	db := database.NewDB(dbtest.NewDB(t))
 
 	userID := ct.CreateTestUser(t, db, false).ID
 
@@ -104,7 +106,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 		OwnedByBatchChange: batchChange.ID,
 	})
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -257,7 +259,7 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t, "")
+	db := database.NewDB(dbtest.NewDB(t))
 
 	userID := ct.CreateTestUser(t, db, false).ID
 
@@ -268,7 +270,7 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 	repo := newGitHubTestRepo("github.com/sourcegraph/test", newGitHubExternalService(t, esStore))
 	require.Nil(t, repoStore.Create(ctx, repo))
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	require.Nil(t, err)
 
 	// To make it easier to assert against the operations in a preview node,
@@ -372,7 +374,14 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 
 		// We need to modify the changeset spec to not have a published field.
 		newFx.specPublished.Spec.Published = batches.PublishedValue{Val: nil}
-		require.Nil(t, bstore.UpdateChangesetSpec(ctx, newFx.specPublished))
+		spec, err := json.Marshal(newFx.specPublished.Spec)
+		if err != nil {
+			t.Fatal(err)
+		}
+		q := sqlf.Sprintf(`UPDATE changeset_specs SET spec = %s WHERE id = %s`, spec, newFx.specPublished.ID)
+		if _, err := db.ExecContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+			t.Fatal(err)
+		}
 
 		// Same as above, but this time we'll use a page size of 3 just to mix
 		// it up.
@@ -398,7 +407,6 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 		assertOperations(t, previews, newFx.specToBeDraft, publishDraftOps)
 		assertOperations(t, previews, newFx.specToBeUnpublished, noOps)
 		assertOperations(t, previews, newFx.specToBeOmitted, noOps)
-
 	})
 
 	t.Run("conflicting publication state", func(t *testing.T) {

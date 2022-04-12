@@ -1,9 +1,11 @@
 import React from 'react'
+
 import { RouteComponentProps } from 'react-router'
+
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { Scalars } from '../../graphql-operations'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
-import { lazyComponent } from '../../util/lazyComponent'
 
 import { showPasswordsPage, showAccountSecurityPage, userExternalServicesEnabled } from './cloud-ga'
 import type { UserAddCodeHostsPageContainerProps } from './UserAddCodeHostsPageContainer'
@@ -11,9 +13,9 @@ import { UserSettingsAreaRoute, UserSettingsAreaRouteContext } from './UserSetti
 
 const SettingsArea = lazyComponent(() => import('../../settings/SettingsArea'), 'SettingsArea')
 
-const UserSettingsRepositoriesPage = lazyComponent(
-    () => import('./repositories/UserSettingsRepositoriesPage'),
-    'UserSettingsRepositoriesPage'
+const SettingsRepositoriesPage = lazyComponent(
+    () => import('./repositories/SettingsRepositoriesPage'),
+    'SettingsRepositoriesPage'
 )
 const UserSettingsManageRepositoriesPage = lazyComponent(
     () => import('./repositories/UserSettingsManageRepositoriesPage'),
@@ -35,6 +37,11 @@ const UserSettingsSecurityPage = lazyComponent(
     'UserSettingsSecurityPage'
 )
 
+// const UserSettingsPrivacyPage = lazyComponent(
+//     () => import('./privacy/UserSettingsPrivacyPage'),
+//     'UserSettingsPrivacyPage'
+// )
+
 export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     {
         path: '',
@@ -42,7 +49,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         render: props => {
             if (props.isSourcegraphDotCom && props.authenticatedUser && props.user.id !== props.authenticatedUser.id) {
                 return (
-                    <SiteAdminAlert className="sidebar__alert alert-danger">
+                    <SiteAdminAlert className="sidebar__alert" variant="danger">
                         Only the user may access their individual settings.
                     </SiteAdminAlert>
                 )
@@ -95,11 +102,16 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         condition: showAccountSecurityPage,
     },
     {
+        path: '/privacy',
+        exact: true,
+        render: lazyComponent(() => import('./privacy/UserSettingsPrivacyPage'), 'UserSettingsPrivacyPage'),
+    },
+    {
         path: '/repositories',
         render: props => (
-            <UserSettingsRepositoriesPage
+            <SettingsRepositoriesPage
                 {...props}
-                userID={props.user.id}
+                owner={{ id: props.user.id, type: 'user', tags: props.authenticatedUser.tags }}
                 routingPrefix={props.user.url + '/settings'}
             />
         ),
@@ -107,15 +119,17 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         condition: userExternalServicesEnabled,
     },
     {
+        path: '/organizations',
+        render: lazyComponent(() => import('./openBetaOrgs/OrganizationsList'), 'OrganizationsListPage'),
+        exact: true,
+        condition: context => !!context.featureFlags.get('open-beta-enabled'),
+    },
+    {
         path: '/repositories/manage',
         render: props => (
             <UserSettingsManageRepositoriesPage
                 {...props}
-                authenticatedUser={{
-                    id: props.authenticatedUser.id,
-                    siteAdmin: props.authenticatedUser.siteAdmin,
-                    tags: props.authenticatedUser.tags,
-                }}
+                owner={{ id: props.authenticatedUser.id, tags: props.authenticatedUser.tags, type: 'user' }}
                 routingPrefix={props.user.url + '/settings'}
             />
         ),
@@ -126,10 +140,11 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         path: '/code-hosts',
         render: props => (
             <UserAddCodeHostsPageContainer
-                user={{ id: props.authenticatedUser.id, tags: props.authenticatedUser.tags }}
+                owner={{ id: props.authenticatedUser.id, tags: props.authenticatedUser.tags, type: 'user' }}
                 context={window.context}
                 routingPrefix={props.user.url + '/settings'}
                 onUserExternalServicesOrRepositoriesUpdate={props.onUserExternalServicesOrRepositoriesUpdate}
+                telemetryService={props.telemetryService}
             />
         ),
         exact: true,
@@ -152,5 +167,10 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         exact: true,
         render: lazyComponent(() => import('./research/ProductResearch'), 'ProductResearchPage'),
         condition: () => window.context.productResearchPageEnabled,
+    },
+    {
+        path: '/about-organizations',
+        exact: true,
+        render: lazyComponent(() => import('./aboutOrganization/AboutOrganizationPage'), 'AboutOrganizationPage'),
     },
 ]

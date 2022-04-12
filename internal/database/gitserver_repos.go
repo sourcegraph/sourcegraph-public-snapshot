@@ -6,68 +6,163 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// GitserverReposStore is responsible for data stored in the gitserver_repos table.
-type GitserverRepoStore struct {
+type GitserverRepoStore interface {
+	basestore.ShareableStore
+	With(other basestore.ShareableStore) GitserverRepoStore
+	Upsert(ctx context.Context, repos ...*types.GitserverRepo) error
+	IterateRepoGitserverStatus(ctx context.Context, options IterateRepoGitserverStatusOptions, repoFn func(repo types.RepoGitserverStatus) error) error
+	GetByID(ctx context.Context, id api.RepoID) (*types.GitserverRepo, error)
+	GetByName(ctx context.Context, name api.RepoName) (*types.GitserverRepo, error)
+	GetByNames(ctx context.Context, names ...api.RepoName) ([]*types.GitserverRepo, error)
+	SetCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus, shardID string) error
+	SetLastError(ctx context.Context, name api.RepoName, error, shardID string) error
+	SetLastFetched(ctx context.Context, name api.RepoName, data GitserverFetchData) error
+	SetRepoSize(ctx context.Context, name api.RepoName, size int64, shardID string) error
+	IterateWithNonemptyLastError(ctx context.Context, repoFn func(repo types.RepoGitserverStatus) error) error
+	TotalErroredCloudDefaultRepos(ctx context.Context) (int, error)
+	ListReposWithoutSize(ctx context.Context) (map[api.RepoName]api.RepoID, error)
+	UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoID]int64) error
+}
+
+var _ GitserverRepoStore = (*gitserverRepoStore)(nil)
+
+// gitserverRepoStore is responsible for data stored in the gitserver_repos table.
+type gitserverRepoStore struct {
 	*basestore.Store
 }
 
-// GitserverRepos instantiates and returns a new GitserverRepoStore.
-func GitserverRepos(db dbutil.DB) *GitserverRepoStore {
-	return &GitserverRepoStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+// GitserverRepos instantiates and returns a new gitserverRepoStore.
+func GitserverRepos(db dbutil.DB) GitserverRepoStore {
+	return &gitserverRepoStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
-// NewGitserverReposWith instantiates and returns a new GitserverRepoStore using
+// NewGitserverReposWith instantiates and returns a new gitserverRepoStore using
 // the other store handle.
-func NewGitserverReposWith(other basestore.ShareableStore) *GitserverRepoStore {
-	return &GitserverRepoStore{Store: basestore.NewWithHandle(other.Handle())}
+func NewGitserverReposWith(other basestore.ShareableStore) GitserverRepoStore {
+	return &gitserverRepoStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
-func (s *GitserverRepoStore) With(other basestore.ShareableStore) *GitserverRepoStore {
-	return &GitserverRepoStore{Store: s.Store.With(other)}
+func (s *gitserverRepoStore) With(other basestore.ShareableStore) GitserverRepoStore {
+	return &gitserverRepoStore{Store: s.Store.With(other)}
 }
 
-func (s *GitserverRepoStore) Transact(ctx context.Context) (*GitserverRepoStore, error) {
+func (s *gitserverRepoStore) Transact(ctx context.Context) (GitserverRepoStore, error) {
 	txBase, err := s.Store.Transact(ctx)
-	return &GitserverRepoStore{Store: txBase}, err
+	return &gitserverRepoStore{Store: txBase}, err
 }
 
 // Upsert adds a row representing the GitServer status of a repo
-func (s *GitserverRepoStore) Upsert(ctx context.Context, repos ...*types.GitserverRepo) error {
+func (s *gitserverRepoStore) Upsert(ctx context.Context, repos ...*types.GitserverRepo) error {
 	values := make([]*sqlf.Query, 0, len(repos))
 	for _, gr := range repos {
-		q := sqlf.Sprintf("(%s, %s, %s, %s, %s, %s, now())",
+		q := sqlf.Sprintf("(%s, %s, %s, %s, %s, %s, %s, now())",
 			gr.RepoID,
 			gr.CloneStatus,
 			dbutil.NewNullString(gr.ShardID),
-			dbutil.NewNullInt64(gr.LastExternalService),
 			dbutil.NewNullString(sanitizeToUTF8(gr.LastError)),
 			gr.LastFetched,
+			gr.LastChanged,
+			gr.RepoSizeBytes,
 		)
 
 		values = append(values, q)
 	}
 
 	err := s.Exec(ctx, sqlf.Sprintf(`
--- source: internal/database/gitserver_repos.go:GitserverRepoStore.Upsert
+-- source: internal/database/gitserver_repos.go:gitserverRepoStore.Upsert
 INSERT INTO
-    gitserver_repos(repo_id, clone_status, shard_id, last_external_service, last_error, last_fetched, updated_at)
+    gitserver_repos(repo_id, clone_status, shard_id, last_error, last_fetched, last_changed, repo_size_bytes, updated_at)
     VALUES %s
     ON CONFLICT (repo_id) DO UPDATE
-    SET (clone_status, shard_id, last_external_service, last_error, last_fetched, updated_at) =
-        (EXCLUDED.clone_status, EXCLUDED.shard_id, EXCLUDED.last_external_service, EXCLUDED.last_error, EXCLUDED.last_fetched, now())
+    SET (clone_status, shard_id, last_error, last_fetched, last_changed, repo_size_bytes, updated_at) =
+        (EXCLUDED.clone_status, EXCLUDED.shard_id, EXCLUDED.last_error, EXCLUDED.last_fetched, EXCLUDED.last_changed, EXCLUDED.repo_size_bytes, now())
 `, sqlf.Join(values, ",")))
 
 	return errors.Wrap(err, "creating GitserverRepo")
 }
+
+// TotalErroredCloudDefaultRepos returns the total number of repos which have a non-empty last_error field. Note that this is only
+// counting repos with an associated cloud_default external service.
+func (s *gitserverRepoStore) TotalErroredCloudDefaultRepos(ctx context.Context) (int, error) {
+	rows, err := s.Query(ctx, sqlf.Sprintf(totalErroredQuery))
+	if err != nil {
+		return 0, errors.Wrap(err, "fetching count of total errored repos")
+	}
+	var total int
+	for rows.Next() {
+		if err := rows.Scan(
+			&total,
+		); err != nil {
+			return 0, errors.Wrap(err, "scanning row")
+		}
+	}
+	return total, nil
+}
+
+const totalErroredQuery = `
+-- source: internal/database/gitserver_repos.go:gitserverRepoStore.TotalErroredCloudDefaultRepos
+SELECT
+	count(*)
+FROM repo
+	INNER JOIN gitserver_repos gr ON repo.id = gr.repo_id
+	INNER JOIN external_service_repos esr ON repo.id = esr.repo_id
+	INNER JOIN external_services es on esr.external_service_id = es.id
+WHERE gr.last_error != '' AND repo.deleted_at is NULL AND es.cloud_default IS True
+`
+
+// IterateWithNonemptyLastError iterates over repos w/ non-empty last_error field and calls the repoFn for these repos.
+// note that this currently filters out any repos which do not have an associated external service where cloud_default = true.
+func (s *gitserverRepoStore) IterateWithNonemptyLastError(ctx context.Context, repoFn func(repo types.RepoGitserverStatus) error) error {
+	rows, err := s.Query(ctx, sqlf.Sprintf(nonemptyLastErrorQuery))
+	if err != nil {
+		return errors.Wrap(err, "fetching repos with nonempty last_error")
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var gr types.GitserverRepo
+		var rgs types.RepoGitserverStatus
+		if err := rows.Scan(
+			&rgs.Name,
+			&dbutil.NullString{S: &gr.LastError},
+		); err != nil {
+			return errors.Wrap(err, "scanning row")
+		}
+		err := repoFn(rgs)
+		if err != nil {
+			// Abort
+			return errors.Wrap(err, "calling repoFn")
+		}
+	}
+
+	if rows.Err() != nil {
+		return errors.Wrap(rows.Err(), "iterating rows")
+	}
+
+	return nil
+}
+
+const nonemptyLastErrorQuery = `
+-- source: internal/database/gitserver_repos.go:gitserverRepoStore.IterateWithNonemptyLastError
+SELECT
+	repo.name,
+	gr.last_error
+FROM repo
+	INNER JOIN gitserver_repos gr ON repo.id = gr.repo_id
+	INNER JOIN external_service_repos esr ON repo.id = esr.repo_id
+	INNER JOIN external_services es on esr.external_service_id = es.id
+WHERE gr.last_error != '' AND repo.deleted_at is NULL AND es.cloud_default IS True
+`
 
 type IterateRepoGitserverStatusOptions struct {
 	// If set, will only iterate over repos that have not been assigned to a shard
@@ -78,27 +173,16 @@ type IterateRepoGitserverStatusOptions struct {
 // our repo and gitserver_repos table. It is possible for us not to have a
 // corresponding row in gitserver_repos yet. repoFn will be called once for each
 // row. If it returns an error we'll abort iteration.
-func (s *GitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, options IterateRepoGitserverStatusOptions, repoFn func(repo types.RepoGitserverStatus) error) error {
+func (s *gitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, options IterateRepoGitserverStatusOptions, repoFn func(repo types.RepoGitserverStatus) error) error {
 	if repoFn == nil {
 		return errors.New("nil repoFn")
 	}
 
-	q := `
--- source: internal/database/gitserver_repos.go:GitserverRepoStore.IterateRepoGitserverStatus
-SELECT repo.id,
-       repo.name,
-       gr.clone_status,
-       gr.shard_id,
-       gr.last_external_service,
-       gr.last_error,
-       gr.last_fetched,
-       gr.updated_at
-FROM repo
-    LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id
-    WHERE repo.deleted_at IS NULL
-`
+	var q string
 	if options.OnlyWithoutShard {
-		q = q + "AND (gr.shard_id = '' OR gr IS NULL)"
+		q = iterateRepoGitserverStatusWithoutShardQuery
+	} else {
+		q = iterateRepoGitserverQuery
 	}
 
 	rows, err := s.Query(ctx, sqlf.Sprintf(q))
@@ -117,9 +201,10 @@ FROM repo
 			&rgs.Name,
 			&dbutil.NullString{S: &cloneStatus},
 			&dbutil.NullString{S: &gr.ShardID},
-			&dbutil.NullInt64{N: &gr.LastExternalService},
 			&dbutil.NullString{S: &gr.LastError},
 			&dbutil.NullTime{Time: &gr.LastFetched},
+			&dbutil.NullTime{Time: &gr.LastChanged},
+			&dbutil.NullInt64{N: &gr.RepoSizeBytes},
 			&dbutil.NullTime{Time: &gr.UpdatedAt},
 		); err != nil {
 			return errors.Wrap(err, "scanning row")
@@ -147,34 +232,157 @@ FROM repo
 	return nil
 }
 
-func (s *GitserverRepoStore) GetByID(ctx context.Context, id api.RepoID) (*types.GitserverRepo, error) {
+const iterateRepoGitserverQuery = `
+-- source: internal/database/gitserver_repos.go:gitserverRepoStore.IterateRepoGitserverStatus
+SELECT
+	repo.id,
+	repo.name,
+	gr.clone_status,
+	gr.shard_id,
+	gr.last_error,
+	gr.last_fetched,
+	gr.last_changed,
+	gr.repo_size_bytes,
+	gr.updated_at
+FROM repo
+LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id
+WHERE repo.deleted_at IS NULL
+`
+
+const iterateRepoGitserverStatusWithoutShardQuery = `
+-- source: internal/database/gitserver_repos.go:gitserverRepoStore.IterateRepoGitserverStatus
+(
+	SELECT
+		repo.id,
+		repo.name,
+		NULL AS clone_status,
+		NULL AS shard_id,
+		NULL AS last_error,
+		NULL AS last_fetched,
+		NULL AS last_changed,
+		NULL AS repo_size_bytes,
+		NULL AS updated_at
+	FROM repo
+	WHERE repo.deleted_at IS NULL AND NOT EXISTS (SELECT 1 FROM gitserver_repos gr WHERE gr.repo_id = repo.id)
+) UNION ALL (
+	SELECT
+		repo.id,
+		repo.name,
+		gr.clone_status,
+		gr.shard_id,
+		gr.last_error,
+		gr.last_fetched,
+		gr.last_changed,
+		gr.repo_size_bytes,
+		gr.updated_at
+	FROM repo
+	JOIN gitserver_repos gr ON gr.repo_id = repo.id
+	WHERE repo.deleted_at IS NULL AND gr.shard_id = ''
+)
+`
+
+func (s *gitserverRepoStore) GetByID(ctx context.Context, id api.RepoID) (*types.GitserverRepo, error) {
 	q := `
--- source: internal/database/gitserver_repos.go:GitserverRepoStore.GetByID
+-- source: internal/database/gitserver_repos.go:gitserverRepoStore.GetByID
 SELECT
        repo_id,
        clone_status,
        shard_id,
-       last_external_service,
        last_error,
        last_fetched,
+       last_changed,
+	   repo_size_bytes,
        updated_at
 FROM gitserver_repos
 WHERE repo_id = %s
 `
 
-	row := s.QueryRow(ctx, sqlf.Sprintf(q, id))
-	if row.Err() != nil {
-		return nil, errors.Wrap(row.Err(), "getting GitserverRepo")
+	return scanSingleGitserverRepo(s.QueryRow(ctx, sqlf.Sprintf(q, id)))
+}
+
+func (s *gitserverRepoStore) GetByName(ctx context.Context, name api.RepoName) (*types.GitserverRepo, error) {
+	q := `
+-- source: internal/database/gitserver_repos.go:gitserverRepoStore.GetByName
+SELECT
+       g.repo_id,
+       g.clone_status,
+       g.shard_id,
+       g.last_error,
+       g.last_fetched,
+       g.last_changed,
+	   g.repo_size_bytes,
+       g.updated_at
+FROM gitserver_repos g
+JOIN repo r on r.id = g.repo_id
+WHERE r.name = %s
+`
+
+	return scanSingleGitserverRepo(s.QueryRow(ctx, sqlf.Sprintf(q, name)))
+}
+
+func (s *gitserverRepoStore) GetByNames(ctx context.Context, names ...api.RepoName) ([]*types.GitserverRepo, error) {
+	if len(names) > batch.MaxNumPostgresParameters {
+		return nil, errors.Newf("getting GitserverRepos by names: too many names provided: %v", len(names))
+	}
+
+	q := `
+-- source: internal/database/gitserver_repos.go:gitserverRepoStore.GetByName
+SELECT
+       g.repo_id,
+       g.clone_status,
+       g.shard_id,
+       g.last_error,
+       g.last_fetched,
+       g.last_changed,
+	   g.repo_size_bytes,
+       g.updated_at
+FROM gitserver_repos g
+JOIN repo r on r.id = g.repo_id
+WHERE r.name IN (%s)
+`
+	nameQueries := []*sqlf.Query{}
+	for _, v := range names {
+		nameQueries = append(nameQueries, sqlf.Sprintf("%s", v))
+	}
+
+	rows, err := s.Query(ctx, sqlf.Sprintf(q, sqlf.Join(nameQueries, ",")))
+	if err != nil {
+		return nil, err
+	}
+
+	repos := make([]*types.GitserverRepo, 0, len(names))
+
+	for rows.Next() {
+		repo, err := scanSingleGitserverRepo(rows)
+		if err != nil {
+			return nil, err
+		}
+		repos = append(repos, repo)
+	}
+
+	return repos, nil
+}
+
+// ScannerWithError captures Scan and Err methods of sql.Rows and sql.Row.
+type ScannerWithError interface {
+	Scan(dst ...interface{}) error
+	Err() error
+}
+
+func scanSingleGitserverRepo(scanner ScannerWithError) (*types.GitserverRepo, error) {
+	if scanner.Err() != nil {
+		return nil, errors.Wrap(scanner.Err(), "getting GitserverRepo")
 	}
 	var gr types.GitserverRepo
 	var cloneStatus string
-	err := row.Scan(
+	err := scanner.Scan(
 		&gr.RepoID,
 		&cloneStatus,
 		&gr.ShardID,
-		&dbutil.NullInt64{N: &gr.LastExternalService},
 		&dbutil.NullString{S: &gr.LastError},
 		&dbutil.NullTime{Time: &gr.LastFetched},
+		&dbutil.NullTime{Time: &gr.LastChanged},
+		&dbutil.NullInt64{N: &gr.RepoSizeBytes},
 		&gr.UpdatedAt,
 	)
 	if err != nil {
@@ -188,9 +396,9 @@ WHERE repo_id = %s
 // SetCloneStatus will attempt to update ONLY the clone status of a
 // GitServerRepo. If a matching row does not yet exist a new one will be created.
 // If the status value hasn't changed, the row will not be updated.
-func (s *GitserverRepoStore) SetCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus, shardID string) error {
+func (s *gitserverRepoStore) SetCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus, shardID string) error {
 	err := s.Exec(ctx, sqlf.Sprintf(`
--- source: internal/database/gitserver_repos.go:GitserverRepoStore.SetCloneStatus
+-- source: internal/database/gitserver_repos.go:gitserverRepoStore.SetCloneStatus
 INSERT INTO gitserver_repos(repo_id, clone_status, shard_id, updated_at)
 SELECT id, %s, %s, now()
 FROM repo
@@ -207,11 +415,11 @@ SET (clone_status, shard_id, updated_at) =
 // SetLastError will attempt to update ONLY the last error of a GitServerRepo. If
 // a matching row does not yet exist a new one will be created.
 // If the error value hasn't changed, the row will not be updated.
-func (s *GitserverRepoStore) SetLastError(ctx context.Context, name api.RepoName, error, shardID string) error {
+func (s *gitserverRepoStore) SetLastError(ctx context.Context, name api.RepoName, error, shardID string) error {
 	ns := dbutil.NewNullString(sanitizeToUTF8(error))
 
 	err := s.Exec(ctx, sqlf.Sprintf(`
--- source: internal/database/gitserver_repos.go:GitserverRepoStore.SetLastError
+-- source: internal/database/gitserver_repos.go:gitserverRepoStore.SetLastError
 INSERT INTO gitserver_repos(repo_id, last_error, shard_id, updated_at)
 SELECT id, %s, %s, now()
 FROM repo
@@ -225,20 +433,113 @@ WHERE gitserver_repos.last_error IS DISTINCT FROM EXCLUDED.last_error
 	return errors.Wrap(err, "setting last error")
 }
 
-// SetLastFetched will attempt to update ONLY the last fetched time of a GitServerRepo.
+// SetRepoSize will attempt to update ONLY the repo size of a GitServerRepo. If
 // a matching row does not yet exist a new one will be created.
-func (s *GitserverRepoStore) SetLastFetched(ctx context.Context, name api.RepoName, lastFetched time.Time, shardID string) error {
+// If the size value hasn't changed, the row will not be updated.
+func (s *gitserverRepoStore) SetRepoSize(ctx context.Context, name api.RepoName, size int64, shardID string) error {
 	err := s.Exec(ctx, sqlf.Sprintf(`
--- source: internal/database/gitserver_repos.go:GitserverRepoStore.SetLastFetched
-INSERT INTO gitserver_repos(repo_id, last_fetched, shard_id, updated_at)
-SELECT id, %s, %s, now()
+	-- source: internal/database/gitserver_repos.go:gitserverRepoStore.SetRepoSize
+	INSERT INTO gitserver_repos(repo_id, repo_size_bytes, shard_id, updated_at)
+	SELECT id, %s, %s, now()
+	FROM repo
+	WHERE name = %s
+	ON CONFLICT (repo_id) DO UPDATE
+	       SET (repo_size_bytes, updated_at) =
+	                       (EXCLUDED.repo_size_bytes, now())
+	WHERE gitserver_repos.repo_size_bytes IS DISTINCT FROM EXCLUDED.repo_size_bytes
+	`, size, shardID, name))
+
+	return errors.Wrap(err, "setting repo size")
+}
+
+// GitserverFetchData is the metadata associated with a fetch operation on
+// gitserver.
+type GitserverFetchData struct {
+	// LastFetched was the time the fetch operation completed (gitserver_repos.last_fetched).
+	LastFetched time.Time
+	// LastChanged was the last time a fetch changed the contents of the repo (gitserver_repos.last_changed).
+	LastChanged time.Time
+	// ShardID is the name of the gitserver the fetch ran on (gitserver.shard_id).
+	ShardID string
+}
+
+// SetLastFetched will attempt to update ONLY the last fetched data of a GitServerRepo.
+// a matching row does not yet exist a new one will be created.
+func (s *gitserverRepoStore) SetLastFetched(ctx context.Context, name api.RepoName, data GitserverFetchData) error {
+	err := s.Exec(ctx, sqlf.Sprintf(`
+-- source: internal/database/gitserver_repos.go:gitserverRepoStore.SetLastFetched
+INSERT INTO gitserver_repos(repo_id, last_fetched, last_changed, shard_id, updated_at)
+SELECT id, %s, %s, %s, now()
 FROM repo WHERE name = %s
 ON CONFLICT (repo_id) DO UPDATE
-SET (last_fetched, shard_id, updated_at) =
-    (EXCLUDED.last_fetched, EXCLUDED.shard_id, now())
-`, lastFetched, shardID, name))
+SET (last_fetched, last_changed, shard_id, updated_at) =
+    (EXCLUDED.last_fetched, EXCLUDED.last_changed, EXCLUDED.shard_id, now())
+`, data.LastFetched, data.LastChanged, data.ShardID, name))
 
 	return errors.Wrap(err, "setting last fetched")
+}
+
+// ListReposWithoutSize returns a map of repo name to repo ID for repos which do not have a repo_size_bytes
+func (s *gitserverRepoStore) ListReposWithoutSize(ctx context.Context) (map[api.RepoName]api.RepoID, error) {
+	rows, err := s.Query(ctx, sqlf.Sprintf(listReposWithoutSizeQuery))
+	if err != nil {
+		return nil, errors.Wrap(err, "fetching repos without size")
+	}
+	defer rows.Close()
+	repos := make(map[api.RepoName]api.RepoID, 0)
+	for rows.Next() {
+		var name string
+		var ID int32
+		if err := rows.Scan(&name, &ID); err != nil {
+			return nil, errors.Wrap(err, "scanning row")
+		}
+		repos[api.RepoName(name)] = api.RepoID(ID)
+	}
+	return repos, nil
+}
+
+const listReposWithoutSizeQuery = `
+-- source: internal/database/gitserver_repos.go:gitserverRepoStore.ListReposWithoutSize
+SELECT
+	repo.name,
+    repo.id
+FROM repo
+JOIN gitserver_repos gr ON gr.repo_id = repo.id
+WHERE gr.repo_size_bytes IS NULL
+`
+
+// UpdateRepoSizes sets repo sizes according to input map. Key is repoID, value is repo_size_bytes.
+func (s *gitserverRepoStore) UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoID]int64) error {
+
+	inserter := func(inserter *batch.Inserter) error {
+		for repo, size := range repos {
+			if err := inserter.Insert(ctx, repo, shardID, size, "now()"); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	tx, err := s.Store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if err := batch.WithInserterWithReturn(
+		ctx,
+		tx.Handle().DB(),
+		"gitserver_repos",
+		batch.MaxNumPostgresParameters,
+		[]string{"repo_id", "shard_id", "repo_size_bytes", "updated_at"},
+		"ON CONFLICT (repo_id) DO UPDATE SET (repo_size_bytes, shard_id, updated_at) = (EXCLUDED.repo_size_bytes, gitserver_repos.shard_id, now())",
+		nil,
+		nil,
+		inserter,
+	); err != nil {
+		return err
+	}
+	return nil
 }
 
 // sanitizeToUTF8 will remove any null character terminated string. The null character can be

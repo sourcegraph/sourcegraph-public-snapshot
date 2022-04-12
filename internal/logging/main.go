@@ -33,11 +33,20 @@ func condensedFormat(r *log15.Record) []byte {
 	colorAttr := logColors[r.Lvl]
 	text := logLabels[r.Lvl]
 	var msg bytes.Buffer
-	if colorAttr != 0 {
-		fmt.Fprint(&msg, color.New(colorAttr).Sprint(text)+" "+r.Msg)
-	} else {
-		fmt.Fprint(&msg, r.Msg)
+	if env.LogSourceLink {
+		// Link to open the file:line in VS Code.
+		url := "vscode://file/" + fmt.Sprintf("%#v", r.Call)
+
+		// Constructs an escape sequence that iTerm recognizes as a link.
+		// See https://iterm2.com/documentation-escape-codes.html
+		link := fmt.Sprintf("\x1B]8;;%s\x07%s\x1B]8;;\x07", url, "src")
+
+		fmt.Fprint(&msg, color.New(color.Faint).Sprint(link)+" ")
 	}
+	if colorAttr != 0 {
+		fmt.Fprint(&msg, color.New(colorAttr).Sprint(text)+" ")
+	}
+	fmt.Fprint(&msg, r.Msg)
 	if len(r.Ctx) > 0 {
 		for i := 0; i < len(r.Ctx); i += 2 {
 			// not as smart about printing things as log15's internal magic

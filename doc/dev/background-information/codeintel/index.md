@@ -9,7 +9,7 @@ Services:
 Code intelligence-specific code:
 
 - [lib/codeintel](https://github.com/sourcegraph/sourcegraph/tree/main/lib/codeintel)
-- [internal/cmd/precise-code-intel-tester](https://github.com/sourcegraph/sourcegraph/tree/main/internal/cmd/precise-code-intel-tester)
+- [dev/codeintel-qa](https://github.com/sourcegraph/sourcegraph/tree/main/dev/codeintel-qa)
 - [enterprise/internal/codeintel](https://github.com/sourcegraph/sourcegraph/tree/main/enterprise/internal/codeintel)
 - [enterprise/cmd/worker/internal/codeintel](https://github.com/sourcegraph/sourcegraph/tree/main/enterprise/cmd/worker/internal/codeintel)
 - [enterprise/cmd/frontend/internal/codeintel](https://github.com/sourcegraph/sourcegraph/tree/main/enterprise/cmd/frontend/internal/codeintel)
@@ -22,3 +22,4 @@ Docs:
 - [How precise code intelligence queries are resolved](queries.md)
 - [How code intelligence extensions resolve hovers](extensions.md)
 - [How Sourcegraph auto-indexes source code](auto-indexing.md)
+- [API docs developer guide](apidocs/index.md)

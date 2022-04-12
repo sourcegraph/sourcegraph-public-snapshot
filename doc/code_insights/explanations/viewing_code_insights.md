@@ -13,28 +13,18 @@ The main way to view code insights is on a dashboard page. Dashboards have a uni
 There are three possible visibility levels:
 
 - Private: visible only to you
-- Shared with an organization: visible to everyone in the organization
+- Shared with [an organization](../../../admin/organizations.md): visible to everyone in the organization
 - Global: visible to everyone on the Sourcegraph instance
-
-> Global visibility is currently only available if your instance is not [using a separate global settings file](../../../admin/config/advanced_config_file.md#global-settings). Global visibility regardless of settings file setup will arrive by October 2021.
-
-> The **quick workaround** is to [make an organization and easily add all users to it](../../../admin/organizations.md).
 
 ### Built-in dashboards
 
-The following dashboards exist on every instance:
-
-- "All insights": this dashboard contains all the insights defined on the instance that are visible to this specific user
-- "[Username] insights": this dashboard contains all the insights that are created by a user and set to "private" visibility
-- "Global insights": this dashboard contains all the insights that are set to global visibility
-
-If the instance has organizations, there will also be an "[Organization name] insights" dashboard for each organization, visible to members of the organization, that contains all insights set to that organization's visibility level.
+A default "dashboard" of all insights visible to a user appears as the homepage for the Insights navigation bar item. 
 
 To add insights to your own custom dashboard, see [Creating a custom dashboard of code insights](../how-tos/creating_a_custom_dashboard_of_code_insights.md).
 
-### Dashboard visibility respects insights' visibility
+### Dashboard visibility
 
-A Dashboard's visibility level respects the visibility levels you [set when you created the insight](../quickstart.md#7-set-the-visibility-of-your-insight). You can't add an insight with "Private" visibility to an organization dashboard, but you can add an insight with organization visibility to your private dashboard (assuming you're in the organization).
+A Dashboard's visibility level owns the visibility of code insights on the dashboard. If you add an Insight that was on a private dashboard to an organization or global dashboard, now people with access to that dashboard can view the insight. When you first create an insight, it defaults to appearing on the dashboard from which you clicked the "create" button. If you create an insight directly on the create page or from the default dashboard, it will appear on the default dashboard. 
 
 ### Insights still enforce individual permissions regardless of dashboard visibility
 
@@ -42,7 +32,7 @@ The dashboard visibility levels have no impact on the data in the insight itself
 
 This means that two organization users with different repo read permission sets might see different values for the same insights on the same dashboards, if it contains results from a repository only one user can view.
 
-(This also means that if you change a private-visible dashboard with both organization-visible and private-visible insights so that the dashboard is now visible to an organization, then the organization can only see the organization-visible insights on that dashboard. This is non-optimal and a bit awkward to convey, and we are actively improving this UX. If you have strong thoughts, please do [leave them on the issue](https://github.com/sourcegraph/sourcegraph/issues/23003).)
+If you change a private-visible dashboard so that the dashboard is now visible to an organization (or globally), then the organization (or entire instance) can now see all insights on the dashboard, though the result counts will still be filtered to count from only repos that the individual organization member can view. 
 
 ### Insights can be on multiple dashboards
 
@@ -50,12 +40,12 @@ You can attach insights to multiple dashboards.
 
 ## Repository and directory pages
 
-On repository pages, any code insight that runs over that repository will display. On directory pages, code insights defined for that repository will display **and** run only over files that are children of the directory.
+On repository pages, any code insight that runs over that repository can display. On directory pages, code insights defined for that repository can display **and** run only over files that are children of the directory.
 
-This is enabled by default and can be disabled with a flag in your global, organization, or user settings:
+This is disabled by default as it is the not the primary way to view insights and there are (yet) no ways to select only showing a subset of possible insights, but it can be enabled with a flag in your global, organization, or user settings:
 
 ```json
-"insights.displayLocation.directory": false
+"insights.displayLocation.directory": true
 ```
 
 ## Search home page

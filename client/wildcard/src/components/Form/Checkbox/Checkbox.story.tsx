@@ -1,5 +1,6 @@
-import { Meta } from '@storybook/react'
 import React, { useCallback } from 'react'
+
+import { Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
@@ -22,8 +23,7 @@ const config: Meta = {
         design: {
             type: 'figma',
             name: 'Figma',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A1353',
+            url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=860%3A79469',
         },
     },
 }
@@ -51,7 +51,7 @@ const BaseCheckbox = ({ name, ...props }: { name: string } & Pick<CheckboxProps,
     )
 }
 
-export const CheckboxExamples: React.FunctionComponent = () => (
+export const CheckboxExamples: Story = () => (
     <>
         <h1>Checkbox</h1>
         <Grid columnCount={4}>
@@ -74,3 +74,10 @@ export const CheckboxExamples: React.FunctionComponent = () => (
         </Grid>
     </>
 )
+
+CheckboxExamples.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+        disableSnapshot: false,
+    },
+}

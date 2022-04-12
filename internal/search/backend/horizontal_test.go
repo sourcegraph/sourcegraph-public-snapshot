@@ -10,11 +10,11 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/zoekt"
-	"github.com/google/zoekt/query"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestHorizontalSearcher(t *testing.T) {
@@ -24,23 +24,20 @@ func TestHorizontalSearcher(t *testing.T) {
 	searcher := &HorizontalSearcher{
 		Map: &endpoints,
 		Dial: func(endpoint string) zoekt.Streamer {
+			repoID, _ := strconv.Atoi(endpoint)
 			var rle zoekt.RepoListEntry
 			rle.Repository.Name = endpoint
-			repoID, _ := strconv.Atoi(endpoint)
-			client := &mockSearcher{
-				searchResult: &zoekt.SearchResult{
+			rle.Repository.ID = uint32(repoID)
+			client := &FakeSearcher{
+				Result: &zoekt.SearchResult{
 					Files: []zoekt.FileMatch{{
 						Repository: endpoint,
 					}},
 				},
-				listResult: &zoekt.RepoList{
-					Repos:   []*zoekt.RepoListEntry{&rle},
-					Crashes: 0,
-					Minimal: map[uint32]*zoekt.MinimalRepoListEntry{uint32(repoID): {}},
-				},
+				Repos: []*zoekt.RepoListEntry{&rle},
 			}
 			// Return metered searcher to test that codepath
-			return NewMeteredSearcher(endpoint, &StreamSearchAdapter{client})
+			return NewMeteredSearcher(endpoint, client)
 		},
 	}
 	defer searcher.Close()
@@ -107,13 +104,17 @@ func TestHorizontalSearcher(t *testing.T) {
 			t.Errorf("list mismatch (-want +got):\n%s", cmp.Diff(want, got))
 		}
 
+		rle, err = searcher.List(context.Background(), nil, &zoekt.ListOptions{Minimal: true})
+		if err != nil {
+			t.Fatal(err)
+		}
 		got = []string{}
 		for r := range rle.Minimal {
 			got = append(got, strconv.Itoa(int(r)))
 		}
 		sort.Strings(got)
 		if !cmp.Equal(want, got, cmpopts.EquateEmpty()) {
-			t.Errorf("list mismatch (-want +got):\n%s", cmp.Diff(want, got))
+			t.Fatalf("list mismatch (-want +got):\n%s", cmp.Diff(want, got))
 		}
 	}
 
@@ -127,12 +128,11 @@ func TestDoStreamSearch(t *testing.T) {
 	searcher := &HorizontalSearcher{
 		Map: &endpoints,
 		Dial: func(endpoint string) zoekt.Streamer {
-			client := &mockSearcher{
-				searchResult: nil,
-				searchError:  errors.Errorf("test error"),
+			client := &FakeSearcher{
+				SearchError: errors.Errorf("test error"),
 			}
 			// Return metered searcher to test that codepath
-			return NewMeteredSearcher(endpoint, &StreamSearchAdapter{client})
+			return NewMeteredSearcher(endpoint, client)
 		},
 	}
 	defer searcher.Close()
@@ -159,7 +159,7 @@ func TestSyncSearchers(t *testing.T) {
 	endpoints.Store(prefixMap{"a"})
 
 	type mock struct {
-		mockSearcher
+		FakeSearcher
 		dialNum int
 	}
 
@@ -194,45 +194,67 @@ func TestSyncSearchers(t *testing.T) {
 
 func TestIgnoreDownEndpoints(t *testing.T) {
 	var endpoints atomicMap
-	endpoints.Store(prefixMap{"down", "up"})
+	endpoints.Store(prefixMap{"dns-not-found", "dial-timeout", "dial-refused", "up"})
 
 	searcher := &HorizontalSearcher{
 		Map: &endpoints,
 		Dial: func(endpoint string) zoekt.Streamer {
-			var client zoekt.Searcher
+			var client *FakeSearcher
 			switch endpoint {
-			case "down":
+			case "dns-not-found":
 				err := &net.DNSError{
 					Err:        "no such host",
 					Name:       "down",
 					IsNotFound: true,
 				}
-				client = &mockSearcher{
-					searchError: err,
-					listError:   err,
+				client = &FakeSearcher{
+					SearchError: err,
+					ListError:   err,
+				}
+			case "dial-timeout":
+				// dial tcp 10.164.42.39:6070: i/o timeout
+				err := &net.OpError{
+					Op:   "dial",
+					Net:  "tcp",
+					Addr: fakeAddr("10.164.42.39:6070"),
+					Err:  &timeoutError{},
+				}
+				client = &FakeSearcher{
+					SearchError: err,
+					ListError:   err,
+				}
+			case "dial-refused":
+				// dial tcp 10.164.51.47:6070: connect: connection refused
+				err := &net.OpError{
+					Op:   "dial",
+					Net:  "tcp",
+					Addr: fakeAddr("10.164.51.47:6070"),
+					Err:  errors.New("connect: connection refused"),
+				}
+				client = &FakeSearcher{
+					SearchError: err,
+					ListError:   err,
 				}
 			case "up":
 				var rle zoekt.RepoListEntry
 				rle.Repository.Name = "repo"
 
-				client = &mockSearcher{
-					searchResult: &zoekt.SearchResult{
+				client = &FakeSearcher{
+					Result: &zoekt.SearchResult{
 						Files: []zoekt.FileMatch{{
 							Repository: "repo",
 						}},
 					},
-					listResult: &zoekt.RepoList{
-						Repos: []*zoekt.RepoListEntry{&rle},
-					},
+					Repos: []*zoekt.RepoListEntry{&rle},
 				}
 			case "error":
-				client = &mockSearcher{
-					searchError: errors.New("boom"),
-					listError:   errors.New("boom"),
+				client = &FakeSearcher{
+					SearchError: errors.New("boom"),
+					ListError:   errors.New("boom"),
 				}
 			}
 
-			return NewMeteredSearcher(endpoint, &StreamSearchAdapter{client})
+			return NewMeteredSearcher(endpoint, client)
 		},
 	}
 	defer searcher.Close()
@@ -254,7 +276,7 @@ func TestIgnoreDownEndpoints(t *testing.T) {
 	}
 
 	// now test we do return errors if they occur
-	endpoints.Store(prefixMap{"down", "up", "error"})
+	endpoints.Store(prefixMap{"dns-not-found", "up", "error"})
 	_, err = searcher.Search(context.Background(), nil, nil)
 	if err == nil {
 		t.Fatal("Search: expected error")
@@ -265,6 +287,17 @@ func TestIgnoreDownEndpoints(t *testing.T) {
 		t.Fatal("List: expected error")
 	}
 }
+
+// implements net.Addr
+type fakeAddr string
+
+func (a fakeAddr) Network() string { return "tcp" }
+func (a fakeAddr) String() string  { return string(a) }
+
+type timeoutError struct{}
+
+func (e *timeoutError) Error() string { return "i/o timeout" }
+func (e *timeoutError) Timeout() bool { return true }
 
 func TestDedupper(t *testing.T) {
 	parse := func(s string) []zoekt.FileMatch {
@@ -419,38 +452,6 @@ func backgroundSearch(searcher zoekt.Searcher) func(t *testing.T) {
 			t.Error("concurrent search failed: ", err)
 		}
 	}
-}
-
-type mockSearcher struct {
-	searchResult *zoekt.SearchResult
-	searchError  error
-	listResult   *zoekt.RepoList
-	listError    error
-}
-
-func (s *mockSearcher) Search(context.Context, query.Q, *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
-	res := s.searchResult
-	if s.searchResult != nil {
-		// Copy since we mutate the File slice
-		sr := *res
-		sr.Files = append([]zoekt.FileMatch{}, sr.Files...)
-		res = &sr
-	}
-	return res, s.searchError
-}
-
-func (s *mockSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, streamer zoekt.Sender) error {
-	return (&StreamSearchAdapter{s}).StreamSearch(ctx, q, opts, streamer)
-}
-
-func (s *mockSearcher) List(context.Context, query.Q, *zoekt.ListOptions) (*zoekt.RepoList, error) {
-	return s.listResult, s.listError
-}
-
-func (*mockSearcher) Close() {}
-
-func (*mockSearcher) String() string {
-	return "mockSearcher"
 }
 
 type atomicMap struct {

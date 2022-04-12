@@ -1,7 +1,7 @@
 # sourcegraph/grafana - learn more about this image in https://docs.sourcegraph.com/dev/background-information/observability/grafana
 
 # Build monitoring definitions
-FROM sourcegraph/alpine-3.12:107969_2021-09-10_80f5edc@sha256:ce1ba2f16ec56e5e8007da53e0e6449bc0fa1fe1f972bffbc33dea1ae410b86d AS monitoring_builder
+FROM sourcegraph/alpine-3.12:137550_2022-03-17_32d45d6a2a7f@sha256:d67684c174c577e7d61b4d7ef9d173fb73973f5b941bd65401dad90fc5e74353 AS monitoring_builder
 RUN mkdir -p '/generated/grafana'
 COPY ./.bin/monitoring-generator /bin/monitoring-generator
 RUN GRAFANA_DIR='/generated/grafana' PROMETHEUS_DIR='' DOCS_DIR='' NO_PRUNE=true /bin/monitoring-generator
@@ -11,8 +11,8 @@ RUN ls '/generated/grafana'
 # when upgrading the Grafana version, please refer to https://docs.sourcegraph.com/dev/background-information/observability/grafana#upgrading-grafana
 # DO NOT UPGRADE to AGPL Grafana without consulting Stephen+legal, Grafana >= 8.0 is AGPLv3 Licensed
 # See https://docs.google.com/document/d/1nSmz1ChL_rBvX8FAKTB-CNzgcff083sUlIpoXEz6FHE/edit#heading=h.69clsrno4211
-FROM grafana/grafana:7.5.7@sha256:c1134ea4c5a6bac38ddc246bd07eb1ff35680ea6cdda63a7bc30773e2f2a6085 as production
-LABEL com.sourcegraph.grafana.version=7.5.7
+FROM grafana/grafana:7.5.15@sha256:8e6fe7907f8e5c5547bee5e3e8be8165144d86ad98581d6d092044aa5f805c39 as production
+LABEL com.sourcegraph.grafana.version=7.5.15
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -37,7 +37,13 @@ ADD entry.sh /
 
 USER root
 
-RUN apk add --upgrade --no-cache apk-tools=2.10.8-r0 krb5-libs=1.18.4-r0 libssl1.1=1.1.1l-r0 openssl=1.1.1l-r0
+# Create optional folders to avoid error logs about missing dirs
+RUN mkdir /sg_grafana_additional_dashboards
+RUN mkdir /sg_config_grafana/provisioning/plugins && chown grafana:root /sg_config_grafana/provisioning/plugins
+
+# @FIXME: Update redis image
+# Pin busybox=1.32.1-r7 https://github.com/sourcegraph/sourcegraph/issues/27965
+RUN apk add --upgrade --no-cache apk-tools>=2.12 krb5-libs>=1.18.4 libssl1.1>=1.1.1l openssl>=1.1.1l busybox>=1.32.1
 
 EXPOSE 3370
 USER grafana

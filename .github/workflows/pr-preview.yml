@@ -1,0 +1,25 @@
+name: PR Preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, closed]
+
+jobs:
+  preview-deployment:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+
+      - name: Delete PR preview app
+        if: github.event.action == 'closed'
+        run: ./dev/ci/render-pr-preview.sh -d
+        env:
+          RENDER_COM_API_KEY: ${{ secrets.RENDER_COM_API_KEY }}
+          RENDER_COM_OWNER_ID: ${{ secrets.RENDER_COM_OWNER_ID }}
+
+          BUILDKITE_PULL_REQUEST_REPO: "https://github.com/${{ github.repository }}"
+          BUILDKITE_BRANCH: ${{ github.head_ref }}

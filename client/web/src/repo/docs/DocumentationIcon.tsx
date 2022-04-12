@@ -1,4 +1,7 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
+import { upperFirst } from 'lodash'
 import { MdiReactIconComponentType } from 'mdi-react'
 import AccountMultipleIcon from 'mdi-react/AccountMultipleIcon'
 import ClockFastIcon from 'mdi-react/ClockFastIcon'
@@ -31,9 +34,10 @@ import TextBoxIcon from 'mdi-react/TextBoxIcon'
 import TimetableIcon from 'mdi-react/TimetableIcon'
 import WebIcon from 'mdi-react/WebIcon'
 import WrenchIcon from 'mdi-react/WrenchIcon'
-import * as React from 'react'
 
 import { Tag } from './graphql'
+
+import styles from './DocumentationIcon.module.scss'
 
 /**
  * Returns the icon component for a given documentation tag
@@ -118,6 +122,10 @@ interface Props {
     className?: string
 }
 
+function getDocumentationIconClassName(tag: Tag): string | undefined {
+    return styles[`documentationIconTag${upperFirst(tag)}` as keyof typeof styles]
+}
+
 /**
  * Renders an Icon for a given documentation tag
  */
@@ -125,7 +133,7 @@ export const DocumentationIcon: React.FunctionComponent<Props> = ({ tag, classNa
     const Icon = getDocumentationIconComponent(tag)
     return (
         <Icon
-            className={classNames('documentation-icon', `documentation-icon--tag-${tag}`, className)}
+            className={classNames(styles.documentationIcon, getDocumentationIconClassName(tag), className)}
             data-tooltip={tag}
         />
     )

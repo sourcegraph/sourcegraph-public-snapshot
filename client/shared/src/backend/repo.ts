@@ -1,10 +1,11 @@
 import { from, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { dataOrThrowErrors, gql } from '../graphql/graphql'
-import * as GQL from '../graphql/schema'
+import { memoizeObservable } from '@sourcegraph/common'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+
 import { PlatformContext } from '../platform/context'
-import { memoizeObservable } from '../util/memoizeObservable'
+import * as GQL from '../schema'
 import { RepoSpec } from '../util/url'
 
 import { CloneInProgressError, RepoNotFoundError } from './errors'

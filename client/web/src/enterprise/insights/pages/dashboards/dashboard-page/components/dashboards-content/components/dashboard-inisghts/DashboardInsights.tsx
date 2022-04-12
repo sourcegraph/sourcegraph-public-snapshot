@@ -1,53 +1,40 @@
-import React from 'react'
+import React, { useContext, useMemo } from 'react'
 
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
-import { Settings } from '../../../../../../../../../schema/settings.schema'
 import { SmartInsightsViewGrid } from '../../../../../../../components/insights-view-grid/SmartInsightsViewGrid'
+import { CodeInsightsBackendContext } from '../../../../../../../core/backend/code-insights-backend-context'
 import { InsightDashboard } from '../../../../../../../core/types'
-import { useDistinctValue } from '../../../../../../../hooks/use-distinct-value'
-import { useInsights } from '../../../../../../../hooks/use-insight/use-insight'
 import { EmptyInsightDashboard } from '../empty-insight-dashboard/EmptyInsightDashboard'
 
 import { DashboardInsightsContext } from './DashboardInsightsContext'
 
-const DEFAULT_INSIGHT_IDS: string[] = []
-
-interface DashboardInsightsProps
-    extends TelemetryProps,
-        SettingsCascadeProps<Settings>,
-        PlatformContextProps<'updateSettings'> {
+interface DashboardInsightsProps extends TelemetryProps {
     dashboard: InsightDashboard
     onAddInsightRequest: () => void
 }
 
 export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> = props => {
-    const { telemetryService, dashboard, settingsCascade, platformContext, onAddInsightRequest } = props
+    const { telemetryService, dashboard, onAddInsightRequest } = props
 
-    const dashboardInsightIds = dashboard.insightIds ?? DEFAULT_INSIGHT_IDS
-    const insightIds = useDistinctValue(dashboardInsightIds)
-    const insights = useInsights({ insightIds, settingsCascade })
+    const { getInsights } = useContext(CodeInsightsBackendContext)
+
+    const insights = useObservable(
+        useMemo(() => getInsights({ dashboardId: dashboard.id }), [getInsights, dashboard.id])
+    )
+
+    if (insights === undefined) {
+        return <LoadingSpinner inline={false} />
+    }
 
     return (
         <DashboardInsightsContext.Provider value={{ dashboard }}>
-            <div>
-                {insights.length > 0 ? (
-                    <SmartInsightsViewGrid
-                        insights={insights}
-                        telemetryService={telemetryService}
-                        settingsCascade={settingsCascade}
-                        platformContext={platformContext}
-                    />
-                ) : (
-                    <EmptyInsightDashboard
-                        dashboard={dashboard}
-                        settingsCascade={settingsCascade}
-                        onAddInsight={onAddInsightRequest}
-                    />
-                )}
-            </div>
+            {insights.length > 0 ? (
+                <SmartInsightsViewGrid insights={insights} telemetryService={telemetryService} />
+            ) : (
+                <EmptyInsightDashboard dashboard={dashboard} onAddInsight={onAddInsightRequest} />
+            )}
         </DashboardInsightsContext.Provider>
     )
 }

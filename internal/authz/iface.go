@@ -4,10 +4,51 @@ package authz
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
+
+// SubRepoPermissions denotes access control rules within a repository's
+// contents.
+//
+// Rules are expressed as Glob syntaxes:
+//
+//    pattern:
+//        { term }
+//
+//    term:
+//        `*`         matches any sequence of non-separator characters
+//        `**`        matches any sequence of characters
+//        `?`         matches any single non-separator character
+//        `[` [ `!` ] { character-range } `]`
+//                    character class (must be non-empty)
+//        `{` pattern-list `}`
+//                    pattern alternatives
+//        c           matches character c (c != `*`, `**`, `?`, `\`, `[`, `{`, `}`)
+//        `\` c       matches character c
+//
+//    character-range:
+//        c           matches character c (c != `\\`, `-`, `]`)
+//        `\` c       matches character c
+//        lo `-` hi   matches character c for lo <= c <= hi
+//
+//    pattern-list:
+//        pattern { `,` pattern }
+//                    comma-separated (without spaces) patterns
+//
+// This Glob syntax is currently from github.com/gobwas/glob:
+// https://sourcegraph.com/github.com/gobwas/glob@e7a84e9525fe90abcda167b604e483cc959ad4aa/-/blob/glob.go?L39:6
+//
+// We use a third party library for double-wildcard support, which the standard
+// library does not provide.
+//
+// Paths are relative to the root of the repo.
+type SubRepoPermissions struct {
+	PathIncludes []string
+	PathExcludes []string
+}
 
 // ExternalUserPermissions is a collection of accessible repository/project IDs
 // (on code host). It contains exact IDs, as well as prefixes to both include
@@ -19,6 +60,11 @@ type ExternalUserPermissions struct {
 	Exacts          []extsvc.RepoID
 	IncludeContains []extsvc.RepoID
 	ExcludeContains []extsvc.RepoID
+
+	// SubRepoPermissions denotes sub-repository content access control rules where
+	// relevant. If no corresponding entry for an Exacts repo exists in SubRepoPermissions,
+	// it can be safely assumed that access to the entire repo is available.
+	SubRepoPermissions map[extsvc.RepoID]*SubRepoPermissions
 }
 
 // FetchPermsOptions declares options when performing permissions sync.
@@ -76,6 +122,10 @@ type Provider interface {
 	// to decide whether to discard.
 	FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts FetchPermsOptions) ([]extsvc.AccountID, error)
 
+	// FetchUserPermsByToken is similar to FetchUserPerms but only requires a token
+	// in order to communicate with the code host.
+	FetchUserPermsByToken(ctx context.Context, token string, opts FetchPermsOptions) (*ExternalUserPermissions, error)
+
 	// ServiceType returns the service type (e.g., "gitlab") of this authz provider.
 	ServiceType() string
 
@@ -87,7 +137,36 @@ type Provider interface {
 	// is defined.
 	URN() string
 
-	// Validate checks the configuration and credentials of the authz provider and returns any
-	// problems.
-	Validate() (problems []string)
+	// ValidateConnection checks that the configuration and credentials of the authz provider
+	// can establish a valid connection with the provider, and returns warnings based on any
+	// issues it finds.
+	ValidateConnection(ctx context.Context) (warnings []string)
+}
+
+// ErrUnauthenticated indicates an unauthenticated request.
+type ErrUnauthenticated struct{}
+
+func (e ErrUnauthenticated) Error() string {
+	return "request is unauthenticated"
+}
+
+func (e ErrUnauthenticated) Unauthenticated() bool { return true }
+
+// ErrUnimplemented indicates sync is unimplemented and its data should not be used.
+//
+// When returning this error, provide a pointer.
+type ErrUnimplemented struct {
+	// Feature indicates the unimplemented functionality.
+	Feature string
+}
+
+func (e ErrUnimplemented) Error() string {
+	return fmt.Sprintf("%s is unimplemented", e.Feature)
+}
+
+func (e ErrUnimplemented) Unimplemented() bool { return true }
+
+func (e ErrUnimplemented) Is(err error) bool {
+	_, ok := err.(*ErrUnimplemented)
+	return ok
 }

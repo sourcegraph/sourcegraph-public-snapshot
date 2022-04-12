@@ -1,5 +1,6 @@
-import { Meta } from '@storybook/react'
 import React, { useCallback } from 'react'
+
+import { Meta } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
@@ -17,11 +18,14 @@ const Story: Meta = {
 
     parameters: {
         component: Input,
+        chromatic: {
+            enableDarkMode: true,
+            disableSnapshot: false,
+        },
         design: {
             type: 'figma',
             name: 'Figma',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A1943',
+            url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=875%3A797',
         },
     },
 }
@@ -49,7 +53,7 @@ export const Simple = () => {
             />
             <Input
                 value={selected}
-                title="Input loading"
+                label="Input loading"
                 onChange={handleChange}
                 message="random message"
                 status="loading"
@@ -59,7 +63,7 @@ export const Simple = () => {
                 value={selected}
                 label="Input error"
                 onChange={handleChange}
-                message="a message with error"
+                error="a message with error"
                 status="error"
                 placeholder="error status input"
             />

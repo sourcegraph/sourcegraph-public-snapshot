@@ -8,14 +8,17 @@ import (
 	"io/fs"
 	"strconv"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Feature flag for enhanced (but much slower) language detection that uses file contents, not just
@@ -26,7 +29,7 @@ var inventoryCache = rcache.New(fmt.Sprintf("inv:v2:enhanced_%v", useEnhancedLan
 
 // InventoryContext returns the inventory context for computing the inventory for the repository at
 // the given commit.
-func InventoryContext(repo api.RepoName, commitID api.CommitID, forceEnhancedLanguageDetection bool) (inventory.Context, error) {
+func InventoryContext(repo api.RepoName, db database.DB, commitID api.CommitID, forceEnhancedLanguageDetection bool) (inventory.Context, error) {
 	if !git.IsAbsoluteRevision(string(commitID)) {
 		return inventory.Context{}, errors.Errorf("refusing to compute inventory for non-absolute commit ID %q", commitID)
 	}
@@ -42,10 +45,10 @@ func InventoryContext(repo api.RepoName, commitID api.CommitID, forceEnhancedLan
 		ReadTree: func(ctx context.Context, path string) ([]fs.FileInfo, error) {
 			// TODO: As a perf optimization, we could read multiple levels of the Git tree at once
 			// to avoid sequential tree traversal calls.
-			return git.ReadDir(ctx, repo, commitID, path, false)
+			return gitserver.NewClient(db).ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, repo, commitID, path, false)
 		},
 		NewFileReader: func(ctx context.Context, path string) (io.ReadCloser, error) {
-			return git.NewFileReader(ctx, repo, commitID, path)
+			return git.NewFileReader(ctx, db, repo, commitID, path, authz.DefaultSubRepoPermsChecker)
 		},
 		CacheGet: func(e fs.FileInfo) (inventory.Inventory, bool) {
 			cacheKey := cacheKey(e)

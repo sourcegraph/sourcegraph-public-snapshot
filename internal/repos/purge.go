@@ -10,13 +10,14 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
 
 // RunRepositoryPurgeWorker is a worker which deletes repos which are present
 // on gitserver, but not enabled/present in our repos table.
-func RunRepositoryPurgeWorker(ctx context.Context) {
+func RunRepositoryPurgeWorker(ctx context.Context, db database.DB) {
 	log := log15.Root().New("worker", "repo-purge")
 
 	// Temporary escape hatch if this feature proves to be dangerous
@@ -32,7 +33,7 @@ func RunRepositoryPurgeWorker(ctx context.Context) {
 		// reduce the chance of this happening by only purging at a weird time
 		// to be configuring Sourcegraph.
 		if isSaturdayNight(time.Now()) {
-			err := purge(ctx, log)
+			err := purge(ctx, db, log)
 			if err != nil {
 				log.Error("failed to run repository clone purge", "error", err)
 			}
@@ -41,7 +42,8 @@ func RunRepositoryPurgeWorker(ctx context.Context) {
 	}
 }
 
-func purge(ctx context.Context, log log15.Logger) error {
+func purge(ctx context.Context, db database.DB, log log15.Logger) error {
+	start := time.Now()
 	// If we fetched enabled first we have the following race condition:
 	//
 	// 1. Fetched enabled list without repo X.
@@ -51,12 +53,12 @@ func purge(ctx context.Context, log log15.Logger) error {
 	// However, if we fetch cloned first the only race is we may miss a
 	// repository that got disabled. The next time purge runs we will remove
 	// it though.
-	cloned, err := gitserver.DefaultClient.ListCloned(ctx)
+	cloned, err := gitserver.NewClient(db).ListCloned(ctx)
 	if err != nil {
 		return err
 	}
 
-	enabledList, err := api.InternalClient.ReposListEnabled(ctx)
+	enabledList, err := db.Repos().ListEnabledNames(ctx)
 	if err != nil {
 		return err
 	}
@@ -78,7 +80,7 @@ func purge(ctx context.Context, log log15.Logger) error {
 		// Race condition: A repo can be re-enabled between our listing and
 		// now. This should be very rare, so we ignore it since it will get
 		// cloned again.
-		if err = gitserver.DefaultClient.Remove(ctx, repo); err != nil {
+		if err = gitserver.NewClient(db).Remove(ctx, repo); err != nil {
 			// Do not fail at this point, just log so we can remove other
 			// repos.
 			log.Error("failed to remove disabled repository", "repo", repo, "error", err)
@@ -92,11 +94,11 @@ func purge(ctx context.Context, log log15.Logger) error {
 	}
 
 	// If we did something we log with a higher level.
-	statusLogger := log.Debug
-	if success > 0 || failed > 0 {
-		statusLogger = log.Info
+	statusLogger := log.Info
+	if failed > 0 {
+		statusLogger = log.Warn
 	}
-	statusLogger("repository cloned purge finished", "enabled", len(enabled), "cloned", len(cloned)-success, "removed", success, "failed", failed)
+	statusLogger("repository cloned purge finished", "enabled", len(enabled), "cloned", len(cloned)-success, "removed", success, "failed", failed, "duration", time.Since(start))
 
 	return nil
 }

@@ -1,25 +1,38 @@
 package datastructures
 
-// DefaultIDSetMap is a space-efficient map from integer keys to identifier sets. This
-// map adds convenience operations that will operate on the set at a specific key, and
-// create it if it does not yet exist in the map.
+type mapState int
+
+const (
+	mapStateEmpty mapState = iota
+	mapStateInline
+	mapStateHeap
+	ILLEGAL_MAPSTATE = "invariant violation: illegal map state!"
+	// random sentinel key to identify runtime errors
+	uninitSentinelKey = -0xc0c0
+)
+
+// DefaultIDSetMap is a small-size-optimized map from integer keys to identifier sets.
+// It adds convenience operations that operate on the set for a specific key.
 //
 // The correlation process creates many such maps (e.g. result set and contains relations),
-// the majority of which contain only a single element. This structure optimizes for the
-// case where only a single key is present in the map.
+// the majority of which contain only a single element. Since Go maps have high overhead
+// (see https://golang.org/src/runtime/map.go#L115), we optimize for the common case.
 //
 // For concrete numbers, processing an index for aws-sdk-go produces 1.5 million singleton
 // maps, and only 25k non-singleton maps.
 //
-// Each map starts out empty. Insertion of the first element sets a key and value field
-// directly in the map struct. Insertion of a second element will promote the struct into
-// a non-singleton map and heap-allocate a builtin map to hold additional keys. Maps have
-// large overhead (see https://golang.org/src/runtime/map.go#L115), so we only want to pay
-// this cost when we need to.
+// The map is conceptually in one of three states:
+// - Empty: This is the initial state.
+// - Inline: This contains an inline element.
+// - Heap: This contains key-value pairs in a Go map.
+//
+// The state of the map may change:
+// - On additions: Empty → Inline or Inline → Heap.
+// - On deletions: Inline → Empty or Heap → Inline.
 type DefaultIDSetMap struct {
-	key   int            // singleton map key
-	value *IDSet         // singleton map value
-	m     map[int]*IDSet // non-singleton map
+	inlineKey   int            // key for the Inline state
+	inlineValue *IDSet         // value for the Inline state
+	m           map[int]*IDSet // storage for 2 or more key-value pairs
 }
 
 // NewDefaultIDSetMap creates a new empty default identifier set map.
@@ -27,93 +40,214 @@ func NewDefaultIDSetMap() *DefaultIDSetMap {
 	return &DefaultIDSetMap{}
 }
 
-// DefaultIDSetMapWith creates a default identifier set map with the given contents.
+func (sm *DefaultIDSetMap) state() mapState {
+	if sm.inlineValue == nil {
+		if sm.m == nil {
+			return mapStateEmpty
+		}
+		return mapStateHeap
+	}
+	if sm.m != nil {
+		panic("m field of DefaultIDSetMap should be nil when value is present inline")
+	}
+	return mapStateInline
+}
+
+// DefaultIDSetMapWith creates a default identifier set map with
+// a copy of the given contents.
+//
+// map entries with nil or empty IDSets are ignored.
 func DefaultIDSetMapWith(m map[int]*IDSet) *DefaultIDSetMap {
-	return &DefaultIDSetMap{m: m}
+	tmp := NewDefaultIDSetMap()
+	for k, v := range m {
+		tmp.UnionIDSet(k, v)
+	}
+	return tmp
+}
+
+// Len returns the number of keys.
+func (sm *DefaultIDSetMap) Len() int {
+	switch sm.state() {
+	case mapStateEmpty:
+		return 0
+	case mapStateInline:
+		return 1
+	case mapStateHeap:
+		return len(sm.m)
+	default:
+		panic(ILLEGAL_MAPSTATE)
+	}
+}
+
+// UnorderedKeys returns a slice with a copy of all keys in an unspecified order.
+func (sm *DefaultIDSetMap) UnorderedKeys() []int {
+	switch sm.state() {
+	case mapStateEmpty:
+		return []int{}
+	case mapStateInline:
+		return []int{sm.inlineKey}
+	case mapStateHeap:
+		var out = make([]int, 0, sm.Len())
+		for k := range sm.m {
+			out = append(out, k)
+		}
+		return out
+	default:
+		panic(ILLEGAL_MAPSTATE)
+	}
 }
 
 // Get returns the identifier set at the given key or nil if it does not exist.
 func (sm *DefaultIDSetMap) Get(key int) *IDSet {
-	if sm.key == key {
-		return sm.value
-	}
-	if sm.m != nil {
+	switch sm.state() {
+	case mapStateEmpty:
+		return nil
+	case mapStateInline:
+		if sm.inlineKey == key {
+			return sm.inlineValue
+		}
+		return nil
+	case mapStateHeap:
 		return sm.m[key]
+	default:
+		panic(ILLEGAL_MAPSTATE)
 	}
-	return nil
+}
+
+// Pop returns the identifier set at the given key or nil if it does not exist and
+// removes the key from the map.
+func (sm *DefaultIDSetMap) Pop(key int) *IDSet {
+	switch sm.state() {
+	case mapStateEmpty:
+		return nil
+	case mapStateInline:
+		if sm.inlineKey != key {
+			return nil
+		}
+		v := sm.inlineValue
+		sm.inlineKey = uninitSentinelKey
+		sm.inlineValue = nil
+		return v
+	case mapStateHeap:
+		v, ok := sm.m[key]
+		if ok {
+			sm.deleteFromMap(key)
+		}
+		return v
+	default:
+		panic(ILLEGAL_MAPSTATE)
+	}
 }
 
 // Delete removes the identifier set at the given key if it exists.
 func (sm *DefaultIDSetMap) Delete(key int) {
-	if sm.key == key {
-		sm.key = 0
-		sm.value = nil
+	switch sm.state() {
+	case mapStateEmpty:
+		return
+	case mapStateInline:
+		if sm.inlineKey == key {
+			sm.inlineKey = uninitSentinelKey
+			sm.inlineValue = nil
+		}
+	case mapStateHeap:
+		sm.deleteFromMap(key)
+	default:
+		panic(ILLEGAL_MAPSTATE)
 	}
-	if sm.m != nil {
-		delete(sm.m, key)
+}
+
+func (sm *DefaultIDSetMap) deleteFromMap(key int) {
+	delete(sm.m, key)
+	if len(sm.m) == 1 {
+		for k, v := range sm.m {
+			sm.inlineKey = k
+			sm.inlineValue = v
+		}
+		sm.m = nil
 	}
 }
 
 // Each invokes the given function with each key and identifier set in the map.
+//
+// The order of iteration is not guaranteed to be deterministic.
 func (sm *DefaultIDSetMap) Each(f func(key int, value *IDSet)) {
-	if sm.key != 0 {
-		f(sm.key, sm.value)
-	}
-	if sm.m != nil {
+	switch sm.state() {
+	case mapStateEmpty:
+		return
+	case mapStateInline:
+		f(sm.inlineKey, sm.inlineValue)
+	case mapStateHeap:
 		for k, v := range sm.m {
 			f(k, v)
 		}
+	default:
+		panic(ILLEGAL_MAPSTATE)
 	}
 }
 
-// SetLen returns the number of identifiers in the identifier set at the given key.
-func (sm *DefaultIDSetMap) SetLen(key int) int {
-	if sm.key == key {
-		return sm.value.Len()
-	}
-	if sm.m != nil {
+// NumIDsForKey returns the number of identifiers in the identifier set at the given key.
+func (sm *DefaultIDSetMap) NumIDsForKey(key int) int {
+	switch sm.state() {
+	case mapStateEmpty:
+		return 0
+	case mapStateInline:
+		if sm.inlineKey == key {
+			return sm.inlineValue.Len()
+		}
+	case mapStateHeap:
 		if s, ok := sm.m[key]; ok {
 			return s.Len()
 		}
+	default:
+		panic(ILLEGAL_MAPSTATE)
 	}
-
 	return 0
 }
 
-// SetContains determines if the given identifier belongs to the set at the given key.
-func (sm *DefaultIDSetMap) SetContains(key, id int) bool {
-	if sm.key == key {
-		return sm.value.Contains(id)
-	}
-	if sm.m != nil {
+// Contains determines if the given identifier belongs to the set at the given key.
+func (sm *DefaultIDSetMap) Contains(key, id int) bool {
+	switch sm.state() {
+	case mapStateEmpty:
+		return false
+	case mapStateInline:
+		return sm.inlineKey == key && sm.inlineValue.Contains(id)
+	case mapStateHeap:
 		if s, ok := sm.m[key]; ok {
 			return s.Contains(id)
 		}
+	default:
+		panic(ILLEGAL_MAPSTATE)
 	}
-
 	return false
 }
 
-// SetEach invokes the given function with each identifier in the set at the given key.
-func (sm *DefaultIDSetMap) SetEach(key int, f func(id int)) {
-	if sm.key == key {
-		sm.value.Each(f)
+// EachID invokes the given function with each identifier in the set at the given key.
+//
+// The order of iteration is not guaranteed to be deterministic.
+func (sm *DefaultIDSetMap) EachID(key int, f func(id int)) {
+	switch sm.state() {
+	case mapStateEmpty:
 		return
-	}
-	if sm.m != nil {
+	case mapStateInline:
+		if sm.inlineKey == key {
+			sm.inlineValue.Each(f)
+		}
+	case mapStateHeap:
 		if s, ok := sm.m[key]; ok {
 			s.Each(f)
 		}
+	default:
+		panic(ILLEGAL_MAPSTATE)
 	}
 }
 
-// SetAdd inserts an identifier into the set at the given key.
-func (sm *DefaultIDSetMap) SetAdd(key, id int) {
+// AddID inserts an identifier into the set at the given key.
+func (sm *DefaultIDSetMap) AddID(key, id int) {
 	sm.getOrCreate(key).Add(id)
 }
 
-// SetUnion inserts all the identifiers of other into the set a the given key.
-func (sm *DefaultIDSetMap) SetUnion(key int, other *IDSet) {
+// UnionIDSet inserts all the identifiers of other into the set a the given key.
+func (sm *DefaultIDSetMap) UnionIDSet(key int, other *IDSet) {
 	if other == nil || other.Len() == 0 {
 		return
 	}
@@ -121,41 +255,34 @@ func (sm *DefaultIDSetMap) SetUnion(key int, other *IDSet) {
 	sm.getOrCreate(key).Union(other)
 }
 
-// GetOrCreate will return the set at the given key, or create an empty set if it does not exist.
+// getOrCreate will return the set at the given inlineKey, or create an empty set if it does not exist.
+//
+// The return value is never nil.
 func (sm *DefaultIDSetMap) getOrCreate(key int) *IDSet {
-	if sm.key == key {
-		return sm.value
-	}
-	if sm.m != nil {
+	switch sm.state() {
+	case mapStateEmpty:
+		sm.inlineKey = key
+		sm.inlineValue = NewIDSet()
+		return sm.inlineValue
+	case mapStateInline:
+		if sm.inlineKey == key {
+			return sm.inlineValue
+		}
+		newValue := NewIDSet()
+		sm.m = map[int]*IDSet{sm.inlineKey: sm.inlineValue, key: newValue}
+		sm.inlineValue = nil
+		sm.inlineKey = uninitSentinelKey
+		return newValue
+	case mapStateHeap:
 		if s, ok := sm.m[key]; ok {
 			return s
 		}
+		newValue := NewIDSet()
+		sm.m[key] = newValue
+		return newValue
+	default:
+		panic(ILLEGAL_MAPSTATE)
 	}
-
-	if sm.m != nil {
-		// Already a map, just add a new key
-		s := NewIDSet()
-		sm.m[key] = s
-		return s
-	}
-
-	if sm.key == 0 {
-		// Populating a singleton set
-		s := NewIDSet()
-		sm.key = key
-		sm.value = s
-		return s
-	}
-
-	// Adding to a singleton set. Create a new map and add the
-	// new value along with the old singleton value to the it
-	s := NewIDSet()
-	sm.m = make(map[int]*IDSet, 2)
-	sm.m[key] = s
-	sm.m[sm.key] = sm.value
-	sm.key = 0
-	sm.value = nil
-	return s
 }
 
 // compareDefaultIDSetMaps returns true if the given identifier default identifier set maps
@@ -165,16 +292,12 @@ func compareDefaultIDSetMaps(x, y *DefaultIDSetMap) bool {
 		return true
 	}
 
-	if x == nil || y == nil {
+	if x.state() != y.state() {
 		return false
 	}
 
 	m1 := toMap(x)
 	m2 := toMap(y)
-
-	if len(m1) != len(m2) {
-		return false
-	}
 
 	for k, v := range m1 {
 		if !compareIDSets(v, m2[k]) {
@@ -188,19 +311,18 @@ func compareDefaultIDSetMaps(x, y *DefaultIDSetMap) bool {
 // toMap returns a copy of the map backing the default identifier set map. This is called from
 // compareDefaultIDSetMaps for testing and should not be used in the hot path.
 func toMap(s *DefaultIDSetMap) map[int]*IDSet {
-	if s.key != 0 {
-		return map[int]*IDSet{
-			s.key: s.value,
-		}
-	}
-
-	if s.m != nil {
+	switch s.state() {
+	case mapStateEmpty:
+		return nil
+	case mapStateInline:
+		return map[int]*IDSet{s.inlineKey: s.inlineValue}
+	case mapStateHeap:
 		m := map[int]*IDSet{}
 		for k, v := range s.m {
 			m[k] = v
 		}
 		return m
+	default:
+		panic(ILLEGAL_MAPSTATE)
 	}
-
-	return nil
 }

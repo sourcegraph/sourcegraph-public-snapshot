@@ -6,10 +6,10 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-func DeleteOldEventLogsInPostgres(ctx context.Context, db dbutil.DB) {
+func DeleteOldEventLogsInPostgres(ctx context.Context, db database.DB) {
 	for {
 		// We choose 93 days as the interval to ensure that we have at least the last three months
 		// of logs at all times.
@@ -24,13 +24,13 @@ func DeleteOldEventLogsInPostgres(ctx context.Context, db dbutil.DB) {
 	}
 }
 
-func DeleteOldSecurityEventLogsInPostgres(ctx context.Context, db dbutil.DB) {
+func DeleteOldSecurityEventLogsInPostgres(ctx context.Context, db database.DB) {
 	for {
-		// We choose 186 days as the interval to ensure that we have at least the last six months of
+		// We choose 7 days as the interval to ensure that we have at least the last week's worth of
 		// logs at all times.
 		_, err := db.ExecContext(
 			ctx,
-			`DELETE FROM security_event_logs WHERE "timestamp" < now() - interval '186' day`,
+			`DELETE FROM security_event_logs WHERE "timestamp" < now() - interval '7' day`,
 		)
 		if err != nil {
 			log15.Error("deleting expired rows from security_event_logs table", "error", err)

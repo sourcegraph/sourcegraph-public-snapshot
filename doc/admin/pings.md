@@ -10,13 +10,14 @@ Critical telemetry includes only the high-level data below required for billing,
 - The email address of the initial site installer (or if deleted, the first active site admin), to know who to contact regarding sales, product updates, security updates, and policy updates
 - Sourcegraph version string (e.g. "vX.X.X")
 - Dependency versions (e.g. "6.0.9" for Redis, or "13.0" for Postgres)
-- Deployment type (single Docker image, Docker Compose, Kubernetes cluster, or pure Docker cluster)
+- Deployment type (single Docker image, Docker Compose, Kubernetes cluster, Helm, or pure Docker cluster)
 - License key associated with your Sourcegraph subscription
 - Aggregate count of current monthly users
 - Total count of existing user accounts
 - Aggregated repository statistics
   - Total size of git repositories stored in bytes
   - Total number of lines of code stored in text search index
+- Code Insights: total count of insights 
 
 ## Other telemetry
 
@@ -27,7 +28,7 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
 
 - Whether the instance is deployed on localhost (true/false)
 - Which category of authentication provider is in use (built-in, OpenID Connect, an HTTP proxy, SAML, GitHub, GitLab)
-- Which code hosts are in use (GitHub, Bitbucket Server, GitLab, Phabricator, Gitolite, AWS CodeCommit, Other)
+- Which code hosts are in use (GitHub, Bitbucket Server / Bitbucket Data Center, GitLab, Phabricator, Gitolite, AWS CodeCommit, Other)
   - Which versions of the code hosts are used
 - Whether new user signup is allowed (true/false)
 - Whether a repository has ever been added (true/false)
@@ -38,7 +39,7 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
 - Aggregate daily, weekly, and monthly latencies (in ms) of search queries
 - Aggregate daily, weekly, and monthly integer counts of the following query syntax:
   - The number of boolean operators (`and`, `or`, `not` keywords)
-  - The number of built-in predicate keywords (`contains`, `contains.file`, `contains.repo`, `contains.commit.after`)
+  - The number of built-in predicate keywords (`contains`, `contains.file`, `contains.repo`, `contains.commit.after`, `dependencies`)
   - The number of `select` keywords by kind (`repo`, `file`, `content`, `symbol`, `commit.diff.added`, `commit.diff.removed`)
   - The number of queries using the `context:` filter without the default `global` value
   - The number of queries with only patterns (e.g., without filters like `repo:` or `file:`)
@@ -99,7 +100,7 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
   - Weekly count of total and unique clicks of the `Create` and `Cancel` buttons on the `Create search insight` and `Create language insight` pages
   - Total count of insights grouped by time interval (step size) in days  
   - Total count of insights set organization visible grouped by insight type
-
+  - Total count of insights grouped by presentation type, series type, and presentation-series type.
 - Code monitoring usage data
   - Total number of views of the code monitoring page
   - Total number of views of the create code monitor page
@@ -107,6 +108,38 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
   - Total number of views of the create code monitor page without a pre-populated trigger query
   - Total number of views of the manage code monitor page
   - Total number of clicks on the code monitor email search link
+- Code Host integration usage data (Browser extension / Native Integration)
+  - Aggregate counts of current daily, weekly, and monthly unique users and total events
+  - Aggregate counts of current daily, weekly, and monthly unique users and total events who visited Sourcegraph instance from browser extension
+- IDE extensions usage data
+  - Aggregate counts of current daily, weekly, and monthly searches performed:
+    - Count of unique users who performed searches
+    - Count of total searches performed
+  - Aggregate counts of current daily user state:
+    - Count of users who installed the extension
+    - Count of users who uninstalled the extension 
+  - Aggregate count of current daily redirects from extension to Sourcegraph instance
+
+
+
+- CTA usage data
+  - Browser extension
+    - Total number of users who viewed the "install browser extension" CTA on the file page
+    - Total number of users who clicked the "install browser extension" CTA on the file page
+    - Total number of users who viewed the "install browser extension" CTA on the search page
+    - Total number of users who clicked the "install browser extension" CTA on the search page
+    - Total number of views of the "install browser extension" CTA on the file page
+    - Total number of clicks on the "install browser extension" CTA on the file page
+    - Total number of views of the "install browser extension" CTA on the search page
+    - Total number of clicks on the "install browser extension" CTA on the search page
+
+- CTA usage data
+  - Browser extension
+    - Number of users who viewed / clicked the "install browser extension" CTA on the file / search pages today
+    - Number of views / clicks on the "install browser extension" CTA on the file / search pages today
+  - IDE extension
+    - Number of users who viewed / clicked the "install IDE extension" CTA on the file / search pages today
+    - Number of views / clicks on the "install IDE extension" CTA on the file / search pages today
 
 ## CIDR Range for Sourcegraph
 

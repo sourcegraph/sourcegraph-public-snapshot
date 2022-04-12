@@ -1,18 +1,19 @@
-import classNames from 'classnames'
-import * as H from 'history'
 import React, { useCallback, useContext, useState } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { ButtonTooltip } from '@sourcegraph/web/src/components/ButtonTooltip'
+import classNames from 'classnames'
+import * as H from 'history'
 
-import { ErrorAlert } from '../../../components/alerts'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { isErrorLike } from '@sourcegraph/common'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Button, Alert, Link } from '@sourcegraph/wildcard'
+
 import { BatchSpecFields } from '../../../graphql-operations'
 import { MultiSelectContext } from '../MultiSelectContext'
 
 import { createBatchChange, applyBatchChange } from './backend'
 import { BatchChangePreviewContext } from './BatchChangePreviewContext'
+
 import styles from './CreateUpdateBatchChangeAlert.module.scss'
 
 export interface CreateUpdateBatchChangeAlertProps extends TelemetryProps {
@@ -81,7 +82,7 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
 
     return (
         <>
-            <div className="alert alert-info mb-3 d-block d-md-flex align-items-center body-lead">
+            <Alert className="mb-3 d-block d-md-flex align-items-center body-lead" variant="info">
                 <div className={classNames(styles.createUpdateBatchChangeAlertCopy, 'flex-grow-1 mr-3')}>
                     {batchChange ? (
                         <>
@@ -97,20 +98,20 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
                     all changesets.
                 </div>
                 <div className={styles.createUpdateBatchChangeAlertBtn}>
-                    <ButtonTooltip
-                        type="button"
+                    <Button
+                        variant="primary"
                         className={classNames(
-                            'btn btn-primary test-batches-confirm-apply-btn text-nowrap',
+                            'test-batches-confirm-apply-btn text-nowrap',
                             isLoading === true || (!viewerCanAdminister && 'disabled')
                         )}
                         onClick={onApply}
                         disabled={!canApply}
-                        tooltip={disabledTooltip()}
+                        data-tooltip={disabledTooltip()}
                     >
                         Apply
-                    </ButtonTooltip>
+                    </Button>
                 </div>
-            </div>
+            </Alert>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
         </>
     )

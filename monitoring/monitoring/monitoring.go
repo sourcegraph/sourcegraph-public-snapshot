@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/grafana-tools/sdk"
 
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/grafana"
 )
 
@@ -27,8 +27,9 @@ type Container struct {
 	// is responsible for, so that the impact of issues in it is clear.
 	Description string
 
-	// List of Template Variables to apply to the dashboard
-	Templates []sdk.TemplateVar
+	// Variables define the variables that can be to applied to the dashboard for this
+	// container, such as instances or shards.
+	Variables []ContainerVariable
 
 	// Groups of observable information about the container.
 	Groups []Group
@@ -51,6 +52,11 @@ func (c *Container) validate() error {
 	if c.Description != withPeriod(c.Description) || c.Description != upperFirst(c.Description) {
 		return errors.Errorf("Description must be sentence starting with an uppercase letter and ending with period; found \"%s\"", c.Description)
 	}
+	for i, v := range c.Variables {
+		if err := v.validate(); err != nil {
+			return errors.Errorf("Variable %d %q: %v", i, c.Name, err)
+		}
+	}
 	for i, g := range c.Groups {
 		if err := g.validate(); err != nil {
 			return errors.Errorf("Group %d %q: %v", i, g.Title, err)
@@ -72,20 +78,17 @@ func (c *Container) renderDashboard() *sdk.Board {
 	board.SharedCrosshair = true
 	board.Editable = false
 	board.AddTags("builtin")
-	board.Templating.List = append([]sdk.TemplateVar{{
-		Label:      "Filter alert level",
-		Name:       "alert_level",
-		AllValue:   ".*",
-		Current:    sdk.Current{Text: &sdk.StringSliceString{Value: []string{"all"}, Valid: true}, Value: "$__all"},
-		IncludeAll: true,
-		Options: []sdk.Option{
-			{Text: "all", Value: "$__all", Selected: true},
-			{Text: "critical", Value: "critical"},
-			{Text: "warning", Value: "warning"},
+	alertLevelVariable := ContainerVariable{
+		Label: "Alert level",
+		Name:  "alert_level",
+		Options: ContainerVariableOptions{
+			Options: []string{"critical", "warning"},
 		},
-		Query: "critical,warning",
-		Type:  "custom",
-	}}, c.Templates...)
+	}
+	board.Templating.List = []sdk.TemplateVar{alertLevelVariable.toGrafanaTemplateVar()}
+	for _, variable := range c.Variables {
+		board.Templating.List = append(board.Templating.List, variable.toGrafanaTemplateVar())
+	}
 	board.Annotations.List = []sdk.Annotation{{
 		Name:       "Alert events",
 		Datasource: StringPtr("Prometheus"),
@@ -330,6 +333,162 @@ func (c *Container) renderRules() (*promRulesFile, error) {
 	}, nil
 }
 
+type ContainerVariableOptionType string
+
+const (
+	OptionTypeInterval = "interval"
+)
+
+type ContainerVariableOptions struct {
+	Options []string
+	// DefaultOption is the option that should be selected by default.
+	DefaultOption string
+	// Type of the options. You can usually leave this unset.
+	Type ContainerVariableOptionType
+}
+
+// ContainerVariable describes a template variable that can be applied container dashboard
+// for filtering purposes.
+type ContainerVariable struct {
+	// Name is the name of the variable to substitute the value for, e.g. "alert_level"
+	// to replace "$alert_level" in queries
+	Name string
+	// Label is a human-readable name for the variable, e.g. "Alert level"
+	Label string
+
+	// OptionsQuery is the query to generate the possible values for this variable. Cannot
+	// be used in conjunction with Options
+	OptionsQuery string
+	// Options are the pre-defined possible values for this variable. Cannot be used in
+	// conjunction with Query
+	Options ContainerVariableOptions
+
+	// WildcardAllValue indicates to Grafana that is should NOT use Query or Options to
+	// generate a concatonated 'All' value for the variable, and use a '.*' wildcard
+	// instead. Setting this to true primarily useful if you use Query and expect it to be
+	// a large enough result set to cause issues when viewing the dashboard.
+	//
+	// We allow Grafana to generate a value by default because simply using '.*' wildcard
+	// can pull in unintended metrics if adequate filtering is not performed on the query,
+	// for example if multiple services export the same metric. If set to true, make sure
+	// the queries that use this variable perform adequate filtering to avoid pulling in
+	// unintended metrics.
+	WildcardAllValue bool
+
+	// Multi indicates whether or not to allow multi-selection for this variable filter
+	Multi bool
+
+	// RawTransform is can be used to extend ContainerVariable to modify underlying
+	// Grafana variables specification.
+	//
+	// It is recommended to use or extend the standardized ContainerVariable options
+	// instead.
+	RawTransform func(*sdk.TemplateVar)
+}
+
+func (c *ContainerVariable) validate() error {
+	if c.Name == "" {
+		return errors.New("ContainerVariable.Name is required")
+	}
+	if c.Label == "" {
+		return errors.New("ContainerVariable.Label is required")
+	}
+	if c.OptionsQuery == "" && len(c.Options.Options) == 0 {
+		return errors.New("one of ContainerVariable.Query and ContainerVariable.Options must be set")
+	}
+	if c.OptionsQuery != "" && len(c.Options.Options) > 0 {
+		return errors.New("ContainerVariable.Query and ContainerVariable.Options cannot both be set")
+	}
+	return nil
+}
+
+// toGrafanaTemplateVar generates the Grafana template variable configuration for this
+// container variable.
+func (c *ContainerVariable) toGrafanaTemplateVar() sdk.TemplateVar {
+	variable := sdk.TemplateVar{
+		Name:  c.Name,
+		Label: c.Label,
+		Multi: c.Multi,
+
+		Datasource: StringPtr("Prometheus"),
+		IncludeAll: true,
+
+		// Apply the AllValue to a template variable by default
+		Current: sdk.Current{Text: &sdk.StringSliceString{Value: []string{"all"}, Valid: true}, Value: "$__all"},
+	}
+
+	if c.WildcardAllValue {
+		variable.AllValue = ".*"
+	} else {
+		// Rely on Grafana to create a union of only the values
+		// generated by the specified query.
+		//
+		// See https://grafana.com/docs/grafana/latest/variables/formatting-multi-value-variables/#multi-value-variables-with-a-prometheus-or-influxdb-data-source
+		// for more information.
+		variable.AllValue = ""
+	}
+
+	switch {
+	case c.OptionsQuery != "":
+		variable.Type = "query"
+		variable.Query = c.OptionsQuery
+		variable.Refresh = sdk.BoolInt{
+			Flag:  true,
+			Value: Int64Ptr(2), // Refresh on time range change
+		}
+		variable.Sort = 3
+
+	case len(c.Options.Options) > 0:
+		// Set the type
+		variable.Type = "custom"
+		if c.Options.Type != "" {
+			variable.Type = string(c.Options.Type)
+		}
+		// Generate our options
+		variable.Query = strings.Join(c.Options.Options, ",")
+
+		// On interval options, don't allow the selection of 'all' intervals, since
+		// this is a one-of-many selection
+		var hasAllOption bool
+		if c.Options.Type != OptionTypeInterval {
+			// Add the AllValue as a default, only selected if a default is not configured
+			hasAllOption = true
+			selected := c.Options.DefaultOption == ""
+			variable.Options = append(variable.Options, sdk.Option{Text: "all", Value: "$__all", Selected: selected})
+		}
+		// Generate options
+		for i, option := range c.Options.Options {
+			// Whether this option should be selected
+			var selected bool
+			if c.Options.DefaultOption != "" {
+				// If an default option is provided, select that
+				selected = option == c.Options.DefaultOption
+			} else if !hasAllOption {
+				// Otherwise if there is no 'all' option generated, select the first
+				selected = i == 0
+			}
+
+			variable.Options = append(variable.Options, sdk.Option{Text: option, Value: option, Selected: selected})
+			if selected {
+				// Also configure current
+				variable.Current = sdk.Current{
+					Text: &sdk.StringSliceString{
+						Value: []string{option},
+						Valid: true,
+					},
+					Value: option,
+				}
+			}
+		}
+	}
+
+	if c.RawTransform != nil {
+		c.RawTransform(&variable)
+	}
+
+	return variable
+}
+
 // Group describes a group of observable information about a container.
 //
 // These correspond to collapsible sections in a Grafana dashboard.
@@ -380,7 +539,7 @@ func (r Row) validate() error {
 }
 
 // ObservableOwner denotes a team that owns an Observable. The current teams are described in
-// the handbook: https://about.sourcegraph.com/handbook/engineering/eng_org#current-organization
+// the handbook: https://handbook.sourcegraph.com/engineering/eng_org#current-organization
 type ObservableOwner string
 
 const (
@@ -388,32 +547,43 @@ const (
 	ObservableOwnerSearchCore      ObservableOwner = "search-core"
 	ObservableOwnerBatches         ObservableOwner = "batches"
 	ObservableOwnerCodeIntel       ObservableOwner = "code-intel"
-	ObservableOwnerDistribution    ObservableOwner = "distribution"
 	ObservableOwnerSecurity        ObservableOwner = "security"
 	ObservableOwnerWeb             ObservableOwner = "web"
 	ObservableOwnerCoreApplication ObservableOwner = "core application"
 	ObservableOwnerCodeInsights    ObservableOwner = "code-insights"
+	ObservableOwnerDevOps          ObservableOwner = "devops"
+	ObservableOwnerCloudSaaS       ObservableOwner = "cloud-saas"
 )
 
 // toMarkdown returns a Markdown string that also links to the owner's team page
 func (o ObservableOwner) toMarkdown() string {
 	var slug string
+
+	team := upperFirst(string(o))
+
 	// special cases for differences in how a team is named in ObservableOwner and how
 	// they are named in the handbook.
-	// see https://about.sourcegraph.com/handbook/engineering/eng_org#current-organization
+	// see https://handbook.sourcegraph.com/engineering/eng_org#current-organization
 	switch o {
 	case ObservableOwnerCodeIntel:
 		slug = "code-intelligence"
 	case ObservableOwnerCodeInsights:
 		slug = "developer-insights/code-insights"
+	case ObservableOwnerDevOps:
+		slug = "cloud/devops"
 	case ObservableOwnerSearchCore:
 		slug = "search/core"
+	case ObservableOwnerCloudSaaS:
+		slug = "cloud/saas"
+		team = "Cloud Software-as-a-Service"
 	default:
 		slug = strings.ReplaceAll(string(o), " ", "-")
 	}
 
-	return fmt.Sprintf("[Sourcegraph %s team](https://about.sourcegraph.com/handbook/engineering/%s)",
-		upperFirst(string(o)), slug)
+	return fmt.Sprintf(
+		"[Sourcegraph %s team](https://handbook.sourcegraph.com/engineering/%s)",
+		team, slug,
+	)
 }
 
 // Observable describes a metric about a container that can be observed. For example, memory usage.
@@ -543,8 +713,8 @@ func (o Observable) validate() error {
 	if len(o.Description) == 0 {
 		return errors.New("Description must be set")
 	}
-	if v := string([]rune(o.Description)[0]); v != strings.ToLower(v) {
-		return errors.Errorf("Description must be lowercase; found \"%s\"", o.Description)
+	if first, second := string([]rune(o.Description)[0]), string([]rune(o.Description)[1]); first != strings.ToLower(first) && second == strings.ToLower(second) {
+		return errors.Errorf("Description must be lowercase except for acronyms; found \"%s\"", o.Description)
 	}
 	if o.Owner == "" && !o.NoAlert {
 		return errors.New("Owner must be defined for observables with alerts")
@@ -624,7 +794,7 @@ type ObservableAlertDefinition struct {
 	// We only support per-service alerts, not per-container/replica, and not doing so can cause issues.
 	// See https://github.com/sourcegraph/sourcegraph/issues/11571#issuecomment-654571953,
 	// https://github.com/sourcegraph/sourcegraph/issues/17599, and related pull requests.
-	aggregator string
+	aggregator Aggregator
 	// Comparator sets how a metric should be compared against a threshold
 	comparator string
 	// Threshold sets the value to be compared against
@@ -632,52 +802,36 @@ type ObservableAlertDefinition struct {
 }
 
 // GreaterOrEqual indicates the alert should fire when greater or equal the given value.
-func (a *ObservableAlertDefinition) GreaterOrEqual(f float64, aggregator *string) *ObservableAlertDefinition {
+func (a *ObservableAlertDefinition) GreaterOrEqual(f float64) *ObservableAlertDefinition {
 	a.greaterThan = true
-	if aggregator != nil {
-		a.aggregator = *aggregator
-	} else {
-		a.aggregator = "max"
-	}
+	a.aggregator = AggregatorMax
 	a.comparator = ">="
 	a.threshold = f
 	return a
 }
 
 // LessOrEqual indicates the alert should fire when less than or equal to the given value.
-func (a *ObservableAlertDefinition) LessOrEqual(f float64, aggregator *string) *ObservableAlertDefinition {
+func (a *ObservableAlertDefinition) LessOrEqual(f float64) *ObservableAlertDefinition {
 	a.lessThan = true
-	if aggregator != nil {
-		a.aggregator = *aggregator
-	} else {
-		a.aggregator = "min"
-	}
+	a.aggregator = AggregatorMin
 	a.comparator = "<="
 	a.threshold = f
 	return a
 }
 
 // Greater indicates the alert should fire when strictly greater to this value.
-func (a *ObservableAlertDefinition) Greater(f float64, aggregator *string) *ObservableAlertDefinition {
+func (a *ObservableAlertDefinition) Greater(f float64) *ObservableAlertDefinition {
 	a.greaterThan = true
-	if aggregator != nil {
-		a.aggregator = *aggregator
-	} else {
-		a.aggregator = "max"
-	}
+	a.aggregator = AggregatorMax
 	a.comparator = ">"
 	a.threshold = f
 	return a
 }
 
 // Less indicates the alert should fire when strictly less than this value.
-func (a *ObservableAlertDefinition) Less(f float64, aggregator *string) *ObservableAlertDefinition {
+func (a *ObservableAlertDefinition) Less(f float64) *ObservableAlertDefinition {
 	a.lessThan = true
-	if aggregator != nil {
-		a.aggregator = *aggregator
-	} else {
-		a.aggregator = "min"
-	}
+	a.aggregator = AggregatorMin
 	a.comparator = "<"
 	a.threshold = f
 	return a
@@ -687,6 +841,24 @@ func (a *ObservableAlertDefinition) Less(f float64, aggregator *string) *Observa
 // considered firing. Defaults to 0s (immediately alerts when threshold is exceeded).
 func (a *ObservableAlertDefinition) For(d time.Duration) *ObservableAlertDefinition {
 	a.duration = d
+	return a
+}
+
+type Aggregator string
+
+const (
+	AggregatorSum = "sum"
+	AggregatorMax = "max"
+	AggregatorMin = "min"
+)
+
+// AggregateBy configures the aggregator to use for this alert. Make sure to only call
+// this after setting one of GreaterOrEqual, LessOrEqual, etc.
+//
+// By default, Less* thresholds are configured with AggregatorMin, and
+// Greater* thresholds are configured with AggregatorMax.
+func (a *ObservableAlertDefinition) AggregateBy(aggregator Aggregator) *ObservableAlertDefinition {
+	a.aggregator = aggregator
 	return a
 }
 

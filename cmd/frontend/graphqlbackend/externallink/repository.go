@@ -1,7 +1,6 @@
 package externallink
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"net/url"
@@ -11,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -24,7 +22,7 @@ import (
 //
 // For example, a repository might have 2 external links, one to its origin repository on GitHub.com
 // and one to the repository on Phabricator.
-func Repository(ctx context.Context, db dbutil.DB, repo *types.Repo) (links []*Resolver, err error) {
+func Repository(ctx context.Context, db database.DB, repo *types.Repo) (links []*Resolver, err error) {
 	phabRepo, link, serviceType := linksForRepository(ctx, db, repo)
 	if phabRepo != nil {
 		links = append(links, NewResolver(
@@ -39,17 +37,16 @@ func Repository(ctx context.Context, db dbutil.DB, repo *types.Repo) (links []*R
 }
 
 // FileOrDir returns the external links for a file or directory in a repository.
-func FileOrDir(ctx context.Context, db dbutil.DB, repo *types.Repo, rev, path string, isDir bool) (links []*Resolver, err error) {
+func FileOrDir(ctx context.Context, db database.DB, repo *types.Repo, rev, path string, isDir bool) (links []*Resolver, err error) {
 	rev = url.PathEscape(rev)
 
 	phabRepo, link, serviceType := linksForRepository(ctx, db, repo)
 	if phabRepo != nil {
 		// We need a branch name to construct the Phabricator URL.
-		branchName, _, _, err := git.ExecSafe(ctx, repo.Name, []string{"symbolic-ref", "--short", "HEAD"})
-		branchName = bytes.TrimSpace(branchName)
-		if err == nil && string(branchName) != "" {
+		branchName, _, err := git.GetDefaultBranchShort(ctx, db, repo.Name)
+		if err == nil && branchName != "" {
 			links = append(links, NewResolver(
-				fmt.Sprintf("%s/source/%s/browse/%s/%s;%s", strings.TrimSuffix(phabRepo.URL, "/"), phabRepo.Callsign, url.PathEscape(string(branchName)), path, rev),
+				fmt.Sprintf("%s/source/%s/browse/%s/%s;%s", strings.TrimSuffix(phabRepo.URL, "/"), phabRepo.Callsign, url.PathEscape(branchName), path, rev),
 				extsvc.TypePhabricator,
 			))
 		}
@@ -72,7 +69,7 @@ func FileOrDir(ctx context.Context, db dbutil.DB, repo *types.Repo, rev, path st
 }
 
 // Commit returns the external links for a commit in a repository.
-func Commit(ctx context.Context, db dbutil.DB, repo *types.Repo, commitID api.CommitID) (links []*Resolver, err error) {
+func Commit(ctx context.Context, db database.DB, repo *types.Repo, commitID api.CommitID) (links []*Resolver, err error) {
 	commitStr := url.PathEscape(string(commitID))
 
 	phabRepo, link, serviceType := linksForRepository(ctx, db, repo)
@@ -100,7 +97,7 @@ func Commit(ctx context.Context, db dbutil.DB, repo *types.Repo, commitID api.Co
 // failing any request for.
 func linksForRepository(
 	ctx context.Context,
-	db dbutil.DB,
+	db database.DB,
 	repo *types.Repo,
 ) (phabRepo *types.PhabricatorRepo, links *protocol.RepoLinks, serviceType string) {
 	span, ctx := ot.StartSpanFromContext(ctx, "externallink.linksForRepository")
@@ -109,7 +106,7 @@ func linksForRepository(
 	span.SetTag("ExternalRepo", repo.ExternalRepo)
 
 	var err error
-	phabRepo, err = database.Phabricator(db).GetByName(ctx, repo.Name)
+	phabRepo, err = db.Phabricator().GetByName(ctx, repo.Name)
 	if err != nil && !errcode.IsNotFound(err) {
 		ext.Error.Set(span, true)
 		span.SetTag("phabErr", err.Error())

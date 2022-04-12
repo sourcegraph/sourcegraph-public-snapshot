@@ -7,15 +7,15 @@ import (
 	"strconv"
 	"sync"
 
+	gh "github.com/google/go-github/v43/github"
+	"github.com/inconshreveable/log15"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/cockroachdb/errors"
-	gh "github.com/google/go-github/v28/github"
-	"github.com/inconshreveable/log15"
-
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -32,7 +32,7 @@ type WebhookHandler func(ctx context.Context, extSvc *types.ExternalService, eve
 // and routing to any registered WebhookHandlers, events are routed by their event type,
 // passed in the X-Github-Event header
 type GitHubWebhook struct {
-	ExternalServices *database.ExternalServiceStore
+	ExternalServices database.ExternalServiceStore
 
 	mu       sync.RWMutex
 	handlers map[string][]WebhookHandler
@@ -54,9 +54,15 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	SetExternalServiceID(r.Context(), extSvc.ID)
+
+	// 🚨 SECURITY: now that the payload and shared secret have been validated,
+	// we can use an internal actor on the context.
+	ctx := actor.WithInternalActor(r.Context())
+
 	// parse event
 	eventType := gh.WebHookType(r)
-	e, err := gh.ParseWebHook(gh.WebHookType(r), body)
+	e, err := gh.ParseWebHook(eventType, body)
 	if err != nil {
 		log15.Error("Error parsing github webhook event", "error", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -64,7 +70,7 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// match event handlers
-	err = h.Dispatch(r.Context(), eventType, extSvc, e)
+	err = h.Dispatch(ctx, eventType, extSvc, e)
 	if err != nil {
 		log15.Error("Error handling github webhook event", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

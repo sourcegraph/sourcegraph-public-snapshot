@@ -89,6 +89,12 @@ func ScanFirstNullString(rows *sql.Rows, queryErr error) (_ string, _ bool, err 
 	return "", false, nil
 }
 
+// ScanInt is a convenience method to return an integer value and any query error from a given row object.
+func ScanInt(row *sql.Row) (int, error) {
+	var value int
+	return value, row.Scan(&value)
+}
+
 // ScanInts reads integer values from the given row object.
 func ScanInts(rows *sql.Rows, queryErr error) (_ []int, err error) {
 	if queryErr != nil {
@@ -119,6 +125,26 @@ func ScanInt32s(rows *sql.Rows, queryErr error) (_ []int32, err error) {
 	var values []int32
 	for rows.Next() {
 		var value int32
+		if err := rows.Scan(&value); err != nil {
+			return nil, err
+		}
+
+		values = append(values, value)
+	}
+
+	return values, nil
+}
+
+// ScanInt64s reads integer values from the given row object.
+func ScanInt64s(rows *sql.Rows, queryErr error) (_ []int64, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = CloseRows(rows, err) }()
+
+	var values []int64
+	for rows.Next() {
+		var value int64
 		if err := rows.Scan(&value); err != nil {
 			return nil, err
 		}
@@ -164,6 +190,47 @@ func ScanFirstInt(rows *sql.Rows, queryErr error) (_ int, _ bool, err error) {
 		}
 
 		return value, true, nil
+	}
+
+	return 0, false, nil
+}
+
+// ScanFirstInt64 reads int64 values from the given row object and returns the first one.
+// If no rows match the query, a false-valued flag is returned.
+func ScanFirstInt64(rows *sql.Rows, queryErr error) (_ int64, _ bool, err error) {
+	if queryErr != nil {
+		return 0, false, queryErr
+	}
+	defer func() { err = CloseRows(rows, err) }()
+
+	if rows.Next() {
+		var value int64
+		if err := rows.Scan(&value); err != nil {
+			return 0, false, err
+		}
+
+		return value, true, nil
+	}
+
+	return 0, false, nil
+}
+
+// ScanFirstNullInt64 reads possibly null int64 values from the given row
+// object and returns the first one. If no rows match the query, a false-valued
+// flag is returned.
+func ScanFirstNullInt64(rows *sql.Rows, queryErr error) (_ int64, _ bool, err error) {
+	if queryErr != nil {
+		return 0, false, queryErr
+	}
+	defer func() { err = CloseRows(rows, err) }()
+
+	if rows.Next() {
+		var value sql.NullInt64
+		if err := rows.Scan(&value); err != nil {
+			return 0, false, err
+		}
+
+		return value.Int64, true, nil
 	}
 
 	return 0, false, nil

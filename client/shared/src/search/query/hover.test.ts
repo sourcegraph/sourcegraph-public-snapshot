@@ -6,25 +6,6 @@ import { getHoverResult } from './hover'
 import { scanSearchQuery, ScanSuccess, ScanResult } from './scanner'
 import { Token } from './token'
 
-/* eslint-disable ban/ban */
-
-/**
- * Needed for mocking methods not implemented in JSDom, for tests dependent on Monaco editor model.
- */
-Object.defineProperty(window, 'matchMedia', {
-    writable: true,
-    value: jest.fn().mockImplementation(query => ({
-        matches: false,
-        media: query,
-        onchange: null,
-        addListener: jest.fn(), // Deprecated
-        removeListener: jest.fn(), // Deprecated
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn(),
-    })),
-})
-
 expect.addSnapshotSerializer({
     serialize: value => JSON.stringify(value, null, 2),
     test: () => true,
@@ -36,7 +17,7 @@ describe('getHoverResult()', () => {
     test('returns hover contents for filters', () => {
         const input = 'repo:sourcegraph file:code_intelligence'
         const scannedQuery = toSuccess(scanSearchQuery(input))
-        expect(getHoverResult(scannedQuery, new Position(1, 4), editor.createModel(input))).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 3), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -47,7 +28,7 @@ describe('getHoverResult()', () => {
                 "startLineNumber": 1,
                 "endLineNumber": 1,
                 "startColumn": 1,
-                "endColumn": 6
+                "endColumn": 5
               }
             }
         `)
@@ -62,7 +43,7 @@ describe('getHoverResult()', () => {
                 "startLineNumber": 1,
                 "endLineNumber": 1,
                 "startColumn": 18,
-                "endColumn": 23
+                "endColumn": 22
               }
             }
         `)
@@ -97,7 +78,7 @@ describe('getHoverResult()', () => {
                 "startLineNumber": 1,
                 "endLineNumber": 1,
                 "startColumn": 1,
-                "endColumn": 6
+                "endColumn": 5
               }
             }
         `)

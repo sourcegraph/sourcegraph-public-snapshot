@@ -2,8 +2,12 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -11,17 +15,13 @@ import (
 )
 
 func TestSettingsMutation_EditSettings(t *testing.T) {
-	resetMocks()
-	database.Mocks.Users.GetByID = func(context.Context, int32) (*types.User, error) {
-		return &types.User{ID: 1}, nil
-	}
-	database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-		return &types.User{ID: 1, SiteAdmin: false}, nil
-	}
-	database.Mocks.Settings.GetLatest = func(context.Context, api.SettingsSubject) (*api.Settings, error) {
-		return &api.Settings{ID: 1, Contents: "{}"}, nil
-	}
-	database.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject api.SettingsSubject, lastID, authorUserID *int32, contents string) (*api.Settings, error) {
+	users := database.NewMockUserStore()
+	users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
+
+	settings := database.NewMockSettingsStore()
+	settings.GetLatestFunc.SetDefaultReturn(&api.Settings{ID: 1, Contents: "{}"}, nil)
+	settings.CreateIfUpToDateFunc.SetDefaultHook(func(ctx context.Context, subject api.SettingsSubject, lastID, authorUserID *int32, contents string) (*api.Settings, error) {
 		if want := `{
   "p": {
     "x": 123
@@ -30,12 +30,16 @@ func TestSettingsMutation_EditSettings(t *testing.T) {
 			t.Errorf("got %q, want %q", contents, want)
 		}
 		return &api.Settings{ID: 2, Contents: contents}, nil
-	}
+	})
+
+	db := database.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.SettingsFunc.SetDefaultReturn(settings)
 
 	RunTests(t, []*Test{
 		{
 			Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
-			Schema:  mustParseGraphQLSchema(t),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 				mutation($value: JSONValue) {
 					settingsMutation(input: {subject: "VXNlcjox", lastID: 1}) {
@@ -62,27 +66,27 @@ func TestSettingsMutation_EditSettings(t *testing.T) {
 }
 
 func TestSettingsMutation_OverwriteSettings(t *testing.T) {
-	resetMocks()
-	database.Mocks.Users.GetByID = func(context.Context, int32) (*types.User, error) {
-		return &types.User{ID: 1}, nil
-	}
-	database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-		return &types.User{ID: 1, SiteAdmin: false}, nil
-	}
-	database.Mocks.Settings.GetLatest = func(context.Context, api.SettingsSubject) (*api.Settings, error) {
-		return &api.Settings{ID: 1, Contents: "{}"}, nil
-	}
-	database.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject api.SettingsSubject, lastID, authorUserID *int32, contents string) (*api.Settings, error) {
+	users := database.NewMockUserStore()
+	users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
+
+	settings := database.NewMockSettingsStore()
+	settings.GetLatestFunc.SetDefaultReturn(&api.Settings{ID: 1, Contents: "{}"}, nil)
+	settings.CreateIfUpToDateFunc.SetDefaultHook(func(ctx context.Context, subject api.SettingsSubject, lastID, authorUserID *int32, contents string) (*api.Settings, error) {
 		if want := `x`; contents != want {
 			t.Errorf("got %q, want %q", contents, want)
 		}
 		return &api.Settings{ID: 2, Contents: contents}, nil
-	}
+	})
+
+	db := database.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.SettingsFunc.SetDefaultReturn(settings)
 
 	RunTests(t, []*Test{
 		{
 			Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
-			Schema:  mustParseGraphQLSchema(t),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 				mutation($contents: String!) {
 					settingsMutation(input: {subject: "VXNlcjox", lastID: 1}) {
@@ -105,5 +109,66 @@ func TestSettingsMutation_OverwriteSettings(t *testing.T) {
 				}
 			`,
 		},
+	})
+}
+
+func TestSettingsMutation(t *testing.T) {
+	db := database.NewMockDB()
+	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
+		users := database.NewMockUserStore()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		orig := envvar.SourcegraphDotComMode()
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(orig) // reset
+
+		tests := []struct {
+			name  string
+			ctx   context.Context
+			setup func()
+		}{
+			{
+				name: "unauthenticated",
+				ctx:  context.Background(),
+				setup: func() {
+					users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+				},
+			},
+			{
+				name: "another user",
+				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				setup: func() {
+					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+						return &types.User{ID: id}, nil
+					})
+				},
+			},
+			{
+				name: "site admin",
+				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				setup: func() {
+					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+						return &types.User{ID: id, SiteAdmin: true}, nil
+					})
+				},
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				test.setup()
+
+				_, err := newSchemaResolver(db).SettingsMutation(
+					test.ctx,
+					&settingsMutationArgs{
+						Input: &settingsMutationGroupInput{
+							Subject: MarshalUserID(1),
+						},
+					},
+				)
+				got := fmt.Sprintf("%v", err)
+				want := "must be authenticated as user with id 1"
+				assert.Equal(t, want, got)
+			})
+		}
 	})
 }

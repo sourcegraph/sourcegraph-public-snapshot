@@ -2,14 +2,18 @@ import cookies, { CookieAttributes } from 'js-cookie'
 import * as uuid from 'uuid'
 
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { UTMMarker } from '@sourcegraph/shared/src/tracking/utm'
 
-import { browserExtensionMessageReceived } from './analyticsUtils'
+import { browserExtensionMessageReceived } from './BrowserExtensionTracker'
 import { serverAdmin } from './services/serverAdminWrapper'
 import { getPreviousMonday, redactSensitiveInfoFromAppURL, stripURLParameters } from './util'
 
 export const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
 export const COHORT_ID_KEY = 'sourcegraphCohortId'
 export const FIRST_SOURCE_URL_KEY = 'sourcegraphSourceUrl'
+export const LAST_SOURCE_URL_KEY = 'sourcegraphRecentSourceUrl'
+export const DEVICE_ID_KEY = 'sourcegraphDeviceId'
+const isTelemetryDisabled = process.env.DISABLE_TELEMETRY
 
 export class EventLogger implements TelemetryService {
     private hasStrippedQueryParameters = false
@@ -17,6 +21,10 @@ export class EventLogger implements TelemetryService {
     private anonymousUserID = ''
     private cohortID?: string
     private firstSourceURL?: string
+    private lastSourceURL?: string
+    private deviceID = ''
+    private eventID = 0
+    private listeners: Set<(eventName: string) => void> = new Set()
 
     private readonly cookieSettings: CookieAttributes = {
         // 365 days expiry, but renewed on activity.
@@ -24,7 +32,9 @@ export class EventLogger implements TelemetryService {
         // Enforce HTTPS
         secure: true,
         // We only read the cookie with JS so we don't need to send it cross-site nor on initial page requests.
-        sameSite: 'Strict',
+        // However, we do need it on page redirects when users sign up via OAuth, hence using the Lax policy.
+        // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie/SameSite
+        sameSite: 'Lax',
         // Specify the Domain attribute to ensure subdomains (about.sourcegraph.com) can receive this cookie.
         // https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#define_where_cookies_are_sent
         domain: location.hostname,
@@ -33,8 +43,9 @@ export class EventLogger implements TelemetryService {
     constructor() {
         // EventLogger is never teared down
         // eslint-disable-next-line rxjs/no-ignored-subscription
-        browserExtensionMessageReceived.subscribe(({ platform }) => {
-            this.log('BrowserExtensionConnectedToServer', { platform }, { platform })
+        browserExtensionMessageReceived.subscribe(({ platform, version }) => {
+            const args = { platform, version }
+            this.log('BrowserExtensionConnectedToServer', args, args)
 
             if (localStorage && localStorage.getItem('eventLogDebug') === 'true') {
                 console.debug('%cBrowser extension detected, sync completed', 'color: #aaa')
@@ -44,19 +55,12 @@ export class EventLogger implements TelemetryService {
         this.initializeLogParameters()
     }
 
-    /**
-     * Log a pageview.
-     * Page titles should be specific and human-readable in pascal case, e.g. "SearchResults" or "Blob" or "NewOrg"
-     */
-    public logViewEvent(pageTitle: string, eventProperties?: any, logAsActiveUser = true): void {
-        if (window.context?.userAgentIsBot || !pageTitle) {
-            return
-        }
-        pageTitle = `View${pageTitle}`
-
+    private logViewEventInternal(eventName: string, eventProperties?: any, logAsActiveUser = true): void {
         const props = pageViewQueryParameters(window.location.href)
-        serverAdmin.trackPageView(pageTitle, logAsActiveUser, eventProperties)
-        this.logToConsole(pageTitle, props)
+        if (!isTelemetryDisabled) {
+            serverAdmin.trackPageView(eventName, logAsActiveUser, eventProperties)
+        }
+        this.logToConsole(eventName, props)
 
         // Use flag to ensure URL query params are only stripped once
         if (!this.hasStrippedQueryParameters) {
@@ -66,20 +70,59 @@ export class EventLogger implements TelemetryService {
     }
 
     /**
+     * @deprecated Use logPageView instead
+     *
+     * Log a pageview.
+     * Page titles should be specific and human-readable in pascal case, e.g. "SearchResults" or "Blob" or "NewOrg"
+     */
+    public logViewEvent(pageTitle: string, eventProperties?: any, logAsActiveUser = true): void {
+        if (window.context?.userAgentIsBot || !pageTitle) {
+            return
+        }
+        pageTitle = `View${pageTitle}`
+        this.logViewEventInternal(pageTitle, eventProperties, logAsActiveUser)
+    }
+
+    /**
+     * Log a pageview, following the new event naming conventions
+     *
+     * @param eventName should be specific and human-readable in pascal case, e.g. "SearchResults" or "Blob" or "NewOrg"
+     */
+    public logPageView(eventName: string, eventProperties?: any, logAsActiveUser = true): void {
+        if (window.context?.userAgentIsBot || !eventName) {
+            return
+        }
+        eventName = `${eventName}Viewed`
+        this.logViewEventInternal(eventName, eventProperties, logAsActiveUser)
+    }
+
+    /**
      * Log a user action or event.
      * Event labels should be specific and follow a ${noun}${verb} structure in pascal case, e.g. "ButtonClicked" or "SignInInitiated"
+     *
+     * @param eventLabel: the event name.
+     * @param eventProperties: event properties. These get logged to our database, but do not get
+     * sent to our analytics systems. This may contain private info such as repository names or search queries.
+     * @param publicArgument: event properties that include only public information. Do NOT
+     * include any private information, such as full URLs that may contain private repo names or
+     * search queries. The contents of this parameter are sent to our analytics systems.
      */
     public log(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
+        for (const listener of this.listeners) {
+            listener(eventLabel)
+        }
         if (window.context?.userAgentIsBot || !eventLabel) {
             return
         }
-        serverAdmin.trackAction(eventLabel, eventProperties, publicArgument)
-        this.logToConsole(eventLabel, eventProperties)
+        if (!isTelemetryDisabled) {
+            serverAdmin.trackAction(eventLabel, eventProperties, publicArgument)
+        }
+        this.logToConsole(eventLabel, eventProperties, publicArgument)
     }
 
-    private logToConsole(eventLabel: string, object?: any): void {
+    private logToConsole(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
         if (localStorage && localStorage.getItem('eventLogDebug') === 'true') {
-            console.debug('%cEVENT %s', 'color: #aaa', eventLabel, object)
+            console.debug('%cEVENT %s', 'color: #aaa', eventLabel, eventProperties, publicArgument)
         }
     }
 
@@ -113,6 +156,41 @@ export class EventLogger implements TelemetryService {
         return firstSourceURL
     }
 
+    public getLastSourceURL(): string {
+        // The cookie value gets overwritten each time a user visits a *.sourcegraph.com property. This code
+        // lives in Google Tag Manager.
+        const lastSourceURL = this.lastSourceURL || cookies.get(LAST_SOURCE_URL_KEY) || location.href
+
+        const redactedURL = redactSensitiveInfoFromAppURL(lastSourceURL)
+
+        // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
+        // Always set to renew expiry and migrate from localStorage
+        cookies.set(LAST_SOURCE_URL_KEY, redactedURL, this.cookieSettings)
+
+        this.lastSourceURL = lastSourceURL
+        return lastSourceURL
+    }
+
+    // Device ID is a require field for Amplitude events.
+    // https://developers.amplitude.com/docs/http-api-v2
+    public getDeviceID(): string {
+        return this.deviceID
+    }
+
+    // Insert ID is used to deduplicate events in Amplitude.
+    // https://developers.amplitude.com/docs/http-api-v2#optional-keys
+    public getInsertID(): string {
+        return uuid.v4()
+    }
+
+    // Event ID is used to deduplicate events in Amplitude.
+    // This is used in the case that multiple events with the same userID and timestamp
+    // are sent. https://developers.amplitude.com/docs/http-api-v2#optional-keys
+    public getEventID(): number {
+        this.eventID++
+        return this.eventID
+    }
+
     public getReferrer(): string {
         const referrer = document.referrer
         try {
@@ -142,7 +220,6 @@ export class EventLogger implements TelemetryService {
     private initializeLogParameters(): void {
         let anonymousUserID = cookies.get(ANONYMOUS_USER_ID_KEY) || localStorage.getItem(ANONYMOUS_USER_ID_KEY)
         let cohortID = cookies.get(COHORT_ID_KEY)
-
         if (!anonymousUserID) {
             anonymousUserID = uuid.v4()
             cohortID = getPreviousMonday(new Date())
@@ -156,8 +233,21 @@ export class EventLogger implements TelemetryService {
             cookies.set(COHORT_ID_KEY, cohortID, this.cookieSettings)
         }
 
+        let deviceID = cookies.get(DEVICE_ID_KEY)
+        if (!deviceID) {
+            // If device ID does not exist, use the anonymous user ID value so these are consolidated.
+            deviceID = anonymousUserID
+            cookies.set(DEVICE_ID_KEY, deviceID, this.cookieSettings)
+        }
+
         this.anonymousUserID = anonymousUserID
         this.cohortID = cohortID
+        this.deviceID = deviceID
+    }
+
+    public addEventLogListener(callback: (eventName: string) => void): () => void {
+        this.listeners.add(callback)
+        return () => this.listeners.delete(callback)
     }
 }
 
@@ -178,30 +268,46 @@ function handleQueryEvents(url: string): void {
     stripURLParameters(url, ['utm_campaign', 'utm_source', 'utm_medium', 'badge'])
 }
 
-interface EventQueryParameters {
-    utm_campaign?: string
-    utm_source?: string
-    utm_medium?: string
-}
-
 /**
  * Get pageview-specific event properties from URL query string parameters
  */
-function pageViewQueryParameters(url: string): EventQueryParameters {
+function pageViewQueryParameters(url: string): UTMMarker {
     const parsedUrl = new URL(url)
 
     const utmSource = parsedUrl.searchParams.get('utm_source')
+    const utmCampaign = parsedUrl.searchParams.get('utm_campaign')
+    const utmMedium = parsedUrl.searchParams.get('utm_medium')
+
+    const utmProps: UTMMarker = {
+        utm_campaign: utmCampaign || undefined,
+        utm_source: utmSource || undefined,
+        utm_medium: utmMedium || undefined,
+        utm_term: parsedUrl.searchParams.get('utm_term') || undefined,
+        utm_content: parsedUrl.searchParams.get('utm_content') || undefined,
+    }
+
     if (utmSource === 'saved-search-email') {
         eventLogger.log('SavedSearchEmailClicked')
     } else if (utmSource === 'saved-search-slack') {
         eventLogger.log('SavedSearchSlackClicked')
     } else if (utmSource === 'code-monitoring-email') {
         eventLogger.log('CodeMonitorEmailLinkClicked')
+    } else if (utmSource === 'hubspot' && utmCampaign?.match(/^cloud-onboarding-email(.*)$/)) {
+        eventLogger.log('UTMCampaignLinkClicked', utmProps, utmProps)
+    } else if (
+        [
+            'safari-extension',
+            'firefox-extension',
+            'chrome-extension',
+            'phabricator-integration',
+            'bitbucket-integration',
+            'gitlab-integration',
+        ].includes(utmSource ?? '')
+    ) {
+        eventLogger.log('UTMCodeHostIntegration', utmProps, utmProps)
+    } else if (utmMedium === 'VSCIDE' && utmCampaign === 'vsce-sign-up') {
+        eventLogger.log('VSCIDESignUpLinkClicked', utmProps, utmProps)
     }
 
-    return {
-        utm_campaign: parsedUrl.searchParams.get('utm_campaign') || undefined,
-        utm_source: parsedUrl.searchParams.get('utm_source') || undefined,
-        utm_medium: parsedUrl.searchParams.get('utm_medium') || undefined,
-    }
+    return utmProps
 }

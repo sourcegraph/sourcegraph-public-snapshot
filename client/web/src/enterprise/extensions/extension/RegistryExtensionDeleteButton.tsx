@@ -1,12 +1,14 @@
+import * as React from 'react'
+
 import { upperFirst } from 'lodash'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import WarningIcon from 'mdi-react/WarningIcon'
-import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { Button, ButtonGroup, Icon } from '@sourcegraph/wildcard'
 
 import { deleteRegistryExtensionWithConfirmation } from '../registry/backend'
 
@@ -72,27 +74,21 @@ export class RegistryExtensionDeleteButton extends React.PureComponent<
 
     public render(): JSX.Element | null {
         return (
-            <div className="btn-group" role="group">
-                <button
-                    type="button"
-                    className="btn btn-danger"
+            <ButtonGroup>
+                <Button
                     onClick={this.deleteExtension}
                     disabled={this.props.disabled || this.state.deletionOrError === undefined}
                     title={this.props.compact ? 'Delete extension' : ''}
+                    variant="danger"
                 >
-                    <DeleteIcon className="icon-inline" /> {!this.props.compact && 'Delete extension'}
-                </button>
+                    <Icon as={DeleteIcon} /> {!this.props.compact && 'Delete extension'}
+                </Button>
                 {isErrorLike(this.state.deletionOrError) && (
-                    <button
-                        type="button"
-                        disabled={true}
-                        className="btn btn-danger"
-                        title={upperFirst(this.state.deletionOrError.message)}
-                    >
-                        <WarningIcon className="icon-inline" />
-                    </button>
+                    <Button disabled={true} title={upperFirst(this.state.deletionOrError.message)} variant="danger">
+                        <Icon as={WarningIcon} />
+                    </Button>
                 )}
-            </div>
+            </ButtonGroup>
         )
     }
 

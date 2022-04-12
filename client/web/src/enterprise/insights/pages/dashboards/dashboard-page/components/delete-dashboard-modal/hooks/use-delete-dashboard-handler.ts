@@ -1,14 +1,12 @@
 import { useContext, useState } from 'react'
 
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { ErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
+import { ErrorLike, asError } from '@sourcegraph/common'
 
-import { InsightsApiContext } from '../../../../../../core/backend/api-provider'
-import { removeDashboardFromSettings } from '../../../../../../core/settings-action/dashboards'
-import { SettingsBasedInsightDashboard } from '../../../../../../core/types'
+import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
+import { CustomInsightDashboard } from '../../../../../../core/types'
 
-export interface UseDeleteDashboardHandlerProps extends PlatformContextProps<'updateSettings'> {
-    dashboard: SettingsBasedInsightDashboard
+export interface UseDeleteDashboardHandlerProps {
+    dashboard: CustomInsightDashboard
     onSuccess: () => void
 }
 
@@ -21,8 +19,8 @@ export interface useDeleteDashboardHandlerResult {
  * Deletes dashboard from the settings subject (owner).
  */
 export function useDeleteDashboardHandler(props: UseDeleteDashboardHandlerProps): useDeleteDashboardHandlerResult {
-    const { dashboard, platformContext, onSuccess } = props
-    const { getSubjectSettings, updateSubjectSettings } = useContext(InsightsApiContext)
+    const { dashboard, onSuccess } = props
+    const { deleteDashboard } = useContext(CodeInsightsBackendContext)
 
     const [loadingOrError, setLoadingOrError] = useState<undefined | boolean | ErrorLike>()
 
@@ -30,11 +28,7 @@ export function useDeleteDashboardHandler(props: UseDeleteDashboardHandlerProps)
         setLoadingOrError(true)
 
         try {
-            const settings = await getSubjectSettings(dashboard.owner.id).toPromise()
-
-            const updatedSettings = removeDashboardFromSettings(settings.contents, dashboard.settingsKey)
-
-            await updateSubjectSettings(platformContext, dashboard.owner.id, updatedSettings).toPromise()
+            await deleteDashboard({ id: dashboard.id }).toPromise()
 
             setLoadingOrError(false)
             onSuccess()

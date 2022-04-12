@@ -1,28 +1,25 @@
-import classnames from 'classnames'
-import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useCallback, useState } from 'react'
+
 import { useHistory, useLocation } from 'react-router'
 import { of } from 'rxjs'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { Container } from '@sourcegraph/wildcard'
+import { Button, Container, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { CodeMonitorFields, ListUserCodeMonitorsResult, ListUserCodeMonitorsVariables } from '../../graphql-operations'
-import { Settings } from '../../schema/settings.schema'
 
+import { CodeMonitorInfo } from './CodeMonitorInfo'
 import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
 import { CodeMonitoringPageProps } from './CodeMonitoringPage'
 import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
 
+import styles from './CodeMonitorList.module.scss'
+
 type CodeMonitorFilter = 'all' | 'user'
 
 interface CodeMonitorListProps
-    extends Required<Pick<CodeMonitoringPageProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'>>,
-        SettingsCascadeProps<Settings> {
+    extends Required<Pick<CodeMonitoringPageProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'>> {
     authenticatedUser: AuthenticatedUser | null
 }
 
@@ -31,20 +28,18 @@ const CodeMonitorEmptyList: React.FunctionComponent<{ authenticatedUser: Authent
 }) => (
     <div className="text-center">
         <h2 className="text-muted mb-2">No code monitors have been created.</h2>
-        {authenticatedUser ? (
-            <Link to="/code-monitoring/new" className="btn btn-primary">
-                <PlusIcon className="icon-inline" />
-                Create a code monitor
-            </Link>
-        ) : (
-            <CodeMonitorSignUpLink eventName="SignUpPLGMonitor_EmptyList" text="Sign up to create a code monitor" />
+        {!authenticatedUser && (
+            <CodeMonitorSignUpLink
+                className="my-3"
+                eventName="SignUpPLGMonitor_EmptyList"
+                text="Get started with code monitors"
+            />
         )}
     </div>
 )
 
 export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
     authenticatedUser,
-    settingsCascade,
     fetchUserCodeMonitors,
     toggleCodeMonitorEnabled,
 }) => {
@@ -76,30 +71,27 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
             <div className="row mb-5">
                 <div className="d-flex flex-column col-2 mr-2">
                     <h3>Filters</h3>
-                    <button
-                        type="button"
-                        className={classnames('btn text-left', {
-                            'btn-primary': monitorListFilter === 'all',
-                        })}
+                    <Button
+                        className="text-left"
                         onClick={() => setMonitorListFilter('all')}
+                        variant={monitorListFilter === 'all' ? 'primary' : undefined}
                     >
                         All
-                    </button>
-                    <button
-                        type="button"
-                        className={classnames('btn text-left', {
-                            'btn-primary': monitorListFilter === 'user',
-                        })}
+                    </Button>
+                    <Button
+                        className="text-left"
                         onClick={() => setMonitorListFilter('user')}
+                        variant={monitorListFilter === 'user' ? 'primary' : undefined}
                     >
                         Your code monitors
-                    </button>
+                    </Button>
                 </div>
                 <div className="d-flex flex-column w-100 col">
+                    <CodeMonitorInfo />
                     <h3 className="mb-2">
                         {`${monitorListFilter === 'all' ? 'All code monitors' : 'Your code monitors'}`}
                     </h3>
-                    <Container>
+                    <Container className="py-3">
                         <FilteredConnection<
                             CodeMonitorFields,
                             Omit<CodeMonitorNodeProps, 'node'>,
@@ -112,27 +104,22 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
                             hideSearch={true}
                             nodeComponent={CodeMonitorNode}
                             nodeComponentProps={{
-                                isSiteAdminUser: authenticatedUser?.siteAdmin ?? false,
                                 location,
-                                showCodeMonitoringTestEmailButton:
-                                    (!isErrorLike(settingsCascade.final) &&
-                                        settingsCascade.final?.experimentalFeatures
-                                            ?.showCodeMonitoringTestEmailButton) ||
-                                    false,
                                 toggleCodeMonitorEnabled,
                             }}
                             noun="code monitor"
                             pluralNoun="code monitors"
                             noSummaryIfAllNodesVisible={true}
                             cursorPaging={true}
-                            className="filtered-connection__centered-summary"
+                            withCenteredSummary={true}
                             emptyElement={<CodeMonitorEmptyList authenticatedUser={authenticatedUser} />}
+                            className={styles.list}
                         />
                     </Container>
                 </div>
             </div>
             <div className="mt-5">
-                We want to hear your feedback! <a href="mailto:feedback@sourcegraph.com">Share your thoughts</a>
+                We want to hear your feedback! <Link to="mailto:feedback@sourcegraph.com">Share your thoughts</Link>
             </div>
         </>
     )

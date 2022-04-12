@@ -1,10 +1,12 @@
-import { Observable, of } from 'rxjs'
+import { combineLatest, Observable, of } from 'rxjs'
 import { map, distinctUntilChanged } from 'rxjs/operators'
+
+import { isFirefox } from '@sourcegraph/common'
 
 import { observeStorageKey } from '../../browser-extension/web-extension-api/storage'
 import { isExtension } from '../context'
 
-import { isDefaultSourcegraphUrl } from './context'
+import { isDefaultSourcegraphUrl, observeSourcegraphURL } from './context'
 
 const OPTION_FLAGS_SYNC_STORAGE_KEY = 'featureFlags'
 
@@ -13,6 +15,7 @@ export type OptionFlagKey =
     | 'allowErrorReporting'
     | 'experimentalLinkPreviews'
     | 'experimentalTextFieldCompletion'
+    | 'clickToGoToDefinition'
 
 export interface OptionFlagDefinition {
     label: string
@@ -39,6 +42,10 @@ export const optionFlagDefinitions: OptionFlagDefinition[] = [
         key: 'experimentalLinkPreviews',
         label: 'Experimental link previews',
     },
+    {
+        key: 'clickToGoToDefinition',
+        label: 'Enable click to go to definition',
+    },
 ]
 
 const optionFlagDefaults: OptionFlagValues = {
@@ -46,24 +53,25 @@ const optionFlagDefaults: OptionFlagValues = {
     allowErrorReporting: false,
     experimentalLinkPreviews: false,
     experimentalTextFieldCompletion: false,
+    clickToGoToDefinition: false,
 }
 
-export function assignOptionFlagValues(values: OptionFlagValues): OptionFlagWithValue[] {
-    return optionFlagDefinitions.map(flag => ({ ...flag, value: values[flag.key] }))
-}
+const assignOptionFlagValues = (values: OptionFlagValues): OptionFlagWithValue[] =>
+    optionFlagDefinitions.map(flag => ({ ...flag, value: values[flag.key] }))
 
 /**
  * Apply default values to option flags, taking a partial option flag values
  * object and returning a complete option flag values object.
  */
-export function applyOptionFlagDefaults(values: Partial<OptionFlagValues> | undefined): OptionFlagValues {
-    return { ...optionFlagDefaults, ...values }
-}
+const applyOptionFlagDefaults = (values: Partial<OptionFlagValues> | undefined): OptionFlagValues => ({
+    ...optionFlagDefaults,
+    ...values,
+})
 
 /**
  * Observe the option flags object, with default values already applied.
  */
-export const observeOptionFlags = (): Observable<OptionFlagValues> => {
+const observeOptionFlags = (): Observable<OptionFlagValues> => {
     const optionFlagsStorageObservable = isExtension
         ? observeStorageKey('sync', OPTION_FLAGS_SYNC_STORAGE_KEY)
         : of(undefined)
@@ -81,19 +89,49 @@ export function observeOptionFlag(key: OptionFlagKey): Observable<boolean> {
 }
 
 /**
- * Determine if the sendTelemetry option flag should be overriden.
+ * Determine if the sendTelemetry option flag should be overridden.
  *
- * This function encapsulates the logic of when telemetry should be overriden.
+ * This function encapsulates the logic of when telemetry should be overridden.
  */
-export function shouldOverrideSendTelemetry(isFirefox: boolean, isExtension: boolean, sourcegraphUrl: string): boolean {
-    const isFirefoxExtension = isFirefox && isExtension
-    if (!isFirefoxExtension) {
-        return true
-    }
+const shouldOverrideSendTelemetry = (isExtension: boolean): Observable<boolean> =>
+    observeSourcegraphURL(isExtension).pipe(
+        map(sourcegraphUrl => {
+            const isFirefoxExtension = isFirefox() && isExtension
+            if (!isFirefoxExtension) {
+                return true
+            }
 
-    if (!isDefaultSourcegraphUrl(sourcegraphUrl)) {
-        return true
-    }
+            if (!isDefaultSourcegraphUrl(sourcegraphUrl)) {
+                return true
+            }
 
-    return false
-}
+            return false
+        })
+    )
+
+/**
+ * Determine if the sendTelemetry is enabled
+ */
+export const observeSendTelemetry = (isExtension: boolean): Observable<boolean> =>
+    combineLatest([shouldOverrideSendTelemetry(isExtension), observeOptionFlag('sendTelemetry')]).pipe(
+        map(([override, sendTelemetry]) => {
+            if (override) {
+                return true
+            }
+            return sendTelemetry
+        })
+    )
+
+/**
+ * A list of option flags with values
+ */
+export const observeOptionFlagsWithValues = (isExtension: boolean): Observable<OptionFlagWithValue[]> =>
+    combineLatest([observeOptionFlags(), shouldOverrideSendTelemetry(isExtension)]).pipe(
+        map(([flags, override]) => {
+            const definitions = assignOptionFlagValues(flags)
+            if (override) {
+                return definitions.filter(flag => flag.key !== 'sendTelemetry')
+            }
+            return definitions
+        })
+    )

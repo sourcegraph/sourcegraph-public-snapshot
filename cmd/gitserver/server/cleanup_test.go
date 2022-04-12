@@ -16,20 +16,27 @@ import (
 	"testing/quick"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const (
 	testRepoA = "testrepo-A"
 	testRepoC = "testrepo-C"
 )
+
+func (s *Server) testSetup(t *testing.T) {
+	t.Helper()
+	s.Handler() // Handler as a side-effect sets up Server
+	db := dbtest.NewDB(t)
+	s.DB = database.NewDB(db)
+}
 
 func TestCleanup_computeStats(t *testing.T) {
 	root, err := os.MkdirTemp("", "gitserver-test-")
@@ -60,8 +67,27 @@ func TestCleanup_computeStats(t *testing.T) {
 	// We run cleanupRepos because we want to test as a side-effect it creates
 	// the correct file in the correct place.
 	s := &Server{ReposDir: root}
-	s.Handler() // Handler as a side-effect sets up Server
+	s.testSetup(t)
+
+	if _, err := s.DB.ExecContext(context.Background(), `
+insert into repo(id, name) values (1, 'a'), (2, 'b/d'), (3, 'c');
+insert into gitserver_repos(repo_id, shard_id) values (1, 1), (2, 1);
+insert into gitserver_repos(repo_id, shard_id, repo_size_bytes) values (3, 1, 228);
+`); err != nil {
+		t.Fatalf("unexpected error while inserting test data: %s", err)
+	}
+
 	s.cleanupRepos()
+
+	for i := 1; i <= 3; i++ {
+		repo, err := s.DB.GitserverRepos().GetByID(context.Background(), 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if repo.RepoSizeBytes == 0 {
+			t.Fatal("repo_size_bytes is not updated")
+		}
+	}
 
 	// we hardcode the name here so the tests break if someone changes the
 	// value of reposStatsName. We don't want it to change without good reason
@@ -107,7 +133,7 @@ func TestCleanupInactive(t *testing.T) {
 	}
 
 	s := &Server{ReposDir: root}
-	s.Handler() // Handler as a side-effect sets up Server
+	s.testSetup(t)
 	s.cleanupRepos()
 
 	if _, err := os.Stat(repoA); os.IsNotExist(err) {
@@ -125,10 +151,9 @@ func TestCleanupInactive(t *testing.T) {
 // relevant internal magic numbers and transformations change.
 func TestGitGCAuto(t *testing.T) {
 	// Create a test repository with detectable garbage that GC can prune.
-	root := t.TempDir()
-	repo := filepath.Join(root, "garbage-repo")
-	defer os.RemoveAll(root)
-	runCmd(t, root, "git", "init", repo)
+	wd := t.TempDir()
+	repo := filepath.Join(wd, "garbage-repo")
+	runCmd(t, wd, "git", "init", repo)
 
 	// First we need to generate a moderate number of commits.
 	for i := 0; i < 50; i++ {
@@ -149,6 +174,12 @@ func TestGitGCAuto(t *testing.T) {
 	runCmd(t, repo, "git", "checkout", "master")
 	runCmd(t, repo, "git", "merge", "secondary")
 
+	// Now create a bare repo like gitserver expects
+	root := t.TempDir()
+	wdRepo := repo
+	repo = filepath.Join(root, "garbage-repo")
+	runCmd(t, root, "git", "clone", "--bare", wdRepo, filepath.Join(repo, ".git"))
+
 	// `git count-objects -v` can indicate objects, packs, etc.
 	// We'll run this before and after to verify that an action
 	// was taken by `git gc --auto`.
@@ -164,7 +195,7 @@ func TestGitGCAuto(t *testing.T) {
 
 	// Handler must be invoked for Server side-effects.
 	s := &Server{ReposDir: root}
-	s.Handler()
+	s.testSetup(t)
 	s.cleanupRepos()
 
 	// Verify that there are no more GC-able objects in the repository.
@@ -186,6 +217,7 @@ func TestCleanupExpired(t *testing.T) {
 	repoGCOld := path.Join(root, "repo-gc-old", ".git")
 	repoBoom := path.Join(root, "repo-boom", ".git")
 	repoCorrupt := path.Join(root, "repo-corrupt", ".git")
+	repoNonBare := path.Join(root, "repo-non-bare", ".git")
 	repoPerforce := path.Join(root, "repo-perforce", ".git")
 	repoPerforceGCOld := path.Join(root, "repo-perforce-gc-old", ".git")
 	repoRemoteURLScrub := path.Join(root, "repo-remote-url-scrub", ".git")
@@ -202,6 +234,10 @@ func TestCleanupExpired(t *testing.T) {
 		if err := cmd.Run(); err != nil {
 			t.Fatal(err)
 		}
+	}
+
+	if err := exec.Command("git", "init", filepath.Dir(repoNonBare)).Run(); err != nil {
+		t.Fatal(err)
 	}
 
 	getRemoteURL := func(ctx context.Context, name api.RepoName) (string, error) {
@@ -271,6 +307,10 @@ func TestCleanupExpired(t *testing.T) {
 	repoBoomTime := modTime(repoBoom)
 	repoBoomRecloneTime := recloneTime(repoBoom)
 
+	if _, err := os.Stat(repoNonBare); err != nil {
+		t.Fatal(err)
+	}
+
 	s := &Server{
 		ReposDir:         root,
 		GetRemoteURLFunc: getRemoteURL,
@@ -278,7 +318,7 @@ func TestCleanupExpired(t *testing.T) {
 			return &GitRepoSyncer{}, nil
 		},
 	}
-	s.Handler() // Handler as a side-effect sets up Server
+	s.testSetup(t)
 	s.cleanupRepos()
 
 	// repos that shouldn't be re-cloned
@@ -323,74 +363,142 @@ func TestCleanupExpired(t *testing.T) {
 	} else if err != nil {
 		t.Fatal(err)
 	}
+
+	if _, err := os.Stat(repoNonBare); err == nil {
+		t.Fatal("non-bare repo was not removed")
+	}
 }
 
+// TestCleanupOldLocks checks whether cleanupRepos removes stale lock files. It
+// does not check whether each job in cleanupRepos finishes successfully, nor
+// does it check if other files or directories have been created.
 func TestCleanupOldLocks(t *testing.T) {
+	type file struct {
+		name        string
+		age         time.Duration
+		wantRemoved bool
+	}
+
+	cases := []struct {
+		name  string
+		files []file
+	}{
+		{
+			name: "fresh_config_lock",
+			files: []file{
+				{
+					name: "config.lock",
+				},
+			},
+		},
+		{
+			name: "stale_config_lock",
+			files: []file{
+				{
+					name:        "config.lock",
+					age:         time.Hour,
+					wantRemoved: true,
+				},
+			},
+		},
+		{
+			name: "fresh_packed",
+			files: []file{
+				{
+					name: "packed-refs.lock",
+				},
+			},
+		},
+		{
+			name: "stale_packed",
+			files: []file{
+				{
+					name:        "packed-refs.lock",
+					age:         2 * time.Hour,
+					wantRemoved: true,
+				},
+			},
+		},
+		{
+			name: "fresh_commit-graph_lock",
+			files: []file{
+				{
+					name: "objects/info/commit-graph.lock",
+				},
+			},
+		},
+		{
+			name: "stale_commit-graph_lock",
+			files: []file{
+				{
+					name:        "objects/info/commit-graph.lock",
+					age:         2 * time.Hour,
+					wantRemoved: true,
+				},
+			},
+		},
+		{
+			name: "refs_lock",
+			files: []file{
+				{
+					name: "refs/heads/fresh",
+				},
+				{
+					name: "refs/heads/fresh.lock",
+				},
+				{
+					name: "refs/heads/stale",
+				},
+				{
+					name:        "refs/heads/stale.lock",
+					age:         2 * time.Hour,
+					wantRemoved: true,
+				},
+			},
+		},
+	}
+
 	root := t.TempDir()
 
-	// Only recent lock files should remain.
-	mkFiles(t, root,
-		"github.com/foo/empty/.git/HEAD",
-
-		"github.com/foo/freshconfiglock/.git/HEAD",
-		"github.com/foo/freshconfiglock/.git/config.lock",
-
-		"github.com/foo/freshpacked/.git/HEAD",
-		"github.com/foo/freshpacked/.git/packed-refs.lock",
-
-		"github.com/foo/staleconfiglock/.git/HEAD",
-		"github.com/foo/staleconfiglock/.git/config.lock",
-
-		"github.com/foo/stalepacked/.git/HEAD",
-		"github.com/foo/stalepacked/.git/packed-refs.lock",
-
-		"github.com/foo/refslock/.git/HEAD",
-		"github.com/foo/refslock/.git/refs/heads/fresh",
-		"github.com/foo/refslock/.git/refs/heads/fresh.lock",
-		"github.com/foo/refslock/.git/refs/heads/stale",
-		"github.com/foo/refslock/.git/refs/heads/stale.lock",
-	)
-
-	chtime := func(p string, age time.Duration) {
-		err := os.Chtimes(filepath.Join(root, p), time.Now().Add(-age), time.Now().Add(-age))
-		if err != nil {
+	// initialize git directories and place files
+	for _, c := range cases {
+		cmd := exec.Command("git", "--bare", "init", c.name+"/.git")
+		cmd.Dir = root
+		if err := cmd.Run(); err != nil {
 			t.Fatal(err)
 		}
+		dir := GitDir(filepath.Join(root, c.name, ".git"))
+		for _, f := range c.files {
+			writeFile(t, dir.Path(f.name), nil)
+			if f.age == 0 {
+				continue
+			}
+			err := os.Chtimes(dir.Path(f.name), time.Now().Add(-f.age), time.Now().Add(-f.age))
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
 	}
-	chtime("github.com/foo/staleconfiglock/.git/config.lock", time.Hour)
-	chtime("github.com/foo/stalepacked/.git/packed-refs.lock", 2*time.Hour)
-	chtime("github.com/foo/refslock/.git/refs/heads/stale.lock", 2*time.Hour)
 
 	s := &Server{ReposDir: root}
-	s.Handler() // Handler as a side-effect sets up Server
+	s.testSetup(t)
 	s.cleanupRepos()
 
-	assertPaths(t, root,
-		"repos-stats.json",
+	isRemoved := func(path string) bool {
+		_, err := os.Stat(path)
+		return errors.Is(err, fs.ErrNotExist)
+	}
 
-		"github.com/foo/empty/.git/HEAD",
-		"github.com/foo/empty/.git/info/attributes",
-
-		"github.com/foo/freshconfiglock/.git/HEAD",
-		"github.com/foo/freshconfiglock/.git/config.lock",
-		"github.com/foo/freshconfiglock/.git/info/attributes",
-
-		"github.com/foo/freshpacked/.git/HEAD",
-		"github.com/foo/freshpacked/.git/packed-refs.lock",
-		"github.com/foo/freshpacked/.git/info/attributes",
-
-		"github.com/foo/staleconfiglock/.git/HEAD",
-		"github.com/foo/staleconfiglock/.git/info/attributes",
-
-		"github.com/foo/stalepacked/.git/HEAD",
-		"github.com/foo/stalepacked/.git/info/attributes",
-
-		"github.com/foo/refslock/.git/HEAD",
-		"github.com/foo/refslock/.git/refs/heads/fresh",
-		"github.com/foo/refslock/.git/refs/heads/fresh.lock",
-		"github.com/foo/refslock/.git/refs/heads/stale",
-		"github.com/foo/refslock/.git/info/attributes",
-	)
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			dir := GitDir(filepath.Join(root, c.name, ".git"))
+			for _, f := range c.files {
+				if f.wantRemoved != isRemoved(dir.Path(f.name)) {
+					t.Fatalf("%s should have been removed", f.name)
+				}
+			}
+		})
+	}
 }
 
 func TestSetupAndClearTmp(t *testing.T) {
@@ -480,8 +588,10 @@ func TestRemoveRepoDirectory(t *testing.T) {
 	)
 
 	// Set them up in the DB
-	ctx := context.Background()
-	db := dbtesting.GetDB(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	db := database.NewDB(dbtest.NewDB(t))
 
 	idMapping := make(map[api.RepoName]api.RepoID)
 
@@ -511,6 +621,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 	s := &Server{
 		ReposDir: root,
 		DB:       db,
+		ctx:      ctx,
 	}
 
 	// Remove everything but github.com/foo/survivor
@@ -821,5 +932,396 @@ func TestJitterDuration(t *testing.T) {
 	}
 	if err := quick.Check(f, nil); err != nil {
 		t.Error(err)
+	}
+}
+
+func prepareEmptyGitRepo(t *testing.T, dir string) GitDir {
+	t.Helper()
+	cmd := exec.Command("git", "init", ".")
+	cmd.Dir = dir
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("execution error: %v, output %s", err, out)
+	}
+	return GitDir(filepath.Join(dir, ".git"))
+}
+
+func TestTooManyLooseObjects(t *testing.T) {
+	dir := t.TempDir()
+	gitDir := prepareEmptyGitRepo(t, dir)
+
+	// create sentinel object folder
+	if err := os.MkdirAll(gitDir.Path("objects", "17"), fs.ModePerm); err != nil {
+		t.Fatal(err)
+	}
+
+	touch := func(name string) error {
+		file, err := os.Create(gitDir.Path("objects", "17", name))
+		if err != nil {
+			return err
+		}
+		return file.Close()
+	}
+
+	limit := 2 * 256 // 2 objects per folder
+
+	cases := []struct {
+		name string
+		file string
+		want bool
+	}{
+		{
+			name: "empty",
+			file: "",
+			want: false,
+		},
+		{
+			name: "1 file",
+			file: "abc1",
+			want: false,
+		},
+		{
+			name: "ignore files with non-hexadecimal names",
+			file: "abcxyz123",
+			want: false,
+		},
+		{
+			name: "2 files",
+			file: "abc2",
+			want: false,
+		},
+		{
+			name: "3 files (too many)",
+			file: "abc3",
+			want: true,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if c.file != "" {
+				err := touch(c.file)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			tooManyLO, err := tooManyLooseObjects(gitDir, limit)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tooManyLO != c.want {
+				t.Fatalf("want %t, got %t\n", c.want, tooManyLO)
+			}
+		})
+	}
+}
+
+func TestTooManyLooseObjectsMissingSentinelDir(t *testing.T) {
+	dir := t.TempDir()
+	gitDir := prepareEmptyGitRepo(t, dir)
+
+	_, err := tooManyLooseObjects(gitDir, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestHasBitmap(t *testing.T) {
+	dir := t.TempDir()
+	gitDir := prepareEmptyGitRepo(t, dir)
+
+	t.Run("empty git repo", func(t *testing.T) {
+		hasBm, err := hasBitmap(gitDir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if hasBm {
+			t.Fatalf("expected no bitmap file for an empty git repository")
+		}
+	})
+
+	t.Run("repo with bitmap", func(t *testing.T) {
+		script := `echo acont > afile
+git add afile
+git commit -am amsg
+git repack -d -l -A --write-bitmap
+`
+		cmd := exec.Command("/bin/sh", "-euxc", script)
+		cmd.Dir = dir
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("out=%s, err=%s", out, err)
+		}
+		hasBm, err := hasBitmap(gitDir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !hasBm {
+			t.Fatalf("expected bitmap file after running git repack -d -l -A --write-bitmap")
+		}
+	})
+}
+
+func TestTooManyPackFiles(t *testing.T) {
+	dir := t.TempDir()
+	gitDir := prepareEmptyGitRepo(t, dir)
+
+	newPackFile := func(name string) error {
+		file, err := os.Create(gitDir.Path("objects", "pack", name))
+		if err != nil {
+			return err
+		}
+		return file.Close()
+	}
+
+	packLimit := 1
+
+	cases := []struct {
+		name string
+		file string
+		want bool
+	}{
+		{
+			name: "empty",
+			file: "",
+			want: false,
+		},
+		{
+			name: "1 pack",
+			file: "a.pack",
+			want: false,
+		},
+		{
+			name: "2 packs",
+			file: "b.pack",
+			want: true,
+		},
+		{
+			name: "2 packs, with 1 keep file",
+			file: "b.keep",
+			want: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if c.file != "" {
+				err := newPackFile(c.file)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			tooManyPf, err := tooManyPackfiles(gitDir, packLimit)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tooManyPf != c.want {
+				t.Fatalf("want %t, got %t\n", c.want, tooManyPf)
+			}
+		})
+	}
+}
+
+func TestHasCommitGraph(t *testing.T) {
+	dir := t.TempDir()
+	gitDir := prepareEmptyGitRepo(t, dir)
+
+	t.Run("empty git repo", func(t *testing.T) {
+		hasBm, err := hasCommitGraph(gitDir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if hasBm {
+			t.Fatalf("expected no commit-graph file for an empty git repository")
+		}
+	})
+
+	t.Run("commit-graph", func(t *testing.T) {
+		script := `echo acont > afile
+git add afile
+git commit -am amsg
+git commit-graph write --reachable --changed-paths
+`
+		cmd := exec.Command("/bin/sh", "-euxc", script)
+		cmd.Dir = dir
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("out=%s, err=%s", out, err)
+		}
+		hasCg, err := hasCommitGraph(gitDir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !hasCg {
+			t.Fatalf("expected commit-graph file after running git commit-graph write --reachable --changed-paths")
+		}
+	})
+}
+
+func TestNeedsMaintenance(t *testing.T) {
+	dir := t.TempDir()
+	gitDir := prepareEmptyGitRepo(t, dir)
+
+	needed, reason, err := needsMaintenance(gitDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if reason != "bitmap" {
+		t.Fatalf("want %s, got %s", "bitmap", reason)
+	}
+	if !needed {
+		t.Fatal("repos without a bitmap should require a repack")
+	}
+
+	// create bitmap file and commit-graph
+	script := `echo acont > afile
+git add afile
+git commit -am amsg
+git repack -d -l -A --write-bitmap
+git commit-graph write --reachable --changed-paths
+`
+	cmd := exec.Command("/bin/sh", "-euxc", script)
+	cmd.Dir = dir
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("out=%s, err=%s", out, err)
+	}
+
+	needed, reason, err = needsMaintenance(gitDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if reason != "skipped" {
+		t.Fatalf("want %s, got %s", "skipped", reason)
+	}
+	if needed {
+		t.Fatal("this repo doesn't need maintenance")
+	}
+}
+
+func TestPruneIfNeeded(t *testing.T) {
+	gitDir := prepareEmptyGitRepo(t, t.TempDir())
+
+	// create sentinel object folder
+	if err := os.MkdirAll(gitDir.Path("objects", "17"), fs.ModePerm); err != nil {
+		t.Fatal(err)
+	}
+
+	limit := -1 // always run prune
+	if err := pruneIfNeeded(gitDir, limit); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCleanup_setRepoSizes(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	root, err := os.MkdirTemp("", "gitserver-test-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(root)
+
+	for _, name := range []string{
+		"ghe.sgdev.org/sourcegraph/gorilla-websocket",
+		"ghe.sgdev.org/sourcegraph/gorilla-mux",
+		"ghe.sgdev.org/sourcegraph/gorilla-sessions",
+	} {
+		p := path.Join(root, name, ".git")
+		if err := os.MkdirAll(p, 0755); err != nil {
+			t.Fatal(err)
+		}
+		cmd := exec.Command("git", "--bare", "init", p)
+		if err := cmd.Run(); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// We run cleanupRepos because we want to test as a side-effect it creates
+	// the correct file in the correct place.
+	s := &Server{ReposDir: root}
+	s.Handler() // Handler as a side-effect sets up Server
+	db := dbtest.NewDB(t)
+	s.DB = database.NewDB(db)
+
+	// inserting info about repos to DB. Repo with ID = 1 already has its size
+	if _, err := db.Exec(`
+insert into repo(id, name)
+values (1, 'ghe.sgdev.org/sourcegraph/gorilla-websocket'),
+       (2, 'ghe.sgdev.org/sourcegraph/gorilla-mux'),
+       (3, 'ghe.sgdev.org/sourcegraph/gorilla-sessions');
+insert into gitserver_repos(repo_id, shard_id) values (2, 1), (3, 1);
+insert into gitserver_repos(repo_id, shard_id, repo_size_bytes) values (1, 1, 228);
+`); err != nil {
+		t.Fatalf("unexpected error while inserting test data: %s", err)
+	}
+
+	s.cleanupRepos()
+
+	for i := 1; i <= 3; i++ {
+		repo, err := s.DB.GitserverRepos().GetByID(context.Background(), 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if repo.RepoSizeBytes == 0 {
+			t.Fatal("repo_size_bytes is not updated")
+		}
+		if i == 1 && repo.RepoSizeBytes != 228 {
+			t.Fatal("existing repo_size_bytes has been updated")
+		}
+		if repo.ShardID != "1" {
+			t.Fatal("shard_id has been corrupted")
+		}
+	}
+}
+
+func TestSGMLogFile(t *testing.T) {
+	dir := GitDir(t.TempDir())
+	cmd := exec.Command("git", "--bare", "init")
+	dir.Set(cmd)
+	if err := cmd.Run(); err != nil {
+		t.Fatal(err)
+	}
+
+	mustHaveLogFile := func(t *testing.T) {
+		t.Helper()
+		content, err := os.ReadFile(dir.Path(sgmLog))
+		if err != nil {
+			t.Fatalf("%s should have been set: %s", sgmLog, err)
+		}
+		if len(content) == 0 {
+			t.Fatal("log file should have contained command output")
+		}
+	}
+
+	// break the repo
+	fakeRef := dir.Path("refs", "heads", "apple")
+	if _, err := os.Create(fakeRef); err != nil {
+		t.Fatal("test setup failed. Could not create fake ref")
+	}
+
+	// failed run => log file
+	if err := sgMaintenance(dir); err == nil {
+		t.Fatal("sgMaintenance should have returned an error")
+	}
+	mustHaveLogFile(t)
+
+	// fix the repo
+	os.Remove(fakeRef)
+
+	// fresh sgmLog file => skip execution
+	if err := sgMaintenance(dir); err != nil {
+		t.Fatalf("unexpected error %s", err)
+	}
+	mustHaveLogFile(t)
+
+	// backdate sgmLog file => sgMaintenance ignores log file
+	old := time.Now().Add(-2 * sgmLogExpire)
+	if err := os.Chtimes(dir.Path(sgmLog), old, old); err != nil {
+		t.Fatal(err)
+	}
+	if err := sgMaintenance(dir); err != nil {
+		t.Fatalf("unexpected error %s", err)
+	}
+	if _, err := os.Stat(dir.Path(sgmLog)); err == nil {
+		t.Fatalf("%s should have been removed", sgmLog)
 	}
 }

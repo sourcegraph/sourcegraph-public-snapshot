@@ -2,34 +2,34 @@ package janitor
 
 import (
 	"context"
-	"fmt"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/gobwas/glob"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type uploadExpirer struct {
 	dbStore                DBStore
-	gitserverClient        GitserverClient
+	policyMatcher          PolicyMatcher
 	metrics                *metrics
 	repositoryProcessDelay time.Duration
 	repositoryBatchSize    int
 	uploadProcessDelay     time.Duration
 	uploadBatchSize        int
+	policyBatchSize        int
 	commitBatchSize        int
 	branchesCacheMaxKeys   int
 }
 
-var _ goroutine.Handler = &uploadExpirer{}
-var _ goroutine.ErrorHandler = &uploadExpirer{}
+var (
+	_ goroutine.Handler      = &uploadExpirer{}
+	_ goroutine.ErrorHandler = &uploadExpirer{}
+)
 
 // NewUploadExpirer returns a background routine that periodically compares the age of upload records
 // against the age of uploads protected by global and repository specific data retention policies.
@@ -38,11 +38,12 @@ var _ goroutine.ErrorHandler = &uploadExpirer{}
 // no dependents will be removed by the expiredUploadDeleter.
 func NewUploadExpirer(
 	dbStore DBStore,
-	gitserverClient GitserverClient,
+	policyMatcher PolicyMatcher,
 	repositoryProcessDelay time.Duration,
 	repositoryBatchSize int,
 	uploadProcessDelay time.Duration,
 	uploadBatchSize int,
+	policyBatchSize int,
 	commitBatchSize int,
 	branchesCacheMaxKeys int,
 	interval time.Duration,
@@ -50,12 +51,13 @@ func NewUploadExpirer(
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &uploadExpirer{
 		dbStore:                dbStore,
-		gitserverClient:        gitserverClient,
+		policyMatcher:          policyMatcher,
 		metrics:                metrics,
 		repositoryProcessDelay: repositoryProcessDelay,
 		repositoryBatchSize:    repositoryBatchSize,
 		uploadProcessDelay:     uploadProcessDelay,
 		uploadBatchSize:        uploadBatchSize,
+		policyBatchSize:        policyBatchSize,
 		commitBatchSize:        commitBatchSize,
 		branchesCacheMaxKeys:   branchesCacheMaxKeys,
 	})
@@ -65,38 +67,31 @@ func (e *uploadExpirer) Handle(ctx context.Context) (err error) {
 	// Get the batch of repositories that we'll handle in this invocation of the periodic goroutine. This
 	// set should contain repositories that have yet to be updated, or that have been updated least recently.
 	// This allows us to update every repository reliably, even if it takes a long time to process through
-	// the backlog.
-	lastUpdatedAtByRepository, err := e.dbStore.SelectRepositoriesForRetentionScan(ctx, e.repositoryProcessDelay, e.repositoryBatchSize)
+	// the backlog. Note that this set of repositories require a fresh commit graph, so we're not trying to
+	// process records that have been uploaded but the commits from which they are visible have yet to be
+	// determined (and appearing as if they are visible to no commit).
+	repositories, err := e.dbStore.SelectRepositoriesForRetentionScan(ctx, e.repositoryProcessDelay, e.repositoryBatchSize)
 	if err != nil {
 		return errors.Wrap(err, "dbstore.SelectRepositoriesForRetentionScan")
 	}
-	if len(lastUpdatedAtByRepository) == 0 {
+	if len(repositories) == 0 {
 		// All repositories updated recently enough
 		return nil
 	}
 
-	// Retrieve the set of global configuration policies that affect data retention. These policies are
-	// applied to all repositories.
-	globalPolicies, err := e.dbStore.GetConfigurationPolicies(ctx, dbstore.GetConfigurationPoliciesOptions{
-		ForDataRetention: true,
-	})
-	if err != nil {
-		return errors.Wrap(err, "dbstore.GetConfigurationPolicies")
-	}
-
 	now := timeutil.Now()
 
-	for repositoryID, repositoryLastUpdatedAt := range lastUpdatedAtByRepository {
-		if repositoryErr := e.handleRepository(ctx, repositoryID, repositoryLastUpdatedAt, globalPolicies, now); repositoryErr != nil {
+	for _, repositoryID := range repositories {
+		if repositoryErr := e.handleRepository(ctx, repositoryID, now); repositoryErr != nil {
 			if err == nil {
 				err = repositoryErr
 			} else {
-				err = multierror.Append(err, repositoryErr)
+				err = errors.Append(err, repositoryErr)
 			}
 		}
 	}
 
-	return nil
+	return err
 }
 
 func (e *uploadExpirer) HandleError(err error) {
@@ -107,38 +102,17 @@ func (e *uploadExpirer) HandleError(err error) {
 func (e *uploadExpirer) handleRepository(
 	ctx context.Context,
 	repositoryID int,
-	repositoryLastUpdatedAt *time.Time,
-	globalPolicies []dbstore.ConfigurationPolicy,
 	now time.Time,
 ) error {
 	e.metrics.numRepositoriesScanned.Inc()
 
-	// Retrieve the set of configuration policies that affect data retention. These policies are applied
-	// only to this repository.
-	repositoryPolicies, err := e.dbStore.GetConfigurationPolicies(ctx, dbstore.GetConfigurationPoliciesOptions{
-		RepositoryID:     repositoryID,
-		ForDataRetention: true,
-	})
-	if err != nil {
-		return errors.Wrap(err, "dbstore.GetConfigurationPolicies")
-	}
-
-	// Combine global and repository-specific policies. Note that this resulting slice should never be
-	// empty as we have a pair of protected data retention policies on the global scope so that all data
-	// visible from a tag or branch tip is protected for at least a short amount of time after upload.
-	policies := append(globalPolicies, repositoryPolicies...)
-
-	// Pre-compile the glob patterns in all the policies to reduce the number of times we need to compile
-	// the pattern in the loops below.
-	patterns, err := compilePatterns(policies)
+	// Build a map from commits to the set of policies that affect them. Note that this map should
+	// never be empty as we have multiple protected data retention policies on the global scope so
+	// that all data visible from a tag or branch tip is protected for at least a short amount of
+	// time after upload.
+	commitMap, err := e.buildCommitMap(ctx, repositoryID, now)
 	if err != nil {
 		return err
-	}
-
-	// Get a list of relevant branch and tag heads of this repository
-	refDescriptions, err := e.gitserverClient.RefDescriptions(ctx, repositoryID)
-	if err != nil {
-		return errors.Wrap(err, "gitserver.RefDescriptions")
 	}
 
 	// Mark the time after which all unprocessed uploads for this repository will not be touched.
@@ -151,20 +125,16 @@ func (e *uploadExpirer) handleRepository(
 	// this value in the loop.
 	lastRetentionScanBefore := now.Add(-e.uploadProcessDelay)
 
-	// Create a cache structure shared by the routine that processes each upload. An upload can be
-	// visible from many commits at once, so it is likely that the same commit is re-processed many
-	// times. This cache prevents us from making redundant gitserver requests, and from wasting
-	// compute time iterating through the same data already in memory.
-	repositoryState, err := newRepositoryExpirationState(repositoryID, e.gitserverClient, e.branchesCacheMaxKeys)
-	if err != nil {
-		return err
-	}
-
 	for {
 		// Each record pulled back by this query will either have its expired flag or its last
 		// retention scan timestamp updated by the following handleUploads call. This guarantees
 		// that the loop will terminate naturally after the entire set of candidate uploads have
 		// been seen and updated with a time necessarily greater than lastRetentionScanBefore.
+		//
+		// Additionally, we skip the set of uploads that have finished processing strictly after
+		// the last update to the commit graph for that repository. This ensures we do not throw
+		// out new uploads that would happen to be visible to no commits since they were never
+		// installed into the commit graph.
 
 		uploads, _, err := e.dbStore.GetUploads(ctx, dbstore.GetUploadsOptions{
 			State:                   "completed",
@@ -173,13 +143,13 @@ func (e *uploadExpirer) handleRepository(
 			OldestFirst:             true,
 			Limit:                   e.uploadBatchSize,
 			LastRetentionScanBefore: &lastRetentionScanBefore,
-			UploadedBefore:          repositoryLastUpdatedAt,
+			InCommitGraph:           true,
 		})
 		if err != nil || len(uploads) == 0 {
 			return err
 		}
 
-		if err := e.handleUploads(ctx, policies, patterns, refDescriptions, repositoryState, uploads, now); err != nil {
+		if err := e.handleUploads(ctx, commitMap, uploads, now); err != nil {
 			// Note that we collect errors in the lop of the handleUploads call, but we will still terminate
 			// this loop on any non-nil error from that function. This is required to prevent us from pullling
 			// back the same set of failing records from the database in a tight loop.
@@ -188,28 +158,57 @@ func (e *uploadExpirer) handleRepository(
 	}
 }
 
+// buildCommitMap will iterate the complete set of configuration policies that apply to a particular
+// repository and build a map from commits to the policies that apply to them.
+func (e *uploadExpirer) buildCommitMap(ctx context.Context, repositoryID int, now time.Time) (map[string][]policies.PolicyMatch, error) {
+	var (
+		offset   int
+		policies []dbstore.ConfigurationPolicy
+	)
+
+	for {
+		// Retrieve the complete set of configuration policies that affect data retention for this repository
+		policyBatch, totalCount, err := e.dbStore.GetConfigurationPolicies(ctx, dbstore.GetConfigurationPoliciesOptions{
+			RepositoryID:     repositoryID,
+			ForDataRetention: true,
+			Limit:            e.policyBatchSize,
+			Offset:           offset,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "dbstore.GetConfigurationPolicies")
+		}
+
+		offset += len(policyBatch)
+		policies = append(policies, policyBatch...)
+
+		if len(policyBatch) == 0 || offset >= totalCount {
+			break
+		}
+	}
+
+	// Get the set of commits within this repository that match a data retention policy
+	return e.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, policies, now)
+}
+
 func (e *uploadExpirer) handleUploads(
 	ctx context.Context,
-	policies []dbstore.ConfigurationPolicy,
-	patterns map[string]glob.Glob,
-	refDescriptions map[string][]gitserver.RefDescription,
-	repositoryState *repositoryExpirationState,
+	commitMap map[string][]policies.PolicyMatch,
 	uploads []dbstore.Upload,
 	now time.Time,
 ) (err error) {
-	e.metrics.numUploadsScanned.Inc()
-
 	// Categorize each upload as protected or expired
-	protectedUploadIDs := make([]int, 0, len(uploads))
-	expiredUploadIDs := make([]int, 0, len(uploads))
+	var (
+		protectedUploadIDs = make([]int, 0, len(uploads))
+		expiredUploadIDs   = make([]int, 0, len(uploads))
+	)
 
 	for _, upload := range uploads {
-		protected, checkErr := e.isUploadProtectedByPolicy(ctx, policies, patterns, refDescriptions, repositoryState, upload, now)
+		protected, checkErr := e.isUploadProtectedByPolicy(ctx, commitMap, upload, now)
 		if checkErr != nil {
 			if err == nil {
 				err = checkErr
 			} else {
-				err = multierror.Append(err, checkErr)
+				err = errors.Append(err, checkErr)
 			}
 
 			// Collect errors but not prevent other commits from being successfully processed. We'll leave the
@@ -233,23 +232,26 @@ func (e *uploadExpirer) handleUploads(
 		if updateErr := errors.Wrap(err, "dbstore.UpdateUploadRetention"); err == nil {
 			err = updateErr
 		} else {
-			err = multierror.Append(err, updateErr)
+			err = errors.Append(err, updateErr)
 		}
 	}
 
-	e.metrics.numUploadsExpired.Add(float64(len(expiredUploadIDs)))
+	if count := len(expiredUploadIDs); count > 0 {
+		log15.Info("Expiring codeintel uploads", "count", count)
+		e.metrics.numUploadsExpired.Add(float64(count))
+	}
+
 	return err
 }
 
 func (e *uploadExpirer) isUploadProtectedByPolicy(
 	ctx context.Context,
-	policies []dbstore.ConfigurationPolicy,
-	patterns map[string]glob.Glob,
-	refDescriptions map[string][]gitserver.RefDescription,
-	repositoryState *repositoryExpirationState,
+	commitMap map[string][]policies.PolicyMatch,
 	upload dbstore.Upload,
 	now time.Time,
 ) (bool, error) {
+	e.metrics.numUploadsScanned.Inc()
+
 	var token *string
 
 	for first := true; first || token != nil; first = false {
@@ -269,41 +271,18 @@ func (e *uploadExpirer) isUploadProtectedByPolicy(
 		}
 		token = nextToken
 
-		if ok, err := isUploadCommitProtectedByPolicy(
-			ctx,
-			policies,
-			patterns,
-			refDescriptions,
-			repositoryState,
-			upload,
-			commits,
-			now,
-		); err != nil || ok {
-			return ok, err
+		e.metrics.numCommitsScanned.Add(float64(len(commits)))
+
+		for _, commit := range commits {
+			if policyMatches, ok := commitMap[commit]; ok {
+				for _, policyMatch := range policyMatches {
+					if policyMatch.PolicyDuration == nil || now.Sub(upload.UploadedAt) < *policyMatch.PolicyDuration {
+						return true, nil
+					}
+				}
+			}
 		}
 	}
 
 	return false, nil
-}
-
-// compilePatterns constructs a map from patterns in each given policy to a compiled glob object used
-// to match to commits, branch names, and tag names. If there are multiple policies with the same pattern,
-// the pattern is compiled only once.
-func compilePatterns(policies []dbstore.ConfigurationPolicy) (map[string]glob.Glob, error) {
-	patterns := make(map[string]glob.Glob, len(policies))
-
-	for _, policy := range policies {
-		if _, ok := patterns[policy.Pattern]; ok {
-			continue
-		}
-
-		pattern, err := glob.Compile(policy.Pattern)
-		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("failed to compile glob pattern `%s` in configuration policy %d", policy.Pattern, policy.ID))
-		}
-
-		patterns[policy.Pattern] = pattern
-	}
-
-	return patterns, nil
 }

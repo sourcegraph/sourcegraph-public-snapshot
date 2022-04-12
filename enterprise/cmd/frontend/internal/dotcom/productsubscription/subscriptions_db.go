@@ -5,12 +5,11 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // dbSubscription describes an product subscription row in the product_subscriptions DB
@@ -36,7 +35,7 @@ var errSubscriptionNotFound = errors.New("product subscription not found")
 
 // dbSubscriptions exposes product subscriptions in the product_subscriptions DB table.
 type dbSubscriptions struct {
-	db dbutil.DB
+	db database.DB
 }
 
 // Create creates a new product subscription entry given a license key.

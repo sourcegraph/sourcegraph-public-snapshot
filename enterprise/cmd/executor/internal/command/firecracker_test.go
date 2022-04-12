@@ -14,20 +14,22 @@ import (
 func TestFormatFirecrackerCommandRaw(t *testing.T) {
 	actual := formatFirecrackerCommand(
 		CommandSpec{
-			Command:   []string{"ls", "-a"},
-			Dir:       "subdir",
-			Env:       []string{"TEST=true"},
+			Command: []string{"ls", "-a"},
+			Dir:     "subdir",
+			Env: []string{
+				`TEST=true`,
+				`CONTAINS_WHITESPACE=yes it does`,
+			},
 			Operation: makeTestOperation(),
 		},
 		"deadbeef",
-		"/proj/src",
 		Options{},
 	)
 
 	expected := command{
 		Command: []string{
 			"ignite", "exec", "deadbeef", "--",
-			"cd /work/subdir && TEST=true ls -a",
+			`cd /work/subdir && TEST=true CONTAINS_WHITESPACE="yes it does" ls -a`,
 		},
 	}
 	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
@@ -41,11 +43,13 @@ func TestFormatFirecrackerCommandDockerScript(t *testing.T) {
 			Image:      "alpine:latest",
 			ScriptPath: "myscript.sh",
 			Dir:        "subdir",
-			Env:        []string{"TEST=true"},
-			Operation:  makeTestOperation(),
+			Env: []string{
+				`TEST=true`,
+				`CONTAINS_WHITESPACE=yes it does`,
+			},
+			Operation: makeTestOperation(),
 		},
 		"deadbeef",
-		"/proj/src",
 		Options{
 			ResourceOptions: ResourceOptions{
 				NumCPUs: 4,
@@ -64,6 +68,7 @@ func TestFormatFirecrackerCommandDockerScript(t *testing.T) {
 				"-v", "/work:/data",
 				"-w", "/data/subdir",
 				"-e", "TEST=true",
+				"-e", `CONTAINS_WHITESPACE="yes it does"`,
 				"--entrypoint /bin/sh",
 				"alpine:latest",
 				"/data/.sourcegraph-executor/myscript.sh",
@@ -71,34 +76,6 @@ func TestFormatFirecrackerCommandDockerScript(t *testing.T) {
 		},
 	}
 	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
-		t.Errorf("unexpected command (-want +got):\n%s", diff)
-	}
-}
-
-func TestFormatFirecrackerCommandDockerCommand(t *testing.T) {
-	actual := formatFirecrackerCommand(
-		CommandSpec{
-			Command: []string{"ls", "-a"},
-			Dir:     "subdir",
-			Env:     []string{"TEST=true"},
-		},
-		"deadbeef",
-		"/proj/src",
-		Options{
-			ResourceOptions: ResourceOptions{
-				NumCPUs: 4,
-				Memory:  "20G",
-			},
-		},
-	)
-
-	expected := command{
-		Command: []string{
-			"ignite", "exec", "deadbeef", "--",
-			"cd /work/subdir && TEST=true ls -a",
-		},
-	}
-	if diff := cmp.Diff(expected, actual); diff != "" {
 		t.Errorf("unexpected command (-want +got):\n%s", diff)
 	}
 }
@@ -146,10 +123,9 @@ func TestSetupFirecracker(t *testing.T) {
 
 func TestTeardownFirecracker(t *testing.T) {
 	runner := NewMockCommandRunner()
-	options := Options{}
 	operations := NewOperations(&observation.TestContext)
 
-	if err := teardownFirecracker(context.Background(), runner, nil, "deadbeef", options, operations); err != nil {
+	if err := teardownFirecracker(context.Background(), runner, nil, "deadbeef", operations); err != nil {
 		t.Fatalf("unexpected error tearing down virtual machine: %s", err)
 	}
 

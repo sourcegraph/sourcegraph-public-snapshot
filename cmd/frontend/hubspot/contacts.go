@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"reflect"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // CreateOrUpdateContact creates or updates a HubSpot contact (with email as primary key)
@@ -21,6 +21,15 @@ func (c *Client) CreateOrUpdateContact(email string, params *ContactProperties) 
 	}
 	var resp ContactResponse
 	err := c.postJSON("CreateOrUpdateContact", c.baseContactURL(email), newAPIValues(params), &resp)
+	if err != nil {
+		return &resp, err
+	}
+	if resp.IsNew {
+		// First source URL should only be sent when a contact is new. Although the user's cookie value should
+		// not change, minimize risk of login via multiple browsers, clearing of cookies, etc. by not sending
+		// this value on subsequent logins.
+		err = c.postJSON("CreateOrUpdateContact", c.baseContactURL(email), firstSourceURLValue(params), &resp)
+	}
 	return &resp, err
 }
 
@@ -43,7 +52,9 @@ type ContactProperties struct {
 	LatestPing      int64  `json:"latest_ping"`
 	AnonymousUserID string `json:"anonymous_user_id"`
 	FirstSourceURL  string `json:"first_source_url"`
+	LastSourceURL   string `json:"last_source_url"`
 	DatabaseID      int32  `json:"database_id"`
+	HasAgreedToToS  bool   `json:"has_agreed_to_tos_and_pp"`
 }
 
 // ContactResponse represents HubSpot user properties returned
@@ -61,9 +72,16 @@ func newAPIValues(h *ContactProperties) *apiProperties {
 	apiProps.set("is_server_admin", h.IsServerAdmin)
 	apiProps.set("latest_ping", h.LatestPing)
 	apiProps.set("anonymous_user_id", h.AnonymousUserID)
-	apiProps.set("first_source_url", h.FirstSourceURL)
+	apiProps.set("last_source_url", h.LastSourceURL)
 	apiProps.set("database_id", h.DatabaseID)
+	apiProps.set("has_agreed_to_tos_and_pp", h.HasAgreedToToS)
 	return apiProps
+}
+
+func firstSourceURLValue(h *ContactProperties) *apiProperties {
+	firstSourceProp := &apiProperties{}
+	firstSourceProp.set("first_source_url", h.FirstSourceURL)
+	return firstSourceProp
 }
 
 // apiProperties represents a list of HubSpot API-compliant key-value pairs

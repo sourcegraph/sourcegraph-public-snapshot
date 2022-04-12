@@ -21,7 +21,7 @@ func TestExternalAccounts_LookupUserAndSave(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	spec := extsvc.AccountSpec{
@@ -49,7 +49,7 @@ func TestExternalAccounts_AssociateUserAndSave(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{Username: "u"})
@@ -100,7 +100,7 @@ func TestExternalAccounts_CreateUserAndSave(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	spec := extsvc.AccountSpec{
@@ -155,7 +155,7 @@ func TestExternalAccounts_CreateUserAndSave_NilData(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	spec := extsvc.AccountSpec{
@@ -203,7 +203,7 @@ func TestExternalAccounts_List(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	specs := []extsvc.AccountSpec{
@@ -314,7 +314,7 @@ func TestExternalAccounts_Encryption(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	store := ExternalAccounts(db).WithEncryptionKey(et.TestKey{})
@@ -339,7 +339,7 @@ func TestExternalAccounts_Encryption(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	listFirstAccount := func(s *UserExternalAccountsStore) extsvc.Account {
+	listFirstAccount := func(s UserExternalAccountsStore) extsvc.Account {
 		t.Helper()
 
 		accounts, err := s.List(ctx, ExternalAccountsListOptions{})
@@ -407,7 +407,7 @@ func TestExternalAccounts_expiredAt(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	spec := extsvc.AccountSpec{

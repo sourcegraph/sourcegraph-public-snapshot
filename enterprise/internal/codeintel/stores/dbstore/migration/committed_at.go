@@ -4,14 +4,13 @@ import (
 	"context"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type committedAtMigrator struct {
@@ -87,7 +86,7 @@ func (m *committedAtMigrator) handleSourcedCommits(ctx context.Context, tx *dbst
 	// come back to this and figure out how to batch these so we're not doing so many
 	// gitserver roundtrips on these kind of background tasks for code intelligence.
 	for _, commit := range sourcedCommits.Commits {
-		if err := m.handleCommit(ctx, tx, sourcedCommits.RepositoryID, sourcedCommits.RepositoryName, commit); err != nil {
+		if err := m.handleCommit(ctx, tx, sourcedCommits.RepositoryID, commit); err != nil {
 			return err
 		}
 	}
@@ -98,23 +97,23 @@ func (m *committedAtMigrator) handleSourcedCommits(ctx context.Context, tx *dbst
 	}
 
 	return nil
-
 }
 
-func (m *committedAtMigrator) handleCommit(ctx context.Context, tx *dbstore.Store, repositoryID int, repositoryName, commit string) error {
-	var commitDateString string
-	if commitDate, err := m.gitserverClient.CommitDate(ctx, repositoryID, commit); err != nil {
-		if !vcs.IsRepoNotExist(err) && !errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
-			return errors.Wrap(err, "gitserver.CommitDate")
-		}
+func (m *committedAtMigrator) handleCommit(ctx context.Context, tx *dbstore.Store, repositoryID int, commit string) error {
+	_, commitDate, revisionExists, err := m.gitserverClient.CommitDate(ctx, repositoryID, commit)
+	if err != nil && !gitdomain.IsRepoNotExist(err) {
+		return errors.Wrap(err, "gitserver.CommitDate")
+	}
 
+	var commitDateString string
+	if revisionExists {
+		commitDateString = commitDate.Format(time.RFC3339)
+	} else {
 		// Set a value here that we'll filter out on the query side so that we don't
-		// reprocess the same failing batch infinitely. We could alternative soft
+		// reprocess the same failing batch infinitely. We could alternatively soft
 		// delete the record, but it would be better to keep record deletion behavior
 		// together in the same place (so we have unified metrics on that event).
 		commitDateString = "-infinity"
-	} else {
-		commitDateString = commitDate.Format(time.RFC3339)
 	}
 
 	// Update commit date of all uploads attached to this this repository and commit

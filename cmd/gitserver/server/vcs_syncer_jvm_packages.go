@@ -14,41 +14,41 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 const (
 	// DO NOT CHANGE. This timestamp needs to be stable so that JVM package
-	// repos consistently produce the same git revhash.  Changing this
-	// timestamp will cause links to JVM package repos to return 404s
-	// because Sourcegraph URLs can optionally include the git commit sha.
+	// repos consistently produce the same git revhash. Sourcegraph URLs
+	// can optionally include this hash, so changing the timestamp (and hence
+	// hashes) will cause existing links to JVM package repos to return 404s.
 	stableGitCommitDate = "Thu Apr 8 14:24:52 2021 +0200"
 
 	jvmMajorVersion0 = 44
 )
 
-// sourcegraphMavenDependency is used to set GIT_AUTHOR_NAME for git commands
+// placeholderMavenDependency is used to set GIT_AUTHOR_NAME for git commands
 // that don't create commits or tags. The name of this dependency should never
 // be publicly visible so it can have any random value.
-var sourcegraphMavenDependency = reposource.MavenDependency{
-	MavenModule: reposource.MavenModule{
-		GroupID:    "com.sourcegraph",
-		ArtifactID: "sourcegraph",
-	},
-	Version: "1.0.0",
-}
+var placeholderMavenDependency = func() *reposource.MavenDependency {
+	d, err := reposource.ParseMavenDependency("com.sourcegraph:sourcegraph:1.0.0")
+	if err != nil {
+		panic(err)
+	}
+	return d
+}()
 
 type JVMPackagesSyncer struct {
-	Config  *schema.JVMPackagesConnection
-	DBStore repos.JVMPackagesRepoStore
+	Config    *schema.JVMPackagesConnection
+	DepsStore repos.DependenciesStore
 }
 
 var _ VCSSyncer = &JVMPackagesSyncer{}
@@ -73,14 +73,19 @@ func (s *JVMPackagesSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL)
 	}
 
 	for _, dependency := range dependencies {
-		sources, err := coursier.FetchSources(ctx, s.Config, dependency)
+		_, err := coursier.FetchSources(ctx, s.Config, dependency)
 		if err != nil {
+			// Temporary: We shouldn't need both these checks but we're continuing to see the
+			// error in production logs which implies `HasType` is not matching.
+			if errors.HasType(err, &coursier.ErrNoSources{}) || strings.Contains(err.Error(), "no sources for dependency") {
+				// We can't do anything and it's leading to increases in our
+				// src_repoupdater_sched_error alert firing more often.
+				continue
+			}
 			return err
 		}
-		if len(sources) == 0 {
-			return errors.Errorf("no sources for dependency %s", dependency)
-		}
 	}
+
 	return nil
 }
 
@@ -97,7 +102,7 @@ func (s *JVMPackagesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL
 	}
 
 	cmd := exec.CommandContext(ctx, "git", "--bare", "init")
-	if _, err := runCommandInDirectory(ctx, cmd, bareGitDirectory, sourcegraphMavenDependency); err != nil {
+	if _, err := runCommandInDirectory(ctx, cmd, bareGitDirectory, placeholderMavenDependency); err != nil {
 		return nil, err
 	}
 
@@ -111,7 +116,7 @@ func (s *JVMPackagesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL
 }
 
 // Fetch adds git tags for newly added dependency versions and removes git tags
-// for deleted deleted versions.
+// for deleted versions.
 func (s *JVMPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir) error {
 	dependencies, err := s.packageDependencies(ctx, remoteURL.Path)
 	if err != nil {
@@ -120,7 +125,7 @@ func (s *JVMPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 
 	tags := map[string]bool{}
 
-	out, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "tag"), string(dir), sourcegraphMavenDependency)
+	out, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "tag"), string(dir), placeholderMavenDependency)
 	if err != nil {
 		return err
 	}
@@ -136,9 +141,9 @@ func (s *JVMPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 		if tags[dependency.GitTagFromVersion()] {
 			continue
 		}
-		// the gitPushDependencyTag method is reponsible for cleaning up temporary directories.
+		// the gitPushDependencyTag method is responsible for cleaning up temporary directories.
 		if err := s.gitPushDependencyTag(ctx, string(dir), dependency, i == 0); err != nil {
-			return errors.Wrapf(err, "error pushing dependency %q", dependency.CoursierSyntax())
+			return errors.Wrapf(err, "error pushing dependency %q", dependency.PackageManagerSyntax())
 		}
 	}
 
@@ -150,7 +155,7 @@ func (s *JVMPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 	for tag := range tags {
 		if _, isDependencyTag := dependencyTags[tag]; !isDependencyTag {
 			cmd := exec.CommandContext(ctx, "git", "tag", "-d", tag)
-			if _, err := runCommandInDirectory(ctx, cmd, string(dir), sourcegraphMavenDependency); err != nil {
+			if _, err := runCommandInDirectory(ctx, cmd, string(dir), placeholderMavenDependency); err != nil {
 				log15.Error("Failed to delete git tag", "error", err, "tag", tag)
 				continue
 			}
@@ -168,13 +173,16 @@ func (s *JVMPackagesSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vc
 // packageDependencies returns the list of JVM dependencies that belong to the given URL path.
 // The returned package dependencies are sorted by semantic versioning.
 // A URL maps to a single JVM package, which may contain multiple versions (one git tag per version).
-func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath string) (dependencies []reposource.MavenDependency, err error) {
+func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath string) (dependencies []*reposource.MavenDependency, err error) {
 	module, err := reposource.ParseMavenModule(repoUrlPath)
 	if err != nil {
 		return nil, err
 	}
 
-	var totalConfigMatched int
+	var (
+		totalConfigMatched int
+		timedout           []*reposource.MavenDependency
+	)
 	for _, dependency := range s.MavenDependencies() {
 		if module.MatchesDependencyString(dependency) {
 			dependency, err := reposource.ParseMavenDependency(dependency)
@@ -182,9 +190,12 @@ func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 				return nil, err
 			}
 
-			if coursier.Exists(ctx, s.Config, dependency) {
+			exists, err := coursier.Exists(ctx, s.Config, dependency)
+			if exists {
 				totalConfigMatched++
 				dependencies = append(dependencies, dependency)
+			} else if errors.Is(err, context.DeadlineExceeded) {
+				timedout = append(timedout, dependency)
 			}
 			// Silently ignore non-existent dependencies because
 			// they are already logged out in the `GetRepo` method
@@ -192,8 +203,14 @@ func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 		}
 	}
 
-	dbDeps, err := s.DBStore.GetJVMDependencyRepos(ctx, dbstore.GetJVMDependencyReposOpts{
-		ArtifactName: repoUrlPath,
+	if len(timedout) > 0 {
+		log15.Warn("non-zero number of timed-out coursier invocations", "count", len(timedout), "dependencies", timedout)
+	}
+
+	dbDeps, err := s.DepsStore.ListDependencyRepos(ctx, dependenciesStore.ListDependencyReposOpts{
+		Scheme:      dependenciesStore.JVMPackagesScheme,
+		Name:        repoUrlPath,
+		NewestFirst: true,
 	})
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get JVM dependency repos from database", "repoPath", repoUrlPath)
@@ -201,13 +218,13 @@ func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 
 	var totalDBMatched int
 	for _, dep := range dbDeps {
-		parsedModule, err := reposource.ParseMavenModule(dep.Module)
+		parsedModule, err := reposource.ParseMavenModule(dep.Name)
 		if err != nil {
-			log15.Warn("error parsing maven module", "error", err, "module", dep.Module)
+			log15.Warn("error parsing maven module", "error", err, "module", dep.Name)
 			continue
 		}
-		if module == parsedModule {
-			dependency := reposource.MavenDependency{
+		if module.Equal(parsedModule) {
+			dependency := &reposource.MavenDependency{
 				MavenModule: parsedModule,
 				Version:     dep.Version,
 			}
@@ -230,7 +247,7 @@ func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 // tag points to a commit that adds all sources of given dependency. When
 // isMainBranch is true, the main branch of the bare git directory will also be
 // updated to point to the same commit as the git tag.
-func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dependency reposource.MavenDependency, isLatestVersion bool) error {
+func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dependency *reposource.MavenDependency, isLatestVersion bool) error {
 	tmpDirectory, err := os.MkdirTemp("", "maven")
 	if err != nil {
 		return err
@@ -238,23 +255,24 @@ func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 	// Always clean up created temporary directories.
 	defer os.RemoveAll(tmpDirectory)
 
-	sourceCodePaths, err := coursier.FetchSources(ctx, s.Config, dependency)
+	sourceCodeJarPath, err := coursier.FetchSources(ctx, s.Config, dependency)
 	if err != nil {
+		// Temporary: We shouldn't need both these checks but we're continuing to see the
+		// error in production logs which implies `HasType` is not matching.
+		if errors.HasType(err, &coursier.ErrNoSources{}) || strings.Contains(err.Error(), "no sources for dependency") {
+			// We can't do anything and it's leading to increases in our
+			// src_repoupdater_sched_error alert firing more often.
+			return nil
+		}
 		return err
 	}
-
-	if len(sourceCodePaths) == 0 {
-		return errors.Errorf("no sources for dependency %s", dependency)
-	}
-
-	sourceCodePath := sourceCodePaths[0]
 
 	cmd := exec.CommandContext(ctx, "git", "init")
 	if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory, dependency); err != nil {
 		return err
 	}
 
-	err = s.commitJar(ctx, dependency, tmpDirectory, sourceCodePath, s.Config)
+	err = s.commitJar(ctx, dependency, tmpDirectory, sourceCodeJarPath, s.Config)
 	if err != nil {
 		return err
 	}
@@ -287,10 +305,10 @@ func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 
 // commitJar creates a git commit in the given working directory that adds all the file contents of the given jar file.
 // A `*.jar` file works the same way as a `*.zip` file, it can even be uncompressed with the `unzip` command-line tool.
-func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource.MavenDependency,
+func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency *reposource.MavenDependency,
 	workingDirectory, sourceCodeJarPath string, connection *schema.JVMPackagesConnection) error {
 	if err := unzipJarFile(sourceCodeJarPath, workingDirectory); err != nil {
-		return errors.Wrapf(err, "failed to unzip jar file for %s to %v", dependency.CoursierSyntax(), sourceCodeJarPath)
+		return errors.Wrapf(err, "failed to unzip jar file for %s to %v", dependency.PackageManagerSyntax(), sourceCodeJarPath)
 	}
 
 	file, err := os.Create(filepath.Join(workingDirectory, "lsif-java.json"))
@@ -304,6 +322,7 @@ func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource
 		return err
 	}
 
+	// See [NOTE: LSIF-config-json] for details on why we use this JSON file.
 	jsonContents, err := json.Marshal(&lsifJavaJSON{
 		Kind:         dependency.MavenModule.LsifJavaKind(),
 		JVM:          jvmVersion,
@@ -324,12 +343,12 @@ func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource
 	}
 
 	// Use --no-verify for security reasons. See https://github.com/sourcegraph/sourcegraph/pull/23399
-	cmd = exec.CommandContext(ctx, "git", "commit", "--no-verify", "-m", dependency.CoursierSyntax(), "--date", stableGitCommitDate)
+	cmd = exec.CommandContext(ctx, "git", "commit", "--no-verify", "-m", dependency.PackageManagerSyntax(), "--date", stableGitCommitDate)
 	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory, dependency); err != nil {
 		return err
 	}
 
-	cmd = exec.CommandContext(ctx, "git", "tag", "-m", dependency.CoursierSyntax(), dependency.GitTagFromVersion())
+	cmd = exec.CommandContext(ctx, "git", "tag", "-m", dependency.PackageManagerSyntax(), dependency.GitTagFromVersion())
 	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory, dependency); err != nil {
 		return err
 	}
@@ -346,30 +365,12 @@ func unzipJarFile(jarPath, destination string) (err error) {
 	destinationDirectory := strings.TrimSuffix(destination, string(os.PathSeparator)) + string(os.PathSeparator)
 
 	for _, file := range reader.File {
-		if strings.HasPrefix(file.Name, ".git/") {
-			// For security reasons, don't unzip files under the `.git/`
-			// directory. See https://github.com/sourcegraph/security-issues/issues/163
+		cleanedOutputPath, isPotentiallyMalicious :=
+			isPotentiallyMaliciousFilepathInArchive(file.Name, destinationDirectory)
+		if isPotentiallyMalicious {
 			continue
 		}
-		if strings.HasSuffix(file.Name, "/") {
-			// Skip directory entries. Directory entries must end
-			// with a forward slash (even on Windows) according to
-			// `file.Name` docstring.
-			continue
-		}
-		if strings.HasPrefix(file.Name, "/") {
-			// Skip absolute paths. While they are extracted relative to `destination`,
-			// they should be unimportant. Related issue https://github.com/golang/go/issues/48085#issuecomment-912659635
-			continue
-		}
-		outputPath := path.Join(destination, file.Name)
-		if !strings.HasPrefix(outputPath, destinationDirectory) {
-			// For security reasons, skip file if it's not a child
-			// of the target directory. See "Zip Slip Vulnerability".
-			continue
-		}
-
-		err := copyZipFileEntry(file, outputPath)
+		err := copyZipFileEntry(file, cleanedOutputPath)
 		if err != nil {
 			return err
 		}
@@ -411,22 +412,16 @@ func copyZipFileEntry(entry *zip.File, outputPath string) (err error) {
 // inferJVMVersionFromByteCode returns the JVM version that was used to compile
 // the bytecode in the given jar file.
 func inferJVMVersionFromByteCode(ctx context.Context, connection *schema.JVMPackagesConnection,
-	dependency reposource.MavenDependency) (string, error) {
+	dependency *reposource.MavenDependency) (string, error) {
 	if dependency.IsJDK() {
 		return dependency.Version, nil
 	}
 
-	byteCodePaths, err := coursier.FetchByteCode(ctx, connection, dependency)
+	byteCodeJarPath, err := coursier.FetchByteCode(ctx, connection, dependency)
 	if err != nil {
 		return "", err
 	}
-
-	if len(byteCodePaths) == 0 {
-		return "", errors.Errorf("no bytecode jar for dependency %s", dependency)
-	}
-
-	byteCodePath := byteCodePaths[0]
-	majorVersionString, err := classFileMajorVersion(byteCodePath)
+	majorVersionString, err := classFileMajorVersion(byteCodeJarPath)
 	if err != nil {
 		return "", err
 	}
@@ -472,24 +467,6 @@ func roundJVMVersionToNearestStableVersion(javaVersion int) int {
 	return javaVersion
 }
 
-func runCommandInDirectory(ctx context.Context, cmd *exec.Cmd, workingDirectory string, dependency reposource.MavenDependency) (string, error) {
-	gitName := dependency.MavenModule.CoursierSyntax() + " authors"
-	gitEmail := "code-intel@sourcegraph.com"
-	cmd.Dir = workingDirectory
-	cmd.Env = append(cmd.Env, "EMAIL="+gitEmail)
-	cmd.Env = append(cmd.Env, "GIT_AUTHOR_NAME="+gitName)
-	cmd.Env = append(cmd.Env, "GIT_AUTHOR_EMAIL="+gitEmail)
-	cmd.Env = append(cmd.Env, "GIT_AUTHOR_DATE="+stableGitCommitDate)
-	cmd.Env = append(cmd.Env, "GIT_COMMITTER_NAME="+gitName)
-	cmd.Env = append(cmd.Env, "GIT_COMMITTER_EMAIL="+gitEmail)
-	cmd.Env = append(cmd.Env, "GIT_COMMITTER_DATE="+stableGitCommitDate)
-	output, err := runWith(ctx, cmd, false, nil)
-	if err != nil {
-		return "", errors.Wrapf(err, "command %s failed with output %s", cmd.Args, string(output))
-	}
-	return string(output), nil
-}
-
 type lsifJavaJSON struct {
 	Kind         string   `json:"kind"`
 	JVM          string   `json:"jvm"`
@@ -529,7 +506,11 @@ func classFileMajorVersion(byteCodeJarPath string) (string, error) {
 		return version, nil
 	}
 
-	return "", errors.Errorf("failed to infer JVM version for jar %s because it doesn't contain any classfiles", byteCodeJarPath)
+	// We didn't find any `*.class` files so we can use any Java version.
+	// Maven don't have to contain classfiles, some artifacts like
+	// 'io.smallrye:smallrye-health-ui:3.1.1' only contain HTML/css/png/js
+	// files.
+	return "8", nil
 }
 
 func classFileEntryMajorVersion(byteCodeJarPath string, zipEntry *zip.File) (string, error) {

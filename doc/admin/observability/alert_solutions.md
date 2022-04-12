@@ -30,7 +30,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
 <br />
 
@@ -57,7 +57,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
 <br />
 
@@ -82,7 +82,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
 <br />
 
@@ -107,7 +107,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
 <br />
 
@@ -130,7 +130,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
 <br />
 
@@ -154,7 +154,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
 <br />
 
@@ -169,8 +169,9 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
+- Explore the data returned by the query in the dashboard panel and filter by different labels to identify any patterns
 - Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-page-load-latency).
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-page-load-latency).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -179,7 +180,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud Software-as-a-Service team](https://handbook.sourcegraph.com/engineering/cloud/saas).*</sub>
 
 <br />
 
@@ -195,6 +196,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
 - Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
+- Check that gitserver containers have enough CPU/memory and are not getting throttled.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-blob-load-latency).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -204,7 +206,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -222,6 +224,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
 - **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the `indexed-search.Deployment.yaml` if regularly hitting max CPU utilization.
 - **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml` if regularly hitting max CPU utilization.
+- This alert may indicate that your instance is struggling to process symbols queries on a monorepo, [learn more here](../how-to/monorepo-issues.md).
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-99th-percentile-search-codeintel-request-duration).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -231,7 +234,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
 <br />
 
@@ -249,6 +252,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
 - **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the `indexed-search.Deployment.yaml` if regularly hitting max CPU utilization.
 - **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml` if regularly hitting max CPU utilization.
+- This alert may indicate that your instance is struggling to process symbols queries on a monorepo, [learn more here](../how-to/monorepo-issues.md).
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-90th-percentile-search-codeintel-request-duration).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -258,7 +262,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
 <br />
 
@@ -283,7 +287,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
 <br />
 
@@ -308,7 +312,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
 <br />
 
@@ -331,7 +335,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
 <br />
 
@@ -355,7 +359,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
 <br />
 
@@ -382,7 +386,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
 <br />
 
@@ -409,7 +413,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
 <br />
 
@@ -434,7 +438,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
 <br />
 
@@ -457,7 +461,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
 <br />
 
@@ -481,7 +485,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
 <br />
 
@@ -505,7 +509,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
 <br />
 
@@ -529,11 +533,11 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
 <br />
 
-## frontend: internal_api_error_responses
+## frontend: internalapi_error_responses
 
 <p class="subtitle">internal API error responses every 5m by route</p>
 
@@ -544,16 +548,16 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - May not be a substantial issue, check the `frontend` logs for potential causes.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-internal-api-error-responses).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-internalapi-error-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_internal_api_error_responses"
+  "warning_frontend_internalapi_error_responses"
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud Software-as-a-Service team](https://handbook.sourcegraph.com/engineering/cloud/saas).*</sub>
 
 <br />
 
@@ -576,7 +580,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -599,7 +603,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -623,7 +627,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -647,7 +651,33 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+
+<br />
+
+## frontend: cloudkms_cryptographic_requests
+
+<p class="subtitle">cryptographic requests to Cloud KMS every 1m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> frontend: 15000+ cryptographic requests to Cloud KMS every 1m for 5m0s
+- <span class="badge badge-critical">critical</span> frontend: 30000+ cryptographic requests to Cloud KMS every 1m for 5m0s
+
+**Possible solutions**
+
+- Revert recent commits that cause extensive listing from "external_services" and/or "user_external_accounts" tables.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-cloudkms-cryptographic-requests).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_cloudkms_cryptographic_requests",
+  "critical_frontend_cloudkms_cryptographic_requests"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -674,7 +704,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -699,7 +729,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -724,7 +754,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -749,7 +779,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -774,7 +804,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -799,7 +829,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -824,7 +854,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -847,7 +877,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -870,7 +900,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -893,119 +923,119 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
-## frontend: mean_successful_sentinel_duration_5m
+## frontend: mean_successful_sentinel_duration_over_1h30m
 
-<p class="subtitle">mean successful sentinel search duration over 5m</p>
+<p class="subtitle">mean successful sentinel search duration over 1h30m</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> frontend: 5s+ mean successful sentinel search duration over 5m for 15m0s
-- <span class="badge badge-critical">critical</span> frontend: 8s+ mean successful sentinel search duration over 5m for 30m0s
+- <span class="badge badge-warning">warning</span> frontend: 5s+ mean successful sentinel search duration over 1h30m for 15m0s
+- <span class="badge badge-critical">critical</span> frontend: 8s+ mean successful sentinel search duration over 1h30m for 30m0s
 
 **Possible solutions**
 
 - Look at the breakdown by query to determine if a specific query type is being affected
 - Check for high CPU usage on zoekt-webserver
 - Check Honeycomb for unusual activity
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-mean-successful-sentinel-duration-5m).
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-mean-successful-sentinel-duration-over-1h30m).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_mean_successful_sentinel_duration_5m",
-  "critical_frontend_mean_successful_sentinel_duration_5m"
+  "warning_frontend_mean_successful_sentinel_duration_over_1h30m",
+  "critical_frontend_mean_successful_sentinel_duration_over_1h30m"
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
 <br />
 
-## frontend: mean_sentinel_stream_latency_5m
+## frontend: mean_sentinel_stream_latency_over_1h30m
 
-<p class="subtitle">mean sentinel stream latency over 5m</p>
+<p class="subtitle">mean successful sentinel stream latency over 1h30m</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> frontend: 2s+ mean sentinel stream latency over 5m for 15m0s
-- <span class="badge badge-critical">critical</span> frontend: 3s+ mean sentinel stream latency over 5m for 30m0s
+- <span class="badge badge-warning">warning</span> frontend: 2s+ mean successful sentinel stream latency over 1h30m for 15m0s
+- <span class="badge badge-critical">critical</span> frontend: 3s+ mean successful sentinel stream latency over 1h30m for 30m0s
 
 **Possible solutions**
 
 - Look at the breakdown by query to determine if a specific query type is being affected
 - Check for high CPU usage on zoekt-webserver
 - Check Honeycomb for unusual activity
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-mean-sentinel-stream-latency-5m).
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-mean-sentinel-stream-latency-over-1h30m).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_mean_sentinel_stream_latency_5m",
-  "critical_frontend_mean_sentinel_stream_latency_5m"
+  "warning_frontend_mean_sentinel_stream_latency_over_1h30m",
+  "critical_frontend_mean_sentinel_stream_latency_over_1h30m"
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
 <br />
 
-## frontend: 90th_percentile_successful_sentinel_duration_5m
+## frontend: 90th_percentile_successful_sentinel_duration_over_1h30m
 
-<p class="subtitle">90th percentile successful sentinel search duration over 5m</p>
+<p class="subtitle">90th percentile successful sentinel search duration over 1h30m</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> frontend: 5s+ 90th percentile successful sentinel search duration over 5m for 15m0s
-- <span class="badge badge-critical">critical</span> frontend: 10s+ 90th percentile successful sentinel search duration over 5m for 30m0s
+- <span class="badge badge-warning">warning</span> frontend: 5s+ 90th percentile successful sentinel search duration over 1h30m for 15m0s
+- <span class="badge badge-critical">critical</span> frontend: 10s+ 90th percentile successful sentinel search duration over 1h30m for 30m0s
 
 **Possible solutions**
 
 - Look at the breakdown by query to determine if a specific query type is being affected
 - Check for high CPU usage on zoekt-webserver
 - Check Honeycomb for unusual activity
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-90th-percentile-successful-sentinel-duration-5m).
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-90th-percentile-successful-sentinel-duration-over-1h30m).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_90th_percentile_successful_sentinel_duration_5m",
-  "critical_frontend_90th_percentile_successful_sentinel_duration_5m"
+  "warning_frontend_90th_percentile_successful_sentinel_duration_over_1h30m",
+  "critical_frontend_90th_percentile_successful_sentinel_duration_over_1h30m"
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
 <br />
 
-## frontend: 90th_percentile_sentinel_stream_latency_5m
+## frontend: 90th_percentile_sentinel_stream_latency_over_1h30m
 
-<p class="subtitle">90th percentile sentinel stream latency over 5m</p>
+<p class="subtitle">90th percentile successful sentinel stream latency over 1h30m</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> frontend: 4s+ 90th percentile sentinel stream latency over 5m for 15m0s
-- <span class="badge badge-critical">critical</span> frontend: 6s+ 90th percentile sentinel stream latency over 5m for 30m0s
+- <span class="badge badge-warning">warning</span> frontend: 4s+ 90th percentile successful sentinel stream latency over 1h30m for 15m0s
+- <span class="badge badge-critical">critical</span> frontend: 6s+ 90th percentile successful sentinel stream latency over 1h30m for 30m0s
 
 **Possible solutions**
 
 - Look at the breakdown by query to determine if a specific query type is being affected
 - Check for high CPU usage on zoekt-webserver
 - Check Honeycomb for unusual activity
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-90th-percentile-sentinel-stream-latency-5m).
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-90th-percentile-sentinel-stream-latency-over-1h30m).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_90th_percentile_sentinel_stream_latency_5m",
-  "critical_frontend_90th_percentile_sentinel_stream_latency_5m"
+  "warning_frontend_90th_percentile_sentinel_stream_latency_over_1h30m",
+  "critical_frontend_90th_percentile_sentinel_stream_latency_over_1h30m"
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
 <br />
 
@@ -1031,7 +1061,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -1059,7 +1089,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -1084,7 +1114,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -1110,7 +1140,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -1140,7 +1170,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -1167,7 +1197,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1192,7 +1222,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -1217,7 +1247,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -1242,7 +1272,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -1267,7 +1297,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -1290,7 +1320,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -1313,7 +1343,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -1336,7 +1366,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -1361,7 +1391,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -1386,7 +1416,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -1411,7 +1441,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -1436,7 +1466,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -1461,7 +1491,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -1486,7 +1516,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -1511,7 +1541,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -1534,7 +1564,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -1557,7 +1587,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -1580,7 +1610,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -1603,7 +1633,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1613,8 +1643,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> postgres: 300ms+ maximum transaction durations for 5m0s
-- <span class="badge badge-critical">critical</span> postgres: 500ms+ maximum transaction durations for 10m0s
+- <span class="badge badge-warning">warning</span> postgres: 0.3s+ maximum transaction durations for 5m0s
+- <span class="badge badge-critical">critical</span> postgres: 0.5s+ maximum transaction durations for 10m0s
 
 **Possible solutions**
 
@@ -1628,7 +1658,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1651,7 +1681,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1675,7 +1705,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1699,7 +1729,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1723,7 +1753,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1737,8 +1767,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
-- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the (pgsql|codeintel-db) service.
-- **Docker Compose:** Consider increasing `cpus:` of the (pgsql|codeintel-db) container in `docker-compose.yml`.
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the (pgsql|codeintel-db|codeinsights-db) service.
+- **Docker Compose:** Consider increasing `cpus:` of the (pgsql|codeintel-db|codeinsights-db) container in `docker-compose.yml`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-provisioning-container-cpu-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -1748,7 +1778,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1762,8 +1792,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
-- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the (pgsql|codeintel-db) service.
-- **Docker Compose:** Consider increasing `memory:` of the (pgsql|codeintel-db) container in `docker-compose.yml`.
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the (pgsql|codeintel-db|codeinsights-db) service.
+- **Docker Compose:** Consider increasing `memory:` of the (pgsql|codeintel-db|codeinsights-db) container in `docker-compose.yml`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-provisioning-container-memory-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -1773,7 +1803,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1788,7 +1818,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the (pgsql|codeintel-db) container in `docker-compose.yml`.
+- **Docker Compose:** Consider increasing `cpus:` of the (pgsql|codeintel-db|codeinsights-db) container in `docker-compose.yml`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-provisioning-container-cpu-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -1798,7 +1828,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1813,7 +1843,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of (pgsql|codeintel-db) container in `docker-compose.yml`.
+- **Docker Compose:** Consider increasing `memory:` of (pgsql|codeintel-db|codeinsights-db) container in `docker-compose.yml`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-provisioning-container-memory-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -1823,7 +1853,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1846,7 +1876,33 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+
+<br />
+
+## precise-code-intel-worker: codeintel_upload_queued_max_age
+
+<p class="subtitle">unprocessed upload record queue longest time in queue</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> precise-code-intel-worker: 18000s+ unprocessed upload record queue longest time in queue
+
+**Possible solutions**
+
+- An alert here could be indicative of a few things: an upload surfacing a pathological performance characteristic,
+precise-code-intel-worker being underprovisioned for the required upload processing throughput, or a higher replica
+count being required for the volume of uploads.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#precise-code-intel-worker-codeintel-upload-queued-max-age).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_precise-code-intel-worker_codeintel_upload_queued_max_age"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -1876,7 +1932,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -1903,7 +1959,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1928,7 +1984,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -1953,7 +2009,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -1978,7 +2034,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2003,7 +2059,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2028,7 +2084,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2053,7 +2109,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2076,7 +2132,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2099,7 +2155,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2122,256 +2178,301 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
-## query-runner: frontend_internal_api_error_responses
+## redis: redis-store_up
 
-<p class="subtitle">frontend-internal API error responses every 5m by route</p>
+<p class="subtitle">redis-store availability</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> query-runner: 2%+ frontend-internal API error responses every 5m by route for 5m0s
+- <span class="badge badge-critical">critical</span> redis: less than 1 redis-store availability for 10s
 
 **Possible solutions**
 
-- **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
-- **Kubernetes:**
-	- Confirm that `kubectl get pods` shows the `frontend` pods are healthy.
-	- Check `kubectl logs query-runner` for logs indicate request failures to `frontend` or `frontend-internal`.
-- **Docker Compose:**
-	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
-	- Check `docker logs query-runner` for logs indicating request failures to `frontend` or `frontend-internal`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#query-runner-frontend-internal-api-error-responses).
+- Ensure redis-store is running
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#redis-redis-store-up).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_query-runner_frontend_internal_api_error_responses"
+  "critical_redis_redis-store_up"
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
-## query-runner: container_cpu_usage
+## redis: redis-cache_up
 
-<p class="subtitle">container cpu usage total (1m average) across all cores by instance</p>
+<p class="subtitle">redis-cache availability</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> query-runner: 99%+ container cpu usage total (1m average) across all cores by instance
+- <span class="badge badge-critical">critical</span> redis: less than 1 redis-cache availability for 10s
 
 **Possible solutions**
 
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the query-runner container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#query-runner-container-cpu-usage).
+- Ensure redis-cache is running
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#redis-redis-cache-up).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_query-runner_container_cpu_usage"
+  "critical_redis_redis-cache_up"
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
-## query-runner: container_memory_usage
-
-<p class="subtitle">container memory usage by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> query-runner: 99%+ container memory usage by instance
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of query-runner container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#query-runner-container-memory-usage).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_query-runner_container_memory_usage"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
-
-<br />
-
-## query-runner: provisioning_container_cpu_usage_long_term
+## redis: provisioning_container_cpu_usage_long_term
 
 <p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> query-runner: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
+- <span class="badge badge-warning">warning</span> redis: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
 
 **Possible solutions**
 
-- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the query-runner service.
-- **Docker Compose:** Consider increasing `cpus:` of the query-runner container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#query-runner-provisioning-container-cpu-usage-long-term).
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the redis-cache service.
+- **Docker Compose:** Consider increasing `cpus:` of the redis-cache container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#redis-provisioning-container-cpu-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_query-runner_provisioning_container_cpu_usage_long_term"
+  "warning_redis_provisioning_container_cpu_usage_long_term"
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
-## query-runner: provisioning_container_memory_usage_long_term
+## redis: provisioning_container_memory_usage_long_term
 
 <p class="subtitle">container memory usage (1d maximum) by instance</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> query-runner: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
+- <span class="badge badge-warning">warning</span> redis: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
 
 **Possible solutions**
 
-- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the query-runner service.
-- **Docker Compose:** Consider increasing `memory:` of the query-runner container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#query-runner-provisioning-container-memory-usage-long-term).
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the redis-cache service.
+- **Docker Compose:** Consider increasing `memory:` of the redis-cache container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#redis-provisioning-container-memory-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_query-runner_provisioning_container_memory_usage_long_term"
+  "warning_redis_provisioning_container_memory_usage_long_term"
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
-## query-runner: provisioning_container_cpu_usage_short_term
+## redis: provisioning_container_cpu_usage_short_term
 
 <p class="subtitle">container cpu usage total (5m maximum) across all cores by instance</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> query-runner: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
+- <span class="badge badge-warning">warning</span> redis: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
 
 **Possible solutions**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the query-runner container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#query-runner-provisioning-container-cpu-usage-short-term).
+- **Docker Compose:** Consider increasing `cpus:` of the redis-cache container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#redis-provisioning-container-cpu-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_query-runner_provisioning_container_cpu_usage_short_term"
+  "warning_redis_provisioning_container_cpu_usage_short_term"
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
-## query-runner: provisioning_container_memory_usage_short_term
+## redis: provisioning_container_memory_usage_short_term
 
 <p class="subtitle">container memory usage (5m maximum) by instance</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> query-runner: 90%+ container memory usage (5m maximum) by instance
+- <span class="badge badge-warning">warning</span> redis: 90%+ container memory usage (5m maximum) by instance
 
 **Possible solutions**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of query-runner container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#query-runner-provisioning-container-memory-usage-short-term).
+- **Docker Compose:** Consider increasing `memory:` of redis-cache container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#redis-provisioning-container-memory-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_query-runner_provisioning_container_memory_usage_short_term"
+  "warning_redis_provisioning_container_memory_usage_short_term"
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
-## query-runner: go_goroutines
+## redis: provisioning_container_cpu_usage_long_term
 
-<p class="subtitle">maximum active goroutines</p>
+<p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> query-runner: 10000+ maximum active goroutines for 10m0s
+- <span class="badge badge-warning">warning</span> redis: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
 
 **Possible solutions**
 
-- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#query-runner-go-goroutines).
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the redis-store service.
+- **Docker Compose:** Consider increasing `cpus:` of the redis-store container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#redis-provisioning-container-cpu-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_query-runner_go_goroutines"
+  "warning_redis_provisioning_container_cpu_usage_long_term"
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
-## query-runner: go_gc_duration_seconds
+## redis: provisioning_container_memory_usage_long_term
 
-<p class="subtitle">maximum go garbage collection duration</p>
+<p class="subtitle">container memory usage (1d maximum) by instance</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> query-runner: 2s+ maximum go garbage collection duration
+- <span class="badge badge-warning">warning</span> redis: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
 
 **Possible solutions**
 
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#query-runner-go-gc-duration-seconds).
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the redis-store service.
+- **Docker Compose:** Consider increasing `memory:` of the redis-store container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#redis-provisioning-container-memory-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_query-runner_go_gc_duration_seconds"
+  "warning_redis_provisioning_container_memory_usage_long_term"
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
-## query-runner: pods_available_percentage
+## redis: provisioning_container_cpu_usage_short_term
+
+<p class="subtitle">container cpu usage total (5m maximum) across all cores by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> redis: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the redis-store container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#redis-provisioning-container-cpu-usage-short-term).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_redis_provisioning_container_cpu_usage_short_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+
+<br />
+
+## redis: provisioning_container_memory_usage_short_term
+
+<p class="subtitle">container memory usage (5m maximum) by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> redis: 90%+ container memory usage (5m maximum) by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of redis-store container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#redis-provisioning-container-memory-usage-short-term).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_redis_provisioning_container_memory_usage_short_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+
+<br />
+
+## redis: pods_available_percentage
 
 <p class="subtitle">percentage pods available</p>
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> query-runner: less than 90% percentage pods available for 10m0s
+- <span class="badge badge-critical">critical</span> redis: less than 90% percentage pods available for 10m0s
 
 **Possible solutions**
 
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#query-runner-pods-available-percentage).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#redis-pods-available-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "critical_query-runner_pods_available_percentage"
+  "critical_redis_pods_available_percentage"
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+
+<br />
+
+## redis: pods_available_percentage
+
+<p class="subtitle">percentage pods available</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> redis: less than 90% percentage pods available for 10m0s
+
+**Possible solutions**
+
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#redis-pods-available-percentage).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_redis_pods_available_percentage"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -2400,7 +2501,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2429,7 +2530,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2458,7 +2559,56 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: codeintel_commit_graph_queued_max_age
+
+<p class="subtitle">repository queue longest time in queue</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> worker: 3600s+ repository queue longest time in queue
+
+**Possible solutions**
+
+- An alert here is generally indicative of either underprovisioned worker instance(s) and/or
+an underprovisioned main postgres instance.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-codeintel-commit-graph-queued-max-age).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_worker_codeintel_commit_graph_queued_max_age"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: insights_queue_unutilized_size
+
+<p class="subtitle">insights queue size that is not utilized (not processing)</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 0+ insights queue size that is not utilized (not processing) for 30m0s
+
+**Possible solutions**
+
+- Verify code insights worker job has successfully started. Restart worker service and monitoring startup logs, looking for worker panics.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#worker-insights-queue-unutilized-size).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_insights_queue_unutilized_size"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://handbook.sourcegraph.com/engineering/developer-insights/code-insights).*</sub>
 
 <br />
 
@@ -2488,7 +2638,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2515,7 +2665,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -2540,7 +2690,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2565,7 +2715,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2590,7 +2740,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2615,7 +2765,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2640,7 +2790,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2665,7 +2815,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2688,7 +2838,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2711,7 +2861,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2734,7 +2884,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2764,7 +2914,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -2796,7 +2946,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -2820,7 +2970,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -2844,7 +2994,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -2868,7 +3018,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -2892,7 +3042,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -2916,7 +3066,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -2926,11 +3076,11 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> repo-updater: 180000+ total number of user added repos for 5m0s
+- <span class="badge badge-critical">critical</span> repo-updater: 720000+ total number of user added repos for 5m0s
 
 **Possible solutions**
 
-- Check for unusual spikes in user added repos. Each user is only allowed to add 2000
+- Check for unusual spikes in user added repos. Each user is only allowed to add 2000 and we have a site wide limit of 400k.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-user-added-repos).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -2940,7 +3090,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -2964,7 +3114,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -2988,7 +3138,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3012,7 +3162,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3036,7 +3186,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3060,7 +3210,32 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<br />
+
+## repo-updater: src_repoupdater_stale_repos
+
+<p class="subtitle">repos that haven't been fetched in more than 8 hours</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> repo-updater: 1+ repos that haven't been fetched in more than 8 hours for 25m0s
+
+**Possible solutions**
+
+- 							Check repo-updater logs for errors.
+							Check for rows in gitserver_repos where LastError is not an empty string.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-src-repoupdater-stale-repos).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_src_repoupdater_stale_repos"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3070,7 +3245,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> repo-updater: 1+ repositories schedule error rate for 1m0s
+- <span class="badge badge-critical">critical</span> repo-updater: 1+ repositories schedule error rate for 25m0s
 
 **Possible solutions**
 
@@ -3084,7 +3259,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3108,7 +3283,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3132,7 +3307,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3157,7 +3332,32 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<br />
+
+## repo-updater: perms_syncer_outdated_perms
+
+<p class="subtitle">number of entities with outdated permissions</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> repo-updater: 100+ number of entities with outdated permissions for 5m0s
+
+**Possible solutions**
+
+- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
+- **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-outdated-perms).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_perms_syncer_outdated_perms"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3181,7 +3381,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3206,7 +3406,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3231,7 +3431,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3255,7 +3455,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3279,7 +3479,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3304,7 +3504,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3328,7 +3528,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3352,7 +3552,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3376,7 +3576,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3400,7 +3600,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3424,7 +3624,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3448,7 +3648,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3478,7 +3678,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3505,7 +3705,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -3530,7 +3730,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3555,7 +3755,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3580,7 +3780,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3605,7 +3805,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3630,7 +3830,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3655,7 +3855,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3678,7 +3878,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3701,7 +3901,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3724,7 +3924,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -3747,7 +3947,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
 <br />
 
@@ -3770,7 +3970,34 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<br />
+
+## searcher: mean_blocked_seconds_per_conn_request
+
+<p class="subtitle">mean blocked seconds per conn request</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> searcher: 0.05s+ mean blocked seconds per conn request for 10m0s
+- <span class="badge badge-critical">critical</span> searcher: 0.1s+ mean blocked seconds per conn request for 15m0s
+
+**Possible solutions**
+
+- Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
+- Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#searcher-mean-blocked-seconds-per-conn-request).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_searcher_mean_blocked_seconds_per_conn_request",
+  "critical_searcher_mean_blocked_seconds_per_conn_request"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -3800,7 +4027,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
 <br />
 
@@ -3825,7 +4052,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
 <br />
 
@@ -3850,7 +4077,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
 <br />
 
@@ -3875,7 +4102,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
 <br />
 
@@ -3900,7 +4127,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
 <br />
 
@@ -3925,7 +4152,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
 <br />
 
@@ -3950,7 +4177,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
 <br />
 
@@ -3973,7 +4200,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
 <br />
 
@@ -3996,7 +4223,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
 <br />
 
@@ -4019,53 +4246,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
-
-<br />
-
-## symbols: store_fetch_failures
-
-<p class="subtitle">store fetch failures every 5m</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> symbols: 5+ store fetch failures every 5m
-
-**Possible solutions**
-
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#symbols-store-fetch-failures).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_symbols_store_fetch_failures"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-## symbols: current_fetch_queue_size
-
-<p class="subtitle">current fetch queue size</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> symbols: 25+ current fetch queue size
-
-**Possible solutions**
-
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#symbols-current-fetch-queue-size).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_symbols_current_fetch_queue_size"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
 <br />
 
@@ -4095,7 +4276,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4120,7 +4301,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4145,7 +4326,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4170,7 +4351,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4195,7 +4376,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4220,7 +4401,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4245,7 +4426,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4268,7 +4449,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4291,7 +4472,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4314,7 +4495,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4339,7 +4520,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -4364,7 +4545,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -4389,7 +4570,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -4414,7 +4595,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -4439,7 +4620,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -4464,7 +4645,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -4487,406 +4668,406 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
-## zoekt-indexserver: average_resolve_revision_duration
+## zoekt: average_resolve_revision_duration
 
 <p class="subtitle">average resolve revision duration over 5m</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> zoekt-indexserver: 15s+ average resolve revision duration over 5m
-- <span class="badge badge-critical">critical</span> zoekt-indexserver: 30s+ average resolve revision duration over 5m
+- <span class="badge badge-warning">warning</span> zoekt: 15s+ average resolve revision duration over 5m
+- <span class="badge badge-critical">critical</span> zoekt: 30s+ average resolve revision duration over 5m
 
 **Possible solutions**
 
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-indexserver-average-resolve-revision-duration).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-average-resolve-revision-duration).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-indexserver_average_resolve_revision_duration",
-  "critical_zoekt-indexserver_average_resolve_revision_duration"
+  "warning_zoekt_average_resolve_revision_duration",
+  "critical_zoekt_average_resolve_revision_duration"
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
 <br />
 
-## zoekt-indexserver: get_index_options_error_increase
+## zoekt: get_index_options_error_increase
 
 <p class="subtitle">the number of repositories we failed to get indexing options over 5m</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> zoekt-indexserver: 100+ the number of repositories we failed to get indexing options over 5m for 1m0s
-- <span class="badge badge-critical">critical</span> zoekt-indexserver: 100+ the number of repositories we failed to get indexing options over 5m for 10m0s
+- <span class="badge badge-warning">warning</span> zoekt: 100+ the number of repositories we failed to get indexing options over 5m for 5m0s
+- <span class="badge badge-critical">critical</span> zoekt: 100+ the number of repositories we failed to get indexing options over 5m for 35m0s
 
 **Possible solutions**
 
 - View error rates on gitserver and frontend to identify root cause.
 - Rollback frontend/gitserver deployment if due to a bad code change.
 - View error logs for `getIndexOptions` via net/trace debug interface. For example click on a `indexed-search-indexer-` on https://sourcegraph.com/-/debug/. Then click on Traces. Replace sourcegraph.com with your instance address.
-- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#zoekt-indexserver-get-index-options-error-increase).
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#zoekt-get-index-options-error-increase).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-indexserver_get_index_options_error_increase",
-  "critical_zoekt-indexserver_get_index_options_error_increase"
+  "warning_zoekt_get_index_options_error_increase",
+  "critical_zoekt_get_index_options_error_increase"
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
 <br />
 
-## zoekt-indexserver: container_cpu_usage
-
-<p class="subtitle">container cpu usage total (1m average) across all cores by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> zoekt-indexserver: 99%+ container cpu usage total (1m average) across all cores by instance
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-indexserver-container-cpu-usage).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_zoekt-indexserver_container_cpu_usage"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
-
-<br />
-
-## zoekt-indexserver: container_memory_usage
-
-<p class="subtitle">container memory usage by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> zoekt-indexserver: 99%+ container memory usage by instance
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-indexserver-container-memory-usage).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_zoekt-indexserver_container_memory_usage"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
-
-<br />
-
-## zoekt-indexserver: provisioning_container_cpu_usage_long_term
-
-<p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> zoekt-indexserver: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the zoekt-indexserver service.
-- **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-indexserver-provisioning-container-cpu-usage-long-term).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_zoekt-indexserver_provisioning_container_cpu_usage_long_term"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
-
-<br />
-
-## zoekt-indexserver: provisioning_container_memory_usage_long_term
-
-<p class="subtitle">container memory usage (1d maximum) by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> zoekt-indexserver: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the zoekt-indexserver service.
-- **Docker Compose:** Consider increasing `memory:` of the zoekt-indexserver container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-indexserver-provisioning-container-memory-usage-long-term).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_zoekt-indexserver_provisioning_container_memory_usage_long_term"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
-
-<br />
-
-## zoekt-indexserver: provisioning_container_cpu_usage_short_term
-
-<p class="subtitle">container cpu usage total (5m maximum) across all cores by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> zoekt-indexserver: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-indexserver-provisioning-container-cpu-usage-short-term).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_zoekt-indexserver_provisioning_container_cpu_usage_short_term"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
-
-<br />
-
-## zoekt-indexserver: provisioning_container_memory_usage_short_term
-
-<p class="subtitle">container memory usage (5m maximum) by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> zoekt-indexserver: 90%+ container memory usage (5m maximum) by instance
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-indexserver-provisioning-container-memory-usage-short-term).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_zoekt-indexserver_provisioning_container_memory_usage_short_term"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
-
-<br />
-
-## zoekt-indexserver: pods_available_percentage
-
-<p class="subtitle">percentage pods available</p>
-
-**Descriptions**
-
-- <span class="badge badge-critical">critical</span> zoekt-indexserver: less than 90% percentage pods available for 10m0s
-
-**Possible solutions**
-
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-indexserver-pods-available-percentage).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "critical_zoekt-indexserver_pods_available_percentage"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
-
-<br />
-
-## zoekt-webserver: indexed_search_request_errors
+## zoekt: indexed_search_request_errors
 
 <p class="subtitle">indexed search request errors every 5m by code</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> zoekt-webserver: 5%+ indexed search request errors every 5m by code for 5m0s
+- <span class="badge badge-warning">warning</span> zoekt: 5%+ indexed search request errors every 5m by code for 5m0s
 
 **Possible solutions**
 
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-webserver-indexed-search-request-errors).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-indexed-search-request-errors).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-webserver_indexed_search_request_errors"
+  "warning_zoekt_indexed_search_request_errors"
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
 <br />
 
-## zoekt-webserver: container_cpu_usage
+## zoekt: container_cpu_usage
 
 <p class="subtitle">container cpu usage total (1m average) across all cores by instance</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> zoekt-webserver: 99%+ container cpu usage total (1m average) across all cores by instance
+- <span class="badge badge-warning">warning</span> zoekt: 99%+ container cpu usage total (1m average) across all cores by instance
 
 **Possible solutions**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-webserver-container-cpu-usage).
+- **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-container-cpu-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-webserver_container_cpu_usage"
+  "warning_zoekt_container_cpu_usage"
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
 <br />
 
-## zoekt-webserver: container_memory_usage
+## zoekt: container_memory_usage
 
 <p class="subtitle">container memory usage by instance</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> zoekt-webserver: 99%+ container memory usage by instance
+- <span class="badge badge-warning">warning</span> zoekt: 99%+ container memory usage by instance
 
 **Possible solutions**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-webserver-container-memory-usage).
+- **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-container-memory-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-webserver_container_memory_usage"
+  "warning_zoekt_container_memory_usage"
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
 <br />
 
-## zoekt-webserver: provisioning_container_cpu_usage_long_term
+## zoekt: container_cpu_usage
 
-<p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> zoekt-webserver: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the zoekt-webserver service.
-- **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-webserver-provisioning-container-cpu-usage-long-term).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_zoekt-webserver_provisioning_container_cpu_usage_long_term"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
-
-<br />
-
-## zoekt-webserver: provisioning_container_memory_usage_long_term
-
-<p class="subtitle">container memory usage (1d maximum) by instance</p>
+<p class="subtitle">container cpu usage total (1m average) across all cores by instance</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> zoekt-webserver: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the zoekt-webserver service.
-- **Docker Compose:** Consider increasing `memory:` of the zoekt-webserver container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-webserver-provisioning-container-memory-usage-long-term).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_zoekt-webserver_provisioning_container_memory_usage_long_term"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
-
-<br />
-
-## zoekt-webserver: provisioning_container_cpu_usage_short_term
-
-<p class="subtitle">container cpu usage total (5m maximum) across all cores by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> zoekt-webserver: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
+- <span class="badge badge-warning">warning</span> zoekt: 99%+ container cpu usage total (1m average) across all cores by instance
 
 **Possible solutions**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-webserver-provisioning-container-cpu-usage-short-term).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-container-cpu-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-webserver_provisioning_container_cpu_usage_short_term"
+  "warning_zoekt_container_cpu_usage"
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
 <br />
 
-## zoekt-webserver: provisioning_container_memory_usage_short_term
+## zoekt: container_memory_usage
 
-<p class="subtitle">container memory usage (5m maximum) by instance</p>
+<p class="subtitle">container memory usage by instance</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> zoekt-webserver: 90%+ container memory usage (5m maximum) by instance
+- <span class="badge badge-warning">warning</span> zoekt: 99%+ container memory usage by instance
 
 **Possible solutions**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-webserver-provisioning-container-memory-usage-short-term).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-container-memory-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-webserver_provisioning_container_memory_usage_short_term"
+  "warning_zoekt_container_memory_usage"
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<br />
+
+## zoekt: provisioning_container_cpu_usage_long_term
+
+<p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> zoekt: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the zoekt-indexserver service.
+- **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-provisioning-container-cpu-usage-long-term).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_zoekt_provisioning_container_cpu_usage_long_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<br />
+
+## zoekt: provisioning_container_memory_usage_long_term
+
+<p class="subtitle">container memory usage (1d maximum) by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> zoekt: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the zoekt-indexserver service.
+- **Docker Compose:** Consider increasing `memory:` of the zoekt-indexserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-provisioning-container-memory-usage-long-term).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_zoekt_provisioning_container_memory_usage_long_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<br />
+
+## zoekt: provisioning_container_cpu_usage_short_term
+
+<p class="subtitle">container cpu usage total (5m maximum) across all cores by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> zoekt: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-provisioning-container-cpu-usage-short-term).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_zoekt_provisioning_container_cpu_usage_short_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<br />
+
+## zoekt: provisioning_container_memory_usage_short_term
+
+<p class="subtitle">container memory usage (5m maximum) by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> zoekt: 90%+ container memory usage (5m maximum) by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-provisioning-container-memory-usage-short-term).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_zoekt_provisioning_container_memory_usage_short_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<br />
+
+## zoekt: provisioning_container_cpu_usage_long_term
+
+<p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> zoekt: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the zoekt-webserver service.
+- **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-provisioning-container-cpu-usage-long-term).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_zoekt_provisioning_container_cpu_usage_long_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<br />
+
+## zoekt: provisioning_container_memory_usage_long_term
+
+<p class="subtitle">container memory usage (1d maximum) by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> zoekt: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the zoekt-webserver service.
+- **Docker Compose:** Consider increasing `memory:` of the zoekt-webserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-provisioning-container-memory-usage-long-term).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_zoekt_provisioning_container_memory_usage_long_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<br />
+
+## zoekt: provisioning_container_cpu_usage_short_term
+
+<p class="subtitle">container cpu usage total (5m maximum) across all cores by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> zoekt: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-provisioning-container-cpu-usage-short-term).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_zoekt_provisioning_container_cpu_usage_short_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<br />
+
+## zoekt: provisioning_container_memory_usage_short_term
+
+<p class="subtitle">container memory usage (5m maximum) by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> zoekt: 90%+ container memory usage (5m maximum) by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-provisioning-container-memory-usage-short-term).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_zoekt_provisioning_container_memory_usage_short_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<br />
+
+## zoekt: pods_available_percentage
+
+<p class="subtitle">percentage pods available</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> zoekt: less than 90% percentage pods available for 10m0s
+
+**Possible solutions**
+
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-pods-available-percentage).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_zoekt_pods_available_percentage"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
 <br />
 
@@ -4912,7 +5093,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -4938,7 +5119,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -4964,7 +5145,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -4989,7 +5170,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -5014,7 +5195,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -5038,7 +5219,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -5062,7 +5243,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -5086,7 +5267,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -5110,7 +5291,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -5135,7 +5316,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -5160,7 +5341,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -5185,7 +5366,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -5210,7 +5391,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -5235,7 +5416,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -5260,7 +5441,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -5283,157 +5464,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
-
-<br />
-
-## executor: container_cpu_usage
-
-<p class="subtitle">container cpu usage total (1m average) across all cores by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> executor: 99%+ container cpu usage total (1m average) across all cores by instance
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the (executor|sourcegraph-code-intel-indexers|executor-batches) container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#executor-container-cpu-usage).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_executor_container_cpu_usage"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-## executor: container_memory_usage
-
-<p class="subtitle">container memory usage by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> executor: 99%+ container memory usage by instance
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of (executor|sourcegraph-code-intel-indexers|executor-batches) container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#executor-container-memory-usage).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_executor_container_memory_usage"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-## executor: provisioning_container_cpu_usage_long_term
-
-<p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> executor: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the (executor|sourcegraph-code-intel-indexers|executor-batches) service.
-- **Docker Compose:** Consider increasing `cpus:` of the (executor|sourcegraph-code-intel-indexers|executor-batches) container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#executor-provisioning-container-cpu-usage-long-term).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_executor_provisioning_container_cpu_usage_long_term"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-## executor: provisioning_container_memory_usage_long_term
-
-<p class="subtitle">container memory usage (1d maximum) by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> executor: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the (executor|sourcegraph-code-intel-indexers|executor-batches) service.
-- **Docker Compose:** Consider increasing `memory:` of the (executor|sourcegraph-code-intel-indexers|executor-batches) container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#executor-provisioning-container-memory-usage-long-term).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_executor_provisioning_container_memory_usage_long_term"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-## executor: provisioning_container_cpu_usage_short_term
-
-<p class="subtitle">container cpu usage total (5m maximum) across all cores by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> executor: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the (executor|sourcegraph-code-intel-indexers|executor-batches) container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#executor-provisioning-container-cpu-usage-short-term).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_executor_provisioning_container_cpu_usage_short_term"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-## executor: provisioning_container_memory_usage_short_term
-
-<p class="subtitle">container memory usage (5m maximum) by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> executor: 90%+ container memory usage (5m maximum) by instance
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of (executor|sourcegraph-code-intel-indexers|executor-batches) container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#executor-provisioning-container-memory-usage-short-term).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_executor_provisioning_container_memory_usage_short_term"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -5456,7 +5487,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5479,30 +5510,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-## executor: pods_available_percentage
-
-<p class="subtitle">percentage pods available</p>
-
-**Descriptions**
-
-- <span class="badge badge-critical">critical</span> executor: less than 90% percentage pods available for 10m0s
-
-**Possible solutions**
-
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#executor-pods-available-percentage).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "critical_executor_pods_available_percentage"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 

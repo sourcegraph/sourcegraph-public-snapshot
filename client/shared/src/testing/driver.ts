@@ -1,7 +1,7 @@
 import * as os from 'os'
 import * as path from 'path'
 
-import { percySnapshot as realPercySnapshot } from '@percy/puppeteer'
+import realPercySnapshot from '@percy/puppeteer'
 import * as jsonc from '@sqs/jsonc-parser'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import delay from 'delay'
@@ -10,14 +10,15 @@ import getFreePort from 'get-port'
 import { escapeRegExp } from 'lodash'
 import { readFile, appendFile, mkdir } from 'mz/fs'
 import puppeteer, {
-    PageEventObj,
+    PageEventObject,
     Page,
     Serializable,
     LaunchOptions,
-    PageFnOptions,
     ConsoleMessage,
     Target,
-    RevisionInfo,
+    PuppeteerNode,
+    BrowserLaunchArgumentOptions,
+    BrowserConnectOptions,
 } from 'puppeteer'
 import puppeteerFirefox from 'puppeteer-firefox'
 import { from, fromEvent, merge, Subscription } from 'rxjs'
@@ -25,21 +26,21 @@ import { filter, map, concatAll, mergeMap, mergeAll, takeUntil } from 'rxjs/oper
 import { Key } from 'ts-key-enum'
 import webExt from 'web-ext'
 
+import { isDefined } from '@sourcegraph/common'
+import { dataOrThrowErrors, gql, GraphQLResult } from '@sourcegraph/http-client'
+
 import { ExternalServiceKind } from '../graphql-operations'
-import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
-import { IMutation, IQuery, IRepository } from '../graphql/schema'
+import { IMutation, IQuery, IRepository } from '../schema'
 import { Settings } from '../settings/settings'
-import { isDefined } from '../util/types'
 
 import { getConfig } from './config'
 import { formatPuppeteerConsoleMessage } from './console'
-import { PUPPETEER_BROWSER_REVISION } from './puppeteer-browser-revision'
 import { readEnvironmentBoolean, retry } from './utils'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
  */
-export const oncePageEvent = <E extends keyof PageEventObj>(page: Page, eventName: E): Promise<PageEventObj[E]> =>
+export const oncePageEvent = <E extends keyof PageEventObject>(page: Page, eventName: E): Promise<PageEventObject[E]> =>
     new Promise(resolve => page.once(eventName, resolve))
 
 export const percySnapshot = readEnvironmentBoolean({ variable: 'PERCY_ON', defaultValue: false })
@@ -63,6 +64,10 @@ type SelectTextMethod = 'selectall' | 'keyboard'
  * where typing would be too slow or we explicitly want to test paste behavior.
  */
 type EnterTextMethod = 'type' | 'paste'
+
+interface PageFnOptions {
+    timeout?: number
+}
 
 interface FindElementOptions {
     /**
@@ -204,13 +209,22 @@ export class Driver {
         password: string
         email?: string
     }): Promise<void> {
-        await this.page.goto(this.sourcegraphBaseUrl)
+        /**
+         * Wait for redirects to complete to avoid using an outdated page URL.
+         *
+         * In case a user is not authenticated, and site-init is required, two redirects happen:
+         * 1. Redirect to /sign-in?returnTo=%2F
+         * 2. Redirect to /site-admin/init
+         */
+        await this.page.goto(this.sourcegraphBaseUrl, { waitUntil: 'networkidle0' })
         await this.page.evaluate(() => {
             localStorage.setItem('has-dismissed-browser-ext-toast', 'true')
             localStorage.setItem('has-dismissed-integrations-toast', 'true')
             localStorage.setItem('has-dismissed-survey-toast', 'true')
         })
+
         const url = new URL(this.page.url())
+
         if (url.pathname === '/site-admin/init') {
             await this.page.waitForSelector('.test-signup-form')
             if (email) {
@@ -225,7 +239,7 @@ export class Driver {
             // you back to the login page
             await delay(1000)
             await this.page.click('button[type=submit]')
-            await this.page.waitForNavigation({ timeout: 3 * 10000 })
+            await this.page.waitForNavigation({ timeout: 300000 })
         } else if (url.pathname === '/sign-in') {
             await this.page.waitForSelector('.test-signin-form')
             await this.page.type('input', username)
@@ -233,19 +247,43 @@ export class Driver {
             // TODO(uwedeportivo): see comment above, same reason
             await delay(1000)
             await this.page.click('button[type=submit]')
-            await this.page.waitForNavigation({ timeout: 3 * 10000 })
+            await this.page.waitForNavigation({ timeout: 300000 })
         }
+    }
+
+    /**
+     * Navigates to the Sourcegraph browser extension page.
+     */
+    public async openBrowserExtensionPage(page: 'options' | 'after_install'): Promise<void> {
+        await this.page.goto(`chrome-extension://${BROWSER_EXTENSION_DEV_ID}/${page}.html`)
     }
 
     /**
      * Navigates to the Sourcegraph browser extension options page and sets the sourcegraph URL.
      */
     public async setExtensionSourcegraphUrl(): Promise<void> {
-        await this.page.goto(`chrome-extension://${BROWSER_EXTENSION_DEV_ID}/options.html`)
+        await this.openBrowserExtensionPage('options')
         await this.page.waitForSelector('.test-sourcegraph-url')
         await this.replaceText({ selector: '.test-sourcegraph-url', newText: this.sourcegraphBaseUrl })
         await this.page.keyboard.press(Key.Enter)
         await this.page.waitForSelector('.test-valid-sourcegraph-url-feedback')
+    }
+
+    /**
+     * Sets 'Enable click to go to definition' option flag value.
+     */
+    public async setClickGoToDefOptionFlag(isEnabled: boolean): Promise<void> {
+        await this.openBrowserExtensionPage('options')
+        const toggleAdvancedSettingsButton = await this.page.waitForSelector('.test-toggle-advanced-settings-button')
+        await toggleAdvancedSettingsButton?.click()
+        const checkbox = await this.findElementWithText('Enable click to go to definition')
+        if (!checkbox) {
+            throw new Error("'Enable click to go to definition' checkbox not found.")
+        }
+        const isChecked = await checkbox.$eval('input', input => (input as HTMLInputElement).checked)
+        if (isEnabled !== isChecked) {
+            await checkbox.click()
+        }
     }
 
     public async close(): Promise<void> {
@@ -354,8 +392,8 @@ export class Driver {
         // Delete existing external services if there are any.
         if (externalServices.totalCount !== 0) {
             await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services')
-            await this.page.waitFor('.test-filtered-connection')
-            await this.page.waitForSelector('.test-filtered-connection__loader', { hidden: true })
+            await this.page.waitForSelector('[data-testid="filtered-connection"]')
+            await this.page.waitForSelector('[data-testid="filtered-connection-loader"]', { hidden: true })
 
             // Matches buttons for deleting external services named ${displayName}.
             const deleteButtonSelector = `[data-test-external-service-name="${displayName}"] .test-delete-external-service-button`
@@ -466,7 +504,7 @@ export class Driver {
             "//*[contains(@class, 'panel')]//*[contains(@tabindex, '0')]//*[contains(text(), 'References')]"
         )
         // verify there are some references
-        await this.page.waitForSelector('[data-testid="panel-tabs-content"] .file-match-children__item', {
+        await this.page.waitForSelector('[data-testid="panel-tabs-content"] [data-testid="file-match-children-item"]', {
             visible: true,
         })
     }
@@ -688,7 +726,7 @@ export class Driver {
     }
 
     public async waitUntilURL(url: string, options: PageFnOptions = {}): Promise<void> {
-        await this.page.waitForFunction(url => document.location.href === url, options, url)
+        await this.page.waitForFunction((url: string) => document.location.href === url, options, url)
     }
 }
 
@@ -710,7 +748,7 @@ export function modifyJSONC(
 
 // Copied from node_modules/puppeteer-firefox/misc/install-preferences.js
 async function getFirefoxCfgPath(): Promise<string> {
-    const firefoxFolder = path.dirname(puppeteerFirefox.executablePath())
+    const firefoxFolder = path.dirname(((puppeteerFirefox as unknown) as PuppeteerNode).executablePath())
     let configPath: string
     if (process.platform === 'darwin') {
         configPath = path.join(firefoxFolder, '..', 'Resources')
@@ -725,7 +763,7 @@ async function getFirefoxCfgPath(): Promise<string> {
     return path.join(configPath, 'puppeteer.cfg')
 }
 
-interface DriverOptions extends LaunchOptions {
+interface DriverOptions extends LaunchOptions, BrowserConnectOptions, BrowserLaunchArgumentOptions {
     browser?: 'chrome' | 'firefox'
 
     /** If true, load the Sourcegraph browser extension. */
@@ -750,17 +788,16 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
     }
 
     const { loadExtension } = resolvedOptions
-    const args: string[] = []
-    const launchOptions: puppeteer.LaunchOptions = {
+    const args: string[] = ['--no-sandbox'] // https://stackoverflow.com/a/61278676
+    const launchOptions: LaunchOptions & BrowserLaunchArgumentOptions & BrowserConnectOptions = {
         ignoreHTTPSErrors: true,
         ...resolvedOptions,
         args,
         defaultViewport: null,
-        timeout: 30000,
+        timeout: 300000,
     }
     let browser: puppeteer.Browser
-    const browserName = resolvedOptions.browser || 'chrome'
-    if (browserName === 'firefox') {
+    if (resolvedOptions.browser === 'firefox') {
         // Make sure CSP is disabled in FF preferences,
         // because Puppeteer uses new Function() to evaluate code
         // which is not allowed by the github.com CSP.
@@ -781,7 +818,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
             await webExt.cmd.run(
                 {
                     sourceDir: firefoxExtensionPath,
-                    firefox: puppeteerFirefox.executablePath(),
+                    firefox: ((puppeteer as unknown) as puppeteer.PuppeteerNode).executablePath(),
                     args,
                 },
                 { shouldExitProgram: false }
@@ -812,30 +849,10 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
             args.push(`--disable-extensions-except=${chromeExtensionPath}`, `--load-extension=${chromeExtensionPath}`)
         }
 
-        const revision = PUPPETEER_BROWSER_REVISION[browserName]
-        const revisionInfo = getPuppeteerBrowser(browserName, revision)
-
-        console.log(`Using ${browserName} (revision ${revision}) executable path:`, revisionInfo.executablePath)
-        browser = await puppeteer.launch({ ...launchOptions, executablePath: revisionInfo.executablePath })
+        browser = await puppeteer.launch({ ...launchOptions })
     }
 
     const page = await browser.newPage()
 
     return new Driver(browser, page, resolvedOptions)
-}
-
-/**
- * Get the RevisionInfo (which contains the executable path) for the given
- * browser and revision string.
- */
-function getPuppeteerBrowser(browserName: string, revision: string): RevisionInfo {
-    const browserFetcher = puppeteer.createBrowserFetcher({ product: browserName })
-    const revisionInfo = browserFetcher.revisionInfo(revision)
-    if (!revisionInfo.local) {
-        throw new Error(
-            `No local executable found for Puppeteer browser: expected ${browserName} revision "${revision}". Run "yarn run download-puppeteer-browser".`
-        )
-    }
-
-    return revisionInfo
 }

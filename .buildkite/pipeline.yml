@@ -1,0 +1,23 @@
+# pipeline.yml sets up the appropriate pipeline to run for any given commit through the
+# pipeline generator (see steps).
+#
+# 🚨 SECURITY: DO NOT DEFINE SECRETS HERE IN PIPELINE ENV - instead, go to
+# https://sourcegraph.com/github.com/sourcegraph/infrastructure/-/blob/buildkite/kubernetes/gsm-secrets.tf
+#
+# MUST_INCLUDE_COMMIT, as well as other non-secret variables, are now defined in
+# https://sourcegraph.com/github.com/sourcegraph/infrastructure/-/blob/buildkite/kubernetes/buildkite-agent/buildkite-agent.Deployment.yaml
+
+steps:
+  - group: "Pipeline setup"
+    steps:
+      - label: ':hammer_and_wrench: :pipeline: Generate pipeline'
+        agents: { queue: standard }
+        # Prioritize generating pipelines so that jobs can get generated and queued up as soon
+        # as possible, so as to better assess pipeline load e.g. to scale the Buildkite fleet.
+        priority: 10
+        command: |
+          echo "--- generate pipeline"
+          go run ./enterprise/dev/ci/gen-pipeline.go | tee generated-pipeline.yml
+          echo ""
+          echo "--- upload pipeline"
+          buildkite-agent pipeline upload generated-pipeline.yml

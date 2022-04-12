@@ -1,15 +1,14 @@
 import React from 'react'
 
-import { UseConnectionResult } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
+import { UseConnectionResult } from '../../components/FilteredConnection/hooks/useConnection'
 import {
-    ConnectionContainer,
     ConnectionError,
-    ConnectionForm,
-    ConnectionList,
     ConnectionLoading,
     ShowMoreButton,
     SummaryContainer,
-} from '@sourcegraph/web/src/components/FilteredConnection/ui'
+} from '../../components/FilteredConnection/ui'
+
+import { ConnectionPopoverContainer, ConnectionPopoverForm, ConnectionPopoverList } from './components'
 
 interface RevisionsPopoverTabProps extends UseConnectionResult<unknown> {
     inputValue: string
@@ -30,23 +29,23 @@ export const RevisionsPopoverTab: React.FunctionComponent<RevisionsPopoverTabPro
     hasNextPage,
     fetchMore,
 }) => (
-    <ConnectionContainer compact={true} className="connection-popover__content">
-        <ConnectionForm
+    <ConnectionPopoverContainer>
+        <ConnectionPopoverForm
             inputValue={inputValue}
             onInputChange={event => onInputChange(event.target.value)}
             autoFocus={true}
             inputPlaceholder="Find..."
-            inputClassName="connection-popover__input"
+            compact={true}
         />
-        <SummaryContainer>{query && summary}</SummaryContainer>
-        {error && <ConnectionError errors={[error.message]} />}
-        <ConnectionList className="connection-popover__nodes">{children}</ConnectionList>
-        {loading && <ConnectionLoading />}
+        <SummaryContainer compact={true}>{query && summary}</SummaryContainer>
+        {error && <ConnectionError errors={[error.message]} compact={true} />}
+        <ConnectionPopoverList>{children}</ConnectionPopoverList>
+        {loading && <ConnectionLoading compact={true} />}
         {!loading && connection && (
-            <SummaryContainer>
+            <SummaryContainer compact={true}>
                 {!query && summary}
-                {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                {hasNextPage && <ShowMoreButton compact={true} onClick={fetchMore} />}
             </SummaryContainer>
         )}
-    </ConnectionContainer>
+    </ConnectionPopoverContainer>
 )

@@ -1,15 +1,18 @@
-import * as H from 'history'
+import React, { useEffect } from 'react'
+
 import EyeIcon from 'mdi-react/EyeIcon'
-import * as React from 'react'
+import { useLocation } from 'react-router'
 
-import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
-import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import { RenderMode } from '@sourcegraph/shared/src/util/url'
+import { TooltipController, Icon } from '@sourcegraph/wildcard'
 
+import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../../RepoHeader'
 
-interface Props extends RepoHeaderContext {
-    location: H.Location
+import { getURLForMode } from './utils'
+
+interface ToggledRenderedFileModeProps {
+    actionType: RepoHeaderContext['actionType']
     mode: RenderMode
 }
 
@@ -17,64 +20,37 @@ interface Props extends RepoHeaderContext {
  * A repository header action that toggles between showing a rendered file and the file's original
  * source, for files that can be rendered (such as Markdown files).
  */
-export class ToggleRenderedFileMode extends React.PureComponent<Props> {
-    private static URL_QUERY_PARAM = 'view'
-
+export const ToggleRenderedFileMode: React.FunctionComponent<ToggledRenderedFileModeProps> = ({ mode, actionType }) => {
     /**
-     * Reports whether the location's URL displays the blob as rendered or source.
+     * The opposite mode of the current mode.
+     * Used to enable switching between modes.
      */
-    public static getModeFromURL(location: H.Location): RenderMode {
-        const searchParameters = new URLSearchParams(location.search)
+    const otherMode: RenderMode = mode === 'code' ? 'rendered' : 'code'
+    const label = mode === 'rendered' ? 'Show raw code file' : 'Show formatted file'
+    const location = useLocation()
 
-        if (!searchParameters.has(ToggleRenderedFileMode.URL_QUERY_PARAM)) {
-            return undefined
-        }
-        return searchParameters.get(ToggleRenderedFileMode.URL_QUERY_PARAM) === 'code' ? 'code' : 'rendered' // default to rendered
-    }
+    useEffect(() => {
+        TooltipController.forceUpdate()
+    }, [mode])
 
-    /**
-     * Returns the URL that displays the blob using the specified mode.
-     */
-    private getURLForMode(location: H.Location, mode: RenderMode): H.Location {
-        const searchParameters = new URLSearchParams(location.search)
-        if (mode === 'code') {
-            searchParameters.set(ToggleRenderedFileMode.URL_QUERY_PARAM, mode)
-        } else {
-            searchParameters.delete(ToggleRenderedFileMode.URL_QUERY_PARAM)
-        }
-        return { ...location, search: searchParameters.toString() }
-    }
-
-    public componentDidUpdate(previousProps: Props): void {
-        if (previousProps.mode !== this.props.mode) {
-            Tooltip.forceUpdate()
-        }
-    }
-
-    public render(): JSX.Element | null {
-        const otherMode: RenderMode = this.props.mode === 'code' ? 'rendered' : 'code'
-
-        if (this.props.actionType === 'dropdown') {
-            return (
-                <ButtonLink
-                    className="btn repo-header__file-action"
-                    to={this.getURLForMode(this.props.location, otherMode)}
-                >
-                    <EyeIcon className="icon-inline" />
-                    <span>{otherMode === 'code' ? 'Show raw code file' : 'Show formatted file'}</span>
-                </ButtonLink>
-            )
-        }
-
+    if (actionType === 'dropdown') {
         return (
-            <ButtonLink
-                to={this.getURLForMode(this.props.location, otherMode)}
-                data-tooltip={otherMode === 'code' ? 'Show raw code file' : 'Show formatted file'}
-                className="btn btn-icon repo-header__action"
-            >
-                <EyeIcon className="icon-inline" />{' '}
-                <span className="d-none d-lg-inline ml-1">{otherMode === 'code' ? 'Raw' : 'Formatted'}</span>
-            </ButtonLink>
+            <RepoHeaderActionButtonLink to={getURLForMode(location, otherMode)} file={true}>
+                <Icon as={EyeIcon} />
+                <span>{label}</span>
+            </RepoHeaderActionButtonLink>
         )
     }
+
+    return (
+        <RepoHeaderActionButtonLink
+            className="btn-icon"
+            file={false}
+            to={getURLForMode(location, otherMode)}
+            data-tooltip={label}
+        >
+            <Icon as={EyeIcon} />{' '}
+            <span className="d-none d-lg-inline ml-1">{mode === 'rendered' ? 'Raw' : 'Formatted'}</span>
+        </RepoHeaderActionButtonLink>
+    )
 }

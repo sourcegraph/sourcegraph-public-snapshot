@@ -17,7 +17,6 @@ import (
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
-	"github.com/cockroachdb/errors"
 	"github.com/gomodule/oauth1/oauth"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
@@ -30,39 +29,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+// The metric generated here will be named as "src_bitbucket_requests_total".
 var requestCounter = metrics.NewRequestMeter("bitbucket", "Total number of requests sent to the Bitbucket API.")
-
-// These fields define the self-imposed Bitbucket rate limit (since Bitbucket Server does
-// not have a concept of rate limiting in HTTP response headers).
-//
-// See https://godoc.org/golang.org/x/time/rate#Limiter for an explanation of these fields.
-//
-// We chose the limits here based on the fact that Sourcegraph is a heavy consumer of the Bitbucket
-// Server API and that a large customer had reported to us their Bitbucket instance receives
-// ~100 req/s so it seems reasonable for us to (at max) consume ~8 req/s.
-//
-// Note that, for comparison, Bitbucket Cloud restricts "List all repositories" requests (which are
-// a good portion of our requests) to 1,000/hr, and they restrict "List a user or team's repositories"
-// requests (which are roughly equal to our repository lookup requests) to 1,000/hr. We perform a list
-// repositories request for every 1000 repositories on Bitbucket every 1m by default, so for someone
-// with 20,000 Bitbucket repositories we need 20,000/1000 requests per minute (1200/hr) + overhead for
-// repository lookup requests by users, and requests for identifying which repositories a user has
-// access to (if authorization is in use) and requests for changeset synchronization if it is in use.
-//
-// These are our default values, they can be changed in configuration
-const (
-	defaultRateLimit      = rate.Limit(8) // 480/min or 28,800/hr
-	defaultRateLimitBurst = 500
-)
 
 // Client access a Bitbucket Server via the REST API.
 type Client struct {
-	// HTTP Client used to communicate with the API
-	httpClient httpcli.Doer
-
 	// URL is the base URL of Bitbucket Server.
 	URL *url.URL
 
@@ -77,16 +52,20 @@ type Client struct {
 	//   This is generally set using SetOAuth.
 	Auth auth.Authenticator
 
-	// RateLimit is the self-imposed rate limiter (since Bitbucket does not have a concept
-	// of rate limiting in HTTP response headers).
-	RateLimit *rate.Limiter
+	// HTTP Client used to communicate with the API
+	httpClient httpcli.Doer
+
+	// RateLimit is the self-imposed rate limiter (since Bitbucket does not have a
+	// concept of rate limiting in HTTP response headers). Default limits are defined
+	// in extsvc.GetLimitFromConfig
+	rateLimit *rate.Limiter
 }
 
 // NewClient returns an authenticated Bitbucket Server API client with
 // the provided configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
-func NewClient(config *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
-	client, err := newClient(config, httpClient)
+func NewClient(urn string, config *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
+	client, err := newClient(urn, config, httpClient)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +92,7 @@ func NewClient(config *schema.BitbucketServerConnection, httpClient httpcli.Doer
 	return client, nil
 }
 
-func newClient(config *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
+func newClient(urn string, config *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
 	u, err := url.Parse(config.Url)
 	if err != nil {
 		return nil, err
@@ -124,16 +103,11 @@ func newClient(config *schema.BitbucketServerConnection, httpClient httpcli.Doer
 	}
 	httpClient = requestCounter.Doer(httpClient, categorize)
 
-	// Normally our registry will return a default infinite limiter when nothing has been
-	// synced from config. However, we always want to ensure there is at least some form of rate
-	// limiting for Bitbucket.
-	defaultLimiter := rate.NewLimiter(defaultRateLimit, defaultRateLimitBurst)
-	l := ratelimit.DefaultRegistry.GetOrSet(u.String(), defaultLimiter)
-
 	return &Client{
 		httpClient: httpClient,
 		URL:        u,
-		RateLimit:  l,
+		// Default limits are defined in extsvc.GetLimitFromConfig
+		rateLimit: ratelimit.DefaultRegistry.Get(urn),
 	}, nil
 }
 
@@ -144,7 +118,7 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
 	return &Client{
 		httpClient: c.httpClient,
 		URL:        c.URL,
-		RateLimit:  c.RateLimit,
+		rateLimit:  c.rateLimit,
 		Auth:       a,
 	}
 }
@@ -610,9 +584,9 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 	_, err = c.send(ctx, "POST", path, nil, payload, pr)
 	if err != nil {
 		if IsDuplicatePullRequest(err) {
-			pr, extractErr := ExtractDuplicatePullRequest(err)
+			pr, extractErr := ExtractExistingPullRequest(err)
 			if extractErr != nil {
-				log15.Error("Extracting existsing PR", "err", extractErr)
+				log15.Error("Extracting existing PR", "err", extractErr)
 			}
 			return &ErrAlreadyExists{
 				Existing: pr,
@@ -878,6 +852,24 @@ func (c *Client) RecentRepos(ctx context.Context, pageToken *PageToken) ([]*Repo
 	return repos, next, err
 }
 
+type CreateForkInput struct {
+	Name          *string                 `json:"name,omitempty"`
+	DefaultBranch *string                 `json:"defaultBranch,omitempty"`
+	Project       *CreateForkInputProject `json:"project,omitempty"`
+}
+
+type CreateForkInputProject struct {
+	Key string `json:"key"`
+}
+
+func (c *Client) Fork(ctx context.Context, projectKey, repoSlug string, input CreateForkInput) (*Repo, error) {
+	u := fmt.Sprintf("rest/api/1.0/projects/%s/repos/%s", projectKey, repoSlug)
+
+	var resp Repo
+	_, err := c.send(ctx, "POST", u, nil, input, &resp)
+	return &resp, err
+}
+
 func (c *Client) page(ctx context.Context, path string, qry url.Values, token *PageToken, results interface{}) (*PageToken, error) {
 	if qry == nil {
 		qry = make(url.Values)
@@ -948,7 +940,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	}
 
 	startWait := time.Now()
-	if err := c.RateLimit.Wait(ctx); err != nil {
+	if err := c.rateLimit.Wait(ctx); err != nil {
 		return nil, err
 	}
 
@@ -1176,15 +1168,19 @@ type Project struct {
 	} `json:"links"`
 }
 
+type ProjectKey struct {
+	Key string `json:"key"`
+}
+
+type RefRepository struct {
+	ID      int        `json:"id"`
+	Slug    string     `json:"slug"`
+	Project ProjectKey `json:"project"`
+}
+
 type Ref struct {
-	ID         string `json:"id"`
-	Repository struct {
-		ID      int    `json:"id"`
-		Slug    string `json:"slug"`
-		Project struct {
-			Key string `json:"key"`
-		} `json:"project"`
-	} `json:"repository"`
+	ID         string        `json:"id"`
+	Repository RefRepository `json:"repository"`
 }
 
 type PullRequest struct {
@@ -1381,11 +1377,31 @@ func IsDuplicatePullRequest(err error) bool {
 	return errors.As(err, &e) && e.DuplicatePullRequest()
 }
 
-// ExtractDuplicatePullRequest will attempt to extract a duplicate PR
-func ExtractDuplicatePullRequest(err error) (*PullRequest, error) {
+func IsPullRequestOutOfDate(err error) bool {
+	var e *httpError
+	return errors.As(err, &e) && e.PullRequestOutOfDateException()
+}
+
+func IsMergePreconditionFailedException(err error) bool {
+	var e *httpError
+	return errors.As(err, &e) && e.MergePreconditionFailedException()
+}
+
+// ExtractExistingPullRequest will attempt to extract the existing PR returned with an error.
+func ExtractExistingPullRequest(err error) (*PullRequest, error) {
 	var e *httpError
 	if errors.As(err, &e) {
 		return e.ExtractExistingPullRequest()
+	}
+
+	return nil, errors.Errorf("error does not contain existing PR")
+}
+
+// ExtractPullRequest will attempt to extract the PR returned with an error.
+func ExtractPullRequest(err error) (*PullRequest, error) {
+	var e *httpError
+	if errors.As(err, &e) {
+		return e.ExtractPullRequest()
 	}
 
 	return nil, errors.Errorf("error does not contain existing PR")
@@ -1422,15 +1438,23 @@ func (e *httpError) NoSuchLabelException() bool {
 }
 
 func (e *httpError) MergePreconditionFailedException() bool {
-	return e.StatusCode == 409
+	return strings.Contains(string(e.Body), bitbucketPullRequestMergeVetoedException)
+}
+
+func (e *httpError) PullRequestOutOfDateException() bool {
+	return strings.Contains(string(e.Body), bitbucketPullRequestOutOfDateException)
 }
 
 const (
-	bitbucketDuplicatePRException       = "com.atlassian.bitbucket.pull.DuplicatePullRequestException"
-	bitbucketNoSuchLabelException       = "com.atlassian.bitbucket.label.NoSuchLabelException"
-	bitbucketNoSuchPullRequestException = "com.atlassian.bitbucket.pull.NoSuchPullRequestException"
+	bitbucketDuplicatePRException            = "com.atlassian.bitbucket.pull.DuplicatePullRequestException"
+	bitbucketNoSuchLabelException            = "com.atlassian.bitbucket.label.NoSuchLabelException"
+	bitbucketNoSuchPullRequestException      = "com.atlassian.bitbucket.pull.NoSuchPullRequestException"
+	bitbucketPullRequestOutOfDateException   = "com.atlassian.bitbucket.pull.PullRequestOutOfDateException"
+	bitbucketPullRequestMergeVetoedException = "com.atlassian.bitbucket.pull.PullRequestMergeVetoedException"
 )
 
+// ExtractExistingPullRequest will try to extract a PullRequest from the
+// ExistingPullRequest field of the first Error in the response body.
 func (e *httpError) ExtractExistingPullRequest() (*PullRequest, error) {
 	var dest struct {
 		Errors []struct {
@@ -1451,6 +1475,29 @@ func (e *httpError) ExtractExistingPullRequest() (*PullRequest, error) {
 	}
 
 	return nil, errors.New("existing PR not found")
+}
+
+// ExtractPullRequest will try to extract a PullRequest from the
+// PullRequest field of the first Error in the response body.
+func (e *httpError) ExtractPullRequest() (*PullRequest, error) {
+	var dest struct {
+		Errors []struct {
+			ExceptionName string
+			// This is different from ExistingPullRequest
+			PullRequest PullRequest
+		}
+	}
+
+	err := json.Unmarshal(e.Body, &dest)
+	if err != nil {
+		return nil, errors.Wrap(err, "unmarshalling error")
+	}
+
+	if len(dest.Errors) == 0 {
+		return nil, errors.New("existing PR not found")
+	}
+
+	return &dest.Errors[0].PullRequest, nil
 }
 
 // AuthenticatedUsername returns the username associated with the credentials
@@ -1501,10 +1548,6 @@ func (c *Client) CreatePullRequestComment(ctx context.Context, pr *PullRequest, 
 	return err
 }
 
-// ErrNotMergeable is returned by MergePullRequest when the pull request failed
-// to merge, because a precondition is not met.
-var ErrNotMergeable = errors.New("pull request cannot be merged")
-
 func (c *Client) MergePullRequest(ctx context.Context, pr *PullRequest) error {
 	if pr.ToRef.Repository.Slug == "" {
 		return errors.New("repository slug empty")
@@ -1525,10 +1568,6 @@ func (c *Client) MergePullRequest(ctx context.Context, pr *PullRequest) error {
 
 	_, err := c.send(ctx, "POST", path, qry, nil, pr)
 	if err != nil {
-		var e *httpError
-		if errors.As(err, &e) && e.MergePreconditionFailedException() {
-			return errors.Wrap(ErrNotMergeable, err.Error())
-		}
 		return err
 	}
 	return nil

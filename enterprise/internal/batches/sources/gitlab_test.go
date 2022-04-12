@@ -8,9 +8,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
+	"github.com/stretchr/testify/assert"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -29,10 +30,10 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			defer func() { _ = recover() }()
 
 			p := newGitLabChangesetSourceTestProvider(t)
+			repo := &types.Repo{Metadata: struct{}{}}
 			_, _ = p.source.CreateChangeset(p.ctx, &Changeset{
-				Repo: &types.Repo{
-					Metadata: struct{}{},
-				},
+				RemoteRepo: repo,
+				TargetRepo: repo,
 			})
 			t.Error("invalid metadata did not panic")
 		})
@@ -127,10 +128,10 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			defer func() { _ = recover() }()
 
 			p := newGitLabChangesetSourceTestProvider(t)
+			repo := &types.Repo{Metadata: struct{}{}}
 			_ = p.source.CloseChangeset(p.ctx, &Changeset{
-				Repo: &types.Repo{
-					Metadata: struct{}{},
-				},
+				RemoteRepo: repo,
+				TargetRepo: repo,
 			})
 			t.Error("invalid metadata did not panic")
 		})
@@ -171,10 +172,10 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			defer func() { _ = recover() }()
 
 			p := newGitLabChangesetSourceTestProvider(t)
+			repo := &types.Repo{Metadata: struct{}{}}
 			_ = p.source.ReopenChangeset(p.ctx, &Changeset{
-				Repo: &types.Repo{
-					Metadata: struct{}{},
-				},
+				RemoteRepo: repo,
+				TargetRepo: repo,
 			})
 			t.Error("invalid metadata did not panic")
 		})
@@ -217,20 +218,24 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 			p := newGitLabChangesetSourceTestProvider(t)
 
+			repo := &types.Repo{Metadata: struct{}{}}
 			_ = p.source.LoadChangeset(p.ctx, &Changeset{
-				Repo: &types.Repo{Metadata: struct{}{}},
+				RemoteRepo: repo,
+				TargetRepo: repo,
 			})
 			t.Error("invalid metadata did not panic")
 		})
 
 		t.Run("error from ParseInt", func(t *testing.T) {
 			p := newGitLabChangesetSourceTestProvider(t)
+			repo := &types.Repo{Metadata: &gitlab.Project{}}
 			if err := p.source.LoadChangeset(p.ctx, &Changeset{
 				Changeset: &btypes.Changeset{
 					ExternalID: "foo",
 					Metadata:   &gitlab.MergeRequest{},
 				},
-				Repo: &types.Repo{Metadata: &gitlab.Project{}},
+				RemoteRepo: repo,
+				TargetRepo: repo,
 			}); err == nil {
 				t.Error("invalid ExternalID did not result in an error")
 			}
@@ -354,6 +359,12 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 		})
 
 		t.Run("integration", func(t *testing.T) {
+			repo := &types.Repo{
+				Metadata: &gitlab.Project{
+					// sourcegraph/sourcegraph
+					ProjectCommon: gitlab.ProjectCommon{ID: 16606088},
+				},
+			}
 			testCases := []struct {
 				name string
 				cs   *Changeset
@@ -362,28 +373,25 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 				{
 					name: "found",
 					cs: &Changeset{
-						Repo: &types.Repo{Metadata: &gitlab.Project{
-							// sourcegraph/sourcegraph
-							ProjectCommon: gitlab.ProjectCommon{ID: 16606088},
-						}},
-						Changeset: &btypes.Changeset{ExternalID: "2"},
+						RemoteRepo: repo,
+						TargetRepo: repo,
+						Changeset:  &btypes.Changeset{ExternalID: "2"},
 					},
 				},
 				{
 					name: "not-found",
 					cs: &Changeset{
-						Repo: &types.Repo{Metadata: &gitlab.Project{
-							// sourcegraph/sourcegraph
-							ProjectCommon: gitlab.ProjectCommon{ID: 16606088},
-						}},
-						Changeset: &btypes.Changeset{ExternalID: "100000"},
+						RemoteRepo: repo,
+						TargetRepo: repo,
+						Changeset:  &btypes.Changeset{ExternalID: "100000"},
 					},
 					err: "Changeset with external ID 100000 not found",
 				},
 				{
 					name: "project-not-found",
 					cs: &Changeset{
-						Repo: &types.Repo{Metadata: &gitlab.Project{
+						RemoteRepo: repo,
+						TargetRepo: &types.Repo{Metadata: &gitlab.Project{
 							ProjectCommon: gitlab.ProjectCommon{ID: 999999999999},
 						}},
 						Changeset: &btypes.Changeset{ExternalID: "100000"},
@@ -640,16 +648,44 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 		}
 	})
 
+	t.Run("UndraftChangeset", func(t *testing.T) {
+		in := &gitlab.MergeRequest{IID: 2, WorkInProgress: true}
+		out := &gitlab.MergeRequest{}
+
+		p := newGitLabChangesetSourceTestProvider(t)
+		p.changeset.Changeset.Metadata = in
+
+		oldMock := gitlab.MockUpdateMergeRequest
+		t.Cleanup(func() { gitlab.MockUpdateMergeRequest = oldMock })
+		gitlab.MockUpdateMergeRequest = func(c *gitlab.Client, ctx context.Context, project *gitlab.Project, mr *gitlab.MergeRequest, opts gitlab.UpdateMergeRequestOpts) (*gitlab.MergeRequest, error) {
+			if have, want := opts.Title, "title"; have != want {
+				t.Errorf("unexpected title: have=%q want=%q", have, want)
+			}
+			return out, nil
+		}
+
+		p.mockGetMergeRequestNotes(in.IID, nil, 20, nil)
+		p.mockGetMergeRequestResourceStateEvents(in.IID, nil, 20, nil)
+		p.mockGetMergeRequestPipelines(in.IID, nil, 20, nil)
+
+		if err := p.source.UndraftChangeset(p.ctx, p.changeset); err != nil {
+			t.Errorf("unexpected non-nil error: %+v", err)
+		}
+		if p.changeset.Changeset.Metadata != out {
+			t.Errorf("metadata not correctly updated: have %+v; want %+v", p.changeset.Changeset.Metadata, out)
+		}
+	})
+
 	t.Run("CreateComment", func(t *testing.T) {
 		commentBody := "test-comment"
 		t.Run("invalid metadata", func(t *testing.T) {
 			defer func() { _ = recover() }()
 
 			p := newGitLabChangesetSourceTestProvider(t)
+			repo := &types.Repo{Metadata: struct{}{}}
 			_ = p.source.CreateComment(p.ctx, &Changeset{
-				Repo: &types.Repo{
-					Metadata: struct{}{},
-				},
+				RemoteRepo: repo,
+				TargetRepo: repo,
 			}, commentBody)
 			t.Error("invalid metadata did not panic")
 		})
@@ -660,7 +696,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 			p := newGitLabChangesetSourceTestProvider(t)
 			p.changeset.Changeset.Metadata = mr
-			p.mockCreateComment(commentBody, mr, inner)
+			p.mockCreateComment(commentBody, inner)
 
 			have := p.source.CreateComment(p.ctx, p.changeset, commentBody)
 			if !errors.Is(have, inner) {
@@ -673,7 +709,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 			p := newGitLabChangesetSourceTestProvider(t)
 			p.changeset.Changeset.Metadata = mr
-			p.mockCreateComment(commentBody, mr, nil)
+			p.mockCreateComment(commentBody, nil)
 
 			if err := p.source.CreateComment(p.ctx, p.changeset, commentBody); err != nil {
 				t.Errorf("unexpected error: %+v", err)
@@ -704,11 +740,10 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 				}
 
 				ctx := context.Background()
+				repo := &types.Repo{Metadata: newGitLabProject(16606088)}
 				cs := &Changeset{
-					Repo: &types.Repo{Metadata: &gitlab.Project{
-						// sourcegraph/sourcegraph
-						ProjectCommon: gitlab.ProjectCommon{ID: 16606088},
-					}},
+					RemoteRepo: repo,
+					TargetRepo: repo,
 					Changeset: &btypes.Changeset{Metadata: &gitlab.MergeRequest{
 						IID: gitlab.ID(2),
 					}},
@@ -833,25 +868,28 @@ type gitLabChangesetSourceTestProvider struct {
 // objects, along with a handful of methods to mock underlying
 // internal/extsvc/gitlab functions.
 func newGitLabChangesetSourceTestProvider(t *testing.T) *gitLabChangesetSourceTestProvider {
-	prov := gitlab.NewClientProvider(&url.URL{}, &panicDoer{})
+	prov := gitlab.NewClientProvider("Test", &url.URL{}, &panicDoer{})
+	repo := &types.Repo{Metadata: &gitlab.Project{}}
 	p := &gitLabChangesetSourceTestProvider{
 		changeset: &Changeset{
-			Changeset: &btypes.Changeset{},
-			Repo:      &types.Repo{Metadata: &gitlab.Project{}},
-			HeadRef:   "refs/heads/head",
-			BaseRef:   "refs/heads/base",
-			Title:     "title",
-			Body:      "description",
+			Changeset:  &btypes.Changeset{},
+			RemoteRepo: repo,
+			TargetRepo: repo,
+			HeadRef:    "refs/heads/head",
+			BaseRef:    "refs/heads/base",
+			Title:      "title",
+			Body:       "description",
 		},
 		ctx: context.Background(),
 		mr: &gitlab.MergeRequest{
-			ID:           1,
-			IID:          2,
-			ProjectID:    3,
-			Title:        "title",
-			Description:  "description",
-			SourceBranch: "head",
-			TargetBranch: "base",
+			ID:              1,
+			IID:             2,
+			ProjectID:       3,
+			SourceProjectID: 3,
+			Title:           "title",
+			Description:     "description",
+			SourceBranch:    "head",
+			TargetBranch:    "base",
 		},
 		source: &GitLabSource{
 			client: prov.GetClient(),
@@ -873,8 +911,8 @@ func (p *gitLabChangesetSourceTestProvider) testCommonParams(ctx context.Context
 	if ctx != p.ctx {
 		p.t.Errorf("unexpected context: have %+v; want %+v", ctx, p.ctx)
 	}
-	if project != p.changeset.Repo.Metadata.(*gitlab.Project) {
-		p.t.Errorf("unexpected Project: have %+v; want %+v", project, p.changeset.Repo.Metadata)
+	if project != p.changeset.TargetRepo.Metadata.(*gitlab.Project) {
+		p.t.Errorf("unexpected Project: have %+v; want %+v", project, p.changeset.TargetRepo.Metadata)
 	}
 }
 
@@ -905,6 +943,7 @@ func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequest(expected gitlab.
 	}
 }
 
+//nolint:unparam // unparam complains that `pageSize` always has same value across call-sites, but that's OK
 func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequestNotes(expectedIID gitlab.ID, notes []*gitlab.Note, pageSize int, err error) {
 	gitlab.MockGetMergeRequestNotes = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, iid gitlab.ID) func() ([]*gitlab.Note, error) {
 		p.testCommonParams(ctx, client, project)
@@ -919,6 +958,7 @@ func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequestNotes(expectedIID
 	}
 }
 
+//nolint:unparam // unparam complains that `pageSize` always has same value across call-sites, but that's OK
 func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequestResourceStateEvents(expectedIID gitlab.ID, events []*gitlab.ResourceStateEvent, pageSize int, err error) {
 	gitlab.MockGetMergeRequestResourceStateEvents = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, iid gitlab.ID) func() ([]*gitlab.ResourceStateEvent, error) {
 		p.testCommonParams(ctx, client, project)
@@ -933,6 +973,7 @@ func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequestResourceStateEven
 	}
 }
 
+//nolint:unparam // unparam complains that `pageSize` always has same value across call-sites, but that's OK
 func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequestPipelines(expectedIID gitlab.ID, pipelines []*gitlab.Pipeline, pageSize int, err error) {
 	gitlab.MockGetMergeRequestPipelines = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, iid gitlab.ID) func() ([]*gitlab.Pipeline, error) {
 		p.testCommonParams(ctx, client, project)
@@ -968,7 +1009,7 @@ func (p *gitLabChangesetSourceTestProvider) mockUpdateMergeRequest(expectedMR, u
 	}
 }
 
-func (p *gitLabChangesetSourceTestProvider) mockCreateComment(expected string, mr *gitlab.MergeRequest, err error) {
+func (p *gitLabChangesetSourceTestProvider) mockCreateComment(expected string, err error) {
 	gitlab.MockCreateMergeRequestNote = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, mr *gitlab.MergeRequest, body string) error {
 		p.testCommonParams(ctx, client, project)
 		if expected != body {
@@ -1061,7 +1102,7 @@ func paginatedPipelineIterator(pipelines []*gitlab.Pipeline, pageSize int) func(
 func TestGitLabSource_WithAuthenticator(t *testing.T) {
 	t.Run("supported", func(t *testing.T) {
 		var src ChangesetSource
-		src, err := newGitLabSource(&schema.GitLabConnection{}, nil, nil)
+		src, err := newGitLabSource("Test", &schema.GitLabConnection{}, nil)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
@@ -1085,7 +1126,7 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 		} {
 			t.Run(name, func(t *testing.T) {
 				var src ChangesetSource
-				src, err := newGitLabSource(&schema.GitLabConnection{}, nil, nil)
+				src, err := newGitLabSource("Test", &schema.GitLabConnection{}, nil)
 				if err != nil {
 					t.Errorf("unexpected non-nil error: %v", err)
 				}
@@ -1101,4 +1142,55 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestDecorateMergeRequestData(t *testing.T) {
+	ctx := context.Background()
+
+	// The test fixtures use publicly available merge requests, and should be
+	// able to be updated at any time without any action required.
+	createSource := func(t *testing.T) *GitLabSource {
+		cf, save := newClientFactory(t, t.Name())
+		t.Cleanup(func() { save(t) })
+
+		src, err := newGitLabSource(
+			"Test",
+			&schema.GitLabConnection{
+				Url:   "https://gitlab.com",
+				Token: os.Getenv("GITLAB_TOKEN"),
+			},
+			cf,
+		)
+
+		assert.Nil(t, err)
+		return src
+	}
+
+	src := createSource(t)
+
+	// https://gitlab.com/sourcegraph/src-cli/-/merge_requests/1
+	forked, err := src.client.GetMergeRequest(ctx, newGitLabProject(16606399), 1)
+	assert.Nil(t, err)
+
+	// https://gitlab.com/sourcegraph/sourcegraph/-/merge_requests/2
+	unforked, err := src.client.GetMergeRequest(ctx, newGitLabProject(16606088), 2)
+	assert.Nil(t, err)
+
+	t.Run("fork", func(t *testing.T) {
+		err := createSource(t).decorateMergeRequestData(ctx, newGitLabProject(int(forked.ProjectID)), forked)
+		assert.Nil(t, err)
+		assert.Equal(t, "LawnGnome", forked.SourceProjectNamespace)
+	})
+
+	t.Run("not a fork", func(t *testing.T) {
+		err := createSource(t).decorateMergeRequestData(ctx, newGitLabProject(int(unforked.ProjectID)), unforked)
+		assert.Nil(t, err)
+		assert.Equal(t, "", unforked.SourceProjectNamespace)
+	})
+}
+
+func newGitLabProject(id int) *gitlab.Project {
+	return &gitlab.Project{
+		ProjectCommon: gitlab.ProjectCommon{ID: id},
+	}
 }

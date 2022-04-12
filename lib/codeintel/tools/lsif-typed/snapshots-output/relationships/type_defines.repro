@@ -1,0 +1,9 @@
+ definition local1
+#           ^^^^^^ definition local 1
+#           documentation signature of local1
+ definition local2 type_defines local1
+#           ^^^^^^ definition local 2
+#           documentation signature of local2
+#           relationship local 1 type_definition
+#                               ^^^^^^ reference local 1
+ 

@@ -1,10 +1,13 @@
-import { storiesOf } from '@storybook/react'
 import React from 'react'
+
+import { storiesOf } from '@storybook/react'
 import sinon from 'sinon'
 
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { WebStory } from '../../../components/WebStory'
 
 import { FormTriggerArea } from './FormTriggerArea'
+
+import codeMonitorFormStyles from './CodeMonitorForm.module.scss'
 
 const { add } = storiesOf('web/enterprise/code-monitoring/FormTrigerArea', module).addParameters({
     design: {
@@ -15,50 +18,78 @@ const { add } = storiesOf('web/enterprise/code-monitoring/FormTrigerArea', modul
     chromatic: {
         delay: 600, // Delay screenshot for input validation debouncing
         viewports: [720],
+        disableSnapshot: false,
     },
 })
 
-add('Open, empty query', () => (
-    <EnterpriseWebStory>
+add('FormTrigerArea', () => (
+    <WebStory>
         {props => (
-            <FormTriggerArea
-                {...props}
-                query=""
-                triggerCompleted={false}
-                onQueryChange={sinon.fake()}
-                setTriggerCompleted={sinon.fake()}
-                startExpanded={true}
-            />
-        )}
-    </EnterpriseWebStory>
-))
+            <>
+                <h2>Closed, empty query</h2>
+                <div className="my-2">
+                    <FormTriggerArea
+                        {...props}
+                        query=""
+                        triggerCompleted={false}
+                        onQueryChange={sinon.fake()}
+                        setTriggerCompleted={sinon.fake()}
+                        startExpanded={false}
+                        cardBtnClassName={codeMonitorFormStyles.cardButton}
+                        cardLinkClassName={codeMonitorFormStyles.cardLink}
+                        cardClassName={codeMonitorFormStyles.card}
+                        isSourcegraphDotCom={false}
+                    />
+                </div>
 
-add('Open, partially valid query', () => (
-    <EnterpriseWebStory>
-        {props => (
-            <FormTriggerArea
-                {...props}
-                query="test type:commit"
-                triggerCompleted={false}
-                onQueryChange={sinon.fake()}
-                setTriggerCompleted={sinon.fake()}
-                startExpanded={true}
-            />
-        )}
-    </EnterpriseWebStory>
-))
+                <h2>Open, empty query</h2>
+                <div className="my-2">
+                    <FormTriggerArea
+                        {...props}
+                        query=""
+                        triggerCompleted={false}
+                        onQueryChange={sinon.fake()}
+                        setTriggerCompleted={sinon.fake()}
+                        startExpanded={true}
+                        cardBtnClassName={codeMonitorFormStyles.cardButton}
+                        cardLinkClassName={codeMonitorFormStyles.cardLink}
+                        cardClassName={codeMonitorFormStyles.card}
+                        isSourcegraphDotCom={false}
+                    />
+                </div>
 
-add('Open, fully valid query', () => (
-    <EnterpriseWebStory>
-        {props => (
-            <FormTriggerArea
-                {...props}
-                query="test type:commit repo:test"
-                triggerCompleted={false}
-                onQueryChange={sinon.fake()}
-                setTriggerCompleted={sinon.fake()}
-                startExpanded={true}
-            />
+                <h2>Open, partially valid query</h2>
+                <div className="my-2">
+                    <FormTriggerArea
+                        {...props}
+                        query="test type:commit"
+                        triggerCompleted={false}
+                        onQueryChange={sinon.fake()}
+                        setTriggerCompleted={sinon.fake()}
+                        startExpanded={true}
+                        cardBtnClassName={codeMonitorFormStyles.cardButton}
+                        cardLinkClassName={codeMonitorFormStyles.cardLink}
+                        cardClassName={codeMonitorFormStyles.card}
+                        isSourcegraphDotCom={false}
+                    />
+                </div>
+
+                <h2>Open, fully valid query</h2>
+                <div className="my-2">
+                    <FormTriggerArea
+                        {...props}
+                        query="test type:commit repo:test"
+                        triggerCompleted={false}
+                        onQueryChange={sinon.fake()}
+                        setTriggerCompleted={sinon.fake()}
+                        startExpanded={true}
+                        cardBtnClassName={codeMonitorFormStyles.cardButton}
+                        cardLinkClassName={codeMonitorFormStyles.cardLink}
+                        cardClassName={codeMonitorFormStyles.card}
+                        isSourcegraphDotCom={false}
+                    />
+                </div>
+            </>
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))

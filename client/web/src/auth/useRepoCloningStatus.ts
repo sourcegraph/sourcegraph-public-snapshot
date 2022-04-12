@@ -1,7 +1,7 @@
 import { ApolloError, ReactiveVar } from '@apollo/client'
 import { upperFirst, xor } from 'lodash'
 
-import { useQuery, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { useQuery, gql } from '@sourcegraph/http-client'
 
 import { Maybe, UserRepositoriesVariables } from '../graphql-operations'
 
@@ -16,7 +16,7 @@ interface UseRepoCloningStatusArguments {
     repoSelectionMode: RepoSelectionMode
 }
 
-interface RepoLine {
+export interface RepoLine {
     id: string
     title: string
     details: string

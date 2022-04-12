@@ -1,28 +1,27 @@
-import * as H from 'history'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import ErrorIcon from 'mdi-react/ErrorIcon'
 import React, { useCallback, useState } from 'react'
+
+import * as H from 'history'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import { of, Observable, concat, from } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { map, catchError, tap, concatMap } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { asError, isErrorLike } from '@sourcegraph/common'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import extensionSchemaJSON from '@sourcegraph/shared/src/schema/extension.schema.json'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Button, LoadingSpinner, useLocalStorage, useEventObservable, Link, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { mutateGraphQL } from '../../../backend/graphql'
-import { ErrorAlert } from '../../../components/alerts'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../settings/DynamicallyImportedMonacoSettingsEditor'
@@ -125,7 +124,7 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
 
         return !extension.registryExtension || !extension.registryExtension.viewerCanAdminister ? (
             <HeroPage
-                icon={ErrorIcon}
+                icon={AlertCircleIcon}
                 title="Unauthorized"
                 subtitle="You are not authorized to adminster this extension."
             />
@@ -135,9 +134,9 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                 <h2>Publish new release</h2>
                 <p>
                     Use the{' '}
-                    <a href="https://github.com/sourcegraph/src-cli" target="_blank" rel="noopener noreferrer">
+                    <Link to="https://github.com/sourcegraph/src-cli" target="_blank" rel="noopener noreferrer">
                         <code>src</code> CLI tool
-                    </a>{' '}
+                    </Link>{' '}
                     to publish a new release:
                 </p>
                 <pre>
@@ -179,7 +178,7 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                                         </label>
                                         {bundleOrError === undefined ? (
                                             <div>
-                                                <LoadingSpinner className="icon-inline" />
+                                                <LoadingSpinner />
                                             </div>
                                         ) : isErrorLike(bundleOrError) ? (
                                             <ErrorAlert error={bundleOrError} />
@@ -203,20 +202,21 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                                 </div>
                             </div>
                             <div className="d-flex align-items-center">
-                                <button
+                                <Button
                                     type="submit"
                                     disabled={updateOrError === LOADING || isErrorLike(bundleOrError)}
-                                    className="btn btn-primary mr-2"
+                                    className="mr-2"
+                                    variant="primary"
                                 >
                                     Publish
-                                </button>{' '}
+                                </Button>{' '}
                                 {updateOrError &&
                                     !isErrorLike(updateOrError) &&
                                     (updateOrError === LOADING ? (
-                                        <LoadingSpinner className="icon-inline" />
+                                        <LoadingSpinner />
                                     ) : (
                                         <span className="text-success">
-                                            <CheckCircleIcon className="icon-inline" /> Published release successfully.
+                                            <Icon as={CheckCircleIcon} /> Published release successfully.
                                         </span>
                                     ))}
                             </div>
@@ -224,9 +224,9 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                         </Form>
                     </>
                 ) : (
-                    <button type="button" className="btn btn-secondary" onClick={onShowEditorClick}>
+                    <Button onClick={onShowEditorClick} variant="secondary">
                         Experimental: Use in-browser extension editor
-                    </button>
+                    </Button>
                 )}
             </div>
         )

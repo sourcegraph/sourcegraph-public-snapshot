@@ -1,9 +1,10 @@
-import { noop } from 'lodash'
-import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import React, { useMemo, useContext } from 'react'
 
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { noop } from 'lodash'
+import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
+
+import { pluralize } from '@sourcegraph/common'
+import { Button, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { BatchSpecApplyPreviewVariables, Scalars } from '../../../../graphql-operations'
 import { Action, DropdownButton } from '../../DropdownButton'
@@ -53,8 +54,6 @@ const getPublicationStateFromAction = (action: Action): Scalars['PublishedValue'
 export interface PreviewSelectRowProps {
     queryArguments: BatchSpecApplyPreviewVariables
     /** For testing only. */
-    dropDownInitiallyOpen?: boolean
-    /** For testing only. */
     queryPublishableChangesetSpecIDs?: typeof _queryPublishableChangesetSpecIDs
 }
 
@@ -63,7 +62,6 @@ export interface PreviewSelectRowProps {
  * the X selected label. Provides select ALL functionality.
  */
 export const PreviewSelectRow: React.FunctionComponent<PreviewSelectRowProps> = ({
-    dropDownInitiallyOpen = false,
     queryPublishableChangesetSpecIDs = _queryPublishableChangesetSpecIDs,
     queryArguments,
 }) => {
@@ -83,8 +81,17 @@ export const PreviewSelectRow: React.FunctionComponent<PreviewSelectRowProps> = 
                 const dropdownAction: Action = {
                     ...action,
                     onTrigger: onDone => {
+                        const specIDs = selected === 'all' ? allChangesetSpecIDs : [...selected]
+                        if (!specIDs) {
+                            // allChangesetSpecIDs hasn't populated yet: it
+                            // shouldn't be possible to set selected to 'all' if
+                            // that's the case, but to be safe, we'll just bail
+                            // early if that somehow happens.
+                            return
+                        }
+
                         updatePublicationStates(
-                            [...selected].map(changeSpecID => ({
+                            specIDs.map(changeSpecID => ({
                                 changesetSpec: changeSpecID,
                                 publicationState: getPublicationStateFromAction(action),
                             }))
@@ -96,14 +103,14 @@ export const PreviewSelectRow: React.FunctionComponent<PreviewSelectRowProps> = 
 
                 return dropdownAction
             }),
-        [deselectAll, selected, updatePublicationStates]
+        [allChangesetSpecIDs, deselectAll, selected, updatePublicationStates]
     )
 
     return (
         <>
             <div className="row align-items-center no-gutters mb-3">
                 <div className="ml-2 col d-flex align-items-center">
-                    <InfoCircleOutlineIcon className="icon-inline text-muted mr-2" />
+                    <Icon className="text-muted mr-2" as={InfoCircleOutlineIcon} />
                     {selected === 'all' || allChangesetSpecIDs?.length === selected.size ? (
                         <AllSelectedLabel count={allChangesetSpecIDs?.length} />
                     ) : (
@@ -113,21 +120,16 @@ export const PreviewSelectRow: React.FunctionComponent<PreviewSelectRowProps> = 
                         areAllVisibleSelected() &&
                         allChangesetSpecIDs &&
                         allChangesetSpecIDs.length > selected.size && (
-                            <button type="button" className="btn btn-link py-0 px-1" onClick={selectAll}>
+                            <Button className="py-0 px-1" onClick={selectAll} variant="link">
                                 (Select all{allChangesetSpecIDs !== undefined && ` ${allChangesetSpecIDs.length}`})
-                            </button>
+                            </Button>
                         )}
                 </div>
                 <div className="w-100 d-block d-md-none" />
                 <div className="m-0 col col-md-auto">
                     <div className="row no-gutters">
                         <div className="col ml-0 ml-sm-2">
-                            <DropdownButton
-                                actions={actions}
-                                dropdownMenuPosition="right"
-                                initiallyOpen={dropDownInitiallyOpen}
-                                placeholder="Select action on apply"
-                            />
+                            <DropdownButton actions={actions} placeholder="Select action on apply" />
                         </div>
                     </div>
                 </div>

@@ -8,6 +8,7 @@ import {
     ExternalServiceKind,
     SharedGraphQlOperations,
 } from '@sourcegraph/shared/src/graphql-operations'
+import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -26,23 +27,44 @@ import {
     BatchChangeByNamespaceResult,
     BatchChangeChangesetsVariables,
     BatchChangeChangesetsResult,
+    BatchChangeState,
+    BatchSpecState,
 } from '../graphql-operations'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { percySnapshotWithVariants } from './utils'
 
-const batchChangeListNode: ListBatchChange = {
+const now = new Date()
+
+const batchChangeListNode: ListBatchChange & { __typename: 'BatchChange' } = {
+    __typename: 'BatchChange',
     id: 'batch123',
     url: '/users/alice/batch-changes/test-batch-change',
     name: 'test-batch-change',
-    createdAt: subDays(new Date(), 5).toISOString(),
+    createdAt: subDays(now, 5).toISOString(),
     changesetsStats: { closed: 4, merged: 10, open: 5 },
     closedAt: null,
     description: null,
+    state: BatchChangeState.OPEN,
+
     namespace: {
         namespaceName: 'alice',
         url: '/users/alice',
+    },
+
+    currentSpec: {
+        id: 'test-spec',
+    },
+    batchSpecs: {
+        nodes: [
+            {
+                __typename: 'BatchSpec',
+                id: 'test-spec',
+                state: BatchSpecState.COMPLETED,
+                applyURL: '/fake-apply-url',
+            },
+        ],
     },
 }
 
@@ -124,13 +146,18 @@ const mockDiff: NonNullable<ExternalChangesetFileDiffsFields['diff']> = {
     },
 }
 
+const mockChangesetSpecFileDiffs: NonNullable<ExternalChangesetFileDiffsFields['diff']> = {
+    __typename: 'PreviewRepositoryComparison',
+    fileDiffs: mockDiff.fileDiffs,
+}
+
 const ChangesetCountsOverTime: (variables: ChangesetCountsOverTimeVariables) => ChangesetCountsOverTimeResult = () => ({
     node: {
         __typename: 'BatchChange',
         changesetCountsOverTime: [
             {
                 closed: 12,
-                date: subDays(new Date(), 2).toISOString(),
+                date: subDays(now, 2).toISOString(),
                 merged: 10,
                 openApproved: 3,
                 openChangesRequested: 1,
@@ -140,7 +167,7 @@ const ChangesetCountsOverTime: (variables: ChangesetCountsOverTimeVariables) => 
             },
             {
                 closed: 12,
-                date: subDays(new Date(), 1).toISOString(),
+                date: subDays(now, 1).toISOString(),
                 merged: 10,
                 openApproved: 23,
                 openChangesRequested: 1,
@@ -165,6 +192,7 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
     node: {
         __typename: 'BatchChange',
         changesets: {
+            __typename: 'ChangesetConnection',
             totalCount: 1,
             pageInfo: {
                 endCursor: null,
@@ -175,9 +203,10 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
                     __typename: 'ExternalChangeset',
                     body: 'body123',
                     checkState: ChangesetCheckState.PASSED,
-                    createdAt: subDays(new Date(), 5).toISOString(),
-                    updatedAt: subDays(new Date(), 5).toISOString(),
+                    createdAt: subDays(now, 5).toISOString(),
+                    updatedAt: subDays(now, 5).toISOString(),
                     diffStat: {
+                        __typename: 'DiffStat',
                         added: 100,
                         changed: 10,
                         deleted: 23,
@@ -189,9 +218,11 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
                     externalURL: {
                         url: 'http://test.test/123',
                     },
+                    forkNamespace: null,
                     id: 'changeset123',
                     labels: [
                         {
+                            __typename: 'ChangesetLabel',
                             color: '93ba13',
                             description: null,
                             text: 'Abc label',
@@ -210,8 +241,12 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
                         type: ChangesetSpecType.BRANCH,
                         description: {
                             __typename: 'GitBranchChangesetDescription',
+                            baseRef: 'my-branch',
                             headRef: 'my-branch',
                         },
+                        pageInfo: { hasNextPage: false },
+
+                        forkTarget: null,
                     },
                 },
             ],
@@ -237,10 +272,25 @@ function mockCommonGraphQLResponses(
                 viewerCanAdminister: true,
                 viewerIsMember: false,
                 viewerPendingInvitation: null,
+                viewerNeedsCodeHostUpdate: false,
             },
         }),
         UserAreaUserProfile: () => ({
             user: {
+                __typename: 'User',
+                id: 'user123',
+                username: 'alice',
+                displayName: 'alice',
+                url: namespaceURL,
+                settingsURL: `${namespaceURL}/settings`,
+                avatarURL: '',
+                viewerCanAdminister: true,
+                builtinAuth: true,
+                tags: [],
+            },
+        }),
+        UserSettingsAreaUserProfile: () => ({
+            node: {
                 __typename: 'User',
                 id: 'user123',
                 username: 'alice',
@@ -264,6 +314,7 @@ function mockCommonGraphQLResponses(
                 __typename: 'BatchChange',
                 id: 'change123',
                 changesetsStats: {
+                    __typename: 'ChangesetsStats',
                     closed: 2,
                     deleted: 1,
                     merged: 3,
@@ -273,11 +324,12 @@ function mockCommonGraphQLResponses(
                     unpublished: 3,
                     draft: 2,
                 },
+                state: BatchChangeState.OPEN,
                 closedAt: null,
-                createdAt: subDays(new Date(), 5).toISOString(),
-                updatedAt: subDays(new Date(), 5).toISOString(),
+                createdAt: subDays(now, 5).toISOString(),
+                updatedAt: subDays(now, 5).toISOString(),
                 description: '### Very cool batch change',
-                initialApplier: {
+                creator: {
                     url: '/users/alice',
                     username: 'alice',
                 },
@@ -286,20 +338,30 @@ function mockCommonGraphQLResponses(
                     namespaceName: entityType === 'user' ? 'alice' : 'test-org',
                     url: namespaceURL,
                 },
-                diffStat: { added: 1000, changed: 2000, deleted: 1000 },
+                diffStat: { added: 1000, changed: 2000, deleted: 1000, __typename: 'DiffStat' },
                 url: `${namespaceURL}/batch-changes/test-batch-change`,
                 viewerCanAdminister: true,
-                lastAppliedAt: subDays(new Date(), 5).toISOString(),
+                lastAppliedAt: subDays(now, 5).toISOString(),
                 lastApplier: {
                     url: '/users/bob',
                     username: 'bob',
                 },
                 currentSpec: {
+                    id: 'specID1',
                     originalInput: 'name: awesome-batch-change\ndescription: somesttring',
                     supersedingBatchSpec: null,
+                    codeHostsWithoutWebhooks: {
+                        nodes: [],
+                        pageInfo: { hasNextPage: false },
+                        totalCount: 0,
+                    },
                 },
-                bulkOperations: { totalCount: 0 },
-                activeBulkOperations: { totalCount: 0, nodes: [] },
+                batchSpecs: {
+                    nodes: [{ state: BatchSpecState.COMPLETED }],
+                    pageInfo: { hasNextPage: false },
+                },
+                bulkOperations: { __typename: 'BulkOperationConnection', totalCount: 0 },
+                activeBulkOperations: { __typename: 'BulkOperationConnection', totalCount: 0, nodes: [] },
                 ...batchesOverrides,
             },
         }),
@@ -309,14 +371,12 @@ function mockCommonGraphQLResponses(
                       node: {
                           __typename: 'User',
                           batchChanges: {
+                              __typename: 'BatchChangeConnection',
                               nodes: [batchChangeListNode],
                               pageInfo: {
                                   endCursor: null,
                                   hasNextPage: false,
                               },
-                              totalCount: 1,
-                          },
-                          allBatchChanges: {
                               totalCount: 1,
                           },
                       },
@@ -325,6 +385,7 @@ function mockCommonGraphQLResponses(
                       node: {
                           __typename: 'Org',
                           batchChanges: {
+                              __typename: 'BatchChangeConnection',
                               nodes: [
                                   {
                                       ...batchChangeListNode,
@@ -341,11 +402,13 @@ function mockCommonGraphQLResponses(
                               },
                               totalCount: 1,
                           },
-                          allBatchChanges: {
-                              totalCount: 1,
-                          },
                       },
                   },
+        GetStartedInfo: () => ({
+            membersSummary: { membersCount: 1, invitesCount: 1, __typename: 'OrgMembersSummary' },
+            repoCount: { total: { totalCount: 1, __typename: 'RepositoryConnection' }, __typename: 'Org' },
+            extServices: { totalCount: 1, __typename: 'ExternalServiceConnection' },
+        }),
     }
 }
 
@@ -367,14 +430,18 @@ describe('Batches', () => {
     afterEach(() => testContext?.dispose())
 
     const batchChangeLicenseGraphQlResults = {
-        AreBatchChangesLicensed: () => ({
+        GetLicenseAndUsageInfo: () => ({
             campaigns: true,
             batchChanges: true,
+            allBatchChanges: {
+                totalCount: 1,
+            },
         }),
     }
     const batchChangesListResults = {
         BatchChanges: () => ({
             batchChanges: {
+                __typename: 'BatchChangeConnection' as const,
                 nodes: [batchChangeListNode],
                 pageInfo: {
                     endCursor: null,
@@ -382,11 +449,33 @@ describe('Batches', () => {
                 },
                 totalCount: 1,
             },
-            allBatchChanges: {
-                totalCount: 1,
-            },
         }),
     }
+
+    describe('Batch changes getting started', () => {
+        it('displays batch changes - getting started section', async () => {
+            // Mock Videos on getting started page
+            const videoDomains = ['https://storage.googleapis.com', 'https://www.youtube-nocookie.com']
+            for (const domain of videoDomains) {
+                testContext.server.host(domain, () => {
+                    testContext.server.get('/*path').intercept((request, response) => {
+                        response.sendStatus(200)
+                    })
+                })
+            }
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
+                ...batchChangeLicenseGraphQlResults,
+                ...batchChangesListResults,
+            })
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/batch-changes')
+            await driver.page.waitForSelector('.test-batches-list-page')
+            await driver.page.click('[data-testid="test-getting-started-btn"]')
+            await driver.page.waitForSelector('[data-testid="test-getting-started"]')
+            await percySnapshotWithVariants(driver.page, 'Batch changes getting started page')
+            await accessibilityAudit(driver.page)
+        })
+    })
 
     describe('Batch changes list', () => {
         it('lists global batch changes', async () => {
@@ -451,6 +540,13 @@ describe('Batches', () => {
         })
     })
 
+    describe('Create batch changes', () => {
+        it('is styled correctly', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/batch-changes/create')
+            await percySnapshotWithVariants(driver.page, 'Create batch change')
+        })
+    })
+
     describe('Batch changes details', () => {
         for (const entityType of ['user', 'org'] as const) {
             it(`displays a single batch change for ${entityType}`, async () => {
@@ -468,6 +564,7 @@ describe('Batches', () => {
                 await driver.page.goto(driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change')
                 // View overview page.
                 await driver.page.waitForSelector('.test-batch-change-details-page')
+                await percySnapshotWithVariants(driver.page, 'Batch change details page')
 
                 // Expand one changeset.
                 await driver.page.click('.test-batches-expand-changeset')
@@ -475,11 +572,11 @@ describe('Batches', () => {
                 await driver.page.waitForSelector('.test-file-diff-node')
 
                 // Switch to view burndown chart.
-                await driver.page.click('[data-reach-tab-list] button:nth-child(2)')
+                await driver.page.click('[data-testid="wildcard-tab-list"] [data-testid="wildcard-tab"]:nth-child(2)')
                 await driver.page.waitForSelector('.test-batches-chart')
 
                 // Switch to view spec file.
-                await driver.page.click('[data-reach-tab-list] button:nth-child(3)')
+                await driver.page.click('[data-testid="wildcard-tab-list"] [data-testid="wildcard-tab"]:nth-child(3)')
                 await driver.page.waitForSelector('.test-batches-spec')
 
                 // Go to close page via button.
@@ -493,7 +590,7 @@ describe('Batches', () => {
                 testContext.overrideGraphQL({
                     ...commonWebGraphQlResults,
                     ...batchChangeLicenseGraphQlResults,
-                    ...mockCommonGraphQLResponses(entityType, { closedAt: subDays(new Date(), 1).toISOString() }),
+                    ...mockCommonGraphQLResponses(entityType, { closedAt: subDays(now, 1).toISOString() }),
                     BatchChangeChangesets,
                     ChangesetCountsOverTime,
                     ExternalChangesetFileDiffs,
@@ -509,7 +606,8 @@ describe('Batches', () => {
                 await driver.page.waitForSelector('.test-batch-change-details-page')
                 assert.strictEqual(
                     await driver.page.evaluate(() => window.location.href),
-                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change'
+                    // We now have 1 in the cache, so we'll have a starting number visible that gets set in the URL.
+                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change?visible=1'
                 )
 
                 // Delete the closed batch change.
@@ -549,7 +647,7 @@ describe('Batches', () => {
                             __typename: 'BatchSpec',
                             id: 'spec123',
                             appliesToBatchChange: null,
-                            createdAt: subDays(new Date(), 2).toISOString(),
+                            createdAt: subDays(now, 2).toISOString(),
                             creator: {
                                 username: 'alice',
                                 url: '/users/alice',
@@ -560,11 +658,12 @@ describe('Batches', () => {
                                 description: '### Very great batch change',
                             },
                             diffStat: {
+                                __typename: 'DiffStat',
                                 added: 1000,
                                 changed: 100,
                                 deleted: 182,
                             },
-                            expiresAt: addDays(new Date(), 3).toISOString(),
+                            expiresAt: addDays(now, 3).toISOString(),
                             namespace:
                                 entityType === 'user'
                                     ? {
@@ -579,12 +678,14 @@ describe('Batches', () => {
                             viewerCanAdminister: true,
                             originalInput: 'name: awesome-batch-change\ndescription: somestring',
                             applyPreview: {
+                                __typename: 'ChangesetApplyPreviewConnection',
                                 stats: {
                                     archive: 10,
                                 },
                                 totalCount: 10,
                             },
                             viewerBatchChangesCodeHosts: {
+                                __typename: 'BatchChangesCodeHostConnection',
                                 totalCount: 0,
                                 nodes: [],
                             },
@@ -594,11 +695,13 @@ describe('Batches', () => {
                         node: {
                             __typename: 'BatchSpec',
                             applyPreview: {
+                                __typename: 'ChangesetApplyPreviewConnection',
                                 nodes: [
                                     {
                                         __typename: 'VisibleChangesetApplyPreview',
                                         operations: [ChangesetSpecOperation.PUSH, ChangesetSpecOperation.PUBLISH],
                                         delta: {
+                                            __typename: 'ChangesetSpecDelta',
                                             titleChanged: false,
                                             baseRefChanged: false,
                                             diffChanged: false,
@@ -615,6 +718,7 @@ describe('Batches', () => {
                                                     __typename: 'GitBranchChangesetDescription',
                                                     baseRef: 'main',
                                                     headRef: 'head-ref',
+                                                    fork: false,
                                                     baseRepository: {
                                                         name: 'github.com/sourcegraph/repo',
                                                         url: 'http://test.test/repo',
@@ -623,13 +727,16 @@ describe('Batches', () => {
                                                     body: 'Body',
                                                     commits: [
                                                         {
+                                                            __typename: 'GitCommitDescription',
                                                             subject: 'Commit message',
                                                             body: 'And the more explanatory body.',
                                                             author: {
+                                                                __typename: 'Person',
                                                                 avatarURL: null,
                                                                 displayName: 'john',
                                                                 email: 'john@test.not',
                                                                 user: {
+                                                                    __typename: 'User',
                                                                     displayName: 'lejohn',
                                                                     url: '/users/lejohn',
                                                                     username: 'john',
@@ -638,15 +745,17 @@ describe('Batches', () => {
                                                         },
                                                     ],
                                                     diffStat: {
+                                                        __typename: 'DiffStat',
                                                         added: 10,
                                                         changed: 2,
                                                         deleted: 9,
                                                     },
                                                     title: 'Changeset title',
                                                 },
-                                                expiresAt: addDays(new Date(), 3).toISOString(),
+                                                expiresAt: addDays(now, 3).toISOString(),
                                                 id: 'changesetspec123',
                                                 type: ChangesetSpecType.BRANCH,
+                                                forkTarget: null,
                                             },
                                         },
                                     },
@@ -664,12 +773,13 @@ describe('Batches', () => {
                             __typename: 'VisibleChangesetSpec',
                             description: {
                                 __typename: 'GitBranchChangesetDescription',
-                                diff: mockDiff,
+                                diff: mockChangesetSpecFileDiffs,
                             },
                         },
                     }),
                     CreateBatchChange: () => ({
                         createBatchChange: {
+                            __typename: 'BatchChange',
                             id: 'change123',
                             url: namespaceURL + '/batch-changes/test-batch-change',
                         },
@@ -703,6 +813,7 @@ describe('Batches', () => {
                 await driver.page.goto(driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/apply/spec123')
                 // View overview page.
                 await driver.page.waitForSelector('.test-batch-change-apply-page')
+                await percySnapshotWithVariants(driver.page, 'Batch change preview page')
 
                 // Expand one changeset.
                 await driver.page.click('.test-batches-expand-preview')
@@ -827,6 +938,7 @@ describe('Batches', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/users/alice/settings/batch-changes')
             // View settings page.
             await driver.page.waitForSelector('.test-batches-settings-page')
+            await percySnapshotWithVariants(driver.page, 'User batch changes settings page')
             // Wait for list to load.
             await driver.page.waitForSelector('.test-code-host-connection-node')
             // Check no credential is configured.

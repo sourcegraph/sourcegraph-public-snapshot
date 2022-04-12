@@ -1,8 +1,9 @@
-import { boolean } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
 import React from 'react'
 
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { boolean } from '@storybook/addon-knobs'
+import { storiesOf } from '@storybook/react'
+
+import { WebStory } from '../../../components/WebStory'
 import { MultiSelectContextProvider } from '../MultiSelectContext'
 
 import { CreateUpdateBatchChangeAlert } from './CreateUpdateBatchChangeAlert'
@@ -16,7 +17,7 @@ const { add } = storiesOf('web/batches/preview/CreateUpdateBatchChangeAlert', mo
     })
 
 add('Create', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <CreateUpdateBatchChangeAlert
                 {...props}
@@ -26,10 +27,10 @@ add('Create', () => (
                 viewerCanAdminister={boolean('viewerCanAdminister', true)}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 add('Update', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <CreateUpdateBatchChangeAlert
                 {...props}
@@ -39,10 +40,10 @@ add('Update', () => (
                 viewerCanAdminister={boolean('viewerCanAdminister', true)}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 add('Disabled', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <MultiSelectContextProvider initialSelected={['id1', 'id2']}>
                 <CreateUpdateBatchChangeAlert
@@ -54,5 +55,5 @@ add('Disabled', () => (
                 />
             </MultiSelectContextProvider>
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))

@@ -1,0 +1,46 @@
+.root {
+    width: 100%;
+    margin-top: 1rem;
+}
+
+.input-row {
+    display: flex;
+    align-items: center;
+}
+
+.input {
+    padding: 0.5rem 1rem;
+    width: 100%;
+    background-color: transparent;
+    border: none;
+    border-radius: var(--border-radius);
+
+    &:focus-visible {
+        box-shadow: none;
+    }
+}
+
+.command-palette {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    border-radius: var(--border-radius);
+    box-shadow: 0 0 1.25rem 0 var(--modal-bg);
+}
+
+.command-palette-button {
+    display: flex;
+    align-items: center;
+    text-align: left;
+    outline: none !important;
+
+    &:focus {
+        box-shadow: none;
+    }
+
+    &--selected {
+        background-color: var(--subtle-bg);
+    }
+}

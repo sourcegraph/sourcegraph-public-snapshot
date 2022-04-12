@@ -8,9 +8,10 @@ package lazyregexp
 
 import (
 	"os"
-	"regexp"
 	"strings"
 	"sync"
+
+	"github.com/grafana/regexp"
 )
 
 // Regexp is a wrapper around regexp.Regexp, where the underlying regexp will be
@@ -94,6 +95,10 @@ func (r *Regexp) ReplaceAllStringFunc(src string, repl func(string) string) stri
 
 func (r *Regexp) ReplaceAll(src, repl []byte) []byte {
 	return r.re().ReplaceAll(src, repl)
+}
+
+func (r *Regexp) SubexpIndex(s string) int {
+	return r.re().SubexpIndex(s)
 }
 
 var inTest = len(os.Args) > 0 && strings.HasSuffix(strings.TrimSuffix(os.Args[0], ".exe"), ".test")

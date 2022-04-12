@@ -1,0 +1,28 @@
+.execution-options-menu-button {
+    border-left: 1px solid var(--border-primary-color);
+    padding: 0 0.25rem;
+}
+
+.execution-option:last-child {
+    margin-bottom: 1rem;
+}
+
+.execution-option-form {
+    padding: 0.5rem 1rem 0.5rem 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.checkbox {
+    width: 2rem;
+}
+
+.menu-list {
+    width: 17rem;
+}
+
+.expanded-info {
+    padding: 0 1rem 0 2.25rem;
+    overflow-y: hidden;
+    width: 100%;
+}

@@ -1,17 +1,18 @@
 # Set up local Sourcegraph monitoring development
 
 This guide documents how to spin up and develop Sourcegraph's monitoring stack locally.
-Sourcegraph employees should also refer to the [handbook's monitoring section](https://about.sourcegraph.com/handbook/engineering/observability/monitoring) for Sourcegraph-specific documentation.
+Sourcegraph employees should also refer to the [handbook's monitoring section](https://handbook.sourcegraph.com/engineering/observability/monitoring) for Sourcegraph-specific documentation.
 The [developing observability page](../background-information/observability/index.md) contains relevant documentation as well, including background about the components listed here.
 
-> NOTE: For how to *use* Sourcegraph's observability and an overview of our observability features, refer to the [observability for site administrators documentation](../../admin/observability/index.md).
+> NOTE: For how to *use* Sourcegraph's observability and an overview of our observability features, refer to the [observability for site administrators documentation](index.md).
 
 ## Running monitoring components
 
 ### With all services
 
-The monitoring stack is included in the `./dev/start.sh` and `./enterprise/dev/start.sh` scripts.
-Learn more about these in the [general development getting started guide](../getting-started/index.md).
+The monitoring stack is not included in `sg start` (or `sg start oss` and `sg start enterprise`) scripts.
+It needs to be started separately with `sg start monitoring`.
+Learn more about these in the [general development getting started guide](../setup/index.md).
 
 ### Without all services
 
@@ -19,28 +20,43 @@ For convenience, there are a number of ways to spin up Sourcegraph's monitoring 
 
 You can follow the instructions below for spinning up individual monitoring components, or use one of the following:
 
-- `sg run-set monitoring`: Spin up just monitoring components
-- `sg run-set monitoring-alerts`: Spin up frontend components as well as some monitoring components to test out the [alerting integration](../../admin/observability/alerting.md#setting-up-alerting).
+- `sg start monitoring`: Spin up just monitoring components
+- `sg start monitoring-alerts`: Spin up frontend components as well as some monitoring components to test out the [alerting integration](../../../admin/observability/alerting.md#setting-up-alerting).
 
 #### Grafana
 
 Running just Grafana is a convenient way to validate dashboards.
-When doing so, you may wish to connect Grafana to a remote Prometheus instance that you have administrator access to (such as [Sourcegraph's instances](https://about.sourcegraph.com/handbook/engineering/deployments/instances)), to show more real data than is available on your dev server.
-For Kubernetes deployments, you can do this by getting `kubectl` connected to a Sourcegraph cluster and then port-forwarding Prometheus via:
 
-```sh
-kubectl port-forward svc/prometheus 9090:30090
+When doing so, you may wish to connect Grafana to a remote Prometheus instance that you have administrator access to (such as [Sourcegraph's instances](https://handbook.sourcegraph.com/engineering/deployments/instances)), to show more real data than is available on your dev server.
+
+For Kubernetes deployments, you can accomplish this by creating a [`sg.config.overwrite.yaml` file](../background-information/sg/index.md#Configuration) that replaces your local Prometheus instance with a `kubectl` command that port-forwards traffic from the Prometheus service on the Kubernetes cluster that you're currently connected to:
+
+```yaml
+# sg.config.overwrite.yaml
+commands:
+  prometheus:
+    # install can just be set up gcloud credentials for a cluster
+    # e.g. https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/deployments/instances
+    install: gcloud container clusters get-credentials ...
+    # make remote prometheus accessible to local grafana
+    cmd: kubectl port-forward svc/prometheus 9090:30090
+  monitoring-generator:
+    env:
+      # don't reload your production Prometheus!
+      PROMETHEUS_DIR: ''
 ```
 
-Then, you can start up a standalone Grafana using:
+Then, you can start up the local dev monitoring stack by using:
 
 ```sh
-./dev/grafana.sh
+sg start monitoring
 ```
 
-Dashboards will be available at `localhost:3030`.
+Grafana dashboards will be available at `localhost:3370`.
 
-Note that instead of `kubectl`, you can use whichever port-forwarding mechanism you wish to connect to a remote Prometheus instance as well, as long as Prometheus is available on port `9090` locally.
+> NOTE:  If you are on Linux and are also running [ufw](https://wiki.archlinux.org/title/Uncomplicated_Firewall) for your firewall, the Grafana dashboard might show a `Bad gateway` error. Although not recommended, disabling the firewall is a quick hack to make this work but it should be possible to get `ufw` to play along with `docker` nicely with some research (not covered in this document).
+
+Note that instead of `kubectl`, you can replace the command in the `sg.config.overwrite.yaml` above to use whichever port-forwarding mechanism you wish to use to connect to a remote Prometheus instance (as long as Prometheus is available on port `9090` locally).
 The dev targets for Grafana are defined in the following files:
 
 * Non-Linux: [`dev/grafana/all/datasources.yaml`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/grafana/all/datasources.yaml)
@@ -52,7 +68,7 @@ Running just Prometheus is a convenient way to validate the generated recording 
 You can start up a standalone Prometheus using:
 
 ```sh
-./dev/prometheus.sh
+sg run prometheus
 ```
 
 The loaded generated recording and alert rules are available at `http://localhost:9090/rules`.
@@ -79,25 +95,25 @@ One way to do this is to [start up Prometheus alongside all Sourcegraph services
 You can alternatively spin up just the frontend separately:
 
 ```sh
-./dev/start.sh --only frontend
+sg run enterprise-frontend # or: sg run frontend
 ```
 
 This should be sufficient to access the frontend API and the admin console (`/site-admin`), which is where most of the integration is.
 
 #### Docsite
 
-The docsite is used to serve generated monitoring documentation, such as the [alert solutions reference](../../admin/observability/alert_solutions.md).
+The docsite is used to serve generated monitoring documentation, such as the [alert solutions reference](../../../admin/observability/alert_solutions.md).
 You can spin it up by running:
 
 ```sh
-yarn docsite:serve
+sg run docsite
 ```
 
-Learn more about docsite development in the [product documentation implementation guide](./documentation_implementation.md).
+Learn more about docsite development in the [product documentation implementation guide](documentation_implementation.md).
 
 ## Using the monitoring generator
 
-> NOTE: Looking to add monitoring first? Refer to the [how to add monitoring](./add_monitoring.md) guide!
+> NOTE: Looking to add monitoring first? Refer to the [how to add monitoring](add_monitoring.md) guide!
 
 The dev startup scripts used in this guide all mount relevant configuration directories into each monitoring service.
 This means that you can:
@@ -106,10 +122,10 @@ This means that you can:
 * Run the generator to regenerate and reload monitoring services
 * Validate the result of your changes immediately (for example, by checking Prometheus rules in `/rules` or Grafana dashboards in `/-/debug/grafana`)
 
-To run the generator and trigger a reload:
+To run the generator and trigger a reload on changes:
 
 ```sh
-RELOAD=true go generate ./monitoring
+sg run monitoring-generator
 ```
 
 Make sure to provide the following parameters as well, where relevant:

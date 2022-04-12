@@ -1,14 +1,15 @@
+import React from 'react'
+
 import { storiesOf } from '@storybook/react'
 import { parseISO } from 'date-fns'
-import React from 'react'
-import { NEVER, of } from 'rxjs'
+import { noop } from 'lodash'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../components/WebStory'
 
 import { RecentSearchesPanel } from './RecentSearchesPanel'
-import { _fetchRecentSearches } from './utils'
+import { recentSearchesPayload } from './utils'
 
 const { add } = storiesOf('web/search/panels/RecentSearchesPanel', module)
     .addParameters({
@@ -16,7 +17,7 @@ const { add } = storiesOf('web/search/panels/RecentSearchesPanel', module)
             type: 'figma',
             url: 'https://www.figma.com/file/sPRyyv3nt5h0284nqEuAXE/12192-Sourcegraph-server-page-v1?node-id=255%3A3',
         },
-        chromatic: { viewports: [800] },
+        chromatic: { viewports: [800], disableSnapshot: false },
     })
     .addDecorator(story => <div style={{ width: '800px' }}>{story()}</div>)
 
@@ -31,15 +32,26 @@ const emptyRecentSearches = {
 
 const props = {
     authenticatedUser: null,
-    fetchRecentSearches: _fetchRecentSearches,
+    recentSearches: { recentSearchesLogs: recentSearchesPayload() },
     now: () => parseISO('2020-09-16T23:15:01Z'),
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-explicit-any
+    fetchMore: noop as any,
     telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
-add('Populated', () => <WebStory>{() => <RecentSearchesPanel {...props} />}</WebStory>)
+add('RecentSearchesPanel', () => (
+    <WebStory>
+        {() => (
+            <div style={{ maxWidth: '32rem' }}>
+                <h2>Populated</h2>
+                <RecentSearchesPanel {...props} />
 
-add('Loading', () => <WebStory>{() => <RecentSearchesPanel {...props} fetchRecentSearches={() => NEVER} />}</WebStory>)
+                <h2>Loading</h2>
+                <RecentSearchesPanel {...props} recentSearches={null} />
 
-add('Empty', () => (
-    <WebStory>{() => <RecentSearchesPanel {...props} fetchRecentSearches={() => of(emptyRecentSearches)} />}</WebStory>
+                <h2>Empty</h2>
+                <RecentSearchesPanel {...props} recentSearches={{ recentSearchesLogs: emptyRecentSearches }} />
+            </div>
+        )}
+    </WebStory>
 ))

@@ -1,10 +1,10 @@
 import React, { ReactNode } from 'react'
-import { Link } from 'react-router-dom'
 
+import { renderMarkdown } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
-import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+import { Button, Link, Alert } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../graphql-operations'
 
@@ -12,7 +12,6 @@ interface SearchAlertProps {
     alert: Required<AggregateStreamingSearchResults>['alert']
     patternType: SearchPatternType | undefined
     caseSensitive: boolean
-    versionContext?: string
     searchContextSpec?: string
     children?: ReactNode[]
 }
@@ -21,18 +20,13 @@ export const SearchAlert: React.FunctionComponent<SearchAlertProps> = ({
     alert,
     patternType,
     caseSensitive,
-    versionContext,
     searchContextSpec,
     children,
 }) => (
-    <div className="alert alert-info my-2 mr-3" data-testid="alert-container">
+    <Alert className="my-2 mr-3" data-testid="alert-container" variant="info">
         <h3>{alert.title}</h3>
 
-        {alert.description && (
-            <p>
-                <Markdown dangerousInnerHTML={renderMarkdown(alert.description)} />
-            </p>
-        )}
+        {alert.description && <Markdown className="mb-3" dangerousInnerHTML={renderMarkdown(alert.description)} />}
 
         {alert.proposedQueries && (
             <>
@@ -40,8 +34,7 @@ export const SearchAlert: React.FunctionComponent<SearchAlertProps> = ({
                 <ul className="list-unstyled">
                     {alert.proposedQueries.map(proposedQuery => (
                         <li key={proposedQuery.query}>
-                            <Link
-                                className="btn btn-secondary btn-sm"
+                            <Button
                                 data-testid="proposed-query-link"
                                 to={
                                     '/search?' +
@@ -49,13 +42,15 @@ export const SearchAlert: React.FunctionComponent<SearchAlertProps> = ({
                                         proposedQuery.query,
                                         patternType || SearchPatternType.literal,
                                         caseSensitive,
-                                        versionContext,
                                         searchContextSpec
                                     )
                                 }
+                                variant="secondary"
+                                size="sm"
+                                as={Link}
                             >
                                 {proposedQuery.query || proposedQuery.description}
-                            </Link>
+                            </Button>
                             {proposedQuery.query && proposedQuery.description && ` — ${proposedQuery.description}`}
                         </li>
                     ))}
@@ -64,5 +59,5 @@ export const SearchAlert: React.FunctionComponent<SearchAlertProps> = ({
         )}
 
         {children}
-    </div>
+    </Alert>
 )

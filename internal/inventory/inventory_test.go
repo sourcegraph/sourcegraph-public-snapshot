@@ -13,8 +13,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/go-enry/go-enry/v2"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestGetLang_language(t *testing.T) {
@@ -65,7 +66,7 @@ func TestGetLang_language(t *testing.T) {
 			lang, err := getLang(context.Background(),
 				test.file,
 				make([]byte, fileReadBufferSize),
-				makeFileReader(context.Background(), test.file.Path, test.file.Contents))
+				makeFileReader(test.file.Contents))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -76,7 +77,7 @@ func TestGetLang_language(t *testing.T) {
 	}
 }
 
-func makeFileReader(ctx context.Context, path, contents string) func(context.Context, string) (io.ReadCloser, error) {
+func makeFileReader(contents string) func(context.Context, string) (io.ReadCloser, error) {
 	return func(ctx context.Context, path string) (io.ReadCloser, error) {
 		return io.NopCloser(strings.NewReader(contents)), nil
 	}
@@ -128,7 +129,7 @@ func TestGet_readFile(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.file.Name(), func(t *testing.T) {
-			fr := makeFileReader(context.Background(), test.file.(fi).Path, test.file.(fi).Contents)
+			fr := makeFileReader(test.file.(fi).Contents)
 			lang, err := getLang(context.Background(), test.file, make([]byte, fileReadBufferSize), fr)
 			if err != nil {
 				t.Fatal(err)

@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/cockroachdb/errors"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
 	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/visualization"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var traceFlagSet = flag.NewFlagSet("depgraph trace", flag.ExitOnError)

@@ -9,7 +9,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
 
@@ -20,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -77,7 +77,7 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 		{
 			name:                 "not found",
 			projectWithNamespace: "foobarfoobarfoobar/please-let-this-not-exist",
-			err:                  `unexpected response from GitLab API (https://gitlab.com/api/v4/projects/foobarfoobarfoobar%2Fplease-let-this-not-exist): HTTP error status 404`,
+			err:                  "GitLab project \"foobarfoobarfoobar/please-let-this-not-exist\" not found",
 		},
 		{
 			name:                 "found",
@@ -224,7 +224,7 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 func TestGitLabSource_WithAuthenticator(t *testing.T) {
 	t.Run("supported", func(t *testing.T) {
 		var src Source
-		src, err := newGitLabSource(nil, &schema.GitLabConnection{}, nil)
+		src, err := newGitLabSource(&types.ExternalService{}, &schema.GitLabConnection{}, nil)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
@@ -248,7 +248,7 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 		} {
 			t.Run(name, func(t *testing.T) {
 				var src Source
-				src, err := newGitLabSource(nil, &schema.GitLabConnection{}, nil)
+				src, err := newGitLabSource(&types.ExternalService{}, &schema.GitLabConnection{}, nil)
 				if err != nil {
 					t.Errorf("unexpected non-nil error: %v", err)
 				}

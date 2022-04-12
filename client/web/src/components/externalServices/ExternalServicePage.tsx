@@ -1,16 +1,16 @@
+import React, { useEffect, useState, useCallback } from 'react'
+
 import { parse as parseJSONC } from '@sqs/jsonc-parser'
 import * as H from 'history'
-import React, { useEffect, useState, useCallback } from 'react'
 import { catchError } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { asError, ErrorLike, isErrorLike, hasProperty } from '@sourcegraph/common'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { hasProperty } from '@sourcegraph/shared/src/util/types'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ExternalServiceFields, Scalars, AddExternalServiceInput } from '../../graphql-operations'
-import { ErrorAlert } from '../alerts'
 import { PageTitle } from '../PageTitle'
 
 import { isExternalService, updateExternalService, fetchExternalService as _fetchExternalService } from './backend'
@@ -142,7 +142,7 @@ export const ExternalServicePage: React.FunctionComponent<Props> = ({
                 <PageTitle title="External service" />
             )}
             <h2>Update synced repositories</h2>
-            {externalServiceOrError === undefined && <LoadingSpinner className="icon-inline" />}
+            {externalServiceOrError === undefined && <LoadingSpinner />}
             {isErrorLike(externalServiceOrError) && <ErrorAlert className="mb-3" error={externalServiceOrError} />}
             {externalServiceCategory && (
                 <div className="mb-3">

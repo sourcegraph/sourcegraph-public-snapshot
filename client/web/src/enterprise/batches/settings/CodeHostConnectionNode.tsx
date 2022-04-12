@@ -1,31 +1,34 @@
+import React, { useCallback, useState } from 'react'
+
 import classNames from 'classnames'
 import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
-import React, { useCallback, useState } from 'react'
-import { Subject } from 'rxjs'
+
+import { Badge, Button, Icon } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 import { BatchChangesCodeHostFields, Scalars } from '../../../graphql-operations'
 
 import { AddCredentialModal } from './AddCredentialModal'
-import styles from './CodeHostConnectionNode.module.scss'
 import { RemoveCredentialModal } from './RemoveCredentialModal'
 import { ViewCredentialModal } from './ViewCredentialModal'
 
+import styles from './CodeHostConnectionNode.module.scss'
+
 export interface CodeHostConnectionNodeProps {
     node: BatchChangesCodeHostFields
+    refetchAll: () => void
     userID: Scalars['ID'] | null
-    updateList: Subject<void>
 }
 
 type OpenModal = 'add' | 'view' | 'delete'
 
 export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionNodeProps> = ({
     node,
+    refetchAll,
     userID,
-    updateList,
 }) => {
-    const Icon = defaultExternalServices[node.externalServiceKind].icon
+    const ExternalServiceIcon = defaultExternalServices[node.externalServiceKind].icon
 
     const [openModal, setOpenModal] = useState<OpenModal | undefined>()
     const onClickAdd = useCallback(() => {
@@ -44,8 +47,8 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
     }, [])
     const afterAction = useCallback(() => {
         setOpenModal(undefined)
-        updateList.next()
-    }, [updateList])
+        refetchAll()
+    }, [refetchAll])
 
     const isEnabled = node.credential !== null && (userID === null || !node.credential.isSiteCredential)
 
@@ -65,57 +68,55 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                 >
                     <h3 className="text-nowrap mb-0">
                         {isEnabled && (
-                            <CheckCircleOutlineIcon
-                                className="text-success icon-inline test-code-host-connection-node-enabled"
+                            <Icon
+                                className="text-success test-code-host-connection-node-enabled"
                                 data-tooltip="Connected"
+                                as={CheckCircleOutlineIcon}
                             />
                         )}
                         {!isEnabled && (
-                            <CheckboxBlankCircleOutlineIcon
-                                className="text-danger icon-inline test-code-host-connection-node-disabled"
+                            <Icon
+                                className="text-danger test-code-host-connection-node-disabled"
                                 data-tooltip="No token set"
+                                as={CheckboxBlankCircleOutlineIcon}
                             />
                         )}
-                        <Icon className="icon-inline mx-2" /> {node.externalServiceURL}{' '}
+                        <Icon className="mx-2" as={ExternalServiceIcon} /> {node.externalServiceURL}{' '}
                         {!isEnabled && node.credential?.isSiteCredential && (
-                            <span
-                                className="badge badge-secondary"
-                                data-tooltip="Changesets on this code host will
+                            <Badge
+                                variant="secondary"
+                                tooltip="Changesets on this code host will
                             be created with a global token until a personal access token is added."
                             >
                                 Global token
-                            </span>
+                            </Badge>
                         )}
                     </h3>
                     <div className="mb-0 d-flex justify-content-end flex-grow-1">
                         {isEnabled && (
                             <>
-                                <button
-                                    type="button"
-                                    className="btn btn-link text-danger text-nowrap test-code-host-connection-node-btn-remove"
+                                <Button
+                                    className="text-danger text-nowrap test-code-host-connection-node-btn-remove"
                                     onClick={onClickRemove}
+                                    variant="link"
                                 >
                                     Remove
-                                </button>
+                                </Button>
                                 {node.requiresSSH && (
-                                    <button
-                                        type="button"
-                                        onClick={onClickView}
-                                        className="btn btn-secondary text-nowrap ml-2"
-                                    >
+                                    <Button onClick={onClickView} className="text-nowrap ml-2" variant="secondary">
                                         View public key
-                                    </button>
+                                    </Button>
                                 )}
                             </>
                         )}
                         {!isEnabled && (
-                            <button
-                                type="button"
-                                className="btn btn-success text-nowrap test-code-host-connection-node-btn-add"
+                            <Button
+                                className="text-nowrap test-code-host-connection-node-btn-add"
                                 onClick={onClickAdd}
+                                variant="success"
                             >
                                 Add credentials
-                            </button>
+                            </Button>
                         )}
                     </div>
                 </div>

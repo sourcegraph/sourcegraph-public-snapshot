@@ -3,8 +3,9 @@ package syntax
 import (
 	"bytes"
 	"fmt"
-	"regexp"
 	"strings"
+
+	"github.com/grafana/regexp"
 )
 
 // The parse tree for search input. It is a list of expressions.

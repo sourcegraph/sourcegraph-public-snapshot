@@ -1,12 +1,12 @@
-import { useContext, useEffect, useState } from 'react'
+import { useContext, useEffect, useMemo, useState } from 'react'
 
+import { asError, ErrorLike, dedupeWhitespace } from '@sourcegraph/common'
+import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
-import { ErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
-import { dedupeWhitespace } from '@sourcegraph/shared/src/util/strings'
+import { isFilterType, isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
 
-import { InsightsApiContext } from '../../../../../../core/backend/api-provider'
+import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
 import { createDefaultEditSeries } from '../../components/search-insight-creation-content/hooks/use-editable-series'
 import { INITIAL_INSIGHT_VALUES } from '../../components/search-insight-creation-content/initial-insight-values'
 import { CreateInsightFormFields } from '../../types'
@@ -49,11 +49,14 @@ export function getInsightDataFromQuery(searchQuery: string): InsightData {
 
     // Generate a string query from tokens without repo: filters for the insight
     // query field.
-    const tokensWithoutRepoFilters = tokens.filter(token => !isRepoFilter(token))
-    const humanReadableQueryString = stringHuman(tokensWithoutRepoFilters)
+    const tokensWithoutRepoFiltersAndContext = tokens.filter(
+        token => !isRepoFilter(token) && !isFilterType(token, FilterType.context)
+    )
+
+    const humanReadableQueryString = stringHuman(tokensWithoutRepoFiltersAndContext)
 
     return {
-        seriesQuery: dedupeWhitespace(humanReadableQueryString),
+        seriesQuery: dedupeWhitespace(humanReadableQueryString.trim()),
         repositories,
     }
 }
@@ -88,10 +91,10 @@ export interface UseURLQueryInsightResult {
  * Returns initial values for the search insight from query param.
  */
 export function useURLQueryInsight(queryParameters: string): UseURLQueryInsightResult {
-    const { getResolvedSearchRepositories } = useContext(InsightsApiContext)
+    const { getResolvedSearchRepositories } = useContext(CodeInsightsBackendContext)
     const [insightFormFields, setInsightFormFields] = useState<CreateInsightFormFields | ErrorLike | undefined>()
 
-    const query = new URLSearchParams(queryParameters).get('query')
+    const query = useMemo(() => new URLSearchParams(queryParameters).get('query'), [queryParameters])
 
     useEffect(() => {
         if (query === null) {

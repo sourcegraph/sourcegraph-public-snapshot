@@ -2,7 +2,6 @@
 import '../../shared/polyfills'
 
 import { Endpoint } from 'comlink'
-import { without } from 'lodash'
 import { combineLatest, merge, Observable, of, Subject, Subscription, timer } from 'rxjs'
 import {
     bufferCount,
@@ -18,12 +17,12 @@ import {
     distinctUntilChanged,
 } from 'rxjs/operators'
 import addDomainPermissionToggle from 'webext-domain-permission-toggle'
-import { patternToRegex } from 'webext-patterns'
 
+import { isDefined, fetchCache } from '@sourcegraph/common'
+import { GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
 import { createExtensionHostWorker } from '@sourcegraph/shared/src/api/extension/worker'
-import { GraphQLResult, requestGraphQLCommon } from '@sourcegraph/shared/src/graphql/graphql'
 import { EndpointPair } from '@sourcegraph/shared/src/platform/context'
-import { isDefined } from '@sourcegraph/shared/src/util/types'
+import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 
 import { getHeaders } from '../../shared/backend/headers'
 import { fetchSite } from '../../shared/backend/server'
@@ -31,9 +30,11 @@ import { initializeOmniboxInterface } from '../../shared/cli'
 import { browserPortToMessagePort, findMessagePorts } from '../../shared/platform/ports'
 import { createBlobURLForBundle } from '../../shared/platform/worker'
 import { initSentry } from '../../shared/sentry'
-import { observeSourcegraphURL } from '../../shared/util/context'
+import { EventLogger } from '../../shared/tracking/eventLogger'
+import { getExtensionVersion, getPlatformName, observeSourcegraphURL } from '../../shared/util/context'
 import { BrowserActionIconState, setBrowserActionIconState } from '../browser-action-icon'
 import { assertEnvironment } from '../environmentAssertion'
+import { checkUrlPermissions } from '../util'
 import { fromBrowserEvent } from '../web-extension-api/fromBrowserEvent'
 import { observeStorageKey, storage } from '../web-extension-api/storage'
 import { BackgroundPageApi, BackgroundPageApiHandlers } from '../web-extension-api/types'
@@ -48,54 +49,59 @@ assertEnvironment('BACKGROUND')
 
 initSentry('background')
 
-let customServerOrigins: string[] = []
+// Whether current extension is built in dev mode
+const IsProductionVersion = !getExtensionVersion().startsWith('0.0.0')
 
 /**
- * For each tab, we store a flag if we know that we are on a private
- * repository that has not been added to Cloud (+ the extension
- * points to Cloud). The content script notifies the background page if it has
- * experienced a private code on Cloud error by `notifyPrivateCloudError` message.
+ * For each tab, we store a flag if we know that we are on:
+ * - a private repo not synced with Sourcegraph Cloud when the latter is the active Sourcegraph URL
+ * - a repo not added to the other than Cloud Sourcegraph instance (+ the extension * points to this instance).
+ * The content script notifies the background page if it has experienced this kind of an error
+ * by sending `notifyRepoSyncError` message.
  */
-const tabPrivateCloudErrorCache = (() => {
-    const cache = new Map<number, boolean>()
-    const subject = new Subject<ReadonlyMap<number, boolean>>()
+const tabRepoSyncErrorCache = (() => {
+    const cache = new Map<number, Map<string, boolean>>()
+    const subject = new Subject<ReadonlyMap<number, Map<string, boolean>>>()
     return {
         observable: subject.asObservable(),
         /**
-         * Update the background page's cache of which tabs have experienced a
-         * private code on Cloud error.
+         * Update the background page's cache of which tabs have experienced either a
+         * private code on Cloud or not synced repo on other than Cloud Sourcegrpah instance error.
          */
-        setTabHasPrivateCloudError(tabId: number, hasPrivateCloudError: boolean): void {
-            if (!hasPrivateCloudError) {
-                // An absent value is equivalent to being false; so we can delete it.
+        setTabHasRepoSyncError(tabId: number, hasRepoSyncError: boolean, sourcegraphURL?: string): void {
+            if (sourcegraphURL) {
+                let record = cache.get(tabId)
+
+                if (!record) {
+                    record = new Map()
+                    cache.set(tabId, record)
+                }
+
+                if (hasRepoSyncError) {
+                    record.set(sourcegraphURL, true)
+                } else if (record.size === 0) {
+                    cache.delete(tabId)
+                } else {
+                    record.delete(sourcegraphURL)
+                }
+            } else {
                 cache.delete(tabId)
             }
-            cache.set(tabId, hasPrivateCloudError)
 
             // Emit the updated repository cache when it changes, so that consumers can
             // observe the value.
             subject.next(cache)
         },
-        getTabHasPrivateCloudError(tabId: number): boolean {
-            return !!cache.get(tabId)
+
+        /**
+         * Check whether the background page's cache contains data about repo sync error for
+         * the given parameters.
+         */
+        getTabHasRepoSyncError(tabId: number, sourcegraphURL: string): boolean {
+            return !!cache.get(tabId)?.get(sourcegraphURL)
         },
     }
 })()
-
-const contentScripts = browser.runtime.getManifest().content_scripts
-
-// jsContentScriptOrigins are the required URLs inside of the manifest. When checking for permissions to inject
-// the content script on optional pages (inside browser.tabs.onUpdated) we need to skip manual injection of the
-// script since the browser extension will automatically inject it.
-const jsContentScriptOrigins: string[] = []
-if (contentScripts) {
-    for (const contentScript of contentScripts) {
-        if (!contentScript || !contentScript.js || !contentScript.matches) {
-            continue
-        }
-        jsContentScriptOrigins.push(...contentScript.matches)
-    }
-}
 
 const configureOmnibox = (serverUrl: string): void => {
     browser.omnibox.setDefaultSuggestion({
@@ -130,11 +136,26 @@ async function main(): Promise<void> {
 
     // Open installation page after the extension was installed
     browser.runtime.onInstalled.addListener(event => {
-        if (event.reason === 'install') {
-            browser.tabs.create({ url: browser.extension.getURL('after_install.html') }).catch(error => {
-                console.error('Error opening after-install page:', error)
-            })
+        if (event.reason !== 'install') {
+            return
         }
+
+        if (IsProductionVersion) {
+            subscriptions.add(
+                observeSourcegraphURL(IS_EXTENSION)
+                    .pipe(take(1))
+                    .subscribe(sourcegraphURL => {
+                        new EventLogger(requestGraphQL, sourcegraphURL)
+                            .log('BrowserExtensionInstalled')
+                            .then(() => console.log(`Triggered "BrowserExtensionInstalled" using ${sourcegraphURL}`))
+                            .catch(error => console.error('Error triggering "BrowserExtensionInstalled" event:', error))
+                    })
+            )
+        }
+
+        browser.tabs.create({ url: browser.extension.getURL('after_install.html') }).catch(error => {
+            console.error('Error opening after-install page:', error)
+        })
     })
 
     // Mirror the managed sourcegraphURL to sync storage
@@ -148,7 +169,7 @@ async function main(): Promise<void> {
     )
 
     if (browser.omnibox) {
-        initializeOmniboxInterface(requestGraphQL)
+        initializeOmniboxInterface()
 
         // Configure the omnibox when the sourcegraphURL changes.
         subscriptions.add(
@@ -167,51 +188,36 @@ async function main(): Promise<void> {
 
     const permissions = await browser.permissions.getAll()
     if (!permissions.origins) {
-        customServerOrigins = []
         return
     }
-    customServerOrigins = without(permissions.origins, ...jsContentScriptOrigins)
 
-    // Not supported in Firefox
-    // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/permissions/onAdded#Browser_compatibility
-    if (browser.permissions.onAdded) {
-        browser.permissions.onAdded.addListener(permissions => {
-            if (!permissions.origins) {
-                return
-            }
-            const origins = without(permissions.origins, ...jsContentScriptOrigins)
-            customServerOrigins.push(...origins)
-        })
-    }
-    if (browser.permissions.onRemoved) {
-        browser.permissions.onRemoved.addListener(permissions => {
-            if (!permissions.origins) {
-                return
-            }
-            customServerOrigins = without(customServerOrigins, ...permissions.origins)
-            const urlsToRemove: string[] = []
-            for (const url of permissions.origins) {
-                urlsToRemove.push(url.replace('/*', ''))
-            }
-        })
-    }
-
-    browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+    browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         if (changeInfo.status === 'loading') {
             // A new URL is loading in the tab, so clear the cached private cloud error flag.
-            tabPrivateCloudErrorCache.setTabHasPrivateCloudError(tabId, false)
+            tabRepoSyncErrorCache.setTabHasRepoSyncError(tabId, false)
             return
         }
 
-        if (
-            changeInfo.status === 'complete' &&
-            customServerOrigins.some(
-                origin => origin === '<all_urls>' || (!!tab.url && urlMatchesPattern(tab.url, origin))
-            )
-        ) {
-            // Inject content script whenever a new tab was opened with a URL for which we have permission
-            await browser.tabs.executeScript(tabId, { file: 'js/inject.bundle.js', runAt: 'document_end' })
+        if (tab.url && changeInfo.status === 'complete') {
+            checkUrlPermissions(tab.url)
+                .then(async hasPermissions => {
+                    if (hasPermissions) {
+                        /**
+                         * Loading content script dynamically
+                         * See https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Content_scripts#loading_content_scripts
+                         */
+                        await browser.tabs.executeScript(tabId, {
+                            file: 'js/inject.bundle.js',
+                            runAt: 'document_end',
+                        })
+                    }
+                })
+                .catch(console.warn)
         }
+    })
+
+    browser.tabs.onRemoved.addListener(tabId => {
+        tabRepoSyncErrorCache.setTabHasRepoSyncError(tabId, false)
     })
 
     const handlers: BackgroundPageApiHandlers = {
@@ -235,20 +241,19 @@ async function main(): Promise<void> {
             return requestGraphQL<T, V>({ request, variables, sourcegraphURL }).toPromise()
         },
 
-        async notifyPrivateCloudError(
-            hasPrivateCloudError: boolean,
-            sender: browser.runtime.MessageSender
-        ): Promise<void> {
+        async notifyRepoSyncError({ sourcegraphURL, hasRepoSyncError }, sender: browser.runtime.MessageSender) {
             const tabId = sender.tab?.id
             if (tabId !== undefined) {
-                tabPrivateCloudErrorCache.setTabHasPrivateCloudError(tabId, hasPrivateCloudError)
+                tabRepoSyncErrorCache.setTabHasRepoSyncError(tabId, hasRepoSyncError, sourcegraphURL)
             }
             return Promise.resolve()
         },
 
-        async checkPrivateCloudError(tabId: number): Promise<boolean> {
-            return Promise.resolve(!!tabPrivateCloudErrorCache.getTabHasPrivateCloudError(tabId))
+        async checkRepoSyncError({ tabId, sourcegraphURL }) {
+            return Promise.resolve(!!tabRepoSyncErrorCache.getTabHasRepoSyncError(tabId, sourcegraphURL))
         },
+
+        fetchCache,
     }
 
     // Handle calls from other scripts
@@ -266,7 +271,18 @@ async function main(): Promise<void> {
         ) => ReturnType<BackgroundPageApi[typeof method]>)(message.payload, sender)
     })
 
-    await browser.runtime.setUninstallURL('https://about.sourcegraph.com/uninstall/')
+    await browser.runtime.setUninstallURL(
+        createURLWithUTM(
+            new URL('https://about.sourcegraph.com/uninstall'),
+            IsProductionVersion
+                ? {
+                      utm_source: getPlatformName(),
+                      utm_campaign: 'browser-extension-uninstall',
+                      utm_content: getExtensionVersion(),
+                  }
+                : {}
+        ).href
+    )
 
     // The `popup=true` param is used by the options page to determine if it's
     // loaded in the popup or in th standalone options page.
@@ -423,9 +439,16 @@ function observeCurrentTabId(): Observable<number> {
  * Returns an observable that indicates whether the current tab has experienced
  * a private code on Cloud error.
  */
-function observeCurrentTabPrivateCloudError(): Observable<boolean> {
-    return combineLatest([observeCurrentTabId(), tabPrivateCloudErrorCache.observable]).pipe(
-        map(([tabId, privateCloudErrorCache]) => !!privateCloudErrorCache.get(tabId)),
+function observeCurrentTabRepoSyncError(): Observable<boolean> {
+    return combineLatest([
+        observeCurrentTabId(),
+        observeStorageKey('sync', 'sourcegraphURL'),
+        tabRepoSyncErrorCache.observable,
+    ]).pipe(
+        map(
+            ([tabId, sourcegraphURL, repoSyncErrorCache]) =>
+                !!(sourcegraphURL && repoSyncErrorCache.get(tabId)?.get(sourcegraphURL))
+        ),
         distinctUntilChanged()
     )
 }
@@ -442,14 +465,14 @@ function observeBrowserActionState(): Observable<BrowserActionIconState> {
     return combineLatest([
         observeStorageKey('sync', 'disableExtension'),
         observeSourcegraphUrlValidation(),
-        observeCurrentTabPrivateCloudError(),
+        observeCurrentTabRepoSyncError(),
     ]).pipe(
-        map(([isDisabled, isSourcegraphUrlValid, hasPrivateCloudError]) => {
+        map(([isDisabled, isSourcegraphUrlValid, hasRepoSyncError]) => {
             if (isDisabled) {
                 return 'inactive'
             }
 
-            if (!isSourcegraphUrlValid || hasPrivateCloudError) {
+            if (!isSourcegraphUrlValid || hasRepoSyncError) {
                 return 'active-with-alert'
             }
 
@@ -457,17 +480,4 @@ function observeBrowserActionState(): Observable<BrowserActionIconState> {
         }),
         distinctUntilChanged()
     )
-}
-
-function urlMatchesPattern(url: string, originPermissionPattern: string): boolean {
-    // Workaround for bug in `webext-patterns`. Remove workaround when fixed upstream.
-    // https://github.com/fregante/webext-patterns/issues/2
-    if (originPermissionPattern.includes('://*.')) {
-        const bareDomainPattern = originPermissionPattern.replace('://*.', '://')
-        if (patternToRegex(bareDomainPattern).test(url)) {
-            return true
-        }
-    }
-
-    return patternToRegex(originPermissionPattern).test(url)
 }

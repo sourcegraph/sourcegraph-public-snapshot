@@ -8,6 +8,7 @@ import {
     useLayoutEffect,
     useRef,
 } from 'react'
+
 import { noop } from 'rxjs'
 
 import { FieldState, FormAPI, ValidationResult } from './useForm'
@@ -44,7 +45,7 @@ export interface useFieldAPI<FieldValue> {
         name: string
         value: FieldValue
         onChange: (event: ChangeEvent<HTMLInputElement> | FieldValue) => void
-        onBlur: FocusEventHandler<HTMLInputElement>
+        onBlur: FocusEventHandler<HTMLInputElement> | (() => void)
     } & InputProps<FieldValue>
 
     /**
@@ -60,6 +61,8 @@ export interface useFieldAPI<FieldValue> {
         setState: (dispatch: (previousState: FieldState<FieldValue>) => FieldState<FieldValue>) => void
     }
 }
+
+export type Field = useFieldAPI<string> | useFieldAPI<number>
 
 export type UseFieldProps<FormValues, Key, Value> = {
     name: Key
@@ -137,7 +140,12 @@ export function useField<FormValues, Key extends keyof FormAPI<FormValues>['init
                 startAsyncValidation({ value: state.value, validity })
             })
 
-            return
+            return setState(state => ({
+                ...state,
+                validState: 'CHECKING' as const,
+                error: '',
+                validity,
+            }))
         }
 
         return setState(state => ({
@@ -196,8 +204,8 @@ function useFormFieldState<FormValues, Key extends keyof FormAPI<FormValues>['in
     setFieldStateReference.current = setFieldState
 
     const setState = useCallback(
-        (trasformer: FieldStateTransformer<FormValues[Key]>) => {
-            setFieldStateReference.current(name, trasformer as FieldStateTransformer<unknown>)
+        (transformer: FieldStateTransformer<FormValues[Key]>) => {
+            setFieldStateReference.current(name, transformer as FieldStateTransformer<unknown>)
         },
         [name]
     )

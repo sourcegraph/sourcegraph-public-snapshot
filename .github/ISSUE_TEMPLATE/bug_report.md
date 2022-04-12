@@ -18,3 +18,5 @@ assignees: ''
 #### Expected behavior:
 
 #### Actual behavior:
+
+If would like immediate help on this, please email support@sourcegraph.com (you can still create the issue, but there are not [SLAs](https://about.sourcegraph.com/support/) on issues like there are for support requests).

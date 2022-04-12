@@ -1,35 +1,56 @@
+import React, { useCallback, useEffect, useState } from 'react'
+
+import { gql } from '@apollo/client'
 import classNames from 'classnames'
 import PencilOutlineIcon from 'mdi-react/PencilOutlineIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { Observable } from 'rxjs'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { ISavedSearch, SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Button, ButtonGroup, Link, Menu, MenuButton, MenuList, MenuItem, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { SavedSearchesPanelFragment } from '../../graphql-operations'
+import { buildSearchURLQueryFromQueryState } from '../../stores'
 
+import { EmptyPanelContainer } from './EmptyPanelContainer'
+import { FooterPanel } from './FooterPanel'
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
 
 interface Props extends TelemetryProps {
     className?: string
     authenticatedUser: AuthenticatedUser | null
-    fetchSavedSearches: () => Observable<ISavedSearch[]>
-    patternType: SearchPatternType
+    savedSearchesFragment: SavedSearchesPanelFragment | null
+    insideTabPanel?: boolean
 }
 
+export const savedSearchesPanelFragment = gql`
+    fragment SavedSearchesPanelFragment on Query {
+        savedSearches @include(if: $enableSavedSearches) {
+            id
+            description
+            notify
+            notifySlack
+            query
+            namespace {
+                __typename
+                id
+                namespaceName
+            }
+            slackWebhookURL
+        }
+    }
+`
+
 export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
-    patternType,
     authenticatedUser,
-    fetchSavedSearches,
     className,
     telemetryService,
+    insideTabPanel,
+    savedSearchesFragment,
 }) => {
-    const savedSearches = useObservable(useMemo(() => fetchSavedSearches(), [fetchSavedSearches]))
+    const savedSearches = savedSearchesFragment?.savedSearches ?? null
+
     const [showAllSearches, setShowAllSearches] = useState(true)
 
     useEffect(() => {
@@ -48,21 +69,23 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
     ])
 
     const emptyDisplay = (
-        <div className="panel-container__empty-container text-muted">
+        <EmptyPanelContainer className="text-muted">
             <small>
                 Use saved searches to alert you to uses of a favorite API, or changes to code you need to monitor.
             </small>
             {authenticatedUser && (
-                <Link
+                <Button
                     to={`/users/${authenticatedUser.username}/searches/add`}
                     onClick={logEvent('SavedSearchesPanelCreateButtonClicked', { source: 'empty view' })}
-                    className="btn btn-secondary mt-2 align-self-center"
+                    className="mt-2 align-self-center"
+                    variant="secondary"
+                    as={Link}
                 >
-                    <PlusIcon className="icon-inline" />
+                    <Icon as={PlusIcon} />
                     Create a saved search
-                </Link>
+                </Button>
             )}
-        </div>
+        </EmptyPanelContainer>
     )
     const loadingDisplay = <LoadingPanelView text="Loading saved searches" />
 
@@ -80,7 +103,7 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                             <div className="d-flex justify-content-between">
                                 <small>
                                     <Link
-                                        to={'/search?' + buildSearchURLQuery(search.query, patternType, false)}
+                                        to={'/search?' + buildSearchURLQueryFromQueryState({ query: search.query })}
                                         className=" p-0"
                                         onClick={logEvent('SavedSearchesPanelSearchClicked')}
                                     >
@@ -93,14 +116,14 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                                             to={`/users/${search.namespace.namespaceName}/searches/${search.id}`}
                                             onClick={logEvent('SavedSearchesPanelEditClicked')}
                                         >
-                                            <PencilOutlineIcon className="icon-inline" />
+                                            <Icon as={PencilOutlineIcon} />
                                         </Link>
                                     ) : (
                                         <Link
                                             to={`/organizations/${search.namespace.namespaceName}/searches/${search.id}`}
                                             onClick={logEvent('SavedSearchesPanelEditClicked')}
                                         >
-                                            <PencilOutlineIcon className="icon-inline" />
+                                            <Icon as={PencilOutlineIcon} />
                                         </Link>
                                     ))}
                             </div>
@@ -108,7 +131,7 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                     ))}
             </dl>
             {authenticatedUser && (
-                <div className="panel-container__footer p-1">
+                <FooterPanel className="p-1">
                     <small>
                         <Link
                             to={`/users/${authenticatedUser.username}/searches`}
@@ -118,56 +141,56 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                             View saved searches
                         </Link>
                     </small>
-                </div>
+                </FooterPanel>
             )}
         </div>
     )
 
     const actionButtons = (
-        <div className="panel-container__action-button-group">
-            <div className="btn-group btn-group-sm">
-                {authenticatedUser && (
-                    <Link
-                        to={`/users/${authenticatedUser.username}/searches/add`}
-                        className="btn btn-outline-secondary panel-container__action-button mr-2"
-                        onClick={logEvent('SavedSearchesPanelCreateButtonClicked', { source: 'toolbar' })}
-                    >
-                        +
-                    </Link>
-                )}
-            </div>
-            <div className="btn-group btn-group-sm">
-                <button
-                    type="button"
+        <>
+            <ButtonGroup className="d-none d-sm-block d-lg-none d-xl-block">
+                <Button
                     onClick={() => setShowAllSearches(false)}
-                    className={classNames(
-                        'btn btn-outline-secondary panel-container__action-button test-saved-search-panel-my-searches',
-                        {
-                            active: !showAllSearches,
-                        }
-                    )}
+                    className="test-saved-search-panel-my-searches"
+                    outline={showAllSearches}
+                    variant="secondary"
+                    size="sm"
                 >
                     My searches
-                </button>
-                <button
-                    type="button"
+                </Button>
+                <Button
                     onClick={() => setShowAllSearches(true)}
-                    className={classNames(
-                        'btn btn-outline-secondary panel-container__action-button test-saved-search-panel-all-searches',
-                        {
-                            active: showAllSearches,
-                        }
-                    )}
+                    className="test-saved-search-panel-all-searches"
+                    outline={!showAllSearches}
+                    variant="secondary"
+                    size="sm"
                 >
                     All searches
-                </button>
-            </div>
-        </div>
+                </Button>
+            </ButtonGroup>
+            <Menu>
+                <MenuButton
+                    variant="icon"
+                    outline={true}
+                    className="d-block d-sm-none d-lg-block d-xl-none p-0"
+                    size="lg"
+                    aria-label="Filter saved searches"
+                >
+                    ...
+                </MenuButton>
+
+                <MenuList>
+                    <MenuItem onSelect={() => setShowAllSearches(false)}>My searches</MenuItem>
+                    <MenuItem onSelect={() => setShowAllSearches(true)}>All searches</MenuItem>
+                </MenuList>
+            </Menu>
+        </>
     )
     return (
         <PanelContainer
-            className={classNames(className, 'saved-searches-panel')}
+            insideTabPanel={insideTabPanel}
             title="Saved searches"
+            className={classNames(className, { 'h-100': insideTabPanel })}
             state={savedSearches ? (savedSearches.length > 0 ? 'populated' : 'empty') : 'loading'}
             loadingContent={loadingDisplay}
             populatedContent={contentDisplay}

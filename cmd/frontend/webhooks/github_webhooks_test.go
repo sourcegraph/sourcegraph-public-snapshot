@@ -7,23 +7,20 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"flag"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 
-	"github.com/cockroachdb/errors"
-	gh "github.com/google/go-github/v28/github"
+	gh "github.com/google/go-github/v43/github"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
 
 func TestGithubWebhookDispatchSuccess(t *testing.T) {
 	h := GitHubWebhook{}
@@ -111,7 +108,7 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 
 	t.Parallel()
 
-	db := dbtest.NewDB(t, *dsn)
+	db := dbtest.NewDB(t)
 
 	ctx := context.Background()
 

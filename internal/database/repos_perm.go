@@ -3,14 +3,13 @@ package database
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var errPermissionsUserMappingConflict = errors.New("The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when other authorization providers are in use, please contact site admin to resolve it.")
@@ -18,7 +17,7 @@ var errPermissionsUserMappingConflict = errors.New("The permissions user mapping
 // AuthzQueryConds returns a query clause for enforcing repository permissions.
 // It uses `repo` as the table name to filter out repository IDs and should be
 // used as an AND condition in a complete SQL query.
-func AuthzQueryConds(ctx context.Context, db dbutil.DB) (*sqlf.Query, error) {
+func AuthzQueryConds(ctx context.Context, db DB) (*sqlf.Query, error) {
 	authzAllowByDefault, authzProviders := authz.GetProviders()
 	usePermissionsUserMapping := globals.PermissionsUserMapping().Enabled
 
@@ -43,7 +42,7 @@ func AuthzQueryConds(ctx context.Context, db dbutil.DB) (*sqlf.Query, error) {
 	// so correctness is important here.
 	bypassAuthz := a.IsInternal() || (authzAllowByDefault && len(authzProviders) == 0)
 	if !bypassAuthz && a.IsAuthenticated() {
-		currentUser, err := Users(db).GetByCurrentAuthUser(ctx)
+		currentUser, err := db.Users().GetByCurrentAuthUser(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -59,6 +58,7 @@ func AuthzQueryConds(ctx context.Context, db dbutil.DB) (*sqlf.Query, error) {
 	return q, nil
 }
 
+//nolint:unparam // unparam complains that `perms` always has same value across call-sites, but that's OK, as we only support read permissions right now.
 func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID int32, perms authz.Perms) *sqlf.Query {
 	const queryFmtString = `(
     %s                            -- TRUE or FALSE to indicate whether to bypass the check
@@ -78,19 +78,30 @@ OR  (
 		)
 	)
 )
-OR EXISTS ( -- We assume that all repos added by the authenticated user should be shown
-	SELECT 1
-	FROM external_service_repos
-	WHERE repo_id = repo.id
-	AND user_id = %s
-)
-OR (                             -- Restricted repositories require checking permissions
-	SELECT object_ids_ints @> INTSET(repo.id)
-	FROM user_permissions
-	WHERE
-		user_id = %s
-	AND permission = %s
-	AND object_type = 'repos'
+OR  (                             -- Restricted repositories require checking permissions
+	(
+		SELECT object_ids_ints @> INTSET(repo.id)
+		FROM user_permissions
+		WHERE
+			user_id = %s
+		AND permission = %s
+		AND object_type = 'repos'
+	) AND EXISTS (
+		SELECT
+		FROM external_service_repos
+		WHERE repo_id = repo.id
+		AND (
+				(user_id IS NULL AND org_id IS NULL)  -- The repository was added at the instance level
+			OR  user_id = %s                          -- The authenticated user added this repository
+			OR  EXISTS (                              -- The authenticated user is a member of an organization that added this repository
+				SELECT
+				FROM org_members
+				WHERE
+					external_service_repos.org_id = org_members.org_id
+				AND org_members.user_id = %s
+			)
+		)
+	)
 )
 )
 `
@@ -99,7 +110,8 @@ OR (                             -- Restricted repositories require checking per
 		bypassAuthz,
 		usePermissionsUserMapping,
 		authenticatedUserID,
-		authenticatedUserID,
 		perms.String(),
+		authenticatedUserID,
+		authenticatedUserID,
 	)
 }

@@ -15,33 +15,47 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/enforcement"
-	eauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 var clock = timeutil.Now
 
-func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services) error {
-	database.ExternalServices = edb.NewExternalServicesStore
-	database.GlobalAuthz = edb.NewAuthzStore(db, clock)
+func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
+	database.ValidateExternalServiceConfig = edb.ValidateExternalServiceConfig
+	database.Authz = func(db dbutil.DB) database.AuthzStore {
+		return edb.NewAuthzStore(db, clock)
+	}
+	database.AuthzWith = func(other basestore.ShareableStore) database.AuthzStore {
+		return edb.NewAuthzStore(db, clock)
+	}
 
 	extsvcStore := database.ExternalServices(db)
 
+	// TODO(nsc): use c
 	// Report any authz provider problems in external configs.
-	conf.ContributeWarning(func(cfg conf.Unified) (problems conf.Problems) {
-		_, _, seriousProblems, warnings :=
-			eauthz.ProvidersFromConfig(context.Background(), &cfg, extsvcStore)
+	conf.ContributeWarning(func(cfg conftypes.SiteConfigQuerier) (problems conf.Problems) {
+		_, providers, seriousProblems, warnings :=
+			eiauthz.ProvidersFromConfig(ctx, cfg, extsvcStore, db)
 		problems = append(problems, conf.NewExternalServiceProblems(seriousProblems...)...)
+
+		// Add connection validation issue
+		for _, p := range providers {
+			for _, problem := range p.ValidateConnection(ctx) {
+				warnings = append(warnings, fmt.Sprintf("%s provider %q: %s", p.ServiceType(), p.ServiceID(), problem))
+			}
+		}
 		problems = append(problems, conf.NewExternalServiceProblems(warnings...)...)
 		return problems
 	})
@@ -58,7 +72,7 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 		}
 
 		// We can ignore problems returned here because they would have been surfaced in other places.
-		_, providers, _, _ := eauthz.ProvidersFromConfig(context.Background(), conf.Get(), extsvcStore)
+		_, providers, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), extsvcStore, db)
 		if len(providers) == 0 {
 			return nil
 		}
@@ -168,7 +182,7 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {
 			allowAccessByDefault, authzProviders, _, _ :=
-				eiauthz.ProvidersFromConfig(ctx, conf.Get(), extsvcStore)
+				eiauthz.ProvidersFromConfig(ctx, conf.Get(), extsvcStore, db)
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()

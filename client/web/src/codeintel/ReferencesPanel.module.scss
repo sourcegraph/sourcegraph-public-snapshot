@@ -1,0 +1,73 @@
+.reference {
+    code {
+        overflow: hidden;
+        color: var(--body-color);
+    }
+
+    &--active {
+        background-color: var(--secondary-2);
+        color: var(--primary);
+        font-weight: bold;
+    }
+
+    &--filename {
+        color: var(--body-color);
+
+        mark {
+            padding-left: 0;
+            padding-right: 0;
+            font-weight: bold;
+        }
+    }
+
+    &--link {
+        color: inherit;
+
+        &--line-number {
+            font-family: monospace;
+            color: var(--primary);
+        }
+    }
+}
+
+.dismiss-button {
+    color: var(--icon-color);
+}
+
+.references {
+    $references-token-height: 2rem;
+    $references-filter-height: 2rem;
+
+    &--token {
+        height: $references-token-height;
+    }
+
+    &--filter {
+        height: $references-filter-height;
+    }
+
+    &--list {
+        display: flex;
+        // Ensure list spans entire height of panel, and that the scrollable area does not include the filter height
+        height: calc(100% - #{$references-filter-height + $references-token-height});
+    }
+
+    // Left side of the panel: hover & list of references/definition/...
+    &--side-references {
+        flex: 1;
+        overflow: auto;
+        height: 100%;
+    }
+
+    // Right side of the panel
+    &--side-blob {
+        flex: 1;
+        overflow: auto;
+    }
+
+    // Code needs to be smaller than 100% so it scrolls correctly
+    &--side-blob-code {
+        // Subtract the space taken up by the filename
+        height: calc(100% - #{$references-filter-height});
+    }
+}

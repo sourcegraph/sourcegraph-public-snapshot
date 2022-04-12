@@ -1,11 +1,11 @@
 import assert from 'assert'
 
+import { subtypeOf } from '@sourcegraph/common'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
-import { subtypeOf } from '@sourcegraph/shared/src/util/types'
 
 import { WebGraphQlOperations, OrganizationResult } from '../graphql-operations'
 
@@ -25,6 +25,7 @@ describe('Organizations', () => {
         viewerCanAdminister: true,
         viewerIsMember: false,
         viewerPendingInvitation: null,
+        viewerNeedsCodeHostUpdate: false,
     })
 
     let driver: Driver
@@ -145,6 +146,11 @@ describe('Organizations', () => {
                             },
                         },
                     }),
+                    GetStartedInfo: () => ({
+                        membersSummary: { membersCount: 1, invitesCount: 1, __typename: 'OrgMembersSummary' },
+                        repoCount: { total: { totalCount: 1, __typename: 'RepositoryConnection' }, __typename: 'Org' },
+                        extServices: { totalCount: 1, __typename: 'ExternalServiceConnection' },
+                    }),
                 })
                 await driver.page.goto(testContext.driver.sourcegraphBaseUrl + '/organizations/sourcegraph/settings')
                 const updatedSettings = '// updated'
@@ -165,6 +171,8 @@ describe('Organizations', () => {
                     lastID: settingsID,
                     contents: updatedSettings,
                 })
+
+                await percySnapshotWithVariants(driver.page, 'Organization settings page')
             })
         })
         describe('Members tab', () => {
@@ -198,6 +206,11 @@ describe('Organizations', () => {
                     RemoveUserFromOrganization: () => ({
                         removeUserFromOrganization: emptyResponse,
                     }),
+                    GetStartedInfo: () => ({
+                        membersSummary: { membersCount: 1, invitesCount: 1, __typename: 'OrgMembersSummary' },
+                        repoCount: { total: { totalCount: 1, __typename: 'RepositoryConnection' }, __typename: 'Org' },
+                        extServices: { totalCount: 1, __typename: 'ExternalServiceConnection' },
+                    }),
                 }
                 testContext.overrideGraphQL(graphQlResults)
 
@@ -214,6 +227,8 @@ describe('Organizations', () => {
                     2,
                     'Expected members list to show 2 members.'
                 )
+
+                await percySnapshotWithVariants(driver.page, 'Organization members list')
 
                 // Override for the fetch post-removal
                 testContext.overrideGraphQL({

@@ -1,11 +1,12 @@
-import { ApolloError, QueryResult, WatchQueryFetchPolicy } from '@apollo/client'
-import { useMemo, useRef } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 
-import { GraphQLResult, useQuery } from '@sourcegraph/shared/src/graphql/graphql'
-import { asGraphQLResult, hasNextPage, parseQueryInt } from '@sourcegraph/web/src/components/FilteredConnection/utils'
-import { useSearchParameters } from '@sourcegraph/wildcard'
+import { ApolloError, QueryResult, WatchQueryFetchPolicy } from '@apollo/client'
+
+import { GraphQLResult, useQuery } from '@sourcegraph/http-client'
+import { useSearchParameters, useInterval } from '@sourcegraph/wildcard'
 
 import { Connection, ConnectionQueryArguments } from '../ConnectionType'
+import { asGraphQLResult, hasNextPage, parseQueryInt } from '../utils'
 
 import { useConnectionUrl } from './useConnectionUrl'
 
@@ -13,22 +14,29 @@ export interface UseConnectionResult<TData> {
     connection?: Connection<TData>
     error?: ApolloError
     fetchMore: () => void
+    refetchAll: () => void
     loading: boolean
     hasNextPage: boolean
+    startPolling: (pollInterval: number) => void
+    stopPolling: () => void
 }
 
-interface UseConnectionConfig {
+interface UseConnectionConfig<TResult> {
     /** Set if query variables should be updated in and derived from the URL */
     useURL?: boolean
     /** Allows modifying how the query interacts with the Apollo cache */
     fetchPolicy?: WatchQueryFetchPolicy
+    /** Set to enable polling of all the nodes currently loaded in the connection */
+    pollInterval?: number
+    /** Allows running an optional callback on any successful request */
+    onCompleted?: (data: TResult) => void
 }
 
 interface UseConnectionParameters<TResult, TVariables, TData> {
     query: string
     variables: TVariables & ConnectionQueryArguments
     getConnection: (result: GraphQLResult<TResult>) => Connection<TData>
-    options?: UseConnectionConfig
+    options?: UseConnectionConfig<TResult>
 }
 
 const DEFAULT_AFTER: ConnectionQueryArguments['after'] = undefined
@@ -92,13 +100,14 @@ export const useConnection = <TResult, TVariables, TData>({
      * Initial query of the hook.
      * Subsequent requests (such as further pagination) will be handled through `fetchMore`
      */
-    const { data, error, loading, fetchMore } = useQuery<TResult, TVariables>(query, {
+    const { data, error, loading, fetchMore, refetch } = useQuery<TResult, TVariables>(query, {
         variables: {
             ...variables,
             ...initialControls,
         },
         notifyOnNetworkStatusChange: true, // Ensures loading state is updated on `fetchMore`
         fetchPolicy: options?.fetchPolicy,
+        onCompleted: options?.onCompleted,
     })
 
     /**
@@ -150,11 +159,28 @@ export const useConnection = <TResult, TVariables, TData>({
         })
     }
 
+    const refetchAll = useCallback(async (): Promise<void> => {
+        const first = connection?.nodes.length || firstReference.current.actual
+
+        await refetch({
+            ...variables,
+            first,
+        })
+    }, [connection?.nodes.length, refetch, variables])
+
+    // We use `refetchAll` to poll for all of the nodes currently loaded in the
+    // connection, vs. just providing a `pollInterval` to the underlying `useQuery`, which
+    // would only poll for the first page of results.
+    const { startExecution, stopExecution } = useInterval(refetchAll, options?.pollInterval || -1)
+
     return {
         connection,
         loading,
         error,
         fetchMore: fetchMoreData,
+        refetchAll,
         hasNextPage: connection ? hasNextPage(connection) : false,
+        startPolling: startExecution,
+        stopPolling: stopExecution,
     }
 }

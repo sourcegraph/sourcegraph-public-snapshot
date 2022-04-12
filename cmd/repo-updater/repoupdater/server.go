@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 
@@ -22,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Server is a repoupdater server.
@@ -43,7 +43,7 @@ type Server struct {
 	RateLimitSyncer interface {
 		// SyncRateLimiters should be called when an external service changes so that
 		// our internal rate limiters are kept in sync
-		SyncRateLimiters(ctx context.Context) error
+		SyncRateLimiters(ctx context.Context, ids ...int64) error
 	}
 	PermsSyncer interface {
 		// ScheduleUsers schedules new permissions syncing requests for given users.
@@ -190,8 +190,10 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	sourcer := repos.NewSourcer(httpcli.ExternalClientFactory, repos.WithDB(s.Handle().DB()))
-
+	var sourcer repos.Sourcer
+	if sourcer = s.Sourcer; sourcer == nil {
+		sourcer = repos.NewSourcer(database.NewDB(s.Handle().DB()), httpcli.ExternalClientFactory, repos.WithDB(s.Handle().DB()))
+	}
 	src, err := sourcer(&types.ExternalService{
 		ID:          req.ExternalService.ID,
 		Kind:        req.ExternalService.Kind,
@@ -217,19 +219,27 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	} else if err != nil {
 		log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
+		if errcode.IsUnauthorized(err) {
+			respond(w, http.StatusUnauthorized, err)
+			return
+		}
+		if errcode.IsForbidden(err) {
+			respond(w, http.StatusForbidden, err)
+			return
+		}
 		respond(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	if err := s.Syncer.TriggerExternalServiceSync(ctx, req.ExternalService.ID); err != nil {
-		log15.Warn("Enqueueing external service sync job", "error", err, "id", req.ExternalService.ID)
+	if s.RateLimitSyncer != nil {
+		err = s.RateLimitSyncer.SyncRateLimiters(ctx, req.ExternalService.ID)
+		if err != nil {
+			log15.Warn("Handling rate limiter sync", "err", err, "id", req.ExternalService.ID)
+		}
 	}
 
-	if s.RateLimitSyncer != nil {
-		err = s.RateLimitSyncer.SyncRateLimiters(ctx)
-		if err != nil {
-			log15.Warn("Handling rate limiter sync", "err", err)
-		}
+	if err := s.Syncer.TriggerExternalServiceSync(ctx, req.ExternalService.ID); err != nil {
+		log15.Warn("Enqueueing external service sync job", "error", err, "id", req.ExternalService.ID)
 	}
 
 	log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
@@ -276,9 +286,9 @@ func externalServiceValidate(ctx context.Context, req protocol.ExternalServiceSy
 var mockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
 
 func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (result *protocol.RepoLookupResult, err error) {
-	// Sourcegraph.com: this is on the user path, do not block for ever if codehost is being
-	// bad. Ideally block before cloudflare 504s the request (1min).
-	// Other: we only speak to our database, so response should be in a few ms.
+	// Sourcegraph.com: this is on the user path, do not block forever if codehost is
+	// being bad. Ideally block before cloudflare 504s the request (1min). Other: we
+	// only speak to our database, so response should be in a few ms.
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
@@ -300,14 +310,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return mockRepoLookup(args)
 	}
 
-	var repo *types.Repo
-	if s.SourcegraphDotComMode {
-		repo, err = s.Syncer.SyncRepo(ctx, args.Repo)
-	} else {
-		// TODO: Remove all call sites that RPC into repo-updater to just look-up
-		// a repo. They can simply ask the database instead.
-		repo, err = s.Store.RepoStore.GetByName(ctx, args.Repo)
-	}
+	repo, err := s.Syncer.SyncRepo(ctx, args.Repo, true)
 
 	switch {
 	case err == nil:
@@ -320,6 +323,11 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return &protocol.RepoLookupResult{ErrorTemporarilyUnavailable: true}, nil
 	default:
 		return nil, err
+	}
+
+	if s.Scheduler != nil && args.Update {
+		// Enqueue a high priority update for this repo.
+		s.Scheduler.UpdateOnce(repo.ID, repo.Name)
 	}
 
 	repoInfo := protocol.NewRepoInfo(repo)
@@ -364,7 +372,7 @@ func (s *Server) handleSchedulePermsSync(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	if len(req.UserIDs) == 0 && len(req.RepoIDs) == 0 {
-		respond(w, http.StatusBadRequest, errors.New("neither user and repo ids provided"))
+		respond(w, http.StatusBadRequest, errors.New("neither user IDs nor repo IDs was provided in request (must provide at least one)"))
 		return
 	}
 

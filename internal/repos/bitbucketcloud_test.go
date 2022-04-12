@@ -16,11 +16,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestBitbucketCloudSource_ListRepos(t *testing.T) {
-	assertAllReposListed := func(want []string) types.ReposAssertion {
+	assertAllReposListed := func(want []string) typestest.ReposAssertion {
 		return func(t testing.TB, rs types.Repos) {
 			t.Helper()
 
@@ -36,19 +37,17 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 
 	testCases := []struct {
 		name   string
-		assert types.ReposAssertion
+		assert typestest.ReposAssertion
 		conf   *schema.BitbucketCloudConnection
 		err    string
 	}{
 		{
 			name: "found",
 			assert: assertAllReposListed([]string{
-				"bitbucket.org/Unknwon/boilerdb",
-				"bitbucket.org/Unknwon/scripts",
-				"bitbucket.org/Unknwon/wxvote",
+				"/sourcegraph-testing/src-cli",
+				"/sourcegraph-testing/sourcegraph",
 			}),
 			conf: &schema.BitbucketCloudConnection{
-				Url:         "https://bitbucket.org",
 				Username:    bitbucketcloud.GetenvTestBitbucketCloudUsername(),
 				AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
 			},
@@ -57,15 +56,12 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 		{
 			name: "with teams",
 			assert: assertAllReposListed([]string{
-				"bitbucket.org/Unknwon/boilerdb",
-				"bitbucket.org/Unknwon/scripts",
-				"bitbucket.org/Unknwon/wxvote",
-				"bitbucket.org/sglocal/mux",
-				"bitbucket.org/sglocal/go-langserver",
-				"bitbucket.org/sglocal/python-langserver",
+				"/sglocal/go-langserver",
+				"/sglocal/python-langserver",
+				"/sourcegraph-testing/src-cli",
+				"/sourcegraph-testing/sourcegraph",
 			}),
 			conf: &schema.BitbucketCloudConnection{
-				Url:         "https://bitbucket.org",
 				Username:    bitbucketcloud.GetenvTestBitbucketCloudUsername(),
 				AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
 				Teams: []string{

@@ -7,7 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestAndOrQuery_Validation(t *testing.T) {
+func TestValidation(t *testing.T) {
 	cases := []struct {
 		input      string
 		searchType SearchType // nil value is regexp
@@ -125,7 +125,7 @@ func TestAndOrQuery_Validation(t *testing.T) {
 	}
 }
 
-func TestAndOrQuery_IsCaseSensitive(t *testing.T) {
+func TestIsCaseSensitive(t *testing.T) {
 	cases := []struct {
 		name  string
 		input string
@@ -161,7 +161,7 @@ func TestAndOrQuery_IsCaseSensitive(t *testing.T) {
 	}
 }
 
-func TestAndOrQuery_RegexpPatterns(t *testing.T) {
+func TestRegexpPatterns(t *testing.T) {
 	type want struct {
 		values        []string
 		negatedValues []string
@@ -290,7 +290,7 @@ func TestForAll(t *testing.T) {
 		Parameter{Field: "repo", Value: "foo"},
 		Parameter{Field: "repo", Value: "bar"},
 	}
-	result := forAll(nodes, func(node Node) bool {
+	result := ForAll(nodes, func(node Node) bool {
 		_, ok := node.(Parameter)
 		return ok
 	})
@@ -356,58 +356,6 @@ func TestContainsRefGlobs(t *testing.T) {
 			got := ContainsRefGlobs(query)
 			if got != c.want {
 				t.Errorf("got %t, expected %t", got, c.want)
-			}
-		})
-	}
-}
-
-func TestHasTypeRepo(t *testing.T) {
-	tests := []struct {
-		query           string
-		wantHasTypeRepo bool
-	}{
-		{
-			query:           "sourcegraph type:repo",
-			wantHasTypeRepo: true,
-		},
-		{
-			query:           "sourcegraph type:symbol type:repo",
-			wantHasTypeRepo: true,
-		},
-		{
-			query:           "(sourcegraph type:repo) or (goreman type:repo)",
-			wantHasTypeRepo: true,
-		},
-		{
-			query:           "sourcegraph repohasfile:Dockerfile type:repo",
-			wantHasTypeRepo: true,
-		},
-		{
-			query:           "repo:sourcegraph type:repo",
-			wantHasTypeRepo: true,
-		},
-		{
-			query:           "repo:sourcegraph",
-			wantHasTypeRepo: false,
-		},
-		{
-			query:           "repository",
-			wantHasTypeRepo: false,
-		},
-		{
-			query:           "",
-			wantHasTypeRepo: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.query, func(t *testing.T) {
-			q, err := ParseLiteral(tt.query)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if got := HasTypeRepo(q); got != tt.wantHasTypeRepo {
-				t.Fatalf("got %t, expected %t", got, tt.wantHasTypeRepo)
 			}
 		})
 	}

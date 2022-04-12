@@ -1,7 +1,10 @@
+import React, { useCallback, useState } from 'react'
+
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import React, { useCallback, useState } from 'react'
+
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import styles from './Collapsible.module.scss'
 
@@ -14,7 +17,7 @@ interface Props {
     /**
      * Sub-content always visible in the title bar.
      */
-    detail?: string
+    detail?: string | React.ReactElement
 
     /**
      * Optional children that appear below the title bar that can be expanded/collapsed. If present,
@@ -60,6 +63,7 @@ export const Collapsible: React.FunctionComponent<Props> = ({
     buttonClassName = '',
     expandedButtonClassName = '',
     wholeTitleClickable = true,
+    ...rest
 }) => {
     const [isExpanded, setIsExpanded] = useState(defaultExpanded)
     const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
@@ -80,7 +84,7 @@ export const Collapsible: React.FunctionComponent<Props> = ({
     )
 
     return (
-        <div className={className}>
+        <div className={className} {...rest}>
             <div
                 className={classNames(
                     'd-flex justify-content-between align-items-center position-relative',
@@ -89,22 +93,18 @@ export const Collapsible: React.FunctionComponent<Props> = ({
                 )}
             >
                 {titleAtStart && titleNode}
-                <button
-                    type="button"
-                    className={classNames(
-                        'd-flex btn btn-icon',
-                        styles.expandBtn,
-                        wholeTitleClickable && 'stretched-link'
-                    )}
+                <Button
+                    variant="icon"
+                    className={classNames('d-flex', styles.expandBtn, wholeTitleClickable && 'stretched-link')}
                     aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                     onClick={toggleIsExpanded}
                 >
                     {isExpanded ? (
-                        <ChevronDownIcon className="icon-inline" aria-label="Close section" />
+                        <Icon aria-label="Close section" as={ChevronDownIcon} />
                     ) : (
-                        <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
+                        <Icon aria-label="Expand section" as={ChevronRightIcon} />
                     )}
-                </button>
+                </Button>
                 {!titleAtStart && titleNode}
             </div>
             {isExpanded && children}

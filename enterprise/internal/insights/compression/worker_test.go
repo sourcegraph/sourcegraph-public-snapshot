@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestCommitIndexer_indexAll(t *testing.T) {
@@ -26,13 +26,14 @@ func TestCommitIndexer_indexAll(t *testing.T) {
 		commitStore:       commitStore,
 		maxHistoricalTime: maxHistorical,
 		background:        context.Background(),
+		operations:        newOperations(&observation.TestContext),
 	}
 
 	// Testing a scenario with 3 repos
 	// "repo-one" has commits but has disabled indexing
 	// "really-big-repo" has commits and has enabled indexing, it should update
 	// "no-commits" has no commits but is enabled, and will not update the index but will update the metadata
-	commits := map[string][]*git.Commit{
+	commits := map[string][]*gitdomain.Commit{
 		"repo-one": {
 			commit("ref1", "2020-05-01T00:00:00+00:00"),
 			commit("ref2", "2020-05-10T00:00:00+00:00"),
@@ -48,7 +49,6 @@ func TestCommitIndexer_indexAll(t *testing.T) {
 		"no-commits": {},
 	}
 	indexer.getCommits = mockCommits(commits)
-	indexer.getRepoID = mockIds(map[string]int{"repo-one": 1, "really-big-repo": 2, "no-commits": 3})
 	indexer.allReposIterator = mockIterator([]string{"repo-one", "really-big-repo", "no-commits"})
 
 	commitStore.GetMetadataFunc.PushReturn(CommitIndexMetadata{
@@ -97,7 +97,7 @@ func TestCommitIndexer_indexAll(t *testing.T) {
 			t.Errorf("got UpsertMetadataStamp invocations: %v want %v", got, want)
 		} else {
 			call := commitStore.UpsertMetadataStampFunc.history[0]
-			if call.Arg1 != 3 {
+			if call.Arg1 != 2 {
 				t.Errorf("unexpected repository for UpsertMetadataStamp repo_id: %v", call.Arg1)
 			}
 		}
@@ -172,10 +172,10 @@ func Test_getMetadata_NoInsertRequired(t *testing.T) {
 }
 
 // mockIterator generates iterator methods given a list of repo names for test scenarios
-func mockIterator(repos []string) func(ctx context.Context, each func(repoName string) error) error {
-	return func(ctx context.Context, each func(repoName string) error) error {
-		for _, repo := range repos {
-			err := each(repo)
+func mockIterator(repos []string) func(ctx context.Context, each func(repoName string, id api.RepoID) error) error {
+	return func(ctx context.Context, each func(repoName string, id api.RepoID) error) error {
+		for i, repo := range repos {
+			err := each(repo, api.RepoID(i))
 			if err != nil {
 				return err
 			}
@@ -185,24 +185,17 @@ func mockIterator(repos []string) func(ctx context.Context, each func(repoName s
 }
 
 // commit build a fake commit for test scenarios
-func commit(ref string, commitTime string) *git.Commit {
+func commit(ref string, commitTime string) *gitdomain.Commit {
 	t, _ := time.Parse(time.RFC3339, commitTime)
 
-	return &git.Commit{
+	return &gitdomain.Commit{
 		ID:        api.CommitID(ref),
-		Committer: &git.Signature{Date: t},
+		Committer: &gitdomain.Signature{Date: t},
 	}
 }
 
-func mockCommits(commits map[string][]*git.Commit) func(ctx context.Context, name api.RepoName, after time.Time) ([]*git.Commit, error) {
-	return func(ctx context.Context, name api.RepoName, after time.Time) ([]*git.Commit, error) {
+func mockCommits(commits map[string][]*gitdomain.Commit) func(ctx context.Context, db database.DB, name api.RepoName, after time.Time, operation *observation.Operation) ([]*gitdomain.Commit, error) {
+	return func(ctx context.Context, db database.DB, name api.RepoName, after time.Time, operation *observation.Operation) ([]*gitdomain.Commit, error) {
 		return commits[(string(name))], nil
-	}
-}
-
-func mockIds(ids map[string]int) func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
-	return func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
-		id := ids[string(name)]
-		return &types.Repo{ID: api.RepoID(id)}, nil
 	}
 }

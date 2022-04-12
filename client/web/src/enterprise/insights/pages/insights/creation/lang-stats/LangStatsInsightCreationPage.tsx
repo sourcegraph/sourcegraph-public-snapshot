@@ -1,50 +1,44 @@
-import classnames from 'classnames'
 import React, { useCallback, useEffect } from 'react'
 
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { asError } from '@sourcegraph/shared/src/util/errors'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import classNames from 'classnames'
 
-import { Page } from '../../../../../../components/Page'
+import { asError } from '@sourcegraph/common'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useLocalStorage, Link, PageHeader } from '@sourcegraph/wildcard'
+
 import { PageTitle } from '../../../../../../components/PageTitle'
+import { CodeInsightsIcon } from '../../../../../../insights/Icons'
+import { CodeInsightsPage } from '../../../../components/code-insights-page/CodeInsightsPage'
 import { FORM_ERROR, FormChangeEvent } from '../../../../components/form/hooks/useForm'
-import { LangStatsInsight } from '../../../../core/types'
-import { useInsightSubjects } from '../../../../hooks/use-insight-subjects/use-insight-subjects'
+import { MinimalLangStatsInsightData } from '../../../../core/backend/code-insights-backend-types'
+import { CodeInsightTrackType } from '../../../../pings'
 
 import {
     LangStatsInsightCreationContent,
     LangStatsInsightCreationContentProps,
 } from './components/lang-stats-insight-creation-content/LangStatsInsightCreationContent'
-import styles from './LangStatsInsightCreationPage.module.scss'
 import { LangStatsCreationFormFields } from './types'
 import { getSanitizedLangStatsInsight } from './utils/insight-sanitizer'
 
-const DEFAULT_FINAL_SETTINGS = {}
+import styles from './LangStatsInsightCreationPage.module.scss'
 
 export interface InsightCreateEvent {
-    subjectId: string
-    insight: LangStatsInsight
+    insight: MinimalLangStatsInsightData
 }
 
-export interface LangStatsInsightCreationPageProps extends SettingsCascadeProps, TelemetryProps {
-    /**
-     * Set initial value for insight visibility setting.
-     */
-    visibility: string
-
+export interface LangStatsInsightCreationPageProps extends TelemetryProps {
     /**
      * Whenever the user submit form and clicks on save/submit button
      *
      * @param event - creation event with subject id and updated settings content
      * info.
      */
-    onInsightCreateRequest: (event: InsightCreateEvent) => Promise<void>
+    onInsightCreateRequest: (event: InsightCreateEvent) => Promise<unknown>
 
     /**
      * Whenever insight was created and all operations after creation were completed.
      */
-    onSuccessfulCreation: (insight: LangStatsInsight) => void
+    onSuccessfulCreation: (insight: MinimalLangStatsInsightData) => void
 
     /**
      * Whenever the user click on cancel button
@@ -53,23 +47,12 @@ export interface LangStatsInsightCreationPageProps extends SettingsCascadeProps,
 }
 
 export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsightCreationPageProps> = props => {
-    const {
-        visibility,
-        settingsCascade,
-        telemetryService,
-        onInsightCreateRequest,
-        onCancel,
-        onSuccessfulCreation,
-    } = props
+    const { telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
 
-    const insightSubjects = useInsightSubjects({ settingsCascade })
     const [initialFormValues, setInitialFormValues] = useLocalStorage<LangStatsCreationFormFields | undefined>(
         'insights.code-stats-creation-ui',
         undefined
     )
-
-    // Set the top-level scope value as initial value for the insight visibility
-    const mergedInitialValues = { ...(initialFormValues ?? {}), visibility }
 
     useEffect(() => {
         telemetryService.logViewEvent('CodeInsightsCodeStatsCreationPage')
@@ -77,19 +60,19 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
 
     const handleSubmit = useCallback<LangStatsInsightCreationContentProps['onSubmit']>(
         async values => {
-            const subjectID = values.visibility
-
             try {
                 const insight = getSanitizedLangStatsInsight(values)
 
-                await onInsightCreateRequest({
-                    subjectId: subjectID,
-                    insight,
-                })
+                await onInsightCreateRequest({ insight })
 
                 // Clear initial values if user successfully created search insight
                 setInitialFormValues(undefined)
                 telemetryService.log('CodeInsightsCodeStatsCreationPageSubmitClick')
+                telemetryService.log(
+                    'InsightAddition',
+                    { insightType: CodeInsightTrackType.LangStatsInsight },
+                    { insightType: CodeInsightTrackType.LangStatsInsight }
+                )
 
                 onSuccessfulCreation(insight)
             } catch (error) {
@@ -114,29 +97,29 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
     }
 
     return (
-        <Page className={classnames(styles.creationPage, 'col-10')}>
-            <PageTitle title="Create new code insight" />
+        <CodeInsightsPage className={classNames(styles.creationPage, 'col-10')}>
+            <PageTitle title="Create insight - Code Insights" />
 
-            <div className="mb-5">
-                <h2>Set up new language usage insight</h2>
-
-                <p className="text-muted">
-                    Shows language usage in your repository based on number of lines of code.{' '}
-                    <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
-                        Learn more.
-                    </a>
-                </p>
-            </div>
+            <PageHeader
+                className="mb-5"
+                path={[{ icon: CodeInsightsIcon }, { text: 'Set up new language usage insight' }]}
+                description={
+                    <span className="text-muted">
+                        Shows language usage in your repository based on number of lines of code.{' '}
+                        <Link to="/help/code_insights" target="_blank" rel="noopener">
+                            Learn more.
+                        </Link>
+                    </span>
+                }
+            />
 
             <LangStatsInsightCreationContent
                 className="pb-5"
-                settings={settingsCascade.final ?? DEFAULT_FINAL_SETTINGS}
-                initialValues={mergedInitialValues}
-                subjects={insightSubjects}
+                initialValues={initialFormValues}
                 onSubmit={handleSubmit}
                 onCancel={handleCancel}
                 onChange={handleChange}
             />
-        </Page>
+        </CodeInsightsPage>
     )
 }

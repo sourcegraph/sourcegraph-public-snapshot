@@ -170,14 +170,6 @@ mutation {
 	}
 }`,
 			}, {
-				name: "sendSavedSearchTestNotification",
-				query: `
-mutation {
-	sendSavedSearchTestNotification(id: "U2F2ZWRTZWFyY2g6MQ==") {
-		alwaysNil
-	}
-}`,
-			}, {
 				name: "createAccessToken.ScopeSiteAdminSudo",
 				query: `
 mutation CreateAccessToken($userID: ID!) {

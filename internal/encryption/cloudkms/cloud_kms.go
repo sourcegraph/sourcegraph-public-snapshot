@@ -5,13 +5,15 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"hash/crc32"
+	"strconv"
 	"strings"
 
 	kms "cloud.google.com/go/kms/apiv1"
-	"github.com/cockroachdb/errors"
 	"google.golang.org/api/option"
 	kmspb "google.golang.org/genproto/googleapis/cloud/kms/v1"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -57,7 +59,11 @@ func (k *Key) Version(ctx context.Context) (encryption.KeyVersion, error) {
 
 // Decrypt a secret, it must have been encrypted with the same Key
 // encrypted secrets are a base64 encoded string containing the key name and a checksum
-func (k *Key) Decrypt(ctx context.Context, cipherText []byte) (*encryption.Secret, error) {
+func (k *Key) Decrypt(ctx context.Context, cipherText []byte) (_ *encryption.Secret, err error) {
+	defer func() {
+		cryptographicTotal.WithLabelValues("decrypt", strconv.FormatBool(err == nil)).Inc()
+	}()
+
 	buf, err := base64.StdEncoding.DecodeString(string(cipherText))
 	if err != nil {
 		return nil, err
@@ -90,7 +96,12 @@ func (k *Key) Decrypt(ctx context.Context, cipherText []byte) (*encryption.Secre
 
 // Encrypt a secret, storing it as a base64 encoded json blob, this json contains
 // the key name, ciphertext, & checksum.
-func (k *Key) Encrypt(ctx context.Context, plaintext []byte) ([]byte, error) {
+func (k *Key) Encrypt(ctx context.Context, plaintext []byte) (_ []byte, err error) {
+	defer func() {
+		cryptographicTotal.WithLabelValues("encrypt", strconv.FormatBool(err == nil)).Inc()
+		encryptPayloadSize.WithLabelValues(strconv.FormatBool(err == nil)).Observe(float64(len(plaintext)) / 1024)
+	}()
+
 	// encrypt plaintext
 	res, err := k.client.Encrypt(ctx, &kmspb.EncryptRequest{
 		Name:            k.name,

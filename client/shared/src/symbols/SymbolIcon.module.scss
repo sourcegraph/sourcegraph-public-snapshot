@@ -1,0 +1,40 @@
+.symbol-icon {
+    $oc-level: 5;
+    $symbol-kinds: (
+        'array': 'red',
+        'boolean': 'red',
+        'class': 'orange',
+        'constant': 'indigo',
+        'constructor': 'violet',
+        'enum': 'blue',
+        'enummember': 'blue',
+        'event': 'red',
+        'field': 'blue',
+        'file': 'gray',
+        'function': 'violet',
+        'interface': 'green',
+        'key': 'yellow',
+        'method': 'violet',
+        'module': 'grape',
+        'namespace': 'grape',
+        'null': 'red',
+        'number': 'violet',
+        'object': 'orange',
+        'operator': 'gray',
+        'package': 'yellow',
+        'property': 'gray',
+        'string': 'orange',
+        'struct': 'orange',
+        'typeparameter': 'blue',
+        'variable': 'blue',
+    );
+
+    // Default for unknown symbols
+    color: var(--oc-gray-#{$oc-level});
+
+    @each $kind, $oc-color in $symbol-kinds {
+        &--kind-#{$kind} {
+            color: var(--oc-#{$oc-color}-#{$oc-level});
+        }
+    }
+}

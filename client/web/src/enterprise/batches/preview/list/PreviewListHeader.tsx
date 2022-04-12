@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
+import { InputTooltip } from '../../../../components/InputTooltip'
 
 export interface PreviewListHeaderProps {
     allSelected?: boolean
@@ -17,7 +17,6 @@ export const PreviewListHeader: React.FunctionComponent<PreviewListHeaderProps> 
             <div className="d-flex p-2 align-items-center">
                 <InputTooltip
                     type="checkbox"
-                    className="btn"
                     checked={allSelected}
                     onChange={toggleSelectAll}
                     tooltip="Click to select all changesets"

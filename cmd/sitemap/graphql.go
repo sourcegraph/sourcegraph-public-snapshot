@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -13,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // This file contains all the methods required to execute Sourcegraph GraphQL API requests.
@@ -102,7 +101,7 @@ func (c *graphQLClient) requestGraphQL(ctx context.Context, queryName string, qu
 		return nil, errors.Wrap(err, "Unmarshal errors")
 	}
 	if len(errs.Errors) > 0 {
-		return nil, fmt.Errorf("graphql error: %v", errs.Errors)
+		return nil, errors.Newf("graphql error: %v", errs.Errors)
 	}
 	return data, nil
 }

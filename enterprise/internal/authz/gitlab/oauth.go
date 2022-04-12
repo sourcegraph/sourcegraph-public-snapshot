@@ -4,13 +4,12 @@ import (
 	"context"
 	"net/url"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var _ authz.Provider = (*OAuthProvider)(nil)
@@ -49,13 +48,13 @@ func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer) *OAuthProvider {
 		tokenType: op.TokenType,
 
 		urn:            op.URN,
-		clientProvider: gitlab.NewClientProvider(op.BaseURL, cli),
+		clientProvider: gitlab.NewClientProvider(op.URN, op.BaseURL, cli),
 		clientURL:      op.BaseURL,
 		codeHost:       extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
 	}
 }
 
-func (p *OAuthProvider) Validate() (problems []string) {
+func (p *OAuthProvider) ValidateConnection(context.Context) (problems []string) {
 	return nil
 }
 
@@ -99,6 +98,13 @@ func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Acco
 	}
 
 	client := p.clientProvider.GetOAuthClient(tok.AccessToken)
+	return listProjects(ctx, client)
+}
+
+// FetchUserPermsByToken is the same as FetchUserPerms, but it only requires a
+// token.
+func (p *OAuthProvider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+	client := p.clientProvider.GetOAuthClient(token)
 	return listProjects(ctx, client)
 }
 

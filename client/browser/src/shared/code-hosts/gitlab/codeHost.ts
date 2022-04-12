@@ -1,9 +1,12 @@
+import * as Sentry from '@sentry/browser'
+import classNames from 'classnames'
 import { Omit } from 'utility-types'
 
+import { subtypeOf } from '@sourcegraph/common'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { subtypeOf } from '@sourcegraph/shared/src/util/types'
 import { toAbsoluteBlobURL } from '@sourcegraph/shared/src/util/url'
 
+import { background } from '../../../browser-extension/web-extension-api/runtime'
 import { CodeHost } from '../shared/codeHost'
 import { CodeView } from '../shared/codeViews'
 import { createNotificationClassNameGetter } from '../shared/getNotificationClassName'
@@ -15,9 +18,7 @@ import { getCommandPaletteMount } from './extensions'
 import { resolveCommitFileInfo, resolveDiffFileInfo, resolveFileInfo } from './fileInfo'
 import { getPageInfo, GitLabPageKind, getFilePathsFromCodeView } from './scrape'
 
-const toolbarButtonProps = {
-    className: 'btn btn-default btn-sm',
-}
+import styles from './codeHost.module.scss'
 
 export function checkIsGitlab(): boolean {
     return !!document.head.querySelector('meta[content="GitLab"]')
@@ -40,7 +41,7 @@ const adjustOverlayPosition: CodeHost['adjustOverlayPosition'] = ({ top, left })
     }
 }
 
-export const getToolbarMount = (codeView: HTMLElement): HTMLElement => {
+export const getToolbarMount = (codeView: HTMLElement, pageKind?: GitLabPageKind): HTMLElement => {
     const existingMount: HTMLElement | null = codeView.querySelector('.sg-toolbar-mount-gitlab')
     if (existingMount) {
         return existingMount
@@ -52,9 +53,10 @@ export const getToolbarMount = (codeView: HTMLElement): HTMLElement => {
     }
 
     const mount = document.createElement('div')
-    mount.classList.add('btn-group')
-    mount.classList.add('sg-toolbar-mount')
-    mount.classList.add('sg-toolbar-mount-gitlab')
+    mount.classList.add('sg-toolbar-mount', 'sg-toolbar-mount-gitlab')
+    if (pageKind === GitLabPageKind.Commit) {
+        mount.classList.add('gl-mr-3')
+    }
 
     fileActions.prepend(mount)
 
@@ -63,9 +65,8 @@ export const getToolbarMount = (codeView: HTMLElement): HTMLElement => {
 
 const singleFileCodeView: Omit<CodeView, 'element'> = {
     dom: singleFileDOMFunctions,
-    getToolbarMount,
+    getToolbarMount: (codeView: HTMLElement) => getToolbarMount(codeView, GitLabPageKind.File),
     resolveFileInfo,
-    toolbarButtonProps,
     getSelections: getSelectionsFromHash,
     observeSelections: observeSelectionsFromHash,
 }
@@ -80,17 +81,15 @@ const getFileTitle = (codeView: HTMLElement): HTMLElement[] => {
 
 const mergeRequestCodeView: Omit<CodeView, 'element'> = {
     dom: diffDOMFunctions,
-    getToolbarMount,
+    getToolbarMount: (codeView: HTMLElement) => getToolbarMount(codeView, GitLabPageKind.MergeRequest),
     resolveFileInfo: resolveDiffFileInfo,
-    toolbarButtonProps,
     getScrollBoundaries: getFileTitle,
 }
 
 const commitCodeView: Omit<CodeView, 'element'> = {
     dom: diffDOMFunctions,
-    getToolbarMount,
+    getToolbarMount: (codeView: HTMLElement) => getToolbarMount(codeView, GitLabPageKind.Commit),
     resolveFileInfo: resolveCommitFileInfo,
-    toolbarButtonProps,
     getScrollBoundaries: getFileTitle,
 }
 
@@ -136,6 +135,37 @@ const notificationClassNames = {
     [NotificationType.Error]: 'alert alert-danger',
 }
 
+/**
+ * Checks whether repository is private or not using Gitlab API
+ *
+ * @description see https://docs.gitlab.com/ee/api/projects.html#get-single-project
+ * @description see rate limit https://docs.gitlab.com/ee/user/admin_area/settings/user_and_ip_rate_limits.html#response-headers
+ */
+export const isPrivateRepository = (repoName: string, fetchCache = background.fetchCache): Promise<boolean> => {
+    if (window.location.hostname !== 'gitlab.com' || !repoName) {
+        return Promise.resolve(true)
+    }
+    return fetchCache({
+        url: `https://gitlab.com/api/v4/projects/${encodeURIComponent(repoName)}`,
+        credentials: 'omit', // it returns different response based on auth state
+        cacheMaxAge: 60 * 60 * 1000, // 1 hour
+    })
+        .then(response => {
+            const rateLimit = response.headers['ratelimit-remaining']
+            if (Number(rateLimit) <= 0) {
+                const rateLimitError = new Error('Gitlab rate limit exceeded.')
+                Sentry.captureException(rateLimitError)
+                throw rateLimitError
+            }
+            return response
+        })
+        .then(({ status }) => status !== 200)
+        .catch(error => {
+            console.warn('Failed to fetch repository visibility info.', error)
+            return true
+        })
+}
+
 export const gitlabCodeHost = subtypeOf<CodeHost>()({
     type: 'gitlab',
     name: 'GitLab',
@@ -143,10 +173,13 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
     codeViewResolvers: [codeViewResolver],
     adjustOverlayPosition,
     getCommandPaletteMount,
-    getContext: () => ({
-        ...getPageInfo(),
-        privateRepository: window.location.hostname !== 'gitlab.com',
-    }),
+    getContext: async () => {
+        const { repoName, ...pageInfo } = getPageInfo()
+        return {
+            ...pageInfo,
+            privateRepository: await isPrivateRepository(repoName),
+        }
+    },
     urlToFile: (sourcegraphURL, target, context): string => {
         // A view state means that a panel must be shown, and panels are currently only supported on
         // Sourcegraph (not code hosts).
@@ -191,7 +224,7 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
     },
     notificationClassNames,
     commandPaletteClassProps: {
-        popoverClassName: 'dropdown-menu command-list-popover--gitlab',
+        popoverClassName: classNames('dropdown-menu', styles.commandListPopover),
         formClassName: 'dropdown-input',
         inputClassName: 'dropdown-input-field',
         resultsContainerClassName: 'dropdown-content',
@@ -200,15 +233,15 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
         iconClassName: 's16 align-bottom',
     },
     codeViewToolbarClassProps: {
-        className: 'code-view-toolbar--gitlab',
-        actionItemClass: 'btn btn-sm btn-secondary ml-2 action-item--gitlab',
+        className: 'pl-0',
+        actionItemClass: 'btn btn-md gl-button btn-icon',
         actionItemPressedClass: 'active',
+        actionItemIconClass: 'gl-button-icon gl-icon s16',
     },
     hoverOverlayClassProps: {
-        className: 'card hover-overlay--gitlab',
-        actionItemClassName: 'btn btn-secondary action-item--gitlab',
+        className: classNames('card', styles.hoverOverlay),
+        actionItemClassName: 'btn btn-secondary',
         actionItemPressedClassName: 'active',
-        closeButtonClassName: 'btn btn-transparent p-0 btn-icon--gitlab',
         iconClassName: 'square s16',
         getAlertClassName: createNotificationClassNameGetter(notificationClassNames),
     },

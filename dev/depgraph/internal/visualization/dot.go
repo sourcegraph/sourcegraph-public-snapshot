@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"fmt"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/grafana/regexp"
 )
 
 // Dotify serializes the given package and edge data into a DOT-formatted graph.

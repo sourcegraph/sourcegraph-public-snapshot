@@ -1,4 +1,4 @@
-# Context key expressions 
+# Context key expressions
 
 **Context key expressions** are a way to express values dynamically in the
 fields of a Sourcegraph extension's manifest.
@@ -30,7 +30,7 @@ These fields in the manifest support context key expressions.
 ### In contributed actions
 
 String fields that accept interpolated expressions, in [contributed
-actions:](contributions.md#actions)
+actions](contributions.md#actions):
 
 - `title`
 - `category`
@@ -52,7 +52,7 @@ Fields that expect a context key expression:
 ### In menu contributions
 
 Fields that expect a context key expression, in [menu
-contributions](contributions.md#menus)
+contributions](contributions.md#menus):
 
 - `when`: enables the menu contribution when this expression evaluates to true.
 
@@ -65,12 +65,15 @@ Context keys are the variables that you can use inside of expressions.
   example, `config.sourcegraphBaseUrl` contains the `sourcegraphBaseUrl` value
   from Sourcegraph settings.
 - `resource`: the current resource being viewed, such as a file.
-  - `resource.uri`
-  - `resource.basename`
-  - `resource.dirname`
-  - `resource.extname`
-  - `resource.language`
-  - `resource.type`
+  - `resource.uri`: example `git://github.com/sourcegraph/src-cli?6bffe0f39072e56b414712d0b0cf1fde3b2faca2#internal/batches/executor/execution_cache.go`
+  - `resource.basename`: example `execution_cache.go`
+  - `resource.dirname`: example `git://github.com/sourcegraph/src-cli?6bffe0f39072e56b414712d0b0cf1fde3b2faca2#internal/batches/executor`
+  - `resource.extname`: example `.go`
+  - `resource.language`: example `go`
+  - `resource.type`: example `textDocument`
+  - `resource.repo`: example `github.com/sourcegraph/src-cli`
+  - `resource.commit`: example `6bffe0f39072e56b414712d0b0cf1fde3b2faca2`
+  - `resource.path`: example `internal/batches/executor/execution_cache.go`
 - `component`: true if a component is open, such as a panel, directory view, or
   file view.
 - `component.selections`: an object representing the current selections.

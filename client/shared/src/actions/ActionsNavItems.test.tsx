@@ -1,13 +1,15 @@
-import * as H from 'history'
 import React from 'react'
-import renderer, { act, ReactTestRenderer } from 'react-test-renderer'
+
+import { render, act, RenderResult } from '@testing-library/react'
+import * as H from 'history'
 import { of, NEVER } from 'rxjs'
 
+import { ContributableMenu } from '@sourcegraph/client-api'
+
 import { FlatExtensionHostAPI } from '../api/contract'
-import { ContributableMenu } from '../api/protocol'
 import { pretendProxySubscribable, pretendRemote } from '../api/util'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
-import { extensionsController } from '../util/searchTestHelpers'
+import { extensionsController } from '../testing/searchTestHelpers'
 
 import { ActionsNavItems } from './ActionsNavItems'
 
@@ -20,10 +22,10 @@ describe('ActionItem', () => {
     )
 
     test('Renders contributed action items', async () => {
-        let component!: ReactTestRenderer
+        let component!: RenderResult
         // eslint-disable-next-line @typescript-eslint/require-await
         await act(async () => {
-            component = renderer.create(
+            component = render(
                 <ActionsNavItems
                     menu={ContributableMenu.EditorTitle}
                     location={location}
@@ -60,6 +62,7 @@ describe('ActionItem', () => {
                 />
             )
         })
-        expect(component.toJSON()).toMatchSnapshot()
+
+        expect(component.asFragment()).toMatchSnapshot()
     })
 })

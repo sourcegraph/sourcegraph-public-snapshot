@@ -1,0 +1,31 @@
+{{- if .IsTest -}}
+This email is a preview. Links are removed.
+
+{{ end -}}
+
+Your Sourcegraph code monitor, {{.Description}}, detected {{.TotalCount}} new {{.ResultPluralized}}.
+
+{{- if .IncludeResults }}
+{{- range .TruncatedResults }}
+
+- {{.ResultType}} match: {{.CommitURL}} from {{.RepoName}}@{{.CommitID}}
+{{.Content}}
+{{- end }}
+{{- end }}
+
+{{- if .DisplayMoreLink }}
+
+...and {{.TruncatedCount}} more {{.TruncatedResultPluralized}}: {{.SearchURL}}
+{{- else }}
+
+View search on Sourcegraph: {{.SearchURL}}
+{{- end }}
+
+__
+You are receiving this notification because you are a recipient on a code monitor.
+
+View code monitor: {{.CodeMonitorURL}}
+
+Search results may contain confidential data. To protect your privacy and security,
+Sourcegraph limits what information is contained in this notification.
+{{/* This comment forces new line at end of file */}}

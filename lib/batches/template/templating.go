@@ -7,10 +7,11 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/cockroachdb/errors"
 	"github.com/gobwas/glob"
 
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const startDelim = "${{"
@@ -88,6 +89,7 @@ type BatchChangeAttributes struct {
 
 type Repository struct {
 	Name        string
+	Branch      string
 	FileMatches []string
 }
 
@@ -109,13 +111,13 @@ type StepContext struct {
 	Outputs map[string]interface{}
 	// Step is the result of the current step. Empty when evaluating the "run" field
 	// but filled when evaluating the "outputs" field.
-	Step StepResult
+	Step execution.StepResult
 	// Steps contains the path in which the steps are being executed and the
 	// changes made by all steps that were executed up until the current step.
 	Steps StepsContext
 	// PreviousStep is the result of the previous step. Empty when there is no
 	// previous step.
-	PreviousStep StepResult
+	PreviousStep execution.StepResult
 	// Repository is the Sourcegraph repository in which the steps are executed.
 	Repository Repository
 }
@@ -123,7 +125,7 @@ type StepContext struct {
 // ToFuncMap returns a template.FuncMap to access fields on the StepContext in a
 // text/template.
 func (stepCtx *StepContext) ToFuncMap() template.FuncMap {
-	newStepResult := func(res *StepResult) map[string]interface{} {
+	newStepResult := func(res *execution.StepResult) map[string]interface{} {
 		m := map[string]interface{}{
 			"modified_files": "",
 			"added_files":    "",
@@ -160,7 +162,7 @@ func (stepCtx *StepContext) ToFuncMap() template.FuncMap {
 			return newStepResult(&stepCtx.Step)
 		},
 		"steps": func() map[string]interface{} {
-			res := newStepResult(&StepResult{Files: stepCtx.Steps.Changes})
+			res := newStepResult(&execution.StepResult{Files: stepCtx.Steps.Changes})
 			res["path"] = stepCtx.Steps.Path
 			return res
 		},
@@ -171,6 +173,7 @@ func (stepCtx *StepContext) ToFuncMap() template.FuncMap {
 			return map[string]interface{}{
 				"search_result_paths": stepCtx.Repository.SearchResultPaths(),
 				"name":                stepCtx.Repository.Name,
+				"branch":              stepCtx.Repository.Branch,
 			}
 		},
 		"batch_change": func() map[string]interface{} {
@@ -180,49 +183,6 @@ func (stepCtx *StepContext) ToFuncMap() template.FuncMap {
 			}
 		},
 	}
-}
-
-// StepResult represents the result of a previously executed step.
-type StepResult struct {
-	// Files are the changes made to Files by the step.
-	Files *git.Changes
-
-	// Stdout is the output produced by the step on standard out.
-	Stdout *bytes.Buffer
-	// Stderr is the output produced by the step on standard error.
-	Stderr *bytes.Buffer
-}
-
-// ModifiedFiles returns the files modified by a step.
-func (r StepResult) ModifiedFiles() []string {
-	if r.Files != nil {
-		return r.Files.Modified
-	}
-	return []string{}
-}
-
-// AddedFiles returns the files added by a step.
-func (r StepResult) AddedFiles() []string {
-	if r.Files != nil {
-		return r.Files.Added
-	}
-	return []string{}
-}
-
-// DeletedFiles returns the files deleted by a step.
-func (r StepResult) DeletedFiles() []string {
-	if r.Files != nil {
-		return r.Files.Deleted
-	}
-	return []string{}
-}
-
-// RenamedFiles returns the new name of files that have been renamed by a step.
-func (r StepResult) RenamedFiles() []string {
-	if r.Files != nil {
-		return r.Files.Renamed
-	}
-	return []string{}
 }
 
 type StepsContext struct {
@@ -258,6 +218,7 @@ func (tmplCtx *ChangesetTemplateContext) ToFuncMap() template.FuncMap {
 			return map[string]interface{}{
 				"search_result_paths": tmplCtx.Repository.SearchResultPaths(),
 				"name":                tmplCtx.Repository.Name,
+				"branch":              tmplCtx.Repository.Branch,
 			}
 		},
 		"batch_change": func() map[string]interface{} {
@@ -270,9 +231,9 @@ func (tmplCtx *ChangesetTemplateContext) ToFuncMap() template.FuncMap {
 			return tmplCtx.Outputs
 		},
 		"steps": func() map[string]interface{} {
-			// Wrap the *StepChanges in a StepResult so we can use nil-safe
+			// Wrap the *StepChanges in a execution.StepResult so we can use nil-safe
 			// methods.
-			res := StepResult{Files: tmplCtx.Steps.Changes}
+			res := execution.StepResult{Files: tmplCtx.Steps.Changes}
 
 			return map[string]interface{}{
 				"modified_files": res.ModifiedFiles(),

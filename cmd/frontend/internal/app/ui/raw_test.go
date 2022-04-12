@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"context"
+	"errors"
 	"io"
 	"io/fs"
 	"mime"
@@ -11,7 +13,9 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
@@ -21,7 +25,7 @@ import (
 // by httpStatusCode and a body as set by resp. It also ensures that the server is closed during
 // test cleanup, thus ensuring that the caller does not have to remember to close the server.
 //
-// Finally, initHTTPTestGitServer patches the gitserver.DefaultClient.Addrs to the URL of the test
+// Finally, initHTTPTestGitServer patches the gitserver.Client.Addrs to the URL of the test
 // HTTP server, so that API calls to the gitserver are received by the test HTTP server.
 //
 // TL;DR: This function helps us to mock the gitserver without having to define mock functions for
@@ -41,13 +45,25 @@ func initHTTPTestGitServer(t *testing.T, httpStatusCode int, resp string) {
 		}
 	}))
 
-	t.Cleanup(func() { s.Close() })
+	t.Cleanup(func() {
+		s.Close()
+		gitserver.ResetClientMocks()
+	})
 
-	// Strip the protocol from the URI while patching the gitserver client's
-	// addresses, since the gitserver implementation does not want the protocol in
-	// the address.
-	gitserver.DefaultClient.Addrs = func() []string {
-		return []string{strings.TrimPrefix(s.URL, "http://")}
+	gitserver.ClientMocks.RepoInfo = func(ctx context.Context, repos ...api.RepoName) (resp *protocol.RepoInfoResponse, err error) {
+		if httpStatusCode != http.StatusOK {
+			err = errors.New("error")
+		}
+		return nil, err
+	}
+	gitserver.ClientMocks.Archive = func(ctx context.Context, repo api.RepoName, opt gitserver.ArchiveOptions) (reader io.ReadCloser, err error) {
+		if httpStatusCode != http.StatusOK {
+			err = errors.New("error")
+		} else {
+			stringReader := strings.NewReader(resp)
+			reader = io.NopCloser(stringReader)
+		}
+		return reader, err
 	}
 }
 
@@ -66,14 +82,14 @@ func Test_serveRawWithHTTPRequestMethodHEAD(t *testing.T) {
 	}()
 
 	t.Run("success response for HEAD request", func(t *testing.T) {
-		// httptest server will return a 200 OK, so gitserver.DefaultClient.RepoInfo will not return
+		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return
 		// an error.
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
 		req := httptest.NewRequest("HEAD", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
 		w := httptest.NewRecorder()
 
-		err := serveRaw(w, req)
+		err := serveRaw(database.NewMockDB())(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -84,14 +100,14 @@ func Test_serveRawWithHTTPRequestMethodHEAD(t *testing.T) {
 	})
 
 	t.Run("failure response for HEAD request", func(t *testing.T) {
-		// httptest server will return a 404 Not Found, so gitserver.DefaultClient.RepoInfo will
+		// httptest server will return a 404 Not Found, so gitserver.Client.RepoInfo will
 		// return an error.
 		initHTTPTestGitServer(t, http.StatusNotFound, "{}")
 
 		req := httptest.NewRequest("HEAD", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
 		w := httptest.NewRecorder()
 
-		err := serveRaw(w, req)
+		err := serveRaw(database.NewMockDB())(w, req)
 		if err == nil {
 			t.Fatal("Want error but got nil")
 		}
@@ -118,14 +134,14 @@ func Test_serveRawWithContentArchive(t *testing.T) {
 	mockGitServerResponse := "this is a gitserver archive response"
 
 	t.Run("success response for format=zip", func(t *testing.T) {
-		// httptest server will return a 200 OK, so gitserver.DefaultClient.RepoInfo will not return an error.
+		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
 
 		initHTTPTestGitServer(t, http.StatusOK, mockGitServerResponse)
 
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw?format=zip", nil)
 		w := httptest.NewRecorder()
 
-		err := serveRaw(w, req)
+		err := serveRaw(database.NewMockDB())(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -157,14 +173,14 @@ func Test_serveRawWithContentArchive(t *testing.T) {
 	})
 
 	t.Run("success response for format=tar", func(t *testing.T) {
-		// httptest server will return a 200 OK, so gitserver.DefaultClient.RepoInfo will not return an error.
+		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
 
 		initHTTPTestGitServer(t, http.StatusOK, mockGitServerResponse)
 
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw?format=tar", nil)
 		w := httptest.NewRecorder()
 
-		err := serveRaw(w, req)
+		err := serveRaw(database.NewMockDB())(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -230,7 +246,7 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 	}
 
 	t.Run("404 Not Found for non existent directory", func(t *testing.T) {
-		// httptest server will return a 200 OK, so gitserver.DefaultClient.RepoInfo will not return an error.
+		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
 		git.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
@@ -241,7 +257,7 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
 		w := httptest.NewRecorder()
 
-		err := serveRaw(w, req)
+		err := serveRaw(database.NewMockDB())(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -254,14 +270,14 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 	})
 
 	t.Run("success response for existing directory", func(t *testing.T) {
-		// httptest server will return a 200 OK, so gitserver.DefaultClient.RepoInfo will not return an error.
+		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
 		git.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
 			return &util.FileInfo{Mode_: os.ModeDir}, nil
 		}
 
-		git.Mocks.ReadDir = func(commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error) {
+		gitserver.Mocks.ReadDir = func(commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error) {
 			return []fs.FileInfo{
 				&util.FileInfo{Name_: "test/a", Mode_: os.ModeDir},
 				&util.FileInfo{Name_: "test/b", Mode_: os.ModeDir},
@@ -274,7 +290,7 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
 		w := httptest.NewRecorder()
 
-		err := serveRaw(w, req)
+		err := serveRaw(database.NewMockDB())(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -295,7 +311,7 @@ c.go`
 	})
 
 	t.Run("success response for existing file", func(t *testing.T) {
-		// httptest server will return a 200 OK, so gitserver.DefaultClient.RepoInfo will not return an error.
+		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
 		git.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
@@ -311,7 +327,7 @@ c.go`
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
 		w := httptest.NewRecorder()
 
-		err := serveRaw(w, req)
+		err := serveRaw(database.NewMockDB())(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -332,7 +348,7 @@ c.go`
 
 	// Ensure that anything apart from tar/zip/text is still handled with a text/plain content type.
 	t.Run("success response for existing file with format=exe", func(t *testing.T) {
-		// httptest server will return a 200 OK, so gitserver.DefaultClient.RepoInfo will not return an error.
+		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
 		git.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
@@ -348,7 +364,7 @@ c.go`
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw?format=exe", nil)
 		w := httptest.NewRecorder()
 
-		err := serveRaw(w, req)
+		err := serveRaw(database.NewMockDB())(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}

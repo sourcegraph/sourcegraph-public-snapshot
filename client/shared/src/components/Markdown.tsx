@@ -1,8 +1,11 @@
-import classNames from 'classnames'
 import React, { useMemo } from 'react'
+
+import classNames from 'classnames'
 import { useHistory } from 'react-router'
 
-import { createLinkClickHandler } from '../util/link-click-handler/linkClickHandler'
+import { createLinkClickHandler } from './utils/linkClickHandler'
+
+import styles from './Markdown.module.scss'
 
 interface Props {
     wrapper?: 'div' | 'span'
@@ -30,7 +33,7 @@ export const Markdown: React.FunctionComponent<Props> = ({
             data-testid={testId}
             onClick={onClick}
             ref={refFn}
-            className={classNames(className, 'markdown')}
+            className={classNames(className, styles.markdown)}
             dangerouslySetInnerHTML={{ __html: dangerousInnerHTML }}
         />
     )

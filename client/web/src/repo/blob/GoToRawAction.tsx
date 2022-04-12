@@ -1,9 +1,12 @@
-import FileDownloadOutlineIcon from 'mdi-react/FileDownloadOutlineIcon'
 import * as React from 'react'
+
+import FileDownloadOutlineIcon from 'mdi-react/FileDownloadOutlineIcon'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { encodeRepoRevision, RepoSpec, RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
+import { Icon } from '@sourcegraph/wildcard'
 
+import { RepoHeaderActionAnchor } from '../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../RepoHeader'
 
 interface Props extends RepoSpec, Partial<RevisionSpec>, FileSpec, RepoHeaderContext, TelemetryProps {}
@@ -21,26 +24,28 @@ export class GoToRawAction extends React.PureComponent<Props> {
 
     public render(): JSX.Element {
         const to = `/${encodeRepoRevision(this.props)}/-/raw/${this.props.filePath}`
+        const descriptiveText = 'Raw (download file)'
 
         if (this.props.actionType === 'dropdown') {
             return (
-                <a href={to} onClick={this.onClick.bind(this)} className="btn repo-header__file-action" download={true}>
-                    <FileDownloadOutlineIcon className="icon-inline" />
-                    <span>Raw (download file)</span>
-                </a>
+                <RepoHeaderActionAnchor to={to} onClick={this.onClick.bind(this)} download={true}>
+                    <Icon as={FileDownloadOutlineIcon} />
+                    <span>{descriptiveText}</span>
+                </RepoHeaderActionAnchor>
             )
         }
 
         return (
-            <a
-                href={to}
+            <RepoHeaderActionAnchor
+                to={to}
                 onClick={this.onClick.bind(this)}
-                className="btn btn-icon repo-header__action"
-                data-tooltip="Raw (download file)"
+                className="btn-icon"
+                data-tooltip={descriptiveText}
+                aria-label={descriptiveText}
                 download={true}
             >
-                <FileDownloadOutlineIcon className="icon-inline" />
-            </a>
+                <Icon as={FileDownloadOutlineIcon} />
+            </RepoHeaderActionAnchor>
         )
     }
 }

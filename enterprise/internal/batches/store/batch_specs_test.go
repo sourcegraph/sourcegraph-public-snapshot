@@ -2,11 +2,16 @@ package store
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/batches/overridable"
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -35,7 +40,10 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 						Published: &falsy,
 					},
 				},
-				UserID: int32(i + 1234),
+				CreatedFromRaw:   true,
+				AllowUnsupported: true,
+				AllowIgnored:     true,
+				UserID:           int32(i + 1234),
 			}
 
 			if i%2 == 0 {
@@ -78,7 +86,7 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 	}
 
 	t.Run("Count", func(t *testing.T) {
-		count, err := s.CountBatchSpecs(ctx)
+		count, err := s.CountBatchSpecs(ctx, CountBatchSpecsOpts{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -86,9 +94,105 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		if have, want := count, len(batchSpecs); have != want {
 			t.Fatalf("have count: %d, want: %d", have, want)
 		}
+
+		t.Run("ExcludeCreatedFromRawNotOwnedByUser", func(t *testing.T) {
+			for _, spec := range batchSpecs {
+				spec.CreatedFromRaw = true
+				if err := s.UpdateBatchSpec(ctx, spec); err != nil {
+					t.Fatal(err)
+				}
+
+				count, err = s.CountBatchSpecs(ctx, CountBatchSpecsOpts{ExcludeCreatedFromRawNotOwnedByUser: spec.UserID})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := count, 1; have != want {
+					t.Fatalf("have count: %d, want: %d", have, want)
+				}
+			}
+		})
 	})
 
 	t.Run("List", func(t *testing.T) {
+		t.Run("NewestFirst", func(t *testing.T) {
+			ts, _, err := s.ListBatchSpecs(ctx, ListBatchSpecsOpts{NewestFirst: true})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			have, want := ts, batchSpecs
+			if len(have) != len(want) {
+				t.Fatalf("listed %d batchSpecs, want: %d", len(have), len(want))
+			}
+
+			for i := 0; i < len(have); i++ {
+				haveID, wantID := int(have[i].ID), len(have)-i
+				if haveID != wantID {
+					t.Fatalf("found batch specs out of order: have ID: %d, want: %d", haveID, wantID)
+				}
+			}
+		})
+
+		t.Run("OldestFirst", func(t *testing.T) {
+			ts, _, err := s.ListBatchSpecs(ctx, ListBatchSpecsOpts{NewestFirst: false})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			have, want := ts, batchSpecs
+			if len(have) != len(want) {
+				t.Fatalf("listed %d batchSpecs, want: %d", len(have), len(want))
+			}
+
+			for i := 0; i < len(have); i++ {
+				haveID, wantID := int(have[i].ID), i+1
+				if haveID != wantID {
+					t.Fatalf("found batch specs out of order: have ID: %d, want: %d", haveID, wantID)
+				}
+			}
+		})
+
+		t.Run("NewestFirstWithCursor", func(t *testing.T) {
+			var cursor int64
+			lastID := 99999
+			for i := 1; i <= len(batchSpecs); i++ {
+				opts := ListBatchSpecsOpts{Cursor: cursor, NewestFirst: true}
+				ts, next, err := s.ListBatchSpecs(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				haveID := int(ts[0].ID)
+				if haveID > lastID {
+					t.Fatalf("found batch specs out of order: expected descending but ID %d was before %d", lastID, haveID)
+				}
+
+				lastID = haveID
+				cursor = next
+			}
+		})
+
+		t.Run("OldestFirstWithCursor", func(t *testing.T) {
+			var cursor int64
+			var lastID int
+			for i := 1; i <= len(batchSpecs); i++ {
+				opts := ListBatchSpecsOpts{Cursor: cursor, NewestFirst: false}
+				ts, next, err := s.ListBatchSpecs(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				haveID := int(ts[0].ID)
+				if haveID < lastID {
+					t.Fatalf("found batch specs out of order: expected ascending but ID %d was before %d", lastID, haveID)
+				}
+
+				lastID = haveID
+				cursor = next
+			}
+		})
+
 		t.Run("NoLimit", func(t *testing.T) {
 			// Empty should return all entries
 			opts := ListBatchSpecsOpts{}
@@ -161,11 +265,34 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 				cursor = next
 			}
 		})
+
+		t.Run("ExcludeCreatedFromRawNotOwnedByUser", func(t *testing.T) {
+			for _, spec := range batchSpecs {
+				spec.CreatedFromRaw = true
+				if err := s.UpdateBatchSpec(ctx, spec); err != nil {
+					t.Fatal(err)
+				}
+
+				opts := ListBatchSpecsOpts{ExcludeCreatedFromRawNotOwnedByUser: spec.UserID}
+				have, _, err := s.ListBatchSpecs(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				want := []*btypes.BatchSpec{spec}
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				}
+			}
+		})
 	})
 
 	t.Run("Update", func(t *testing.T) {
 		for _, c := range batchSpecs {
 			c.UserID += 1234
+			c.CreatedFromRaw = false
+			c.AllowUnsupported = false
+			c.AllowIgnored = false
 
 			clock.Add(1 * time.Second)
 
@@ -212,6 +339,39 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 			if have != want {
 				t.Fatalf("have err %v, want %v", have, want)
+			}
+		})
+
+		t.Run("ExcludeCreatedFromRawNotOwnedByUser", func(t *testing.T) {
+			for _, spec := range batchSpecs {
+				opts := GetBatchSpecOpts{ID: spec.ID, ExcludeCreatedFromRawNotOwnedByUser: spec.UserID}
+				have, err := s.GetBatchSpec(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if diff := cmp.Diff(have, spec); diff != "" {
+					t.Fatal(diff)
+				}
+
+				spec.CreatedFromRaw = true
+				if err := s.UpdateBatchSpec(ctx, spec); err != nil {
+					t.Fatal(err)
+				}
+
+				// Confirm that it won't be returned if another user looks at it
+				opts.ExcludeCreatedFromRawNotOwnedByUser += 9999
+				if _, err = s.GetBatchSpec(ctx, opts); err != ErrNoResults {
+					t.Fatalf("have err %v, want %v", err, ErrNoResults)
+				}
+
+				spec.CreatedFromRaw = false
+				if err := s.UpdateBatchSpec(ctx, spec); err != nil {
+					t.Fatal(err)
+				}
+
+				if _, err = s.GetBatchSpec(ctx, opts); err == ErrNoResults {
+					t.Fatalf("unexpected ErrNoResults")
+				}
 			}
 		})
 	})
@@ -274,7 +434,7 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 				t.Fatal(err)
 			}
 
-			count, err := s.CountBatchSpecs(ctx)
+			count, err := s.CountBatchSpecs(ctx, CountBatchSpecsOpts{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -290,11 +450,10 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		overTTL := clock.Now().Add(-btypes.BatchSpecTTL - 1*time.Minute)
 
 		tests := []struct {
-			createdAt             time.Time
-			hasBatchChange        bool
-			hasChangesetSpecs     bool
-			hasBatchSpecExecution bool
-			wantDeleted           bool
+			createdAt         time.Time
+			hasBatchChange    bool
+			hasChangesetSpecs bool
+			wantDeleted       bool
 		}{
 			{createdAt: underTTL, wantDeleted: false},
 			{createdAt: overTTL, wantDeleted: true},
@@ -305,14 +464,11 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			{hasBatchChange: true, hasChangesetSpecs: true, createdAt: underTTL, wantDeleted: false},
 			{hasBatchChange: true, hasChangesetSpecs: true, createdAt: overTTL, wantDeleted: false},
 
-			{hasBatchSpecExecution: true, createdAt: underTTL, wantDeleted: false},
-			{hasBatchSpecExecution: true, createdAt: overTTL, wantDeleted: false},
-
-			{hasBatchChange: true, hasBatchSpecExecution: true, hasChangesetSpecs: true, createdAt: underTTL, wantDeleted: false},
-			{hasBatchChange: true, hasBatchSpecExecution: true, hasChangesetSpecs: true, createdAt: overTTL, wantDeleted: false},
+			{hasBatchChange: true, hasChangesetSpecs: true, createdAt: underTTL, wantDeleted: false},
+			{hasBatchChange: true, hasChangesetSpecs: true, createdAt: overTTL, wantDeleted: false},
 		}
 
-		for _, tc := range tests {
+		for i, tc := range tests {
 			batchSpec := &btypes.BatchSpec{
 				UserID:          1,
 				NamespaceUserID: 1,
@@ -325,12 +481,12 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 			if tc.hasBatchChange {
 				batchChange := &btypes.BatchChange{
-					Name:             "not-blank",
-					InitialApplierID: 1,
-					NamespaceUserID:  1,
-					BatchSpecID:      batchSpec.ID,
-					LastApplierID:    1,
-					LastAppliedAt:    time.Now(),
+					Name:            fmt.Sprintf("not-blank-%d", i),
+					CreatorID:       1,
+					NamespaceUserID: 1,
+					BatchSpecID:     batchSpec.ID,
+					LastApplierID:   1,
+					LastAppliedAt:   time.Now(),
 				}
 				if err := s.CreateBatchChange(ctx, batchChange); err != nil {
 					t.Fatal(err)
@@ -343,16 +499,6 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 					BatchSpecID: batchSpec.ID,
 				}
 				if err := s.CreateChangesetSpec(ctx, changesetSpec); err != nil {
-					t.Fatal(err)
-				}
-			}
-
-			if tc.hasBatchSpecExecution {
-				batchSpecExecution := &btypes.BatchSpecExecution{
-					NamespaceUserID: 1,
-					BatchSpecID:     batchSpec.ID,
-				}
-				if err := s.CreateBatchSpecExecution(ctx, batchSpecExecution); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -375,4 +521,165 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			}
 		}
 	})
+}
+
+func TestStoreGetBatchSpecStats(t *testing.T) {
+	ctx := context.Background()
+	c := &ct.TestClock{Time: timeutil.Now()}
+	minAgo := func(m int) time.Time { return c.Now().Add(-time.Duration(m) * time.Minute) }
+
+	db := database.NewDB(dbtest.NewDB(t))
+	s := NewWithClock(db, &observation.TestContext, nil, c.Now)
+
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
+
+	admin := ct.CreateTestUser(t, db, true)
+
+	var specIDs []int64
+	for _, setup := range []struct {
+		jobs                       []*btypes.BatchSpecWorkspaceExecutionJob
+		additionalWorkspace        int
+		additionalSkippedWorkspace int
+	}{
+		{
+			jobs: []*btypes.BatchSpecWorkspaceExecutionJob{
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(99)},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateCompleted, StartedAt: minAgo(5), FinishedAt: minAgo(2)},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateFailed, StartedAt: minAgo(5), FinishedAt: minAgo(2), Cancel: true},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(10), Cancel: true},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateQueued},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateFailed, StartedAt: minAgo(5), FinishedAt: minAgo(1)},
+			},
+			additionalWorkspace:        1,
+			additionalSkippedWorkspace: 2,
+		},
+		{
+			jobs: []*btypes.BatchSpecWorkspaceExecutionJob{
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(5)},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(55)},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateCompleted, StartedAt: minAgo(5), FinishedAt: minAgo(2)},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateFailed, StartedAt: minAgo(5), FinishedAt: minAgo(2), Cancel: true},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(10), Cancel: true},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(10), Cancel: true},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateQueued},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateFailed, StartedAt: minAgo(5), FinishedAt: minAgo(1)},
+			},
+			additionalWorkspace:        3,
+			additionalSkippedWorkspace: 2,
+		},
+		{
+			jobs:                []*btypes.BatchSpecWorkspaceExecutionJob{},
+			additionalWorkspace: 0,
+		},
+		{
+			jobs: []*btypes.BatchSpecWorkspaceExecutionJob{
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(5)},
+			},
+			additionalWorkspace: 0,
+		},
+	} {
+		spec := &btypes.BatchSpec{
+			Spec:            &batcheslib.BatchSpec{},
+			UserID:          admin.ID,
+			NamespaceUserID: admin.ID,
+		}
+		if err := s.CreateBatchSpec(ctx, spec); err != nil {
+			t.Fatal(err)
+		}
+		specIDs = append(specIDs, spec.ID)
+
+		job := &btypes.BatchSpecResolutionJob{BatchSpecID: spec.ID}
+		if err := s.CreateBatchSpecResolutionJob(ctx, job); err != nil {
+			t.Fatal(err)
+		}
+
+		// Workspaces without execution job
+		for i := 0; i < setup.additionalWorkspace; i++ {
+			ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID}
+			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		// Workspaces without execution job and skipped
+		if setup.additionalSkippedWorkspace > 0 {
+			for i := 0; i < setup.additionalSkippedWorkspace; i++ {
+				ws := &btypes.BatchSpecWorkspace{
+					BatchSpecID: spec.ID,
+					RepoID:      repo.ID,
+					Skipped:     true,
+				}
+				if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+					t.Fatal(err)
+				}
+			}
+		}
+
+		// Workspaces with execution jobs
+		for _, job := range setup.jobs {
+			ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID}
+			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+				t.Fatal(err)
+			}
+
+			// We use a clone so that CreateBatchSpecWorkspaceExecutionJob doesn't overwrite the fields we set
+
+			clone := *job
+			clone.BatchSpecWorkspaceID = ws.ID
+			if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, &clone); err != nil {
+				t.Fatal(err)
+			}
+
+			job.ID = clone.ID
+			ct.UpdateJobState(t, ctx, s, job)
+		}
+
+	}
+	have, err := s.GetBatchSpecStats(ctx, specIDs)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := map[int64]btypes.BatchSpecStats{
+		specIDs[0]: {
+			StartedAt:         minAgo(99),
+			FinishedAt:        minAgo(1),
+			Workspaces:        9,
+			SkippedWorkspaces: 2,
+			Executions:        6,
+			Queued:            1,
+			Processing:        1,
+			Completed:         1,
+			Canceling:         1,
+			Canceled:          1,
+			Failed:            1,
+		},
+		specIDs[1]: {
+			StartedAt:         minAgo(55),
+			FinishedAt:        minAgo(1),
+			Workspaces:        13,
+			SkippedWorkspaces: 2,
+			Executions:        8,
+			Queued:            1,
+			Processing:        2,
+			Completed:         1,
+			Canceling:         2,
+			Canceled:          1,
+			Failed:            1,
+		},
+		specIDs[2]: {
+			StartedAt:  time.Time{},
+			FinishedAt: time.Time{},
+		},
+		specIDs[3]: {
+			StartedAt:  minAgo(5),
+			FinishedAt: time.Time{},
+			Workspaces: 1,
+			Executions: 1,
+			Processing: 1,
+		},
+	}
+	if diff := cmp.Diff(have, want); diff != "" {
+		t.Errorf("unexpected batch spec stats:\n%s", diff)
+	}
 }

@@ -17,9 +17,22 @@ export interface TelemetryService {
      */
     log(eventName: string, eventProperties?: any, publicArgument?: any): void
     /**
+     * @deprecated use logPageView instead
+     *
      * Log a pageview event (by sending it to the server).
      */
     logViewEvent(eventName: string, eventProperties?: any, publicArgument?: any): void
+    /**
+     * Log a pageview event (by sending it to the server).
+     * Adheres to the new event naming policy
+     */
+    logPageView(eventName: string, eventProperties?: any, publicArgument?: any): void
+    /**
+     * Listen for event logs
+     *
+     * @returns a cleanup/removeEventListener function
+     */
+    addEventLogListener?(callback: (eventName: string) => void): () => void
 }
 
 /**
@@ -30,6 +43,9 @@ export const NOOP_TELEMETRY_SERVICE: TelemetryService = {
         /* noop */
     },
     logViewEvent: () => {
+        /* noop */
+    },
+    logPageView: () => {
         /* noop */
     },
 }

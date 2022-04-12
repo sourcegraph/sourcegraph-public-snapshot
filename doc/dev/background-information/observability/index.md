@@ -1,7 +1,7 @@
 # Developing observability
 
 This documentation is for generalized, usecase-agnostic development of Sourcegraph's observability.
-Sourcegraph employees should also refer to the [handbook's observability section](https://about.sourcegraph.com/handbook/engineering/observability) for Sourcegraph-specific documentation.
+Sourcegraph employees should also refer to the [handbook's observability section](https://handbook.sourcegraph.com/engineering/observability) for Sourcegraph-specific documentation.
 
 > NOTE: For how to *use* Sourcegraph's observability and an overview of our observability features, refer to the [observability for site administrators documentation](../../../admin/observability/index.md).
 
@@ -16,8 +16,8 @@ Observability at Sourcegraph includes:
 
 ## Concepts
 
-- [Sourcegraph monitoring pillars](https://about.sourcegraph.com/handbook/engineering/observability/monitoring_pillars)
-- [Sourcegraph monitoring architecture](https://about.sourcegraph.com/handbook/engineering/observability/monitoring_architecture)
+- [Sourcegraph monitoring pillars](https://handbook.sourcegraph.com/engineering/observability/monitoring_pillars)
+- [Sourcegraph monitoring architecture](https://handbook.sourcegraph.com/engineering/observability/monitoring_architecture)
 
 ## Guides
 

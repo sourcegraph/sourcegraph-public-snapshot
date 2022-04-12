@@ -1,18 +1,21 @@
-import { boolean, select } from '@storybook/addon-knobs'
-import { Meta } from '@storybook/react'
-import SearchIcon from 'mdi-react/SearchIcon'
 import React from 'react'
+
+import { boolean, select } from '@storybook/addon-knobs'
+import { Meta, Story } from '@storybook/react'
+import SearchIcon from 'mdi-react/SearchIcon'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { Button } from '../Button'
+import { ButtonGroup } from '../ButtonGroup'
 import { BUTTON_VARIANTS, BUTTON_SIZES } from '../constants'
 
 import { ButtonVariants } from './ButtonVariants'
 
-const Story: Meta = {
+const config: Meta = {
     title: 'wildcard/Button',
+    component: Button,
 
     decorators: [
         story => (
@@ -22,18 +25,24 @@ const Story: Meta = {
 
     parameters: {
         component: Button,
-        design: {
-            type: 'figma',
-            name: 'Figma',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A2514',
-        },
+        design: [
+            {
+                type: 'figma',
+                name: 'Figma Light',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=908%3A2513',
+            },
+            {
+                type: 'figma',
+                name: 'Figma Dark',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=908%3A5794',
+            },
+        ],
     },
 }
 
-export default Story
+export default config
 
-export const Simple = () => (
+export const Simple: Story = () => (
     <Button
         variant={select('Variant', BUTTON_VARIANTS, 'primary')}
         size={select('Size', BUTTON_SIZES, undefined)}
@@ -44,8 +53,8 @@ export const Simple = () => (
     </Button>
 )
 
-export const AllButtons = () => (
-    <>
+export const AllButtons: Story = () => (
+    <div className="pb-3">
         <h1>Buttons</h1>
         <h2>Variants</h2>
         <ButtonVariants variants={BUTTON_VARIANTS} />
@@ -63,7 +72,6 @@ export const AllButtons = () => (
         <Button
             variant="secondary"
             as="a"
-            // @ts-expect-error (providing `as` changes possible props)
             href="https://example.com"
             target="_blank"
             rel="noopener noreferrer"
@@ -73,5 +81,40 @@ export const AllButtons = () => (
         </Button>
         <p>Buttons can be made to look like links.</p>
         <ButtonVariants variants={['link']} />
-    </>
+        <h2>Button Display</h2>
+        <Button className="mb-3" size="sm" variant="secondary" display="inline">
+            Inline
+        </Button>
+        <Button size="sm" variant="secondary" display="block">
+            Block
+        </Button>
+
+        <h2>Button Group</h2>
+        <ButtonGroup className="mb-3">
+            <Button variant="secondary" display="block">
+                Grouped
+            </Button>
+            <Button variant="secondary" display="block">
+                Grouped
+            </Button>
+            <Button variant="secondary" display="block">
+                Grouped
+            </Button>
+        </ButtonGroup>
+        <h2>Tooltips</h2>
+        <p>Buttons can have tooltips.</p>
+        <Button variant="primary" className="mr-3" data-tooltip="Some extra context on the button.">
+            Enabled
+        </Button>
+        <Button variant="primary" disabled={true} data-tooltip="Some extra context on why the button is disabled.">
+            Disabled
+        </Button>
+    </div>
 )
+
+AllButtons.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+        disableSnapshot: false,
+    },
+}

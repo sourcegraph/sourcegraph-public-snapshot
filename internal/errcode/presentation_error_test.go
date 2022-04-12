@@ -3,7 +3,7 @@ package errcode
 import (
 	"testing"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestPresentationError(t *testing.T) {

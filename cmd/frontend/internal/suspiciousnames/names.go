@@ -4,9 +4,8 @@ package suspiciousnames
 import (
 	"strings"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // CheckNameAllowedForUserOrOrganization returns a non-nil error if the desired username or

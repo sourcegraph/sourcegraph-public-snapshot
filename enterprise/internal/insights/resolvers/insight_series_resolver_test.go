@@ -12,31 +12,26 @@ import (
 	"github.com/hexops/autogold"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 // TestResolver_InsightSeries tests that the InsightSeries GraphQL resolver works.
 func TestResolver_InsightSeries(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	testSetup := func(t *testing.T) (context.Context, [][]graphqlbackend.InsightSeriesResolver, *store.MockInterface, func()) {
+	testSetup := func(t *testing.T) (context.Context, [][]graphqlbackend.InsightSeriesResolver, *store.MockInterface) {
 		// Setup the GraphQL resolver.
 		ctx := actor.WithInternalActor(context.Background())
 		now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond)
 		clock := func() time.Time { return now }
-		timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-		postgres := dbtesting.GetDB(t)
-		resolver := newWithClock(timescale, postgres, clock)
+		insightsDB := dbtest.NewInsightsDB(t)
+		postgres := dbtest.NewDB(t)
+		resolver := newWithClock(insightsDB, postgres, clock)
 
 		// Create a mock store, delegating any un-mocked methods to the DB store.
-		dbStore := resolver.insightsStore
+		dbStore := resolver.timeSeriesStore
 		mockStore := store.NewMockInterfaceFrom(dbStore)
-		resolver.insightsStore = mockStore
+		resolver.timeSeriesStore = mockStore
 
 		insightMetadataStore := store.NewMockInsightMetadataStore()
 		insightMetadataStore.GetMappedFunc.SetDefaultReturn([]types.Insight{
@@ -46,18 +41,17 @@ func TestResolver_InsightSeries(t *testing.T) {
 				Description: "desc1",
 				Series: []types.InsightViewSeries{
 					{
-						UniqueID:              "unique1",
-						SeriesID:              "1234567",
-						Title:                 "title1",
-						Description:           "desc1",
-						Query:                 "query1",
-						CreatedAt:             now,
-						OldestHistoricalAt:    now,
-						LastRecordedAt:        now,
-						NextRecordingAfter:    now,
-						RecordingIntervalDays: 1,
-						Label:                 "label1",
-						Stroke:                "color1",
+						UniqueID:           "unique1",
+						SeriesID:           "1234567",
+						Title:              "title1",
+						Description:        "desc1",
+						Query:              "query1",
+						CreatedAt:          now,
+						OldestHistoricalAt: now,
+						LastRecordedAt:     now,
+						NextRecordingAfter: now,
+						Label:              "label1",
+						LineColor:          "color1",
 					},
 				},
 			},
@@ -67,25 +61,22 @@ func TestResolver_InsightSeries(t *testing.T) {
 		// Create the insights connection resolver and query series.
 		conn, err := resolver.Insights(ctx, nil)
 		if err != nil {
-			cleanup()
 			t.Fatal(err)
 		}
 
 		nodes, err := conn.Nodes(ctx)
 		if err != nil {
-			cleanup()
 			t.Fatal(err)
 		}
 		var series [][]graphqlbackend.InsightSeriesResolver
 		for _, node := range nodes {
 			series = append(series, node.Series())
 		}
-		return ctx, series, mockStore, cleanup
+		return ctx, series, mockStore
 	}
 
 	t.Run("Points", func(t *testing.T) {
-		ctx, insights, mock, cleanup := testSetup(t)
-		defer cleanup()
+		ctx, insights, mock := testSetup(t)
 		autogold.Want("insights length", int(1)).Equal(t, len(insights))
 
 		autogold.Want("insights[0].length", int(1)).Equal(t, len(insights[0]))
@@ -121,6 +112,6 @@ func TestResolver_InsightSeries(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("insights[0][0].Points mocked", "[{p:{SeriesID: Time:{wall:0 ext:63271811045 loc:<nil>} Value:1 Metadata:[]}} {p:{SeriesID: Time:{wall:0 ext:63271811045 loc:<nil>} Value:2 Metadata:[]}} {p:{SeriesID: Time:{wall:0 ext:63271811045 loc:<nil>} Value:3 Metadata:[]}}]").Equal(t, fmt.Sprintf("%+v", points))
+		autogold.Want("insights[0][0].Points mocked", "[{p:{SeriesID: Time:{wall:0 ext:63271811045 loc:<nil>} Value:1 Metadata:[] Capture:<nil>}} {p:{SeriesID: Time:{wall:0 ext:63271811045 loc:<nil>} Value:2 Metadata:[] Capture:<nil>}} {p:{SeriesID: Time:{wall:0 ext:63271811045 loc:<nil>} Value:3 Metadata:[] Capture:<nil>}}]").Equal(t, fmt.Sprintf("%+v", points))
 	})
 }

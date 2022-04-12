@@ -3,13 +3,13 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type userEventLogResolver struct {
-	db    dbutil.DB
+	db    database.DB
 	event *types.Event
 }
 
@@ -34,7 +34,9 @@ func (s *userEventLogResolver) AnonymousUserID() string {
 }
 
 func (s *userEventLogResolver) URL() string {
-	return s.event.URL
+	// 🚨 SECURITY: It is important to sanitize event URL before responding to the
+	// client to prevent malicious data being rendered in browser.
+	return database.SanitizeEventURL(s.event.URL)
 }
 
 func (s *userEventLogResolver) Source() string {

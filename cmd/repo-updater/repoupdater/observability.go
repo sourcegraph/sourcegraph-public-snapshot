@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go"
@@ -13,18 +12,19 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // HandlerMetrics encapsulates the Prometheus metrics of an http.Handler.
 type HandlerMetrics struct {
-	ServeHTTP *metrics.OperationMetrics
+	ServeHTTP *metrics.REDMetrics
 }
 
 // NewHandlerMetrics returns HandlerMetrics that need to be registered
 // in a Prometheus registry.
 func NewHandlerMetrics() HandlerMetrics {
 	return HandlerMetrics{
-		ServeHTTP: &metrics.OperationMetrics{
+		ServeHTTP: &metrics.REDMetrics{
 			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 				Name: "src_repoupdater_http_handler_duration_seconds",
 				Help: "Time spent handling an HTTP request",

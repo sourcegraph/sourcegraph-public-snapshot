@@ -4,7 +4,7 @@ set -euf -o pipefail
 
 [ -n "$OUTPUT" ]
 
-version=1.17.1
+version=1.24.0
 suffix="${version}-$(go env GOOS)-$(go env GOARCH)"
 target="${OUTPUT}/usr/local/bin/jaeger"
 url="https://github.com/jaegertracing/jaeger/releases/download/v${version}/jaeger-${suffix}.tar.gz"

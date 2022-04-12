@@ -1,18 +1,19 @@
 import { PublishedStoreItem } from '@storybook/client-api'
 import { toId } from '@storybook/csf'
 
-import { createChromaticStory, CreateChromaticStoryOptions } from './create-chromatic-story'
+import { createChromaticStory } from './create-chromatic-story'
 import { storyStore } from './story-store'
 
-interface AddStoryOptions extends Pick<CreateChromaticStoryOptions, 'isDarkModeEnabled'> {
+interface AddStoryOptions {
     storeItem: PublishedStoreItem
 }
 
 export const addStory = (options: AddStoryOptions): void => {
     const {
         storeItem: { name, kind, storyFn, parameters },
-        isDarkModeEnabled,
     } = options
+
+    const isDarkModeEnabled = Boolean(parameters?.chromatic?.enableDarkMode)
 
     // Add suffix to the story name based on theme options:
     // 1. Default + Dark:   "Text" -> "Text 🌚"

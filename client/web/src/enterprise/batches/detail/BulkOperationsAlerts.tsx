@@ -1,9 +1,10 @@
-import * as H from 'history'
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import * as H from 'history'
+
+import { pluralize } from '@sourcegraph/common'
 import { BulkOperationState } from '@sourcegraph/shared/src/graphql-operations'
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { Link } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert, isAlertDismissed } from '../../../components/DismissibleAlert'
 import { ActiveBulkOperationsConnectionFields } from '../../../graphql-operations'
@@ -39,10 +40,7 @@ export const BulkOperationsAlerts: React.FunctionComponent<BulkOperationsAlertsP
     if (latestProcessingNode && !isAlertDismissed(`bulkOperation-processing-${latestProcessingNode.id}`)) {
         const processingCount = bulkOperations.nodes.filter(node => node.state === BulkOperationState.PROCESSING).length
         return (
-            <DismissibleAlert
-                className="alert-info"
-                partialStorageKey={`bulkOperation-processing-${latestProcessingNode.id}`}
-            >
+            <DismissibleAlert variant="info" partialStorageKey={`bulkOperation-processing-${latestProcessingNode.id}`}>
                 <span>
                     {processingCount} bulk {pluralize('operation', processingCount)}{' '}
                     {pluralize('is', processingCount, 'are')} currently running. Click the{' '}
@@ -56,7 +54,7 @@ export const BulkOperationsAlerts: React.FunctionComponent<BulkOperationsAlertsP
     if (latestFailedNode && !isAlertDismissed(`bulkOperation-failed-${latestFailedNode.id}`)) {
         const failedCount = bulkOperations.nodes.filter(node => node.state === BulkOperationState.FAILED).length
         return (
-            <DismissibleAlert className="alert-info" partialStorageKey={`bulkOperation-failed-${latestFailedNode.id}`}>
+            <DismissibleAlert variant="info" partialStorageKey={`bulkOperation-failed-${latestFailedNode.id}`}>
                 <span>
                     {failedCount} bulk {pluralize('operation', failedCount)} {pluralize('has', failedCount, 'have')}{' '}
                     recently failed running. Click the <Link to="?tab=bulkoperations">bulk operations tab</Link> to
@@ -69,10 +67,7 @@ export const BulkOperationsAlerts: React.FunctionComponent<BulkOperationsAlertsP
     if (latestCompleteNode && !isAlertDismissed(`bulkOperation-completed-${latestCompleteNode.id}`)) {
         const completeCount = bulkOperations.nodes.filter(node => node.state === BulkOperationState.COMPLETED).length
         return (
-            <DismissibleAlert
-                className="alert-info"
-                partialStorageKey={`bulkOperation-completed-${latestCompleteNode.id}`}
-            >
+            <DismissibleAlert variant="info" partialStorageKey={`bulkOperation-completed-${latestCompleteNode.id}`}>
                 <span>
                     {completeCount} bulk {pluralize('operation', completeCount)}{' '}
                     {pluralize('has', completeCount, 'have')} recently finished running. Click the{' '}

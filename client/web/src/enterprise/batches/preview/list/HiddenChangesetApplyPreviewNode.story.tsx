@@ -1,11 +1,13 @@
-import { storiesOf } from '@storybook/react'
-import classNames from 'classnames'
 import React from 'react'
 
+import { storiesOf } from '@storybook/react'
+import classNames from 'classnames'
+
+import { WebStory } from '../../../../components/WebStory'
 import { ChangesetSpecType, HiddenChangesetApplyPreviewFields } from '../../../../graphql-operations'
-import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
 import { HiddenChangesetApplyPreviewNode } from './HiddenChangesetApplyPreviewNode'
+
 import styles from './PreviewList.module.scss'
 
 const { add } = storiesOf('web/batches/preview/HiddenChangesetApplyPreviewNode', module).addDecorator(story => (
@@ -39,10 +41,10 @@ export const hiddenChangesetApplyPreviewStories: Record<string, HiddenChangesetA
 
 for (const storyName of Object.keys(hiddenChangesetApplyPreviewStories)) {
     add(storyName, () => (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <HiddenChangesetApplyPreviewNode {...props} node={hiddenChangesetApplyPreviewStories[storyName]} />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     ))
 }

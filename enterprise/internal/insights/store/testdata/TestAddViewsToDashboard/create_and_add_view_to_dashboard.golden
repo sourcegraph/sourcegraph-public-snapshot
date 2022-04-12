@@ -1,0 +1,9 @@
+&types.Dashboard{
+	ID: 1, Title: "test dashboard 1", InsightIDs: []string{
+		"view1234567",
+		"view1234567-2",
+	},
+	UserIdGrants: []int64{},
+	OrgIdGrants:  []int64{},
+	GlobalGrant:  true,
+}

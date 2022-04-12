@@ -5,37 +5,44 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/cockroachdb/errors"
+	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/hexops/autogold"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const exampleCommitSHA1 = "1234567890123456789012345678901234567890"
 
 func TestRepository_Commit(t *testing.T) {
-	resetMocks()
-	database.Mocks.Repos.MockGetByName(t, "github.com/gorilla/mux", 2)
 	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		if repo.ID != 2 || rev != "abc" {
-			t.Error("wrong arguments to ResolveRev")
-		}
+		assert.Equal(t, api.RepoID(2), repo.ID)
+		assert.Equal(t, "abc", rev)
 		return exampleCommitSHA1, nil
 	}
-	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &git.Commit{ID: exampleCommitSHA1})
+	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &gitdomain.Commit{ID: exampleCommitSHA1})
+	defer func() {
+		backend.Mocks = backend.MockServices{}
+	}()
+
+	repos := database.NewMockRepoStore()
+	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
+
+	db := database.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(repos)
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 				{
 					repository(name: "github.com/gorilla/mux") {
@@ -59,7 +66,8 @@ func TestRepository_Commit(t *testing.T) {
 }
 
 func TestRepositoryHydration(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	t.Parallel()
+
 	makeRepos := func() (*types.Repo, *types.Repo) {
 		const id = 42
 		name := fmt.Sprintf("repo-%d", id)
@@ -86,13 +94,15 @@ func TestRepositoryHydration(t *testing.T) {
 
 	t.Run("hydrated without errors", func(t *testing.T) {
 		minimalRepo, hydratedRepo := makeRepos()
-		database.Mocks.Repos.Get = func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
-			return hydratedRepo, nil
-		}
-		defer func() { database.Mocks = database.MockStores{} }()
+
+		rs := database.NewMockRepoStore()
+		rs.GetFunc.SetDefaultReturn(hydratedRepo, nil)
+		db := database.NewMockDB()
+		db.ReposFunc.SetDefaultReturn(rs)
 
 		repoResolver := NewRepositoryResolver(db, minimalRepo)
 		assertRepoResolverHydrated(ctx, t, repoResolver, hydratedRepo)
+		mockrequire.CalledOnce(t, rs.GetFunc)
 	})
 
 	t.Run("hydration results in errors", func(t *testing.T) {
@@ -100,30 +110,20 @@ func TestRepositoryHydration(t *testing.T) {
 
 		dbErr := errors.New("cannot load repo")
 
-		database.Mocks.Repos.Get = func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
-			return nil, dbErr
-		}
-		defer func() { database.Mocks = database.MockStores{} }()
+		rs := database.NewMockRepoStore()
+		rs.GetFunc.SetDefaultReturn(nil, dbErr)
+		db := database.NewMockDB()
+		db.ReposFunc.SetDefaultReturn(rs)
 
 		repoResolver := NewRepositoryResolver(db, minimalRepo)
 		_, err := repoResolver.Description(ctx)
-		if err == nil {
-			t.Fatal("err is unexpected nil")
-		}
-
-		if err != dbErr {
-			t.Fatalf("wrong err. want=%q, have=%q", dbErr, err)
-		}
+		require.ErrorIs(t, err, dbErr)
 
 		// Another call to make sure err does not disappear
 		_, err = repoResolver.URI(ctx)
-		if err == nil {
-			t.Fatal("err is unexpected nil")
-		}
+		require.ErrorIs(t, err, dbErr)
 
-		if err != dbErr {
-			t.Fatalf("wrong err. want=%q, have=%q", dbErr, err)
-		}
+		mockrequire.CalledOnce(t, rs.GetFunc)
 	})
 }
 
@@ -183,7 +183,7 @@ func TestRepository_DefaultBranch(t *testing.T) {
 		},
 		{
 			name:           "clone in progress",
-			symbolicRefErr: &vcs.RepoNotExistError{CloneInProgress: true},
+			symbolicRefErr: &gitdomain.RepoNotExistError{CloneInProgress: true},
 			// Expect it to not fail and not return a resolver.
 			wantBranch: nil,
 			wantErr:    nil,
@@ -197,7 +197,7 @@ func TestRepository_DefaultBranch(t *testing.T) {
 		{
 			name:               "default branch doesn't exist",
 			symbolicRef:        "refs/heads/main",
-			resolveRevisionErr: &gitserver.RevisionNotFoundError{Repo: "repo", Spec: "refs/heads/main"},
+			resolveRevisionErr: &gitdomain.RevisionNotFoundError{Repo: "repo", Spec: "refs/heads/main"},
 			// Expect it to not fail and not return a resolver.
 			wantBranch: nil,
 			wantErr:    nil,

@@ -2,192 +2,34 @@ package symbol
 
 import (
 	"context"
-	"fmt"
-	"regexp"
-	"regexp/syntax"
-	"sort"
+	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
 	"time"
 
-	"github.com/cockroachdb/errors"
+	"github.com/RoaringBitmap/roaring"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
-	"github.com/neelance/parallel"
-	"github.com/opentracing/opentracing-go/ext"
+	"github.com/grafana/regexp"
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const DefaultSymbolLimit = 100
 
-var MockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, stats *streaming.Stats, err error)
-
-// Search searches the given repos in parallel for symbols matching the given search query
-// it can be used for both search suggestions and search results
-//
-// May return partial results and an error
-func Search(ctx context.Context, args *search.TextParameters, limit int, stream streaming.Sender) (err error) {
-	if MockSearchSymbols != nil {
-		results, stats, err := MockSearchSymbols(ctx, args, limit)
-		stream.Send(streaming.SearchEvent{
-			Results: results,
-			Stats:   stats.Deref(),
-		})
-		return err
-	}
-
-	tr, ctx := trace.New(ctx, "Search symbols", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, len(args.Repos)))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	ctx, stream, cancel := streaming.WithLimit(ctx, stream, limit)
-	defer cancel()
-
-	request, err := zoektutil.NewIndexedSearchRequest(ctx, args, search.SymbolRequest, zoektutil.MissingRepoRevStatus(stream))
-	if err != nil {
-		return err
-	}
-
-	run := parallel.NewRun(conf.SearchSymbolsParallelism())
-
-	if args.Mode != search.SearcherOnly {
-		run.Acquire()
-		goroutine.Go(func() {
-			defer run.Release()
-			err := request.Search(ctx, stream)
-			if err != nil {
-				tr.LogFields(otlog.Error(err))
-				// Only record error if we haven't timed out.
-				if ctx.Err() == nil {
-					cancel()
-					run.Error(err)
-				}
-			}
-		})
-	}
-
-	for _, repoRevs := range request.UnindexedRepos() {
-		repoRevs := repoRevs
-		if ctx.Err() != nil {
-			break
-		}
-		if len(repoRevs.RevSpecs()) == 0 {
-			continue
-		}
-		run.Acquire()
-		goroutine.Go(func() {
-			defer run.Release()
-
-			matches, err := searchInRepo(ctx, repoRevs, args.PatternInfo, limit)
-			stats, err := searchrepos.HandleRepoSearchResult(repoRevs, len(matches) > limit, false, err)
-			stream.Send(streaming.SearchEvent{
-				Results: matches,
-				Stats:   stats,
-			})
-			if err != nil {
-				tr.LogFields(otlog.String("repo", string(repoRevs.Repo.Name)), otlog.Error(err))
-				// Only record error if we haven't timed out.
-				if ctx.Err() == nil {
-					cancel()
-					run.Error(err)
-				}
-			}
-		})
-	}
-
-	return run.Wait()
-}
-
-func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo")
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.LogFields(otlog.Error(err))
-		}
-		span.Finish()
-	}()
-	span.SetTag("repo", string(repoRevs.Repo.Name))
-
-	inputRev := repoRevs.RevSpecs()[0]
-	span.SetTag("rev", inputRev)
-	// Do not trigger a repo-updater lookup (e.g.,
-	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
-	// down by a lot (if we're looping over many repos). This means that it'll fail if a
-	// repo is not on gitserver.
-	commitID, err := git.ResolveRevision(ctx, repoRevs.GitserverRepo(), inputRev, git.ResolveRevisionOptions{})
-	if err != nil {
-		return nil, err
-	}
-	span.SetTag("commit", string(commitID))
-
-	symbols, err := backend.Symbols.ListTags(ctx, search.SymbolsParameters{
-		Repo:            repoRevs.Repo.Name,
-		CommitID:        commitID,
-		Query:           patternInfo.Pattern,
-		IsCaseSensitive: patternInfo.IsCaseSensitive,
-		IsRegExp:        patternInfo.IsRegExp,
-		IncludePatterns: patternInfo.IncludePatterns,
-		ExcludePattern:  patternInfo.ExcludePattern,
-		// Ask for limit + 1 so we can detect whether there are more results than the limit.
-		First: limit + 1,
-	})
-
-	// All symbols are from the same repo, so we can just partition them by path
-	// to build file matches
-	symbolsByPath := make(map[string][]*result.Symbol)
-	for _, symbol := range symbols {
-		cur := symbolsByPath[symbol.Path]
-		symbolsByPath[symbol.Path] = append(cur, &symbol)
-	}
-
-	// Create file matches from partitioned symbols
-	matches := make([]result.Match, 0, len(symbolsByPath))
-	for path, symbols := range symbolsByPath {
-		file := result.File{
-			Path:     path,
-			Repo:     repoRevs.Repo,
-			CommitID: commitID,
-			InputRev: &inputRev,
-		}
-
-		symbolMatches := make([]*result.SymbolMatch, 0, len(symbols))
-		for _, symbol := range symbols {
-			symbolMatches = append(symbolMatches, &result.SymbolMatch{
-				File:   &file,
-				Symbol: *symbol,
-			})
-		}
-
-		matches = append(matches, &result.FileMatch{
-			Symbols: symbolMatches,
-			File:    file,
-		})
-	}
-
-	// Make the results deterministic
-	sort.Sort(result.Matches(matches))
-	return matches, err
-}
-
 // indexedSymbols checks to see if Zoekt has indexed symbols information for a
 // repository at a specific commit. If it has it returns the branch name (for
 // use when querying zoekt). Otherwise an empty string is returned.
-func indexedSymbolsBranch(ctx context.Context, repo *types.RepoName, commit string) string {
+func indexedSymbolsBranch(ctx context.Context, repo *types.MinimalRepo, commit string) string {
 	z := search.Indexed()
 	if z == nil {
 		return ""
@@ -214,7 +56,7 @@ func indexedSymbolsBranch(ctx context.Context, repo *types.RepoName, commit stri
 	return ""
 }
 
-func searchZoekt(ctx context.Context, repoName types.RepoName, commitID api.CommitID, inputRev *string, branch string, queryString *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
+func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, branch string, queryString *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
 	raw := *queryString
 	if raw == "" {
 		raw = ".*"
@@ -239,8 +81,8 @@ func searchZoekt(ctx context.Context, repoName types.RepoName, commitID api.Comm
 	}
 
 	ands := []zoektquery.Q{
-		&zoektquery.RepoBranches{Set: map[string][]string{
-			string(repoName.Name): {branch},
+		&zoektquery.BranchesRepos{List: []zoektquery.BranchRepos{
+			{Branch: branch, Repos: roaring.BitmapOf(uint32(repoName.ID))},
 		}},
 		&zoektquery.Symbol{Expr: query},
 	}
@@ -290,6 +132,7 @@ func searchZoekt(ctx context.Context, repoName types.RepoName, commitID api.Comm
 				res = append(res, result.NewSymbolMatch(
 					newFile,
 					l.LineNumber,
+					-1, // -1 means infer the column
 					m.SymbolInfo.Sym,
 					m.SymbolInfo.Kind,
 					m.SymbolInfo.Parent,
@@ -304,7 +147,7 @@ func searchZoekt(ctx context.Context, repoName types.RepoName, commitID api.Comm
 	return
 }
 
-func Compute(ctx context.Context, repoName types.RepoName, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
+func Compute(ctx context.Context, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
 	// TODO(keegancsmith) we should be able to use indexedSearchRequest here
 	// and remove indexedSymbolsBranch.
 	if branch := indexedSymbolsBranch(ctx, &repoName, string(commitID)); branch != "" {
@@ -359,13 +202,12 @@ func Compute(ctx context.Context, repoName types.RepoName, commitID api.CommitID
 
 // GetMatchAtLineCharacter retrieves the shortest matching symbol (if exists) defined
 // at a specific line number and character offset in the provided file.
-func GetMatchAtLineCharacter(ctx context.Context, repo types.RepoName, commitID api.CommitID, filePath string, line int, character int) (*result.SymbolMatch, error) {
+func GetMatchAtLineCharacter(ctx context.Context, repo types.MinimalRepo, commitID api.CommitID, filePath string, line int, character int) (*result.SymbolMatch, error) {
 	// Should be large enough to include all symbols from a single file
 	first := int32(999999)
 	emptyString := ""
 	includePatterns := []string{regexp.QuoteMeta(filePath)}
 	symbolMatches, err := Compute(ctx, repo, commitID, &emptyString, &emptyString, &first, &includePatterns)
-
 	if err != nil {
 		return nil, err
 	}
@@ -386,4 +228,35 @@ func limitOrDefault(first *int32) int {
 		return DefaultSymbolLimit
 	}
 	return int(*first)
+}
+
+type RepoUniverseSymbolSearch struct {
+	GlobalZoektQuery *zoektutil.GlobalZoektQuery
+	ZoektArgs        *search.ZoektParameters
+	RepoOptions      search.RepoOptions
+}
+
+func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
+	defer func() { finish(alert, err) }()
+
+	userPrivateRepos := repos.PrivateReposForActor(ctx, clients.DB, s.RepoOptions)
+	s.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
+	s.ZoektArgs.Query = s.GlobalZoektQuery.Generate()
+
+	// always search for symbols in indexed repositories when searching the repo universe.
+	err = zoektutil.DoZoektSearchGlobal(ctx, clients.Zoekt, s.ZoektArgs, stream)
+	if err != nil {
+		tr.LogFields(otlog.Error(err))
+		// Only record error if we haven't timed out.
+		if ctx.Err() == nil {
+			return nil, err
+		}
+	}
+
+	return nil, nil
+}
+
+func (*RepoUniverseSymbolSearch) Name() string {
+	return "RepoUniverseSymbolSearch"
 }

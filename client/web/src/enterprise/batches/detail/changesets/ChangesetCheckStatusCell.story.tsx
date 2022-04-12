@@ -1,9 +1,10 @@
-import { storiesOf } from '@storybook/react'
-import { capitalize } from 'lodash'
 import React from 'react'
 
+import { storiesOf } from '@storybook/react'
+import { capitalize } from 'lodash'
+
+import { WebStory } from '../../../../components/WebStory'
 import { ChangesetCheckState } from '../../../../graphql-operations'
-import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
 import { ChangesetCheckStatusCell } from './ChangesetCheckStatusCell'
 
@@ -13,6 +14,6 @@ const { add } = storiesOf('web/batches/ChangesetCheckStatusCell', module).addDec
 
 for (const state of Object.values(ChangesetCheckState)) {
     add(capitalize(state), () => (
-        <EnterpriseWebStory>{props => <ChangesetCheckStatusCell {...props} checkState={state} />}</EnterpriseWebStory>
+        <WebStory>{props => <ChangesetCheckStatusCell {...props} checkState={state} />}</WebStory>
     ))
 }

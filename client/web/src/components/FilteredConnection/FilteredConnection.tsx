@@ -1,6 +1,7 @@
+import * as React from 'react'
+
 import * as H from 'history'
 import { uniq } from 'lodash'
-import * as React from 'react'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import {
     catchError,
@@ -18,7 +19,7 @@ import {
     share,
 } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 
 import { ConnectionNodes, ConnectionNodesState, ConnectionNodesDisplayProps, ConnectionProps } from './ConnectionNodes'
 import { Connection, ConnectionQueryArguments } from './ConnectionType'
@@ -26,7 +27,7 @@ import { QUERY_KEY } from './constants'
 import { FilteredConnectionFilter, FilteredConnectionFilterValue } from './FilterControl'
 import { ConnectionError, ConnectionLoading, ConnectionForm, ConnectionContainer } from './ui'
 import type { ConnectionFormProps } from './ui/ConnectionForm'
-import { getFilterFromURL, getUrlQuery, parseQueryInt } from './utils'
+import { getFilterFromURL, getUrlQuery, parseQueryInt, hasID } from './utils'
 
 /**
  * Fields that belong in FilteredConnectionProps and that don't depend on the type parameters. These are the fields
@@ -44,6 +45,9 @@ interface FilteredConnectionDisplayProps extends ConnectionNodesDisplayProps, Co
 
     /** Whether to display it more compactly. */
     compact?: boolean
+
+    /** Whether to display centered summary. */
+    withCenteredSummary?: boolean
 
     /**
      * An observable that upon emission causes the connection to refresh the data (by calling queryConnection).
@@ -294,21 +298,30 @@ export class FilteredConnection<
                     }),
                     scan<PartialStateUpdate & { shouldRefresh: boolean }, PartialStateUpdate & { previousPage: N[] }>(
                         ({ previousPage }, { shouldRefresh, connectionOrError, ...rest }) => {
+                            // Set temp variable in case we update its nodes. We cannot directly update connectionOrError.nodes as they are read-only props.
+                            let temporaryConnection: C | ErrorLike | undefined = connectionOrError
                             let nodes: N[] = previousPage
                             let after: string | undefined
 
                             if (this.props.cursorPaging && connectionOrError && !isErrorLike(connectionOrError)) {
-                                if (!shouldRefresh) {
-                                    connectionOrError.nodes = previousPage.concat(connectionOrError.nodes)
-                                }
+                                nodes = !shouldRefresh
+                                    ? [...previousPage, ...connectionOrError.nodes]
+                                    : connectionOrError.nodes
+                                // Deduplicate any elements that occur between pages. This can happen as results are added during pagination.
+                                nodes = [
+                                    ...new Map(
+                                        nodes.map((node, index) => [hasID(node) ? node.id : index, node])
+                                    ).values(),
+                                ]
 
-                                const pageInfo = connectionOrError.pageInfo
-                                nodes = connectionOrError.nodes
+                                temporaryConnection = { ...connectionOrError, nodes }
+
+                                const pageInfo = temporaryConnection.pageInfo
                                 after = pageInfo?.endCursor || undefined
                             }
 
                             return {
-                                connectionOrError,
+                                connectionOrError: temporaryConnection,
                                 previousPage: nodes,
                                 after,
                                 ...rest,
@@ -331,6 +344,8 @@ export class FilteredConnection<
                                 this.props.history.replace({
                                     search: searchFragment,
                                     hash: this.props.location.hash,
+                                    // Do not throw away flash messages
+                                    state: this.props.location.state,
                                 })
                             }
                         }
@@ -483,10 +498,12 @@ export class FilteredConnection<
                             filters={this.props.filters}
                             onValueSelect={this.onDidSelectValue}
                             values={this.state.activeValues}
+                            compact={this.props.compact}
+                            formClassName={this.props.formClassName}
                         />
                     )
                 }
-                {errors.length > 0 && <ConnectionError errors={errors} />}
+                {errors.length > 0 && <ConnectionError errors={errors} compact={this.props.compact} />}
                 {this.state.connectionOrError && !isErrorLike(this.state.connectionOrError) && (
                     <ConnectionNodes
                         connection={this.state.connectionOrError}
@@ -511,9 +528,12 @@ export class FilteredConnection<
                         location={this.props.location}
                         emptyElement={this.props.emptyElement}
                         totalCountSummaryComponent={this.props.totalCountSummaryComponent}
+                        withCenteredSummary={this.props.withCenteredSummary}
                     />
                 )}
-                {this.state.loading && <ConnectionLoading className={this.props.loaderClassName} />}
+                {this.state.loading && (
+                    <ConnectionLoading compact={this.props.compact} className={this.props.loaderClassName} />
+                )}
             </ConnectionContainer>
         )
     }

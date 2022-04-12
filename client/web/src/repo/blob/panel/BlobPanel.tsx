@@ -1,22 +1,41 @@
-import * as H from 'history'
 import React, { useCallback, useEffect, useMemo, useRef } from 'react'
+
+import * as H from 'history'
 import { from, Observable, ReplaySubject, Subscription } from 'rxjs'
 import { map, mapTo, switchMap, tap } from 'rxjs/operators'
 
-import { useBuiltinPanelViews } from '@sourcegraph/branded/src/components/panel/Panel'
+import {
+    BuiltinTabbedPanelDefinition,
+    BuiltinTabbedPanelView,
+    useBuiltinTabbedPanelViews,
+} from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
+import { ReferenceParameters, TextDocumentPositionParameters } from '@sourcegraph/client-api'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import { isErrorLike } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { ReferenceParameters, TextDocumentPositionParameters } from '@sourcegraph/shared/src/api/protocol'
 import { Activation, ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { Settings, SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/wildcard'
 
+import { ReferencesPanelWithMemoryRouter } from '../../../codeintel/ReferencesPanel'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
 
-interface Props extends AbsoluteRepoFile, ModeSpec, ExtensionsControllerProps, ActivationProps {
+interface Props
+    extends AbsoluteRepoFile,
+        ModeSpec,
+        SettingsCascadeProps,
+        ExtensionsControllerProps,
+        ActivationProps,
+        ThemeProps,
+        PlatformContextProps,
+        TelemetryProps {
     location: H.Location
     history: H.History
     repoID: Scalars['ID']
@@ -54,6 +73,10 @@ export function useBlobPanelViews({
     repoID,
     location,
     history,
+    settingsCascade,
+    isLightTheme,
+    platformContext,
+    telemetryService,
 }: Props): void {
     const subscriptions = useMemo(() => new Subscription(), [])
 
@@ -76,6 +99,11 @@ export function useBlobPanelViews({
         )
     )
 
+    const maxPanelResults = maxPanelResultsFromSettings(settingsCascade)
+    const preferAbsoluteTimestamps = preferAbsoluteTimestampsFromSettings(settingsCascade)
+    const experimentalReferencePanelEnabled =
+        !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.coolCodeIntel === true
+
     // Creates source for definition and reference panels
     const createLocationProvider = useCallback(
         <P extends TextDocumentPositionParameters>(
@@ -84,7 +112,7 @@ export function useBlobPanelViews({
             priority: number,
             provideLocations: (parameters: P) => Observable<MaybeLoadingResult<clientType.Location[]>>,
             extraParameters?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParameters>>
-        ) =>
+        ): Observable<BuiltinTabbedPanelView | null> =>
             activeCodeEditorPositions.pipe(
                 map(textDocumentPositionParameters => {
                     if (!textDocumentPositionParameters) {
@@ -94,8 +122,10 @@ export function useBlobPanelViews({
                     return {
                         title,
                         content: '',
+                        selector: null,
                         priority,
 
+                        maxLocationResults: id === 'references' || id === 'def' ? maxPanelResults : undefined,
                         // This disable directive is necessary because TypeScript is not yet smart
                         // enough to know that (typeof params & typeof extraParams) is P.
                         //
@@ -113,7 +143,7 @@ export function useBlobPanelViews({
                     }
                 })
             ),
-        [activeCodeEditorPositions]
+        [activeCodeEditorPositions, maxPanelResults]
     )
 
     // Source for history panel
@@ -141,9 +171,9 @@ export function useBlobPanelViews({
         panelSubjectChanges.next(panelSubject)
     }, [panelSubject, panelSubjectChanges])
 
-    useBuiltinPanelViews(
-        useMemo(
-            () => [
+    useBuiltinTabbedPanelViews(
+        useMemo(() => {
+            const panelDefinitions: BuiltinTabbedPanelDefinition[] = [
                 {
                     id: 'history',
                     provider: panelSubjectChanges.pipe(
@@ -151,6 +181,7 @@ export function useBlobPanelViews({
                             title: 'History',
                             content: '',
                             priority: 150,
+                            selector: null,
                             locationProvider: undefined,
                             reactElement: (
                                 <RepoRevisionSidebarCommits
@@ -160,37 +191,109 @@ export function useBlobPanelViews({
                                     filePath={filePath}
                                     history={history}
                                     location={location}
+                                    preferAbsoluteTimestamps={preferAbsoluteTimestamps}
                                 />
                             ),
                         }))
                     ),
                 },
-                {
-                    id: 'def',
-                    provider: createLocationProvider('def', 'Definition', 190, parameters =>
-                        from(extensionsController.extHostAPI).pipe(
-                            switchMap(extensionHostAPI =>
-                                wrapRemoteObservable(extensionHostAPI.getDefinition(parameters))
-                            )
-                        )
-                    ),
-                },
-                {
-                    id: 'references',
-                    provider: createLocationProvider<ReferenceParameters>('references', 'References', 180, parameters =>
-                        from(extensionsController.extHostAPI).pipe(
-                            switchMap(extensionHostAPI =>
-                                wrapRemoteObservable(
-                                    extensionHostAPI.getReferences(parameters, { includeDeclaration: false })
+            ]
+
+            if (!experimentalReferencePanelEnabled) {
+                panelDefinitions.push(
+                    ...[
+                        {
+                            id: 'def',
+                            provider: createLocationProvider('def', 'Definition', 190, parameters =>
+                                from(extensionsController.extHostAPI).pipe(
+                                    switchMap(extensionHostAPI =>
+                                        wrapRemoteObservable(extensionHostAPI.getDefinition(parameters))
+                                    )
                                 )
-                            )
-                        )
+                            ),
+                        },
+                        {
+                            id: 'references',
+                            provider: createLocationProvider<ReferenceParameters>(
+                                'references',
+                                'References',
+                                180,
+                                parameters =>
+                                    from(extensionsController.extHostAPI).pipe(
+                                        switchMap(extensionHostAPI =>
+                                            wrapRemoteObservable(
+                                                extensionHostAPI.getReferences(parameters, {
+                                                    includeDeclaration: false,
+                                                })
+                                            )
+                                        )
+                                    )
+                            ),
+                        },
+                    ]
+                )
+            } else {
+                panelDefinitions.push({
+                    id: 'references',
+                    provider: panelSubjectChanges.pipe(
+                        map(({ position, history, location }) => ({
+                            title: 'References',
+                            content: '',
+                            priority: 180,
+                            selector: null,
+                            locationProvider: undefined,
+                            // The new reference panel contains definitoins, references, and implementations. We need it to
+                            // match all these IDs so it shows up when one of the IDs is used as `#tab=<ID>` in the URL.
+                            matchesTabID: (id: string): boolean =>
+                                id === 'def' || id === 'references' || id.startsWith('implementations_'),
+                            // This panel doesn't need a wrapper
+                            noWrapper: true,
+                            reactElement: position ? (
+                                <ReferencesPanelWithMemoryRouter
+                                    settingsCascade={settingsCascade}
+                                    platformContext={platformContext}
+                                    isLightTheme={isLightTheme}
+                                    extensionsController={extensionsController}
+                                    telemetryService={telemetryService}
+                                    key="references"
+                                    externalHistory={history}
+                                    externalLocation={location}
+                                />
+                            ) : (
+                                <></>
+                            ),
+                        }))
                     ),
-                },
-            ],
-            [createLocationProvider, extensionsController.extHostAPI, panelSubjectChanges]
-        )
+                })
+            }
+
+            return panelDefinitions
+        }, [
+            experimentalReferencePanelEnabled,
+            createLocationProvider,
+            panelSubjectChanges,
+            preferAbsoluteTimestamps,
+            isLightTheme,
+            settingsCascade,
+            telemetryService,
+            platformContext,
+            extensionsController,
+        ])
     )
 
     useEffect(() => () => subscriptions.unsubscribe(), [subscriptions])
+}
+
+function maxPanelResultsFromSettings(settingsCascade: SettingsCascadeOrError<Settings>): number | undefined {
+    if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
+        return settingsCascade.final['codeIntelligence.maxPanelResults'] as number
+    }
+    return undefined
+}
+
+function preferAbsoluteTimestampsFromSettings(settingsCascade: SettingsCascadeOrError<Settings>): boolean {
+    if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
+        return settingsCascade.final['history.preferAbsoluteTimestamps'] as boolean
+    }
+    return false
 }

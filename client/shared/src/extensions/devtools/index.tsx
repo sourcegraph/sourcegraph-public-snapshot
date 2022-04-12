@@ -1,13 +1,30 @@
-import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
-import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import React, { useCallback } from 'react'
-import { UncontrolledPopover } from 'reactstrap'
+
+import classNames from 'classnames'
+import MenuUpIcon from 'mdi-react/MenuUpIcon'
+
+import {
+    Button,
+    Card,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    Tabs,
+    useLocalStorage,
+    Icon,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+    Position,
+} from '@sourcegraph/wildcard'
 
 import { PlatformContextProps } from '../../platform/context'
-import { useLocalStorage } from '../../util/useLocalStorage'
 import { ExtensionsControllerProps } from '../controller'
 
 import { ActiveExtensionsPanel } from './ActiveExtensionsPanel'
+
+import styles from './index.module.scss'
 
 export interface ExtensionsDevelopmentToolsProps
     extends ExtensionsControllerProps,
@@ -34,16 +51,19 @@ const ExtensionDevelopmentTools: React.FunctionComponent<ExtensionsDevelopmentTo
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
 
     return (
-        <Tabs defaultIndex={tabIndex} className="extension-status card border-0 rounded-0" onChange={handleTabsChange}>
-            <div className="tablist-wrapper w-100 align-items-center">
-                <TabList>
-                    {TABS.map(({ label, id }) => (
-                        <Tab className="d-flex flex-1 justify-content-around" key={id} data-tab-content={id}>
-                            {label}
-                        </Tab>
-                    ))}
-                </TabList>
-            </div>
+        <Tabs
+            as={Card}
+            defaultIndex={tabIndex}
+            className={classNames('border-0 rounded-0', styles.extensionStatus)}
+            onChange={handleTabsChange}
+        >
+            <TabList>
+                {TABS.map(({ label, id }) => (
+                    <Tab key={id} data-tab-content={id}>
+                        {label}
+                    </Tab>
+                ))}
+            </TabList>
 
             <TabPanels>
                 {TABS.map(tab => (
@@ -58,17 +78,12 @@ const ExtensionDevelopmentTools: React.FunctionComponent<ExtensionsDevelopmentTo
 
 /** A button that toggles the visibility of the ExtensionDevTools element in a popover. */
 export const ExtensionDevelopmentToolsPopover = React.memo<ExtensionsDevelopmentToolsProps>(props => (
-    <>
-        <button type="button" id="extension-status-popover" className="btn btn-link text-decoration-none px-2">
-            <span className="text-muted">Ext</span> <MenuUpIcon className="icon-inline" />
-        </button>
-        <UncontrolledPopover
-            placement="auto-end"
-            target="extension-status-popover"
-            hideArrow={true}
-            popperClassName="border-0 rounded-0"
-        >
+    <Popover>
+        <PopoverTrigger as={Button} className="text-decoration-none px-2" variant="link">
+            <span className="text-muted">Ext</span> <Icon as={MenuUpIcon} />
+        </PopoverTrigger>
+        <PopoverContent position={Position.leftEnd}>
             <ExtensionDevelopmentTools {...props} />
-        </UncontrolledPopover>
-    </>
+        </PopoverContent>
+    </Popover>
 ))

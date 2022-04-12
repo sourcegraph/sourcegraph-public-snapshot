@@ -1,24 +1,23 @@
-import * as H from 'history'
-import ErrorIcon from 'mdi-react/ErrorIcon'
-import InformationIcon from 'mdi-react/InformationIcon'
 import React, { useMemo } from 'react'
+
+import * as H from 'history'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import InformationIcon from 'mdi-react/InformationIcon'
 import { Observable } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { asError, isErrorLike } from '@sourcegraph/common'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { RepositoryFields } from '../../graphql-operations'
 
 import { DocumentationExamplesListItem } from './DocumentationExamplesListItem'
 import { fetchDocumentationReferences } from './graphql'
 
-interface Props extends SettingsCascadeProps, VersionContextProps {
+interface Props extends SettingsCascadeProps {
     location: H.Location
     isLightTheme: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
@@ -58,7 +57,7 @@ export const DocumentationExamplesList: React.FunctionComponent<Props> = ({
     return (
         <div className="documentation-examples">
             {referencesLocations === LOADING ? (
-                <LoadingSpinner className="icon-inline" />
+                <LoadingSpinner />
             ) : (
                 (referencesLocations as GQL.ILocationConnection).nodes.map(location => (
                     <DocumentationExamplesListItem
@@ -74,14 +73,14 @@ export const DocumentationExamplesList: React.FunctionComponent<Props> = ({
             )}
             {referencesLocations !== LOADING && isErrorLike(referencesLocations) && (
                 <span className="ml-2">
-                    <ErrorIcon className="icon-inline" /> Error: {referencesLocations}
+                    <Icon as={AlertCircleIcon} /> Error: {referencesLocations}
                 </span>
             )}
             {referencesLocations !== LOADING &&
                 !isErrorLike(referencesLocations) &&
                 referencesLocations.nodes.length === 0 && (
                     <span className="ml-2">
-                        <InformationIcon className="icon-inline" /> None found
+                        <Icon as={InformationIcon} /> None found
                     </span>
                 )}
         </div>

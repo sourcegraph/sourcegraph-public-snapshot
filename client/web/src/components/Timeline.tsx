@@ -1,9 +1,11 @@
+import React, { FunctionComponent, ReactNode } from 'react'
+
 import classNames from 'classnames'
 import { formatDistance } from 'date-fns/esm'
-import React, { FunctionComponent, ReactNode } from 'react'
 
 import { Collapsible } from './Collapsible'
 import { Timestamp } from './time/Timestamp'
+
 import styles from './Timeline.module.scss'
 
 export interface TimelineStage {

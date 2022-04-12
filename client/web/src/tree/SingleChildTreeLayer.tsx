@@ -1,11 +1,12 @@
 /* eslint jsx-a11y/mouse-events-have-key-events: warn */
-import classNames from 'classnames'
 import * as React from 'react'
+
 import { FileDecoration } from 'sourcegraph'
 
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
 import { ChildTreeLayer } from './ChildTreeLayer'
+import { TreeLayerTable } from './components'
 import { Directory } from './Directory'
 import { TreeNode } from './Tree'
 import { TreeLayerProps } from './TreeLayer'
@@ -117,12 +118,7 @@ export class SingleChildTreeLayer extends React.Component<SingleChildTreeLayerPr
 
     public render(): JSX.Element | null {
         const isActive = this.node === this.props.activeNode
-        const className = classNames(
-            'tree__row',
-            this.props.isExpanded && 'tree__row--expanded',
-            this.node === this.props.activeNode && 'tree__row--active',
-            this.node === this.props.selectedNode && 'tree__row--selected'
-        )
+        const isSelected = this.node === this.props.selectedNode
 
         return (
             <div>
@@ -131,14 +127,10 @@ export class SingleChildTreeLayer extends React.Component<SingleChildTreeLayerPr
                     We should support onFocus here but we currently do not let users focus directly on the actual items in this list.
                     Issue: https://github.com/sourcegraph/sourcegraph/issues/19167
                 */}
-                <table
-                    className="tree-layer"
-                    onMouseOver={this.props.entryInfo.isDirectory ? this.invokeOnHover : undefined}
-                >
+                <TreeLayerTable onMouseOver={this.props.entryInfo.isDirectory ? this.invokeOnHover : undefined}>
                     <tbody>
                         <Directory
                             {...this.props}
-                            className={className}
                             maxEntries={maxEntries}
                             loading={false}
                             handleTreeClick={this.handleTreeClick}
@@ -146,6 +138,7 @@ export class SingleChildTreeLayer extends React.Component<SingleChildTreeLayerPr
                             linkRowClick={this.linkRowClick}
                             fileDecorations={this.props.fileDecorations}
                             isActive={isActive}
+                            isSelected={isSelected}
                         />
                         {this.props.isExpanded && (
                             <tr>
@@ -162,7 +155,7 @@ export class SingleChildTreeLayer extends React.Component<SingleChildTreeLayerPr
                             </tr>
                         )}
                     </tbody>
-                </table>
+                </TreeLayerTable>
             </div>
         )
     }

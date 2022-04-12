@@ -3,18 +3,29 @@
 const path = require('path')
 
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin')
+const CompressionPlugin = require('compression-webpack-plugin')
 const CssMinimizerWebpackPlugin = require('css-minimizer-webpack-plugin')
 const logger = require('gulplog')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
-const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin')
-const TerserPlugin = require('terser-webpack-plugin')
 const webpack = require('webpack')
-const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
 const { WebpackManifestPlugin } = require('webpack-manifest-plugin')
 
-const { getCSSLoaders } = require('./dev/webpack/get-css-loaders')
+const {
+  ROOT_PATH,
+  getBabelLoader,
+  getCacheConfig,
+  getMonacoWebpackPlugin,
+  getCSSLoaders,
+  getTerserPlugin,
+  getProvidePlugin,
+  getCSSModulesLoader,
+  getMonacoCSSRule,
+  getMonacoTTFRule,
+  getBasicCSSLoader,
+  getStatoscopePlugin,
+} = require('@sourcegraph/build-config')
+
 const { getHTMLWebpackPlugins } = require('./dev/webpack/get-html-webpack-plugins')
-const { MONACO_LANGUAGES_AND_FEATURES } = require('./dev/webpack/monacoWebpack')
 const { isHotReloadEnabled } = require('./src/integration/environment')
 
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
@@ -24,6 +35,10 @@ const isDevelopment = mode === 'development'
 const isProduction = mode === 'production'
 const isCI = process.env.CI === 'true'
 const isCacheEnabled = isDevelopment && !isCI
+const isEmbedDevelopment = isDevelopment && process.env.EMBED_DEVELOPMENT === 'true'
+
+/** Allow overriding default Webpack naming behavior for debugging */
+const useNamedChunks = process.env.WEBPACK_USE_NAMED_CHUNKS === 'true'
 
 const devtool = isProduction ? 'source-map' : 'eval-cheap-module-source-map'
 
@@ -37,27 +52,43 @@ const webServerEnvironmentVariables = {
 }
 
 const shouldAnalyze = process.env.WEBPACK_ANALYZER === '1'
+
+const STATOSCOPE_STATS = {
+  all: false, // disable all the stats
+  hash: true, // compilation hash
+  entrypoints: true,
+  chunks: true,
+  chunkModules: true, // modules
+  reasons: true, // modules reasons
+  ids: true, // IDs of modules and chunks (webpack 5)
+  dependentModules: true, // dependent modules of chunks (webpack 5)
+  chunkRelations: true, // chunk parents, children and siblings (webpack 5)
+  cachedAssets: true, // information about the cached assets (webpack 5)
+
+  nestedModules: true, // concatenated modules
+  usedExports: true,
+  providedExports: true, // provided imports
+  assets: true,
+  chunkOrigins: true, // chunks origins stats (to find out which modules require a chunk)
+  version: true, // webpack version
+  builtAt: true, // build at time
+  timings: true, // modules timing information
+  performance: true, // info about oversized assets
+}
+
 if (shouldAnalyze) {
   logger.info('Running bundle analyzer')
 }
 
-const rootPath = path.resolve(__dirname, '..', '..')
 const hotLoadablePaths = ['branded', 'shared', 'web', 'wildcard'].map(workspace =>
-  path.resolve(rootPath, 'client', workspace, 'src')
+  path.resolve(ROOT_PATH, 'client', workspace, 'src')
 )
-const nodeModulesPath = path.resolve(rootPath, 'node_modules')
-const monacoEditorPaths = [path.resolve(nodeModulesPath, 'monaco-editor')]
 
 const isEnterpriseBuild = process.env.ENTERPRISE && Boolean(JSON.parse(process.env.ENTERPRISE))
+const isEmbedEntrypointEnabled = isEnterpriseBuild && (isProduction || isEmbedDevelopment)
 const enterpriseDirectory = path.resolve(__dirname, 'src', 'enterprise')
 
-const babelLoader = {
-  loader: 'babel-loader',
-  options: {
-    cacheDirectory: true,
-    configFile: path.join(__dirname, 'babel.config.js'),
-  },
-}
+const styleLoader = isDevelopment ? 'style-loader' : MiniCssExtractPlugin.loader
 
 const extensionHostWorker = /main\.worker\.ts$/
 
@@ -65,45 +96,34 @@ const extensionHostWorker = /main\.worker\.ts$/
 const config = {
   context: __dirname, // needed when running `gulp webpackDevServer` from the root dir
   mode,
-  stats: {
-    // Minimize logging in case if Webpack is used along with multiple other services.
-    // Use `normal` output preset in case of running standalone web server.
-    preset: shouldServeIndexHTML || isProduction ? 'normal' : 'errors-warnings',
-    errorDetails: true,
-    timings: true,
-  },
+  stats: shouldAnalyze
+    ? STATOSCOPE_STATS
+    : {
+        // Minimize logging in case if Webpack is used along with multiple other services.
+        // Use `normal` output preset in case of running standalone web server.
+        preset: shouldServeIndexHTML || isProduction ? 'normal' : 'errors-warnings',
+        errorDetails: true,
+        timings: true,
+      },
   infrastructureLogging: {
     // Controls webpack-dev-server logging level.
     level: 'warn',
   },
   target: 'browserslist',
   // Use cache only in `development` mode to speed up production build.
-  cache: isCacheEnabled && {
-    type: 'filesystem',
-    buildDependencies: {
-      // Invalidate cache on config change.
-      config: [
-        __filename,
-        path.resolve(__dirname, 'babel.config.js'),
-        path.resolve(rootPath, 'babel.config.js'),
-        path.resolve(rootPath, 'postcss.config.js'),
-      ],
-    },
-  },
+  cache: isCacheEnabled && getCacheConfig({ invalidateCacheFiles: [path.resolve(__dirname, 'babel.config.js')] }),
   optimization: {
     minimize: isProduction,
-    minimizer: [
-      new TerserPlugin({
-        terserOptions: {
-          compress: {
-            // Don't inline functions, which causes name collisions with uglify-es:
-            // https://github.com/mishoo/UglifyJS2/issues/2842
-            inline: 1,
-          },
+    minimizer: [getTerserPlugin(), new CssMinimizerWebpackPlugin()],
+    splitChunks: {
+      cacheGroups: {
+        react: {
+          test: /[/\\]node_modules[/\\](react|react-dom)[/\\]/,
+          name: 'react',
+          chunks: 'all',
         },
-      }),
-      new CssMinimizerWebpackPlugin(),
-    ],
+      },
+    },
     ...(isDevelopment && {
       // Running multiple entries on a single page that do not share a runtime chunk from the same compilation is not supported.
       // https://github.com/webpack/webpack-dev-server/issues/2792#issuecomment-808328432
@@ -117,14 +137,18 @@ const config = {
     // Enterprise vs. OSS builds use different entrypoints. The enterprise entrypoint imports a
     // strict superset of the OSS entrypoint.
     app: isEnterpriseBuild ? path.join(enterpriseDirectory, 'main.tsx') : path.join(__dirname, 'src', 'main.tsx'),
-    'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
-    'json.worker': 'monaco-editor/esm/vs/language/json/json.worker',
+    // Embedding entrypoint. It uses a small subset of the main webapp intended to be embedded into
+    // iframes on 3rd party sites. Added only in production enterprise builds or if embed development is enabled.
+    ...(isEmbedEntrypointEnabled && { embed: path.join(enterpriseDirectory, 'embed', 'main.tsx') }),
   },
   output: {
-    path: path.join(rootPath, 'ui', 'assets'),
+    path: path.join(ROOT_PATH, 'ui', 'assets'),
     // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
-    filename: mode === 'production' ? 'scripts/[name].[contenthash].bundle.js' : 'scripts/[name].bundle.js',
-    chunkFilename: mode === 'production' ? 'scripts/[id]-[contenthash].chunk.js' : 'scripts/[id].chunk.js',
+    // Note: [name] will vary depending on the Webpack chunk. If specified, it will use a provided chunk name, otherwise it will fallback to a deterministic id.
+    filename:
+      mode === 'production' && !useNamedChunks ? 'scripts/[name].[contenthash].bundle.js' : 'scripts/[name].bundle.js',
+    chunkFilename:
+      mode === 'production' && !useNamedChunks ? 'scripts/[name]-[contenthash].chunk.js' : 'scripts/[name].chunk.js',
     publicPath: '/.assets/',
     globalObject: 'self',
     pathinfo: false,
@@ -135,30 +159,52 @@ const config = {
     new webpack.DefinePlugin({
       'process.env': {
         NODE_ENV: JSON.stringify(mode),
+        DISABLE_TELEMETRY: process.env.DISABLE_TELEMETRY,
         ...(shouldServeIndexHTML && webServerEnvironmentVariables),
       },
     }),
-    new webpack.ProvidePlugin({
-      process: 'process/browser',
-      // Based on the issue: https://github.com/webpack/changelog-v5/issues/10
-      Buffer: ['buffer', 'Buffer'],
-    }),
+    getProvidePlugin(),
     new MiniCssExtractPlugin({
       // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
       filename: mode === 'production' ? 'styles/[name].[contenthash].bundle.css' : 'styles/[name].bundle.css',
     }),
-    new MonacoWebpackPlugin(MONACO_LANGUAGES_AND_FEATURES),
+    getMonacoWebpackPlugin(),
     !shouldServeIndexHTML &&
       new WebpackManifestPlugin({
         writeToFileEmit: true,
         fileName: 'webpack.manifest.json',
-        // Only output files that are required to run the application
-        filter: ({ isInitial }) => isInitial,
+        // Only output files that are required to run the application.
+        filter: ({ isInitial, name }) => isInitial || name?.includes('react'),
       }),
     ...(shouldServeIndexHTML ? getHTMLWebpackPlugins() : []),
-    shouldAnalyze && new BundleAnalyzerPlugin(),
+    shouldAnalyze && getStatoscopePlugin(),
     isHotReloadEnabled && new webpack.HotModuleReplacementPlugin(),
     isHotReloadEnabled && new ReactRefreshWebpackPlugin({ overlay: false }),
+    isProduction &&
+      new CompressionPlugin({
+        filename: '[path][base].gz',
+        algorithm: 'gzip',
+        test: /\.(js|css|svg)$/,
+        compressionOptions: {
+          /** Maximum compression level for Gzip */
+          level: 9,
+        },
+      }),
+    isProduction &&
+      new CompressionPlugin({
+        filename: '[path][base].br',
+        algorithm: 'brotliCompress',
+        test: /\.(js|css|svg)$/,
+        compressionOptions: {
+          /** Maximum compression level for Brotli */
+          level: 11,
+        },
+        /**
+         * We get little/no benefits from compressing files that are already under this size.
+         * We can fall back to dynamic gzip for these.
+         */
+        threshold: 10240,
+      }),
   ].filter(Boolean),
   resolve: {
     extensions: ['.mjs', '.ts', '.tsx', '.js', '.json'],
@@ -166,7 +212,7 @@ const config = {
     alias: {
       // react-visibility-sensor's main field points to a UMD bundle instead of ESM
       // https://github.com/joshwnj/react-visibility-sensor/issues/148
-      'react-visibility-sensor': path.resolve(rootPath, 'node_modules/react-visibility-sensor/visibility-sensor.js'),
+      'react-visibility-sensor': path.resolve(ROOT_PATH, 'node_modules/react-visibility-sensor/visibility-sensor.js'),
     },
   },
   module: {
@@ -191,46 +237,39 @@ const config = {
       {
         test: /\.[jt]sx?$/,
         exclude: [...hotLoadablePaths, extensionHostWorker],
-        use: [...(isProduction ? ['thread-loader'] : []), babelLoader],
+        use: [...(isProduction ? ['thread-loader'] : []), getBabelLoader()],
       },
       {
         test: /\.(sass|scss)$/,
         // CSS Modules loaders are only applied when the file is explicitly named as CSS module stylesheet using the extension `.module.scss`.
         include: /\.module\.(sass|scss)$/,
-        use: getCSSLoaders(rootPath, isDevelopment, {
-          loader: 'css-loader',
-          options: {
-            sourceMap: isDevelopment,
-            modules: {
-              exportLocalsConvention: 'camelCase',
-              localIdentName: '[name]__[local]_[hash:base64:5]',
-            },
-          },
-        }),
+        use: getCSSLoaders(styleLoader, getCSSModulesLoader({ sourceMap: isDevelopment })),
       },
       {
         test: /\.(sass|scss)$/,
         exclude: /\.module\.(sass|scss)$/,
-        use: getCSSLoaders(rootPath, isDevelopment, { loader: 'css-loader', options: { url: false } }),
+        use: getCSSLoaders(styleLoader, getBasicCSSLoader()),
       },
-      {
-        // CSS rule for monaco-editor and other external plain CSS (skip SASS and PostCSS for build perf)
-        test: /\.css$/,
-        include: monacoEditorPaths,
-        use: ['style-loader', { loader: 'css-loader' }],
-      },
-      {
-        // TTF rule for monaco-editor
-        test: /\.ttf$/,
-        include: monacoEditorPaths,
-        type: 'asset/resource',
-      },
+      getMonacoCSSRule(),
+      getMonacoTTFRule(),
       {
         test: extensionHostWorker,
-        use: [{ loader: 'worker-loader', options: { inline: 'no-fallback' } }, babelLoader],
+        use: [{ loader: 'worker-loader', options: { inline: 'no-fallback' } }, getBabelLoader()],
       },
       { test: /\.ya?ml$/, type: 'asset/source' },
       { test: /\.(png|woff2)$/, type: 'asset/resource' },
+      {
+        test: /\.elm$/,
+        exclude: /elm-stuff/,
+        use: {
+          loader: 'elm-webpack-loader',
+          options: {
+            cwd: path.resolve(ROOT_PATH, 'client/web/src/notebooks/blocks/compute/component'),
+            report: 'json',
+            pathToElm: path.resolve(ROOT_PATH, 'node_modules/.bin/elm'),
+          },
+        },
+      },
     ],
   },
 }

@@ -1,11 +1,12 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
+
+import { render } from '@testing-library/react'
 
 import { Markdown } from './Markdown'
 
 describe('Markdown', () => {
     it('renders', () => {
-        const component = renderer.create(<Markdown dangerousInnerHTML="hello" />)
-        expect(component.toJSON()).toMatchSnapshot()
+        const component = render(<Markdown dangerousInnerHTML="hello" />)
+        expect(component.asFragment()).toMatchSnapshot()
     })
 })

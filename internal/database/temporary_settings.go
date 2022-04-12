@@ -4,28 +4,25 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	ts "github.com/sourcegraph/sourcegraph/internal/temporarysettings"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type TemporarySettingsStore struct {
+type TemporarySettingsStore interface {
+	basestore.ShareableStore
+	GetTemporarySettings(ctx context.Context, userID int32) (*ts.TemporarySettings, error)
+	OverwriteTemporarySettings(ctx context.Context, userID int32, contents string) error
+	EditTemporarySettings(ctx context.Context, userID int32, settingsToEdit string) error
+}
+
+type temporarySettingsStore struct {
 	*basestore.Store
 }
 
-func TemporarySettings(db dbutil.DB) *TemporarySettingsStore {
-	return &TemporarySettingsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
-
-func (f *TemporarySettingsStore) GetTemporarySettings(ctx context.Context, userID int32) (*ts.TemporarySettings, error) {
-	if Mocks.TemporarySettings.GetTemporarySettings != nil {
-		return Mocks.TemporarySettings.GetTemporarySettings(ctx, userID)
-	}
-
+func (f *temporarySettingsStore) GetTemporarySettings(ctx context.Context, userID int32) (*ts.TemporarySettings, error) {
 	const getTemporarySettingsQuery = `
 		SELECT contents
 		FROM temporary_settings
@@ -46,12 +43,8 @@ func (f *TemporarySettingsStore) GetTemporarySettings(ctx context.Context, userI
 	return &ts.TemporarySettings{Contents: contents}, nil
 }
 
-func (f *TemporarySettingsStore) UpsertTemporarySettings(ctx context.Context, userID int32, contents string) error {
-	if Mocks.TemporarySettings.UpsertTemporarySettings != nil {
-		return Mocks.TemporarySettings.UpsertTemporarySettings(ctx, userID, contents)
-	}
-
-	const upsertTemporarySettingsQuery = `
+func (f *temporarySettingsStore) OverwriteTemporarySettings(ctx context.Context, userID int32, contents string) error {
+	const overwriteTemporarySettingsQuery = `
 		INSERT INTO temporary_settings (user_id, contents)
 		VALUES (%s, %s)
 		ON CONFLICT (user_id) DO UPDATE SET
@@ -59,5 +52,17 @@ func (f *TemporarySettingsStore) UpsertTemporarySettings(ctx context.Context, us
 			updated_at = now();
 	`
 
-	return f.Exec(ctx, sqlf.Sprintf(upsertTemporarySettingsQuery, userID, contents, contents))
+	return f.Exec(ctx, sqlf.Sprintf(overwriteTemporarySettingsQuery, userID, contents, contents))
+}
+
+func (f *temporarySettingsStore) EditTemporarySettings(ctx context.Context, userID int32, settingsToEdit string) error {
+	const editTemporarySettingsQuery = `
+		INSERT INTO temporary_settings AS t (user_id, contents)
+			VALUES (%s, %s)
+			ON CONFLICT (user_id) DO UPDATE SET
+				contents = t.contents || %s,
+				updated_at = now();
+	`
+
+	return f.Exec(ctx, sqlf.Sprintf(editTemporarySettingsQuery, userID, settingsToEdit, settingsToEdit))
 }

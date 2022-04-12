@@ -22,10 +22,7 @@ if (isChromatic()) {
         // In other environments, these themes can be explored by a user via toolbar toggles.
         for (const storeItem of storeItems) {
             // Default theme + Dark mode.
-            addStory({
-                storeItem,
-                isDarkModeEnabled: true,
-            })
+            addStory({ storeItem })
         }
 
         storyStore.finishConfiguring()

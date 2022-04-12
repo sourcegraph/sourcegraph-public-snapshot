@@ -1,11 +1,14 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { Popover } from 'reactstrap'
 
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
+import { ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { SearchContextProps } from '@sourcegraph/search'
+import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import {
     CloneInProgressError,
     isCloneInProgressErrorLike,
@@ -15,29 +18,29 @@ import {
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { Button, Icon, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { CodeIntelligenceProps } from '../codeintel'
-import { ErrorMessage } from '../components/alerts'
 import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
+import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
-import { PatternTypeProps, CaseSensitivityProps, SearchContextProps, SearchStreamingProps } from '../search'
-import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
+import { SearchStreamingProps } from '../search'
 import { RouteDescriptor } from '../util/contributions'
 
 import { CopyPathAction } from './actions/CopyPathAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
+import type { ExtensionAlertProps } from './actions/InstallIntegrationsAlert'
 import { ResolvedRevision } from './backend'
+import { RepoRevisionChevronDownIcon, RepoRevisionWrapper } from './components/RepoRevision'
 import { HoverThresholdProps, RepoContainerContext } from './RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
@@ -45,6 +48,8 @@ import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './Reposito
 import { RevisionsPopover } from './RevisionsPopover'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
+
+import styles from './RepoRevisionContainer.module.scss'
 
 /** Props passed to sub-routes of {@link RepoRevisionContainer}. */
 export interface RepoRevisionContainerContext
@@ -57,17 +62,16 @@ export interface RepoRevisionContainerContext
         HoverThresholdProps,
         ActivationProps,
         Omit<RepoContainerContext, 'onDidUpdateExternalLinks'>,
-        PatternTypeProps,
-        CaseSensitivityProps,
-        VersionContextProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         RevisionSpec,
         BreadcrumbSetters,
         ActionItemsBarProps,
         SearchStreamingProps,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         BatchChangesProps,
-        CodeInsightsProps {
+        CodeInsightsProps,
+        ExtensionAlertProps,
+        FeatureFlagProps {
     repo: RepositoryFields
     resolvedRev: ResolvedRevision
 
@@ -76,9 +80,9 @@ export interface RepoRevisionContainerContext
 
     globbing: boolean
 
-    showSearchNotebook: boolean
-
     isMacPlatform: boolean
+
+    isSourcegraphDotCom: boolean
 }
 
 /** A sub-route of {@link RepoRevisionContainer}. */
@@ -94,18 +98,17 @@ interface RepoRevisionContainerProps
         ExtensionsControllerProps,
         ThemeProps,
         ActivationProps,
-        PatternTypeProps,
-        CaseSensitivityProps,
-        VersionContextProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         RevisionSpec,
         BreadcrumbSetters,
         ActionItemsBarProps,
+        FeatureFlagProps,
         SearchStreamingProps,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         CodeIntelligenceProps,
         BatchChangesProps,
-        CodeInsightsProps {
+        CodeInsightsProps,
+        ExtensionAlertProps {
     routes: readonly RepoRevisionContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
@@ -123,9 +126,9 @@ interface RepoRevisionContainerProps
 
     globbing: boolean
 
-    showSearchNotebook: boolean
-
     isMacPlatform: boolean
+
+    isSourcegraphDotCom: boolean
 }
 
 interface RepoRevisionBreadcrumbProps extends Pick<RepoRevisionContainerProps, 'repo' | 'revision'> {
@@ -136,60 +139,39 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<RepoRevisionBread
     revision,
     resolvedRevisionOrError,
     repo,
-}) => (
-    <button
-        type="button"
-        className="btn btn-sm btn-outline-secondary d-flex align-items-center text-nowrap"
-        key="repo-revision"
-        id="repo-revision-popover"
-        aria-label="Change revision"
-    >
-        {(revision && revision === resolvedRevisionOrError.commitID
-            ? resolvedRevisionOrError.commitID.slice(0, 7)
-            : revision) ||
-            resolvedRevisionOrError.defaultBranch ||
-            'HEAD'}
-        <ChevronDownIcon className="icon-inline repo-revision-container__breadcrumb-icon" />
-        <RepoRevisionContainerPopover
-            repo={repo}
-            resolvedRevisionOrError={resolvedRevisionOrError}
-            revision={revision}
-        />
-    </button>
-)
-
-interface RepoRevisionContainerPopoverProps extends Pick<RepoRevisionContainerProps, 'repo' | 'revision'> {
-    resolvedRevisionOrError: ResolvedRevision
-}
-
-const RepoRevisionContainerPopover: React.FunctionComponent<RepoRevisionContainerPopoverProps> = ({
-    repo,
-    resolvedRevisionOrError,
-    revision,
 }) => {
     const [popoverOpen, setPopoverOpen] = useState(false)
     const togglePopover = useCallback(() => setPopoverOpen(previous => !previous), [])
-
     return (
-        <Popover
-            isOpen={popoverOpen}
-            toggle={togglePopover}
-            placement="bottom-start"
-            target="repo-revision-popover"
-            trigger="legacy"
-            hideArrow={true}
-            fade={false}
-            popperClassName="border-0"
-        >
-            <RevisionsPopover
-                repo={repo.id}
-                repoName={repo.name}
-                defaultBranch={resolvedRevisionOrError.defaultBranch}
-                currentRev={revision}
-                currentCommitID={resolvedRevisionOrError.commitID}
-                togglePopover={togglePopover}
-                onSelect={togglePopover}
-            />
+        <Popover isOpen={popoverOpen} onOpenChange={event => setPopoverOpen(event.isOpen)}>
+            <PopoverTrigger
+                as={Button}
+                className="d-flex align-items-center text-nowrap"
+                key="repo-revision"
+                id="repo-revision-popover"
+                aria-label="Change revision"
+                outline={true}
+                variant="secondary"
+                size="sm"
+            >
+                {(revision && revision === resolvedRevisionOrError.commitID
+                    ? resolvedRevisionOrError.commitID.slice(0, 7)
+                    : revision) ||
+                    resolvedRevisionOrError.defaultBranch ||
+                    'HEAD'}
+                <Icon as={RepoRevisionChevronDownIcon} />
+            </PopoverTrigger>
+            <PopoverContent position={Position.bottomStart} className="pt-0 pb-0">
+                <RevisionsPopover
+                    repo={repo.id}
+                    repoName={repo.name}
+                    defaultBranch={resolvedRevisionOrError.defaultBranch}
+                    currentRev={revision}
+                    currentCommitID={resolvedRevisionOrError.commitID}
+                    togglePopover={togglePopover}
+                    onSelect={togglePopover}
+                />
+            </PopoverContent>
         </Popover>
     )
 }
@@ -210,7 +192,7 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
 
             return {
                 key: 'revision',
-                divider: <span className="repo-revision-container__divider">@</span>,
+                divider: <span className={styles.divider}>@</span>,
                 element: (
                     <RepoRevisionContainerBreadcrumb
                         resolvedRevisionOrError={props.resolvedRevisionOrError}
@@ -276,45 +258,52 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
     const resolvedRevisionOrError = props.resolvedRevisionOrError
 
     return (
-        <div className="repo-revision-container pl-3">
-            <Switch>
-                {props.routes.map(
-                    ({ path, render, exact, condition = () => true }) =>
-                        condition(context) && (
-                            <Route
-                                path={props.routePrefix + path}
-                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                exact={exact}
-                                render={routeComponentProps => render({ ...context, ...routeComponentProps })}
-                            />
-                        )
-                )}
-            </Switch>
-            <RepoHeaderContributionPortal
-                position="left"
-                id="copy-path"
-                repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-            >
-                {() => <CopyPathAction key="copy-path" />}
-            </RepoHeaderContributionPortal>
-            <RepoHeaderContributionPortal
-                position="right"
-                priority={3}
-                id="go-to-permalink"
-                repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-            >
-                {context => (
-                    <GoToPermalinkAction
-                        key="go-to-permalink"
-                        telemetryService={props.telemetryService}
-                        revision={props.revision}
-                        commitID={resolvedRevisionOrError.commitID}
-                        location={props.location}
-                        history={props.history}
-                        {...context}
-                    />
-                )}
-            </RepoHeaderContributionPortal>
-        </div>
+        <>
+            <RepoRevisionWrapper className="pl-3">
+                <Switch>
+                    {props.routes.map(
+                        ({ path, render, exact, condition = () => true }) =>
+                            condition(context) && (
+                                <Route
+                                    path={props.routePrefix + path}
+                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    exact={exact}
+                                    render={routeComponentProps =>
+                                        render({
+                                            ...context,
+                                            ...routeComponentProps,
+                                        })
+                                    }
+                                />
+                            )
+                    )}
+                </Switch>
+                <RepoHeaderContributionPortal
+                    position="left"
+                    id="copy-path"
+                    repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+                >
+                    {() => <CopyPathAction key="copy-path" />}
+                </RepoHeaderContributionPortal>
+                <RepoHeaderContributionPortal
+                    position="right"
+                    priority={3}
+                    id="go-to-permalink"
+                    repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+                >
+                    {context => (
+                        <GoToPermalinkAction
+                            key="go-to-permalink"
+                            telemetryService={props.telemetryService}
+                            revision={props.revision}
+                            commitID={resolvedRevisionOrError.commitID}
+                            location={props.location}
+                            history={props.history}
+                            {...context}
+                        />
+                    )}
+                </RepoHeaderContributionPortal>
+            </RepoRevisionWrapper>
+        </>
     )
 }

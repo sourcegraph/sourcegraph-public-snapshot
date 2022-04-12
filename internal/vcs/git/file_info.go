@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 // ModeSubmodule is an os.FileMode mask indicating that the file is a Git submodule.
@@ -14,7 +15,7 @@ import (
 const ModeSubmodule = 0160000 | os.ModeDevice
 
 // Submodule holds information about a Git submodule and is
-// returned in the FileInfo's Sys field by Stat/Lstat/ReadDir calls.
+// returned in the FileInfo's Sys field by Stat/ReadDir calls.
 type Submodule struct {
 	// URL is the submodule repository clone URL.
 	URL string
@@ -28,11 +29,7 @@ type Submodule struct {
 }
 
 // ObjectInfo holds information about a Git object and is returned in (fs.FileInfo).Sys for blobs
-// and trees from Stat/Lstat/ReadDir calls.
+// and trees from Stat/ReadDir calls.
 type ObjectInfo interface {
-	OID() OID
+	OID() gitdomain.OID
 }
-
-type objectInfo OID
-
-func (oid objectInfo) OID() OID { return OID(oid) }

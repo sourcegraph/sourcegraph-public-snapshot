@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
@@ -40,7 +40,7 @@ func robotsTxtHelper(w io.Writer, allowRobots bool) {
 }
 
 func sitemapXmlGz(w http.ResponseWriter, r *http.Request) {
-	if envvar.SourcegraphDotComMode() || conf.DeployType() == conf.DeployDev {
+	if envvar.SourcegraphDotComMode() || deploy.Type() == deploy.Dev {
 		number := mux.Vars(r)["number"]
 		http.Redirect(w, r, fmt.Sprintf("https://storage.googleapis.com/sitemap-sourcegraph-com/sitemap%s.xml.gz", number), http.StatusFound)
 		return
@@ -49,7 +49,7 @@ func sitemapXmlGz(w http.ResponseWriter, r *http.Request) {
 }
 
 func favicon(w http.ResponseWriter, r *http.Request) {
-	url := assetsutil.URL("/img/favicon.png")
+	url := assetsutil.URL("/img/sourcegraph-mark.svg")
 
 	// Add query parameter for cache busting.
 	query := url.Query()

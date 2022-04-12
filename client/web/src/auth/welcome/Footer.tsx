@@ -1,20 +1,21 @@
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { LoaderButton } from '@sourcegraph/web/src/components/LoaderButton'
+import { Button, Link } from '@sourcegraph/wildcard'
 
+import { LoaderButton } from '../../components/LoaderButton'
 import { FinishWelcomeFlow } from '../PostSignUpPage'
 import { useSteps } from '../Steps/context'
 
 interface Props {
     onFinish: FinishWelcomeFlow
+    isSkippable?: boolean
 }
 
-export const Footer: React.FunctionComponent<Props> = ({ onFinish }) => {
+export const Footer: React.FunctionComponent<Props> = ({ onFinish, isSkippable }) => {
     const { setStep, currentIndex, currentStep } = useSteps()
 
     return (
-        <div className="d-flex align-items-center justify-content-end mt-4">
+        <div className="d-flex align-items-center justify-content-end mt-4 w-100">
             {!currentStep.isLastStep && (
                 <Link
                     to="https://docs.sourcegraph.com/code_search/explanations/code_visibility_on_sourcegraph_cloud"
@@ -27,23 +28,31 @@ export const Footer: React.FunctionComponent<Props> = ({ onFinish }) => {
             )}
 
             <div>
-                {!currentStep.isLastStep && (
-                    <button
-                        type="button"
-                        className="btn btn-link font-weight-normal text-secondary"
-                        onClick={event =>
-                            onFinish(event, { eventName: 'NotRightNow_Clicked', tabNumber: currentIndex })
-                        }
+                {currentStep.isFirstStep && (
+                    <Button
+                        className="font-weight-normal"
+                        onClick={event => {
+                            event.currentTarget.blur()
+                            setStep(currentIndex + 1)
+                        }}
+                        variant="link"
                     >
                         Not right now
-                    </button>
+                    </Button>
                 )}
+
                 <LoaderButton
-                    type="button"
                     alwaysShowLabel={true}
-                    label={currentStep.isLastStep ? 'Start searching' : 'Continue'}
-                    className="btn btn-primary float-right ml-2"
-                    disabled={!currentStep.isComplete}
+                    label={
+                        isSkippable === true && !currentStep.isComplete
+                            ? 'Skip this step'
+                            : currentStep.isLastStep
+                            ? 'Start searching'
+                            : 'Continue'
+                    }
+                    className="float-right ml-2"
+                    disabled={!currentStep.isComplete && !isSkippable}
+                    variant="primary"
                     onClick={event => {
                         if (currentStep.isLastStep) {
                             onFinish(event, { eventName: 'StartSearching_Clicked' })

@@ -1,11 +1,11 @@
 import { Observable, of } from 'rxjs'
 import { map, mapTo, switchMap } from 'rxjs/operators'
 
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+import { createAggregateError } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
+import * as GQL from '@sourcegraph/shared/src/schema'
 
-import { queryGraphQL, requestGraphQL } from '../../../backend/graphql'
+import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../../../backend/graphql'
 import { DeleteRegistryExtensionResult, DeleteRegistryExtensionVariables, Scalars } from '../../../graphql-operations'
 
 export function deleteRegistryExtensionWithConfirmation(extension: Scalars['ID']): Observable<boolean> {
@@ -64,6 +64,40 @@ export function queryViewerRegistryPublishers(): Observable<GQL.RegistryPublishe
                 ...publisher,
                 extensionIDPrefix: data.extensionRegistry.localExtensionIDPrefix || undefined,
             }))
+        })
+    )
+}
+
+export function createExtension(
+    publisher: Scalars['ID'],
+    name: string
+): Observable<GQL.IExtensionRegistryCreateExtensionResult> {
+    return mutateGraphQL(
+        gql`
+            mutation CreateRegistryExtension($publisher: ID!, $name: String!) {
+                extensionRegistry {
+                    createExtension(publisher: $publisher, name: $name) {
+                        extension {
+                            id
+                            extensionID
+                            url
+                        }
+                    }
+                }
+            }
+        `,
+        { publisher, name }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (
+                !data ||
+                !data.extensionRegistry ||
+                !data.extensionRegistry.createExtension ||
+                (errors && errors.length > 0)
+            ) {
+                throw createAggregateError(errors)
+            }
+            return data.extensionRegistry.createExtension
         })
     )
 }

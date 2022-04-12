@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	gh "github.com/google/go-github/v28/github"
-	"github.com/hashicorp/go-multierror"
+	gh "github.com/google/go-github/v43/github"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
@@ -15,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
@@ -54,13 +54,20 @@ func (h *GitHubWebhook) Register(router *webhooks.GitHubWebhook) {
 // handleGithubWebhook is the entry point for webhooks from the webhook router, see the events
 // it's registered to handle in GitHubWebhook.Register
 func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, extSvc *types.ExternalService, payload interface{}) error {
-	m := new(multierror.Error)
+	var m error
 	externalServiceID, err := extractExternalServiceID(extSvc)
 	if err != nil {
 		return err
 	}
 
 	prs, ev := h.convertEvent(ctx, externalServiceID, payload)
+
+	if ev == nil {
+		// We don't recognize this event type, we don't need to do any more work.
+		// This happens when the action in the body is of no type we understand.
+		// Since we don't care about those events, we can just early return here.
+		return nil
+	}
 
 	for _, pr := range prs {
 		if pr == (PR{}) {
@@ -69,10 +76,10 @@ func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, extSvc *types.E
 
 		err := h.upsertChangesetEvent(ctx, externalServiceID, pr, ev)
 		if err != nil {
-			m = multierror.Append(m, err)
+			m = errors.Append(m, err)
 		}
 	}
-	return m.ErrorOrNil()
+	return m
 }
 
 func (h *GitHubWebhook) convertEvent(ctx context.Context, externalServiceID string, theirs interface{}) (prs []PR, ours keyer) {
@@ -95,9 +102,16 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, externalServiceID stri
 			return
 		}
 		repoExternalID := repo.GetNodeID()
+
+		if e.Number == nil {
+			return
+		}
 		pr := PR{ID: int64(*e.Number), RepoExternalID: repoExternalID}
 		prs = append(prs, pr)
 
+		if e.Action == nil {
+			return
+		}
 		switch *e.Action {
 		case "ready_for_review":
 			ours = h.readyForReviewEvent(e)

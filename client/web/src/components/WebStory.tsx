@@ -1,22 +1,22 @@
 import React, { useMemo } from 'react'
+
 import { MemoryRouter, MemoryRouterProps, RouteComponentProps, withRouter } from 'react-router'
 
-import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { MockedStoryProvider, MockedStoryProviderProps } from '@sourcegraph/storybook/src/apollo/MockedStoryProvider'
-import { usePrependStyles } from '@sourcegraph/storybook/src/hooks/usePrependStyles'
-import { useTheme } from '@sourcegraph/storybook/src/hooks/useTheme'
-
-import webStyles from '../SourcegraphWebApp.scss'
+import { MockedStoryProvider, MockedStoryProviderProps, usePrependStyles, useTheme } from '@sourcegraph/storybook'
+// Add root Tooltip for Storybook
+// eslint-disable-next-line no-restricted-imports
+import { Tooltip, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import { BreadcrumbSetters, BreadcrumbsProps, useBreadcrumbs } from './Breadcrumbs'
+
+import webStyles from '../SourcegraphWebApp.scss'
 
 export interface WebStoryProps extends MemoryRouterProps, Pick<MockedStoryProviderProps, 'mocks' | 'useStrictMocking'> {
     children: React.FunctionComponent<
         ThemeProps & BreadcrumbSetters & BreadcrumbsProps & TelemetryProps & RouteComponentProps<any>
     >
-    additionalWebStyles?: string
 }
 
 /**
@@ -25,7 +25,6 @@ export interface WebStoryProps extends MemoryRouterProps, Pick<MockedStoryProvid
  */
 export const WebStory: React.FunctionComponent<WebStoryProps> = ({
     children,
-    additionalWebStyles,
     mocks,
     useStrictMocking,
     ...memoryRouterProps
@@ -34,19 +33,20 @@ export const WebStory: React.FunctionComponent<WebStoryProps> = ({
     const breadcrumbSetters = useBreadcrumbs()
     const Children = useMemo(() => withRouter(children), [children])
 
-    usePrependStyles('additional-web-styles', additionalWebStyles)
     usePrependStyles('web-styles', webStyles)
 
     return (
         <MockedStoryProvider mocks={mocks} useStrictMocking={useStrictMocking}>
-            <MemoryRouter {...memoryRouterProps}>
-                <Tooltip />
-                <Children
-                    {...breadcrumbSetters}
-                    isLightTheme={isLightTheme}
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                />
-            </MemoryRouter>
+            <WildcardThemeContext.Provider value={{ isBranded: true }}>
+                <MemoryRouter {...memoryRouterProps}>
+                    <Tooltip />
+                    <Children
+                        {...breadcrumbSetters}
+                        isLightTheme={isLightTheme}
+                        telemetryService={NOOP_TELEMETRY_SERVICE}
+                    />
+                </MemoryRouter>
+            </WildcardThemeContext.Provider>
         </MockedStoryProvider>
     )
 }

@@ -7,6 +7,10 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/tools/clientcmd"
@@ -103,6 +107,79 @@ func TestK8sURL(t *testing.T) {
 			t.Errorf("mismatch on %s (-want +got):\n%s", rawurl, cmp.Diff(want, got))
 		}
 	}
+}
+
+func TestK8sEndpoints(t *testing.T) {
+	cases := []struct {
+		name string
+		spec string
+		obj  interface{}
+		want []string
+	}{{
+		name: "endpoint empty",
+		spec: "k8s+http://searcher:3138",
+		obj:  &corev1.Endpoints{},
+		want: []string{},
+	}, {
+		name: "endpoint ip",
+		spec: "k8s+http://searcher:3138",
+		obj: &corev1.Endpoints{
+			Subsets: []corev1.EndpointSubset{{
+				Addresses: []corev1.EndpointAddress{{
+					IP: "10.164.38.109",
+				}, {
+					IP: "10.164.38.110",
+				}},
+			}},
+		},
+		want: []string{"http://10.164.38.109:3138", "http://10.164.38.110:3138"},
+	}, {
+		name: "endpoint hostname",
+		spec: "k8s+rpc://indexed-search:6070",
+		obj: &corev1.Endpoints{
+			Subsets: []corev1.EndpointSubset{{
+				Addresses: []corev1.EndpointAddress{{
+					Hostname: "indexed-search-2",
+					IP:       "10.164.0.31",
+				}, {
+					Hostname: "indexed-search-0",
+					IP:       "10.164.38.110",
+				}},
+			}},
+		},
+		want: []string{"indexed-search-2.indexed-search:6070", "indexed-search-0.indexed-search:6070"},
+	}, {
+		name: "sts",
+		spec: "k8s+rpc://indexed-search:6070?kind=sts",
+		obj: &appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "indexed-search",
+			},
+			Spec: appsv1.StatefulSetSpec{
+				Replicas:    int32Ptr(2),
+				ServiceName: "indexed-search-svc", // normally same as sts name, but testing when different
+			},
+		},
+		want: []string{"indexed-search-0.indexed-search-svc:6070", "indexed-search-1.indexed-search-svc:6070"},
+	}}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			u, err := parseURL(c.spec)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			got := k8sEndpoints(u, c.obj)
+			if d := cmp.Diff(c.want, got, cmpopts.EquateEmpty()); d != "" {
+				t.Fatalf("unexpected endpoints (-want, +got):\n%s", d)
+			}
+		})
+	}
+}
+
+func int32Ptr(v int32) *int32 {
+	return &v
 }
 
 func localClient() (*kubernetes.Clientset, error) {

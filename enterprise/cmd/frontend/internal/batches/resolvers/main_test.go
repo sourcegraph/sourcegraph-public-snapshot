@@ -19,9 +19,10 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -117,7 +118,7 @@ func parseJSONTime(t testing.TB, ts string) time.Time {
 	return timestamp
 }
 
-func newGitHubExternalService(t *testing.T, store *database.ExternalServiceStore) *types.ExternalService {
+func newGitHubExternalService(t *testing.T, store database.ExternalServiceStore) *types.ExternalService {
 	t.Helper()
 
 	clock := timeutil.NewFakeClock(time.Now(), 0)
@@ -173,11 +174,11 @@ func mockBackendCommits(t *testing.T, revs ...api.CommitID) {
 	}
 	t.Cleanup(func() { backend.Mocks.Repos.ResolveRev = nil })
 
-	backend.Mocks.Repos.GetCommit = func(_ context.Context, _ *types.Repo, id api.CommitID) (*git.Commit, error) {
+	backend.Mocks.Repos.GetCommit = func(_ context.Context, _ *types.Repo, id api.CommitID) (*gitdomain.Commit, error) {
 		if _, ok := byRev[id]; !ok {
 			t.Fatalf("GetCommit received unexpected ID: %s", id)
 		}
-		return &git.Commit{ID: id}, nil
+		return &gitdomain.Commit{ID: id}, nil
 	}
 	t.Cleanup(func() { backend.Mocks.Repos.GetCommit = nil })
 }
@@ -195,7 +196,7 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 	}
 	t.Cleanup(func() { git.Mocks.GetCommit = nil })
 
-	git.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
+	gitserver.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
 		if len(args) < 1 && args[0] != "diff" {
 			t.Fatalf("gitserver.ExecReader received wrong args: %v", args)
 		}
@@ -205,7 +206,7 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 		}
 		return io.NopCloser(strings.NewReader(diff)), nil
 	}
-	t.Cleanup(func() { git.Mocks.ExecReader = nil })
+	t.Cleanup(func() { gitserver.Mocks.ExecReader = nil })
 
 	git.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
 		if string(a) != baseRev && string(b) != headRev {
@@ -225,7 +226,7 @@ func addChangeset(t *testing.T, ctx context.Context, s *store.Store, c *btypes.C
 	}
 }
 
-func pruneUserCredentials(t *testing.T, db dbutil.DB, key encryption.Key) {
+func pruneUserCredentials(t *testing.T, db database.DB, key encryption.Key) {
 	t.Helper()
 	creds, _, err := database.UserCredentials(db, key).List(context.Background(), database.UserCredentialsListOpts{})
 	if err != nil {

@@ -37,19 +37,22 @@ body,
     background-color: var(--mark-bg);
 }
 
-.app {
-    &__error {
-        > hr {
-            margin-top: 1rem;
-            margin-bottom: 1rem;
-            border-color: #93a9c8;
-        }
+.match-highlight,
+.match-highlight-sticky {
+    background-color: var(--mark-bg);
+}
 
-        &-text {
-            margin-top: 1rem;
-            background-color: #233043;
-            padding: 1rem;
-        }
+// When a match highlight and a selection highlight overlap,
+// change the color to be able to distinguish between the highlights.
+.match-highlight .selection-highlight,
+.match-highlight.selection-highlight,
+.selection-highlight .match-highlight {
+    .theme-light & {
+        background-color: var(--mark-bg-light);
+    }
+
+    .theme-dark & {
+        background-color: var(--mark-bg-dark);
     }
 }
 
@@ -72,52 +75,16 @@ body,
 }
 
 // Global styles provided by @reach packages. Should be imported once in the global scope.
-@import '@reach/dialog/styles.css';
 @import '@reach/combobox/styles.css';
 @import '@reach/menu-button/styles.css';
 @import '@reach/listbox/styles.css';
 
 // Pages
-@import './Layout';
 @import './api/ApiConsole';
-@import './extensions/components/StatusBar';
-@import './extensions/components/ActionItemsBar';
-@import './global/GlobalDebug';
-@import './savedSearches/index';
-@import './search/home/SearchPage';
-@import './search/SearchConsolePage';
 @import './search/ShepherdTour';
-@import './repogroups/RepogroupPage';
-@import './search/queryBuilder/index';
-@import './searchContexts/index';
-@import './search/results/SearchResultsInfoBar';
-@import './search/results/progress/StreamingProgress.scss';
-@import './settings/MonacoSettingsEditor';
-@import './settings/SettingsFile';
-@import './tree/Tree';
-@import './views/view-global-styles';
-@import './nav/GlobalNavbar';
-@import './nav/Feedback/FeedbackPrompt.scss';
-@import './nav/UserNavItem.scss';
-@import './nav/StatusMessagesNavItem.scss';
-@import './repo/RepoContainer';
-@import './repo/FilePathBreadcrumbs.scss';
-@import './repo/settings/RepoSettingsArea';
-@import './repo/actions/InstallBrowserExtensionPopover.scss';
-@import './repo/actions/InstallBrowserExtensionAlert.scss';
-@import './components/FilteredConnection';
-@import './components/Dialog';
-@import './user/settings/UserSettingsArea';
-@import './site/DockerForMacAlert';
-@import './user/UserAvatar';
-@import './user/area/UserArea';
-@import './org/OrgsArea';
-@import '../../branded/src/components/panel/views/FileLocations';
-@import '../../branded/src/components/LoaderInput';
-
-@import '../../shared/src/index';
 
 :root {
+    --max-homepage-container-width: 65rem;
     // Skip Reach UI styles. See https://reacttraining.com/reach-ui/styling/.
     --reach-menu-button: 1;
     --reach-accordion: 1;

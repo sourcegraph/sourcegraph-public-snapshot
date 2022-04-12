@@ -1,15 +1,15 @@
+import React, { useEffect, useMemo } from 'react'
+
 import { isEmpty, noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
-import React, { useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router-dom'
 import { fromFetch } from 'rxjs/fetch'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { checkOk } from '@sourcegraph/shared/src/backend/fetch'
+import { checkOk } from '@sourcegraph/http-client'
+import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
-import { MonacoEditor } from '../components/MonacoEditor'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -65,7 +65,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
             <h3>Most recent ping</h3>
             {latestPing === undefined ? (
                 <p>
-                    <LoadingSpinner className="icon-inline" />
+                    <LoadingSpinner />
                 </p>
             ) : isEmpty(latestPing) ? (
                 <p>No recent ping data to display.</p>
@@ -94,11 +94,13 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                 <li>Sourcegraph version string (e.g. "vX.X.X")</li>
                 <li>Dependency versions (e.g. "6.0.9" for Redis, or "13.0" for Postgres)</li>
                 <li>
-                    Deployment type (single Docker image, Docker Compose, Kubernetes cluster, or pure Docker cluster)
+                    Deployment type (single Docker image, Docker Compose, Kubernetes cluster, Helm, or pure Docker
+                    cluster)
                 </li>
                 <li>License key associated with your Sourcegraph subscription</li>
                 <li>Aggregate count of current monthly users</li>
                 <li>Total count of existing user accounts</li>
+                <li>Code Insights: total count of insights</li>
             </ul>
             <h3>Other telemetry</h3>
             <p>
@@ -273,6 +275,10 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                         </li>
                         <li>Total count of insights grouped by time interval (step size) in days</li>
                         <li>Total count of insights set organization visible grouped by insight type</li>
+                        <li>
+                            Total count of insight views grouped by presentation type, series type, and
+                            presentation-series type
+                        </li>
                     </ul>
                 </li>
                 <li>
@@ -289,6 +295,65 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                         <li>Total number of views of the manage code monitor page</li>
                         <li>Total number of clicks on the code monitor email search link</li>
                     </ul>
+                </li>
+                <li>
+                    CTA usage data
+                    <ul>
+                        <li>
+                            Browser extension
+                            <ul>
+                                <li>
+                                    Number of users who viewed / clicked the "install browser extension" CTA on the file
+                                    / search pages today
+                                </li>
+                                <li>
+                                    Number of views / clicks on the "install browser extension" CTA on the file / search
+                                    pages today
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            IDE extension
+                            <ul>
+                                <li>
+                                    Number of users who viewed / clicked the "install IDE extension" CTA on the file /
+                                    search pages today
+                                </li>
+                                <li>
+                                    Number of views / clicks on the "install IDE extension" CTA on the file / search
+                                    pages today
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    Code Host integration usage data (Browser extension / Native Integration)
+                    <ul>
+                        <li>Aggregate counts of current daily, weekly, and monthly unique users and total events</li>
+                        <li>
+                            Aggregate counts of current daily, weekly, and monthly unique users and total events who
+                            visited Sourcegraph instance from browser extension
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    IDE extensions data
+                    <ul>
+                        Aggregate counts of current daily, weekly, and monthly searches performed:
+                        <li>
+                            <ul>Count of unique users who performed searches</ul>
+                            <ul>Count of total searches performed</ul>
+                        </li>
+                    </ul>
+                    <ul>
+                        Aggregate counts of daily user state:
+                        <li>
+                            <ul>Count of unique users who installed the extension</ul>
+                            <ul>Count of unique users who uninstalled the extension</ul>
+                        </li>
+                    </ul>
+                    <ul>Aggregate count of daily redirects from extension to Sourcegraph instance</ul>
                 </li>
             </ul>
             {updatesDisabled ? (

@@ -1,29 +1,35 @@
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
+
+import classNames from 'classnames'
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Redirect } from 'react-router'
 import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
+import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
+import { SearchContextProps } from '@sourcegraph/search'
+import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ErrorLike, isErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Alert, Button, LoadingSpinner, useEventObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { ErrorMessage } from '../../components/alerts'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
+import { render as renderLsifHtml } from '../../lsif/html'
+import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
 import { SearchStreamingProps } from '../../search'
-import { StreamingSearchResultsListProps } from '../../search/results/StreamingSearchResultsList'
+import { useSearchStack, useExperimentalFeatures } from '../../stores'
+import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { HoverThresholdProps } from '../RepoContainer'
@@ -33,12 +39,15 @@ import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
+import { getModeFromURL } from './actions/utils'
 import { fetchBlob } from './backend'
 import { Blob, BlobInfo } from './Blob'
 import { GoToRawAction } from './GoToRawAction'
 import { useBlobPanelViews } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
-import { RenderedSearchNotebookMarkdown, SEARCH_NOTEBOOK_FILE_EXTENSION } from './RenderedSearchNotebookMarkdown'
+import { RenderedNotebookMarkdown, SEARCH_NOTEBOOK_FILE_EXTENSION } from './RenderedNotebookMarkdown'
+
+import styles from './BlobPage.module.scss'
 
 interface Props
     extends AbsoluteRepoFile,
@@ -52,6 +61,7 @@ interface Props
         HoverThresholdProps,
         BreadcrumbSetters,
         SearchStreamingProps,
+        Pick<SearchContextProps, 'searchContextsEnabled'>,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'> {
     location: H.Location
     history: H.History
@@ -59,18 +69,41 @@ interface Props
     authenticatedUser: AuthenticatedUser | null
     globbing: boolean
     isMacPlatform: boolean
-    showSearchNotebook: boolean
+    isSourcegraphDotCom: boolean
+    repoUrl: string
 }
 
 export const BlobPage: React.FunctionComponent<Props> = props => {
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
-    let renderMode = ToggleRenderedFileMode.getModeFromURL(props.location)
-    const { repoName, revision, commitID, filePath, isLightTheme, useBreadcrumb, mode } = props
+    let renderMode = getModeFromURL(props.location)
+    const { repoName, revision, commitID, filePath, isLightTheme, useBreadcrumb, mode, repoUrl } = props
+    const showSearchNotebook = useExperimentalFeatures(features => features.showSearchNotebook)
+    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
+    const lineOrRange = useMemo(() => parseQueryAndHash(props.location.search, props.location.hash), [
+        props.location.search,
+        props.location.hash,
+    ])
 
     // Log view event whenever a new Blob, or a Blob with a different render mode, is visited.
     useEffect(() => {
         props.telemetryService.logViewEvent('Blob', { repoName, filePath })
     }, [repoName, commitID, filePath, renderMode, props.telemetryService])
+    useSearchStack(
+        useMemo(
+            () => ({
+                type: 'file',
+                path: filePath,
+                repo: repoName,
+                revision,
+                // Need to subtract 1 because IHighlightLineRange is 0-based but
+                // line information in the URL is 1-based.
+                lineRange: lineOrRange.line
+                    ? { startLine: lineOrRange.line - 1, endLine: (lineOrRange.endLine ?? lineOrRange.line) - 1 }
+                    : null,
+            }),
+            [filePath, repoName, revision, lineOrRange.line, lineOrRange.endLine]
+        )
+    )
 
     useBreadcrumb(
         useMemo(() => {
@@ -89,10 +122,12 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                         revision={revision}
                         filePath={filePath}
                         isDir={false}
+                        repoUrl={repoUrl}
+                        telemetryService={props.telemetryService}
                     />
                 ),
             }
-        }, [filePath, revision, repoName])
+        }, [filePath, revision, repoName, repoUrl, props.telemetryService])
     )
 
     // Bundle latest blob with all other file info to pass to `Blob`
@@ -120,6 +155,12 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                         if (blob === null) {
                             return blob
                         }
+
+                        // Replace html with lsif generated HTML, if available
+                        if (blob.highlight.lsif && blob.highlight.lsif !== '{}') {
+                            blob.highlight.html = renderLsifHtml(blob.highlight.lsif, blob.content)
+                        }
+
                         const blobInfo: BlobInfo & { richHTML: string; aborted: boolean } = {
                             content: blob.content,
                             html: blob.highlight.html,
@@ -134,10 +175,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                         }
                         return blobInfo
                     }),
-                    catchError((error): [ErrorLike] => {
-                        console.error(error)
-                        return [asError(error)]
-                    })
+                    catchError((error): [ErrorLike] => [asError(error)])
                 ),
             [repoName, revision, commitID, filePath, mode]
         )
@@ -167,17 +205,23 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
         blobInfoOrError &&
         !isErrorLike(blobInfoOrError) &&
         blobInfoOrError.filePath.endsWith(SEARCH_NOTEBOOK_FILE_EXTENSION) &&
-        props.showSearchNotebook
+        showSearchNotebook
+
+    const onCopyNotebook = useCallback(
+        (props: Omit<CopyNotebookProps, 'title'>) => {
+            const title =
+                blobInfoOrError && !isErrorLike(blobInfoOrError) ? basename(blobInfoOrError.filePath) : 'Notebook'
+            return copyNotebook({ title: `Copy of ${title}`, ...props })
+        },
+        [blobInfoOrError]
+    )
 
     // If url explicitly asks for a certain rendering mode, renderMode is set to that mode, else it checks:
     // - If file contains richHTML and url does not include a line number: We render in richHTML.
     // - If file does not contain richHTML or the url includes a line number: We render in code view.
     if (!renderMode) {
         renderMode =
-            blobInfoOrError &&
-            !isErrorLike(blobInfoOrError) &&
-            blobInfoOrError.richHTML &&
-            !parseQueryAndHash(props.location.search, props.location.hash).line
+            blobInfoOrError && !isErrorLike(blobInfoOrError) && blobInfoOrError.richHTML && !lineOrRange.line
                 ? 'rendered'
                 : 'code'
     }
@@ -250,7 +294,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
     if (blobInfoOrError === undefined) {
         // Render placeholder for layout before content is fetched.
         return (
-            <div className="blob-page__placeholder">
+            <div className={styles.placeholder}>
                 {alwaysRender}
                 <div className="d-flex mt-3 justify-content-center">
                     <LoadingSpinner />
@@ -262,7 +306,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
     // File not found:
     if (blobInfoOrError === null) {
         return (
-            <div className="blob-page__placeholder">
+            <div className={styles.placeholder}>
                 <HeroPage
                     icon={MapSearchIcon}
                     title="Not found"
@@ -282,36 +326,41 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                     id="toggle-rendered-file-mode"
                     repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
                 >
-                    {context => (
+                    {({ actionType }) => (
                         <ToggleRenderedFileMode
                             key="toggle-rendered-file-mode"
                             mode={renderMode || 'rendered'}
-                            location={props.location}
-                            {...context}
+                            actionType={actionType}
                         />
                     )}
                 </RepoHeaderContributionPortal>
             )}
             {isSearchNotebook && renderMode === 'rendered' && (
-                <RenderedSearchNotebookMarkdown {...props} markdown={blobInfoOrError.content} />
+                <RenderedNotebookMarkdown
+                    {...props}
+                    markdown={blobInfoOrError.content}
+                    onCopyNotebook={onCopyNotebook}
+                    showSearchContext={showSearchContext}
+                    exportedFileName={basename(blobInfoOrError.filePath)}
+                />
             )}
             {!isSearchNotebook && blobInfoOrError.richHTML && renderMode === 'rendered' && (
                 <RenderedFile dangerousInnerHTML={blobInfoOrError.richHTML} location={props.location} />
             )}
             {!blobInfoOrError.richHTML && blobInfoOrError.aborted && (
-                <div className="blob-page__aborted">
-                    <div className="alert alert-info">
+                <div>
+                    <Alert variant="info">
                         Syntax-highlighting this file took too long. &nbsp;
-                        <button type="button" onClick={onExtendTimeoutClick} className="btn btn-sm btn-primary">
+                        <Button onClick={onExtendTimeoutClick} variant="primary" size="sm">
                             Try again
-                        </button>
-                    </div>
+                        </Button>
+                    </Alert>
                 </div>
             )}
             {/* Render the (unhighlighted) blob also in the case highlighting timed out */}
             {renderMode === 'code' && (
                 <Blob
-                    className="blob-page__blob test-repo-blob"
+                    className={classNames('test-repo-blob', styles.blob)}
                     blobInfo={blobInfoOrError}
                     wrapCode={wrapCode}
                     platformContext={props.platformContext}
@@ -322,6 +371,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                     isLightTheme={isLightTheme}
                     telemetryService={props.telemetryService}
                     location={props.location}
+                    disableStatusBar={false}
                 />
             )}
         </>

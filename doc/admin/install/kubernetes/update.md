@@ -1,4 +1,4 @@
-# Updating Sourcegraph
+# Updating Sourcegraph with Kubernetes
 
 A new version of Sourcegraph is released every month (with patch releases in between, released as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) for release announcements.
 
@@ -79,48 +79,28 @@ the following:
   determine if an instance goes down.
 - Database migrations are handled automatically on update when they are necessary.
 
-### Updating blue-green deployments
+## Database Migrations
 
-Some users may wish to opt for running two separate Sourcegraph clusters running in a
-[blue-green](https://martinfowler.com/bliki/BlueGreenDeployment.html) deployment. Such a setup makes
-the update step more complex, but it can still be done with the `sourcegraph-server-gen snapshot`
-command:
+> NOTE: The `migrator` service is only available in versions `3.37` and later.
 
-- **Preconditions:**
-  - Suppose cluster A is currently live, and cluster B is in standby.
-  - Clusters A and B should be running the same version of Sourcegraph.
-  - Ensure `sourcegraph-server-gen` is upgraded to version 3.0.1 (`sourcegraph-server-gen update`)
-- **Snapshot of A:** Configure `kubectl` to access cluster A and then run `sourcegraph-server-gen snapshot create`.
-- **Restore A's snapshot to B:**
-  - Configure `kubectl` to access B.
-  - Spin down `sourcegraph-frontend` replicas to 0. (**Note:** this is very important, because
-    otherwise `sourcegraph-frontend` may apply changes to the database that corrupt the snapshot
-    restoration.)
+By default, database migrations will be performed during application startup by a `migrator` init container running prior to the `frontend` deployment. These migrations **must** succeed before Sourcegraph will become available. If the databases are large, these migrations may take a long time.
 
-    ```
-    kubectl scale --replicas=0 deployment/sourcegraph-frontend
-    ```
+In some situations, administrators may wish to migrate their databases before upgrading the rest of the system to reduce downtime. Sourcegraph guarantees database backward compatibility to the most recent minor point release so the database can safely be upgraded before the application code.
 
-  - `sourcegraph-server-gen snapshot restore` from the same directory where you ran the snapshot creation earlier.
-  - Spin up `sourcegraph-frontend` replicas to what it was before:
+To execute the database migrations independently, follow the [Kubernetes instructions on how to manually run database migrations](../../how-to/manual_database_migrations.md#kubernetes). Running the `up` (default) command on the `migrator` of the *version you are upgrading to* will apply all migrations required by the next version of Sourcegraph.
 
-    ```
-    kubectl scale --replicas=$N deployment/sourcegraph-frontend
-    ```
-- **Upgrade cluster B** to the new Sourcegraph version. Perform some quick checks to verify it is
-  functioning.
-- **Switch traffic over to B.** (B is now live.)
-- **Upgrade cluster A** to the new Sourcegraph version.
-- **Switch traffic back to A.** (A is now live again.)
+### Failing migrations
 
-After the update, cluster A will be live, cluster B will be in standby, and both will be running the
-same new version of Sourcegraph. You may lose a few minutes of database updates while A is not live,
-but that is generally acceptable.
+Migrations may fail due to transient or application errors. When this happens, the database will be marked by the migrator as _dirty_. A dirty database requires manual intervention to ensure the schema is in the expected state before continuing with migrations or application startup.
 
-To keep the database on B current, you may periodically wish to sync A's database over to B
-(`sourcegraph-server-gen snapshot create` on A, `sourcegraph-server-gen snapshot restore` on B). It
-is important that the versions of A and B are equivalent when this is done.
+In order to retrieve the error message printed by the migrator on startup, you'll need to use the `kubectl logs <frontend pod> -c migrator` to specify the init container, not the main application container. Using a bare `kubectl logs` command will result in the following error:
 
-### Troubleshooting
+```
+Error from server (BadRequest): container "frontend" in pod "sourcegraph-frontend-69f4b68d75-w98lx" is waiting to start: PodInitializing
+```
+
+Once a failing migration error message can be found, follow the guide on [how to troubleshoot a dirty database](../../how-to/dirty_database.md).
+
+## Troubleshooting
 
 See the [troubleshooting page](troubleshoot.md).

@@ -1,21 +1,32 @@
-import classNames from 'classnames'
 import * as React from 'react'
 
+import classNames from 'classnames'
+
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { RepoRevision, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { toRepoURL, RepoRevision, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { toTreeURL } from '../util/url'
+
+import styles from './FilePathBreadcrumbs.module.scss'
+
+interface Props extends RepoRevision, TelemetryProps {
+    filePath: string
+    isDir: boolean
+    repoUrl: string
+}
 
 /**
  * Displays a file path in a repository in breadcrumb style, with ancestor path
  * links.
  */
-export const FilePathBreadcrumbs: React.FunctionComponent<
-    RepoRevision & {
-        filePath: string
-        isDir: boolean
-    }
-> = ({ repoName, revision, filePath, isDir }) => {
+export const FilePathBreadcrumbs: React.FunctionComponent<Props> = ({
+    repoName,
+    revision,
+    filePath,
+    isDir,
+    telemetryService,
+}) => {
     const parts = filePath.split('/')
     const partToUrl = (index: number): string => {
         const partPath = parts.slice(0, index + 1).join('/')
@@ -25,31 +36,36 @@ export const FilePathBreadcrumbs: React.FunctionComponent<
         return toPrettyBlobURL({ repoName, revision, filePath: partPath })
     }
     const partToClassName = (index: number): string =>
-        index === parts.length - 1 ? 'test-breadcrumb-part-last' : 'part-directory test-breadcrumb-part-directory'
+        index === parts.length - 1
+            ? 'test-breadcrumb-part-last'
+            : classNames('test-breadcrumb-part-directory', styles.partDirectory)
 
-    const spans: JSX.Element[] = []
+    const spans: JSX.Element[] = [
+        <LinkOrSpan
+            key="root-dir"
+            className={classNames('test-breadcrumb-part-directory', styles.partDirectory)}
+            to={toRepoURL({ repoName, revision })}
+            aria-current={false}
+            onClick={() => telemetryService.log('RootBreadcrumbClicked', { action: 'click', label: 'root directory' })}
+        >
+            /
+        </LinkOrSpan>,
+    ]
     for (const [index, part] of parts.entries()) {
         const link = partToUrl(index)
-        const className = classNames('part', partToClassName?.(index))
+        const className = classNames(styles.part, partToClassName?.(index))
         spans.push(
             <LinkOrSpan
-                key={index}
+                key={`link-${index}`}
                 className={className}
                 to={link}
                 aria-current={index === parts.length - 1 ? 'page' : 'false'}
             >
-                {part}
+                {index < parts.length - 1 ? `${part} /` : part}
             </LinkOrSpan>
         )
-        if (index < parts.length - 1) {
-            spans.push(
-                <span key={`sep${index}`} className="file-path-breadcrumbs__separator text-muted font-weight-medium">
-                    /
-                </span>
-            )
-        }
     }
 
     // Important: do not put spaces between the breadcrumbs or spaces will get added when copying the path
-    return <span className="file-path-breadcrumbs">{spans}</span>
+    return <span className={styles.filePathBreadcrumbs}>{spans}</span>
 }

@@ -3,14 +3,20 @@ package enqueuer
 import (
 	"strings"
 
+	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
-func InferRepositoryAndRevision(pkg precise.Package) (repoName, gitTagOrCommit string, ok bool) {
-	for _, fn := range []func(pkg precise.Package) (string, string, bool){
+func InferRepositoryAndRevision(pkg precise.Package) (repoName api.RepoName, gitTagOrCommit string, ok bool) {
+	for _, fn := range []func(pkg precise.Package) (api.RepoName, string, bool){
 		inferGoRepositoryAndRevision,
 		inferJVMRepositoryAndRevision,
+		inferNpmRepositoryAndRevision,
 	} {
 		if repoName, gitTagOrCommit, ok := fn(pkg); ok {
 			return repoName, gitTagOrCommit, true
@@ -24,7 +30,7 @@ const GitHubScheme = "https://"
 
 var goVersionPattern = lazyregexp.New(`^v?[\d\.]+-([a-f0-9]+)`)
 
-func inferGoRepositoryAndRevision(pkg precise.Package) (string, string, bool) {
+func inferGoRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, bool) {
 	if pkg.Scheme != "gomod" || !strings.HasPrefix(pkg.Name, GitHubScheme+"github.com/") {
 		return "", "", false
 	}
@@ -39,12 +45,24 @@ func inferGoRepositoryAndRevision(pkg precise.Package) (string, string, bool) {
 		version = match[0][1]
 	}
 
-	return strings.Join(repoParts, "/"), version, true
+	return api.RepoName(strings.Join(repoParts, "/")), version, true
 }
 
-func inferJVMRepositoryAndRevision(pkg precise.Package) (string, string, bool) {
-	if pkg.Scheme != "semanticdb" {
+func inferJVMRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, bool) {
+	if pkg.Scheme != dependenciesStore.JVMPackagesScheme {
 		return "", "", false
 	}
-	return pkg.Name, "v" + pkg.Version, true
+	return api.RepoName(pkg.Name), "v" + pkg.Version, true
+}
+
+func inferNpmRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, bool) {
+	if pkg.Scheme != dependenciesStore.NpmPackagesScheme {
+		return "", "", false
+	}
+	npmPkg, err := reposource.ParseNpmPackageFromPackageSyntax(pkg.Name)
+	if err != nil {
+		log15.Error("invalid npm package name in database", "error", err)
+		return "", "", false
+	}
+	return npmPkg.RepoName(), "v" + pkg.Version, true
 }

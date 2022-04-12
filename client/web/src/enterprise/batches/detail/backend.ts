@@ -1,7 +1,7 @@
 import { EMPTY, Observable } from 'rxjs'
 import { expand, map, reduce } from 'rxjs/operators'
 
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { diffStatFields, fileDiffFields } from '../../../backend/diff'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -33,9 +33,6 @@ import {
     ChangesetScheduleEstimateVariables,
     CreateChangesetCommentsResult,
     CreateChangesetCommentsVariables,
-    BatchChangeBulkOperationsResult,
-    BatchChangeBulkOperationsVariables,
-    BulkOperationConnectionFields,
     AllChangesetIDsResult,
     AllChangesetIDsVariables,
     ChangesetIDConnectionFields,
@@ -47,10 +44,14 @@ import {
     CloseChangesetsVariables,
     PublishChangesetsResult,
     PublishChangesetsVariables,
+    AvailableBulkOperationsVariables,
+    AvailableBulkOperationsResult,
+    BulkOperationType,
 } from '../../../graphql-operations'
 
 const changesetsStatsFragment = gql`
     fragment ChangesetsStatsFields on ChangesetsStats {
+        __typename
         total
         closed
         deleted
@@ -64,6 +65,7 @@ const changesetsStatsFragment = gql`
 
 const bulkOperationFragment = gql`
     fragment BulkOperationFields on BulkOperation {
+        __typename
         id
         type
         state
@@ -107,7 +109,7 @@ const batchChangeFragment = gql`
         description
 
         createdAt
-        initialApplier {
+        creator {
             username
             url
         }
@@ -122,6 +124,8 @@ const batchChangeFragment = gql`
             ...DiffStatFields
         }
 
+        state
+
         updatedAt
         closedAt
         viewerCanAdminister
@@ -131,6 +135,7 @@ const batchChangeFragment = gql`
         }
 
         bulkOperations(first: 0) {
+            __typename
             totalCount
         }
 
@@ -139,15 +144,39 @@ const batchChangeFragment = gql`
         }
 
         currentSpec {
+            id
             originalInput
             supersedingBatchSpec {
                 createdAt
                 applyURL
             }
+            codeHostsWithoutWebhooks: viewerBatchChangesCodeHosts(first: 3, onlyWithoutWebhooks: true) {
+                nodes {
+                    externalServiceKind
+                    externalServiceURL
+                }
+                pageInfo {
+                    hasNextPage
+                }
+                totalCount
+            }
+        }
+
+        # TODO: We ought to be able to filter these by state, but because state is only computed
+        # in the resolver and not persisted to the DB, it's currently expensive and messy to do so,
+        # so for now we fetch the first 100 and count the active ones clientside.
+        batchSpecs(first: 100) {
+            nodes {
+                state
+            }
+            pageInfo {
+                hasNextPage
+            }
         }
     }
 
     fragment ActiveBulkOperationsConnectionFields on BulkOperationConnection {
+        __typename
         totalCount
         nodes {
             ...ActiveBulkOperationFields
@@ -159,6 +188,7 @@ const batchChangeFragment = gql`
     ${diffStatFields}
 
     fragment ActiveBulkOperationFields on BulkOperation {
+        __typename
         id
         state
     }
@@ -166,6 +196,7 @@ const batchChangeFragment = gql`
 
 const changesetLabelFragment = gql`
     fragment ChangesetLabelFields on ChangesetLabel {
+        __typename
         color
         description
         text
@@ -196,6 +227,15 @@ export const fetchBatchChangeByNamespace = (
             return batchChange
         })
     )
+
+export const BATCH_CHANGE_BY_NAMESPACE = gql`
+    query BatchChangeByNamespace($namespaceID: ID!, $batchChange: String!, $createdAfter: DateTime!) {
+        batchChange(namespace: $namespaceID, name: $batchChange) {
+            ...BatchChangeFields
+        }
+    }
+    ${batchChangeFragment}
+`
 
 export const hiddenExternalChangesetFieldsFragment = gql`
     fragment HiddenExternalChangesetFields on HiddenExternalChangeset {
@@ -229,6 +269,7 @@ export const externalChangesetFieldsFragment = gql`
         externalURL {
             url
         }
+        forkNamespace
         externalID
         diffStat {
             ...DiffStatFields
@@ -242,8 +283,13 @@ export const externalChangesetFieldsFragment = gql`
             description {
                 __typename
                 ... on GitBranchChangesetDescription {
+                    baseRef
                     headRef
                 }
+            }
+            forkTarget {
+                pushUser
+                namespace
             }
         }
     }
@@ -269,11 +315,68 @@ export const changesetFieldsFragment = gql`
     ${externalChangesetFieldsFragment}
 `
 
+export const CHANGESETS = gql`
+    query BatchChangeChangesets(
+        $batchChange: ID!
+        $first: Int
+        $after: String
+        $state: ChangesetState
+        $reviewState: ChangesetReviewState
+        $checkState: ChangesetCheckState
+        $onlyPublishedByThisBatchChange: Boolean
+        $search: String
+        $onlyArchived: Boolean
+        $onlyClosable: Boolean
+    ) {
+        node(id: $batchChange) {
+            __typename
+            ... on BatchChange {
+                changesets(
+                    first: $first
+                    after: $after
+                    state: $state
+                    reviewState: $reviewState
+                    checkState: $checkState
+                    onlyPublishedByThisBatchChange: $onlyPublishedByThisBatchChange
+                    search: $search
+                    onlyArchived: $onlyArchived
+                    onlyClosable: $onlyClosable
+                ) {
+                    __typename
+                    totalCount
+                    pageInfo {
+                        endCursor
+                        hasNextPage
+                    }
+                    nodes {
+                        # NOTE: Apollo typename resolution fails if we form a fragment on a union type (e.g. "on Changeset")
+                        __typename
+                        ... on HiddenExternalChangeset {
+                            ...HiddenExternalChangesetFields
+                        }
+                        ... on ExternalChangeset {
+                            ...ExternalChangesetFields
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    ${hiddenExternalChangesetFieldsFragment}
+
+    ${externalChangesetFieldsFragment}
+`
+
+// TODO: This has been superseded by CHANGESETS above, but the "Close" page still uses
+// this older `requestGraphQL` one. The variables and result types are the same, so
+// eventually this can just go away when we refactor the requests from the "Close" page.
 export const queryChangesets = ({
     batchChange,
     first,
     after,
     state,
+    onlyClosable,
     reviewState,
     checkState,
     onlyPublishedByThisBatchChange,
@@ -282,59 +385,18 @@ export const queryChangesets = ({
 }: BatchChangeChangesetsVariables): Observable<
     (BatchChangeChangesetsResult['node'] & { __typename: 'BatchChange' })['changesets']
 > =>
-    requestGraphQL<BatchChangeChangesetsResult, BatchChangeChangesetsVariables>(
-        gql`
-            query BatchChangeChangesets(
-                $batchChange: ID!
-                $first: Int
-                $after: String
-                $state: ChangesetState
-                $reviewState: ChangesetReviewState
-                $checkState: ChangesetCheckState
-                $onlyPublishedByThisBatchChange: Boolean
-                $search: String
-                $onlyArchived: Boolean
-            ) {
-                node(id: $batchChange) {
-                    __typename
-                    ... on BatchChange {
-                        changesets(
-                            first: $first
-                            after: $after
-                            state: $state
-                            reviewState: $reviewState
-                            checkState: $checkState
-                            onlyPublishedByThisBatchChange: $onlyPublishedByThisBatchChange
-                            search: $search
-                            onlyArchived: $onlyArchived
-                        ) {
-                            totalCount
-                            pageInfo {
-                                endCursor
-                                hasNextPage
-                            }
-                            nodes {
-                                ...ChangesetFields
-                            }
-                        }
-                    }
-                }
-            }
-
-            ${changesetFieldsFragment}
-        `,
-        {
-            batchChange,
-            first,
-            after,
-            state,
-            reviewState,
-            checkState,
-            onlyPublishedByThisBatchChange,
-            search,
-            onlyArchived,
-        }
-    ).pipe(
+    requestGraphQL<BatchChangeChangesetsResult, BatchChangeChangesetsVariables>(CHANGESETS, {
+        batchChange,
+        first,
+        after,
+        state,
+        onlyClosable,
+        reviewState,
+        checkState,
+        onlyPublishedByThisBatchChange,
+        search,
+        onlyArchived,
+    }).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
             if (!node) {
@@ -575,7 +637,9 @@ export async function getChangesetDiff(changeset: Scalars['ID']): Promise<string
                     throw new Error(`The given ID is a ${node.__typename}, not an ExternalChangeset`)
                 }
 
-                const commits = node.currentSpec?.description.commits
+                const commits =
+                    node.currentSpec?.description?.__typename === 'GitBranchChangesetDescription' &&
+                    node.currentSpec?.description.commits
                 if (!commits) {
                     throw new Error(`No commit available for changeset ID ${changeset}`)
                 } else if (commits.length !== 1) {
@@ -721,48 +785,32 @@ export async function publishChangesets(
     dataOrThrowErrors(result)
 }
 
-export const queryBulkOperations = (
-    args: BatchChangeBulkOperationsVariables
-): Observable<BulkOperationConnectionFields> =>
-    requestGraphQL<BatchChangeBulkOperationsResult, BatchChangeBulkOperationsVariables>(
-        gql`
-            query BatchChangeBulkOperations($batchChange: ID!, $first: Int, $after: String) {
-                node(id: $batchChange) {
-                    __typename
-                    ... on BatchChange {
-                        bulkOperations(first: $first, after: $after) {
-                            ...BulkOperationConnectionFields
-                        }
-                    }
+export const BULK_OPERATIONS = gql`
+    query BatchChangeBulkOperations($batchChange: ID!, $first: Int, $after: String) {
+        node(id: $batchChange) {
+            __typename
+            ... on BatchChange {
+                bulkOperations(first: $first, after: $after) {
+                    ...BulkOperationConnectionFields
                 }
             }
+        }
+    }
 
-            fragment BulkOperationConnectionFields on BulkOperationConnection {
-                totalCount
-                pageInfo {
-                    hasNextPage
-                    endCursor
-                }
-                nodes {
-                    ...BulkOperationFields
-                }
-            }
+    fragment BulkOperationConnectionFields on BulkOperationConnection {
+        __typename
+        totalCount
+        pageInfo {
+            hasNextPage
+            endCursor
+        }
+        nodes {
+            ...BulkOperationFields
+        }
+    }
 
-            ${bulkOperationFragment}
-        `,
-        args
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(({ node }) => {
-            if (!node) {
-                throw new Error(`Batch change with ID ${args.batchChange} does not exist`)
-            }
-            if (node.__typename !== 'BatchChange') {
-                throw new Error(`The given ID is a ${node.__typename}, not a BatchChange`)
-            }
-            return node.bulkOperations
-        })
-    )
+    ${bulkOperationFragment}
+`
 
 export const queryAllChangesetIDs = ({
     batchChange,
@@ -850,3 +898,22 @@ export const queryAllChangesetIDs = ({
         )
     )
 }
+
+export const queryAvailableBulkOperations = ({
+    batchChange,
+    changesets,
+}: {
+    batchChange: Scalars['ID']
+    changesets: Scalars['ID'][]
+}): Observable<BulkOperationType[]> =>
+    requestGraphQL<AvailableBulkOperationsResult, AvailableBulkOperationsVariables>(
+        gql`
+            query AvailableBulkOperations($batchChange: ID!, $changesets: [ID!]!) {
+                availableBulkOperations(batchChange: $batchChange, changesets: $changesets)
+            }
+        `,
+        { batchChange, changesets }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(item => item.availableBulkOperations)
+    )

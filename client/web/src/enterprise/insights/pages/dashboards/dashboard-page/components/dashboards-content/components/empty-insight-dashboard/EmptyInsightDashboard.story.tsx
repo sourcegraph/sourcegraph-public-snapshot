@@ -1,14 +1,15 @@
-import { storiesOf } from '@storybook/react'
-import { noop } from 'lodash'
 import React from 'react'
 
-import { EnterpriseWebStory } from '../../../../../../../../components/EnterpriseWebStory'
-import { InsightDashboard, InsightsDashboardType } from '../../../../../../../core/types'
+import { storiesOf } from '@storybook/react'
+import { noop } from 'lodash'
+
+import { WebStory } from '../../../../../../../../../components/WebStory'
+import { InsightDashboard, InsightsDashboardOwnerType, InsightsDashboardType } from '../../../../../../../core/types'
 
 import { EmptyInsightDashboard } from './EmptyInsightDashboard'
 
 const { add } = storiesOf('web/insights/EmptyInsightDashboard', module)
-    .addDecorator(story => <EnterpriseWebStory>{() => story()}</EnterpriseWebStory>)
+    .addDecorator(story => <WebStory>{() => story()}</WebStory>)
     .addParameters({
         chromatic: {
             viewports: [576, 1440],
@@ -17,17 +18,12 @@ const { add } = storiesOf('web/insights/EmptyInsightDashboard', module)
 
 add('EmptyInsightDashboard', () => {
     const dashboard: InsightDashboard = {
-        type: InsightsDashboardType.Personal,
+        type: InsightsDashboardType.Custom,
         id: '101',
         title: 'Personal',
-        builtIn: true,
         insightIds: [],
-        owner: {
-            id: '101',
-            name: 'Pesonal',
-        },
-        settingsKey: 'test',
+        owners: [{ type: InsightsDashboardOwnerType.Personal, id: '101', title: 'Personal ' }],
     }
-    const settingsCascade = {} as any
-    return <EmptyInsightDashboard dashboard={dashboard} onAddInsight={noop} settingsCascade={settingsCascade} />
+
+    return <EmptyInsightDashboard dashboard={dashboard} onAddInsight={noop} />
 })

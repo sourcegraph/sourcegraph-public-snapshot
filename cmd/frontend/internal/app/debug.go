@@ -10,28 +10,30 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	zoektweb "github.com/google/zoekt/web"
 	"github.com/gorilla/mux"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/debugproxies"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/search"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var grafanaURLFromEnv = env.Get("GRAFANA_SERVER_URL", "", "URL at which Grafana can be reached")
-var jaegerURLFromEnv = env.Get("JAEGER_SERVER_URL", "", "URL at which Jaeger UI can be reached")
+var (
+	grafanaURLFromEnv = env.Get("GRAFANA_SERVER_URL", "", "URL at which Grafana can be reached")
+	jaegerURLFromEnv  = env.Get("JAEGER_SERVER_URL", "", "URL at which Jaeger UI can be reached")
+)
 
 func init() {
 	conf.ContributeWarning(newPrometheusValidator(srcprometheus.NewClient(srcprometheus.PrometheusURL)))
 }
 
-func addNoK8sClientHandler(r *mux.Router, db dbutil.DB) {
+func addNoK8sClientHandler(r *mux.Router, db database.DB) {
 	noHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `Cluster information not available`)
 		fmt.Fprintf(w, `<br><br><a href="headers">headers</a><br>`)
@@ -41,10 +43,9 @@ func addNoK8sClientHandler(r *mux.Router, db dbutil.DB) {
 
 // addDebugHandlers registers the reverse proxies to each services debug
 // endpoints.
-func addDebugHandlers(r *mux.Router, db dbutil.DB) {
+func addDebugHandlers(r *mux.Router, db database.DB) {
 	addGrafana(r, db)
 	addJaeger(r, db)
-	addZoekt(r, db)
 
 	var rph debugproxies.ReverseProxyHandler
 
@@ -56,9 +57,11 @@ func addDebugHandlers(r *mux.Router, db dbutil.DB) {
 				Addr:    s.Host,
 			})
 		}
-		rph.Populate(peps)
-	} else if conf.IsDeployTypeKubernetes(conf.DeployType()) {
-		err := debugproxies.StartClusterScanner(rph.Populate)
+		rph.Populate(db, peps)
+	} else if deploy.IsDeployTypeKubernetes(deploy.Type()) {
+		err := debugproxies.StartClusterScanner(func(endpoints []debugproxies.Endpoint) {
+			rph.Populate(db, endpoints)
+		})
 		if err != nil {
 			// we ended up here because cluster is not a k8s cluster
 			addNoK8sClientHandler(r, db)
@@ -68,7 +71,7 @@ func addDebugHandlers(r *mux.Router, db dbutil.DB) {
 		addNoK8sClientHandler(r, db)
 	}
 
-	rph.AddToRouter(r)
+	rph.AddToRouter(r, db)
 }
 
 // PreMountGrafanaHook (if set) is invoked as a hook prior to mounting a
@@ -78,14 +81,14 @@ var PreMountGrafanaHook func() error
 // This error is returned if the current license does not support monitoring.
 const errMonitoringNotLicensed = `The feature "monitoring" is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.`
 
-func addNoGrafanaHandler(r *mux.Router, db dbutil.DB) {
+func addNoGrafanaHandler(r *mux.Router, db database.DB) {
 	noGrafana := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `Grafana endpoint proxying: Please set env var GRAFANA_SERVER_URL`)
 	})
 	r.Handle("/grafana", adminOnly(noGrafana, db))
 }
 
-func addGrafanaNotLicensedHandler(r *mux.Router, db dbutil.DB) {
+func addGrafanaNotLicensedHandler(r *mux.Router, db database.DB) {
 	notLicensed := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, errMonitoringNotLicensed, http.StatusUnauthorized)
 	})
@@ -93,7 +96,7 @@ func addGrafanaNotLicensedHandler(r *mux.Router, db dbutil.DB) {
 }
 
 // addReverseProxyForService registers a reverse proxy for the specified service.
-func addGrafana(r *mux.Router, db dbutil.DB) {
+func addGrafana(r *mux.Router, db database.DB) {
 	if PreMountGrafanaHook != nil {
 		if err := PreMountGrafanaHook(); err != nil {
 			addGrafanaNotLicensedHandler(r, db)
@@ -125,14 +128,14 @@ func addGrafana(r *mux.Router, db dbutil.DB) {
 	}
 }
 
-func addNoJaegerHandler(r *mux.Router, db dbutil.DB) {
+func addNoJaegerHandler(r *mux.Router, db database.DB) {
 	noJaeger := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `Jaeger endpoint proxying: Please set env var JAEGER_SERVER_URL`)
 	})
 	r.Handle("/jaeger", adminOnly(noJaeger, db))
 }
 
-func addJaeger(r *mux.Router, db dbutil.DB) {
+func addJaeger(r *mux.Router, db database.DB) {
 	if len(jaegerURLFromEnv) > 0 {
 		fmt.Println("Jaeger URL from env ", jaegerURLFromEnv)
 		jaegerURL, err := url.Parse(jaegerURLFromEnv)
@@ -156,27 +159,8 @@ func addJaeger(r *mux.Router, db dbutil.DB) {
 	}
 }
 
-func addZoekt(r *mux.Router, db dbutil.DB) {
-	z := search.Indexed()
-	if z == nil {
-		return
-	}
-
-	h, err := zoektweb.NewMux(&zoektweb.Server{
-		Searcher: search.Indexed(),
-		Top:      zoektweb.Top,
-		Print:    true,
-		HTML:     true,
-	})
-	if err != nil {
-		log.Printf("debugserver: failed to create zoekt web: %v", err)
-		return
-	}
-	r.PathPrefix("/zoekt/").Handler(adminOnly(http.StripPrefix("/-/debug/zoekt", h), db))
-}
-
 // adminOnly is a HTTP middleware which only allows requests by admins.
-func adminOnly(next http.Handler, db dbutil.DB) http.Handler {
+func adminOnly(next http.Handler, db database.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := backend.CheckCurrentUserIsSiteAdmin(r.Context(), db); err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
@@ -193,7 +177,7 @@ func adminOnly(next http.Handler, db dbutil.DB) http.Handler {
 // It also accepts the error from creating `srcprometheus.Client` as an parameter, to validate
 // Prometheus configuration.
 func newPrometheusValidator(prom srcprometheus.Client, promErr error) conf.Validator {
-	return func(c conf.Unified) conf.Problems {
+	return func(c conftypes.SiteConfigQuerier) conf.Problems {
 		// surface new prometheus client error if it was unexpected
 		prometheusUnavailable := errors.Is(promErr, srcprometheus.ErrPrometheusUnavailable)
 		if promErr != nil && !prometheusUnavailable {
@@ -201,7 +185,7 @@ func newPrometheusValidator(prom srcprometheus.Client, promErr error) conf.Valid
 		}
 
 		// no need to validate prometheus config if no `observability.*` settings are configured
-		observabilityNotConfigured := len(c.ObservabilityAlerts) == 0 && len(c.ObservabilitySilenceAlerts) == 0
+		observabilityNotConfigured := len(c.SiteConfig().ObservabilityAlerts) == 0 && len(c.SiteConfig().ObservabilitySilenceAlerts) == 0
 		if observabilityNotConfigured {
 			// no observability configuration, no checks to make
 			return nil

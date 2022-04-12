@@ -52,50 +52,6 @@ func scanFirstIndexConfiguration(rows *sql.Rows, err error) (IndexConfiguration,
 	return indexConfigurations[0], true, nil
 }
 
-// GetRepositoriesWithIndexConfiguration returns the ids of repositories explicit index configuration.
-// This does NOT return repositories that are disabled for autoindexing
-func (s *Store) GetRepositoriesWithIndexConfiguration(ctx context.Context) (_ []int, err error) {
-	ctx, traceLog, endObservation := s.operations.getRepositoriesWithIndexConfiguration.WithAndLogger(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	repositories, err := basestore.ScanInts(s.Store.Query(ctx, sqlf.Sprintf(getRepositoriesWithIndexConfigurationQuery)))
-	if err != nil {
-		return nil, err
-	}
-	traceLog(log.Int("numRepositories", len(repositories)))
-
-	return repositories, nil
-}
-
-const getRepositoriesWithIndexConfigurationQuery = `
--- source: enterprise/internal/codeintel/stores/dbstore/configuration.go:GetRepositoriesWithIndexConfiguration
-SELECT c.repository_id
-FROM lsif_index_configuration c
-LEFT JOIN repo r ON r.id = c.repository_id
-WHERE c.autoindex_enabled = true AND r.deleted_at IS NULL
-`
-
-func (s *Store) GetAutoindexDisabledRepositories(ctx context.Context) (_ []int, err error) {
-	ctx, traceLog, endObservation := s.operations.getRepositoriesWithIndexConfiguration.WithAndLogger(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	repositories, err := basestore.ScanInts(s.Store.Query(ctx, sqlf.Sprintf(getAutoIndexDisabledRepositoriesQuery)))
-	if err != nil {
-		return nil, err
-	}
-	traceLog(log.Int("numRepositories", len(repositories)))
-
-	return repositories, nil
-}
-
-const getAutoIndexDisabledRepositoriesQuery = `
--- source: enterprise/internal/codeintel/stores/dbstore/configuration.go:GetAutoindexDisabledRepositories
-SELECT c.repository_id
-FROM lsif_index_configuration c
-LEFT JOIN repo r ON r.id = c.repository_id
-WHERE c.autoindex_enabled = false AND r.deleted_at IS NULL
-`
-
 // GetIndexConfigurationByRepositoryID returns the index configuration for a repository.
 func (s *Store) GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ IndexConfiguration, _ bool, err error) {
 	ctx, endObservation := s.operations.getIndexConfigurationByRepositoryID.With(ctx, &err, observation.Args{LogFields: []log.Field{

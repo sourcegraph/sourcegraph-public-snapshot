@@ -4,23 +4,23 @@ import (
 	"context"
 	"sync"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type externalServiceResolver struct {
-	db              dbutil.DB
+	db              database.DB
 	externalService *types.ExternalService
 	warning         string
 
@@ -31,18 +31,19 @@ type externalServiceResolver struct {
 
 const externalServiceIDKind = "ExternalService"
 
-func externalServiceByID(ctx context.Context, db dbutil.DB, gqlID graphql.ID) (*externalServiceResolver, error) {
-	id, err := unmarshalExternalServiceID(gqlID)
+func externalServiceByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*externalServiceResolver, error) {
+	id, err := UnmarshalExternalServiceID(gqlID)
+
 	if err != nil {
 		return nil, err
 	}
 
-	es, err := database.ExternalServices(db).GetByID(ctx, id)
+	es, err := db.ExternalServices().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := checkExternalServiceAccess(ctx, db, es.NamespaceUserID); err != nil {
+	if err := backend.CheckExternalServiceAccess(ctx, db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
 		return nil, err
 	}
 	return &externalServiceResolver{db: db, externalService: es}, nil
@@ -52,7 +53,7 @@ func marshalExternalServiceID(id int64) graphql.ID {
 	return relay.MarshalID(externalServiceIDKind, id)
 }
 
-func unmarshalExternalServiceID(id graphql.ID) (externalServiceID int64, err error) {
+func UnmarshalExternalServiceID(id graphql.ID) (externalServiceID int64, err error) {
 	if kind := relay.UnmarshalKind(id); kind != externalServiceIDKind {
 		err = errors.Errorf("expected graphql ID to have kind %q; got %q", externalServiceIDKind, kind)
 		return
@@ -141,7 +142,7 @@ func (r *externalServiceResolver) Warning() *string {
 }
 
 func (r *externalServiceResolver) LastSyncError(ctx context.Context) (*string, error) {
-	latestError, err := database.ExternalServices(r.db).GetLastSyncError(ctx, r.externalService.ID)
+	latestError, err := r.db.ExternalServices().GetLastSyncError(ctx, r.externalService.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +153,7 @@ func (r *externalServiceResolver) LastSyncError(ctx context.Context) (*string, e
 }
 
 func (r *externalServiceResolver) RepoCount(ctx context.Context) (int32, error) {
-	return database.ExternalServices(r.db).RepoCount(ctx, r.externalService.ID)
+	return r.db.ExternalServices().RepoCount(ctx, r.externalService.ID)
 }
 
 func (r *externalServiceResolver) LastSyncAt() *DateTime {
@@ -172,7 +173,7 @@ func (r *externalServiceResolver) NextSyncAt() *DateTime {
 var scopeCache = rcache.New("extsvc_token_scope")
 
 func (r *externalServiceResolver) GrantedScopes(ctx context.Context) (*[]string, error) {
-	scopes, err := repos.GrantedScopes(ctx, scopeCache, r.externalService)
+	scopes, err := repos.GrantedScopes(ctx, scopeCache, r.db, r.externalService)
 	if err != nil {
 		// It's possible that we fail to fetch scope from the code host, in this case we
 		// don't want the entire resolver to fail.
@@ -183,4 +184,8 @@ func (r *externalServiceResolver) GrantedScopes(ctx context.Context) (*[]string,
 		return nil, nil
 	}
 	return &scopes, nil
+}
+
+func (r *externalServiceResolver) WebhookLogs(ctx context.Context, args *webhookLogsArgs) (*webhookLogConnectionResolver, error) {
+	return newWebhookLogConnectionResolver(ctx, r.db, args, webhookLogsExternalServiceID(r.externalService.ID))
 }

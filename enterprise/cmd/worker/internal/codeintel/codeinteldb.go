@@ -3,11 +3,12 @@ package codeintel
 import (
 	"database/sql"
 
-	"github.com/cockroachdb/errors"
-
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/memo"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // InitCodeIntelDatabase initializes and returns a connection to the codeintel db.
@@ -20,18 +21,13 @@ func InitCodeIntelDatabase() (*sql.DB, error) {
 	return conn.(*sql.DB), err
 }
 
-var initCodeIntelDatabaseMemo = shared.NewMemoizedConstructor(func() (interface{}, error) {
-	postgresDSN := shared.WatchServiceConnectionValue(func(serviceConnections conftypes.ServiceConnections) string {
+var initCodeIntelDatabaseMemo = memo.NewMemoizedConstructor(func() (interface{}, error) {
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
-
-	db, err := dbconn.New(dbconn.Opts{DSN: postgresDSN, DBName: "codeintel", AppName: "worker"})
+	db, err := connections.EnsureNewCodeIntelDB(dsn, "worker", &observation.TestContext)
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to codeintel database: %s", err)
-	}
-
-	if err := dbconn.MigrateDB(db, dbconn.CodeIntel); err != nil {
-		return nil, errors.Errorf("failed to perform codeintel database migration: %s", err)
 	}
 
 	return db, nil

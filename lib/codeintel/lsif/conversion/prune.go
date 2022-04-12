@@ -31,12 +31,13 @@ func prune(ctx context.Context, state *State, root string, getChildren pathexist
 
 	pruneFromDefinitionReferences(state, state.DefinitionData)
 	pruneFromDefinitionReferences(state, state.ReferenceData)
+	pruneFromDefinitionReferences(state, state.ImplementationData)
 	return nil
 }
 
 func pruneFromDefinitionReferences(state *State, definitionReferenceData map[int]*datastructures.DefaultIDSetMap) {
 	for _, documentRanges := range definitionReferenceData {
-		documentRanges.Each(func(documentID int, rangeIDs *datastructures.IDSet) {
+		documentRanges.Each(func(documentID int, _ *datastructures.IDSet) {
 			if _, ok := state.DocumentData[documentID]; !ok {
 				// Document was pruned, remove reference
 				documentRanges.Delete(documentID)

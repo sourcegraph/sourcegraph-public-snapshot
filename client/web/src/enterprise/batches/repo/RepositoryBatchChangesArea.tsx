@@ -1,5 +1,6 @@
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useMemo } from 'react'
+
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -7,7 +8,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 import { HeroPage } from '../../../components/HeroPage'
 import { RepositoryFields } from '../../../graphql-operations'
-import { PatternTypeProps } from '../../../search'
 
 import { BatchChangeRepoPage } from './BatchChangeRepoPage'
 
@@ -16,11 +16,7 @@ const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIco
 /**
  * Properties passed to all page components in the repository batch changes area.
  */
-export interface RepositoryBatchChangesAreaPageProps
-    extends ThemeProps,
-        RouteComponentProps<{}>,
-        BreadcrumbSetters,
-        Omit<PatternTypeProps, 'setPatternType'> {
+export interface RepositoryBatchChangesAreaPageProps extends ThemeProps, RouteComponentProps<{}>, BreadcrumbSetters {
     /**
      * The active repository.
      */

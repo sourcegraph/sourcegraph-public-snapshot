@@ -1,34 +1,33 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
+
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { Notices } from './Notices'
 
 describe('Notices', () => {
     test('shows notices for location', () =>
         expect(
-            renderer
-                .create(
-                    <Notices
-                        location="home"
-                        settingsCascade={{
-                            subjects: [],
-                            final: {
-                                notices: [
-                                    { message: 'a', location: 'home' },
-                                    { message: 'a', location: 'home', dismissible: true },
-                                    { message: 'b', location: 'top' },
-                                ],
-                            },
-                        }}
-                    />
-                )
-                .toJSON()
+            renderWithBrandedContext(
+                <Notices
+                    location="home"
+                    settingsCascade={{
+                        subjects: [],
+                        final: {
+                            notices: [
+                                { message: 'a', location: 'home' },
+                                { message: 'a', location: 'home', dismissible: true },
+                                { message: 'b', location: 'top' },
+                            ],
+                        },
+                    }}
+                />
+            ).asFragment()
         ).toMatchSnapshot())
 
     test('no notices', () =>
         expect(
-            renderer
-                .create(<Notices location="home" settingsCascade={{ subjects: [], final: { notices: null } }} />)
-                .toJSON()
+            renderWithBrandedContext(
+                <Notices location="home" settingsCascade={{ subjects: [], final: { notices: null } }} />
+            ).asFragment()
         ).toMatchSnapshot())
 })

@@ -3,6 +3,7 @@ import path from 'path'
 
 import html from 'tagged-template-noop'
 
+import { SearchGraphQlOperations } from '@sourcegraph/search'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import {
@@ -20,7 +21,7 @@ import { createJsContext } from './jscontext'
 
 export interface WebIntegrationTestContext
     extends IntegrationTestContext<
-        WebGraphQlOperations & SharedGraphQlOperations,
+        WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations,
         string & keyof (WebGraphQlOperations & SharedGraphQlOperations)
     > {
     /**
@@ -59,6 +60,7 @@ export const createWebIntegrationTestContext = async ({
     driver,
     currentTest,
     directory,
+    customContext = {},
 }: IntegrationTestOptions): Promise<WebIntegrationTestContext> => {
     const sharedTestContext = await createSharedIntegrationTestContext<
         WebGraphQlOperations & SharedGraphQlOperations,
@@ -78,14 +80,14 @@ export const createWebIntegrationTestContext = async ({
         .filter(request => !request.pathname.startsWith('/-/'))
         .intercept((request, response) => {
             response.type('text/html').send(html`
-                <html>
+                <html lang="en">
                     <head>
                         <title>Sourcegraph Test</title>
                     </head>
                     <body>
                         <div id="root"></div>
                         <script>
-                            window.context = ${JSON.stringify(jsContext)}
+                            window.context = ${JSON.stringify({ ...jsContext, ...customContext })}
                         </script>
                         ${runtimeChunkScriptTag}
                         <script src=${getAppBundle()}></script>

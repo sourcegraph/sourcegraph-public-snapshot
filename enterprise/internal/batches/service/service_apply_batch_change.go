@@ -4,15 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/rewirer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // ErrApplyClosedBatchChange is returned by ApplyBatchChange when the batch change
@@ -52,11 +51,8 @@ func (s *Service) ApplyBatchChange(
 	ctx context.Context,
 	opts ApplyBatchChangeOpts,
 ) (batchChange *btypes.BatchChange, err error) {
-	tr, ctx := trace.New(ctx, "Service.ApplyBatchChange", opts.String())
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	ctx, endObservation := s.operations.applyBatchChange.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
 
 	batchSpec, err := s.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
 		RandID: opts.BatchSpecRandID,
@@ -66,7 +62,13 @@ func (s *Service) ApplyBatchChange(
 	}
 
 	// 🚨 SECURITY: Only site-admins or the creator of batchSpec can apply it.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DB(), batchSpec.UserID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchSpec.UserID); err != nil {
+		return nil, err
+	}
+
+	// Validate ChangesetSpecs and return error if they're invalid and the
+	// BatchSpec can't be applied safely.
+	if err := s.ValidateChangesetSpecs(ctx, batchSpec.ID); err != nil {
 		return nil, err
 	}
 
@@ -170,6 +172,9 @@ func (s *Service) ReconcileBatchChange(
 	ctx context.Context,
 	batchSpec *btypes.BatchSpec,
 ) (batchChange *btypes.BatchChange, previousSpecID int64, err error) {
+	ctx, endObservation := s.operations.reconcileBatchChange.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	batchChange, err = s.GetBatchChangeMatchingBatchSpec(ctx, batchSpec)
 	if err != nil {
 		return nil, 0, err
@@ -185,8 +190,8 @@ func (s *Service) ReconcileBatchChange(
 	batchChange.NamespaceUserID = batchSpec.NamespaceUserID
 	batchChange.Name = batchSpec.Spec.Name
 	a := actor.FromContext(ctx)
-	if batchChange.InitialApplierID == 0 {
-		batchChange.InitialApplierID = a.UID
+	if batchChange.CreatorID == 0 {
+		batchChange.CreatorID = a.UID
 	}
 	batchChange.LastApplierID = a.UID
 	batchChange.LastAppliedAt = s.clock()

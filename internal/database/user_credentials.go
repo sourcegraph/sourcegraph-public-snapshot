@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -14,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // UserCredential represents a row in the `user_credentials` table.
@@ -104,35 +104,47 @@ func (UserCredentialNotFoundErr) NotFound() bool {
 	return true
 }
 
-// UserCredentialsStore provides access to the `user_credentials` table.
-type UserCredentialsStore struct {
+type UserCredentialsStore interface {
+	basestore.ShareableStore
+	With(basestore.ShareableStore) UserCredentialsStore
+	Transact(context.Context) (UserCredentialsStore, error)
+	Create(ctx context.Context, scope UserCredentialScope, credential auth.Authenticator) (*UserCredential, error)
+	Update(context.Context, *UserCredential) error
+	Delete(ctx context.Context, id int64) error
+	GetByID(ctx context.Context, id int64) (*UserCredential, error)
+	GetByScope(context.Context, UserCredentialScope) (*UserCredential, error)
+	List(context.Context, UserCredentialsListOpts) ([]*UserCredential, int, error)
+}
+
+// userCredentialsStore provides access to the `user_credentials` table.
+type userCredentialsStore struct {
 	*basestore.Store
 	key encryption.Key
 }
 
 // UserCredentials instantiates and returns a new UserCredentialsStore with prepared statements.
-func UserCredentials(db dbutil.DB, key encryption.Key) *UserCredentialsStore {
-	return &UserCredentialsStore{
+func UserCredentials(db dbutil.DB, key encryption.Key) UserCredentialsStore {
+	return &userCredentialsStore{
 		Store: basestore.NewWithDB(db, sql.TxOptions{}),
 		key:   key,
 	}
 }
 
 // UserCredentialsWith instantiates and returns a new UserCredentialsStore using the other store handle.
-func UserCredentialsWith(other basestore.ShareableStore, key encryption.Key) *UserCredentialsStore {
-	return &UserCredentialsStore{
+func UserCredentialsWith(other basestore.ShareableStore, key encryption.Key) UserCredentialsStore {
+	return &userCredentialsStore{
 		Store: basestore.NewWithHandle(other.Handle()),
 		key:   key,
 	}
 }
 
-func (s *UserCredentialsStore) With(other basestore.ShareableStore) *UserCredentialsStore {
-	return &UserCredentialsStore{Store: s.Store.With(other)}
+func (s *userCredentialsStore) With(other basestore.ShareableStore) UserCredentialsStore {
+	return &userCredentialsStore{Store: s.Store.With(other)}
 }
 
-func (s *UserCredentialsStore) Transact(ctx context.Context) (*UserCredentialsStore, error) {
+func (s *userCredentialsStore) Transact(ctx context.Context) (UserCredentialsStore, error) {
 	txBase, err := s.Store.Transact(ctx)
-	return &UserCredentialsStore{Store: txBase}, err
+	return &userCredentialsStore{Store: txBase}, err
 }
 
 // UserCredentialScope represents the unique scope for a credential. Only one
@@ -147,11 +159,7 @@ type UserCredentialScope struct {
 // Create creates a new user credential based on the given scope and
 // authenticator. If the scope already has a credential, an error will be
 // returned.
-func (s *UserCredentialsStore) Create(ctx context.Context, scope UserCredentialScope, credential auth.Authenticator) (*UserCredential, error) {
-	if Mocks.UserCredentials.Create != nil {
-		return Mocks.UserCredentials.Create(ctx, scope, credential)
-	}
-
+func (s *userCredentialsStore) Create(ctx context.Context, scope UserCredentialScope, credential auth.Authenticator) (*UserCredential, error) {
 	id, err := keyID(ctx, s.key)
 	if err != nil {
 		return nil, err
@@ -184,11 +192,7 @@ func (s *UserCredentialsStore) Create(ctx context.Context, scope UserCredentialS
 
 // Update updates a user credential in the database. If the credential cannot be found,
 // an error is returned.
-func (s *UserCredentialsStore) Update(ctx context.Context, credential *UserCredential) error {
-	if Mocks.UserCredentials.Update != nil {
-		return Mocks.UserCredentials.Update(ctx, credential)
-	}
-
+func (s *userCredentialsStore) Update(ctx context.Context, credential *UserCredential) error {
 	credential.UpdatedAt = timeutil.Now()
 
 	q := sqlf.Sprintf(
@@ -216,11 +220,7 @@ func (s *UserCredentialsStore) Update(ctx context.Context, credential *UserCrede
 // Delete deletes the given user credential. Note that there is no concept of a
 // soft delete with user credentials: once deleted, the relevant records are
 // _gone_, so that we don't hold any sensitive data unexpectedly. 💀
-func (s *UserCredentialsStore) Delete(ctx context.Context, id int64) error {
-	if Mocks.UserCredentials.Delete != nil {
-		return Mocks.UserCredentials.Delete(ctx, id)
-	}
-
+func (s *userCredentialsStore) Delete(ctx context.Context, id int64) error {
 	q := sqlf.Sprintf("DELETE FROM user_credentials WHERE id = %s", id)
 	res, err := s.ExecResult(ctx, q)
 	if err != nil {
@@ -238,11 +238,7 @@ func (s *UserCredentialsStore) Delete(ctx context.Context, id int64) error {
 
 // GetByID returns the user credential matching the given ID, or
 // UserCredentialNotFoundErr if no such credential exists.
-func (s *UserCredentialsStore) GetByID(ctx context.Context, id int64) (*UserCredential, error) {
-	if Mocks.UserCredentials.GetByID != nil {
-		return Mocks.UserCredentials.GetByID(ctx, id)
-	}
-
+func (s *userCredentialsStore) GetByID(ctx context.Context, id int64) (*UserCredential, error) {
 	q := sqlf.Sprintf(
 		"SELECT %s FROM user_credentials WHERE id = %s",
 		sqlf.Join(userCredentialsColumns, ", "),
@@ -262,11 +258,7 @@ func (s *UserCredentialsStore) GetByID(ctx context.Context, id int64) (*UserCred
 
 // GetByScope returns the user credential matching the given scope, or
 // UserCredentialNotFoundErr if no such credential exists.
-func (s *UserCredentialsStore) GetByScope(ctx context.Context, scope UserCredentialScope) (*UserCredential, error) {
-	if Mocks.UserCredentials.GetByScope != nil {
-		return Mocks.UserCredentials.GetByScope(ctx, scope)
-	}
-
+func (s *userCredentialsStore) GetByScope(ctx context.Context, scope UserCredentialScope) (*UserCredential, error) {
 	q := sqlf.Sprintf(
 		userCredentialsGetByScopeQueryFmtstr,
 		sqlf.Join(userCredentialsColumns, ", "),
@@ -318,11 +310,7 @@ func (opts *UserCredentialsListOpts) sql() *sqlf.Query {
 }
 
 // List returns all user credentials matching the given options.
-func (s *UserCredentialsStore) List(ctx context.Context, opts UserCredentialsListOpts) ([]*UserCredential, int, error) {
-	if Mocks.UserCredentials.List != nil {
-		return Mocks.UserCredentials.List(ctx, opts)
-	}
-
+func (s *userCredentialsStore) List(ctx context.Context, opts UserCredentialsListOpts) ([]*UserCredential, int, error) {
 	preds := []*sqlf.Query{}
 	if opts.Scope.Domain != "" {
 		preds = append(preds, sqlf.Sprintf("domain = %s", opts.Scope.Domain))

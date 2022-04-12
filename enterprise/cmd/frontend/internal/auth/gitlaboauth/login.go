@@ -4,13 +4,14 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/cockroachdb/errors"
 	"github.com/dghubble/gologin"
 	oauth2Login "github.com/dghubble/gologin/oauth2"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func LoginHandler(config *oauth2.Config, failure http.Handler) http.Handler {
@@ -79,5 +80,5 @@ func gitlabClientFromAuthURL(authURL, oauthToken string) (*gitlab.Client, error)
 	baseURL.Path = ""
 	baseURL.RawQuery = ""
 	baseURL.Fragment = ""
-	return gitlab.NewClientProvider(baseURL, nil).GetOAuthClient(oauthToken), nil
+	return gitlab.NewClientProvider(extsvc.URNGitLabOAuth, baseURL, nil).GetOAuthClient(oauthToken), nil
 }

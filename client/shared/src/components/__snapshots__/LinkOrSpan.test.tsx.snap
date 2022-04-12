@@ -1,18 +1,22 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`LinkOrSpan render a link when "to" is set 1`] = `
-<a
-  className=""
-  href="http://example.com"
->
-  foo
-</a>
+<DocumentFragment>
+  <a
+    class=""
+    href="http://example.com"
+  >
+    foo
+  </a>
+</DocumentFragment>
 `;
 
 exports[`LinkOrSpan render a span when "to" is undefined 1`] = `
-<span
-  className=""
->
-  foo
-</span>
+<DocumentFragment>
+  <span
+    class=""
+  >
+    foo
+  </span>
+</DocumentFragment>
 `;

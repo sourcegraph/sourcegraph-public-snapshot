@@ -30,7 +30,7 @@ func (s *Store) CreateSiteCredential(ctx context.Context, c *btypes.SiteCredenti
 	}
 
 	q := createSiteCredentialQuery(c)
-	return s.query(ctx, q, func(sc scanner) error {
+	return s.query(ctx, q, func(sc dbutil.Scanner) error {
 		return scanSiteCredential(c, sc)
 	})
 }
@@ -114,7 +114,7 @@ func (s *Store) GetSiteCredential(ctx context.Context, opts GetSiteCredentialOpt
 	q := getSiteCredentialQuery(opts)
 
 	cred := btypes.SiteCredential{Key: s.key}
-	err = s.query(ctx, q, func(sc scanner) error { return scanSiteCredential(&cred, sc) })
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error { return scanSiteCredential(&cred, sc) })
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +174,7 @@ func (s *Store) ListSiteCredentials(ctx context.Context, opts ListSiteCredential
 	q := listSiteCredentialsQuery(opts)
 
 	cs = make([]*btypes.SiteCredential, 0, opts.DBLimit())
-	err = s.query(ctx, q, func(sc scanner) (err error) {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		c := btypes.SiteCredential{Key: s.key}
 		if err := scanSiteCredential(&c, sc); err != nil {
 			return err
@@ -240,7 +240,7 @@ func (s *Store) UpdateSiteCredential(ctx context.Context, c *btypes.SiteCredenti
 
 	updated := &btypes.SiteCredential{Key: s.key}
 	q := s.updateSiteCredentialQuery(c)
-	if err := s.query(ctx, q, func(sc scanner) error {
+	if err := s.query(ctx, q, func(sc dbutil.Scanner) error {
 		return scanSiteCredential(updated, sc)
 	}); err != nil {
 		return err
@@ -294,7 +294,7 @@ var siteCredentialColumns = []*sqlf.Query{
 	sqlf.Sprintf("updated_at"),
 }
 
-func scanSiteCredential(c *btypes.SiteCredential, sc scanner) error {
+func scanSiteCredential(c *btypes.SiteCredential, sc dbutil.Scanner) error {
 	return sc.Scan(
 		&c.ID,
 		&c.ExternalServiceType,

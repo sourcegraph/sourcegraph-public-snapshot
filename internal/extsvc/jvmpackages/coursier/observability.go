@@ -15,8 +15,8 @@ type Operations struct {
 	runCommand    *observation.Operation
 }
 
-func NewOperationsFromMetrics(observationContext *observation.Context) *Operations {
-	metrics := metrics.NewOperationMetrics(
+func NewOperations(observationContext *observation.Context) *Operations {
+	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"codeintel_coursier",
 		metrics.WithLabels("op"),
@@ -32,7 +32,7 @@ func NewOperationsFromMetrics(observationContext *observation.Context) *Operatio
 				if err != nil && strings.Contains(err.Error(), "not found") {
 					return observation.EmitForMetrics | observation.EmitForTraces
 				}
-				return observation.EmitForAll
+				return observation.EmitForDefault
 			},
 		})
 	}

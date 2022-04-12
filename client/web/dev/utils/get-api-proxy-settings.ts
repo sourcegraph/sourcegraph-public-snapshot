@@ -4,20 +4,15 @@ import { Options } from 'http-proxy-middleware'
 export const PROXY_ROUTES = ['/.api', '/search/stream', '/-', '/.auth']
 
 interface GetAPIProxySettingsOptions {
-    csrfContextValue: string
     apiURL: string
 }
 
-export const getAPIProxySettings = ({ csrfContextValue, apiURL }: GetAPIProxySettingsOptions): Options => ({
+export const getAPIProxySettings = ({ apiURL }: GetAPIProxySettingsOptions): Options => ({
     target: apiURL,
     // Do not SSL certificate.
     secure: false,
     // Change the origin of the host header to the target URL.
     changeOrigin: true,
-    // Attach `x-csrf-token` header to every request to avoid "CSRF token is invalid" API error.
-    headers: {
-        'x-csrf-token': csrfContextValue,
-    },
     // Rewrite domain of `set-cookie` headers for all cookies received.
     cookieDomainRewrite: '',
     onProxyRes: proxyResponse => {
@@ -29,6 +24,12 @@ export const getAPIProxySettings = ({ csrfContextValue, apiURL }: GetAPIProxySet
 
             proxyResponse.headers['set-cookie'] = cookies
         }
+    },
+    onProxyReq: proxyRequest => {
+        // Not really clear why, but the `changeOrigin: true` setting does NOT add the correct
+        // Origin header to requests sent to k8s.sgdev.org, which e.g. breaks sign in and more. So
+        // we add it ourselves.
+        proxyRequest.setHeader('Origin', apiURL)
     },
     // TODO: share with `client/web/gulpfile.js`
     // Avoid crashing on "read ECONNRESET".

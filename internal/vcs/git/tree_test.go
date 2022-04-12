@@ -9,15 +9,24 @@ import (
 	"reflect"
 	"runtime"
 	"sort"
+	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/grafana/regexp"
+
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 func TestRepository_FileSystem_Symlinks(t *testing.T) {
 	t.Parallel()
 
+	db := database.NewMockDB()
 	gitCommands := []string{
 		"touch file1",
 		"mkdir dir1",
@@ -28,12 +37,17 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 
-	symlinks := []string{"link1", "dir1/link2"}
+	// map of path to size of content
+	symlinks := map[string]int64{
+		"link1":      5, // file1
+		"dir1/link2": 8, // ../file1
+	}
 
 	dir := InitGitRepository(t, gitCommands...)
 	repo := api.RepoName(filepath.Base(dir))
 
-	if resp, err := gitserver.DefaultClient.RequestRepoUpdate(context.Background(), repo, 0); err != nil {
+	client := gitserver.NewClient(db)
+	if resp, err := client.RequestRepoUpdate(context.Background(), repo, 0); err != nil {
 		t.Fatal(err)
 	} else if resp.Error != "" {
 		t.Fatal(resp.Error)
@@ -44,7 +58,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 	ctx := context.Background()
 
 	// file1 should be a file.
-	file1Info, err := Stat(ctx, repo, commitID, "file1")
+	file1Info, err := Stat(ctx, db, authz.DefaultSubRepoPermsChecker, repo, commitID, "file1")
 	if err != nil {
 		t.Fatalf("fs.Stat(file1): %s", err)
 	}
@@ -63,10 +77,10 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 	}
 
 	// Check symlinks are links
-	for _, symlink := range symlinks {
-		fi, err := Lstat(ctx, repo, commitID, symlink)
+	for symlink := range symlinks {
+		fi, err := gitserver.LStat(ctx, db, authz.DefaultSubRepoPermsChecker, repo, commitID, symlink)
 		if err != nil {
-			t.Fatalf("fs.Lstat(%s): %s", symlink, err)
+			t.Fatalf("fs.lStat(%s): %s", symlink, err)
 		}
 		if runtime.GOOS != "windows" {
 			// TODO(alexsaveliev) make it work on Windows too
@@ -75,8 +89,8 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 	}
 
 	// Also check the FileInfo returned by ReadDir to ensure it's
-	// consistent with the FileInfo returned by Lstat.
-	entries, err := ReadDir(ctx, repo, commitID, ".", false)
+	// consistent with the FileInfo returned by lStat.
+	entries, err := client.ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, repo, commitID, ".", false)
 	if err != nil {
 		t.Fatalf("fs.ReadDir(.): %s", err)
 	}
@@ -93,20 +107,19 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 		t.Fatal("readdir did not return link1")
 	}
 
-	// links stat should follow the link to file1.
-	for _, symlink := range symlinks {
-		fi, err := Stat(ctx, repo, commitID, symlink)
+	for symlink, size := range symlinks {
+		fi, err := Stat(ctx, db, authz.DefaultSubRepoPermsChecker, repo, commitID, symlink)
 		if err != nil {
 			t.Fatalf("fs.Stat(%s): %s", symlink, err)
 		}
-		if !fi.Mode().IsRegular() {
-			t.Errorf("%s Stat !IsRegular (mode: %o)", symlink, fi.Mode())
+		if fi.Mode()&fs.ModeSymlink == 0 {
+			t.Errorf("%s Stat is not a symlink (mode: %o)", symlink, fi.Mode())
 		}
 		if fi.Name() != symlink {
 			t.Errorf("got Name %q, want %q", fi.Name(), symlink)
 		}
-		if fi.Size() != 0 {
-			t.Errorf("got %s Size %d, want %d", symlink, fi.Size(), 0)
+		if fi.Size() != size {
+			t.Errorf("got %s Size %d, want %d", symlink, fi.Size(), size)
 		}
 	}
 }
@@ -114,6 +127,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 func TestRepository_FileSystem(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
+	db := database.NewMockDB()
 
 	// In all tests, repo should contain three commits. The first commit
 	// (whose ID is in the 'first' field) has a file at dir1/file1 with the
@@ -151,13 +165,13 @@ func TestRepository_FileSystem(t *testing.T) {
 
 	for label, test := range tests {
 		// notafile should not exist.
-		if _, err := Stat(ctx, test.repo, test.first, "notafile"); !os.IsNotExist(err) {
+		if _, err := Stat(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "notafile"); !os.IsNotExist(err) {
 			t.Errorf("%s: fs1.Stat(notafile): got err %v, want os.IsNotExist", label, err)
 			continue
 		}
 
 		// dir1 should exist and be a dir.
-		dir1Info, err := Stat(ctx, test.repo, test.first, "dir1")
+		dir1Info, err := Stat(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "dir1")
 		if err != nil {
 			t.Errorf("%s: fs1.Stat(dir1): %s", label, err)
 			continue
@@ -174,9 +188,10 @@ func TestRepository_FileSystem(t *testing.T) {
 		if got, want := "ab771ba54f5571c99ffdae54f44acc7993d9f115", dir1Info.Sys().(ObjectInfo).OID().String(); got != want {
 			t.Errorf("%s: got dir1 OID %q, want %q", label, got, want)
 		}
+		client := gitserver.NewClient(db)
 
 		// dir1 should contain one entry: file1.
-		dir1Entries, err := ReadDir(ctx, test.repo, test.first, "dir1", false)
+		dir1Entries, err := client.ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "dir1", false)
 		if err != nil {
 			t.Errorf("%s: fs1.ReadDir(dir1): %s", label, err)
 			continue
@@ -197,14 +212,14 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// dir2 should not exist
-		_, err = ReadDir(ctx, test.repo, test.first, "dir2", false)
+		_, err = client.ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "dir2", false)
 		if !os.IsNotExist(err) {
 			t.Errorf("%s: fs1.ReadDir(dir2): should not exist: %s", label, err)
 			continue
 		}
 
 		// dir1/file1 should exist, contain "infile1", have the right mtime, and be a file.
-		file1Data, err := ReadFile(ctx, test.repo, test.first, "dir1/file1", 0)
+		file1Data, err := ReadFile(ctx, db, test.repo, test.first, "dir1/file1", 0, nil)
 		if err != nil {
 			t.Errorf("%s: fs1.ReadFile(dir1/file1): %s", label, err)
 			continue
@@ -212,7 +227,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		if !bytes.Equal(file1Data, []byte("infile1")) {
 			t.Errorf("%s: got file1Data == %q, want %q", label, string(file1Data), "infile1")
 		}
-		file1Info, err = Stat(ctx, test.repo, test.first, "dir1/file1")
+		file1Info, err = Stat(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "dir1/file1")
 		if err != nil {
 			t.Errorf("%s: fs1.Stat(dir1/file1): %s", label, err)
 			continue
@@ -228,30 +243,30 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// file 2 shouldn't exist in the 1st commit.
-		_, err = ReadFile(ctx, test.repo, test.first, "file 2", 0)
+		_, err = ReadFile(ctx, db, test.repo, test.first, "file 2", 0, nil)
 		if !os.IsNotExist(err) {
 			t.Errorf("%s: fs1.Open(file 2): got err %v, want os.IsNotExist (file 2 should not exist in this commit)", label, err)
 		}
 
 		// file 2 should exist in the 2nd commit.
-		_, err = ReadFile(ctx, test.repo, test.second, "file 2", 0)
+		_, err = ReadFile(ctx, db, test.repo, test.second, "file 2", 0, nil)
 		if err != nil {
 			t.Errorf("%s: fs2.Open(file 2): %s", label, err)
 			continue
 		}
 
 		// file1 should also exist in the 2nd commit.
-		if _, err := Stat(ctx, test.repo, test.second, "dir1/file1"); err != nil {
+		if _, err := Stat(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, test.second, "dir1/file1"); err != nil {
 			t.Errorf("%s: fs2.Stat(dir1/file1): %s", label, err)
 			continue
 		}
-		if _, err := ReadFile(ctx, test.repo, test.second, "dir1/file1", 0); err != nil {
+		if _, err := ReadFile(ctx, db, test.repo, test.second, "dir1/file1", 0, nil); err != nil {
 			t.Errorf("%s: fs2.Open(dir1/file1): %s", label, err)
 			continue
 		}
 
 		// root should exist (via Stat).
-		root, err := Stat(ctx, test.repo, test.second, ".")
+		root, err := Stat(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, test.second, ".")
 		if err != nil {
 			t.Errorf("%s: fs2.Stat(.): %s", label, err)
 			continue
@@ -261,7 +276,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// root should have 2 entries: dir1 and file 2.
-		rootEntries, err := ReadDir(ctx, test.repo, test.second, ".", false)
+		rootEntries, err := client.ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, test.second, ".", false)
 		if err != nil {
 			t.Errorf("%s: fs2.ReadDir(.): %s", label, err)
 			continue
@@ -278,7 +293,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// dir1 should still only contain one entry: file1.
-		dir1Entries, err = ReadDir(ctx, test.repo, test.second, "dir1", false)
+		dir1Entries, err = client.ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, test.second, "dir1", false)
 		if err != nil {
 			t.Errorf("%s: fs1.ReadDir(dir1): %s", label, err)
 			continue
@@ -292,7 +307,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// rootEntries should be empty for third commit
-		rootEntries, err = ReadDir(ctx, test.repo, test.third, ".", false)
+		rootEntries, err = client.ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, test.third, ".", false)
 		if err != nil {
 			t.Errorf("%s: fs3.ReadDir(.): %s", label, err)
 			continue
@@ -307,6 +322,7 @@ func TestRepository_FileSystem(t *testing.T) {
 func TestRepository_FileSystem_quoteChars(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
+	db := database.NewMockDB()
 
 	// The repo contains 3 files: one whose filename includes a
 	// non-ASCII char, one whose filename contains a double quote, and
@@ -339,13 +355,14 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 		},
 	}
 
+	client := gitserver.NewClient(db)
 	for label, test := range tests {
-		commitID, err := ResolveRevision(ctx, test.repo, "master", ResolveRevisionOptions{})
+		commitID, err := ResolveRevision(ctx, db, test.repo, "master", ResolveRevisionOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		entries, err := ReadDir(ctx, test.repo, commitID, ".", false)
+		entries, err := client.ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, commitID, ".", false)
 		if err != nil {
 			t.Errorf("%s: fs.ReadDir(.): %s", label, err)
 			continue
@@ -362,7 +379,7 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 		}
 
 		for _, name := range wantNames {
-			stat, err := Stat(ctx, test.repo, commitID, name)
+			stat, err := Stat(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, commitID, name)
 			if err != nil {
 				t.Errorf("%s: Stat(%q): %s", label, name, err)
 				continue
@@ -378,6 +395,7 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
+	db := database.NewMockDB()
 
 	submodDir := InitGitRepository(t,
 		"touch f",
@@ -398,8 +416,9 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 		},
 	}
 
+	client := gitserver.NewClient(db)
 	for label, test := range tests {
-		commitID, err := ResolveRevision(ctx, test.repo, "master", ResolveRevisionOptions{})
+		commitID, err := ResolveRevision(ctx, db, test.repo, "master", ResolveRevisionOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -419,7 +438,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 			if mode := submod.Mode(); mode&ModeSubmodule == 0 {
 				t.Errorf("%s: submod.Mode(): got %o, want & ModeSubmodule (%o) != 0", label, mode, ModeSubmodule)
 			}
-			si, ok := submod.Sys().(Submodule)
+			si, ok := submod.Sys().(gitdomain.Submodule)
 			if !ok {
 				t.Errorf("%s: submod.Sys(): got %v, want Submodule", label, si)
 			}
@@ -433,13 +452,13 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 
 		// Check the submodule fs.FileInfo both when it's returned by
 		// Stat and when it's returned in a list by ReadDir.
-		submod, err := Stat(ctx, test.repo, commitID, "submod")
+		submod, err := Stat(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, commitID, "submod")
 		if err != nil {
 			t.Errorf("%s: fs.Stat(submod): %s", label, err)
 			continue
 		}
 		checkSubmoduleFileInfo(label+" (Stat)", submod)
-		entries, err := ReadDir(ctx, test.repo, commitID, ".", false)
+		entries, err := client.ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, commitID, ".", false)
 		if err != nil {
 			t.Errorf("%s: fs.ReadDir(.): %s", label, err)
 			continue
@@ -447,10 +466,287 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 		// .gitmodules file is entries[0]
 		checkSubmoduleFileInfo(label+" (ReadDir)", entries[1])
 
-		_, err = ReadFile(ctx, test.repo, commitID, "submod", 0)
+		_, err = ReadFile(ctx, db, test.repo, commitID, "submod", 0, nil)
 		if err != nil {
 			t.Errorf("%s: fs.Open(submod): %s", label, err)
 			continue
 		}
+	}
+}
+
+func TestListFiles(t *testing.T) {
+	t.Parallel()
+
+	pattern := regexp.MustCompile("file")
+
+	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) ([]string, error) {
+		return ListFiles(ctx, database.NewMockDB(), repo, "HEAD", pattern, checker)
+	})
+}
+
+func TestLsFiles(t *testing.T) {
+	t.Parallel()
+
+	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) ([]string, error) {
+		return LsFiles(ctx, database.NewMockDB(), checker, repo, "HEAD")
+	})
+}
+
+// runFileListingTest tests the specified function which must return a list of filenames and an error. The test first
+// tests the basic case (all paths returned), then the case with sub-repo permissions specified.
+func runFileListingTest(t *testing.T,
+	listingFunctionToTest func(context.Context, authz.SubRepoPermissionChecker, api.RepoName) ([]string, error)) {
+	t.Helper()
+	gitCommands := []string{
+		"touch file1",
+		"touch file2",
+		"touch file3",
+		"git add file1 file2 file3",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	}
+
+	repo := MakeGitRepository(t, gitCommands...)
+
+	ctx := context.Background()
+
+	checker := authz.NewMockSubRepoPermissionChecker()
+	// Start disabled
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return false
+	})
+
+	files, err := listingFunctionToTest(ctx, checker, repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		"file1", "file2", "file3",
+	}
+	if diff := cmp.Diff(want, files); diff != "" {
+		t.Fatal(diff)
+	}
+
+	// With filtering
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return true
+	})
+	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+		if content.Path == "file1" {
+			return authz.Read, nil
+		}
+		return authz.None, nil
+	})
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: 1,
+	})
+	files, err = listingFunctionToTest(ctx, checker, repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want = []string{
+		"file1",
+	}
+	if diff := cmp.Diff(want, files); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestParseDirectoryChildrenRoot(t *testing.T) {
+	dirnames := []string{""}
+	paths := []string{
+		".github",
+		".gitignore",
+		"LICENSE",
+		"README.md",
+		"cmd",
+		"go.mod",
+		"go.sum",
+		"internal",
+		"protocol",
+	}
+
+	expected := map[string][]string{
+		"": paths,
+	}
+
+	if diff := cmp.Diff(expected, parseDirectoryChildren(dirnames, paths)); diff != "" {
+		t.Errorf("unexpected directory children result (-want +got):\n%s", diff)
+	}
+}
+
+func TestParseDirectoryChildrenNonRoot(t *testing.T) {
+	dirnames := []string{"cmd/", "protocol/", "cmd/protocol/"}
+	paths := []string{
+		"cmd/lsif-go",
+		"protocol/protocol.go",
+		"protocol/writer.go",
+	}
+
+	expected := map[string][]string{
+		"cmd/":          {"cmd/lsif-go"},
+		"protocol/":     {"protocol/protocol.go", "protocol/writer.go"},
+		"cmd/protocol/": nil,
+	}
+
+	if diff := cmp.Diff(expected, parseDirectoryChildren(dirnames, paths)); diff != "" {
+		t.Errorf("unexpected directory children result (-want +got):\n%s", diff)
+	}
+}
+
+func TestParseDirectoryChildrenDifferentDepths(t *testing.T) {
+	dirnames := []string{"cmd/", "protocol/", "cmd/protocol/"}
+	paths := []string{
+		"cmd/lsif-go",
+		"protocol/protocol.go",
+		"protocol/writer.go",
+		"cmd/protocol/main.go",
+	}
+
+	expected := map[string][]string{
+		"cmd/":          {"cmd/lsif-go"},
+		"protocol/":     {"protocol/protocol.go", "protocol/writer.go"},
+		"cmd/protocol/": {"cmd/protocol/main.go"},
+	}
+
+	if diff := cmp.Diff(expected, parseDirectoryChildren(dirnames, paths)); diff != "" {
+		t.Errorf("unexpected directory children result (-want +got):\n%s", diff)
+	}
+}
+
+func TestCleanDirectoriesForLsTree(t *testing.T) {
+	args := []string{"", "foo", "bar/", "baz"}
+	actual := cleanDirectoriesForLsTree(args)
+	expected := []string{".", "foo/", "bar/", "baz/"}
+
+	if diff := cmp.Diff(expected, actual); diff != "" {
+		t.Errorf("unexpected ls-tree args (-want +got):\n%s", diff)
+	}
+}
+
+func TestListDirectoryChildren(t *testing.T) {
+	gitCommands := []string{
+		"mkdir -p dir{1..3}/sub{1..3}",
+		"touch dir1/sub1/file",
+		"touch dir1/sub2/file",
+		"touch dir2/sub1/file",
+		"touch dir2/sub2/file",
+		"touch dir3/sub1/file",
+		"touch dir3/sub3/file",
+		"git add .",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	}
+
+	db := database.NewMockDB()
+	repo := MakeGitRepository(t, gitCommands...)
+
+	ctx := context.Background()
+
+	checker := authz.NewMockSubRepoPermissionChecker()
+	// Start disabled
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return false
+	})
+
+	dirnames := []string{"dir1/", "dir2/", "dir3/"}
+	children, err := ListDirectoryChildren(ctx, db, checker, repo, "HEAD", dirnames)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := map[string][]string{
+		"dir1/": {"dir1/sub1", "dir1/sub2"},
+		"dir2/": {"dir2/sub1", "dir2/sub2"},
+		"dir3/": {"dir3/sub1", "dir3/sub3"},
+	}
+	if diff := cmp.Diff(expected, children); diff != "" {
+		t.Fatal(diff)
+	}
+
+	// With filtering
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return true
+	})
+	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+		if strings.Contains(content.Path, "dir1/") {
+			return authz.Read, nil
+		}
+		return authz.None, nil
+	})
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: 1,
+	})
+	children, err = ListDirectoryChildren(ctx, db, checker, repo, "HEAD", dirnames)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected = map[string][]string{
+		"dir1/": {"dir1/sub1", "dir1/sub2"},
+		"dir2/": nil,
+		"dir3/": nil,
+	}
+	if diff := cmp.Diff(expected, children); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestStat(t *testing.T) {
+	t.Parallel()
+
+	db := database.NewMockDB()
+	gitCommands := []string{
+		"mkdir dir1",
+		"touch dir1/file1",
+		"git add dir1/file1",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	}
+
+	dir := InitGitRepository(t, gitCommands...)
+	repo := api.RepoName(filepath.Base(dir))
+
+	if resp, err := gitserver.NewClient(db).RequestRepoUpdate(context.Background(), repo, 0); err != nil {
+		t.Fatal(err)
+	} else if resp.Error != "" {
+		t.Fatal(resp.Error)
+	}
+
+	commitID := api.CommitID(ComputeCommitHash(dir, true))
+
+	ctx := context.Background()
+
+	checker := authz.NewMockSubRepoPermissionChecker()
+	// Start disabled
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return false
+	})
+
+	fileInfo, err := Stat(ctx, db, checker, repo, commitID, "dir1/file1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "dir1/file1"
+	if diff := cmp.Diff(want, fileInfo.Name()); diff != "" {
+		t.Fatal(diff)
+	}
+
+	// With filtering
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return true
+	})
+	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+		if strings.HasPrefix(content.Path, "dir2") {
+			return authz.Read, nil
+		}
+		return authz.None, nil
+	})
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: 1,
+	})
+
+	_, err = Stat(ctx, db, checker, repo, commitID, "dir1/file1")
+	if err == nil {
+		t.Fatal(err)
+	}
+	want = "ls-tree dir1/file1: file does not exist"
+	if diff := cmp.Diff(want, err.Error()); diff != "" {
+		t.Fatal(diff)
 	}
 }

@@ -1,16 +1,17 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
+
+import { render } from '@testing-library/react'
 
 import { UserAvatar } from './UserAvatar'
 
 describe('UserAvatar', () => {
     test('no avatar URL', () =>
         expect(
-            renderer.create(<UserAvatar user={{ avatarURL: null, username: 'test', displayName: 't' }} />).toJSON()
+            render(<UserAvatar user={{ avatarURL: null, username: 'test', displayName: 't' }} />).asFragment()
         ).toMatchSnapshot())
 
     test('with avatar URL', () =>
         expect(
-            renderer.create(<UserAvatar user={{ avatarURL: 'u', username: 'test', displayName: 't' }} />).toJSON()
+            render(<UserAvatar user={{ avatarURL: 'u', username: 'test', displayName: 't' }} />).asFragment()
         ).toMatchSnapshot())
 })

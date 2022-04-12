@@ -1,18 +1,21 @@
-import classNames from 'classnames'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { Observable } from 'rxjs'
+import React, { useCallback, useEffect, useState } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { gql } from '@apollo/client'
+import classNames from 'classnames'
+
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Link } from '@sourcegraph/wildcard'
 
 import { parseSearchURLQuery } from '..'
 import { AuthenticatedUser } from '../../auth'
-import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
+import { RecentlySearchedRepositoriesFragment } from '../../graphql-operations'
 import { EventLogResult } from '../backend'
 
+import { EmptyPanelContainer } from './EmptyPanelContainer'
+import { HomePanelsFetchMore, RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD } from './HomePanels'
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
 import { ShowMoreButton } from './ShowMoreButton'
@@ -20,19 +23,43 @@ import { ShowMoreButton } from './ShowMoreButton'
 interface Props extends TelemetryProps {
     className?: string
     authenticatedUser: AuthenticatedUser | null
-    fetchRecentSearches: (userId: string, first: number) => Observable<EventLogResult | null>
+    recentlySearchedRepositories: RecentlySearchedRepositoriesFragment | null
+    fetchMore: HomePanelsFetchMore
 }
+
+export const recentlySearchedRepositoriesFragment = gql`
+    fragment RecentlySearchedRepositoriesFragment on User {
+        recentlySearchedRepositoriesLogs: eventLogs(
+            first: $firstRecentlySearchedRepositories
+            eventName: "SearchResultsQueried"
+        ) {
+            nodes {
+                argument
+                timestamp
+                url
+            }
+            pageInfo {
+                hasNextPage
+            }
+            totalCount
+        }
+    }
+`
 
 export const RepositoriesPanel: React.FunctionComponent<Props> = ({
     className,
-    authenticatedUser,
-    fetchRecentSearches,
     telemetryService,
+    recentlySearchedRepositories,
+    fetchMore,
 }) => {
-    // Use a larger page size because not every search may have a `repo:` filter, and `repo:` filters could often
-    // be duplicated. Therefore, we fetch more searches to populate this panel.
-    const pageSize = 50
-    const [itemsToLoad, setItemsToLoad] = useState(pageSize)
+    const [searchEventLogs, setSearchEventLogs] = useState<
+        null | RecentlySearchedRepositoriesFragment['recentlySearchedRepositoriesLogs']
+    >(recentlySearchedRepositories?.recentlySearchedRepositoriesLogs ?? null)
+    useEffect(() => setSearchEventLogs(recentlySearchedRepositories?.recentlySearchedRepositoriesLogs ?? null), [
+        recentlySearchedRepositories?.recentlySearchedRepositoriesLogs,
+    ])
+
+    const [itemsToLoad, setItemsToLoad] = useState(RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD)
 
     const logRepoClicked = useCallback(() => telemetryService.log('RepositoriesPanelRepoFilterClicked'), [
         telemetryService,
@@ -41,7 +68,7 @@ export const RepositoriesPanel: React.FunctionComponent<Props> = ({
     const loadingDisplay = <LoadingPanelView text="Loading recently searched repositories" />
 
     const emptyDisplay = (
-        <div className="panel-container__empty-container text-muted">
+        <EmptyPanelContainer className="text-muted">
             <small className="mb-2">
                 <p className="mb-1">Recently searched repositories will be displayed here.</p>
                 <p className="mb-1">
@@ -55,18 +82,10 @@ export const RepositoriesPanel: React.FunctionComponent<Props> = ({
                     <SyntaxHighlightedSearchQuery query="repo:^git\.local/my/repo$" />
                 </p>
             </small>
-        </div>
+        </EmptyPanelContainer>
     )
 
     const [repoFilterValues, setRepoFilterValues] = useState<string[] | null>(null)
-
-    const searchEventLogs = useObservable(
-        useMemo(() => fetchRecentSearches(authenticatedUser?.id || '', itemsToLoad), [
-            fetchRecentSearches,
-            authenticatedUser?.id,
-            itemsToLoad,
-        ])
-    )
 
     useEffect(() => {
         if (searchEventLogs) {
@@ -77,7 +96,7 @@ export const RepositoriesPanel: React.FunctionComponent<Props> = ({
 
     useEffect(() => {
         // Only log the first load (when items to load is equal to the page size)
-        if (repoFilterValues && itemsToLoad === pageSize) {
+        if (repoFilterValues && itemsToLoad === RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD) {
             telemetryService.log(
                 'RepositoriesPanelLoaded',
                 { empty: repoFilterValues.length === 0 },
@@ -86,9 +105,23 @@ export const RepositoriesPanel: React.FunctionComponent<Props> = ({
         }
     }, [repoFilterValues, telemetryService, itemsToLoad])
 
-    function loadMoreItems(): void {
-        setItemsToLoad(current => current + pageSize)
+    async function loadMoreItems(): Promise<void> {
         telemetryService.log('RepositoriesPanelShowMoreClicked')
+        const newItemsToLoad = itemsToLoad + RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD
+        setItemsToLoad(newItemsToLoad)
+
+        const { data } = await fetchMore({
+            firstRecentlySearchedRepositories: newItemsToLoad,
+        })
+
+        if (data === undefined) {
+            return
+        }
+        const node = data.node
+        if (node === null || node.__typename !== 'User') {
+            return
+        }
+        setSearchEventLogs(node.recentlySearchedRepositoriesLogs)
     }
 
     const contentDisplay = (
@@ -131,14 +164,16 @@ function processRepositories(eventLogResult: EventLogResult): string[] | null {
     const recentlySearchedRepos: string[] = []
 
     for (const node of eventLogResult.nodes) {
-        const url = new URL(node.url)
-        const queryFromURL = parseSearchURLQuery(url.search)
-        const scannedQuery = scanSearchQuery(queryFromURL || '')
-        if (scannedQuery.type === 'success') {
-            for (const token of scannedQuery.term) {
-                if (isRepoFilter(token)) {
-                    if (token.value && !recentlySearchedRepos.includes(token.value.value)) {
-                        recentlySearchedRepos.push(token.value.value)
+        if (node.url) {
+            const url = new URL(node.url)
+            const queryFromURL = parseSearchURLQuery(url.search)
+            const scannedQuery = scanSearchQuery(queryFromURL || '')
+            if (scannedQuery.type === 'success') {
+                for (const token of scannedQuery.term) {
+                    if (isRepoFilter(token)) {
+                        if (token.value && !recentlySearchedRepos.includes(token.value.value)) {
+                            recentlySearchedRepos.push(token.value.value)
+                        }
                     }
                 }
             }

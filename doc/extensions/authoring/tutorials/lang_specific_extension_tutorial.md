@@ -68,7 +68,7 @@ Replace the contents of the [`contributes` object](../contributions.md) in `pack
     "editor/title": [
       {
         "action": "pybutton.open",
-        "when": "resource"
+        "when": "resource.language == 'python'"
       }
     ]
   }
@@ -78,7 +78,7 @@ Replace the contents of the [`contributes` object](../contributions.md) in `pack
 
 The when field is an expression. If an expression returns a true or a truthy, the properties of the `action` it references are used to display an element in the chosen menu location, e.g. `editor/title`.
 
-The code `"when": "resource"` means the extension will be active on code view pages only.
+The code `"when": "resource"` means the button will be active on code view pages only. `"when": "resource.language == 'python'"` means the button will only be active on python code view pages, and show an inactive button on other code views. 
 
 <!-- TODO (ryan): Link to template expression recipes and docs -->
 

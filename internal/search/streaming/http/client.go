@@ -7,9 +7,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const maxPayloadSize = 10 * 1024 * 1024 // 10mb

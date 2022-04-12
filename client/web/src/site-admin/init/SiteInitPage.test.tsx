@@ -1,6 +1,10 @@
 import React from 'react'
-import { MemoryRouter, Redirect } from 'react-router'
-import renderer from 'react-test-renderer'
+
+import { createMemoryHistory } from 'history'
+
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+
+import { EMPTY_FEATURE_FLAGS } from '../../featureFlags/featureFlags'
 
 import { SiteInitPage } from './SiteInitPage'
 
@@ -16,46 +20,43 @@ describe('SiteInitPage', () => {
     })
 
     test('site already initialized', () => {
-        const component = renderer.create(
-            <MemoryRouter>
-                <SiteInitPage
-                    isLightTheme={true}
-                    needsSiteInit={false}
-                    authenticatedUser={null}
-                    context={{ authProviders: [], sourcegraphDotComMode: false }}
-                />
-            </MemoryRouter>
+        const history = createMemoryHistory({ initialEntries: ['/'] })
+        renderWithBrandedContext(
+            <SiteInitPage
+                isLightTheme={true}
+                needsSiteInit={false}
+                authenticatedUser={null}
+                context={{ authProviders: [], sourcegraphDotComMode: false, experimentalFeatures: {} }}
+                featureFlags={EMPTY_FEATURE_FLAGS}
+            />,
+            { history }
         )
-        const redirect = component.root.findByType(Redirect)
-        expect(redirect).toBeDefined()
-        expect(redirect.props.to).toEqual('/search')
+        expect(history.location.pathname).toEqual('/search')
     })
 
     test('unexpected authed user', () =>
         expect(
-            renderer
-                .create(
-                    <SiteInitPage
-                        isLightTheme={true}
-                        needsSiteInit={true}
-                        authenticatedUser={{ username: 'alice' }}
-                        context={{ authProviders: [], sourcegraphDotComMode: false }}
-                    />
-                )
-                .toJSON()
+            renderWithBrandedContext(
+                <SiteInitPage
+                    isLightTheme={true}
+                    needsSiteInit={true}
+                    authenticatedUser={{ username: 'alice' }}
+                    context={{ authProviders: [], sourcegraphDotComMode: false, experimentalFeatures: {} }}
+                    featureFlags={EMPTY_FEATURE_FLAGS}
+                />
+            ).asFragment()
         ).toMatchSnapshot())
 
     test('normal', () =>
         expect(
-            renderer
-                .create(
-                    <SiteInitPage
-                        isLightTheme={true}
-                        needsSiteInit={true}
-                        authenticatedUser={null}
-                        context={{ authProviders: [], sourcegraphDotComMode: false }}
-                    />
-                )
-                .toJSON()
+            renderWithBrandedContext(
+                <SiteInitPage
+                    isLightTheme={true}
+                    needsSiteInit={true}
+                    authenticatedUser={null}
+                    context={{ authProviders: [], sourcegraphDotComMode: false, experimentalFeatures: {} }}
+                    featureFlags={EMPTY_FEATURE_FLAGS}
+                />
+            ).asFragment()
         ).toMatchSnapshot())
 })

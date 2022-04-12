@@ -87,9 +87,27 @@ func TestCheckFeature(t *testing.T) {
 			check(t, feature, license(plan(enterprise), string(feature)), true)
 		}
 	}
+
 	// FeatureCampaigns is deprecated but should behave like BatchChanges.
 	t.Run(string(FeatureCampaigns), testBatchChanges(FeatureCampaigns))
 	t.Run(string(FeatureBatchChanges), testBatchChanges(FeatureBatchChanges))
+
+	testCodeInsights := func(feature Feature) func(*testing.T) {
+		return func(t *testing.T) {
+			check(t, feature, nil, false)
+
+			check(t, feature, license("starter"), false)
+			check(t, feature, license(plan(oldEnterpriseStarter)), false)
+			check(t, feature, license(plan(oldEnterprise)), true)
+			check(t, feature, license(), true)
+
+			check(t, feature, license(plan(team)), false)
+			check(t, feature, license(plan(enterprise)), false)
+			check(t, feature, license(plan(enterprise), string(feature)), true)
+		}
+	}
+	// Code Insights
+	t.Run(string(FeatureCodeInsights), testCodeInsights(FeatureCodeInsights))
 
 	t.Run(string(FeatureMonitoring), func(t *testing.T) {
 		check(t, FeatureMonitoring, nil, false)

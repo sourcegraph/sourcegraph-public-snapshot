@@ -10,7 +10,7 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -105,10 +105,7 @@ func testScanFirstRecordRetry(rows *sql.Rows, queryErr error) (v workerutil.Reco
 }
 
 func setupStoreTest(t *testing.T) dbutil.DB {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 
 	if _, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS workerutil_test (
@@ -121,7 +118,7 @@ func setupStoreTest(t *testing.T) dbutil.DB {
 			process_after     timestamp with time zone,
 			num_resets        integer NOT NULL default 0,
 			num_failures      integer NOT NULL default 0,
-			uploaded_at       timestamp with time zone NOT NULL default NOW(),
+			created_at        timestamp with time zone NOT NULL default NOW(),
 			execution_logs    json[],
 			worker_hostname   text NOT NULL default ''
 		)
@@ -144,11 +141,14 @@ func defaultTestStoreOptions(clock glock.Clock) Options {
 		Name:              "test",
 		TableName:         "workerutil_test w",
 		Scan:              testScanFirstRecord,
-		OrderByExpression: sqlf.Sprintf("w.uploaded_at"),
+		OrderByExpression: sqlf.Sprintf("w.created_at"),
 		ColumnExpressions: []*sqlf.Query{
 			sqlf.Sprintf("w.id"),
 			sqlf.Sprintf("w.state"),
 			sqlf.Sprintf("w.execution_logs"),
+		},
+		AlternateColumnNames: map[string]string{
+			"queued_at": "created_at",
 		},
 		StalledMaxAge: time.Second * 5,
 		MaxNumResets:  5,

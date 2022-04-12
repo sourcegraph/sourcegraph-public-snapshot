@@ -1,8 +1,11 @@
-import { mount } from 'enzyme'
 import React from 'react'
-import { of } from 'rxjs'
+
+import { screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { noop } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { RepositoriesPanel } from './RepositoriesPanel'
 
@@ -32,11 +35,13 @@ describe('RepositoriesPanel', () => {
 
         const props = {
             authenticatedUser: null,
-            fetchRecentSearches: () => of(recentSearches),
             telemetryService: NOOP_TELEMETRY_SERVICE,
+            recentlySearchedRepositories: { recentlySearchedRepositoriesLogs: recentSearches },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-explicit-any
+            fetchMore: noop as any,
         }
 
-        expect(mount(<RepositoriesPanel {...props} />)).toMatchSnapshot()
+        expect(renderWithBrandedContext(<RepositoriesPanel {...props} />).asFragment()).toMatchSnapshot()
     })
 
     test('consecutive searches with identical repo filters are correctly merged when rendered', () => {
@@ -70,11 +75,13 @@ describe('RepositoriesPanel', () => {
 
         const props = {
             authenticatedUser: null,
-            fetchRecentSearches: () => of(recentSearches),
+            recentlySearchedRepositories: { recentlySearchedRepositoriesLogs: recentSearches },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-explicit-any
+            fetchMore: noop as any,
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
-        expect(mount(<RepositoriesPanel {...props} />)).toMatchSnapshot()
+        expect(renderWithBrandedContext(<RepositoriesPanel {...props} />).asFragment()).toMatchSnapshot()
     })
 
     test('Show More button is shown if more pages are available', () => {
@@ -108,11 +115,13 @@ describe('RepositoriesPanel', () => {
 
         const props = {
             authenticatedUser: null,
-            fetchRecentSearches: () => of(recentSearches),
+            recentlySearchedRepositories: { recentlySearchedRepositoriesLogs: recentSearches },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-explicit-any
+            fetchMore: noop as any,
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
-        expect(mount(<RepositoriesPanel {...props} />)).toMatchSnapshot()
+        expect(renderWithBrandedContext(<RepositoriesPanel {...props} />).asFragment()).toMatchSnapshot()
     })
 
     test('Show More button loads more items', () => {
@@ -193,15 +202,14 @@ describe('RepositoriesPanel', () => {
         const props = {
             className: '',
             authenticatedUser: null,
-            fetchRecentSearches: (_userId: string, first: number) =>
-                first === 50 ? of(recentSearches1) : of(recentSearches2),
+            recentlySearchedRepositories: { recentlySearchedRepositoriesLogs: recentSearches1 },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-explicit-any
+            fetchMore: (() => ({ recentSearchesLogs: recentSearches2 })) as any,
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
-        const component = mount(<RepositoriesPanel {...props} />)
-        const showMoreButton = component.find('button.test-repositories-panel-show-more')
-        showMoreButton.simulate('click')
-
-        expect(component).toMatchSnapshot()
+        const { asFragment } = renderWithBrandedContext(<RepositoriesPanel {...props} />)
+        userEvent.click(screen.getByRole('button', { name: /Show more/ }))
+        expect(asFragment()).toMatchSnapshot()
     })
 })

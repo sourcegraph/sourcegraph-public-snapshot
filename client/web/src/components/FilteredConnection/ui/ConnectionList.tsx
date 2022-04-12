@@ -1,5 +1,8 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
+
+import styles from './ConnectionList.module.scss'
 
 interface ConnectionListProps {
     /** list HTML element type. Default is <ul>. */
@@ -7,6 +10,8 @@ interface ConnectionListProps {
 
     /** CSS class name for the list element (<ul>, <table>, or <div>). */
     className?: string
+
+    compact?: boolean
 }
 
 /**
@@ -17,8 +22,12 @@ export const ConnectionList: React.FunctionComponent<ConnectionListProps> = ({
     as: ListComponent = 'ul',
     className,
     children,
+    compact,
 }) => (
-    <ListComponent className={classNames('filtered-connection__nodes', className)} data-testid="nodes">
+    <ListComponent
+        className={classNames(styles.normal, compact && styles.compact, className)}
+        data-testid="filtered-connection-nodes"
+    >
         {children}
     </ListComponent>
 )

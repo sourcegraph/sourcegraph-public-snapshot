@@ -37,6 +37,73 @@ To support precise code intelligence, [write an LSIF indexer](../../code_intelli
 
 ## Syntax highlighting support
 
+### Customizing Syntax Highlight Language
+
+The following settings apply only to the site settings. They are global configuration options for your Sourcegraph instance.
+
+If you have a custom language that is derived from an existing language, it is possible to configure Sourcegraph to highlight that language as another.
+
+For example:
+
+```json
+{
+  "syntaxHighlighting": {
+   "languages": {
+     "extensions": {
+        "strato": "scala"
+      },
+      "patterns": []
+    }
+  }
+}
+```
+
+If you have custom file extensions that map to an existing language, it is possible to configure Sourcegraph to highlight those files as an existing language.
+
+For example:
+
+```json
+{
+  "syntaxHighlighting": {
+   "languages": {
+     "extensions": {
+        "module": "php",
+        "inc": "php"
+      },
+      "patterns": []
+    }
+  }
+}
+```
+
+NOTE: In both cases, the `.` is dropped from the file extension.
+
+Additionally, for more complex matching, it possible to pass regexes that will be evaluated (in order listed in the configuration) and if a match is found, will override the syntax highlight language for that file.
+
+For example:
+
+```json
+{
+  "syntaxHighlighting": {
+    "languages": {
+      "extensions": {},
+      "patterns": [
+        {
+          "language": "bash",
+          "pattern": "bash.rc"
+        },
+        {
+          "language": "bash",
+          "pattern": ".bashprofile"
+        }
+      ]
+    }
+  }
+}
+```
+
+### Adding New Syntax Highlighting
+
 To support syntax highlighting on code files, search results, diff views, and more:
 
 1. Follow the [directions](https://github.com/sourcegraph/syntect_server#adding-languages) to add a language to [syntect server](https://github.com/sourcegraph/syntect_server).

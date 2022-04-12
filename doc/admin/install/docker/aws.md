@@ -2,7 +2,7 @@
 
 This tutorial shows you how to deploy [single-container Sourcegraph with Docker](./index.md) to a single EC2 instance on AWS.
 
-> NOTE: We *do not* recommend using this method for a production instance. If deploying a production instance, see [our recommendations](../index.md) for how to chose a deployment type that suits your needs. We recommend [Docker Compose](../docker-compose/aws.md) for most initial production deployments.
+> NOTE: We *do not* recommend using this method for a production instance. If deploying a production instance, see [our recommendations](../index.md) for how to choose a deployment type that suits your needs. We recommend [Docker Compose](../docker-compose/aws.md) for most initial production deployments.
 
 ---
 
@@ -33,7 +33,7 @@ This tutorial shows you how to deploy [single-container Sourcegraph with Docker]
    - usermod -a -G docker ec2-user
 
    # Install and run Sourcegraph. Restart the container upon subsequent reboots
-   - [ sh, -c, 'docker run -d --publish 80:7080 --publish 443:7080 --publish 127.0.0.1:3370:3370 --restart unless-stopped --volume /home/ec2-user/.sourcegraph/config:/etc/sourcegraph --volume /home/ec2-user/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.31.2' ]
+   - [ sh, -c, 'docker run -d --publish 80:7080 --publish 443:7080 --publish 127.0.0.1:3370:3370 --restart unless-stopped --volume /home/ec2-user/.sourcegraph/config:/etc/sourcegraph --volume /home/ec2-user/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.38.1' ]
    ```
 
 - Select **Next: ...** until you get to the **Configure Security Group** page. Then add the following rules:

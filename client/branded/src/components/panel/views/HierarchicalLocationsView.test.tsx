@@ -1,12 +1,8 @@
-// react-visibility-sensor, used in CodeExcerpt depends on ReactDOM.findDOMNode,
-// which is not supported when using react-test-renderer + jest.
-// This mock makes it so that <VisibilitySensor /> simply becomes a <div> in the rendered output.
-jest.mock('react-visibility-sensor', () => 'VisibilitySensor')
+import React from 'react'
 
+import { render } from '@testing-library/react'
 import * as H from 'history'
 import { noop } from 'lodash'
-import React from 'react'
-import renderer from 'react-test-renderer'
 import { concat, EMPTY, NEVER, of } from 'rxjs'
 import * as sinon from 'sinon'
 
@@ -17,6 +13,7 @@ import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { HierarchicalLocationsView, HierarchicalLocationsViewProps } from './HierarchicalLocationsView'
 
@@ -53,7 +50,6 @@ describe('<HierarchicalLocationsView />', () => {
             defaultGroup: 'git://github.com/foo/bar',
             isLightTheme: true,
             fetchHighlightedFileLineRanges: sinon.spy(),
-            versionContext: undefined,
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
         return { props, registerContributions }
@@ -61,20 +57,15 @@ describe('<HierarchicalLocationsView />', () => {
 
     test('shows a spinner before any locations emissions', () => {
         const { props } = getProps()
-        expect(renderer.create(<HierarchicalLocationsView {...props} />).toJSON()).toMatchSnapshot()
+        expect(render(<HierarchicalLocationsView {...props} />).asFragment()).toMatchSnapshot()
     })
 
     test('shows a spinner if locations emits empty and is not complete', () => {
         const { props } = getProps()
         expect(
-            renderer
-                .create(
-                    <HierarchicalLocationsView
-                        {...props}
-                        locations={concat(of({ isLoading: true, result: [] }), NEVER)}
-                    />
-                )
-                .toJSON()
+            render(
+                <HierarchicalLocationsView {...props} locations={concat(of({ isLoading: true, result: [] }), NEVER)} />
+            ).asFragment()
         ).toMatchSnapshot()
     })
 
@@ -98,7 +89,7 @@ describe('<HierarchicalLocationsView />', () => {
             ...getProps().props,
             locations,
         }
-        expect(renderer.create(<HierarchicalLocationsView {...props} />).toJSON()).toMatchSnapshot()
+        expect(renderWithBrandedContext(<HierarchicalLocationsView {...props} />).asFragment()).toMatchSnapshot()
     })
 
     test('displays partial locations before complete', () => {
@@ -106,7 +97,7 @@ describe('<HierarchicalLocationsView />', () => {
             ...getProps().props,
             locations: concat(of({ isLoading: false, result: [SAMPLE_LOCATION] }), NEVER),
         }
-        expect(renderer.create(<HierarchicalLocationsView {...props} />).toJSON()).toMatchSnapshot()
+        expect(renderWithBrandedContext(<HierarchicalLocationsView {...props} />).asFragment()).toMatchSnapshot()
     })
 
     test('displays multiple locations grouped by file', () => {
@@ -187,6 +178,6 @@ describe('<HierarchicalLocationsView />', () => {
             },
             locations: of({ isLoading: false, result: locations }),
         }
-        expect(renderer.create(<HierarchicalLocationsView {...props} />).toJSON()).toMatchSnapshot()
+        expect(renderWithBrandedContext(<HierarchicalLocationsView {...props} />).asFragment()).toMatchSnapshot()
     })
 })

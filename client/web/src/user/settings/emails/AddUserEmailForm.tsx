@@ -1,13 +1,14 @@
-import classNames from 'classnames'
 import React, { FunctionComponent, useMemo, useState } from 'react'
 
+import classNames from 'classnames'
+
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
-import { asError, isErrorLike, ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError, isErrorLike, ErrorLike } from '@sourcegraph/common'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/src/util/useInputValidation'
 
 import { requestGraphQL } from '../../../backend/graphql'
-import { ErrorAlert } from '../../../components/alerts'
 import { LoaderButton } from '../../../components/LoaderButton'
 import { AddUserEmailResult, AddUserEmailVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -108,7 +109,7 @@ export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, on
                     label="Add"
                     type="submit"
                     disabled={statusOrError === 'loading' || emailState.kind !== 'VALID'}
-                    className="btn btn-primary"
+                    variant="primary"
                 />
                 {emailState.kind === 'INVALID' && (
                     <small className="invalid-feedback" role="alert">

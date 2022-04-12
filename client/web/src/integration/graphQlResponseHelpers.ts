@@ -1,4 +1,4 @@
-import { encodeURIPathComponent } from '@sourcegraph/shared/src/util/url'
+import { encodeURIPathComponent } from '@sourcegraph/common'
 
 import {
     TreeEntriesResult,
@@ -41,6 +41,7 @@ export const createBlobContentResult = (
                 highlight: {
                     aborted: false,
                     html,
+                    lsif: '',
                 },
             },
         },

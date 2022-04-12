@@ -9,16 +9,18 @@ import (
 	"os"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/machinebox/graphql"
 	"golang.org/x/oauth2"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const (
-	beginWorkMarker        = "<!-- BEGIN WORK -->"
-	endWorkMarker          = "<!-- END WORK -->"
-	beginAssigneeMarkerFmt = "<!-- BEGIN ASSIGNEE: %s -->"
-	endAssigneeMarker      = "<!-- END ASSIGNEE -->"
+	beginWorkMarker           = "<!-- BEGIN WORK -->"
+	endWorkMarker             = "<!-- END WORK -->"
+	beginAssigneeMarkerFmt    = "<!-- BEGIN ASSIGNEE: %s -->"
+	endAssigneeMarker         = "<!-- END ASSIGNEE -->"
+	optionalLabelMarkerRegexp = "<!-- OPTIONAL LABEL: (.*) -->"
 )
 
 func main() {

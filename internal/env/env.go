@@ -30,6 +30,7 @@ var (
 	MyName, envVarName = findName()
 	LogLevel           = Get("SRC_LOG_LEVEL", "warn", "upper log level to restrict log output to (dbug, info, warn, error, crit)")
 	LogFormat          = Get("SRC_LOG_FORMAT", "logfmt", "log format (logfmt, condensed, json)")
+	LogSourceLink, _   = strconv.ParseBool(Get("SRC_LOG_SOURCE_LINK", "false", "Print an iTerm link to the file:line in VS Code"))
 	InsecureDev, _     = strconv.ParseBool(Get("INSECURE_DEV", "false", "Running in insecure dev (local laptop) mode"))
 )
 

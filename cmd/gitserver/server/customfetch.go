@@ -12,7 +12,8 @@ import (
 )
 
 var customGitFetch = conf.Cached(func() interface{} {
-	return buildCustomFetchMappings(conf.Get().ExperimentalFeatures.CustomGitFetch)
+	exp := conf.ExperimentalFeatures()
+	return buildCustomFetchMappings(exp.CustomGitFetch)
 })
 
 func buildCustomFetchMappings(c []*schema.CustomGitFetchMapping) map[string][]string {

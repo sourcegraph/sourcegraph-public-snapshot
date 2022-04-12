@@ -1,12 +1,13 @@
-import { radios } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
 import React from 'react'
 
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { radios } from '@storybook/addon-knobs'
+import { storiesOf } from '@storybook/react'
+
+import { WebStory } from '../../../components/WebStory'
 
 import { BatchChangesListIntro } from './BatchChangesListIntro'
 
-const { add } = storiesOf('web/batches/BatchChangesListIntro', module).addDecorator(story => (
+const { add } = storiesOf('web/batches/list/BatchChangesListIntro', module).addDecorator(story => (
     <div className="p-3 container">{story()}</div>
 ))
 
@@ -29,8 +30,8 @@ function stateToInput(state: LicensingState): boolean | undefined {
 
 for (const state of Object.values(LicensingState)) {
     add(state, () => (
-        <EnterpriseWebStory>
-            {() => <BatchChangesListIntro licensed={stateToInput(radios('licensed', LicensingState, state))} />}
-        </EnterpriseWebStory>
+        <WebStory>
+            {() => <BatchChangesListIntro isLicensed={stateToInput(radios('licensed', LicensingState, state))} />}
+        </WebStory>
     ))
 }

@@ -7,27 +7,22 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
-
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // newInsightEnqueuer returns a background goroutine which will periodically find all of the search
 // and webhook insights across all user settings, and enqueue work for the query runner and webhook
 // runner workers to perform.
 func newInsightEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, insightStore store.DataSeriesStore, observationContext *observation.Context) goroutine.BackgroundRoutine {
-	metrics := metrics.NewOperationMetrics(
+	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"insights_enqueuer",
 		metrics.WithCountHelp("Total number of insights enqueuer executions"),
@@ -67,23 +62,23 @@ func discoverAndEnqueueInsights(
 
 	log15.Info("enqueuing indexed insight recordings")
 	// this job will do the work of both recording (permanent) queries, and snapshot (ephemeral) queries. We want to try both, so if either has a soft-failure we will attempt both.
-	recordingSeries, err := insightStore.GetDataSeries(ctx, store.GetDataSeriesArgs{NextRecordingBefore: now()})
+	recordingSeries, err := insightStore.GetDataSeries(ctx, store.GetDataSeriesArgs{NextRecordingBefore: now(), GlobalOnly: true})
 	if err != nil {
 		return errors.Wrap(err, "indexed insight recorder: unable to fetch series for recordings")
 	}
 	err = enqueue(ctx, recordingSeries, store.RecordMode, insightStore.StampRecording, queryRunnerEnqueueJob)
 	if err != nil {
-		multi = multierror.Append(multi, err)
+		multi = errors.Append(multi, err)
 	}
 
 	log15.Info("enqueuing indexed insight snapshots")
-	snapshotSeries, err := insightStore.GetDataSeries(ctx, store.GetDataSeriesArgs{NextSnapshotBefore: now()})
+	snapshotSeries, err := insightStore.GetDataSeries(ctx, store.GetDataSeriesArgs{NextSnapshotBefore: now(), GlobalOnly: true})
 	if err != nil {
 		return errors.Wrap(err, "indexed insight recorder: unable to fetch series for snapshots")
 	}
 	err = enqueue(ctx, snapshotSeries, store.SnapshotMode, insightStore.StampSnapshot, queryRunnerEnqueueJob)
 	if err != nil {
-		multi = multierror.Append(multi, err)
+		multi = errors.Append(multi, err)
 	}
 
 	return multi
@@ -116,7 +111,7 @@ func enqueue(ctx context.Context, dataSeries []types.InsightSeries, mode store.P
 			PersistMode: string(mode),
 		})
 		if err != nil {
-			multi = multierror.Append(multi, errors.Wrapf(err, "failed to enqueue insight series_id: %s", seriesID))
+			multi = errors.Append(multi, errors.Wrapf(err, "failed to enqueue insight series_id: %s", seriesID))
 			continue
 		}
 
@@ -124,9 +119,10 @@ func enqueue(ctx context.Context, dataSeries []types.InsightSeries, mode store.P
 		// at-least-once semantics by waiting until the queue transaction is complete and without error.
 		_, err = stampFunc(ctx, series)
 		if err != nil {
-			multi = multierror.Append(multi, errors.Wrapf(err, "failed to stamp insight series_id: %s", seriesID))
+			multi = errors.Append(multi, errors.Wrapf(err, "failed to stamp insight series_id: %s", seriesID))
 			continue // might as well try the other insights and just skip this one
 		}
+		log15.Info("queued global search for insight recording", "series_id", series.SeriesID)
 	}
 
 	return multi

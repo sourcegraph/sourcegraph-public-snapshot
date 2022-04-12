@@ -4,25 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"strings"
-	"sync"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/zoekt"
-	zoektrpc "github.com/google/zoekt/rpc"
+	"github.com/google/zoekt/web"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -35,8 +29,8 @@ import (
 
 func TestSearch(t *testing.T) {
 	type Results struct {
-		Results     []interface{}
-		ResultCount int
+		Results    []interface{}
+		MatchCount int
 	}
 	tcs := []struct {
 		name                         string
@@ -44,8 +38,8 @@ func TestSearch(t *testing.T) {
 		searchVersion                string
 		reposListMock                func(v0 context.Context, v1 database.ReposListOptions) ([]*types.Repo, error)
 		repoRevsMock                 func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error)
-		externalServicesListMock     func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error)
-		phabricatorGetRepoByNameMock func(repo api.RepoName) (*types.PhabricatorRepo, error)
+		externalServicesListMock     func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error)
+		phabricatorGetRepoByNameMock func(_ context.Context, repo api.RepoName) (*types.PhabricatorRepo, error)
 		wantResults                  Results
 	}{
 		{
@@ -57,15 +51,15 @@ func TestSearch(t *testing.T) {
 			repoRevsMock: func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
 				return "", nil
 			},
-			externalServicesListMock: func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+			externalServicesListMock: func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 				return nil, nil
 			},
-			phabricatorGetRepoByNameMock: func(repo api.RepoName) (*types.PhabricatorRepo, error) {
+			phabricatorGetRepoByNameMock: func(_ context.Context, repo api.RepoName) (*types.PhabricatorRepo, error) {
 				return nil, nil
 			},
 			wantResults: Results{
-				Results:     nil,
-				ResultCount: 0,
+				Results:    nil,
+				MatchCount: 0,
 			},
 			searchVersion: "V1",
 		},
@@ -80,15 +74,15 @@ func TestSearch(t *testing.T) {
 			repoRevsMock: func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
 				return "", nil
 			},
-			externalServicesListMock: func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+			externalServicesListMock: func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 				return nil, nil
 			},
-			phabricatorGetRepoByNameMock: func(repo api.RepoName) (*types.PhabricatorRepo, error) {
+			phabricatorGetRepoByNameMock: func(_ context.Context, repo api.RepoName) (*types.PhabricatorRepo, error) {
 				return nil, nil
 			},
 			wantResults: Results{
-				Results:     nil,
-				ResultCount: 0,
+				Results:    nil,
+				MatchCount: 0,
 			},
 			searchVersion: "V1",
 		},
@@ -99,18 +93,29 @@ func TestSearch(t *testing.T) {
 			defer conf.Mock(nil)
 			vars := map[string]interface{}{"query": tc.searchQuery, "version": tc.searchVersion}
 
-			mockDecodedViewerFinalSettings = &schema.Settings{}
-			defer func() { mockDecodedViewerFinalSettings = nil }()
+			MockDecodedViewerFinalSettings = &schema.Settings{}
+			defer func() { MockDecodedViewerFinalSettings = nil }()
 
-			db := new(dbtesting.MockDB)
-			database.Mocks.Repos.List = tc.reposListMock
+			repos := database.NewMockRepoStore()
+			repos.ListFunc.SetDefaultHook(tc.reposListMock)
+
+			ext := database.NewMockExternalServiceStore()
+			ext.ListFunc.SetDefaultHook(tc.externalServicesListMock)
+
+			phabricator := database.NewMockPhabricatorStore()
+			phabricator.GetByNameFunc.SetDefaultHook(tc.phabricatorGetRepoByNameMock)
+
+			db := database.NewMockDB()
+			db.ReposFunc.SetDefaultReturn(repos)
+			db.ExternalServicesFunc.SetDefaultReturn(ext)
+			db.PhabricatorFunc.SetDefaultReturn(phabricator)
+
 			sr := &schemaResolver{db: db}
 			schema, err := graphql.ParseSchema(mainSchema, sr, graphql.Tracer(&prometheusTracer{}))
 			if err != nil {
 				t.Fatal(err)
 			}
-			database.Mocks.ExternalServices.List = tc.externalServicesListMock
-			database.Mocks.Phabricator.GetByName = tc.phabricatorGetRepoByNameMock
+
 			git.Mocks.ResolveRevision = tc.repoRevsMock
 			result := schema.Exec(context.Background(), testSearchGQLQuery, "", vars)
 			if len(result.Errors) > 0 {
@@ -240,70 +245,12 @@ var testSearchGQLQuery = `
 					timedout {
 						name
 					}
-					resultCount
+					matchCount
 					elapsedMilliseconds
 				}
 			}
 		}
 `
-
-func testStringResult(result SearchSuggestionResolver) string {
-	var name string
-	switch r := result.(type) {
-	case repositorySuggestionResolver:
-		name = "repo:" + r.repo.Name()
-	case gitTreeSuggestionResolver:
-		name = "file:" + r.gitTreeEntry.Path()
-	case languageSuggestionResolver:
-		name = "lang:" + r.lang.name
-	case symbolSuggestionResolver:
-		name = "symbol:" + r.symbol.Symbol.Name
-	default:
-		panic("never here")
-	}
-	if result.Score() == 0 {
-		return "<removed>"
-	}
-	return name
-}
-
-func TestDetectSearchType(t *testing.T) {
-	typeRegexp := "regexp"
-	typeLiteral := "literal"
-	testCases := []struct {
-		name        string
-		version     string
-		patternType *string
-		input       string
-		want        query.SearchType
-	}{
-		{"V1, no pattern type", "V1", nil, "", query.SearchTypeRegex},
-		{"V2, no pattern type", "V2", nil, "", query.SearchTypeLiteral},
-		{"V2, no pattern type, input does not produce parse error", "V2", nil, "/-/godoc", query.SearchTypeLiteral},
-		{"V1, regexp pattern type", "V1", &typeRegexp, "", query.SearchTypeRegex},
-		{"V2, regexp pattern type", "V2", &typeRegexp, "", query.SearchTypeRegex},
-		{"V1, literal pattern type", "V1", &typeLiteral, "", query.SearchTypeLiteral},
-		{"V2, override regexp pattern type", "V2", &typeLiteral, "patterntype:regexp", query.SearchTypeRegex},
-		{"V2, override regex variant pattern type", "V2", &typeLiteral, "patterntype:regex", query.SearchTypeRegex},
-		{"V2, override regex variant pattern type with double quotes", "V2", &typeLiteral, `patterntype:"regex"`, query.SearchTypeRegex},
-		{"V2, override regex variant pattern type with single quotes", "V2", &typeLiteral, `patterntype:'regex'`, query.SearchTypeRegex},
-		{"V1, override literal pattern type", "V1", &typeRegexp, "patterntype:literal", query.SearchTypeLiteral},
-		{"V1, override literal pattern type, with case-insensitive query", "V1", &typeRegexp, "pAtTErNTypE:literal", query.SearchTypeLiteral},
-	}
-
-	for _, test := range testCases {
-		t.Run(test.name, func(*testing.T) {
-			got, err := detectSearchType(test.version, test.patternType)
-			got = overrideSearchType(test.input, got)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if got != test.want {
-				t.Errorf("failed %v, got %v, expected %v", test.name, got, test.want)
-			}
-		})
-	}
-}
 
 func TestExactlyOneRepo(t *testing.T) {
 	cases := []struct {
@@ -345,185 +292,7 @@ func TestExactlyOneRepo(t *testing.T) {
 	}
 }
 
-func TestQuoteSuggestions(t *testing.T) {
-	t.Run("regex error", func(t *testing.T) {
-		raw := "*"
-		_, err := query.Pipeline(query.InitRegexp(raw))
-		if err == nil {
-			t.Fatalf("error returned from query.ParseRegexp(%q) is nil", raw)
-		}
-		alert := alertForQuery(raw, err)
-		if !strings.Contains(alert.description, "regexp") {
-			t.Errorf("description is '%s', want it to contain 'regexp'", alert.description)
-		}
-	})
-}
-
-func TestVersionContext(t *testing.T) {
-	db := new(dbtesting.MockDB)
-
-	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				VersionContexts: []*schema.VersionContext{
-					{
-						Name: "ctx-1",
-						Revisions: []*schema.VersionContextRevision{
-							{Repo: "github.com/sourcegraph/foo", Rev: "some-branch"},
-							{Repo: "github.com/sourcegraph/foobar", Rev: "v1.0.0"},
-							{Repo: "github.com/sourcegraph/bar", Rev: "e62b6218f61cc1564d6ebcae19f9dafdf1357567"},
-						},
-					}, {
-						Name: "multiple-revs",
-						Revisions: []*schema.VersionContextRevision{
-							{Repo: "github.com/sourcegraph/foobar", Rev: "v1.0.0"},
-							{Repo: "github.com/sourcegraph/foobar", Rev: "v1.1.0"},
-							{Repo: "github.com/sourcegraph/bar", Rev: "e62b6218f61cc1564d6ebcae19f9dafdf1357567"},
-						},
-					},
-				},
-			},
-		},
-	})
-	defer conf.Mock(nil)
-
-	tcs := []struct {
-		name           string
-		searchQuery    string
-		versionContext string
-		// database.ReposListOptions.Names
-		wantReposListOptionsNames []string
-		reposGetListNames         []string
-		wantResults               []string
-	}{{
-		name:           "query with version context should return the right repositories",
-		searchQuery:    "foo",
-		versionContext: "ctx-1",
-		wantReposListOptionsNames: []string{
-			"github.com/sourcegraph/foo",
-			"github.com/sourcegraph/foobar",
-			"github.com/sourcegraph/bar",
-		},
-		reposGetListNames: []string{
-			"github.com/sourcegraph/foo",
-			"github.com/sourcegraph/foobar",
-			"github.com/sourcegraph/bar",
-		},
-		wantResults: []string{
-			"github.com/sourcegraph/foo@some-branch",
-			"github.com/sourcegraph/foobar@v1.0.0",
-			"github.com/sourcegraph/bar@e62b6218f61cc1564d6ebcae19f9dafdf1357567",
-		},
-	}, {
-		name:           "query with version context and subset of repos",
-		searchQuery:    "repo:github.com/sourcegraph/foo.*",
-		versionContext: "ctx-1",
-		wantReposListOptionsNames: []string{
-			"github.com/sourcegraph/foo",
-			"github.com/sourcegraph/foobar",
-			"github.com/sourcegraph/bar",
-		},
-		reposGetListNames: []string{
-			"github.com/sourcegraph/foo",
-			"github.com/sourcegraph/foobar",
-		},
-		wantResults: []string{
-			"github.com/sourcegraph/foo@some-branch",
-			"github.com/sourcegraph/foobar@v1.0.0",
-		},
-	}, {
-		name:           "query with version context and non-exact search",
-		searchQuery:    "repo:github.com/sourcegraph/notincontext",
-		versionContext: "ctx-1",
-		wantReposListOptionsNames: []string{
-			"github.com/sourcegraph/foo",
-			"github.com/sourcegraph/foobar",
-			"github.com/sourcegraph/bar",
-		},
-		reposGetListNames: []string{},
-		wantResults:       []string{},
-	}, {
-		name:                      "query with version context and exact repo search",
-		searchQuery:               "repo:github.com/sourcegraph/notincontext@v1.0.0",
-		versionContext:            "ctx-1",
-		wantReposListOptionsNames: []string{},
-		reposGetListNames:         []string{"github.com/sourcegraph/notincontext"},
-		wantResults:               []string{"github.com/sourcegraph/notincontext@v1.0.0"},
-	}, {
-		name:           "multiple revs",
-		searchQuery:    "foo",
-		versionContext: "multiple-revs",
-		wantReposListOptionsNames: []string{
-			"github.com/sourcegraph/foobar",
-			"github.com/sourcegraph/foobar", // we don't mind listing repos twice
-			"github.com/sourcegraph/bar",
-		},
-		reposGetListNames: []string{
-			"github.com/sourcegraph/foobar",
-			"github.com/sourcegraph/bar",
-		},
-		wantResults: []string{
-			"github.com/sourcegraph/foobar@v1.0.0:v1.1.0",
-			"github.com/sourcegraph/bar@e62b6218f61cc1564d6ebcae19f9dafdf1357567",
-		},
-	}}
-	for _, tc := range tcs {
-		t.Run(tc.name, func(t *testing.T) {
-			plan, err := query.Pipeline(query.InitLiteral(tc.searchQuery))
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			resolver := searchResolver{
-				db: db,
-				SearchInputs: &run.SearchInputs{
-					Plan:           plan,
-					Query:          plan.ToParseTree(),
-					VersionContext: &tc.versionContext,
-					UserSettings:   &schema.Settings{},
-				},
-				reposMu:  &sync.Mutex{},
-				resolved: &searchrepos.Resolved{},
-			}
-
-			database.Mocks.Repos.ListRepoNames = func(ctx context.Context, opts database.ReposListOptions) ([]types.RepoName, error) {
-				if diff := cmp.Diff(tc.wantReposListOptionsNames, opts.Names, cmpopts.EquateEmpty()); diff != "" {
-					t.Fatalf("database.RepostListOptions.Names mismatch (-want, +got):\n%s", diff)
-				}
-				var repos []types.RepoName
-				for _, name := range tc.reposGetListNames {
-					repos = append(repos, types.RepoName{Name: api.RepoName(name)})
-				}
-				return repos, nil
-			}
-			database.Mocks.Repos.Count = func(context.Context, database.ReposListOptions) (int, error) { return len(tc.reposGetListNames), nil }
-			defer func() {
-				database.Mocks.Repos.ListRepoNames = nil
-				database.Mocks.Repos.Count = nil
-			}()
-			git.Mocks.ResolveRevision = func(rev string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
-				return api.CommitID("deadbeef"), nil
-			}
-			defer git.ResetMocks()
-
-			repoOptions := resolver.toRepoOptions(resolver.Query, resolveRepositoriesOpts{})
-			gotResult, err := resolver.resolveRepositories(context.Background(), repoOptions)
-			if err != nil {
-				t.Fatal(err)
-			}
-			var got []string
-			for _, repoRev := range gotResult.RepoRevs {
-				got = append(got, string(repoRev.Repo.Name)+"@"+strings.Join(repoRev.RevSpecs(), ":"))
-			}
-
-			if diff := cmp.Diff(tc.wantResults, got, cmpopts.EquateEmpty()); diff != "" {
-				t.Fatalf("mismatch (-want, +got):\n%s", diff)
-			}
-		})
-	}
-}
-
-func mkFileMatch(repo types.RepoName, path string, lineNumbers ...int32) *result.FileMatch {
+func mkFileMatch(repo types.MinimalRepo, path string, lineNumbers ...int32) *result.FileMatch {
 	var lines []*result.LineMatch
 	for _, n := range lineNumbers {
 		lines = append(lines, &result.LineMatch{LineNumber: n})
@@ -538,118 +307,38 @@ func mkFileMatch(repo types.RepoName, path string, lineNumbers ...int32) *result
 }
 
 func BenchmarkSearchResults(b *testing.B) {
-	db := new(dbtesting.MockDB)
+	minimalRepos, zoektRepos := generateRepos(500_000)
+	zoektFileMatches := generateZoektMatches(1000)
 
-	minimalRepos, _, zoektRepos := generateRepos(5000)
-	zoektFileMatches := generateZoektMatches(50)
-
-	z := &searchbackend.FakeSearcher{
-		Repos:  zoektRepos,
-		Result: &zoekt.SearchResult{Files: zoektFileMatches},
-	}
-
-	ctx := context.Background()
-
-	database.Mocks.Repos.List = func(_ context.Context, op database.ReposListOptions) ([]*types.Repo, error) {
-		return minimalRepos, nil
-	}
-	database.Mocks.Repos.Count = func(ctx context.Context, opt database.ReposListOptions) (int, error) {
-		return len(minimalRepos), nil
-	}
-	defer func() { database.Mocks = database.MockStores{} }()
-
-	b.ResetTimer()
-	b.ReportAllocs()
-
-	for n := 0; n < b.N; n++ {
-		q, err := query.ParseLiteral(`print index:only count:350`)
-		if err != nil {
-			b.Fatal(err)
-		}
-		resolver := &searchResolver{
-			db: db,
-			SearchInputs: &run.SearchInputs{
-				Query:        q,
-				UserSettings: &schema.Settings{},
-			},
-			zoekt:    z,
-			reposMu:  &sync.Mutex{},
-			resolved: &searchrepos.Resolved{},
-		}
-		results, err := resolver.Results(ctx)
-		if err != nil {
-			b.Fatal("Results:", err)
-		}
-		if int(results.MatchCount()) != len(zoektFileMatches) {
-			b.Fatalf("wrong results length. want=%d, have=%d\n", len(zoektFileMatches), results.MatchCount())
-		}
-	}
-}
-
-func BenchmarkIntegrationSearchResults(b *testing.B) {
-	db := dbtesting.GetDB(b)
-
-	ctx := context.Background()
-
-	_, repos, zoektRepos := generateRepos(5000)
-	zoektFileMatches := generateZoektMatches(50)
-
-	zoektClient, cleanup := zoektRPC(&searchbackend.FakeSearcher{
+	z := zoektRPC(b, &searchbackend.FakeSearcher{
 		Repos:  zoektRepos,
 		Result: &zoekt.SearchResult{Files: zoektFileMatches},
 	})
-	defer cleanup()
-	z := &searchbackend.StreamSearchAdapter{zoektClient}
 
-	rows := make([]*sqlf.Query, 0, len(repos))
-	for _, r := range repos {
-		rows = append(rows, sqlf.Sprintf(
-			"(%s, %s, %s, %s, %s, %s, %s)",
-			r.Name,
-			r.Description,
-			r.Fork,
-			true,
-			r.ExternalRepo.ServiceType,
-			r.ExternalRepo.ServiceID,
-			r.ExternalRepo.ID,
-		))
-	}
+	ctx := context.Background()
+	db := database.NewMockDB()
 
-	q := sqlf.Sprintf(`
-		INSERT INTO repo (
-			name,
-			description,
-			fork,
-			enabled,
-			external_service_type,
-			external_service_id,
-			external_id
-		)
-		VALUES %s`,
-		sqlf.Join(rows, ","),
-	)
-
-	_, err := db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		b.Fatal(err)
-	}
+	repos := database.NewMockRepoStore()
+	repos.ListMinimalReposFunc.SetDefaultReturn(minimalRepos, nil)
+	repos.CountFunc.SetDefaultReturn(len(minimalRepos), nil)
+	db.ReposFunc.SetDefaultReturn(repos)
 
 	b.ResetTimer()
 	b.ReportAllocs()
 
 	for n := 0; n < b.N; n++ {
-		q, err := query.ParseLiteral(`print index:only count:350`)
+		plan, err := query.Pipeline(query.InitLiteral(`print repo:foo index:only count:1000`))
 		if err != nil {
 			b.Fatal(err)
 		}
 		resolver := &searchResolver{
 			db: db,
 			SearchInputs: &run.SearchInputs{
-				Query: q,
+				Plan:         plan,
+				Query:        plan.ToParseTree(),
+				UserSettings: &schema.Settings{},
 			},
-			zoekt:    z,
-			reposMu:  &sync.Mutex{},
-			resolved: &searchrepos.Resolved{},
+			zoekt: z,
 		}
 		results, err := resolver.Results(ctx)
 		if err != nil {
@@ -661,33 +350,19 @@ func BenchmarkIntegrationSearchResults(b *testing.B) {
 	}
 }
 
-func generateRepos(count int) ([]*types.Repo, []*types.Repo, []*zoekt.RepoListEntry) {
-	var reposWithIDs []*types.Repo
-	var repos []*types.Repo
-	var zoektRepos []*zoekt.RepoListEntry
+func generateRepos(count int) ([]types.MinimalRepo, []*zoekt.RepoListEntry) {
+	repos := make([]types.MinimalRepo, 0, count)
+	zoektRepos := make([]*zoekt.RepoListEntry, 0, count)
 
 	for i := 1; i <= count; i++ {
 		name := fmt.Sprintf("repo-%d", i)
 
-		repoWithIDs := &types.Repo{
+		repoWithIDs := types.MinimalRepo{
 			ID:   api.RepoID(i),
 			Name: api.RepoName(name),
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          name,
-				ServiceType: extsvc.TypeGitHub,
-				ServiceID:   "https://github.com",
-			}}
+		}
 
-		reposWithIDs = append(reposWithIDs, repoWithIDs)
-
-		repos = append(repos, &types.Repo{
-
-			ID:           repoWithIDs.ID,
-			Name:         repoWithIDs.Name,
-			ExternalRepo: repoWithIDs.ExternalRepo,
-			URI:          fmt.Sprintf("https://github.com/foobar/%s", repoWithIDs.Name),
-			Description:  "this repositoriy contains a side project that I haven't maintained in 2 years",
-		})
+		repos = append(repos, repoWithIDs)
 
 		zoektRepos = append(zoektRepos, &zoekt.RepoListEntry{
 			Repository: zoekt.Repository{
@@ -697,7 +372,7 @@ func generateRepos(count int) ([]*types.Repo, []*types.Repo, []*zoekt.RepoListEn
 			},
 		})
 	}
-	return reposWithIDs, repos, zoektRepos
+	return repos, zoektRepos
 }
 
 func generateZoektMatches(count int) []zoekt.FileMatch {
@@ -726,13 +401,20 @@ func generateZoektMatches(count int) []zoekt.FileMatch {
 // zoektRPC starts zoekts rpc interface and returns a client to
 // searcher. Useful for capturing CPU/memory usage when benchmarking the zoekt
 // client.
-func zoektRPC(s zoekt.Searcher) (zoekt.Searcher, func()) {
-	mux := http.NewServeMux()
-	mux.Handle(zoektrpc.DefaultRPCPath, zoektrpc.Server(s))
-	ts := httptest.NewServer(mux)
-	cl := zoektrpc.Client(strings.TrimPrefix(ts.URL, "http://"))
-	return cl, func() {
+func zoektRPC(t testing.TB, s zoekt.Streamer) zoekt.Streamer {
+	srv, err := web.NewMux(&web.Server{
+		Searcher: s,
+		RPC:      true,
+		Top:      web.Top,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ts := httptest.NewServer(srv)
+	cl := backend.ZoektDial(strings.TrimPrefix(ts.URL, "http://"))
+	t.Cleanup(func() {
 		cl.Close()
 		ts.Close()
-	}
+	})
+	return cl
 }

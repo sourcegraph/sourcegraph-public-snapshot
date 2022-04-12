@@ -11,3 +11,8 @@ We currently have plugins for these editors:
 <a href="https://plugins.jetbrains.com/plugin/9682-sourcegraph"><img src="img/jetbrains.svg"/> JetBrains IDEs (IntelliJ, PyCharm, GoLand, etc.)</a>
 
 <a href="https://github.com/sourcegraph/sourcegraph-sublime"><img src="img/sublime.svg"/> Sublime Text</a>
+
+
+## References
+
+[VS Code Extension Troubleshooting Docs](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#vs-code-extension)

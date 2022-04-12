@@ -6,5 +6,5 @@ import (
 )
 
 type GitserverClient interface {
-	CommitDate(ctx context.Context, repositoryID int, commit string) (time.Time, error)
+	CommitDate(ctx context.Context, repositoryID int, commit string) (string, time.Time, bool, error)
 }

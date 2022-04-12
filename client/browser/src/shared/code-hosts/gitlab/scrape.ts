@@ -1,6 +1,6 @@
 import { last, take } from 'lodash'
 
-import { FileSpec, RawRepoSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { FileSpec, RawRepoSpec, RepoSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { isExtension } from '../../context'
 import { commitIDFromPermalink } from '../../util/dom'
@@ -16,7 +16,7 @@ export enum GitLabPageKind {
 /**
  * General information that can be found on any GitLab page that we care about. (i.e. has code)
  */
-export interface GitLabInfo extends RawRepoSpec {
+export interface GitLabInfo extends RawRepoSpec, RepoSpec {
     pageKind: GitLabPageKind
 
     owner: string
@@ -68,6 +68,7 @@ export function getPageInfo(): GitLabInfo {
         owner,
         projectName,
         rawRepoName: [hostname, owner, projectName].join('/'),
+        repoName: projectFullName,
         pageKind,
     }
 }

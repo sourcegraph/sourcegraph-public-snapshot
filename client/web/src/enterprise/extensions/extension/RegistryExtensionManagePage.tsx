@@ -1,21 +1,22 @@
+import * as React from 'react'
+
+import classNames from 'classnames'
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, map, tap } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { Button, LoadingSpinner, Link, CardHeader, CardBody, Card, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { mutateGraphQL } from '../../../backend/graphql'
-import { ErrorAlert } from '../../../components/alerts'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import { toExtensionID } from '../../../extensions/extension/extension'
@@ -24,6 +25,8 @@ import { eventLogger } from '../../../tracking/eventLogger'
 
 import { RegistryExtensionDeleteButton } from './RegistryExtensionDeleteButton'
 import { RegistryExtensionNameFormGroup, RegistryPublisherFormGroup } from './RegistryExtensionForm'
+
+import styles from './RegistryExtensionManagePage.module.scss'
 
 function updateExtension(
     args: Pick<
@@ -154,13 +157,13 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                     <h2>Manage extension</h2>
                     <Form onSubmit={this.onSubmit}>
                         <RegistryPublisherFormGroup
-                            className="registry-extension-manage-page__input"
+                            className={styles.input}
                             value={publisher.id}
                             publishersOrError={[publisher]}
                             disabled={true}
                         />
                         <RegistryExtensionNameFormGroup
-                            className="registry-extension-manage-page__input"
+                            className={styles.input}
                             value={extensionName}
                             onChange={this.onNameChange}
                             disabled={this.state.updateOrError === 'loading'}
@@ -168,41 +171,35 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                         {extensionID &&
                             this.state.name &&
                             this.state.name !== this.props.extension.registryExtension.name && (
-                                <div className="alert alert-primary">
+                                <Alert variant="primary">
                                     Extension will be renamed. New extension ID:{' '}
                                     <code id="registry-extension__extensionID">
                                         <strong>{extensionID}</strong>
                                     </code>
-                                </div>
+                                </Alert>
                             )}
-                        <button
-                            type="submit"
-                            disabled={this.state.updateOrError === 'loading'}
-                            className="btn btn-primary"
-                        >
-                            {this.state.updateOrError === 'loading' ? (
-                                <LoadingSpinner className="icon-inline" />
-                            ) : (
-                                'Update extension'
-                            )}
-                        </button>
+                        <Button type="submit" disabled={this.state.updateOrError === 'loading'} variant="primary">
+                            {this.state.updateOrError === 'loading' ? <LoadingSpinner /> : 'Update extension'}
+                        </Button>
                     </Form>
                     {isErrorLike(this.state.updateOrError) && <ErrorAlert error={this.state.updateOrError} />}
-                    <div className="card mt-5 registry-extension-manage-page__other-actions">
-                        <div className="card-header">Other actions</div>
-                        <div className="card-body">
-                            <Link
+                    <Card className={classNames('mt-5', styles.otherActions)}>
+                        <CardHeader>Other actions</CardHeader>
+                        <CardBody>
+                            <Button
                                 to={`${this.props.extension.registryExtension.url}/-/releases/new`}
-                                className="btn btn-success mr-2"
+                                className="mr-2"
+                                variant="success"
+                                as={Link}
                             >
                                 Publish new release
-                            </Link>
+                            </Button>
                             <RegistryExtensionDeleteButton
                                 extension={this.props.extension.registryExtension}
                                 onDidUpdate={this.onDidDelete}
                             />
-                        </div>
-                    </div>
+                        </CardBody>
+                    </Card>
                 </div>
             )
         }

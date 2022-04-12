@@ -1,39 +1,47 @@
-import { mount } from 'enzyme'
 import React from 'react'
-import { act } from 'react-dom/test-utils'
+
+import { screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
 
-import { AuthenticatedUser } from '../../../auth'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+
+import { CodeMonitorFields } from '../../../graphql-operations'
+import { mockAuthenticatedUser } from '../testing/util'
 
 import { FormActionArea } from './FormActionArea'
 
 describe('FormActionArea', () => {
-    const authenticatedUser = {
-        id: 'foobar',
-        username: 'alice',
-        email: 'alice@alice.com',
-    } as AuthenticatedUser
-    const mockActions = {
-        nodes: [{ id: 'id1', recipients: { nodes: [{ id: authenticatedUser.id }] }, enabled: true }],
+    const mockActions: CodeMonitorFields['actions'] = {
+        nodes: [
+            {
+                __typename: 'MonitorEmail',
+                id: 'id1',
+                recipients: { nodes: [{ id: mockAuthenticatedUser.id }] },
+                enabled: true,
+                includeResults: false,
+            },
+        ],
     }
 
     test('Error is shown if code monitor has empty description', () => {
-        let component = mount(
-            <FormActionArea
-                actions={mockActions}
-                actionsCompleted={true}
-                setActionsCompleted={sinon.spy()}
-                disabled={false}
-                authenticatedUser={authenticatedUser}
-                onActionsChange={sinon.spy()}
-                description=""
-            />
+        const { asFragment } = renderWithBrandedContext(
+            <MockedTestProvider>
+                <FormActionArea
+                    actions={mockActions}
+                    actionsCompleted={true}
+                    setActionsCompleted={sinon.spy()}
+                    disabled={false}
+                    authenticatedUser={mockAuthenticatedUser}
+                    onActionsChange={sinon.spy()}
+                    monitorName=""
+                />
+            </MockedTestProvider>
         )
-        act(() => {
-            const triggerButton = component.find('.test-action-button')
-            triggerButton.simulate('click')
-        })
-        component = component.update()
-        expect(component).toMatchSnapshot()
+
+        userEvent.click(screen.getByTestId('form-action-toggle-email'))
+
+        expect(asFragment()).toMatchSnapshot()
     })
 })

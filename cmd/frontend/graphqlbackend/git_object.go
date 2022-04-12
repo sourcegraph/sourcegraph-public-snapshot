@@ -4,9 +4,10 @@ import (
 	"context"
 	"sync"
 
-	"github.com/cockroachdb/errors"
-
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type GitObjectType string
@@ -21,15 +22,15 @@ const (
 	GitObjectTypeUnknown GitObjectType = "GIT_UNKNOWN"
 )
 
-func toGitObjectType(t git.ObjectType) GitObjectType {
+func toGitObjectType(t gitdomain.ObjectType) GitObjectType {
 	switch t {
-	case git.ObjectTypeCommit:
+	case gitdomain.ObjectTypeCommit:
 		return GitObjectTypeCommit
-	case git.ObjectTypeTag:
+	case gitdomain.ObjectTypeTag:
 		return GitObjectTypeTag
-	case git.ObjectTypeTree:
+	case gitdomain.ObjectTypeTree:
 		return GitObjectTypeTree
-	case git.ObjectTypeBlob:
+	case gitdomain.ObjectTypeBlob:
 		return GitObjectTypeBlob
 	}
 	return GitObjectTypeUnknown
@@ -77,13 +78,13 @@ type gitObjectResolver struct {
 
 func (o *gitObjectResolver) resolve(ctx context.Context) (GitObjectID, GitObjectType, error) {
 	o.once.Do(func() {
-		oid, objectType, err := git.GetObject(ctx, o.repo.RepoName(), o.revspec)
+		obj, err := gitserver.NewClient(o.repo.db).GetObject(ctx, o.repo.RepoName(), o.revspec)
 		if err != nil {
 			o.err = err
 			return
 		}
-		o.oid = GitObjectID(oid.String())
-		o.typ = toGitObjectType(objectType)
+		o.oid = GitObjectID(obj.ID.String())
+		o.typ = toGitObjectType(obj.Type)
 	})
 	return o.oid, o.typ, o.err
 }

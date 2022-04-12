@@ -4,9 +4,10 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/cockroachdb/errors"
 	"github.com/mattn/go-isatty"
 	"github.com/moby/term"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type capabilities struct {

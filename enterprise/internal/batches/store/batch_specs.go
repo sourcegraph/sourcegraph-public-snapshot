@@ -4,14 +4,15 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // batchSpecColumns are used by the batchSpec related Store methods to insert,
@@ -24,6 +25,10 @@ var batchSpecColumns = []*sqlf.Query{
 	sqlf.Sprintf("batch_specs.namespace_user_id"),
 	sqlf.Sprintf("batch_specs.namespace_org_id"),
 	sqlf.Sprintf("batch_specs.user_id"),
+	sqlf.Sprintf("batch_specs.created_from_raw"),
+	sqlf.Sprintf("batch_specs.allow_unsupported"),
+	sqlf.Sprintf("batch_specs.allow_ignored"),
+	sqlf.Sprintf("batch_specs.no_cache"),
 	sqlf.Sprintf("batch_specs.created_at"),
 	sqlf.Sprintf("batch_specs.updated_at"),
 }
@@ -37,11 +42,15 @@ var batchSpecInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("namespace_user_id"),
 	sqlf.Sprintf("namespace_org_id"),
 	sqlf.Sprintf("user_id"),
+	sqlf.Sprintf("created_from_raw"),
+	sqlf.Sprintf("allow_unsupported"),
+	sqlf.Sprintf("allow_ignored"),
+	sqlf.Sprintf("no_cache"),
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
 }
 
-const batchSpecInsertColsFmt = `(%s, %s, %s, %s, %s, %s, %s, %s)`
+const batchSpecInsertColsFmt = `(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)`
 
 // CreateBatchSpec creates the given BatchSpec.
 func (s *Store) CreateBatchSpec(ctx context.Context, c *btypes.BatchSpec) (err error) {
@@ -52,7 +61,7 @@ func (s *Store) CreateBatchSpec(ctx context.Context, c *btypes.BatchSpec) (err e
 	if err != nil {
 		return err
 	}
-	return s.query(ctx, q, func(sc scanner) error { return scanBatchSpec(c, sc) })
+	return s.query(ctx, q, func(sc dbutil.Scanner) error { return scanBatchSpec(c, sc) })
 }
 
 var createBatchSpecQueryFmtstr = `
@@ -90,6 +99,10 @@ func (s *Store) createBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 		nullInt32Column(c.NamespaceUserID),
 		nullInt32Column(c.NamespaceOrgID),
 		nullInt32Column(c.UserID),
+		c.CreatedFromRaw,
+		c.AllowUnsupported,
+		c.AllowIgnored,
+		c.NoCache,
 		c.CreatedAt,
 		c.UpdatedAt,
 		sqlf.Join(batchSpecColumns, ", "),
@@ -108,7 +121,7 @@ func (s *Store) UpdateBatchSpec(ctx context.Context, c *btypes.BatchSpec) (err e
 		return err
 	}
 
-	return s.query(ctx, q, func(sc scanner) error {
+	return s.query(ctx, q, func(sc dbutil.Scanner) error {
 		return scanBatchSpec(c, sc)
 	})
 }
@@ -137,6 +150,10 @@ func (s *Store) updateBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 		nullInt32Column(c.NamespaceUserID),
 		nullInt32Column(c.NamespaceOrgID),
 		nullInt32Column(c.UserID),
+		c.CreatedFromRaw,
+		c.AllowUnsupported,
+		c.AllowIgnored,
+		c.NoCache,
 		c.CreatedAt,
 		c.UpdatedAt,
 		c.ID,
@@ -159,24 +176,69 @@ var deleteBatchSpecQueryFmtstr = `
 DELETE FROM batch_specs WHERE id = %s
 `
 
+// CountBatchSpecsOpts captures the query options needed for
+// counting batch specs.
+type CountBatchSpecsOpts struct {
+	BatchChangeID int64
+
+	ExcludeCreatedFromRawNotOwnedByUser int32
+}
+
 // CountBatchSpecs returns the number of code mods in the database.
-func (s *Store) CountBatchSpecs(ctx context.Context) (count int, err error) {
+func (s *Store) CountBatchSpecs(ctx context.Context, opts CountBatchSpecsOpts) (count int, err error) {
 	ctx, endObservation := s.operations.countBatchSpecs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return s.queryCount(ctx, sqlf.Sprintf(countBatchSpecsQueryFmtstr))
+	q := countBatchSpecsQuery(opts)
+
+	return s.queryCount(ctx, q)
 }
 
 var countBatchSpecsQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_specs.go:CountBatchSpecs
-SELECT COUNT(id)
+SELECT COUNT(batch_specs.id)
 FROM batch_specs
+-- Joins go here:
+%s
+WHERE %s
 `
+
+func countBatchSpecsQuery(opts CountBatchSpecsOpts) *sqlf.Query {
+	preds := []*sqlf.Query{}
+	joins := []*sqlf.Query{}
+
+	if opts.BatchChangeID != 0 {
+		joins = append(joins, sqlf.Sprintf(`INNER JOIN batch_changes
+ON
+	batch_changes.name = batch_specs.spec->>'name'
+	AND
+	batch_changes.namespace_user_id IS NOT DISTINCT FROM batch_specs.namespace_user_id
+	AND
+	batch_changes.namespace_org_id IS NOT DISTINCT FROM batch_specs.namespace_org_id`))
+		preds = append(preds, sqlf.Sprintf("batch_changes.id = %s", opts.BatchChangeID))
+	}
+
+	if opts.ExcludeCreatedFromRawNotOwnedByUser != 0 {
+		preds = append(preds, sqlf.Sprintf("(batch_specs.user_id = %s OR batch_specs.created_from_raw IS FALSE)", opts.ExcludeCreatedFromRawNotOwnedByUser))
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
+	return sqlf.Sprintf(
+		countBatchSpecsQueryFmtstr,
+		sqlf.Join(joins, "\n"),
+		sqlf.Join(preds, "\n AND "),
+	)
+}
 
 // GetBatchSpecOpts captures the query options needed for getting a BatchSpec
 type GetBatchSpecOpts struct {
 	ID     int64
 	RandID string
+
+	ExcludeCreatedFromRawNotOwnedByUser int32
 }
 
 // GetBatchSpec gets a BatchSpec matching the given options.
@@ -190,7 +252,7 @@ func (s *Store) GetBatchSpec(ctx context.Context, opts GetBatchSpecOpts) (spec *
 	q := getBatchSpecQuery(&opts)
 
 	var c btypes.BatchSpec
-	err = s.query(ctx, q, func(sc scanner) (err error) {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		return scanBatchSpec(&c, sc)
 	})
 	if err != nil {
@@ -219,6 +281,10 @@ func getBatchSpecQuery(opts *GetBatchSpecOpts) *sqlf.Query {
 
 	if opts.RandID != "" {
 		preds = append(preds, sqlf.Sprintf("rand_id = %s", opts.RandID))
+	}
+
+	if opts.ExcludeCreatedFromRawNotOwnedByUser != 0 {
+		preds = append(preds, sqlf.Sprintf("(user_id = %s OR created_from_raw IS FALSE)", opts.ExcludeCreatedFromRawNotOwnedByUser))
 	}
 
 	if len(preds) == 0 {
@@ -251,7 +317,7 @@ func (s *Store) GetNewestBatchSpec(ctx context.Context, opts GetNewestBatchSpecO
 	q := getNewestBatchSpecQuery(&opts)
 
 	var c btypes.BatchSpec
-	err = s.query(ctx, q, func(sc scanner) (err error) {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		return scanBatchSpec(&c, sc)
 	})
 	if err != nil {
@@ -304,7 +370,11 @@ func getNewestBatchSpecQuery(opts *GetNewestBatchSpecOpts) *sqlf.Query {
 // listing batch specs.
 type ListBatchSpecsOpts struct {
 	LimitOpts
-	Cursor int64
+	Cursor        int64
+	BatchChangeID int64
+	NewestFirst   bool
+
+	ExcludeCreatedFromRawNotOwnedByUser int32
 }
 
 // ListBatchSpecs lists BatchSpecs with the given filters.
@@ -315,7 +385,7 @@ func (s *Store) ListBatchSpecs(ctx context.Context, opts ListBatchSpecsOpts) (cs
 	q := listBatchSpecsQuery(&opts)
 
 	cs = make([]*btypes.BatchSpec, 0, opts.DBLimit())
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		var c btypes.BatchSpec
 		if err := scanBatchSpec(&c, sc); err != nil {
 			return err
@@ -335,24 +405,59 @@ func (s *Store) ListBatchSpecs(ctx context.Context, opts ListBatchSpecsOpts) (cs
 var listBatchSpecsQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_specs.go:ListBatchSpecs
 SELECT %s FROM batch_specs
+-- Joins go here:
+%s
 WHERE %s
-ORDER BY id ASC
+ORDER BY %s
 `
 
 func listBatchSpecsQuery(opts *ListBatchSpecsOpts) *sqlf.Query {
-	preds := []*sqlf.Query{
-		sqlf.Sprintf("id >= %s", opts.Cursor),
+	preds := []*sqlf.Query{}
+	joins := []*sqlf.Query{}
+	order := sqlf.Sprintf("batch_specs.id ASC")
+
+	if opts.BatchChangeID != 0 {
+		joins = append(joins, sqlf.Sprintf(`INNER JOIN batch_changes
+ON
+	batch_changes.name = batch_specs.spec->>'name'
+	AND
+	batch_changes.namespace_user_id IS NOT DISTINCT FROM batch_specs.namespace_user_id
+	AND
+	batch_changes.namespace_org_id IS NOT DISTINCT FROM batch_specs.namespace_org_id`))
+		preds = append(preds, sqlf.Sprintf("batch_changes.id = %s", opts.BatchChangeID))
+	}
+
+	if opts.ExcludeCreatedFromRawNotOwnedByUser != 0 {
+		preds = append(preds, sqlf.Sprintf("(batch_specs.user_id = %s OR batch_specs.created_from_raw IS FALSE)", opts.ExcludeCreatedFromRawNotOwnedByUser))
+	}
+
+	if opts.NewestFirst {
+		order = sqlf.Sprintf("batch_specs.id DESC")
+		if opts.Cursor != 0 {
+			preds = append(preds, sqlf.Sprintf("batch_specs.id <= %s", opts.Cursor))
+		}
+	} else {
+		preds = append(preds, sqlf.Sprintf("batch_specs.id >= %s", opts.Cursor))
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
 	return sqlf.Sprintf(
 		listBatchSpecsQueryFmtstr+opts.LimitOpts.ToDB(),
 		sqlf.Join(batchSpecColumns, ", "),
+		sqlf.Join(joins, "\n"),
 		sqlf.Join(preds, "\n AND "),
+		order,
 	)
 }
 
 // DeleteExpiredBatchSpecs deletes BatchSpecs that have not been attached
 // to a Batch change within BatchSpecTTL.
+// TODO: A more sophisticated cleanup process for SSBC-created batch specs.
+// - We could: Add execution_started_at to the batch_specs table and delete
+// all that are older than TIME_PERIOD and never started executing.
 func (s *Store) DeleteExpiredBatchSpecs(ctx context.Context) (err error) {
 	ctx, endObservation := s.operations.deleteExpiredBatchSpecs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -363,6 +468,73 @@ func (s *Store) DeleteExpiredBatchSpecs(ctx context.Context) (err error) {
 	return s.Store.Exec(ctx, q)
 }
 
+func (s *Store) GetBatchSpecStats(ctx context.Context, ids []int64) (stats map[int64]btypes.BatchSpecStats, err error) {
+	stats = make(map[int64]btypes.BatchSpecStats)
+	q := getBatchSpecStatsQuery(ids)
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
+		var (
+			s  btypes.BatchSpecStats
+			id int64
+		)
+		if err := sc.Scan(
+			&id,
+			&s.ResolutionDone,
+			&s.Workspaces,
+			&s.SkippedWorkspaces,
+			&dbutil.NullTime{Time: &s.StartedAt},
+			&dbutil.NullTime{Time: &s.FinishedAt},
+			&s.Executions,
+			&s.Completed,
+			&s.Processing,
+			&s.Queued,
+			&s.Failed,
+			&s.Canceled,
+			&s.Canceling,
+		); err != nil {
+			return err
+		}
+		stats[id] = s
+		return nil
+	})
+	return stats, err
+}
+
+func getBatchSpecStatsQuery(ids []int64) *sqlf.Query {
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("batch_specs.id = ANY(%s)", pq.Array(ids)),
+	}
+
+	return sqlf.Sprintf(
+		getBatchSpecStatsFmtstr,
+		sqlf.Join(preds, " AND "),
+	)
+}
+
+const getBatchSpecStatsFmtstr = `
+-- source: enterprise/internal/batches/store/batch_specs.go:GetBatchSpecStats
+SELECT
+	batch_specs.id AS batch_spec_id,
+	COALESCE(res_job.state IN ('completed', 'failed'), FALSE) AS resolution_done,
+	COUNT(ws.id) AS workspaces,
+	COUNT(ws.id) FILTER (WHERE ws.skipped) AS skipped_workspaces,
+	MIN(jobs.started_at) AS started_at,
+	MAX(jobs.finished_at) AS finished_at,
+	COUNT(jobs.id) AS executions,
+	COUNT(jobs.id) FILTER (WHERE jobs.state = 'completed') AS completed,
+	COUNT(jobs.id) FILTER (WHERE jobs.state = 'processing' AND jobs.cancel = FALSE) AS processing,
+	COUNT(jobs.id) FILTER (WHERE jobs.state = 'queued') AS queued,
+	COUNT(jobs.id) FILTER (WHERE jobs.state = 'failed' AND jobs.cancel = FALSE) AS failed,
+	COUNT(jobs.id) FILTER (WHERE jobs.state = 'failed' AND jobs.cancel = TRUE) AS canceled,
+	COUNT(jobs.id) FILTER (WHERE jobs.state = 'processing' AND jobs.cancel = TRUE) AS canceling
+FROM batch_specs
+LEFT JOIN batch_spec_resolution_jobs res_job ON res_job.batch_spec_id = batch_specs.id
+LEFT JOIN batch_spec_workspaces ws ON ws.batch_spec_id = batch_specs.id
+LEFT JOIN batch_spec_workspace_execution_jobs jobs ON jobs.batch_spec_workspace_id = ws.id
+WHERE
+	%s
+GROUP BY batch_specs.id, res_job.state
+`
+
 var deleteExpiredBatchSpecsQueryFmtstr = `
 -- source: enterprise/internal/batches/store.go:DeleteExpiredBatchSpecs
 DELETE FROM
@@ -372,15 +544,14 @@ WHERE
 AND NOT EXISTS (
   SELECT 1 FROM batch_changes WHERE batch_spec_id = batch_specs.id
 )
+-- Only delete expired batch specs that have been created by src-cli
+AND NOT created_from_raw
 AND NOT EXISTS (
   SELECT 1 FROM changeset_specs WHERE batch_spec_id = batch_specs.id
 )
-AND NOT EXISTS (
-  SELECT 1 FROM batch_spec_executions WHERE batch_spec_id = batch_specs.id
-);
 `
 
-func scanBatchSpec(c *btypes.BatchSpec, s scanner) error {
+func scanBatchSpec(c *btypes.BatchSpec, s dbutil.Scanner) error {
 	var spec json.RawMessage
 
 	err := s.Scan(
@@ -391,6 +562,10 @@ func scanBatchSpec(c *btypes.BatchSpec, s scanner) error {
 		&dbutil.NullInt32{N: &c.NamespaceUserID},
 		&dbutil.NullInt32{N: &c.NamespaceOrgID},
 		&dbutil.NullInt32{N: &c.UserID},
+		&c.CreatedFromRaw,
+		&c.AllowUnsupported,
+		&c.AllowIgnored,
+		&c.NoCache,
 		&c.CreatedAt,
 		&c.UpdatedAt,
 	)

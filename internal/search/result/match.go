@@ -1,6 +1,8 @@
 package result
 
 import (
+	"time"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -10,9 +12,14 @@ import (
 // to ensure only those types implement Match.
 type Match interface {
 	ResultCount() int
+
+	// Limit truncates the match such that, after limiting,
+	// `Match.ResultCount() == limit`. It should never be called with
+	// `limit <= 0`, since a single match cannot be truncated to zero results.
 	Limit(int) int
+
 	Select(filter.SelectPath) Match
-	RepoName() types.RepoName
+	RepoName() types.MinimalRepo
 
 	// Key returns a key which uniquely identifies this match.
 	Key() Key
@@ -38,14 +45,25 @@ const (
 	rankRepoMatch   = 3
 )
 
-// Key is a sorting or deduplicating key for a Match.
-// It contains all the identifying information for the Match.
+// Key is a sorting or deduplicating key for a Match. It contains all the
+// identifying information for the Match. Keys must be comparable by struct
+// equality. If two matches have keys that are equal by struct equality, they
+// will be treated as the same result for the purpose of deduplication/merging
+// in and/or queries.
 type Key struct {
 	// Repo is the name of the repo the match belongs to
 	Repo api.RepoName
 
 	// Rev is the revision associated with the repo if it exists
 	Rev string
+
+	// AuthorDate is the date a commit was authored if this key is for
+	// a commit match.
+	//
+	// NOTE(@camdencheek): this should probably use committer date,
+	// but the CommitterField on our CommitMatch type is possibly null,
+	// so using AuthorDate here preserves previous sorting behavior.
+	AuthorDate time.Time
 
 	// Commit is the commit hash of the commit the match belongs to.
 	// Empty if there is no commit associated with the match (e.g. RepoMatch)
@@ -69,6 +87,10 @@ func (k Key) Less(other Key) bool {
 		return k.Rev < other.Rev
 	}
 
+	if !k.AuthorDate.Equal(other.AuthorDate) {
+		return k.AuthorDate.Before(other.AuthorDate)
+	}
+
 	if k.Commit != other.Commit {
 		return k.Commit < other.Commit
 	}
@@ -86,3 +108,24 @@ type Matches []Match
 func (m Matches) Len() int           { return len(m) }
 func (m Matches) Less(i, j int) bool { return m[i].Key().Less(m[j].Key()) }
 func (m Matches) Swap(i, j int)      { m[i], m[j] = m[j], m[i] }
+
+// Limit truncates the slice of matches such that, after limiting, `m.ResultCount() == limit`
+func (m *Matches) Limit(limit int) int {
+	for i, match := range *m {
+		if limit <= 0 {
+			*m = (*m)[:i]
+			return 0
+		}
+		limit = match.Limit(limit)
+	}
+	return limit
+}
+
+// ResultCount returns the sum of the result counts of each match in the slice
+func (m Matches) ResultCount() int {
+	count := 0
+	for _, match := range m {
+		count += match.ResultCount()
+	}
+	return count
+}

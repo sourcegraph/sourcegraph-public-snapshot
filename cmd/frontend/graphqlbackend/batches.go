@@ -9,95 +9,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	gql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 )
-
-// TODO(campaigns-deprecation)
-type CreateCampaignArgs struct {
-	CampaignSpec graphql.ID
-}
-
-// TODO(campaigns-deprecation)
-type CreateCampaignSpecArgs struct {
-	Namespace graphql.ID
-
-	CampaignSpec   string
-	ChangesetSpecs []graphql.ID
-}
-
-// TODO(campaigns-deprecation)
-type ApplyCampaignArgs struct {
-	CampaignSpec   graphql.ID
-	EnsureCampaign *graphql.ID
-}
-
-// TODO(campaigns-deprecation)
-type CloseCampaignArgs struct {
-	Campaign        graphql.ID
-	CloseChangesets bool
-}
-
-// TODO(campaigns-deprecation)
-type MoveCampaignArgs struct {
-	Campaign     graphql.ID
-	NewName      *string
-	NewNamespace *graphql.ID
-}
-
-// TODO(campaigns-deprecation)
-type DeleteCampaignArgs struct {
-	Campaign graphql.ID
-}
-
-// TODO(campaigns-deprecation)
-type CreateCampaignsCredentialArgs struct {
-	ExternalServiceKind string
-	ExternalServiceURL  string
-	User                graphql.ID
-	Credential          string
-}
-
-// TODO(campaigns-deprecation)
-type DeleteCampaignsCredentialArgs struct {
-	CampaignsCredential graphql.ID
-}
-
-// TODO(campaigns-deprecation)
-type ListCampaignsCodeHostsArgs struct {
-	First  int32
-	After  *string
-	UserID int32
-}
-
-// TODO(campaigns-deprecation)
-type ListViewerCampaignsCodeHostsArgs struct {
-	First                 int32
-	After                 *string
-	OnlyWithoutCredential bool
-}
-
-// TODO(campaigns-deprecation)
-type CampaignsCodeHostConnectionResolver interface {
-	Nodes(ctx context.Context) ([]CampaignsCodeHostResolver, error)
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-}
-
-// TODO(campaigns-deprecation)
-type CampaignsCodeHostResolver interface {
-	ExternalServiceKind() string
-	ExternalServiceURL() string
-	RequiresSSH() bool
-	Credential() CampaignsCredentialResolver
-}
-
-// TODO(campaigns-deprecation)
-type CampaignsCredentialResolver interface {
-	ID() graphql.ID
-	ExternalServiceKind() string
-	ExternalServiceURL() string
-	SSHPublicKey(ctx context.Context) (*string, error)
-	CreatedAt() DateTime
-}
 
 type CreateBatchChangeArgs struct {
 	BatchSpec         graphql.ID
@@ -119,15 +32,11 @@ type ListBatchChangesArgs struct {
 	First               int32
 	After               *string
 	State               *string
+	States              *[]string
 	ViewerCanAdminister *bool
 
 	Namespace *graphql.ID
 	Repo      *graphql.ID
-}
-
-type ListBatchSpecExecutionsArgs struct {
-	First int32
-	After *string
 }
 
 type CloseBatchChangeArgs struct {
@@ -162,6 +71,67 @@ type CreateBatchSpecArgs struct {
 
 	BatchSpec      string
 	ChangesetSpecs []graphql.ID
+}
+
+type CreateEmptyBatchChangeArgs struct {
+	Namespace graphql.ID
+	Name      string
+}
+
+type CreateBatchSpecFromRawArgs struct {
+	BatchSpec        string
+	AllowIgnored     bool
+	AllowUnsupported bool
+	Execute          bool
+	NoCache          bool
+	Namespace        graphql.ID
+}
+
+type ReplaceBatchSpecInputArgs struct {
+	PreviousSpec     graphql.ID
+	BatchSpec        string
+	AllowIgnored     bool
+	AllowUnsupported bool
+	Execute          bool
+	NoCache          bool
+}
+
+type UpsertBatchSpecInputArgs = CreateBatchSpecFromRawArgs
+
+type DeleteBatchSpecArgs struct {
+	BatchSpec graphql.ID
+}
+
+type ExecuteBatchSpecArgs struct {
+	BatchSpec graphql.ID
+	NoCache   bool
+	AutoApply bool
+}
+
+type CancelBatchSpecExecutionArgs struct {
+	BatchSpec graphql.ID
+}
+
+type CancelBatchSpecWorkspaceExecutionArgs struct {
+	BatchSpecWorkspaces []graphql.ID
+}
+
+type RetryBatchSpecWorkspaceExecutionArgs struct {
+	BatchSpecWorkspaces []graphql.ID
+}
+
+type RetryBatchSpecExecutionArgs struct {
+	BatchSpec        graphql.ID
+	IncludeCompleted bool
+}
+
+type EnqueueBatchSpecWorkspaceExecutionArgs struct {
+	BatchSpecWorkspaces []graphql.ID
+}
+
+type ToggleBatchSpecAutoApplyArgs struct {
+	BatchSpec graphql.ID
+	Value     bool
 }
 
 type ChangesetSpecsConnectionArgs struct {
@@ -211,6 +181,7 @@ type ListViewerBatchChangesCodeHostsArgs struct {
 	First                 int32
 	After                 *string
 	OnlyWithoutCredential bool
+	OnlyWithoutWebhooks   bool
 }
 
 type BulkOperationBaseArgs struct {
@@ -242,15 +213,6 @@ type MergeChangesetsArgs struct {
 	Squash bool
 }
 
-type CreateBatchSpecExecutionArgs struct {
-	Spec      string
-	Namespace *graphql.ID
-}
-
-type CancelBatchSpecExecutionArgs struct {
-	BatchSpecExecution graphql.ID
-}
-
 type CloseChangesetsArgs struct {
 	BulkOperationBaseArgs
 }
@@ -266,22 +228,35 @@ type ResolveWorkspacesForBatchSpecArgs struct {
 	AllowUnsupported bool
 }
 
+type ListImportingChangesetsArgs struct {
+	First  int32
+	After  *string
+	Search *string
+}
+
+type BatchSpecWorkspaceStepArgs struct {
+	Index int32
+}
+
 type BatchChangesResolver interface {
 	//
 	// MUTATIONS
 	//
-	// TODO(campaigns-deprecation)
-	CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (BatchChangeResolver, error)
-	CreateCampaignSpec(ctx context.Context, args *CreateCampaignSpecArgs) (BatchSpecResolver, error)
-	ApplyCampaign(ctx context.Context, args *ApplyCampaignArgs) (BatchChangeResolver, error)
-	CloseCampaign(ctx context.Context, args *CloseCampaignArgs) (BatchChangeResolver, error)
-	MoveCampaign(ctx context.Context, args *MoveCampaignArgs) (BatchChangeResolver, error)
-	DeleteCampaign(ctx context.Context, args *DeleteCampaignArgs) (*EmptyResponse, error)
-	CreateCampaignsCredential(ctx context.Context, args *CreateCampaignsCredentialArgs) (CampaignsCredentialResolver, error)
-	DeleteCampaignsCredential(ctx context.Context, args *DeleteCampaignsCredentialArgs) (*EmptyResponse, error)
-	// New:
 	CreateBatchChange(ctx context.Context, args *CreateBatchChangeArgs) (BatchChangeResolver, error)
 	CreateBatchSpec(ctx context.Context, args *CreateBatchSpecArgs) (BatchSpecResolver, error)
+	CreateEmptyBatchChange(ctx context.Context, args *CreateEmptyBatchChangeArgs) (BatchChangeResolver, error)
+	CreateBatchSpecFromRaw(ctx context.Context, args *CreateBatchSpecFromRawArgs) (BatchSpecResolver, error)
+	ReplaceBatchSpecInput(ctx context.Context, args *ReplaceBatchSpecInputArgs) (BatchSpecResolver, error)
+	UpsertBatchSpecInput(ctx context.Context, args *UpsertBatchSpecInputArgs) (BatchSpecResolver, error)
+	DeleteBatchSpec(ctx context.Context, args *DeleteBatchSpecArgs) (*EmptyResponse, error)
+	ExecuteBatchSpec(ctx context.Context, args *ExecuteBatchSpecArgs) (BatchSpecResolver, error)
+	CancelBatchSpecExecution(ctx context.Context, args *CancelBatchSpecExecutionArgs) (BatchSpecResolver, error)
+	CancelBatchSpecWorkspaceExecution(ctx context.Context, args *CancelBatchSpecWorkspaceExecutionArgs) (*EmptyResponse, error)
+	RetryBatchSpecWorkspaceExecution(ctx context.Context, args *RetryBatchSpecWorkspaceExecutionArgs) (*EmptyResponse, error)
+	RetryBatchSpecExecution(ctx context.Context, args *RetryBatchSpecExecutionArgs) (BatchSpecResolver, error)
+	EnqueueBatchSpecWorkspaceExecution(ctx context.Context, args *EnqueueBatchSpecWorkspaceExecutionArgs) (*EmptyResponse, error)
+	ToggleBatchSpecAutoApply(ctx context.Context, args *ToggleBatchSpecAutoApplyArgs) (BatchSpecResolver, error)
+
 	ApplyBatchChange(ctx context.Context, args *ApplyBatchChangeArgs) (BatchChangeResolver, error)
 	CloseBatchChange(ctx context.Context, args *CloseBatchChangeArgs) (BatchChangeResolver, error)
 	MoveBatchChange(ctx context.Context, args *MoveBatchChangeArgs) (BatchChangeResolver, error)
@@ -296,26 +271,19 @@ type BatchChangesResolver interface {
 	CreateChangesetComments(ctx context.Context, args *CreateChangesetCommentsArgs) (BulkOperationResolver, error)
 	ReenqueueChangesets(ctx context.Context, args *ReenqueueChangesetsArgs) (BulkOperationResolver, error)
 	MergeChangesets(ctx context.Context, args *MergeChangesetsArgs) (BulkOperationResolver, error)
-	CreateBatchSpecExecution(ctx context.Context, args *CreateBatchSpecExecutionArgs) (BatchSpecExecutionResolver, error)
-	CancelBatchSpecExecution(ctx context.Context, args *CancelBatchSpecExecutionArgs) (BatchSpecExecutionResolver, error)
 	CloseChangesets(ctx context.Context, args *CloseChangesetsArgs) (BulkOperationResolver, error)
 	PublishChangesets(ctx context.Context, args *PublishChangesetsArgs) (BulkOperationResolver, error)
 
 	// Queries
-
-	// TODO(campaigns-deprecation)
-	Campaign(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
-	Campaigns(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
-	CampaignsCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error)
-	// New:
 	BatchChange(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
 	BatchChanges(cx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
-	ResolveWorkspacesForBatchSpec(ctx context.Context, args *ResolveWorkspacesForBatchSpecArgs) (BatchSpecWorkspacesResolver, error)
 
 	BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error)
 	RepoChangesetsStats(ctx context.Context, repo *graphql.ID) (RepoChangesetsStatsResolver, error)
 	RepoDiffStat(ctx context.Context, repo *graphql.ID) (*DiffStat, error)
-	BatchSpecExecutions(ctx context.Context, args *ListBatchSpecExecutionsArgs) (BatchSpecExecutionConnectionResolver, error)
+
+	BatchSpecs(cx context.Context, args *ListBatchSpecArgs) (BatchSpecConnectionResolver, error)
+	AvailableBulkOperations(ctx context.Context, args *AvailableBulkOperationsArgs) ([]string, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
 }
@@ -359,7 +327,7 @@ type BatchSpecResolver interface {
 
 	ExpiresAt() *DateTime
 
-	ApplyURL(ctx context.Context) (string, error)
+	ApplyURL(ctx context.Context) (*string, error)
 
 	ViewerCanAdminister(context.Context) (bool, error)
 
@@ -371,15 +339,18 @@ type BatchSpecResolver interface {
 
 	ViewerBatchChangesCodeHosts(ctx context.Context, args *ListViewerBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error)
 
-	// TODO(campaigns-deprecation)
-	// Defined so that BatchSpecResolver can act as a CampaignSpec:
-	AppliesToCampaign(ctx context.Context) (BatchChangeResolver, error)
-	SupersedingCampaignSpec(context.Context) (BatchSpecResolver, error)
-	ViewerCampaignsCodeHosts(ctx context.Context, args *ListViewerCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error)
-	// This should be removed once we remove batches. It's here so that in
-	// the NodeResolver we can have the same resolver, BatchChangeResolver, act
-	// as a Campaign and a BatchChange.
-	ActAsCampaignSpec() bool
+	AutoApplyEnabled() bool
+	State(context.Context) (string, error)
+	StartedAt(ctx context.Context) (*DateTime, error)
+	FinishedAt(ctx context.Context) (*DateTime, error)
+	FailureMessage(ctx context.Context) (*string, error)
+	WorkspaceResolution(ctx context.Context) (BatchSpecWorkspaceResolutionResolver, error)
+	ImportingChangesets(ctx context.Context, args *ListImportingChangesetsArgs) (ChangesetSpecConnectionResolver, error)
+
+	AllowIgnored() *bool
+	AllowUnsupported() *bool
+
+	ViewerCanRetry(context.Context) (bool, error)
 }
 
 type BatchChangeDescriptionResolver interface {
@@ -490,6 +461,9 @@ type VisibleChangesetSpecResolver interface {
 	ChangesetSpecResolver
 
 	Description(ctx context.Context) (ChangesetDescription, error)
+	Workspace(ctx context.Context) (BatchSpecWorkspaceResolver, error)
+
+	ForkTarget() ForkTargetInterface
 }
 
 type ChangesetSpecDeltaResolver interface {
@@ -540,6 +514,11 @@ type GitCommitDescriptionResolver interface {
 	Diff() string
 }
 
+type ForkTargetInterface interface {
+	PushUser() bool
+	Namespace() *string
+}
+
 type BatchChangesCodeHostConnectionResolver interface {
 	Nodes(ctx context.Context) ([]BatchChangesCodeHostResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
@@ -550,6 +529,7 @@ type BatchChangesCodeHostResolver interface {
 	ExternalServiceKind() string
 	ExternalServiceURL() string
 	RequiresSSH() bool
+	HasWebhooks() bool
 	Credential() BatchChangesCredentialResolver
 }
 
@@ -579,13 +559,12 @@ type ListChangesetsArgs struct {
 	ExternalState *string
 	// State is a value of type *btypes.ChangesetState.
 	State *string
+	// onlyClosable indicates the user only wants open and draft changesets to be returned
+	OnlyClosable *bool
 	// ReviewState is a value of type *btypes.ChangesetReviewState.
 	ReviewState *string
 	// CheckState is a value of type *btypes.ChangesetCheckState.
-	CheckState *string
-	// old
-	OnlyPublishedByThisCampaign *bool
-	//new
+	CheckState                     *string
 	OnlyPublishedByThisBatchChange *bool
 	Search                         *string
 
@@ -593,13 +572,48 @@ type ListChangesetsArgs struct {
 	Repo         *graphql.ID
 }
 
+type ListBatchSpecArgs struct {
+	First int32
+	After *string
+}
+
+type AvailableBulkOperationsArgs struct {
+	BatchChange graphql.ID
+	Changesets  []graphql.ID
+}
+
+type ListWorkspacesArgs struct {
+	First   int32
+	After   *string
+	OrderBy *string
+	Search  *string
+	State   *string
+}
+
+type ListRecentlyCompletedWorkspacesArgs struct {
+	First int32
+	After *string
+}
+
+type ListRecentlyErroredWorkspacesArgs struct {
+	First int32
+	After *string
+}
+
+type BatchSpecWorkspaceStepOutputLinesArgs struct {
+	First int32
+	After *int32
+}
+
 type BatchChangeResolver interface {
 	ID() graphql.ID
 	Name() string
 	Description() *string
+	State() string
 	InitialApplier(ctx context.Context) (*UserResolver, error)
+	Creator(ctx context.Context) (*UserResolver, error)
 	LastApplier(ctx context.Context) (*UserResolver, error)
-	LastAppliedAt() DateTime
+	LastAppliedAt() *DateTime
 	SpecCreator(ctx context.Context) (*UserResolver, error)
 	ViewerCanAdminister(ctx context.Context) (bool, error)
 	URL(ctx context.Context) (string, error)
@@ -613,11 +627,7 @@ type BatchChangeResolver interface {
 	DiffStat(ctx context.Context) (*DiffStat, error)
 	CurrentSpec(ctx context.Context) (BatchSpecResolver, error)
 	BulkOperations(ctx context.Context, args *ListBatchChangeBulkOperationArgs) (BulkOperationConnectionResolver, error)
-
-	// TODO(campaigns-deprecation): This should be removed once we remove batches.
-	// It's here so that in the NodeResolver we can have the same resolver,
-	// BatchChangeResolver, act as a Campaign and a BatchChange.
-	ActAsCampaign() bool
+	BatchSpecs(ctx context.Context, args *ListBatchSpecArgs) (BatchSpecConnectionResolver, error)
 }
 
 type BatchChangesConnectionResolver interface {
@@ -626,8 +636,8 @@ type BatchChangesConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-type BatchSpecExecutionConnectionResolver interface {
-	Nodes(ctx context.Context) ([]BatchSpecExecutionResolver, error)
+type BatchSpecConnectionResolver interface {
+	Nodes(ctx context.Context) ([]BatchSpecResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
@@ -687,9 +697,6 @@ type ChangesetResolver interface {
 
 	ToExternalChangeset() (ExternalChangesetResolver, bool)
 	ToHiddenExternalChangeset() (HiddenExternalChangesetResolver, bool)
-
-	// TODO(campaigns-deprecation):
-	Campaigns(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
 }
 
 // HiddenExternalChangesetResolver implements only the common interface,
@@ -712,6 +719,7 @@ type ExternalChangesetResolver interface {
 	Body(context.Context) (*string, error)
 	Author() (*PersonResolver, error)
 	ExternalURL() (*externallink.Resolver, error)
+	ForkNamespace() *string
 	// ReviewState returns a value of type *btypes.ChangesetReviewState.
 	ReviewState(context.Context) *string
 	// CheckState returns a value of type *btypes.ChangesetCheckState.
@@ -754,47 +762,98 @@ type ChangesetCountsResolver interface {
 	OpenPending() int32
 }
 
-type BatchSpecExecutionResolver interface {
-	ID() graphql.ID
-	InputSpec() string
-	Name(ctx context.Context) (*string, error)
+type BatchSpecWorkspaceResolutionResolver interface {
 	State() string
-	CreatedAt() DateTime
 	StartedAt() *DateTime
 	FinishedAt() *DateTime
-	Failure() *string
-	Steps() BatchSpecExecutionStepsResolver
-	PlaceInQueue() *int32
-	BatchSpec(ctx context.Context) (BatchSpecResolver, error)
-	Initiator(ctx context.Context) (*UserResolver, error)
-	Namespace(ctx context.Context) (*NamespaceResolver, error)
+	FailureMessage() *string
+
+	Workspaces(ctx context.Context, args *ListWorkspacesArgs) (BatchSpecWorkspaceConnectionResolver, error)
+	Unsupported(ctx context.Context) RepositoryConnectionResolver
+
+	RecentlyCompleted(ctx context.Context, args *ListRecentlyCompletedWorkspacesArgs) BatchSpecWorkspaceConnectionResolver
+	RecentlyErrored(ctx context.Context, args *ListRecentlyErroredWorkspacesArgs) BatchSpecWorkspaceConnectionResolver
 }
 
-type BatchSpecExecutionStepsResolver interface {
-	Setup() []ExecutionLogEntryResolver
-	SrcPreview() ExecutionLogEntryResolver
-	Teardown() []ExecutionLogEntryResolver
+type BatchSpecWorkspaceConnectionResolver interface {
+	Nodes(ctx context.Context) ([]BatchSpecWorkspaceResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	Stats(ctx context.Context) (BatchSpecWorkspacesStatsResolver, error)
 }
 
-type BatchSpecWorkspacesResolver interface {
-	RawSpec() string
-	AllowIgnored() bool
-	AllowUnsupported() bool
-	Workspaces() []BatchSpecWorkspaceResolver
-	Unsupported() []*RepositoryResolver
-	Ignored() []*RepositoryResolver
+type BatchSpecWorkspacesStatsResolver interface {
+	Errored() int32
+	Completed() int32
+	Processing() int32
+	Queued() int32
+	Ignored() int32
 }
 
 type BatchSpecWorkspaceResolver interface {
+	ID() graphql.ID
+
+	State() string
+	QueuedAt() *DateTime
+	StartedAt() *DateTime
+	FinishedAt() *DateTime
+	FailureMessage() *string
+
+	CachedResultFound() bool
+	Stages() BatchSpecWorkspaceStagesResolver
+
 	Repository(ctx context.Context) (*RepositoryResolver, error)
+	BatchSpec(ctx context.Context) (BatchSpecResolver, error)
+
 	Branch(ctx context.Context) (*GitRefResolver, error)
 	Path() string
-	OnlyFetchWorkspace() bool
-	Steps() []BatchSpecWorkspaceStepResolver
+	Step(ctx context.Context, args BatchSpecWorkspaceStepArgs) (BatchSpecWorkspaceStepResolver, error)
+	Steps(ctx context.Context) ([]BatchSpecWorkspaceStepResolver, error)
 	SearchResultPaths() []string
+	OnlyFetchWorkspace() bool
+
+	Ignored() bool
+	Unsupported() bool
+
+	ChangesetSpecs(ctx context.Context) (*[]ChangesetSpecResolver, error)
+	DiffStat(ctx context.Context) (*DiffStat, error)
+	PlaceInQueue() *int32
+
+	Executor(ctx context.Context) (*gql.ExecutorResolver, error)
+}
+
+type BatchSpecWorkspaceStagesResolver interface {
+	Setup() []ExecutionLogEntryResolver
+	SrcExec() ExecutionLogEntryResolver
+	Teardown() []ExecutionLogEntryResolver
 }
 
 type BatchSpecWorkspaceStepResolver interface {
-	Command() string
+	Number() int32
+	Run() string
 	Container() string
+	IfCondition() *string
+	CachedResultFound() bool
+	Skipped() bool
+	OutputLines(ctx context.Context, args *BatchSpecWorkspaceStepOutputLinesArgs) (*[]string, error)
+
+	StartedAt() *DateTime
+	FinishedAt() *DateTime
+
+	ExitCode() *int32
+	Environment() ([]BatchSpecWorkspaceEnvironmentVariableResolver, error)
+	OutputVariables() *[]BatchSpecWorkspaceOutputVariableResolver
+
+	DiffStat(ctx context.Context) (*DiffStat, error)
+	Diff(ctx context.Context) (PreviewRepositoryComparisonResolver, error)
+}
+
+type BatchSpecWorkspaceEnvironmentVariableResolver interface {
+	Name() string
+	Value() string
+}
+
+type BatchSpecWorkspaceOutputVariableResolver interface {
+	Name() string
+	Value() JSONValue
 }

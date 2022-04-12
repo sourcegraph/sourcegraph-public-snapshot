@@ -1,9 +1,12 @@
+import * as React from 'react'
+
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import * as React from 'react'
 import { defer, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap } from 'rxjs/operators'
 
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
+import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import {
     CloneInProgressError,
     isCloneInProgressErrorLike,
@@ -11,9 +14,7 @@ import {
 } from '@sourcegraph/shared/src/backend/errors'
 import { RepoQuestionIcon } from '@sourcegraph/shared/src/components/icons'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
-import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { ErrorMessage } from '../components/alerts'
 import { HeroPage } from '../components/HeroPage'
 
 import { resolveRevision } from './backend'

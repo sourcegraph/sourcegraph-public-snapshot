@@ -1,19 +1,25 @@
+import React, { useCallback, useState } from 'react'
+
 import * as H from 'history'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import InformationIcon from 'mdi-react/InformationIcon'
-import React, { useCallback, useState } from 'react'
+import PencilIcon from 'mdi-react/PencilIcon'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { isErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
+import { isErrorLike, asError } from '@sourcegraph/common'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { Button, Link, Icon } from '@sourcegraph/wildcard'
 
+import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { Scalars } from '../../../graphql-operations'
 
 import { deleteBatchChange as _deleteBatchChange } from './backend'
 
-export interface BatchChangeDetailsActionSectionProps {
+export interface BatchChangeDetailsActionSectionProps extends SettingsCascadeProps<Settings> {
     batchChangeID: Scalars['ID']
     batchChangeClosed: boolean
     batchChangeNamespaceURL: string
+    batchChangeURL: string
     history: H.History
 
     /** For testing only. */
@@ -24,9 +30,13 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<BatchChang
     batchChangeID,
     batchChangeClosed,
     batchChangeNamespaceURL,
+    batchChangeURL,
     history,
+    settingsCascade,
     deleteBatchChange = _deleteBatchChange,
 }) => {
+    const showEditButton = isBatchChangesExecutionEnabled(settingsCascade)
+
     const [isDeleting, setIsDeleting] = useState<boolean | Error>(false)
     const onDeleteBatchChange = useCallback(async () => {
         if (!confirm('Do you really want to delete this batch change?')) {
@@ -42,25 +52,36 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<BatchChang
     }, [batchChangeID, deleteBatchChange, history, batchChangeNamespaceURL])
     if (batchChangeClosed) {
         return (
-            <button
-                type="button"
-                className="btn btn-outline-danger test-batches-delete-btn"
+            <Button
+                className="test-batches-delete-btn"
                 onClick={onDeleteBatchChange}
                 data-tooltip="Deleting this batch change is a final action."
                 disabled={isDeleting === true}
+                outline={true}
+                variant="danger"
             >
-                {isErrorLike(isDeleting) && <InformationIcon className="icon-inline" data-tooltip={isDeleting} />}
-                <DeleteIcon className="icon-inline" /> Delete
-            </button>
+                {isErrorLike(isDeleting) && <Icon data-tooltip={isDeleting} as={InformationIcon} />}
+                <Icon as={DeleteIcon} /> Delete
+            </Button>
         )
     }
     return (
-        <Link
-            to={`${location.pathname}/close`}
-            className="btn btn-outline-danger test-batches-close-btn"
-            data-tooltip="View a preview of all changes that will happen when you close this batch change."
-        >
-            <DeleteIcon className="icon-inline" /> Close
-        </Link>
+        <div className="d-flex">
+            {showEditButton && (
+                <Button to={`${batchChangeURL}/edit`} className="mr-2" variant="secondary" as={Link}>
+                    <Icon as={PencilIcon} /> Edit
+                </Button>
+            )}
+            <Button
+                to={`${batchChangeURL}/close`}
+                className="test-batches-close-btn"
+                data-tooltip="View a preview of all changes that will happen when you close this batch change."
+                variant="danger"
+                outline={true}
+                as={Link}
+            >
+                <Icon as={DeleteIcon} /> Close
+            </Button>
+        </div>
     )
 }

@@ -41,11 +41,11 @@ As part of this service you will receive a number of benefits from our team, inc
 ## Health monitoring, support, and SLAs
 
 - Instance performance and health [monitored](../observability/index.md) by our team's on-call engineers.
-- [Responding to support requests and maintaining SLAs](https://about.sourcegraph.com/handbook/ce/support#for-customers-with-managed-instances)
+- [Responding to support requests and maintaining SLAs](https://handbook.sourcegraph.com/support#for-customers-with-managed-instances)
 
 ## Backup and Restore
 
-- Snapshots are taken every week and kept for 90 days. 
+- Snapshots are taken every week and kept for 90 days.
 
 ## Training, feedback, and engagement
 
@@ -79,7 +79,9 @@ As with any Sourcegraph enterprise customer, you will also receive support from 
 
 Your managed instance will be accessible over HTTPS/TLS, provide storage volumes that are encrypted at rest, and would have access restricted to only your team through your enterprise VPN and/or internal [SSO (single sign-on provider)](../auth/index.md) of choice.
 
-It will be hosted in completely isolated Google Cloud infrastructure, with minimal access even within the Sourcegraph team, both for security and billing purposes. See our [employee handbook](https://about.sourcegraph.com/handbook/engineering/distribution/managed#technical-details) to learn more about the cloud architecture we use. Both your team and limited Sourcegraph personnel will have application-level administrator access to the instance.
+If you decide for your manged instance to be public, we will provide security capabilities from Cloudflare such as WAF and rate-limiting. We will also provide a firewall to protect your instance from malicious traffic.
+
+It will be hosted in completely isolated Google Cloud infrastructure, with minimal access even within the Sourcegraph team, both for security and billing purposes. See our [employee handbook](https://handbook.sourcegraph.com/engineering/enablement/delivery/managed#technical-details) to learn more about the cloud architecture we use. Both your team and limited Sourcegraph personnel will have application-level administrator access to the instance.
 
 Only essential Sourcegraph personnel will have access to the instance, server, code, and any other sensitive materials, such as tokens or keys. The employees or contractors with access would be bound by the same terms as Sourcegraph itself. Learn more in our [network security policies for Sourcegraph Cloud](https://about.sourcegraph.com/security) or [contact us](https://about.sourcegraph.com/contact/sales) with any questions/concerns.
 

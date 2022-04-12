@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -22,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -98,7 +98,7 @@ func newGitLabSource(svc *types.ExternalService, c *schema.GitLabConnection, cf 
 		return nil, err
 	}
 
-	provider := gitlab.NewClientProvider(baseURL, cli)
+	provider := gitlab.NewClientProvider(svc.URN(), baseURL, cli)
 
 	var client *gitlab.Client
 	switch gitlab.TokenType(c.TokenType) {

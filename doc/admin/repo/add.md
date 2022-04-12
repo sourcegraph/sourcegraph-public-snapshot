@@ -1,6 +1,6 @@
 # Add repositories (from code hosts) to Sourcegraph
 
-- [Add repositories from a code host](../external_service/index.md) (GitHub, GitLab, Bitbucket Server, AWS CodeCommit, Phabricator, or Gitolite)
+- [Add repositories from a code host](../external_service/index.md) (GitHub, GitLab, Bitbucket Server, Bitbucket Data Center, AWS CodeCommit, Phabricator, or Gitolite)
 - [Add repositories by Git clone URLs](../external_service/other.md)
 - [Add repositories from non-Git code hosts](../external_service/non-git.md)
   - [Add Perforce repositories](perforce.md)

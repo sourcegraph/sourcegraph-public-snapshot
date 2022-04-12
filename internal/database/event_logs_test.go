@@ -13,10 +13,12 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestEventLogs_ValidInfo(t *testing.T) {
@@ -24,7 +26,7 @@ func TestEventLogs_ValidInfo(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	var testCases = []struct {
@@ -35,17 +37,17 @@ func TestEventLogs_ValidInfo(t *testing.T) {
 		{
 			name:  "EmptyName",
 			event: &Event{UserID: 1, URL: "http://sourcegraph.com", Source: "WEB"},
-			err:   `INSERT: ERROR: new row for relation "event_logs" violates check constraint "event_logs_check_name_not_empty" (SQLSTATE 23514)`,
+			err:   `inserter.Flush: ERROR: new row for relation "event_logs" violates check constraint "event_logs_check_name_not_empty" (SQLSTATE 23514)`,
 		},
 		{
 			name:  "InvalidUser",
 			event: &Event{Name: "test_event", URL: "http://sourcegraph.com", Source: "WEB"},
-			err:   `INSERT: ERROR: new row for relation "event_logs" violates check constraint "event_logs_check_has_user" (SQLSTATE 23514)`,
+			err:   `inserter.Flush: ERROR: new row for relation "event_logs" violates check constraint "event_logs_check_has_user" (SQLSTATE 23514)`,
 		},
 		{
 			name:  "EmptySource",
 			event: &Event{Name: "test_event", URL: "http://sourcegraph.com", UserID: 1},
-			err:   `INSERT: ERROR: new row for relation "event_logs" violates check constraint "event_logs_check_source_not_empty" (SQLSTATE 23514)`,
+			err:   `inserter.Flush: ERROR: new row for relation "event_logs" violates check constraint "event_logs_check_source_not_empty" (SQLSTATE 23514)`,
 		},
 		{
 			name:  "ValidInsert",
@@ -57,7 +59,7 @@ func TestEventLogs_ValidInfo(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			err := EventLogs(db).Insert(ctx, tc.event)
 
-			if have, want := fmt.Sprint(err), tc.err; have != want {
+			if have, want := fmt.Sprint(errors.Unwrap(err)), tc.err; have != want {
 				t.Errorf("have %+v, want %+v", have, want)
 			}
 		})
@@ -69,7 +71,7 @@ func TestEventLogs_CountUniqueUsersPerPeriod(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	now := time.Now()
@@ -115,7 +117,7 @@ func TestEventLogs_UsersUsageCounts(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	now := time.Now()
@@ -135,7 +137,7 @@ func TestEventLogs_UsersUsageCounts(t *testing.T) {
 					e := &Event{
 						UserID:    user,
 						Name:      name,
-						URL:       "test",
+						URL:       "http://sourcegraph.com",
 						Source:    "test",
 						Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60*12))),
 					}
@@ -172,7 +174,7 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
@@ -231,7 +233,7 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 						e := &Event{
 							UserID: user,
 							Name:   name,
-							URL:    "test",
+							URL:    "http://sourcegraph.com",
 							Source: source,
 							// Jitter current time +/- 30 minutes
 							Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
@@ -250,7 +252,8 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 		}
 	}
 
-	summary, err := EventLogs(db).siteUsage(ctx, now)
+	el := &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+	summary, err := el.siteUsage(ctx, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -287,7 +290,7 @@ func TestEventLogs_codeIntelligenceWeeklyUsersCount(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	names := []string{"codeintel.lsifHover", "codeintel.searchReferences", "unknown event"}
@@ -303,7 +306,7 @@ func TestEventLogs_codeIntelligenceWeeklyUsersCount(t *testing.T) {
 			e := &Event{
 				UserID: user,
 				Name:   name,
-				URL:    "test",
+				URL:    "http://sourcegraph.com",
 				Source: "test",
 				// This week; jitter current time +/- 30 minutes
 				Timestamp: now.Add(-time.Hour * 24 * 3).Add(time.Minute * time.Duration(rand.Intn(60)-30)),
@@ -317,7 +320,7 @@ func TestEventLogs_codeIntelligenceWeeklyUsersCount(t *testing.T) {
 			e := &Event{
 				UserID: user,
 				Name:   name,
-				URL:    "test",
+				URL:    "http://sourcegraph.com",
 				Source: "test",
 				// This month: jitter current time +/- 30 minutes
 				Timestamp: now.Add(-time.Hour * 24 * 12).Add(time.Minute * time.Duration(rand.Intn(60)-30)),
@@ -334,7 +337,8 @@ func TestEventLogs_codeIntelligenceWeeklyUsersCount(t *testing.T) {
 		"codeintel.searchReferences",
 	}
 
-	count, err := EventLogs(db).codeIntelligenceWeeklyUsersCount(ctx, eventNames, now)
+	el := &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+	count, err := el.codeIntelligenceWeeklyUsersCount(ctx, eventNames, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -349,7 +353,7 @@ func TestEventLogs_TestCodeIntelligenceRepositoryCounts(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 	now := time.Now()
 
@@ -491,7 +495,7 @@ func TestEventLogs_CodeIntelligenceSettingsPageViewCounts(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	names := []string{
@@ -525,7 +529,7 @@ func TestEventLogs_CodeIntelligenceSettingsPageViewCounts(t *testing.T) {
 				e := &Event{
 					UserID:   1,
 					Name:     name,
-					URL:      "test",
+					URL:      "http://sourcegraph.com",
 					Source:   "test",
 					Argument: json.RawMessage(fmt.Sprintf(`{"languageId": "lang-%02d"}`, (i%3)+1)),
 					// Jitter current time +/- 30 minutes
@@ -543,7 +547,8 @@ func TestEventLogs_CodeIntelligenceSettingsPageViewCounts(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	count, err := EventLogs(db).codeIntelligenceSettingsPageViewCount(ctx, now)
+	el := &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+	count, err := el.codeIntelligenceSettingsPageViewCount(ctx, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -558,7 +563,7 @@ func TestEventLogs_AggregatedCodeIntelEvents(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	names := []string{"codeintel.lsifHover", "codeintel.searchReferences.xrepo", "unknown event"}
@@ -587,7 +592,7 @@ func TestEventLogs_AggregatedCodeIntelEvents(t *testing.T) {
 					e := &Event{
 						UserID:   user,
 						Name:     name,
-						URL:      "test",
+						URL:      "http://sourcegraph.com",
 						Source:   "test",
 						Argument: json.RawMessage(fmt.Sprintf(`{"languageId": "lang-%02d"}`, (i%3)+1)),
 						// Jitter current time +/- 30 minutes
@@ -606,7 +611,8 @@ func TestEventLogs_AggregatedCodeIntelEvents(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	events, err := EventLogs(db).aggregatedCodeIntelEvents(ctx, now)
+	el := &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+	events, err := el.aggregatedCodeIntelEvents(ctx, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -636,7 +642,7 @@ func TestEventLogs_AggregatedSparseCodeIntelEvents(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
@@ -648,7 +654,7 @@ func TestEventLogs_AggregatedSparseCodeIntelEvents(t *testing.T) {
 		e := &Event{
 			UserID:    1,
 			Name:      "codeintel.searchReferences.xrepo",
-			URL:       "test",
+			URL:       "http://sourcegraph.com",
 			Source:    "test",
 			Argument:  json.RawMessage(fmt.Sprintf(`{"languageId": "lang-%02d"}`, (i%3)+1)),
 			Timestamp: now.Add(-time.Hour * 24 * 3), // This week
@@ -659,7 +665,8 @@ func TestEventLogs_AggregatedSparseCodeIntelEvents(t *testing.T) {
 		}
 	}
 
-	events, err := EventLogs(db).aggregatedCodeIntelEvents(ctx, now)
+	el := &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+	events, err := el.aggregatedCodeIntelEvents(ctx, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -686,7 +693,7 @@ func TestEventLogs_AggregatedSparseSearchEvents(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
@@ -698,7 +705,7 @@ func TestEventLogs_AggregatedSparseSearchEvents(t *testing.T) {
 		e := &Event{
 			UserID: 1,
 			Name:   "search.latencies.structural",
-			URL:    "test",
+			URL:    "http://sourcegraph.com",
 			Source: "test",
 			// Make durations non-uniform to test percent_cont. The values
 			// in this test were hand-checked before being added to the assertion.
@@ -745,7 +752,7 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	names := []string{"search.latencies.literal", "search.latencies.structural", "unknown event"}
@@ -780,7 +787,7 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 						e := &Event{
 							UserID: user,
 							Name:   name,
-							URL:    "test",
+							URL:    "http://sourcegraph.com",
 							Source: "test",
 							// Make durations non-uniform to test percent_cont. The values
 							// in this test were hand-checked before being added to the assertion.
@@ -803,7 +810,7 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 	e := &Event{
 		UserID: 3,
 		Name:   "SearchResultsQueried",
-		URL:    "test",
+		URL:    "http://sourcegraph.com",
 		Source: "test",
 		Argument: json.RawMessage(`
 {
@@ -811,7 +818,8 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
       "query_data":{
          "query":{
              "count_and":3,
-             "count_repo_contains_commit_after":2
+             "count_repo_contains_commit_after":2,
+             "count_repo_dependencies":5
          },
          "empty":false,
          "combined":"don't care"
@@ -888,6 +896,17 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 			UniquesMonth: 1,
 			UniquesWeek:  1,
 		},
+		{
+			Name:         "count_repo_dependencies",
+			Month:        time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+			Week:         now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5),
+			Day:          now.Truncate(time.Hour * 24),
+			TotalMonth:   5,
+			TotalWeek:    5,
+			TotalDay:     0,
+			UniquesMonth: 1,
+			UniquesWeek:  1,
+		},
 	}
 	if diff := cmp.Diff(expectedEvents, events); diff != "" {
 		t.Fatal(diff)
@@ -899,7 +918,7 @@ func TestEventLogs_ListAll(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	now := time.Now()
@@ -910,27 +929,27 @@ func TestEventLogs_ListAll(t *testing.T) {
 		{
 			UserID:    1,
 			Name:      "SearchResultsQueried",
-			URL:       "test",
+			URL:       "http://sourcegraph.com",
 			Source:    "test",
 			Timestamp: startDate,
 		}, {
 			UserID:    2,
 			Name:      "codeintel",
-			URL:       "test",
+			URL:       "http://sourcegraph.com",
 			Source:    "test",
 			Timestamp: startDate,
 		},
 		{
 			UserID:    2,
 			Name:      "ViewRepository",
-			URL:       "test",
+			URL:       "http://sourcegraph.com",
 			Source:    "test",
 			Timestamp: startDate,
 		},
 		{
 			UserID:    2,
 			Name:      "SearchResultsQueried",
-			URL:       "test",
+			URL:       "http://sourcegraph.com",
 			Source:    "test",
 			Timestamp: startDate,
 		}}
@@ -959,7 +978,7 @@ func TestEventLogs_LatestPing(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	t.Run("with no pings in database", func(t *testing.T) {
 		ctx := context.Background()
@@ -981,7 +1000,7 @@ func TestEventLogs_LatestPing(t *testing.T) {
 			{
 				UserID:          0,
 				Name:            "ping",
-				URL:             "test",
+				URL:             "http://sourcegraph.com",
 				AnonymousUserID: "test",
 				Source:          "test",
 				Timestamp:       timestamp,
@@ -989,7 +1008,7 @@ func TestEventLogs_LatestPing(t *testing.T) {
 			}, {
 				UserID:          0,
 				Name:            "ping",
-				URL:             "test",
+				URL:             "http://sourcegraph.com",
 				AnonymousUserID: "test",
 				Source:          "test",
 				Timestamp:       timestamp,
@@ -1030,7 +1049,7 @@ func makeTestEvent(e *Event) *Event {
 		e.UserID = 1
 	}
 	e.Name = "foo"
-	e.URL = "test"
+	e.URL = "http://sourcegraph.com"
 	e.Source = "WEB"
 	e.Timestamp = e.Timestamp.Add(time.Minute * time.Duration(rand.Intn(60*12)))
 	return e

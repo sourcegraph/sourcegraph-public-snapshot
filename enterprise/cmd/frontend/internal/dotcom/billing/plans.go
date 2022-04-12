@@ -3,11 +3,11 @@ package billing
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
 	"github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/plan"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // InfoForProductPlan returns the license key tags and min/max quantities that should be used for

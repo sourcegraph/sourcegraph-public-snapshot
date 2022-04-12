@@ -1,7 +1,10 @@
-import { Meta } from '@storybook/react'
 import React from 'react'
 
-import { WebStory } from '@sourcegraph/web/src/components/WebStory'
+import { Meta } from '@storybook/react'
+
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
+import { WebStory } from '../../components/WebStory'
 
 import { RepositoriesPopover } from './RepositoriesPopover'
 import { MOCK_REQUESTS } from './RepositoriesPopover.mocks'
@@ -20,4 +23,6 @@ const Story: Meta = {
 
 export default Story
 
-export const RepositoriesPopoverExample = () => <RepositoriesPopover currentRepo="some-repo-id" />
+export const RepositoriesPopoverExample = () => (
+    <RepositoriesPopover currentRepo="some-repo-id" telemetryService={NOOP_TELEMETRY_SERVICE} />
+)

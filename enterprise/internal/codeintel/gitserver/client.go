@@ -1,33 +1,33 @@
 package gitserver
 
 import (
-	"bytes"
 	"context"
-	"fmt"
 	"os"
-	"regexp"
-	"sort"
-	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
+	"github.com/grafana/regexp"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/pathexistence"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Client struct {
+	db         database.DB
 	dbStore    DBStore
 	operations *operations
 }
 
-func New(dbStore DBStore, observationContext *observation.Context) *Client {
+func New(db database.DB, dbStore DBStore, observationContext *observation.Context) *Client {
 	return &Client{
+		db:         db,
 		dbStore:    dbStore,
 		operations: newOperations(observationContext),
 	}
@@ -41,15 +41,85 @@ func (c *Client) CommitExists(ctx context.Context, repositoryID int, commit stri
 	}})
 	defer endObservation(1, observation.Args{})
 
-	out, err := c.execGitCommand(ctx, repositoryID, "cat-file", "-t", commit)
-	if err == nil {
-		return true, nil
+	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
+	if err != nil {
+		return false, err
+	}
+	return git.CommitExists(ctx, c.db, repo, api.CommitID(commit), authz.DefaultSubRepoPermsChecker)
+}
+
+type RepositoryCommit struct {
+	RepositoryID int
+	Commit       string
+}
+
+// CommitsExist determines if the given commits exists in the given repositories. This method returns a
+// slice of the same size as the input slice, true indicating that the commit at the symmetric index exists.
+func (c *Client) CommitsExist(ctx context.Context, commits []RepositoryCommit) (_ []bool, err error) {
+	ctx, endObservation := c.operations.commitsExist.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numCommits", len(commits)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	repositoryIDMap := map[int]struct{}{}
+	for _, rc := range commits {
+		repositoryIDMap[rc.RepositoryID] = struct{}{}
+	}
+	repositoryIDs := make([]int, 0, len(repositoryIDMap))
+	for repositoryID := range repositoryIDMap {
+		repositoryIDs = append(repositoryIDs, repositoryID)
 	}
 
-	if strings.Contains(out, "Not a valid object name") {
-		err = nil
+	repositoryNames, err := c.repositoryIDsToRepos(ctx, repositoryIDs...)
+	if err != nil {
+		return nil, err
 	}
-	return false, err
+
+	// Build the batch request to send to gitserver. Because we only add repo/commit
+	// pairs that are resolvable to a repo name, we may skip some of the inputs here.
+	// We track the indexes we're sending to gitserver so we can spread the response
+	// back to the correct indexes the caller is expecting. Anything not resolvable
+	// to a repository name will implicity have a false value in the returned slice.
+
+	repoCommits := make([]api.RepoCommit, 0, len(commits))
+	originalIndexes := make([]int, 0, len(commits))
+
+	for i, rc := range commits {
+		repoName, ok := repositoryNames[rc.RepositoryID]
+		if !ok {
+			continue
+		}
+
+		repoCommits = append(repoCommits, api.RepoCommit{
+			Repo:     repoName,
+			CommitID: api.CommitID(rc.Commit),
+		})
+
+		originalIndexes = append(originalIndexes, i)
+	}
+
+	exists, err := git.CommitsExist(ctx, c.db, repoCommits, authz.DefaultSubRepoPermsChecker)
+	if err != nil {
+		return nil, err
+	}
+	if len(exists) != len(repoCommits) {
+		// Add assertion here so that the blast radius of new or newly discovered errors southbound
+		// from the internal/vcs/git package does not leak into code intelligence. The existing callers
+		// of this method panic when this assertion is not met. Describing the error in more detail here
+		// will not cause destruction outside of the particular user-request in which this assertion
+		// was not true.
+		return nil, errors.Newf("expected slice returned from git.CommitsExist to have len %d, but has len %d", len(repoCommits), len(exists))
+	}
+
+	// Spread the response back to the correct indexes the caller is expecting. Each value in the
+	// response from gitserver belongs to some index in the original commits slice. We re-map these
+	// values and leave all other values implicitly false (these repo name were not resolvable).
+	out := make([]bool, len(commits))
+	for i, e := range exists {
+		out[originalIndexes[i]] = e
+	}
+
+	return out, nil
 }
 
 // Head determines the tip commit of the default branch for the given repository. If no HEAD revision exists
@@ -61,259 +131,177 @@ func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, revision
 	}})
 	defer endObservation(1, observation.Args{})
 
-	revision, err := c.execGitCommand(ctx, repositoryID, "rev-parse", "HEAD")
+	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
 	if err != nil {
-		if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
-			err = nil
-		}
-
 		return "", false, err
 	}
 
-	return revision, true, nil
+	return git.Head(ctx, c.db, repo, authz.DefaultSubRepoPermsChecker)
 }
 
-// CommitDate returns the time that the given commit was committed.
-func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string) (_ time.Time, err error) {
+// CommitDate returns the time that the given commit was committed. If the given revision does not exist,
+// a false-valued flag is returned along with a nil error and zero-valued time.
+func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string) (_ string, _ time.Time, revisionExists bool, err error) {
 	ctx, endObservation := c.operations.commitDate.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	out, err := c.execResolveRevGitCommand(ctx, repositoryID, commit, "show", "-s", "--format=%cI", commit)
+	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
 	if err != nil {
-		return time.Time{}, err
+		return "", time.Time{}, false, nil
 	}
 
-	return time.Parse(time.RFC3339, strings.TrimSpace(out))
+	db := c.db
+	rev, tm, ok, err := git.CommitDate(ctx, db, repo, api.CommitID(commit), authz.DefaultSubRepoPermsChecker)
+	if err == nil {
+		return rev, tm, ok, nil
+	}
+
+	// If the repo doesn't exist don't bother trying to resolve the commit.
+	// Otherwise, if we're returning an error, try to resolve revision that was the
+	// target of the command. If the revision fails to resolve, we return an instance
+	// of a RevisionNotFoundError error instead of an "exit 128".
+	if !gitdomain.IsRepoNotExist(err) {
+		if _, err := git.ResolveRevision(ctx, db, repo, commit, git.ResolveRevisionOptions{}); err != nil {
+			return "", time.Time{}, false, errors.Wrap(err, "git.ResolveRevision")
+		}
+	}
+
+	// If we didn't expect a particular revision to exist, or we did but it
+	// resolved without error, return the original error as the command had
+	// failed for another reason.
+	return "", time.Time{}, false, errors.Wrap(err, "git.CommitDate")
 }
 
-type CommitGraph struct {
-	graph map[string][]string
-	order []string
-}
+func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (_ map[api.RepoName]*protocol.RepoInfo, err error) {
+	ctx, endObservation := c.operations.repoInfo.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numRepos", len(repos)),
+	}})
+	defer endObservation(1, observation.Args{})
 
-func (c *CommitGraph) Graph() map[string][]string { return c.graph }
-func (c *CommitGraph) Order() []string            { return c.order }
+	resp, err := gitserver.NewClient(c.db).RepoInfo(ctx, repos...)
+	if resp == nil {
+		return nil, err
+	}
 
-type CommitGraphOptions struct {
-	Commit  string
-	AllRefs bool
-	Limit   int
-	Since   *time.Time
+	return resp.Results, err
 }
 
 // CommitGraph returns the commit graph for the given repository as a mapping from a commit
 // to its parents. If a commit is supplied, the returned graph will be rooted at the given
 // commit. If a non-zero limit is supplied, at most that many commits will be returned.
-func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts CommitGraphOptions) (_ *CommitGraph, err error) {
-	ctx, endObservation := c.operations.commitGraph.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
-		log.String("commit", opts.Commit),
-		log.Int("limit", opts.Limit),
-	}})
+func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts gitserver.CommitGraphOptions) (_ *gitdomain.CommitGraph, err error) {
+	ctx, endObservation := c.operations.commitGraph.With(ctx, &err, observation.Args{
+		LogFields: append([]log.Field{log.Int("repositoryID", repositoryID)}, opts.LogFields()...),
+	})
 	defer endObservation(1, observation.Args{})
 
-	args := []string{"log", "--pretty=%H %P", "--topo-order"}
-	if opts.AllRefs {
-		args = append(args, "--all")
-	}
-	if opts.Commit != "" {
-		args = append(args, opts.Commit)
-	}
-	if opts.Since != nil {
-		args = append(args, fmt.Sprintf("--since=%s", opts.Since.Format(time.RFC3339)))
-	}
-	if opts.Limit > 0 {
-		args = append(args, fmt.Sprintf("-%d", opts.Limit))
-	}
-
-	out, err := c.execResolveRevGitCommand(ctx, repositoryID, opts.Commit, args...)
+	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
 	if err != nil {
 		return nil, err
 	}
 
-	return ParseCommitGraph(strings.Split(out, "\n")), nil
-}
-
-// ParseCommitGraph converts the output of git log into a map from commits to parent commits,
-// and a topological ordering of commits such that parents come before children. If a commit
-// is listed but has no ancestors then its parent slice is empty, but is still present in
-// the map and the ordering. If the ordering is to be correct, the git log output must be
-// formatted with --topo-order.
-func ParseCommitGraph(lines []string) *CommitGraph {
-	// Process lines backwards so that we see all parents before children.
-	// We get a topological ordering by simply scraping the keys off in this
-	// order.
-
-	n := len(lines) - 1
-	for i := 0; i < len(lines)/2; i++ {
-		lines[i], lines[n-i] = lines[n-i], lines[i]
+	g, err := gitserver.NewClient(c.db).CommitGraph(ctx, repo, opts)
+	if err == nil {
+		return g, nil
 	}
 
-	graph := make(map[string][]string, len(lines))
-	order := make([]string, 0, len(lines))
-
-	var prefix []string
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-
-		parts := strings.Split(line, " ")
-
-		if len(parts) == 1 {
-			graph[parts[0]] = []string{}
-		} else {
-			graph[parts[0]] = parts[1:]
-		}
-
-		order = append(order, parts[0])
-
-		for _, part := range parts[1:] {
-			if _, ok := graph[part]; !ok {
-				graph[part] = []string{}
-				prefix = append(prefix, part)
-			}
+	// If the repo doesn't exist don't bother trying to resolve the commit.
+	// Otherwise, if we're returning an error, try to resolve revision that was the
+	// target of the command. If the revision fails to resolve, we return an instance
+	// of a RevisionNotFoundError error instead of an "exit 128".
+	if !gitdomain.IsRepoNotExist(err) && opts.Commit != "" {
+		if _, err := git.ResolveRevision(ctx, c.db, repo, opts.Commit, git.ResolveRevisionOptions{}); err != nil {
+			return nil, errors.Wrap(err, "git.ResolveRevision")
 		}
 	}
 
-	return &CommitGraph{
-		graph: graph,
-		order: append(prefix, order...),
-	}
-}
-
-// RefDescription describes a commit at the head of a branch or tag.
-type RefDescription struct {
-	Name            string
-	Type            RefType
-	IsDefaultBranch bool
-	CreatedDate     time.Time
-}
-
-type RefType int
-
-const (
-	RefTypeUnknown RefType = iota
-	RefTypeBranch
-	RefTypeTag
-)
-
-var refPrefixes = map[string]RefType{
-	"refs/heads/": RefTypeBranch,
-	"refs/tags/":  RefTypeTag,
+	// If we didn't expect a particular revision to exist, or we did but it
+	// resolved without error, return the original error as the command had
+	// failed for another reason.
+	return nil, errors.Wrap(err, "git.CommitGraph")
 }
 
 // RefDescriptions returns a map from commits to descriptions of the tip of each
-// branch and tag of the given repository.
-func (c *Client) RefDescriptions(ctx context.Context, repositoryID int) (_ map[string][]RefDescription, err error) {
+// branch and tag of the given repository. If any git objects are provided, it will
+// only populate entries for descriptions pointing at the given git objects.
+func (c *Client) RefDescriptions(ctx context.Context, repositoryID int, pointedAt ...string) (_ map[string][]gitdomain.RefDescription, err error) {
 	ctx, endObservation := c.operations.refDescriptions.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	args := []string{"for-each-ref", "--format=%(objectname):%(refname):%(HEAD):%(creatordate:iso8601-strict)"}
-	for prefix := range refPrefixes {
-		args = append(args, prefix)
-	}
-
-	out, err := c.execGitCommand(ctx, repositoryID, args...)
+	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
 	if err != nil {
 		return nil, err
 	}
 
-	return parseRefDescriptions(strings.Split(out, "\n"))
+	return git.RefDescriptions(ctx, c.db, repo, authz.DefaultSubRepoPermsChecker, pointedAt...)
 }
 
-// parseRefDescriptions converts the output of the for-each-ref command in the RefDescriptions
-// method to a map from commits to RefDescription objects. Each line should conform to the format
-// string `%(objectname):%(refname):%(HEAD):%(creatordate)`, where
+// CommitsUniqueToBranch returns a map from commits that exist on a particular branch in the given repository to
+// their committer date. This set of commits is determined by listing `{branchName} ^HEAD`, which is interpreted
+// as: all commits on {branchName} not also on the tip of the default branch. If the supplied branch name is the
+// default branch, then this method instead returns all commits reachable from HEAD.
+func (c *Client) CommitsUniqueToBranch(ctx context.Context, repositoryID int, branchName string, isDefaultBranch bool, maxAge *time.Time) (_ map[string]time.Time, err error) {
+	ctx, endObservation := c.operations.commitsUniqueToBranch.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("branchName", branchName),
+		log.Bool("isDefaultBranch", isDefaultBranch),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
+	if err != nil {
+		return nil, err
+	}
+
+	return git.CommitsUniqueToBranch(ctx, c.db, repo, branchName, isDefaultBranch, maxAge, authz.DefaultSubRepoPermsChecker)
+}
+
+// BranchesContaining returns a map from branch names to branch tip hashes for each branch
+// containing the given commit.
+func (c *Client) BranchesContaining(ctx context.Context, db database.DB, repositoryID int, commit string) ([]string, error) {
+	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
+	if err != nil {
+		return nil, err
+	}
+	return git.BranchesContaining(ctx, db, repo, api.CommitID(commit), authz.DefaultSubRepoPermsChecker)
+}
+
+// DefaultBranchContains tells if the default branch contains the given commit ID.
 //
-// - %(objectname) is the 40-character revhash
-// - %(refname) is the name of the tag or branch (prefixed with refs/heads/ or ref/tags/)
-// - %(HEAD) is `*` if the branch is the default branch (and whitesace otherwise)
-// - %(creatordate) is the ISO-formatted date the object was created
-func parseRefDescriptions(lines []string) (map[string][]RefDescription, error) {
-	refDescriptions := make(map[string][]RefDescription, len(lines))
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-
-		parts := strings.SplitN(line, ":", 4)
-		if len(parts) != 4 {
-			return nil, errors.Errorf(`unexpected output from git for-each-ref "%s"`, line)
-		}
-
-		commit := parts[0]
-		isDefaultBranch := parts[2] == "*"
-
-		var name string
-		var refType RefType
-		for prefix, typ := range refPrefixes {
-			if strings.HasPrefix(parts[1], prefix) {
-				name = parts[1][len(prefix):]
-				refType = typ
+// TODO(apidocs): future: This could be implemented more optimally, but since it is called
+// infrequently it is fine for now.
+func (c *Client) DefaultBranchContains(ctx context.Context, repositoryID int, commit string) (bool, error) {
+	// Determine default branch name.
+	descriptions, err := c.RefDescriptions(ctx, repositoryID)
+	if err != nil {
+		return false, errors.Wrap(err, "RefDescriptions")
+	}
+	var defaultBranchName string
+	for _, descriptions := range descriptions {
+		for _, ref := range descriptions {
+			if ref.IsDefaultBranch {
+				defaultBranchName = ref.Name
 				break
 			}
 		}
-		if refType == RefTypeUnknown {
-			return nil, errors.Errorf(`unexpected output from git for-each-ref "%s"`, line)
-		}
-
-		createdDate, err := time.Parse(time.RFC3339, parts[3])
-		if err != nil {
-			return nil, errors.Errorf(`unexpected output from git for-each-ref (bad date format) "%s"`, line)
-		}
-
-		refDescriptions[commit] = append(refDescriptions[commit], RefDescription{
-			Name:            name,
-			Type:            refType,
-			IsDefaultBranch: isDefaultBranch,
-			CreatedDate:     createdDate,
-		})
 	}
 
-	return refDescriptions, nil
-}
-
-// BranchesContaining returns a map from branch names to branch tip hashes for each brach
-// containing the given commit.
-func (c *Client) BranchesContaining(ctx context.Context, repositoryID int, commit string) ([]string, error) {
-	out, err := c.execGitCommand(ctx, repositoryID, "branch", "--contains", commit, "--format", "%(refname)")
+	// Determine if branch contains commit.
+	branches, err := c.BranchesContaining(ctx, c.db, repositoryID, commit)
 	if err != nil {
-		return nil, err
+		return false, errors.Wrap(err, "BranchesContaining")
 	}
-
-	return parseBranchesContaining(strings.Split(out, "\n")), nil
-}
-
-func parseBranchesContaining(lines []string) []string {
-	names := make([]string, 0, len(lines))
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
+	for _, branch := range branches {
+		if branch == defaultBranchName {
+			return true, nil
 		}
-
-		refname := line
-
-		// Remove refs/heads/ or ref/tags/ prefix
-		for prefix := range refPrefixes {
-			if strings.HasPrefix(line, prefix) {
-				refname = line[len(prefix):]
-			}
-		}
-
-		names = append(names, refname)
 	}
-	sort.Strings(names)
-
-	return names
+	return false, nil
 }
 
 // RawContents returns the contents of a file in a particular commit of a repository.
@@ -325,12 +313,31 @@ func (c *Client) RawContents(ctx context.Context, repositoryID int, commit, file
 	}})
 	defer endObservation(1, observation.Args{})
 
-	out, err := c.execResolveRevGitCommand(ctx, repositoryID, commit, "show", fmt.Sprintf("%s:%s", commit, file))
+	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
 	if err != nil {
 		return nil, err
 	}
 
-	return []byte(out), err
+	db := c.db
+	out, err := git.ReadFile(ctx, db, repo, api.CommitID(commit), file, 0, authz.DefaultSubRepoPermsChecker)
+	if err == nil {
+		return out, nil
+	}
+
+	// If the repo doesn't exist don't bother trying to resolve the commit.
+	// Otherwise, if we're returning an error, try to resolve revision that was the
+	// target of the command. If the revision fails to resolve, we return an instance
+	// of a RevisionNotFoundError error instead of an "exit 128".
+	if !gitdomain.IsRepoNotExist(err) {
+		if _, err := git.ResolveRevision(ctx, db, repo, commit, git.ResolveRevisionOptions{}); err != nil {
+			return nil, errors.Wrap(err, "git.ResolveRevision")
+		}
+	}
+
+	// If we didn't expect a particular revision to exist, or we did but it
+	// resolved without error, return the original error as the command had
+	// failed for another reason.
+	return nil, errors.Wrap(err, "git.ReadFile")
 }
 
 // DirectoryChildren determines all children known to git for the given directory names via an invocation
@@ -343,13 +350,30 @@ func (c *Client) DirectoryChildren(ctx context.Context, repositoryID int, commit
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return pathexistence.GitGetChildren(
-		func(args ...string) (string, error) {
-			return c.execResolveRevGitCommand(ctx, repositoryID, commit, args...)
-		},
-		commit,
-		dirnames,
-	)
+	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
+	if err != nil {
+		return nil, err
+	}
+
+	children, err := git.ListDirectoryChildren(ctx, c.db, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit), dirnames)
+	if err == nil {
+		return children, err
+	}
+
+	// If the repo doesn't exist don't bother trying to resolve the commit.
+	// Otherwise, if we're returning an error, try to resolve revision that was the
+	// target of the command. If the revision fails to resolve, we return an instance
+	// of a RevisionNotFoundError error instead of an "exit 128".
+	if !gitdomain.IsRepoNotExist(err) {
+		if _, err := git.ResolveRevision(ctx, c.db, repo, commit, git.ResolveRevisionOptions{}); err != nil {
+			return nil, errors.Wrap(err, "git.ResolveRevision")
+		}
+	}
+
+	// If we didn't expect a particular revision to exist, or we did but it
+	// resolved without error, return the original error as the command had
+	// failed for another reason.
+	return nil, errors.Wrap(err, "git.ListDirectoryChildren")
 }
 
 // FileExists determines whether a file exists in a particular commit of a repository.
@@ -366,11 +390,12 @@ func (c *Client) FileExists(ctx context.Context, repositoryID int, commit, file 
 		return false, err
 	}
 
-	if _, err := git.ResolveRevision(ctx, repo, commit, git.ResolveRevisionOptions{}); err != nil {
+	db := c.db
+	if _, err := git.ResolveRevision(ctx, db, repo, commit, git.ResolveRevisionOptions{}); err != nil {
 		return false, errors.Wrap(err, "git.ResolveRevision")
 	}
 
-	if _, err := git.Stat(ctx, repo, api.CommitID(commit), file); err != nil {
+	if _, err := git.Stat(ctx, db, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit), file); err != nil {
 		if os.IsNotExist(err) {
 			return false, nil
 		}
@@ -391,19 +416,30 @@ func (c *Client) ListFiles(ctx context.Context, repositoryID int, commit string,
 	}})
 	defer endObservation(1, observation.Args{})
 
-	out, err := c.execResolveRevGitCommand(ctx, repositoryID, commit, "ls-tree", "--name-only", "-r", commit, "--")
+	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
 	if err != nil {
 		return nil, err
 	}
 
-	var matching []string
-	for _, path := range strings.Split(out, "\n") {
-		if pattern.MatchString(path) {
-			matching = append(matching, path)
+	matching, err := git.ListFiles(ctx, c.db, repo, api.CommitID(commit), pattern, authz.DefaultSubRepoPermsChecker)
+	if err == nil {
+		return matching, nil
+	}
+
+	// If the repo doesn't exist don't bother trying to resolve the commit.
+	// Otherwise, if we're returning an error, try to resolve revision that was the
+	// target of the command. If the revision fails to resolve, we return an instance
+	// of a RevisionNotFoundError error instead of an "exit 128".
+	if !gitdomain.IsRepoNotExist(err) {
+		if _, err := git.ResolveRevision(ctx, c.db, repo, commit, git.ResolveRevisionOptions{}); err != nil {
+			return nil, errors.Wrap(err, "git.ResolveRevision")
 		}
 	}
 
-	return matching, nil
+	// If we didn't expect a particular revision to exist, or we did but it
+	// resolved without error, return the original error as the command had
+	// failed for another reason.
+	return nil, errors.Wrap(err, "git.ListFiles")
 }
 
 // ResolveRevision returns the absolute commit for a commit-ish spec.
@@ -418,50 +454,13 @@ func (c *Client) ResolveRevision(ctx context.Context, repositoryID int, versionS
 	if err != nil {
 		return "", err
 	}
-	commitID, err = git.ResolveRevision(ctx, repoName, versionString, git.ResolveRevisionOptions{})
 
+	commitID, err = git.ResolveRevision(ctx, c.db, repoName, versionString, git.ResolveRevisionOptions{})
 	if err != nil {
 		return "", errors.Wrap(err, "git.ResolveRevision")
 	}
 
 	return commitID, nil
-}
-
-// execGitCommand executes a git command for the given repository by identifier.
-func (c *Client) execGitCommand(ctx context.Context, repositoryID int, args ...string) (string, error) {
-	return c.execResolveRevGitCommand(ctx, repositoryID, "", args...)
-}
-
-// execResolveRevGitCommand executes a git command for the given repository by identifier if the
-// given revision is resolvable prior to running the command.
-func (c *Client) execResolveRevGitCommand(ctx context.Context, repositoryID int, revision string, args ...string) (string, error) {
-	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
-	if err != nil {
-		return "", err
-	}
-
-	cmd := gitserver.DefaultClient.Command("git", args...)
-	cmd.Repo = repo
-
-	out, err := cmd.CombinedOutput(ctx)
-	if err == nil {
-		return string(bytes.TrimSpace(out)), nil
-	}
-
-	// If the repo doesn't exist don't bother trying to resolve the commit. Otherwise,
-	// if we're returning an error, try to resolve revision that was the target of the
-	// command (if any). If the revision fails to resolve, we return an instance of a
-	// RevisionNotFoundError error instead of an "exit 128".
-	if revision != "" && !vcs.IsRepoNotExist(err) {
-		if _, err := git.ResolveRevision(ctx, repo, revision, git.ResolveRevisionOptions{}); err != nil {
-			return "", errors.Wrap(err, "git.ResolveRevision")
-		}
-	}
-
-	// If we didn't expect a particular revision to exist, or we did but it
-	// resolved without error, return the original error as the command had
-	// failed for another reason.
-	return "", errors.Wrap(err, "gitserver.Command")
 }
 
 // repositoryIDToRepo creates a api.RepoName from a repository identifier.
@@ -472,4 +471,19 @@ func (c *Client) repositoryIDToRepo(ctx context.Context, repositoryID int) (api.
 	}
 
 	return api.RepoName(repoName), nil
+}
+
+// repositoryIDsToRepos creates a map from repository identifiers to api.RepoNames.
+func (c *Client) repositoryIDsToRepos(ctx context.Context, repositoryIDs ...int) (map[int]api.RepoName, error) {
+	names, err := c.dbStore.RepoNames(ctx, repositoryIDs...)
+	if err != nil {
+		return nil, err
+	}
+
+	repoNames := make(map[int]api.RepoName, len(names))
+	for repositoryID, name := range names {
+		repoNames[repositoryID] = api.RepoName(name)
+	}
+
+	return repoNames, nil
 }

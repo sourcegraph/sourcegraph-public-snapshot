@@ -1,19 +1,22 @@
 package gqltestutil
 
 import (
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type CreateSearchContextInput struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Public      bool   `json:"public"`
+	Name        string  `json:"name"`
+	Namespace   *string `json:"namespace"`
+	Description string  `json:"description"`
+	Public      bool    `json:"public"`
+	Query       string  `json:"query"`
 }
 
 type UpdateSearchContextInput struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Public      bool   `json:"public"`
+	Query       string `json:"query"`
 }
 
 type SearchContextRepositoryRevisionsInput struct {
@@ -63,6 +66,7 @@ type GetSearchContextResult struct {
 		} `json:"repository"`
 		Revisions []string `json:"revisions"`
 	} `json:"repositories"`
+	Query string `json:"query"`
 }
 
 func (c *Client) GetSearchContext(id string) (*GetSearchContextResult, error) {
@@ -80,6 +84,7 @@ query GetSearchContext($id: ID!) {
 				}
 				revisions
 			}
+			query
 		}
 	}
 }
@@ -114,6 +119,7 @@ mutation UpdateSearchContext($id: ID!, $input: SearchContextEditInput!, $reposit
 			}
 			revisions
 		}
+		query
 	}
 }
 `
@@ -211,6 +217,7 @@ query ListSearchContexts(
 				}
 				revisions
 			}
+			query
 		}
 		pageInfo {
 			hasNextPage

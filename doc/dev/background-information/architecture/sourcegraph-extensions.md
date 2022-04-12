@@ -32,9 +32,9 @@ Note that the extension host execution context varies depending on the client ap
 ### Conceptualizing
 
 - Think about the UI through which users will interact with this feature
-	- If this feature significantly affects the Sourcegraph UI, consider [consulting a designer](https://about.sourcegraph.com/handbook/product/design#working-with-design-requesting-design-work).
+	- If this feature significantly affects the Sourcegraph UI, consider [consulting a designer](https://handbook.sourcegraph.com/product/design#working-with-design-requesting-design-work).
 - Think about the API through which extension authors will interact with this feature. 
-	- Add type definitions for this API to [`sourcegraph.d.ts`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/packages/sourcegraph-extension-api/src/sourcegraph.d.ts). Try to write detailed docstrings so extension authors can learn this API from their IDE or with Sourcegraph.
+	- Add type definitions for this API to [`sourcegraph.d.ts`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/extension-api/src/sourcegraph.d.ts). Try to write detailed docstrings so extension authors can learn this API from their IDE or with Sourcegraph.
 
 ### Implementing
 
@@ -57,7 +57,7 @@ Note that the extension host execution context varies depending on the client ap
 ### Publishing
 
 - Once you've opened a PR and received feedback and approval, bump the sourcegraph extension API version. Be sure to follow [semantic versioning](https://semver.org/).
-- Once your PR is merged into `main`, publish the new extension API to NPM.
+- Once your PR is merged into `main`, publish the new extension API to npm.
 - If necessary, update [extension-api-stubs](https://github.com/sourcegraph/extension-api-stubs) to reflect the latest version of the extension API. 
 - Upgrade any extensions you've written to the latest version. Be sure to CHECK that the Sourcegraph extension host that loads your extension supports this feature ([example](https://sourcegraph.com/github.com/codecov/sourcegraph-codecov@19a302e7dccb48b4fe910f1862309e434cf76bb8/-/blob/src/extension.ts#L225-227)).
 	- Sourcegraph.com will support this new feature (almost) immediately

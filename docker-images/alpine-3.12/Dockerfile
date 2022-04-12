@@ -1,7 +1,8 @@
 # This Dockerfile defines the sourcegraph/alpine Docker image, which is the
 # base image used by all Sourcegraph Docker images.
 
-FROM alpine:3.12@sha256:a721d672be3cdaaf1285c2b60b76d81ab4a8a3cf5a7180a966f2c545305ad6de
+# alpine_base CHECK:ALPINE_OK
+FROM alpine:3.12@sha256:d9459083f962de6bd980ae6a05be2a4cf670df6a1d898157bceb420342bec280 as alpine_base
 
 LABEL org.opencontainers.image.url=https://sourcegraph.com/
 LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph/
@@ -22,5 +23,17 @@ RUN addgroup -g 101 -S sourcegraph && adduser -u 100 -S -G sourcegraph -h /home/
 # other Docker containers.
 # See https://github.com/sourcegraph/deploy-sourcegraph-docker/issues/1
 # Install other packages that are desirable in ALL Sourcegraph Docker images.
-# hadolint ignore=DL3018
-RUN apk add --no-cache bind-tools ca-certificates curl mailcap tini
+RUN apk update && apk add --no-cache \
+    bind-tools \
+    busybox \
+    ca-certificates \
+    curl \
+    mailcap \
+    tini \
+    wget
+
+# Patch CVE 2022-0778
+# Issue: https://github.com/sourcegraph/sourcegraph/issues/32679
+# PR: https://github.com/sourcegraph/sourcegraph/pull/32682
+# @TODO: Remove this with the next release of Alpine
+RUN apk add --upgrade --no-cache libcrypto1.1>=1.1.1n-r0 libssl1.1>=1.1.1n-r0

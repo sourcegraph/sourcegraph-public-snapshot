@@ -1,23 +1,25 @@
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import * as React from 'react'
-import { Link, RouteComponentProps } from 'react-router-dom'
+
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import { RouteComponentProps } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { asError, createAggregateError, ErrorLike, isErrorLike, memoizeObservable } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { createAggregateError, ErrorLike, isErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
-import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { Link, LoadingSpinner, CardHeader, Card, Icon } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
-import { ErrorAlert } from '../../components/alerts'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { gitReferenceFragments, GitReferenceNode } from '../GitReference'
 
 import { RepositoryBranchesAreaPageProps } from './RepositoryBranchesArea'
+
+import styles from './RepositoryBranchesOverviewPage.module.scss'
 
 interface Data {
     defaultBranch: GQL.IGitRef | null
@@ -25,7 +27,7 @@ interface Data {
     hasMoreActiveBranches: boolean
 }
 
-const queryGitBranches = memoizeObservable(
+export const queryGitBranches = memoizeObservable(
     (args: { repo: Scalars['ID']; first: number }): Observable<Data> =>
         queryGraphQL(
             gql`
@@ -119,25 +121,25 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
 
     public render(): JSX.Element | null {
         return (
-            <div className="repository-branches-page">
+            <div>
                 <PageTitle title="Branches" />
                 {this.state.dataOrError === undefined ? (
-                    <LoadingSpinner className="icon-inline mt-2" />
+                    <LoadingSpinner className="mt-2" />
                 ) : isErrorLike(this.state.dataOrError) ? (
                     <ErrorAlert className="mt-2" error={this.state.dataOrError} />
                 ) : (
-                    <div className="repository-branches-page__cards">
+                    <div>
                         {this.state.dataOrError.defaultBranch && (
-                            <div className="card repository-branches-page__card">
-                                <div className="card-header">Default branch</div>
+                            <Card className={styles.card}>
+                                <CardHeader>Default branch</CardHeader>
                                 <ul className="list-group list-group-flush">
                                     <GitReferenceNode node={this.state.dataOrError.defaultBranch} />
                                 </ul>
-                            </div>
+                            </Card>
                         )}
                         {this.state.dataOrError.activeBranches.length > 0 && (
-                            <div className="card repository-branches-page__card">
-                                <div className="card-header">Active branches</div>
+                            <Card className={styles.card}>
+                                <CardHeader>Active branches</CardHeader>
                                 <div className="list-group list-group-flush">
                                     {this.state.dataOrError.activeBranches.map((gitReference, index) => (
                                         <GitReferenceNode key={index} node={gitReference} />
@@ -148,11 +150,11 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                                             to={`/${this.props.repo.name}/-/branches/all`}
                                         >
                                             View more branches
-                                            <ChevronRightIcon className="icon-inline" />
+                                            <Icon as={ChevronRightIcon} />
                                         </Link>
                                     )}
                                 </div>
-                            </div>
+                            </Card>
                         )}
                     </div>
                 )}

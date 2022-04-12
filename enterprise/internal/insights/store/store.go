@@ -8,15 +8,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Interface is the interface describing a code insights store. See the Store struct
@@ -50,7 +49,7 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 	}, nil
 }
 
-// New returns a new Store backed by the given Timescale db.
+// New returns a new Store backed by the given Postgres db.
 func New(db dbutil.DB, permStore InsightPermissionStore) *Store {
 	return NewWithClock(db, permStore, timeutil.Now)
 }
@@ -87,6 +86,7 @@ type SeriesPoint struct {
 	Time     time.Time
 	Value    float64
 	Metadata []byte
+	Capture  *string
 }
 
 func (s *SeriesPoint) String() string {
@@ -146,6 +146,7 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 			&point.Time,
 			&point.Value,
 			&point.Metadata,
+			&point.Capture,
 		)
 		if err != nil {
 			return err
@@ -156,24 +157,54 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 	return points, err
 }
 
+// Delete will delete the time series data for a particular series_id. This will hard (permanently) delete the data.
+func (s *Store) Delete(ctx context.Context, seriesId string) (err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	err = tx.Exec(ctx, sqlf.Sprintf(deleteForSeries, seriesId))
+	if err != nil {
+		return errors.Wrap(err, "DeleteForSeries")
+	}
+	err = tx.Exec(ctx, sqlf.Sprintf(deleteForSeriesSnapshots, seriesId))
+	if err != nil {
+		return errors.Wrap(err, "DeleteForSeriesSnapshots")
+	}
+
+	return nil
+}
+
+const deleteForSeries = `
+-- source: enterprise/internal/insights/store/store.go:Delete
+DELETE FROM series_points where series_id = %s;
+`
+
+const deleteForSeriesSnapshots = `
+-- source: enterprise/internal/insights/store/store.go:Delete
+DELETE FROM series_points_snapshots where series_id = %s;
+`
+
 // Note: the inner query could return duplicate points on its own if we merely did a SUM(value) over
 // all desired repositories. By using the sub-query, we select the per-repository maximum (thus
 // eliminating duplicate points that might have been recorded in a given interval for a given repository)
 // and then SUM the result for each repository, giving us our final total number.
 const fullVectorSeriesAggregation = `
 -- source: enterprise/internal/insights/store/store.go:SeriesPoints
-SELECT sub.series_id, sub.interval_time, SUM(sub.value) as value, sub.metadata FROM (
-	SELECT sp.repo_name_id, sp.series_id, sp.time AS interval_time, MAX(value) as value, null as metadata
+SELECT sub.series_id, sub.interval_time, SUM(sub.value) as value, sub.metadata, sub.capture FROM (
+	SELECT sp.repo_name_id, sp.series_id, sp.time AS interval_time, MAX(value) as value, null as metadata, capture
 	FROM (  select * from series_points
 			union
 			select * from series_points_snapshots
 	) AS sp
 	JOIN repo_names rn ON sp.repo_name_id = rn.id
 	WHERE %s
-	GROUP BY sp.series_id, interval_time, sp.repo_name_id
-	ORDER BY sp.series_id, interval_time, sp.repo_name_id DESC
+	GROUP BY sp.series_id, interval_time, sp.repo_name_id, capture
+	ORDER BY sp.series_id, interval_time, sp.repo_name_id
 ) sub
-GROUP BY sub.series_id, sub.interval_time, sub.metadata
+GROUP BY sub.series_id, sub.interval_time, sub.metadata, sub.capture
 ORDER BY sub.series_id, sub.interval_time DESC
 `
 
@@ -300,6 +331,9 @@ func countDataQuery(opts CountDataOpts) *sqlf.Query {
 }
 
 func (s *Store) DeleteSnapshots(ctx context.Context, series *types.InsightSeries) error {
+	if series == nil {
+		return errors.New("invalid input for Delete Snapshots")
+	}
 	err := s.Exec(ctx, sqlf.Sprintf(deleteSnapshotsSql, sqlf.Sprintf(snapshotsTable), series.SeriesID))
 	if err != nil {
 		return errors.Wrapf(err, "failed to delete insights snapshots for series_id: %s", series.SeriesID)
@@ -392,14 +426,9 @@ func (s *Store) RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) 
 		metadataID = &metadataIDValue
 	}
 
-	var tableName string
-	switch v.PersistMode {
-	case RecordMode:
-		tableName = recordingTable
-	case SnapshotMode:
-		tableName = snapshotsTable
-	default:
-		return errors.Newf("unsupported insights series point persist mode: %v", v.PersistMode)
+	tableName, err := getTableForPersistMode(v.PersistMode)
+	if err != nil {
+		return err
 	}
 
 	q := sqlf.Sprintf(
@@ -412,9 +441,21 @@ func (s *Store) RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) 
 		v.RepoID,           // repo_id
 		repoNameID,         // repo_name_id
 		repoNameID,         // original_repo_name_id
+		v.Point.Capture,
 	)
 	// Insert the actual data point.
 	return txStore.Exec(ctx, q)
+}
+
+func getTableForPersistMode(mode PersistMode) (string, error) {
+	switch mode {
+	case RecordMode:
+		return recordingTable, nil
+	case SnapshotMode:
+		return snapshotsTable, nil
+	default:
+		return "", errors.Newf("unsupported insights series point persist mode: %v", mode)
+	}
 }
 
 // RecordSeriesPoints stores multiple data points atomically.
@@ -469,8 +510,8 @@ INSERT INTO %s (
 	metadata_id,
 	repo_id,
 	repo_name_id,
-	original_repo_name_id)
-VALUES (%s, %s, %s, %s, %s, %s, %s);
+	original_repo_name_id, capture)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
 `
 
 func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {

@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { SourcegraphIcon } from './SourcegraphIcon'
+import { SourcegraphIcon, Link } from '@sourcegraph/wildcard'
 
 export interface SourcegraphIconButtonProps
     extends Pick<JSX.IntrinsicElements['a'], 'href' | 'title' | 'rel' | 'className' | 'onClick' | 'target'> {
@@ -10,6 +10,8 @@ export interface SourcegraphIconButtonProps
     label?: string
     /** aria-label attribute */
     ariaLabel?: string
+    /** data-testid attribute */
+    dataTestId?: string
 }
 
 export const SourcegraphIconButton: React.FunctionComponent<SourcegraphIconButtonProps> = ({
@@ -22,16 +24,18 @@ export const SourcegraphIconButton: React.FunctionComponent<SourcegraphIconButto
     rel,
     target,
     title,
+    dataTestId,
 }) => (
-    <a
-        href={href}
+    <Link
+        to={href ?? ''}
         className={className}
         target={target ?? '_blank'}
         rel={rel ?? 'noopener noreferrer'}
         title={title}
         aria-label={ariaLabel}
         onClick={onClick}
+        data-testid={dataTestId}
     >
         <SourcegraphIcon className={iconClassName} /> {label}
-    </a>
+    </Link>
 )

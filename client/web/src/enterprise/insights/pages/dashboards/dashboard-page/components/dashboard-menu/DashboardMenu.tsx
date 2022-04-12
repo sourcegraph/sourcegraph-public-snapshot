@@ -1,14 +1,13 @@
-import { Menu, MenuButton, MenuItem, MenuItems, MenuPopover } from '@reach/menu-button'
-import classnames from 'classnames'
-import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import React from 'react'
 
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { VisuallyHidden } from '@reach/visually-hidden'
+import classNames from 'classnames'
+import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 
-import { Settings } from '../../../../../../../schema/settings.schema'
-import { positionRight } from '../../../../../components/context-menu/utils'
+import { Button, Menu, MenuButton, MenuDivider, MenuItem, MenuList, Position } from '@sourcegraph/wildcard'
+
 import { InsightDashboard } from '../../../../../core/types'
-import { getTooltipMessage, useDashboardPermissions } from '../../hooks/use-dashboard-permissions'
+import { useUiFeatures } from '../../../../../hooks/use-ui-features'
 
 import styles from './DashboardMenu.module.scss'
 
@@ -19,18 +18,19 @@ export enum DashboardMenuAction {
     AddRemoveInsights,
 }
 
-export interface DashboardMenuProps extends SettingsCascadeProps<Settings> {
+export interface DashboardMenuProps {
     innerRef: React.Ref<HTMLButtonElement>
     dashboard?: InsightDashboard
     onSelect?: (action: DashboardMenuAction) => void
     tooltipText?: string
+    className?: string
 }
 
 export const DashboardMenu: React.FunctionComponent<DashboardMenuProps> = props => {
-    const { innerRef, dashboard, settingsCascade, onSelect = () => {}, tooltipText } = props
+    const { innerRef, dashboard, onSelect = () => {}, tooltipText, className } = props
 
-    const hasDashboard = dashboard !== undefined
-    const permissions = useDashboardPermissions(dashboard, settingsCascade)
+    const { dashboard: dashboardPermission } = useUiFeatures()
+    const menuPermissions = dashboardPermission.getContextActionsPermissions(dashboard)
 
     return (
         <Menu>
@@ -38,58 +38,58 @@ export const DashboardMenu: React.FunctionComponent<DashboardMenuProps> = props 
                 ref={innerRef}
                 data-tooltip={tooltipText}
                 data-placement="right"
-                className={classnames(styles.triggerButton, 'btn btn-icon')}
+                variant="icon"
+                outline={true}
+                className={classNames(className, styles.triggerButton)}
             >
+                <VisuallyHidden>Dashboard options</VisuallyHidden>
                 <DotsVerticalIcon size={16} />
             </MenuButton>
 
-            <MenuPopover portal={true} position={positionRight}>
-                <MenuItems className={classnames(styles.menuList, 'dropdown-menu')}>
+            <MenuList className={styles.menuList} position={Position.bottomEnd}>
+                {menuPermissions.configure.display && (
                     <MenuItem
-                        as="button"
-                        disabled={!permissions.isConfigurable}
-                        data-tooltip={getTooltipMessage(dashboard, permissions)}
+                        as={Button}
+                        disabled={menuPermissions.configure.disabled}
+                        data-tooltip={menuPermissions.configure.tooltip}
                         data-placement="right"
-                        className={classnames(styles.menuItem, 'btn btn-outline')}
-                        onSelect={() => onSelect(DashboardMenuAction.AddRemoveInsights)}
-                    >
-                        Add or remove insights
-                    </MenuItem>
-
-                    <MenuItem
-                        as="button"
-                        disabled={!permissions.isConfigurable}
-                        data-tooltip={getTooltipMessage(dashboard, permissions)}
-                        data-placement="right"
-                        className={classnames(styles.menuItem, 'btn btn-outline')}
+                        className={styles.menuItem}
                         onSelect={() => onSelect(DashboardMenuAction.Configure)}
+                        outline={true}
                     >
                         Configure dashboard
                     </MenuItem>
+                )}
 
+                {menuPermissions.copy.display && (
                     <MenuItem
-                        as="button"
-                        disabled={!hasDashboard}
-                        className={classnames(styles.menuItem, 'btn btn-outline')}
+                        as={Button}
+                        disabled={menuPermissions.copy.disabled}
+                        className={styles.menuItem}
                         onSelect={() => onSelect(DashboardMenuAction.CopyLink)}
+                        outline={true}
                     >
                         Copy link
                     </MenuItem>
+                )}
 
-                    <hr />
+                {(menuPermissions.configure.display || menuPermissions.copy.display) &&
+                    menuPermissions.delete.display && <MenuDivider />}
 
+                {menuPermissions.delete.display && (
                     <MenuItem
-                        as="button"
-                        disabled={!permissions.isConfigurable}
-                        data-tooltip={getTooltipMessage(dashboard, permissions)}
+                        as={Button}
+                        disabled={menuPermissions.delete.disabled}
+                        data-tooltip={menuPermissions.delete.tooltip}
                         data-placement="right"
-                        className={classnames(styles.menuItem, 'btn btn-outline', styles.menuItemDanger)}
+                        className={classNames(styles.menuItem, styles.menuItemDanger)}
                         onSelect={() => onSelect(DashboardMenuAction.Delete)}
+                        outline={true}
                     >
                         Delete
                     </MenuItem>
-                </MenuItems>
-            </MenuPopover>
+                )}
+            </MenuList>
         </Menu>
     )
 }

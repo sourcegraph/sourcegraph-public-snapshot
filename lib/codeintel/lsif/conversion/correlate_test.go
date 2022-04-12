@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -67,7 +68,8 @@ func TestCorrelate(t *testing.T) {
 						End:   protocol.Pos{Line: 6, Character: 7},
 					},
 				},
-				ReferenceResultID: 15,
+				ReferenceResultID:      15,
+				ImplementationResultID: 100,
 			},
 			8: {
 				Range: reader.Range{
@@ -103,6 +105,9 @@ func TestCorrelate(t *testing.T) {
 		ReferenceData: map[int]*datastructures.DefaultIDSetMap{
 			14: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{2: datastructures.IDSetWith(4, 5)}),
 			15: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{}),
+		},
+		ImplementationData: map[int]*datastructures.DefaultIDSetMap{
+			100: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{2: datastructures.IDSetWith(5)}),
 		},
 		HoverData: map[int]string{
 			16: "```go\ntext A\n```",
@@ -166,6 +171,7 @@ func TestCorrelate(t *testing.T) {
 		},
 		ImportedMonikers:       datastructures.IDSetWith(18),
 		ExportedMonikers:       datastructures.IDSetWith(19),
+		ImplementedMonikers:    datastructures.NewIDSet(),
 		LinkedMonikers:         datastructures.DisjointIDSetWith(19, 21),
 		LinkedReferenceResults: map[int][]int{14: {15}},
 		Contains: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
@@ -217,6 +223,7 @@ func TestCorrelateMetaDataRoot(t *testing.T) {
 		ResultSetData:          map[int]ResultSet{},
 		DefinitionData:         map[int]*datastructures.DefaultIDSetMap{},
 		ReferenceData:          map[int]*datastructures.DefaultIDSetMap{},
+		ImplementationData:     map[int]*datastructures.DefaultIDSetMap{},
 		HoverData:              map[int]string{},
 		MonikerData:            map[int]Moniker{},
 		PackageInformationData: map[int]PackageInformation{},
@@ -224,6 +231,7 @@ func TestCorrelateMetaDataRoot(t *testing.T) {
 		NextData:               map[int]int{},
 		ImportedMonikers:       datastructures.NewIDSet(),
 		ExportedMonikers:       datastructures.NewIDSet(),
+		ImplementedMonikers:    datastructures.NewIDSet(),
 		LinkedMonikers:         datastructures.NewDisjointIDSet(),
 		LinkedReferenceResults: map[int][]int{},
 		Contains:               datastructures.NewDefaultIDSetMap(),
@@ -265,6 +273,7 @@ func TestCorrelateMetaDataRootX(t *testing.T) {
 		ResultSetData:          map[int]ResultSet{},
 		DefinitionData:         map[int]*datastructures.DefaultIDSetMap{},
 		ReferenceData:          map[int]*datastructures.DefaultIDSetMap{},
+		ImplementationData:     map[int]*datastructures.DefaultIDSetMap{},
 		HoverData:              map[int]string{},
 		MonikerData:            map[int]Moniker{},
 		PackageInformationData: map[int]PackageInformation{},
@@ -272,6 +281,7 @@ func TestCorrelateMetaDataRootX(t *testing.T) {
 		NextData:               map[int]int{},
 		ImportedMonikers:       datastructures.NewIDSet(),
 		ExportedMonikers:       datastructures.NewIDSet(),
+		ImplementedMonikers:    datastructures.NewIDSet(),
 		LinkedMonikers:         datastructures.NewDisjointIDSet(),
 		LinkedReferenceResults: map[int][]int{},
 		Contains:               datastructures.NewDefaultIDSetMap(),
@@ -289,5 +299,31 @@ func TestCorrelateMetaDataRootX(t *testing.T) {
 
 	if diff := cmp.Diff(expectedState, state, datastructures.Comparers...); diff != "" {
 		t.Errorf("unexpected state (-want +got):\n%s", diff)
+	}
+}
+
+func TestCorrelateConflictingDocumentProperties(t *testing.T) {
+	dump, err := os.ReadFile("../testdata/dump1.lsif")
+	if err != nil {
+		t.Fatalf("unexpected error reading test file: %s", err)
+	}
+
+	// Change the document value of one of the item edges.
+	oldLine := `{"id": "38", "type": "edge", "label": "item", "outV": "14", "inVs": ["05"], "document": "02"}`
+	newLine := `{"id": "38", "type": "edge", "label": "item", "outV": "14", "inVs": ["05"], "document": "03"}`
+	badDump := []byte(strings.ReplaceAll(string(dump), oldLine, newLine))
+
+	wantErr := "validate: range 5 is contained in document 2, but linked to a different document 3"
+
+	// Make sure correlation fails.
+	_, err = correlateFromReader(context.Background(), bytes.NewReader(badDump), "")
+	if err == nil {
+		t.Fatalf("Expected an error")
+
+	} else if !strings.Contains(err.Error(), wantErr) {
+		t.Errorf("Expected a different error.")
+		t.Errorf("wanted: %s", wantErr)
+		t.Errorf("got   : %s", err)
+		t.Fail()
 	}
 }

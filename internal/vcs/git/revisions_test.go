@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestIsAbsoluteRevision(t *testing.T) {
@@ -44,7 +44,7 @@ func TestRepository_ResolveBranch(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
+		commitID, err := ResolveRevision(context.Background(), database.NewMockDB(), test.repo, test.branch, ResolveRevisionOptions{})
 		if err != nil {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -70,12 +70,12 @@ func TestRepository_ResolveBranch_error(t *testing.T) {
 		"git cmd": {
 			repo:    MakeGitRepository(t, gitCommands...),
 			branch:  "doesntexist",
-			wantErr: func(err error) bool { return errors.HasType(err, &gitserver.RevisionNotFoundError{}) },
+			wantErr: func(err error) bool { return errors.HasType(err, &gitdomain.RevisionNotFoundError{}) },
 		},
 	}
 
 	for label, test := range tests {
-		commitID, err := ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
+		commitID, err := ResolveRevision(context.Background(), database.NewMockDB(), test.repo, test.branch, ResolveRevisionOptions{})
 		if !test.wantErr(err) {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -107,7 +107,7 @@ func TestRepository_ResolveTag(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
+		commitID, err := ResolveRevision(context.Background(), database.NewMockDB(), test.repo, test.tag, ResolveRevisionOptions{})
 		if err != nil {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -133,12 +133,12 @@ func TestRepository_ResolveTag_error(t *testing.T) {
 		"git cmd": {
 			repo:    MakeGitRepository(t, gitCommands...),
 			tag:     "doesntexist",
-			wantErr: func(err error) bool { return errors.HasType(err, &gitserver.RevisionNotFoundError{}) },
+			wantErr: func(err error) bool { return errors.HasType(err, &gitdomain.RevisionNotFoundError{}) },
 		},
 	}
 
 	for label, test := range tests {
-		commitID, err := ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
+		commitID, err := ResolveRevision(context.Background(), database.NewMockDB(), test.repo, test.tag, ResolveRevisionOptions{})
 		if !test.wantErr(err) {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue

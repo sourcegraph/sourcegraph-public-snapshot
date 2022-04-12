@@ -1,3 +1,5 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import CommentOutlineIcon from 'mdi-react/CommentOutlineIcon'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
@@ -5,14 +7,12 @@ import LinkVariantRemoveIcon from 'mdi-react/LinkVariantRemoveIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SyncIcon from 'mdi-react/SyncIcon'
 import UploadIcon from 'mdi-react/UploadIcon'
-import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
+import { pluralize } from '@sourcegraph/common'
 import { BulkOperationState, BulkOperationType } from '@sourcegraph/shared/src/graphql-operations'
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { Badge, AlertLink, Link, Alert, Icon } from '@sourcegraph/wildcard'
 
-import { ErrorMessage } from '../../../../components/alerts'
 import { Collapsible } from '../../../../components/Collapsible'
 import { Timestamp } from '../../../../components/time/Timestamp'
 import { BulkOperationFields } from '../../../../graphql-operations'
@@ -22,32 +22,32 @@ import styles from './BulkOperationNode.module.scss'
 const OPERATION_TITLES: Record<BulkOperationType, JSX.Element> = {
     COMMENT: (
         <>
-            <CommentOutlineIcon className="icon-inline text-muted" /> Comment on changesets
+            <Icon className="text-muted" as={CommentOutlineIcon} /> Comment on changesets
         </>
     ),
     DETACH: (
         <>
-            <LinkVariantRemoveIcon className="icon-inline text-muted" /> Detach changesets
+            <Icon className="text-muted" as={LinkVariantRemoveIcon} /> Detach changesets
         </>
     ),
     REENQUEUE: (
         <>
-            <SyncIcon className="icon-inline text-muted" /> Retry changesets
+            <Icon className="text-muted" as={SyncIcon} /> Retry changesets
         </>
     ),
     MERGE: (
         <>
-            <SourceBranchIcon className="icon-inline text-muted" /> Merge changesets
+            <Icon className="text-muted" as={SourceBranchIcon} /> Merge changesets
         </>
     ),
     CLOSE: (
         <>
-            <SourceBranchIcon className="icon-inline text-danger" /> Close changesets
+            <Icon className="text-danger" as={SourceBranchIcon} /> Close changesets
         </>
     ),
     PUBLISH: (
         <>
-            <UploadIcon className="icon-inline text-muted" /> Publish changesets
+            <Icon className="text-muted" as={UploadIcon} /> Publish changesets
         </>
     ),
 }
@@ -65,7 +65,9 @@ export const BulkOperationNode: React.FunctionComponent<BulkOperationNodeProps> 
             )}
         >
             <div className={classNames(styles.bulkOperationNodeChangesetCounts, 'text-center')}>
-                <p className="badge badge-secondary mb-2">{node.changesetCount}</p>
+                <Badge variant="secondary" className="mb-2" as="p">
+                    {node.changesetCount}
+                </Badge>
                 <p className="mb-0">{pluralize('changeset', node.changesetCount)}</p>
             </div>
             <div className={styles.bulkOperationNodeDivider} />
@@ -82,10 +84,14 @@ export const BulkOperationNode: React.FunctionComponent<BulkOperationNodeProps> 
                 </div>
             )}
             {node.state === BulkOperationState.FAILED && (
-                <span className="badge badge-danger text-uppercase">failed</span>
+                <Badge variant="danger" className="text-uppercase">
+                    failed
+                </Badge>
             )}
             {node.state === BulkOperationState.COMPLETED && (
-                <span className="badge badge-success text-uppercase">complete</span>
+                <Badge variant="success" className="text-uppercase">
+                    complete
+                </Badge>
             )}
         </div>
         {node.errors.length > 0 && (
@@ -95,25 +101,25 @@ export const BulkOperationNode: React.FunctionComponent<BulkOperationNodeProps> 
                     title={<h4 className="mb-0">The following errors occured while running this task:</h4>}
                 >
                     {node.errors.map((error, index) => (
-                        <div className="mt-2 alert alert-danger" key={index}>
+                        <Alert className="mt-2" key={index} variant="danger">
                             <p>
                                 {error.changeset.__typename === 'HiddenExternalChangeset' ? (
                                     <span className="text-muted">On hidden repository</span>
                                 ) : (
                                     <>
-                                        <LinkOrSpan className="alert-link" to={error.changeset.externalURL?.url}>
-                                            {error.changeset.title} <ExternalLinkIcon className="icon-inline" />
-                                        </LinkOrSpan>{' '}
+                                        <AlertLink to={error.changeset.externalURL?.url ?? ''}>
+                                            {error.changeset.title} <Icon as={ExternalLinkIcon} />
+                                        </AlertLink>{' '}
                                         on{' '}
-                                        <Link className="alert-link" to={error.changeset.repository.url}>
+                                        <AlertLink to={error.changeset.repository.url}>
                                             repository {error.changeset.repository.name}
-                                        </Link>
+                                        </AlertLink>
                                         .
                                     </>
                                 )}
                             </p>
                             {error.error && <ErrorMessage error={'```\n' + error.error + '\n```'} />}
-                        </div>
+                        </Alert>
                     ))}
                 </Collapsible>
             </div>

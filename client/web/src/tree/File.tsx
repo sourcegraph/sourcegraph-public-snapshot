@@ -1,19 +1,32 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-static-element-interactions: warn */
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
+
+import { Icon } from '@sourcegraph/wildcard'
+
+import {
+    TreeLayerCell,
+    TreeLayerRowContents,
+    TreeLayerRowContentsLink,
+    TreeRowAlert,
+    TreeLayerRowContentsText,
+    TreeRowIcon,
+    TreeRowLabel,
+    TreeRow,
+} from './components'
 import { FileDecorator } from './FileDecorator'
 import { TreeLayerProps } from './TreeLayer'
 import { maxEntries, treePadding } from './util'
 
 interface FileProps extends TreeLayerProps {
-    className: string
+    className?: string
     maxEntries: number
     handleTreeClick: () => void
     noopRowClick: (event: React.MouseEvent<HTMLAnchorElement>) => void
     linkRowClick: (event: React.MouseEvent<HTMLAnchorElement>) => void
     isActive: boolean
+    isSelected: boolean
 }
 
 export const File: React.FunctionComponent<FileProps> = props => {
@@ -27,56 +40,49 @@ export const File: React.FunctionComponent<FileProps> = props => {
     )
 
     return (
-        <tr key={props.entryInfo.path} className={props.className}>
-            <td className="tree__cell test-sidebar-file-decorable">
+        <TreeRow
+            key={props.entryInfo.path}
+            className={props.className}
+            isActive={props.isActive}
+            isSelected={props.isSelected}
+        >
+            <TreeLayerCell className="test-sidebar-file-decorable">
                 {props.entryInfo.submodule ? (
                     props.entryInfo.url ? (
-                        <Link
+                        <TreeLayerRowContentsLink
                             to={props.entryInfo.url}
                             onClick={props.linkRowClick}
                             draggable={false}
                             title={'Submodule: ' + props.entryInfo.submodule.url}
-                            className="tree__row-contents"
                             data-tree-path={props.entryInfo.path}
                         >
-                            <div className="tree__row-contents-text">
+                            <TreeLayerRowContentsText>
                                 {/* TODO Improve accessibility: https://github.com/sourcegraph/sourcegraph/issues/12916 */}
-                                <span
-                                    // needed because of dynamic styling
-                                    // eslint-disable-next-line react/forbid-dom-props
-                                    style={treePadding(props.depth, true)}
-                                    className="tree__row-icon"
-                                    onClick={props.noopRowClick}
-                                >
-                                    <SourceRepositoryIcon className="icon-inline" />
-                                </span>
-                                <span className="tree__row-label test-file-decorable-name">
+                                <TreeRowIcon style={treePadding(props.depth, true)} onClick={props.noopRowClick}>
+                                    <Icon as={SourceRepositoryIcon} />
+                                </TreeRowIcon>
+                                <TreeRowLabel className="test-file-decorable-name">
                                     {props.entryInfo.name} @ {props.entryInfo.submodule.commit.slice(0, 7)}
-                                </span>
+                                </TreeRowLabel>
                                 {renderedFileDecorations}
-                            </div>
-                        </Link>
+                            </TreeLayerRowContentsText>
+                        </TreeLayerRowContentsLink>
                     ) : (
-                        <div className="tree__row-contents" title={'Submodule: ' + props.entryInfo.submodule.url}>
-                            <div className="tree__row-contents-text">
-                                <span
-                                    className="tree__row-icon"
-                                    // needed because of dynamic styling
-                                    // eslint-disable-next-line react/forbid-dom-props
-                                    style={treePadding(props.depth, true)}
-                                >
-                                    <SourceRepositoryIcon className="icon-inline" />
-                                </span>
-                                <span className="tree__row-label test-file-decorable-name">
+                        <TreeLayerRowContents title={'Submodule: ' + props.entryInfo.submodule.url}>
+                            <TreeLayerRowContentsText>
+                                <TreeRowIcon style={treePadding(props.depth, true)}>
+                                    <Icon as={SourceRepositoryIcon} />
+                                </TreeRowIcon>
+                                <TreeRowLabel className="test-file-decorable-name">
                                     {props.entryInfo.name} @ {props.entryInfo.submodule.commit.slice(0, 7)}
-                                </span>
+                                </TreeRowLabel>
                                 {renderedFileDecorations}
-                            </div>
-                        </div>
+                            </TreeLayerRowContentsText>
+                        </TreeLayerRowContents>
                     )
                 ) : (
-                    <Link
-                        className="tree__row-contents test-tree-file-link"
+                    <TreeLayerRowContentsLink
+                        className="test-tree-file-link"
                         to={props.entryInfo.url}
                         onClick={props.linkRowClick}
                         data-tree-path={props.entryInfo.path}
@@ -86,23 +92,20 @@ export const File: React.FunctionComponent<FileProps> = props => {
                         style={treePadding(props.depth, false)}
                         tabIndex={-1}
                     >
-                        <div className="tree__row-contents-text d-flex flex-row flex-1 justify-content-between">
+                        <TreeLayerRowContentsText className="d-flex flex-row flex-1 justify-content-between">
                             <span className="test-file-decorable-name">{props.entryInfo.name}</span>
                             {renderedFileDecorations}
-                        </div>
-                    </Link>
+                        </TreeLayerRowContentsText>
+                    </TreeLayerRowContentsLink>
                 )}
                 {props.index === maxEntries - 1 && (
-                    <div
-                        className="tree__row-alert alert alert-warning"
-                        // needed because of dynamic styling
-                        // eslint-disable-next-line react/forbid-dom-props
+                    <TreeRowAlert
+                        variant="warning"
                         style={treePadding(props.depth, true)}
-                    >
-                        Too many entries. Use search to find a specific file.
-                    </div>
+                        error="Too many entries. Use search to find a specific file."
+                    />
                 )}
-            </td>
-        </tr>
+            </TreeLayerCell>
+        </TreeRow>
     )
 }

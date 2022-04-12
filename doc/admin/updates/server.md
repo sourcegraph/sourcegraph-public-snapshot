@@ -5,7 +5,50 @@ This document describes the exact changes needed to update a single-node Sourceg
 
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
 2. Find the relevant entry for your update in the update notes on this page.
-3. After checking the relevant update notes, refer to the [standard upgrade procedure](../install/docker-compose/operations.md#standard-upgrade-procedure) to upgrade your instance.
+3. After checking the relevant update notes, refer to the [standard upgrade procedure](../install/docker/operations.md#upgrade) to upgrade your instance.
+
+<!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
+
+## 3.38.0 -> 3.38.1
+
+Follow the [standard upgrade procedure](../install/docker/operations.md#upgrade).
+
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.38.1).*
+
+## 3.37 -> 3.38
+
+Follow the [standard upgrade procedure](../install/docker/operations.md#upgrade).
+
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.37).*
+
+## 3.36 -> 3.37
+
+Follow the [standard upgrade procedure](../install/docker/operations.md#upgrade).
+
+## 3.35 -> 3.36
+
+Follow the [standard upgrade procedure](../install/docker/operations.md#upgrade).
+
+## 3.35.0 -> 3.35.1
+**Due to issues related to Code Insights on the 3.35.0 release, users are advised to upgrade to 3.35.1 as soon as possible.**
+
+There is a [known issue](../../code_insights/how-tos/Troubleshooting.md#oob-migration-has-made-progress-but-is-stuck-before-reaching-100) with the Code Insights out-of-band settings migration not reaching 100% complete when encountering deleted users or organizations.
+
+## 3.34 -> 3.35.1
+
+**Due to issues related to Code Insights on the 3.35.0 release, Users are advised to upgrade directly to 3.35.1.**
+
+## 3.33 -> 3.34
+
+Follow the [standard upgrade procedure](../install/docker/operations.md#upgrade).
+
+## 3.32 -> 3.33
+
+Follow the [standard upgrade procedure](../install/docker/operations.md#upgrade).
+
+## 3.31 -> 3.32
+
+Follow the [standard upgrade procedure](../install/docker/operations.md#upgrade).
 
 ## 3.30 -> 3.31
 
@@ -15,12 +58,9 @@ All users that use our bundled (built-in) database instances **must** read throu
 
 > NOTE: The above does not apply to users that use external databases (e.x: Amazon RDS, Google Cloud SQL, etc.).
 
-
 ## 3.29 -> 3.30.3
 
 > WARNING: **Users on 3.29.x are advised to upgrade directly to 3.30.3**. If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2 please follow [this migration guide](../migration/3_30.md).
-
-## Standard upgrade procedure
 
 To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.N.N` is the version number) in place of the older one, using the same Docker volumes. Your server's data will be migrated automatically if needed.
 
@@ -28,19 +68,11 @@ You can always find the version number of the latest release at [docs.sourcegrap
 
 ## 3.28 -> 3.29
 
-## Standard upgrade procedure
-
-To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.N.N` is the version number) in place of the older one, using the same Docker volumes. Your server's data will be migrated automatically if needed.
-
-You can always find the version number of the latest release at [docs.sourcegraph.com](https://docs.sourcegraph.com) in the `docker run` command's image tag.
+Follow the [standard upgrade procedure](../install/docker/operations.md#upgrade).
 
 ## 3.27 -> 3.28
 
-## Standard upgrade procedure
-
-To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.N.N` is the version number) in place of the older one, using the same Docker volumes. Your server's data will be migrated automatically if needed.
-
-You can always find the version number of the latest release at [docs.sourcegraph.com](https://docs.sourcegraph.com) in the `docker run` command's image tag.
+Follow the [standard upgrade procedure](../install/docker/operations.md#upgrade).
 
 ## 3.26 -> 3.27
 
@@ -50,15 +82,7 @@ If you are using an external database, [upgrade your database](https://docs.sour
 
 ## 3.25 -> 3.26
 
-## Standard upgrade procedure
-
-To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.N.N` is the version number) in place of the older one, using the same Docker volumes. Your server's data will be migrated automatically if needed.
-
-You can always find the version number of the latest release at [docs.sourcegraph.com](https://docs.sourcegraph.com) in the `docker run` command's image tag.
-
-- As a precaution, before updating, we recommend backing up the contents of the Docker volumes used by Sourcegraph.
-- If you need a HA deployment, use the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph).
-- There is currently no automated way to downgrade to an older version after you have updated. [Contact support](https://about.sourcegraph.com/contact) for help.
+Follow the [standard upgrade procedure](../install/docker/operations.md#upgrade).
 
 > NOTE: ⚠️ From **3.27** onwards we will only support PostgreSQL versions **starting from 12**.
 
@@ -91,14 +115,4 @@ In Sourcegraph version 3.20, we would automatically generate a secret key file (
 
 ## 3.16 -> 3.17
 
-- There was [a bug](https://github.com/sourcegraph/sourcegraph/issues/11618) in release that caused the version displayed on the `site-admin/update` page to be `0.0.0+dev` instead of `3.17.0`. This issue [was fixed](https://github.com/sourcegraph/sourcegraph/pull/11633) in the `3.17.2` release. We recommend that you avoid this issue by upgrading past `3.17.0` to `3.17.2` using the [Standard upgrade procedure](#Standard-upgrade-procedure) listed below.
-
-## Standard upgrade procedure
-
-To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.N.N` is the version number) in place of the older one, using the same Docker volumes. Your server's data will be migrated automatically if needed.
-
-You can always find the version number of the latest release at [docs.sourcegraph.com](https://docs.sourcegraph.com) in the `docker run` command's image tag.
-
-- As a precaution, before updating, we recommend backing up the contents of the Docker volumes used by Sourcegraph.
-- If you need a HA deployment, use the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph).
-- There is currently no automated way to downgrade to an older version after you have updated. [Contact support](https://about.sourcegraph.com/contact) for help.
+- There was [a bug](https://github.com/sourcegraph/sourcegraph/issues/11618) in release that caused the version displayed on the `site-admin/update` page to be `0.0.0+dev` instead of `3.17.0`. This issue [was fixed](https://github.com/sourcegraph/sourcegraph/pull/11633) in the `3.17.2` release. We recommend that you avoid this issue by upgrading past `3.17.0` to `3.17.2` using the [Standard upgrade procedure](../install/docker/operations.md#upgrade) listed below.

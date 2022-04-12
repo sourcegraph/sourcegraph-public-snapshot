@@ -5,6 +5,7 @@ import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/dri
 import { setupExtensionMocking, simpleHoverProvider } from '@sourcegraph/shared/src/testing/integration/mockExtension'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
+import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 
 import { BrowserIntegrationTestContext, createBrowserIntegrationTestContext } from './context'
 import { closeInstallPageTab } from './shared'
@@ -36,6 +37,10 @@ describe('GitLab', () => {
             response.sendStatus(200)
         })
 
+        testContext.server.any('https://gitlab.com/api/v4/projects/*').intercept((request, response) => {
+            response.sendStatus(200).send(JSON.stringify({ visibility: 'public' }))
+        })
+
         testContext.overrideGraphQL({
             ViewerConfiguration: () => ({
                 viewerConfiguration: {
@@ -57,6 +62,9 @@ describe('GitLab', () => {
                 repository: {
                     name: rawRepoName,
                 },
+            }),
+            ResolveRawRepoName: ({ repoName }) => ({
+                repository: { uri: `${repoName}`, mirrorInfo: { cloned: true } },
             }),
             BlobContent: () => ({
                 repository: {
@@ -82,15 +90,28 @@ describe('GitLab', () => {
         const url = 'https://gitlab.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
         await driver.page.goto(url)
 
-        await driver.page.waitForSelector('.code-view-toolbar .open-on-sourcegraph', { timeout: 10000 })
-        assert.strictEqual((await driver.page.$$('.code-view-toolbar .open-on-sourcegraph')).length, 1)
+        await driver.page.waitForSelector('[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]', {
+            timeout: 10000,
+        })
+        assert.strictEqual(
+            (await driver.page.$$('[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]')).length,
+            1
+        )
 
         await retry(async () => {
             assert.strictEqual(
                 await driver.page.evaluate(
-                    () => document.querySelector<HTMLAnchorElement>('.code-view-toolbar .open-on-sourcegraph')?.href
+                    () =>
+                        document.querySelector<HTMLAnchorElement>(
+                            '[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]'
+                        )?.href
                 ),
-                `${driver.sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go?utm_source=${driver.browserType}-extension`
+                createURLWithUTM(
+                    new URL(
+                        `${driver.sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go`
+                    ),
+                    { utm_source: `${driver.browserType}-extension`, utm_campaign: 'open-on-sourcegraph' }
+                ).href
             )
         })
     })
@@ -136,7 +157,7 @@ describe('GitLab', () => {
         await driver.page.goto(
             'https://gitlab.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
         )
-        await driver.page.waitForSelector('.code-view-toolbar .open-on-sourcegraph')
+        await driver.page.waitForSelector('[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]')
 
         // Pause to give codeintellify time to register listeners for
         // tokenization (only necessary in CI, not sure why).
@@ -149,10 +170,15 @@ describe('GitLab', () => {
         const line = await driver.page.waitForSelector(`${lineSelector}:nth-child(${lineNumber})`, {
             timeout: 10000,
         })
-        const [token] = await line.$x('//span[text()="CallOption"]')
+
+        if (!line) {
+            throw new Error(`Found no line with number ${lineNumber}`)
+        }
+
+        const [token] = await line.$x('.//span[text()="CallOption"]')
         await token.hover()
         await driver.findElementWithText('User is hovering over CallOption', {
-            selector: '.hover-overlay__content > p',
+            selector: '[data-testid="hover-overlay-content"] > p',
             fuzziness: 'contains',
             wait: {
                 timeout: 6000,

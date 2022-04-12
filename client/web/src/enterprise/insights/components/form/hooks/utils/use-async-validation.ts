@@ -1,8 +1,9 @@
 import { RefObject, useCallback, useRef } from 'react'
+
 import { EMPTY, from, Observable } from 'rxjs'
 import { debounceTime, switchMap, tap } from 'rxjs/operators'
 
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useEventObservable } from '@sourcegraph/wildcard'
 
 import { FieldState, ValidationResult } from '../useForm'
 

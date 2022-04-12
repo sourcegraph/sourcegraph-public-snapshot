@@ -3,7 +3,8 @@ package github
 import (
 	"flag"
 	"os"
-	"regexp"
+
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )
@@ -15,6 +16,10 @@ import (
 // in 1Password.
 var vcrToken = &auth.OAuthBearerToken{
 	Token: os.Getenv("GITHUB_TOKEN"),
+}
+
+var gheToken = &auth.OAuthBearerToken{
+	Token: os.Getenv("GHE_TOKEN"),
 }
 
 var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")

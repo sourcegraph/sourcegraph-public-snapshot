@@ -6,23 +6,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestCommittedAtMigrator(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := dbstore.NewWithDB(db, &observation.TestContext)
 	gitserverClient := NewMockGitserverClient()
 	migrator := NewCommittedAtMigrator(store, gitserverClient, 250)
@@ -34,12 +30,12 @@ func TestCommittedAtMigrator(t *testing.T) {
 		expectedCommitDates = append(expectedCommitDates, t0.Add(time.Second*time.Duration(i)))
 	}
 
-	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (time.Time, error) {
+	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (string, time.Time, bool, error) {
 		if i := len(gitserverClient.CommitDateFunc.History()); i < n {
-			return expectedCommitDates[i], nil
+			return commit, expectedCommitDates[i], true, nil
 		}
 
-		return time.Time{}, errors.Errorf("too many calls")
+		return "", time.Time{}, false, errors.Errorf("too many calls")
 	})
 
 	assertProgress := func(expectedProgress float64) {
@@ -112,10 +108,7 @@ func TestCommittedAtMigrator(t *testing.T) {
 }
 
 func TestCommittedAtMigratorUnknownRepository(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := dbstore.NewWithDB(db, &observation.TestContext)
 	gitserverClient := NewMockGitserverClient()
 	migrator := NewCommittedAtMigrator(store, gitserverClient, 250)
@@ -133,16 +126,16 @@ func TestCommittedAtMigratorUnknownRepository(t *testing.T) {
 		}
 	}
 
-	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (time.Time, error) {
+	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (string, time.Time, bool, error) {
 		if i := len(gitserverClient.CommitDateFunc.History()); i < n {
 			if i%3 == 0 {
-				return time.Time{}, &vcs.RepoNotExistError{}
+				return "", time.Time{}, false, &gitdomain.RepoNotExistError{}
 			}
 
-			return allDates[i], nil
+			return commit, allDates[i], true, nil
 		}
 
-		return time.Time{}, errors.Errorf("too many calls")
+		return "", time.Time{}, false, errors.Errorf("too many calls")
 	})
 
 	assertProgress := func(expectedProgress float64) {
@@ -215,10 +208,7 @@ func TestCommittedAtMigratorUnknownRepository(t *testing.T) {
 }
 
 func TestCommittedAtMigratorUnknownCommits(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := dbstore.NewWithDB(db, &observation.TestContext)
 	gitserverClient := NewMockGitserverClient()
 	migrator := NewCommittedAtMigrator(store, gitserverClient, 250)
@@ -236,16 +226,16 @@ func TestCommittedAtMigratorUnknownCommits(t *testing.T) {
 		}
 	}
 
-	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (time.Time, error) {
+	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (string, time.Time, bool, error) {
 		if i := len(gitserverClient.CommitDateFunc.History()); i < n {
 			if i%3 == 0 {
-				return time.Time{}, &gitserver.RevisionNotFoundError{}
+				return "", time.Time{}, false, nil
 			}
 
-			return allDates[i], nil
+			return commit, allDates[i], true, nil
 		}
 
-		return time.Time{}, errors.Errorf("too many calls")
+		return "", time.Time{}, false, errors.Errorf("too many calls")
 	})
 
 	assertProgress := func(expectedProgress float64) {

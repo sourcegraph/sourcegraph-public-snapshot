@@ -27,13 +27,13 @@ type SessionData struct {
 }
 
 type SessionIssuerHelper interface {
-	GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL string) (actr *actor.Actor, safeErrMsg string, err error)
+	GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error)
 	CreateCodeHostConnection(ctx context.Context, token *oauth2.Token, providerID string) (safeErrMsg string, err error)
 	DeleteStateCookie(w http.ResponseWriter)
 	SessionData(token *oauth2.Token) SessionData
 }
 
-func SessionIssuer(s SessionIssuerHelper, sessionKey string) http.Handler {
+func SessionIssuer(db database.DB, s SessionIssuerHelper, sessionKey string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -89,16 +89,15 @@ func SessionIssuer(s SessionIssuerHelper, sessionKey string) http.Handler {
 			}
 			return c.Value
 		}
-
 		anonymousId, _ := cookie.AnonymousUID(r)
-		actr, safeErrMsg, err := s.GetOrCreateUser(ctx, token, anonymousId, getCookie("sourcegraphSourceUrl"))
+		actr, safeErrMsg, err := s.GetOrCreateUser(ctx, token, anonymousId, getCookie("sourcegraphSourceUrl"), getCookie("sourcegraphRecentSourceUrl"))
 		if err != nil {
 			log15.Error("OAuth failed: error looking up or creating user from OAuth token.", "error", err, "userErr", safeErrMsg)
 			http.Error(w, safeErrMsg, http.StatusInternalServerError)
 			return
 		}
 
-		user, err := database.GlobalUsers.GetByID(r.Context(), actr.UID)
+		user, err := db.Users().GetByID(r.Context(), actr.UID)
 		if err != nil {
 			log15.Error("OAuth failed: error retrieving user from database.", "error", err)
 			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not initiate session.", http.StatusInternalServerError)

@@ -1,77 +1,84 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`ErrorBoundary passes through if non-error 1`] = `
-<div
-  className="heroPage defaultPadding"
->
+<DocumentFragment>
   <div
-    className="icon"
-  >
-    <ErrorIcon />
-  </div>
-  <div
-    className="title"
-  >
-    Error
-  </div>
-  <div
-    className="subtitle"
+    class="heroPage defaultPadding"
   >
     <div
-      className="container"
+      class="icon"
     >
-      <p>
-        Sourcegraph encountered an unexpected error. If reloading the page doesn't fix it, contact your site admin or Sourcegraph support.
-      </p>
-      <p>
-        <code
-          className="text-wrap"
-        >
-          x
-        </code>
-      </p>
+      <alertcircleicon />
+    </div>
+    <div
+      class="title"
+    >
+      Error
+    </div>
+    <div
+      class="subtitle"
+      data-testid="hero-page-subtitle"
+    >
+      <div
+        class="container"
+      >
+        <p>
+          Sourcegraph encountered an unexpected error. If reloading the page doesn't fix it, contact your site admin or Sourcegraph support.
+        </p>
+        <p>
+          <code
+            class="text-wrap"
+          >
+            x
+          </code>
+        </p>
+      </div>
     </div>
   </div>
-</div>
+</DocumentFragment>
 `;
 
 exports[`ErrorBoundary renders error page if error 1`] = `
-<span>
-  hello
-</span>
+<DocumentFragment>
+  <span>
+    hello
+  </span>
+</DocumentFragment>
 `;
 
 exports[`ErrorBoundary renders reload page if chunk error 1`] = `
-<div
-  className="heroPage defaultPadding"
->
+<DocumentFragment>
   <div
-    className="icon"
-  >
-    <ErrorIcon />
-  </div>
-  <div
-    className="title"
-  >
-    Error
-  </div>
-  <div
-    className="subtitle"
+    class="heroPage defaultPadding"
   >
     <div
-      className="container"
+      class="icon"
     >
-      <p>
-        Sourcegraph encountered an unexpected error. If reloading the page doesn't fix it, contact your site admin or Sourcegraph support.
-      </p>
-      <p>
-        <code
-          className="text-wrap"
+      <reloadicon />
+    </div>
+    <div
+      class="title"
+    >
+      Reload required
+    </div>
+    <div
+      class="subtitle"
+      data-testid="hero-page-subtitle"
+    >
+      <div
+        class="container"
+      >
+        <p>
+          A new version of Sourcegraph is available.
+        </p>
+        <button
+          class="btn btnPrimary"
+          type="button"
         >
-          Loading chunk 123 failed.
-        </code>
-      </p>
+          Reload to update
+        </button>
+      </div>
     </div>
   </div>
-</div>
+</DocumentFragment>
 `;

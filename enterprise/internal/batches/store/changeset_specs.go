@@ -5,196 +5,167 @@ import (
 	"encoding/json"
 	"strconv"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // changesetSpecInsertColumns is the list of changeset_specs columns that are
 // modified when inserting or updating a changeset spec.
-var changesetSpecInsertColumns = []*sqlf.Query{
-	sqlf.Sprintf("rand_id"),
-	sqlf.Sprintf("raw_spec"),
-	sqlf.Sprintf("spec"),
-	sqlf.Sprintf("batch_spec_id"),
-	sqlf.Sprintf("repo_id"),
-	sqlf.Sprintf("user_id"),
-	sqlf.Sprintf("diff_stat_added"),
-	sqlf.Sprintf("diff_stat_changed"),
-	sqlf.Sprintf("diff_stat_deleted"),
-	sqlf.Sprintf("created_at"),
-	sqlf.Sprintf("updated_at"),
+var changesetSpecInsertColumns = []string{
+	"rand_id",
+	"spec",
+	"batch_spec_id",
+	"repo_id",
+	"user_id",
+	"diff_stat_added",
+	"diff_stat_changed",
+	"diff_stat_deleted",
+	"created_at",
+	"updated_at",
+	"fork_namespace",
 
 	// `external_id`, `head_ref`, `title` are (for now) write-only columns that
 	// contain normalized data from `spec` and are used for JOINs and WHERE
 	// conditions.
-	sqlf.Sprintf("external_id"),
-	sqlf.Sprintf("head_ref"),
-	sqlf.Sprintf("title"),
+	"external_id",
+	"head_ref",
+	"title",
 }
 
 // changesetSpecColumns are used by the changeset spec related Store methods to
 // insert, update and query changeset specs.
-var changesetSpecColumns = []*sqlf.Query{
-	sqlf.Sprintf("changeset_specs.id"),
-	sqlf.Sprintf("changeset_specs.rand_id"),
-	sqlf.Sprintf("changeset_specs.raw_spec"),
-	sqlf.Sprintf("changeset_specs.spec"),
-	sqlf.Sprintf("changeset_specs.batch_spec_id"),
-	sqlf.Sprintf("changeset_specs.repo_id"),
-	sqlf.Sprintf("changeset_specs.user_id"),
-	sqlf.Sprintf("changeset_specs.diff_stat_added"),
-	sqlf.Sprintf("changeset_specs.diff_stat_changed"),
-	sqlf.Sprintf("changeset_specs.diff_stat_deleted"),
-	sqlf.Sprintf("changeset_specs.created_at"),
-	sqlf.Sprintf("changeset_specs.updated_at"),
+var changesetSpecColumns = SQLColumns{
+	"changeset_specs.id",
+	"changeset_specs.rand_id",
+	"changeset_specs.spec",
+	"changeset_specs.batch_spec_id",
+	"changeset_specs.repo_id",
+	"changeset_specs.user_id",
+	"changeset_specs.diff_stat_added",
+	"changeset_specs.diff_stat_changed",
+	"changeset_specs.diff_stat_deleted",
+	"changeset_specs.created_at",
+	"changeset_specs.updated_at",
+	"changeset_specs.fork_namespace",
 }
 
-// CreateChangesetSpec creates the given ChangesetSpec.
-func (s *Store) CreateChangesetSpec(ctx context.Context, c *btypes.ChangesetSpec) (err error) {
-	ctx, endObservation := s.operations.createChangesetSpec.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	q, err := s.createChangesetSpecQuery(c)
-	if err != nil {
-		return err
-	}
-
-	return s.query(ctx, q, func(sc scanner) error { return scanChangesetSpec(c, sc) })
-}
-
-var createChangesetSpecQueryFmtstr = `
--- source: enterprise/internal/batches/store_changeset_specs.go:CreateChangesetSpec
-INSERT INTO changeset_specs (%s)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-RETURNING %s`
-
-func (s *Store) createChangesetSpecQuery(c *btypes.ChangesetSpec) (*sqlf.Query, error) {
-	spec, err := jsonbColumn(c.Spec)
-	if err != nil {
-		return nil, err
-	}
-
-	if c.CreatedAt.IsZero() {
-		c.CreatedAt = s.now()
-	}
-
-	if c.UpdatedAt.IsZero() {
-		c.UpdatedAt = c.CreatedAt
-	}
-
-	var externalID, headRef, title *string
-	if c.Spec != nil {
-		if c.Spec.ExternalID != "" {
-			externalID = &c.Spec.ExternalID
-		}
-		if c.Spec.HeadRef != "" {
-			headRef = &c.Spec.HeadRef
-		}
-		if c.Spec.Title != "" {
-			title = &c.Spec.Title
-		}
-	}
-
-	if c.RandID == "" {
-		if c.RandID, err = RandomID(); err != nil {
-			return nil, errors.Wrap(err, "creating RandID failed")
-		}
-	}
-
-	return sqlf.Sprintf(
-		createChangesetSpecQueryFmtstr,
-		sqlf.Join(changesetSpecInsertColumns, ", "),
-		c.RandID,
-		c.RawSpec,
-		spec,
-		nullInt64Column(c.BatchSpecID),
-		c.RepoID,
-		nullInt32Column(c.UserID),
-		c.DiffStatAdded,
-		c.DiffStatChanged,
-		c.DiffStatDeleted,
-		c.CreatedAt,
-		c.UpdatedAt,
-		&dbutil.NullString{S: externalID},
-		&dbutil.NullString{S: headRef},
-		&dbutil.NullString{S: title},
-		sqlf.Join(changesetSpecColumns, ", "),
-	), nil
-}
-
-// UpdateChangesetSpec updates the given ChangesetSpec.
-func (s *Store) UpdateChangesetSpec(ctx context.Context, c *btypes.ChangesetSpec) (err error) {
-	ctx, endObservation := s.operations.updateChangesetSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(c.ID)),
+// CreateChangesetSpec creates the given ChangesetSpecs.
+func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.ChangesetSpec) (err error) {
+	ctx, endObservation := s.operations.createChangesetSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("Count", len(cs)),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	q, err := s.updateChangesetSpecQuery(c)
-	if err != nil {
-		return err
-	}
+	inserter := func(inserter *batch.Inserter) error {
+		for _, c := range cs {
+			spec, err := jsonbColumn(c.Spec)
+			if err != nil {
+				return err
+			}
 
-	return s.query(ctx, q, func(sc scanner) error {
-		return scanChangesetSpec(c, sc)
-	})
+			if c.CreatedAt.IsZero() {
+				c.CreatedAt = s.now()
+			}
+
+			if c.UpdatedAt.IsZero() {
+				c.UpdatedAt = c.CreatedAt
+			}
+
+			var externalID, headRef, title *string
+			if c.Spec != nil {
+				if c.Spec.ExternalID != "" {
+					externalID = &c.Spec.ExternalID
+				}
+				if c.Spec.HeadRef != "" {
+					headRef = &c.Spec.HeadRef
+				}
+				if c.Spec.Title != "" {
+					title = &c.Spec.Title
+				}
+			}
+
+			if c.RandID == "" {
+				if c.RandID, err = RandomID(); err != nil {
+					return errors.Wrap(err, "creating RandID failed")
+				}
+			}
+
+			if err := inserter.Insert(
+				ctx,
+				c.RandID,
+				spec,
+				nullInt64Column(c.BatchSpecID),
+				c.RepoID,
+				nullInt32Column(c.UserID),
+				c.DiffStatAdded,
+				c.DiffStatChanged,
+				c.DiffStatDeleted,
+				c.CreatedAt,
+				c.UpdatedAt,
+				c.ForkNamespace,
+				&dbutil.NullString{S: externalID},
+				&dbutil.NullString{S: headRef},
+				&dbutil.NullString{S: title},
+			); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+	i := -1
+	return batch.WithInserterWithReturn(
+		ctx,
+		s.Handle().DB(),
+		"changeset_specs",
+		batch.MaxNumPostgresParameters,
+		changesetSpecInsertColumns,
+		"",
+		changesetSpecColumns,
+		func(rows dbutil.Scanner) error {
+			i++
+			return scanChangesetSpec(cs[i], rows)
+		},
+		inserter,
+	)
 }
 
-var updateChangesetSpecQueryFmtstr = `
--- source: enterprise/internal/batches/store_changeset_specs.go:UpdateChangesetSpec
+// UpdateChangesetSpecBatchSpecID updates the given ChangesetSpecs to be owned by the given batch spec.
+func (s *Store) UpdateChangesetSpecBatchSpecID(ctx context.Context, cs []int64, batchSpec int64) (err error) {
+	ctx, endObservation := s.operations.updateChangesetSpecBatchSpecID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("Count", len(cs)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	q := s.updateChangesetSpecQuery(cs, batchSpec)
+
+	return s.Exec(ctx, q)
+}
+
+var updateChangesetSpecBatchSpecIDQueryFmtstr = `
+-- source: enterprise/internal/batches/store_changeset_specs.go:UpdateChangesetSpecBatchSpecID
 UPDATE changeset_specs
-SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-WHERE id = %s
-RETURNING %s`
+SET batch_spec_id = %s
+WHERE id = ANY (%s)
+`
 
-func (s *Store) updateChangesetSpecQuery(c *btypes.ChangesetSpec) (*sqlf.Query, error) {
-	spec, err := jsonbColumn(c.Spec)
-	if err != nil {
-		return nil, err
-	}
-
-	c.UpdatedAt = s.now()
-
-	var externalID, headRef, title *string
-	if c.Spec != nil {
-		if c.Spec.ExternalID != "" {
-			externalID = &c.Spec.ExternalID
-		}
-		if c.Spec.HeadRef != "" {
-			headRef = &c.Spec.HeadRef
-		}
-		if c.Spec.Title != "" {
-			title = &c.Spec.Title
-		}
-	}
-
+func (s *Store) updateChangesetSpecQuery(cs []int64, batchSpec int64) *sqlf.Query {
 	return sqlf.Sprintf(
-		updateChangesetSpecQueryFmtstr,
-		sqlf.Join(changesetSpecInsertColumns, ", "),
-		c.RandID,
-		c.RawSpec,
-		spec,
-		nullInt64Column(c.BatchSpecID),
-		c.RepoID,
-		nullInt32Column(c.UserID),
-		c.DiffStatAdded,
-		c.DiffStatChanged,
-		c.DiffStatDeleted,
-		c.CreatedAt,
-		c.UpdatedAt,
-		&dbutil.NullString{S: externalID},
-		&dbutil.NullString{S: headRef},
-		&dbutil.NullString{S: title},
-		c.ID,
-		sqlf.Join(changesetSpecColumns, ", "),
-	), nil
+		updateChangesetSpecBatchSpecIDQueryFmtstr,
+		batchSpec,
+		pq.Array(cs),
+	)
 }
 
 // DeleteChangesetSpec deletes the ChangesetSpec with the given ID.
@@ -216,6 +187,7 @@ DELETE FROM changeset_specs WHERE id = %s
 // ChangesetSpecs.
 type CountChangesetSpecsOpts struct {
 	BatchSpecID int64
+	Type        batcheslib.ChangesetSpecDescriptionType
 }
 
 // CountChangesetSpecs returns the number of changeset specs in the database.
@@ -246,6 +218,16 @@ func countChangesetSpecsQuery(opts *CountChangesetSpecsOpts) *sqlf.Query {
 		preds = append(preds, cond)
 	}
 
+	if opts.Type != "" {
+		if opts.Type == batcheslib.ChangesetSpecDescriptionTypeExisting {
+			// Check that externalID is not empty.
+			preds = append(preds, sqlf.Sprintf("COALESCE(changeset_specs.spec->>'externalID', NULL) IS NOT NULL"))
+		} else {
+			// Check that externalID is empty.
+			preds = append(preds, sqlf.Sprintf("COALESCE(changeset_specs.spec->>'externalID', NULL) IS NULL"))
+		}
+	}
+
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
@@ -270,7 +252,7 @@ func (s *Store) GetChangesetSpec(ctx context.Context, opts GetChangesetSpecOpts)
 	q := getChangesetSpecQuery(&opts)
 
 	var c btypes.ChangesetSpec
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		return scanChangesetSpec(&c, sc)
 	})
 	if err != nil {
@@ -316,7 +298,7 @@ func getChangesetSpecQuery(opts *GetChangesetSpecOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		getChangesetSpecsQueryFmtstr,
-		sqlf.Join(changesetSpecColumns, ", "),
+		sqlf.Join(changesetSpecColumns.ToSqlf(), ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -330,6 +312,7 @@ type ListChangesetSpecsOpts struct {
 	BatchSpecID int64
 	RandIDs     []string
 	IDs         []int64
+	Type        batcheslib.ChangesetSpecDescriptionType
 }
 
 // ListChangesetSpecs lists ChangesetSpecs with the given filters.
@@ -340,7 +323,7 @@ func (s *Store) ListChangesetSpecs(ctx context.Context, opts ListChangesetSpecsO
 	q := listChangesetSpecsQuery(&opts)
 
 	cs = make(btypes.ChangesetSpecs, 0, opts.DBLimit())
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		var c btypes.ChangesetSpec
 		if err := scanChangesetSpec(&c, sc); err != nil {
 			return err
@@ -376,36 +359,77 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 	}
 
 	if len(opts.RandIDs) != 0 {
-		ids := make([]*sqlf.Query, 0, len(opts.RandIDs))
-		for _, id := range opts.RandIDs {
-			if id != "" {
-				ids = append(ids, sqlf.Sprintf("%s", id))
-			}
-		}
-		preds = append(preds, sqlf.Sprintf("changeset_specs.rand_id IN (%s)", sqlf.Join(ids, ",")))
+		preds = append(preds, sqlf.Sprintf("changeset_specs.rand_id = ANY (%s)", pq.Array(opts.RandIDs)))
 	}
 
 	if len(opts.IDs) != 0 {
-		ids := make([]*sqlf.Query, 0, len(opts.IDs))
-		for _, id := range opts.IDs {
-			if id != 0 {
-				ids = append(ids, sqlf.Sprintf("%s", id))
-			}
+		preds = append(preds, sqlf.Sprintf("changeset_specs.id = ANY (%s)", pq.Array(opts.IDs)))
+	}
+
+	if opts.Type != "" {
+		if opts.Type == batcheslib.ChangesetSpecDescriptionTypeExisting {
+			// Check that externalID is not empty.
+			preds = append(preds, sqlf.Sprintf("COALESCE(changeset_specs.spec->>'externalID', NULL) IS NOT NULL"))
+		} else {
+			// Check that externalID is empty.
+			preds = append(preds, sqlf.Sprintf("COALESCE(changeset_specs.spec->>'externalID', NULL) IS NULL"))
 		}
-		preds = append(preds, sqlf.Sprintf("changeset_specs.id IN (%s)", sqlf.Join(ids, ",")))
 	}
 
 	return sqlf.Sprintf(
 		listChangesetSpecsQueryFmtstr+opts.LimitOpts.ToDB(),
-		sqlf.Join(changesetSpecColumns, ", "),
+		sqlf.Join(changesetSpecColumns.ToSqlf(), ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
+}
+
+type ChangesetSpecHeadRefConflict struct {
+	RepoID  api.RepoID
+	HeadRef string
+	Count   int
+}
+
+var listChangesetSpecsWithConflictingHeadQueryFmtstr = `
+-- source: enterprise/internal/batches/store/changeset_specs.go:ListChangesetSpecsWithConflictingHeadRef
+SELECT
+	repo_id,
+	spec->>'headRef' AS head_ref,
+	COUNT(*) AS count
+FROM
+	changeset_specs
+WHERE
+	batch_spec_id = %s
+AND
+	spec->>'headRef' IS NOT NULL
+GROUP BY
+	repo_id, spec->>'headRef'
+HAVING COUNT(*) > 1
+ORDER BY repo_id ASC, head_ref ASC
+`
+
+func (s *Store) ListChangesetSpecsWithConflictingHeadRef(ctx context.Context, batchSpecID int64) (conflicts []ChangesetSpecHeadRefConflict, err error) {
+	ctx, endObservation := s.operations.createChangesetSpec.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	q := sqlf.Sprintf(listChangesetSpecsWithConflictingHeadQueryFmtstr, batchSpecID)
+
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
+		var c ChangesetSpecHeadRefConflict
+		if err := sc.Scan(&c.RepoID, &c.HeadRef, &c.Count); err != nil {
+			return errors.Wrap(err, "scanning head ref conflict")
+		}
+		conflicts = append(conflicts, c)
+		return nil
+	})
+
+	return conflicts, err
 }
 
 // DeleteExpiredChangesetSpecs deletes each ChangesetSpec that has not been
 // attached to a BatchSpec within ChangesetSpecTTL, OR that is attached
 // to a BatchSpec that is not applied and is not attached to a Changeset
-// within BatchSpecTTL
+// within BatchSpecTTL.
+// TODO: Fix comment.
 func (s *Store) DeleteExpiredChangesetSpecs(ctx context.Context) (err error) {
 	ctx, endObservation := s.operations.deleteExpiredChangesetSpecs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -417,7 +441,7 @@ func (s *Store) DeleteExpiredChangesetSpecs(ctx context.Context) (err error) {
 }
 
 var deleteExpiredChangesetSpecsQueryFmtstr = `
--- source: enterprise/internal/batches/store.go:DeleteExpiredChangesetSpecs
+-- source: enterprise/internal/batches/store/changeset_specs.go:DeleteExpiredChangesetSpecs
 DELETE FROM
   changeset_specs cspecs
 WHERE
@@ -434,19 +458,62 @@ OR
   created_at < %s
   AND
   -- and the batch_spec it is attached to is not applied to a batch_change
-  NOT EXISTS(SELECT 1 FROM batch_changes WHERE batch_spec_id = cspecs.batch_spec_id)
+  NOT EXISTS (SELECT 1 FROM batch_changes WHERE batch_spec_id = cspecs.batch_spec_id)
   AND
   -- and it is not attached to a changeset
-  NOT EXISTS(SELECT 1 FROM changesets WHERE current_spec_id = cspecs.id OR previous_spec_id = cspecs.id)
+  NOT EXISTS (SELECT 1 FROM changesets WHERE current_spec_id = cspecs.id OR previous_spec_id = cspecs.id)
+  AND
+  -- and it is not created by SSBC
+  NOT (SELECT created_from_raw FROM batch_specs WHERE id = cspecs.batch_spec_id)
 );`
 
-func scanChangesetSpec(c *btypes.ChangesetSpec, s scanner) error {
+type DeleteChangesetSpecsOpts struct {
+	BatchSpecID int64
+	IDs         []int64
+}
+
+// DeleteChangesetSpecs deletes the ChangesetSpecs matching the given options.
+func (s *Store) DeleteChangesetSpecs(ctx context.Context, opts DeleteChangesetSpecsOpts) (err error) {
+	ctx, endObservation := s.operations.deleteChangesetSpecs.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("batchSpecID", int(opts.BatchSpecID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if opts.BatchSpecID == 0 && len(opts.IDs) == 0 {
+		return errors.New("BatchSpecID is 0 and no IDs given")
+	}
+
+	q := deleteChangesetSpecsQuery(&opts)
+	return s.Store.Exec(ctx, q)
+}
+
+var deleteChangesetSpecsQueryFmtstr = `
+-- source: enterprise/internal/batches/store/changeset_specs.go:DeleteChangesetSpecs
+DELETE FROM changeset_specs
+WHERE
+  %s
+`
+
+func deleteChangesetSpecsQuery(opts *DeleteChangesetSpecsOpts) *sqlf.Query {
+	preds := []*sqlf.Query{}
+
+	if opts.BatchSpecID != 0 {
+		preds = append(preds, sqlf.Sprintf("changeset_specs.batch_spec_id = %s", opts.BatchSpecID))
+	}
+
+	if len(opts.IDs) != 0 {
+		preds = append(preds, sqlf.Sprintf("changeset_specs.id = ANY(%s)", pq.Array(opts.IDs)))
+	}
+
+	return sqlf.Sprintf(deleteChangesetSpecsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+}
+
+func scanChangesetSpec(c *btypes.ChangesetSpec, s dbutil.Scanner) error {
 	var spec json.RawMessage
 
 	err := s.Scan(
 		&c.ID,
 		&c.RandID,
-		&c.RawSpec,
 		&spec,
 		&dbutil.NullInt64{N: &c.BatchSpecID},
 		&c.RepoID,
@@ -456,6 +523,7 @@ func scanChangesetSpec(c *btypes.ChangesetSpec, s scanner) error {
 		&c.DiffStatDeleted,
 		&c.CreatedAt,
 		&c.UpdatedAt,
+		&c.ForkNamespace,
 	)
 
 	if err != nil {
@@ -541,7 +609,7 @@ func (s *Store) GetRewirerMappings(ctx context.Context, opts GetRewirerMappingsO
 		return nil, err
 	}
 
-	if err = s.query(ctx, q, func(sc scanner) error {
+	if err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		var c btypes.RewirerMapping
 		if err := sc.Scan(&c.ChangesetSpecID, &c.ChangesetID, &c.RepoID); err != nil {
 			return err

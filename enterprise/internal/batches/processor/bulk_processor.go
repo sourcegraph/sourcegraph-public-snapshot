@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/global"
@@ -16,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // unknownJobTypeErr is returned when a ChangesetJob record is of an unknown type
@@ -94,11 +94,11 @@ func (b *bulkProcessor) Process(ctx context.Context, job *btypes.ChangesetJob) (
 	case btypes.ChangesetJobTypeDetach:
 		return b.detach(ctx, job)
 	case btypes.ChangesetJobTypeReenqueue:
-		return b.reenqueueChangeset(ctx, job)
+		return b.reenqueueChangeset(ctx)
 	case btypes.ChangesetJobTypeMerge:
 		return b.mergeChangeset(ctx, job)
 	case btypes.ChangesetJobTypeClose:
-		return b.closeChangeset(ctx, job)
+		return b.closeChangeset(ctx)
 	case btypes.ChangesetJobTypePublish:
 		return b.publishChangeset(ctx, job)
 
@@ -113,8 +113,8 @@ func (b *bulkProcessor) comment(ctx context.Context, job *btypes.ChangesetJob) e
 		return errors.Errorf("invalid payload type for changeset_job, want=%T have=%T", &btypes.ChangesetJobCommentPayload{}, job.Payload)
 	}
 	cs := &sources.Changeset{
-		Changeset: b.ch,
-		Repo:      b.repo,
+		Changeset:  b.ch,
+		TargetRepo: b.repo,
 	}
 	return b.css.CreateComment(ctx, cs, typedPayload.Message)
 }
@@ -149,7 +149,7 @@ func (b *bulkProcessor) detach(ctx context.Context, job *btypes.ChangesetJob) er
 	return b.tx.EnqueueChangeset(ctx, b.ch, global.DefaultReconcilerEnqueueState(), "")
 }
 
-func (b *bulkProcessor) reenqueueChangeset(ctx context.Context, job *btypes.ChangesetJob) error {
+func (b *bulkProcessor) reenqueueChangeset(ctx context.Context) error {
 	svc := service.New(b.tx)
 	_, _, err := svc.ReenqueueChangeset(ctx, b.ch.ID)
 	return err
@@ -162,8 +162,8 @@ func (b *bulkProcessor) mergeChangeset(ctx context.Context, job *btypes.Changese
 	}
 
 	cs := &sources.Changeset{
-		Changeset: b.ch,
-		Repo:      b.repo,
+		Changeset:  b.ch,
+		TargetRepo: b.repo,
 	}
 	if err := b.css.MergeChangeset(ctx, cs, typedPayload.Squash); err != nil {
 		return err
@@ -189,10 +189,10 @@ func (b *bulkProcessor) mergeChangeset(ctx context.Context, job *btypes.Changese
 	return nil
 }
 
-func (b *bulkProcessor) closeChangeset(ctx context.Context, job *btypes.ChangesetJob) (err error) {
+func (b *bulkProcessor) closeChangeset(ctx context.Context) (err error) {
 	cs := &sources.Changeset{
-		Changeset: b.ch,
-		Repo:      b.repo,
+		Changeset:  b.ch,
+		TargetRepo: b.repo,
 	}
 	if err := b.css.CloseChangeset(ctx, cs); err != nil {
 		return err

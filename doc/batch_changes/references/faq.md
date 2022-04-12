@@ -28,6 +28,7 @@ Note: If you run memory-intensive jobs, you might need to reduce the number of p
 ### My batch change does not open changesets on all the repositories it should. Why?
 - Do you have enough permissions? Batch Changes will error on the repositories you don’t have access to. See [Repository permissions for Batch Changes](../explanations/permissions_in_batch_changes.md).
 - Does your `repositoriesMatchingQuery` contain all the necessary flags? If you copied the query from the sourcegraph UI, note that some flags are represented as buttons (case sensitivity, regex, structural search), and do not appear in the query unless you use the copy query button.
+- Are the files you are trying to change in your repository's `.gitignore`? Batch Changes respects .gitignore files when creating the diff.
 
 ### Can I create tickets or issues along with Batch Changes?
 Batch Changes does not support a declarative syntax for issues or tickets.
@@ -44,7 +45,7 @@ Yes. When [executing a batch spec](../explanations/how_src_executes_a_batch_spec
 
 However, outside of the spec, `src` pulls an image from Docker Hub when running in volume workspace mode. This is the default on macOS, so you will need to use one of the following three workarounds:
 
-1. Run `src` with the `-workspace bind` flag. This will be slower, but will prevent `src` from pulling the iamge.
+1. Run `src` with the `-workspace bind` flag. This will be slower, but will prevent `src` from pulling the image.
 2. If you have a way of replicating trusted images onto your private registry, you can replicate [our image](https://hub.docker.com/r/sourcegraph/src-batch-change-volume-workspace) to your private registry. Ensure that the replicated image has the same tags, or this will fail.
 3. If you have the ability to ad hoc pull images from public Docker Hub, you can run `docker pull -a sourcegraph/src-batch-change-volume-workspace` to pull the image and its tags.
 
@@ -66,7 +67,7 @@ To tell Sourcegraph not to evaluate `${{ }}` like a normal [template delimiter](
 ${{ "${{ leave me alone! }}" }}
 ```
 
-Keep in mind the context in which the inner `${{ }}` will be evaluated and be sure to escape characters as is appropriate. Check out the cheatsheet for an [example](batch_spec_cheat_sheet.md#write-a-github-actions-workflow-that-includes-github-expression-syntax) within a shell script.
+Keep in mind the context in which the inner `${{ }}` will be evaluated and be sure to escape characters as is appropriate. Check out the cheat sheet for an [example](batch_spec_cheat_sheet.md#write-a-github-actions-workflow-that-includes-github-expression-syntax) within a shell script.
 
 ### How is commit author determined for commits produced from Batch Changes?
 
@@ -82,3 +83,6 @@ Since Sourcegraph 3.31, it is possible to publish many types of changeset when p
 - The changeset was imported (and was therefore already published by someone or something else).
 
 The changeset may also be in a state that we cannot currently publish from: for example, because a previous push to the code host failed (in which case you should re-apply the batch change), or if you are actively detaching the changeset from your batch change.
+
+### Why do my changesets take a long time to sync?
+Have you [set up webhooks](requirements.md#batch-changes-effect-on-code-host-rate-limits)?

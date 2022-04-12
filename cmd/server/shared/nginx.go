@@ -5,9 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/cmd/server/shared/assets"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // nginxProcFile will return a procfile entry for nginx, as well as setup

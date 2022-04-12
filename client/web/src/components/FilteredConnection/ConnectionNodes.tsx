@@ -1,5 +1,6 @@
-import * as H from 'history'
 import * as React from 'react'
+
+import * as H from 'history'
 
 import { Connection } from './ConnectionType'
 import { ConnectionList, ShowMoreButton, SummaryContainer, ConnectionSummary } from './ui'
@@ -77,6 +78,10 @@ export interface ConnectionNodesDisplayProps {
 
     /** The component displayed when all nodes have been fetched. */
     totalCountSummaryComponent?: React.ComponentType<{ totalCount: number }>
+
+    compact?: boolean
+
+    withCenteredSummary?: boolean
 }
 
 interface ConnectionNodesProps<C extends Connection<N>, N, NP = {}, HP = {}>
@@ -130,6 +135,8 @@ export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
     noShowMore,
     onShowMore,
     showMoreClassName,
+    compact,
+    withCenteredSummary,
 }: ConnectionNodesProps<C, N, NP, HP>): JSX.Element => {
     const nextPage = hasNextPage(connection)
 
@@ -144,6 +151,8 @@ export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
             emptyElement={emptyElement}
             connection={connection}
             hasNextPage={nextPage}
+            compact={compact}
+            centered={withCenteredSummary}
         />
     )
 
@@ -153,9 +162,11 @@ export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
 
     return (
         <>
-            <SummaryContainer className={summaryClassName}>{connectionQuery && summary}</SummaryContainer>
+            <SummaryContainer compact={compact} centered={withCenteredSummary} className={summaryClassName}>
+                {connectionQuery && summary}
+            </SummaryContainer>
             {connection.nodes.length > 0 && (
-                <ConnectionList as={listComponent} className={listClassName}>
+                <ConnectionList compact={compact} as={listComponent} className={listClassName}>
                     {HeadComponent && (
                         <HeadComponent
                             nodes={connection.nodes}
@@ -168,9 +179,16 @@ export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
                 </ConnectionList>
             )}
             {!loading && (
-                <SummaryContainer className={summaryClassName}>
+                <SummaryContainer compact={compact} centered={withCenteredSummary} className={summaryClassName}>
                     {!connectionQuery && summary}
-                    {!noShowMore && nextPage && <ShowMoreButton onClick={onShowMore} className={showMoreClassName} />}
+                    {!noShowMore && nextPage && (
+                        <ShowMoreButton
+                            compact={compact}
+                            centered={withCenteredSummary}
+                            onClick={onShowMore}
+                            className={showMoreClassName}
+                        />
+                    )}
                 </SummaryContainer>
             )}
         </>

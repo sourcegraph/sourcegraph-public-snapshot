@@ -5,39 +5,53 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/cockroachdb/errors"
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type OrgMemberStore struct {
+type OrgMemberStore interface {
+	basestore.ShareableStore
+	With(basestore.ShareableStore) OrgMemberStore
+	AutocompleteMembersSearch(ctx context.Context, OrgID int32, query string) ([]*types.OrgMemberAutocompleteSearchItem, error)
+	Transact(context.Context) (OrgMemberStore, error)
+	Create(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error)
+	GetByUserID(ctx context.Context, userID int32) ([]*types.OrgMembership, error)
+	GetByOrgIDAndUserID(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error)
+	MemberCount(ctx context.Context, orgID int32) (int, error)
+	Remove(ctx context.Context, orgID, userID int32) error
+	GetByOrgID(ctx context.Context, orgID int32) ([]*types.OrgMembership, error)
+	CreateMembershipInOrgsForAllUsers(ctx context.Context, orgNames []string) error
+}
+
+type orgMemberStore struct {
 	*basestore.Store
 }
 
 // OrgMembers instantiates and returns a new OrgMemberStore with prepared statements.
-func OrgMembers(db dbutil.DB) *OrgMemberStore {
-	return &OrgMemberStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+func OrgMembers(db dbutil.DB) OrgMemberStore {
+	return &orgMemberStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // NewOrgMemberStoreWithDB instantiates and returns a new OrgMemberStore using the other store handle.
-func OrgMembersWith(other basestore.ShareableStore) *OrgMemberStore {
-	return &OrgMemberStore{Store: basestore.NewWithHandle(other.Handle())}
+func OrgMembersWith(other basestore.ShareableStore) OrgMemberStore {
+	return &orgMemberStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
-func (s *OrgMemberStore) With(other basestore.ShareableStore) *OrgMemberStore {
-	return &OrgMemberStore{Store: s.Store.With(other)}
+func (s *orgMemberStore) With(other basestore.ShareableStore) OrgMemberStore {
+	return &orgMemberStore{Store: s.Store.With(other)}
 }
 
-func (m *OrgMemberStore) Transact(ctx context.Context) (*OrgMemberStore, error) {
+func (m *orgMemberStore) Transact(ctx context.Context) (OrgMemberStore, error) {
 	txBase, err := m.Store.Transact(ctx)
-	return &OrgMemberStore{Store: txBase}, err
+	return &orgMemberStore{Store: txBase}, err
 }
 
-func (m *OrgMemberStore) Create(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {
+func (m *orgMemberStore) Create(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {
 	om := types.OrgMembership{
 		OrgID:  orgID,
 		UserID: userID,
@@ -56,29 +70,68 @@ func (m *OrgMemberStore) Create(ctx context.Context, orgID, userID int32) (*type
 	return &om, nil
 }
 
-func (m *OrgMemberStore) GetByUserID(ctx context.Context, userID int32) ([]*types.OrgMembership, error) {
+func (m *orgMemberStore) GetByUserID(ctx context.Context, userID int32) ([]*types.OrgMembership, error) {
 	return m.getBySQL(ctx, "INNER JOIN users ON org_members.user_id=users.id WHERE org_members.user_id=$1 AND users.deleted_at IS NULL", userID)
 }
 
-func (m *OrgMemberStore) GetByOrgIDAndUserID(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {
-	if Mocks.OrgMembers.GetByOrgIDAndUserID != nil {
-		return Mocks.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, userID)
-	}
+func (m *orgMemberStore) GetByOrgIDAndUserID(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {
 	return m.getOneBySQL(ctx, "INNER JOIN users ON org_members.user_id=users.id WHERE org_id=$1 AND user_id=$2 AND users.deleted_at IS NULL LIMIT 1", orgID, userID)
 }
 
-func (m *OrgMemberStore) Remove(ctx context.Context, orgID, userID int32) error {
+func (m *orgMemberStore) MemberCount(ctx context.Context, orgID int32) (int, error) {
+	var memberCount int
+	err := m.Handle().DB().QueryRowContext(ctx, `
+		SELECT COUNT(*)
+		FROM org_members INNER JOIN users ON org_members.user_id = users.id
+		WHERE org_id=$1 AND users.deleted_at IS NULL`, orgID).Scan(&memberCount)
+	if err != nil {
+		return 0, err
+	}
+	return memberCount, nil
+}
+
+func (m *orgMemberStore) Remove(ctx context.Context, orgID, userID int32) error {
 	_, err := m.Handle().DB().ExecContext(ctx, "DELETE FROM org_members WHERE (org_id=$1 AND user_id=$2)", orgID, userID)
 	return err
 }
 
 // GetByOrgID returns a list of all members of a given organization.
-func (m *OrgMemberStore) GetByOrgID(ctx context.Context, orgID int32) ([]*types.OrgMembership, error) {
+func (m *orgMemberStore) GetByOrgID(ctx context.Context, orgID int32) ([]*types.OrgMembership, error) {
 	org, err := OrgsWith(m).GetByID(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
 	return m.getBySQL(ctx, "INNER JOIN users ON org_members.user_id = users.id WHERE org_id=$1 AND users.deleted_at IS NULL ORDER BY upper(users.display_name), users.id", org.ID)
+}
+
+func (u *orgMemberStore) AutocompleteMembersSearch(ctx context.Context, orgID int32, query string) ([]*types.OrgMemberAutocompleteSearchItem, error) {
+	pattern := query + "%"
+	q := sqlf.Sprintf(`SELECT u.id, u.username, u.display_name, u.avatar_url, (SELECT COUNT(o.org_id) from org_members o WHERE o.org_id = %d AND o.user_id = u.id) as inorg
+		FROM users u WHERE (u.username ILIKE %s OR u.display_name ILIKE %s) AND u.searchable IS TRUE AND u.deleted_at IS NULL ORDER BY id ASC LIMIT 10`, orgID, pattern, pattern)
+
+	rows, err := u.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	users := []*types.OrgMemberAutocompleteSearchItem{}
+	defer rows.Close()
+	for rows.Next() {
+		var u types.OrgMemberAutocompleteSearchItem
+		var displayName, avatarURL sql.NullString
+		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.InOrg)
+		if err != nil {
+			return nil, err
+		}
+		u.DisplayName = displayName.String
+		u.AvatarURL = avatarURL.String
+		users = append(users, &u)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }
 
 // ErrOrgMemberNotFound is the error that is returned when
@@ -93,7 +146,7 @@ func (err *ErrOrgMemberNotFound) Error() string {
 
 func (ErrOrgMemberNotFound) NotFound() bool { return true }
 
-func (m *OrgMemberStore) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*types.OrgMembership, error) {
+func (m *orgMemberStore) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*types.OrgMembership, error) {
 	members, err := m.getBySQL(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -104,7 +157,7 @@ func (m *OrgMemberStore) getOneBySQL(ctx context.Context, query string, args ...
 	return members[0], nil
 }
 
-func (m *OrgMemberStore) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.OrgMembership, error) {
+func (m *orgMemberStore) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.OrgMembership, error) {
 	rows, err := m.Handle().DB().QueryContext(ctx, "SELECT org_members.id, org_members.org_id, org_members.user_id, org_members.created_at, org_members.updated_at FROM org_members "+query, args...)
 	if err != nil {
 		return nil, err
@@ -128,7 +181,7 @@ func (m *OrgMemberStore) getBySQL(ctx context.Context, query string, args ...int
 
 // CreateMembershipInOrgsForAllUsers causes *ALL* users to become members of every org in the
 // orgNames list.
-func (m *OrgMemberStore) CreateMembershipInOrgsForAllUsers(ctx context.Context, orgNames []string) error {
+func (m *orgMemberStore) CreateMembershipInOrgsForAllUsers(ctx context.Context, orgNames []string) error {
 	if len(orgNames) == 0 {
 		return nil
 	}

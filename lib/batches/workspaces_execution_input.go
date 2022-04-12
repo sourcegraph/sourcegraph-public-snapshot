@@ -1,17 +1,15 @@
 package batches
 
-type WorkspacesExecutionInput struct {
-	RawSpec    string       `json:"rawSpec"`
-	Workspaces []*Workspace `json:"workspaces"`
-}
+import "github.com/sourcegraph/sourcegraph/lib/batches/template"
 
-type Workspace struct {
-	Repository         WorkspaceRepo   `json:"repository"`
-	Branch             WorkspaceBranch `json:"branch"`
-	Path               string          `json:"path"`
-	OnlyFetchWorkspace bool            `json:"onlyFetchWorkspace"`
-	Steps              []Step          `json:"steps"`
-	SearchResultPaths  []string        `json:"searchResultPaths"`
+type WorkspacesExecutionInput struct {
+	BatchChangeAttributes template.BatchChangeAttributes
+	Repository            WorkspaceRepo   `json:"repository"`
+	Branch                WorkspaceBranch `json:"branch"`
+	Path                  string          `json:"path"`
+	OnlyFetchWorkspace    bool            `json:"onlyFetchWorkspace"`
+	Steps                 []Step          `json:"steps"`
+	SearchResultPaths     []string        `json:"searchResultPaths"`
 }
 
 type WorkspaceRepo struct {

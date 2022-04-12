@@ -1,13 +1,13 @@
+import React, { useCallback, useState, useMemo } from 'react'
+
 import * as H from 'history'
 import ChartLineIcon from 'mdi-react/ChartLineIcon'
-import React, { useCallback, useState, useMemo } from 'react'
 import { of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { asError, isErrorLike, ErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { asError, isErrorLike, ErrorLike } from '@sourcegraph/common'
+import { Badge, Button, LoadingSpinner, useObservable, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { querySearchResultsStats } from './backend'
 import { SearchStatsLanguages } from './SearchStatsLanguages'
@@ -56,8 +56,10 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({
         <div className="search-stats-page container mt-4">
             <header className="d-flex align-items-center justify-content-between mb-3">
                 <h2 className="d-flex align-items-center mb-0">
-                    <ChartLineIcon className="icon-inline mr-2" /> Code statistics{' '}
-                    <small className="badge badge-secondary text-uppercase ml-2">Experimental</small>
+                    <Icon className="mr-2" as={ChartLineIcon} /> Code statistics{' '}
+                    <Badge variant="secondary" className="text-uppercase ml-2" as="small">
+                        Experimental
+                    </Badge>
                 </h2>
             </header>
             <Form onSubmit={onSubmit} className="form">
@@ -75,22 +77,22 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({
                         autoComplete="off"
                     />
                     {uncommittedQuery !== query && (
-                        <button type="submit" className="btn btn-primary ml-2 test-stats-query-update">
+                        <Button type="submit" className="ml-2 test-stats-query-update" variant="primary">
                             Update
-                        </button>
+                        </Button>
                     )}
                 </div>
             </Form>
             <hr className="my-3" />
             {stats === undefined ? (
-                <LoadingSpinner className="icon-inline" />
+                <LoadingSpinner />
             ) : isErrorLike(stats) ? (
-                <div className="alert alert-danger">{stats.message}</div>
+                <Alert variant="danger">{stats.message}</Alert>
             ) : stats.limitHit ? (
-                <div className="alert alert-warning">
+                <Alert variant="warning">
                     Limit hit. Add <code>count:{DEFAULT_COUNT * 5}</code> (or an even larger number) to your query to
                     retry with a higher limit.
-                </div>
+                </Alert>
             ) : (
                 <SearchStatsLanguages query={query} stats={stats} />
             )}

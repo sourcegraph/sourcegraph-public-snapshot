@@ -3,7 +3,7 @@ package batches
 import (
 	"encoding/json"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // PublishedValue is a wrapper type that supports the quadruple `true`, `false`,

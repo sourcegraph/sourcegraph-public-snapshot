@@ -4,14 +4,19 @@
 # ignores.
 
 # Install p4 CLI (keep this up to date with cmd/server/Dockerfile)
-FROM sourcegraph/alpine-3.12:107969_2021-09-10_80f5edc@sha256:ce1ba2f16ec56e5e8007da53e0e6449bc0fa1fe1f972bffbc33dea1ae410b86d AS p4cli
+FROM sourcegraph/alpine-3.12:137550_2022-03-17_32d45d6a2a7f@sha256:d67684c174c577e7d61b4d7ef9d173fb73973f5b941bd65401dad90fc5e74353 AS p4cli
 
 # hadolint ignore=DL3003
 RUN wget http://cdist2.perforce.com/perforce/r20.1/bin.linux26x86_64/p4 && \
     mv p4 /usr/local/bin/p4 && \
     chmod +x /usr/local/bin/p4
 
-FROM sourcegraph/alpine-3.12:107969_2021-09-10_80f5edc@sha256:ce1ba2f16ec56e5e8007da53e0e6449bc0fa1fe1f972bffbc33dea1ae410b86d AS coursier
+FROM sourcegraph/alpine-3.12:137550_2022-03-17_32d45d6a2a7f@sha256:d67684c174c577e7d61b4d7ef9d173fb73973f5b941bd65401dad90fc5e74353 AS p4-fusion
+
+COPY p4-fusion-install-alpine.sh /p4-fusion-install-alpine.sh
+RUN /p4-fusion-install-alpine.sh
+
+FROM sourcegraph/alpine-3.12:137550_2022-03-17_32d45d6a2a7f@sha256:d67684c174c577e7d61b4d7ef9d173fb73973f5b941bd65401dad90fc5e74353 AS coursier
 
 # TODO(code-intel): replace with official streams when musl builds are upstreamed
 RUN wget -O coursier.zip https://github.com/sourcegraph/lsif-java/releases/download/v0.5.6/cs-musl.zip && \
@@ -19,7 +24,8 @@ RUN wget -O coursier.zip https://github.com/sourcegraph/lsif-java/releases/downl
     mv cs-musl /usr/local/bin/coursier && \
     chmod +x /usr/local/bin/coursier
 
-FROM sourcegraph/alpine-3.12:107969_2021-09-10_80f5edc@sha256:ce1ba2f16ec56e5e8007da53e0e6449bc0fa1fe1f972bffbc33dea1ae410b86d
+
+FROM sourcegraph/alpine-3.12:137550_2022-03-17_32d45d6a2a7f@sha256:d67684c174c577e7d61b4d7ef9d173fb73973f5b941bd65401dad90fc5e74353
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -30,19 +36,21 @@ LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
-# hadolint ignore=DL3018
 RUN apk add --no-cache \
-    # Gitserver requires Git protocol v2 https://github.com/sourcegraph/sourcegraph/issues/13168
-    'git>=2.18' \
-    openssh-client \
+    # We require git 2.34.1 because we use git-repack with flag --write-midx.
+    'git>=2.34.1' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.15/main  \
     git-p4 \
-    python2
-
-# This is installed separately due to the upstream edge repo requirement
-RUN apk update && apk add --no-cache \
-    'python3>=3.9.5' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main
+    && apk add --no-cache  \
+    openssh-client \
+    # We require libstdc++ for p4-fusion
+    libstdc++ \
+    python2 \
+    python3 \
+    bash
 
 COPY --from=p4cli /usr/local/bin/p4 /usr/local/bin/p4
+
+COPY --from=p4-fusion /usr/local/bin/p4-fusion /usr/local/bin/p4-fusion
 
 COPY --from=coursier /usr/local/bin/coursier /usr/local/bin/coursier
 
@@ -53,5 +61,8 @@ RUN tar zxf /lib-x64.tgz --directory /
 
 RUN mkdir -p /data/repos && chown -R sourcegraph:sourcegraph /data/repos
 USER sourcegraph
+
+WORKDIR /
+
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/gitserver"]
 COPY gitserver /usr/local/bin/

@@ -3,18 +3,23 @@ package repos
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/tidwall/gjson"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -23,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -45,6 +51,10 @@ type GithubSource struct {
 	// originalHostname is the hostname of config.Url (differs from client APIURL, whose host is api.github.com
 	// for an originalHostname of github.com).
 	originalHostname string
+
+	// useGitHubApp indicate whether clients are authenticated through GitHub App,
+	// which may need to hit different API endpoints from regular RESTful API.
+	useGitHubApp bool
 }
 
 var (
@@ -55,12 +65,12 @@ var (
 )
 
 // NewGithubSource returns a new GithubSource from the given external service.
-func NewGithubSource(svc *types.ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
+func NewGithubSource(externalServicesStore database.ExternalServiceStore, svc *types.ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
 	var c schema.GitHubConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGithubSource(svc, &c, cf)
+	return newGithubSource(externalServicesStore, svc, &c, cf)
 }
 
 var githubRemainingGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
@@ -74,7 +84,76 @@ var githubRatelimitWaitCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "The amount of time spent waiting on the rate limit",
 }, []string{"resource", "name"})
 
-func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf *httpcli.Factory) (*GithubSource, error) {
+// IsGitHubAppCloudEnabled returns true if all required configuration options for
+// Sourcegraph Cloud GitHub App are filled by checking the given dotcom config.
+func IsGitHubAppCloudEnabled(dotcom *schema.Dotcom) bool {
+	return dotcom != nil &&
+		dotcom.GithubAppCloud != nil &&
+		dotcom.GithubAppCloud.AppID != "" &&
+		dotcom.GithubAppCloud.PrivateKey != "" &&
+		dotcom.GithubAppCloud.Slug != ""
+}
+
+// GetOrRenewGitHubAppInstallationAccessToken extracts and returns the token
+// stored in the given external service config. It automatically renews and
+// updates the access token if it had expired or about to expire in 5 minutes.
+func GetOrRenewGitHubAppInstallationAccessToken(
+	ctx context.Context,
+	externalServicesStore database.ExternalServiceStore,
+	svc *types.ExternalService,
+	client *github.V3Client,
+	installationID int64,
+) (string, error) {
+	token := gjson.Get(svc.Config, "token").String()
+	// It is incorrect to have GitHub App installation access token without an
+	// expiration time, and being conservative to have 5-minute buffer in case the
+	// expiration time is close to the current time.
+	if token != "" && svc.TokenExpiresAt != nil && time.Until(*svc.TokenExpiresAt) > 5*time.Minute {
+		return token, nil
+	}
+
+	reqCtx, cancel := context.WithTimeout(ctx, time.Minute)
+	defer cancel()
+
+	tok, err := client.CreateAppInstallationAccessToken(reqCtx, installationID)
+	if err != nil {
+		return "", errors.Wrap(err, "create app installation access token")
+	}
+	if tok.Token == nil || *tok.Token == "" {
+		return "", errors.New("empty token returned")
+	}
+
+	// NOTE: Use `json.Marshal` breaks the actual external service config that fails
+	// validation with missing "repos" property when no repository has been selected,
+	// due to generated JSON tag of ",omitempty".
+	config, err := jsonc.Edit(svc.Config, *tok.Token, "token")
+	if err != nil {
+		return "", errors.Wrap(err, "edit token")
+	}
+
+	err = externalServicesStore.Update(ctx,
+		conf.Get().AuthProviders,
+		svc.ID,
+		&database.ExternalServiceUpdate{
+			Config:         &config,
+			TokenExpiresAt: tok.ExpiresAt,
+		},
+	)
+	if err != nil {
+		// If we failed to update the new token and its expiration time, it is fine to
+		// try again later. We should not block further process since we already have the
+		// new token available for use at this time.
+		log15.Error("GetOrRenewGitHubAppInstallationAccessToken.updateExternalService", "id", svc.ID, "error", err)
+	}
+	return *tok.Token, nil
+}
+
+func newGithubSource(
+	externalServicesStore database.ExternalServiceStore,
+	svc *types.ExternalService,
+	c *schema.GitHubConnection,
+	cf *httpcli.Factory,
+) (*GithubSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -128,14 +207,53 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 		return nil, err
 	}
 	token := &auth.OAuthBearerToken{Token: c.Token}
+	urn := svc.URN()
 
 	var (
-		v3Client     = github.NewV3Client(apiURL, token, cli)
-		v4Client     = github.NewV4Client(apiURL, token, cli)
-		searchClient = github.NewV3SearchClient(apiURL, token, cli)
+		v3Client     = github.NewV3Client(urn, apiURL, token, cli)
+		v4Client     = github.NewV4Client(urn, apiURL, token, cli)
+		searchClient = github.NewV3SearchClient(urn, apiURL, token, cli)
 	)
 
-	if svc.NamespaceUserID == 0 {
+	useGitHubApp := false
+	dotcomConfig := conf.SiteConfig().Dotcom
+	if envvar.SourcegraphDotComMode() &&
+		c.GithubAppInstallationID != "" &&
+		IsGitHubAppCloudEnabled(dotcomConfig) {
+		privateKey, err := base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
+		if err != nil {
+			return nil, errors.Wrap(err, "decode private key")
+		}
+
+		auther, err := auth.NewOAuthBearerTokenWithGitHubApp(dotcomConfig.GithubAppCloud.AppID, privateKey)
+		if err != nil {
+			return nil, errors.Wrap(err, "new authenticator with GitHub App")
+		}
+
+		apiURL, err := url.Parse("https://api.github.com")
+		if err != nil {
+			return nil, errors.Wrap(err, "parse api.github.com")
+		}
+		client := github.NewV3Client(urn, apiURL, auther, nil)
+
+		installationID, err := strconv.ParseInt(c.GithubAppInstallationID, 10, 64)
+		if err != nil {
+			return nil, errors.Wrap(err, "parse installation ID")
+		}
+
+		token, err := GetOrRenewGitHubAppInstallationAccessToken(context.Background(), externalServicesStore, svc, client, installationID)
+		if err != nil {
+			return nil, errors.Wrap(err, "get or renew GitHub App installation access token")
+		}
+
+		auther = &auth.OAuthBearerToken{Token: token}
+		v3Client = github.NewV3Client(urn, apiURL, auther, cli)
+		v4Client = github.NewV4Client(urn, apiURL, auther, cli)
+
+		useGitHubApp = true
+	}
+
+	if svc.IsSiteOwned() {
 		for resource, monitor := range map[string]*ratelimit.Monitor{
 			"rest":    v3Client.RateLimitMonitor(),
 			"graphql": v4Client.RateLimitMonitor(),
@@ -167,6 +285,7 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 		v4Client:         v4Client,
 		searchClient:     searchClient,
 		originalHostname: originalHostname,
+		useGitHubApp:     useGitHubApp,
 	}, nil
 }
 
@@ -554,6 +673,9 @@ func (s *GithubSource) listAffiliated(ctx context.Context, results chan *githubR
 				"retryAfter", retry,
 			)
 		}()
+		if s.useGitHubApp {
+			return s.v3Client.ListInstallationRepositories(ctx, page)
+		}
 		return s.v3Client.ListAffiliatedRepositories(ctx, github.VisibilityAll, page)
 	})
 }
@@ -862,10 +984,17 @@ func (s *GithubSource) AffiliatedRepositories(ctx context.Context) ([]types.Code
 			return nil, errors.Errorf("context canceled")
 		default:
 		}
-		repos, hasNextPage, _, err = s.v3Client.ListAffiliatedRepositories(ctx, github.VisibilityAll, page)
+
+		var repos []*github.Repository
+		if s.useGitHubApp {
+			repos, hasNextPage, _, err = s.v3Client.ListInstallationRepositories(ctx, page)
+		} else {
+			repos, hasNextPage, _, err = s.v3Client.ListAffiliatedRepositories(ctx, github.VisibilityAll, page)
+		}
 		if err != nil {
 			return nil, err
 		}
+
 		for _, repo := range repos {
 			out = append(out, types.CodeHostRepository{
 				Name:       repo.NameWithOwner,

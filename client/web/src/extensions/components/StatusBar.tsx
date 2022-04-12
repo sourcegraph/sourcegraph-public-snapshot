@@ -1,21 +1,22 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import React, { useCallback, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { Observable, timer } from 'rxjs'
 import { filter, first, mapTo, switchMap } from 'rxjs/operators'
 
 import { urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { StatusBarItemWithKey } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
-import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Badge, Button, useObservable, Link, ButtonLink, Icon } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
+
+import styles from './StatusBar.module.scss'
 
 interface StatusBarProps extends ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     getStatusBarItems: () => Observable<StatusBarItemWithKey[] | 'loading'>
@@ -85,7 +86,8 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
     return (
         <div
             className={classNames(
-                'status-bar border-top',
+                styles.statusBar,
+                'border-top',
                 'percy-hide', // TODO: Fix flaky status bar in Percy tests: https://github.com/sourcegraph/sourcegraph/issues/20751
                 className
             )}
@@ -96,22 +98,26 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                 // To be clear to users that this isn't an error reported by extensions
                 // about e.g. the code they're viewing.
                 render={error => (
-                    <div className="status-bar__item ml-2">
+                    <div className={classNames('ml-2', styles.item)}>
                         <small className="text-muted">Status bar component error: {error.message}</small>
                     </div>
                 )}
             >
                 {canScrollNegative && (
-                    <button
-                        type="button"
-                        className="btn btn-link status-bar__scroll border-0"
+                    <Button
+                        className={classNames('border-0', styles.scroll)}
                         onClick={onNegativeClicked}
+                        variant="link"
                     >
-                        <ChevronLeftIcon className="icon-inline" />
-                    </button>
+                        <Icon as={ChevronLeftIcon} />
+                    </Button>
                 )}
-                <div className="status-bar__items d-flex align-items-center px-2" ref={carouselReference}>
-                    {badgeText && <p className="badge badge-secondary m-0">{badgeText}</p>}
+                <div className={classNames('d-flex align-items-center px-2', styles.items)} ref={carouselReference}>
+                    {badgeText && (
+                        <Badge variant="secondary" className="m-0" as="p">
+                            {badgeText}
+                        </Badge>
+                    )}
                     {!!statusBarItems && statusBarItems !== 'loading' && statusBarItems.length > 0
                         ? statusBarItems.map(statusBarItem => (
                               <StatusBarItem
@@ -123,7 +129,7 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                               />
                           ))
                         : hasEnoughTimePassed && (
-                              <div className="status-bar__item ml-2">
+                              <div className={classNames('ml-2', styles.item)}>
                                   <small className="text-muted">
                                       No information from extensions available.{' '}
                                       <Link to="/extensions">
@@ -134,13 +140,13 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                           )}
                 </div>
                 {canScrollPositive && (
-                    <button
-                        type="button"
-                        className="btn btn-link status-bar__scroll border-0"
+                    <Button
+                        className={classNames('border-0', styles.scroll)}
                         onClick={onPositiveClicked}
+                        variant="link"
                     >
-                        <ChevronRightIcon className="icon-inline" />
-                    </button>
+                        <Icon as={ChevronRightIcon} />
+                    </Button>
                 )}
             </ErrorBoundary>
         </div>
@@ -160,7 +166,8 @@ const StatusBarItem: React.FunctionComponent<
     const command = useMemo(() => statusBarItem.command, [statusBarItem.command])
 
     const to = useMemo(
-        () => command && urlForClientCommandOpen({ command: command.id, commandArguments: command.args }, location),
+        () =>
+            command && urlForClientCommandOpen({ command: command.id, commandArguments: command.args }, location.hash),
         [command, location]
     )
 
@@ -186,8 +193,9 @@ const StatusBarItem: React.FunctionComponent<
     return (
         <ButtonLink
             className={classNames(
-                'status-bar__item h-100 d-flex align-items-center px-1',
-                noop && 'status-bar__item--noop text-decoration-none',
+                'h-100 d-flex align-items-center px-1',
+                styles.item,
+                noop && classNames('text-decoration-none', styles.itemNoop),
                 className
             )}
             data-tooltip={statusBarItem.tooltip}
@@ -197,7 +205,7 @@ const StatusBarItem: React.FunctionComponent<
             disabled={commandState === 'loading'}
         >
             {component || (
-                <small className={classNames('status-bar__text', commandState === 'loading' && 'text-muted')}>
+                <small className={classNames(styles.text, commandState === 'loading' && 'text-muted')}>
                     {statusBarItem.text}
                 </small>
             )}

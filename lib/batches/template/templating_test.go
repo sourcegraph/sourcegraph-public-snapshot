@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"gopkg.in/yaml.v3"
 
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 )
 
@@ -23,7 +24,7 @@ func TestEvalStepCondition(t *testing.T) {
 			Name:        "test-batch-change",
 			Description: "This batch change is just an experiment",
 		},
-		PreviousStep: StepResult{
+		PreviousStep: execution.StepResult{
 			Files:  testChanges,
 			Stdout: bytes.NewBufferString("this is previous step's stdout"),
 			Stderr: bytes.NewBufferString("this is previous step's stderr"),
@@ -88,7 +89,7 @@ func TestRenderStepTemplate(t *testing.T) {
 			Name:        "test-batch-change",
 			Description: "This batch change is just an experiment",
 		},
-		PreviousStep: StepResult{
+		PreviousStep: execution.StepResult{
 			Files:  testChanges,
 			Stdout: bytes.NewBufferString("this is previous step's stdout"),
 			Stderr: bytes.NewBufferString("this is previous step's stderr"),
@@ -97,7 +98,7 @@ func TestRenderStepTemplate(t *testing.T) {
 			"lastLine": "lastLine is this",
 			"project":  parsedYaml,
 		},
-		Step: StepResult{
+		Step: execution.StepResult{
 			Files:  testChanges,
 			Stdout: bytes.NewBufferString("this is current step's stdout"),
 			Stderr: bytes.NewBufferString("this is current step's stderr"),
@@ -232,7 +233,7 @@ ${{ steps.path }}
 
 func TestRenderStepMap(t *testing.T) {
 	stepCtx := &StepContext{
-		PreviousStep: StepResult{
+		PreviousStep: execution.StepResult{
 			Files:  testChanges,
 			Stdout: bytes.NewBufferString("this is previous step's stdout"),
 			Stderr: bytes.NewBufferString("this is previous step's stderr"),

@@ -8,7 +8,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 /*
@@ -404,14 +404,14 @@ loop:
 
 // ScanPredicate scans for a predicate that exists in the predicate
 // registry. It takes the current field as context.
-func ScanPredicate(field string, buf []byte) (string, int, bool) {
-	fieldRegistry, ok := DefaultPredicateRegistry[resolveFieldAlias(field)]
+func ScanPredicate(field string, buf []byte, lookup PredicateRegistry) (string, int, bool) {
+	fieldRegistry, ok := lookup[resolveFieldAlias(field)]
 	if !ok {
 		// This field has no registered predicates
 		return "", 0, false
 	}
 
-	predicateName, nameAdvance, ok := ScanPredicateName(fieldRegistry, buf)
+	predicateName, nameAdvance, ok := ScanPredicateName(buf, fieldRegistry)
 	if !ok {
 		return "", 0, false
 	}
@@ -431,8 +431,8 @@ func ScanPredicate(field string, buf []byte) (string, int, bool) {
 	return predicateName + params, nameAdvance + paramsAdvance, true
 }
 
-// ScanPredicateName scans for a well-known predicate name for he given field
-func ScanPredicateName(fieldRegistry map[string]func() Predicate, buf []byte) (string, int, bool) {
+// ScanPredicateName scans whether buf contains a well-known name in the predicate lookup table.
+func ScanPredicateName(buf []byte, lookup PredicateTable) (string, int, bool) {
 	var predicateName string
 	var advance int
 	for {
@@ -448,7 +448,7 @@ func ScanPredicateName(fieldRegistry map[string]func() Predicate, buf []byte) (s
 		advance += i
 	}
 
-	if _, ok := fieldRegistry[predicateName]; !ok {
+	if _, ok := lookup[predicateName]; !ok {
 		// The string is not a predicate
 		return "", 0, false
 	}
@@ -742,7 +742,7 @@ func (p *parser) ParseFieldValue(field string) (string, labels, error) {
 		return delimited('"')
 	}
 
-	value, advance, ok := ScanPredicate(field, p.buf[p.pos:])
+	value, advance, ok := ScanPredicate(field, p.buf[p.pos:], DefaultPredicateRegistry)
 	if ok {
 		p.pos += advance
 		return value, IsPredicate, nil
@@ -769,26 +769,35 @@ func (p *parser) TryParseDelimitedPattern() (Pattern, bool) {
 	if value, delimiter, ok := p.TryParseDelimiter(); ok {
 		var labels labels
 		if delimiter == '/' {
-			// This is a regex-delimited pattern
-			labels = Regexp
+			if value != "" {
+				// This is a non-empty regex-delimited pattern
+				labels = Regexp
+			} else {
+				// This is an empty `//` delimited pattern:
+				// treat this heuristically as a literal //
+				// pattern instead, since the an empty regex
+				// pattern offers lower utitility.
+				value = "//"
+				labels = Literal
+			}
 		} else {
 			labels = Literal | Quoted
 		}
-		return newPattern(value, false, labels, newRange(start, p.pos)), true
+		return newPattern(value, labels, newRange(start, p.pos)), true
 	}
 	return Pattern{}, false
 }
 
 func (p *parser) TryScanBalancedPattern(label labels) (Pattern, bool) {
 	if value, advance, ok := ScanBalancedPattern(p.buf[p.pos:]); ok {
-		pattern := newPattern(value, false, label, newRange(p.pos, p.pos+advance))
+		pattern := newPattern(value, label, newRange(p.pos, p.pos+advance))
 		p.pos += advance
 		return pattern, true
 	}
 	return Pattern{}, false
 }
 
-func newPattern(value string, negated bool, labels labels, range_ Range) Pattern {
+func newPattern(value string, labels labels, range_ Range) Pattern {
 	return Pattern{
 		Value:   value,
 		Negated: false,
@@ -828,7 +837,7 @@ func (p *parser) ParsePattern(label labels) Pattern {
 		label.set(HeuristicDanglingParens)
 	}
 	p.pos += advance
-	return newPattern(value, false, label, newRange(start, p.pos))
+	return newPattern(value, label, newRange(start, p.pos))
 
 }
 
@@ -908,7 +917,7 @@ loop:
 					if label.IsSet(Literal) {
 						label.set(HeuristicParensAsPatterns)
 					}
-					pattern := newPattern(value, false, label, newRange(p.pos, p.pos+advance))
+					pattern := newPattern(value, label, newRange(p.pos, p.pos+advance))
 					p.pos += advance
 					nodes = append(nodes, pattern)
 					continue
@@ -934,7 +943,7 @@ loop:
 				// We parsed "()".
 				if isSet(p.heuristics, parensAsPatterns) {
 					// Interpret literally.
-					nodes = []Node{newPattern("()", false, Literal|HeuristicParensAsPatterns, newRange(start, p.pos))}
+					nodes = []Node{newPattern("()", Literal|HeuristicParensAsPatterns, newRange(start, p.pos))}
 				} else {
 					// Interpret as a group: return an empty non-nil node.
 					nodes = []Node{Parameter{}}

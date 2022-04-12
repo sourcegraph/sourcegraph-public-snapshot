@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 )
 
@@ -41,7 +42,7 @@ func (r *IndexesResolver) resolve(ctx context.Context) error {
 	}
 
 	r.Indexes = indexes
-	r.NextOffset = nextOffset(r.opts.Offset, len(indexes), totalCount)
+	r.NextOffset = graphqlutil.NextOffset(r.opts.Offset, len(indexes), totalCount)
 	r.TotalCount = totalCount
 	return nil
 }

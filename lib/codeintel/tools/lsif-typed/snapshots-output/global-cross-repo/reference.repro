@@ -1,0 +1,6 @@
+ # Reference a global symbol from another workspace.
+ reference global global-workspace hello.repro/hello().
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference local ERROR_UNRESOLVED_SYMBOL
+ reference global duplicates duplicate.repro/readFileSync.
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference duplicates duplicate.repro/readFileSync.
+ 

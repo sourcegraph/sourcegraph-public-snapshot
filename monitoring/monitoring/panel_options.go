@@ -109,7 +109,7 @@ func (panelOptionsLibrary) OpinionatedGraphPanelDefaults() ObservablePanelOption
 		// We use "value" as the default legend format and not, say, "{{instance}}" or
 		// an empty string (Grafana defaults to all labels in that case) because:
 		//
-		// 1. Using "{{instance}}" is often wrong, see: https://about.sourcegraph.com/handbook/engineering/observability/monitoring_pillars#faq-why-can-t-i-create-a-graph-panel-with-more-than-5-cardinality-labels
+		// 1. Using "{{instance}}" is often wrong, see: https://handbook.sourcegraph.com/engineering/observability/monitoring_pillars#graphs-should-have-less-than-5-cardinality
 		// 2. More often than not, you actually do want to aggregate your whole query with `sum()`, `max()` or similar.
 		// 3. If "{{instance}}" or similar was the default, it would be easy for people to say "I guess that's intentional"
 		//    instead of seeing multiple "value" labels on their dashboard (which immediately makes them think
@@ -193,8 +193,11 @@ func (panelOptionsLibrary) ColorOverride(seriesName string, color string) Observ
 //
 // Only supports `PanelTypeGraph`.
 func (panelOptionsLibrary) LegendOnRight() ObservablePanelOption {
-	return func(_ Observable, panel *sdk.Panel) {
-		panel.GraphPanel.Legend.RightSide = true
+	return func(o Observable, panel *sdk.Panel) {
+		switch o.Panel.panelType {
+		case PanelTypeGraph:
+			panel.GraphPanel.Legend.RightSide = true
+		}
 	}
 }
 

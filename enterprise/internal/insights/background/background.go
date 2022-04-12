@@ -6,6 +6,9 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/pings"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
@@ -31,7 +34,7 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 	insightsStore := store.New(insightsDB, insightPermStore)
 
 	// Create a base store to be used for storing worker state. We store this in the main app Postgres
-	// DB, not the TimescaleDB (which we use only for storing insights data.)
+	// DB, not the insights DB (which we use only for storing insights data.)
 	workerBaseStore := basestore.NewWithDB(mainAppDB, sql.TxOptions{})
 
 	// Create basic metrics for recording information about background jobs.
@@ -40,29 +43,20 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
-	queryRunnerWorkerMetrics, queryRunnerResetterMetrics := newWorkerMetrics(observationContext, "insights_search_queue")
 
 	insightsMetadataStore := store.NewInsightStore(insightsDB)
 
-	workerStore := queryrunner.CreateDBWorkerStore(workerBaseStore, observationContext)
-
 	// Start background goroutines for all of our workers.
+	// The query runner worker is started in a separate routine so it can benefit from horizontal scaling.
 	routines := []goroutine.BackgroundRoutine{
 		// Register the background goroutine which discovers and enqueues insights work.
 		newInsightEnqueuer(ctx, workerBaseStore, insightsMetadataStore, observationContext),
-
-		// Register the query-runner worker and resetter, which executes search queries and records
-		// results to TimescaleDB.
-		queryrunner.NewWorker(ctx, workerStore, insightsStore, queryRunnerWorkerMetrics),
-		queryrunner.NewResetter(ctx, workerStore, queryRunnerResetterMetrics),
-		// disabling the cleaner job while we debug mismatched results from historical insights
-		queryrunner.NewCleaner(ctx, workerBaseStore, observationContext),
 
 		// TODO(slimsag): future: register another worker here for webhook querying.
 	}
 
 	// todo(insights) add setting to disable this indexer
-	routines = append(routines, compression.NewCommitIndexerWorker(ctx, mainAppDB, insightsDB))
+	routines = append(routines, compression.NewCommitIndexerWorker(ctx, database.NewDB(mainAppDB), insightsDB, observationContext))
 
 	// Register the background goroutine which discovers historical gaps in data and enqueues
 	// work to fill them - if not disabled.
@@ -71,9 +65,50 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 		routines = append(routines, newInsightHistoricalEnqueuer(ctx, workerBaseStore, insightsMetadataStore, insightsStore, observationContext))
 	}
 
-	routines = append(routines, discovery.NewMigrateSettingInsightsJob(ctx, mainAppDB, insightsDB))
+	// this flag will allow users to ENABLE the settings sync job. This is a last resort option if for some reason the new GraphQL API does not work. This
+	// should not be published as an option externally, and will be deprecated as soon as possible.
+	enableSync, _ := strconv.ParseBool(os.Getenv("ENABLE_CODE_INSIGHTS_SETTINGS_STORAGE"))
+	if enableSync {
+		log15.Warn("Enabling Code Insights Settings Storage - This is a deprecated functionality!")
+		routines = append(routines, discovery.NewMigrateSettingInsightsJob(ctx, mainAppDB, insightsDB))
+	}
+	routines = append(
+		routines,
+		pings.NewInsightsPingEmitterJob(ctx, mainAppDB, insightsDB),
+		NewInsightsDataPrunerJob(ctx, mainAppDB, insightsDB),
+		NewLicenseCheckJob(ctx, mainAppDB, insightsDB),
+	)
 
 	return routines
+}
+
+// GetBackgroundQueryRunnerJob is the main entrypoint for starting the background jobs for code
+// insights query runner. It is called from the worker service.
+func GetBackgroundQueryRunnerJob(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.DB) []goroutine.BackgroundRoutine {
+	insightPermStore := store.NewInsightPermissionStore(mainAppDB)
+	insightsStore := store.New(insightsDB, insightPermStore)
+
+	// Create a base store to be used for storing worker state. We store this in the main app Postgres
+	// DB, not the insights DB (which we use only for storing insights data.)
+	workerBaseStore := basestore.NewWithDB(mainAppDB, sql.TxOptions{})
+
+	// Create basic metrics for recording information about background jobs.
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+	queryRunnerWorkerMetrics, queryRunnerResetterMetrics := newWorkerMetrics(observationContext, "query_runner_worker")
+
+	workerStore := queryrunner.CreateDBWorkerStore(workerBaseStore, observationContext)
+
+	return []goroutine.BackgroundRoutine{
+		// Register the query-runner worker and resetter, which executes search queries and records
+		// results to the insights DB.
+		queryrunner.NewWorker(ctx, workerStore, insightsStore, queryRunnerWorkerMetrics),
+		queryrunner.NewResetter(ctx, workerStore, queryRunnerResetterMetrics),
+		queryrunner.NewCleaner(ctx, workerBaseStore, observationContext),
+	}
 }
 
 // newWorkerMetrics returns a basic set of metrics to be used for a worker and its resetter:
@@ -85,7 +120,7 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 // Individual insights workers may then _also_ want to register their own metrics, if desired, in
 // their NewWorker functions.
 func newWorkerMetrics(observationContext *observation.Context, workerName string) (workerutil.WorkerMetrics, dbworker.ResetterMetrics) {
-	workerMetrics := workerutil.NewMetrics(observationContext, workerName+"_processor", nil)
+	workerMetrics := workerutil.NewMetrics(observationContext, workerName+"_processor")
 	resetterMetrics := dbworker.NewMetrics(observationContext, workerName)
 	return workerMetrics, *resetterMetrics
 }

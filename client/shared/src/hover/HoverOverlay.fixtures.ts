@@ -1,5 +1,4 @@
 import { action } from '@storybook/addon-actions'
-import { boolean } from '@storybook/addon-knobs'
 import { createMemoryHistory } from 'history'
 import { of } from 'rxjs'
 import { MarkupContent, Badged, AggregableBadge } from 'sourcegraph'
@@ -8,6 +7,7 @@ import { MarkupKind } from '@sourcegraph/extension-api-classes'
 
 import { ActionItemAction } from '../actions/ActionItem'
 import { PlatformContext } from '../platform/context'
+import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '../settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 
 import { HoverOverlayProps } from './HoverOverlay'
@@ -19,8 +19,7 @@ const NOOP_PLATFORM_CONTEXT: Pick<PlatformContext, 'forceUpdateTooltip' | 'setti
     settings: of({ final: {}, subjects: [] }),
 }
 
-export const commonProps = (): HoverOverlayProps => ({
-    showCloseButton: boolean('showCloseButton', true),
+export const commonProps = (): HoverOverlayProps & SettingsCascadeProps => ({
     location: history.location,
     telemetryService: NOOP_TELEMETRY_SERVICE,
     extensionsController: NOOP_EXTENSIONS_CONTROLLER,
@@ -28,7 +27,7 @@ export const commonProps = (): HoverOverlayProps => ({
     isLightTheme: true,
     overlayPosition: { top: 16, left: 16 },
     onAlertDismissed: action('onAlertDismissed'),
-    onCloseButtonClick: action('onCloseButtonClick'),
+    settingsCascade: EMPTY_SETTINGS_CASCADE,
 })
 
 export const FIXTURE_CONTENT: Badged<MarkupContent> = {

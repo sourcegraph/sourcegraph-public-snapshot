@@ -3,7 +3,7 @@ package extsvc
 import (
 	"encoding/json"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func setJSONOrError(field **json.RawMessage, value interface{}) {

@@ -1,10 +1,12 @@
 package query
 
 import (
-	"regexp"
+	"regexp/syntax" //nolint:depguard
 	"strings"
 
-	"github.com/cockroachdb/errors"
+	"github.com/grafana/regexp"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Predicate interface {
@@ -20,17 +22,22 @@ type Predicate interface {
 	// into the predicate object.
 	ParseParams(string) error
 
-	// Plan generates a plan of (possibly multiple) queries to execute the
-	// behavior of a predicate in a query Q.
+	// Plan optionally generates a plan of queries to evaluate. Currently
+	// all such queries are evaluated and the results are substituted in the
+	// original query. If Plan returns nil, it means this predicate doesn't
+	// need evaluation and just exposes it's value in the query, which can
+	// be used for any purpose.
 	Plan(parent Basic) (Plan, error)
 }
 
-var DefaultPredicateRegistry = predicateRegistry{
+var DefaultPredicateRegistry = PredicateRegistry{
 	FieldRepo: {
 		"contains":              func() Predicate { return &RepoContainsPredicate{} },
 		"contains.file":         func() Predicate { return &RepoContainsFilePredicate{} },
 		"contains.content":      func() Predicate { return &RepoContainsContentPredicate{} },
 		"contains.commit.after": func() Predicate { return &RepoContainsCommitAfterPredicate{} },
+		"dependencies":          func() Predicate { return &RepoDependenciesPredicate{} },
+		"deps":                  func() Predicate { return &RepoDependenciesPredicate{} },
 	},
 	FieldFile: {
 		"contains.content": func() Predicate { return &FileContainsContentPredicate{} },
@@ -38,11 +45,15 @@ var DefaultPredicateRegistry = predicateRegistry{
 	},
 }
 
-type predicateRegistry map[string]map[string]func() Predicate
+// PredicateTable is a lookup map of one or more predicate names that resolve to the Predicate type.
+type PredicateTable map[string]func() Predicate
+
+// PredicateRegistry is a lookup map of predicate tables associated with all fields.
+type PredicateRegistry map[string]PredicateTable
 
 // Get returns a predicate for the given field with the given name. It assumes
 // it exists, and panics otherwise.
-func (pr predicateRegistry) Get(field, name string) Predicate {
+func (pr PredicateRegistry) Get(field, name string) Predicate {
 	fieldPredicates, ok := pr[field]
 	if !ok {
 		panic("predicate lookup for " + field + " is invalid")
@@ -72,6 +83,14 @@ func ParseAsPredicate(value string) (name, params string) {
 	params = match[paramsIndex]
 	return name, params
 }
+
+// EmptyPredicate is a noop value that satisfies the Predicate interface.
+type EmptyPredicate struct{}
+
+func (EmptyPredicate) Field() string            { return "" }
+func (EmptyPredicate) Name() string             { return "" }
+func (EmptyPredicate) ParseParams(string) error { return nil }
+func (EmptyPredicate) Plan(Basic) (Plan, error) { return nil, nil }
 
 // RepoContainsPredicate represents the `repo:contains()` predicate,
 // which filters to repos that contain either a file or content
@@ -249,6 +268,36 @@ func (f *RepoContainsCommitAfterPredicate) Plan(parent Basic) (Plan, error) {
 	return ToPlan(Dnf(nodes))
 }
 
+// RepoDependenciesPredicate represents the `repo:dependencies(regex@rev)` predicate,
+// which filters to repos that are dependencies of the repos matching the given of regex.
+type RepoDependenciesPredicate struct{}
+
+func (f *RepoDependenciesPredicate) ParseParams(params string) (err error) {
+	re := params
+	if n := strings.LastIndex(params, "@"); n > 0 {
+		re = re[:n]
+	}
+
+	if re == "" {
+		return errors.Errorf("empty repo:dependencies predicate parameter %q", params)
+	}
+
+	_, err = syntax.Parse(re, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
+	if err != nil {
+		return errors.Errorf("invalid repo:dependencies predicate parameter %q: %v", params, err)
+	}
+
+	return nil
+}
+
+func (f *RepoDependenciesPredicate) Field() string { return FieldRepo }
+func (f *RepoDependenciesPredicate) Name() string  { return "dependencies" }
+func (f *RepoDependenciesPredicate) Plan(parent Basic) (Plan, error) {
+	return nil, nil
+}
+
+/* repo:contains.content(pattern) */
+
 type FileContainsContentPredicate struct {
 	Pattern string
 }
@@ -297,7 +346,6 @@ func nonPredicateRepos(q Basic) []Node {
 		case
 			FieldRepo,
 			FieldContext,
-			FieldRepoGroup,
 			FieldIndex,
 			FieldFork,
 			FieldArchived,

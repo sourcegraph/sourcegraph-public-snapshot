@@ -1,0 +1,166 @@
+# regex_small
+patterntype:regexp se[arc]{3}hZoekt
+
+# regex_medium
+patterntype:regexp can_handle_hl_color\b
+
+# regex_large
+patterntype:regexp try_init
+
+# regex_two_sameline
+patterntype:regexp matt senses
+
+# regex_three_sameline
+patterntype:regexp mk tim hike
+
+# regex_repo_scope_small
+patterntype:regexp repo:^github\.com/sgtest/slate$ getfragment
+
+# regex_repo_scope_large
+patterntype:regexp repo:^github\.com/sgtest/flutter_inappwebview$ count:800 add\w+
+
+# regex_file_scope
+patterntype:regexp repo:^github\.com/sgtest/kubernetes$ file:^cluster/gce/gci Installing
+
+# structural_repo_scope_small
+patterntype:structural repo:^github\.com/sgtest/fastapi-crud-async$ file:^src/app async def :[1](...)
+
+# structural_multi_repo_small
+patterntype:structural repo:^github\.com/sourcegraph/ strings.ToUpper(...)
+
+# literal_small
+patterntype:literal --exclude-task=test
+
+# literal_large
+patterntype:literal lang:go -file:vendor/ count:1000 cfssl
+
+# literal_repo_scope
+patterntype:literal repo:^github\.com/sgtest/element$ repeat-click
+
+# literal_repo_excluded_scope
+patterntype:literal -repo:^github\.com/sourcegraph/sourcegraph$ --exclude-task=test
+
+# literal_file_scope
+patterntype:literal repo:^github\.com/sgtest/cockroach-gen$ file:^pkg/ccl/importccl/read_import_csv\.go p.record
+
+# symbol_small
+type:symbol IndexFormatVersion
+
+# diff_small
+type:diff repo:^github\.com/sourcegraph/sourcegraph$ author:camden before:"february 1 2021"
+
+# commit_small
+type:commit repo:^github\.com/sourcegraph/sourcegraph$ author:camden before:"february 1 2021"
+
+# literal_small_select_repo
+patterntype:literal --exclude-task=test select:repo
+
+# literal_large_select_repo
+patterntype:literal lang:go -file:vendor/ count:1000 cfssl select:repo
+
+# and_regex
+patterntype:regexp \beven\b and \bintelligence\b and \bdream\b and \bsimplest\b
+
+# or_regex
+patterntype:regexp \bdeadbeeeeef\b or \bdeadbeeeeeef\b or \bdeadBEEEEEF\b or \bdeadbeeeeef\b or \bdeadbeeeeeef\b or \bdeadBEEEEEF\b or \bdoResults\b
+
+# or_literal_simple
+patterntype:literal readUInt16LE or readUInt8
+
+## mono_ queries cherry-pick the above queries but are run on our synthetic
+## monorepo. The queries specifying rev: will use the latest commit, not just
+## the latest indexed commit.
+
+# mono_regex_small
+repo:^github\.com/sgtest/megarepo$ patterntype:regexp se[arc]{3}hZoekt
+
+# mono_rev_regex_small
+repo:^github\.com/sgtest/megarepo$ patterntype:regexp se[arc]{3}hZoekt rev:main
+
+# mono_structural_small
+repo:^github\.com/sgtest/megarepo$ patterntype:structural strings.ToUpper(...)
+
+# mono_rev_structural_small
+repo:^github\.com/sgtest/megarepo$ patterntype:structural strings.ToUpper(...) rev:main
+
+# mono_symbol_small
+repo:^github\.com/sgtest/megarepo$ type:symbol IndexFormatVersion
+
+# mono_rev_symbol_small
+repo:^github\.com/sgtest/megarepo$ type:symbol IndexFormatVersion rev:main
+
+# mono_diff_small
+repo:^github\.com/sgtest/megarepo$ type:diff   author:camden before:"february 1 2021"
+
+# mono_commit_small
+repo:^github\.com/sgtest/megarepo$ type:commit author:camden before:"february 1 2021"
+
+# mono_literal_small
+repo:^github\.com/sgtest/megarepo$ patterntype:literal --exclude-task=test
+
+# mono_rev_literal_small
+repo:^github\.com/sgtest/megarepo$ patterntype:literal --exclude-task=test rev:main
+
+# mono_literal_large
+repo:^github\.com/sgtest/megarepo$ patterntype:literal lang:go -file:vendor/ count:1000 TempDir
+
+# mono_rev_literal_large
+repo:^github\.com/sgtest/megarepo$ patterntype:literal lang:go -file:vendor/ count:1000 TempDir rev:main
+
+
+## incremental_ queries consist of standard queries that run against two versions of
+## sourcegraph/sourcegraph that use different indexing strategies:
+##
+## - incremental_delta_  queries run against a fork of sourcegraph/sourcegraph that uses the experimental delta
+##                       indexing strategy: https://github.com/sourcegraph/sourcegraph-incremental-indexing-fork
+##
+## - incremental_normal_ queries run against the main sourcegraph/sourcegraph repository that uses the "normal"
+##                       (non-delta) indexing strategy: https://github.com/sourcegraph/sourcegraph
+
+# incremental_delta_literal_small
+repo:^github\.com/sourcegraph/sourcegraph-incremental-indexing-fork$ patterntype:literal bitbucketserver.Activity
+
+# incremental_normal_literal_small
+repo:^github\.com/sourcegraph/sourcegraph$ patterntype:literal bitbucketserver.Activity
+
+# incremental_delta_literal_large
+repo:^github\.com/sourcegraph/sourcegraph-incremental-indexing-fork$ patterntype:literal time.Duration count:1000
+
+# incremental_normal_literal_large
+repo:^github\.com/sourcegraph/sourcegraph$ patterntype:literal time.Duration count:1000
+
+# incremental_delta_regex_small
+repo:^github\.com/sourcegraph/sourcegraph-incremental-indexing-fork$ patterntype:regexp se[arc]{3}hZoekt
+
+# incremental_normal_regex_small
+repo:^github\.com/sourcegraph/sourcegraph$ patterntype:regexp se[arc]{3}hZoekt
+
+# incremental_delta_rev_regex_small
+repo:^github\.com/sourcegraph/sourcegraph-incremental-indexing-fork$ patterntype:regexp se[arc]{3}hZoekt rev:main
+
+# incremental_normal_rev_regex_small
+repo:^github\.com/sourcegraph/sourcegraph$ patterntype:regexp se[arc]{3}hZoekt rev:main
+
+# incremental_delta_symbol_small
+repo:^github\.com/sourcegraph/sourcegraph-incremental-indexing-fork$ type:symbol redispool
+
+# incremental_normal_symbol_small
+repo:^github\.com/sourcegraph/sourcegraph$ type:symbol redispool
+
+# incremental_delta_rev_symbol_small
+repo:^github\.com/sourcegraph/sourcegraph-incremental-indexing-fork$ type:symbol redispool rev:main
+
+# incremental_normal_rev_symbol_small
+repo:^github\.com/sourcegraph/sourcegraph$ type:symbol redispool rev:main
+
+# incremental_delta_diff_small
+repo:^github\.com/sourcegraph/sourcegraph-incremental-indexing-fork$ type:diff author:camden before:"february 1 2021"
+
+# incremental_normal_diff_small
+repo:^github\.com/sourcegraph/sourcegraph$ type:diff author:camden before:"february 1 2021"
+
+# incremental_delta_commit_small
+repo:^github\.com/sourcegraph/sourcegraph-incremental-indexing-fork$ type:commit author:camden before:"february 1 2021"
+
+# incremental_normal_commit_small
+repo:^github\.com/sourcegraph/sourcegraph$ type:commit author:camden before:"february 1 2021"

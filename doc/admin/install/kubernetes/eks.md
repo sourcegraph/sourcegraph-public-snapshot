@@ -1,4 +1,4 @@
-# Kubernetes on Amazon EKS
+# Sourcegraph with Kubernetes on Amazon EKS
 
 [Amazon EKS](https://aws.amazon.com/eks/) is Amazon's managed Kubernetes offering, similar to how Google Cloud offers managed Kubernetes clusters (GKE).
 

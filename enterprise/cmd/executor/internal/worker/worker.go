@@ -7,7 +7,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
@@ -16,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // canceledJobsPollInterval denotes the time in between calls to the API to get a
@@ -55,9 +55,6 @@ type Options struct {
 	// ResourceOptions configures the resource limits of docker container and Firecracker
 	// virtual machines running on the executor.
 	ResourceOptions command.ResourceOptions
-
-	// MaximumRuntimePerJob is the maximum wall time that can be spent on a single job.
-	MaximumRuntimePerJob time.Duration
 }
 
 // NewWorker creates a worker that polls a remote job queue API for work. The returned
@@ -116,7 +113,7 @@ func connectToFrontend(queueStore *apiclient.Client, options Options) bool {
 	defer ticker.Stop()
 
 	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, syscall.SIGHUP, syscall.SIGINT)
+	signal.Notify(signals, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
 	defer signal.Stop(signals)
 
 	for {

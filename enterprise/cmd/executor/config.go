@@ -12,34 +12,34 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Config struct {
 	env.BaseConfig
 
-	FrontendURL          string
-	FrontendUsername     string
-	FrontendPassword     string
-	QueueName            string
-	QueuePollInterval    time.Duration
-	MaximumNumJobs       int
-	FirecrackerImage     string
-	VMStartupScriptPath  string
-	VMPrefix             string
-	UseFirecracker       bool
-	FirecrackerNumCPUs   int
-	FirecrackerMemory    string
-	FirecrackerDiskSpace string
-	MaximumRuntimePerJob time.Duration
-	CleanupTaskInterval  time.Duration
-	NumTotalJobs         int
-	MaxActiveTime        time.Duration
+	FrontendURL                string
+	FrontendAuthorizationToken string
+	QueueName                  string
+	QueuePollInterval          time.Duration
+	MaximumNumJobs             int
+	FirecrackerImage           string
+	VMStartupScriptPath        string
+	VMPrefix                   string
+	UseFirecracker             bool
+	FirecrackerNumCPUs         int
+	FirecrackerMemory          string
+	FirecrackerDiskSpace       string
+	MaximumRuntimePerJob       time.Duration
+	CleanupTaskInterval        time.Duration
+	NumTotalJobs               int
+	MaxActiveTime              time.Duration
+	WorkerHostname             string
 }
 
 func (c *Config) Load() {
 	c.FrontendURL = c.Get("EXECUTOR_FRONTEND_URL", "", "The external URL of the sourcegraph instance.")
-	c.FrontendUsername = c.Get("EXECUTOR_FRONTEND_USERNAME", "", "The username supplied to the frontend.")
-	c.FrontendPassword = c.Get("EXECUTOR_FRONTEND_PASSWORD", "", "The password supplied to the frontend.")
+	c.FrontendAuthorizationToken = c.Get("EXECUTOR_FRONTEND_PASSWORD", "", "The authorization token supplied to the frontend.")
 	c.QueueName = c.Get("EXECUTOR_QUEUE_NAME", "", "The name of the queue to listen to.")
 	c.QueuePollInterval = c.GetInterval("EXECUTOR_QUEUE_POLL_INTERVAL", "1s", "Interval between dequeue requests.")
 	c.MaximumNumJobs = c.GetInt("EXECUTOR_MAXIMUM_NUM_JOBS", "1", "Number of virtual machines or containers that can be running at once.")
@@ -54,44 +54,49 @@ func (c *Config) Load() {
 	c.CleanupTaskInterval = c.GetInterval("EXECUTOR_CLEANUP_TASK_INTERVAL", "1m", "The frequency with which to run periodic cleanup tasks.")
 	c.NumTotalJobs = c.GetInt("EXECUTOR_NUM_TOTAL_JOBS", "0", "The maximum number of jobs that will be dequeued by the worker.")
 	c.MaxActiveTime = c.GetInterval("EXECUTOR_MAX_ACTIVE_TIME", "0", "The maximum time that can be spent by the worker dequeueing records to be handled.")
+
+	hn := hostname.Get()
+	// Be unique but also descriptive.
+	c.WorkerHostname = hn + "-" + uuid.New().String()
 }
 
 func (c *Config) Validate() error {
 	if c.FirecrackerNumCPUs != 1 && c.FirecrackerNumCPUs%2 != 0 {
 		// Required by Firecracker: The vCPU number is invalid! The vCPU number can only be 1 or an even number when hyperthreading is enabled
-		c.AddError(fmt.Errorf("EXECUTOR_FIRECRACKER_NUM_CPUS must be 1 or an even number"))
+		c.AddError(errors.Newf("EXECUTOR_FIRECRACKER_NUM_CPUS must be 1 or an even number"))
 	}
 
 	return c.BaseConfig.Validate()
 }
 
-func (c *Config) APIWorkerOptions() apiworker.Options {
+func (c *Config) APIWorkerOptions(telemetryOptions apiclient.TelemetryOptions) apiworker.Options {
 	return apiworker.Options{
-		VMPrefix:             c.VMPrefix,
-		QueueName:            c.QueueName,
-		WorkerOptions:        c.WorkerOptions(),
-		FirecrackerOptions:   c.FirecrackerOptions(),
-		ResourceOptions:      c.ResourceOptions(),
-		MaximumRuntimePerJob: c.MaximumRuntimePerJob,
-		GitServicePath:       "/.executors/git",
-		ClientOptions:        c.ClientOptions(),
+		VMPrefix:           c.VMPrefix,
+		QueueName:          c.QueueName,
+		WorkerOptions:      c.WorkerOptions(),
+		FirecrackerOptions: c.FirecrackerOptions(),
+		ResourceOptions:    c.ResourceOptions(),
+		GitServicePath:     "/.executors/git",
+		ClientOptions:      c.ClientOptions(telemetryOptions),
 		RedactedValues: map[string]string{
 			// 🚨 SECURITY: Catch uses of the shared frontend token used to clone
 			// git repositories that make it into commands or stdout/stderr streams.
-			c.FrontendPassword: "PASSWORD_REMOVED",
+			c.FrontendAuthorizationToken: "SECRET_REMOVED",
 		},
 	}
 }
 
 func (c *Config) WorkerOptions() workerutil.WorkerOptions {
 	return workerutil.WorkerOptions{
-		Name:              fmt.Sprintf("executor_%s_worker", c.QueueName),
-		NumHandlers:       c.MaximumNumJobs,
-		Interval:          c.QueuePollInterval,
-		HeartbeatInterval: 5 * time.Second,
-		Metrics:           makeWorkerMetrics(c.QueueName),
-		NumTotalJobs:      c.NumTotalJobs,
-		MaxActiveTime:     c.MaxActiveTime,
+		Name:                 fmt.Sprintf("executor_%s_worker", c.QueueName),
+		NumHandlers:          c.MaximumNumJobs,
+		Interval:             c.QueuePollInterval,
+		HeartbeatInterval:    5 * time.Second,
+		Metrics:              makeWorkerMetrics(c.QueueName),
+		NumTotalJobs:         c.NumTotalJobs,
+		MaxActiveTime:        c.MaxActiveTime,
+		WorkerHostname:       c.WorkerHostname,
+		MaximumRuntimePerJob: c.MaximumRuntimePerJob,
 	}
 }
 
@@ -111,16 +116,13 @@ func (c *Config) ResourceOptions() command.ResourceOptions {
 	}
 }
 
-func (c *Config) ClientOptions() apiclient.Options {
-	hn := hostname.Get()
-
+func (c *Config) ClientOptions(telemetryOptions apiclient.TelemetryOptions) apiclient.Options {
 	return apiclient.Options{
-		// Be unique but also descriptive.
-		ExecutorName:      hn + "-" + uuid.New().String(),
-		ExecutorHostname:  hn,
+		ExecutorName:      c.WorkerHostname,
 		PathPrefix:        "/.executors/queue",
 		EndpointOptions:   c.EndpointOptions(),
 		BaseClientOptions: c.BaseClientOptions(),
+		TelemetryOptions:  telemetryOptions,
 	}
 }
 
@@ -130,8 +132,7 @@ func (c *Config) BaseClientOptions() apiclient.BaseClientOptions {
 
 func (c *Config) EndpointOptions() apiclient.EndpointOptions {
 	return apiclient.EndpointOptions{
-		URL:      c.FrontendURL,
-		Username: c.FrontendUsername,
-		Password: c.FrontendPassword,
+		URL:   c.FrontendURL,
+		Token: c.FrontendAuthorizationToken,
 	}
 }

@@ -21,12 +21,12 @@ For example, this JSON will create two quick links:
   // ...
   "quicklinks": [
     {
-      "name": "ACMECorp main repo",
-      "url": "/github.com/acmecorp/main-repository"
+      "name": "ExampleCorp main repo",
+      "url": "/github.com/ExampleCorp/main-repository"
     },
     {
-      "name": "ACMECorp Sourcegraph docs",
-      "url": "https://dev.acme.com/docs/sourcegraph"
+      "name": "ExampleCorp Sourcegraph docs",
+      "url": "https://dev.example.com/docs/sourcegraph"
     }
   ]
   // ...

@@ -1,20 +1,21 @@
+import * as React from 'react'
+
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import AddIcon from 'mdi-react/AddIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import RadioactiveIcon from 'mdi-react/RadioactiveIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
-import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { asError } from '@sourcegraph/shared/src/util/errors'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { asError } from '@sourcegraph/common'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
-import { ErrorAlert } from '../components/alerts'
 import { CopyableText } from '../components/CopyableText'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
@@ -22,7 +23,16 @@ import { eventLogger } from '../tracking/eventLogger'
 import { userURL } from '../user'
 import { setUserEmailVerified } from '../user/settings/backend'
 
-import { deleteUser, fetchAllUsers, randomizeUserPassword, setUserIsSiteAdmin, invalidateSessionsByID } from './backend'
+import {
+    deleteUser,
+    fetchAllUsers,
+    randomizeUserPassword,
+    setUserIsSiteAdmin,
+    invalidateSessionsByID,
+    setUserTag,
+} from './backend'
+
+const CREATE_ORG_TAG = 'CreateOrg'
 
 interface UserNodeProps {
     /**
@@ -102,95 +112,132 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
     }
 
     public render(): JSX.Element | null {
+        const orgCreationLabel =
+            window.context.sourcegraphDotComMode && this.props.node.tags?.includes(CREATE_ORG_TAG)
+                ? 'Disable'
+                : 'Enable'
+
         return (
             <li className="list-group-item py-2">
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
-                        <Link to={`/users/${this.props.node.username}`}>
+                        {window.context.sourcegraphDotComMode ? (
                             <strong>{this.props.node.username}</strong>
-                        </Link>
+                        ) : (
+                            <Link to={`/users/${this.props.node.username}`}>
+                                <strong>{this.props.node.username}</strong>
+                            </Link>
+                        )}
                         <br />
                         <span className="text-muted">{this.props.node.displayName}</span>
                     </div>
                     <div>
-                        <Link className="btn btn-sm btn-secondary" to={`${userURL(this.props.node.username)}/settings`}>
-                            <SettingsIcon className="icon-inline" /> Settings
-                        </Link>{' '}
+                        {window.context.sourcegraphDotComMode && (
+                            <>
+                                <Button
+                                    onClick={() => this.toggleOrgCreationTag(orgCreationLabel === 'Enable')}
+                                    disabled={this.state.loading}
+                                    data-tooltip={`${orgCreationLabel} user tag to allow user to create organizations`}
+                                    variant="secondary"
+                                    size="sm"
+                                >
+                                    {orgCreationLabel} org creation
+                                </Button>{' '}
+                            </>
+                        )}
+                        {!window.context.sourcegraphDotComMode && (
+                                <Button
+                                    to={`${userURL(this.props.node.username)}/settings`}
+                                    variant="secondary"
+                                    size="sm"
+                                    as={Link}
+                                >
+                                    <Icon as={SettingsIcon} /> Settings
+                                </Button>
+                            ) &&
+                            ' '}
                         {this.props.node.id !== this.props.authenticatedUser.id && (
-                            <button
-                                type="button"
-                                className="btn btn-sm btn-secondary"
+                            <Button
                                 onClick={this.invalidateSessions}
                                 disabled={this.state.loading}
                                 data-tooltip="Force the user to re-authenticate on their next request"
+                                variant="secondary"
+                                size="sm"
                             >
                                 Force sign-out
-                            </button>
+                            </Button>
                         )}{' '}
                         {window.context.resetPasswordEnabled && (
-                            <button
-                                type="button"
-                                className="btn btn-sm btn-secondary"
+                            <Button
                                 onClick={this.randomizePassword}
                                 disabled={this.state.loading || !!this.state.resetPasswordURL}
+                                variant="secondary"
+                                size="sm"
                             >
                                 Reset password
-                            </button>
+                            </Button>
                         )}{' '}
                         {this.props.node.id !== this.props.authenticatedUser.id &&
                             (this.props.node.siteAdmin ? (
-                                <button
-                                    type="button"
-                                    className="btn btn-sm btn-secondary"
+                                <Button
                                     onClick={this.demoteFromSiteAdmin}
                                     disabled={this.state.loading}
+                                    variant="secondary"
+                                    size="sm"
                                 >
                                     Revoke site admin
-                                </button>
+                                </Button>
                             ) : (
-                                <button
-                                    type="button"
+                                <Button
                                     key="promote"
-                                    className="btn btn-sm btn-secondary"
                                     onClick={this.promoteToSiteAdmin}
                                     disabled={this.state.loading}
+                                    variant="secondary"
+                                    size="sm"
                                 >
                                     Promote to site admin
-                                </button>
+                                </Button>
                             ))}{' '}
                         {this.props.node.id !== this.props.authenticatedUser.id && (
-                            <button
-                                type="button"
-                                className="btn btn-sm btn-danger"
+                            <Button
                                 onClick={this.deleteUser}
                                 disabled={this.state.loading}
                                 data-tooltip="Delete user"
+                                variant="danger"
+                                size="sm"
                             >
-                                <DeleteIcon className="icon-inline" />
-                            </button>
+                                <Icon as={DeleteIcon} />
+                            </Button>
                         )}
                         {this.props.node.id !== this.props.authenticatedUser.id && (
-                            <button
-                                type="button"
-                                className="ml-1 btn btn-sm btn-danger"
+                            <Button
+                                className="ml-1"
                                 onClick={this.nukeUser}
                                 disabled={this.state.loading}
                                 data-tooltip="Nuke user (click for more information)"
+                                variant="danger"
+                                size="sm"
                             >
-                                <RadioactiveIcon className="icon-inline" />
-                            </button>
+                                <Icon as={RadioactiveIcon} />
+                            </Button>
                         )}
                     </div>
                 </div>
                 {this.state.errorDescription && <ErrorAlert className="mt-2" error={this.state.errorDescription} />}
                 {this.state.resetPasswordURL && (
-                    <div className="alert alert-success mt-2">
+                    <Alert className="mt-2" variant="success">
                         <p>
                             Password was reset. You must manually send <strong>{this.props.node.username}</strong> this
                             reset link:
                         </p>
                         <CopyableText text={this.state.resetPasswordURL} size={40} />
-                    </div>
+                    </Alert>
+                )}
+                {this.state.resetPasswordURL === null && (
+                    <Alert className="mt-2" variant="success">
+                        Password was reset. The reset link was sent to the primary email of the user:{' '}
+                        <strong>{this.props.node.emails.find(item => item.isPrimary)?.email}</strong>
+                    </Alert>
                 )}
             </li>
         )
@@ -308,6 +355,26 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                 error => this.setState({ loading: false, errorDescription: asError(error).message })
             )
     }
+
+    private toggleOrgCreationTag = (newValue: boolean): void => {
+        this.setState({
+            errorDescription: undefined,
+            resetPasswordURL: undefined,
+            loading: true,
+        })
+
+        setUserTag(this.props.node.id, CREATE_ORG_TAG, newValue)
+            .toPromise()
+            .then(() => {
+                this.setState({ loading: false })
+                if (this.props.onDidUpdate) {
+                    this.props.onDidUpdate()
+                }
+            })
+            .catch(error => {
+                this.setState({ loading: false, errorDescription: asError(error).message })
+            })
+    }
 }
 
 interface Props extends RouteComponentProps<{}> {
@@ -350,9 +417,9 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
                 <div className="d-flex justify-content-between align-items-center mb-3">
                     <h2 className="mb-0">Users</h2>
                     <div>
-                        <Link to="/site-admin/users/new" className="btn btn-primary">
-                            <AddIcon className="icon-inline" /> Create user account
-                        </Link>
+                        <Button to="/site-admin/users/new" variant="primary" as={Link}>
+                            <Icon as={AddIcon} /> Create user account
+                        </Button>
                     </div>
                 </div>
                 <FilteredConnection<GQL.IUser, Omit<UserNodeProps, 'node'>>

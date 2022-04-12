@@ -1,18 +1,20 @@
-import classNames from 'classnames'
 import * as React from 'react'
+
+import classNames from 'classnames'
 import { useLocation } from 'react-router'
 
+import { isDefined, property } from '@sourcegraph/common'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { DecorationMapByLine, decorationStyleForTheme } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { isDefined, property } from '@sourcegraph/shared/src/util/types'
 
 import { DiffHunkLineType, FileDiffHunkFields } from '../../graphql-operations'
 
 import { addLineNumberToHunks } from './addLineNumberToHunks'
 import { DiffBoundary } from './DiffBoundary'
-import diffHunkStyles from './DiffHunk.module.scss'
 import { EmptyLine, Line } from './Lines'
+
+import diffHunkStyles from './DiffHunk.module.scss'
 import linesStyles from './Lines.module.scss'
 
 type HunkZipped = [Hunk[], Hunk | undefined, number]

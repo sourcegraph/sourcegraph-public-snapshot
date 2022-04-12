@@ -7,37 +7,59 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestGitCommitResolver(t *testing.T) {
 	ctx := context.Background()
-	db := new(dbtesting.MockDB)
+	db := database.NewMockDB()
 
-	commit := &git.Commit{
+	commit := &gitdomain.Commit{
 		ID:      "c1",
 		Message: "subject: Changes things\nBody of changes",
 		Parents: []api.CommitID{"p1", "p2"},
-		Author: git.Signature{
+		Author: gitdomain.Signature{
 			Name:  "Bob",
 			Email: "bob@alice.com",
 			Date:  time.Now(),
 		},
-		Committer: &git.Signature{
+		Committer: &gitdomain.Signature{
 			Name:  "Alice",
 			Email: "alice@bob.com",
 			Date:  time.Now(),
 		},
 	}
 
+	t.Run("URL Escaping", func(t *testing.T) {
+		repo := NewRepositoryResolver(db, &types.Repo{Name: "xyz"})
+		commitResolver := NewGitCommitResolver(db, repo, "c1", commit)
+		{
+			inputRev := "master^1"
+			commitResolver.inputRev = &inputRev
+			require.Equal(t, "/xyz/-/commit/master%5E1", commitResolver.URL())
+
+			treeResolver := NewGitTreeEntryResolver(db, commitResolver, CreateFileInfo("a/b", false))
+			url, err := treeResolver.URL(ctx)
+			require.Nil(t, err)
+			require.Equal(t, "/xyz@master%5E1/-/blob/a/b", url)
+		}
+		{
+			inputRev := "refs/heads/main"
+			commitResolver.inputRev = &inputRev
+			require.Equal(t, "/xyz/-/commit/refs/heads/main", commitResolver.URL())
+		}
+	})
+
 	t.Run("Lazy loading", func(t *testing.T) {
-		git.Mocks.GetCommit = func(api.CommitID) (*git.Commit, error) {
+		git.Mocks.GetCommit = func(api.CommitID) (*gitdomain.Commit, error) {
 			return commit, nil
 		}
 		t.Cleanup(func() {
@@ -96,7 +118,7 @@ func TestGitCommitResolver(t *testing.T) {
 				repo := NewRepositoryResolver(db, &types.Repo{Name: "bob-repo"})
 				// We pass no commit here to test that it gets lazy loaded via
 				// the git.GetCommit mock above.
-				r := toGitCommitResolver(repo, db, "c1", nil)
+				r := NewGitCommitResolver(db, repo, "c1", nil)
 
 				have, err := tc.have(r)
 				if err != nil {
@@ -112,27 +134,33 @@ func TestGitCommitResolver(t *testing.T) {
 }
 
 func TestGitCommitFileNames(t *testing.T) {
-	resetMocks()
-	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-		return nil, nil
-	}
-	database.Mocks.Repos.MockGetByName(t, "github.com/gorilla/mux", 2)
+	externalServices := database.NewMockExternalServiceStore()
+	externalServices.ListFunc.SetDefaultReturn(nil, nil)
+
+	repos := database.NewMockRepoStore()
+	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
+
+	db := database.NewMockDB()
+	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+	db.ReposFunc.SetDefaultReturn(repos)
+
 	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		if repo.ID != 2 || rev != exampleCommitSHA1 {
-			t.Error("wrong arguments to Repos.ResolveRev")
-		}
+		assert.Equal(t, api.RepoID(2), repo.ID)
+		assert.Equal(t, exampleCommitSHA1, rev)
 		return exampleCommitSHA1, nil
 	}
-	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &git.Commit{ID: exampleCommitSHA1})
+	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &gitdomain.Commit{ID: exampleCommitSHA1})
 	git.Mocks.LsFiles = func(repo api.RepoName, commit api.CommitID) ([]string, error) {
 		return []string{"a", "b"}, nil
 	}
-
-	defer git.ResetMocks()
+	defer func() {
+		backend.Mocks = backend.MockServices{}
+		git.ResetMocks()
+	}()
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 				{
 					repository(name: "github.com/gorilla/mux") {

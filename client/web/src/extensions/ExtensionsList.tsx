@@ -1,22 +1,23 @@
-import classNames from 'classnames'
-import * as H from 'history'
 import React, { useMemo } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import classNames from 'classnames'
+import * as H from 'history'
+
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { isErrorLike } from '@sourcegraph/common'
 import { isExtensionEnabled } from '@sourcegraph/shared/src/extensions/extension'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { mergeSettings, SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { createRecord } from '@sourcegraph/shared/src/util/createRecord'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
-
-import { ErrorAlert } from '../components/alerts'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ExtensionCard } from './ExtensionCard'
 import { ExtensionCategoryOrAll, ExtensionListData, ExtensionsEnablement } from './ExtensionRegistry'
 import { applyEnablementFilter, applyWIPFilter } from './extensions'
 import { ExtensionsAreaRouteContext } from './ExtensionsArea'
+import { createRecord } from './utils/createRecord'
+
 import styles from './ExtensionsList.module.scss'
 
 interface Props
@@ -106,7 +107,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
     const settingsFromLastFilterChange = useMemo(() => settingsCascade.final, [enablementFilter])
 
     if (!data || data === LOADING) {
-        return <LoadingSpinner className="icon-inline mt-2" />
+        return <LoadingSpinner className="mt-2" />
     }
 
     if (isErrorLike(data)) {
@@ -216,13 +217,13 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
                     </div>
                     {extensionIDsForCategory.length > 6 && (
                         <div className="d-flex justify-content-center mt-4">
-                            <button
-                                type="button"
-                                className="btn btn-outline-secondary"
+                            <Button
                                 onClick={() => onShowFullCategoryClicked(category)}
+                                outline={true}
+                                variant="secondary"
                             >
                                 Show full category
-                            </button>
+                            </Button>
                         </div>
                     )}
                 </div>

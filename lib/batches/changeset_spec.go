@@ -1,10 +1,13 @@
 package batches
 
 import (
-	"github.com/cockroachdb/errors"
+	"encoding/json"
+	"reflect"
+	"strconv"
 
 	jsonutil "github.com/sourcegraph/sourcegraph/lib/batches/json"
 	"github.com/sourcegraph/sourcegraph/lib/batches/schema"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // ErrHeadBaseMismatch is returned by (*ChangesetSpec).UnmarshalValidate() if
@@ -30,6 +33,32 @@ func ParseChangesetSpec(rawSpec []byte) (*ChangesetSpec, error) {
 	return spec, nil
 }
 
+// ParseChangesetSpecExternalID attempts to parse the ID of a changeset in the
+// batch spec that should be imported.
+func ParseChangesetSpecExternalID(id interface{}) (string, error) {
+	var sid string
+
+	switch tid := id.(type) {
+	case string:
+		sid = tid
+	case int, int8, int16, int32, int64:
+		sid = strconv.FormatInt(reflect.ValueOf(id).Int(), 10)
+	case uint, uint8, uint16, uint32, uint64:
+		sid = strconv.FormatUint(reflect.ValueOf(id).Uint(), 10)
+	case float32:
+		sid = strconv.FormatFloat(float64(tid), 'f', -1, 32)
+	case float64:
+		sid = strconv.FormatFloat(tid, 'f', -1, 64)
+	default:
+		return "", NewValidationError(errors.Newf("cannot convert value of type %T into a valid external ID: expected string or int", id))
+	}
+
+	return sid, nil
+}
+
+// Note: When modifying this struct, make sure to reflect the new fields below in
+// the customized MarshalJSON method.
+
 type ChangesetSpec struct {
 	// BaseRepository is the GraphQL ID of the base repository.
 	BaseRepository string `json:"baseRepository,omitempty"`
@@ -51,6 +80,43 @@ type ChangesetSpec struct {
 	Commits []GitCommitDescription `json:"commits,omitempty"`
 
 	Published PublishedValue `json:"published,omitempty"`
+}
+
+// MarshalJSON overwrites the default behavior of the json lib while unmarshalling
+// a *ChangesetSpec. We explicitly only set Published, when it's non-nil. Due to
+// it not being a pointer, omitempty does nothing. That causes it to fail schema
+// validation.
+// TODO: This is the easiest workaround for now, without risking breaking anything
+// right before the release. Ideally, we split up this type into two separate ones
+// in the future.
+// See https://github.com/sourcegraph/sourcegraph/issues/25968.
+func (c *ChangesetSpec) MarshalJSON() ([]byte, error) {
+	v := struct {
+		BaseRepository string                 `json:"baseRepository,omitempty"`
+		ExternalID     string                 `json:"externalID,omitempty"`
+		BaseRev        string                 `json:"baseRev,omitempty"`
+		BaseRef        string                 `json:"baseRef,omitempty"`
+		HeadRepository string                 `json:"headRepository,omitempty"`
+		HeadRef        string                 `json:"headRef,omitempty"`
+		Title          string                 `json:"title,omitempty"`
+		Body           string                 `json:"body,omitempty"`
+		Commits        []GitCommitDescription `json:"commits,omitempty"`
+		Published      *PublishedValue        `json:"published,omitempty"`
+	}{
+		BaseRepository: c.BaseRepository,
+		ExternalID:     c.ExternalID,
+		BaseRev:        c.BaseRev,
+		BaseRef:        c.BaseRef,
+		HeadRepository: c.HeadRepository,
+		HeadRef:        c.HeadRef,
+		Title:          c.Title,
+		Body:           c.Body,
+		Commits:        c.Commits,
+	}
+	if !c.Published.Nil() {
+		v.Published = &c.Published
+	}
+	return json.Marshal(&v)
 }
 
 type GitCommitDescription struct {

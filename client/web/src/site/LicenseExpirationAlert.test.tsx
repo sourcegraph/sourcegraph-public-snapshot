@@ -1,19 +1,25 @@
-import { subMonths, addDays } from 'date-fns'
 import React from 'react'
-import renderer from 'react-test-renderer'
+
+import { subMonths, addDays } from 'date-fns'
+
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { LicenseExpirationAlert } from './LicenseExpirationAlert'
 
-describe('LicenseExpirationAlert.test.tsx', () => {
+describe('LicenseExpirationAlert', () => {
     test('expiring soon', () => {
         expect(
-            renderer.create(<LicenseExpirationAlert expiresAt={addDays(new Date(), 3)} daysLeft={3} />)
+            renderWithBrandedContext(
+                <LicenseExpirationAlert expiresAt={addDays(new Date(), 3)} daysLeft={3} />
+            ).asFragment()
         ).toMatchSnapshot()
     })
 
     test('expired', () => {
         expect(
-            renderer.create(<LicenseExpirationAlert expiresAt={subMonths(new Date(), 3)} daysLeft={0} />)
+            renderWithBrandedContext(
+                <LicenseExpirationAlert expiresAt={subMonths(new Date(), 3)} daysLeft={0} />
+            ).asFragment()
         ).toMatchSnapshot()
     })
 })

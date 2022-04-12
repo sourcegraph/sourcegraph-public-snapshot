@@ -2,9 +2,8 @@ package result
 
 import (
 	"net/url"
-	"strings"
-
 	"path"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -16,9 +15,9 @@ type File struct {
 	// InputRev is the Git revspec that the user originally requested to search. It is used to
 	// preserve the original revision specifier from the user instead of navigating them to the
 	// absolute commit ID when they select a result.
-	InputRev *string        `json:"-"`
-	Repo     types.RepoName `json:"-"`
-	CommitID api.CommitID   `json:"-"`
+	InputRev *string           `json:"-"`
+	Repo     types.MinimalRepo `json:"-"`
+	CommitID api.CommitID      `json:"-"`
 	Path     string
 }
 
@@ -39,7 +38,7 @@ func (f *File) URL() *url.URL {
 // FileMatch represents either:
 // - A collection of symbol results (len(Symbols) > 0)
 // - A collection of text content results (len(LineMatches) > 0)
-// - A result repsenting the whole file (len(Symbols) == 0 && len(LineMatches) == 0)
+// - A result representing the whole file (len(Symbols) == 0 && len(LineMatches) == 0)
 type FileMatch struct {
 	File
 
@@ -49,7 +48,7 @@ type FileMatch struct {
 	LimitHit bool
 }
 
-func (fm *FileMatch) RepoName() types.RepoName {
+func (fm *FileMatch) RepoName() types.MinimalRepo {
 	return fm.File.Repo
 }
 
@@ -64,6 +63,13 @@ func (fm *FileMatch) ResultCount() int {
 		return 1 // 1 to count "empty" results like type:path results
 	}
 	return rc
+}
+
+// IsPathMatch returns true if a `FileMatch` has no line or symbol matches. In
+// the absence of a true `PathMatch` type, we use this function as a proxy
+// signal to drive `select:file` logic that deduplicates path results.
+func (fm *FileMatch) IsPathMatch() bool {
+	return fm.LineMatches == nil && fm.Symbols == nil
 }
 
 func (fm *FileMatch) Select(selectPath filter.SelectPath) Match {
@@ -142,12 +148,18 @@ func (fm *FileMatch) Limit(limit int) int {
 }
 
 func (fm *FileMatch) Key() Key {
-	return Key{
+	k := Key{
 		TypeRank: rankFileMatch,
 		Repo:     fm.Repo.Name,
 		Commit:   fm.CommitID,
 		Path:     fm.Path,
 	}
+
+	if fm.InputRev != nil {
+		k.Rev = *fm.InputRev
+	}
+
+	return k
 }
 
 // LineMatch is the struct used by vscode to receive search results for a line

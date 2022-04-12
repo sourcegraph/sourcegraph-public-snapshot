@@ -1,9 +1,11 @@
 package debugproxies
 
 import (
+	"context"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
@@ -18,6 +20,8 @@ func TestClusterScan(t *testing.T) {
 	}
 
 	// test setup
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	client := fake.NewSimpleClientset()
 	const ns = "test-ns"
 	cs := &clusterScanner{
@@ -64,7 +68,7 @@ func TestClusterScan(t *testing.T) {
 		},
 	}
 	for _, e := range endpoints {
-		_, err := cs.client.Endpoints(ns).Create(&e)
+		_, err := cs.client.Endpoints(ns).Create(ctx, &e, metav1.CreateOptions{})
 		if err != nil {
 			t.Fatalf("unable to create test endpoint: %v", err)
 		}
@@ -115,13 +119,13 @@ func TestClusterScan(t *testing.T) {
 		},
 	}
 	for _, svc := range svcs {
-		_, err := cs.client.Services(ns).Create(&svc)
+		_, err := cs.client.Services(ns).Create(ctx, &svc, metav1.CreateOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	cs.scanCluster()
+	cs.scanCluster(ctx)
 
 	want := []Endpoint{{
 		Service:  "gitserver",
@@ -135,7 +139,10 @@ func TestClusterScan(t *testing.T) {
 		Addr:    "192.168.10.2:2324",
 	}}
 
-	if !cmp.Equal(want, eps) {
-		t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(want, eps))
+	sortOpt := cmpopts.SortSlices(func(x Endpoint, y Endpoint) bool {
+		return x.Service < y.Service
+	})
+	if d := cmp.Diff(want, eps, sortOpt); d != "" {
+		t.Errorf("mismatch (-want +got):\n%s", d)
 	}
 }

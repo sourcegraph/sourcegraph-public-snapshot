@@ -27,5 +27,5 @@ func (r *LocationConnectionResolver) Nodes(ctx context.Context) ([]gql.LocationR
 }
 
 func (r *LocationConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	return encodeCursor(r.cursor), nil
+	return graphqlutil.EncodeCursor(r.cursor), nil
 }

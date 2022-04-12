@@ -2,7 +2,6 @@ package testing
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 	"testing"
@@ -11,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -22,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestRepo(t *testing.T, store *database.ExternalServiceStore, serviceKind string) *types.Repo {
+func TestRepo(t *testing.T, store database.ExternalServiceStore, serviceKind string) *types.Repo {
 	t.Helper()
 
 	clock := timeutil.NewFakeClock(time.Now(), 0)
@@ -46,7 +44,7 @@ func TestRepo(t *testing.T, store *database.ExternalServiceStore, serviceKind st
 	return repo
 }
 
-func TestRepoWithService(t *testing.T, store *database.ExternalServiceStore, name string, svc *types.ExternalService) *types.Repo {
+func TestRepoWithService(t *testing.T, store database.ExternalServiceStore, name string, svc *types.ExternalService) *types.Repo {
 	t.Helper()
 
 	return &types.Repo{
@@ -66,12 +64,12 @@ func TestRepoWithService(t *testing.T, store *database.ExternalServiceStore, nam
 	}
 }
 
-func CreateTestRepo(t *testing.T, ctx context.Context, db dbutil.DB) (*types.Repo, *types.ExternalService) {
+func CreateTestRepo(t *testing.T, ctx context.Context, db database.DB) (*types.Repo, *types.ExternalService) {
 	repos, extSvc := CreateTestRepos(t, ctx, db, 1)
 	return repos[0], extSvc
 }
 
-func CreateTestRepos(t *testing.T, ctx context.Context, db dbutil.DB, count int) ([]*types.Repo, *types.ExternalService) {
+func CreateTestRepos(t *testing.T, ctx context.Context, db database.DB, count int) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
 	repoStore := database.Repos(db)
@@ -116,7 +114,7 @@ func CreateTestRepos(t *testing.T, ctx context.Context, db dbutil.DB, count int)
 	return rs, ext
 }
 
-func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*types.Repo, *types.ExternalService) {
+func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db database.DB, count int) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
 	repoStore := database.Repos(db)
@@ -154,7 +152,7 @@ func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count 
 	return rs, ext
 }
 
-func CreateBbsTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*types.Repo, *types.ExternalService) {
+func CreateBbsTestRepos(t *testing.T, ctx context.Context, db database.DB, count int) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
 	ext := &types.ExternalService{
@@ -169,7 +167,7 @@ func CreateBbsTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int
 	return createBbsRepos(t, ctx, db, ext, count, "https://bbs-user:bbs-token@bitbucket.sourcegraph.com/scm")
 }
 
-func CreateGitHubSSHTestRepos(t *testing.T, ctx context.Context, db dbutil.DB, count int) ([]*types.Repo, *types.ExternalService) {
+func CreateGitHubSSHTestRepos(t *testing.T, ctx context.Context, db database.DB, count int) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
 	ext := &types.ExternalService{
@@ -201,10 +199,10 @@ func CreateGitHubSSHTestRepos(t *testing.T, ctx context.Context, db dbutil.DB, c
 	if err != nil {
 		t.Fatal(err)
 	}
-	return rs, nil
+	return rs, ext
 }
 
-func CreateBbsSSHTestRepos(t *testing.T, ctx context.Context, db dbutil.DB, count int) ([]*types.Repo, *types.ExternalService) {
+func CreateBbsSSHTestRepos(t *testing.T, ctx context.Context, db database.DB, count int) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
 	ext := &types.ExternalService{
@@ -220,7 +218,7 @@ func CreateBbsSSHTestRepos(t *testing.T, ctx context.Context, db dbutil.DB, coun
 	return createBbsRepos(t, ctx, db, ext, count, "ssh://git@bitbucket.sgdev.org:7999")
 }
 
-func createBbsRepos(t *testing.T, ctx context.Context, db dbutil.DB, ext *types.ExternalService, count int, cloneBaseURL string) ([]*types.Repo, *types.ExternalService) {
+func createBbsRepos(t *testing.T, ctx context.Context, db database.DB, ext *types.ExternalService, count int, cloneBaseURL string) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
 	repoStore := database.Repos(db)
@@ -257,7 +255,7 @@ func createBbsRepos(t *testing.T, ctx context.Context, db dbutil.DB, ext *types.
 	return rs, ext
 }
 
-func CreateAWSCodeCommitTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*types.Repo, *types.ExternalService) {
+func CreateAWSCodeCommitTestRepos(t *testing.T, ctx context.Context, db database.DB, count int) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
 	repoStore := database.Repos(db)

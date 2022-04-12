@@ -11,16 +11,13 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestGetIndexByID(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -93,10 +90,7 @@ func TestGetIndexByID(t *testing.T) {
 }
 
 func TestGetQueuedIndexRank(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
@@ -145,10 +139,7 @@ func TestGetQueuedIndexRank(t *testing.T) {
 }
 
 func TestGetIndexesByIDs(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -210,10 +201,7 @@ func TestGetIndexesByIDs(t *testing.T) {
 }
 
 func TestGetIndexes(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -264,6 +252,7 @@ func TestGetIndexes(t *testing.T) {
 		{term: "333", expectedIDs: []int{1, 2, 3, 5}},    // searches commits and failure message
 		{term: "QuEuEd", expectedIDs: []int{1, 3, 4, 9}}, // searches text status
 		{term: "bAr", expectedIDs: []int{4, 6}},          // search repo names
+		{state: "failed", expectedIDs: []int{2}},         // treats errored/failed states equivalently
 	}
 
 	for _, testCase := range testCases {
@@ -331,10 +320,7 @@ func TestGetIndexes(t *testing.T) {
 }
 
 func TestIsQueued(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	insertIndexes(t, db, Index{ID: 1, RepositoryID: 1, Commit: makeCommit(1)})
@@ -371,10 +357,7 @@ func TestIsQueued(t *testing.T) {
 }
 
 func TestInsertIndexes(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -499,10 +482,7 @@ func TestInsertIndexes(t *testing.T) {
 }
 
 func TestDeleteIndexByID(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	insertIndexes(t, db,
@@ -524,10 +504,7 @@ func TestDeleteIndexByID(t *testing.T) {
 }
 
 func TestDeleteIndexByIDMissingRow(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	if found, err := store.DeleteIndexByID(context.Background(), 1); err != nil {
@@ -538,10 +515,7 @@ func TestDeleteIndexByIDMissingRow(t *testing.T) {
 }
 
 func TestDeleteIndexesWithoutRepository(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	var indexes []Index
@@ -581,5 +555,96 @@ func TestDeleteIndexesWithoutRepository(t *testing.T) {
 	}
 	if diff := cmp.Diff(expected, ids); diff != "" {
 		t.Errorf("unexpected ids (-want +got):\n%s", diff)
+	}
+}
+
+func TestLastIndexScanForRepository(t *testing.T) {
+	db := dbtest.NewDB(t)
+	store := testStore(db)
+	ctx := context.Background()
+
+	ts, err := store.LastIndexScanForRepository(ctx, 50)
+	if err != nil {
+		t.Fatalf("unexpected error querying last index scan: %s", err)
+	}
+	if ts != nil {
+		t.Fatalf("unexpected timestamp for repository. want=%v have=%s", nil, ts)
+	}
+
+	expected := time.Unix(1587396557, 0).UTC()
+
+	if err := store.Exec(ctx, sqlf.Sprintf(`
+		INSERT INTO lsif_last_index_scan (repository_id, last_index_scan_at)
+		VALUES (%s, %s)
+	`, 50, expected)); err != nil {
+		t.Fatalf("unexpected error inserting timestamp: %s", err)
+	}
+
+	ts, err = store.LastIndexScanForRepository(ctx, 50)
+	if err != nil {
+		t.Fatalf("unexpected error querying last index scan: %s", err)
+	}
+
+	if ts == nil || !ts.Equal(expected) {
+		t.Fatalf("unexpected timestamp for repository. want=%s have=%s", expected, ts)
+	}
+}
+
+func TestRecentIndexesSummary(t *testing.T) {
+	db := dbtest.NewDB(t)
+	store := testStore(db)
+	ctx := context.Background()
+
+	t0 := time.Unix(1587396557, 0).UTC()
+	t1 := t0.Add(-time.Minute * 1)
+	t2 := t0.Add(-time.Minute * 2)
+	t3 := t0.Add(-time.Minute * 3)
+	t4 := t0.Add(-time.Minute * 4)
+	t5 := t0.Add(-time.Minute * 5)
+	t6 := t0.Add(-time.Minute * 6)
+	t7 := t0.Add(-time.Minute * 7)
+	t8 := t0.Add(-time.Minute * 8)
+	t9 := t0.Add(-time.Minute * 9)
+
+	r1 := 1
+	r2 := 2
+
+	addDefaults := func(index Index) Index {
+		index.Commit = makeCommit(index.ID)
+		index.RepositoryID = 50
+		index.RepositoryName = "n-50"
+		index.DockerSteps = []DockerStep{}
+		index.IndexerArgs = []string{}
+		index.LocalSteps = []string{}
+		return index
+	}
+
+	indexes := []Index{
+		addDefaults(Index{ID: 150, QueuedAt: t0, Root: "r1", Indexer: "i1", State: "queued", Rank: &r2}), // visible (group 1)
+		addDefaults(Index{ID: 151, QueuedAt: t1, Root: "r1", Indexer: "i1", State: "queued", Rank: &r1}), // visible (group 1)
+		addDefaults(Index{ID: 152, FinishedAt: &t2, Root: "r1", Indexer: "i1", State: "errored"}),        // visible (group 1)
+		addDefaults(Index{ID: 153, FinishedAt: &t3, Root: "r1", Indexer: "i2", State: "completed"}),      // visible (group 2)
+		addDefaults(Index{ID: 154, FinishedAt: &t4, Root: "r2", Indexer: "i1", State: "completed"}),      // visible (group 3)
+		addDefaults(Index{ID: 155, FinishedAt: &t5, Root: "r2", Indexer: "i1", State: "errored"}),        // shadowed
+		addDefaults(Index{ID: 156, FinishedAt: &t6, Root: "r2", Indexer: "i2", State: "completed"}),      // visible (group 4)
+		addDefaults(Index{ID: 157, FinishedAt: &t7, Root: "r2", Indexer: "i2", State: "errored"}),        // shadowed
+		addDefaults(Index{ID: 158, FinishedAt: &t8, Root: "r2", Indexer: "i2", State: "errored"}),        // shadowed
+		addDefaults(Index{ID: 159, FinishedAt: &t9, Root: "r2", Indexer: "i2", State: "errored"}),        // shadowed
+	}
+	insertIndexes(t, db, indexes...)
+
+	summary, err := store.RecentIndexesSummary(ctx, 50)
+	if err != nil {
+		t.Fatalf("unexpected error querying recent index summary: %s", err)
+	}
+
+	expected := []IndexesWithRepositoryNamespace{
+		{Root: "r1", Indexer: "i1", Indexes: []Index{indexes[0], indexes[1], indexes[2]}},
+		{Root: "r1", Indexer: "i2", Indexes: []Index{indexes[3]}},
+		{Root: "r2", Indexer: "i1", Indexes: []Index{indexes[4]}},
+		{Root: "r2", Indexer: "i2", Indexes: []Index{indexes[6]}},
+	}
+	if diff := cmp.Diff(expected, summary); diff != "" {
+		t.Errorf("unexpected index summary (-want +got):\n%s", diff)
 	}
 }

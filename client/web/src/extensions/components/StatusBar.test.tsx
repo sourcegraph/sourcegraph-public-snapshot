@@ -1,10 +1,11 @@
+import React from 'react'
+
 import { render } from '@testing-library/react'
 import * as H from 'history'
-import React from 'react'
 import { BehaviorSubject } from 'rxjs'
 
 import { StatusBarItemWithKey } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
-import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
+import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { StatusBar } from './StatusBar'
 

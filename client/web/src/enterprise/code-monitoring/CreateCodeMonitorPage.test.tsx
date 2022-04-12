@@ -1,9 +1,14 @@
-import { mount } from 'enzyme'
-import * as H from 'history'
 import * as React from 'react'
+
+import { getByRole, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import * as H from 'history'
 import { act } from 'react-dom/test-utils'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
+
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { AuthenticatedUser } from '../../auth'
 import { CreateCodeMonitorVariables } from '../../graphql-operations'
@@ -31,86 +36,111 @@ describe('CreateCodeMonitorPage', () => {
         createCodeMonitor: sinon.spy((monitor: CreateCodeMonitorVariables) =>
             of({ description: mockCodeMonitor.node.description })
         ),
+        isLightTheme: true,
+        isSourcegraphDotCom: false,
     }
     let clock: sinon.SinonFakeTimers
 
-    beforeAll(() => {
+    beforeEach(() => {
         clock = sinon.useFakeTimers()
     })
 
-    afterAll(() => {
+    afterEach(() => {
         clock.restore()
     })
 
-    test('createCodeMonitor is called on submit', () => {
-        let component = mount(<CreateCodeMonitorPage {...props} />)
-        const nameInput = component.find('.test-name-input')
-        nameInput.simulate('change', { target: { value: 'Test updated' } })
+    afterEach(() => {
+        props.createCodeMonitor.resetHistory()
+    })
 
-        const triggerButton = component.find('.test-trigger-button')
-        triggerButton.simulate('click')
-        const triggerInput = component.find('.test-trigger-input')
-        expect(triggerInput.length).toBe(1)
+    test('createCodeMonitor is called on submit', () => {
+        renderWithBrandedContext(
+            <MockedTestProvider>
+                <CreateCodeMonitorPage {...props} />
+            </MockedTestProvider>
+        )
+        const nameInput = screen.getByTestId('name-input')
+        userEvent.type(nameInput, 'Test updated')
+        userEvent.click(screen.getByTestId('trigger-button'))
+
+        const triggerInput = screen.getByTestId('trigger-query-edit')
+        expect(triggerInput).toBeInTheDocument()
+
+        const textbox = getByRole(triggerInput, 'textbox')
+        userEvent.type(textbox, 'test type:diff repo:test')
         act(() => {
-            triggerInput.simulate('change', { target: { value: 'test type:diff repo:test' } })
             clock.tick(600)
         })
-        component = component.update()
-        expect(component.find('.test-is-valid').length).toBe(1)
-        const submitTrigger = component.find('.test-submit-trigger')
-        submitTrigger.simulate('click')
-        const actionButton = component.find('.test-action-button')
-        actionButton.simulate('click')
-        const submitAction = component.find('.test-submit-action')
-        submitAction.simulate('click')
-        const submitMonitor = component.find('.test-submit-monitor')
-        submitMonitor.simulate('submit')
+
+        expect(triggerInput).toHaveClass('test-is-valid')
+
+        userEvent.click(screen.getByTestId('submit-trigger'))
+
+        userEvent.click(screen.getByTestId('form-action-toggle-email'))
+
+        userEvent.click(screen.getByTestId('submit-action-email'))
+
+        act(() => {
+            clock.tick(600)
+        })
+
+        userEvent.click(screen.getByTestId('submit-monitor'))
+
         sinon.assert.called(props.createCodeMonitor)
-        props.createCodeMonitor.resetHistory()
-        component.unmount()
     })
 
     test('createCodeMonitor is not called on submit when trigger or action is incomplete', () => {
-        let component = mount(<CreateCodeMonitorPage {...props} />)
-        const monitorForm = component.find('.test-monitor-form').first()
-        const nameInput = component.find('.test-name-input')
-        nameInput.simulate('change', { target: { value: 'Test updated' } })
-        monitorForm.simulate('submit')
+        renderWithBrandedContext(
+            <MockedTestProvider>
+                <CreateCodeMonitorPage {...props} />
+            </MockedTestProvider>
+        )
+        const nameInput = screen.getByTestId('name-input')
+        userEvent.type(nameInput, 'Test updated')
+        userEvent.click(screen.getByTestId('submit-monitor'))
+
         // Pressing enter does not call createCodeMonitor because other fields not complete
         sinon.assert.notCalled(props.createCodeMonitor)
 
-        const triggerButton = component.find('.test-trigger-button')
-        triggerButton.simulate('click')
-        const triggerInput = component.find('.test-trigger-input')
-        expect(triggerInput.length).toBe(1)
+        userEvent.click(screen.getByTestId('trigger-button'))
+
+        const triggerInput = screen.getByTestId('trigger-query-edit')
+        expect(triggerInput).toBeInTheDocument()
+
+        const textbox = getByRole(triggerInput, 'textbox')
+
+        userEvent.type(textbox, 'test type:diff repo:test')
         act(() => {
-            triggerInput.simulate('change', { target: { value: 'test type:diff repo:test' } })
             clock.tick(600)
         })
-        component = component.update()
-        expect(component.find('.test-is-valid').length).toBe(1)
-        const submitTrigger = component.find('.test-submit-trigger')
-        submitTrigger.simulate('click')
+        expect(triggerInput).toHaveClass('test-is-valid')
+        userEvent.click(screen.getByTestId('submit-trigger'))
 
-        monitorForm.simulate('submit')
+        userEvent.click(screen.getByTestId('submit-monitor'))
+
         // Pressing enter still does not call createCodeMonitor
         sinon.assert.notCalled(props.createCodeMonitor)
 
-        const actionButton = component.find('.test-action-button')
-        actionButton.simulate('click')
-        const submitAction = component.find('.test-submit-action')
-        submitAction.simulate('click')
+        userEvent.click(screen.getByTestId('form-action-toggle-email'))
+        userEvent.click(screen.getByTestId('submit-action-email'))
+
+        act(() => {
+            clock.tick(600)
+        })
 
         // Pressing enter calls createCodeMonitor when all sections are complete
-        monitorForm.simulate('submit')
+        userEvent.click(screen.getByTestId('submit-monitor'))
+
         sinon.assert.calledOnce(props.createCodeMonitor)
-        props.createCodeMonitor.resetHistory()
-        component.unmount()
     })
 
     test('Actions area button is disabled while trigger is incomplete', () => {
-        const component = mount(<CreateCodeMonitorPage {...props} />)
-        const actionButton = component.find('.test-action-button')
-        expect(actionButton.prop('disabled')).toBe(true)
+        renderWithBrandedContext(
+            <MockedTestProvider>
+                <CreateCodeMonitorPage {...props} />
+            </MockedTestProvider>
+        )
+        const actionButton = screen.getByTestId('form-action-toggle-email')
+        expect(actionButton).toBeDisabled()
     })
 })

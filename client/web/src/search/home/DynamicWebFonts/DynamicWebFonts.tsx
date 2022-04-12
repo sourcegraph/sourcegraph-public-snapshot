@@ -1,9 +1,10 @@
 import React from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
+
+import { useDynamicWebFonts, DynamicWebFont } from './useDynamicWebFonts'
 
 import styles from './DynamicWebFonts.module.scss'
-import { useDynamicWebFonts, DynamicWebFont } from './useDynamicWebFonts'
 
 interface DynamicWebFontsProps {
     fonts: DynamicWebFont[]

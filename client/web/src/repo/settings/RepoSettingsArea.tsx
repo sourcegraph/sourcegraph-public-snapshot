@@ -1,18 +1,20 @@
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import DoNotDisturbIcon from 'mdi-react/DoNotDisturbIcon'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useMemo } from 'react'
+
+import classNames from 'classnames'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import MinusCircleIcon from 'mdi-react/MinusCircleIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { ErrorMessage } from '../../components/alerts'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { RepositoryFields, SettingsAreaRepositoryFields } from '../../graphql-operations'
@@ -20,6 +22,8 @@ import { RouteDescriptor } from '../../util/contributions'
 
 import { fetchSettingsAreaRepository } from './backend'
 import { RepoSettingsSidebar, RepoSettingsSideBarGroups } from './RepoSettingsSidebar'
+
+import styles from './RepoSettingsArea.module.scss'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -72,7 +76,7 @@ export const RepoSettingsArea: React.FunctionComponent<Props> = ({
     if (!repoOrError.viewerCanAdminister) {
         return (
             <HeroPage
-                icon={DoNotDisturbIcon}
+                icon={MinusCircleIcon}
                 title="Forbidden"
                 subtitle="You are not authorized to view or change this repository's settings."
             />
@@ -89,7 +93,7 @@ export const RepoSettingsArea: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <div className="repo-settings-area container d-flex mt-3">
+        <div className={classNames('container d-flex mt-3', styles.repoSettingsArea)}>
             <RepoSettingsSidebar className="flex-0 mr-3" {...props} {...context} />
             <div className="flex-bounded">
                 <Switch>

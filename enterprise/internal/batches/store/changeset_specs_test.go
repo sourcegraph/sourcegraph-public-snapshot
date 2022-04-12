@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
@@ -35,7 +36,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 	esStore := database.ExternalServicesWith(s)
 
 	repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
-	deletedRepo := ct.TestRepo(t, esStore, extsvc.KindGitHub).With(types.Opt.RepoDeletedAt(clock.Now()))
+	deletedRepo := ct.TestRepo(t, esStore, extsvc.KindGitHub).With(typestest.Opt.RepoDeletedAt(clock.Now()))
 
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
@@ -47,7 +48,6 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 	changesetSpecs := make(btypes.ChangesetSpecs, 0, 3)
 	for i := 0; i < cap(changesetSpecs); i++ {
 		c := &btypes.ChangesetSpec{
-			RawSpec: `{"externalID":"12345"}`,
 			Spec: &batcheslib.ChangesetSpec{
 				ExternalID: "123456",
 			},
@@ -62,6 +62,8 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 
 		if i == cap(changesetSpecs)-1 {
 			c.BatchSpecID = 0
+			forkNamespace := "fork"
+			c.ForkNamespace = &forkNamespace
 		}
 		changesetSpecs = append(changesetSpecs, c)
 	}
@@ -73,7 +75,6 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 		UserID:      int32(424242),
 		Spec:        &batcheslib.ChangesetSpec{},
 		BatchSpecID: int64(424242),
-		RawSpec:     `{}`,
 		RepoID:      deletedRepo.ID,
 	}
 
@@ -298,23 +299,17 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 		})
 	})
 
-	t.Run("Update", func(t *testing.T) {
+	t.Run("UpdateChangesetSpecBatchSpecID", func(t *testing.T) {
 		for _, c := range changesetSpecs {
-			c.UserID += 1234
-			c.DiffStatAdded += 1234
-			c.DiffStatChanged += 1234
-			c.DiffStatDeleted += 1234
-
-			clock.Add(1 * time.Second)
-
-			want := c
-			want.UpdatedAt = clock.Now()
-
-			have := c.Clone()
-			if err := s.UpdateChangesetSpec(ctx, have); err != nil {
+			c.BatchSpecID = 10001
+			want := c.Clone()
+			if err := s.UpdateChangesetSpecBatchSpecID(ctx, []int64{c.ID}, 10001); err != nil {
 				t.Fatal(err)
 			}
-
+			have, err := s.GetChangesetSpecByID(ctx, c.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
 			if diff := cmp.Diff(have, want); diff != "" {
 				t.Fatal(diff)
 			}
@@ -354,7 +349,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 		})
 	})
 
-	t.Run("Delete", func(t *testing.T) {
+	t.Run("DeleteChangesetSpec", func(t *testing.T) {
 		for i := range changesetSpecs {
 			err := s.DeleteChangesetSpec(ctx, changesetSpecs[i].ID)
 			if err != nil {
@@ -370,6 +365,61 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 				t.Fatalf("have count: %d, want: %d", have, want)
 			}
 		}
+	})
+
+	t.Run("DeleteChangesetSpecs", func(t *testing.T) {
+		t.Run("ByBatchSpecID", func(t *testing.T) {
+
+			for i := 0; i < 3; i++ {
+				spec := &btypes.ChangesetSpec{
+					BatchSpecID: int64(i + 1),
+					RepoID:      repo.ID,
+				}
+				err := s.CreateChangesetSpec(ctx, spec)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if err := s.DeleteChangesetSpecs(ctx, DeleteChangesetSpecsOpts{
+					BatchSpecID: spec.BatchSpecID,
+				}); err != nil {
+					t.Fatal(err)
+				}
+
+				count, err := s.CountChangesetSpecs(ctx, CountChangesetSpecsOpts{BatchSpecID: spec.ID})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := count, 0; have != want {
+					t.Fatalf("have count: %d, want: %d", have, want)
+				}
+			}
+		})
+
+		t.Run("ByID", func(t *testing.T) {
+			for i := 0; i < 3; i++ {
+				spec := &btypes.ChangesetSpec{
+					BatchSpecID: int64(i + 1),
+					RepoID:      repo.ID,
+				}
+				err := s.CreateChangesetSpec(ctx, spec)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if err := s.DeleteChangesetSpecs(ctx, DeleteChangesetSpecsOpts{
+					IDs: []int64{spec.ID},
+				}); err != nil {
+					t.Fatal(err)
+				}
+
+				_, err = s.GetChangesetSpec(ctx, GetChangesetSpecOpts{ID: spec.ID})
+				if err != ErrNoResults {
+					t.Fatal("changeset spec not deleted")
+				}
+			}
+		})
 	})
 
 	t.Run("DeleteExpiredChangesetSpecs", func(t *testing.T) {
@@ -433,12 +483,12 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 
 				if tc.batchSpecApplied {
 					batchChange := &btypes.BatchChange{
-						Name:             fmt.Sprintf("batch change for spec %d", batchSpec.ID),
-						BatchSpecID:      batchSpec.ID,
-						InitialApplierID: batchSpec.UserID,
-						NamespaceUserID:  batchSpec.NamespaceUserID,
-						LastApplierID:    batchSpec.UserID,
-						LastAppliedAt:    time.Now(),
+						Name:            fmt.Sprintf("batch change for spec %d", batchSpec.ID),
+						BatchSpecID:     batchSpec.ID,
+						CreatorID:       batchSpec.UserID,
+						NamespaceUserID: batchSpec.NamespaceUserID,
+						LastApplierID:   batchSpec.UserID,
+						LastAppliedAt:   time.Now(),
 					}
 					if err := s.CreateBatchChange(ctx, batchChange); err != nil {
 						t.Fatal(err)
@@ -500,7 +550,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 
 	t.Run("GetRewirerMappings", func(t *testing.T) {
 		// Create some test data
-		user := ct.CreateTestUser(t, s.DB(), true)
+		user := ct.CreateTestUser(t, s.DatabaseDB(), true)
 		batchSpec := ct.CreateBatchSpec(t, ctx, s, "get-rewirer-mappings", user.ID)
 		var mappings = make(btypes.RewirerMappings, 3)
 		changesetSpecIDs := make([]int64, 0, cap(mappings))
@@ -689,6 +739,65 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			}
 		})
 	})
+
+	t.Run("ListChangesetSpecsWithConflictingHeadRef", func(t *testing.T) {
+		user := ct.CreateTestUser(t, s.DatabaseDB(), true)
+
+		repo2 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
+		if err := repoStore.Create(ctx, repo2); err != nil {
+			t.Fatal(err)
+		}
+		repo3 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
+		if err := repoStore.Create(ctx, repo3); err != nil {
+			t.Fatal(err)
+		}
+
+		conflictingBatchSpec := ct.CreateBatchSpec(t, ctx, s, "no-conflicts", user.ID)
+		conflictingRef := "refs/heads/conflicting-head-ref"
+		for _, opts := range []ct.TestSpecOpts{
+			{ExternalID: "4321", Repo: repo.ID, BatchSpec: conflictingBatchSpec.ID},
+			{HeadRef: conflictingRef, Repo: repo.ID, BatchSpec: conflictingBatchSpec.ID},
+			{HeadRef: conflictingRef, Repo: repo.ID, BatchSpec: conflictingBatchSpec.ID},
+			{HeadRef: conflictingRef, Repo: repo2.ID, BatchSpec: conflictingBatchSpec.ID},
+			{HeadRef: conflictingRef, Repo: repo2.ID, BatchSpec: conflictingBatchSpec.ID},
+			{HeadRef: conflictingRef, Repo: repo3.ID, BatchSpec: conflictingBatchSpec.ID},
+		} {
+			ct.CreateChangesetSpec(t, ctx, s, opts)
+		}
+
+		conflicts, err := s.ListChangesetSpecsWithConflictingHeadRef(ctx, conflictingBatchSpec.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if have, want := len(conflicts), 2; have != want {
+			t.Fatalf("wrong number of conflicts. want=%d, have=%d", want, have)
+		}
+		for _, c := range conflicts {
+			if c.RepoID != repo.ID && c.RepoID != repo2.ID {
+				t.Fatalf("conflict has wrong RepoID: %d", c.RepoID)
+			}
+		}
+
+		nonConflictingBatchSpec := ct.CreateBatchSpec(t, ctx, s, "no-conflicts", user.ID)
+		for _, opts := range []ct.TestSpecOpts{
+			{ExternalID: "1234", Repo: repo.ID, BatchSpec: nonConflictingBatchSpec.ID},
+			{HeadRef: "refs/heads/branch-1", Repo: repo.ID, BatchSpec: nonConflictingBatchSpec.ID},
+			{HeadRef: "refs/heads/branch-2", Repo: repo.ID, BatchSpec: nonConflictingBatchSpec.ID},
+			{HeadRef: "refs/heads/branch-1", Repo: repo2.ID, BatchSpec: nonConflictingBatchSpec.ID},
+			{HeadRef: "refs/heads/branch-2", Repo: repo2.ID, BatchSpec: nonConflictingBatchSpec.ID},
+			{HeadRef: "refs/heads/branch-1", Repo: repo3.ID, BatchSpec: nonConflictingBatchSpec.ID},
+		} {
+			ct.CreateChangesetSpec(t, ctx, s, opts)
+		}
+
+		conflicts, err = s.ListChangesetSpecsWithConflictingHeadRef(ctx, nonConflictingBatchSpec.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if have, want := len(conflicts), 0; have != want {
+			t.Fatalf("wrong number of conflicts. want=%d, have=%d", want, have)
+		}
+	})
 }
 
 func testStoreGetRewirerMappingWithArchivedChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
@@ -700,7 +809,7 @@ func testStoreGetRewirerMappingWithArchivedChangesets(t *testing.T, ctx context.
 		t.Fatal(err)
 	}
 
-	user := ct.CreateTestUser(t, s.DB(), false)
+	user := ct.CreateTestUser(t, s.DatabaseDB(), false)
 
 	// Create old batch spec and batch change
 	oldBatchSpec := ct.CreateBatchSpec(t, ctx, s, "old", user.ID)
@@ -757,7 +866,7 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 	}
 
 	// Create a user.
-	user := ct.CreateTestUser(t, s.DB(), false)
+	user := ct.CreateTestUser(t, s.DatabaseDB(), false)
 
 	// Next, we need old and new batch specs.
 	oldBatchSpec := ct.CreateBatchSpec(t, ctx, s, "old", user.ID)
@@ -874,7 +983,7 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 	})
 }
 
-func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.Context, s *Store, _ ct.Clock) {
 	repoStore := database.ReposWith(s)
 	esStore := database.ExternalServicesWith(s)
 
@@ -887,7 +996,7 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 	}
 
 	// Create a user.
-	user := ct.CreateTestUser(t, s.DB(), false)
+	user := ct.CreateTestUser(t, s.DatabaseDB(), false)
 
 	// Next, we need old and new batch specs.
 	oldBatchSpec := ct.CreateBatchSpec(t, ctx, s, "old", user.ID)
@@ -898,16 +1007,16 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 
 	// Now we'll add three old and new pairs of changeset specs. Two will have
 	// matching statuses, and a different two will have matching names.
-	createChangesetSpecPair := func(t *testing.T, ctx context.Context, s *Store, oldBatchSpec, newBatchSpec *btypes.BatchSpec, opts ct.TestSpecOpts) (old, new *btypes.ChangesetSpec) {
+	createChangesetSpecPair := func(t *testing.T, ctx context.Context, s *Store, oldBatchSpec, newBatchSpec *btypes.BatchSpec, opts ct.TestSpecOpts) (old *btypes.ChangesetSpec) {
 		opts.BatchSpec = oldBatchSpec.ID
 		old = ct.CreateChangesetSpec(t, ctx, s, opts)
 
 		opts.BatchSpec = newBatchSpec.ID
-		new = ct.CreateChangesetSpec(t, ctx, s, opts)
+		_ = ct.CreateChangesetSpec(t, ctx, s, opts)
 
-		return old, new
+		return old
 	}
-	oldOpenFoo, _ := createChangesetSpecPair(t, ctx, s, oldBatchSpec, newBatchSpec, ct.TestSpecOpts{
+	oldOpenFoo := createChangesetSpecPair(t, ctx, s, oldBatchSpec, newBatchSpec, ct.TestSpecOpts{
 		User:      user.ID,
 		Repo:      repo.ID,
 		BatchSpec: oldBatchSpec.ID,
@@ -915,7 +1024,7 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 		Published: true,
 		HeadRef:   "open-foo",
 	})
-	oldOpenBar, _ := createChangesetSpecPair(t, ctx, s, oldBatchSpec, newBatchSpec, ct.TestSpecOpts{
+	oldOpenBar := createChangesetSpecPair(t, ctx, s, oldBatchSpec, newBatchSpec, ct.TestSpecOpts{
 		User:      user.ID,
 		Repo:      repo.ID,
 		BatchSpec: oldBatchSpec.ID,
@@ -923,7 +1032,7 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 		Published: true,
 		HeadRef:   "open-bar",
 	})
-	oldClosedFoo, _ := createChangesetSpecPair(t, ctx, s, oldBatchSpec, newBatchSpec, ct.TestSpecOpts{
+	oldClosedFoo := createChangesetSpecPair(t, ctx, s, oldBatchSpec, newBatchSpec, ct.TestSpecOpts{
 		User:      user.ID,
 		Repo:      repo.ID,
 		BatchSpec: oldBatchSpec.ID,
@@ -1052,7 +1161,7 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 	}
 
 	// Create a user.
-	user := ct.CreateTestUser(t, s.DB(), false)
+	user := ct.CreateTestUser(t, s.DatabaseDB(), false)
 
 	// Next, we need a batch spec.
 	oldBatchSpec := ct.CreateBatchSpec(t, ctx, s, "text", user.ID)

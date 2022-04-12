@@ -58,7 +58,7 @@ We **strongly** recommend that you create and run Sourcegraph from your own fork
 
   ```bash
   # Specify the version you want to install
-  export SOURCEGRAPH_VERSION="v3.31.2"
+  export SOURCEGRAPH_VERSION="v3.38.1"
   # Check out the selected version for use, in a new branch called "release"
   git checkout $SOURCEGRAPH_VERSION -b release
   ```
@@ -143,6 +143,8 @@ sourcegraph-frontend-0:
 
 See ["Environment variables in Compose"](https://docs.docker.com/compose/environment-variables/) for other ways to pass these environment variables to the relevant services (including from the command line, a .env file, etc.).
 
+> _Note: After adding a new environment variable to your `docker-compose.yaml` you'll need to redeploy from the new spec by running `docker-compose up -d`, running `docker-compose restart` will not be sufficiant to add the new environment variable._
+
 ## Upgrade
 
 This requires you to have [set up configuration for Docker Compose](#configure).
@@ -166,6 +168,12 @@ Address any merge conflicts you might have.
 > If you do this, make sure to validate your configuration is correct before proceeding.
 
 If you are upgrading a live deployment, make sure to check the [release upgrade notes](../../updates/docker_compose.md) for any additional actions you need to take **before proceeding**.
+
+Download all the latest docker images to your local docker daemon:
+
+```bash
+docker-compose pull --include-deps
+```
 Then, ensure that the current Sourcegraph instance is completely stopped:
 
 ```bash
@@ -179,6 +187,14 @@ docker-compose up -d
 ```
 
 You can see what's changed in the [Sourcegraph changelog](../../../CHANGELOG.md).
+
+### Database Migrations
+
+> NOTE: The `migrator` service is only available in versions `3.37` and later.
+
+The `frontend` container in the `docker-compose.yaml` file will automatically run on startup and migrate the databases if any changes are required, however administrators may wish to migrate their databases before upgrading the rest of the system when working with large databases. Sourcegraph guarantees database backward compatibility to the most recent minor point release so the database can safely be upgraded before the application code.
+
+To execute the database migrations independently, follow the [docker-compose instructions on how to manually run database migrations](../../how-to/manual_database_migrations.md#docker-compose). Running the `up` (default) command on the `migrator` of the *version you are upgrading to* will apply all migrations required by the next version of Sourcegraph.
 
 ## Monitoring
 

@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import * as React from 'react'
+
+import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router-dom'
 
 import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../../components/Sidebar'
@@ -10,12 +11,20 @@ import styles from './OrgSettingsSidebar.module.scss'
 
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
     className?: string
+    showOrgCode: boolean
 }
 
 /**
  * Sidebar for org settings pages.
  */
-export const OrgSettingsSidebar: React.FunctionComponent<Props> = ({ org, authenticatedUser, className, match }) => {
+export const OrgSettingsSidebar: React.FunctionComponent<Props> = ({
+    org,
+    authenticatedUser,
+    className,
+    match,
+    showOrgCode,
+    newMembersInviteEnabled,
+}) => {
     if (!org) {
         return null
     }
@@ -34,14 +43,26 @@ export const OrgSettingsSidebar: React.FunctionComponent<Props> = ({ org, authen
             <SidebarGroup>
                 <SidebarGroupHeader label="Organization" />
                 <SidebarNavItem to={match.url} exact={true}>
-                    Organization Settings
+                    Settings
                 </SidebarNavItem>
                 <SidebarNavItem to={`${match.url}/profile`} exact={true}>
                     Profile
                 </SidebarNavItem>
-                <SidebarNavItem to={`${match.url}/members`} exact={true}>
-                    Members
-                </SidebarNavItem>
+                {!newMembersInviteEnabled && (
+                    <SidebarNavItem to={`${match.url}/members`} exact={true}>
+                        Members
+                    </SidebarNavItem>
+                )}
+                {showOrgCode && (
+                    <>
+                        <SidebarNavItem to={`${match.url}/code-hosts`} exact={true}>
+                            Code host connections
+                        </SidebarNavItem>
+                        <SidebarNavItem to={`${match.url}/repositories`} exact={true}>
+                            Repositories
+                        </SidebarNavItem>
+                    </>
+                )}
             </SidebarGroup>
         </div>
     )

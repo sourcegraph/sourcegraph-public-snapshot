@@ -1,21 +1,25 @@
-import classNames from 'classnames'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { Observable } from 'rxjs'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { gql } from '@apollo/client'
+import classNames from 'classnames'
+
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 import { Timestamp } from '../../components/time/Timestamp'
-import { SearchPatternType } from '../../graphql-operations'
+import { RecentSearchesPanelFragment, SearchPatternType } from '../../graphql-operations'
 import { EventLogResult } from '../backend'
 
+import { EmptyPanelContainer } from './EmptyPanelContainer'
+import { HomePanelsFetchMore, RECENT_SEARCHES_TO_LOAD } from './HomePanels'
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
 import { ShowMoreButton } from './ShowMoreButton'
+
+import styles from './RecentSearchesPanel.module.scss'
 
 interface RecentSearch {
     count: number
@@ -27,42 +31,51 @@ interface RecentSearch {
 interface Props extends TelemetryProps {
     className?: string
     authenticatedUser: AuthenticatedUser | null
-    fetchRecentSearches: (userId: string, first: number) => Observable<EventLogResult | null>
-
+    recentSearches: RecentSearchesPanelFragment | null
     /** Function that returns current time (for stability in visual tests). */
     now?: () => Date
+    fetchMore: HomePanelsFetchMore
 }
+
+export const recentSearchesPanelFragment = gql`
+    fragment RecentSearchesPanelFragment on User {
+        recentSearchesLogs: eventLogs(first: $firstRecentSearches, eventName: "SearchResultsQueried") {
+            nodes {
+                argument
+                timestamp
+                url
+            }
+            pageInfo {
+                hasNextPage
+            }
+            totalCount
+        }
+    }
+`
 
 export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
     className,
-    authenticatedUser,
-    fetchRecentSearches,
     now,
     telemetryService,
+    recentSearches,
+    fetchMore,
 }) => {
-    const pageSize = 20
-
-    const [itemsToLoad, setItemsToLoad] = useState(pageSize)
-    const recentSearches = useObservable(
-        useMemo(() => fetchRecentSearches(authenticatedUser?.id || '', itemsToLoad), [
-            authenticatedUser?.id,
-            fetchRecentSearches,
-            itemsToLoad,
-        ])
+    const [searchEventLogs, setSearchEventLogs] = useState<null | RecentSearchesPanelFragment['recentSearchesLogs']>(
+        recentSearches?.recentSearchesLogs ?? null
     )
-    const [processedResults, setProcessedResults] = useState<RecentSearch[] | null>(null)
+    useEffect(() => setSearchEventLogs(recentSearches?.recentSearchesLogs ?? null), [
+        recentSearches?.recentSearchesLogs,
+    ])
 
-    // Only update processed results when results are valid to prevent
-    // flashing loading screen when "Show more" button is clicked
-    useEffect(() => {
-        if (recentSearches) {
-            setProcessedResults(processRecentSearches(recentSearches))
-        }
-    }, [recentSearches])
+    const [itemsToLoad, setItemsToLoad] = useState(RECENT_SEARCHES_TO_LOAD)
+
+    const processedResults = useMemo(() => (searchEventLogs === null ? null : processRecentSearches(searchEventLogs)), [
+        searchEventLogs,
+    ])
 
     useEffect(() => {
         // Only log the first load (when items to load is equal to the page size)
-        if (processedResults && itemsToLoad === pageSize) {
+        if (processedResults && itemsToLoad === RECENT_SEARCHES_TO_LOAD) {
             telemetryService.log(
                 'RecentSearchesPanelLoaded',
                 { empty: processedResults.length === 0 },
@@ -77,13 +90,13 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
 
     const loadingDisplay = <LoadingPanelView text="Loading recent searches" />
     const emptyDisplay = (
-        <div className="panel-container__empty-container text-muted">
+        <EmptyPanelContainer className="text-muted">
             <small className="mb-2">
                 Your recent searches will be displayed here. Here are a few searches to get you started:
             </small>
 
-            <ul className="recent-searches-panel__examples-list">
-                <li className="recent-searches-panel__examples-list-item">
+            <ul className={styles.examplesList}>
+                <li className={styles.examplesListItem}>
                     <small>
                         <Link
                             to={
@@ -100,7 +113,7 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
                         </Link>
                     </small>
                 </li>
-                <li className="recent-searches-panel__examples-list-item">
+                <li className={styles.examplesListItem}>
                     <small>
                         <Link
                             to={
@@ -117,7 +130,7 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
                         </Link>
                     </small>
                 </li>
-                <li className="recent-searches-panel__examples-list-item">
+                <li className={styles.examplesListItem}>
                     <small>
                         <Link
                             to={'/search?' + buildSearchURLQuery('lang:java', SearchPatternType.literal, false)}
@@ -128,19 +141,33 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
                     </small>
                 </li>
             </ul>
-        </div>
+        </EmptyPanelContainer>
     )
 
-    function loadMoreItems(): void {
-        setItemsToLoad(current => current + pageSize)
+    async function loadMoreItems(): Promise<void> {
         telemetryService.log('RecentSearchesPanelShowMoreClicked')
+        const newItemsToLoad = itemsToLoad + RECENT_SEARCHES_TO_LOAD
+        setItemsToLoad(newItemsToLoad)
+
+        const { data } = await fetchMore({
+            firstRecentSearches: newItemsToLoad,
+        })
+
+        if (data === undefined) {
+            return
+        }
+        const node = data.node
+        if (node === null || node.__typename !== 'User') {
+            return
+        }
+        setSearchEventLogs(node.recentSearchesLogs)
     }
 
     const contentDisplay = (
         <>
-            <table className="recent-searches-panel__results-table mt-2">
+            <table className={classNames('mt-2', styles.resultsTable)}>
                 <thead>
-                    <tr className="recent-searches-panel__results-table-row">
+                    <tr className={styles.resultsTableRow}>
                         <th>
                             <small>Search</small>
                         </th>
@@ -149,26 +176,24 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
                         </th>
                     </tr>
                 </thead>
-                <tbody className="recent-searches-panel__results-table-body">
+                <tbody>
                     {processedResults?.map((recentSearch, index) => (
-                        <tr key={index} className="recent-searches-panel__results-table-row">
+                        <tr key={index} className={styles.resultsTableRow}>
                             <td>
-                                <small>
+                                <small className={styles.recentQuery}>
                                     <Link to={recentSearch.url} onClick={logSearchClicked}>
                                         <SyntaxHighlightedSearchQuery query={recentSearch.searchText} />
                                     </Link>
                                 </small>
                             </td>
-                            <td className="recent-searches-panel__results-table-date-col">
+                            <td className={styles.resultsTableDateCol}>
                                 <Timestamp noAbout={true} date={recentSearch.timestamp} now={now} strict={true} />
                             </td>
                         </tr>
                     ))}
                 </tbody>
             </table>
-            {recentSearches?.pageInfo.hasNextPage && (
-                <ShowMoreButton onClick={loadMoreItems} className="test-recent-searches-panel-show-more" />
-            )}
+            {searchEventLogs?.pageInfo.hasNextPage && <ShowMoreButton onClick={loadMoreItems} />}
         </>
     )
 
@@ -192,7 +217,7 @@ function processRecentSearches(eventLogResult?: EventLogResult): RecentSearch[] 
     const recentSearches: RecentSearch[] = []
 
     for (const node of eventLogResult.nodes) {
-        if (node.argument) {
+        if (node.argument && node.url) {
             const parsedArguments = JSON.parse(node.argument)
             const searchText: string | undefined = parsedArguments?.code_search?.query_data?.combined
 

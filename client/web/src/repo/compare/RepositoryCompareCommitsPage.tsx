@@ -1,11 +1,13 @@
 import * as React from 'react'
+
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
 
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+import { createAggregateError } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { CardHeader, Card } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -91,8 +93,8 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         return (
             <div className="repository-compare-page">
-                <div className="card">
-                    <div className="card-header">Commits</div>
+                <Card>
+                    <CardHeader>Commits</CardHeader>
                     <FilteredConnection<GitCommitFields, Pick<GitCommitNodeProps, 'className' | 'compact'>>
                         listClassName="list-group list-group-flush"
                         noun="commit"
@@ -111,7 +113,7 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
                         history={this.props.history}
                         location={this.props.location}
                     />
-                </div>
+                </Card>
             </div>
         )
     }

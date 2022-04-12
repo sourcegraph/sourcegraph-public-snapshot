@@ -1,0 +1,29 @@
+{"id":1,"version":"0.4.3","projectRoot":"file:/root","positionEncoding":"utf-8","toolInfo":{"name":"reprolang","version":"1.0.0"},"type":"vertex","label":"metaData"}
+{"id":2,"type":"vertex","label":"document","uri":"file:/root/local1.repro"}
+{"id":3,"type":"vertex","label":"definitionResult"}
+{"id":4,"type":"vertex","label":"resultSet"}
+{"id":5,"type":"vertex","label":"referenceResult"}
+{"id":6,"type":"vertex","label":"hoverResult","result":{"contents":{"kind":"markdown","value":"signature of localExample\n\n---\n\n: local is a local method"}}}
+{"id":7,"type":"edge","label":"textDocument/definition","inV":3,"outV":4}
+{"id":8,"type":"edge","label":"textDocument/references","inV":5,"outV":4}
+{"id":9,"type":"edge","label":"textDocument/hover","inV":6,"outV":4}
+{"id":10,"type":"vertex","label":"range","start":{"line":1,"character":11},"end":{"line":1,"character":23}}
+{"id":11,"type":"edge","label":"next","inV":4,"outV":10}
+{"id":12,"type":"edge","label":"item","inVs":[10],"outV":3,"document":2}
+{"id":13,"type":"edge","label":"item","inVs":[10],"outV":5,"document":2}
+{"id":14,"type":"vertex","label":"range","start":{"line":2,"character":10},"end":{"line":2,"character":22}}
+{"id":15,"type":"edge","label":"next","inV":4,"outV":14}
+{"id":16,"type":"edge","label":"item","inVs":[14],"outV":5,"document":2}
+{"id":17,"type":"edge","label":"contains","inVs":[10,14],"outV":2}
+{"id":18,"type":"vertex","label":"document","uri":"file:/root/local2.repro"}
+{"id":19,"type":"vertex","label":"range","start":{"line":0,"character":10},"end":{"line":0,"character":22}}
+{"id":20,"type":"vertex","label":"resultSet"}
+{"id":21,"type":"vertex","label":"referenceResult"}
+{"id":22,"type":"vertex","label":"hoverResult","result":{"contents":{"kind":"markdown"}}}
+{"id":23,"type":"edge","label":"textDocument/references","inV":21,"outV":20}
+{"id":24,"type":"edge","label":"textDocument/hover","inV":22,"outV":20}
+{"id":25,"type":"vertex","label":"moniker","identifier":"local ERROR_UNRESOLVED_SYMBOL","kind":"import","scheme":"local"}
+{"id":26,"type":"edge","label":"moniker","inV":25,"outV":20}
+{"id":27,"type":"edge","label":"next","inV":20,"outV":19}
+{"id":28,"type":"edge","label":"item","inVs":[19],"outV":21,"document":18}
+{"id":29,"type":"edge","label":"contains","inVs":[19],"outV":18}

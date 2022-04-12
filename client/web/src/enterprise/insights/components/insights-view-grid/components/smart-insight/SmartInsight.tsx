@@ -1,42 +1,31 @@
-import React from 'react'
+import React, { forwardRef } from 'react'
 
-import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { Settings } from '../../../../../../schema/settings.schema'
-import { Insight, isSearchBasedInsight } from '../../../../core/types'
-import { isSearchBackendBasedInsight } from '../../../../core/types/insight/search-insight'
-import { BackendInsight } from '../backend-insight/BackendInsight'
+import { Insight, isBackendInsight } from '../../../../core/types'
+import { BackendInsightView } from '../backend-insight/BackendInsight'
 import { BuiltInInsight } from '../built-in-insight/BuiltInInsight'
 
-export interface SmartInsightProps<D extends keyof ViewContexts>
-    extends TelemetryProps,
-        SettingsCascadeProps<Settings>,
-        PlatformContextProps<'updateSettings'>,
-        React.HTMLAttributes<HTMLElement> {
+export interface SmartInsightProps extends TelemetryProps, React.HTMLAttributes<HTMLElement> {
     insight: Insight
-
-    where: D
-    context: ViewContexts[D]
+    resizing?: boolean
 }
 
 /**
  * Render smart insight with (gql or extension api) fetcher and independent mutation
  * actions.
  */
-export function SmartInsight<D extends keyof ViewContexts>(props: SmartInsightProps<D>): React.ReactElement {
-    const { insight, telemetryService, settingsCascade, platformContext, where, context, ...otherProps } = props
+export const SmartInsight = forwardRef<HTMLElement, SmartInsightProps>((props, reference) => {
+    const { insight, resizing = false, telemetryService, ...otherProps } = props
 
-    if (isSearchBasedInsight(insight) && isSearchBackendBasedInsight(insight)) {
+    if (isBackendInsight(insight)) {
         return (
-            <BackendInsight
+            <BackendInsightView
                 insight={insight}
+                resizing={resizing}
                 telemetryService={telemetryService}
-                settingsCascade={settingsCascade}
-                platformContext={platformContext}
                 {...otherProps}
+                innerRef={reference}
             />
         )
     }
@@ -45,12 +34,12 @@ export function SmartInsight<D extends keyof ViewContexts>(props: SmartInsightPr
     return (
         <BuiltInInsight
             insight={insight}
+            resizing={resizing}
             telemetryService={telemetryService}
-            settingsCascade={settingsCascade}
-            platformContext={platformContext}
-            where={where}
-            context={context}
+            innerRef={reference}
             {...otherProps}
         />
     )
-}
+})
+
+SmartInsight.displayName = 'SmartInsight'

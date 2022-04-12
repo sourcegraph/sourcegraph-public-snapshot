@@ -1,5 +1,6 @@
-import { storiesOf } from '@storybook/react'
 import React from 'react'
+
+import { storiesOf } from '@storybook/react'
 
 import { CaseInsensitiveFuzzySearch } from '../../fuzzyFinder/CaseInsensitiveFuzzySearch'
 import { SearchValue } from '../../fuzzyFinder/FuzzySearch'
@@ -29,16 +30,16 @@ const searchValues: SearchValue[] = filenames.map(filename => ({ text: filename 
 const fuzzy = new CaseInsensitiveFuzzySearch(searchValues)
 const fsm: Ready = { key: 'ready', fuzzy }
 const defaultProps = {
-    commitID: 'commitID',
     repoName: 'repoName',
-    initialQuery: 'clientb',
+    commitID: 'commitID',
     initialMaxResults: 10,
-    downloadFilenames: () => Promise.resolve(filenames),
+    initialQuery: 'clientb',
+    downloadFilenames: filenames,
+    isLoading: false,
+    isError: undefined,
+    onClose: () => {},
     fsm,
     setFsm: () => {},
-    isVisible: true,
-    onClose: () => {},
-    caseInsensitiveFileCountThreshold: 100,
 }
 const { add } = storiesOf('web/FuzzyFinder', module).addDecorator(story => <WebStory>{() => story()}</WebStory>)
 

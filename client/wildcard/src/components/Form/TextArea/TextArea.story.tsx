@@ -1,6 +1,7 @@
+import React, { useCallback, useState } from 'react'
+
 import { Meta } from '@storybook/react'
 import { StoryFnReactReturnType } from '@storybook/react/dist/ts3.9/client/preview/types'
-import React, { useCallback, useState } from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
@@ -20,11 +21,14 @@ const config: Meta = {
 
     parameters: {
         component: TextArea,
+        chromatic: {
+            enableDarkMode: true,
+            disableSnapshot: false,
+        },
         design: {
             type: 'figma',
             name: 'Figma',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A1943',
+            url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=860%3A79961',
         },
     },
 }
@@ -62,7 +66,7 @@ export const TextAreaExamples: React.FunctionComponent = () => {
                 <div>
                     <TextArea
                         onChange={handleChange}
-                        isError={true}
+                        isValid={false}
                         value={value}
                         label="Error example"
                         message="show an error message"

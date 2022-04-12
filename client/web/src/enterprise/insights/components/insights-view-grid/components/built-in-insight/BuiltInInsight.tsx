@@ -1,36 +1,27 @@
-import classnames from 'classnames'
-import PuzzleIcon from 'mdi-react/PuzzleIcon'
-import React, { useContext, useMemo, useState } from 'react'
+import React, { Ref, useContext, useMemo, useRef, useState } from 'react'
 
-import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { useMergeRefs } from 'use-callback-ref'
+
+import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { Settings } from '../../../../../../schema/settings.schema'
-import {
-    ViewCard,
-    ViewLoadingContent,
-    ViewErrorContent,
-    ViewContent,
-    LineChartSettingsContext,
-} from '../../../../../../views'
-import { InsightsApiContext } from '../../../../core/backend/api-provider'
+import * as View from '../../../../../../views'
+import { LineChartSettingsContext } from '../../../../../../views'
+import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
 import { LangStatsInsight } from '../../../../core/types'
-import { SearchExtensionBasedInsight } from '../../../../core/types/insight/search-insight'
-import { useDeleteInsight } from '../../../../hooks/use-delete-insight/use-delete-insight'
-import { useParallelRequests } from '../../../../hooks/use-parallel-requests/use-parallel-request'
+import { SearchRuntimeBasedInsight } from '../../../../core/types/insight/types/search-insight'
+import { useDeleteInsight } from '../../../../hooks/use-delete-insight'
+import { useDistinctValue } from '../../../../hooks/use-distinct-value'
+import { useRemoveInsightFromDashboard } from '../../../../hooks/use-remove-insight'
+import { DashboardInsightsContext } from '../../../../pages/dashboards/dashboard-page/components/dashboards-content/components/dashboard-inisghts/DashboardInsightsContext'
+import { useCodeInsightViewPings, getTrackingTypeByInsightType } from '../../../../pings'
+import { useInsightData } from '../../hooks/use-insight-data'
 import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
 
-interface BuiltInInsightProps<D extends keyof ViewContexts>
-    extends TelemetryProps,
-        PlatformContextProps<'updateSettings'>,
-        SettingsCascadeProps<Settings>,
-        React.HTMLAttributes<HTMLElement> {
-    insight: SearchExtensionBasedInsight | LangStatsInsight
-    where: D
-    context: ViewContexts[D]
+interface BuiltInInsightProps extends TelemetryProps, React.HTMLAttributes<HTMLElement> {
+    insight: SearchRuntimeBasedInsight | LangStatsInsight
+    innerRef: Ref<HTMLElement>
+    resizing: boolean
 }
 
 /**
@@ -41,54 +32,68 @@ interface BuiltInInsightProps<D extends keyof ViewContexts>
  * Component sends FE network request to get and process information but does that in
  * main work thread instead of using Extension API.
  */
-export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsightProps<D>): React.ReactElement {
-    const { insight, telemetryService, settingsCascade, platformContext, where, context, ...otherProps } = props
-    const { getBuiltInInsight } = useContext(InsightsApiContext)
+export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
+    const { insight, resizing, telemetryService, innerRef, ...otherProps } = props
+    const { getBuiltInInsightData } = useContext(CodeInsightsBackendContext)
+    const { dashboard } = useContext(DashboardInsightsContext)
 
-    const { data, loading } = useParallelRequests(
-        useMemo(() => () => getBuiltInInsight(insight, { where, context }), [
-            getBuiltInInsight,
-            insight,
-            where,
-            context,
-        ])
+    const insightCardReference = useRef<HTMLDivElement>(null)
+    const mergedInsightCardReference = useMergeRefs([insightCardReference, innerRef])
+
+    const cachedInsight = useDistinctValue(insight)
+
+    const { data, loading, isVisible } = useInsightData(
+        useMemo(() => () => getBuiltInInsightData({ insight: cachedInsight }), [getBuiltInInsightData, cachedInsight]),
+        insightCardReference
     )
 
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
-    const { delete: handleDelete, loading: isDeleting } = useDeleteInsight({ settingsCascade, platformContext })
+    const { delete: handleDelete, loading: isDeleting } = useDeleteInsight()
+    const { remove: handleRemove, loading: isRemoving } = useRemoveInsightFromDashboard()
+
+    const { trackDatumClicks, trackMouseLeave, trackMouseEnter } = useCodeInsightViewPings({
+        telemetryService,
+        insightType: getTrackingTypeByInsightType(insight.type),
+    })
 
     return (
-        <ViewCard
+        <View.Root
             {...otherProps}
-            insight={{ id: insight.id, view: data?.view }}
-            className={classnames('extension-insight-card', otherProps.className)}
-            contextMenu={
-                <InsightContextMenu
-                    insightID={insight.id}
-                    menuButtonClassName="ml-1 mr-n2 d-inline-flex"
-                    zeroYAxisMin={zeroYAxisMin}
-                    onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
-                    onDelete={() => handleDelete(insight)}
-                />
+            innerRef={mergedInsightCardReference}
+            title={insight.title}
+            actions={
+                isVisible && (
+                    <InsightContextMenu
+                        insight={insight}
+                        dashboard={dashboard}
+                        menuButtonClassName="ml-1 d-inline-flex"
+                        zeroYAxisMin={zeroYAxisMin}
+                        onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
+                        onRemoveFromDashboard={dashboard => handleRemove({ insight, dashboard })}
+                        onDelete={() => handleDelete(insight)}
+                    />
+                )
             }
+            data-testid={`insight-card.${insight.id}`}
+            onMouseEnter={trackMouseEnter}
+            onMouseLeave={trackMouseLeave}
         >
-            {!data || loading || isDeleting ? (
-                <ViewLoadingContent
-                    text={isDeleting ? 'Deleting code insight' : 'Loading code insight'}
-                    subTitle={insight.id}
-                    icon={PuzzleIcon}
-                />
+            {resizing ? (
+                <View.Banner>Resizing</View.Banner>
+            ) : !data || loading || isDeleting || !isVisible ? (
+                <View.LoadingContent text={isDeleting ? 'Deleting code insight' : 'Loading code insight'} />
+            ) : isRemoving ? (
+                <View.LoadingContent text="Removing insight from the dashboard" />
             ) : isErrorLike(data.view) ? (
-                <ViewErrorContent error={data.view} title={insight.id} icon={PuzzleIcon} />
+                <View.ErrorContent error={data.view} title={insight.id} />
             ) : (
                 data.view && (
                     <LineChartSettingsContext.Provider value={{ zeroYAxisMin }}>
-                        <ViewContent
-                            telemetryService={telemetryService}
-                            viewContent={data.view.content}
-                            viewID={insight.id}
-                            containerClassName="extension-insight-card"
+                        <View.Content
+                            content={data.view.content}
+                            onDatumLinkClick={trackDatumClicks}
+                            locked={insight.isFrozen}
                         />
                     </LineChartSettingsContext.Provider>
                 )
@@ -96,8 +101,8 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
             {
                 // Passing children props explicitly to render any top-level content like
                 // resize-handler from the react-grid-layout library
-                otherProps.children
+                isVisible && otherProps.children
             }
-        </ViewCard>
+        </View.Root>
     )
 }

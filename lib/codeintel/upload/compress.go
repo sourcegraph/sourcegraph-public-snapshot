@@ -4,9 +4,9 @@ import (
 	"io"
 	"os"
 
-	"github.com/hashicorp/go-multierror"
 	gzip "github.com/klauspost/pgzip"
 
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -20,14 +20,14 @@ func compressReaderToDisk(r io.Reader, readerLen int64, progress output.Progress
 	}
 	defer func() {
 		if closeErr := compressedFile.Close(); err != nil {
-			err = multierror.Append(err, closeErr)
+			err = errors.Append(err, closeErr)
 		}
 	}()
 
 	gzipWriter := gzip.NewWriter(compressedFile)
 	defer func() {
 		if closeErr := gzipWriter.Close(); err != nil {
-			err = multierror.Append(err, closeErr)
+			err = errors.Append(err, closeErr)
 		}
 	}()
 

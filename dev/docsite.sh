@@ -4,12 +4,18 @@ set -euf -o pipefail
 
 pushd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
 
-mkdir -p .bin
-
-version=v1.8.1
+# Update DOCSITE_VERSION everywhere in all places (including outside this repo)
+version=v1.8.6
 suffix="${version}_$(go env GOOS)_$(go env GOARCH)"
-target="$PWD/.bin/docsite_${suffix}"
 url="https://github.com/sourcegraph/docsite/releases/download/${version}/docsite_${suffix}"
+
+base="$PWD/.bin"
+if [[ "${CI:-"false"}" == "true" ]]; then
+  base="/tmp"
+fi
+
+target="${base}/docsite_${suffix}"
+mkdir -p "$(dirname "${target}")"
 
 if [ ! -f "${target}" ]; then
   echo "downloading ${url}" 1>&2

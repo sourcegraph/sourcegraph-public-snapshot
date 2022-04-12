@@ -1,21 +1,19 @@
+import React, { RefObject, useEffect, useMemo, useRef } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
+import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import LinkVariantIcon from 'mdi-react/LinkVariantIcon'
-import React, { RefObject, useEffect, useMemo, useRef } from 'react'
-import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 
+import { renderMarkdown } from '@sourcegraph/common'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { AnchorLink } from '@sourcegraph/shared/src/components/Link'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { AnchorLink, ProductStatusBadge, Link, Icon } from '@sourcegraph/wildcard'
 
-import { Badge } from '../../components/Badge'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationSingleSymbolURL, toDocumentationURL } from '../../util/url'
@@ -25,12 +23,9 @@ import { DocumentationIcons } from './DocumentationIcons'
 import { GQLDocumentationNode, Tag, isExcluded } from './graphql'
 import { hasDescendent } from './RepositoryDocumentationSidebar'
 
-interface Props
-    extends Partial<RevisionSpec>,
-        ResolvedRevisionSpec,
-        BreadcrumbSetters,
-        SettingsCascadeProps,
-        VersionContextProps {
+import styles from './DocumentationNode.module.scss'
+
+interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec, BreadcrumbSetters, SettingsCascadeProps {
     repo: RepositoryFields
 
     history: H.History
@@ -136,12 +131,15 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
         }
         const renderContent = !onlyPathID || node.pathID === onlyPathID || depth === 0
         return (
-            <div className={classNames('documentation-node mb-5', topMargin)}>
+            <div className={classNames('mb-5', styles.documentationNode, topMargin)}>
                 {renderContent && (
                     <div ref={reference}>
-                        <Heading level={headingLevel} className="d-flex align-items-center documentation-node__heading">
-                            <AnchorLink className="documentation-node__heading-anchor-link" to={thisPage}>
-                                <LinkVariantIcon className="icon-inline" />
+                        <Heading
+                            level={headingLevel}
+                            className={classNames('d-flex align-items-center', styles.heading)}
+                        >
+                            <AnchorLink className={styles.headingAnchorLink} to={thisPage}>
+                                <Icon as={LinkVariantIcon} />
                             </AnchorLink>
                             {depth !== 0 && <DocumentationIcons className="mr-1" tags={node.documentation.tags} />}
                             <Link className="h" id={hash} to={singleSymbolPage}>
@@ -151,24 +149,32 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
                         {depth === 0 && (
                             <>
                                 <div className="d-flex align-items-center mb-3">
-                                    <span className="documentation-node__pill d-flex justify-content-center align-items-center px-2">
-                                        <BookOpenVariantIcon className="icon-inline text-muted mr-1" /> Generated API
+                                    <span
+                                        className={classNames(
+                                            'd-flex justify-content-center align-items-center px-2',
+                                            styles.pill
+                                        )}
+                                    >
+                                        <Icon className="text-muted mr-1" as={BookOpenBlankVariantIcon} /> Generated API
                                         docs
-                                        <span className="documentation-node__pill-divider mx-2" />
-                                        <a
-                                            // eslint-disable-next-line react/jsx-no-target-blank
+                                        <span className={classNames('mx-2', styles.pillDivider)} />
+                                        <Link
                                             target="_blank"
                                             rel="noopener"
-                                            href="https://docs.sourcegraph.com/code_intelligence/apidocs"
+                                            to="https://docs.sourcegraph.com/code_intelligence/apidocs"
                                         >
                                             Learn more
-                                        </a>
+                                        </Link>
                                     </span>
                                     {/*
                             TODO(apidocs): add support for indicating time the API docs were updated
                             <span className="ml-2">Last updated 2 days ago</span>
                         */}
-                                    <Badge status="experimental" className="text-uppercase ml-2" />
+                                    <ProductStatusBadge
+                                        status="experimental"
+                                        className="text-uppercase ml-2"
+                                        linkToDocs={true}
+                                    />
                                 </div>
                                 <hr />
                                 {onlyPathID && depth === 0 && (
@@ -189,9 +195,10 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
                                 <>
                                     <h4 className="mt-4">
                                         Usage examples
-                                        <HelpCircleOutlineIcon
-                                            className="icon-inline ml-1"
+                                        <Icon
+                                            className="ml-1"
                                             data-tooltip="Usage examples from precise LSIF code intelligence index"
+                                            as={HelpCircleOutlineIcon}
                                         />
                                     </h4>
                                     <DocumentationExamples {...props} pathID={node.pathID} count={onlyPathID ? 3 : 1} />

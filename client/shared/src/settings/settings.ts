@@ -1,8 +1,8 @@
 import { cloneDeep, isFunction } from 'lodash'
 
-import * as GQL from '../graphql/schema'
-import { createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
-import { parseJSONCOrError } from '../util/jsonc'
+import { createAggregateError, ErrorLike, isErrorLike, parseJSONCOrError } from '@sourcegraph/common'
+
+import * as GQL from '../schema'
 
 /**
  * A dummy type to represent the "subject" for client settings (i.e., settings stored in the client application,
@@ -21,8 +21,17 @@ export interface Settings {
     extensions?: { [extensionID: string]: boolean }
     experimentalFeatures?: {
         enableFastResultLoading?: boolean
-        acceptSearchSuggestionOnEnter?: boolean
         batchChangesExecution?: boolean
+        showSearchContext?: boolean
+        showSearchContextManagement?: boolean
+        fuzzyFinder?: boolean
+        fuzzyFinderCaseInsensitiveFileCountThreshold?: number
+        clientSearchResultRanking?: string
+        coolCodeIntel?: boolean
+        codeIntelRepositoryBadge?: {
+            enabled: boolean
+            forNerds?: boolean
+        }
     }
     [key: string]: any
 

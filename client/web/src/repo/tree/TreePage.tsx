@@ -1,127 +1,79 @@
-import { subYears, formatISO } from 'date-fns'
-import * as H from 'history'
-import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
-import BrainIcon from 'mdi-react/BrainIcon'
-import FolderIcon from 'mdi-react/FolderIcon'
-import HistoryIcon from 'mdi-react/HistoryIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
-import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
-import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import TagIcon from 'mdi-react/TagIcon'
-import UserIcon from 'mdi-react/UserIcon'
-import React, { useState, useMemo, useCallback, useEffect } from 'react'
-import { Link, Redirect } from 'react-router-dom'
-import { Observable, EMPTY } from 'rxjs'
-import { catchError, map } from 'rxjs/operators'
+import React, { useMemo, useEffect, useState } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
-import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
-import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
+import classNames from 'classnames'
+import * as H from 'history'
+import CodeJsonIcon from 'mdi-react/CodeJsonIcon'
+import FolderIcon from 'mdi-react/FolderIcon'
+import SettingsIcon from 'mdi-react/SettingsIcon'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
+import { Redirect, Route, Switch, useRouteMatch } from 'react-router-dom'
+import { catchError } from 'rxjs/operators'
+
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { asError, encodeURIPathComponent, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
+import { SearchContextProps } from '@sourcegraph/search'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { encodeURIPathComponent, toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { toURIWithPath, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
+import {
+    Container,
+    PageHeader,
+    LoadingSpinner,
+    useObservable,
+    Link,
+    Icon,
+    ButtonGroup,
+    Button,
+    Badge,
+} from '@sourcegraph/wildcard'
 
-import { getFileDecorations } from '../../backend/features'
-import { queryGraphQL } from '../../backend/graphql'
 import { BatchChangesProps } from '../../batches'
-import { RepoBatchChangesButton } from '../../batches/RepoBatchChangesButton'
+import { BatchChangesIcon } from '../../batches/icons'
 import { CodeIntelligenceProps } from '../../codeintel'
-import { ErrorAlert } from '../../components/alerts'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
-import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
-import { CodeInsightsProps } from '../../insights/types'
-import { Settings } from '../../schema/settings.schema'
-import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../../search'
+import { ActionItemsBarProps } from '../../extensions/components/ActionItemsBar'
+import { FeatureFlagProps } from '../../featureFlags/featureFlags'
+import { RepositoryFields, TreeFields } from '../../graphql-operations'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
-import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
-import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
+import { RepositoryCompareArea } from '../compare/RepositoryCompareArea'
+import { RepoRevisionWrapper } from '../components/RepoRevision'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
+import { RepositoryFileTreePageProps } from '../RepositoryFileTreePage'
+import { RepositoryGitDataContainer } from '../RepositoryGitDataContainer'
+import { RepoCommits, RepoDocs } from '../routes'
+import { RepositoryStatsContributorsPage } from '../stats/RepositoryStatsContributorsPage'
 
-import { TreeEntriesSection } from './TreeEntriesSection'
+import { RepositoryBranchesTab } from './BranchesTab'
+import { HomeTab } from './HomeTab'
+import { RepositoryTagTab } from './TagTab'
+import { TreeNavigation } from './TreeNavigation'
+import { TreePageContent } from './TreePageContent'
+import { TreeTabList } from './TreeTabList'
 
-const fetchTreeCommits = memoizeObservable(
-    (args: {
-        repo: Scalars['ID']
-        revspec: string
-        first?: number
-        filePath?: string
-        after?: string
-    }): Observable<GQL.IGitCommitConnection> =>
-        queryGraphQL(
-            gql`
-                query TreeCommits($repo: ID!, $revspec: String!, $first: Int, $filePath: String, $after: String) {
-                    node(id: $repo) {
-                        __typename
-                        ... on Repository {
-                            commit(rev: $revspec) {
-                                ancestors(first: $first, path: $filePath, after: $after) {
-                                    nodes {
-                                        ...GitCommitFields
-                                    }
-                                    pageInfo {
-                                        hasNextPage
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                ${gitCommitFragment}
-            `,
-            args
-        ).pipe(
-            map(dataOrThrowErrors),
-            map(data => {
-                if (!data.node) {
-                    throw new Error('Repository not found')
-                }
-                if (data.node.__typename !== 'Repository') {
-                    throw new Error('Node is not a Repository')
-                }
-                if (!data.node.commit) {
-                    throw new Error('Commit not found')
-                }
-                return data.node.commit.ancestors
-            })
-        ),
-    args => `${args.repo}:${args.revspec}:${String(args.first)}:${String(args.filePath)}:${String(args.after)}`
-)
+import styles from './TreePage.module.scss'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
+        FeatureFlagProps,
         ExtensionsControllerProps,
         PlatformContextProps,
         ThemeProps,
         TelemetryProps,
         ActivationProps,
-        PatternTypeProps,
-        CaseSensitivityProps,
-        VersionContextProps,
         CodeIntelligenceProps,
         BatchChangesProps,
-        CodeInsightsProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters {
-    repo: TreePageRepositoryFields
+    repo: RepositoryFields
     /** The tree's path in TreePage. We call it filePath for consistency elsewhere. */
     filePath: string
     commitID: string
@@ -129,6 +81,9 @@ interface Props
     location: H.Location
     history: H.History
     globbing: boolean
+    useActionItemsBar: ActionItemsBarProps['useActionItemsBar']
+    match: RepositoryFileTreePageProps['match']
+    isSourcegraphDotCom: boolean
 }
 
 export const treePageRepositoryFragment = gql`
@@ -137,6 +92,7 @@ export const treePageRepositoryFragment = gql`
         name
         description
         viewerCanAdminister
+        url
     }
 `
 
@@ -145,13 +101,14 @@ export const TreePage: React.FunctionComponent<Props> = ({
     commitID,
     revision,
     filePath,
-    patternType,
-    caseSensitive,
     settingsCascade,
     useBreadcrumb,
     codeIntelligenceEnabled,
     batchChangesEnabled,
-    extensionViews: ExtensionViewsSection,
+    useActionItemsBar,
+    match,
+    featureFlags,
+    isSourcegraphDotCom,
     ...props
 }) => {
     useEffect(() => {
@@ -177,20 +134,12 @@ export const TreePage: React.FunctionComponent<Props> = ({
                         revision={revision}
                         filePath={filePath}
                         isDir={true}
+                        repoUrl={repo.url}
+                        telemetryService={props.telemetryService}
                     />
                 ),
             }
-        }, [repo.name, revision, filePath])
-    )
-
-    const [showOlderCommits, setShowOlderCommits] = useState(false)
-
-    const onShowOlderCommitsClicked = useCallback(
-        (event: React.MouseEvent): void => {
-            event.preventDefault()
-            setShowOlderCommits(true)
-        },
-        [setShowOlderCommits]
+        }, [repo.name, repo.url, revision, filePath, props.telemetryService])
     )
 
     const treeOrError = useObservable(
@@ -206,23 +155,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
             [repo.name, commitID, revision, filePath]
         )
     )
-
-    const fileDecorationsByPath =
-        useObservable<FileDecorationsByPath>(
-            useMemo(
-                () =>
-                    treeOrError && !isErrorLike(treeOrError)
-                        ? getFileDecorations({
-                              files: treeOrError.entries,
-                              extensionsController: props.extensionsController,
-                              repoName: repo.name,
-                              commitID,
-                              parentNodeUri: treeOrError.url,
-                          })
-                        : EMPTY,
-                [treeOrError, repo.name, commitID, props.extensionsController]
-            )
-        ) ?? {}
 
     const showCodeInsights =
         !isErrorLike(settingsCascade.final) &&
@@ -262,10 +194,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
         }
     }, [uri, showCodeInsights, props.extensionsController])
 
-    // eslint-disable-next-line unicorn/prevent-abbreviations
-    const enableAPIDocs =
-        !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.apiDocs !== false
-
     const getPageTitle = (): string => {
         const repoString = displayRepoName(repo.name)
         if (filePath) {
@@ -274,62 +202,132 @@ export const TreePage: React.FunctionComponent<Props> = ({
         return `${repoString}`
     }
 
-    const queryCommits = useCallback(
-        (args: { first?: number }): Observable<GQL.IGitCommitConnection> => {
-            const after: string | undefined = showOlderCommits ? undefined : formatISO(subYears(Date.now(), 1))
-            return fetchTreeCommits({
-                ...args,
-                repo: repo.id,
-                revspec: revision || '',
-                filePath,
-                after,
-            })
-        },
-        [filePath, repo.id, revision, showOlderCommits]
-    )
+    // To start using the feature flag bellow, you can go to /site-admin/feature-flags and
+    // create a new featurFlag named 'new-repo-page' and set its value to true.
+    // https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag
+    const newRepoPage = featureFlags.get('new-repo-page')
 
-    const emptyElement = showOlderCommits ? (
-        <>No commits in this tree.</>
-    ) : (
-        <div className="test-tree-page-no-recent-commits">
-            <p className="mb-2">No commits in this tree in the past year.</p>
-            <button
-                type="button"
-                className="btn btn-secondary btn-sm test-tree-page-show-all-commits"
-                onClick={onShowOlderCommitsClicked}
-            >
-                Show all commits
-            </button>
-        </div>
-    )
+    const homeTabProps = {
+        repo,
+        commitID,
+        revision,
+        filePath,
+        settingsCascade,
+        codeIntelligenceEnabled,
+        batchChangesEnabled,
+        location,
+    }
 
-    const TotalCountSummary: React.FunctionComponent<{ totalCount: number }> = ({ totalCount }) => (
-        <div className="mt-2">
-            {showOlderCommits ? (
-                <>
-                    {totalCount} total {pluralize('commit', totalCount)} in this tree.
-                </>
+    const [selectedTab, setSelectedTab] = useState('home')
+    const [showPageTitle, setShowPageTitle] = useState(true)
+    const { path } = useRouteMatch()
+
+    useMemo(() => {
+        if (newRepoPage && treeOrError && !isErrorLike(treeOrError)) {
+            setShowPageTitle(false)
+
+            switch (path) {
+                case `${treeOrError.url}/-/tag/tab`:
+                    setSelectedTab('tags')
+                    break
+                case `${treeOrError.url}/-/docs/tab/:pathID*`:
+                    setSelectedTab('docs')
+                    setShowPageTitle(true)
+                    break
+                case `${treeOrError.url}/-/commits/tab`:
+                    setSelectedTab('commits')
+                    break
+                case `${treeOrError.url}/-/branch/tab`:
+                    setSelectedTab('branch')
+                    break
+                case `${treeOrError.url}/-/contributors/tab`:
+                    setSelectedTab('contributors')
+                    break
+                case `${treeOrError.url}/-/compare/tab/:spec*`:
+                    setSelectedTab('compare')
+                    break
+                case `${treeOrError.url}`:
+                    setSelectedTab('home')
+                    setShowPageTitle(true)
+                    break
+            }
+        }
+    }, [newRepoPage, path, treeOrError])
+
+    const RootHeaderSection = ({ tree }: { tree: TreeFields }): React.ReactElement => (
+        <>
+            <div className="d-flex justify-content-between align-items-center">
+                <div>
+                    <PageHeader
+                        path={[{ icon: SourceRepositoryIcon, text: displayRepoName(repo.name) }]}
+                        className="mb-3 test-tree-page-title"
+                    />
+                    {repo.description && <p>{repo.description}</p>}
+                </div>
+                {newRepoPage && (
+                    <ButtonGroup>
+                        <Button
+                            to={`/search?q=${encodeURIPathComponent(
+                                `context:global count:all repo:dependencies(${repo.name.replaceAll('.', '\\.')}$) `
+                            )}`}
+                            variant="secondary"
+                            outline={true}
+                            as={Link}
+                            className="ml-1"
+                        >
+                            <Icon as={CodeJsonIcon} /> Search dependencies{' '}
+                            <Badge variant="info" className={classNames('text-uppercase')}>
+                                NEW
+                            </Badge>
+                        </Button>
+
+                        {!isSourcegraphDotCom && batchChangesEnabled && (
+                            <Button
+                                to="/batch-changes/create"
+                                variant="secondary"
+                                outline={true}
+                                as={Link}
+                                className="ml-1"
+                            >
+                                <Icon as={BatchChangesIcon} /> Create batch change
+                            </Button>
+                        )}
+
+                        {repo.viewerCanAdminister && (
+                            <Button
+                                to={`/${encodeURIPathComponent(repo.name)}/-/settings`}
+                                variant="secondary"
+                                outline={true}
+                                as={Link}
+                                className="ml-1"
+                            >
+                                <Icon as={SettingsIcon} />
+                            </Button>
+                        )}
+                    </ButtonGroup>
+                )}
+            </div>
+            {newRepoPage ? (
+                <TreeTabList tree={tree} selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
             ) : (
-                <>
-                    <p className="mb-2">
-                        {totalCount} {pluralize('commit', totalCount)} in this tree in the past year.
-                    </p>
-                    <button type="button" className="btn btn-secondary btn-sm" onClick={onShowOlderCommitsClicked}>
-                        Show all commits
-                    </button>
-                </>
+                <TreeNavigation
+                    batchChangesEnabled={batchChangesEnabled}
+                    codeIntelligenceEnabled={codeIntelligenceEnabled}
+                    repo={repo}
+                    revision={revision}
+                    tree={tree}
+                />
             )}
-        </div>
+        </>
     )
 
     return (
-        <div className="tree-page">
-            <Container className="tree-page__container">
-                <PageTitle title={getPageTitle()} />
+        <div className={styles.treePage}>
+            <Container className={styles.container}>
+                {!showPageTitle && <PageTitle title={getPageTitle()} />}
                 {treeOrError === undefined ? (
                     <div>
-                        <LoadingSpinner className="icon-inline tree-page__entries-loader" /> Loading files and
-                        directories
+                        <LoadingSpinner /> Loading files and directories
                     </div>
                 ) : isErrorLike(treeOrError) ? (
                     // If the tree is actually a blob, be helpful and redirect to the blob page.
@@ -340,147 +338,108 @@ export const TreePage: React.FunctionComponent<Props> = ({
                         <ErrorAlert error={treeOrError} />
                     )
                 ) : (
-                    <>
+                    <div className={classNames(styles.header)}>
                         <header className="mb-3">
                             {treeOrError.isRoot ? (
-                                <>
-                                    <PageHeader
-                                        path={[{ icon: SourceRepositoryIcon, text: displayRepoName(repo.name) }]}
-                                        className="mb-3 test-tree-page-title"
-                                    />
-                                    {repo.description && <p>{repo.description}</p>}
-                                    <div className="btn-group">
-                                        {enableAPIDocs && (
-                                            <Link
-                                                className="btn btn-outline-secondary"
-                                                to={`${treeOrError.url}/-/docs`}
-                                            >
-                                                <BookOpenVariantIcon className="icon-inline" /> API docs
-                                            </Link>
-                                        )}
-                                        <Link className="btn btn-outline-secondary" to={`${treeOrError.url}/-/commits`}>
-                                            <SourceCommitIcon className="icon-inline" /> Commits
-                                        </Link>
-                                        <Link
-                                            className="btn btn-outline-secondary"
-                                            to={`/${encodeURIPathComponent(repo.name)}/-/branches`}
-                                        >
-                                            <SourceBranchIcon className="icon-inline" /> Branches
-                                        </Link>
-                                        <Link
-                                            className="btn btn-outline-secondary"
-                                            to={`/${encodeURIPathComponent(repo.name)}/-/tags`}
-                                        >
-                                            <TagIcon className="icon-inline" /> Tags
-                                        </Link>
-                                        <Link
-                                            className="btn btn-outline-secondary"
-                                            to={
-                                                revision
-                                                    ? `/${encodeURIPathComponent(
-                                                          repo.name
-                                                      )}/-/compare/...${encodeURIComponent(revision)}`
-                                                    : `/${encodeURIPathComponent(repo.name)}/-/compare`
-                                            }
-                                        >
-                                            <HistoryIcon className="icon-inline" /> Compare
-                                        </Link>
-                                        <Link
-                                            className="btn btn-outline-secondary"
-                                            to={`/${encodeURIPathComponent(repo.name)}/-/stats/contributors`}
-                                        >
-                                            <UserIcon className="icon-inline" /> Contributors
-                                        </Link>
-                                        {codeIntelligenceEnabled && (
-                                            <Link
-                                                className="btn btn-outline-secondary"
-                                                to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
-                                            >
-                                                <BrainIcon className="icon-inline" /> Code Intelligence
-                                            </Link>
-                                        )}
-                                        {batchChangesEnabled && (
-                                            <RepoBatchChangesButton
-                                                className="btn btn-outline-secondary"
-                                                repoName={repo.name}
-                                            />
-                                        )}
-                                        {repo.viewerCanAdminister && (
-                                            <Link
-                                                className="btn btn-outline-secondary"
-                                                to={`/${encodeURIPathComponent(repo.name)}/-/settings`}
-                                            >
-                                                <SettingsIcon className="icon-inline" /> Settings
-                                            </Link>
-                                        )}
-                                    </div>
-                                </>
+                                <RootHeaderSection tree={treeOrError} />
                             ) : (
                                 <PageHeader
                                     path={[{ icon: FolderIcon, text: filePath }]}
-                                    className="mb-3 test-tree-page-title"
+                                    className="mb-3 mr-2 test-tree-page-title"
                                 />
                             )}
                         </header>
 
-                        <ExtensionViewsSection
-                            className="tree-page__section mb-3"
-                            telemetryService={props.telemetryService}
-                            settingsCascade={settingsCascade}
-                            platformContext={props.platformContext}
-                            extensionsController={props.extensionsController}
-                            where="directory"
-                            uri={uri}
-                        />
-
-                        <section className="tree-page__section test-tree-entries mb-3">
-                            <h2>Files and directories</h2>
-                            <TreeEntriesSection
-                                parentPath={filePath}
-                                entries={treeOrError.entries}
-                                fileDecorationsByPath={fileDecorationsByPath}
-                                isLightTheme={props.isLightTheme}
-                            />
-                        </section>
-                        <ActionsContainer {...props} menu={ContributableMenu.DirectoryPage} empty={null}>
-                            {items => (
-                                <section className="tree-page__section">
-                                    <h2>Actions</h2>
-                                    {items.map(item => (
-                                        <ActionItem
-                                            {...props}
-                                            key={item.action.id}
-                                            {...item}
-                                            className="btn btn-secondary mr-1 mb-1"
+                        {newRepoPage ? (
+                            <div>
+                                <section className={classNames('test-tree-entries mb-3', styles.section)}>
+                                    <Switch>
+                                        <Route
+                                            path={`${treeOrError.url}/-/tag/tab`}
+                                            render={routeComponentProps => (
+                                                <RepositoryTagTab repo={repo} {...routeComponentProps} />
+                                            )}
                                         />
-                                    ))}
+                                        <Route
+                                            path={`${treeOrError.url}/-/docs/tab`}
+                                            render={routeComponentProps => (
+                                                <RepoDocs
+                                                    repo={repo}
+                                                    useBreadcrumb={useBreadcrumb}
+                                                    {...routeComponentProps}
+                                                    {...props}
+                                                />
+                                            )}
+                                        />
+                                        <Route
+                                            path={`${treeOrError.url}/-/commits/tab`}
+                                            render={routeComponentProps => (
+                                                <RepoCommits
+                                                    repo={repo}
+                                                    useBreadcrumb={useBreadcrumb}
+                                                    {...props}
+                                                    {...routeComponentProps}
+                                                />
+                                            )}
+                                        />
+                                        <Route
+                                            path={`${treeOrError.url}`}
+                                            exact={true}
+                                            render={routeComponentProps => (
+                                                <HomeTab
+                                                    {...homeTabProps}
+                                                    {...props}
+                                                    {...routeComponentProps}
+                                                    repo={repo}
+                                                />
+                                            )}
+                                        />
+                                        <Route
+                                            path={`${treeOrError.url}/-/branch/tab`}
+                                            render={routeComponentProps => (
+                                                <RepositoryBranchesTab repo={repo} {...routeComponentProps} />
+                                            )}
+                                        />
+                                        <Route
+                                            path={`${treeOrError.url}/-/contributors/tab`}
+                                            render={routeComponentProps => (
+                                                <RepositoryStatsContributorsPage
+                                                    {...routeComponentProps}
+                                                    repo={repo}
+                                                    {...props}
+                                                />
+                                            )}
+                                        />
+                                        <Route
+                                            path={`${treeOrError.url}/-/compare/tab`}
+                                            render={() => (
+                                                <RepoRevisionWrapper>
+                                                    <RepositoryGitDataContainer {...props} repoName={repo.name}>
+                                                        <RepositoryCompareArea
+                                                            repo={repo}
+                                                            match={match}
+                                                            settingsCascade={settingsCascade}
+                                                            useBreadcrumb={useBreadcrumb}
+                                                            {...props}
+                                                        />
+                                                    </RepositoryGitDataContainer>
+                                                </RepoRevisionWrapper>
+                                            )}
+                                        />
+                                    </Switch>
                                 </section>
-                            )}
-                        </ActionsContainer>
-
-                        <div className="tree-page__section">
-                            <h2>Changes</h2>
-                            <FilteredConnection<GitCommitFields, Pick<GitCommitNodeProps, 'className' | 'compact'>>
-                                location={props.location}
-                                className="mt-2 tree-page__section--commits"
-                                listClassName="list-group list-group-flush"
-                                noun="commit in this tree"
-                                pluralNoun="commits in this tree"
-                                queryConnection={queryCommits}
-                                nodeComponent={GitCommitNode}
-                                nodeComponentProps={{
-                                    className: 'list-group-item',
-                                    compact: true,
-                                }}
-                                updateOnChange={`${repo.name}:${revision}:${filePath}:${String(showOlderCommits)}`}
-                                defaultFirst={7}
-                                useURLQuery={false}
-                                hideSearch={true}
-                                emptyElement={emptyElement}
-                                totalCountSummaryComponent={TotalCountSummary}
+                            </div>
+                        ) : (
+                            <TreePageContent
+                                filePath={filePath}
+                                tree={treeOrError}
+                                repo={repo}
+                                revision={revision}
+                                commitID={commitID}
+                                {...props}
                             />
-                        </div>
-                    </>
+                        )}
+                    </div>
                 )}
             </Container>
         </div>

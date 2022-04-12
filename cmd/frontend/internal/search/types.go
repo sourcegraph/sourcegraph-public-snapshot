@@ -1,6 +1,6 @@
 package search
 
-import "github.com/cockroachdb/errors"
+import "github.com/sourcegraph/sourcegraph/lib/errors"
 
 type matchType int
 

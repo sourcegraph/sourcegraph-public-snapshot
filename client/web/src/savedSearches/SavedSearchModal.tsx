@@ -1,13 +1,17 @@
-import Dialog from '@reach/dialog'
-import * as H from 'history'
 import * as React from 'react'
 
+import classNames from 'classnames'
+import * as H from 'history'
+
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { SearchPatternTypeProps } from '@sourcegraph/search'
+import { Button, Modal, Select } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
-import { PatternTypeProps } from '../search'
 
-interface Props extends Omit<PatternTypeProps, 'setPatternType'> {
+import styles from './SavedSearchModal.module.scss'
+
+interface Props extends SearchPatternTypeProps {
     location: H.Location
     history: H.History
     authenticatedUser: AuthenticatedUser | null
@@ -24,6 +28,8 @@ interface State {
     saveLocation: UserOrOrg
     organization?: string
 }
+
+const MODAL_LABEL_ID = 'saved-search-modal-id'
 
 export class SavedSearchModal extends React.Component<Props, State> {
     constructor(props: Props) {
@@ -46,48 +52,52 @@ export class SavedSearchModal extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         return (
             this.props.authenticatedUser && (
-                <Dialog className="saved-search-modal-form " onDismiss={this.props.onDidCancel}>
+                <Modal
+                    aria-labelledby={MODAL_LABEL_ID}
+                    className={styles.savedSearchModalForm}
+                    onDismiss={this.props.onDidCancel}
+                    data-testid="saved-search-modal"
+                >
                     <Form onSubmit={this.onSubmit} className="test-saved-search-modal">
-                        <h3>Save search query to: </h3>
-                        <div className="form-group">
-                            <select
-                                onChange={this.onLocationChange}
-                                className="form-control saved-search-modal-form__select"
-                            >
-                                <option value={UserOrOrg.User}>User</option>
-                                {this.props.authenticatedUser.organizations &&
-                                    this.props.authenticatedUser.organizations.nodes.length > 0 && (
-                                        <option value={UserOrOrg.Org}>Organization</option>
-                                    )}
-                            </select>
+                        <h3 id={MODAL_LABEL_ID}>Save search query to: </h3>
+
+                        <Select aria-label="" onChange={this.onLocationChange} selectClassName={styles.select}>
+                            <option value={UserOrOrg.User}>User</option>
                             {this.props.authenticatedUser.organizations &&
-                                this.props.authenticatedUser.organizations.nodes.length > 0 &&
-                                this.state.saveLocation === UserOrOrg.Org && (
-                                    <select
-                                        onChange={this.onOrganizationChange}
-                                        placeholder="Select an organization"
-                                        className="form-control saved-search-modal-form__select"
-                                    >
-                                        <option value="" disabled={true} selected={true}>
-                                            Select an organization
-                                        </option>
-                                        {this.props.authenticatedUser.organizations.nodes.map(org => (
-                                            <option value={org.name} key={org.name}>
-                                                {org.displayName ? org.displayName : org.name}
-                                            </option>
-                                        ))}
-                                    </select>
+                                this.props.authenticatedUser.organizations.nodes.length > 0 && (
+                                    <option value={UserOrOrg.Org}>Organization</option>
                                 )}
-                        </div>
-                        <button
+                        </Select>
+                        {this.props.authenticatedUser.organizations &&
+                            this.props.authenticatedUser.organizations.nodes.length > 0 &&
+                            this.state.saveLocation === UserOrOrg.Org && (
+                                <Select
+                                    aria-label=""
+                                    onChange={this.onOrganizationChange}
+                                    placeholder="Select an organization"
+                                    selectClassName={styles.select}
+                                >
+                                    <option value="" disabled={true} selected={true}>
+                                        Select an organization
+                                    </option>
+                                    {this.props.authenticatedUser.organizations.nodes.map(org => (
+                                        <option value={org.name} key={org.name}>
+                                            {org.displayName ? org.displayName : org.name}
+                                        </option>
+                                    ))}
+                                </Select>
+                            )}
+
+                        <Button
                             type="submit"
                             disabled={this.state.saveLocation === UserOrOrg.Org && !this.state.organization}
-                            className="btn btn-primary saved-search-modal-form__button test-saved-search-modal-save-button"
+                            className={classNames(styles.button, 'test-saved-search-modal-save-button')}
+                            variant="primary"
                         >
                             Save query
-                        </button>
+                        </Button>
                     </Form>
-                </Dialog>
+                </Modal>
             )
         )
     }

@@ -1,0 +1,36 @@
+{"id":1,"version":"0.4.3","projectRoot":"file:/root","positionEncoding":"utf-8","toolInfo":{"name":"reprolang","version":"1.0.0"},"type":"vertex","label":"metaData"}
+{"id":2,"type":"vertex","label":"definitionResult"}
+{"id":3,"type":"vertex","label":"resultSet"}
+{"id":4,"type":"vertex","label":"referenceResult"}
+{"id":5,"type":"vertex","label":"hoverResult","result":{"contents":{"kind":"markdown","value":"signature of bird#"}}}
+{"id":6,"type":"edge","label":"textDocument/definition","inV":2,"outV":3}
+{"id":7,"type":"edge","label":"textDocument/references","inV":4,"outV":3}
+{"id":8,"type":"edge","label":"textDocument/hover","inV":5,"outV":3}
+{"id":9,"type":"vertex","label":"moniker","identifier":"reprolang repro_manager implementation-cross-repo 1.0.0 bird.repro/bird#","kind":"export","scheme":"reprolang"}
+{"id":10,"type":"edge","label":"moniker","inV":9,"outV":3}
+{"id":11,"name":"implementation-cross-repo","version":"1.0.0","manager":"repro_manager","type":"vertex","label":"packageInformation"}
+{"id":12,"type":"edge","label":"packageInformation","inV":11,"outV":9}
+{"id":13,"type":"vertex","label":"document","uri":"file:/root/bird.repro"}
+{"id":14,"type":"vertex","label":"resultSet"}
+{"id":15,"type":"vertex","label":"referenceResult"}
+{"id":16,"type":"vertex","label":"hoverResult","result":{"contents":{"kind":"markdown"}}}
+{"id":17,"type":"edge","label":"textDocument/references","inV":15,"outV":14}
+{"id":18,"type":"edge","label":"textDocument/hover","inV":16,"outV":14}
+{"id":19,"type":"vertex","label":"moniker","identifier":"reprolang repro_manager implementation 1.0.0 animal.repro/animal#","kind":"import","scheme":"reprolang"}
+{"id":20,"type":"edge","label":"moniker","inV":19,"outV":14}
+{"id":21,"name":"implementation","version":"1.0.0","manager":"repro_manager","type":"vertex","label":"packageInformation"}
+{"id":22,"type":"edge","label":"packageInformation","inV":21,"outV":19}
+{"id":23,"type":"vertex","label":"moniker","identifier":"reprolang repro_manager implementation 1.0.0 animal.repro/animal#","kind":"implementation","scheme":"reprolang"}
+{"id":24,"type":"edge","label":"moniker","inV":23,"outV":3}
+{"id":25,"type":"edge","label":"packageInformation","inV":21,"outV":23}
+{"id":26,"type":"vertex","label":"range","start":{"line":1,"character":11},"end":{"line":1,"character":16}}
+{"id":27,"type":"edge","label":"next","inV":3,"outV":26}
+{"id":28,"type":"edge","label":"item","inVs":[26],"outV":2,"document":13}
+{"id":29,"type":"vertex","label":"implementationResult"}
+{"id":30,"type":"edge","label":"textDocument/implementation","inV":29,"outV":14}
+{"id":31,"type":"edge","label":"item","inVs":[26],"outV":29,"document":13}
+{"id":32,"type":"edge","label":"item","inVs":[26],"outV":4,"document":13}
+{"id":33,"type":"vertex","label":"range","start":{"line":1,"character":28},"end":{"line":1,"character":70}}
+{"id":34,"type":"edge","label":"next","inV":14,"outV":33}
+{"id":35,"type":"edge","label":"item","inVs":[33],"outV":15,"document":13}
+{"id":36,"type":"edge","label":"contains","inVs":[26,33],"outV":13}

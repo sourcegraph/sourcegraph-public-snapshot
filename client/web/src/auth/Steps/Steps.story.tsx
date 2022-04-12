@@ -1,30 +1,23 @@
-import { Meta, Story } from '@storybook/react'
 import React from 'react'
+
+import { Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-import { Container } from '@sourcegraph/wildcard'
+import { Container, Button } from '@sourcegraph/wildcard'
 
-import { Steps, Step, StepList, StepPanels, StepPanel, StepActions, useSteps } from '.'
+import { Steps, Step, StepList, StepPanels, StepPanel, useSteps } from '.'
 
 const Actions = () => {
     const { setStep, currentIndex, currentStep } = useSteps()
     return (
         <>
-            <button
-                disabled={currentStep.isFirstStep}
-                className="btn btn-primary"
-                onClick={() => setStep(currentIndex - 1)}
-            >
+            <Button disabled={currentStep.isFirstStep} onClick={() => setStep(currentIndex - 1)} variant="primary">
                 Previous
-            </button>
-            <button
-                disabled={currentStep.isLastStep}
-                className="btn btn-primary"
-                onClick={() => setStep(currentIndex + 1)}
-            >
+            </Button>
+            <Button disabled={currentStep.isLastStep} onClick={() => setStep(currentIndex + 1)} variant="primary">
                 Next
-            </button>
+            </Button>
         </>
     )
 }
@@ -33,20 +26,26 @@ export const Stepper: Story = () => (
     <BrandedStory styles={webStyles}>
         {() => (
             <Container>
-                <Steps initialStep={2}>
+                <Steps initialStep={2} totalSteps={3}>
                     <StepList numeric={true}>
                         <Step borderColor="blue">Panel 1 title</Step>
                         <Step borderColor="orange">Panel 2 Title</Step>
                         <Step borderColor="purple">Panel 3 Title</Step>
                     </StepList>
                     <StepPanels>
-                        <StepPanel>Panel 1</StepPanel>
-                        <StepPanel>Panel 2</StepPanel>
-                        <StepPanel>Panel 3</StepPanel>
+                        <StepPanel>
+                            <div>Panel 1</div>
+                            <Actions />
+                        </StepPanel>
+                        <StepPanel>
+                            <div>Panel 2</div>
+                            <Actions />
+                        </StepPanel>
+                        <StepPanel>
+                            <div>Panel 3</div>
+                            <Actions />
+                        </StepPanel>
                     </StepPanels>
-                    <StepActions>
-                        <Actions />
-                    </StepActions>
                 </Steps>
             </Container>
         )}

@@ -1,5 +1,6 @@
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React from 'react'
+
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -10,6 +11,8 @@ import { HeroPage } from '../../../components/HeroPage'
 import { ExtensionsAreaRouteContext } from '../../../extensions/ExtensionsArea'
 
 import { RegistryNewExtensionPage } from './RegistryNewExtensionPage'
+
+import styles from './RegistryArea.module.scss'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
@@ -41,7 +44,7 @@ export const RegistryArea: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <div className="registry-area">
+        <div className={styles.registryArea}>
             <Switch>
                 <Route
                     path={`${match.url}/new`}

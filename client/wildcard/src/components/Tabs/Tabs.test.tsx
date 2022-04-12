@@ -1,5 +1,6 @@
-import { render, RenderResult, cleanup, fireEvent } from '@testing-library/react'
 import React from 'react'
+
+import { render, RenderResult, cleanup, fireEvent } from '@testing-library/react'
 
 import { Tab, TabList, TabPanel, TabPanels, Tabs, TabsProps } from './Tabs'
 
@@ -46,7 +47,7 @@ describe('Tabs', () => {
         it('will render tabs children correctly', () => {
             expect(queries.getByTestId('wildcard-tabs')).toBeInTheDocument()
             expect(queries.getByTestId('wildcard-tab-list')).toBeInTheDocument()
-            expect(queries.getByTestId('wildcard-tab-panels')).toBeInTheDocument()
+            expect(queries.getByTestId('wildcard-tab-panel-list')).toBeInTheDocument()
         })
 
         it('will render the right amount of <Tab/> components', () => {

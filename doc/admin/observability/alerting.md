@@ -41,6 +41,8 @@ Once configured, Sourcegraph alerts will automatically be routed to the appropri
 ]
 ```
 
+> NOTE: Learn more about generating a [Slack incoming webhook URL](https://api.slack.com/messaging/webhooks)
+
 #### PagerDuty
 
 ```json
@@ -49,8 +51,8 @@ Once configured, Sourcegraph alerts will automatically be routed to the appropri
     "level": "critical",
     "notifier": {
       "type": "pagerduty",
-      // Routing key for the PagerDuty Events API v2
-      "routingKey": "XXXXXXXX"
+      // Integration key for the PagerDuty Events API v2
+      "integrationKey": "XXXXXXXX"
     }
   }
 ]

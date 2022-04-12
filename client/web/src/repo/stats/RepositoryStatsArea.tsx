@@ -1,11 +1,11 @@
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useMemo } from 'react'
+
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { RepositoryFields } from '../../graphql-operations'
-import { PatternTypeProps } from '../../search'
 
 import { RepositoryStatsContributorsPage } from './RepositoryStatsContributorsPage'
 import { RepositoryStatsNavbar } from './RepositoryStatsNavbar'
@@ -18,7 +18,7 @@ const NotFoundPage: React.FunctionComponent = () => (
     />
 )
 
-interface Props extends RouteComponentProps<{}>, BreadcrumbSetters, Omit<PatternTypeProps, 'setPatternType'> {
+interface Props extends RouteComponentProps<{}>, BreadcrumbSetters {
     repo: RepositoryFields
     globbing: boolean
 }

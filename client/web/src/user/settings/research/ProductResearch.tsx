@@ -1,8 +1,9 @@
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import React, { useEffect } from 'react'
 
+import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
+
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, ButtonLink, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 
@@ -30,9 +31,9 @@ export const ProductResearchPage: React.FunctionComponent<Props> = ({ telemetryS
                     feedback about upcoming ideas. Sign up to participate in our research and help us shape the future
                     of our product!
                 </p>
-                <a href={signUpForm.href} className="btn btn-primary" target="_blank" rel="noopener noreferrer">
-                    Sign up now <OpenInNewIcon className="icon-inline" />
-                </a>
+                <ButtonLink to={signUpForm.href} target="_blank" rel="noopener noreferrer" variant="primary">
+                    Sign up now <Icon as={OpenInNewIcon} />
+                </ButtonLink>
             </Container>
         </>
     )

@@ -7,18 +7,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
+	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestExecutor_ExecutePlan(t *testing.T) {
@@ -36,7 +37,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t, "")
+	sqlDB := dbtest.NewDB(t)
+	db := database.NewDB(sqlDB)
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
@@ -54,7 +56,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	defer state.Unmock()
 
 	internalClient = &mockInternalClient{externalURL: "https://sourcegraph.test"}
-	defer func() { internalClient = api.InternalClient }()
+	defer func() { internalClient = internalapi.Client }()
 
 	githubPR := buildGithubPR(clock(), btypes.ChangesetExternalStateOpen)
 	githubHeadRef := git.EnsureRefPrefix(githubPR.HeadRefName)
@@ -584,7 +586,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		})
 
 		// After each test: clean up database.
-		ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+		ct.TruncateTables(t, sqlDB, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
 	}
 }
 
@@ -594,7 +596,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t, "")
+	db := database.NewDB(dbtest.NewDB(t))
 
 	cstore := store.New(db, &observation.TestContext, et.TestKey{})
 
@@ -633,9 +635,53 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	}
 }
 
+func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
+	ctx := context.Background()
+	db := database.NewDB(dbtest.NewDB(t))
+	cstore := store.New(db, &observation.TestContext, et.TestKey{})
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
+
+	changesetSpec := ct.BuildChangesetSpec(t, ct.TestSpecOpts{
+		Repo:      repo.ID,
+		HeadRef:   "refs/heads/my-pr",
+		Published: true,
+	})
+	changeset := ct.BuildChangeset(ct.TestChangesetOpts{ExternalState: "OPEN", Repo: repo.ID})
+
+	ourError := errors.New("this should not be returned")
+	sourcer := sources.NewFakeSourcer(ourError, &sources.FakeChangesetSource{})
+
+	t.Run("plan requires changeset source", func(t *testing.T) {
+		plan := &Plan{}
+		plan.ChangesetSpec = changesetSpec
+		plan.Changeset = changeset
+
+		plan.AddOp(btypes.ReconcilerOperationClose)
+
+		err := executePlan(ctx, nil, sourcer, true, cstore, plan)
+		if err != ourError {
+			t.Fatalf("executePlan did not return expected error: %s", err)
+		}
+	})
+
+	t.Run("plan does not require changeset source", func(t *testing.T) {
+		plan := &Plan{}
+		plan.ChangesetSpec = changesetSpec
+		plan.Changeset = changeset
+
+		plan.AddOp(btypes.ReconcilerOperationDetach)
+
+		err := executePlan(ctx, nil, sourcer, true, cstore, plan)
+		if err != nil {
+			t.Fatalf("executePlan returned unexpected error: %s", err)
+		}
+	})
+}
+
 func TestLoadChangesetSource(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t, "")
+	sqlDB := dbtest.NewDB(t)
+	db := database.NewDB(sqlDB)
 	token := &auth.OAuthBearerToken{Token: "abcdef"}
 
 	cstore := store.New(db, &observation.TestContext, et.TestKey{})
@@ -671,7 +717,7 @@ func TestLoadChangesetSource(t *testing.T) {
 			t.Fatal(err)
 		}
 		t.Cleanup(func() {
-			ct.TruncateTables(t, db, "batch_changes_site_credentials")
+			ct.TruncateTables(t, sqlDB, "batch_changes_site_credentials")
 		})
 		fakeSource := &sources.FakeChangesetSource{}
 		sourcer := sources.NewFakeSourcer(nil, fakeSource)
@@ -752,7 +798,7 @@ func TestLoadChangesetSource(t *testing.T) {
 			t.Fatal(err)
 		}
 		t.Cleanup(func() {
-			ct.TruncateTables(t, db, "user_credentials")
+			ct.TruncateTables(t, sqlDB, "user_credentials")
 		})
 
 		fakeSource := &sources.FakeChangesetSource{}
@@ -776,7 +822,7 @@ func TestLoadChangesetSource(t *testing.T) {
 			t.Fatal(err)
 		}
 		t.Cleanup(func() {
-			ct.TruncateTables(t, db, "batch_changes_site_credentials")
+			ct.TruncateTables(t, sqlDB, "batch_changes_site_credentials")
 		})
 
 		fakeSource := &sources.FakeChangesetSource{}
@@ -795,7 +841,7 @@ func TestLoadChangesetSource(t *testing.T) {
 
 func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t, "")
+	db := database.NewDB(dbtest.NewDB(t))
 
 	cstore := store.New(db, &observation.TestContext, et.TestKey{})
 
@@ -997,14 +1043,92 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	}
 }
 
+func TestLoadRemoteRepo(t *testing.T) {
+	ctx := context.Background()
+	targetRepo := &types.Repo{}
+
+	t.Run("forks disabled", func(t *testing.T) {
+		t.Run("unforked changeset", func(t *testing.T) {
+			// Set up a changeset source that will panic if any methods are invoked.
+			css := NewStrictMockChangesetSource()
+
+			// This should succeed, since loadRemoteRepo() should early return with
+			// forks disabled.
+			remoteRepo, err := loadRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{}, &btypes.ChangesetSpec{
+				ForkNamespace: nil,
+			})
+			assert.Nil(t, err)
+			assert.Same(t, targetRepo, remoteRepo)
+		})
+
+		t.Run("forked changeset", func(t *testing.T) {
+			forkNamespace := "fork"
+			want := &types.Repo{}
+			css := NewMockForkableChangesetSource()
+			css.GetNamespaceForkFunc.SetDefaultReturn(want, nil)
+
+			// This should succeed, since loadRemoteRepo() should early return with
+			// forks disabled.
+			remoteRepo, err := loadRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{}, &btypes.ChangesetSpec{
+				ForkNamespace: &forkNamespace,
+			})
+			assert.Nil(t, err)
+			assert.Same(t, want, remoteRepo)
+			mockassert.CalledOnce(t, css.GetNamespaceForkFunc)
+		})
+	})
+
+	t.Run("forks enabled", func(t *testing.T) {
+		forkNamespace := "<user>"
+
+		t.Run("unforkable changeset source", func(t *testing.T) {
+			css := NewMockChangesetSource()
+
+			repo, err := loadRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{}, &btypes.ChangesetSpec{
+				ForkNamespace: &forkNamespace,
+			})
+			assert.Nil(t, repo)
+			assert.ErrorIs(t, err, errChangesetSourceCannotFork)
+		})
+
+		t.Run("forkable changeset source", func(t *testing.T) {
+			t.Run("success", func(t *testing.T) {
+				want := &types.Repo{}
+				css := NewMockForkableChangesetSource()
+				css.GetUserForkFunc.SetDefaultReturn(want, nil)
+
+				have, err := loadRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{}, &btypes.ChangesetSpec{
+					ForkNamespace: &forkNamespace,
+				})
+				assert.Nil(t, err)
+				assert.Same(t, want, have)
+				mockassert.CalledOnce(t, css.GetUserForkFunc)
+			})
+
+			t.Run("error from the source", func(t *testing.T) {
+				want := errors.New("source error")
+				css := NewMockForkableChangesetSource()
+				css.GetUserForkFunc.SetDefaultReturn(nil, want)
+
+				repo, err := loadRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{}, &btypes.ChangesetSpec{
+					ForkNamespace: &forkNamespace,
+				})
+				assert.Nil(t, repo)
+				assert.Same(t, want, err)
+				mockassert.CalledOnce(t, css.GetUserForkFunc)
+			})
+		})
+	})
+}
+
 func TestDecorateChangesetBody(t *testing.T) {
-	database.Mocks.Namespaces.GetByID = func(ctx context.Context, org, user int32) (*database.Namespace, error) {
+	ns := database.NewMockNamespaceStore()
+	ns.GetByIDFunc.SetDefaultHook(func(_ context.Context, _ int32, user int32) (*database.Namespace, error) {
 		return &database.Namespace{Name: "my-user", User: user}, nil
-	}
-	defer func() { database.Mocks.Namespaces.GetByID = nil }()
+	})
 
 	internalClient = &mockInternalClient{externalURL: "https://sourcegraph.test"}
-	defer func() { internalClient = api.InternalClient }()
+	defer func() { internalClient = internalapi.Client }()
 
 	fs := &FakeStore{
 		GetBatchChangeMock: func(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error) {
@@ -1016,7 +1140,7 @@ func TestDecorateChangesetBody(t *testing.T) {
 
 	body := "body"
 	rcs := &sources.Changeset{Body: body, Changeset: cs}
-	if err := decorateChangesetBody(context.Background(), fs, database.Namespaces(new(dbtesting.MockDB)), rcs); err != nil {
+	if err := decorateChangesetBody(context.Background(), fs, ns, rcs); err != nil {
 		t.Errorf("unexpected non-nil error: %v", err)
 	}
 	if want := body + "\n\n[_Created by Sourcegraph batch change `my-user/reconciler-test-batch-change`._](https://sourcegraph.test/users/my-user/batch-changes/reconciler-test-batch-change)"; rcs.Body != want {
@@ -1034,7 +1158,7 @@ func TestBatchChangeURL(t *testing.T) {
 		} {
 			t.Run(name, func(t *testing.T) {
 				internalClient = tc
-				defer func() { internalClient = api.InternalClient }()
+				defer func() { internalClient = internalapi.Client }()
 
 				if _, err := batchChangeURL(ctx, nil, nil); err == nil {
 					t.Error("unexpected nil error")
@@ -1045,7 +1169,7 @@ func TestBatchChangeURL(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		internalClient = &mockInternalClient{externalURL: "https://sourcegraph.test"}
-		defer func() { internalClient = api.InternalClient }()
+		defer func() { internalClient = internalapi.Client }()
 
 		url, err := batchChangeURL(
 			ctx,

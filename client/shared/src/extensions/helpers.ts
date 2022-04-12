@@ -1,16 +1,16 @@
 import { Observable, of } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
+import { createAggregateError } from '@sourcegraph/common'
+import { fromObservableQueryPromise, getDocumentNode, gql } from '@sourcegraph/http-client'
+
 import {
     ExtensionsResult,
     ExtensionsVariables,
     ExtensionsWithPrioritizeExtensionIDsParamAndNoJSONFieldsResult,
     ExtensionsWithPrioritizeExtensionIDsParamAndNoJSONFieldsVariables,
 } from '../graphql-operations'
-import { fromObservableQueryPromise } from '../graphql/fromObservableQuery'
-import { getDocumentNode, gql } from '../graphql/graphql'
 import { PlatformContext } from '../platform/context'
-import { createAggregateError } from '../util/errors'
 
 import {
     ConfiguredExtension,
@@ -24,6 +24,7 @@ const ExtensionsQuery = gql`
         extensionRegistry {
             extensions(first: $first, extensionIDs: $extensionIDs) {
                 nodes {
+                    id
                     extensionID
                     manifest {
                         jsonFields(fields: $extensionManifestFields)
@@ -39,6 +40,7 @@ const ExtensionsWithPrioritizeExtensionIDsParameterAndNoJSONFieldsQuery = gql`
         extensionRegistry {
             extensions(first: $first, prioritizeExtensionIDs: $extensionIDs) {
                 nodes {
+                    id
                     extensionID
                     manifest {
                         raw

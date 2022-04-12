@@ -5,18 +5,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestDatabaseRanges(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
-	populateTestStore(t)
-	store := NewStore(db, &observation.TestContext)
+	store := populateTestStore(t)
 
 	//   20: // NewWriter creates a new Writer.
 	//   21: func NewWriter(w io.Writer, addContents bool) *Writer {
@@ -69,7 +61,8 @@ func TestDatabaseRanges(t *testing.T) {
 					{DumpID: testBundleID, Path: "protocol/writer.go", Range: newRange(150, 9, 150, 15)},
 					{DumpID: testBundleID, Path: "protocol/writer.go", Range: newRange(155, 9, 155, 15)},
 				},
-				HoverText: "```go\ntype Writer struct\n```\n\n---\n\nWriter emits vertices and edges to the underlying writer. This struct will guarantee that unique identifiers are generated for each element.\n\n---\n\n```go\nstruct {\n    w Writer\n    addContents bool\n    id int\n    numElements int\n}\n```",
+				HoverText:           "```go\ntype Writer struct\n```\n\n---\n\nWriter emits vertices and edges to the underlying writer. This struct will guarantee that unique identifiers are generated for each element. \n\n\n\n---\n\n```go\nstruct {\n    w Writer\n    addContents bool\n    id int\n    numElements int\n}\n```",
+				DocumentationPathID: "/#Writer",
 			},
 			{
 				Range: newRange(22, 2, 22, 3),

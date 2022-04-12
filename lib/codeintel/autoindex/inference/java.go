@@ -1,36 +1,69 @@
 package inference
 
 import (
-	"regexp"
+	"path/filepath"
 	"strings"
+
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
-
-func CanIndexJavaRepo(gitserver GitClient, paths []string) bool {
-	return javaBuildTool(paths) != ""
-}
 
 func InferJavaIndexJobs(gitserver GitClient, paths []string) (indexes []config.IndexJob) {
 	if buildTool := javaBuildTool(paths); buildTool != "" {
 		indexes = append(indexes, config.IndexJob{
 			Indexer: "sourcegraph/lsif-java",
 			IndexerArgs: []string{
-				"/coursier launch --contrib --ttl 0 lsif-java -- index --build-tool=" + buildTool,
+				"lsif-java index --build-tool=" + buildTool,
 			},
 			Outfile: "dump.lsif",
 			Root:    "",
 			Steps:   []config.DockerStep{},
 		})
 	}
-	return indexes
+	return
+}
+
+func InferJavaIndexJobHints(gitserver GitClient, paths []string) (hints []config.IndexJobHint) {
+	inferredDir := make(map[string]bool)
+	for _, path := range paths {
+		dir := filepath.Dir(path)
+		if inferredDir[dir] {
+			continue
+		}
+		base := filepath.Base(path)
+		if base == "pom.xml" || base == "build.gradle" || base == "build.gradle.kts" {
+			hints = append(hints, config.IndexJobHint{
+				Root:           dir,
+				Indexer:        "sourcegraph/lsif-java",
+				HintConfidence: config.HintConfidenceProjectStructureSupported,
+			})
+			inferredDir[dir] = true
+			continue
+		}
+		// if we get here, then build config hasnt been found in this directory
+		// so we will attempt to see if any known languages reside here.
+		ext := filepath.Ext(path)
+		if ext == ".java" || ext == ".scala" || ext == ".kt" {
+			hints = append(hints, config.IndexJobHint{
+				Root:           dir,
+				Indexer:        "sourcegraph/lsif-java",
+				HintConfidence: config.HintConfidenceLanguageSupport,
+			})
+		}
+	}
+
+	return
 }
 
 func JavaPatterns() []*regexp.Regexp {
 	return []*regexp.Regexp{
-		suffixPattern(rawPattern("lsif-java.json")),
+		suffixPattern(pathPattern(rawPattern("lsif-java.json"))),
 		suffixPattern(rawPattern(".java")),
 		suffixPattern(rawPattern(".scala")),
+		suffixPattern(rawPattern(".kt")),
+		suffixPattern(pathPattern(rawPattern("pom.xml"))),
+		suffixPattern(pathPattern(rawPattern("build.gradle(.kts)?"))),
 	}
 }
 
@@ -59,5 +92,6 @@ func javaBuildTool(paths []string) string {
 
 func isLsifJavaIndexablePath(path string) bool {
 	return strings.HasSuffix(path, ".java") ||
-		strings.HasSuffix(path, ".scala")
+		strings.HasSuffix(path, ".scala") ||
+		strings.HasSuffix(path, ".kt")
 }

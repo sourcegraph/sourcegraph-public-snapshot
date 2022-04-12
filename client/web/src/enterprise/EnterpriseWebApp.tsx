@@ -1,15 +1,15 @@
 import React from 'react'
 
 import '../SourcegraphWebApp.scss'
-import '../enterprise.scss'
-import { KEYBOARD_SHORTCUTS } from '../keyboardShortcuts/keyboardShortcuts'
+import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
+
 import { SourcegraphWebApp } from '../SourcegraphWebApp'
 
+import { RepositoryMenuContent } from './codeintel/RepositoryMenu'
 import { enterpriseExtensionAreaHeaderNavItems } from './extensions/extension/extensionAreaHeaderNavItems'
 import { enterpriseExtensionAreaRoutes } from './extensions/extension/routes'
 import { enterpriseExtensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'
 import { enterpriseExtensionsAreaRoutes } from './extensions/routes'
-import { ExtensionViewsSection } from './insights/sections/ExtenstionViewsSection'
 import { enterpriseOrgAreaHeaderNavItems } from './organizations/navitems'
 import { enterpriseOrganizationAreaRoutes } from './organizations/routes'
 import { enterpriseRepoHeaderActionButtons } from './repo/repoHeaderActionButtons'
@@ -46,10 +46,11 @@ export const EnterpriseWebApp: React.FunctionComponent = () => (
         repoSettingsAreaRoutes={enterpriseRepoSettingsAreaRoutes}
         repoSettingsSidebarGroups={enterpriseRepoSettingsSidebarGroups}
         routes={enterpriseRoutes}
-        extensionViews={ExtensionViewsSection}
         keyboardShortcuts={KEYBOARD_SHORTCUTS}
         codeIntelligenceEnabled={true}
+        repositoryMenuContent={RepositoryMenuContent}
         codeInsightsEnabled={true}
         batchChangesEnabled={window.context.batchChangesEnabled}
+        searchContextsEnabled={true}
     />
 )

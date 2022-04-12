@@ -1,23 +1,27 @@
+import * as React from 'react'
+
+import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { filter, map, withLatestFrom } from 'rxjs/operators'
 
-import { createHoverifier, HoveredToken, Hoverifier, HoverState } from '@sourcegraph/codeintellify'
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
+import { HoverMerged } from '@sourcegraph/client-api'
+import { HoveredToken, createHoverifier, Hoverifier, HoverState } from '@sourcegraph/codeintellify'
+import { isDefined, property } from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { property, isDefined } from '@sourcegraph/shared/src/util/types'
 import {
     FileSpec,
     ModeSpec,
@@ -26,9 +30,9 @@ import {
     ResolvedRevisionSpec,
     RevisionSpec,
 } from '@sourcegraph/shared/src/util/url'
+import { Alert } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
-import { ErrorMessage } from '../../components/alerts'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { WebHoverOverlay } from '../../components/shared'
@@ -37,6 +41,8 @@ import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
 import { RepositoryCompareHeader } from './RepositoryCompareHeader'
 import { RepositoryCompareOverviewPage } from './RepositoryCompareOverviewPage'
+
+import styles from './RepositoryCompareArea.module.scss'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -53,6 +59,7 @@ interface RepositoryCompareAreaProps
         TelemetryProps,
         ExtensionsControllerProps,
         ThemeProps,
+        SettingsCascadeProps,
         BreadcrumbSetters {
     repo: RepositoryFields
     history: H.History
@@ -94,10 +101,6 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
     private nextRepositoryCompareAreaElement = (element: HTMLElement | null): void =>
         this.repositoryCompareAreaElements.next(element)
 
-    /** Emits when the close button was clicked */
-    private closeButtonClicks = new Subject<MouseEvent>()
-    private nextCloseButtonClick = (event: MouseEvent): void => this.closeButtonClicks.next(event)
-
     private subscriptions = new Subscription()
     private hoverifier: Hoverifier<
         RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,
@@ -112,7 +115,6 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
             HoverMerged,
             ActionItemAction
         >({
-            closeButtonClicks: this.closeButtonClicks,
             hoverOverlayElements: this.hoverOverlayElements,
             hoverOverlayRerenders: this.componentUpdates.pipe(
                 withLatestFrom(this.hoverOverlayElements, this.repositoryCompareAreaElements),
@@ -128,7 +130,6 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
             getDocumentHighlights: hoveredToken =>
                 getDocumentHighlights(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
             getActions: context => getHoverActions(this.props, context),
-            pinningEnabled: true,
         })
         this.subscriptions.add(this.hoverifier)
         this.state = this.hoverifier.hoverState
@@ -185,10 +186,13 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
             platformContext: this.props.platformContext,
         }
         return (
-            <div className="repository-compare-area container" ref={this.nextRepositoryCompareAreaElement}>
+            <div
+                className={classNames('container', styles.repositoryCompareArea)}
+                ref={this.nextRepositoryCompareAreaElement}
+            >
                 <RepositoryCompareHeader className="my-3" {...commonProps} />
                 {spec === null ? (
-                    <div className="alert alert-danger">Invalid comparison specifier</div>
+                    <Alert variant="danger">Invalid comparison specifier</Alert>
                 ) : (
                     <Switch>
                         <Route
@@ -212,9 +216,10 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
                     <WebHoverOverlay
                         {...this.props}
                         {...this.state.hoverOverlayProps}
+                        nav={url => this.props.history.push(url)}
+                        hoveredTokenElement={this.state.hoveredTokenElement}
                         telemetryService={this.props.telemetryService}
                         hoverRef={this.nextOverlayElement}
-                        onCloseButtonClick={this.nextCloseButtonClick}
                     />
                 )}
             </div>

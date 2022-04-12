@@ -1,4 +1,4 @@
-import { createAggregateError, isErrorLike } from '../util/errors'
+import { createAggregateError, isErrorLike } from '@sourcegraph/common'
 
 import {
     CustomMergeFunctions,
@@ -102,13 +102,13 @@ describe('mergeSettings', () => {
                     b?: { [key: string]: { [key: string]: string }[] }
                 } & Settings
             >([
-                { 'search.scopes': [{ name: 'test repos', value: 'repogroup:test' }] },
-                { 'search.scopes': [{ name: 'sourcegraph repos', value: 'repogroup:sourcegraph' }] },
+                { 'search.scopes': [{ name: 'test repos', value: 'repo:test' }] },
+                { 'search.scopes': [{ name: 'sourcegraph repos', value: 'repo:sourcegraph' }] },
             ])
         ).toEqual({
             'search.scopes': [
-                { name: 'test repos', value: 'repogroup:test' },
-                { name: 'sourcegraph repos', value: 'repogroup:sourcegraph' },
+                { name: 'test repos', value: 'repo:test' },
+                { name: 'sourcegraph repos', value: 'repo:sourcegraph' },
             ],
         }))
     test('merges quicklinks property', () =>

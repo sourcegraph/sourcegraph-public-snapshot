@@ -16,7 +16,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	gh "github.com/google/go-github/v28/github"
+	gh "github.com/google/go-github/v43/github"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
@@ -74,7 +74,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal(t)
 		}
 
-		githubSrc, err := repos.NewGithubSource(extSvc, cf)
+		githubSrc, err := repos.NewGithubSource(database.NewDB(db).ExternalServices(), extSvc, cf)
 		if err != nil {
 			t.Fatal(t)
 		}
@@ -101,13 +101,13 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		}
 
 		batchChange := &btypes.BatchChange{
-			Name:             "Test batch changes",
-			Description:      "Testing THE WEBHOOKS",
-			InitialApplierID: userID,
-			NamespaceUserID:  userID,
-			LastApplierID:    userID,
-			LastAppliedAt:    clock(),
-			BatchSpecID:      spec.ID,
+			Name:            "Test batch changes",
+			Description:     "Testing THE WEBHOOKS",
+			CreatorID:       userID,
+			NamespaceUserID: userID,
+			LastApplierID:   userID,
+			LastAppliedAt:   clock(),
+			BatchSpecID:     spec.ID,
 		}
 
 		err = s.CreateBatchChange(ctx, batchChange)
@@ -230,8 +230,8 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 					NodeID: &githubRepo.ExternalRepo.ID,
 				},
 				Action: &action,
-			}); err == nil {
-				t.Error("unexpected nil error")
+			}); err != nil {
+				t.Errorf("unexpected non-nil error: %v", err)
 			}
 		})
 	}

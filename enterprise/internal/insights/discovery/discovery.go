@@ -4,22 +4,17 @@ import (
 	"context"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/inconshreveable/log15"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/segmentio/ksuid"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
-
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-
-	"github.com/sourcegraph/sourcegraph/internal/insights"
-
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -147,16 +142,69 @@ func NewMigrateSettingInsightsJob(ctx context.Context, base dbutil.DB, insights 
 }
 
 func (m *settingMigrator) migrate(ctx context.Context) error {
-	insightStore := store.NewInsightStore(m.insights)
 	loader := insights.NewLoader(m.base)
+	dashboardStore := store.NewDashboardStore(m.insights)
 
 	discovered, err := discoverIntegrated(ctx, loader)
 	if err != nil {
 		return err
 	}
 
+	justInTimeInsights, err := insights.GetSearchInsights(ctx, m.base, insights.All)
+	if err != nil {
+		return errors.Wrap(err, "failed to fetch just-in-time insights from all settings")
+	}
+
+	langStatsInsights, err := insights.GetLangStatsInsights(ctx, m.base, insights.All)
+	if err != nil {
+		return errors.Wrap(err, "failed to fetch lang stats insights from all settings")
+	}
+
+	log15.Info("insights migration: migrating backend insights")
+	m.migrateInsights(ctx, discovered, backend)
+
+	log15.Info("insights migration: migrating frontend search insights")
+	m.migrateInsights(ctx, justInTimeInsights, frontend)
+
+	log15.Info("insights migration: migrating frontend lang stats insights")
+	m.migrateLangStatsInsights(ctx, langStatsInsights)
+
+	log15.Info("insights migration: migrating dashboards")
+	dashboards, err := loader.LoadDashboards(ctx)
+	if err != nil {
+		return err
+	}
+	err = clearDashboards(ctx, m.insights)
+	if err != nil {
+		return errors.Wrap(err, "clearDashboards")
+	}
+	for _, dashboard := range dashboards {
+		err := migrateDashboard(ctx, dashboardStore, dashboard)
+		if err != nil {
+			log15.Info("insights migration: error while migrating dashboard", "error", err)
+			continue
+		}
+	}
+
+	err = purgeOrphanFrontendSeries(ctx, m.insights)
+	if err != nil {
+		return errors.Wrap(err, "failed to purge orphaned frontend series")
+	}
+
+	return nil
+}
+
+type migrationBatch string
+
+const (
+	backend  migrationBatch = "backend"
+	frontend migrationBatch = "frontend"
+)
+
+func (m *settingMigrator) migrateInsights(ctx context.Context, toMigrate []insights.SearchInsight, batch migrationBatch) {
+	insightStore := store.NewInsightStore(m.insights)
 	var count, skipped, errorCount int
-	for _, d := range discovered {
+	for _, d := range toMigrate {
 		if d.ID == "" {
 			// we need a unique ID, and if for some reason this insight doesn't have one, it can't be migrated.
 			skipped++
@@ -169,8 +217,7 @@ func (m *settingMigrator) migrate(ctx context.Context) error {
 			skipped++
 			continue
 		}
-
-		err = migrateSeries(ctx, insightStore, d)
+		err = migrateSeries(ctx, insightStore, d, batch)
 		if err != nil {
 			// we can't do anything about errors, so we will just skip it and log it
 			errorCount++
@@ -178,12 +225,104 @@ func (m *settingMigrator) migrate(ctx context.Context) error {
 		}
 		count++
 	}
-	log15.Info("insights settings migration complete", "count", count, "skipped", skipped, "errors", errorCount)
+	log15.Info("insights settings migration batch complete", "batch", batch, "count", count, "skipped", skipped, "errors", errorCount)
+
+}
+
+func (m *settingMigrator) migrateLangStatsInsights(ctx context.Context, toMigrate []insights.LangStatsInsight) {
+	insightStore := store.NewInsightStore(m.insights)
+	tx, err := insightStore.Transact(ctx)
+	if err != nil {
+		log15.Info("insights migration: problem connecting to store, aborting lang stats migration")
+		return
+	}
+	defer func() { err = tx.Store.Done(err) }()
+
+	var count, skipped, errorCount int
+	for _, d := range toMigrate {
+		if d.ID == "" {
+			// we need a unique ID, and if for some reason this insight doesn't have one, it can't be migrated.
+			skipped++
+			continue
+		}
+		err := insightStore.DeleteViewByUniqueID(ctx, d.ID)
+		log15.Info("insights migration: deleting insight view", "unique_id", d.ID)
+		if err != nil {
+			// if we fail here there isn't much we can do in this migration, so continue
+			skipped++
+			continue
+		}
+		err = migrateLangStatSeries(ctx, insightStore, d)
+		if err != nil {
+			// we can't do anything about errors, so we will just skip it and log it
+			errorCount++
+			log15.Error("insights migration: error while migrating insight", "error", err)
+		}
+		count++
+	}
+	log15.Info("insights settings migration batch complete", "batch", "langStats", "count", count, "skipped", skipped, "errors", errorCount)
+}
+
+func migrateDashboard(ctx context.Context, dashboardStore *store.DBDashboardStore, from insights.SettingDashboard) (err error) {
+	tx, err := dashboardStore.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Store.Done(err) }()
+
+	dashboard := types.Dashboard{
+		Title:      from.Title,
+		InsightIDs: from.InsightIds,
+	}
+	log15.Info("insights migration: migrating dashboard", "settings_unique_id", from.ID)
+
+	var grants []store.DashboardGrant
+	if from.UserID != nil {
+		grants = []store.DashboardGrant{store.UserDashboardGrant(int(*from.UserID))}
+	} else if from.OrgID != nil {
+		grants = []store.DashboardGrant{store.OrgDashboardGrant(int(*from.OrgID))}
+	} else {
+		grants = []store.DashboardGrant{store.GlobalDashboardGrant()}
+	}
+	_, err = dashboardStore.CreateDashboard(ctx, store.CreateDashboardArgs{Dashboard: dashboard, Grants: grants})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
+// clearDashboards will delete all dashboards. This should be deprecated as soon as possible, and is only useful to ensure a smooth migration from settings to database.
+func clearDashboards(ctx context.Context, db dbutil.DB) error {
+	_, err := db.ExecContext(ctx, deleteAllDashboardsSql)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+const deleteAllDashboardsSql = `
+-- source: enterprise/internal/insights/discovery/discovery.go:clearDashboards
+delete from dashboard where save != true;
+`
+
+func purgeOrphanFrontendSeries(ctx context.Context, db dbutil.DB) error {
+	_, err := db.ExecContext(ctx, purgeOrphanedFrontendSeries)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+const purgeOrphanedFrontendSeries = `
+-- source: enterprise/internal/insights/discovery/discovery.go:purgeOrphanFrontendSeries
+with distinct_series_ids as (select distinct ivs.insight_series_id from insight_view_series ivs)
+delete from insight_series
+where id not in (select * from distinct_series_ids);
+`
+
 // migrateSeries will attempt to take an insight defined in Sourcegraph settings and migrate it to the database.
-func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from insights.SearchInsight) (err error) {
+func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from insights.SearchInsight, batch migrationBatch) (err error) {
 	tx, err := insightStore.Transact(ctx)
 	if err != nil {
 		return err
@@ -196,15 +335,37 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 
 	for i, timeSeries := range from.Series {
 		temp := types.InsightSeries{
-			SeriesID:              Encode(timeSeries),
-			Query:                 timeSeries.Query,
-			RecordingIntervalDays: 1,
-			NextRecordingAfter:    insights.NextRecording(time.Now()),
-			NextSnapshotAfter:     insights.NextSnapshot(time.Now()),
+			Query: timeSeries.Query,
 		}
+
+		if batch == frontend {
+			temp.Repositories = from.Repositories
+			if temp.Repositories == nil {
+				// this shouldn't be possible, but if for some reason we get here there is a malformed schema
+				return errors.New("invalid schema for frontend insight, missing repositories")
+			}
+			interval := parseTimeInterval(from)
+			temp.SampleIntervalUnit = string(interval.unit)
+			temp.SampleIntervalValue = interval.value
+			temp.SeriesID = ksuid.New().String() // this will cause some orphan records, but we can't use the query to match because of repo / time scope. We will purge orphan records at the end of this job.
+			temp.JustInTime = true
+			temp.GenerationMethod = types.Search
+		} else if batch == backend {
+			temp.SampleIntervalUnit = string(types.Month)
+			temp.SampleIntervalValue = 1
+			temp.NextRecordingAfter = insights.NextRecording(time.Now())
+			temp.NextSnapshotAfter = insights.NextSnapshot(time.Now())
+			temp.SeriesID = Encode(timeSeries)
+			temp.JustInTime = false
+			temp.GenerationMethod = types.Search
+		} else {
+			// not a real possibility
+			return errors.Newf("invalid batch %v", batch)
+		}
+
 		var series types.InsightSeries
 		// first check if this data series already exists (somebody already created an insight of this query), in which case we just need to attach the view to this data series
-		existing, err := tx.GetDataSeries(ctx, store.GetDataSeriesArgs{SeriesID: Encode(timeSeries)})
+		existing, err := tx.GetDataSeries(ctx, store.GetDataSeriesArgs{SeriesID: temp.SeriesID})
 		if err != nil {
 			return errors.Wrapf(err, "unable to migrate insight unique_id: %s series_id: %s", from.ID, temp.SeriesID)
 		} else if len(existing) > 0 {
@@ -225,9 +386,17 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 	}
 
 	view := types.InsightView{
-		Title:       from.Title,
-		Description: from.Description,
-		UniqueID:    from.ID,
+		Title:            from.Title,
+		Description:      from.Description,
+		UniqueID:         from.ID,
+		PresentationType: types.Line,
+	}
+
+	if from.Filters != nil {
+		view.Filters = types.InsightViewFilters{
+			IncludeRepoRegex: from.Filters.IncludeRepoRegexp,
+			ExcludeRepoRegex: from.Filters.ExcludeRepoRegexp,
+		}
 	}
 
 	var grants []store.InsightViewGrant
@@ -251,4 +420,89 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 		}
 	}
 	return nil
+}
+
+func migrateLangStatSeries(ctx context.Context, insightStore *store.InsightStore, from insights.LangStatsInsight) (err error) {
+	tx, err := insightStore.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Store.Done(err) }()
+
+	log15.Info("insights migration: attempting to migrate insight", "unique_id", from.ID)
+
+	view := types.InsightView{
+		Title:            from.Title,
+		UniqueID:         from.ID,
+		OtherThreshold:   &from.OtherThreshold,
+		PresentationType: types.Pie,
+	}
+	series := types.InsightSeries{
+		SeriesID:           ksuid.New().String(),
+		Repositories:       []string{from.Repository},
+		SampleIntervalUnit: string(types.Month),
+	}
+	var grants []store.InsightViewGrant
+	if from.UserID != nil {
+		grants = []store.InsightViewGrant{store.UserGrant(int(*from.UserID))}
+	} else if from.OrgID != nil {
+		grants = []store.InsightViewGrant{store.OrgGrant(int(*from.OrgID))}
+	} else {
+		grants = []store.InsightViewGrant{store.GlobalGrant()}
+	}
+
+	view, err = tx.CreateView(ctx, view, grants)
+	if err != nil {
+		return errors.Wrapf(err, "unable to migrate insight unique_id: %s", from.ID)
+	}
+	series, err = tx.CreateSeries(ctx, series)
+	if err != nil {
+		return errors.Wrapf(err, "unable to migrate insight unique_id: %s", from.ID)
+	}
+	err = tx.AttachSeriesToView(ctx, series, view, types.InsightViewSeriesMetadata{})
+	if err != nil {
+		return errors.Wrapf(err, "unable to migrate insight unique_id: %s", from.ID)
+	}
+
+	return nil
+}
+
+// there seems to be some global insights with possibly old schema that have a step field
+func parseTimeInterval(insight insights.SearchInsight) timeInterval {
+	if insight.Step.Days != nil {
+		return timeInterval{
+			unit:  types.Day,
+			value: *insight.Step.Days,
+		}
+	} else if insight.Step.Hours != nil {
+		return timeInterval{
+			unit:  types.Hour,
+			value: *insight.Step.Hours,
+		}
+	} else if insight.Step.Weeks != nil {
+		return timeInterval{
+			unit:  types.Week,
+			value: *insight.Step.Weeks,
+		}
+	} else if insight.Step.Months != nil {
+		return timeInterval{
+			unit:  types.Month,
+			value: *insight.Step.Months,
+		}
+	} else if insight.Step.Years != nil {
+		return timeInterval{
+			unit:  types.Year,
+			value: *insight.Step.Years,
+		}
+	} else {
+		return timeInterval{
+			unit:  types.Month,
+			value: 1,
+		}
+	}
+}
+
+type timeInterval struct {
+	unit  types.IntervalUnit
+	value int
 }

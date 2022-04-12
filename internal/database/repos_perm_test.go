@@ -32,12 +32,17 @@ func (p *fakeProvider) FetchAccount(context.Context, *types.User, []*extsvc.Acco
 	return p.extAcct, nil
 }
 
-func (p *fakeProvider) ServiceType() string           { return p.codeHost.ServiceType }
-func (p *fakeProvider) ServiceID() string             { return p.codeHost.ServiceID }
-func (p *fakeProvider) URN() string                   { return extsvc.URN(p.codeHost.ServiceType, 0) }
-func (p *fakeProvider) Validate() (problems []string) { return nil }
+func (p *fakeProvider) ServiceType() string { return p.codeHost.ServiceType }
+func (p *fakeProvider) ServiceID() string   { return p.codeHost.ServiceID }
+func (p *fakeProvider) URN() string         { return extsvc.URN(p.codeHost.ServiceType, 0) }
+
+func (p *fakeProvider) ValidateConnection(context.Context) (problems []string) { return nil }
 
 func (p *fakeProvider) FetchUserPerms(context.Context, *extsvc.Account, authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+	return nil, nil
+}
+
+func (p *fakeProvider) FetchUserPermsByToken(context.Context, string, authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	return nil, nil
 }
 
@@ -48,7 +53,7 @@ func (p *fakeProvider) FetchRepoPerms(context.Context, *extsvc.Repository, authz
 // 🚨 SECURITY: Tests are necessary to ensure security.
 func TestAuthzQueryConds(t *testing.T) {
 	cmpOpts := cmp.AllowUnexported(sqlf.Query{})
-	db := dbtest.NewDB(t, "")
+	db := NewDB(dbtest.NewDB(t))
 
 	t.Run("Conflict with permissions user mapping", func(t *testing.T) {
 		before := globals.PermissionsUserMapping()
@@ -80,75 +85,68 @@ func TestAuthzQueryConds(t *testing.T) {
 		}
 	})
 
-	defer func() {
-		Mocks.Users.GetByCurrentAuthUser = nil
-	}()
 	tests := []struct {
 		name                string
-		setup               func(t *testing.T) context.Context
+		setup               func(t *testing.T) (context.Context, DB)
 		authzAllowByDefault bool
 		wantQuery           *sqlf.Query
 	}{
 		{
 			name: "internal actor bypass checks",
-			setup: func(t *testing.T) context.Context {
-				return actor.WithInternalActor(context.Background())
+			setup: func(t *testing.T) (context.Context, DB) {
+				return actor.WithInternalActor(context.Background()), db
 			},
 			wantQuery: authzQuery(true, false, int32(0), authz.Read),
 		},
 		{
 			name: "no authz provider and not allow by default",
-			setup: func(t *testing.T) context.Context {
-				return context.Background()
+			setup: func(t *testing.T) (context.Context, DB) {
+				return context.Background(), db
 			},
 			wantQuery: authzQuery(false, false, int32(0), authz.Read),
 		},
 		{
 			name: "no authz provider but allow by default",
-			setup: func(t *testing.T) context.Context {
-				return context.Background()
+			setup: func(t *testing.T) (context.Context, DB) {
+				return context.Background(), db
 			},
 			authzAllowByDefault: true,
 			wantQuery:           authzQuery(true, false, int32(0), authz.Read),
 		},
 		{
 			name: "authenticated user is a site admin",
-			setup: func(t *testing.T) context.Context {
-				Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-					return &types.User{ID: 1, SiteAdmin: true}, nil
-				}
-				t.Cleanup(func() {
-					Mocks.Users = MockUsers{}
-				})
-				return actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			setup: func(_ *testing.T) (context.Context, DB) {
+				users := NewMockUserStoreFrom(db.Users())
+				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+				mockDB := NewMockDBFrom(db)
+				mockDB.UsersFunc.SetDefaultReturn(users)
+				return actor.WithActor(context.Background(), &actor.Actor{UID: 1}), mockDB
 			},
 			wantQuery: authzQuery(true, false, int32(1), authz.Read),
 		},
 		{
 			name: "authenticated user is a site admin and AuthzEnforceForSiteAdmins is set",
-			setup: func(t *testing.T) context.Context {
-				Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-					return &types.User{ID: 1, SiteAdmin: true}, nil
-				}
+			setup: func(t *testing.T) (context.Context, DB) {
+				users := NewMockUserStoreFrom(db.Users())
+				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+				mockDB := NewMockDBFrom(db)
+				mockDB.UsersFunc.SetDefaultReturn(users)
 				conf.Get().AuthzEnforceForSiteAdmins = true
 				t.Cleanup(func() {
-					Mocks.Users = MockUsers{}
 					conf.Get().AuthzEnforceForSiteAdmins = false
 				})
-				return actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+				return actor.WithActor(context.Background(), &actor.Actor{UID: 1}), mockDB
 			},
 			wantQuery: authzQuery(false, false, int32(1), authz.Read),
 		},
 		{
 			name: "authenticated user is not a site admin",
-			setup: func(t *testing.T) context.Context {
-				Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-					return &types.User{ID: 1}, nil
-				}
-				t.Cleanup(func() {
-					Mocks.Users = MockUsers{}
-				})
-				return actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			setup: func(_ *testing.T) (context.Context, DB) {
+				users := NewMockUserStoreFrom(db.Users())
+				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+				mockDB := NewMockDBFrom(db)
+				mockDB.UsersFunc.SetDefaultReturn(users)
+				return actor.WithActor(context.Background(), &actor.Actor{UID: 1}), mockDB
 			},
 			wantQuery: authzQuery(false, false, int32(1), authz.Read),
 		},
@@ -159,7 +157,8 @@ func TestAuthzQueryConds(t *testing.T) {
 			authz.SetProviders(test.authzAllowByDefault, nil)
 			defer authz.SetProviders(true, nil)
 
-			q, err := AuthzQueryConds(test.setup(t), db)
+			ctx, mockDB := test.setup(t)
+			q, err := AuthzQueryConds(ctx, mockDB)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -171,12 +170,8 @@ func TestAuthzQueryConds(t *testing.T) {
 	}
 }
 
-func TestRepos_nonSiteAdminCanViewOwnPrivateCode(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	db := dbtest.NewDB(t, "")
+func TestRepoStore_nonSiteAdminCanViewOwnPrivateCode(t *testing.T) {
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	// Add a single user who is NOT a site admin
@@ -204,7 +199,7 @@ func TestRepos_nonSiteAdminCanViewOwnPrivateCode(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		}, types.CloneStatusNotCloned,
+		},
 	)[0]
 	alicePrivateRepo := mustCreate(internalCtx, t, db,
 		&types.Repo{
@@ -215,7 +210,7 @@ func TestRepos_nonSiteAdminCanViewOwnPrivateCode(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		}, types.CloneStatusNotCloned,
+		},
 	)[0]
 
 	confGet := func() *conf.Unified {
@@ -241,6 +236,21 @@ VALUES (%s, %s, NULLIF(%s, 0), '')
 		t.Fatal(err)
 	}
 
+	q = sqlf.Sprintf(`
+INSERT INTO user_permissions (user_id, permission, object_type, object_ids_ints, updated_at)
+VALUES
+	(%s, 'read', 'repos', %s, NOW())
+`,
+		alice.ID, pq.Array([]int32{int32(alicePrivateRepo.ID)}),
+	)
+	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	authz.SetProviders(false, []authz.Provider{&fakeProvider{}})
+	defer authz.SetProviders(true, nil)
+
 	// Alice should be able to see both her public and private repos
 	aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
 	repos, err := Repos(db).List(aliceCtx, ReposListOptions{})
@@ -248,6 +258,118 @@ VALUES (%s, %s, NULLIF(%s, 0), '')
 		t.Fatal(err)
 	}
 	wantRepos := []*types.Repo{alicePublicRepo, alicePrivateRepo}
+	if diff := cmp.Diff(wantRepos, repos, cmpopts.IgnoreFields(types.Repo{}, "Sources")); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	}
+}
+
+func TestRepoStore_nonSiteAdminCanViewOrgPrivateCode(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	db := dbtest.NewDB(t)
+	ctx := context.Background()
+
+	// Add a single user who is NOT a site admin
+	alice, err := Users(db).Create(ctx,
+		NewUser{
+			Email:                 "alice@example.com",
+			Username:              "alice",
+			Password:              "alice",
+			EmailVerificationCode: "alice",
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = Users(db).SetIsSiteAdmin(ctx, alice.ID, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Set up two private repositories the user has access to both on the code host:
+	//  1. One is not added to the organization code host connection
+	//  2. One is added to the organization code host connection
+	internalCtx := actor.WithInternalActor(ctx)
+	privateRepo1 := mustCreate(internalCtx, t, db,
+		&types.Repo{
+			Name:    "private_repo_1",
+			Private: true,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "private_repo_1",
+				ServiceType: extsvc.TypeGitHub,
+				ServiceID:   "https://github.com/",
+			},
+		},
+	)[0]
+	privateRepo2 := mustCreate(internalCtx, t, db,
+		&types.Repo{
+			Name:    "private_repo_2",
+			Private: true,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "private_repo_2",
+				ServiceType: extsvc.TypeGitHub,
+				ServiceID:   "https://github.com/",
+			},
+		},
+	)[0]
+
+	// Create an organization and add alice as a member
+	org, err := Orgs(db).Create(ctx, "org", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = OrgMembers(db).Create(ctx, org.ID, alice.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	extsvc := &types.ExternalService{
+		Kind:           extsvc.KindGitHub,
+		DisplayName:    "GITHUB #1",
+		Config:         `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+		NamespaceOrgID: org.ID,
+	}
+	err = ExternalServices(db).Create(ctx, confGet, extsvc)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	q := sqlf.Sprintf(`
+INSERT INTO external_service_repos (external_service_id, repo_id, org_id, clone_url)
+VALUES (%s, %s, NULLIF(%s, 0), '')
+`, extsvc.ID, privateRepo2.ID, extsvc.NamespaceOrgID)
+	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	q = sqlf.Sprintf(`
+INSERT INTO user_permissions (user_id, permission, object_type, object_ids_ints, updated_at)
+VALUES
+	(%s, 'read', 'repos', %s, NOW())
+`,
+		alice.ID, pq.Array([]int32{int32(privateRepo1.ID), int32(privateRepo2.ID)}),
+	)
+	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	authz.SetProviders(false, []authz.Provider{&fakeProvider{}})
+	defer authz.SetProviders(true, nil)
+
+	// Alice should be able to see both her public and private repos
+	aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
+	repos, err := Repos(db).List(aliceCtx, ReposListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantRepos := []*types.Repo{privateRepo2}
 	if diff := cmp.Diff(wantRepos, repos, cmpopts.IgnoreFields(types.Repo{}, "Sources")); diff != "" {
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
@@ -272,12 +394,12 @@ func createGitHubExternalService(t *testing.T, db dbutil.DB, userID int32) *type
 }
 
 // 🚨 SECURITY: Tests are necessary to ensure security.
-func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
+func TestRepoStore_List_checkPermissions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	// Set up three users: alice, bob and admin
@@ -332,7 +454,7 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		}, types.CloneStatusNotCloned,
+		},
 	)[0]
 	alicePublicRepo.Sources = map[string]*types.SourceInfo{
 		siteLevelGitHubService.URN(): {
@@ -349,7 +471,7 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		}, types.CloneStatusNotCloned,
+		},
 	)[0]
 	alicePrivateRepo.Sources = map[string]*types.SourceInfo{
 		siteLevelGitHubService.URN(): {
@@ -365,7 +487,7 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		}, types.CloneStatusNotCloned,
+		},
 	)[0]
 	bobPublicRepo.Sources = map[string]*types.SourceInfo{
 		siteLevelGitHubService.URN(): {
@@ -382,7 +504,7 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		}, types.CloneStatusNotCloned,
+		},
 	)[0]
 	bobPrivateRepo.Sources = map[string]*types.SourceInfo{
 		siteLevelGitHubService.URN(): {
@@ -434,7 +556,7 @@ VALUES (%s, %s, '')
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		}, types.CloneStatusNotCloned,
+		},
 	)[0]
 	cindyPrivateRepo.Sources = map[string]*types.SourceInfo{
 		cindyExternalService.URN(): {ID: cindyExternalService.URN()},
@@ -467,8 +589,9 @@ VALUES
 	authz.SetProviders(false, []authz.Provider{&fakeProvider{}})
 	defer authz.SetProviders(true, nil)
 
-	// Alice should see "alice_public_repo", "alice_private_repo", "bob_public_repo", "cindy_private_repo"
-	// "cindy_private_repos" comes from an unrestricted external service
+	// Alice should see "alice_public_repo", "alice_private_repo",
+	// "bob_public_repo", "cindy_private_repo". The "cindy_private_repo" comes from
+	// an unrestricted external service
 	aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
 	repos, err := Repos(db).List(aliceCtx, ReposListOptions{})
 	if err != nil {
@@ -479,8 +602,9 @@ VALUES
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 
-	// Bob should see "alice_public_repo", "bob_private_repo", "bob_public_repo", "cindy_private_repo"
-	// "cindy_private_repos" comes from an unrestricted external service
+	// Bob should see "alice_public_repo", "bob_private_repo", "bob_public_repo",
+	// "cindy_private_repo". The "cindy_private_repo" comes from an unrestricted
+	// external service
 	bobCtx := actor.WithActor(ctx, &actor.Actor{UID: bob.ID})
 	repos, err = Repos(db).List(bobCtx, ReposListOptions{})
 	if err != nil {
@@ -531,12 +655,12 @@ VALUES
 }
 
 // 🚨 SECURITY: Tests are necessary to ensure security.
-func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
+func TestRepoStore_List_permissionsUserMapping(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	// Set up three users: alice, bob and admin
@@ -591,7 +715,7 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		}, types.CloneStatusNotCloned,
+		},
 	)[0]
 	alicePublicRepo.Sources = map[string]*types.SourceInfo{
 		siteLevelGitHubService.URN(): {
@@ -608,7 +732,7 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		}, types.CloneStatusNotCloned,
+		},
 	)[0]
 	alicePrivateRepo.Sources = map[string]*types.SourceInfo{
 		siteLevelGitHubService.URN(): {
@@ -624,7 +748,7 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		}, types.CloneStatusNotCloned,
+		},
 	)[0]
 	bobPublicRepo.Sources = map[string]*types.SourceInfo{
 		siteLevelGitHubService.URN(): {
@@ -641,7 +765,7 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		}, types.CloneStatusNotCloned,
+		},
 	)[0]
 	bobPrivateRepo.Sources = map[string]*types.SourceInfo{
 		siteLevelGitHubService.URN(): {
@@ -725,7 +849,6 @@ VALUES
 	// AuthzEnforceForSiteAdmins is set
 	conf.Get().AuthzEnforceForSiteAdmins = true
 	t.Cleanup(func() {
-		Mocks.Users = MockUsers{}
 		conf.Get().AuthzEnforceForSiteAdmins = false
 	})
 	adminCtx = actor.WithActor(ctx, &actor.Actor{UID: admin.ID})

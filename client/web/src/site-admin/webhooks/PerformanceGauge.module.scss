@@ -1,0 +1,11 @@
+.gauge {
+    border: solid 1px var(--border-color);
+    border-radius: var(--border-radius);
+}
+
+.count {
+    font-size: 1.625rem;
+    font-weight: 600;
+    line-height: 1;
+    margin-right: 0.714rem;
+}

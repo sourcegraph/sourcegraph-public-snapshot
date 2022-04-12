@@ -1,0 +1,59 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://registry.npmjs.org/left-pad/1.3.0
+    method: GET
+  response:
+    body: '{"name":"left-pad","version":"1.3.0","description":"String left pad","main":"index.js","types":"index.d.ts","scripts":{"test":"node
+      test","bench":"node perf/perf.js"},"devDependencies":{"benchmark":"^2.1.0","fast-check":"0.0.8","tape":"*"},"keywords":["leftpad","left","pad","padding","string","repeat"],"repository":{"url":"git+ssh://git@github.com/stevemao/left-pad.git","type":"git"},"author":{"name":"azer"},"maintainers":[{"name":"sebmck","email":"sebmck@gmail.com"},{"name":"stevemao","email":"maochenyan@gmail.com"},{"name":"westlac","email":"cameron.westland@autodesk.com"}],"license":"WTFPL","gitHead":"ff8e7ba8b4122829cf66125ca8445cac7f073bce","bugs":{"url":"https://github.com/stevemao/left-pad/issues"},"homepage":"https://github.com/stevemao/left-pad#readme","_id":"left-pad@1.3.0","_npmVersion":"5.5.1","_nodeVersion":"9.2.1","_npmUser":{"name":"stevemao","email":"maochenyan@gmail.com"},"dist":{"integrity":"sha512-XI5MPzVNApjAyhQzphX8BkmKsKUxD4LdyK24iZeQGinBN9yTQT3bFlCBy/aVx2HrNcqQGsdot8ghrjyrvMCoEA==","shasum":"5b8a3a7765dfe001261dde915589e782f8c94d1e","tarball":"https://registry.npmjs.org/left-pad/-/left-pad-1.3.0.tgz","fileCount":10,"unpackedSize":9752},"directories":{},"_npmOperationalInternal":{"host":"s3://npm-registry-packages","tmp":"tmp/left-pad_1.3.0_1523236245678_0.2849598021556574"},"_hasShrinkwrap":false,"deprecated":"use
+      String.prototype.padStart()"}'
+    headers:
+      Cache-Control:
+      - max-age=300
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 6ea39fe4ed5f58ea-TXL
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 11 Mar 2022 10:32:09 GMT
+      Expect-Ct:
+      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      Server:
+      - cloudflare
+      Vary:
+      - accept-encoding, accept
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://registry.npmjs.org/left-pad/1.3.1
+    method: GET
+  response:
+    body: '"version not found: 1.3.1"'
+    headers:
+      Cf-Ray:
+      - 6ea39fe6e9d258ea-TXL
+      Content-Length:
+      - "26"
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 11 Mar 2022 10:32:10 GMT
+      Expect-Ct:
+      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      Server:
+      - cloudflare
+      Vary:
+      - Accept-Encoding
+    status: 404 Not Found
+    code: 404
+    duration: ""

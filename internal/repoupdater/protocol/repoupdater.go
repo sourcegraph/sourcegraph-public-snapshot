@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -39,6 +40,7 @@ type RepoQueueState struct {
 	Index    int
 	Total    int
 	Updating bool
+	Priority int
 }
 
 // RepoExternalServicesRequest is a request for the external services
@@ -55,15 +57,17 @@ type RepoExternalServicesResponse struct {
 }
 
 // RepoLookupArgs is a request for information about a repository on repoupdater.
-//
-// Exactly one of Repo and ExternalRepo should be set.
 type RepoLookupArgs struct {
 	// Repo is the repository name to look up.
 	Repo api.RepoName `json:",omitempty"`
+
+	// Update will enqueue a high priority git update for this repo if it exists and this
+	// field is true.
+	Update bool
 }
 
 func (a *RepoLookupArgs) String() string {
-	return fmt.Sprintf("RepoLookupArgs{%s}", a.Repo)
+	return fmt.Sprintf("RepoLookupArgs{Repo: %s, Update: %t}", a.Repo, a.Update)
 }
 
 // RepoLookupResult is the response to a repository information request (RepoLookupArgs).
@@ -95,6 +99,8 @@ func (r *RepoLookupResult) String() string {
 
 // RepoInfo is information about a repository that lives on an external service (such as GitHub or GitLab).
 type RepoInfo struct {
+	ID api.RepoID // ID is the unique numeric ID for this repository.
+
 	// Name the canonical name of the repository. Its case (uppercase/lowercase) may differ from the name arg used
 	// in the lookup. If the repository was renamed on the external service, this name is the new name.
 	Name api.RepoName
@@ -115,6 +121,7 @@ type RepoInfo struct {
 
 func NewRepoInfo(r *types.Repo) *RepoInfo {
 	info := RepoInfo{
+		ID:           r.ID,
 		Name:         r.Name,
 		Description:  r.Description,
 		Fork:         r.Fork,
@@ -158,6 +165,19 @@ func NewRepoInfo(r *types.Repo) *RepoInfo {
 			Tree:   pathAppend(root, "/browse/{path}?at={rev}"),
 			Blob:   pathAppend(root, "/browse/{path}?at={rev}"),
 			Commit: pathAppend(root, "/commits/{commit}"),
+		}
+	case extsvc.TypeBitbucketCloud:
+		repo := r.Metadata.(*bitbucketcloud.Repo)
+		if repo.Links.HTML.Href == "" {
+			break
+		}
+
+		href := repo.Links.HTML.Href
+		info.Links = &RepoLinks{
+			Root:   href,
+			Tree:   pathAppend(href, "/src/{rev}/{path}"),
+			Blob:   pathAppend(href, "/src/{rev}/{path}"),
+			Commit: pathAppend(href, "/commits/{commit}"),
 		}
 	case extsvc.TypeAWSCodeCommit:
 		repo := r.Metadata.(*awscodecommit.Repository)

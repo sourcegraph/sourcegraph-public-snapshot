@@ -23,6 +23,9 @@ const CurrentDefinitionsSchemaVersion = 2
 // CurrentReferencesSchemaVersion is the schema version used for new lsif_data_references rows.
 const CurrentReferencesSchemaVersion = 2
 
+// CurrentImplementationsSchemaVersion is the schema version used for new lsif_data_implementations rows.
+const CurrentImplementationsSchemaVersion = 2
+
 // WriteMeta is called (transactionally) from the precise-code-intel-worker.
 func (s *Store) WriteMeta(ctx context.Context, bundleID int, meta precise.MetaData) (err error) {
 	ctx, endObservation := s.operations.writeMeta.With(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -34,24 +37,23 @@ func (s *Store) WriteMeta(ctx context.Context, bundleID int, meta precise.MetaDa
 }
 
 // WriteDocuments is called (transactionally) from the precise-code-intel-worker.
-func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan precise.KeyedDocumentData) (err error) {
-	ctx, traceLog, endObservation := s.operations.writeDocuments.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan precise.KeyedDocumentData) (count uint32, err error) {
+	ctx, trace, endObservation := s.operations.writeDocuments.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
 	defer endObservation(1, observation.Args{})
 
 	tx, err := s.Transact(ctx)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer func() { err = tx.Done(err) }()
 
 	// Create temporary table symmetric to lsif_data_documents without the dump id or schema version
 	if err := tx.Exec(ctx, sqlf.Sprintf(writeDocumentsTemporaryTableQuery)); err != nil {
-		return err
+		return 0, err
 	}
 
-	var count uint32
 	inserter := func(inserter *batch.Inserter) error {
 		for v := range documents {
 			data, err := s.serializer.MarshalDocumentData(v.Document)
@@ -94,14 +96,14 @@ func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan
 		},
 		inserter,
 	); err != nil {
-		return err
+		return 0, err
 	}
-	traceLog(log.Int("numDocumentRecords", int(count)))
+	trace.Log(log.Int("numDocumentRecords", int(count)))
 
 	// Insert the values from the temporary table into the target table. We select a
 	// parameterized dump id and schema version here since it is the same for all rows
 	// in this operation.
-	return tx.Exec(ctx, sqlf.Sprintf(writeDocumentsInsertQuery, bundleID, CurrentDocumentSchemaVersion))
+	return count, tx.Exec(ctx, sqlf.Sprintf(writeDocumentsInsertQuery, bundleID, CurrentDocumentSchemaVersion))
 }
 
 const writeDocumentsTemporaryTableQuery = `
@@ -125,24 +127,23 @@ FROM t_lsif_data_documents source
 `
 
 // WriteResultChunks is called (transactionally) from the precise-code-intel-worker.
-func (s *Store) WriteResultChunks(ctx context.Context, bundleID int, resultChunks chan precise.IndexedResultChunkData) (err error) {
-	ctx, traceLog, endObservation := s.operations.writeResultChunks.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+func (s *Store) WriteResultChunks(ctx context.Context, bundleID int, resultChunks chan precise.IndexedResultChunkData) (count uint32, err error) {
+	ctx, trace, endObservation := s.operations.writeResultChunks.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
 	defer endObservation(1, observation.Args{})
 
 	tx, err := s.Transact(ctx)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer func() { err = tx.Done(err) }()
 
 	// Create temporary table symmetric to lsif_data_documents without the dump id
 	if err := tx.Exec(ctx, sqlf.Sprintf(writeResultChunksTemporaryTableQuery)); err != nil {
-		return err
+		return 0, err
 	}
 
-	var count uint32
 	inserter := func(inserter *batch.Inserter) error {
 		for v := range resultChunks {
 			data, err := s.serializer.MarshalResultChunkData(v.ResultChunk)
@@ -168,13 +169,13 @@ func (s *Store) WriteResultChunks(ctx context.Context, bundleID int, resultChunk
 		[]string{"idx", "data"},
 		inserter,
 	); err != nil {
-		return err
+		return 0, err
 	}
-	traceLog(log.Int("numResultChunkRecords", int(count)))
+	trace.Log(log.Int("numResultChunkRecords", int(count)))
 
 	// Insert the values from the temporary table into the target table. We select a
 	// parameterized dump id here since it is the same for all rows in this operation.
-	return tx.Exec(ctx, sqlf.Sprintf(writeResultChunksInsertQuery, bundleID))
+	return count, tx.Exec(ctx, sqlf.Sprintf(writeResultChunksInsertQuery, bundleID))
 }
 
 const writeResultChunksTemporaryTableQuery = `
@@ -193,38 +194,47 @@ FROM t_lsif_data_result_chunks source
 `
 
 // WriteDefinitions is called (transactionally) from the precise-code-intel-worker.
-func (s *Store) WriteDefinitions(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) (err error) {
-	ctx, traceLog, endObservation := s.operations.writeDefinitions.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+func (s *Store) WriteDefinitions(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) (count uint32, err error) {
+	ctx, trace, endObservation := s.operations.writeDefinitions.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.writeDefinitionReferences(ctx, bundleID, "lsif_data_definitions", CurrentDefinitionsSchemaVersion, monikerLocations, traceLog)
+	return s.writeMonikers(ctx, bundleID, "lsif_data_definitions", CurrentDefinitionsSchemaVersion, monikerLocations, trace)
 }
 
 // WriteReferences is called (transactionally) from the precise-code-intel-worker.
-func (s *Store) WriteReferences(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) (err error) {
-	ctx, traceLog, endObservation := s.operations.writeReferences.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+func (s *Store) WriteReferences(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) (count uint32, err error) {
+	ctx, trace, endObservation := s.operations.writeReferences.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.writeDefinitionReferences(ctx, bundleID, "lsif_data_references", CurrentReferencesSchemaVersion, monikerLocations, traceLog)
+	return s.writeMonikers(ctx, bundleID, "lsif_data_references", CurrentReferencesSchemaVersion, monikerLocations, trace)
 }
 
-func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tableName string, version int, monikerLocations chan precise.MonikerLocations, traceLog observation.TraceLogger) (err error) {
+// WriteImplementations is called (transactionally) from the precise-code-intel-worker.
+func (s *Store) WriteImplementations(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) (count uint32, err error) {
+	ctx, trace, endObservation := s.operations.writeImplementations.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("bundleID", bundleID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return s.writeMonikers(ctx, bundleID, "lsif_data_implementations", CurrentImplementationsSchemaVersion, monikerLocations, trace)
+}
+
+func (s *Store) writeMonikers(ctx context.Context, bundleID int, tableName string, version int, monikerLocations chan precise.MonikerLocations, trace observation.TraceLogger) (count uint32, err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer func() { err = tx.Done(err) }()
 
 	// Create temporary table symmetric to the given target table without the dump id or schema version
-	if err := tx.Exec(ctx, sqlf.Sprintf(writeDefinitionsReferencesTemporaryTableQuery, sqlf.Sprintf(tableName))); err != nil {
-		return err
+	if err := tx.Exec(ctx, sqlf.Sprintf(writeLocationsTemporaryTableQuery, sqlf.Sprintf(tableName))); err != nil {
+		return 0, err
 	}
 
-	var count uint32
 	inserter := func(inserter *batch.Inserter) error {
 		for v := range monikerLocations {
 			data, err := s.serializer.MarshalLocations(v.Locations)
@@ -250,24 +260,29 @@ func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tab
 		[]string{"scheme", "identifier", "data", "num_locations"},
 		inserter,
 	); err != nil {
-		return err
+		return 0, err
 	}
-	traceLog(log.Int("numRecords", int(count)))
+	trace.Log(log.Int("numRecords", int(count)))
 
 	// Insert the values from the temporary table into the target table. We select a
 	// parameterized dump id and schema version here since it is the same for all rows
 	// in this operation.
-	return tx.Exec(ctx, sqlf.Sprintf(
-		writeDefinitionReferencesInsertQuery,
+	err = tx.Exec(ctx, sqlf.Sprintf(
+		writeLocationsInsertQuery,
 		sqlf.Sprintf(tableName),
 		bundleID,
 		version,
 		sqlf.Sprintf(tableName),
 	))
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }
 
-const writeDefinitionsReferencesTemporaryTableQuery = `
--- source: enterprise/internal/codeintel/stores/lsifstore/data_write.go:writeDefinitionReferences
+const writeLocationsTemporaryTableQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_write.go:writeLocations
 CREATE TEMPORARY TABLE t_%s (
 	scheme text NOT NULL,
 	identifier text NOT NULL,
@@ -276,17 +291,18 @@ CREATE TEMPORARY TABLE t_%s (
 ) ON COMMIT DROP
 `
 
-const writeDefinitionReferencesInsertQuery = `
--- source: enterprise/internal/codeintel/stores/lsifstore/data_write.go:writeDefinitionReferences
+const writeLocationsInsertQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_write.go:writeLocations
 INSERT INTO %s (dump_id, schema_version, scheme, identifier, data, num_locations)
 SELECT %s, %s, source.scheme, source.identifier, source.data, source.num_locations
 FROM t_%s source
+ON CONFLICT DO NOTHING
 `
 
 // withBatchInserter runs batch.WithInserter in a number of goroutines proportional to
 // the maximum number of CPUs that can be executing simultaneously.
 func withBatchInserter(ctx context.Context, db dbutil.DB, tableName string, columns []string, f func(inserter *batch.Inserter) error) (err error) {
 	return goroutine.RunWorkers(goroutine.SimplePoolWorker(func() error {
-		return batch.WithInserter(ctx, db, tableName, columns, f)
+		return batch.WithInserter(ctx, db, tableName, batch.MaxNumPostgresParameters, columns, f)
 	}))
 }

@@ -1,0 +1,20 @@
+.connection-popover-node-link {
+    display: flex;
+    align-items: center;
+    padding: 0.25rem 1rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    border: none !important;
+
+    &:hover,
+    &:focus {
+        background-color: var(--primary);
+        color: var(--light-text);
+        text-decoration: none;
+    }
+
+    &--active {
+        font-weight: inherit;
+        background-color: var(--color-bg-3);
+    }
+}

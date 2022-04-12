@@ -1,15 +1,16 @@
-import classnames from 'classnames'
+import React, { useCallback, useMemo, useState } from 'react'
+
+import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual } from 'lodash'
-import React, { useCallback, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 import { mergeMap, startWith, catchError, tap, filter } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container } from '@sourcegraph/wildcard'
+import { asError, isErrorLike } from '@sourcegraph/common'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Container, Button, useEventObservable, Alert, Link, Select } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { CodeMonitorFields } from '../../../graphql-operations'
@@ -19,7 +20,9 @@ import { DeleteMonitorModal } from './DeleteMonitorModal'
 import { FormActionArea } from './FormActionArea'
 import { FormTriggerArea } from './FormTriggerArea'
 
-export interface CodeMonitorFormProps {
+import styles from './CodeMonitorForm.module.scss'
+
+export interface CodeMonitorFormProps extends ThemeProps {
     history: H.History
     location: H.Location
     authenticatedUser: AuthenticatedUser
@@ -40,6 +43,8 @@ export interface CodeMonitorFormProps {
     description?: string
 
     deleteCodeMonitor?: typeof _deleteCodeMonitor
+
+    isSourcegraphDotCom: boolean
 }
 
 interface FormCompletionSteps {
@@ -57,6 +62,8 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
     deleteCodeMonitor = _deleteCodeMonitor,
     triggerQuery,
     description,
+    isLightTheme,
+    isSourcegraphDotCom,
 }) => {
     const LOADING = 'loading' as const
 
@@ -148,7 +155,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
 
     return (
         <>
-            <Form className="my-4 pb-5 test-monitor-form" onSubmit={requestOnSubmit}>
+            <Form className="my-4 pb-5" data-testid="monitor-form" onSubmit={requestOnSubmit}>
                 <Container className="mb-3">
                     <div className="form-group">
                         <label htmlFor="code-monitor-form-name">Name</label>
@@ -156,6 +163,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                             id="code-monitor-form-name"
                             type="text"
                             className="form-control mb-2 test-name-input"
+                            data-testid="name-input"
                             required={true}
                             onChange={event => {
                                 onNameChange(event.target.value)
@@ -167,47 +175,46 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                         <small className="text-muted">
                             Give it a short, descriptive name to reference events on Sourcegraph and in notifications.
                             Do not include{' '}
-                            <a
-                                href="https://docs.sourcegraph.com/code_monitoring/explanations/best_practices#do-not-include-confidential-information-in-monitor-names"
+                            <Link
+                                to="/help/code_monitoring/explanations/best_practices#do-not-include-confidential-information-in-monitor-names"
                                 target="_blank"
                                 rel="noopener"
                             >
                                 confidential information
-                            </a>
+                            </Link>
                             .
                         </small>
                     </div>
-                    <div className="form-group">
-                        <label htmlFor="code-monitor-form-owner">Owner</label>
-                        <select
-                            id="code-monitor-form-owner"
-                            className="form-control mb-2 code-monitor-form__owner-dropdown w-auto"
-                            disabled={true}
-                        >
-                            <option value={authenticatedUser.displayName || authenticatedUser.username}>
-                                {authenticatedUser.username}
-                            </option>
-                        </select>
-                        <small className="text-muted">
-                            Event history and configuration will not be shared. Code monitoring currently only supports
-                            individual owners.
-                        </small>
-                    </div>
-                    <hr className="code-monitor-form__horizontal-rule my-3" />
-                    <div className="code-monitor-form__triggers mb-4">
+
+                    <Select
+                        label="Owner"
+                        className="w-100"
+                        aria-label="Owner"
+                        selectClassName={classNames('mb-2 w-auto', styles.ownerDropdown)}
+                        disabled={true}
+                        message="Event history and configuration will not be shared. Code monitoring currently only supports individual owners."
+                    >
+                        <option value={authenticatedUser.displayName || authenticatedUser.username}>
+                            {authenticatedUser.username}
+                        </option>
+                    </Select>
+
+                    <hr className={classNames('my-3', styles.horizontalRule)} />
+                    <div className="mb-4">
                         <FormTriggerArea
                             query={currentCodeMonitorState.trigger.query}
                             onQueryChange={onQueryChange}
                             triggerCompleted={formCompletion.triggerCompleted}
                             setTriggerCompleted={setTriggerCompleted}
                             startExpanded={!!triggerQuery}
+                            cardBtnClassName={styles.cardButton}
+                            cardLinkClassName={styles.cardLink}
+                            cardClassName={styles.card}
+                            isLightTheme={isLightTheme}
+                            isSourcegraphDotCom={isSourcegraphDotCom}
                         />
                     </div>
-                    <div
-                        className={classnames({
-                            'code-monitor-form__actions--disabled': !formCompletion.triggerCompleted,
-                        })}
-                    >
+                    <div className={classNames(!formCompletion.triggerCompleted && styles.actionsDisabled)}>
                         <FormActionArea
                             actions={currentCodeMonitorState.actions}
                             setActionsCompleted={setActionsCompleted}
@@ -215,10 +222,10 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                             authenticatedUser={authenticatedUser}
                             disabled={!formCompletion.triggerCompleted}
                             onActionsChange={onActionsChange}
-                            description={currentCodeMonitorState.description}
+                            monitorName={currentCodeMonitorState.description}
                         />
                     </div>
-                    <hr className="code-monitor-form__horizontal-rule my-3" />
+                    <hr className={classNames('my-3', styles.horizontalRule)} />
                     <div>
                         <div className="d-flex">
                             <div>
@@ -227,10 +234,10 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                                     value={currentCodeMonitorState.enabled}
                                     onToggle={onEnabledChange}
                                     className="mr-2"
-                                    aria-describedby="code-monitor-form__toggle-description"
+                                    aria-describedby="code-monitor-form-toggle-description"
                                 />{' '}
                             </div>
-                            <div className="flex-column" id="code-monitor-form__toggle-description">
+                            <div className="flex-column" id="code-monitor-form-toggle-description">
                                 <div>{currentCodeMonitorState.enabled ? 'Active' : 'Inactive'}</div>
                                 <div className="text-muted">
                                     {currentCodeMonitorState.enabled
@@ -244,7 +251,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                 <div>
                     <div className="d-flex justify-content-between my-4">
                         <div>
-                            <button
+                            <Button
                                 type="submit"
                                 disabled={
                                     !formCompletion.actionCompleted ||
@@ -252,28 +259,31 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                                     codeMonitorOrError === LOADING ||
                                     !hasChangedFields
                                 }
-                                className="btn btn-primary mr-2 test-submit-monitor"
+                                data-testid="submit-monitor"
+                                className="mr-2 test-submit-monitor"
+                                variant="primary"
                             >
                                 {submitButtonLabel}
-                            </button>
-                            <button type="button" className="btn btn-secondary test-cancel-monitor" onClick={onCancel}>
+                            </Button>
+                            <Button onClick={onCancel} data-testid="cancel-monitor" variant="secondary">
                                 Cancel
-                            </button>
+                            </Button>
                         </div>
                         {showDeleteButton && (
                             <div>
-                                <button
-                                    type="button"
-                                    className="btn btn-outline-danger test-delete-monitor"
+                                <Button
                                     onClick={toggleDeleteModal}
+                                    data-testid="delete-monitor"
+                                    outline={true}
+                                    variant="danger"
                                 >
                                     Delete
-                                </button>
+                                </Button>
                             </div>
                         )}
                     </div>
                     {isErrorLike(codeMonitorOrError) && (
-                        <div className="alert alert-danger">Failed to create monitor: {codeMonitorOrError.message}</div>
+                        <Alert variant="danger">Failed to create monitor: {codeMonitorOrError.message}</Alert>
                     )}
                 </div>
             </Form>

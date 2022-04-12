@@ -2,14 +2,16 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const slowDocumentationPageRequestThreshold = time.Second
@@ -18,7 +20,7 @@ const slowDocumentationPageRequestThreshold = time.Second
 //
 // nil, nil is returned if the page does not exist.
 func (r *queryResolver) DocumentationPage(ctx context.Context, pathID string) (_ *precise.DocumentationPageData, err error) {
-	ctx, traceLog, endObservation := observeResolver(ctx, &err, "DocumentationPage", r.operations.documentationPage, slowDocumentationPageRequestThreshold, observation.Args{
+	ctx, trace, endObservation := observeResolver(ctx, &err, "DocumentationPage", r.operations.documentationPage, slowDocumentationPageRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),
@@ -31,7 +33,7 @@ func (r *queryResolver) DocumentationPage(ctx context.Context, pathID string) (_
 	defer endObservation()
 
 	for i := range r.uploads {
-		traceLog(log.Int("uploadID", r.uploads[i].ID))
+		trace.Log(log.Int("uploadID", r.uploads[i].ID))
 
 		// In the case of multiple LSIF uploads, we merely return the most-recent page from a
 		// matching bundle.
@@ -53,7 +55,7 @@ const slowDocumentationPathInfoRequestThreshold = time.Second
 //
 // nil, nil is returned if the page does not exist.
 func (r *queryResolver) DocumentationPathInfo(ctx context.Context, pathID string) (_ *precise.DocumentationPathInfoData, err error) {
-	ctx, traceLog, endObservation := observeResolver(ctx, &err, "DocumentationPathInfo", r.operations.documentationPathInfo, slowDocumentationPathInfoRequestThreshold, observation.Args{
+	ctx, trace, endObservation := observeResolver(ctx, &err, "DocumentationPathInfo", r.operations.documentationPathInfo, slowDocumentationPathInfoRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),
@@ -66,7 +68,7 @@ func (r *queryResolver) DocumentationPathInfo(ctx context.Context, pathID string
 	defer endObservation()
 
 	for i := range r.uploads {
-		traceLog(log.Int("uploadID", r.uploads[i].ID))
+		trace.Log(log.Int("uploadID", r.uploads[i].ID))
 
 		// In the case of multiple LSIF uploads, we merely return the most-recent info from a
 		// matching bundle.
@@ -134,4 +136,39 @@ func (r *queryResolver) Documentation(ctx context.Context, line, character int) 
 		}
 	}
 	return documentation, nil
+}
+
+const slowDocumentationSearchRequestThreshold = 3 * time.Second
+
+// DocumentationSearch searches for documentation, limiting the results to the specified set of repos (or all if empty).
+func (r *resolver) DocumentationSearch(ctx context.Context, query string, repos []string) (_ []precise.DocumentationSearchResult, err error) {
+	ctx, _, endObservation := observeResolver(ctx, &err, "DocumentationSearch", r.operations.documentationSearch, slowDocumentationSearchRequestThreshold, observation.Args{
+		LogFields: []log.Field{
+			log.String("query", query),
+			log.String("repos", fmt.Sprint(repos)),
+		},
+	})
+	defer endObservation()
+
+	// TODO(apidocs): future: search in private **repos** as well
+	results, err := r.lsifStore.DocumentationSearch(ctx, "public", query, repos)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO(apidocs): future: enable searching private **symbols** (in public repos) once the frontend can render them.
+	final := make([]precise.DocumentationSearchResult, 0, len(results)/3)
+	for _, result := range results {
+		private := false
+		for _, tag := range result.Tags {
+			if tag == string(protocol.TagPrivate) {
+				private = true
+				break
+			}
+		}
+		if !private {
+			final = append(final, result)
+		}
+	}
+	return final, nil
 }

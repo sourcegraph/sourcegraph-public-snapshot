@@ -51,7 +51,7 @@ func (c *cachedSearcher) String() string {
 }
 
 func (c *cachedSearcher) List(ctx context.Context, q zoektquery.Q, opts *zoekt.ListOptions) (*zoekt.RepoList, error) {
-	if v, ok := q.(*zoektquery.Const); !ok || !v.Value {
+	if !isTrueQuery(q) {
 		// cache pass-through for anything that isn't "ListAll", either minimal or not
 		return c.Streamer.List(ctx, q, opts)
 	}
@@ -77,6 +77,15 @@ func (c *cachedSearcher) List(ctx context.Context, q zoektquery.Q, opts *zoekt.L
 	}
 
 	return v.list, v.err
+}
+
+// isTrueQuery returns true if q will always match all shards.
+func isTrueQuery(q zoektquery.Q) bool {
+	// the query is probably wrapped to avoid extra RPC work.
+	q = zoektquery.RPCUnwrap(q)
+
+	v, ok := q.(*zoektquery.Const)
+	return ok && v.Value
 }
 
 func (c *cachedSearcher) update(ctx context.Context, q zoektquery.Q, k listCacheKey) *listCacheValue {

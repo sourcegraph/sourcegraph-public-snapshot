@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -17,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -25,15 +24,17 @@ type GithubSource struct {
 	au     auth.Authenticator
 }
 
+var _ ForkableChangesetSource = GithubSource{}
+
 func NewGithubSource(svc *types.ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
 	var c schema.GitHubConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGithubSource(&c, cf, nil)
+	return newGithubSource(svc.URN(), &c, cf, nil)
 }
 
-func newGithubSource(c *schema.GitHubConnection, cf *httpcli.Factory, au auth.Authenticator) (*GithubSource, error) {
+func newGithubSource(urn string, c *schema.GitHubConnection, cf *httpcli.Factory, au auth.Authenticator) (*GithubSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -46,15 +47,11 @@ func newGithubSource(c *schema.GitHubConnection, cf *httpcli.Factory, au auth.Au
 		cf = httpcli.ExternalClientFactory
 	}
 
-	opts := []httpcli.Opt{
+	opts := httpClientCertificateOptions([]httpcli.Opt{
 		// Use a 30s timeout to avoid running into EOF errors, because GitHub
 		// closes idle connections after 60s
 		httpcli.NewIdleConnTimeoutOpt(30 * time.Second),
-	}
-
-	if c.Certificate != "" {
-		opts = append(opts, httpcli.NewCertPoolOpt(c.Certificate))
-	}
+	}, c.Certificate)
 
 	cli, err := cf.Doer(opts...)
 	if err != nil {
@@ -68,11 +65,11 @@ func newGithubSource(c *schema.GitHubConnection, cf *httpcli.Factory, au auth.Au
 
 	return &GithubSource{
 		au:     authr,
-		client: github.NewV4Client(apiURL, authr, cli),
+		client: github.NewV4Client(urn, apiURL, authr, cli),
 	}, nil
 }
 
-func (s GithubSource) GitserverPushConfig(ctx context.Context, store *database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
+func (s GithubSource) GitserverPushConfig(ctx context.Context, store database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
 	return gitserverPushConfig(ctx, store, repo, s.au)
 }
 
@@ -100,25 +97,43 @@ func (s GithubSource) ValidateAuthenticator(ctx context.Context) error {
 
 // CreateChangeset creates the given changeset on the code host.
 func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
-	input := buildCreatePullRequestInput(c)
+	input, err := buildCreatePullRequestInput(c)
+	if err != nil {
+		return false, err
+	}
+
 	return s.createChangeset(ctx, c, input)
 }
 
 // CreateDraftChangeset creates the given changeset on the code host in draft mode.
 func (s GithubSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (bool, error) {
-	input := buildCreatePullRequestInput(c)
+	input, err := buildCreatePullRequestInput(c)
+	if err != nil {
+		return false, err
+	}
+
 	input.Draft = true
 	return s.createChangeset(ctx, c, input)
 }
 
-func buildCreatePullRequestInput(c *Changeset) *github.CreatePullRequestInput {
+func buildCreatePullRequestInput(c *Changeset) (*github.CreatePullRequestInput, error) {
+	headRef := git.AbbreviateRef(c.HeadRef)
+	if c.RemoteRepo != c.TargetRepo {
+		owner, err := c.RemoteRepo.Metadata.(*github.Repository).Owner()
+		if err != nil {
+			return nil, err
+		}
+
+		headRef = owner + ":" + headRef
+	}
+
 	return &github.CreatePullRequestInput{
-		RepositoryID: c.Repo.Metadata.(*github.Repository).ID,
+		RepositoryID: c.TargetRepo.Metadata.(*github.Repository).ID,
 		Title:        c.Title,
 		Body:         c.Body,
-		HeadRefName:  git.AbbreviateRef(c.HeadRef),
+		HeadRefName:  headRef,
 		BaseRefName:  git.AbbreviateRef(c.BaseRef),
-	}
+	}, nil
 }
 
 func (s GithubSource) createChangeset(ctx context.Context, c *Changeset, prInput *github.CreatePullRequestInput) (bool, error) {
@@ -128,7 +143,7 @@ func (s GithubSource) createChangeset(ctx context.Context, c *Changeset, prInput
 		if err != github.ErrPullRequestAlreadyExists {
 			return exists, err
 		}
-		repo := c.Repo.Metadata.(*github.Repository)
+		repo := c.TargetRepo.Metadata.(*github.Repository)
 		owner, name, err := github.SplitRepositoryNameWithOwner(repo.NameWithOwner)
 		if err != nil {
 			return exists, errors.Wrap(err, "getting repo owner and name")
@@ -180,7 +195,7 @@ func (s GithubSource) UndraftChangeset(ctx context.Context, c *Changeset) error 
 
 // LoadChangeset loads the latest state of the given Changeset from the codehost.
 func (s GithubSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
-	repo := cs.Repo.Metadata.(*github.Repository)
+	repo := cs.TargetRepo.Metadata.(*github.Repository)
 	number, err := strconv.ParseInt(cs.ExternalID, 10, 64)
 	if err != nil {
 		return errors.Wrap(err, "parsing changeset external id")
@@ -267,4 +282,44 @@ func (s GithubSource) MergeChangeset(ctx context.Context, c *Changeset, squash b
 	}
 
 	return c.Changeset.SetMetadata(pr)
+}
+
+// GetNamespaceFork returns a repo pointing to a fork of the given repo in
+// the given namespace, ensuring that the fork exists and is a fork of the
+// target repo.
+func (s GithubSource) GetNamespaceFork(ctx context.Context, targetRepo *types.Repo, namespace string) (*types.Repo, error) {
+	return githubGetUserFork(ctx, targetRepo, s.client, &namespace)
+}
+
+// GetUserFork returns a repo pointing to a fork of the given repo in the
+// currently authenticated user's namespace.
+func (s GithubSource) GetUserFork(ctx context.Context, targetRepo *types.Repo) (*types.Repo, error) {
+	// The implementation is separated here so we can mock the GitHub client.
+	return githubGetUserFork(ctx, targetRepo, s.client, nil)
+}
+
+type githubClientFork interface {
+	Fork(context.Context, string, string, *string) (*github.Repository, error)
+}
+
+func githubGetUserFork(ctx context.Context, targetRepo *types.Repo, client githubClientFork, namespace *string) (*types.Repo, error) {
+	meta, ok := targetRepo.Metadata.(*github.Repository)
+	if !ok || meta == nil {
+		return nil, errors.New("target repo is not a GitHub repo")
+	}
+
+	owner, name, err := github.SplitRepositoryNameWithOwner(meta.NameWithOwner)
+	if err != nil {
+		return nil, errors.New("parsing repo name")
+	}
+
+	fork, err := client.Fork(ctx, owner, name, namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "forking repository")
+	}
+
+	remoteRepo := *targetRepo
+	remoteRepo.Metadata = fork
+
+	return &remoteRepo, nil
 }

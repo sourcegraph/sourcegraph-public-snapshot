@@ -1,0 +1,36 @@
+name: Flaky test
+description: Capture information about a flaky test that has been disabled.
+title: 'ci/flake: $TEST_NAME disabled'
+labels:
+- 'dx'
+- 'ci/flake'
+- 'testing'
+body:
+- type: input
+  id: test
+  attributes:
+    label: Test
+    description: Name of test or link to test that was disabled
+  validations:
+    required: true
+- type: input
+  id: example
+  attributes:
+    label: Example failure
+    description: Buildkite link to an example faiure
+  validations:
+    required: true
+- type: input
+  id: pr
+  attributes:
+    label: Disabling PR
+    description: Link to PR that disables the test
+  validations:
+    required: true
+- type: textarea
+  id: details
+  attributes:
+    label: Additional details
+    description: Notes and/or screenshot describing the problem, links to log queries indicating repeat occurrences, etc.
+  validations:
+    required: false

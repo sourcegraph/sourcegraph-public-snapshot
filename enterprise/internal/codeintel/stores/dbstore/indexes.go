@@ -117,7 +117,7 @@ func (s *Store) GetIndexByID(ctx context.Context, id int) (_ Index, _ bool, err 
 	}})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, s.Store.Handle().DB())
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Store.Handle().DB()))
 	if err != nil {
 		return Index{}, false, err
 	}
@@ -182,7 +182,7 @@ func (s *Store) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []Index, err
 		return nil, nil
 	}
 
-	authzConds, err := database.AuthzQueryConds(ctx, s.Store.Handle().DB())
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Store.Handle().DB()))
 	if err != nil {
 		return nil, err
 	}
@@ -237,7 +237,7 @@ type GetIndexesOptions struct {
 
 // GetIndexes returns a list of indexes and the total count of records matching the given conditions.
 func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Index, _ int, err error) {
-	ctx, traceLog, endObservation := s.operations.getIndexes.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.getIndexes.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", opts.RepositoryID),
 		log.String("state", opts.State),
 		log.String("term", opts.Term),
@@ -261,10 +261,10 @@ func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 		conds = append(conds, makeIndexSearchCondition(opts.Term))
 	}
 	if opts.State != "" {
-		conds = append(conds, sqlf.Sprintf("u.state = %s", opts.State))
+		conds = append(conds, makeStateCondition(opts.State))
 	}
 
-	authzConds, err := database.AuthzQueryConds(ctx, tx.Store.Handle().DB())
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(tx.Store.Handle().DB()))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -279,7 +279,7 @@ func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 	if err != nil {
 		return nil, 0, err
 	}
-	traceLog(
+	trace.Log(
 		log.Int("totalCount", totalCount),
 		log.Int("numIndexes", len(indexes)),
 	)
@@ -323,7 +323,7 @@ FROM lsif_indexes_with_repository_name u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
-WHERE %s ORDER BY queued_at DESC LIMIT %d OFFSET %d
+WHERE %s ORDER BY queued_at DESC, u.id LIMIT %d OFFSET %d
 `
 
 // makeIndexSearchCondition returns a disjunction of LIKE clauses against all searchable columns of an index.
@@ -489,7 +489,7 @@ DELETE FROM lsif_indexes WHERE id = %s RETURNING repository_id
 // DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of indexes
 // that were removed for that repository.
 func (s *Store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
-	ctx, traceLog, endObservation := s.operations.deleteIndexesWithoutRepository.WithAndLogger(ctx, &err, observation.Args{})
+	ctx, trace, endObservation := s.operations.deleteIndexesWithoutRepository.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	// TODO(efritz) - this would benefit from an index on repository_id. We currently have
@@ -504,7 +504,7 @@ func (s *Store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Tim
 	for _, numDeleted := range repositories {
 		count += numDeleted
 	}
-	traceLog(
+	trace.Log(
 		log.Int("count", count),
 		log.Int("numRepositories", len(repositories)),
 	)
@@ -531,4 +531,137 @@ deleted AS (
 	RETURNING u.id, u.repository_id
 )
 SELECT d.repository_id, COUNT(*) FROM deleted d GROUP BY d.repository_id
+`
+
+// LastIndexScanForRepository returns the last timestamp, if any, that the repository with the given
+// identifier was considered for auto-indexing scheduling.
+func (s *Store) LastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error) {
+	ctx, endObservation := s.operations.lastIndexScanForRepository.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	t, ok, err := basestore.ScanFirstTime(s.Query(ctx, sqlf.Sprintf(lastIndexScanForRepositoryQuery, repositoryID)))
+	if !ok {
+		return nil, err
+	}
+
+	return &t, nil
+}
+
+const lastIndexScanForRepositoryQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/indexes.go:LastIndexScanForRepository
+SELECT last_index_scan_at FROM lsif_last_index_scan WHERE repository_id = %s
+`
+
+type IndexesWithRepositoryNamespace struct {
+	Root    string
+	Indexer string
+	Indexes []Index
+}
+
+// RecentIndexesSummary returns the set of "interesting" indexes for the repository with the given identifier.
+// The return value is a list of indexes grouped by root and indexer. In each group, the set of indexes should
+// include the set of unprocessed records as well as the latest finished record. These values allow users to
+// quickly determine if a particular root/indexer pair os up-to-date or having issues processing.
+func (s *Store) RecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []IndexesWithRepositoryNamespace, err error) {
+	ctx, logger, endObservation := s.operations.recentIndexesSummary.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	indexes, err := scanIndexes(s.Query(ctx, sqlf.Sprintf(recentIndexesSummaryQuery, repositoryID, repositoryID)))
+	if err != nil {
+		return nil, err
+	}
+	logger.Log(log.Int("numIndexes", len(indexes)))
+
+	groupedIndexes := make([]IndexesWithRepositoryNamespace, 1, len(indexes)+1)
+	for _, index := range indexes {
+		if last := groupedIndexes[len(groupedIndexes)-1]; last.Root != index.Root || last.Indexer != index.Indexer {
+			groupedIndexes = append(groupedIndexes, IndexesWithRepositoryNamespace{
+				Root:    index.Root,
+				Indexer: index.Indexer,
+			})
+		}
+
+		n := len(groupedIndexes)
+		groupedIndexes[n-1].Indexes = append(groupedIndexes[n-1].Indexes, index)
+	}
+
+	return groupedIndexes[1:], nil
+}
+
+const recentIndexesSummaryQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/indexes.go:RecentIndexesSummary
+WITH ranked_completed AS (
+	SELECT
+		u.id,
+		u.root,
+		u.indexer,
+		u.finished_at,
+		RANK() OVER (PARTITION BY root, indexer ORDER BY finished_at DESC) AS rank
+	FROM lsif_indexes u
+	WHERE
+		u.repository_id = %s AND
+		u.state NOT IN ('queued', 'processing', 'deleted')
+),
+latest_indexes AS (
+	SELECT u.id, u.root, u.indexer, u.queued_at
+	FROM lsif_indexes u
+	WHERE
+		u.id IN (
+			SELECT rc.id
+			FROM ranked_completed rc
+			WHERE rc.rank = 1
+		)
+	ORDER BY u.root, u.indexer
+),
+new_indexes AS (
+	SELECT u.id
+	FROM lsif_indexes u
+	WHERE
+		u.repository_id = %s AND
+		u.state IN ('queued', 'processing') AND
+		u.queued_at >= (
+			SELECT lu.queued_at
+			FROM latest_indexes lu
+			WHERE
+				lu.root = u.root AND
+				lu.indexer = u.indexer
+			-- condition passes when latest_indexes is empty
+			UNION SELECT u.queued_at LIMIT 1
+		)
+)
+SELECT
+	u.id,
+	u.commit,
+	u.queued_at,
+	u.state,
+	u.failure_message,
+	u.started_at,
+	u.finished_at,
+	u.process_after,
+	u.num_resets,
+	u.num_failures,
+	u.repository_id,
+	u.repository_name,
+	u.docker_steps,
+	u.root,
+	u.indexer,
+	u.indexer_args,
+	u.outfile,
+	u.execution_logs,
+	s.rank,
+	u.local_steps,
+	` + indexAssociatedUploadIDQueryFragment + `
+FROM lsif_indexes_with_repository_name u
+LEFT JOIN (` + indexRankQueryFragment + `) s
+ON u.id = s.id
+WHERE u.id IN (
+	SELECT lu.id FROM latest_indexes lu
+	UNION
+	SELECT nu.id FROM new_indexes nu
+)
+ORDER BY u.root, u.indexer
 `

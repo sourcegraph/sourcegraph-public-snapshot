@@ -3,10 +3,8 @@ package search
 import (
 	"strings"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search/syntax"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // TextSearchTerm represents a single term within a search string.
@@ -23,7 +21,7 @@ func ParseTextSearch(search string) ([]TextSearchTerm, error) {
 		return nil, errors.Wrap(err, "parsing search string")
 	}
 
-	var errs *multierror.Error
+	var errs error
 	terms := []TextSearchTerm{}
 	for _, expr := range tree {
 		if expr.Field != "" {
@@ -32,7 +30,7 @@ func ParseTextSearch(search string) ([]TextSearchTerm, error) {
 			// function to accept an additional parameter defining field types
 			// and what behaviour should be implemented when they are set. Until
 			// then, we'll just error and keep this function simple.
-			errs = multierror.Append(errs, ErrUnsupportedField{
+			errs = errors.Append(errs, ErrUnsupportedField{
 				ErrExpr: createErrExpr(search, expr),
 				Field:   expr.Field,
 			})
@@ -53,12 +51,12 @@ func ParseTextSearch(search string) ([]TextSearchTerm, error) {
 		// If we ever want to support regex patterns, this would be where we'd
 		// hook it in (by matching TokenPattern).
 		default:
-			errs = multierror.Append(errs, ErrUnsupportedValueType{
+			errs = errors.Append(errs, ErrUnsupportedValueType{
 				ErrExpr:   createErrExpr(search, expr),
 				ValueType: expr.ValueType,
 			})
 		}
 	}
 
-	return terms, errs.ErrorOrNil()
+	return terms, errs
 }

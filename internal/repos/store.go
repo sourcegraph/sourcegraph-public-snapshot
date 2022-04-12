@@ -4,12 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"sort"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -23,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // A Store exposes methods to read and write repos and external services.
@@ -36,13 +34,22 @@ type Store struct {
 	// Used for tracing calls to store methods. Uses opentracing.GlobalTracer() by default.
 	Tracer trace.Tracer
 	// RepoStore is a database.RepoStore using the same database handle.
-	RepoStore *database.RepoStore
+	RepoStore database.RepoStore
+	// GitserverReposStore is a database.GitserverReposStore using the same database handle.
+	GitserverReposStore database.GitserverRepoStore
 	// ExternalServiceStore is a database.ExternalServiceStore using the same database handle.
-	ExternalServiceStore *database.ExternalServiceStore
+	ExternalServiceStore database.ExternalServiceStore
 
 	txtrace *trace.Trace
 	txctx   context.Context
 }
+
+type ReposMocks struct {
+	ListExternalServiceUserIDsByRepoID func(ctx context.Context, repoID api.RepoID) ([]int32, error)
+	ListExternalServiceRepoIDsByUserID func(ctx context.Context, userID int32) ([]api.RepoID, error)
+}
+
+var Mocks ReposMocks
 
 // NewStore instantiates and returns a new DBStore with prepared statements.
 func NewStore(db dbutil.DB, txOpts sql.TxOptions) *Store {
@@ -50,6 +57,7 @@ func NewStore(db dbutil.DB, txOpts sql.TxOptions) *Store {
 	return &Store{
 		Store:                s,
 		RepoStore:            database.ReposWith(s),
+		GitserverReposStore:  database.NewGitserverReposWith(s),
 		ExternalServiceStore: database.ExternalServicesWith(s),
 		Log:                  log15.Root(),
 		Tracer:               trace.Tracer{Tracer: opentracing.GlobalTracer()},
@@ -60,6 +68,7 @@ func (s *Store) With(other basestore.ShareableStore) *Store {
 	return &Store{
 		Store:                s.Store.With(other),
 		RepoStore:            s.RepoStore.With(other),
+		GitserverReposStore:  s.GitserverReposStore.With(other),
 		ExternalServiceStore: s.ExternalServiceStore.With(other),
 		Log:                  s.Log,
 		Metrics:              s.Metrics,
@@ -134,38 +143,40 @@ func (s *Store) trace(ctx context.Context, family string) (*trace.Trace, context
 	return tr, ctx
 }
 
-// CountUserAddedRepos counts the total number of repos that have been added
-// by user owned external services. If userIDs are specified, only repos owned by the given
-// users are counted.
-func (s *Store) CountUserAddedRepos(ctx context.Context, userIDs ...int32) (count uint64, err error) {
-	tr, ctx := s.trace(ctx, "Store.CountUserAddedRepos")
+// CountNamespacedRepos counts the total number of repos that have been added
+// by user or organization owned external services.
+// If userID is specified, only repos owned by that user are counted.
+// If orgID is specified, only repos owned by that organization are counted.
+func (s *Store) CountNamespacedRepos(ctx context.Context, userID, orgID int32) (count uint64, err error) {
+	tr, ctx := s.trace(ctx, "Store.CountNamespacedRepos")
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 
-		uids := fmt.Sprint(userIDs)
-		tr.LogFields(otlog.String("user-ids", uids))
-		s.Metrics.CountUserAddedRepos.Observe(secs, float64(count), &err)
-		logging.Log(s.Log, "store.count-user-added-repos", &err, "count", count, "user-ids", uids)
+		tr.LogFields(otlog.Int32("user-id", userID), otlog.Int32("org-id", orgID))
+		s.Metrics.CountNamespacedRepos.Observe(secs, float64(count), &err)
+		logging.Log(s.Log, "store.count-namespaced-repos", &err, "count", count, "user-id", userID, "org-id", orgID)
 
 		tr.SetError(err)
 		tr.Finish()
 	}(time.Now())
 
 	var q *sqlf.Query
-	if len(userIDs) > 0 {
-		q = sqlf.Sprintf(countTotalUserAddedReposQueryFmtstr+"\nAND user_id = ANY(%s)", pq.Array(userIDs))
+	if userID > 0 {
+		q = sqlf.Sprintf(countTotalNamespacedReposQueryFmtstr+"\nAND user_id = %d", userID)
+	} else if orgID > 0 {
+		q = sqlf.Sprintf(countTotalNamespacedReposQueryFmtstr+"\nAND org_id = %d", orgID)
 	} else {
-		q = sqlf.Sprintf(countTotalUserAddedReposQueryFmtstr)
+		q = sqlf.Sprintf(countTotalNamespacedReposQueryFmtstr)
 	}
 
 	err = s.QueryRow(ctx, q).Scan(&count)
 	return count, err
 }
 
-const countTotalUserAddedReposQueryFmtstr = `
+const countTotalNamespacedReposQueryFmtstr = `
 SELECT COUNT(DISTINCT(repo_id))
 FROM external_service_repos
-WHERE user_id IS NOT NULL`
+WHERE (user_id IS NOT NULL OR org_id IS NOT NULL)`
 
 // DeleteExternalServiceReposNotIn calls DeleteExternalServiceRepo for every repo not in the given ids that is owned
 // by the given external service. We run one query per repo rather than one batch query in order to reduce the chances
@@ -201,16 +212,16 @@ func (s *Store) DeleteExternalServiceReposNotIn(ctx context.Context, svc *types.
 		return nil, errors.Wrap(err, "failed to list external service repo ids")
 	}
 
-	var errs multierror.Error
+	var errs error
 	for _, id := range toDelete {
 		if err = s.DeleteExternalServiceRepo(ctx, svc, api.RepoID(id)); err != nil {
-			multierror.Append(&errs, errors.Wrapf(err, "failed to delete external service repo (%d, %d)", svc.ID, id))
+			errs = errors.Append(errs, errors.Wrapf(err, "failed to delete external service repo (%d, %d)", svc.ID, id))
 		} else {
 			deleted = append(deleted, api.RepoID(id))
 		}
 	}
 
-	return deleted, errs.ErrorOrNil()
+	return deleted, errs
 }
 
 const listExternalServiceReposNotInQuery = `
@@ -241,7 +252,7 @@ func (s *Store) DeleteExternalServiceRepo(ctx context.Context, svc *types.Extern
 	if !s.InTransaction() {
 		s, err = s.Transact(ctx)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "DeleteExternalServiceRepo")
 		}
 		defer func() { s.Done(err) }()
 	}
@@ -280,10 +291,10 @@ WHERE repo_id = %s AND user_id IS NOT NULL
 
 // ListExternalServiceUserIDsByRepoID returns the user IDs associated with a
 // given repository. These users have proven that they have read access to the
-// repository given their presence in our external_service_repos table.
+// repository given records are present in the "external_service_repos" table.
 func (s *Store) ListExternalServiceUserIDsByRepoID(ctx context.Context, repoID api.RepoID) (userIDs []int32, err error) {
-	if database.Mocks.Repos.ListExternalServiceUserIDsByRepoID != nil {
-		return database.Mocks.Repos.ListExternalServiceUserIDsByRepoID(ctx, repoID)
+	if Mocks.ListExternalServiceUserIDsByRepoID != nil {
+		return Mocks.ListExternalServiceUserIDsByRepoID(ctx, repoID)
 	}
 
 	tr, ctx := s.trace(ctx, "Store.ListExternalServiceUserIDsByRepoID")
@@ -317,10 +328,10 @@ AND repo.private
 // ListExternalServicePrivateRepoIDsByUserID returns the private repo IDs
 // associated with a given user. As with ListExternalServiceUserIDsByRepoID, the
 // user has already proven that they have read access to the repositories since
-// they are present in the external_service_repos table.
+// records are present in the "external_service_repos" table.
 func (s *Store) ListExternalServicePrivateRepoIDsByUserID(ctx context.Context, userID int32) (repoIDs []api.RepoID, err error) {
-	if database.Mocks.Repos.ListExternalServiceRepoIDsByUserID != nil {
-		return database.Mocks.Repos.ListExternalServiceRepoIDsByUserID(ctx, userID)
+	if Mocks.ListExternalServiceRepoIDsByUserID != nil {
+		return Mocks.ListExternalServiceRepoIDsByUserID(ctx, userID)
 	}
 
 	tr, ctx := s.trace(ctx, "Store.ListExternalServicePrivateRepoIDsByUserID")
@@ -352,7 +363,7 @@ func (s *Store) ListExternalServicePrivateRepoIDsByUserID(ctx context.Context, u
 }
 
 // CreateExternalServiceRepo inserts a single repo and its association to an external service, respectively in the repo and
-// external_service_repos table. The associated external service must already exist.
+// "external_service_repos" table. The associated external service must already exist.
 func (s *Store) CreateExternalServiceRepo(ctx context.Context, svc *types.ExternalService, r *types.Repo) (err error) {
 	tr, ctx := s.trace(ctx, "Store.CreateExternalServiceRepo")
 	tr.LogFields(
@@ -402,7 +413,7 @@ func (s *Store) CreateExternalServiceRepo(ctx context.Context, svc *types.Extern
 	if !s.InTransaction() {
 		s, err = s.Transact(ctx)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "CreateExternalServiceRepo")
 		}
 		defer func() { s.Done(err) }()
 	}
@@ -415,6 +426,7 @@ func (s *Store) CreateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		svc.ID,
 		r.ID,
 		svc.NamespaceUserID,
+		svc.NamespaceOrgID,
 		src.CloneURL,
 	))
 }
@@ -443,16 +455,19 @@ INSERT INTO external_service_repos (
 	external_service_id,
 	repo_id,
 	user_id,
+	org_id,
 	clone_url
 )
-VALUES (%s, %s, NULLIF(%s, 0), %s)
+VALUES (%s, %s, NULLIF(%s, 0), NULLIF(%s, 0), %s)
 ON CONFLICT (external_service_id, repo_id)
 DO UPDATE SET
 	clone_url = excluded.clone_url,
-	user_id   = excluded.user_id
+	user_id   = excluded.user_id,
+	org_id    =  excluded.org_id
 WHERE
 	external_service_repos.clone_url != excluded.clone_url OR
-	external_service_repos.user_id   != excluded.user_id
+	external_service_repos.user_id   != excluded.user_id OR
+	external_service_repos.org_id    != excluded.org_id
 `
 
 // UpdateExternalServiceRepo updates a single repo and its association to an external service, respectively in the repo and
@@ -511,9 +526,9 @@ func (s *Store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 	if !s.InTransaction() {
 		s, err = s.Transact(ctx)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "UpdateExternalServiceRepo")
 		}
-		defer func() { s.Done(err) }()
+		defer func() { _ = s.Done(err) }()
 	}
 
 	if err = s.QueryRow(ctx, q).Scan(&r.UpdatedAt); err != nil {
@@ -524,6 +539,7 @@ func (s *Store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		svc.ID,
 		r.ID,
 		svc.NamespaceUserID,
+		svc.NamespaceOrgID,
 		src.CloneURL,
 	))
 }
@@ -564,9 +580,9 @@ INSERT INTO external_service_sync_jobs (external_service_id)
 SELECT %s
 WHERE NOT EXISTS (
 	SELECT
-	FROM external_service_sync_jobs j
-	JOIN external_services es ON es.id = j.external_service_id
-	WHERE j.external_service_id = %s
+	FROM external_services es
+	LEFT JOIN external_service_sync_jobs j ON es.id = j.external_service_id
+	WHERE es.id = %s
 	AND (
 		j.state IN ('queued', 'processing')
 		OR es.cloud_default

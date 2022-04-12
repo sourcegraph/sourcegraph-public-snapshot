@@ -1,8 +1,8 @@
 import { MockedResponse } from '@apollo/client/testing'
 import { subDays } from 'date-fns'
 
+import { getDocumentNode } from '@sourcegraph/http-client'
 import { GitRefType } from '@sourcegraph/shared/src/graphql-operations'
-import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
 
 import {
     GitCommitAncestorsConnectionFields,

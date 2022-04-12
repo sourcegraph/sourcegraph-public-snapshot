@@ -8,62 +8,60 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"reflect"
+	"strings"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 const (
-	exampleJar                = "sources.jar"
-	exampleByteCodeJar        = "bytes.jar"
-	exampleJar2               = "sources2.jar"
-	exampleByteCodeJar2       = "bytes2.jar"
-	exampleFilePath           = "Example.java"
-	exampleClassfilePath      = "Example.class"
-	exampleFileContents       = "package example;\npublic class Example {}\n"
-	exampleFileContents2      = "package example;\npublic class Example { public static final int x = 42; }\n"
-	examplePackageVersion     = "1.0.0"
-	examplePackageVersion2    = "2.0.0"
-	examplePackageDependency  = "org.example:example:1.0.0"
-	examplePackageDependency2 = "org.example:example:2.0.0"
-	examplePackageUrl         = "maven/org.example/example"
+	exampleJar               = "sources.jar"
+	exampleByteCodeJar       = "bytes.jar"
+	exampleJar2              = "sources2.jar"
+	exampleByteCodeJar2      = "bytes2.jar"
+	exampleFilePath          = "Example.java"
+	exampleClassfilePath     = "Example.class"
+	exampleFileContents      = "package example;\npublic class Example {}\n"
+	exampleFileContents2     = "package example;\npublic class Example { public static final int x = 42; }\n"
+	exampleVersion           = "1.0.0"
+	exampleVersion2          = "2.0.0"
+	exampleVersionedPackage  = "org.example:example:1.0.0"
+	exampleVersionedPackage2 = "org.example:example:2.0.0"
+	examplePackageUrl        = "maven/org.example/example"
 
 	// These magic numbers come from the table here https://en.wikipedia.org/wiki/Java_class_file#General_layout
 	java5MajorVersion  = 49
 	java11MajorVersion = 53
 )
 
-func createPlaceholderSourcesJar(t *testing.T, dir, contents, jarName string) {
+func createPlaceholderJar(t *testing.T, dir string, contents []byte, jarName, contentPath string) {
 	t.Helper()
-	sourcesPath, err := os.Create(path.Join(dir, jarName))
+	jarPath, err := os.Create(path.Join(dir, jarName))
 	assert.Nil(t, err)
-	zipWriter := zip.NewWriter(sourcesPath)
-	exampleWriter, err := zipWriter.Create(exampleFilePath)
-	assert.Nil(t, err)
-	_, err = exampleWriter.Write([]byte(contents))
-	assert.Nil(t, err)
-	assert.Nil(t, zipWriter.Close())
-	assert.Nil(t, sourcesPath.Close())
-}
-
-func createPlaceholderByteCodeJar(t *testing.T, contents []byte, dir, jarName string) {
-	t.Helper()
-	byteCodePath, err := os.Create(path.Join(dir, jarName))
-	assert.Nil(t, err)
-	zipWriter := zip.NewWriter(byteCodePath)
-	exampleWriter, err := zipWriter.Create(exampleClassfilePath)
+	zipWriter := zip.NewWriter(jarPath)
+	exampleWriter, err := zipWriter.Create(contentPath)
 	assert.Nil(t, err)
 	_, err = exampleWriter.Write(contents)
 	assert.Nil(t, err)
 	assert.Nil(t, zipWriter.Close())
-	assert.Nil(t, byteCodePath.Close())
+	assert.Nil(t, jarPath.Close())
+}
+
+func createPlaceholderSourcesJar(t *testing.T, dir, contents, jarName string) {
+	t.Helper()
+	createPlaceholderJar(t, dir, []byte(contents), jarName, exampleFilePath)
+}
+
+func createPlaceholderByteCodeJar(t *testing.T, contents []byte, dir, jarName string) {
+	t.Helper()
+	createPlaceholderJar(t, dir, contents, jarName, exampleClassfilePath)
 }
 
 func assertCommandOutput(t *testing.T, cmd *exec.Cmd, workingDir, expectedOut string) {
@@ -100,8 +98,8 @@ else
   exit 1
 fi
 `,
-		examplePackageVersion, path.Join(dir, exampleJar), path.Join(dir, exampleByteCodeJar),
-		examplePackageVersion2, path.Join(dir, exampleJar2), path.Join(dir, exampleByteCodeJar2),
+		exampleVersion, path.Join(dir, exampleJar), path.Join(dir, exampleByteCodeJar),
+		exampleVersion2, path.Join(dir, exampleJar2), path.Join(dir, exampleByteCodeJar2),
 	)
 	_, err = coursierPath.WriteString(script)
 	assert.Nil(t, err)
@@ -118,6 +116,19 @@ func (s JVMPackagesSyncer) runCloneCommand(t *testing.T, bareGitDirectory string
 	assert.Nil(t, cmd.Run())
 }
 
+var maliciousPaths []string = []string{
+	// Absolute paths
+	"/sh", "/usr/bin/sh",
+	// Paths into .git which may trigger when git runs a hook
+	".git/blah", ".git/hooks/pre-commit",
+	// Paths into a nested .git which may trigger when git runs a hook
+	"src/.git/blah", "src/.git/hooks/pre-commit",
+	// Relative paths which stray outside
+	"../foo/../bar", "../../../usr/bin/sh",
+}
+
+const harmlessPath = "src/harmless.java"
+
 func TestNoMaliciousFiles(t *testing.T) {
 	dir, err := os.MkdirTemp("", "")
 	assert.Nil(t, err)
@@ -130,18 +141,26 @@ func TestNoMaliciousFiles(t *testing.T) {
 	createMaliciousJar(t, jarPath)
 
 	s := JVMPackagesSyncer{
-		Config:  &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
-		DBStore: &simpleJVMPackageDBStoreMock{},
+		Config:    &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
+		DepsStore: NewMockDependenciesStore(),
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cancel now  to prevent any network IO
-	err = s.commitJar(ctx, reposource.MavenDependency{}, extractPath, jarPath, &schema.JVMPackagesConnection{Maven: &schema.Maven{}})
+	dep := &reposource.MavenDependency{MavenModule: &reposource.MavenModule{}}
+	err = s.commitJar(ctx, dep, extractPath, jarPath, &schema.JVMPackagesConnection{Maven: &schema.Maven{}})
 	assert.NotNil(t, err)
 
-	files, err := os.ReadDir(extractPath)
+	dirEntries, err := os.ReadDir(extractPath)
+	baseline := map[string]int{"lsif-java.json": 0, strings.Split(harmlessPath, string(os.PathSeparator))[0]: 0}
 	assert.Nil(t, err)
-	assert.Equal(t, 2, len(files))
+	paths := map[string]int{}
+	for _, dirEntry := range dirEntries {
+		paths[dirEntry.Name()] = 0
+	}
+	if !reflect.DeepEqual(baseline, paths) {
+		t.Errorf("expected paths: %v\n   found paths:%v", baseline, paths)
+	}
 }
 
 func createMaliciousJar(t *testing.T, name string) {
@@ -151,15 +170,11 @@ func createMaliciousJar(t *testing.T, name string) {
 	writer := zip.NewWriter(f)
 	defer writer.Close()
 
-	_, err = writer.Create("/")
-	assert.Nil(t, err)
-	_, err = writer.Create("/hello/burger")
-	assert.Nil(t, err)
-	_, err = writer.Create("/hello/../../burger")
-	assert.Nil(t, err)
-	_, err = writer.Create("sample/burger")
-	assert.Nil(t, err)
-	_, err = writer.Create(".git/test")
+	for _, filepath := range maliciousPaths {
+		_, err = writer.Create(filepath)
+		assert.Nil(t, err)
+	}
+	_, err = writer.Create(harmlessPath)
 	assert.Nil(t, err)
 }
 
@@ -178,24 +193,24 @@ func TestJVMCloneCommand(t *testing.T) {
 	coursier.CoursierBinary = coursierScript(t, dir)
 
 	s := JVMPackagesSyncer{
-		Config:  &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
-		DBStore: &simpleJVMPackageDBStoreMock{},
+		Config:    &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
+		DepsStore: NewMockDependenciesStore(),
 	}
 	bareGitDirectory := path.Join(dir, "git")
 
-	s.runCloneCommand(t, bareGitDirectory, []string{examplePackageDependency})
+	s.runCloneCommand(t, bareGitDirectory, []string{exampleVersionedPackage})
 	assertCommandOutput(t,
 		exec.Command("git", "tag", "--list"),
 		bareGitDirectory,
 		"v1.0.0\n",
 	)
 	assertCommandOutput(t,
-		exec.Command("git", "show", fmt.Sprintf("v%s:%s", examplePackageVersion, exampleFilePath)),
+		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleVersion, exampleFilePath)),
 		bareGitDirectory,
 		exampleFileContents,
 	)
 
-	s.runCloneCommand(t, bareGitDirectory, []string{examplePackageDependency, examplePackageDependency2})
+	s.runCloneCommand(t, bareGitDirectory, []string{exampleVersionedPackage, exampleVersionedPackage2})
 	assertCommandOutput(t,
 		exec.Command("git", "tag", "--list"),
 		bareGitDirectory,
@@ -203,33 +218,33 @@ func TestJVMCloneCommand(t *testing.T) {
 	)
 
 	assertCommandOutput(t,
-		exec.Command("git", "show", fmt.Sprintf("v%s:%s", examplePackageVersion, "lsif-java.json")),
+		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleVersion, "lsif-java.json")),
 		bareGitDirectory,
 		// Assert that Java 8 is used for a library compiled with Java 5.
-		fmt.Sprintf(`{"kind":"maven","jvm":"%s","dependencies":["%s"]}`, "8", examplePackageDependency),
+		fmt.Sprintf(`{"kind":"maven","jvm":"%s","dependencies":["%s"]}`, "8", exampleVersionedPackage),
 	)
 	assertCommandOutput(t,
-		exec.Command("git", "show", fmt.Sprintf("v%s:%s", examplePackageVersion2, "lsif-java.json")),
+		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleVersion2, "lsif-java.json")),
 		bareGitDirectory,
 		// Assert that Java 11 is used for a library compiled with Java 11.
-		fmt.Sprintf(`{"kind":"maven","jvm":"%s","dependencies":["%s"]}`, "11", examplePackageDependency2),
+		fmt.Sprintf(`{"kind":"maven","jvm":"%s","dependencies":["%s"]}`, "11", exampleVersionedPackage2),
 	)
 
 	assertCommandOutput(t,
-		exec.Command("git", "show", fmt.Sprintf("v%s:%s", examplePackageVersion, exampleFilePath)),
+		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleVersion, exampleFilePath)),
 		bareGitDirectory,
 		exampleFileContents,
 	)
 
 	assertCommandOutput(t,
-		exec.Command("git", "show", fmt.Sprintf("v%s:%s", examplePackageVersion2, exampleFilePath)),
+		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleVersion2, exampleFilePath)),
 		bareGitDirectory,
 		exampleFileContents2,
 	)
 
-	s.runCloneCommand(t, bareGitDirectory, []string{examplePackageDependency})
+	s.runCloneCommand(t, bareGitDirectory, []string{exampleVersionedPackage})
 	assertCommandOutput(t,
-		exec.Command("git", "show", fmt.Sprintf("v%s:%s", examplePackageVersion, exampleFilePath)),
+		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleVersion, exampleFilePath)),
 		bareGitDirectory,
 		exampleFileContents,
 	)
@@ -240,8 +255,13 @@ func TestJVMCloneCommand(t *testing.T) {
 	)
 }
 
-type simpleJVMPackageDBStoreMock struct{}
-
-func (m *simpleJVMPackageDBStoreMock) GetJVMDependencyRepos(ctx context.Context, filter dbstore.GetJVMDependencyReposOpts) ([]dbstore.JVMDependencyRepo, error) {
-	return []dbstore.JVMDependencyRepo{}, nil
+// Sanity check errors.HasType
+func TestErrorHasType(t *testing.T) {
+	err := &coursier.ErrNoSources{}
+	if !errors.HasType(err, &coursier.ErrNoSources{}) {
+		t.Fatal("should be true")
+	}
+	if errors.Is(nil, &coursier.ErrNoSources{}) {
+		t.Fatal("should be false")
+	}
 }

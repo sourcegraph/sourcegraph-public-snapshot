@@ -1,0 +1,34 @@
+.org-avatar {
+    border-radius: 100%;
+    background: #a2b0cd;
+    color: #39496a;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    &--light {
+        background: var(--white);
+    }
+
+    &--sm {
+        /* stylelint-disable-next-line declaration-property-unit-allowed-list */
+        font-size: 0.5rem;
+        height: 1.15rem;
+        width: 1.15rem;
+    }
+
+    &--md {
+        /* stylelint-disable-next-line declaration-property-unit-allowed-list */
+        font-size: 0.625rem;
+        height: 1.5rem;
+        width: 1.5rem;
+    }
+
+    &--lg {
+        /* stylelint-disable-next-line declaration-property-unit-allowed-list */
+        font-size: 1.25rem;
+        height: 3rem;
+        width: 3rem;
+    }
+}

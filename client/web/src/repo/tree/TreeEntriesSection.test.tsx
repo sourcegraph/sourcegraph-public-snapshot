@@ -1,12 +1,13 @@
-import { render } from 'enzyme'
 import React from 'react'
+
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { TreeEntriesSection } from './TreeEntriesSection'
 
 describe('TreeEntriesSection', () => {
     it('should render a grid of tree entries at the root', () => {
         expect(
-            render(
+            renderWithBrandedContext(
                 <TreeEntriesSection
                     parentPath=""
                     entries={[
@@ -48,12 +49,12 @@ describe('TreeEntriesSection', () => {
                     }}
                     isLightTheme={true}
                 />
-            )
+            ).asFragment()
         ).toMatchSnapshot()
     })
     it('should render a grid of tree entries in a subdirectory', () => {
         expect(
-            render(
+            renderWithBrandedContext(
                 <TreeEntriesSection
                     parentPath="src"
                     entries={[
@@ -105,12 +106,12 @@ describe('TreeEntriesSection', () => {
                     }}
                     isLightTheme={true}
                 />
-            )
+            ).asFragment()
         ).toMatchSnapshot()
     })
     it('should render only direct children', () => {
         expect(
-            render(
+            renderWithBrandedContext(
                 <TreeEntriesSection
                     parentPath="x"
                     entries={[
@@ -161,7 +162,7 @@ describe('TreeEntriesSection', () => {
                     }}
                     isLightTheme={true}
                 />
-            )
+            ).asFragment()
         ).toMatchSnapshot()
     })
 })

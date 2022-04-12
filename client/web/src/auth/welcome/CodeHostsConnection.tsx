@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 
-import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { ErrorLike } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ListExternalServiceFields } from '../../graphql-operations'
@@ -38,14 +38,14 @@ export const CodeHostsConnection: React.FunctionComponent<CodeHostsConnection> =
     if (loading || !externalServices) {
         return (
             <div className="d-flex justify-content-center">
-                <LoadingSpinner className="icon-inline" />
+                <LoadingSpinner />
             </div>
         )
     }
 
     return (
         <>
-            <div className="mb-4 mt-5">
+            <div className="mb-4 mt-3">
                 <h3>Connect with code hosts</h3>
                 <p className="text-muted">
                     Connect with providers where your source code is hosted. Then, choose the repositories you’d like to

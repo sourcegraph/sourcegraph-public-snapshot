@@ -1,78 +1,41 @@
-import { boolean } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
-import { addHours } from 'date-fns'
 import React from 'react'
-import { of } from 'rxjs'
 
-import {
-    ChangesetFields,
-    ChangesetCheckState,
-    ChangesetReviewState,
-    ChangesetSpecType,
-    ChangesetState,
-} from '../../../../graphql-operations'
-import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
-import { queryExternalChangesetWithFileDiffs } from '../backend'
+import { boolean, select } from '@storybook/addon-knobs'
+import { storiesOf } from '@storybook/react'
+import { noop } from 'lodash'
+import { of } from 'rxjs'
+import { WildcardMockLink, MATCH_ANY_PARAMETERS } from 'wildcard-mock-link'
+
+import { getDocumentNode } from '@sourcegraph/http-client'
+import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+
+import { WebStory } from '../../../../components/WebStory'
+import { BatchChangeState } from '../../../../graphql-operations'
+import { CHANGESETS, queryExternalChangesetWithFileDiffs } from '../backend'
 
 import { BatchChangeChangesets } from './BatchChangeChangesets'
+import { BATCH_CHANGE_CHANGESETS_RESULT, EMPTY_BATCH_CHANGE_CHANGESETS_RESULT } from './BatchChangeChangesets.mock'
 
 const { add } = storiesOf('web/batches/BatchChangeChangesets', module).addDecorator(story => (
     <div className="p-3 container">{story()}</div>
 ))
 
-const now = new Date()
-const nodes: ChangesetFields[] = [
-    ...Object.values(ChangesetState).map(
-        (state): ChangesetFields => ({
-            __typename: 'ExternalChangeset',
-            id: 'somechangeset' + state,
-            updatedAt: now.toISOString(),
-            nextSyncAt: addHours(now, 1).toISOString(),
-            state,
-            title: 'Changeset title on code host',
-            body: 'This changeset does the following things:\nIs awesome\nIs useful',
-            checkState: ChangesetCheckState.PENDING,
-            createdAt: now.toISOString(),
-            externalID: '123',
-            externalURL: {
-                url: 'http://test.test/pr/123',
-            },
-            diffStat: {
-                added: 10,
-                changed: 20,
-                deleted: 8,
-            },
-            labels: [],
-            repository: {
-                id: 'repoid',
-                name: 'github.com/sourcegraph/sourcegraph',
-                url: 'http://test.test/sourcegraph/sourcegraph',
-            },
-            reviewState: ChangesetReviewState.COMMENTED,
-            error: null,
-            syncerError: null,
-            currentSpec: {
-                id: 'spec-rand-id-1',
-                type: ChangesetSpecType.BRANCH,
-                description: {
-                    __typename: 'GitBranchChangesetDescription',
-                    headRef: 'my-branch',
-                },
-            },
-        })
-    ),
-    ...Object.values(ChangesetState).map(
-        (state): ChangesetFields => ({
-            __typename: 'HiddenExternalChangeset' as const,
-            id: 'somehiddenchangeset' + state,
-            updatedAt: now.toISOString(),
-            nextSyncAt: addHours(now, 1).toISOString(),
-            state,
-            createdAt: now.toISOString(),
-        })
-    ),
-]
-const queryChangesets = () => of({ totalCount: nodes.length, nodes, pageInfo: { endCursor: null, hasNextPage: false } })
+const mocks = new WildcardMockLink([
+    {
+        request: { query: getDocumentNode(CHANGESETS), variables: MATCH_ANY_PARAMETERS },
+        result: { data: { node: BATCH_CHANGE_CHANGESETS_RESULT } },
+        nMatches: Number.POSITIVE_INFINITY,
+    },
+])
+
+const emptyMockData = new WildcardMockLink([
+    {
+        request: { query: getDocumentNode(CHANGESETS), variables: MATCH_ANY_PARAMETERS },
+        result: { data: { node: EMPTY_BATCH_CHANGE_CHANGESETS_RESULT } },
+        nMatches: Number.POSITIVE_INFINITY,
+    },
+])
 
 const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWithFileDiffs = ({
     externalChangeset,
@@ -102,34 +65,71 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
 }
 
 add('List of changesets', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
-            <BatchChangeChangesets
-                {...props}
-                queryChangesets={queryChangesets}
-                queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
-                extensionsController={undefined as any}
-                platformContext={undefined as any}
-                batchChangeID="batchid"
-                viewerCanAdminister={boolean('viewerCanAdminister', true)}
-            />
+            <MockedTestProvider link={mocks}>
+                <BatchChangeChangesets
+                    {...props}
+                    refetchBatchChange={noop}
+                    queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
+                    extensionsController={undefined as any}
+                    platformContext={undefined as any}
+                    batchChangeID="batchid"
+                    viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                    settingsCascade={EMPTY_SETTINGS_CASCADE}
+                    batchChangeState={BatchChangeState.OPEN}
+                    isExecutionEnabled={false}
+                />
+            </MockedTestProvider>
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 
 add('List of expanded changesets', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
-            <BatchChangeChangesets
-                {...props}
-                queryChangesets={queryChangesets}
-                queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
-                extensionsController={undefined as any}
-                platformContext={undefined as any}
-                batchChangeID="batchid"
-                viewerCanAdminister={boolean('viewerCanAdminister', true)}
-                expandByDefault={true}
-            />
+            <MockedTestProvider link={mocks}>
+                <BatchChangeChangesets
+                    {...props}
+                    refetchBatchChange={noop}
+                    queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
+                    extensionsController={undefined as any}
+                    platformContext={undefined as any}
+                    batchChangeID="batchid"
+                    viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                    expandByDefault={true}
+                    settingsCascade={EMPTY_SETTINGS_CASCADE}
+                    batchChangeState={BatchChangeState.OPEN}
+                    isExecutionEnabled={false}
+                />
+            </MockedTestProvider>
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
+
+add('Draft without changesets', () => {
+    const options = Object.keys(BatchChangeState)
+    const batchChangeState = select('batchChangeState', options, BatchChangeState.DRAFT)
+
+    return (
+        <WebStory>
+            {props => (
+                <MockedTestProvider link={emptyMockData}>
+                    <BatchChangeChangesets
+                        {...props}
+                        refetchBatchChange={noop}
+                        queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
+                        extensionsController={undefined as any}
+                        platformContext={undefined as any}
+                        batchChangeID="batchid"
+                        viewerCanAdminister={true}
+                        expandByDefault={true}
+                        settingsCascade={EMPTY_SETTINGS_CASCADE}
+                        batchChangeState={batchChangeState as BatchChangeState}
+                        isExecutionEnabled={boolean('isExecutionEnabled', true)}
+                    />
+                </MockedTestProvider>
+            )}
+        </WebStory>
+    )
+})

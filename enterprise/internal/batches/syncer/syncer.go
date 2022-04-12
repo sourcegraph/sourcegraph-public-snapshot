@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -19,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // externalServiceSyncerInterval is the time in between synchronizations with the
@@ -366,7 +366,7 @@ func (s *changesetSyncer) Run(ctx context.Context) {
 			err := s.syncFunc(ctx, next.changesetID)
 			labelValues := []string{s.codeHostURL, strconv.FormatBool(err == nil)}
 			s.metrics.syncDuration.WithLabelValues(labelValues...).Observe(s.syncStore.Clock()().Sub(start).Seconds())
-			s.metrics.syncs.WithLabelValues(labelValues...).Add(1)
+			s.metrics.syncs.WithLabelValues(labelValues...).Inc()
 
 			if err != nil {
 				log15.Error("Syncing changeset", "err", err)
@@ -454,7 +454,7 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 // SyncChangeset refreshes the metadata of the given changeset and
 // updates them in the database.
 func SyncChangeset(ctx context.Context, syncStore SyncStore, source sources.ChangesetSource, repo *types.Repo, c *btypes.Changeset) (err error) {
-	repoChangeset := &sources.Changeset{Repo: repo, Changeset: c}
+	repoChangeset := &sources.Changeset{TargetRepo: repo, Changeset: c}
 	if err := source.LoadChangeset(ctx, repoChangeset); err != nil {
 		if !errors.HasType(err, sources.ChangesetNotFoundError{}) {
 			// Store the error as the syncer error.

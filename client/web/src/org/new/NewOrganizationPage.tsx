@@ -1,18 +1,19 @@
-import * as H from 'history'
 import React, { useCallback, useEffect, useState } from 'react'
 
+import * as H from 'history'
+
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { asError, isErrorLike } from '@sourcegraph/common'
+import { Button, Container, PageHeader, LoadingSpinner, Link } from '@sourcegraph/wildcard'
 
 import { ORG_NAME_MAX_LENGTH, VALID_ORG_NAME_REGEXP } from '..'
-import { ErrorAlert } from '../../components/alerts'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createOrganization } from '../backend'
+
+import styles from './NewOrgPage.module.scss'
 
 interface Props {
     history: H.History
@@ -55,7 +56,7 @@ export const NewOrganizationPage: React.FunctionComponent<Props> = ({ history })
     )
 
     return (
-        <Page className="new-org-page">
+        <Page className={styles.newOrgPage}>
             <PageTitle title="New organization" />
             <PageHeader
                 path={[{ text: 'Create a new organization' }]}
@@ -110,14 +111,15 @@ export const NewOrganizationPage: React.FunctionComponent<Props> = ({ history })
                     </div>
                 </Container>
 
-                <button
+                <Button
                     type="submit"
-                    className="btn btn-primary test-create-org-submit-button"
+                    className="test-create-org-submit-button"
                     disabled={loading === true}
+                    variant="primary"
                 >
-                    {loading === true && <LoadingSpinner className="icon-inline" />}
+                    {loading === true && <LoadingSpinner />}
                     Create organization
-                </button>
+                </Button>
             </Form>
         </Page>
     )

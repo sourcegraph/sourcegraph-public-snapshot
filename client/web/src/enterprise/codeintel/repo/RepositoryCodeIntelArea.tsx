@@ -1,57 +1,72 @@
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useMemo } from 'react'
+
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
+import { AuthenticatedUser } from '../../../auth'
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
+import { HeroPage } from '../../../components/HeroPage'
 import { RepositoryFields } from '../../../graphql-operations'
 import { RouteDescriptor } from '../../../util/contributions'
-import { lazyComponent } from '../../../util/lazyComponent'
-import { CodeIntelConfigurationPageProps } from '../configuration/CodeIntelConfigurationPage'
-import { CodeIntelConfigurationPolicyPageProps } from '../configuration/CodeIntelConfigurationPolicyPage'
-import { CodeIntelIndexPageProps } from '../detail/CodeIntelIndexPage'
-import { CodeIntelUploadPageProps } from '../detail/CodeIntelUploadPage'
-import { CodeIntelIndexesPageProps } from '../list/CodeIntelIndexesPage'
-import { CodeIntelUploadsPageProps } from '../list/CodeIntelUploadsPage'
+import { CodeIntelConfigurationPageProps } from '../configuration/pages/CodeIntelConfigurationPage'
+import { CodeIntelConfigurationPolicyPageProps } from '../configuration/pages/CodeIntelConfigurationPolicyPage'
+import { CodeIntelRepositoryIndexConfigurationPageProps } from '../configuration/pages/CodeIntelRepositoryIndexConfigurationPage'
+import { CodeIntelIndexesPageProps } from '../indexes/pages/CodeIntelIndexesPage'
+import { CodeIntelIndexPageProps } from '../indexes/pages/CodeIntelIndexPage'
+import { CodeIntelUploadPageProps } from '../uploads/pages/CodeIntelUploadPage'
+import { CodeIntelUploadsPageProps } from '../uploads/pages/CodeIntelUploadsPage'
 
 import { CodeIntelSidebar, CodeIntelSideBarGroups } from './CodeIntelSidebar'
 
 export interface CodeIntelAreaRouteContext extends ThemeProps, TelemetryProps {
     repo: { id: string }
+    authenticatedUser: AuthenticatedUser | null
 }
 
 export interface CodeIntelAreaRoute extends RouteDescriptor<CodeIntelAreaRouteContext> {}
 
 const CodeIntelUploadsPage = lazyComponent<CodeIntelUploadsPageProps, 'CodeIntelUploadsPage'>(
-    () => import('../../codeintel/list/CodeIntelUploadsPage'),
+    () => import('../../codeintel/uploads/pages/CodeIntelUploadsPage'),
     'CodeIntelUploadsPage'
 )
 const CodeIntelUploadPage = lazyComponent<CodeIntelUploadPageProps, 'CodeIntelUploadPage'>(
-    () => import('../../codeintel/detail/CodeIntelUploadPage'),
+    () => import('../../codeintel/uploads/pages/CodeIntelUploadPage'),
     'CodeIntelUploadPage'
 )
 
 const CodeIntelIndexesPage = lazyComponent<CodeIntelIndexesPageProps, 'CodeIntelIndexesPage'>(
-    () => import('../../codeintel/list/CodeIntelIndexesPage'),
+    () => import('../../codeintel/indexes/pages/CodeIntelIndexesPage'),
     'CodeIntelIndexesPage'
 )
 const CodeIntelIndexPage = lazyComponent<CodeIntelIndexPageProps, 'CodeIntelIndexPage'>(
-    () => import('../../codeintel/detail/CodeIntelIndexPage'),
+    () => import('../../codeintel/indexes/pages/CodeIntelIndexPage'),
     'CodeIntelIndexPage'
 )
 
 const CodeIntelConfigurationPage = lazyComponent<CodeIntelConfigurationPageProps, 'CodeIntelConfigurationPage'>(
-    () => import('../../codeintel/configuration/CodeIntelConfigurationPage'),
+    () => import('../../codeintel/configuration/pages/CodeIntelConfigurationPage'),
     'CodeIntelConfigurationPage'
+)
+
+const RepositoryIndexConfigurationPage = lazyComponent<
+    CodeIntelRepositoryIndexConfigurationPageProps,
+    'CodeIntelRepositoryIndexConfigurationPage'
+>(
+    () => import('../../codeintel/configuration/pages/CodeIntelRepositoryIndexConfigurationPage'),
+    'CodeIntelRepositoryIndexConfigurationPage'
 )
 
 const CodeIntelConfigurationPolicyPage = lazyComponent<
     CodeIntelConfigurationPolicyPageProps,
     'CodeIntelConfigurationPolicyPage'
->(() => import('../../codeintel/configuration/CodeIntelConfigurationPolicyPage'), 'CodeIntelConfigurationPolicyPage')
+>(
+    () => import('../../codeintel/configuration/pages/CodeIntelConfigurationPolicyPage'),
+    'CodeIntelConfigurationPolicyPage'
+)
 
 export const routes: readonly CodeIntelAreaRoute[] = [
     {
@@ -87,6 +102,11 @@ export const routes: readonly CodeIntelAreaRoute[] = [
         render: props => <CodeIntelConfigurationPage {...props} />,
     },
     {
+        path: '/index-configuration',
+        exact: true,
+        render: props => <RepositoryIndexConfigurationPage {...props} />,
+    },
+    {
         path: '/configuration/:id',
         exact: true,
         render: props => <CodeIntelConfigurationPolicyPage {...props} />,
@@ -111,6 +131,7 @@ export interface RepositoryCodeIntelAreaPageProps
         TelemetryProps {
     /** The active repository. */
     repo: RepositoryFields
+    authenticatedUser: AuthenticatedUser | null
 }
 
 const sidebarRoutes: CodeIntelSideBarGroups = [
@@ -123,12 +144,17 @@ const sidebarRoutes: CodeIntelSideBarGroups = [
             },
             {
                 to: '/indexes',
-                label: 'Auto indexing',
+                label: 'Auto-indexing',
                 condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
             },
             {
                 to: '/configuration',
-                label: 'Configuration',
+                label: 'Configuration policies',
+            },
+            {
+                to: '/index-configuration',
+                label: 'Auto-index configuration',
+                condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
             },
         ],
     },
@@ -161,6 +187,7 @@ export const RepositoryCodeIntelArea: React.FunctionComponent<RepositoryCodeInte
                                 />
                             )
                     )}
+
                     <Route key="hardcoded-key" component={NotFoundPage} />
                 </Switch>
             </div>

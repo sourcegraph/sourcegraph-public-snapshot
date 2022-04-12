@@ -11,19 +11,14 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-func init() {
-	dbtesting.DBNameSuffix = "oobmigration"
-}
-
 func TestList(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+
+	db := dbtest.NewDB(t)
 	store := testStore(t, db)
 
 	migrations, err := store.List(context.Background())
@@ -43,10 +38,7 @@ func TestList(t *testing.T) {
 }
 
 func TestListEnterprise(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(t, db)
 
 	ReturnEnterpriseMigrations = true
@@ -70,10 +62,8 @@ func TestListEnterprise(t *testing.T) {
 }
 
 func TestUpdateDirection(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t)
 	store := testStore(t, db)
 
 	if err := store.UpdateDirection(context.Background(), 3, true); err != nil {
@@ -97,11 +87,9 @@ func TestUpdateDirection(t *testing.T) {
 }
 
 func TestUpdateProgress(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
+	t.Parallel()
 	now := testTime.Add(time.Hour * 7)
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(t, db)
 
 	if err := store.updateProgress(context.Background(), 3, 0.7, now); err != nil {
@@ -126,11 +114,9 @@ func TestUpdateProgress(t *testing.T) {
 }
 
 func TestUpdateMetadata(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
+	t.Parallel()
 	now := testTime.Add(time.Hour * 7)
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(t, db)
 
 	type sampleMeta = struct {
@@ -176,12 +162,9 @@ func TestUpdateMetadata(t *testing.T) {
 }
 
 func TestAddError(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
+	t.Parallel()
 	now := testTime.Add(time.Hour * 8)
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(t, db)
 
 	if err := store.addError(context.Background(), 2, "oops", now); err != nil {
@@ -210,12 +193,10 @@ func TestAddError(t *testing.T) {
 }
 
 func TestAddErrorBounded(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
+	t.Parallel()
 
 	now := testTime.Add(time.Hour * 9)
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(t, db)
 
 	var expectedErrors []MigrationError
@@ -348,6 +329,7 @@ var testEnterpriseMigrations = []Migration{
 
 func timePtr(t time.Time) *time.Time { return &t }
 
+//nolint:unparam // unparam complains that `major` always has same value across call-sites, but that's OK
 func newVersionPtr(major, minor int) *Version {
 	v := NewVersion(major, minor)
 	return &v
@@ -355,6 +337,10 @@ func newVersionPtr(major, minor int) *Version {
 
 func testStore(t *testing.T, db dbutil.DB) *Store {
 	store := NewStoreWithDB(db)
+
+	if _, err := db.ExecContext(context.Background(), "DELETE FROM out_of_band_migrations CASCADE"); err != nil {
+		t.Fatalf("unexpected error truncating migration: %s", err)
+	}
 
 	for i := range testMigrations {
 		if err := insertMigration(store, testMigrations[i], false); err != nil {

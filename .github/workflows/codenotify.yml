@@ -11,6 +11,13 @@ jobs:
       - uses: actions/checkout@v2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      - uses: sourcegraph/codenotify@v0.4
+      - uses: sourcegraph/codenotify@v0.5.1
+        with:
+          filename: 'CODENOTIFY'
+        env:
+          GITHUB_TOKEN: ${{ secrets.CODENOTIFY_GITHUB_TOKEN }}
+      - uses: sourcegraph/codenotify@v0.5.1
+        with:
+          filename: 'OWNERS'
         env:
           GITHUB_TOKEN: ${{ secrets.CODENOTIFY_GITHUB_TOKEN }}

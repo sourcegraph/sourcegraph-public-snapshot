@@ -5,6 +5,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -25,7 +26,17 @@ import (
 //
 type Unified struct {
 	schema.SiteConfiguration
-	ServiceConnections conftypes.ServiceConnections
+	ServiceConnectionConfig conftypes.ServiceConnections
+}
+
+var _ conftypes.UnifiedQuerier = Unified{}
+
+func (u Unified) SiteConfig() schema.SiteConfiguration {
+	return u.SiteConfiguration
+}
+
+func (u Unified) ServiceConnections() conftypes.ServiceConnections {
+	return u.ServiceConnectionConfig
 }
 
 type configurationMode int
@@ -54,9 +65,18 @@ func getMode() configurationMode {
 	case "empty":
 		return modeEmpty
 	default:
-		// Detect 'go test' and default to empty mode in that case.
 		p, err := os.Executable()
-		if err == nil && strings.Contains(strings.ToLower(p), "test") {
+		if err == nil && filepath.Base(p) == "sg" {
+			// If we're  running `sg`, force the configuration mode to empty so `sg`
+			// can make use of the `internal/database` package without configuration
+			// side effects taking place.
+			//
+			// See https://github.com/sourcegraph/sourcegraph/issues/29222.
+			return modeEmpty
+		}
+
+		if err == nil && strings.Contains(strings.ToLower(filepath.Base(p)), "test") {
+			// If we detect 'go test', defaults to empty mode in that case.
 			return modeEmpty
 		}
 
@@ -66,39 +86,27 @@ func getMode() configurationMode {
 	}
 }
 
-var (
-	configurationServerFrontendOnlyInitialized = make(chan struct{})
-)
+var configurationServerFrontendOnlyInitialized = make(chan struct{})
 
 func initDefaultClient() *client {
-	clientStore := newStore()
+	clientStore := defaultStore
 	defaultClient := &client{store: clientStore}
 
 	mode := getMode()
-
 	// Don't kickoff the background updaters for the client/server
 	// when in empty mode.
 	if mode == modeEmpty {
 		close(configurationServerFrontendOnlyInitialized)
 
 		// Seed the client store with an empty configuration.
-		_, err := clientStore.MaybeUpdate(conftypes.RawUnified{
+		_, err := defaultClient.store.MaybeUpdate(conftypes.RawUnified{
 			Site:               "{}",
 			ServiceConnections: conftypes.ServiceConnections{},
 		})
 		if err != nil {
 			log.Fatalf("received error when setting up the store for the default client during test, err :%s", err)
 		}
-		return defaultClient
 	}
-
-	// The default client is started in InitConfigurationServerFrontendOnly in
-	// the case of server mode.
-	if mode == modeClient {
-		go defaultClient.continuouslyUpdate(nil)
-		close(configurationServerFrontendOnlyInitialized)
-	}
-
 	return defaultClient
 }
 
@@ -163,9 +171,9 @@ func InitConfigurationServerFrontendOnly(source ConfigurationSource) *Server {
 	// Install the passthrough configuration source for defaultClient. This is
 	// so that the frontend does not request configuration from itself via HTTP
 	// and instead only relies on the DB.
-	defaultClient().passthrough = source
+	DefaultClient().passthrough = source
 
-	go defaultClient().continuouslyUpdate(nil)
+	go DefaultClient().continuouslyUpdate(nil)
 	close(configurationServerFrontendOnlyInitialized)
 
 	startSiteConfigEscapeHatchWorker(source)

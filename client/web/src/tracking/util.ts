@@ -30,7 +30,14 @@ export function redactSensitiveInfoFromAppURL(url: string): string {
     // Ensure we do not leak repo and file names in the URL
     sourceURL.pathname = '/redacted'
 
-    const marketingQueryParameters = new Set(['utm_source', 'utm_campaign', 'utm_medium', 'utm_term', 'utm_content'])
+    const marketingQueryParameters = new Set([
+        'utm_source',
+        'utm_campaign',
+        'utm_medium',
+        'utm_term',
+        'utm_content',
+        'utm_cid',
+    ])
     // Ensure we do not leak search queries or other sensitive info in the URL
     // by only maintaining UTM parameters for attribution.
     for (const [parameter] of sourceURL.searchParams) {

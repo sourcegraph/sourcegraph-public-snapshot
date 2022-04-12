@@ -19,7 +19,7 @@ Next: **create your first batch change!**
 
 > NOTE: **Make sure your local development environment is set up** by going through the "[Getting started](https://docs.sourcegraph.com/dev/getting-started)" guide.
 
-1. Since Batch Changes is an enterprise-only feature, make sure to start your local environment with `./enterprise/dev/start.sh`.
+1. Since Batch Changes is an enterprise-only feature, make sure to start your local environment with `sg start` (which defaults to `sg start enterprise`).
 1. Go through the [Quickstart for Batch Changes](https://docs.sourcegraph.com/batch_changes/quickstart) to create a batch change in your local environment. See "[Testing repositories](#testing-repositories)" for a list of repositories in which you can safely publish changesets.
 1. Now combine what you just did with some background information by reading the following:
 
@@ -64,7 +64,7 @@ After that you can look at your new batch change in the UI while the rest happen
 1. To do that, the `Reconciler` looks at the changeset's current and previous `ChangesetSpec` [to determine a plan](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/enterprise/internal/batches/reconciler/reconciler.go#L65-L68) for what it should do ("publish", "push a commit", "update title", etc.)
 1. Once it has the plan, it hands over to the [`Executor`](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/enterprise/internal/batches/reconciler/executor.go#L28:6) which executes the plan.
 1. To push a commit to the code host, the `Executor` [sends a request](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/enterprise/internal/batches/reconciler/executor.go#L462:20) to the [`gitserver` service](https://docs.sourcegraph.com/dev/background-information/architecture#code-syncing)
-1. To create or update a pull request or merge request on the code host it [builds a `ChangesetSource`](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/enterprise/internal/batches/reconciler/executor.go#L149) which is a wrapper around the GitHub, Bitbucket Server and GitLab HTTP clients.
+1. To create or update a pull request or merge request on the code host it [builds a `ChangesetSource`](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/enterprise/internal/batches/reconciler/executor.go#L149) which is a wrapper around the GitHub, Bitbucket Server, Bitbucket Data Center and GitLab HTTP clients.
 
 While that is going on in the background the [`BatchChangeDetailsPage` component is polling the GraphQL](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/client/web/src/enterprise/batches/detail/BatchChangeDetailsPage.tsx#L87-L90) to get the current state of the Batch Change and its changesets.
 
@@ -185,7 +185,7 @@ Take a look at the following links to see some examples of batch changes and the
 - [k8s.sgdev.org/batch-changes](https://k8s.sgdev.org/batch-changes)
 - [Batch Changes tutorials](https://docs.sourcegraph.com/batch_changes/tutorials)
 
-## Server-side batch changes
+## Server-side execution
 
 ### Database tables
 

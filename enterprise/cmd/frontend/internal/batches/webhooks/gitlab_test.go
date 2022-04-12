@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
@@ -28,10 +27,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
+func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
 
@@ -79,8 +80,18 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				h := NewGitLabWebhook(store)
 				es := createGitLabExternalService(t, ctx, store.ExternalServices())
 
-				es.Config = "invalid JSON"
-				if err := store.ExternalServices().Upsert(ctx, es); err != nil {
+				// It's harder than it used to be to get invalid JSON into the
+				// database configuration, so let's just manipulate the database
+				// directly, since it won't make it through the
+				// ExternalServiceStore.
+				if err := store.Exec(
+					ctx,
+					sqlf.Sprintf(
+						"UPDATE external_services SET config = %s WHERE id = %s",
+						"invalid JSON",
+						es.ID,
+					),
+				); err != nil {
 					t.Fatal(err)
 				}
 
@@ -460,14 +471,12 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			// This test is separate from the other unit tests for this
 			// function above because it needs to set up a bad database
 			// connection on the repo store.
-			store := gitLabTestSetup(t, db)
-			database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				return nil, errors.New("foo")
-			}
-			defer func() {
-				database.Mocks.ExternalServices.List = nil
-			}()
+			externalServices := database.NewMockExternalServiceStore()
+			externalServices.ListFunc.SetDefaultReturn(nil, errors.New("foo"))
+			mockDB := database.NewMockDBFrom(database.NewDB(db))
+			mockDB.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
+			store := gitLabTestSetup(t, db).With(mockDB)
 			h := NewGitLabWebhook(store)
 
 			_, err := h.getExternalServiceFromRawID(ctx, "12345")
@@ -670,7 +679,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			// Again, we're going to set up a poisoned store database that will
 			// error if a transaction is started.
 			s := gitLabTestSetup(t, db)
-			store := store.NewWithClock(&noNestingTx{s.DB()}, &observation.TestContext, nil, s.Clock())
+			store := store.NewWithClock(&noNestingTx{s.DatabaseDB()}, &observation.TestContext, nil, s.Clock())
 			h := NewGitLabWebhook(store)
 
 			t.Run("missing merge request", func(t *testing.T) {
@@ -819,7 +828,7 @@ func (ntx *nestedTx) BeginTx(ctx context.Context, opts *sql.TxOptions) error { r
 
 // noNestingTx is another transaction wrapper that always returns an error when
 // a transaction is attempted.
-type noNestingTx struct{ dbutil.DB }
+type noNestingTx struct{ database.DB }
 
 func (nntx *noNestingTx) BeginTx(ctx context.Context, opts *sql.TxOptions) error {
 	return errors.New("foo")
@@ -878,7 +887,7 @@ func assertChangesetEventForChangeset(t *testing.T, ctx context.Context, tx *sto
 
 // createGitLabExternalService creates a mock GitLab service with a valid
 // configuration, including the secrets "super" and "secret".
-func createGitLabExternalService(t *testing.T, ctx context.Context, esStore *database.ExternalServiceStore) *types.ExternalService {
+func createGitLabExternalService(t *testing.T, ctx context.Context, esStore database.ExternalServiceStore) *types.ExternalService {
 	es := &types.ExternalService{
 		Kind:        extsvc.KindGitLab,
 		DisplayName: "gitlab",
@@ -900,7 +909,7 @@ func createGitLabExternalService(t *testing.T, ctx context.Context, esStore *dat
 
 // createGitLabRepo creates a mock GitLab repo attached to the given external
 // service.
-func createGitLabRepo(t *testing.T, ctx context.Context, rstore *database.RepoStore, es *types.ExternalService) *types.Repo {
+func createGitLabRepo(t *testing.T, ctx context.Context, rstore database.RepoStore, es *types.ExternalService) *types.Repo {
 	repo := (&types.Repo{
 		Name: "gitlab.com/sourcegraph/test",
 		URI:  "gitlab.com/sourcegraph/test",
@@ -909,7 +918,7 @@ func createGitLabRepo(t *testing.T, ctx context.Context, rstore *database.RepoSt
 			ServiceType: extsvc.TypeGitLab,
 			ServiceID:   "https://gitlab.com/",
 		},
-	}).With(types.Opt.RepoSources(es.URN()))
+	}).With(typestest.Opt.RepoSources(es.URN()))
 	if err := rstore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}

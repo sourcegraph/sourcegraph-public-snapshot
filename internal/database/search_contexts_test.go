@@ -9,11 +9,12 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func createSearchContexts(ctx context.Context, store *SearchContextsStore, searchContexts []*types.SearchContext) ([]*types.SearchContext, error) {
+func createSearchContexts(ctx context.Context, store SearchContextsStore, searchContexts []*types.SearchContext) ([]*types.SearchContext, error) {
 	emptyRepositoryRevisions := []*types.SearchContextRepositoryRevisions{}
 	createdSearchContexts := make([]*types.SearchContext, len(searchContexts))
 	for idx, searchContext := range searchContexts {
@@ -27,7 +28,7 @@ func createSearchContexts(ctx context.Context, store *SearchContextsStore, searc
 }
 
 func TestSearchContexts_Get(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	u := Users(db)
@@ -79,7 +80,7 @@ func TestSearchContexts_Get(t *testing.T) {
 }
 
 func TestSearchContexts_Update(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	u := Users(db)
@@ -151,7 +152,7 @@ func TestSearchContexts_Update(t *testing.T) {
 }
 
 func TestSearchContexts_List(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	u := Users(db)
@@ -198,7 +199,7 @@ func TestSearchContexts_List(t *testing.T) {
 }
 
 func TestSearchContexts_PaginationAndCount(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	u := Users(db)
@@ -296,7 +297,7 @@ func TestSearchContexts_PaginationAndCount(t *testing.T) {
 }
 
 func TestSearchContexts_CaseInsensitiveNames(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	u := Users(db)
@@ -357,7 +358,7 @@ func TestSearchContexts_CaseInsensitiveNames(t *testing.T) {
 }
 
 func TestSearchContexts_CreateAndSetRepositoryRevisions(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	sc := SearchContexts(db)
@@ -376,8 +377,8 @@ func TestSearchContexts_CreateAndSetRepositoryRevisions(t *testing.T) {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 
-	repoAName := types.RepoName{ID: repoA.ID, Name: repoA.Name}
-	repoBName := types.RepoName{ID: repoB.ID, Name: repoB.Name}
+	repoAName := types.MinimalRepo{ID: repoA.ID, Name: repoA.Name}
+	repoBName := types.MinimalRepo{ID: repoB.ID, Name: repoB.Name}
 
 	// Create a search context with initial repository revisions
 	initialRepositoryRevisions := []*types.SearchContextRepositoryRevisions{
@@ -419,7 +420,7 @@ func TestSearchContexts_CreateAndSetRepositoryRevisions(t *testing.T) {
 }
 
 func TestSearchContexts_Permissions(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	t.Parallel()
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := Users(db)
@@ -622,7 +623,7 @@ func TestSearchContexts_Permissions(t *testing.T) {
 }
 
 func TestSearchContexts_Delete(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	t.Parallel()
 	ctx := context.Background()
 	sc := SearchContexts(db)
@@ -672,7 +673,7 @@ func getSearchContextNames(s []*types.SearchContext) []string {
 }
 
 func TestSearchContexts_OrderBy(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	t.Parallel()
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := Users(db)
@@ -778,6 +779,80 @@ func TestSearchContexts_OrderBy(t *testing.T) {
 			gotSearchContextNames := getSearchContextNames(gotSearchContexts)
 			if !reflect.DeepEqual(tt.wantSearchContextNames, gotSearchContextNames) {
 				t.Fatalf("wanted %+v search contexts, got %+v", tt.wantSearchContextNames, gotSearchContextNames)
+			}
+		})
+	}
+}
+
+func TestSearchContexts_GetAllRevisionsForRepos(t *testing.T) {
+	db := dbtest.NewDB(t)
+	t.Parallel()
+	// Required for this DB query.
+	internalCtx := actor.WithInternalActor(context.Background())
+	sc := SearchContexts(db)
+	r := Repos(db)
+
+	repos := []*types.Repo{
+		{Name: "testA", URI: "https://example.com/a"},
+		{Name: "testB", URI: "https://example.com/b"},
+		{Name: "testC", URI: "https://example.com/c"},
+	}
+	err := r.Create(internalCtx, repos...)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	testRevision := "asdf"
+	searchContexts := []*types.SearchContext{
+		{Name: "public-instance-level", Public: true},
+		{Name: "private-instance-level", Public: false},
+		{Name: "deleted", Public: true},
+	}
+	for idx, searchContext := range searchContexts {
+		searchContexts[idx], err = sc.CreateSearchContextWithRepositoryRevisions(
+			internalCtx,
+			searchContext,
+			[]*types.SearchContextRepositoryRevisions{{Repo: types.MinimalRepo{ID: repos[idx].ID, Name: repos[idx].Name}, Revisions: []string{testRevision}}},
+		)
+		if err != nil {
+			t.Fatalf("Expected no error, got %s", err)
+		}
+	}
+
+	if err := sc.DeleteSearchContext(internalCtx, searchContexts[2].ID); err != nil {
+		t.Fatalf("Failed to delete search context %s", err)
+	}
+
+	listSearchContextsTests := []struct {
+		name    string
+		repoIDs []api.RepoID
+		want    map[api.RepoID][]string
+	}{
+		{
+			name:    "all contexts, deleted ones excluded",
+			repoIDs: []api.RepoID{repos[0].ID, repos[1].ID, repos[2].ID},
+			want: map[api.RepoID][]string{
+				repos[0].ID: {testRevision},
+				repos[1].ID: {testRevision},
+			},
+		},
+		{
+			name:    "subset of repos",
+			repoIDs: []api.RepoID{repos[0].ID},
+			want: map[api.RepoID][]string{
+				repos[0].ID: {testRevision},
+			},
+		},
+	}
+
+	for _, tt := range listSearchContextsTests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotSearchContexts, err := sc.GetAllRevisionsForRepos(internalCtx, tt.repoIDs)
+			if err != nil {
+				t.Fatalf("Expected no error, got %s", err)
+			}
+			if !reflect.DeepEqual(tt.want, gotSearchContexts) {
+				t.Fatalf("wanted %v search contexts, got %v", tt.want, gotSearchContexts)
 			}
 		})
 	}

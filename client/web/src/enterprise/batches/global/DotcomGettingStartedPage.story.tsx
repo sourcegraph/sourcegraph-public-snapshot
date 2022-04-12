@@ -1,12 +1,17 @@
-import { storiesOf } from '@storybook/react'
 import React from 'react'
 
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { storiesOf } from '@storybook/react'
+
+import { WebStory } from '../../../components/WebStory'
 
 import { DotcomGettingStartedPage } from './DotcomGettingStartedPage'
 
-const { add } = storiesOf('web/batches/DotcomGettingStartedPage', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const { add } = storiesOf('web/batches/DotcomGettingStartedPage', module)
+    .addDecorator(story => <div className="p-3 container">{story()}</div>)
+    .addParameters({
+        chromatic: {
+            disableSnapshot: false,
+        },
+    })
 
-add('Overview', () => <EnterpriseWebStory>{() => <DotcomGettingStartedPage />}</EnterpriseWebStory>)
+add('Overview', () => <WebStory>{() => <DotcomGettingStartedPage />}</WebStory>)

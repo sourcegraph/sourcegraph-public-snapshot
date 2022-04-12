@@ -25,7 +25,7 @@ This website is home to Sourcegraph's feature, installation, administration, and
   <a href="https://sourcegraph.com/search" class="btn btn-primary" alt="Sourcegraph Cloud">
    <span>★ Sourcegraph Cloud</span>
    </br>
-   <b>Search 1 million+ open source respositories or your own repositories.</b> No installation required.
+   <b>Search 1 million+ open source repositories or your own repositories.</b> No installation required.
   </a>
 
   <a href="admin/install" class="btn btn-primary" alt="Self-host">
@@ -67,10 +67,12 @@ You can quickly try out Sourcegraph locally using Docker, which takes only a few
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
 
-<pre class="pre-wrap start-sourcegraph-command" id="dockerInstall"><code>docker run -d<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.31.2<span class="iconify copy-text" data-icon="mdi:clipboard-arrow-left-outline" data-inline="false"></span></code>
+<pre class="pre-wrap start-sourcegraph-command" id="dockerInstall"><code>docker run -d<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.38.1<span class="iconify copy-text" data-icon="mdi:clipboard-arrow-left-outline" data-inline="false"></span></code>
 </pre>
 
 For next steps, visit the [Docker installation documentation](admin/install/docker/index.md).
+
+> NOTE: Due to the Windows enviroment, using Sourcegraph with Windows currently isn't fully supported. Testing instructions for running Sourcegraph locally on a Windows machine can be found [here](admin/install/docker/index.md#testing-sourcegraph-on-windows)
 
 > WARNING: **We *do not* recommend using this method for a production instance** - see [Getting started](#getting-started) for more options.
 
@@ -84,18 +86,19 @@ For next steps, visit the [Docker installation documentation](admin/install/dock
 - [Integrations](integration/index.md) with GitHub, GitLab, Bitbucket, etc.
 - [Extensions](extensions/index.md)
 - [Chrome and Firefox browser extensions](integration/browser_extension.md)
+- [Site Administrator Quickstart](admin/how-to/site-admin-quickstart.md)
 
 ### Reference
 
 - [Query syntax reference](code_search/reference/queries.md)
-- [GraphQL API](api/graphql/index.md)
+- [API Documentation](api/index.md)
 - [Sourcegraph changelog](./CHANGELOG.md)
 
 ## Cloud documentation
 
-- [Sourcegraph cloud](code_search/explanations/sourcegraph_cloud.md)
-- [Differences between Sourcegraph cloud and self-hosted](cloud/cloud_ent_on-prem_comparison.md)
-- [Indexing open source code in Sourcegraph cloud](cloud/indexing_open_source_code.md)
+- [Sourcegraph Cloud](code_search/explanations/sourcegraph_cloud.md)
+- [Differences between Sourcegraph Cloud and self-hosted](cloud/cloud_ent_on-prem_comparison.md)
+- [Indexing open source code in Sourcegraph Cloud](cloud/indexing_open_source_code.md)
 
 ## Self-hosted documentation
 
@@ -105,10 +108,10 @@ For next steps, visit the [Docker installation documentation](admin/install/dock
 ## Other links
 
 - [Contributing to Sourcegraph](dev/index.md)
-- [Sourcegraph handbook](https://about.sourcegraph.com/handbook)
+- [Sourcegraph handbook](https://handbook.sourcegraph.com/)
 - [Sourcegraph blog](https://about.sourcegraph.com/blog/)
 - [@sourcegraph on Twitter](https://twitter.com/sourcegraph)
-- [Product Roadmap](https://about.sourcegraph.com/handbook/direction)
+- [Product Roadmap](https://handbook.sourcegraph.com/product#roadmap)
 
 ## Get help
 

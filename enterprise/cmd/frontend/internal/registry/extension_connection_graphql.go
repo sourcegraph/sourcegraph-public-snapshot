@@ -7,7 +7,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry/stores"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 func init() {
@@ -15,25 +16,27 @@ func init() {
 	registry.CountLocalRegistryExtensions = countLocalRegistryExtensions
 }
 
-func listLocalRegistryExtensions(ctx context.Context, db dbutil.DB, args graphqlbackend.RegistryExtensionConnectionArgs) ([]graphqlbackend.RegistryExtension, error) {
+func listLocalRegistryExtensions(ctx context.Context, db database.DB, args graphqlbackend.RegistryExtensionConnectionArgs) ([]graphqlbackend.RegistryExtension, error) {
 	if args.PrioritizeExtensionIDs != nil {
 		ids := filterStripLocalExtensionIDs(*args.PrioritizeExtensionIDs)
 		args.PrioritizeExtensionIDs = &ids
+	}
+	if args.ExtensionIDs != nil {
+		extids := filterStripLocalExtensionIDs(*args.ExtensionIDs)
+		args.ExtensionIDs = &extids
 	}
 	opt, err := toDBExtensionsListOptions(args)
 	if err != nil {
 		return nil, err
 	}
 
-	vs, err := dbExtensions{}.List(ctx, opt)
+	vs, err := stores.Extensions(db).List(ctx, opt)
 	if err != nil {
 		return nil, err
 	}
-	if err := prefixLocalExtensionID(vs...); err != nil {
-		return nil, err
-	}
+	prefixLocalExtensionID(vs...)
 
-	releasesByExtensionID, err := getLatestForBatch(ctx, vs)
+	releasesByExtensionID, err := getLatestForBatch(ctx, db, vs)
 	if err != nil {
 		return nil, err
 	}
@@ -44,16 +47,16 @@ func listLocalRegistryExtensions(ctx context.Context, db dbutil.DB, args graphql
 	return ys, nil
 }
 
-func countLocalRegistryExtensions(ctx context.Context, db dbutil.DB, args graphqlbackend.RegistryExtensionConnectionArgs) (int, error) {
+func countLocalRegistryExtensions(ctx context.Context, db database.DB, args graphqlbackend.RegistryExtensionConnectionArgs) (int, error) {
 	opt, err := toDBExtensionsListOptions(args)
 	if err != nil {
 		return 0, err
 	}
-	return dbExtensions{}.Count(ctx, opt)
+	return stores.Extensions(db).Count(ctx, opt)
 }
 
-func toDBExtensionsListOptions(args graphqlbackend.RegistryExtensionConnectionArgs) (dbExtensionsListOptions, error) {
-	var opt dbExtensionsListOptions
+func toDBExtensionsListOptions(args graphqlbackend.RegistryExtensionConnectionArgs) (stores.ExtensionsListOptions, error) {
+	var opt stores.ExtensionsListOptions
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	if args.Publisher != nil {
 		p, err := unmarshalRegistryPublisherID(*args.Publisher)

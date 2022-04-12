@@ -14,3 +14,7 @@ datasources:
     type: jaeger
     access: proxy
     url: http://127.0.0.1:16686/-/debug/jaeger
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://127.0.0.1:3100

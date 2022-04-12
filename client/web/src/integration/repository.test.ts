@@ -3,13 +3,13 @@ import * as path from 'path'
 
 import type * as sourcegraph from 'sourcegraph'
 
+import { encodeURIPathComponent } from '@sourcegraph/common'
 import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql/schema'
+import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
-import { encodeURIPathComponent } from '@sourcegraph/shared/src/util/url'
 
 import { DiffHunkLineType, WebGraphQlOperations } from '../graphql-operations'
 
@@ -369,8 +369,19 @@ describe('Repository', () => {
                                 ],
                                 totalCount: 1,
                                 pageInfo: { endCursor: null, hasNextPage: false },
-                                diffStat: { added: 1, changed: 3, deleted: 4 },
+                                diffStat: { added: 1, changed: 3, deleted: 4, __typename: 'DiffStat' },
                             },
+                        },
+                    },
+                }),
+                FileNames: () => ({
+                    repository: {
+                        id: 'repo-123',
+                        __typename: 'Repository',
+                        commit: {
+                            id: 'c0ff33',
+                            __typename: 'GitCommit',
+                            fileNames: ['README.md'],
                         },
                     },
                 }),
@@ -385,10 +396,14 @@ describe('Repository', () => {
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/' + repositoryName)
 
-            await driver.page.waitForSelector('header.test-tree-page-title')
+            await driver.page.waitForSelector('div.test-tree-page-title')
 
             // Assert that the directory listing displays properly
             await driver.page.waitForSelector('.test-tree-entries')
+
+            // Wait for extensions bar to be loaded before screenshotting
+            await driver.page.waitForSelector('[data-testid="action-items-toggle-open"]')
+
             await percySnapshotWithVariants(driver.page, 'Repository index page')
 
             const numberOfFileEntries = await driver.page.evaluate(
@@ -412,19 +427,25 @@ describe('Repository', () => {
             const breadcrumbTexts = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
-            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', clickedFileName])
+            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', `/${clickedFileName}`])
 
             // Return to repo page
             await driver.page.waitForSelector('.test-repo-header-repo-link')
             await driver.page.click('.test-repo-header-repo-link')
 
-            await driver.page.waitForSelector('header.test-tree-page-title')
-            await assertSelectorHasText('header.test-tree-page-title', shortRepositoryName)
+            await driver.page.waitForSelector('div.test-tree-page-title')
+            await assertSelectorHasText('div.test-tree-page-title', shortRepositoryName)
             await driver.assertWindowLocation(repositorySourcegraphUrl)
 
-            await driver.findElementWithText(clickedCommit, { selector: '.git-commit-node__oid', action: 'click' })
-            await driver.page.waitForSelector('.git-commit-node__message-subject')
-            await assertSelectorHasText('.git-commit-node__message-subject', 'update LSIF indexing CI workflow')
+            await driver.findElementWithText(clickedCommit, {
+                selector: '[data-testid="git-commit-node-oid"]',
+                action: 'click',
+            })
+            await driver.page.waitForSelector('[data-testid="git-commit-node-message-subject"]')
+            await assertSelectorHasText(
+                '[data-testid="git-commit-node-message-subject"]',
+                'update LSIF indexing CI workflow'
+            )
         })
 
         it('works with files with spaces in the name', async () => {
@@ -465,6 +486,17 @@ describe('Repository', () => {
                         },
                     },
                 }),
+                FileNames: () => ({
+                    repository: {
+                        id: 'repo-123',
+                        __typename: 'Repository',
+                        commit: {
+                            id: 'c0ff33',
+                            __typename: 'GitCommit',
+                            fileNames: ['README.md'],
+                        },
+                    },
+                }),
             })
 
             await driver.page.goto(
@@ -484,7 +516,11 @@ describe('Repository', () => {
             const breadcrumbTexts = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
-            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', filePath])
+            assert.deepStrictEqual(breadcrumbTexts, [
+                shortRepositoryName,
+                '@master',
+                "/Geoffrey's random queries.32r242442bf /% token.4288249258.sql",
+            ])
 
             await driver.page.waitForSelector('#monaco-query-input .view-lines')
             // TODO: find a more reliable way to get the current search query,
@@ -519,12 +555,23 @@ describe('Repository', () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
                 ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl, ['readme.md']),
+                FileNames: () => ({
+                    repository: {
+                        id: 'repo-123',
+                        __typename: 'Repository',
+                        commit: {
+                            id: 'c0ff33',
+                            __typename: 'GitCommit',
+                            fileNames: ['README.md'],
+                        },
+                    },
+                }),
             })
 
             await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
 
-            await driver.page.waitForSelector('header.test-tree-page-title')
-            await assertSelectorHasText('header.test-tree-page-title', shortRepositoryName)
+            await driver.page.waitForSelector('div.test-tree-page-title')
+            await assertSelectorHasText('div.test-tree-page-title', shortRepositoryName)
             await assertSelectorHasText('.test-tree-entry-file', 'readme.md')
 
             await driver.page.waitForSelector('#monaco-query-input .view-lines')
@@ -545,7 +592,7 @@ describe('Repository', () => {
             const breadcrumbTexts = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
-            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', 'readme.md'])
+            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', '/readme.md'])
         })
 
         it('works with spaces in the repository name', async () => {
@@ -556,12 +603,23 @@ describe('Repository', () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
                 ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl, ['readme.md']),
+                FileNames: () => ({
+                    repository: {
+                        id: 'repo-123',
+                        __typename: 'Repository',
+                        commit: {
+                            id: 'c0ff33',
+                            __typename: 'GitCommit',
+                            fileNames: ['README.md'],
+                        },
+                    },
+                }),
             })
 
             await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
 
-            await driver.page.waitForSelector('header.test-tree-page-title')
-            await assertSelectorHasText('header.test-tree-page-title', 'my org/repo with spaces')
+            await driver.page.waitForSelector('div.test-tree-page-title')
+            await assertSelectorHasText('div.test-tree-page-title', 'my org/repo with spaces')
             await assertSelectorHasText('.test-tree-entry-file', 'readme.md')
 
             // page.click() fails for some reason with Error: Node is either not visible or not an HTMLElement
@@ -572,7 +630,7 @@ describe('Repository', () => {
             const breadcrumbTexts = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
-            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', 'readme.md'])
+            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', '/readme.md'])
         })
     })
 
@@ -752,12 +810,24 @@ describe('Repository', () => {
                         extensions: {
                             nodes: [
                                 {
+                                    id: 'test',
                                     extensionID: 'test/test',
                                     manifest: {
                                         jsonFields: extensionManifest,
                                     },
                                 },
                             ],
+                        },
+                    },
+                }),
+                FileNames: () => ({
+                    repository: {
+                        id: 'repo-123',
+                        __typename: 'Repository',
+                        commit: {
+                            id: 'c0ff33',
+                            __typename: 'GitCommit',
+                            fileNames: ['README.md'],
                         },
                     },
                 }),

@@ -1,7 +1,8 @@
-import { LocationDescriptor } from 'history'
 import * as React from 'react'
 
-import { Link } from './Link'
+import { LocationDescriptor } from 'history'
+
+import { Link } from '@sourcegraph/wildcard'
 
 /**
  * The LinkOrSpan component renders a <Link> if the "to" property is a non-empty string; otherwise it renders the

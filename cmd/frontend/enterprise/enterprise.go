@@ -7,28 +7,33 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 // Services is a bag of HTTP handlers and factory functions that are registered by the
 // enterprise frontend setup hook.
 type Services struct {
-	GitHubWebhook             webhooks.Registerer
-	GitLabWebhook             http.Handler
-	BitbucketServerWebhook    http.Handler
-	NewCodeIntelUploadHandler NewCodeIntelUploadHandler
-	NewExecutorProxyHandler   NewExecutorProxyHandler
-	AuthzResolver             graphqlbackend.AuthzResolver
-	BatchChangesResolver      graphqlbackend.BatchChangesResolver
-	CodeIntelResolver         graphqlbackend.CodeIntelResolver
-	InsightsResolver          graphqlbackend.InsightsResolver
-	CodeMonitorsResolver      graphqlbackend.CodeMonitorsResolver
-	LicenseResolver           graphqlbackend.LicenseResolver
-	DotcomResolver            graphqlbackend.DotcomRootResolver
+	GitHubWebhook                 webhooks.Registerer
+	GitLabWebhook                 http.Handler
+	BitbucketServerWebhook        http.Handler
+	NewCodeIntelUploadHandler     NewCodeIntelUploadHandler
+	NewExecutorProxyHandler       NewExecutorProxyHandler
+	NewGitHubAppCloudSetupHandler NewGitHubAppCloudSetupHandler
+	NewComputeStreamHandler       NewComputeStreamHandler
+	AuthzResolver                 graphqlbackend.AuthzResolver
+	BatchChangesResolver          graphqlbackend.BatchChangesResolver
+	CodeIntelResolver             graphqlbackend.CodeIntelResolver
+	InsightsResolver              graphqlbackend.InsightsResolver
+	CodeMonitorsResolver          graphqlbackend.CodeMonitorsResolver
+	LicenseResolver               graphqlbackend.LicenseResolver
+	DotcomResolver                graphqlbackend.DotcomRootResolver
+	SearchContextsResolver        graphqlbackend.SearchContextsResolver
+	OrgRepositoryResolver         graphqlbackend.OrgRepositoryResolver
+	NotebooksResolver             graphqlbackend.NotebooksResolver
+	ComputeResolver               graphqlbackend.ComputeResolver
 }
 
 // NewCodeIntelUploadHandler creates a new handler for the LSIF upload endpoint. The
@@ -40,14 +45,23 @@ type NewCodeIntelUploadHandler func(internal bool) http.Handler
 // via a shared username and password.
 type NewExecutorProxyHandler func() http.Handler
 
+// NewGitHubAppCloudSetupHandler creates a new handler for the Sourcegraph Cloud
+// GitHub App setup URL endpoint.
+type NewGitHubAppCloudSetupHandler func() http.Handler
+
+// NewComputeStreamHandler creates a new handler for the Sourcegraph Compute streaming endpoint.
+type NewComputeStreamHandler func() http.Handler
+
 // DefaultServices creates a new Services value that has default implementations for all services.
 func DefaultServices() Services {
 	return Services{
-		GitHubWebhook:             registerFunc(func(webhook *webhooks.GitHubWebhook) {}),
-		GitLabWebhook:             makeNotFoundHandler("gitlab webhook"),
-		BitbucketServerWebhook:    makeNotFoundHandler("bitbucket server webhook"),
-		NewCodeIntelUploadHandler: func(_ bool) http.Handler { return makeNotFoundHandler("code intel upload") },
-		NewExecutorProxyHandler:   func() http.Handler { return makeNotFoundHandler("executor proxy") },
+		GitHubWebhook:                 registerFunc(func(webhook *webhooks.GitHubWebhook) {}),
+		GitLabWebhook:                 makeNotFoundHandler("gitlab webhook"),
+		BitbucketServerWebhook:        makeNotFoundHandler("bitbucket server webhook"),
+		NewCodeIntelUploadHandler:     func(_ bool) http.Handler { return makeNotFoundHandler("code intel upload") },
+		NewExecutorProxyHandler:       func() http.Handler { return makeNotFoundHandler("executor proxy") },
+		NewGitHubAppCloudSetupHandler: func() http.Handler { return makeNotFoundHandler("Sourcegraph Cloud GitHub App setup") },
+		NewComputeStreamHandler:       func() http.Handler { return makeNotFoundHandler("compute streaming endpoint") },
 	}
 }
 
@@ -100,7 +114,7 @@ func BatchChangesEnabledForSite() error {
 
 // Checks if Batch Changes are enabled for the current user and returns `nil` if they are,
 // or else an error indicating why they're disabled
-func BatchChangesEnabledForUser(ctx context.Context, db dbutil.DB) error {
+func BatchChangesEnabledForUser(ctx context.Context, db database.DB) error {
 	if err := BatchChangesEnabledForSite(); err != nil {
 		return err
 	}

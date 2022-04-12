@@ -1,61 +1,58 @@
+import React, { useEffect, useMemo } from 'react'
+
+import classNames from 'classnames'
 import * as H from 'history'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
-import React, { useEffect, useMemo } from 'react'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
-import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
-import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
+import { ContributableMenu } from '@sourcegraph/client-api'
+import { isErrorLike } from '@sourcegraph/common'
+import { SearchContextInputProps, isSearchContextSpecAvailable } from '@sourcegraph/search'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { ActivationDropdown } from '@sourcegraph/shared/src/components/activation/ActivationDropdown'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { WebCommandListPopoverButton } from '@sourcegraph/web/src/components/shared'
-import { FeedbackPrompt } from '@sourcegraph/web/src/nav/Feedback/FeedbackPrompt'
-import { StatusMessagesNavItem } from '@sourcegraph/web/src/nav/StatusMessagesNavItem'
-import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '@sourcegraph/wildcard'
-
-import { AuthenticatedUser } from '../auth'
-import { BatchChangesProps } from '../batches'
-import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
-import { CodeMonitoringProps } from '../code-monitoring'
-import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
-import { BrandLogo } from '../components/branding/BrandLogo'
-import { CodeInsightsProps } from '../insights/types'
-import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import {
     KeyboardShortcutsProps,
     KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,
     KEYBOARD_SHORTCUT_SWITCH_THEME,
-} from '../keyboardShortcuts/keyboardShortcuts'
+} from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
+import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
+import { useObservable, Button, Link, FeedbackPrompt, ButtonLink, PopoverTrigger } from '@sourcegraph/wildcard'
+
+import { AuthenticatedUser } from '../auth'
+import { BatchChangesProps } from '../batches'
+import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
+import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
+import { ActivationDropdown } from '../components/ActivationDropdown'
+import { BrandLogo } from '../components/branding/BrandLogo'
+import { WebCommandListPopoverButton } from '../components/shared'
+import { useHandleSubmitFeedback, useRoutesMatch } from '../hooks'
+import { CodeInsightsProps } from '../insights/types'
+import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import { LayoutRouteProps } from '../routes'
-import { Settings } from '../schema/settings.schema'
-import { VersionContext } from '../schema/site.schema'
-import {
-    PatternTypeProps,
-    CaseSensitivityProps,
-    OnboardingTourProps,
-    ParsedSearchQueryProps,
-    isSearchContextSpecAvailable,
-    getGlobalSearchContextFilter,
-    SearchContextInputProps,
-} from '../search'
+import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
-import { useNavbarQueryState } from '../search/navbarSearchQueryState'
+import { useExperimentalFeatures, useNavbarQueryState } from '../stores'
 import { ThemePreferenceProps } from '../theme'
 import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { showDotComMarketing } from '../util/features'
 
+import { NavDropdown, NavDropdownItem } from './NavBar/NavDropdown'
+import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
+
+import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '.'
+
+import styles from './GlobalNavbar.module.scss'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -67,14 +64,8 @@ interface Props
         ThemePreferenceProps,
         ExtensionAlertAnimationProps,
         ActivationProps,
-        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
-        PatternTypeProps,
-        CaseSensitivityProps,
-        VersionContextProps,
         SearchContextInputProps,
-        CodeMonitoringProps,
         CodeInsightsProps,
-        OnboardingTourProps,
         BatchChangesProps {
     history: H.History
     location: H.Location<{ query: string }>
@@ -93,27 +84,19 @@ interface Props
      * 'low-profile' renders the the navbar with no border or background. Used on the search
      * homepage.
      *
-     * 'low-profile-with-logo' renders the low-profile navbar but with the homepage logo. Used on repogroup pages.
+     * 'low-profile-with-logo' renders the low-profile navbar but with the homepage logo. Used on community search context pages.
      */
     variant: 'default' | 'low-profile' | 'low-profile-with-logo'
 
-    setVersionContext: (versionContext: string | undefined) => Promise<void>
-    availableVersionContexts: VersionContext[] | undefined
-
     minimalNavLinks?: boolean
     isSearchAutoFocusRequired?: boolean
+    isRepositoryRelatedPage?: boolean
     branding?: typeof window.context.branding
-
-    /** For testing only. Used because reactstrap's Popover is incompatible with react-test-renderer. */
-    hideNavLinks: boolean
 }
 
 export const GlobalNavbar: React.FunctionComponent<Props> = ({
     authRequired,
     showSearchBox,
-    caseSensitive,
-    patternType,
-    hideNavLinks,
     variant,
     isLightTheme,
     branding,
@@ -121,13 +104,15 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     history,
     minimalNavLinks,
     isSourcegraphDotCom,
+    isRepositoryRelatedPage,
     codeInsightsEnabled,
+    searchContextsEnabled,
     ...props
 }) => {
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
     branding = branding ?? window.context?.branding
 
-    const query = props.parsedSearchQuery
+    const query = useNavbarQueryState(state => state.searchQueryFromURL)
 
     const globalSearchContextSpec = useMemo(() => getGlobalSearchContextFilter(query), [query])
 
@@ -140,18 +125,29 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     const isSearchContextAvailable = useObservable(
         useMemo(
             () =>
-                globalSearchContextSpec
+                globalSearchContextSpec && searchContextsEnabled
                     ? // While we wait for the result of the `isSearchContextSpecAvailable` call, we assume the context is available
                       // to prevent flashing and moving content in the query bar. This optimizes for the most common use case where
                       // user selects a search context from the dropdown.
                       // See https://github.com/sourcegraph/sourcegraph/issues/19918 for more info.
-                      isSearchContextSpecAvailable(globalSearchContextSpec.spec).pipe(startWith(true))
+                      isSearchContextSpecAvailable({
+                          spec: globalSearchContextSpec.spec,
+                          platformContext: props.platformContext,
+                      }).pipe(startWith(true))
                     : of(false),
-            [globalSearchContextSpec]
+            [globalSearchContextSpec, searchContextsEnabled, props.platformContext]
         )
     )
 
+    const routeMatch = useRoutesMatch(props.routes)
+    const { handleSubmitFeedback } = useHandleSubmitFeedback({
+        routeMatch,
+    })
+
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
+    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext)
+    const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring)
+    const showSearchNotebook = useExperimentalFeatures(features => features.showSearchNotebook)
 
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in
@@ -169,7 +165,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
         // If a global search context spec is available to the user, we omit it from the
         // query and move it to the search contexts dropdown
         const finalQuery =
-            globalSearchContextSpec && isSearchContextAvailable && props.showSearchContext
+            globalSearchContextSpec && isSearchContextAvailable && showSearchContext
                 ? omitFilter(query, globalSearchContextSpec.filter)
                 : query
 
@@ -180,12 +176,12 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
         query,
         globalSearchContextSpec,
         isSearchContextAvailable,
-        props.showSearchContext,
+        showSearchContext,
     ])
 
     // CodeInsightsEnabled props controls insights appearance over OSS and Enterprise version
     // isCodeInsightsEnabled selector controls appearance based on user settings flags
-    const codeInsights = props.authenticatedUser && codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)
+    const codeInsights = codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)
 
     const searchNavBar = (
         <SearchNavbarItem
@@ -193,11 +189,23 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             location={location}
             history={history}
             isLightTheme={isLightTheme}
-            patternType={patternType}
-            caseSensitive={caseSensitive}
             isSourcegraphDotCom={isSourcegraphDotCom}
+            searchContextsEnabled={searchContextsEnabled}
+            isRepositoryRelatedPage={isRepositoryRelatedPage}
         />
     )
+
+    const searchNavBarItems = useMemo(() => {
+        const items: (NavDropdownItem | false)[] = [
+            searchContextsEnabled &&
+                !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
+            !!showSearchNotebook && {
+                path: PageRoutes.Notebooks,
+                content: 'Notebooks',
+            },
+        ]
+        return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
+    }, [searchContextsEnabled, showSearchNotebook, showSearchContext])
 
     return (
         <>
@@ -207,15 +215,17 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         branding={branding}
                         isLightTheme={isLightTheme}
                         variant="symbol"
-                        className="global-navbar__logo"
+                        className={styles.logo}
                     />
                 }
             >
                 <NavGroup>
-                    <NavItem icon={MagnifyIcon}>
-                        <NavLink to="/search">Code Search</NavLink>
-                    </NavItem>
-                    {props.enableCodeMonitoring && (
+                    <NavDropdown
+                        toggleItem={{ path: '/search', icon: MagnifyIcon, content: 'Code Search' }}
+                        mobileHomeItem={{ content: 'Search home' }}
+                        items={searchNavBarItems}
+                    />
+                    {enableCodeMonitoring && (
                         <NavItem icon={CodeMonitoringLogo}>
                             <NavLink to="/code-monitoring">Monitoring</NavLink>
                         </NavItem>
@@ -226,7 +236,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                     {(props.batchChangesEnabled || isSourcegraphDotCom) && <BatchChangesNavItem />}
                     {codeInsights && (
                         <NavItem icon={BarChartIcon}>
-                            <NavLink to="/insights/dashboards/all">Insights</NavLink>
+                            <NavLink to="/insights">Insights</NavLink>
                         </NavItem>
                     )}
                     <NavItem icon={PuzzleOutlineIcon}>
@@ -242,14 +252,18 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                     {!props.authenticatedUser && (
                         <>
                             <NavAction>
-                                <Link className="global-navbar__link" to="https://about.sourcegraph.com">
+                                <Link className={styles.link} to="https://about.sourcegraph.com">
                                     About <span className="d-none d-sm-inline">Sourcegraph</span>
                                 </Link>
                             </NavAction>
 
                             {showDotComMarketing && (
                                 <NavAction>
-                                    <Link className="global-navbar__link font-weight-medium" to="/help" target="_blank">
+                                    <Link
+                                        className={classNames('font-weight-medium', styles.link)}
+                                        to="/help"
+                                        target="_blank"
+                                    >
                                         Docs
                                     </Link>
                                 </NavAction>
@@ -258,7 +272,18 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                     )}
                     {props.authenticatedUser && (
                         <NavAction>
-                            <FeedbackPrompt routes={props.routes} />
+                            <FeedbackPrompt onSubmit={handleSubmitFeedback} productResearchEnabled={true}>
+                                <PopoverTrigger
+                                    as={Button}
+                                    aria-label="Feedback"
+                                    variant="secondary"
+                                    outline={true}
+                                    size="sm"
+                                    className={styles.feedbackTrigger}
+                                >
+                                    <span>Feedback</span>
+                                </PopoverTrigger>
+                            </FeedbackPrompt>
                         </NavAction>
                     )}
                     {props.authenticatedUser && (
@@ -266,7 +291,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                             <WebCommandListPopoverButton
                                 {...props}
                                 location={location}
-                                buttonClassName="btn btn-link p-0 m-0"
                                 menu={ContributableMenu.CommandPalette}
                                 keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
                             />
@@ -290,12 +314,19 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         <>
                             <NavAction>
                                 <div>
-                                    <Link className="btn btn-sm btn-outline-secondary mr-1" to="/sign-in">
+                                    <Button
+                                        className="mr-1"
+                                        to="/sign-in"
+                                        variant="secondary"
+                                        outline={true}
+                                        size="sm"
+                                        as={Link}
+                                    >
                                         Log in
-                                    </Link>
-                                    <Link className="btn btn-sm global-navbar__sign-up" to="/sign-up">
-                                        Sign up
-                                    </Link>
+                                    </Button>
+                                    <ButtonLink className={styles.signUp} to={buildGetStartedURL('nav')} size="sm">
+                                        Get started
+                                    </ButtonLink>
                                 </div>
                             </NavAction>
                         </>
@@ -303,7 +334,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         <NavAction>
                             <UserNavItem
                                 {...props}
-                                location={location}
                                 isLightTheme={isLightTheme}
                                 authenticatedUser={props.authenticatedUser}
                                 showDotComMarketing={showDotComMarketing}

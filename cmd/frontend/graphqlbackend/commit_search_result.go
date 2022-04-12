@@ -3,7 +3,7 @@ package graphqlbackend
 import (
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
@@ -11,7 +11,7 @@ import (
 type CommitSearchResultResolver struct {
 	result.CommitMatch
 
-	db dbutil.DB
+	db database.DB
 
 	// gitCommitResolver should not be used directly since it may be uninitialized.
 	// Use Commit() instead.
@@ -25,7 +25,7 @@ func (r *CommitSearchResultResolver) Commit() *GitCommitResolver {
 			return
 		}
 		repoResolver := NewRepositoryResolver(r.db, r.Repo.ToRepo())
-		r.gitCommitResolver = toGitCommitResolver(repoResolver, r.db, r.CommitMatch.Commit.ID, &r.CommitMatch.Commit)
+		r.gitCommitResolver = NewGitCommitResolver(r.db, repoResolver, r.CommitMatch.Commit.ID, &r.CommitMatch.Commit)
 	})
 	return r.gitCommitResolver
 }
@@ -56,14 +56,14 @@ func (r *CommitSearchResultResolver) MessagePreview() *highlightedStringResolver
 	if r.CommitMatch.MessagePreview == nil {
 		return nil
 	}
-	return &highlightedStringResolver{*r.CommitMatch.MessagePreview}
+	return &highlightedStringResolver{r.CommitMatch.MessagePreview.ToHighlightedString()}
 }
 
 func (r *CommitSearchResultResolver) DiffPreview() *highlightedStringResolver {
 	if r.CommitMatch.DiffPreview == nil {
 		return nil
 	}
-	return &highlightedStringResolver{*r.CommitMatch.DiffPreview}
+	return &highlightedStringResolver{r.CommitMatch.DiffPreview.ToHighlightedString()}
 }
 
 func (r *CommitSearchResultResolver) Label() Markdown {
@@ -79,9 +79,10 @@ func (r *CommitSearchResultResolver) Detail() Markdown {
 }
 
 func (r *CommitSearchResultResolver) Matches() []*searchResultMatchResolver {
+	hls := r.CommitMatch.Body().ToHighlightedString()
 	match := &searchResultMatchResolver{
-		body:       r.CommitMatch.Body.Value,
-		highlights: r.CommitMatch.Body.Highlights,
+		body:       hls.Value,
+		highlights: hls.Highlights,
 		url:        r.Commit().URL(),
 	}
 	matches := []*searchResultMatchResolver{match}

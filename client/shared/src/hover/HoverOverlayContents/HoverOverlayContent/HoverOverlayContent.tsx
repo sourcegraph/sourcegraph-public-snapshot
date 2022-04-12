@@ -1,18 +1,28 @@
-import classNames from 'classnames'
-import { upperFirst } from 'lodash'
 import React from 'react'
 
-import { HoverMerged } from '../../../api/client/types/hover'
-import { LinkOrSpan } from '../../../components/LinkOrSpan'
-import { asError } from '../../../util/errors'
-import { renderMarkdown } from '../../../util/markdown'
+import classNames from 'classnames'
+import { upperFirst } from 'lodash'
+
+import { HoverMerged } from '@sourcegraph/client-api'
+import { asError, renderMarkdown } from '@sourcegraph/common'
+import { Alert, AlertProps, Badge } from '@sourcegraph/wildcard'
+
+import hoverOverlayStyle from '../../HoverOverlay.module.scss'
+import hoverOverlayContentsStyle from '../../HoverOverlayContents.module.scss'
+import style from './HoverOverlayContent.module.scss'
 
 interface HoverOverlayContentProps {
     content: HoverMerged['contents'][number]
     aggregatedBadges: HoverMerged['aggregatedBadges']
     index: number
+    /**
+     * Allows custom styles
+     * Primarily used to inherit different styles for use on a code host.
+     */
     badgeClassName?: string
     errorAlertClassName?: string
+    errorAlertVariant?: AlertProps['variant']
+    contentClassName?: string
 }
 
 function tryMarkdownRender(content: string): string | Error {
@@ -24,11 +34,14 @@ function tryMarkdownRender(content: string): string | Error {
 }
 
 export const HoverOverlayContent: React.FunctionComponent<HoverOverlayContentProps> = props => {
-    const { content, aggregatedBadges = [], index, errorAlertClassName, badgeClassName } = props
+    const { content, aggregatedBadges = [], index, errorAlertClassName, errorAlertVariant, badgeClassName } = props
 
     if (content.kind !== 'markdown') {
         return (
-            <span className="hover-overlay__content">
+            <span
+                data-testid="hover-overlay-content"
+                className={classNames(style.hoverOverlayContent, hoverOverlayContentsStyle.hoverOverlayContent)}
+            >
                 <p>{content.value}</p>
             </span>
         )
@@ -38,9 +51,12 @@ export const HoverOverlayContent: React.FunctionComponent<HoverOverlayContentPro
 
     if (markdownOrError instanceof Error) {
         return (
-            <div className={classNames('hover-overlay__hover-error', errorAlertClassName)}>
+            <Alert
+                className={classNames(hoverOverlayStyle.hoverError, errorAlertClassName)}
+                variant={errorAlertVariant}
+            >
                 {upperFirst(markdownOrError.message)}
-            </div>
+            </Alert>
         )
     }
 
@@ -48,20 +64,26 @@ export const HoverOverlayContent: React.FunctionComponent<HoverOverlayContentPro
         <>
             {index !== 0 && <hr />}
             {aggregatedBadges.map(({ text, linkURL, hoverMessage }) => (
-                <small key={text} className="hover-overlay__badge">
-                    <LinkOrSpan
-                        to={linkURL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        data-tooltip={hoverMessage}
-                        className={classNames('test-hover-badge', badgeClassName, 'hover-overlay__badge-label')}
+                <small key={text} className={classNames(hoverOverlayStyle.badge)}>
+                    <Badge
+                        variant="secondary"
+                        small={true}
+                        className={classNames('test-hover-badge', badgeClassName, hoverOverlayStyle.badgeLabel)}
+                        href={linkURL}
+                        tooltip={hoverMessage}
                     >
                         {text}
-                    </LinkOrSpan>
+                    </Badge>
                 </small>
             ))}
             <span
-                className="hover-overlay__content test-tooltip-content"
+                data-testid="hover-overlay-content"
+                className={classNames(
+                    style.hoverOverlayContent,
+                    hoverOverlayContentsStyle.hoverOverlayContent,
+                    props.contentClassName,
+                    'test-tooltip-content'
+                )}
                 dangerouslySetInnerHTML={{ __html: markdownOrError }}
             />
         </>

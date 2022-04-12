@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { map } from 'rxjs/operators'
 
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
@@ -16,6 +17,8 @@ import { diffDomFunctions, diffusionDOMFns } from './domFunctions'
 import { resolveDiffFileInfo, resolveDiffusionFileInfo, resolveRevisionFileInfo } from './fileInfo'
 
 import { convertSpacesToTabs, spacesToTabsAdjustment } from '.'
+
+import styles from './codeHost.module.scss'
 
 /**
  * Gets the actual text content we care about and returns the number of characters we have stripped
@@ -81,9 +84,6 @@ const getPositionAdjuster = (
         })
     )
 
-const toolbarButtonProps = {
-    className: 'button grey button-grey has-icon has-text phui-button-default msl',
-}
 export const commitCodeView = {
     dom: diffDomFunctions,
     resolveFileInfo: resolveRevisionFileInfo,
@@ -106,7 +106,6 @@ export const commitCodeView = {
 
         return mount
     },
-    toolbarButtonProps,
 }
 
 export const diffCodeView = {
@@ -129,7 +128,6 @@ export const diffCodeView = {
         mountLocation.prepend(mount, ' ')
         return mount
     },
-    toolbarButtonProps,
     isDiff: true,
 }
 
@@ -163,7 +161,6 @@ const diffusionSourceCodeViewResolver = toCodeViewResolver('.diffusion-source', 
 
         return mount
     },
-    toolbarButtonProps,
 })
 
 // Matches Diffusion single file code views on recent Phabricator versions.
@@ -195,15 +192,14 @@ export const phabricatorCodeHost: CodeHost = {
     // TODO: handle parsing selected line number from Phabricator href,
     // and find a way to listen to changes (Phabricator does not emit popstate events).
     codeViewToolbarClassProps: {
-        actionItemClass: 'button grey action-item--phabricator',
-        actionItemIconClass: 'icon--phabricator',
+        actionItemClass: classNames('button grey', styles.actionItem),
+        actionItemIconClass: styles.icon,
     },
     notificationClassNames,
     hoverOverlayClassProps: {
-        className: 'aphront-dialog-view hover-overlay--phabricator',
-        actionItemClassName: 'button grey hover-overlay-action-item--phabricator',
-        closeButtonClassName: 'button grey btn-icon--phabricator',
-        iconClassName: 'icon--phabricator',
+        className: classNames('aphront-dialog-view', styles.hoverOverlay),
+        actionItemClassName: classNames('button grey', styles.hoverOverlayActionItem),
+        iconClassName: styles.hoverOverlayActionItemIcon,
         getAlertClassName: createNotificationClassNameGetter(notificationClassNames),
     },
     codeViewsRequireTokenization: true,

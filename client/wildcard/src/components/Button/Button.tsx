@@ -1,12 +1,16 @@
-import classNames from 'classnames'
 import React from 'react'
 
-import { BUTTON_VARIANTS, BUTTON_SIZES } from './constants'
-import { getButtonSize, getButtonStyle } from './utils'
+import classNames from 'classnames'
 
-export interface ButtonProps
-    extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-        React.RefAttributes<HTMLButtonElement> {
+import { useWildcardTheme } from '../../hooks/useWildcardTheme'
+import { ForwardReferenceComponent } from '../../types'
+
+import { BUTTON_VARIANTS, BUTTON_SIZES, BUTTON_DISPLAY } from './constants'
+import { getButtonSize, getButtonStyle, getButtonDisplay } from './utils'
+
+import styles from './Button.module.scss'
+
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     /**
      * The variant style of the button. Defaults to `primary`
      */
@@ -16,16 +20,17 @@ export interface ButtonProps
      */
     size?: typeof BUTTON_SIZES[number]
     /**
+     * Allows modifying the display property of the button. Supports inline-block or block variants.
+     */
+    display?: typeof BUTTON_DISPLAY[number]
+    /**
      * Modifies the button style to have a transparent/light background and a more pronounced outline.
      */
     outline?: boolean
     /**
-     * Used to change the element that is rendered.
-     * Useful if needing to style a link as a button, or in certain cases where a different element is required.
-     * Always be mindful of potentially accessibiliy pitfalls when using this!
-     * Note: This component assumes `HTMLButtonElement` types, providing a different component here will change the potential types that can be passed to this component.
+     * A tooltip to display when the user hovers the button.
      */
-    as?: React.ElementType
+    ['data-tooltip']?: string
 }
 
 /**
@@ -44,23 +49,61 @@ export interface ButtonProps
  * Tips:
  * - Avoid using button styling for links where possible. Buttons should typically trigger an action, links should navigate to places.
  */
-export const Button: React.FunctionComponent<ButtonProps> = React.forwardRef(
+export const Button = React.forwardRef(
     (
-        { children, as: Component = 'button', type = 'button', variant, size, outline, className, ...attributes },
+        {
+            children,
+            as: Component = 'button',
+            // Use default type="button" only for the `button` element.
+            type = Component === 'button' ? 'button' : undefined,
+            variant,
+            size,
+            outline,
+            className,
+            disabled,
+            display,
+            ...attributes
+        },
         reference
-    ) => (
-        <Component
-            ref={reference}
-            className={classNames(
-                'btn',
-                variant && getButtonStyle({ variant, outline }),
-                size && getButtonSize({ size }),
-                className
-            )}
-            type={Component === 'button' ? type : undefined}
-            {...attributes}
-        >
-            {children}
-        </Component>
-    )
-)
+    ) => {
+        const tooltip = attributes['data-tooltip']
+        const { isBranded } = useWildcardTheme()
+
+        const brandedButtonClassname = classNames(
+            styles.btn,
+            variant && getButtonStyle({ variant, outline }),
+            display && getButtonDisplay({ display }),
+            size && getButtonSize({ size })
+        )
+
+        const buttonComponent = (
+            <Component
+                ref={reference}
+                className={classNames(isBranded && brandedButtonClassname, className)}
+                type={type}
+                disabled={disabled}
+                {...attributes}
+            >
+                {children}
+            </Component>
+        )
+
+        // Disabled elements don't fire mouse events, but the `Tooltip` relies on mouse
+        // events. This restores the tooltip behavior for disabled buttons by rendering an
+        // invisible `div` with the tooltip on top of the button, in the case that it is
+        // disabled. See https://stackoverflow.com/a/3100395 for more.
+        if (disabled && tooltip) {
+            return (
+                <div className={styles.container}>
+                    {/* We set a tabIndex for the tooltip-producing div so that keyboard
+                        users can still trigger it. */}
+                    {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
+                    <div className={styles.disabledTooltip} data-tooltip={tooltip} tabIndex={0} />
+                    {buttonComponent}
+                </div>
+            )
+        }
+
+        return buttonComponent
+    }
+) as ForwardReferenceComponent<'button', ButtonProps>

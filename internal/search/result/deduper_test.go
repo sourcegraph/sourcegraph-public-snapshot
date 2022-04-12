@@ -6,17 +6,17 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestDeduper(t *testing.T) {
 	commit := func(repo, id string) *CommitMatch {
 		return &CommitMatch{
-			Repo: types.RepoName{
+			Repo: types.MinimalRepo{
 				Name: api.RepoName(repo),
 			},
-			Commit: git.Commit{
+			Commit: gitdomain.Commit{
 				ID: api.CommitID(id),
 			},
 		}
@@ -24,13 +24,13 @@ func TestDeduper(t *testing.T) {
 
 	diff := func(repo, id string) *CommitMatch {
 		return &CommitMatch{
-			Repo: types.RepoName{
+			Repo: types.MinimalRepo{
 				Name: api.RepoName(repo),
 			},
-			Commit: git.Commit{
+			Commit: gitdomain.Commit{
 				ID: api.CommitID(id),
 			},
-			DiffPreview: &HighlightedString{},
+			DiffPreview: &MatchedString{},
 		}
 	}
 
@@ -44,7 +44,7 @@ func TestDeduper(t *testing.T) {
 	file := func(repo, commit, path string, lines []*LineMatch) *FileMatch {
 		return &FileMatch{
 			File: File{
-				Repo: types.RepoName{
+				Repo: types.MinimalRepo{
 					Name: api.RepoName(repo),
 				},
 				CommitID: api.CommitID(commit),
@@ -62,8 +62,8 @@ func TestDeduper(t *testing.T) {
 
 	cases := []struct {
 		name     string
-		input    []Match
-		expected []Match
+		input    Matches
+		expected Matches
 	}{
 		{
 			name: "no dups",

@@ -2,14 +2,13 @@ package authz
 
 import (
 	"context"
-	"encoding/json"
 	"net/url"
-	"reflect"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/gitlab"
@@ -18,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -46,9 +46,13 @@ func (m gitlabAuthzProviderParams) URN() string {
 	panic("should never be called")
 }
 
-func (m gitlabAuthzProviderParams) Validate() []string { return nil }
+func (m gitlabAuthzProviderParams) ValidateConnection(context.Context) []string { return nil }
 
 func (m gitlabAuthzProviderParams) FetchUserPerms(context.Context, *extsvc.Account, authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+	panic("should never be called")
+}
+
+func (m gitlabAuthzProviderParams) FetchUserPermsByToken(context.Context, string, authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	panic("should never be called")
 }
 
@@ -356,7 +360,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 				},
 			},
 			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"1 error occurred:\n\t* authorization.oauth.signingKey: illegal base64 data at input byte 7\n\n"},
+			expSeriousProblems:           []string{"authorization.oauth.signingKey: illegal base64 data at input byte 7"},
 		},
 		{
 			description: "Bitbucket Server exact username matching",
@@ -457,28 +461,59 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Logf("Test %q", test.description)
+		t.Run(test.description, func(t *testing.T) {
+			externalServices := database.NewMockExternalServiceStore()
+			externalServices.ListFunc.SetDefaultHook(func(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+				mustMarshalJSONString := func(v interface{}) string {
+					str, err := jsoniter.MarshalToString(v)
+					require.NoError(t, err)
+					return str
+				}
 
-		store := fakeStore{
-			gitlabs:          test.gitlabConnections,
-			bitbucketServers: test.bitbucketServerConnections,
-		}
+				var svcs []*types.ExternalService
+				for _, kind := range opt.Kinds {
+					switch kind {
+					case extsvc.KindGitLab:
+						for _, gl := range test.gitlabConnections {
+							svcs = append(svcs, &types.ExternalService{
+								Kind:   kind,
+								Config: mustMarshalJSONString(gl),
+							})
+						}
+					case extsvc.KindBitbucketServer:
+						for _, bbs := range test.bitbucketServerConnections {
+							svcs = append(svcs, &types.ExternalService{
+								Kind:   kind,
+								Config: mustMarshalJSONString(bbs),
+							})
+						}
+					case extsvc.KindGitHub, extsvc.KindPerforce:
+					default:
+						return nil, errors.Errorf("unexpected kind: %s", kind)
+					}
+				}
+				return svcs, nil
+			})
 
-		allowAccessByDefault, authzProviders, seriousProblems, _ := ProvidersFromConfig(
-			context.Background(),
-			&test.cfg,
-			&store,
-		)
-		if allowAccessByDefault != test.expAuthzAllowAccessByDefault {
-			t.Errorf("allowAccessByDefault: (actual) %v != (expected) %v", asJSON(t, allowAccessByDefault), asJSON(t, test.expAuthzAllowAccessByDefault))
-		}
-		if test.expAuthzProviders != nil {
-			test.expAuthzProviders(t, authzProviders)
-		}
-		if !reflect.DeepEqual(seriousProblems, test.expSeriousProblems) {
-			t.Errorf("seriousProblems: (actual) %+v != (expected) %+v", asJSON(t, seriousProblems), asJSON(t, test.expSeriousProblems))
-		}
+			allowAccessByDefault, authzProviders, seriousProblems, _ := ProvidersFromConfig(
+				context.Background(),
+				staticConfig(test.cfg.SiteConfiguration),
+				externalServices,
+				database.NewMockDB(),
+			)
+			assert.Equal(t, test.expAuthzAllowAccessByDefault, allowAccessByDefault)
+			if test.expAuthzProviders != nil {
+				test.expAuthzProviders(t, authzProviders)
+			}
+			assert.Equal(t, test.expSeriousProblems, seriousProblems)
+		})
 	}
+}
+
+type staticConfig schema.SiteConfiguration
+
+func (s staticConfig) SiteConfig() schema.SiteConfiguration {
+	return schema.SiteConfiguration(s)
 }
 
 func mustURLParse(t *testing.T, u string) *url.URL {
@@ -487,67 +522,4 @@ func mustURLParse(t *testing.T, u string) *url.URL {
 		t.Fatal(err)
 	}
 	return parsed
-}
-
-func asJSON(t *testing.T, v interface{}) string {
-	b, err := json.MarshalIndent(v, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	return string(b)
-}
-
-type fakeStore struct {
-	gitlabs          []*schema.GitLabConnection
-	githubs          []*schema.GitHubConnection
-	bitbucketServers []*schema.BitbucketServerConnection
-	perforces        []*schema.PerforceConnection
-}
-
-func (s fakeStore) List(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-	mustMarshalJSONString := func(v interface{}) string {
-		str, err := jsoniter.MarshalToString(v)
-		if err != nil {
-			panic(err)
-		}
-		return str
-	}
-
-	var svcs []*types.ExternalService
-	for _, kind := range opt.Kinds {
-		switch kind {
-		case extsvc.KindGitHub:
-			for _, github := range s.githubs {
-				svcs = append(svcs, &types.ExternalService{
-					Kind:   kind,
-					Config: mustMarshalJSONString(github),
-				})
-			}
-		case extsvc.KindGitLab:
-			for _, gitlab := range s.gitlabs {
-				svcs = append(svcs, &types.ExternalService{
-					Kind:   kind,
-					Config: mustMarshalJSONString(gitlab),
-				})
-			}
-		case extsvc.KindBitbucketServer:
-			for _, bbs := range s.bitbucketServers {
-				svcs = append(svcs, &types.ExternalService{
-					Kind:   kind,
-					Config: mustMarshalJSONString(bbs),
-				})
-			}
-		case extsvc.KindPerforce:
-			for _, p := range s.perforces {
-				svcs = append(svcs, &types.ExternalService{
-					Kind:   kind,
-					Config: mustMarshalJSONString(p),
-				})
-			}
-		default:
-			return nil, errors.Errorf("unexpected kind: %s", kind)
-		}
-	}
-
-	return svcs, nil
 }

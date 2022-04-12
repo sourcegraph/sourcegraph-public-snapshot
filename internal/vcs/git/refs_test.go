@@ -2,37 +2,30 @@ package git
 
 import (
 	"context"
-	"reflect"
 	"sort"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
-func TestHumanReadableBranchName(t *testing.T) {
-	for _, tc := range []struct {
-		text string
-		want string
-	}{{
-		// Respect word boundaries when cutting length
-		text: "Change coördination mechanisms of fungible automation processes in place",
-		want: "change-coordination-mechanisms-of-fungible-automation",
-	}, {
-		// Length smaller than maximum
-		text: "Change coördination mechanisms",
-		want: "change-coordination-mechanisms",
-	}, {
-		// Respecting word boundary would result in cutting too much,
-		// so we don't.
-		text: "Change alongwordmadeofmanylettersandnumbersandsymbolsandwhatnotisthisalreadymorethansixtyrunes",
-		want: "change-alongwordmadeofmanylettersandnumbersandsymbolsandwhat",
-	}} {
-		if have := HumanReadableBranchName(tc.text); have != tc.want {
-			t.Fatalf("HumanReadableBranchName(%q):\nhave %q\nwant %q", tc.text, have, tc.want)
-		}
+func testBranches(t *testing.T, gitCommands []string, wantBranches []*Branch, options BranchesOptions) {
+	t.Helper()
+
+	repo := MakeGitRepository(t, gitCommands...)
+	gotBranches, err := ListBranches(context.Background(), database.NewMockDB(), repo, options)
+	require.Nil(t, err)
+
+	sort.Sort(Branches(wantBranches))
+	sort.Sort(Branches(gotBranches))
+
+	if diff := cmp.Diff(wantBranches, gotBranches); diff != "" {
+		t.Fatalf("Branch mismatch (-want +got):\n%s", diff)
 	}
 }
 
@@ -44,29 +37,10 @@ func TestRepository_ListBranches(t *testing.T) {
 		"git checkout -b b0",
 		"git checkout -b b1",
 	}
-	tests := map[string]struct {
-		repo         api.RepoName
-		wantBranches []*Branch
-	}{
-		"git cmd": {
-			repo:         MakeGitRepository(t, gitCommands...),
-			wantBranches: []*Branch{{Name: "b0", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}, {Name: "b1", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}, {Name: "master", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}},
-		},
-	}
 
-	for label, test := range tests {
-		branches, err := ListBranches(context.Background(), test.repo, BranchesOptions{})
-		if err != nil {
-			t.Errorf("%s: Branches: %s", label, err)
-			continue
-		}
-		sort.Sort(Branches(branches))
-		sort.Sort(Branches(test.wantBranches))
+	wantBranches := []*Branch{{Name: "b0", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}, {Name: "b1", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}, {Name: "master", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}}
 
-		if !reflect.DeepEqual(branches, test.wantBranches) {
-			t.Errorf("%s: got branches == %v, want %v", label, AsJSON(branches), AsJSON(test.wantBranches))
-		}
-	}
+	testBranches(t, gitCommands, wantBranches, BranchesOptions{})
 }
 
 func TestRepository_Branches_MergedInto(t *testing.T) {
@@ -98,24 +72,13 @@ func TestRepository_Branches_MergedInto(t *testing.T) {
 		},
 	}
 
-	for label, test := range map[string]struct {
-		repo         api.RepoName
-		wantBranches map[string][]*Branch
-	}{
-		"git cmd": {
-			repo:         MakeGitRepository(t, gitCommands...),
-			wantBranches: gitBranches,
-		},
-	} {
-		for branch, mergedInto := range test.wantBranches {
-			branches, err := ListBranches(context.Background(), test.repo, BranchesOptions{MergedInto: branch})
-			if err != nil {
-				t.Errorf("%s: Branches: %s", label, err)
-				continue
-			}
-			if !cmp.Equal(mergedInto, branches) {
-				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(mergedInto, branches))
-			}
+	repo := MakeGitRepository(t, gitCommands...)
+	wantBranches := gitBranches
+	for branch, mergedInto := range wantBranches {
+		branches, err := ListBranches(context.Background(), database.NewMockDB(), repo, BranchesOptions{MergedInto: branch})
+		require.Nil(t, err)
+		if diff := cmp.Diff(mergedInto, branches); diff != "" {
+			t.Fatalf("branch mismatch (-want +got):\n%s", diff)
 		}
 	}
 }
@@ -137,28 +100,16 @@ func TestRepository_Branches_ContainsCommit(t *testing.T) {
 		"2816a72df28f699722156e545d038a5203b959de": {{Name: "branch2", Head: "920c0e9d7b287b030ac9770fd7ba3ee9dc1760d9"}, {Name: "master", Head: "1224d334dfe08f4693968ea618ad63ae86ec16ca"}},
 	}
 
-	tests := map[string]struct {
-		repo                 api.RepoName
-		commitToWantBranches map[string][]*Branch
-	}{
-		"git cmd": {
-			repo:                 MakeGitRepository(t, gitCommands...),
-			commitToWantBranches: gitWantBranches,
-		},
-	}
+	repo := MakeGitRepository(t, gitCommands...)
+	commitToWantBranches := gitWantBranches
+	for commit, wantBranches := range commitToWantBranches {
+		branches, err := ListBranches(context.Background(), database.NewMockDB(), repo, BranchesOptions{ContainsCommit: commit})
+		require.Nil(t, err)
 
-	for label, test := range tests {
-		for commit, wantBranches := range test.commitToWantBranches {
-			branches, err := ListBranches(context.Background(), test.repo, BranchesOptions{ContainsCommit: commit})
-			if err != nil {
-				t.Errorf("%s: Branches: %s", label, err)
-				continue
-			}
+		sort.Sort(Branches(branches))
 
-			sort.Sort(Branches(branches))
-			if !reflect.DeepEqual(branches, wantBranches) {
-				t.Errorf("%s: ContainsCommit %q: got branches == %v, want %v", label, commit, AsJSON(branches), AsJSON(wantBranches))
-			}
+		if diff := cmp.Diff(wantBranches, branches); diff != "" {
+			t.Fatalf("Branch mismatch (-want +got):\n%s", diff)
 		}
 	}
 }
@@ -181,35 +132,13 @@ func TestRepository_Branches_BehindAheadCounts(t *testing.T) {
 		"git checkout old_work",
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo9 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
-	gitBranches := []*Branch{
+	wantBranches := []*Branch{
 		{Counts: &BehindAhead{Behind: 5, Ahead: 1}, Name: "old_work", Head: "26692c614c59ddaef4b57926810aac7d5f0e94f0"},
 		{Counts: &BehindAhead{Behind: 0, Ahead: 3}, Name: "dev", Head: "6724953367f0cd9a7755bac46ee57f4ab0c1aad8"},
 		{Counts: &BehindAhead{Behind: 0, Ahead: 0}, Name: "master", Head: "8ea26e077a8fb9aa502c3fe2cfa3ce4e052d1a76"},
 	}
-	sort.Sort(Branches(gitBranches))
 
-	tests := map[string]struct {
-		repo         api.RepoName
-		wantBranches []*Branch
-	}{
-		"git cmd": {
-			repo:         MakeGitRepository(t, gitCommands...),
-			wantBranches: gitBranches,
-		},
-	}
-
-	for label, test := range tests {
-		branches, err := ListBranches(context.Background(), test.repo, BranchesOptions{BehindAheadBranch: "master"})
-		if err != nil {
-			t.Errorf("%s: Branches: %s", label, err)
-			continue
-		}
-		sort.Sort(Branches(branches))
-
-		if !reflect.DeepEqual(branches, test.wantBranches) {
-			t.Errorf("%s: got branches == %v, want %v", label, AsJSON(branches), AsJSON(test.wantBranches))
-		}
-	}
+	testBranches(t, gitCommands, wantBranches, BranchesOptions{BehindAheadBranch: "master"})
 }
 
 func TestRepository_Branches_IncludeCommit(t *testing.T) {
@@ -220,51 +149,30 @@ func TestRepository_Branches_IncludeCommit(t *testing.T) {
 		"git checkout -b b0",
 		"GIT_COMMITTER_NAME=b GIT_COMMITTER_EMAIL=b@b.com GIT_COMMITTER_DATE=2006-01-02T15:04:06Z git commit --allow-empty -m foo1 --author='b <b@b.com>' --date 2006-01-02T15:04:06Z",
 	}
-	wantBranchesGit := []*Branch{
+	wantBranches := []*Branch{
 		{
 			Name: "b0", Head: "c4a53701494d1d788b1ceeb8bf32e90224962473",
-			Commit: &Commit{
+			Commit: &gitdomain.Commit{
 				ID:        "c4a53701494d1d788b1ceeb8bf32e90224962473",
-				Author:    Signature{Name: "b", Email: "b@b.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-				Committer: &Signature{Name: "b", Email: "b@b.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+				Author:    gitdomain.Signature{Name: "b", Email: "b@b.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+				Committer: &gitdomain.Signature{Name: "b", Email: "b@b.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
 				Message:   "foo1",
 				Parents:   []api.CommitID{"a3c1537db9797215208eec56f8e7c9c37f8358ca"},
 			},
 		},
 		{
 			Name: "master", Head: "a3c1537db9797215208eec56f8e7c9c37f8358ca",
-			Commit: &Commit{
+			Commit: &gitdomain.Commit{
 				ID:        "a3c1537db9797215208eec56f8e7c9c37f8358ca",
-				Author:    Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-				Committer: &Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+				Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+				Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 				Message:   "foo0",
 				Parents:   nil,
 			},
 		},
 	}
 
-	tests := map[string]struct {
-		repo         api.RepoName
-		wantBranches []*Branch
-	}{
-		"git cmd": {
-			repo:         MakeGitRepository(t, gitCommands...),
-			wantBranches: wantBranchesGit,
-		},
-	}
-
-	for label, test := range tests {
-		branches, err := ListBranches(context.Background(), test.repo, BranchesOptions{IncludeCommit: true})
-		if err != nil {
-			t.Errorf("%s: Branches: %s", label, err)
-			continue
-		}
-		sort.Sort(Branches(branches))
-
-		if !reflect.DeepEqual(branches, test.wantBranches) {
-			t.Errorf("%s: got branches == %v, want %v", label, AsJSON(branches), AsJSON(test.wantBranches))
-		}
-	}
+	testBranches(t, gitCommands, wantBranches, BranchesOptions{IncludeCommit: true})
 }
 
 func TestRepository_ListTags(t *testing.T) {
@@ -277,33 +185,22 @@ func TestRepository_ListTags(t *testing.T) {
 		"git tag t1",
 		dateEnv + " git tag --annotate -m foo t2",
 	}
-	tests := map[string]struct {
-		repo     api.RepoName
-		wantTags []*Tag
-	}{
-		"git cmd": {
-			repo: MakeGitRepository(t, gitCommands...),
-			wantTags: []*Tag{
-				{Name: "t0", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-				{Name: "t1", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-				{Name: "t2", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			},
-		},
+
+	repo := MakeGitRepository(t, gitCommands...)
+	wantTags := []*Tag{
+		{Name: "t0", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+		{Name: "t1", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+		{Name: "t2", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 	}
 
-	for label, test := range tests {
-		tags, err := ListTags(context.Background(), test.repo)
-		if err != nil {
-			t.Errorf("%s: ListTags: %s", label, err)
-			continue
-		}
+	tags, err := ListTags(context.Background(), database.NewMockDB(), repo)
+	require.Nil(t, err)
 
-		sort.Sort(Tags(tags))
-		sort.Sort(Tags(test.wantTags))
+	sort.Sort(Tags(tags))
+	sort.Sort(Tags(wantTags))
 
-		if !reflect.DeepEqual(tags, test.wantTags) {
-			t.Errorf("%s: got tags == %v, want %v", label, tags, test.wantTags)
-		}
+	if diff := cmp.Diff(wantTags, tags); diff != "" {
+		t.Fatalf("tag mismatch (-want +got):\n%s", diff)
 	}
 }
 

@@ -1,20 +1,29 @@
+import React, { useState, useMemo, useEffect, useCallback } from 'react'
+
 import * as H from 'history'
 import AddIcon from 'mdi-react/AddIcon'
 import ArrowLeftIcon from 'mdi-react/ArrowLeftIcon'
-import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Observable, Subject, NEVER } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap, filter } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { asError, createAggregateError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useEventObservable, useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import {
+    Button,
+    LoadingSpinner,
+    useObservable,
+    useEventObservable,
+    Link,
+    CardHeader,
+    CardBody,
+    Card,
+    Icon,
+} from '@sourcegraph/wildcard'
 
 import { queryGraphQL, requestGraphQL } from '../../../../backend/graphql'
-import { ErrorAlert } from '../../../../components/alerts'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
 import { Timestamp } from '../../../../components/time/Timestamp'
@@ -134,30 +143,25 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
         <div className="site-admin-product-subscription-page">
             <PageTitle title="Product subscription" />
             <div className="mb-2">
-                <Link to="/site-admin/dotcom/product/subscriptions" className="btn btn-link btn-sm">
-                    <ArrowLeftIcon className="icon-inline" /> All subscriptions
-                </Link>
+                <Button to="/site-admin/dotcom/product/subscriptions" variant="link" size="sm" as={Link}>
+                    <Icon as={ArrowLeftIcon} /> All subscriptions
+                </Button>
             </div>
             {productSubscription === LOADING ? (
-                <LoadingSpinner className="icon-inline" />
+                <LoadingSpinner />
             ) : isErrorLike(productSubscription) ? (
                 <ErrorAlert className="my-2" error={productSubscription} />
             ) : (
                 <>
                     <h2>Product subscription {productSubscription.name}</h2>
                     <div className="mb-3">
-                        <button
-                            type="button"
-                            className="btn btn-danger"
-                            onClick={nextArchival}
-                            disabled={archival === LOADING}
-                        >
+                        <Button onClick={nextArchival} disabled={archival === LOADING} variant="danger">
                             Archive
-                        </button>
+                        </Button>
                         {isErrorLike(archival) && <ErrorAlert className="mt-2" error={archival} />}
                     </div>
-                    <div className="card mt-3">
-                        <div className="card-header">Details</div>
+                    <Card className="mt-3">
+                        <CardHeader>Details</CardHeader>
                         <table className="table mb-0">
                             <tbody>
                                 <tr>
@@ -202,28 +206,28 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
                                 </tr>
                             </tbody>
                         </table>
-                    </div>
+                    </Card>
                     <LicenseGenerationKeyWarning className="mt-3" />
-                    <div className="card mt-1">
-                        <div className="card-header d-flex align-items-center justify-content-between">
+                    <Card className="mt-1">
+                        <CardHeader className="d-flex align-items-center justify-content-between">
                             Licenses
                             {showGenerate ? (
-                                <button type="button" className="btn btn-secondary" onClick={toggleShowGenerate}>
+                                <Button onClick={toggleShowGenerate} variant="secondary">
                                     Dismiss new license form
-                                </button>
+                                </Button>
                             ) : (
-                                <button type="button" className="btn btn-primary btn-sm" onClick={toggleShowGenerate}>
-                                    <AddIcon className="icon-inline" /> Generate new license manually
-                                </button>
+                                <Button onClick={toggleShowGenerate} variant="primary" size="sm">
+                                    <Icon as={AddIcon} /> Generate new license manually
+                                </Button>
                             )}
-                        </div>
+                        </CardHeader>
                         {showGenerate && (
-                            <div className="card-body">
+                            <CardBody>
                                 <SiteAdminGenerateProductLicenseForSubscriptionForm
                                     subscriptionID={productSubscription.id}
                                     onGenerate={onLicenseUpdate}
                                 />
-                            </div>
+                            </CardBody>
                         )}
                         <FilteredSiteAdminProductLicenseConnection
                             className="list-group list-group-flush"
@@ -239,11 +243,11 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
                             history={history}
                             location={location}
                         />
-                    </div>
-                    <div className="card mt-3">
-                        <div className="card-header">History</div>
+                    </Card>
+                    <Card className="mt-3">
+                        <CardHeader>History</CardHeader>
                         <ProductSubscriptionHistory productSubscription={productSubscription} />
-                    </div>
+                    </Card>
                 </>
             )}
         </div>

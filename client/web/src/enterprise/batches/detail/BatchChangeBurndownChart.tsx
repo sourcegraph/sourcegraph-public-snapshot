@@ -1,7 +1,8 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import { getYear, parseISO } from 'date-fns'
 import * as H from 'history'
-import React, { useCallback, useMemo, useState } from 'react'
 import {
     Area,
     ComposedChart,
@@ -14,13 +15,12 @@ import {
 } from 'recharts'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container } from '@sourcegraph/wildcard'
+import { Container, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { ChangesetCountsOverTimeFields, Scalars } from '../../../graphql-operations'
 
 import { queryChangesetCountsOverTime as _queryChangesetCountsOverTime } from './backend'
+
 import styles from './BatchChangeBurndownChart.module.scss'
 
 interface Props {
@@ -115,7 +115,7 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
     if (changesetCountsOverTime === undefined) {
         return (
             <div className="text-center">
-                <LoadingSpinner className="icon-inline mx-auto my-4" />
+                <LoadingSpinner className="mx-auto my-4" />
             </div>
         )
     }
@@ -237,8 +237,8 @@ const IncludeArchivedToggle: React.FunctionComponent<{
     includeArchived: boolean
     onToggle: () => void
 }> = ({ includeArchived, onToggle }) => (
-    <div className="d-flex align-items-center justify-content-between text-nowrap mb-2">
-        <label htmlFor="include-archived" className="mb-0 pt-1">
+    <div className="d-flex align-items-center justify-content-between text-nowrap mb-2 pt-1">
+        <label htmlFor="include-archived" className="mb-0">
             Include archived
         </label>
         <Toggle
@@ -247,6 +247,7 @@ const IncludeArchivedToggle: React.FunctionComponent<{
             onToggle={onToggle}
             title="Include archived changesets"
             className="ml-2"
+            display="inline"
         />
     </div>
 )
