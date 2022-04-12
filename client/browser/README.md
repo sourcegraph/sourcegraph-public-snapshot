@@ -129,7 +129,7 @@ Click reload for Sourcegraph at `about:debugging`
 
 > **Note**: Requires MacOS with Xcode installed
 
-1. `yarn --cwd client/browser dev:safari`
+1. `yarn workspace @sourcegraph/browser dev:safari`
 1. Open Safari then: `Develop > Allow Unsigned Extensions`
 1. Open `client/browser/build/Sourcegraph for Safari/Sourcegraph for Safari.xcodeproj` using Xcode
 1. Choose `Sourcegraph for Safari (macOS)` in the top toolbar and click Run icon

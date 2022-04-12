@@ -238,4 +238,5 @@ $theme-colors: (
     --focus-box-shadow: 0 0 0 0.125rem var(--primary-2);
     --btn-link-disabled-color: var(--primary-2);
     --vulnerability-announcement: linear-gradient(to right, #8f3fce, #b80887);
+    --text-muted-transparent: #{rgba($gray-06, 0.3)};
 }

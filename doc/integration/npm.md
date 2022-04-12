@@ -7,6 +7,7 @@ Feature | Supported?
 ------- | ----------
 [Repository syncing](#repository-syncing) | ✅
 [Credentials](#credentials) | ✅
+[Rate limiting](#rate-limiting) | ✅
 [Repository permissions](#repository-syncing) | ❌
 [Multiple npm dependency code hosts](#multiple-npm-dependency-code-hosts) | ❌
 
@@ -22,6 +23,29 @@ There are three ways to sync npm dependency repositories.
 
 Use the `"credentials"` section of the JSON configuration to provide an access token for your private npm registry. See the [official npm documentation](https://docs.npmjs.com/about-access-tokens) for more details about how to create, list and view npm access tokens.
 
+## Rate limiting
+
+By default, requests to the npm dependency code host will be rate-limited
+based on a default internal limit. ([source](https://github.com/sourcegraph/sourcegraph/blob/main/schema/npm-packages.schema.json))
+
+To manually set the value, add the following to your code host configuration:
+
+```json
+"rateLimit": {
+  "enabled": true,
+  "requestsPerHour": 600.0
+}
+```
+where the `requestsPerHour` field is set based on your requirements.
+
+**Not recommended**: Rate-limiting can be turned off entirely as well.
+This increases the risk of overloading the code host.
+
+```json
+"rateLimit": {
+  "enabled": false
+}
+```
 
 ## Repository permissions
 

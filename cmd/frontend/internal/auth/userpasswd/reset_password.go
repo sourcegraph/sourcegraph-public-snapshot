@@ -187,7 +187,7 @@ func HandleResetPasswordCode(db database.DB) func(w http.ResponseWriter, r *http
 			return
 		}
 
-		if err := database.CheckPasswordLength(params.Password); err != nil {
+		if err := database.CheckPassword(params.Password); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}

@@ -5,6 +5,7 @@ import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { usePersistentCadence } from '../../hooks'
 import { useIsActiveIdeIntegrationUser } from '../../IdeExtensionTracker'
+import { useTourQueryParameters } from '../../tour/components/Tour/TourAgent'
 import { useIsBrowserExtensionActiveUser } from '../../tracking/BrowserExtensionTracker'
 import { HOVER_COUNT_KEY, HOVER_THRESHOLD } from '../RepoContainer'
 
@@ -53,8 +54,14 @@ export const InstallIntegrationsAlert: React.FunctionComponent<InstallIntegratio
         false
     )
 
+    const tourQueryParameters = useTourQueryParameters()
+
     const ctaToDisplay = useMemo<CtaToDisplay | undefined>(
         (): CtaToDisplay | undefined => {
+            if (tourQueryParameters?.isTour) {
+                return
+            }
+
             if (
                 isBrowserExtensionActiveUser === false &&
                 displayBrowserExtensionCTABasedOnCadence &&
@@ -72,7 +79,7 @@ export const InstallIntegrationsAlert: React.FunctionComponent<InstallIntegratio
                 return 'ide'
             }
 
-            return undefined
+            return
         },
         /**
          * Intentionally use useMemo() here without a dependency on hoverCount to only show the alert on the next reload,
@@ -86,6 +93,7 @@ export const InstallIntegrationsAlert: React.FunctionComponent<InstallIntegratio
             hasDismissedIDEExtensionAlert,
             isBrowserExtensionActiveUser,
             isUsingIdeIntegration,
+            tourQueryParameters,
         ]
     )
 
