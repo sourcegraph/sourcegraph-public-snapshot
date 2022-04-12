@@ -6,6 +6,7 @@ import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react'
 import * as Comlink from 'comlink'
 import { render } from 'react-dom'
+import { MemoryRouter } from 'react-router'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import {
@@ -119,7 +120,10 @@ const Main: React.FC = () => {
 render(
     <ShortcutProvider>
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
-            <Main />
+            {/* Required for shared components that depend on `location`. */}
+            <MemoryRouter>
+                <Main />
+            </MemoryRouter>
             <Tooltip key={1} className="sourcegraph-tooltip" />
         </WildcardThemeContext.Provider>
     </ShortcutProvider>,
