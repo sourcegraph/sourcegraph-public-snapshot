@@ -514,7 +514,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 		Args:           c.Args[1:],
 		NoTimeout:      c.NoTimeout,
 	}
-	resp, err := c.client.httpPost(ctx, repoName, "exec", req)
+	resp, err := c.httpPost(ctx, repoName, "exec", req)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -830,13 +830,13 @@ func repoNamesFromRepoCommits(repoCommits []api.RepoCommit) []string {
 
 // Cmd represents a command to be executed remotely.
 type Cmd struct {
-	client *ClientImplementor
-
 	Args           []string
 	Repo           api.RepoName // the repository to execute the command in
 	EnsureRevision string
 	ExitStatus     int
 	NoTimeout      bool
+
+	httpPost func(ctx context.Context, repo api.RepoName, op string, payload interface{}) (resp *http.Response, err error)
 }
 
 func (c *ClientImplementor) Command(name string, arg ...string) *Cmd {
@@ -844,8 +844,8 @@ func (c *ClientImplementor) Command(name string, arg ...string) *Cmd {
 		panic("gitserver: command name must be 'git'")
 	}
 	return &Cmd{
-		client: c,
-		Args:   append([]string{"git"}, arg...),
+		httpPost: c.httpPost,
+		Args:     append([]string{"git"}, arg...),
 	}
 }
 
