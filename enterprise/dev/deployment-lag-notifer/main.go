@@ -115,12 +115,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println(currentCommit)
-
 	slack := NewSlackClient(flags.SlackWebhookURL)
 
 	current := checkForCommit(version, commitLog)
-	if current || !current {
+	if !current {
 		msg, err := createMessage(version[:7], flags.Environment, currentCommit)
 		if !flags.DryRun {
 			err = slack.PostMessage(msg)
@@ -128,7 +126,6 @@ func main() {
 				log.Fatal(err)
 			}
 		}
-		log.Println(string(msg.String()))
 		if err != nil {
 			log.Fatal(err)
 		}
