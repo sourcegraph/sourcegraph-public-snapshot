@@ -139,7 +139,7 @@ func newTestClient(t testing.TB, name string, update bool) *Client {
 		Urls: []string{"https://proxy.golang.org"},
 	}
 
-	return NewClient(c, hc)
+	return NewClient("urn", c.Urls, hc)
 }
 
 var normalizer = lazyregexp.New("[^A-Za-z0-9-]+")

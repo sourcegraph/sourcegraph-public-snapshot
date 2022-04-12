@@ -694,4 +694,59 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
         const fileBlockHeaderText = await getFileBlockHeaderText(fileBlockSelector)
         expect(fileBlockHeaderText).toEqual('client/search/src/index.ts#30-32github.com/sourcegraph/sourcegraph@main')
     })
+
+    const getHighlightedOutlineHeading = async () => {
+        const selector = '[data-testid="notebook-outline"] [aria-current="true"]'
+        await driver.page.waitForSelector(selector, { visible: true })
+        return driver.page.evaluate(selector => document.querySelector<HTMLElement>(selector)?.dataset.id, selector)
+    }
+
+    it('Should highlight the top visible heading in the outline', async () => {
+        const fillerText = 'Lorem ipsum dolor sit amet. '.repeat(256)
+        // HTML should not affect heading ids.
+        const markdownInput = `# Title <i>1</i>\n\n${fillerText}\n# Title <i>2</i>\n\n${fillerText}\n`
+
+        testContext.overrideGraphQL({
+            ...commonSearchGraphQLResults,
+            FetchNotebook: ({ id }) => ({
+                node: notebookFixture(id, 'Outline', [{ __typename: 'MarkdownBlock', id: 'id-1', markdownInput }]),
+            }),
+        })
+
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
+        await driver.page.waitForSelector('[data-block-id]', { visible: true })
+        // The first "Title 1" heading should be highlighted
+        expect(await getHighlightedOutlineHeading()).toEqual('title-1-id-1')
+
+        // Click on "Title 2" link in the outline
+        await driver.page.click('[data-id="title-2-id-1"] a')
+
+        // The "Title 2" heading should be visible
+        await driver.page.waitForSelector('h1#title-2-id-1', { visible: true })
+
+        // The "Title 2" heading in the outline should be highlighted
+        expect(await getHighlightedOutlineHeading()).toEqual('title-2-id-1')
+    })
+
+    it('Should scroll to the heading specified in the hash on page load', async () => {
+        const fillerText = 'Lorem ipsum dolor sit amet. '.repeat(256)
+        // HTML should not affect heading ids.
+        const markdownInput = `# Title <i>1</i>\n\n${fillerText}\n# Title <i>2</i>\n\n${fillerText}\n`
+
+        testContext.overrideGraphQL({
+            ...commonSearchGraphQLResults,
+            FetchNotebook: ({ id }) => ({
+                node: notebookFixture(id, 'Outline', [{ __typename: 'MarkdownBlock', id: 'id-1', markdownInput }]),
+            }),
+        })
+
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1#title-2-id-1')
+        await driver.page.waitForSelector('[data-block-id]', { visible: true })
+
+        // The "Title 2" heading should be visible
+        await driver.page.waitForSelector('h1#title-2-id-1', { visible: true })
+
+        // The "Title 2" heading in the outline should be highlighted
+        expect(await getHighlightedOutlineHeading()).toEqual('title-2-id-1')
+    })
 })

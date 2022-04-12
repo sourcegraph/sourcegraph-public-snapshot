@@ -1,6 +1,11 @@
 package gitserver
 
-import "io"
+import (
+	"io"
+	"io/fs"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
+)
 
 // Mocks is used to mock behavior in tests. Tests must call ResetMocks() when finished to ensure its
 // mocks are not (inadvertently) used by subsequent tests.
@@ -13,6 +18,7 @@ import "io"
 // package instead.
 var Mocks, emptyMocks struct {
 	ExecReader func(args []string) (reader io.ReadCloser, err error)
+	ReadDir    func(commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error)
 }
 
 // ResetMocks clears the mock functions set on Mocks (so that subsequent tests don't inadvertently

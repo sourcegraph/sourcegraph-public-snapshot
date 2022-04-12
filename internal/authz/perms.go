@@ -2,9 +2,9 @@ package authz
 
 import (
 	"fmt"
+	"sort"
 	"time"
 
-	"github.com/RoaringBitmap/roaring"
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -92,12 +92,12 @@ func (e ErrStalePermissions) Error() string {
 // UserPermissions are the permissions of a user to perform an action
 // on the given set of object IDs of the defined type.
 type UserPermissions struct {
-	UserID    int32           // The internal database ID of a user
-	Perm      Perms           // The permission set
-	Type      PermType        // The type of the permissions
-	IDs       *roaring.Bitmap // The object IDs
-	UpdatedAt time.Time       // The last updated time
-	SyncedAt  time.Time       // The last user-centric synced time
+	UserID    int32              // The internal database ID of a user
+	Perm      Perms              // The permission set
+	Type      PermType           // The type of the permissions
+	IDs       map[int32]struct{} // The object IDs
+	UpdatedAt time.Time          // The last updated time
+	SyncedAt  time.Time          // The last user-centric synced time
 }
 
 // Expired returns true if these UserPermissions have elapsed the given ttl.
@@ -110,17 +110,23 @@ func (p *UserPermissions) Expired(ttl time.Duration, now time.Time) bool {
 func (p *UserPermissions) AuthorizedRepos(repos []*types.Repo) []RepoPerms {
 	// Return directly if it's used for wrong permissions type or no permissions available.
 	if p.Type != PermRepos ||
-		p.IDs == nil || p.IDs.IsEmpty() {
+		p.IDs == nil || len(p.IDs) == 0 {
 		return []RepoPerms{}
 	}
 
 	perms := make([]RepoPerms, 0, len(repos))
 	for _, r := range repos {
-		if r.ID != 0 && p.IDs.Contains(uint32(r.ID)) {
+		_, ok := p.IDs[int32(r.ID)]
+		if r.ID != 0 && ok {
 			perms = append(perms, RepoPerms{Repo: r, Perms: p.Perm})
 		}
 	}
 	return perms
+}
+
+// GenerateSortedIDsSlice returns a sorted slice of the IDs set.
+func (p *UserPermissions) GenerateSortedIDsSlice() []int32 {
+	return convertMapSetToSortedSlice(p.IDs)
 }
 
 // TracingFields returns tracing fields for the opentracing log.
@@ -133,7 +139,7 @@ func (p *UserPermissions) TracingFields() []otlog.Field {
 
 	if p.IDs != nil {
 		fs = append(fs,
-			otlog.Uint64("UserPermissions.IDs.Count", p.IDs.GetCardinality()),
+			otlog.Int("UserPermissions.IDs.Count", len(p.IDs)),
 			otlog.String("UserPermissions.UpdatedAt", p.UpdatedAt.String()),
 			otlog.String("UserPermissions.SyncedAt", p.SyncedAt.String()),
 		)
@@ -146,7 +152,7 @@ func (p *UserPermissions) TracingFields() []otlog.Field {
 type RepoPermissions struct {
 	RepoID         int32              // The internal database ID of a repository
 	Perm           Perms              // The permission set
-	UserIDs        *roaring.Bitmap    // The user IDs
+	UserIDs        map[int32]struct{} // The user IDs
 	PendingUserIDs map[int64]struct{} // The pending user IDs
 	UpdatedAt      time.Time          // The last updated time
 	SyncedAt       time.Time          // The last repo-centric synced time
@@ -155,6 +161,11 @@ type RepoPermissions struct {
 // Expired returns true if these RepoPermissions have elapsed the given ttl.
 func (p *RepoPermissions) Expired(ttl time.Duration, now time.Time) bool {
 	return !now.Before(p.UpdatedAt.Add(ttl))
+}
+
+// GenerateSortedIDsSlice returns a sorted slice of the IDs set.
+func (p *RepoPermissions) GenerateSortedIDsSlice() []int32 {
+	return convertMapSetToSortedSlice(p.UserIDs)
 }
 
 // TracingFields returns tracing fields for the opentracing log.
@@ -166,7 +177,7 @@ func (p *RepoPermissions) TracingFields() []otlog.Field {
 
 	if p.UserIDs != nil {
 		fs = append(fs,
-			otlog.Uint64("RepoPermissions.UserIDs.Count", p.UserIDs.GetCardinality()),
+			otlog.Int("RepoPermissions.UserIDs.Count", len(p.UserIDs)),
 			otlog.Int("RepoPermissions.PendingUserIDs.Count", len(p.PendingUserIDs)),
 			otlog.String("RepoPermissions.UpdatedAt", p.UpdatedAt.String()),
 			otlog.String("RepoPermissions.SyncedAt", p.SyncedAt.String()),
@@ -201,9 +212,14 @@ type UserPendingPermissions struct {
 	// The type of permissions this user has.
 	Type PermType
 	// The object IDs with the "Type".
-	IDs *roaring.Bitmap
+	IDs map[int32]struct{}
 	// The last updated time.
 	UpdatedAt time.Time
+}
+
+// GenerateSortedIDsSlice returns a sorted slice of the IDs set.
+func (p *UserPendingPermissions) GenerateSortedIDsSlice() []int32 {
+	return convertMapSetToSortedSlice(p.IDs)
 }
 
 // TracingFields returns tracing fields for the opentracing log.
@@ -219,10 +235,20 @@ func (p *UserPendingPermissions) TracingFields() []otlog.Field {
 
 	if p.IDs != nil {
 		fs = append(fs,
-			otlog.Uint64("UserPendingPermissions.IDs.Count", p.IDs.GetCardinality()),
+			otlog.Int("UserPendingPermissions.IDs.Count", len(p.IDs)),
 			otlog.String("UserPendingPermissions.UpdatedAt", p.UpdatedAt.String()),
 		)
 	}
 
 	return fs
+}
+
+// convertMapSetToSortedSlice converts a map set into a slice of sorted integers
+func convertMapSetToSortedSlice(mapSet map[int32]struct{}) []int32 {
+	returnSlice := make([]int32, 0, len(mapSet))
+	for id := range mapSet {
+		returnSlice = append(returnSlice, id)
+	}
+	sort.Slice(returnSlice, func(i, j int) bool { return returnSlice[i] < returnSlice[j] })
+	return returnSlice
 }

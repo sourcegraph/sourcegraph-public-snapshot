@@ -51,6 +51,7 @@ func TestDiagnostics(t *testing.T) {
 		uploads,
 		newOperations(&observation.TestContext),
 		authz.NewMockSubRepoPermissionChecker(),
+		50,
 	)
 	adjustedDiagnostics, totalCount, err := resolver.Diagnostics(context.Background(), 5)
 	if err != nil {
@@ -132,6 +133,7 @@ func TestDiagnosticsWithSubRepoPermissions(t *testing.T) {
 		uploads,
 		newOperations(&observation.TestContext),
 		checker,
+		50,
 	)
 
 	ctx := context.Background()

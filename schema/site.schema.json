@@ -71,6 +71,39 @@
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
+        "passwordPolicy": {
+          "description": "Enables and configures password policy. This will allow admins to enforce password complexity and length requirements.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "description": "Enables password policy",
+              "type": "boolean",
+              "default": true
+            },
+            "minimumLength": {
+              "description": "The minimum length required for a password",
+              "type": "integer",
+              "length": 12,
+              "default": 12
+            },
+            "numberOfSpecialCharacters": {
+              "description": "The required number of special characters",
+              "type": "integer",
+              "length": 2
+            },
+            "requireAtLeastOneNumber": {
+              "description": "Does the password require a number",
+              "type": "boolean",
+              "default": true
+            },
+            "requireUpperandLowerCase": {
+              "description": "Require Mixed characters",
+              "type": "boolean",
+              "default": true
+            }
+          }
+        },
         "debug.log": {
           "description": "Turns on debug logging for specific debugging scenarios.",
           "type": "object",

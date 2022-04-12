@@ -58,6 +58,7 @@ func TestRanges(t *testing.T) {
 		uploads,
 		newOperations(&observation.TestContext),
 		authz.NewMockSubRepoPermissionChecker(),
+		50,
 	)
 	adjustedRanges, err := resolver.Ranges(context.Background(), 10, 20)
 	if err != nil {
