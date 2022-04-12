@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
 
 import { noop } from 'lodash'
-import { useLocation } from 'react-router-dom'
 import { NEVER } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
@@ -51,8 +50,6 @@ export const EmbeddedNotebookPage: React.FunctionComponent<EmbeddedNotebookPageP
         )
     )
 
-    const location = useLocation()
-
     const fetchHighlightedFileLineRanges = useCallback(
         (parameters: FetchFileParameters, force?: boolean) =>
             fetchHighlightedFileLineRangesShared(
@@ -80,7 +77,6 @@ export const EmbeddedNotebookPage: React.FunctionComponent<EmbeddedNotebookPageP
             {notebookOrError && notebookOrError !== LOADING && !isErrorLike(notebookOrError) && (
                 <NotebookContent
                     {...props}
-                    location={location}
                     blocks={notebookOrError.blocks}
                     onUpdateBlocks={noop}
                     viewerCanManage={false}

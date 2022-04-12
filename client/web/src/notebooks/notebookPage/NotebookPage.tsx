@@ -84,7 +84,6 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
     telemetryService,
     searchContextsEnabled,
     isSourcegraphDotCom,
-    location,
     fetchHighlightedFileLineRanges,
     authenticatedUser,
     showSearchContext,
@@ -293,7 +292,6 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
                                 telemetryService={telemetryService}
                                 searchContextsEnabled={searchContextsEnabled}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
-                                location={location}
                                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                 authenticatedUser={authenticatedUser}
                                 showSearchContext={showSearchContext}
