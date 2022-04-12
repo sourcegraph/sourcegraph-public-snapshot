@@ -25,6 +25,7 @@ type Flags struct {
 	SgDir           string
 }
 
+// Parse parses the CLI flags and stores them in a configuration struct
 func (f *Flags) Parse() {
 	flag.BoolVar(&f.DryRun, "dry-run", false, "Print to stdout instead of sending to Slack")
 	flag.StringVar(&f.Environment, "env", Getenv("SG_ENVIRONMENT", "cloud"), "Environment to check against")
@@ -32,12 +33,14 @@ func (f *Flags) Parse() {
 	flag.Parse()
 }
 
+// environments represent the currently available environment targets we may care about
 var environments = map[string]string{
 	"cloud":   "https://sourcegraph.com",
 	"k8s":     "https://k8s.sgdev.org",
 	"preprod": "https://preview.sgdev.dev",
 }
 
+// Getenv wraps os.Getenv but allows a default fallback value
 func Getenv(env, def string) string {
 	val, present := os.LookupEnv(env)
 	if !present {
@@ -46,6 +49,8 @@ func Getenv(env, def string) string {
 	return val
 }
 
+// getLiveVersion makes an HTTP GET request to a given Sourcegraph deployment version endpoint to get the running version
+// information
 func getLiveVersion(client *http.Client, url string) (string, error) {
 	var version string
 

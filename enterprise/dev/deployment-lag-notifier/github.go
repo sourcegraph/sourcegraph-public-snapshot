@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// GithubCommit represents the "commit" member of a response object
 type GithubCommit struct {
 	Sha    string `json:"sha"`
 	Commit struct {
@@ -23,7 +24,8 @@ type GithubCommit struct {
 	} `json:"commit"`
 }
 
-// GithubResponse is the response payload from requesting GET /repos/:author/:repo/commits
+// GithubResponse is the response payload from requesting GET /repos/:author/:repo/commits, made up
+// of a slice of GithubCommit's
 type GithubResponse []GithubCommit
 
 // Commit is a singular Git commit to a repo
@@ -34,6 +36,7 @@ type Commit struct {
 	Date    time.Time
 }
 
+// getCommit hits the Github API to fetch information on a singular commit
 func getCommit(client *http.Client, sha string) (Commit, error) {
 	var commit Commit
 
@@ -74,6 +77,7 @@ func getCommit(client *http.Client, sha string) (Commit, error) {
 	return commit, nil
 }
 
+// getCommitLog fetches the last 20 commits of sourcegraph/sourcegraph@main from the Github API
 func getCommitLog(client *http.Client) ([]Commit, error) {
 	var commits []Commit
 
@@ -109,8 +113,6 @@ func getCommitLog(client *http.Client) ([]Commit, error) {
 	if err != nil {
 		return commits, err
 	}
-
-	// fmt.Println(string(body))
 
 	var gh GithubResponse
 	err = json.Unmarshal(body, &gh)

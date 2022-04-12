@@ -6,18 +6,23 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"text/tabwriter"
 	"text/template"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// SlackClient is a client for interfacing with the Slack Webhook API
 type SlackClient struct {
 	WebhookURL string
 
 	HttpClient *http.Client
 }
 
+// NewSlackClient configures a SlackClient for a given webhook URL
 func NewSlackClient(url string) *SlackClient {
 	hc := http.Client{}
 
@@ -29,6 +34,7 @@ func NewSlackClient(url string) *SlackClient {
 	return &c
 }
 
+// PostMessage posts a bytes.Buffer to the given Slack webhook URL with markdown enabled
 func (s *SlackClient) PostMessage(b bytes.Buffer) error {
 
 	type slackRequest struct {
@@ -63,12 +69,16 @@ func (s *SlackClient) PostMessage(b bytes.Buffer) error {
 		return err
 	}
 
-	fmt.Println(string(body))
+	if resp.StatusCode > http.StatusOK {
+		log.Println("Response body: ", string(body))
+		return errors.Newf("received non-200 status code %v", resp.StatusCode)
+	}
 
 	return nil
 }
 
-// createMessage posts the message to Slack or stdout if dry is set
+// createMessage renders a template and returns teh result as a bytes.Buffer to either
+// be printed or posted to Slack
 func createMessage(version, environment string, current Commit) (bytes.Buffer, error) {
 	var msg bytes.Buffer
 
