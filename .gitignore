@@ -170,6 +170,3 @@ annotations/
 
 # Buildkite analytics files
 test-reports/
-
-# Binary
-sg
