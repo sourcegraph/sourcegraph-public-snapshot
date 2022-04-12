@@ -99,8 +99,15 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 	// names are generally distinct, so we need to re-translate the dependency scheme, name,
 	// and version back to the repository name.
 	newRepos := make([]api.RepoName, 0, len(newDependencies))
+	newReposSet := make(map[api.RepoName]struct{}, len(newDependencies))
 	for _, dep := range newDependencies {
-		newRepos = append(newRepos, repoNamesByDependency[hash(dep)])
+		repoName := repoNamesByDependency[hash(dep)]
+		if _, ok := newReposSet[repoName]; ok {
+			continue
+		}
+
+		newRepos = append(newRepos, repoName)
+		newReposSet[repoName] = struct{}{}
 	}
 
 	// Lazily sync all the repos that were newly added
