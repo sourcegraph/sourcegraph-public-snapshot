@@ -213,7 +213,7 @@ const BatchConfigurationPage: React.FunctionComponent<BatchConfigurationPageProp
     namespaceID,
     settingsCascade,
     isReadOnly,
-    batchChangeName
+    batchChangeName,
 }) => {
     const [createEmptyBatchChange, { loading, error }] = useMutation<
         CreateEmptyBatchChangeResult,
