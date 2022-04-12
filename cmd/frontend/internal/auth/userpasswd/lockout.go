@@ -28,7 +28,7 @@ type LockoutStore interface {
 	// Reset clears the failed login attempt count and releases the lockout.
 	Reset(userID int32)
 	// Creates the unlock account url with the signet unlock token
-	GenerateUnlockAccountUrl(userID int32) (string, error)
+	GenerateUnlockAccountUrl(userID int32) (string, string, error)
 	// Verifies the provided unlock token is valid
 	VerifyUnlockAccountToken(userID int32, urlToken string) (bool, error)
 	// Sends an email to the locked account email providing a temporary unlock link
@@ -75,11 +75,11 @@ type unlockAccountClaims struct {
 	jwt.RegisteredClaims
 }
 
-func (s *lockoutStore) GenerateUnlockAccountUrl(userID int32) (string, error) {
+func (s *lockoutStore) GenerateUnlockAccountUrl(userID int32) (string, string, error) {
 	signingKey := conf.SiteConfig().AuthUnlockAccountLinkSigningKey
 
 	if signingKey == "" {
-		return "", errors.Newf("signing key not provided, cannot validate JWT on invitation URL. Please add AuthUnlockAccountLinkSigningKey to site configuration.")
+		return "", "", errors.Newf("signing key not provided, cannot validate JWT on invitation URL. Please add AuthUnlockAccountLinkSigningKey to site configuration.")
 	}
 
 	defaultExpiryMinutes := 5
@@ -100,11 +100,11 @@ func (s *lockoutStore) GenerateUnlockAccountUrl(userID int32) (string, error) {
 	// Sign and get the complete encoded token as a string using the secret
 	decodedSigningKey, err := base64.StdEncoding.DecodeString(signingKey)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	tokenString, err := token.SignedString(decodedSigningKey)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	key := strconv.Itoa(int(userID))
@@ -113,11 +113,11 @@ func (s *lockoutStore) GenerateUnlockAccountUrl(userID int32) (string, error) {
 
 	path := fmt.Sprintf("/unlock-account/%s/%d", tokenString, userID)
 
-	return globals.ExternalURL().ResolveReference(&url.URL{Path: path}).String(), nil
+	return globals.ExternalURL().ResolveReference(&url.URL{Path: path}).String(), tokenString, nil
 }
 
 func (s *lockoutStore) SendUnlockAccountEmail(ctx context.Context, userID int32, recipientEmail string) error {
-	unlockUrl, err := s.GenerateUnlockAccountUrl(userID)
+	unlockUrl, _, err := s.GenerateUnlockAccountUrl(userID)
 
 	if err != nil {
 		return err

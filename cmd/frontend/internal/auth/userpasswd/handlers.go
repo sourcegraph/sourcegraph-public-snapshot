@@ -347,7 +347,7 @@ func HandleUnlockAccount(db database.DB, store LockoutStore) func(w http.Respons
 		}
 
 		if unlockAccountInfo.UserID == 0 || unlockAccountInfo.Token == "" {
-			http.Error(w, fmt.Sprintf("Bad request %s %d", unlockAccountInfo.Token, unlockAccountInfo.UserID), http.StatusBadRequest)
+			http.Error(w, "Bad request: missing token or user id", http.StatusBadRequest)
 			return
 		}
 
@@ -363,8 +363,6 @@ func HandleUnlockAccount(db database.DB, store LockoutStore) func(w http.Respons
 		}
 
 		store.Reset(unlockAccountInfo.UserID)
-
-		return
 	}
 }
 
