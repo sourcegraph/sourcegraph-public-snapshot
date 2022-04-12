@@ -2,8 +2,9 @@ package lint
 
 import (
 	"context"
-	"flag"
 	"time"
+
+	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 )
@@ -30,7 +31,7 @@ type Report struct {
 type Target struct {
 	Name    string
 	Help    string
-	FlagSet *flag.FlagSet
+	Flags   []cli.Flag
 	Linters []Runner
 }
 

@@ -3,14 +3,13 @@ package main
 import (
 	"context"
 	"database/sql"
-	"flag"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/jackc/pgx/v4"
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -25,49 +24,56 @@ import (
 )
 
 var (
-	dbResetPGFlagSet      = flag.NewFlagSet("sg db reset-pg", flag.ExitOnError)
-	dbDatabaseNameFlag    = dbResetPGFlagSet.String("db", db.DefaultDatabase.Name, "The target database instance.")
-	dbRedisFlagSet        = flag.NewFlagSet("sg db reset-redis", flag.ExitOnError)
-	dbAddUserFlagSet      = flag.NewFlagSet("sg db add-user", flag.ExitOnError)
-	dbAddUserNameFlag     = dbAddUserFlagSet.String("name", "sourcegraph", "User name")
-	dbAddUserPasswordFlag = dbAddUserFlagSet.String("password", "sourcegraphsourcegraph", "User password")
+	dbDatabaseNameFlag string
 
-	dbCommand = &ffcli.Command{
-		Name:      "db",
-		ShortHelp: "Interact with Sourcegraph databases for development.",
-		Exec: func(ctx context.Context, args []string) error {
-			return flag.ErrHelp
-		},
-		Subcommands: []*ffcli.Command{
+	dbCommand = &cli.Command{
+		Name:   "db",
+		Usage:  "Interact with Sourcegraph databases for development.",
+		Action: cli.ShowSubcommandHelp,
+		Subcommands: []*cli.Command{
 			{
-				Name:       "reset-pg",
-				ShortUsage: fmt.Sprintf("sg db reset-pg [-db=%s]", db.DefaultDatabase.Name),
-				ShortHelp:  "Drops, recreates and migrates the specified Sourcegraph database.",
-				LongHelp:   `Run 'sg db reset-pg' to drop and recreate Sourcegraph databases. If -db is not set, then the "frontend" database is used (what's set as PGDATABASE in env or the sg.config.yaml). If -db is set to "all" then all databases are reset and recreated.`,
-				FlagSet:    dbResetPGFlagSet,
-				Exec:       dbResetPGExec,
+				Name:        "reset-pg",
+				Usage:       "Drops, recreates and migrates the specified Sourcegraph database.",
+				Description: `Run 'sg db reset-pg' to drop and recreate Sourcegraph databases. If -db is not set, then the "frontend" database is used (what's set as PGDATABASE in env or the sg.config.yaml). If -db is set to "all" then all databases are reset and recreated.`,
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:        "db",
+						Value:       db.DefaultDatabase.Name,
+						Usage:       "The target database instance.",
+						Destination: &dbDatabaseNameFlag,
+					},
+				},
+				Action: execAdapter(dbResetPGExec),
 			},
 			{
-				Name:       "reset-redis",
-				ShortUsage: fmt.Sprintf("sg db reset-redis [-db=%s]", db.DefaultDatabase.Name), // TODO edit flag
-				ShortHelp:  "Drops, recreates and migrates the specified redis Sourcegraph database.",
-				LongHelp:   `Run 'sg db reset-redis' to drop and recreate Sourcegraph redis databases. TODO`,
-				FlagSet:    dbRedisFlagSet,
-				Exec:       dbResetRedisExec,
+				Name:        "reset-redis",
+				Usage:       "Drops, recreates and migrates the specified Sourcegraph Redis database.",
+				Description: `Run 'sg db reset-redis' to drop and recreate Sourcegraph redis databases.`,
+				Action:      execAdapter(dbResetRedisExec),
 			},
 			{
-				Name:       "add-user",
-				ShortUsage: fmt.Sprintf("sg db add-user [-name=%s -password=%s]", "sourcegraph", "sourcegraph"),
-				ShortHelp:  "Create an admin sourcegraph user",
-				LongHelp:   `Run 'sg db add-user -name bob' to create an admin user whose email is bob@sourcegraph.com. The password will be printed if the operation succeeds`,
-				FlagSet:    dbAddUserFlagSet,
-				Exec:       dbAddUserExec,
+				Name:        "add-user",
+				Usage:       "Create an admin sourcegraph user",
+				Description: `Run 'sg db add-user -name bob' to create an admin user whose email is bob@sourcegraph.com. The password will be printed if the operation succeeds`,
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:  "username",
+						Value: "sourcegraph",
+						Usage: "Username for user",
+					},
+					&cli.StringFlag{
+						Name:  "username",
+						Value: "sourcegraphsourcegraph",
+						Usage: "Password for user",
+					},
+				},
+				Action: dbAddUserAction,
 			},
 		},
 	}
 )
 
-func dbAddUserExec(ctx context.Context, args []string) error {
+func dbAddUserAction(ctx *cli.Context) error {
 	// Read the configuration.
 	ok, _ := parseConf(configFlag, overwriteConfigFlag)
 	if !ok {
@@ -81,20 +87,23 @@ func dbAddUserExec(ctx context.Context, args []string) error {
 	}
 	db := database.NewDB(conn)
 
+	username := ctx.String("username")
+	password := ctx.String("password")
+
 	// Create the user, generating an email based on the username.
-	email := fmt.Sprintf("%s@sourcegraph.com", *dbAddUserNameFlag)
-	user, err := db.Users().Create(ctx, database.NewUser{
-		Username:        *dbAddUserNameFlag,
+	email := fmt.Sprintf("%s@sourcegraph.com", username)
+	user, err := db.Users().Create(ctx.Context, database.NewUser{
+		Username:        username,
 		Email:           email,
 		EmailIsVerified: true,
-		Password:        *dbAddUserPasswordFlag,
+		Password:        password,
 	})
 	if err != nil {
 		return err
 	}
 
 	// Make the user site admin.
-	err = db.Users().SetIsSiteAdmin(ctx, user.ID, true)
+	err = db.Users().SetIsSiteAdmin(ctx.Context, user.ID, true)
 	if err != nil {
 		return err
 	}
@@ -104,13 +113,13 @@ func dbAddUserExec(ctx context.Context, args []string) error {
 		// the space after the last %s is so the user can select the password easily in the shell to copy it.
 		"User %s%s%s (%s%s%s) has been created and its password is %s%s%s .",
 		output.StyleOrange,
-		*dbAddUserNameFlag,
+		username,
 		output.StyleReset,
 		output.StyleOrange,
 		email,
 		output.StyleReset,
 		output.StyleOrange,
-		*dbAddUserPasswordFlag,
+		password,
 		output.StyleReset,
 	)
 
@@ -152,10 +161,10 @@ func dbResetPGExec(ctx context.Context, args []string) error {
 		schemaNames []string
 	)
 
-	if *dbDatabaseNameFlag == "all" {
+	if dbDatabaseNameFlag == "all" {
 		schemaNames = schemas.SchemaNames
 	} else {
-		schemaNames = strings.Split(*dbDatabaseNameFlag, ",")
+		schemaNames = strings.Split(dbDatabaseNameFlag, ",")
 	}
 
 	for _, name := range schemaNames {

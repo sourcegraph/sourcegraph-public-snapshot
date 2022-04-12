@@ -123,9 +123,9 @@ var sg = &cli.App{
 		startCommand,
 		runCommand,
 		testCommand,
-		// lintCommand,
-		// dbCommand,
-		// migrationCommand,
+		lintCommand,
+		dbCommand,
+		migrationCommand,
 		// ciCommand,
 		// generateCommand,
 
