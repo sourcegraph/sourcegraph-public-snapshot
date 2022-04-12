@@ -112,10 +112,11 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         fromObservableQuery(
             this.apolloClient.watchQuery<HasAvailableCodeInsightResult>({
                 query: gql`
-                    query HasAvailableCodeInsight($count: Int!) {
-                        insightViews(first: $count) {
+                    query HasAvailableCodeInsight {
+                        insightViews {
                             nodes {
                                 id
+                                isFrozen
                             }
                         }
                     }
@@ -123,7 +124,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                 variables: { count: insightsCount },
                 nextFetchPolicy: 'cache-only',
             })
-        ).pipe(map(({ data }) => data.insightViews.nodes.length === insightsCount))
+        ).pipe(map(({ data }) => data.insightViews.nodes.filter(node => !node.isFrozen).length === insightsCount))
 
     // TODO: This method is used only for insight title validation but since we don't have
     // limitations about title field in gql api remove this method and async validation for
