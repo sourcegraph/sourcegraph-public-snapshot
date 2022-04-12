@@ -510,7 +510,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 
 	req := &protocol.ExecRequest{
 		Repo:           repoName,
-		EnsureRevision: c.EnsureRevision,
+		EnsureRevision: c.EnsureRevision(),
 		Args:           c.args[1:],
 		NoTimeout:      c.noTimeout,
 	}
@@ -830,13 +830,13 @@ func repoNamesFromRepoCommits(repoCommits []api.RepoCommit) []string {
 
 // Cmd represents a command to be executed remotely.
 type Cmd struct {
-	Repo           api.RepoName // the repository to execute the command in
-	EnsureRevision string
+	Repo api.RepoName // the repository to execute the command in
 
-	args       []string
-	noTimeout  bool
-	exitStatus int
-	httpPost   func(ctx context.Context, repo api.RepoName, op string, payload interface{}) (resp *http.Response, err error)
+	ensureRevision string
+	args           []string
+	noTimeout      bool
+	exitStatus     int
+	httpPost       func(ctx context.Context, repo api.RepoName, op string, payload interface{}) (resp *http.Response, err error)
 }
 
 // DividedOutput runs the command and returns its standard output and standard error.
@@ -889,9 +889,13 @@ func (c *Cmd) DisableTimeout() {
 
 func (c *Cmd) Args() []string { return c.args }
 
-func (c *Cmd) String() string { return fmt.Sprintf("%q", c.args) }
-
 func (c *Cmd) ExitStatus() int { return c.exitStatus }
+
+func (c *Cmd) SetEnsureRevision(r string) { c.ensureRevision = r }
+
+func (c *Cmd) EnsureRevision() string { return c.ensureRevision }
+
+func (c *Cmd) String() string { return fmt.Sprintf("%q", c.args) }
 
 // StdoutReader returns an io.ReadCloser of stdout of c. If the command has a
 // non-zero return value, Read returns a non io.EOF error. Do not pass in a

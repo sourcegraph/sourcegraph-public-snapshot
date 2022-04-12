@@ -307,7 +307,7 @@ func getWrappedCommits(ctx context.Context, db database.DB, repo api.RepoName, o
 	cmd := gitserver.NewClient(db).Command("git", args...)
 	cmd.Repo = repo
 	if !opt.NoEnsureRevision {
-		cmd.EnsureRevision = opt.Range
+		cmd.SetEnsureRevision(opt.Range)
 	}
 	wrappedCommits, err := runCommitLog(ctx, cmd, opt)
 	if err != nil {

@@ -85,13 +85,13 @@ func ResolveRevision(ctx context.Context, db database.DB, repo api.RepoName, spe
 
 	cmd := gitserver.NewClient(db).Command("git", "rev-parse", spec)
 	cmd.Repo = repo
-	cmd.EnsureRevision = spec
+	cmd.SetEnsureRevision(spec)
 
 	// We don't ever need to ensure that HEAD is in git-server.
 	// HEAD is always there once a repo is cloned
 	// (except empty repos, but we don't need to ensure revision on those).
 	if opt.NoEnsureRevision || spec == "HEAD" {
-		cmd.EnsureRevision = ""
+		cmd.SetEnsureRevision("")
 	}
 
 	return runRevParse(ctx, cmd, spec)
