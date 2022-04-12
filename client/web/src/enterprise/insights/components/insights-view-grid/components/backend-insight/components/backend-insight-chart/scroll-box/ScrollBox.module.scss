@@ -1,0 +1,71 @@
+.root {
+    position: relative;
+    padding: 0;
+
+    &--with-scroll {
+        overflow: auto;
+    }
+
+    &--with-top-fader {
+        .fader--top {
+            opacity: 1;
+        }
+    }
+
+    &--with-bottom-fader {
+        .fader--bottom {
+            opacity: 1;
+        }
+    }
+}
+
+.fader {
+    display: block;
+    position: sticky;
+    z-index: 1;
+    height: 0;
+    width: 100%;
+    opacity: 0;
+
+    &--top {
+        top: 0;
+
+        &::before {
+            content: '';
+            display: block;
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 3rem;
+
+            :global(.theme-light) & {
+                background: linear-gradient(0deg, rgba(249, 250, 251, 0) 0%, var(--color-bg-1) 100%);
+            }
+
+            :global(.theme-dark) & {
+                background: linear-gradient(0deg, rgba(24, 27, 38, 0) 0%, var(--color-bg-1) 100%);
+            }
+        }
+    }
+
+    &--bottom {
+        top: calc(100% - 3rem);
+
+        &::before {
+            content: '';
+            display: block;
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 3rem;
+
+            :global(.theme-light) & {
+                background: linear-gradient(180deg, rgba(249, 250, 251, 0) 0%, var(--color-bg-1) 100%);
+            }
+
+            :global(.theme-dark) & {
+                background: linear-gradient(180deg, rgba(24, 27, 38, 0) 0%, var(--color-bg-1) 100%);
+            }
+        }
+    }
+}
