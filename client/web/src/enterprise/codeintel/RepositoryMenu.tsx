@@ -1,13 +1,23 @@
 import React from 'react'
 
+import AlertIcon from 'mdi-react/AlertIcon'
+import CheckIcon from 'mdi-react/CheckIcon'
+
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner, MenuDivider } from '@sourcegraph/wildcard'
+import { isDefined, isErrorLike } from '@sourcegraph/common'
+import { Badge, Link, LoadingSpinner, MenuDivider } from '@sourcegraph/wildcard'
 
 import { RepositoryMenuContentProps } from '../../codeintel/RepositoryMenu'
 import { Collapsible } from '../../components/Collapsible'
 import { Timestamp } from '../../components/time/Timestamp'
-import { LsifIndexFields, LsifUploadFields } from '../../graphql-operations'
+import {
+    LsifIndexFields,
+    CodeIntelIndexerFields,
+    LsifUploadFields,
+    PreciseSupportLevel,
+    LSIFUploadState,
+    LSIFIndexState,
+} from '../../graphql-operations'
 
 import { CodeIntelIndexer } from './shared/components/CodeIntelIndexer'
 import { CodeIntelStateIcon } from './shared/components/CodeIntelStateIcon'
@@ -17,11 +27,14 @@ import { CodeIntelUploadOrIndexLastActivity } from './shared/components/CodeInte
 import { CodeIntelUploadOrIndexRoot } from './shared/components/CodeIntelUploadOrIndexRoot'
 import { useCodeIntelStatus as defaultUseCodeIntelStatus, UseCodeIntelStatusPayload } from './useCodeIntelStatus'
 
+import styles from './RepositoryMenu.module.scss'
+
 export const RepositoryMenuContent: React.FunctionComponent<
     RepositoryMenuContentProps & {
         useCodeIntelStatus?: typeof defaultUseCodeIntelStatus
+        now?: () => Date
     }
-> = ({ useCodeIntelStatus = defaultUseCodeIntelStatus, ...props }) => {
+> = ({ useCodeIntelStatus = defaultUseCodeIntelStatus, now, ...props }) => {
     const { data, loading, error } = useCodeIntelStatus({
         variables: {
             repository: props.repoName,
@@ -44,23 +57,195 @@ export const RepositoryMenuContent: React.FunctionComponent<
         </div>
     ) : data ? (
         <>
-            <div className="px-2 py-1">
-                <h2>Unimplemented</h2>
-
-                <p className="text-muted">Unimplemented (enterprise version).</p>
-            </div>
+            <UserFacingRepositoryMenuContent repoName={props.repoName} data={data} now={now} />
 
             {forNerds && (
                 <>
                     <MenuDivider />
-                    <NerdData data={data} />
+                    <InternalFacingRepositoryMenuContent data={data} now={now} />
                 </>
             )}
         </>
     ) : null
 }
 
-const NerdData: React.FunctionComponent<{ data: UseCodeIntelStatusPayload }> = ({ data }) => {
+//
+//
+
+const groupBy = <T, V>(values: T[], keyFn: (value: T) => V): Map<V, T[]> =>
+    values.reduce(
+        (map, value) => map.set(keyFn(value), (map.get(keyFn(value)) || []).concat([value])),
+        new Map<V, T[]>()
+    )
+
+const getIndexerName = (uploadOrIndexer: LsifUploadFields | LsifIndexFields): string | undefined =>
+    uploadOrIndexer.indexer?.name
+
+const UserFacingRepositoryMenuContent: React.FunctionComponent<{
+    repoName: string
+    data: UseCodeIntelStatusPayload
+    now?: () => Date
+}> = ({ repoName, data, now }) => {
+    const allUploads = data.recentUploads.flatMap(uploads => uploads.uploads)
+    const uploadsByIndexerName = groupBy(allUploads, getIndexerName)
+    const allIndexes = data.recentIndexes.flatMap(indexes => indexes.indexes)
+    const indexesByIndexerName = groupBy(allIndexes, getIndexerName)
+
+    const nativelySupportedIndexers = (data.preciseSupport || [])
+        .filter(support => support.supportLevel === PreciseSupportLevel.NATIVE)
+        .map(support => support.indexers?.[0])
+        .filter(isDefined)
+
+    const allIndexers = [
+        ...groupBy(
+            [...allUploads, ...allIndexes]
+                .map(index => index.indexer || undefined)
+                .filter(isDefined)
+                .concat(nativelySupportedIndexers),
+            indexer => indexer.name
+        ).values(),
+    ].map(indexers => indexers[0])
+
+    const indexerNames = allIndexers.map(indexer => indexer.name).sort()
+
+    // Expand badges to be as large as the maximum badge when we are displaying
+    // badges of different types. This condition checks that there's at least one
+    // ENABLED and one CONFIGURABLE badge each in the following rendered component.
+    const className =
+        new Set(
+            indexerNames.map(
+                name =>
+                    uploadsByIndexerName.get(name)?.length || 0 > 0 || indexesByIndexerName.get(name)?.length || 0 > 0
+            )
+        ).size > 1
+            ? styles.badgeMultiple
+            : undefined
+
+    return indexerNames.length === 0 ? (
+        <Unsupported />
+    ) : (
+        <>
+            {indexerNames.map((name, index) => (
+                <React.Fragment key={`indexer-${name}`}>
+                    {index > 0 && <MenuDivider />}
+                    <IndexerSummary
+                        repoName={repoName}
+                        summary={{
+                            name,
+                            uploads: uploadsByIndexerName.get(name) || [],
+                            indexes: indexesByIndexerName.get(name) || [],
+                            indexer: allIndexers.find(candidate => candidate.name === name),
+                        }}
+                        className={className}
+                        now={now}
+                    />
+                </React.Fragment>
+            ))}
+        </>
+    )
+}
+
+//
+//
+
+const IndexerSummary: React.FunctionComponent<{
+    repoName: string
+    summary: {
+        name: string
+        uploads: LsifUploadFields[]
+        indexes: LsifIndexFields[]
+        indexer?: CodeIntelIndexerFields
+    }
+    className?: string
+    now?: () => Date
+}> = ({ repoName, summary, className, now }) => {
+    const failedUploads = summary.uploads.filter(upload => upload.state === LSIFUploadState.ERRORED)
+    const failedIndexes = summary.indexes.filter(index => index.state === LSIFIndexState.ERRORED)
+    const finishedAtTimes = summary.uploads.map(upload => upload.finishedAt || undefined).filter(isDefined)
+    const lastUpdated = finishedAtTimes.length === 0 ? undefined : finishedAtTimes.sort().reverse()[0]
+
+    return summary.indexer ? (
+        <div className="px-2 py-1">
+            <div className="d-flex align-items-center">
+                <div className="px-2 py-1 text-uppercase">
+                    {summary.uploads.length + summary.indexes.length > 0 ? (
+                        <Badge variant="success" className={className}>
+                            Enabled
+                        </Badge>
+                    ) : (
+                        <Badge variant="secondary" className={className}>
+                            Configurable
+                        </Badge>
+                    )}
+                </div>
+
+                <div className="px-2 py-1">
+                    <p className="mb-1">{summary.indexer.name} precise intelligence</p>
+
+                    {lastUpdated && (
+                        <p className="mb-1 text-muted">
+                            Last updated: <Timestamp date={lastUpdated} now={now} />
+                        </p>
+                    )}
+
+                    {summary.uploads.length + summary.indexes.length === 0 ? (
+                        <Link to={summary.indexer.url}>Set up for this repository</Link>
+                    ) : (
+                        <>
+                            {failedUploads.length === 0 && failedIndexes.length === 0 && (
+                                <p className="mb-1 text-muted">
+                                    <CheckIcon size={16} className="text-success" /> Looks good!
+                                </p>
+                            )}
+                            {failedUploads.length > 0 && (
+                                <p className="mb-1 text-muted">
+                                    <AlertIcon size={16} className="text-danger" />{' '}
+                                    <Link to={`/${repoName}/-/code-intelligence/uploads?filters=errored`}>
+                                        Latest upload processing
+                                    </Link>{' '}
+                                    failed
+                                </p>
+                            )}
+                            {failedIndexes.length > 0 && (
+                                <p className="mb-1 text-muted">
+                                    <AlertIcon size={16} className="text-danger" />{' '}
+                                    <Link to={`/${repoName}/-/code-intelligence/indexes?filters=errored`}>
+                                        Latest indexing
+                                    </Link>{' '}
+                                    failed
+                                </p>
+                            )}
+                        </>
+                    )}
+                </div>
+            </div>
+        </div>
+    ) : null
+}
+
+//
+//
+
+const Unsupported: React.FunctionComponent<{}> = () => (
+    <div className="px-2 py-1">
+        <div className="d-flex align-items-center">
+            <div className="px-2 py-1 text-uppercase">
+                <Badge variant="outlineSecondary">Unavailable</Badge>
+            </div>
+            <div className="px-2 py-1">
+                <p className="mb-0">Precise code intelligence </p>
+            </div>
+        </div>
+    </div>
+)
+
+//
+//
+
+const InternalFacingRepositoryMenuContent: React.FunctionComponent<{
+    data: UseCodeIntelStatusPayload
+    now?: () => Date
+}> = ({ data, now }) => {
     const preciseSupportLevels = [...new Set((data?.preciseSupport || []).map(support => support.supportLevel))].sort()
     const searchBasedSupportLevels = [
         ...new Set((data?.searchBasedSupport || []).map(support => support.supportLevel)),
@@ -68,19 +253,21 @@ const NerdData: React.FunctionComponent<{ data: UseCodeIntelStatusPayload }> = (
 
     return (
         <div className="px-2 py-1">
-            <h2>Data for nerds</h2>
-
             <Collapsible titleAtStart={true} title={<h3>Activity (repo)</h3>}>
                 <div>
                     <span>
                         Last auto-indexing job schedule attempt:{' '}
-                        {data.lastIndexScan ? <Timestamp date={data.lastIndexScan} /> : <>never</>}
+                        {data.lastIndexScan ? <Timestamp date={data.lastIndexScan} now={now} /> : <>never</>}
                     </span>
                 </div>
                 <div>
                     <span>
                         Last upload retention scan:{' '}
-                        {data.lastUploadRetentionScan ? <Timestamp date={data.lastUploadRetentionScan} /> : <>never</>}
+                        {data.lastUploadRetentionScan ? (
+                            <Timestamp date={data.lastUploadRetentionScan} now={now} />
+                        ) : (
+                            <>never</>
+                        )}
                     </span>
                 </div>
             </Collapsible>
@@ -146,6 +333,9 @@ const NerdData: React.FunctionComponent<{ data: UseCodeIntelStatusPayload }> = (
     )
 }
 
+//
+//
+
 const UploadOrIndexMetaTable: React.FunctionComponent<{
     prefix: string
     nodes: (LsifUploadFields | LsifIndexFields)[]
@@ -167,6 +357,9 @@ const UploadOrIndexMetaTable: React.FunctionComponent<{
         </tbody>
     </table>
 )
+
+//
+//
 
 const UploadOrIndexMeta: React.FunctionComponent<{ data: LsifUploadFields | LsifIndexFields; now?: () => Date }> = ({
     data: node,
