@@ -93,12 +93,11 @@ type HTTPClient struct {
 }
 
 func NewHTTPClient(urn string, registryURL string, credentials string) *HTTPClient {
-	cachedLimiter := ratelimit.DefaultRegistry.Get(urn)
 	return &HTTPClient{
-		registryURL,
-		httpcli.ExternalDoer,
-		cachedLimiter,
-		credentials,
+		registryURL: registryURL,
+		doer:        httpcli.ExternalDoer,
+		limiter:     ratelimit.DefaultRegistry.Get(urn),
+		credentials: credentials,
 	}
 }
 

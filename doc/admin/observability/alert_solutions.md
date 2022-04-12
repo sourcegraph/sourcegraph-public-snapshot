@@ -3076,7 +3076,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> repo-updater: 360000+ total number of user added repos for 5m0s
+- <span class="badge badge-critical">critical</span> repo-updater: 720000+ total number of user added repos for 5m0s
 
 **Possible solutions**
 

@@ -41,6 +41,7 @@ import {
     useSearchStack,
     buildSearchURLQueryFromQueryState,
 } from '../../stores'
+import { useTourQueryParameters } from '../../tour/components/Tour/TourAgent'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { useIsBrowserExtensionActiveUser } from '../../tracking/BrowserExtensionTracker'
 import { SearchUserNeedsCodeHost } from '../../user/settings/codeHosts/OrgUserNeedsCodeHost'
@@ -116,8 +117,13 @@ function useCtaAlert(
         IDE_CTA_CADENCE_SHIFT
     )
 
+    const tourQueryParameters = useTourQueryParameters()
+
     const ctaToDisplay = useMemo<CtaToDisplay | undefined>((): CtaToDisplay | undefined => {
         if (!areResultsFound) {
+            return
+        }
+        if (tourQueryParameters?.isTour) {
             return
         }
 
@@ -145,14 +151,15 @@ function useCtaAlert(
         return
     }, [
         areResultsFound,
+        tourQueryParameters?.isTour,
         hasDismissedSignupAlert,
         isAuthenticated,
         displaySignupAndBrowserExtensionCTAsBasedOnCadence,
         hasDismissedBrowserExtensionAlert,
         isBrowserExtensionActiveUser,
         isUsingIdeIntegration,
-        hasDismissedIDEExtensionAlert,
         displayIDEExtensionCTABasedOnCadence,
+        hasDismissedIDEExtensionAlert,
     ])
 
     const onCtaAlertDismissed = useCallback((): void => {

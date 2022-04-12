@@ -52,6 +52,12 @@ type:diff repo:^github\.com/sourcegraph/sourcegraph$ author:camden before:"febru
 # commit_small
 type:commit repo:^github\.com/sourcegraph/sourcegraph$ author:camden before:"february 1 2021"
 
+# literal_small_select_repo
+patterntype:literal --exclude-task=test select:repo
+
+# literal_large_select_repo
+patterntype:literal lang:go -file:vendor/ count:1000 cfssl select:repo
+
 # and_regex
 patterntype:regexp \beven\b and \bintelligence\b and \bdream\b and \bsimplest\b
 

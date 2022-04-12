@@ -55,7 +55,7 @@ interface Props extends ThemeProps, FeatureFlagProps {
      * `window.context.needsSiteInit` is used.
      */
     needsSiteInit?: typeof window.context.needsSiteInit
-    context: Pick<SourcegraphContext, 'sourcegraphDotComMode' | 'authProviders'>
+    context: Pick<SourcegraphContext, 'sourcegraphDotComMode' | 'authProviders' | 'experimentalFeatures'>
 }
 
 /**
