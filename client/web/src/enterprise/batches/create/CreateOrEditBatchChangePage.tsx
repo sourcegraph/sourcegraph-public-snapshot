@@ -161,7 +161,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = props => {
     const isNewBatchChange = props.batchChangeName === undefined && !props.isReadOnly
 
     return (
-        <div className="m-4">
+        <div className="w-100 m-4">
             <PageTitle title="Create new batch change" />
             <PageHeader
                 path={[{ icon: BatchChangesIcon, to: '.' }, { text: 'Create batch change' }]}
