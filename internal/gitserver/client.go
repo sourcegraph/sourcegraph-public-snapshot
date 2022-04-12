@@ -512,7 +512,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 		Repo:           repoName,
 		EnsureRevision: c.EnsureRevision,
 		Args:           c.Args[1:],
-		NoTimeout:      c.NoTimeout,
+		NoTimeout:      c.noTimeout,
 	}
 	resp, err := c.httpPost(ctx, repoName, "exec", req)
 	if err != nil {
@@ -833,8 +833,8 @@ type Cmd struct {
 	Args           []string
 	Repo           api.RepoName // the repository to execute the command in
 	EnsureRevision string
-	NoTimeout      bool
 
+	noTimeout  bool
 	exitStatus int
 	httpPost   func(ctx context.Context, repo api.RepoName, op string, payload interface{}) (resp *http.Response, err error)
 }
@@ -884,7 +884,7 @@ func (c *Cmd) CombinedOutput(ctx context.Context) ([]byte, error) {
 }
 
 func (c *Cmd) DisableTimeout() {
-	c.NoTimeout = true
+	c.noTimeout = true
 }
 
 func (c *Cmd) String() string { return fmt.Sprintf("%q", c.Args) }
