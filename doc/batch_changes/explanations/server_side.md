@@ -20,7 +20,7 @@ This is a one-time process. Once a site-admin of the Sourcegraph instance sets u
 Make sure that
 
 - [Executors are deployed and are online](../../admin/deploy_executors.md).
-- The feature flag `experimentalFeatures.batchChangesExecution` is set to `enabled` in the global config or for specific users.
+- The feature flag `experimentalFeatures.batchChangesExecution` is set to `true` in the global config or for specific users.
 
 ## Explanations
 
