@@ -1,10 +1,19 @@
+.update-button {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+    margin-bottom: 0.25rem;
+    font-weight: normal;
+}
+
 .insight-card {
-    position: relative;
     min-height: 20rem;
 }
 
 .chart-block {
     flex: 1;
+    min-height: 15rem;
+    position: relative;
 }
 
 .chart-with-mock {
