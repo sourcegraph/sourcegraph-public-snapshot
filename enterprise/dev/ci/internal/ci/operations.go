@@ -232,7 +232,6 @@ func browserIntegrationTests(parallelTestCount int) operations.Operation {
 				bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(testCount)),
 				bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 				bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
-				bk.Cmd("yarn workspace @sourcegraph/browser record-integration"),
 				bk.Cmd("yarn run cover-browser-integration"),
 				bk.Cmd("yarn nyc report -r json"),
 				bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
