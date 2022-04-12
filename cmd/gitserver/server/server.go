@@ -32,6 +32,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -1214,27 +1215,50 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 			return http.StatusUnprocessableEntity, errors.New("format parameter expected to be of the form `--format=<git log format>`")
 		}
 
-		// Perform requests in each repository in the input batch. We do this synchronously
-		// today so that this endpoint remains simple. If it is determined that performing
-		// the git log requests in parallel _on each shard_ is necesesary, we should keep
-		// the following sequence of actions as simple as possible.
+		// Perform requests in each repository in the input batch. We perform these commands
+		// concurrently, but only allow four comands to be in-flight at a time.
 
-		results := make([]protocol.BatchLogResult, 0, len(req.RepoCommits))
-		for _, repoCommit := range req.RepoCommits {
-			output, isRepoCloned, err := performGitLogCommand(ctx, repoCommit, req.Format)
-			if err == nil && !isRepoCloned {
-				err = errors.Newf("repo not found")
-			}
-			var errMessage string
-			if err != nil {
-				errMessage = err.Error()
+		limit := int64(4)
+		sem := semaphore.NewWeighted(limit)
+		g, ctx := errgroup.WithContext(ctx)
+
+		results := make([]protocol.BatchLogResult, len(req.RepoCommits))
+
+		for i, repoCommit := range req.RepoCommits {
+			// Avoid capture of loop variables
+			i, repoCommit := i, repoCommit
+
+			if err := sem.Acquire(ctx, 1); err != nil {
+				return http.StatusInternalServerError, err
 			}
 
-			results = append(results, protocol.BatchLogResult{
-				RepoCommit:    repoCommit,
-				CommandOutput: output,
-				CommandError:  errMessage,
+			g.Go(func() error {
+				defer sem.Release(1)
+
+				output, isRepoCloned, err := performGitLogCommand(ctx, repoCommit, req.Format)
+				if err == nil && !isRepoCloned {
+					err = errors.Newf("repo not found")
+				}
+				var errMessage string
+				if err != nil {
+					errMessage = err.Error()
+				}
+
+				// Concurrent write results to shared slice. This slice is already properly
+				// sized and each goroutine writes to a unique index exactly once. There should
+				// be no data race conditions possible here.
+
+				results[i] = protocol.BatchLogResult{
+					RepoCommit:    repoCommit,
+					CommandOutput: output,
+					CommandError:  errMessage,
+				}
+				return nil
 			})
+		}
+
+		if err := g.Wait(); err != nil {
+			return http.StatusInternalServerError, err
 		}
 
 		// Write payload to client: implicitly writes 200 OK
