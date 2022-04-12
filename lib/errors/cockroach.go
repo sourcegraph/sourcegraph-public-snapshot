@@ -7,22 +7,21 @@ import (
 )
 
 var (
-	New               = errors.New
-	Newf              = errors.Newf
-	Wrap              = errors.Wrap
-	Wrapf             = errors.Wrapf
-	Errorf            = errors.Errorf
-	Is                = errors.Is
-	As                = errors.As
+	New    = errors.New
+	Newf   = errors.Newf
+	Wrap   = errors.Wrap
+	Wrapf  = errors.Wrapf
+	Errorf = errors.Errorf
+
 	HasType           = errors.HasType
 	WithMessage       = errors.WithMessage
-	Cause             = errors.Cause
-	Unwrap            = errors.Unwrap
-	UnwrapAll         = errors.UnwrapAll
 	WithStack         = errors.WithStack
 	BuildSentryReport = errors.BuildSentryReport
 	Safe              = errors.Safe
-	IsAny             = errors.IsAny
+
+	// TODO this implementation is complex, but uses the potentially problematic
+	// cockroachdb/errors.UnwrapOnce
+	IsAny = errors.IsAny
 )
 
 // Extend multiError to work with cockroachdb errors. Implement here to keep imports in

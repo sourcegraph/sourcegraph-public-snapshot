@@ -106,3 +106,21 @@ func (e *multiError) As(target interface{}) bool {
 	}
 	return false
 }
+
+// UnwrapAll accesses the root cause object of the error by calling this library's choice
+// of `Unwrap` repeatedly.
+//
+// If the error has no cause (leaf error), it is returned directly.
+func UnwrapAll(err error) error {
+	for {
+		if cause := Unwrap(err); cause != nil {
+			err = cause
+			continue
+		}
+		break
+	}
+	return err
+}
+
+// Cause is an alias for UnwrapAll.
+var Cause = UnwrapAll
