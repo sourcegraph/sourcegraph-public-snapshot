@@ -10,13 +10,13 @@ We've broken our Administration docs into sections (the list below).
 
 The deployment section of our docs covers everything you need regardless of the type or size of the deployment you need to do. 
 
-We recommend starting with the [Deployment Overview](deployment/deployment_overview.md). It highlights the different deployment types available. It also provides high-level instruction for many concepts that will be helpful throughout your interaction with Sourcegraph as an admin. 
+We recommend starting with the [Deployment Overview](deployment/index.md). It highlights the different deployment types available. It also provides high-level instruction for many concepts that will be helpful throughout your interaction with Sourcegraph as an admin. 
 
 **Popular Links**
 
-- [Deployment Overview](/deployment/deployment_overview.md)
-- [Docker Compose Deployment](/deployment/docker-compose/index.md)
-- [Kubernetes Deployment](/deployment/kubernetes/index.md)
+- [Deployment Overview](deployment/index.md)
+- [Docker Compose Deployment](deployment/docker-compose/index.md)
+- [Kubernetes Deployment](deployment/kubernetes/index.md)
 
 ## Customization
 
