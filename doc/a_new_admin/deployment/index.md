@@ -8,7 +8,7 @@ Specifically, the table provided in the [Options and scenarios](#options-and-sce
 
 Sourcegraph also provides a [resource estimator](#resource-planning) to help predict and plan the required resource for your deployment. This tool ensures you provision appropriate resources to scale your instance.
 
-If you are short on time and looking for a quick way to test Sourcegraph locally, consider running Sourcegraph via our [Docker single container](docker/index.md). 
+If you are short on time and looking for a quick way to test Sourcegraph locally, consider running Sourcegraph via our [Docker single container](docker-single-container/index.md). 
 
 Or, if you don't want to bother with setup and configuration [try Sourcegraph Cloud](https://sourcegraph.com) instead.
 
@@ -24,7 +24,7 @@ We recommend the [Kubernetes](kubernetes/scale) Deployment type if your deployme
 | -------------------------------------------------------- | ------------------------------------------------------- | --------------- | :----------------: | :----------: | :-----------: |
 | [**Docker Compose**](docker-compose/index.md) | **Small & medium** production deployments               | 🟢 5 minutes     |         ✅          |      ✅       |       ❌       |
 | [**Kubernetes**](kubernetes/index.md)         | **Medium & large** highly-available cluster deployments | 🟠 30-90 minutes |         ✅          |      ✅       |       ✅       |
-| [**Single-container**](docker/index.md)       | Local testing                                           | 🟢 1 minute      |         ❌          |      ❌       |       ❌       |
+| [**Single-container**](docker-single-container/index.md)       | Local testing                                           | 🟢 1 minute      |         ❌          |      ❌       |       ❌       |
 
 Each of the deployment types listed in the table above provides a different level of capability. As mentioned previously, base your deployment type on the needs of your business. However, you should also consider the technical expertise available for your deployment. The sections below provide more detailed recommendations for each deployment type.
 
@@ -38,7 +38,7 @@ We recommend Kubernetes for large enterprises that depend or have an expectation
 
 ### Single Container 
 
-Finally, if you're just starting out, you can [try Sourcegraph Cloud](https://sourcegraph.com) or [run Sourcegraph locally](docker/index.md).
+Finally, if you're just starting out, you can [try Sourcegraph Cloud](https://sourcegraph.com) or [run Sourcegraph locally](docker-single-container/index.md).
 
 > NOTE: The Single container option is provided for local proofs-of-concept and is not intended for testing or deployed at a pre-production/production level. Some features, such as Code Insights, are not available when using this deployment type. If you're just starting out and want the absolute quickest setup time, [try Sourcegraph Cloud](https://sourcegraph.com).
 

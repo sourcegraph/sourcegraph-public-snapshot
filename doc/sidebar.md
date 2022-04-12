@@ -48,12 +48,14 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [References](cli/references/index.md)
 - [Cloud](cloud/index.md)
 - [Adopting](adopt/index.md)
+<!--
 - [Administration POC](a_new_admin/index.md)
   - [Deployment](a_new_admin/deployment/index.md)
   - [Customization](test.md)
   - [Access management](test.md)
   - [Repository management](test.md)
   - [Monitoring and alerting](test.md)
+  -->
 - [Administration](admin/index.md)
   - [Install](admin/install/index.md)
   - [Upgrade](admin/updates/index.md)
