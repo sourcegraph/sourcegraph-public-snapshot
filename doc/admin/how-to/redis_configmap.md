@@ -109,7 +109,7 @@ spec:
 ```
 
 
-4. Locate the original redis-store configuration file. [https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/redis-cache/redis.conf](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/redis-cache/redis.conf) Use this as the “Default redis.conf file” content in the ConfigMap.
+4. Locate the original redis-store configuration file. [https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/redis-store/redis.conf](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/redis-store/redis.conf) Use this as the “Default redis.conf file” content in the ConfigMap.
 
 5. Create the redis-store-conf ConfigMap:
 
