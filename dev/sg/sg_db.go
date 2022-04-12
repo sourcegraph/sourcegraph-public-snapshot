@@ -27,13 +27,14 @@ var (
 	dbDatabaseNameFlag string
 
 	dbCommand = &cli.Command{
-		Name:   "db",
-		Usage:  "Interact with Sourcegraph databases for development.",
-		Action: cli.ShowSubcommandHelp,
+		Name:     "db",
+		Usage:    "Interact with local Sourcegraph databases for development",
+		Action:   cli.ShowSubcommandHelp,
+		Category: CategoryDev,
 		Subcommands: []*cli.Command{
 			{
 				Name:        "reset-pg",
-				Usage:       "Drops, recreates and migrates the specified Sourcegraph database.",
+				Usage:       "Drops, recreates and migrates the specified Sourcegraph database",
 				Description: `Run 'sg db reset-pg' to drop and recreate Sourcegraph databases. If -db is not set, then the "frontend" database is used (what's set as PGDATABASE in env or the sg.config.yaml). If -db is set to "all" then all databases are reset and recreated.`,
 				Flags: []cli.Flag{
 					&cli.StringFlag{
@@ -47,7 +48,7 @@ var (
 			},
 			{
 				Name:        "reset-redis",
-				Usage:       "Drops, recreates and migrates the specified Sourcegraph Redis database.",
+				Usage:       "Drops, recreates and migrates the specified Sourcegraph Redis database",
 				Description: `Run 'sg db reset-redis' to drop and recreate Sourcegraph redis databases.`,
 				Action:      execAdapter(dbResetRedisExec),
 			},

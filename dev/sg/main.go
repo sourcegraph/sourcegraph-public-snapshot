@@ -124,12 +124,12 @@ var sg = &cli.App{
 		// Common dev tasks
 		startCommand,
 		runCommand,
+		ciCommand,
 		testCommand,
 		lintCommand,
+		generateCommand,
 		dbCommand,
 		migrationCommand,
-		ciCommand,
-		generateCommand,
 
 		// Dev environment
 		doctorCommand,

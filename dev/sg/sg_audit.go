@@ -25,6 +25,7 @@ var auditCommand = &cli.Command{
 	Name:      "audit",
 	Usage:     "Display audit trail for resources",
 	ArgsUsage: "[target]",
+	Hidden:    true,
 	Category:  CategoryCompany,
 	Action:    cli.ShowSubcommandHelp,
 	Subcommands: []*cli.Command{{

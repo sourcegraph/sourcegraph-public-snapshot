@@ -25,6 +25,7 @@ var generateCommand = &cli.Command{
 	ArgsUsage:   "[target]",
 	Usage:       "Run code and docs generation tasks",
 	Description: "Run code and docs generation tasks - if no target is provided, all target are run with default arguments.",
+	Category:    CategoryDev,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:        "verbose",

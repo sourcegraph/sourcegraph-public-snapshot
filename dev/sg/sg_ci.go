@@ -73,7 +73,8 @@ var ciCommand = &cli.Command{
 	Description: `Interact with Sourcegraph's continuous integration pipelines on Buildkite.
 
 Note that Sourcegraph's CI pipelines are under our enterprise license: https://github.com/sourcegraph/sourcegraph/blob/main/LICENSE.enterprise`,
-	Action: cli.ShowSubcommandHelp,
+	Category: CategoryDev,
+	Action:   cli.ShowSubcommandHelp,
 	Subcommands: []*cli.Command{{
 		Name:    "preview",
 		Aliases: []string{"plan"},
@@ -213,7 +214,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 	}, {
 		Name:      "build",
 		ArgsUsage: "[runtype]",
-		Usage:     "Manually request a build for the currently checked out commit and branch (e.g. to trigger builds on forks or with special run types).",
+		Usage:     "Manually request a build for the currently checked out commit and branch (e.g. to trigger builds on forks or with special run types)",
 		Description: fmt.Sprintf(`Manually request a Buildkite build for the currently checked out commit and branch. Optionally provide a run type to build with.
 
 This is useful when:
@@ -350,7 +351,7 @@ Learn more about pipeline run types in https://docs.sourcegraph.com/dev/backgrou
 		},
 	}, {
 		Name:  "logs",
-		Usage: "Get logs from CI builds.",
+		Usage: "Get logs from CI builds (e.g. to grep locally)",
 		Description: `Get logs from CI builds, and output them in stdout or push them to Loki. By default only gets failed jobs - to change this, use the '--state' flag.
 
 The '--job' flag can be used to narrow down the logs returned - you can provide either the ID, or part of the name of the job you want to see logs for.
@@ -530,7 +531,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 		},
 	}, {
 		Name:        "docs",
-		Usage:       "Render reference documentation for build pipeline types.",
+		Usage:       "Render reference documentation for build pipeline types",
 		Description: "Render reference documentation for build pipeline types. An online version of this is also available in https://docs.sourcegraph.com/dev/background-information/ci/reference.",
 		Action: execAdapter(func(ctx context.Context, args []string) error {
 			cmd := exec.Command("go", "run", "./enterprise/dev/ci/gen-pipeline.go", "-docs")
@@ -543,7 +544,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 	}, {
 		Name:        "open",
 		ArgsUsage:   "[pipeline]",
-		Usage:       "Open Sourcegraph's Buildkite page in browser.",
+		Usage:       "Open Sourcegraph's Buildkite page in browser",
 		Description: "Open Sourcegraph's Buildkite page in browser. Optionally specify the pipeline you want to open.",
 		Action: execAdapter(func(ctx context.Context, args []string) error {
 			buildkiteURL := fmt.Sprintf("https://buildkite.com/%s", bk.BuildkiteOrg)

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"strings"
 	"testing"
 
@@ -9,14 +10,24 @@ import (
 )
 
 func TestAppRun(t *testing.T) {
+	// Check app starts up correctly
+	var out, err bytes.Buffer
+	sg.Writer = &out
+	sg.ErrWriter = &err
 	assert.NoError(t, sg.Run([]string{"help"}))
+	assert.Contains(t, out.String(), "The Sourcegraph developer tool!")
+	assert.Empty(t, err.String())
 }
 
 func TestCommandFormatting(t *testing.T) {
+	sg.Setup()
 	for _, cmd := range sg.Commands {
+		if cmd.Name == "help" {
+			continue
+		}
 		testCommandFormatting(t, cmd)
 		// for top-level commands, also require a category
-		assert.NotEmptyf(t, cmd.Category, "top-level command %s Category should be set", cmd.Name)
+		assert.NotEmptyf(t, cmd.Category, "top-level command %q Category should be set", cmd.Name)
 	}
 }
 

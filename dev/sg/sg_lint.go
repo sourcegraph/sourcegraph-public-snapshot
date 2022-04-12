@@ -25,6 +25,7 @@ var lintCommand = &cli.Command{
 	ArgsUsage:   "[target]",
 	Usage:       "Run all or specified linter on the codebase",
 	Description: `Run all or specified linter on the codebase and display failures, if any. To run all checks, don't provide an argument.`,
+	Category:    CategoryDev,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:        "annotations",
