@@ -61,10 +61,6 @@
 
     &.open {
         max-height: 95vh;
-        .header {
-            border-radius: 0;
-            border-bottom: 1px solid var(--border-color-2);
-        }
     }
 
     small {
@@ -82,9 +78,16 @@
 
 .header {
     .open & {
+        border-radius: 0;
+        border-bottom: 1px solid var(--border-color-2);
+
         // Hides the item count in the header
         small {
             display: none;
+        }
+
+        .toggleIcon {
+            transform: rotate(180deg);
         }
     }
 }

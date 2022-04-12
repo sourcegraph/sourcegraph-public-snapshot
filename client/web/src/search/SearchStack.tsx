@@ -12,7 +12,6 @@ import React, {
 
 import classNames from 'classnames'
 import { LocationDescriptor } from 'history'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
 import FileDocumentOutlineIcon from 'mdi-react/FileDocumentOutlineIcon'
@@ -280,7 +279,6 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({ initial
     }
 
     const buttonLabel = (open ? 'Open' : 'Close') + ' Notebook'
-    const toggleIcon = open ? ChevronDownIcon : ChevronUpIcon
 
     return (
         <section className={classNames(styles.root, { [styles.open]: open })} id={SEARCH_STACK_ID} role="dialog">
@@ -299,7 +297,9 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({ initial
                         ({reversedEntries.length} note{reversedEntries.length === 1 ? '' : 's'})
                     </small>
                 </span>
-                <Icon as={toggleIcon} />
+                <span className={styles.toggleIcon}>
+                    <Icon as={ChevronUpIcon} />
+                </span>
             </Button>
             {open && (
                 <>
