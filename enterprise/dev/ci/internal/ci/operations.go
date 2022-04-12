@@ -232,6 +232,7 @@ func browserIntegrationTests(parallelTestCount int) operations.Operation {
 				bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(testCount)),
 				bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 				bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
+				bk.Cmd("yarn workspace @sourcegraph/browser record-integration"),
 				bk.Cmd("yarn run cover-browser-integration"),
 				bk.Cmd("yarn nyc report -r json"),
 				bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
@@ -274,7 +275,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 	chunkCount := len(chunkedTestFiles)
 	parallelTestCount := getParallelTestCount(chunkCount)
 
-	browserIntegrationTests(chunkCount)
+	browserIntegrationTests(chunkCount)(pipeline)
 
 	// Add pipeline step for each chunk of web integrations files.
 	for i, chunkTestFiles := range chunkedTestFiles {
