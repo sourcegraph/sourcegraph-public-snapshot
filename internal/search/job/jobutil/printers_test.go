@@ -6,7 +6,6 @@ import (
 
 	"github.com/hexops/autogold"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -193,7 +192,7 @@ func TestPrettyJSON(t *testing.T) {
 			UserSettings: &schema.Settings{},
 			Protocol:     search.Streaming,
 		}
-		j, _ := ToSearchJob(inputs, q, database.NewMockDB())
+		j, _ := ToSearchJob(inputs, q)
 		return PrettyJSONVerbose(j)
 	}
 
