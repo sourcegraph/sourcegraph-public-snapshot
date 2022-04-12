@@ -19,7 +19,9 @@ func TestIdentifyError(t *testing.T) {
 	errs := []error{gosyntect.ErrPanic, gosyntect.ErrHSSWorkerTimeout, gosyntect.ErrRequestTooLarge}
 	for _, err := range errs {
 		wrappedErr := errors.Wrap(err, "some other information")
-		require.NotEqual(t, "", identifyError(wrappedErr))
+		known, problem := identifyError(wrappedErr)
+		require.True(t, known)
+		require.NotEqual(t, "", problem)
 	}
 }
 
