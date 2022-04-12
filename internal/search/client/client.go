@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/execute"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -33,7 +33,7 @@ type SearchClient interface {
 		inputs *run.SearchInputs,
 	) (_ *search.Alert, err error)
 
-	JobArgs(*run.SearchInputs) *job.Args
+	JobArgs(*run.SearchInputs) *jobutil.Args
 }
 
 func NewSearchClient(db database.DB, zoektStreamer zoekt.Streamer, searcherURLs *endpoint.Map) SearchClient {
@@ -70,8 +70,8 @@ func (s *searchClient) Execute(
 	return execute.Execute(ctx, s.db, stream, s.JobArgs(inputs))
 }
 
-func (s *searchClient) JobArgs(inputs *run.SearchInputs) *job.Args {
-	return &job.Args{
+func (s *searchClient) JobArgs(inputs *run.SearchInputs) *jobutil.Args {
+	return &jobutil.Args{
 		SearchInputs: inputs,
 		Zoekt:        s.zoekt,
 		SearcherURLs: s.searcherURLs,

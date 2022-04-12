@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
@@ -14,7 +14,7 @@ type ComputeExcludedRepos struct {
 }
 
 func (c *ComputeExcludedRepos) Run(ctx context.Context, db database.DB, s streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, s, finish := jobutil.StartSpan(ctx, s, c)
+	_, ctx, s, finish := job.StartSpan(ctx, s, c)
 	defer func() { finish(alert, err) }()
 
 	repositoryResolver := Resolver{DB: db}

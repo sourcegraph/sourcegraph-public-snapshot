@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/predicate"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -17,7 +17,7 @@ func Execute(
 	ctx context.Context,
 	db database.DB,
 	stream streaming.Sender,
-	jobArgs *job.Args,
+	jobArgs *jobutil.Args,
 ) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "Execute", "")
 	defer func() {
@@ -31,7 +31,7 @@ func Execute(
 		return nil, err
 	}
 
-	planJob, err := job.FromExpandedPlan(jobArgs, plan, db)
+	planJob, err := jobutil.FromExpandedPlan(jobArgs, plan, db)
 	if err != nil {
 		return nil, err
 	}
