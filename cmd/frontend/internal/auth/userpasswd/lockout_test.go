@@ -14,15 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func mockSiteConfigSigningKey(withEmails *bool) string {
+func mockSiteConfigSigningKey() string {
 	signingKey := "Zm9v"
 
 	siteConfig := schema.SiteConfiguration{
 		AuthUnlockAccountLinkExpiry:     5,
 		AuthUnlockAccountLinkSigningKey: signingKey,
-	}
-	if withEmails != nil && *withEmails {
-		siteConfig.EmailSmtp = &schema.SMTPServerConfig{}
 	}
 
 	conf.Mock(&conf.Unified{
@@ -113,7 +110,7 @@ func TestLockoutStore(t *testing.T) {
 
 		s := NewLockoutStore(2, time.Minute, time.Second)
 
-		mockSiteConfigSigningKey(nil)
+		mockSiteConfigSigningKey()
 		defer mockDefaultSiteConfig()
 
 		path, _, err := s.GenerateUnlockAccountUrl(1)
@@ -130,7 +127,7 @@ func TestLockoutStore(t *testing.T) {
 
 		s := NewLockoutStore(2, time.Minute, time.Second)
 
-		signingKey := mockSiteConfigSigningKey(nil)
+		signingKey := mockSiteConfigSigningKey()
 		defer mockDefaultSiteConfig()
 
 		_, token, err := s.GenerateUnlockAccountUrl(1)
@@ -168,7 +165,7 @@ func TestLockoutStore(t *testing.T) {
 
 		s := NewLockoutStore(2, time.Minute, time.Second)
 
-		mockSiteConfigSigningKey(nil)
+		mockSiteConfigSigningKey()
 		defer mockDefaultSiteConfig()
 
 		_, token, err := s.GenerateUnlockAccountUrl(1)
@@ -190,7 +187,7 @@ func TestLockoutStore(t *testing.T) {
 
 		s := NewLockoutStore(2, time.Minute, time.Second)
 
-		mockSiteConfigSigningKey(nil)
+		mockSiteConfigSigningKey()
 		defer mockDefaultSiteConfig()
 
 		_, token, err := s.GenerateUnlockAccountUrl(1)

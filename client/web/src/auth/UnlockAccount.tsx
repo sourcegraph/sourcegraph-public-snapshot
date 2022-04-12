@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react'
 
-import classNames from 'classnames'
 import * as H from 'history'
 import { Redirect, RouteComponentProps } from 'react-router-dom'
 
-// import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-// import { Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Alert, Link, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
@@ -17,7 +16,6 @@ import { SourcegraphIcon } from './icons'
 import { getReturnTo } from './SignInSignUpCommon'
 
 import unlockAccountStyles from './SignInSignUpCommon.module.scss'
-import { Button } from '@sourcegraph/wildcard'
 
 interface UnlockAccountPageProps extends RouteComponentProps<{ token: string; userId: string }> {
     location: H.Location
@@ -29,25 +27,49 @@ interface UnlockAccountPageProps extends RouteComponentProps<{ token: string; us
 }
 
 export const UnlockAccountPage: React.FunctionComponent<UnlockAccountPageProps> = props => {
-    useEffect(() => eventLogger.logViewEvent('unlockaccount', null, false))
-
     const [error, setError] = useState<Error | null>(null)
+    const [loading, setLoading] = useState(true)
+    const { token, userId } = props.match.params
 
-    const unlockAccount = async (): Promise<void> => {
-        await fetch('/-/unlock-account', {
-            credentials: 'same-origin',
-            method: 'POST',
-            headers: {
-                ...props.context.xhrHeaders,
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                token: props.match.params.token,
-                userId: Number(props.match.params.userId),
-            }),
+    const unlockAccount = React.useCallback(async (): Promise<void> => {
+        try {
+            setLoading(true)
+            const response = await fetch('/-/unlock-account', {
+                credentials: 'same-origin',
+                method: 'POST',
+                headers: {
+                    ...props.context.xhrHeaders,
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    token,
+                    userId: Number(userId),
+                }),
+            })
+
+            if (!response.ok) {
+                throw new Error('The url you provided is either expired or invalid.')
+            }
+
+            eventLogger.log('OkUnlockAccount', { userId, token })
+        } catch (error) {
+            setError(error)
+            eventLogger.log('KoUnlockAccount', { userId, token })
+        } finally {
+            setLoading(false)
+        }
+    }, [userId, token, props.context.xhrHeaders])
+
+    useEffect(() => {
+        if (props.authenticatedUser) {
+            return
+        }
+        eventLogger.logPageView('UnlockUserAccountRequest', null, false)
+        unlockAccount().catch(error => {
+            setError(error)
         })
-    }
+    }, [unlockAccount, props.authenticatedUser])
 
     if (props.authenticatedUser) {
         const returnTo = getReturnTo(props.location)
@@ -56,7 +78,15 @@ export const UnlockAccountPage: React.FunctionComponent<UnlockAccountPageProps> 
 
     const body = (
         <div>
-            <Button onClick={unlockAccount}>unlock</Button>
+            {loading && <LoadingSpinner />}
+            {error && <ErrorAlert className="mt-2" error={error} />}
+            {!loading && !error && (
+                <>
+                    <Alert variant="success">
+                        Your account was unlocked. Please try to <Link to="/sign-in">sign in</Link> to continue.
+                    </Alert>
+                </>
+            )}
         </div>
     )
 
@@ -70,8 +100,8 @@ export const UnlockAccountPage: React.FunctionComponent<UnlockAccountPageProps> 
                 lessPadding={true}
                 title={
                     props.context.sourcegraphDotComMode
-                        ? 'Sign in to Sourcegraph Cloud'
-                        : 'Sign in to Sourcegraph Server'
+                        ? 'Unlock your Sourcegraph Cloud account'
+                        : 'Unlock your Sourcegraph Server account'
                 }
                 body={body}
             />
