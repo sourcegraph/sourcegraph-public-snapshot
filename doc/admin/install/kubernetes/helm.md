@@ -309,7 +309,7 @@ The Helm chart is new and still under active development, and our values.yaml (a
 
 The following guidance for using Kustomize with Helm and Helm Subcharts covers both of these scenarios.
 
-If in doubt, or if you feel something ought to be added to the stock Sourcegraph Helm chart, please contact [support@sourcegraph.com](mailto:support@sourcegraph.com) or your Customer Engineer directly to discuss.
+> ⚠️ While both of these approaches are available, deployment changes that are not covered by Sourcegraph documentation should be discussed with either your Customer Engineer or Support contact before proceeding, to ensure the changes proposed can be supported by Sourcegraph. This also allows Sourcegraph to consider adding the required customizations to the Helm chart.
 
 #### Integrate Kustomize with Helm chart
 
