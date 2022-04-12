@@ -136,8 +136,6 @@ const (
 
 	// TypeOther is the (api.ExternalRepoSpec).ServiceType value for other projects.
 	TypeOther = "other"
-
-	defaultRateLimit = rate.Limit(2)
 )
 
 // KindToType returns a Type constants given a Kind
@@ -417,7 +415,7 @@ func GetLimitFromConfig(kind string, config interface{}) (rate.Limit, error) {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.BitbucketCloudConnection:
-		limit = defaultRateLimit
+		limit = rate.Limit(2)
 		if c != nil && c.RateLimit != nil {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
@@ -427,7 +425,7 @@ func GetLimitFromConfig(kind string, config interface{}) (rate.Limit, error) {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.JVMPackagesConnection:
-		limit = defaultRateLimit
+		limit = rate.Limit(2)
 		if c != nil && c.Maven.RateLimit != nil {
 			limit = limitOrInf(c.Maven.RateLimit.Enabled, c.Maven.RateLimit.RequestsPerHour)
 		}
