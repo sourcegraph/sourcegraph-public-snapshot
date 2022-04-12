@@ -500,7 +500,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 	}()
 	span.SetTag("request", "Exec")
 	span.SetTag("repo", c.Repo)
-	span.SetTag("args", c.Args[1:])
+	span.SetTag("args", c.args[1:])
 
 	// Check that ctx is not expired.
 	if err := ctx.Err(); err != nil {
@@ -511,7 +511,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 	req := &protocol.ExecRequest{
 		Repo:           repoName,
 		EnsureRevision: c.EnsureRevision,
-		Args:           c.Args[1:],
+		Args:           c.args[1:],
 		NoTimeout:      c.noTimeout,
 	}
 	resp, err := c.httpPost(ctx, repoName, "exec", req)
@@ -830,10 +830,10 @@ func repoNamesFromRepoCommits(repoCommits []api.RepoCommit) []string {
 
 // Cmd represents a command to be executed remotely.
 type Cmd struct {
-	Args           []string
 	Repo           api.RepoName // the repository to execute the command in
 	EnsureRevision string
 
+	args       []string
 	noTimeout  bool
 	exitStatus int
 	httpPost   func(ctx context.Context, repo api.RepoName, op string, payload interface{}) (resp *http.Response, err error)
@@ -887,7 +887,9 @@ func (c *Cmd) DisableTimeout() {
 	c.noTimeout = true
 }
 
-func (c *Cmd) String() string { return fmt.Sprintf("%q", c.Args) }
+func (c *Cmd) Args() []string { return c.args }
+
+func (c *Cmd) String() string { return fmt.Sprintf("%q", c.args) }
 
 func (c *Cmd) ExitStatus() int { return c.exitStatus }
 
@@ -938,7 +940,7 @@ func (c *ClientImplementor) Command(name string, arg ...string) *Cmd {
 	}
 	return &Cmd{
 		httpPost: c.httpPost,
-		Args:     append([]string{"git"}, arg...),
+		args:     append([]string{"git"}, arg...),
 	}
 }
 
@@ -1504,7 +1506,7 @@ func (c *ClientImplementor) ResolveRevisions(ctx context.Context, repo api.RepoN
 		if match := ambiguousArgPattern.FindSubmatch(stderr); match != nil {
 			return nil, &gitdomain.RevisionNotFoundError{Repo: repo, Spec: string(match[1])}
 		}
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.Args, stderr))
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.args, stderr))
 	}
 
 	return strings.Fields(string(stdout)), nil

@@ -180,7 +180,7 @@ func branches(ctx context.Context, db database.DB, repo api.RepoName, args ...st
 	cmd.Repo = repo
 	out, err := cmd.Output(ctx)
 	if err != nil {
-		return nil, errors.Errorf("exec %v in %s failed: %v (output follows)\n\n%s", cmd.Args, cmd.Repo, err, out)
+		return nil, errors.Errorf("exec %v in %s failed: %v (output follows)\n\n%s", cmd.Args(), cmd.Repo, err, out)
 	}
 	lines := strings.Split(string(out), "\n")
 	lines = lines[:len(lines)-1]
@@ -237,7 +237,7 @@ func ListTags(ctx context.Context, db database.DB, repo api.RepoName) ([]*Tag, e
 		if gitdomain.IsRepoNotExist(err) {
 			return nil, err
 		}
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, out))
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
 	}
 
 	return parseTags(out)
@@ -291,8 +291,8 @@ type Ref struct {
 }
 
 func showRef(ctx context.Context, db database.DB, repo api.RepoName, args ...string) ([]Ref, error) {
-	cmd := gitserver.NewClient(db).Command("git", "show-ref")
-	cmd.Args = append(cmd.Args, args...)
+	cmdArgs := append([]string{"show-ref"}, args...)
+	cmd := gitserver.NewClient(db).Command("git", cmdArgs...)
 	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
@@ -304,7 +304,7 @@ func showRef(ctx context.Context, db database.DB, repo api.RepoName, args ...str
 		if cmd.ExitStatus() == 1 && len(out) == 0 {
 			return nil, nil
 		}
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, out))
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
 	}
 
 	out = bytes.TrimSuffix(out, []byte("\n")) // remove trailing newline

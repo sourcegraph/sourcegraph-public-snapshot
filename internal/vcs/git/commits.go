@@ -387,7 +387,7 @@ var runCommitLog = func(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOpti
 		if isBadObjectErr(string(stderr), opt.Range) {
 			return nil, &gitdomain.RevisionNotFoundError{Repo: cmd.Repo, Spec: opt.Range}
 		}
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, data))
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), data))
 	}
 
 	return parseCommitLogOutput(data, opt.NameOnly)
@@ -475,15 +475,15 @@ func commitCount(ctx context.Context, db database.DB, repo api.RepoName, opt Com
 		return 0, err
 	}
 
-	cmd := gitserver.NewClient(db).Command("git", args...)
-	cmd.Repo = repo
 	if opt.Path != "" {
 		// This doesn't include --follow flag because rev-list doesn't support it, so the number may be slightly off.
-		cmd.Args = append(cmd.Args, "--", opt.Path)
+		args = append(args, "--", opt.Path)
 	}
+	cmd := gitserver.NewClient(db).Command("git", args...)
+	cmd.Repo = repo
 	out, err := cmd.Output(ctx)
 	if err != nil {
-		return 0, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, out))
+		return 0, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
 	}
 
 	out = bytes.TrimSpace(out)

@@ -108,7 +108,7 @@ func runRevParse(ctx context.Context, cmd *gitserver.Cmd, spec string) (api.Comm
 		if bytes.Contains(stderr, []byte("unknown revision")) {
 			return "", &gitdomain.RevisionNotFoundError{Repo: cmd.Repo, Spec: spec}
 		}
-		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.Args, stderr))
+		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.Args(), stderr))
 	}
 	commit := api.CommitID(bytes.TrimSpace(stdout))
 	if !IsAbsoluteRevision(string(commit)) {

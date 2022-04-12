@@ -67,7 +67,7 @@ func LsFiles(ctx context.Context, db database.DB, checker authz.SubRepoPermissio
 	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, out))
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
 	}
 
 	files := strings.Split(string(out), "\x00")

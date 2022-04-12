@@ -26,7 +26,7 @@ func MergeBase(ctx context.Context, db database.DB, repo api.RepoName, a, b api.
 	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
-		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, out))
+		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
 	}
 	return api.CommitID(bytes.TrimSpace(out)), nil
 }
