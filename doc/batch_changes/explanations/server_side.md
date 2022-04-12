@@ -11,7 +11,7 @@ This allows to:
 - run large-scale batch changes that would be impractical to compute locally
 - speed up batch change creation time by distributing batch change computing over several executors
 - reduce the setup time required to onboard new users to Batch Changes
-- get a GUI-only experience if you want to
+- get a better experience: (nearly) real-time logs, integration with other Sourcegraph features (upcoming!), creating batch changes from templates in just a few clicks (also upcoming!)
 
 ## Setup
 

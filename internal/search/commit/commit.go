@@ -41,7 +41,7 @@ type CommitSearch struct {
 }
 
 type DoSearchFunc func(*gitprotocol.SearchRequest) error
-type CodeMonitorHook func(context.Context, database.DB, GitserverClient, *gitprotocol.SearchRequest, DoSearchFunc) error
+type CodeMonitorHook func(context.Context, database.DB, GitserverClient, *gitprotocol.SearchRequest, api.RepoID, DoSearchFunc) error
 
 type GitserverClient interface {
 	Search(_ context.Context, _ *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error)
@@ -119,7 +119,7 @@ func (j *CommitSearch) Run(ctx context.Context, clients job.RuntimeClients, stre
 
 		bounded.Go(func() error {
 			if j.CodeMonitorSearchWrapper != nil {
-				return j.CodeMonitorSearchWrapper(ctx, clients.DB, clients.Gitserver, args, doSearch)
+				return j.CodeMonitorSearchWrapper(ctx, clients.DB, clients.Gitserver, args, repoRev.Repo.ID, doSearch)
 			}
 			return doSearch(args)
 		})
