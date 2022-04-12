@@ -253,7 +253,6 @@ func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
 				continue
 			}
 			preds = append(preds, sqlf.Sprintf("rn.name ~ %s", regex))
-			log15.Info("include", "preds", preds)
 		}
 	}
 	if len(opts.ExcludeRepoRegex) > 0 {
@@ -262,7 +261,6 @@ func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
 				continue
 			}
 			preds = append(preds, sqlf.Sprintf("rn.name !~ %s", regex))
-			log15.Info("exclude", "preds", preds)
 		}
 	}
 
