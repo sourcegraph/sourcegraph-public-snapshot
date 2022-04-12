@@ -22,6 +22,52 @@ const (
 	DeletedAD StatusAD = 1
 )
 
+// CreateGetSymbolFn creates a function that gets a symbol. TODO(chrismwendt) delete this after 3.39 is
+// released because it's redundant with the associated migration.
+func CreateGetSymbolFn(ctx context.Context, db dbutil.DB) error {
+	const CREATE_ROCKSKIP_GET_SYMBOL = `
+CREATE OR REPLACE FUNCTION rockskip_get_symbol(repo_arg INTEGER, path_arg TEXT, name_arg TEXT, hops INTEGER[]) RETURNS INTEGER AS $$
+DECLARE
+    hop INTEGER;
+    found_id INTEGER;
+BEGIN
+    FOREACH hop IN ARRAY hops LOOP
+        SELECT id
+            INTO found_id
+            FROM rockskip_symbols
+            WHERE
+                repo_id    =  repo_arg AND
+                path       =  path_arg AND
+                name       =  name_arg AND
+                ARRAY[hop] && added;
+
+        IF FOUND THEN
+            RETURN found_id;
+        END IF;
+
+        IF
+            EXISTS (
+                SELECT id
+                FROM rockskip_symbols
+                WHERE
+                    repo_id    =  repo_arg AND
+                    path       =  path_arg AND
+                    name       =  name_arg AND
+                    ARRAY[hop] && deleted
+            )
+            THEN
+            RETURN -1;
+        END IF;
+    END LOOP;
+
+    RETURN -1;
+END; $$ IMMUTABLE language plpgsql;
+`
+
+	_, err := db.ExecContext(ctx, CREATE_ROCKSKIP_GET_SYMBOL)
+	return errors.Wrap(err, "CreateGetSymbolFn")
+}
+
 func GetCommitById(ctx context.Context, db dbutil.DB, givenCommit CommitId) (commitHash string, ancestor CommitId, height int, present bool, err error) {
 	err = db.QueryRowContext(ctx, `
 		SELECT commit_id, ancestor, height
@@ -59,16 +105,15 @@ func InsertCommit(ctx context.Context, db dbutil.DB, repoId int, commitHash stri
 	return id, errors.Wrap(err, "InsertCommit")
 }
 
-func GetSymbol(ctx context.Context, db dbutil.DB, repoId int, path string, name string, hop CommitId) (id int, found bool, err error) {
+func GetSymbol(ctx context.Context, db dbutil.DB, repoId int, path string, name string, hops []CommitId) (id int, found bool, err error) {
 	err = db.QueryRowContext(ctx, `
-		SELECT id
-		FROM rockskip_symbols
-		WHERE repo_id = $1 AND path = $2 AND name = $3 AND $4 && added AND NOT $4 && deleted
-	`, repoId, path, name, pg.Array([]int{hop})).Scan(&id)
-	if err == sql.ErrNoRows {
-		return 0, false, nil
-	} else if err != nil {
+		SELECT rockskip_get_symbol($1, $2, $3, $4)
+	`, repoId, path, name, pg.Array(hops)).Scan(&id)
+	if err != nil {
 		return 0, false, errors.Newf("GetSymbol: %s", err)
+	}
+	if id == -1 {
+		return 0, false, nil
 	}
 	return id, true, nil
 }
