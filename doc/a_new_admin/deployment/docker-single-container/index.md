@@ -28,7 +28,7 @@ Change the `docker` `--publish` argument to make it listen on the specific inter
 
 The other option is to deploy and run Sourcegraph on a cloud provider. For an example, see documentation to [deploy to Google Cloud](./google_cloud.md).
 
-## Git configuration and authentication
+### Git configuration and authentication
 
 For single-container environments, upon the Sourcegraph Docker image container start, it copies all files from `/etc/sourcegraph/{ssh,gitconfig,netrc}` into its own `$HOME` directory, via the `--volume /mnt/sourcegraph/config:/etc/sourcegraph` in the `docker run` command.
 
@@ -56,7 +56,7 @@ This approach can also be used for `sourcegraph/gitserver` images in cluster env
 
 Learn more about Git [configuration](../../repo/git_config.md) and [authentication](../../repo/auth.md).
 
-### SSH authentication (config, keys, `known_hosts`)
+#### SSH authentication (config, keys, `known_hosts`)
 
 The container consults its own file system (in the standard locations) for SSH configuration, private keys, and `known_hosts`. Upon container start, it copies all files from `/etc/sourcegraph/ssh` into its own `$HOME/.ssh` directory.
 
@@ -67,7 +67,7 @@ To provide SSH authentication configuration to the container, assuming you're us
 
 To configure the container to use the same SSH as your user account on the host machine, you can also run `cp -R $HOME/.ssh $HOME/.sourcegraph/config/ssh`.
 
-### HTTP(S) authentication via netrc
+#### HTTP(S) authentication via netrc
 
 The easiest way to specify HTTP(S) authentication for repositories is to include the username and password in the clone URL itself, such as `https://user:password@example.com/my/repo`. These credentials won't be displayed to non-admin users.
 
