@@ -7,10 +7,11 @@ import (
 	"github.com/grafana/regexp"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -20,7 +21,7 @@ var ErrNoResults = errors.New("no results returned for predicate")
 
 // Expand takes a query plan, and replaces any predicates with their expansion. The returned plan
 // is guaranteed to be predicate-free.
-func Expand(ctx context.Context, db database.DB, jobArgs *jobutil.Args, oldPlan query.Plan) (_ query.Plan, err error) {
+func Expand(ctx context.Context, clients job.RuntimeClients, inputs *run.SearchInputs, oldPlan query.Plan) (_ query.Plan, err error) {
 	tr, ctx := trace.New(ctx, "ExpandPredicates", "")
 	defer func() {
 		tr.SetError(err)
@@ -37,13 +38,13 @@ func Expand(ctx context.Context, db database.DB, jobArgs *jobutil.Args, oldPlan 
 		q := q
 		g.Go(func() error {
 			predicatePlan, err := Substitute(q, func(plan query.Plan) (result.Matches, error) {
-				predicateJob, err := jobutil.FromExpandedPlan(jobArgs, plan, db)
+				predicateJob, err := jobutil.FromExpandedPlan(inputs, plan, clients.DB)
 				if err != nil {
 					return nil, err
 				}
 
 				agg := streaming.NewAggregatingStream()
-				_, err = predicateJob.Run(ctx, db, agg)
+				_, err = predicateJob.Run(ctx, clients, agg)
 				if err != nil {
 					return nil, err
 				}

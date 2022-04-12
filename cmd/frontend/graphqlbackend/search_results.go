@@ -23,12 +23,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/execute"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -437,12 +439,12 @@ func LogSearchLatency(ctx context.Context, db database.DB, wg *sync.WaitGroup, s
 	}
 }
 
-// JobArgs converts the parts of search resolver state to values needed to create search jobs.
-func (r *searchResolver) JobArgs() *jobutil.Args {
-	return &jobutil.Args{
-		SearchInputs: r.SearchInputs,
+func (r *searchResolver) JobClients() job.RuntimeClients {
+	return job.RuntimeClients{
+		DB:           r.db,
 		Zoekt:        r.zoekt,
 		SearcherURLs: r.searcherURLs,
+		Gitserver:    gitserver.NewClient(r.db),
 	}
 }
 
@@ -504,7 +506,7 @@ func logBatch(ctx context.Context, db database.DB, searchInputs *run.SearchInput
 func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
 	start := time.Now()
 	agg := streaming.NewAggregatingStream()
-	alert, err := execute.Execute(ctx, r.db, agg, r.JobArgs())
+	alert, err := execute.Execute(ctx, agg, r.SearchInputs, r.JobClients())
 	srr := r.resultsToResolver(agg.Results, alert, agg.Stats)
 	srr.elapsed = time.Since(start)
 	logBatch(ctx, r.db, r.SearchInputs, srr, err)
@@ -591,16 +593,15 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	attempts := 0
 	var v *SearchResultsResolver
 
-	args := r.JobArgs()
 	for {
 		// Query search results.
 		var err error
-		j, err := jobutil.ToSearchJob(args, r.SearchInputs.Query, r.db)
+		j, err := jobutil.ToSearchJob(r.SearchInputs, r.SearchInputs.Query, r.db)
 		if err != nil {
 			return nil, err
 		}
 		agg := streaming.NewAggregatingStream()
-		alert, err := j.Run(ctx, r.db, agg)
+		alert, err := j.Run(ctx, r.JobClients(), agg)
 		if err != nil {
 			return nil, err // do not cache errors.
 		}

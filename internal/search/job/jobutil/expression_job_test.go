@@ -8,7 +8,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/mockjob"
@@ -56,7 +55,7 @@ func (ss senders) Jobs() []job.Job {
 func newMockSender() sender {
 	mj := mockjob.NewMockJob()
 	send := make(chan streaming.SearchEvent)
-	mj.RunFunc.SetDefaultHook(func(_ context.Context, _ database.DB, s streaming.Sender) (*search.Alert, error) {
+	mj.RunFunc.SetDefaultHook(func(_ context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
 		for event := range send {
 			s.Send(event)
 		}
@@ -111,7 +110,7 @@ func TestAndJob(t *testing.T) {
 
 				finished := make(chan struct{})
 				go func() {
-					_, err := j.Run(context.Background(), nil, stream)
+					_, err := j.Run(context.Background(), job.RuntimeClients{}, stream)
 					require.NoError(t, err)
 					close(finished)
 				}()
@@ -137,7 +136,7 @@ func TestAndJob(t *testing.T) {
 
 				finished := make(chan struct{})
 				go func() {
-					_, err := j.Run(context.Background(), nil, stream)
+					_, err := j.Run(context.Background(), job.RuntimeClients{}, stream)
 					require.NoError(t, err)
 					close(finished)
 				}()
@@ -174,7 +173,7 @@ func TestOrJob(t *testing.T) {
 
 				finished := make(chan struct{})
 				go func() {
-					_, err := j.Run(context.Background(), nil, stream)
+					_, err := j.Run(context.Background(), job.RuntimeClients{}, stream)
 					require.NoError(t, err)
 					close(finished)
 				}()
@@ -203,7 +202,7 @@ func TestOrJob(t *testing.T) {
 
 				finished := make(chan struct{})
 				go func() {
-					_, err := j.Run(context.Background(), nil, stream)
+					_, err := j.Run(context.Background(), job.RuntimeClients{}, stream)
 					require.NoError(t, err)
 					close(finished)
 				}()
@@ -226,7 +225,7 @@ func TestOrJob(t *testing.T) {
 		stream := streaming.NewAggregatingStream()
 		finished := make(chan struct{})
 		go func() {
-			_, err := j.Run(context.Background(), nil, stream)
+			_, err := j.Run(context.Background(), job.RuntimeClients{}, stream)
 			require.Error(t, err)
 			close(finished)
 		}()

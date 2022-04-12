@@ -114,13 +114,13 @@ func Search(ctx context.Context, db database.DB, query string, monitorID int64, 
 	}
 
 	// Inline job creation so we can mutate the commit job before running it
-	jobArgs := searchClient.JobArgs(inputs)
-	plan, err := predicate.Expand(ctx, db, jobArgs, inputs.Plan)
+	clients := searchClient.JobClients()
+	plan, err := predicate.Expand(ctx, clients, inputs, inputs.Plan)
 	if err != nil {
 		return nil, err
 	}
 
-	planJob, err := jobutil.FromExpandedPlan(jobArgs, plan, db)
+	planJob, err := jobutil.FromExpandedPlan(inputs, plan, db)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func Search(ctx context.Context, db database.DB, query string, monitorID int64, 
 
 	// Execute the search
 	agg := streaming.NewAggregatingStream()
-	_, err = planJob.Run(ctx, db, agg)
+	_, err = planJob.Run(ctx, clients, agg)
 	if err != nil {
 		return nil, err
 	}
@@ -164,13 +164,13 @@ func Snapshot(ctx context.Context, db database.DB, query string, monitorID int64
 		return err
 	}
 
-	jobArgs := searchClient.JobArgs(inputs)
-	plan, err := predicate.Expand(ctx, db, jobArgs, inputs.Plan)
+	clients := searchClient.JobClients()
+	plan, err := predicate.Expand(ctx, clients, inputs, inputs.Plan)
 	if err != nil {
 		return err
 	}
 
-	planJob, err := jobutil.FromExpandedPlan(jobArgs, plan, db)
+	planJob, err := jobutil.FromExpandedPlan(inputs, plan, db)
 	if err != nil {
 		return err
 	}
@@ -183,7 +183,7 @@ func Snapshot(ctx context.Context, db database.DB, query string, monitorID int64
 		return err
 	}
 
-	_, err = planJob.Run(ctx, db, streaming.NewNullStream())
+	_, err = planJob.Run(ctx, clients, streaming.NewNullStream())
 	return err
 }
 

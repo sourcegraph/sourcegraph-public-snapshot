@@ -15,16 +15,14 @@ import (
 func TestToSearchInputs(t *testing.T) {
 	test := func(input string, protocol search.Protocol, parser func(string) (query.Q, error)) string {
 		q, _ := parser(input)
-		args := &Args{
-			SearchInputs: &run.SearchInputs{
-				UserSettings:        &schema.Settings{},
-				PatternType:         query.SearchTypeLiteral,
-				Protocol:            protocol,
-				OnSourcegraphDotCom: true,
-			},
+		inputs := &run.SearchInputs{
+			UserSettings:        &schema.Settings{},
+			PatternType:         query.SearchTypeLiteral,
+			Protocol:            protocol,
+			OnSourcegraphDotCom: true,
 		}
 
-		j, _ := ToSearchJob(args, q, database.NewMockDB())
+		j, _ := ToSearchJob(inputs, q, database.NewMockDB())
 		return "\n" + PrettySexp(j) + "\n"
 	}
 
@@ -175,17 +173,15 @@ func TestToSearchInputs(t *testing.T) {
 func TestToEvaluateJob(t *testing.T) {
 	test := func(input string, protocol search.Protocol) string {
 		q, _ := query.ParseLiteral(input)
-		args := &Args{
-			SearchInputs: &run.SearchInputs{
-				UserSettings:        &schema.Settings{},
-				PatternType:         query.SearchTypeLiteral,
-				Protocol:            protocol,
-				OnSourcegraphDotCom: true,
-			},
+		inputs := &run.SearchInputs{
+			UserSettings:        &schema.Settings{},
+			PatternType:         query.SearchTypeLiteral,
+			Protocol:            protocol,
+			OnSourcegraphDotCom: true,
 		}
 
 		b, _ := query.ToBasicQuery(q)
-		j, _ := ToEvaluateJob(args, b, database.NewMockDB())
+		j, _ := ToEvaluateJob(inputs, b, database.NewMockDB())
 		return "\n" + PrettySexp(j) + "\n"
 	}
 
@@ -215,18 +211,16 @@ func TestToEvaluateJob(t *testing.T) {
 func Test_optimizeJobs(t *testing.T) {
 	test := func(input string) string {
 		q, _ := query.ParseLiteral(input)
-		args := &Args{
-			SearchInputs: &run.SearchInputs{
-				UserSettings:        &schema.Settings{},
-				PatternType:         query.SearchTypeLiteral,
-				Protocol:            search.Streaming,
-				OnSourcegraphDotCom: true,
-			},
+		inputs := &run.SearchInputs{
+			UserSettings:        &schema.Settings{},
+			PatternType:         query.SearchTypeLiteral,
+			Protocol:            search.Streaming,
+			OnSourcegraphDotCom: true,
 		}
 
 		b, _ := query.ToBasicQuery(q)
-		baseJob, _ := toPatternExpressionJob(args, b, database.NewMockDB())
-		optimizedJob, _ := optimizeJobs(baseJob, args, b.ToParseTree(), database.NewMockDB())
+		baseJob, _ := toPatternExpressionJob(inputs, b, database.NewMockDB())
+		optimizedJob, _ := optimizeJobs(baseJob, inputs, b.ToParseTree(), database.NewMockDB())
 		return "\nBASE:\n\n" + PrettySexp(baseJob) + "\n\nOPTIMIZED:\n\n" + PrettySexp(optimizedJob) + "\n"
 	}
 

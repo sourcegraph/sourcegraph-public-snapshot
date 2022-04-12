@@ -29,7 +29,7 @@ type SymbolSearcher struct {
 }
 
 // Run calls the searcher service to search symbols.
-func (s *SymbolSearcher) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
+func (s *SymbolSearcher) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
@@ -50,7 +50,7 @@ func (s *SymbolSearcher) Run(ctx context.Context, db database.DB, stream streami
 		goroutine.Go(func() {
 			defer run.Release()
 
-			matches, err := searchInRepo(ctx, db, repoRevs, s.PatternInfo, s.Limit)
+			matches, err := searchInRepo(ctx, clients.DB, repoRevs, s.PatternInfo, s.Limit)
 			status, limitHit, err := search.HandleRepoSearchResult(repoRevs, len(matches) > s.Limit, false, err)
 			stream.Send(streaming.SearchEvent{
 				Results: matches,
