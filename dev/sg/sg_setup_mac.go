@@ -279,4 +279,5 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 			},
 		},
 	},
+	dependencyCategoryAdditionalSgConfiguration,
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"io"
 	"os"
@@ -22,22 +21,37 @@ var installCommand = &cli.Command{
 	Name:     "install",
 	Usage:    "Installs sg to a user-defined location by copying sg itself",
 	Category: CategoryUtil,
-	Hidden:   true, // internal command used during installation script
-	Action:   execAdapter(installExec),
+	Flags: []cli.Flag{
+		&cli.BoolFlag{
+			Name:  "force",
+			Usage: "Overwrite existing sg installation",
+		},
+	},
+	Hidden: true, // internal command used during installation script
+	Action: installAction,
 }
 
-func installExec(ctx context.Context, args []string) error {
+func installAction(cmd *cli.Context) error {
+	ctx := cmd.Context
+
 	probeCmdOut, err := exec.CommandContext(ctx, "sg", "-help").CombinedOutput()
 	if err == nil && outputLooksLikeSG(string(probeCmdOut)) {
 		path, err := exec.LookPath("sg")
 		if err != nil {
 			return err
 		}
-		// Looks like sg is already installed. Instead of overwriting anything
-		// we let the user know and exit.
-		writeFingerPointingLinef("Looks like 'sg' is already installed at %s.", path)
-		writeOrangeLinef("Skipping installation.")
-		return nil
+		// Looks like sg is already installed.
+		if cmd.Bool("force") {
+			writeOrangeLinef("Removing existing 'sg' installation at %s.", path)
+			if err := os.Remove(path); err != nil {
+				return err
+			}
+		} else {
+			// Instead of overwriting anything we let the user know and exit.
+			writeFingerPointingLinef("Looks like 'sg' is already installed at %s.", path)
+			writeOrangeLinef("Skipping installation.")
+			return nil
+		}
 	}
 
 	var location string

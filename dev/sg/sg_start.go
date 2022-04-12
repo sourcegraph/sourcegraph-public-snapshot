@@ -73,6 +73,11 @@ var (
 			addToMacOSFirewallFlag,
 		},
 		Action: execAdapter(startExec),
+		BashComplete: func(ctx *cli.Context) {
+			for name := range globalConf.Commandsets {
+				_, _ = fmt.Fprintf(ctx.App.Writer, "%s\n", name)
+			}
+		},
 	}
 )
 
