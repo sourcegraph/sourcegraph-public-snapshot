@@ -55,8 +55,9 @@ type Client struct {
 	// HTTP Client used to communicate with the API
 	httpClient httpcli.Doer
 
-	// RateLimit is the self-imposed rate limiter (since Bitbucket does not have a concept
-	// of rate limiting in HTTP response headers).
+	// RateLimit is the self-imposed rate limiter (since Bitbucket does not have a
+	// concept of rate limiting in HTTP response headers). Default limits are defined
+	// in extsvc.GetLimitFromConfig
 	rateLimit *rate.Limiter
 }
 
