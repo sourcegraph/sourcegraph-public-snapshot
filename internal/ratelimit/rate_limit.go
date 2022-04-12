@@ -45,8 +45,7 @@ type Registry struct {
 //
 // Modifications to the returned rate limiter takes effect on all call sites.
 func (r *Registry) Get(urn string) *rate.Limiter {
-	fallbackLimiter := rate.NewLimiter(r.fallbackRateLimit, defaultBurst)
-	return r.GetOrSet(urn, fallbackLimiter)
+	return r.GetOrSet(urn, nil)
 }
 
 // GetOrSet returns the rate limiter configured for the given URN of an external
@@ -60,7 +59,7 @@ func (r *Registry) GetOrSet(urn string, fallback *rate.Limiter) *rate.Limiter {
 	l := r.rateLimiters[urn]
 	if l == nil {
 		if fallback == nil {
-			fallback = rate.NewLimiter(rate.Inf, defaultBurst)
+			fallback = rate.NewLimiter(r.fallbackRateLimit, defaultBurst)
 		}
 		r.rateLimiters[urn] = fallback
 		return fallback
