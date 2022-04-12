@@ -40,9 +40,10 @@ var (
 	// `parseConf` before.
 	globalConf *Config
 
+	// secretsStore is instantiated when sg gets run.
 	secretsStore *secrets.Store
 
-	// Note that these are only available after the main sg CLI app has been run.
+	// Note that these values are only available after the main sg CLI app has been run.
 	configFlag          string
 	overwriteConfigFlag string
 	verboseFlag         bool
@@ -53,6 +54,7 @@ var (
 	postInitHooks []cli.ActionFunc
 )
 
+// sg is the main sg CLI application.
 var sg = &cli.App{
 	Usage:       "The Sourcegraph developer tool!",
 	Description: "Learn more: https://docs.sourcegraph.com/dev/background-information/sg",
@@ -127,7 +129,7 @@ var sg = &cli.App{
 		dbCommand,
 		migrationCommand,
 		ciCommand,
-		// generateCommand,
+		generateCommand,
 
 		// Dev environment
 		doctorCommand,

@@ -129,7 +129,6 @@ func (lt lintTargets) Commands() (cmds []*cli.Command) {
 		cmds = append(cmds, &cli.Command{
 			Name:  c.Name,
 			Usage: c.Help,
-			Flags: c.Flags,
 			Action: func(cmd *cli.Context) error {
 				if cmd.NArg() > 0 {
 					writeFailureLinef("unrecognized argument %q provided", cmd.Args().First())
