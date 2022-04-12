@@ -174,7 +174,7 @@ type Client interface {
 	BatchLog(ctx context.Context, opts BatchLogOptions, callback BatchLogCallback) error
 
 	// Command creates a new Cmd. Command name must be 'git', otherwise it panics.
-	Command(name string, args ...string) *Cmd
+	Command(repo api.RepoName, name string, args ...string) *Cmd
 
 	// CreateCommitFromPatch will attempt to create a commit from a patch
 	// If possible, the error returned will be of type protocol.CreateCommitFromPatchError
