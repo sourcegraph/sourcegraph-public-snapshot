@@ -58,8 +58,6 @@ func (r *RateLimitSyncer) SyncRateLimiters(ctx context.Context, ids ...int64) er
 		cursor.Offset += len(services)
 
 		for _, svc := range services {
-			//TODO: My TODO(ryanslade)
-
 			limit, err := extsvc.ExtractRateLimit(svc.Config, svc.Kind)
 			if err != nil {
 				if errors.HasType(err, extsvc.ErrRateLimitUnsupported{}) {
