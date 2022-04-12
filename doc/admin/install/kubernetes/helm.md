@@ -428,7 +428,7 @@ frontend:
 
 If using your own certificate, you can do so with [TLS Secrets](https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets).
 
-<!--`sourcegraph-frontend-tls.Secret.yaml`-->
+Create the a file with the following and save it as `sourcegraph-frontend-tls.Secret.yaml`
 ```yaml
 apiVersion: v1
 kind: Secret
@@ -718,7 +718,7 @@ frontend:
 
 You also have the option to manually configure TLS certificate via [TLS Secrets](https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets).
 
-<!--`sourcegraph-frontend-tls.Secret.yaml`-->
+Create the a file with the following and save it as `sourcegraph-frontend-tls.Secret.yaml`
 ```yaml
 apiVersion: v1
 kind: Secret
