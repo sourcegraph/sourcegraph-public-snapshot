@@ -110,8 +110,10 @@ func (c ComputeMatchContext) RepoID() string {
 
 func (c ComputeMatchContext) Counts() map[string]int {
 	distinct := make(map[string]int)
-	for _, value := range c.MatchValues() {
-		distinct[value] = distinct[value] + 1
+	for _, match := range c.Matches {
+		for _, environment := range match.Environment {
+			distinct[environment.Value] = distinct[environment.Value] + 1
+		}
 	}
 	return distinct
 }
