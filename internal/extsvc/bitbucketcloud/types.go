@@ -37,12 +37,6 @@ type RenderedMarkup struct {
 	HTML   string `json:"html"`
 }
 
-type User struct {
-	Account
-	IsStaff   bool   `json:"is_staff"`
-	AccountID string `json:"account_id"`
-}
-
 type AccountStatus string
 type ParticipantRole string
 type ParticipantState string
