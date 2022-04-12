@@ -17,7 +17,7 @@ import {
 import { fromObservableQuery } from '@sourcegraph/http-client'
 
 import { ALL_INSIGHTS_DASHBOARD } from '../../constants'
-import { BackendInsight, Insight, InsightDashboard } from '../../types'
+import { BackendInsight, Insight, InsightDashboard, InsightsDashboardOwner } from '../../types'
 import { CodeInsightsBackend } from '../code-insights-backend'
 import {
     AccessibleInsightInfo,
@@ -36,6 +36,7 @@ import {
     CategoricalChartContent,
     SeriesChartContent,
     UiFeaturesConfig,
+    DashboardCreateResult,
 } from '../code-insights-backend-types'
 import { getRepositorySuggestions } from '../core/api/get-repository-suggestions'
 import { getResolvedSearchRepositories } from '../core/api/get-resolved-search-repositories'
@@ -197,13 +198,14 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
     // This is only used to check for duplicate dashboards. Thi is not required for the new GQL API.
     // So we just return null to get the form to always accept.
-    public findDashboardByName = (name: string) => of(null)
+    public findDashboardByName = (name: string): Observable<InsightDashboard | null> => of(null)
 
-    public getDashboardOwners = () => getDashboardOwners(this.apolloClient)
+    public getDashboardOwners = (): Observable<InsightsDashboardOwner[]> => getDashboardOwners(this.apolloClient)
 
-    public createDashboard = (input: DashboardCreateInput) => createDashboard(this.apolloClient, input)
+    public createDashboard = (input: DashboardCreateInput): Observable<DashboardCreateResult> =>
+        createDashboard(this.apolloClient, input)
 
-    public deleteDashboard = ({ id }: DashboardDeleteInput) => {
+    public deleteDashboard = ({ id }: DashboardDeleteInput): Observable<void> => {
         if (!id) {
             throw new Error('`id` is required to delete a dashboard')
         }
