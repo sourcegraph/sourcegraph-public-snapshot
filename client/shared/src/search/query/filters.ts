@@ -303,15 +303,15 @@ export const discreteValueAliases: { [key: string]: string[] } = {
     only: ['o', 'only', 'ONLY', 'Only'],
 }
 
+export type ResolvedFilter =
+    | { type: NegatableFilter; negated: boolean; definition: NegatableFilterDefinition }
+    | { type: Exclude<FilterType, NegatableFilter>; definition: BaseFilterDefinition }
+    | undefined
+
 /**
  * Returns the {@link FilterDefinition} for the given filterType if it exists, or `undefined` otherwise.
  */
-export const resolveFilter = (
-    filterType: string
-):
-    | { type: NegatableFilter; negated: boolean; definition: NegatableFilterDefinition }
-    | { type: Exclude<FilterType, NegatableFilter>; definition: BaseFilterDefinition }
-    | undefined => {
+export const resolveFilter = (filterType: string): ResolvedFilter => {
     filterType = filterType.toLowerCase()
 
     if (isAliasedFilterType(filterType)) {

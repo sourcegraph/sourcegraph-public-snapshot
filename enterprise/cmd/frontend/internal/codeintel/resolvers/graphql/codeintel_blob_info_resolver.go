@@ -45,11 +45,11 @@ func (r *codeIntelSupportResolver) SearchBasedSupport(ctx context.Context) (_ gq
 		return nil, err
 	}
 
-	if ctagsSupported {
-		return NewSearchBasedCodeIntelResolver(&language), nil
+	if !ctagsSupported {
+		return nil, nil
 	}
 
-	return NewSearchBasedCodeIntelResolver(nil), nil
+	return NewSearchBasedCodeIntelResolver(language), nil
 }
 
 func (r *codeIntelSupportResolver) PreciseSupport(ctx context.Context) (gql.PreciseSupportResolver, error) {

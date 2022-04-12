@@ -530,3 +530,11 @@ export function getMatchUrl(match: SearchMatch): string {
             return getRepoMatchUrl(match)
     }
 }
+
+export type SearchMatchOfType<T extends SearchMatch['type']> = Extract<SearchMatch, { type: T }>
+
+export function isSearchMatchOfType<T extends SearchMatch['type']>(
+    type: T
+): (match: SearchMatch) => match is SearchMatchOfType<T> {
+    return (match): match is SearchMatchOfType<T> => match.type === type
+}

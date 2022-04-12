@@ -41,7 +41,7 @@ func TestFindClosestDumps(t *testing.T) {
 		return
 	})
 
-	resolver := newResolver(mockDBStore, mockLSIFStore, mockGitserverClient, nil, nil, nil, nil, &observation.TestContext, nil)
+	resolver := newResolver(mockDBStore, mockLSIFStore, mockGitserverClient, nil, nil, nil, nil, 50, &observation.TestContext, nil)
 	dumps, err := resolver.findClosestDumps(context.Background(), commitChecker, 42, "deadbeef", "s1/main.go", true, "idx")
 	if err != nil {
 		t.Fatalf("unexpected error finding closest dumps: %s", err)
@@ -101,7 +101,7 @@ func TestFindClosestDumpsInfersClosestUploads(t *testing.T) {
 		return false, nil
 	})
 
-	resolver := newResolver(mockDBStore, mockLSIFStore, mockGitserverClient, nil, nil, nil, nil, &observation.TestContext, nil)
+	resolver := newResolver(mockDBStore, mockLSIFStore, mockGitserverClient, nil, nil, nil, nil, 50, &observation.TestContext, nil)
 	dumps, err := resolver.findClosestDumps(context.Background(), commitChecker, 42, "deadbeef", "s1/main.go", true, "idx")
 	if err != nil {
 		t.Fatalf("unexpected error finding closest dumps: %s", err)
@@ -140,7 +140,7 @@ func TestFindClosestDumpsDoesNotInferClosestUploadForUnknownRepository(t *testin
 	mockGitserverClient := NewMockGitserverClient()
 	commitChecker := newCachedCommitChecker(mockGitserverClient)
 
-	resolver := newResolver(mockDBStore, mockLSIFStore, mockGitserverClient, nil, nil, nil, nil, &observation.TestContext, nil)
+	resolver := newResolver(mockDBStore, mockLSIFStore, mockGitserverClient, nil, nil, nil, nil, 50, &observation.TestContext, nil)
 	dumps, err := resolver.findClosestDumps(context.Background(), commitChecker, 42, "deadbeef", "s1/main.go", true, "idx")
 	if err != nil {
 		t.Fatalf("unexpected error finding closest dumps: %s", err)

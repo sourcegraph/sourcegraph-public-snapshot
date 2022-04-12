@@ -23,6 +23,7 @@ type GitserverRepoStore interface {
 	IterateRepoGitserverStatus(ctx context.Context, options IterateRepoGitserverStatusOptions, repoFn func(repo types.RepoGitserverStatus) error) error
 	GetByID(ctx context.Context, id api.RepoID) (*types.GitserverRepo, error)
 	GetByName(ctx context.Context, name api.RepoName) (*types.GitserverRepo, error)
+	GetByNames(ctx context.Context, names ...api.RepoName) ([]*types.GitserverRepo, error)
 	SetCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus, shardID string) error
 	SetLastError(ctx context.Context, name api.RepoName, error, shardID string) error
 	SetLastFetched(ctx context.Context, name api.RepoName, data GitserverFetchData) error
@@ -319,13 +320,62 @@ WHERE r.name = %s
 	return scanSingleGitserverRepo(s.QueryRow(ctx, sqlf.Sprintf(q, name)))
 }
 
-func scanSingleGitserverRepo(row *sql.Row) (*types.GitserverRepo, error) {
-	if row.Err() != nil {
-		return nil, errors.Wrap(row.Err(), "getting GitserverRepo")
+func (s *gitserverRepoStore) GetByNames(ctx context.Context, names ...api.RepoName) ([]*types.GitserverRepo, error) {
+	if len(names) > batch.MaxNumPostgresParameters {
+		return nil, errors.Newf("getting GitserverRepos by names: too many names provided: %v", len(names))
+	}
+
+	q := `
+-- source: internal/database/gitserver_repos.go:gitserverRepoStore.GetByName
+SELECT
+       g.repo_id,
+       g.clone_status,
+       g.shard_id,
+       g.last_error,
+       g.last_fetched,
+       g.last_changed,
+	   g.repo_size_bytes,
+       g.updated_at
+FROM gitserver_repos g
+JOIN repo r on r.id = g.repo_id
+WHERE r.name IN (%s)
+`
+	nameQueries := []*sqlf.Query{}
+	for _, v := range names {
+		nameQueries = append(nameQueries, sqlf.Sprintf("%s", v))
+	}
+
+	rows, err := s.Query(ctx, sqlf.Sprintf(q, sqlf.Join(nameQueries, ",")))
+	if err != nil {
+		return nil, err
+	}
+
+	repos := make([]*types.GitserverRepo, 0, len(names))
+
+	for rows.Next() {
+		repo, err := scanSingleGitserverRepo(rows)
+		if err != nil {
+			return nil, err
+		}
+		repos = append(repos, repo)
+	}
+
+	return repos, nil
+}
+
+// ScannerWithError captures Scan and Err methods of sql.Rows and sql.Row.
+type ScannerWithError interface {
+	Scan(dst ...interface{}) error
+	Err() error
+}
+
+func scanSingleGitserverRepo(scanner ScannerWithError) (*types.GitserverRepo, error) {
+	if scanner.Err() != nil {
+		return nil, errors.Wrap(scanner.Err(), "getting GitserverRepo")
 	}
 	var gr types.GitserverRepo
 	var cloneStatus string
-	err := row.Scan(
+	err := scanner.Scan(
 		&gr.RepoID,
 		&cloneStatus,
 		&gr.ShardID,

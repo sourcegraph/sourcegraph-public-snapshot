@@ -18,7 +18,6 @@ var Mocks, emptyMocks struct {
 	ExecReader            func(args []string) (reader io.ReadCloser, err error)
 	NewFileReader         func(commit api.CommitID, name string) (io.ReadCloser, error)
 	ReadFile              func(commit api.CommitID, name string) ([]byte, error)
-	ReadDir               func(commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error)
 	LsFiles               func(repo api.RepoName, commit api.CommitID) ([]string, error)
 	ResolveRevision       func(spec string, opt ResolveRevisionOptions) (api.CommitID, error)
 	Stat                  func(commit api.CommitID, name string) (fs.FileInfo, error)
