@@ -188,6 +188,14 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 	if filters.ExcludeRepoRegex != nil {
 		excludeRepo(*filters.ExcludeRepoRegex)
 	}
+	scLoader := &scLoader{primary: r.workerBaseStore.Handle().DB()}
+	inc, exc, err := unwrapSearchContexts(ctx, scLoader, filters.SearchContexts)
+	if err != nil {
+		return nil, errors.Wrap(err, "unwrapSearchContexts")
+	}
+	includeRepo(inc...)
+	excludeRepo(exc...)
+
 	groupedByCapture := make(map[string][]store.SeriesPoint)
 	allPoints, err := r.timeSeriesStore.SeriesPoints(ctx, opts)
 	if err != nil {
