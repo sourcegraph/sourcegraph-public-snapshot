@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
@@ -25,7 +25,7 @@ type ZoektSymbolSearch struct {
 
 // Run calls the zoekt backend to search symbols
 func (z *ZoektSymbolSearch) Run(ctx context.Context, _ database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx, stream, finish := jobutil.StartSpan(ctx, stream, z)
+	tr, ctx, stream, finish := job.StartSpan(ctx, stream, z)
 	defer func() { finish(alert, err) }()
 
 	if z.Repos == nil {

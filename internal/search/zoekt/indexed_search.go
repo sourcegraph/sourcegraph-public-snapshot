@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -544,7 +544,7 @@ type ZoektRepoSubsetSearch struct {
 
 // ZoektSearch is a job that searches repositories using zoekt.
 func (z *ZoektRepoSubsetSearch) Run(ctx context.Context, _ database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, stream, finish := jobutil.StartSpan(ctx, stream, z)
+	_, ctx, stream, finish := job.StartSpan(ctx, stream, z)
 	defer func() { finish(alert, err) }()
 
 	if z.Repos == nil {
@@ -576,7 +576,7 @@ type GlobalSearch struct {
 }
 
 func (t *GlobalSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, stream, finish := jobutil.StartSpan(ctx, stream, t)
+	_, ctx, stream, finish := job.StartSpan(ctx, stream, t)
 	defer func() { finish(alert, err) }()
 
 	userPrivateRepos := searchrepos.PrivateReposForActor(ctx, db, t.RepoOptions)

@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/predicate"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -119,7 +120,7 @@ func Search(ctx context.Context, db database.DB, query string, monitorID int64, 
 		return nil, err
 	}
 
-	planJob, err := job.FromExpandedPlan(jobArgs, plan, db)
+	planJob, err := jobutil.FromExpandedPlan(jobArgs, plan, db)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +170,7 @@ func Snapshot(ctx context.Context, db database.DB, query string, monitorID int64
 		return err
 	}
 
-	planJob, err := job.FromExpandedPlan(jobArgs, plan, db)
+	planJob, err := jobutil.FromExpandedPlan(jobArgs, plan, db)
 	if err != nil {
 		return err
 	}
@@ -187,7 +188,7 @@ func Snapshot(ctx context.Context, db database.DB, query string, monitorID int64
 }
 
 func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err error) {
-	return job.MapAtom(in, func(atom job.Job) job.Job {
+	return jobutil.MapAtom(in, func(atom job.Job) job.Job {
 		switch typedAtom := atom.(type) {
 		case *commit.CommitSearch:
 			jobCopy := *typedAtom

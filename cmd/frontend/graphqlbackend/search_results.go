@@ -29,7 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/execute"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -438,8 +438,8 @@ func LogSearchLatency(ctx context.Context, db database.DB, wg *sync.WaitGroup, s
 }
 
 // JobArgs converts the parts of search resolver state to values needed to create search jobs.
-func (r *searchResolver) JobArgs() *job.Args {
-	return &job.Args{
+func (r *searchResolver) JobArgs() *jobutil.Args {
+	return &jobutil.Args{
 		SearchInputs: r.SearchInputs,
 		Zoekt:        r.zoekt,
 		SearcherURLs: r.searcherURLs,
@@ -595,7 +595,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	for {
 		// Query search results.
 		var err error
-		j, err := job.ToSearchJob(args, r.SearchInputs.Query, r.db)
+		j, err := jobutil.ToSearchJob(args, r.SearchInputs.Query, r.db)
 		if err != nil {
 			return nil, err
 		}

@@ -14,6 +14,7 @@ import (
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -69,10 +70,10 @@ func TestAddCodeMonitorHook(t *testing.T) {
 
 	t.Run("errors on non-commit search", func(t *testing.T) {
 		erroringJobs := []job.Job{
-			job.NewParallelJob(&run.RepoSearch{}, &commit.CommitSearch{}),
+			jobutil.NewParallelJob(&run.RepoSearch{}, &commit.CommitSearch{}),
 			&run.RepoSearch{},
-			job.NewAndJob(&searcher.SymbolSearcher{}, &commit.CommitSearch{}),
-			job.NewTimeoutJob(0, &run.RepoSearch{}),
+			jobutil.NewAndJob(&searcher.SymbolSearcher{}, &commit.CommitSearch{}),
+			jobutil.NewTimeoutJob(0, &run.RepoSearch{}),
 		}
 
 		for _, j := range erroringJobs {
@@ -85,10 +86,10 @@ func TestAddCodeMonitorHook(t *testing.T) {
 
 	t.Run("no errors on only commit search", func(t *testing.T) {
 		nonErroringJobs := []job.Job{
-			job.NewParallelJob(&commit.CommitSearch{}, &commit.CommitSearch{}),
-			job.NewAndJob(&commit.CommitSearch{}, &commit.CommitSearch{}),
+			jobutil.NewParallelJob(&commit.CommitSearch{}, &commit.CommitSearch{}),
+			jobutil.NewAndJob(&commit.CommitSearch{}, &commit.CommitSearch{}),
 			&commit.CommitSearch{},
-			job.NewTimeoutJob(0, &commit.CommitSearch{}),
+			jobutil.NewTimeoutJob(0, &commit.CommitSearch{}),
 		}
 
 		for _, j := range nonErroringJobs {

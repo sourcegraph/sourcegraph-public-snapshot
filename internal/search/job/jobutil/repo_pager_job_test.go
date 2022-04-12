@@ -1,4 +1,4 @@
-package job
+package jobutil
 
 import (
 	"testing"
@@ -6,6 +6,7 @@ import (
 	"github.com/hexops/autogold"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -23,7 +24,7 @@ func Test_setRepos(t *testing.T) {
 	}
 
 	// Test function
-	test := func(job Job) string {
+	test := func(job job.Job) string {
 		job = setRepos(job, indexed, unindexed)
 		return "\n" + PrettyJSONVerbose(job)
 	}
