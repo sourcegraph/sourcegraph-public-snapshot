@@ -288,17 +288,19 @@ func (h *HighlightedCode) LinesForRanges(ranges []LineRange) ([][]string, error)
 	return lineRanges, nil
 }
 
-func identifyError(err error) string {
+/// identifyError returns true + the problem code if err matches a known error.
+func identifyError(err error) (bool, string) {
+	var problem string
 	if errors.Is(err, gosyntect.ErrRequestTooLarge) {
-		return "request_too_large"
+		problem = "request_too_large"
 	} else if errors.Is(err, gosyntect.ErrPanic) {
-		return "panic"
+		problem = "panic"
 	} else if errors.Is(err, gosyntect.ErrHSSWorkerTimeout) {
-		return "hss_worker_timeout"
+		problem = "hss_worker_timeout"
 	} else if strings.Contains(err.Error(), "broken pipe") {
-		return "broken pipe"
+		problem = "broken pipe"
 	}
-	return ""
+	return problem != "", problem
 }
 
 // Code highlights the given file content with the given filepath (must contain
@@ -438,7 +440,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 			"error", err,
 		)
 
-		if problem := identifyError(err); problem != "" {
+		if known, problem := identifyError(err); known {
 			// A problem that can sometimes be expected has occurred. We will
 			// identify such problems through metrics/logs and resolve them on
 			// a case-by-case basis, but they are frequent enough that we want
