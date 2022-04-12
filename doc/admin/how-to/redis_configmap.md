@@ -47,7 +47,7 @@ Reference Materials
 2. Create the redis-cache-conf ConfigMap:
 
 ```
- apiVersion: v1
+apiVersion: v1
 data:
   redis.conf: |
     #############################
@@ -77,7 +77,7 @@ metadata:
 ```
 
 
-3. Modify the apps_v1_deployment_redis-cache.yaml manifest. Add the corresponding volumeMounts: and volumes:
+3. Modify the `apps_v1_deployment_redis-cache.yaml` manifest. Add the corresponding `volumeMounts:` and `volumes:`
 
 ```
 apiVersion: apps/v1
@@ -109,7 +109,7 @@ spec:
 ```
 
 
-4. Locate the original redis-store configuration file. [https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/redis-cache/redis.conf](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/redis-cache/redis.conf) Use this as the “Default redis.conf file” content in the ConfigMap. \
+4. Locate the original redis-store configuration file. [https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/redis-cache/redis.conf](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/redis-cache/redis.conf) Use this as the “Default redis.conf file” content in the ConfigMap.
 
 5. Create the redis-store-conf ConfigMap:
 
