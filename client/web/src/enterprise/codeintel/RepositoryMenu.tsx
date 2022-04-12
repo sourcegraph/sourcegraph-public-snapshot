@@ -180,10 +180,10 @@ const IndexerSummary: React.FunctionComponent<{
                 </div>
 
                 <div className="px-2 py-1">
-                    <p className="mb-0">{summary.indexer.name} precise intelligence</p>
+                    <p className="mb-1">{summary.indexer.name} precise intelligence</p>
 
                     {lastUpdated && (
-                        <p className="mb-0 text-muted">
+                        <p className="mb-1 text-muted">
                             Last updated: <Timestamp date={lastUpdated} now={now} />
                         </p>
                     )}
@@ -193,16 +193,13 @@ const IndexerSummary: React.FunctionComponent<{
                     ) : (
                         <>
                             {failedUploads.length === 0 && failedIndexes.length === 0 && (
-                                <>
-                                    <p className="mb-0 text-muted">
-                                        <CheckIcon className="text-success" /> Looks good!
-                                    </p>
-                                </>
+                                <p className="mb-1 text-muted">
+                                    <CheckIcon size={16} className="text-success" /> Looks good!
+                                </p>
                             )}
                             {failedUploads.length > 0 && (
-                                <p className="mb-0 text-muted">
-                                    {' '}
-                                    <AlertIcon className="text-danger" />{' '}
+                                <p className="mb-1 text-muted">
+                                    <AlertIcon size={16} className="text-danger" />{' '}
                                     <Link to={`/${repoName}/-/code-intelligence/uploads?filters=errored`}>
                                         Latest upload processing
                                     </Link>{' '}
@@ -210,8 +207,8 @@ const IndexerSummary: React.FunctionComponent<{
                                 </p>
                             )}
                             {failedIndexes.length > 0 && (
-                                <p className="mb-0 text-muted">
-                                    <AlertIcon className="text-danger" />{' '}
+                                <p className="mb-1 text-muted">
+                                    <AlertIcon size={16} className="text-danger" />{' '}
                                     <Link to={`/${repoName}/-/code-intelligence/indexes?filters=errored`}>
                                         Latest indexing
                                     </Link>{' '}
