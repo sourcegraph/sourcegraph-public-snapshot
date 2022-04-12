@@ -1,24 +1,22 @@
-import React from 'react'
-
-import RefreshIcon from 'mdi-react/RefreshIcon'
+import React, { useContext, useMemo } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { isErrorLike } from '@sourcegraph/common'
-import { Button, useDeepMemo } from '@sourcegraph/wildcard'
+import { useDeepMemo } from '@sourcegraph/wildcard'
 
-import { ParentSize } from '../../../../../../../../charts'
 import {
-    CategoricalBasedChartTypes,
-    CategoricalChart,
-    InsightCard,
-    InsightCardLoading,
-    InsightCardBanner,
-} from '../../../../../../components/views'
+    LivePreviewBanner,
+    LivePreviewBlurBackdrop,
+    LivePreviewCard,
+    LivePreviewChart,
+    LivePreviewLoading,
+    LivePreviewUpdateButton,
+    useLivePreview,
+    StateStatus,
+} from '../../../../../../components/creation-ui-kit'
+import { CategoricalBasedChartTypes, CategoricalChart } from '../../../../../../components/views'
+import { CodeInsightsBackendContext, CategoricalChartContent } from '../../../../../../core'
 
-import { useLangStatsPreviewContent } from './hooks/use-lang-stats-preview-content'
-import { DEFAULT_PREVIEW_MOCK } from './live-preview-mock-data'
-
-import styles from './LangStatsInsightLivePreview.module.scss'
+import { DEFAULT_PREVIEW_MOCK } from './constants'
 
 export interface LangStatsInsightLivePreviewProps {
     /**
@@ -38,55 +36,65 @@ export interface LangStatsInsightLivePreviewProps {
  */
 export const LangStatsInsightLivePreview: React.FunctionComponent<LangStatsInsightLivePreviewProps> = props => {
     const { repository = '', threshold, disabled = false, className } = props
+    const { getLangStatsInsightContent } = useContext(CodeInsightsBackendContext)
 
-    const previewSetting = useDeepMemo({
+    const settings = useDeepMemo({
         repository: repository.trim(),
         otherThreshold: threshold / 100,
         disabled,
     })
 
-    const { loading, dataOrError, update } = useLangStatsPreviewContent(previewSetting)
+    const getLivePreviewContent = useMemo(
+        () => ({
+            disabled: settings.disabled,
+            fetcher: () => getLangStatsInsightContent(settings),
+        }),
+        [settings, getLangStatsInsightContent]
+    )
+
+    const { state, update } = useLivePreview(getLivePreviewContent)
 
     return (
         <aside className={className}>
-            <Button variant="icon" disabled={disabled} onClick={update}>
-                Live preview <RefreshIcon size="1rem" />
-            </Button>
+            <LivePreviewUpdateButton disabled={disabled} onClick={update} />
 
-            <InsightCard className={styles.insightCard}>
-                {loading ? (
-                    <InsightCardLoading>Loading code insight</InsightCardLoading>
-                ) : isErrorLike(dataOrError) ? (
-                    <ErrorAlert error={dataOrError} />
+            <LivePreviewCard>
+                {state.status === StateStatus.Loading ? (
+                    <LivePreviewLoading>Loading code insight</LivePreviewLoading>
+                ) : state.status === StateStatus.Error ? (
+                    <ErrorAlert error={state.error} />
                 ) : (
-                    <ParentSize className={styles.chartBlock}>
+                    <LivePreviewChart>
                         {parent =>
-                            dataOrError ? (
+                            state.status === StateStatus.Data ? (
                                 <CategoricalChart
                                     type={CategoricalBasedChartTypes.Pie}
                                     width={parent.width}
                                     height={parent.height}
-                                    {...dataOrError}
+                                    {...state.data}
                                 />
                             ) : (
                                 <>
-                                    <CategoricalChart
+                                    <LivePreviewBlurBackdrop
+                                        as={CategoricalChart}
                                         type={CategoricalBasedChartTypes.Pie}
                                         width={parent.width}
                                         height={parent.height}
-                                        className={styles.chartWithMock}
-                                        {...DEFAULT_PREVIEW_MOCK}
+                                        // We cast to unknown here because ForwardReferenceComponent
+                                        // doesn't support inferring as component with generic.
+                                        {...(DEFAULT_PREVIEW_MOCK as CategoricalChartContent<unknown>)}
                                     />
-                                    <InsightCardBanner className={styles.disableBanner}>
+
+                                    <LivePreviewBanner>
                                         The chart preview will be shown here once you have filled out the repository
                                         field.
-                                    </InsightCardBanner>
+                                    </LivePreviewBanner>
                                 </>
                             )
                         }
-                    </ParentSize>
+                    </LivePreviewChart>
                 )}
-            </InsightCard>
+            </LivePreviewCard>
         </aside>
     )
 }

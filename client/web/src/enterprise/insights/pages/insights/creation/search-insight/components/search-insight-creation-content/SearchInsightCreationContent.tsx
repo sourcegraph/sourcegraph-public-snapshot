@@ -7,7 +7,7 @@ import { styles } from '../../../../../../components/creation-ui-kit'
 import { FormChangeEvent, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
 import { Insight } from '../../../../../../core/types'
 import { CreateInsightFormFields } from '../../types'
-import { SearchInsightLivePreview } from '../live-preview-chart/SearchInsightLivePreview'
+import { SearchInsightLivePreview } from '../live-preview-chart'
 import { SearchInsightCreationForm } from '../search-insight-creation-form/SearchInsightCreationForm'
 
 import { useEditableSeries, createDefaultEditSeries } from './hooks/use-editable-series'

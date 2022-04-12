@@ -13,7 +13,7 @@ import {
     SearchRuntimeBasedInsight,
 } from '../types'
 
-export interface PieChartContent<Datum> {
+export interface CategoricalChartContent<Datum> {
     data: Datum[]
     getDatumValue: (datum: Datum) => number
     getDatumName: (datum: Datum) => string
@@ -21,7 +21,7 @@ export interface PieChartContent<Datum> {
     getDatumLink?: (datum: Datum) => string | undefined
 }
 
-export interface LineChartContent<Datum> {
+export interface SeriesChartContent<Datum> {
     data: Datum[]
     series: Series<Datum>[]
     getXValue: (datum: Datum) => Date
@@ -92,17 +92,6 @@ export interface RemoveInsightFromDashboardInput {
     dashboardId: string
 }
 
-export interface SearchInsightSettings {
-    series: SearchBasedInsightSeries[]
-    step: Duration
-    repositories: string[]
-}
-
-export interface LangStatsInsightsSettings {
-    repository: string
-    otherThreshold: number
-}
-
 export interface CaptureInsightSettings {
     repositories: string[]
     query: string
@@ -129,14 +118,22 @@ export interface GetBuiltInsightInput {
 }
 
 export interface GetSearchInsightContentInput {
-    insight: SearchInsightSettings
+    series: SearchBasedInsightSeries[]
+    step: Duration
+    repositories: string[]
 }
 
 export interface GetLangStatsInsightContentInput {
-    insight: LangStatsInsightsSettings
+    repository: string
+    otherThreshold: number
 }
 
 export interface RepositorySuggestionData {
     id: string
     name: string
+}
+
+export interface UiFeaturesConfig {
+    licensed: boolean
+    insightsLimit: number | null
 }

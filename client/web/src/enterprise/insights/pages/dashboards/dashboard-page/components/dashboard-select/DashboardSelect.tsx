@@ -4,8 +4,8 @@ import { ListboxGroup, ListboxGroupLabel, ListboxInput, ListboxList, ListboxPopo
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
-import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
 import {
+    CodeInsightsBackendContext,
     CustomInsightDashboard,
     InsightDashboard,
     isCustomDashboard,
@@ -13,7 +13,7 @@ import {
     isOrganizationDashboard,
     isPersonalDashboard,
     isVirtualDashboard,
-} from '../../../../../core/types'
+} from '../../../../../core'
 
 import { MenuButton, SelectDashboardOption, SelectOption } from './components'
 
