@@ -231,15 +231,15 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if err := s.Syncer.TriggerExternalServiceSync(ctx, req.ExternalService.ID); err != nil {
-		log15.Warn("Enqueueing external service sync job", "error", err, "id", req.ExternalService.ID)
-	}
-
 	if s.RateLimitSyncer != nil {
 		err = s.RateLimitSyncer.SyncRateLimiters(ctx, req.ExternalService.ID)
 		if err != nil {
 			log15.Warn("Handling rate limiter sync", "err", err, "id", req.ExternalService.ID)
 		}
+	}
+
+	if err := s.Syncer.TriggerExternalServiceSync(ctx, req.ExternalService.ID); err != nil {
+		log15.Warn("Enqueueing external service sync job", "error", err, "id", req.ExternalService.ID)
 	}
 
 	log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)

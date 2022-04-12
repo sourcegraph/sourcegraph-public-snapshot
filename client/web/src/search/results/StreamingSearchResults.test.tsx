@@ -246,7 +246,7 @@ describe('StreamingSearchResults', () => {
         })
 
         for (const [index, test] of tests.entries()) {
-            await cleanup()
+            cleanup()
 
             const results: AggregateStreamingSearchResults = {
                 ...streamingSearchResult,

@@ -7,8 +7,7 @@ import { asError } from '@sourcegraph/common'
 import { Button, LoadingSpinner, useObservable, Modal } from '@sourcegraph/wildcard'
 
 import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
-import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
-import { CustomInsightDashboard } from '../../../../../core/types'
+import { CodeInsightsBackendContext, CustomInsightDashboard } from '../../../../../core'
 
 import {
     AddInsightFormValues,

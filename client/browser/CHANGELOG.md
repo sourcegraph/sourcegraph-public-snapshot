@@ -13,6 +13,8 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
+## Chrome & Firefox 22.4.7.1712, Safari v1.13
+
 - Update banners for not synced private repositories banners when on Sourcegraph Cloud instance and not added repositories when on other instances: [pull/31922](https://github.com/sourcegraph/sourcegraph/pull/31922), [issues/31920](https://github.com/sourcegraph/sourcegraph/issues/31920)
 - Fix style errors in browser console: [pull/32604](https://github.com/sourcegraph/sourcegraph/pull/32604), [issues/32443](https://github.com/sourcegraph/sourcegraph/issues/32443)
 - Fix styles conflict on GitLab: [pull/32548](https://github.com/sourcegraph/sourcegraph/pull/32548), [issues/32462](https://github.com/sourcegraph/sourcegraph/issues/32462)

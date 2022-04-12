@@ -247,7 +247,7 @@ func startProcesses(group *errgroup.Group, name string, procfile []string, optio
 func runMigrator() {
 	log.Println("Starting migrator")
 
-	for _, schemaName := range []string{"frontend", "codeintel"} {
+	for _, schemaName := range []string{"frontend", "codeintel", "codeinsights"} {
 		e := execer{}
 		e.Command("migrator", "up", "-db", schemaName)
 

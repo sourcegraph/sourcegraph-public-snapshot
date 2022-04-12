@@ -71,6 +71,29 @@ func (r *workHandler) fetchSeries(ctx context.Context, seriesID string) (*types.
 	return &result[0], nil
 }
 
+func ToRecording(record *Job, value float64, recordTime time.Time, repoName string, repoID api.RepoID, capture *string) []store.RecordSeriesPointArgs {
+	args := make([]store.RecordSeriesPointArgs, 0, len(record.DependentFrames)+1)
+	base := store.RecordSeriesPointArgs{
+		SeriesID: record.SeriesID,
+		Point: store.SeriesPoint{
+			SeriesID: record.SeriesID,
+			Time:     recordTime,
+			Value:    value,
+			Capture:  capture,
+		},
+		RepoName:    &repoName,
+		RepoID:      &repoID,
+		PersistMode: store.PersistMode(record.PersistMode),
+	}
+	args = append(args, base)
+	for _, dependent := range record.DependentFrames {
+		arg := base
+		arg.Point.Time = dependent
+		args = append(args, arg)
+	}
+	return args
+}
+
 func (r *workHandler) generateComputeRecordings(ctx context.Context, job *Job, recordTime time.Time) (_ []store.RecordSeriesPointArgs, err error) {
 	results, err := r.computeSearch(ctx, job.SearchQuery)
 	if err != nil {
@@ -99,6 +122,45 @@ func (r *workHandler) generateComputeRecordings(ctx context.Context, job *Job, r
 		}
 	}
 	return recordings, nil
+}
+
+// checkSubRepoPermissions returns true if the repo has sub-repo permissions or any error occurred while checking it
+// Returns false only if the repo doesn't have sub-repo permissions or these are disabled in settings.
+// Note that repo ID is received untyped and being cast to api.RepoID
+// err is an upstream error to which any new occurring error is appended
+func checkSubRepoPermissions(ctx context.Context, checker authz.SubRepoPermissionChecker, untypedRepoID interface{}, err error) (bool, error) {
+	if !authz.SubRepoEnabled(checker) {
+		return false, err
+	}
+
+	// casting repoID
+	var repoID api.RepoID
+	switch untypedRepoID := untypedRepoID.(type) {
+	case api.RepoID:
+		repoID = untypedRepoID
+	case string:
+		var idErr error
+		repoID, idErr = graphqlbackend.UnmarshalRepositoryID(graphql.ID(untypedRepoID))
+		if idErr != nil {
+			log15.Error("Error during sub-repo permissions check", "repoID", untypedRepoID, "error", "unmarshalling repoID")
+			err = errors.Append(err, errors.Wrap(idErr, "Checking sub-repo permissions: UnmarshalRepositoryID"))
+			return true, err
+		}
+	default:
+		log15.Error("Error during sub-repo permissions check: Unsupported untypedRepoID type",
+			"repoID", untypedRepoID, "type", fmt.Sprintf("%T", untypedRepoID))
+		return true, errors.Append(err, errors.Newf("Checking sub-repo permissions for repoID=%v: Unsupported untypedRepoID type=%T",
+			untypedRepoID, untypedRepoID))
+	}
+
+	// performing the check itself
+	enabled, checkErr := authz.SubRepoEnabledForRepoID(ctx, checker, repoID)
+	if checkErr != nil {
+		log15.Error("Error during sub-repo permissions check", "error", checkErr)
+		err = errors.Append(err, errors.Wrap(checkErr, "Checking sub-repo permissions"))
+		return true, err
+	}
+	return enabled, err
 }
 
 type insightsHandler func(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) error
@@ -177,7 +239,7 @@ func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types
 
 	if job.PersistMode == string(store.SnapshotMode) {
 		// The purpose of the snapshot is for low fidelity but recently updated data points.
-		// To avoid unbounded growth of the snapshots table we will prune it at the same time as adding new values.
+		// We store one snapshot of an insight at any time, so we prune the table whenever adding a new series.
 		if err := tx.DeleteSnapshots(ctx, series); err != nil {
 			return err
 		}
@@ -203,45 +265,6 @@ func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types
 		}
 	}
 	return err
-}
-
-// checkSubRepoPermissions returns true if the repo has sub-repo permissions or any error occurred while checking it
-// Returns false only if the repo doesn't have sub-repo permissions or these are disabled in settings.
-// Note that repo ID is received untyped and being cast to api.RepoID
-// err is an upstream error to which any new occurring error is appended
-func checkSubRepoPermissions(ctx context.Context, checker authz.SubRepoPermissionChecker, untypedRepoID interface{}, err error) (bool, error) {
-	if !authz.SubRepoEnabled(checker) {
-		return false, err
-	}
-
-	// casting repoID
-	var repoID api.RepoID
-	switch untypedRepoID := untypedRepoID.(type) {
-	case api.RepoID:
-		repoID = untypedRepoID
-	case string:
-		var idErr error
-		repoID, idErr = graphqlbackend.UnmarshalRepositoryID(graphql.ID(untypedRepoID))
-		if idErr != nil {
-			log15.Error("Error during sub-repo permissions check", "repoID", untypedRepoID, "error", "unmarshalling repoID")
-			err = errors.Append(err, errors.Wrap(idErr, "Checking sub-repo permissions: UnmarshalRepositoryID"))
-			return true, err
-		}
-	default:
-		log15.Error("Error during sub-repo permissions check: Unsupported untypedRepoID type",
-			"repoID", untypedRepoID, "type", fmt.Sprintf("%T", untypedRepoID))
-		return true, errors.Append(err, errors.Newf("Checking sub-repo permissions for repoID=%v: Unsupported untypedRepoID type=%T",
-			untypedRepoID, untypedRepoID))
-	}
-
-	// performing the check itself
-	enabled, checkErr := authz.SubRepoEnabledForRepoID(ctx, checker, repoID)
-	if checkErr != nil {
-		log15.Error("Error during sub-repo permissions check", "error", checkErr)
-		err = errors.Append(err, errors.Wrap(checkErr, "Checking sub-repo permissions"))
-		return true, err
-	}
-	return enabled, err
 }
 
 func (r *workHandler) computeHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) (err error) {
@@ -277,6 +300,14 @@ func (r *workHandler) searchStreamHandler(ctx context.Context, job *Job, series 
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
+
+	if job.PersistMode == string(store.SnapshotMode) {
+		// The purpose of the snapshot is for low fidelity but recently updated data points.
+		// We store one snapshot of an insight at any time, so we prune the table whenever adding a new series.
+		if err := tx.DeleteSnapshots(ctx, series); err != nil {
+			return err
+		}
+	}
 
 	checker := authz.DefaultSubRepoPermsChecker
 	for _, match := range streamRepoCounts {
@@ -335,27 +366,4 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 		return errors.Newf("unable to handle record for series_id: %s and generation_method: %s", series.SeriesID, series.GenerationMethod)
 	}
 	return executableHandler(ctx, job, series, recordTime)
-}
-
-func ToRecording(record *Job, value float64, recordTime time.Time, repoName string, repoID api.RepoID, capture *string) []store.RecordSeriesPointArgs {
-	args := make([]store.RecordSeriesPointArgs, 0, len(record.DependentFrames)+1)
-	base := store.RecordSeriesPointArgs{
-		SeriesID: record.SeriesID,
-		Point: store.SeriesPoint{
-			SeriesID: record.SeriesID,
-			Time:     recordTime,
-			Value:    value,
-			Capture:  capture,
-		},
-		RepoName:    &repoName,
-		RepoID:      &repoID,
-		PersistMode: store.PersistMode(record.PersistMode),
-	}
-	args = append(args, base)
-	for _, dependent := range record.DependentFrames {
-		arg := base
-		arg.Point.Time = dependent
-		args = append(args, arg)
-	}
-	return args
 }

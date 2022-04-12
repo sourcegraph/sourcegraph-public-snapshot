@@ -1,4 +1,4 @@
-import React, { ReactElement, useMemo, useRef, useState } from 'react'
+import React, { ReactElement, useMemo, useRef, useState, SVGProps } from 'react'
 
 import { curveLinear } from '@visx/curve'
 import { Group } from '@visx/group'
@@ -26,7 +26,7 @@ import { SeriesDatum } from './utils/data-series-processing/types'
 
 import styles from './LineChart.module.scss'
 
-export interface LineChartContentProps<Datum> extends SeriesLikeChart<Datum> {
+export interface LineChartContentProps<Datum> extends SeriesLikeChart<Datum>, SVGProps<SVGSVGElement> {
     width: number
     height: number
     zeroYAxisMin?: boolean
@@ -46,6 +46,8 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
         zeroYAxisMin = false,
         getXValue,
         onDatumClick = noop,
+        className,
+        ...attributes
     } = props
 
     const [activePoint, setActivePoint] = useState<Point<D> & { element?: Element }>()
@@ -59,12 +61,12 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
                 height: outerHeight,
                 margin: {
                     top: 10,
-                    right: 10,
-                    left: yAxisReference.current?.getBoundingClientRect().width ?? 30,
-                    bottom: xAxisReference.current?.getBoundingClientRect().height ?? 30,
+                    right: 20,
+                    left: yAxisReference.current?.getBoundingClientRect().width,
+                    bottom: xAxisReference.current?.getBoundingClientRect().height,
                 },
             }),
-        [outerWidth, outerHeight, yAxisReference]
+        [outerWidth, outerHeight]
     )
 
     const dataSeries = useMemo(() => getSeriesData({ data, series, stacked, getXValue }), [
@@ -83,11 +85,11 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
         () =>
             scaleTime({
                 domain: [minX, maxX],
-                range: [margin.left, width],
+                range: [margin.left, outerWidth - margin.right],
                 nice: true,
                 clamp: true,
             }),
-        [minX, maxX, margin.left, width]
+        [minX, maxX, margin.left, margin.right, outerWidth]
     )
 
     const yScale = useMemo(
@@ -140,7 +142,8 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
         <svg
             width={outerWidth}
             height={outerHeight}
-            className={classNames(styles.root, { [styles.rootWithHoveredLinkPoint]: activePoint?.linkUrl })}
+            className={classNames(styles.root, className, { [styles.rootWithHoveredLinkPoint]: activePoint?.linkUrl })}
+            {...attributes}
             {...handlers}
         >
             <AxisLeft

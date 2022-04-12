@@ -62,6 +62,15 @@ export interface StreamingSearchResultsListProps
 
     extensionsController?: Pick<ExtensionsController, 'extHostAPI'>
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
+    /**
+     * Latest run query. Resets scroll visibility state when changed.
+     * For example, `location.search` on web.
+     */
+    executedQuery: string
+    /**
+     * Classname to be applied to the container of a search result.
+     */
+    resultClassName?: string
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearchResultsListProps> = ({
@@ -82,9 +91,11 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     extensionsController,
     hoverifier,
     openMatchesInNewTab,
+    executedQuery,
+    resultClassName,
 }) => {
     const resultsNumber = results?.results.length || 0
-    const { itemsToShow, handleBottomHit } = useItemsToShow(location.search, resultsNumber)
+    const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
 
     const logSearchResultClicked = useCallback(
         (index: number, type: string) => {
@@ -118,6 +129,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             extensionsController={extensionsController}
                             hoverifier={hoverifier}
                             openInNewTab={openMatchesInNewTab}
+                            containerClassName={resultClassName}
                         />
                     )
                 case 'commit':
@@ -129,6 +141,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             platformContext={platformContext}
                             onSelect={() => logSearchResultClicked(index, 'commit')}
                             openInNewTab={openMatchesInNewTab}
+                            containerClassName={resultClassName}
                         />
                     )
                 case 'repo':
@@ -139,6 +152,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             repoName={result.repository}
                             platformContext={platformContext}
                             onSelect={() => logSearchResultClicked(index, 'repo')}
+                            containerClassName={resultClassName}
                         />
                     )
             }
@@ -154,6 +168,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
             extensionsController,
             hoverifier,
             openMatchesInNewTab,
+            resultClassName,
         ]
     )
 

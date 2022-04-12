@@ -288,6 +288,21 @@ func (h *HighlightedCode) LinesForRanges(ranges []LineRange) ([][]string, error)
 	return lineRanges, nil
 }
 
+/// identifyError returns true + the problem code if err matches a known error.
+func identifyError(err error) (bool, string) {
+	var problem string
+	if errors.Is(err, gosyntect.ErrRequestTooLarge) {
+		problem = "request_too_large"
+	} else if errors.Is(err, gosyntect.ErrPanic) {
+		problem = "panic"
+	} else if errors.Is(err, gosyntect.ErrHSSWorkerTimeout) {
+		problem = "hss_worker_timeout"
+	} else if strings.Contains(err.Error(), "broken pipe") {
+		problem = "broken pipe"
+	}
+	return problem != "", problem
+}
+
 // Code highlights the given file content with the given filepath (must contain
 // at least the file name + extension) and returns the properly escaped HTML
 // table representing the highlighted code.
@@ -424,21 +439,8 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 			"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
 			"error", err,
 		)
-		var problem string
-		switch errors.Cause(err) {
-		case gosyntect.ErrRequestTooLarge:
-			problem = "request_too_large"
-		case gosyntect.ErrPanic:
-			problem = "panic"
-		case gosyntect.ErrHSSWorkerTimeout:
-			problem = "hss_worker_timeout"
-		}
 
-		if problem == "" && strings.Contains(err.Error(), "broken pipe") {
-			problem = "broken pipe"
-		}
-
-		if problem != "" {
+		if known, problem := identifyError(err); known {
 			// A problem that can sometimes be expected has occurred. We will
 			// identify such problems through metrics/logs and resolve them on
 			// a case-by-case basis, but they are frequent enough that we want

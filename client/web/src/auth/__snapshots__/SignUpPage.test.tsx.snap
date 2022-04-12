@@ -252,7 +252,7 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
               />
             </div>
             <small
-              class="form-text text-muted"
+              class="form-help text-muted"
             >
               At least 12 characters
             </small>
