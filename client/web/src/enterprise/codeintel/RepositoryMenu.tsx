@@ -27,6 +27,8 @@ import { CodeIntelUploadOrIndexLastActivity } from './shared/components/CodeInte
 import { CodeIntelUploadOrIndexRoot } from './shared/components/CodeIntelUploadOrIndexRoot'
 import { useCodeIntelStatus as defaultUseCodeIntelStatus, UseCodeIntelStatusPayload } from './useCodeIntelStatus'
 
+import styles from './RepositoryMenu.module.scss'
+
 export const RepositoryMenuContent: React.FunctionComponent<
     RepositoryMenuContentProps & {
         useCodeIntelStatus?: typeof defaultUseCodeIntelStatus
@@ -106,6 +108,19 @@ const UserFacingRepositoryMenuContent: React.FunctionComponent<{
 
     const indexerNames = allIndexers.map(indexer => indexer.name).sort()
 
+    // Expand badges to be as large as the maximum badge when we are displaying
+    // badges of different types. This condition checks that there's at least one
+    // ENABLED and one CONFIGURABLE badge each in the following rendered component.
+    const className =
+        new Set(
+            indexerNames.map(
+                name =>
+                    uploadsByIndexerName.get(name)?.length || 0 > 0 || indexesByIndexerName.get(name)?.length || 0 > 0
+            )
+        ).size > 1
+            ? styles.badgeMultiple
+            : undefined
+
     return indexerNames.length === 0 ? (
         <Unsupported />
     ) : (
@@ -121,6 +136,7 @@ const UserFacingRepositoryMenuContent: React.FunctionComponent<{
                             indexes: indexesByIndexerName.get(name) || [],
                             indexer: allIndexers.find(candidate => candidate.name === name),
                         }}
+                        className={className}
                         now={now}
                     />
                 </React.Fragment>
@@ -140,8 +156,9 @@ const IndexerSummary: React.FunctionComponent<{
         indexes: LsifIndexFields[]
         indexer?: CodeIntelIndexerFields
     }
+    className?: string
     now?: () => Date
-}> = ({ repoName, summary, now }) => {
+}> = ({ repoName, summary, className, now }) => {
     const failedUploads = summary.uploads.filter(upload => upload.state === LSIFUploadState.ERRORED)
     const failedIndexes = summary.indexes.filter(index => index.state === LSIFIndexState.ERRORED)
     const finishedAtTimes = summary.uploads.map(upload => upload.finishedAt || undefined).filter(isDefined)
@@ -152,9 +169,13 @@ const IndexerSummary: React.FunctionComponent<{
             <div className="d-flex align-items-center">
                 <div className="px-2 py-1 text-uppercase">
                     {summary.uploads.length + summary.indexes.length > 0 ? (
-                        <Badge variant="success">Enabled</Badge>
+                        <Badge variant="success" className={className}>
+                            Enabled
+                        </Badge>
                     ) : (
-                        <Badge variant="secondary">Configurable</Badge>
+                        <Badge variant="secondary" className={className}>
+                            Configurable
+                        </Badge>
                     )}
                 </div>
 
