@@ -24,6 +24,7 @@ type CoreTestOperationsOptions struct {
 	// for clientChromaticTests
 	ChromaticShouldAutoAccept bool
 	MinimumUpgradeableVersion string
+	LintOnlyChangedFiles      bool
 }
 
 // CoreTestOperations is a core set of tests that should be run in most CI cases. More
@@ -68,10 +69,10 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 		ops.Merge(operations.NewNamedSet("Client checks",
 			clientIntegrationTests,
 			clientChromaticTests(opts.ChromaticShouldAutoAccept),
-			frontendTests,     // ~4.5m
-			addWebApp,         // ~5.5m
-			addBrowserExt,     // ~4.5m
-			addClientLinters)) // ~9m
+			frontendTests, // ~4.5m
+			addWebApp,     // ~5.5m
+			addBrowserExt, // ~4.5m
+			addClientLinters(opts.LintOnlyChangedFiles))) // ~9m
 	}
 
 	if diff.Has(changed.Go | changed.GraphQL) {
@@ -163,21 +164,32 @@ func addYarnDeduplicateLint(pipeline *bk.Pipeline) {
 }
 
 // Adds client linters and Typescript check.
-func addClientLinters(pipeline *bk.Pipeline) {
-	// - ESLint ~9m
-	pipeline.AddStep(":eslint: ESLint",
-		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-run.sh lint:js:changed"))
+func addClientLinters(lintOnlyChangedFiles bool) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		eslintCommand := "dev/ci/yarn-run.sh lint:js"
+		if lintOnlyChangedFiles {
+			eslintCommand += ":changed"
+		}
 
-	// - build-ts ~4m
-	pipeline.AddStep(":typescript: Build TS",
-		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-run.sh build-ts"))
+		stylelintCommand := "dev/ci/yarn-run.sh lint:css"
+		if lintOnlyChangedFiles {
+			stylelintCommand += ":changed"
+		}
+		// - ESLint ~9m
+		pipeline.AddStep(":eslint: ESLint",
+			withYarnCache(),
+			bk.Cmd(eslintCommand))
 
-	// - Stylelint ~2m
-	pipeline.AddStep(":stylelint: Stylelint",
-		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-run.sh lint:css:changed"))
+		// - Stylelint ~2m
+		pipeline.AddStep(":stylelint: Stylelint",
+			withYarnCache(),
+			bk.Cmd(stylelintCommand))
+
+		// - build-ts ~4m
+		pipeline.AddStep(":typescript: Build TS",
+			withYarnCache(),
+			bk.Cmd("dev/ci/yarn-run.sh build-ts"))
+	}
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.

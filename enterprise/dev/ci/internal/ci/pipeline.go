@@ -99,7 +99,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				ops.Append(prPreview())
 			}
 		}
-		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
+		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{
+			MinimumUpgradeableVersion: minimumUpgradeableVersion,
+			LintOnlyChangedFiles:      c.RunType.Is(runtype.PullRequest),
+		}))
 
 	case runtype.ReleaseNightly:
 		ops.Append(triggerReleaseBranchHealthchecks(minimumUpgradeableVersion))
@@ -120,7 +123,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
 		ops = operations.NewSet(
-			addClientLinters,
+			addClientLinters(false),
 			addBrowserExt,
 			frontendTests,
 			wait,
@@ -130,7 +133,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
 		ops = operations.NewSet(
-			addClientLinters,
+			addClientLinters(false),
 			addBrowserExt,
 			frontendTests,
 			wait,
