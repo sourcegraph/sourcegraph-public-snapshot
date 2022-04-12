@@ -55,7 +55,7 @@ var (
 
 	upCommand       = cliutil.Up("sg migration", makeRunner, stdout.Out, true)
 	upToCommand     = cliutil.UpTo("sg migration", makeRunner, stdout.Out, true)
-	UndoCommand     = cliutil.Undo("sg migration", makeRunner, stdout.Out, true)
+	undoCommand     = cliutil.Undo("sg migration", makeRunner, stdout.Out, true)
 	downToCommand   = cliutil.DownTo("sg migration", makeRunner, stdout.Out, true)
 	validateCommand = cliutil.Validate("sg validate", makeRunner, stdout.Out)
 	addLogCommand   = cliutil.AddLog("sg migration", makeRunner, stdout.Out)
@@ -85,13 +85,12 @@ var (
 		Subcommands: []*cli.Command{
 			addCommand,
 			revertCommand,
-			// TODO migrate migrator
-			// upCommand,
-			// upToCommand,
-			// UndoCommand,
-			// downToCommand,
-			// validateCommand,
-			// addLogCommand,
+			upCommand,
+			upToCommand,
+			undoCommand,
+			downToCommand,
+			validateCommand,
+			addLogCommand,
 			leavesCommand,
 			squashCommand,
 		},
