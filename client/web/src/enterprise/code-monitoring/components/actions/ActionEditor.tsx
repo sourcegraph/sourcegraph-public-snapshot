@@ -112,7 +112,7 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
                     <div className="d-flex align-items-center mb-3">
                         <div>
                             <Toggle
-                                title="Include search results in sent message"
+                                title="Include search results in message"
                                 value={includeResults}
                                 onToggle={toggleIncludeResults}
                                 className="mr-2"
