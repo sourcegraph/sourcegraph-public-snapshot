@@ -301,7 +301,7 @@ func showRef(ctx context.Context, db database.DB, repo api.RepoName, args ...str
 		}
 		// Exit status of 1 and no output means there were no
 		// results. This is not a fatal error.
-		if cmd.ExitStatus == 1 && len(out) == 0 {
+		if cmd.ExitStatus() == 1 && len(out) == 0 {
 			return nil, nil
 		}
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, out))

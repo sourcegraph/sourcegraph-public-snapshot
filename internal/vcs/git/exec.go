@@ -40,7 +40,7 @@ func execSafe(ctx context.Context, db database.DB, repo api.RepoName, params []s
 	cmd := gitserver.NewClient(db).Command("git", params...)
 	cmd.Repo = repo
 	stdout, stderr, err = cmd.DividedOutput(ctx)
-	exitCode = cmd.ExitStatus
+	exitCode = cmd.ExitStatus()
 	if exitCode != 0 && err != nil {
 		err = nil // the error must just indicate that the exit code was nonzero
 	}

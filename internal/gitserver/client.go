@@ -833,20 +833,10 @@ type Cmd struct {
 	Args           []string
 	Repo           api.RepoName // the repository to execute the command in
 	EnsureRevision string
-	ExitStatus     int
 	NoTimeout      bool
 
-	httpPost func(ctx context.Context, repo api.RepoName, op string, payload interface{}) (resp *http.Response, err error)
-}
-
-func (c *ClientImplementor) Command(name string, arg ...string) *Cmd {
-	if name != "git" {
-		panic("gitserver: command name must be 'git'")
-	}
-	return &Cmd{
-		httpPost: c.httpPost,
-		Args:     append([]string{"git"}, arg...),
-	}
+	exitStatus int
+	httpPost   func(ctx context.Context, repo api.RepoName, op string, payload interface{}) (resp *http.Response, err error)
 }
 
 // DividedOutput runs the command and returns its standard output and standard error.
@@ -862,7 +852,7 @@ func (c *Cmd) DividedOutput(ctx context.Context) ([]byte, []byte, error) {
 		return nil, nil, err
 	}
 
-	c.ExitStatus, err = strconv.Atoi(trailer.Get("X-Exec-Exit-Status"))
+	c.exitStatus, err = strconv.Atoi(trailer.Get("X-Exec-Exit-Status"))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -898,6 +888,8 @@ func (c *Cmd) DisableTimeout() {
 }
 
 func (c *Cmd) String() string { return fmt.Sprintf("%q", c.Args) }
+
+func (c *Cmd) ExitStatus() int { return c.exitStatus }
 
 // StdoutReader returns an io.ReadCloser of stdout of c. If the command has a
 // non-zero return value, Read returns a non io.EOF error. Do not pass in a
@@ -938,6 +930,16 @@ func (c *cmdReader) Read(p []byte) (int, error) {
 
 func (c *cmdReader) Close() error {
 	return c.rc.Close()
+}
+
+func (c *ClientImplementor) Command(name string, arg ...string) *Cmd {
+	if name != "git" {
+		panic("gitserver: command name must be 'git'")
+	}
+	return &Cmd{
+		httpPost: c.httpPost,
+		Args:     append([]string{"git"}, arg...),
+	}
 }
 
 func (c *ClientImplementor) ListGitolite(ctx context.Context, gitoliteHost string) (list []*gitolite.Repo, err error) {
