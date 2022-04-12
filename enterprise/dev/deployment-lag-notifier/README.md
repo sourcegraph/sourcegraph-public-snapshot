@@ -4,9 +4,9 @@ https://github.com/sourcegraph/sourcegraph/issues/32878
 The code for this is largely inspired by [Deployment Notifier](../deployment-notifer/README.md).
 
 ## Usage
-Run `go run *.go -dry-run` to test the application locally. The message (as would be sent to slack) should be printed out to the console.
+Run `make`. The message (as would be sent to slack) should be printed out to the console.
 
-If you would like to actually post the message, either configure the `-slack-webhook-url` flag or set the `SLACK_WEBHOOK_URL` environment variable.
+If you would like to actually post the message, either configure the `-slack-webhook-url` flag or set the `SLACK_WEBHOOK_URL` environment variable and then run `make prod`.
 
 ## Flags
 
