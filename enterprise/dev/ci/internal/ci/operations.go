@@ -210,38 +210,6 @@ func addWebApp(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
-var browsers = []string{"chrome"}
-
-func getParallelTestCount(webParallelTestCount int) int {
-	return webParallelTestCount + len(browsers)
-}
-
-func browserIntegrationTests(parallelTestCount int) operations.Operation {
-	testCount := getParallelTestCount(parallelTestCount)
-	return func(pipeline *bk.Pipeline) {
-		for _, browser := range browsers {
-			pipeline.AddStep(
-				fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
-				withYarnCache(),
-				bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
-				bk.Env("BROWSER", browser),
-				bk.Env("LOG_BROWSER_CONSOLE", "true"),
-				bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
-				bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
-				bk.Env("PERCY_ON", "true"),
-				bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(testCount)),
-				bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-				bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
-				bk.Cmd("yarn workspace @sourcegraph/browser record-integration"),
-				bk.Cmd("yarn run cover-browser-integration"),
-				bk.Cmd("yarn nyc report -r json"),
-				bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
-				bk.ArtifactPaths("./puppeteer/*.png"),
-			)
-		}
-	}
-}
-
 func browserUnitTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest::chrome: Test (client/browser)",
 		withYarnCache(),
@@ -272,10 +240,29 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 
 	// Chunk web integration tests to save time via parallel execution.
 	chunkedTestFiles := getChunkedWebIntegrationFileNames(chunkSize)
-	chunkCount := len(chunkedTestFiles)
-	parallelTestCount := getParallelTestCount(chunkCount)
+	browsers := []string{"chrome"}
+	parallelTestCount := len(chunkedTestFiles) + len(browsers)
 
-	browserIntegrationTests(chunkCount)(pipeline)
+	// Add browser extension integration tests pipeline step for each browser
+	for _, browser := range browsers {
+		pipeline.AddStep(
+			fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
+			withYarnCache(),
+			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
+			bk.Env("BROWSER", browser),
+			bk.Env("LOG_BROWSER_CONSOLE", "true"),
+			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
+			bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
+			bk.Env("PERCY_ON", "true"),
+			bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(parallelTestCount)),
+			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
+			bk.Cmd("yarn run cover-browser-integration"),
+			bk.Cmd("yarn nyc report -r json"),
+			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
+			bk.ArtifactPaths("./puppeteer/*.png"),
+		)
+	}
 
 	// Add pipeline step for each chunk of web integrations files.
 	for i, chunkTestFiles := range chunkedTestFiles {

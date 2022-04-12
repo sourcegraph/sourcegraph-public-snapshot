@@ -122,7 +122,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops = operations.NewSet(
 			addClientLinters,
 			browserUnitTests,
-			browserIntegrationTests(0),
 			frontendTests,
 			wait,
 			addBrowserExtensionReleaseSteps)
@@ -133,7 +132,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops = operations.NewSet(
 			addClientLinters,
 			browserUnitTests,
-			browserIntegrationTests(0),
 			frontendTests,
 			wait,
 			addBrowserExtensionE2ESteps)
