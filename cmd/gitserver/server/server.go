@@ -1222,10 +1222,7 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 		sem := semaphore.NewWeighted(limit)
 		g, ctx := errgroup.WithContext(ctx)
 
-		var (
-			mu      sync.Mutex
-			results = make([]protocol.BatchLogResult, len(req.RepoCommits))
-		)
+		results := make([]protocol.BatchLogResult, len(req.RepoCommits))
 
 		for i, repoCommit := range req.RepoCommits {
 			// Avoid capture of loop variables
@@ -1247,8 +1244,9 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 					errMessage = err.Error()
 				}
 
-				mu.Lock()
-				defer mu.Unlock()
+				// Concurrent write results to shared slice. This slice is already properly
+				// sized and each goroutine writes to a unique index exactly once. There should
+				// be no data race conditions possible here.
 
 				results[i] = protocol.BatchLogResult{
 					RepoCommit:    repoCommit,
