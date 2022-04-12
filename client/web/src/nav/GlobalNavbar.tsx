@@ -26,15 +26,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import {
-    ProductStatusBadge,
-    useObservable,
-    Button,
-    Link,
-    FeedbackPrompt,
-    ButtonLink,
-    PopoverTrigger,
-} from '@sourcegraph/wildcard'
+import { useObservable, Button, Link, FeedbackPrompt, ButtonLink, PopoverTrigger } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -209,11 +201,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                 !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
             !!showSearchNotebook && {
                 path: PageRoutes.Notebooks,
-                content: (
-                    <>
-                        Notebooks <ProductStatusBadge className="ml-1" status="beta" />
-                    </>
-                ),
+                content: 'Notebooks',
             },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)

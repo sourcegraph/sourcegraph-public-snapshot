@@ -44,7 +44,7 @@ Install the Sourcegraph chart using default values:
 helm install --version 0.7.0 sourcegraph sourcegraph/sourcegraph
 ```
 
-Sourcegraph should now be available via the address set. Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account. 
+Sourcegraph should now be available via the address set. Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account.
 
 More information on configuring the Sourcegraph application can be found here:
 [Configuring Sourcegraph](../../config/index.md)
@@ -52,11 +52,11 @@ More information on configuring the Sourcegraph application can be found here:
 
 ## Configuration
 
-The Sourcegraph Helm chart is highly customizable to support a wide range of environments. We highly recommend that customizations be applied using an override file, which allows customizations to persist through upgrades without needing to manage merge conflicts. 
+The Sourcegraph Helm chart is highly customizable to support a wide range of environments. We highly recommend that customizations be applied using an override file, which allows customizations to persist through upgrades without needing to manage merge conflicts.
 
-The default configuration values can be viewed in the [values.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/values.yaml) file along with all [supported options](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph#configuration-options). 
+The default configuration values can be viewed in the [values.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/values.yaml) file along with all [supported options](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph#configuration-options).
 
-To customize configuration settings with an override file, begin by creating an empty yaml file (e.g. `override.yaml`). 
+To customize configuration settings with an override file, begin by creating an empty yaml file (e.g. `override.yaml`).
 
 (The configuration override file can be created in advance of deployment, and the configuration override settings can be populated in preparation.)
 
@@ -72,89 +72,172 @@ helm upgrade --install --values ./override.yaml --version 0.7.0 sourcegraph sour
 ```
 When making configuration changes, it's recommended to review the changes that will be applied - see [Reviewing Changes](#reviewing-changes).
 
+### Advanced Configuration Methods
+
+The Helm chart is new and still under active development, and our values.yaml (and therefore the customization available to use via an override file) may not cover every need. Equally, some changes are environment or customer-specific, and so will never be part of the default Sourcegraph Helm chart.
+
+The following guidance for using Kustomize with Helm and Helm Subcharts covers both of these scenarios.
+
+If in doubt, or if you feel something ought to be added to the stock Sourcegraph Helm chart, please contact [support@sourcegraph.com](mailto:support@sourcegraph.com) or your Customer Engineer directly to discuss.
+
+#### Integrate Kustomize with Helm chart
+
+For advanced users who are looking for a temporary workaround, we __recommend__ applying [Kustomize](https://kustomize.io) on the rendered manifests from our chart. Please __do not__ maintain your own fork of our chart, this may impact our ability to support you if you run into issues.
+
+You can learn more about how to integrate Kustomize with Helm from our [example](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/kustomize-chart).
+
+#### Helm subcharts
+
+[Helm subcharts](https://helm.sh/docs/chart_template_guide/subcharts_and_globals/) can be used for permanent customizations to the official Sourcegraph helm chart. This is useful for changes such as adding a new resource unique to your deployment (PodSecurityPolicy, NetworkPolicy, additional services, etc.). These are long-lived customizations that shouldn't be contributed back to the Sourcegraph helm chart.
+
+With a subchart, you create your own helm chart and specify the Sourcegraph chart as a dependency. Any resources you place in the templates folder of your chart will be deployed, as well as the Sourcegraph resources, allowing you to extend the Sourcegraph chart without maintaining a fork.
+
+An example of a subchart is shown in the [examples/subchart](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples) folder.
+
+More details on how to create and configure a subchart can be found in the [helm documentation](https://helm.sh/docs/chart_template_guide/subcharts_and_globals).
+
+## Guides
+
 ### Using external PostgreSQL databases
 
-To use external PostgreSQL databases, first review our [general recommendations](https://docs.sourcegraph.com/admin/external_services/postgres#using-your-own-postgresql-server) and [required postgres permissions](https://docs.sourcegraph.com/admin/external_services/postgres#postgres-permissions-and-database-migrations). 
+To use external PostgreSQL databases, first review our [general recommendations](https://docs.sourcegraph.com/admin/external_services/postgres#using-your-own-postgresql-server) and [required postgres permissions](https://docs.sourcegraph.com/admin/external_services/postgres#postgres-permissions-and-database-migrations).
 
-> ℹ️ Prior to installing the chart, you should store these sensitive environment variables in [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/).
+We recommend storing the credentials in [Secrets] created outside of the helm chart and managed in a secure manner. Each database requires its own Secret and should follow the following format. The Secret name can be customized as desired:
 
-Include code snippets below in your override file:
-
-`pgsql-credentials.Secret.yaml`
 ```yaml
 apiVersion: v1
 kind: Secret
 metadata:
-  name: sourcegraph-pgsql-credentials
+  name: pgsql-credentials
 data:
   # notes: secrets data has to be base64-encoded
-  PGPASSWORD: ""
-```
-
-`codeintel-db-credentials.Secret.yaml`
-```yaml
+  database: ""
+  host: "" # example: pgsql.database.example.com
+  password: ""
+  port: ""
+  user: ""
+---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: sourcegraph-codeintel-db-credentials
+  name: codeintel-db-credentials
 data:
   # notes: secrets data has to be base64-encoded
-  CODEINTEL_PGPASSWORD: ""
+  database: ""
+  host: ""
+  password: ""
+  port: ""
+  user: ""
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: codeinsights-db-credentials
+data:
+  # notes: secrets data has to be base64-encoded
+  database: ""
+  host: ""
+  password: ""
+  port: ""
+  user: ""
 ```
 
-[override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/external-databases/override.yaml)
+The above Secrets should be deployed to the same namespace as the existing Sourcegraph deployment.
+
+You can reference the Secrets in your [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/examples/external-databases/override.yaml) by configuring the `existingSecret` key:
+
 ```yaml
-frontend:
-  env:
-    PGHOST:
-      value: pgsql.database.company.com # external pgsql host
-    PGPORT:
-      value: "5432" # external pgsql port
-    PGDATABASE:
-      value: sg # external pgsql database name
-    PGUSER:
-      value: sg # external pgsql user
-    PGPASSWORD:
-      valueFrom:
-        secretKeyRef: # Pre-existing secret, not created by this chart
-          name: sourcegraph-pgsql-credentials
-          key: PGPASSWORD
-    CODEINTEL_PGHOST:
-      value: codeintel-db.database.company.com # external codeintel-db host
-    CODEINTEL_PGPORT:
-      value: "5432" # external codeintel-db port
-    CODEINTEL_PGDATABASE:
-      value: sg # external codeintel-db database name
-    CODEINTEL_PGUSER:
-      value: sg # external codeintel-db user
-    CODEINTEL_PGPASSWORD:
-      valueFrom:
-        secretKeyRef: # Pre-existing secret, not created by this chart
-          name: sourcegraph-codeintel-db-credentials
-          key: CODEINTEL_PGPASSWORD
+codeIntelDB:
+  enabled: false # disables deployment of the database
+  auth:
+    existingSecret: codeintel-db-credentials
+
+codeInsightsDB:
+  enabled: false
+  auth:
+    existingSecret: codeinsights-db-credentials
 
 pgsql:
-  enabled: false # disable internal pgsql database
+  enabled: false
+  auth:
+    existingSecret: pgsql-credentials
+```
 
-codeIntelDB:
-  enabled: false # disable internal codeintel-db database
+The [using external databases](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/external-databases) example demonstrates this approach.
+
+Although not recommended, credentials can also be configured directly in the helm chart. For example, add the following to your override.yaml to customize pgsql credentials:
+
+```yaml
+pgsql:
+  enabled: false # disable internal pgsql database
+  auth:
+    database: "customdb"
+    host: pgsql.database.company.com # external pgsql host
+    user: "newuser"
+    password: "newpassword"
+    port: "5432"
 ```
 
 ### Using external Redis instances
 
 To use external Redis instances, first review our [general recommendations](https://docs.sourcegraph.com/admin/external_services/redis).
 
-<!--
-  If we copy the entire README.md over here the page will be too cluttered.
-  When the docsite V2 is ready, this should potentially have its own page
--->
-Follow [using your own Redis](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/external-redis) to configure your override file.
+
+If your external Redis instances do not require authentication, you can configure access in your [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/examples/external-redis/override.yaml) with the `endpoint` settings:
+
+```yaml
+redisCache:
+  enabled: false
+  connection:
+    endpoint: redis://redis-cache.example.com:6379 # use a dedicated Redis, recommended
+
+redisStore:
+  enabled: false
+  connection:
+    endpoint: redis://redis-shared.example.com:6379/2 # shared Redis, not recommended
+```
+
+If your endpoints do require authentication, we recommend storing the credentials in [Secrets] created outside of the helm chart and managed in a secure manner.
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: redis-cache-connection
+data:
+  # notes: secrets data has to be base64-encoded
+  endpoint: ""
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: redis-store-connection
+data:
+  # notes: secrets data has to be base64-encoded
+  endpoint: ""
+```
+
+You can reference this secret in your [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/examples/external-redis/override-secret.yaml) by configuring the `existingSecret` key:
+
+```yaml
+redisCache:
+  enabled: false
+  connection:
+    existingSecret: redis-cache-connection
+
+redisStore:
+  enabled: false
+  connection:
+    existingSecret: redis-store-connection
+```
+
+The [using your own Redis](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/external-redis) example demonstrates this approach.
 
 ### Using external Object Storage
 
 To use an external Object Storage service (S3-compatible services, or GCS), first review our [general recommendations](https://docs.sourcegraph.com/admin/external_services/object_storage). Then add the below code snippet to your override file.
 
-Prior to installing the chart, you should store these sensitive environment variables in [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/).
+Prior to installing the chart, you should store these sensitive environment variables in [Secrets].
 
 > The example override assumes the use of AWS S3. You may configure the environment variables accordingly for your own use case based on our [general recommendations](https://docs.sourcegraph.com/admin/external_services/object_storage).
 
@@ -171,6 +254,10 @@ data:
 
 [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/external-object-storage/override.yaml)
 ```yaml
+
+minio:
+  enabled: false # Disable deployment of the built-in object storage
+
 # we use YAML anchors and alias to keep override file clean
 objectStorageEnv: &objectStorageEnv
   PRECISE_CODE_INTEL_UPLOAD_BACKEND:
@@ -341,39 +428,39 @@ If using your own certificate, you can do so with [TLS Secrets](https://kubernet
 
 `sourcegraph-frontend-tls.Secret.yaml`
 ```yaml
-apiVersion: v1 
-kind: Secret 
-metadata: 
-  name: sourcegraph-frontend-tls 
-type: kubernetes.io/tls 
-data: 
-  # the data is abbreviated in this example 
-  tls.crt: | 
-    MIIC2DCCAcCgAwIBAgIBATANBgkqh ... 
-  tls.key: | 
-    MIIEpgIBAAKCAQEA7yn3bRHQ5FHMQ ... 
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sourcegraph-frontend-tls
+type: kubernetes.io/tls
+data:
+  # the data is abbreviated in this example
+  tls.crt: |
+    MIIC2DCCAcCgAwIBAgIBATANBgkqh ...
+  tls.key: |
+    MIIEpgIBAAKCAQEA7yn3bRHQ5FHMQ ...
 ```
 
 ```sh
 kubectl apply -f ./sourcegraph-frontend-tls.Secret.yaml
 ```
-	  
+
 Add the following values to your override file.
-	  
+
 ```yaml
-frontend: 
-  ingress: 
-    enabled: true 
-    annotations: 
-      kubernetes.io/ingress.class: gce 
-    tlsSecret: sourcegraph-frontend-tls # reference the created TLS Secret 
-    # replace with your actual domain 
-    host: sourcegraph.company.com 
+frontend:
+  ingress:
+    enabled: true
+    annotations:
+      kubernetes.io/ingress.class: gce
+    tlsSecret: sourcegraph-frontend-tls # reference the created TLS Secret
+    # replace with your actual domain
+    host: sourcegraph.company.com
 ```
 
 **5** – Validate the deployment
-Sourcegraph should now be available via the address set. 
-Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account. 
+Sourcegraph should now be available via the address set.
+Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account.
 
 **6** – Further configuration
 
@@ -449,8 +536,8 @@ frontend:
 ```
 
 **4** – Validate the deployment
-Sourcegraph should now be available via the address set. 
-Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account. 
+Sourcegraph should now be available via the address set.
+Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account.
 
 **5** – Further configuration
 
@@ -534,8 +621,8 @@ frontend:
 ```
 
 **4** – Validate the deployment
-Sourcegraph should now be available via the address set. 
-Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account. 
+Sourcegraph should now be available via the address set.
+Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account.
 
 **5** – Further configuration
 
@@ -664,37 +751,13 @@ frontend:
 ```
 
 **4** – Validate the deployment
-Sourcegraph should now be available via the address set. 
-Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account. 
+Sourcegraph should now be available via the address set.
+Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account.
 
 **5** – Further configuration
 
 Now the deployment is complete, more information on configuring the Sourcegraph application can be found here:
 [Configuring Sourcegraph](../../config/index.md)
-
-## Advanced configuration
-
-The Helm chart is new and still under active development, and our values.yaml (and therefore the customization available to use via an override file) may not cover every need. Equally, some changes are environment or customer-specific, and so will never be part of the default Sourcegraph Helm chart.
-
-The following guidance for using Kustomize with Helm and Helm Subcharts covers both of these scenarios.
-
-If in doubt, or if you feel something ought to be added to the stock Sourcegraph Helm chart, please contact [support@sourcegraph.com](mailto:support@sourcegraph.com) or your Customer Engineer directly to discuss.
-
-### Integrate Kustomize with Helm chart
-
-For advanced users who are looking for a temporary workaround, we __recommend__ applying [Kustomize](https://kustomize.io) on the rendered manifests from our chart. Please __do not__ maintain your own fork of our chart, this may impact our ability to support you if you run into issues.
-
-You can learn more about how to integrate Kustomize with Helm from our [example](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/kustomize-chart).
-
-### Helm sub charts
-
-[Helm subcharts](https://helm.sh/docs/chart_template_guide/subcharts_and_globals/) can be used for permanent customizations to the official Sourcegraph helm chart. This is useful for changes such as adding a new resource unique to your deployment (PodSecurityPolicy, NetworkPolicy, additional services, etc.). These are long-lived customizations that shouldn't be contributed back to the Sourcegraph helm chart.
-
-With a sub chart, you create your own helm chart and specify the Sourcegraph chart as a dependency. Any resources you place in the templates folder of your chart will be deployed, as well as the Sourcegraph resources, allowing you to extend the Sourcegraph chart without maintaining a fork.
-
-An example of a sub chart is shown in the [examples/subchart](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples) folder.
-
-More details on how to create and configure a sub chart can be found in the [helm documentation](https://helm.sh/docs/chart_template_guide/subcharts_and_globals).
 
 ## Upgrading Sourcegraph
 
@@ -704,7 +767,7 @@ A new version of Sourcegraph is released every month (with patch releases in bet
 
 ### Upgrading
 
-1. Review [Helm Changelog] and [Sourcegraph Changelog] and select a helm chart version compatible with your current Sourcegraph version. 
+1. Review [Helm Changelog] and [Sourcegraph Changelog] and select the most recent version compatible with your current Sourcegraph version.
 
 > ⚠️ You can only upgrade one minor version of Sourcegraph at a time.
 
@@ -719,10 +782,16 @@ A new version of Sourcegraph is released every month (with patch releases in bet
 1.  Install the new version:
 
    ```bash
-      helm upgrade --install --wait -f override.yaml --version 0.7.0 sourcegraph sourcegraph/sourcegraph
+      helm upgrade --install -f override.yaml --version 0.7.0 sourcegraph sourcegraph/sourcegraph
    ```
 
-The --wait flag is optional and can be removed if you do not want to wait for the upgraded resources to become healthy.
+1.  Verify the installation has started:
+
+   ```bash
+      kubectl get pods --watch
+   ```
+
+   When all pods have restarted and show as Running, you can browse to your Sourcegraph deployment and login to verify the instance is working as expected. For troubleshooting, refer to the [Operations guide](https://docs.sourcegraph.com/admin/install/kubernetes/operations) for common commands to gather more information about failures.
 
 ### Rollback
 
@@ -810,6 +879,16 @@ Then, display a diff between a live deployment and an upgrade, with 5 lines of c
 
 For more examples and configuration options, reference the [Helm Diff] plugin documentation.
 
+## Uninstalling Sourcegraph
+
+Sourcegraph can be uninstalled by running the following command:
+
+```sh
+helm uninstall sourcegraph
+```
+
+Some Persistent Volumes may be retained after the uninstall is complete. In your cloud provider, check for unattached disks and delete them as necessary.
+
 [backendconfig]: https://cloud.google.com/kubernetes-engine/docs/how-to/ingress-features#create_backendconfig
 [azure application gateway]: https://docs.microsoft.com/en-us/azure/application-gateway/overview
 [Container-native load balancing]: https://cloud.google.com/kubernetes-engine/docs/how-to/container-native-load-balancing
@@ -821,6 +900,4 @@ For more examples and configuration options, reference the [Helm Diff] plugin do
 [Sourcegraph Changelog]: https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md
 [Sourcegraph Migrator]: https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph-migrator
 [Helm Diff]: https://github.com/databus23/helm-diff
-
-
-
+[Secrets]: https://kubernetes.io/docs/concepts/configuration/secret/

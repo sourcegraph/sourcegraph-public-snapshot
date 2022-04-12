@@ -75,6 +75,11 @@ pkgs.mkShell {
     nodejs-16_x
     (yarn.override { nodejs = nodejs-16_x; })
     nodePackages.typescript
+
+    cargo
+    rustc
+    rustfmt
+    libiconv
   ];
 
   # Startup postgres
@@ -85,4 +90,6 @@ pkgs.mkShell {
   # By explicitly setting this environment variable we avoid starting up
   # universal-ctags via docker.
   CTAGS_COMMAND = "${universal-ctags}/bin/universal-ctags";
+
+  RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
 }
