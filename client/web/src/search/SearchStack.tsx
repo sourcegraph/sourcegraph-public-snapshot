@@ -19,7 +19,7 @@ import NotebookPlusIcon from 'mdi-react/NotebookPlusIcon'
 import PenIcon from 'mdi-react/PenIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import TextBoxIcon from 'mdi-react/TextBoxIcon'
-import TrashIcon from 'mdi-react/TrashCanIcon'
+import DeleteIcon from 'mdi-react/DeleteIcon'
 
 import { isMacPlatform } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
@@ -390,7 +390,7 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({ initial
                                 disabled={entries.length === 0}
                                 onClick={() => setConfirmRemoveAll(true)}
                             >
-                                <Icon as={TrashIcon} />
+                                <Icon as={DeleteIcon} />
                             </Button>
                         </div>
                     </div>
@@ -535,7 +535,7 @@ const SearchStackEntryComponent: React.FunctionComponent<SearchStackEntryCompone
                             onDelete(entry)
                         }}
                     >
-                        <Icon as={TrashIcon} />
+                        <Icon as={DeleteIcon} />
                     </Button>
                 </span>
             </div>
