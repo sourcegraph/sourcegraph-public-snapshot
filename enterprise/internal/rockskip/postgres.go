@@ -68,8 +68,8 @@ func GetSymbol(ctx context.Context, db dbutil.DB, repoId int, path string, name 
 			path = $2 AND
 			name = $3 AND
 		    $4 && added AND
-			NOT $5 && deleted
-	`, repoId, path, name, pg.Array(hops), pg.Array(hops)).Scan(&id)
+			NOT $4 && deleted
+	`, repoId, path, name, pg.Array(hops)).Scan(&id)
 	if err == sql.ErrNoRows {
 		return 0, false, nil
 	} else if err != nil {
