@@ -8,7 +8,7 @@ import (
 	"k8s.io/utils/lru"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -78,7 +78,7 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 
 	tasklog.Start("Log")
 	entriesIndexed := 0
-	err = s.git.LogReverseEach(repo, db, givenCommit, missingCount, func(entry git.LogEntry) error {
+	err = s.git.LogReverseEach(repo, db, givenCommit, missingCount, func(entry gitdomain.LogEntry) error {
 		defer tasklog.Continue("Log")
 
 		threadStatus.SetProgress(entriesIndexed, missingCount)
@@ -120,10 +120,10 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 		deletedPaths := []string{}
 		addedPaths := []string{}
 		for _, pathStatus := range entry.PathStatuses {
-			if pathStatus.Status == git.DeletedAMD || pathStatus.Status == git.ModifiedAMD {
+			if pathStatus.Status == gitdomain.DeletedAMD || pathStatus.Status == gitdomain.ModifiedAMD {
 				deletedPaths = append(deletedPaths, pathStatus.Path)
 			}
-			if pathStatus.Status == git.AddedAMD || pathStatus.Status == git.ModifiedAMD {
+			if pathStatus.Status == gitdomain.AddedAMD || pathStatus.Status == gitdomain.ModifiedAMD {
 				addedPaths = append(addedPaths, pathStatus.Path)
 			}
 		}
@@ -196,11 +196,11 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 		addedSymbols := map[string]map[string]struct{}{}
 		for _, pathStatus := range entry.PathStatuses {
 			switch pathStatus.Status {
-			case git.DeletedAMD:
+			case gitdomain.DeletedAMD:
 				deletedSymbols[pathStatus.Path] = symbolsFromDeletedFiles[pathStatus.Path]
-			case git.AddedAMD:
+			case gitdomain.AddedAMD:
 				addedSymbols[pathStatus.Path] = symbolsFromAddedFiles[pathStatus.Path]
-			case git.ModifiedAMD:
+			case gitdomain.ModifiedAMD:
 				deletedSymbols[pathStatus.Path] = map[string]struct{}{}
 				addedSymbols[pathStatus.Path] = map[string]struct{}{}
 				for name := range symbolsFromDeletedFiles[pathStatus.Path] {

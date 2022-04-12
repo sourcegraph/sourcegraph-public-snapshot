@@ -22,6 +22,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/go-diff/diff"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 
@@ -628,4 +629,22 @@ func decodeOID(sha string) (gitdomain.OID, error) {
 	var oid gitdomain.OID
 	copy(oid[:], oidBytes)
 	return oid, nil
+}
+
+func (c *ClientImplementor) LogReverseEach(repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	command := c.Command("git", gitdomain.LogReverseArgs(n, commit)...)
+	command.Repo = api.RepoName(repo)
+	// We run a single `git log` command and stream the output while the repo is being processed, which
+	// can take much longer than 1 minute (the default timeout).
+	command.DisableTimeout()
+	stdout, err := StdoutReader(ctx, command)
+	if err != nil {
+		return err
+	}
+	defer stdout.Close()
+
+	return errors.Wrap(gitdomain.ParseLogReverseEach(stdout, onLogEntry), "ParseLogReverseEach")
 }
