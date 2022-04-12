@@ -3,9 +3,6 @@ package jobutil
 import (
 	"context"
 
-	zoektstreamer "github.com/google/zoekt"
-
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -20,8 +17,6 @@ type repoPagerJob struct {
 	useIndex         query.YesNoOnly // whether to include indexed repos
 	containsRefGlobs bool            // whether to include repositories with refs
 	child            job.Job         // child job tree that need populating a repos field to run
-
-	zoekt zoektstreamer.Streamer
 }
 
 // setRepos populates the repos field for all jobs that need repos. Jobs are
@@ -61,18 +56,18 @@ func setRepos(job job.Job, indexed *zoekt.IndexedRepoRevs, unindexed []*search.R
 	return setRepos.Map(job)
 }
 
-func (p *repoPagerJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
+func (p *repoPagerJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, p)
 	defer func() { finish(alert, err) }()
 
 	var maxAlerter search.MaxAlerter
 
-	repoResolver := &repos.Resolver{DB: db, Opts: p.repoOptions}
+	repoResolver := &repos.Resolver{DB: clients.DB, Opts: p.repoOptions}
 	pager := func(page *repos.Resolved) error {
 		indexed, unindexed, err := zoekt.PartitionRepos(
 			ctx,
 			page.RepoRevs,
-			p.zoekt,
+			clients.Zoekt,
 			search.TextRequest,
 			p.useIndex,
 			p.containsRefGlobs,
@@ -82,7 +77,7 @@ func (p *repoPagerJob) Run(ctx context.Context, db database.DB, stream streaming
 		}
 
 		job := setRepos(p.child, indexed, unindexed)
-		alert, err := job.Run(ctx, db, stream)
+		alert, err := job.Run(ctx, clients, stream)
 		maxAlerter.Add(alert)
 		return err
 	}

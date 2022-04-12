@@ -6,7 +6,6 @@ import (
 	"context"
 	"sync"
 
-	database "github.com/sourcegraph/sourcegraph/internal/database"
 	search "github.com/sourcegraph/sourcegraph/internal/search"
 	job "github.com/sourcegraph/sourcegraph/internal/search/job"
 	streaming "github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -34,7 +33,7 @@ func NewMockJob() *MockJob {
 			},
 		},
 		RunFunc: &JobRunFunc{
-			defaultHook: func(context.Context, database.DB, streaming.Sender) (*search.Alert, error) {
+			defaultHook: func(context.Context, job.RuntimeClients, streaming.Sender) (*search.Alert, error) {
 				return nil, nil
 			},
 		},
@@ -51,7 +50,7 @@ func NewStrictMockJob() *MockJob {
 			},
 		},
 		RunFunc: &JobRunFunc{
-			defaultHook: func(context.Context, database.DB, streaming.Sender) (*search.Alert, error) {
+			defaultHook: func(context.Context, job.RuntimeClients, streaming.Sender) (*search.Alert, error) {
 				panic("unexpected invocation of MockJob.Run")
 			},
 		},
@@ -172,15 +171,15 @@ func (c JobNameFuncCall) Results() []interface{} {
 // JobRunFunc describes the behavior when the Run method of the parent
 // MockJob instance is invoked.
 type JobRunFunc struct {
-	defaultHook func(context.Context, database.DB, streaming.Sender) (*search.Alert, error)
-	hooks       []func(context.Context, database.DB, streaming.Sender) (*search.Alert, error)
+	defaultHook func(context.Context, job.RuntimeClients, streaming.Sender) (*search.Alert, error)
+	hooks       []func(context.Context, job.RuntimeClients, streaming.Sender) (*search.Alert, error)
 	history     []JobRunFuncCall
 	mutex       sync.Mutex
 }
 
 // Run delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockJob) Run(v0 context.Context, v1 database.DB, v2 streaming.Sender) (*search.Alert, error) {
+func (m *MockJob) Run(v0 context.Context, v1 job.RuntimeClients, v2 streaming.Sender) (*search.Alert, error) {
 	r0, r1 := m.RunFunc.nextHook()(v0, v1, v2)
 	m.RunFunc.appendCall(JobRunFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -188,7 +187,7 @@ func (m *MockJob) Run(v0 context.Context, v1 database.DB, v2 streaming.Sender) (
 
 // SetDefaultHook sets function that is called when the Run method of the
 // parent MockJob instance is invoked and the hook queue is empty.
-func (f *JobRunFunc) SetDefaultHook(hook func(context.Context, database.DB, streaming.Sender) (*search.Alert, error)) {
+func (f *JobRunFunc) SetDefaultHook(hook func(context.Context, job.RuntimeClients, streaming.Sender) (*search.Alert, error)) {
 	f.defaultHook = hook
 }
 
@@ -196,7 +195,7 @@ func (f *JobRunFunc) SetDefaultHook(hook func(context.Context, database.DB, stre
 // Run method of the parent MockJob instance invokes the hook at the front
 // of the queue and discards it. After the queue is empty, the default hook
 // function is invoked for any future action.
-func (f *JobRunFunc) PushHook(hook func(context.Context, database.DB, streaming.Sender) (*search.Alert, error)) {
+func (f *JobRunFunc) PushHook(hook func(context.Context, job.RuntimeClients, streaming.Sender) (*search.Alert, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -205,19 +204,19 @@ func (f *JobRunFunc) PushHook(hook func(context.Context, database.DB, streaming.
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *JobRunFunc) SetDefaultReturn(r0 *search.Alert, r1 error) {
-	f.SetDefaultHook(func(context.Context, database.DB, streaming.Sender) (*search.Alert, error) {
+	f.SetDefaultHook(func(context.Context, job.RuntimeClients, streaming.Sender) (*search.Alert, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *JobRunFunc) PushReturn(r0 *search.Alert, r1 error) {
-	f.PushHook(func(context.Context, database.DB, streaming.Sender) (*search.Alert, error) {
+	f.PushHook(func(context.Context, job.RuntimeClients, streaming.Sender) (*search.Alert, error) {
 		return r0, r1
 	})
 }
 
-func (f *JobRunFunc) nextHook() func(context.Context, database.DB, streaming.Sender) (*search.Alert, error) {
+func (f *JobRunFunc) nextHook() func(context.Context, job.RuntimeClients, streaming.Sender) (*search.Alert, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -255,7 +254,7 @@ type JobRunFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 database.DB
+	Arg1 job.RuntimeClients
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 streaming.Sender

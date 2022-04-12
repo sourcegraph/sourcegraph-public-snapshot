@@ -6,7 +6,11 @@ package job
 import (
 	"context"
 
+	"github.com/google/zoekt"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/endpoint"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
@@ -17,6 +21,13 @@ import (
 // timeout). Calling Run on a job object runs a search.
 //go:generate ../../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/search/job -i Job -d mockjob
 type Job interface {
-	Run(context.Context, database.DB, streaming.Sender) (*search.Alert, error)
+	Run(context.Context, RuntimeClients, streaming.Sender) (*search.Alert, error)
 	Name() string
+}
+
+type RuntimeClients struct {
+	DB           database.DB
+	Zoekt        zoekt.Streamer
+	SearcherURLs *endpoint.Map
+	Gitserver    gitserver.Client
 }

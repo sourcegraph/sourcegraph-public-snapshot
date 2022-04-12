@@ -8,7 +8,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -26,7 +25,7 @@ type subRepoPermsFilterJob struct {
 	child job.Job
 }
 
-func (s *subRepoPermsFilterJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
+func (s *subRepoPermsFilterJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
@@ -48,7 +47,7 @@ func (s *subRepoPermsFilterJob) Run(ctx context.Context, db database.DB, stream 
 		stream.Send(event)
 	})
 
-	alert, err = s.child.Run(ctx, db, filteredStream)
+	alert, err = s.child.Run(ctx, clients, filteredStream)
 	if err != nil {
 		errs = errors.Append(errs, err)
 	}

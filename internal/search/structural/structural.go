@@ -7,7 +7,6 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
@@ -53,6 +52,7 @@ func (UnindexedList) IsIndexed() bool {
 // searchRepos represent the arguments to a search called over repositories.
 type searchRepos struct {
 	args    *search.SearcherParameters
+	clients job.RuntimeClients
 	repoSet repoData
 	stream  streaming.Sender
 }
@@ -64,11 +64,10 @@ func (s *searchRepos) getJob(ctx context.Context) func() error {
 			PatternInfo:     s.args.PatternInfo,
 			Repos:           s.repoSet.AsList(),
 			Indexed:         s.repoSet.IsIndexed(),
-			SearcherURLs:    s.args.SearcherURLs,
 			UseFullDeadline: s.args.UseFullDeadline,
 		}
 
-		_, err := searcherJob.Run(ctx, nil, s.stream)
+		_, err := searcherJob.Run(ctx, s.clients, s.stream)
 		return err
 	}
 }
@@ -82,48 +81,47 @@ func runJobs(ctx context.Context, jobs []*searchRepos) error {
 }
 
 // streamStructuralSearch runs structural search jobs and streams the results.
-func streamStructuralSearch(ctx context.Context, args *search.SearcherParameters, repos []repoData, stream streaming.Sender) (err error) {
+func streamStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *search.SearcherParameters, repos []repoData, stream streaming.Sender) (err error) {
 	jobs := []*searchRepos{}
 	for _, repoSet := range repos {
 		searcherArgs := &search.SearcherParameters{
-			SearcherURLs:    args.SearcherURLs,
 			PatternInfo:     args.PatternInfo,
 			UseFullDeadline: args.UseFullDeadline,
 		}
 
-		jobs = append(jobs, &searchRepos{args: searcherArgs, stream: stream, repoSet: repoSet})
+		jobs = append(jobs, &searchRepos{clients: clients, args: searcherArgs, stream: stream, repoSet: repoSet})
 	}
 	return runJobs(ctx, jobs)
 }
 
 // retryStructuralSearch runs a structural search with a higher limit file match
 // limit so that Zoekt resolves more potential file matches.
-func retryStructuralSearch(ctx context.Context, args *search.SearcherParameters, repos []repoData, stream streaming.Sender) error {
+func retryStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *search.SearcherParameters, repos []repoData, stream streaming.Sender) error {
 	patternCopy := *(args.PatternInfo)
 	patternCopy.FileMatchLimit = 1000
 	argsCopy := *args
 	argsCopy.PatternInfo = &patternCopy
 	args = &argsCopy
-	return streamStructuralSearch(ctx, args, repos, stream)
+	return streamStructuralSearch(ctx, clients, args, repos, stream)
 }
 
-func runStructuralSearch(ctx context.Context, args *search.SearcherParameters, repos []repoData, stream streaming.Sender) error {
+func runStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *search.SearcherParameters, repos []repoData, stream streaming.Sender) error {
 	if args.PatternInfo.FileMatchLimit != limits.DefaultMaxSearchResults {
 		// streamStructuralSearch performs a streaming search when the user sets a value
 		// for `count`. The first return parameter indicates whether the request was
 		// serviced with streaming.
-		return streamStructuralSearch(ctx, args, repos, stream)
+		return streamStructuralSearch(ctx, clients, args, repos, stream)
 	}
 
 	// For structural search with default limits we retry if we get no results.
 	agg := streaming.NewAggregatingStream()
-	err := streamStructuralSearch(ctx, args, repos, agg)
+	err := streamStructuralSearch(ctx, clients, args, repos, agg)
 
 	event := agg.SearchEvent
 	if len(event.Results) == 0 && err == nil {
 		// retry structural search with a higher limit.
 		agg := streaming.NewAggregatingStream()
-		err := retryStructuralSearch(ctx, args, repos, agg)
+		err := retryStructuralSearch(ctx, clients, args, repos, agg)
 		if err != nil {
 			return err
 		}
@@ -160,16 +158,16 @@ type StructuralSearch struct {
 	RepoOpts search.RepoOptions
 }
 
-func (s *StructuralSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
+func (s *StructuralSearch) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	repos := &searchrepos.Resolver{DB: db, Opts: s.RepoOpts}
+	repos := &searchrepos.Resolver{DB: clients.DB, Opts: s.RepoOpts}
 	return nil, repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
 		indexed, unindexed, err := zoektutil.PartitionRepos(
 			ctx,
 			page.RepoRevs,
-			s.ZoektArgs.Zoekt,
+			clients.Zoekt,
 			search.TextRequest,
 			s.UseIndex,
 			s.ContainsRefGlobs,
@@ -182,7 +180,7 @@ func (s *StructuralSearch) Run(ctx context.Context, db database.DB, stream strea
 		if indexed != nil {
 			repoSet = append(repoSet, IndexedMap(indexed.RepoRevs))
 		}
-		return runStructuralSearch(ctx, s.SearcherArgs, repoSet, stream)
+		return runStructuralSearch(ctx, clients, s.SearcherArgs, repoSet, stream)
 	})
 }
 
