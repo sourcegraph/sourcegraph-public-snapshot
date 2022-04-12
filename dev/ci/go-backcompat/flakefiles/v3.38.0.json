@@ -8,5 +8,10 @@
     "path": "enterprise/internal/codemonitors",
     "prefix": "TestCodeMonitorHook",
     "reason": "Feature is experimental and not enabled for any customers"
+  },
+  {
+    "path": "internal/database",
+    "prefix": "TestUsers_CheckAndDecrementInviteQuota",
+    "reason": "Test is written in a bad way (depends on default value definition, but does not affect backwards compatibility) in https://github.com/sourcegraph/sourcegraph/pull/33786."
   }
 ]
