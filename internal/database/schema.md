@@ -2429,7 +2429,7 @@ Foreign-key constraints:
  created_at              | timestamp with time zone |           | not null | now()
  updated_at              | timestamp with time zone |           | not null | now()
  deleted_at              | timestamp with time zone |           |          | 
- invite_quota            | integer                  |           | not null | 15
+ invite_quota            | integer                  |           | not null | 100
  passwd                  | text                     |           |          | 
  passwd_reset_code       | text                     |           |          | 
  passwd_reset_time       | timestamp with time zone |           |          | 
