@@ -35,7 +35,7 @@ func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 		t.Fatal(err)
 	}
 
-	cli, err := NewClient(&schema.BitbucketCloudConnection{
+	cli, err := NewClient("urn", &schema.BitbucketCloudConnection{
 		ApiURL:      "https://api.bitbucket.org",
 		Username:    GetenvTestBitbucketCloudUsername(),
 		AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
