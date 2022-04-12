@@ -166,29 +166,28 @@ func addYarnDeduplicateLint(pipeline *bk.Pipeline) {
 // Adds client linters and Typescript check.
 func addClientLinters(lintOnlyChangedFiles bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
-		eslintCommand := "dev/ci/yarn-run.sh lint:js"
-		if lintOnlyChangedFiles {
-			eslintCommand += ":changed"
-		}
-
-		stylelintCommand := "dev/ci/yarn-run.sh lint:css"
-		if lintOnlyChangedFiles {
-			stylelintCommand += ":changed"
-		}
-		// - ESLint ~9m
-		pipeline.AddStep(":eslint: ESLint",
-			withYarnCache(),
-			bk.Cmd(eslintCommand))
-
-		// - Stylelint ~2m
-		pipeline.AddStep(":stylelint: Stylelint",
-			withYarnCache(),
-			bk.Cmd(stylelintCommand))
-
 		// - build-ts ~4m
 		pipeline.AddStep(":typescript: Build TS",
 			withYarnCache(),
 			bk.Cmd("dev/ci/yarn-run.sh build-ts"))
+
+		if lintOnlyChangedFiles {
+			pipeline.AddStep(":eslint: ESLint",
+				withYarnCache(),
+				bk.Cmd("dev/ci/yarn-run.sh lint:js:changed"))
+
+			pipeline.AddStep(":stylelint: Stylelint",
+				withYarnCache(),
+				bk.Cmd("dev/ci/yarn-run.sh lint:css:changed"))
+		} else {
+			pipeline.AddStep(":eslint: ESLint",
+				withYarnCache(),
+				bk.Cmd("dev/ci/yarn-run.sh lint:js:all"))
+
+			pipeline.AddStep(":stylelint: Stylelint",
+				withYarnCache(),
+				bk.Cmd("dev/ci/yarn-run.sh lint:css:all"))
+		}
 	}
 }
 
