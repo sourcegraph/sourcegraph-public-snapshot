@@ -109,6 +109,9 @@ func (i *CommitIndexer) indexAll(ctx context.Context) error {
 	return nil
 }
 
+// maxPagesPerRepo Limits the number of pages of commits indexRepository can process per run
+const maxPagesPerRepo = 25
+
 // indexRepository attempts to index the commits given a repository name one page at a time.
 // This method will absorb any errors that occur during execution and skip any remaining pages.
 // If this repository already has some commits indexed, only commits made more recently than the previous index will be added.
@@ -118,7 +121,7 @@ func (i *CommitIndexer) indexRepository(name string, id api.RepoID) error {
 	// It is important that the page size stays consistent during processing for each page
 	// so that it can correctly determine the time the repository has been indexed though
 	pageSize := conf.Get().InsightsCommitIndexerPageSize
-	for additionalPages && pagesProccssed < 25 {
+	for additionalPages && pagesProccssed < maxPagesPerRepo {
 		var err error
 		additionalPages, err = i.indexNextPage(name, id, pageSize)
 		pagesProccssed++
