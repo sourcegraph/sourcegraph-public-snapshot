@@ -297,14 +297,12 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 				},
 			},
 			in: schema.GoModulesConnection{
-				Dependencies: []string{"github.com/oklog/ulid"},
 				Urls: []string{
 					"https://proxy.golang.org",
 					"https://user:REDACTED@athens.golang.org",
 				},
 			},
 			out: schema.GoModulesConnection{
-				Dependencies: []string{"github.com/oklog/ulid"},
 				Urls: []string{
 					"https://proxy.golang.org",
 					"https://user:password@athens.golang.org",
@@ -319,17 +317,34 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 				},
 			},
 			in: schema.GoModulesConnection{
-				Dependencies: []string{"github.com/oklog/ulid"},
 				Urls: []string{
 					"https://user:REDACTED@athens.golang.org",
 					"https://proxy.golang.org",
 				},
 			},
 			out: schema.GoModulesConnection{
-				Dependencies: []string{"github.com/oklog/ulid"},
 				Urls: []string{
 					"https://user:password@athens.golang.org",
 					"https://proxy.golang.org",
+				},
+			},
+		},
+		{
+			kind: extsvc.KindGoModules,
+			old: schema.GoModulesConnection{
+				Urls: []string{
+					"https://user:password@athens.golang.org",
+					"https://proxy.golang.org",
+				},
+			},
+			in: schema.GoModulesConnection{
+				Urls: []string{
+					"https://user:REDACTED@athens.golang.org",
+				},
+			},
+			out: schema.GoModulesConnection{
+				Urls: []string{
+					"https://user:password@athens.golang.org",
 				},
 			},
 		},
