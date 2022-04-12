@@ -131,8 +131,7 @@ func (c *ClientImplementor) ShortLog(ctx context.Context, repo api.RepoName, opt
 	if opt.Path != "" {
 		args = append(args, opt.Path)
 	}
-	cmd := c.Command("git", args...)
-	cmd.Repo = repo
+	cmd := c.Command(repo, "git", args...)
 	out, err := cmd.Output(ctx)
 	if err != nil {
 		return nil, errors.Errorf("exec `git shortlog -s -n -e` failed: %v", err)
@@ -157,8 +156,7 @@ func (c *ClientImplementor) execReader(ctx context.Context, repo api.RepoName, a
 	if !gitdomain.IsAllowedGitCmd(args) {
 		return nil, errors.Errorf("command failed: %v is not a allowed git command", args)
 	}
-	cmd := c.Command("git", args...)
-	cmd.Repo = repo
+	cmd := c.Command(repo, "git", args...)
 	return StdoutReader(ctx, cmd)
 }
 
@@ -278,8 +276,7 @@ func (c *ClientImplementor) CommitGraph(ctx context.Context, repo api.RepoName, 
 		args = append(args, fmt.Sprintf("-%d", opts.Limit))
 	}
 
-	cmd := c.Command("git", args...)
-	cmd.Repo = repo
+	cmd := c.Command(repo, "git", args...)
 
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
@@ -324,8 +321,7 @@ func (c *ClientImplementor) DiffPath(ctx context.Context, repo api.RepoName, sou
 
 // DiffSymbols performs a diff command which is expected to be parsed by our symbols package
 func (c *ClientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error) {
-	command := c.Command("git", "diff", "-z", "--name-status", "--no-renames", string(commitA), string(commitB))
-	command.Repo = repo
+	command := c.Command(repo, "git", "diff", "-z", "--name-status", "--no-renames", string(commitA), string(commitB))
 	return command.Output(ctx)
 }
 
@@ -504,8 +500,7 @@ func lsTreeUncached(ctx context.Context, db database.DB, repo api.RepoName, comm
 	if path != "" {
 		args = append(args, "--", filepath.ToSlash(path))
 	}
-	cmd := NewClient(db).Command("git", args...)
-	cmd.Repo = repo
+	cmd := NewClient(db).Command(repo, "git", args...)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		if bytes.Contains(out, []byte("exists on disk, but not in")) {
@@ -583,8 +578,7 @@ func lsTreeUncached(ctx context.Context, db database.DB, repo api.RepoName, comm
 			}
 		case "commit":
 			mode = mode | gitdomain.ModeSubmodule
-			cmd := NewClient(db).Command("git", "show", fmt.Sprintf("%s:.gitmodules", commit))
-			cmd.Repo = repo
+			cmd := NewClient(db).Command(repo, "git", "show", fmt.Sprintf("%s:.gitmodules", commit))
 			var submodule gitdomain.Submodule
 			if out, err := cmd.Output(ctx); err == nil {
 

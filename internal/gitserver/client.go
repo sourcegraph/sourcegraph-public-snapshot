@@ -488,7 +488,7 @@ type badRequestError struct{ error }
 func (e badRequestError) BadRequest() bool { return true }
 
 func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, errRes error) {
-	repoName := protocol.NormalizeRepo(c.Repo)
+	repoName := protocol.NormalizeRepo(c.repo)
 
 	span, ctx := ot.StartSpanFromContext(ctx, "Client.sendExec")
 	defer func() {
@@ -499,7 +499,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 		span.Finish()
 	}()
 	span.SetTag("request", "Exec")
-	span.SetTag("repo", c.Repo)
+	span.SetTag("repo", c.repo)
 	span.SetTag("args", c.args[1:])
 
 	// Check that ctx is not expired.
@@ -830,8 +830,7 @@ func repoNamesFromRepoCommits(repoCommits []api.RepoCommit) []string {
 
 // Cmd represents a command to be executed remotely.
 type Cmd struct {
-	Repo api.RepoName // the repository to execute the command in
-
+	repo           api.RepoName // the repository to execute the command in
 	ensureRevision string
 	args           []string
 	noTimeout      bool
@@ -887,6 +886,8 @@ func (c *Cmd) DisableTimeout() {
 	c.noTimeout = true
 }
 
+func (c *Cmd) Repo() api.RepoName { return c.repo }
+
 func (c *Cmd) Args() []string { return c.args }
 
 func (c *Cmd) ExitStatus() int { return c.exitStatus }
@@ -938,11 +939,12 @@ func (c *cmdReader) Close() error {
 	return c.rc.Close()
 }
 
-func (c *ClientImplementor) Command(name string, arg ...string) *Cmd {
+func (c *ClientImplementor) Command(repo api.RepoName, name string, arg ...string) *Cmd {
 	if name != "git" {
 		panic("gitserver: command name must be 'git'")
 	}
 	return &Cmd{
+		repo:     repo,
 		httpPost: c.httpPost,
 		args:     append([]string{"git"}, arg...),
 	}
@@ -1500,8 +1502,7 @@ var ambiguousArgPattern = lazyregexp.New(`ambiguous argument '([^']+)'`)
 func (c *ClientImplementor) ResolveRevisions(ctx context.Context, repo api.RepoName, revs []protocol.RevisionSpecifier) ([]string, error) {
 	args := append([]string{"rev-parse"}, revsToGitArgs(revs)...)
 
-	cmd := c.Command("git", args...)
-	cmd.Repo = repo
+	cmd := c.Command(repo, "git", args...)
 	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		if gitdomain.IsRepoNotExist(err) {

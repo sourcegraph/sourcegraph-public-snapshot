@@ -83,8 +83,7 @@ func ResolveRevision(ctx context.Context, db database.DB, repo api.RepoName, spe
 		spec = spec + "^0"
 	}
 
-	cmd := gitserver.NewClient(db).Command("git", "rev-parse", spec)
-	cmd.Repo = repo
+	cmd := gitserver.NewClient(db).Command(repo, "git", "rev-parse", spec)
 	cmd.SetEnsureRevision(spec)
 
 	// We don't ever need to ensure that HEAD is in git-server.
@@ -106,7 +105,7 @@ func runRevParse(ctx context.Context, cmd *gitserver.Cmd, spec string) (api.Comm
 			return "", err
 		}
 		if bytes.Contains(stderr, []byte("unknown revision")) {
-			return "", &gitdomain.RevisionNotFoundError{Repo: cmd.Repo, Spec: spec}
+			return "", &gitdomain.RevisionNotFoundError{Repo: cmd.Repo(), Spec: spec}
 		}
 		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.Args(), stderr))
 	}
@@ -117,9 +116,9 @@ func runRevParse(ctx context.Context, cmd *gitserver.Cmd, spec string) (api.Comm
 			// if HEAD doesn't point to anything git just returns `HEAD` as the
 			// output of rev-parse. An example where this occurs is an empty
 			// repository.
-			return "", &gitdomain.RevisionNotFoundError{Repo: cmd.Repo, Spec: spec}
+			return "", &gitdomain.RevisionNotFoundError{Repo: cmd.Repo(), Spec: spec}
 		}
-		return "", gitdomain.BadCommitError{Spec: spec, Commit: commit, Repo: cmd.Repo}
+		return "", gitdomain.BadCommitError{Spec: spec, Commit: commit, Repo: cmd.Repo()}
 	}
 	return commit, nil
 }

@@ -189,8 +189,7 @@ func CommitsUniqueToBranch(ctx context.Context, db database.DB, repo api.RepoNam
 		args = append(args, branchName, "^HEAD")
 	}
 
-	cmd := gitserver.NewClient(db).Command("git", args...)
-	cmd.Repo = repo
+	cmd := gitserver.NewClient(db).Command(repo, "git", args...)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		return nil, err
@@ -304,8 +303,7 @@ func getWrappedCommits(ctx context.Context, db database.DB, repo api.RepoName, o
 		return nil, err
 	}
 
-	cmd := gitserver.NewClient(db).Command("git", args...)
-	cmd.Repo = repo
+	cmd := gitserver.NewClient(db).Command(repo, "git", args...)
 	if !opt.NoEnsureRevision {
 		cmd.SetEnsureRevision(opt.Range)
 	}
@@ -385,7 +383,7 @@ var runCommitLog = func(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOpti
 	if err != nil {
 		data = bytes.TrimSpace(data)
 		if isBadObjectErr(string(stderr), opt.Range) {
-			return nil, &gitdomain.RevisionNotFoundError{Repo: cmd.Repo, Spec: opt.Range}
+			return nil, &gitdomain.RevisionNotFoundError{Repo: cmd.Repo(), Spec: opt.Range}
 		}
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), data))
 	}
@@ -479,8 +477,7 @@ func commitCount(ctx context.Context, db database.DB, repo api.RepoName, opt Com
 		// This doesn't include --follow flag because rev-list doesn't support it, so the number may be slightly off.
 		args = append(args, "--", opt.Path)
 	}
-	cmd := gitserver.NewClient(db).Command("git", args...)
-	cmd.Repo = repo
+	cmd := gitserver.NewClient(db).Command(repo, "git", args...)
 	out, err := cmd.Output(ctx)
 	if err != nil {
 		return 0, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
@@ -497,8 +494,7 @@ func FirstEverCommit(ctx context.Context, db database.DB, repo api.RepoName, che
 	defer span.Finish()
 
 	args := []string{"rev-list", "--reverse", "--date-order", "--max-parents=0", "HEAD"}
-	cmd := gitserver.NewClient(db).Command("git", args...)
-	cmd.Repo = repo
+	cmd := gitserver.NewClient(db).Command(repo, "git", args...)
 	out, err := cmd.Output(ctx)
 	if err != nil {
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", args, out))
@@ -640,8 +636,7 @@ func getCommits(ctx context.Context, db database.DB, repoCommits []api.RepoCommi
 // repositories), a false-valued flag is returned along with a nil error and
 // empty revision.
 func Head(ctx context.Context, db database.DB, repo api.RepoName, checker authz.SubRepoPermissionChecker) (_ string, revisionExists bool, err error) {
-	cmd := gitserver.NewClient(db).Command("git", "rev-parse", "HEAD")
-	cmd.Repo = repo
+	cmd := gitserver.NewClient(db).Command(repo, "git", "rev-parse", "HEAD")
 
 	out, err := cmd.Output(ctx)
 	if err != nil {
@@ -758,8 +753,7 @@ func BranchesContaining(ctx context.Context, db database.DB, repo api.RepoName, 
 			return nil, err
 		}
 	}
-	cmd := gitserver.NewClient(db).Command("git", "branch", "--contains", string(commit), "--format", "%(refname)")
-	cmd.Repo = repo
+	cmd := gitserver.NewClient(db).Command(repo, "git", "branch", "--contains", string(commit), "--format", "%(refname)")
 
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
@@ -804,8 +798,7 @@ func RefDescriptions(ctx context.Context, db database.DB, repo api.RepoName, che
 			args = append(args, "--points-at="+obj)
 		}
 
-		cmd := gitserver.NewClient(db).Command("git", args...)
-		cmd.Repo = repo
+		cmd := gitserver.NewClient(db).Command(repo, "git", args...)
 
 		out, err := cmd.CombinedOutput(ctx)
 		if err != nil {
@@ -939,8 +932,7 @@ func CommitDate(ctx context.Context, db database.DB, repo api.RepoName, commit a
 		}
 	}
 
-	cmd := gitserver.NewClient(db).Command("git", "show", "-s", "--format=%H:%cI", string(commit))
-	cmd.Repo = repo
+	cmd := gitserver.NewClient(db).Command(repo, "git", "show", "-s", "--format=%H:%cI", string(commit))
 
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
