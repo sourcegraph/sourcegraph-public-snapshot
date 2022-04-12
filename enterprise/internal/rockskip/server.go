@@ -71,11 +71,6 @@ func NewService(
 
 	go service.startCleanupLoop()
 
-	err := CreateGetSymbolFn(context.Background(), db)
-	if err != nil {
-		return nil, err
-	}
-
 	for i := 0; i < maxConcurrentlyIndexing; i++ {
 		go service.startIndexingLoop(database.NewDB(service.db), service.indexRequestQueues[i])
 	}
