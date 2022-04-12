@@ -52,6 +52,11 @@ type Request struct {
 	// Whether the revision to be searched is indexed or unindexed. This matters for
 	// structural search because it will query Zoekt for indexed structural search.
 	Indexed bool
+
+	// FeatHybrid is a feature flag which enables hybrid search. Hybrid search
+	// will only search what has changed since Zoekt has indexed as well as
+	// including Zoekt results.
+	FeatHybrid bool `json:"feat_hybrid,omitempty"`
 }
 
 // PatternInfo describes a search request on a repo. Most of the fields

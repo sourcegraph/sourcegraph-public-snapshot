@@ -233,6 +233,11 @@ type Features struct {
 	// the content of the file, rather than just file name patterns. This is
 	// currently just supported by Zoekt.
 	ContentBasedLangFilters bool
+
+	// HybridSearch when true will consult the Zoekt index when running
+	// unindexed searches. Searcher (unindexed search) will the only search
+	// what has changed since the indexed commit.
+	HybridSearch bool
 }
 
 type RepoOptions struct {

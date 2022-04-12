@@ -43,6 +43,8 @@ type SearcherJob struct {
 	// repository if this field is true. Another example is we set this field
 	// to true if the user requests a specific timeout or maximum result size.
 	UseFullDeadline bool
+
+	Features search.Features
 }
 
 // Run calls the searcher service on a set of repositories.
@@ -108,7 +110,7 @@ func (s *SearcherJob) Run(ctx context.Context, clients job.RuntimeClients, strea
 					ctx, done := limitCtx, limitDone
 					defer done()
 
-					repoLimitHit, err := searchFilesInRepo(ctx, clients.DB, clients.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], s.Indexed, s.PatternInfo, fetchTimeout, stream)
+					repoLimitHit, err := s.searchFilesInRepo(ctx, clients.DB, clients.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], s.Indexed, s.PatternInfo, fetchTimeout, stream)
 					if err != nil {
 						tr.LogFields(log.String("repo", string(repoRev.Repo.Name)), log.Error(err), log.Bool("timeout", errcode.IsTimeout(err)), log.Bool("temporary", errcode.IsTemporary(err)))
 						log15.Warn("searchFilesInRepo failed", "error", err, "repo", repoRev.Repo.Name)
@@ -155,7 +157,7 @@ var MockSearchFilesInRepo func(
 	stream streaming.Sender,
 ) (limitHit bool, err error)
 
-func searchFilesInRepo(
+func (s *SearcherJob) searchFilesInRepo(
 	ctx context.Context,
 	db database.DB,
 	searcherURLs *endpoint.Map,
@@ -189,7 +191,7 @@ func searchFilesInRepo(
 	}
 
 	var indexerEndpoints []string
-	if info.IsStructuralPat {
+	if info.IsStructuralPat || s.Features.HybridSearch {
 		indexerEndpoints, err = search.Indexers().Map.Endpoints()
 		if err != nil {
 			return false, err

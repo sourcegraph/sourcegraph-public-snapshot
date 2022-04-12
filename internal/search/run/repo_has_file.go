@@ -106,6 +106,7 @@ func (s *RepoSearchJob) reposContainingPath(ctx context.Context, clients job.Run
 			Repos:           unindexed,
 			Indexed:         false,
 			UseFullDeadline: searcherArgs.UseFullDeadline,
+			Features:        s.Features,
 		}
 
 		_, err := searcherJob.Run(ctx, clients, agg)
