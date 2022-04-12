@@ -306,7 +306,7 @@ Alternatively, you may manually create the secret from a manifest file.
 
 > WARNING: Do NOT commit the secret manifest into your Git repository unless you are okay with storing sensitive information in plaintext and your repository is private.
 
-<!--`gitserver-ssh.Secret.yaml`-->
+Create the a file with the following and save it as `gitserver-ssh.Secret.yaml`
 ```sh
 apiVersion: v1
 kind: Secret
