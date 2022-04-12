@@ -111,9 +111,12 @@ type RunOptions struct {
 
 const DefaultTimeout = time.Millisecond * 200
 
-// RunGoCallback invokes the given Go callback with exclusive access
-// to the state of the sandbox.
+// RunGoCallback invokes the given Go callback with exclusive access to the state of the
+// sandbox.
 func (s *Sandbox) RunGoCallback(ctx context.Context, opts RunOptions, f func(ctx context.Context, state *lua.LState) error) (err error) {
+	ctx, endObservation := s.operations.runGoCallback.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	s.m.Lock()
 	defer s.m.Unlock()
 
