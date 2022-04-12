@@ -20,51 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestHashArgs(t *testing.T) {
-	t.Parallel()
-
-	t.Run("same everything", func(t *testing.T) {
-		args1 := &gitprotocol.SearchRequest{
-			Repo:        "a",
-			Revisions:   []gitprotocol.RevisionSpecifier{{RevSpec: "b"}},
-			Query:       &gitprotocol.AuthorMatches{Expr: "camden"},
-			IncludeDiff: true,
-		}
-		args2 := &gitprotocol.SearchRequest{
-			Repo:        "a",
-			Revisions:   []gitprotocol.RevisionSpecifier{{RevSpec: "b"}},
-			Query:       &gitprotocol.AuthorMatches{Expr: "camden"},
-			IncludeDiff: true,
-		}
-		require.Equal(t, hashArgs(args1), hashArgs(args2))
-	})
-
-	// Requests that search different things should
-	// not have the same hash.
-
-	t.Run("different repos", func(t *testing.T) {
-		args1 := &gitprotocol.SearchRequest{Repo: "a"}
-		args2 := &gitprotocol.SearchRequest{Repo: "b"}
-		require.NotEqual(t, hashArgs(args1), hashArgs(args2))
-	})
-
-	t.Run("different revisions", func(t *testing.T) {
-		args1 := &gitprotocol.SearchRequest{
-			Revisions: []gitprotocol.RevisionSpecifier{{RevSpec: "a"}, {RefGlob: "b"}},
-		}
-		args2 := &gitprotocol.SearchRequest{
-			Revisions: []gitprotocol.RevisionSpecifier{{RevSpec: "a"}, {ExcludeRefGlob: "b"}},
-		}
-		require.NotEqual(t, hashArgs(args1), hashArgs(args2))
-	})
-
-	t.Run("different queries", func(t *testing.T) {
-		args1 := &gitprotocol.SearchRequest{Query: &gitprotocol.AuthorMatches{Expr: "a"}}
-		args2 := &gitprotocol.SearchRequest{Query: &gitprotocol.AuthorMatches{Expr: "b"}}
-		require.NotEqual(t, hashArgs(args1), hashArgs(args2))
-	})
-}
-
 func TestAddCodeMonitorHook(t *testing.T) {
 	t.Parallel()
 
@@ -84,10 +39,14 @@ func TestAddCodeMonitorHook(t *testing.T) {
 		}
 	})
 
+	t.Run("error on multiple commit search jobs", func(t *testing.T) {
+		_, err := addCodeMonitorHook(jobutil.NewAndJob(&commit.CommitSearch{}, &commit.CommitSearch{}), nil)
+		require.Error(t, err)
+	})
+
 	t.Run("no errors on only commit search", func(t *testing.T) {
 		nonErroringJobs := []job.Job{
-			jobutil.NewParallelJob(&commit.CommitSearch{}, &commit.CommitSearch{}),
-			jobutil.NewAndJob(&commit.CommitSearch{}, &commit.CommitSearch{}),
+			jobutil.NewLimitJob(1000, &commit.CommitSearch{}),
 			&commit.CommitSearch{},
 			jobutil.NewTimeoutJob(0, &commit.CommitSearch{}),
 		}
@@ -106,16 +65,21 @@ func TestCodeMonitorHook(t *testing.T) {
 
 	type testFixtures struct {
 		User    *types.User
+		Repo    *types.Repo
 		Monitor *edb.Monitor
 	}
 	populateFixtures := func(db edb.EnterpriseDB) testFixtures {
 		ctx := context.Background()
 		u, err := db.Users().Create(ctx, database.NewUser{Email: "test", Username: "test", EmailVerificationCode: "test"})
 		require.NoError(t, err)
+		err = db.Repos().Create(ctx, &types.Repo{Name: "test"})
+		require.NoError(t, err)
+		r, err := db.Repos().GetByName(ctx, "test")
+		require.NoError(t, err)
 		ctx = actor.WithActor(ctx, actor.FromUser(u.ID))
 		m, err := db.CodeMonitors().CreateMonitor(ctx, edb.MonitorArgs{NamespaceUserID: &u.ID})
 		require.NoError(t, err)
-		return testFixtures{User: u, Monitor: m}
+		return testFixtures{User: u, Monitor: m, Repo: r}
 	}
 
 	db := database.NewDB(dbtest.NewDB(t))
@@ -135,7 +99,7 @@ func TestCodeMonitorHook(t *testing.T) {
 		}})
 		return nil
 	}
-	err := hookWithID(ctx, db, gs, &gitprotocol.SearchRequest{}, doSearch, fixtures.Monitor.ID)
+	err := hookWithID(ctx, db, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{}, doSearch)
 	require.NoError(t, err)
 
 	// The next time, doSearch should receive the new resolved hashes plus the
@@ -152,6 +116,6 @@ func TestCodeMonitorHook(t *testing.T) {
 		}})
 		return nil
 	}
-	err = hookWithID(ctx, db, gs, &gitprotocol.SearchRequest{}, doSearch, fixtures.Monitor.ID)
+	err = hookWithID(ctx, db, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{}, doSearch)
 	require.NoError(t, err)
 }
