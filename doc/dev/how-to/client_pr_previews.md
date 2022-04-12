@@ -24,3 +24,7 @@ Other resources:
 ## Why does it work for client-only pull requests?
 
 We do not create client PR previews [if Go or GraphQL is changed](https://sourcegraph.com/search?q=context:global+repo:sourcegraph/sourcegraph%24+%21c.Diff.Has%28changed.Go%29&patternType=literal) in a PR to avoid confusing preview behavior because only Client code is used to deploy application preview. Otherwise, the PR preview would sometimes show incomplete features with the updated client code, which is not yet supported by the backend.
+
+## Why does a search query fail with an error?
+
+The preview app is deployed with `SOURCEGRAPHDOTCOM_MODE=false`, which means that the user should be authenticated to use all web application features similar to [the dogfood instance](https://k8s.sgdev.org/). Make sure that you're logged in. If it doesn't fix the issue, please report it in Slack.

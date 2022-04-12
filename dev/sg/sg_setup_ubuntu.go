@@ -175,9 +175,28 @@ programming languages and tools. Find out how to install asdf here:
 
 Once you have asdf, execute the commands below.`,
 				instructionsCommands: `
-asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git 
+asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git
 grep -s "legacy_version_file = yes" ~/.asdfrc >/dev/null || echo 'legacy_version_file = yes' >> ~/.asdfrc
 asdf install nodejs
+`,
+			},
+			{
+				name:  "rust",
+				check: getCheck("rust"),
+				instructionsComment: `` +
+					`Souregraph requires Rust to be installed.
+
+Check the .tool-versions file for which version.
+
+We *highly recommend* using the asdf version manager to install and manage
+programming languages and tools. Find out how to install asdf here:
+
+	https://asdf-vm.com/guide/getting-started.html
+
+Once you have asdf, execute the commands below.`,
+				instructionsCommands: `
+asdf plugin-add rust https://github.com/asdf-community/asdf-rust.git
+asdf install rust
 `,
 			},
 		},
@@ -225,7 +244,7 @@ If you used another method, make sure psql is available.`,
 					`Once PostgreSQL is installed and running, we need to setup Sourcegraph database itself and a
 specific user.`,
 				instructionsCommands: `createuser --superuser sourcegraph || true
-psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';" 
+psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"
 createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
 `,
 			},

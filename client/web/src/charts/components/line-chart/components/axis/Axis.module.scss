@@ -10,7 +10,7 @@
 }
 
 .axis-line {
-    stroke: var(--border-color);
+    stroke: var(--border-color-2);
     stroke-width: 1;
 
     &--vertical {
@@ -23,7 +23,7 @@
 .axis-tick {
     // small tick line
     line {
-        stroke: var(--border-color);
+        stroke: var(--border-color-2);
         stroke-width: 1;
     }
 

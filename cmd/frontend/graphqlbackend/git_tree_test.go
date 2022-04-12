@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -103,7 +104,7 @@ func testGitTree(t *testing.T, db *database.MockDB, tests []*Test) {
 		assert.Equal(t, "foo bar", path)
 		return &util.FileInfo{Name_: path, Mode_: os.ModeDir}, nil
 	}
-	git.Mocks.ReadDir = func(commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error) {
+	gitserver.Mocks.ReadDir = func(commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error) {
 		assert.Equal(t, api.CommitID(exampleCommitSHA1), commit)
 		assert.Equal(t, "foo bar", name)
 		assert.False(t, recurse)

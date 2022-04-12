@@ -59,6 +59,7 @@ func newResolver(db database.DB, config *Config, observationContext *observation
 		services.indexEnqueuer,
 		hunkCache,
 		symbols.DefaultClient,
+		config.MaximumIndexesPerMonikerSearch,
 		observationContext,
 		db,
 	)

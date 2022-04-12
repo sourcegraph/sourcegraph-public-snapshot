@@ -217,13 +217,14 @@
     width: 18rem;
 
     @media (--md-breakpoint-down) {
-        max-width: 50%;
+        max-width: 40%;
         flex: 1;
     }
 
     @media (--sm-breakpoint-down) {
         max-width: 100%;
         width: 100%;
+        flex: initial;
     }
 }
 

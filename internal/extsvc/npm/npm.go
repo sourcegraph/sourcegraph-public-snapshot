@@ -92,13 +92,12 @@ type HTTPClient struct {
 	credentials string
 }
 
-func NewHTTPClient(registryURL string, credentials string) *HTTPClient {
-	cachedLimiter := ratelimit.DefaultRegistry.Get(registryURL)
+func NewHTTPClient(urn string, registryURL string, credentials string) *HTTPClient {
 	return &HTTPClient{
-		registryURL,
-		httpcli.ExternalDoer,
-		cachedLimiter,
-		credentials,
+		registryURL: registryURL,
+		doer:        httpcli.ExternalDoer,
+		limiter:     ratelimit.DefaultRegistry.Get(urn),
+		credentials: credentials,
 	}
 }
 

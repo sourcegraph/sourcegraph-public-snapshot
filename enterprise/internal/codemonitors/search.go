@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/predicate"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -113,13 +114,13 @@ func Search(ctx context.Context, db database.DB, query string, monitorID int64, 
 	}
 
 	// Inline job creation so we can mutate the commit job before running it
-	jobArgs := searchClient.JobArgs(inputs)
-	plan, err := predicate.Expand(ctx, db, jobArgs, inputs.Plan)
+	clients := searchClient.JobClients()
+	plan, err := predicate.Expand(ctx, clients, inputs, inputs.Plan)
 	if err != nil {
 		return nil, err
 	}
 
-	planJob, err := job.FromExpandedPlan(jobArgs, plan, db)
+	planJob, err := jobutil.FromExpandedPlan(inputs, plan)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +137,7 @@ func Search(ctx context.Context, db database.DB, query string, monitorID int64, 
 
 	// Execute the search
 	agg := streaming.NewAggregatingStream()
-	_, err = planJob.Run(ctx, db, agg)
+	_, err = planJob.Run(ctx, clients, agg)
 	if err != nil {
 		return nil, err
 	}
@@ -163,13 +164,13 @@ func Snapshot(ctx context.Context, db database.DB, query string, monitorID int64
 		return err
 	}
 
-	jobArgs := searchClient.JobArgs(inputs)
-	plan, err := predicate.Expand(ctx, db, jobArgs, inputs.Plan)
+	clients := searchClient.JobClients()
+	plan, err := predicate.Expand(ctx, clients, inputs, inputs.Plan)
 	if err != nil {
 		return err
 	}
 
-	planJob, err := job.FromExpandedPlan(jobArgs, plan, db)
+	planJob, err := jobutil.FromExpandedPlan(inputs, plan)
 	if err != nil {
 		return err
 	}
@@ -182,12 +183,12 @@ func Snapshot(ctx context.Context, db database.DB, query string, monitorID int64
 		return err
 	}
 
-	_, err = planJob.Run(ctx, db, streaming.NewNullStream())
+	_, err = planJob.Run(ctx, clients, streaming.NewNullStream())
 	return err
 }
 
 func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err error) {
-	return job.MapAtom(in, func(atom job.Job) job.Job {
+	return jobutil.MapAtom(in, func(atom job.Job) job.Job {
 		switch typedAtom := atom.(type) {
 		case *commit.CommitSearch:
 			jobCopy := *typedAtom

@@ -1,0 +1,89 @@
+.outline {
+    position: absolute;
+    padding: 0.5rem 1rem 1rem 0.5rem;
+    width: 100%;
+    max-width: 20rem;
+    height: 100%;
+    background-color: var(--subtle-bg-2);
+    border-right: 1px solid var(--border-color);
+    transition: max-width 0.3s ease;
+}
+
+.outline-closed {
+    max-width: 2.5rem;
+    padding-right: 0.5rem;
+}
+
+.title {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.toggle-outline-button {
+    padding: 0;
+    font-size: 1.25rem;
+}
+
+.scrollable-container {
+    position: relative;
+    height: 95%;
+    overflow: hidden;
+
+    &:hover {
+        overflow: auto;
+    }
+}
+
+.heading {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+.heading-1 {
+    font-weight: 500;
+    padding-left: 0.5rem;
+
+    &:not(:first-child) {
+        padding-top: 0.5rem;
+    }
+
+    .highlight-dot {
+        left: -0.5rem;
+    }
+}
+
+.heading-2 {
+    font-weight: 400;
+    padding: 0.5rem 0 0 1.25rem;
+
+    .highlight-dot {
+        left: -1.25rem;
+    }
+}
+
+.heading-link {
+    position: relative;
+    color: inherit;
+
+    &:hover {
+        color: inherit;
+    }
+}
+
+.highlight {
+    color: var(--primary);
+}
+
+.highlight-dot {
+    position: absolute;
+    font-weight: 500;
+}
