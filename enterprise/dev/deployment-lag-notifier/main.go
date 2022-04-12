@@ -66,7 +66,7 @@ func getLiveVersion(client *http.Client, url string) (string, error) {
 		return version, err
 	}
 
-	if resp.StatusCode > http.StatusOK {
+	if resp.StatusCode != http.StatusOK {
 		return version, errors.Newf("received non-200 status code %v", resp.StatusCode)
 	}
 
