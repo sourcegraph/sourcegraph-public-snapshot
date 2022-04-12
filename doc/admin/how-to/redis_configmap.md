@@ -1,5 +1,5 @@
 
-# How to Set a password for Redis using a ConfigMap
+# How to set a password for Redis using a ConfigMap
 
 
 ```
