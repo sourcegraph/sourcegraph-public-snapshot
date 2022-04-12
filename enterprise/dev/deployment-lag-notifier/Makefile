@@ -11,3 +11,6 @@ run: clean build
 
 prod: clean build
 	./deployment-lag-notifier
+
+test:
+	go test -v
