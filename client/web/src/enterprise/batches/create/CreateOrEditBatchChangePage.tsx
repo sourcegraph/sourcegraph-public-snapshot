@@ -130,8 +130,7 @@ export const CreateOrEditBatchChangePage: React.FunctionComponent<CreateOrEditBa
         return <HeroPage icon={AlertCircleIcon} title="Batch change not found" />
     }
 
-    const isConfigurationReadOnly = data?.batchChange && props.isReadOnly
-    if (isConfigurationReadOnly) {
+    if (props.isReadOnly) {
         return (
             <CreatePage
                 isReadOnly={props.isReadOnly}
