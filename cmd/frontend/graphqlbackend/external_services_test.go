@@ -375,32 +375,6 @@ func TestAddExternalService(t *testing.T) {
 				t.Errorf("got result %v, want nil", result)
 			}
 		})
-
-		t.Run("org has reached the limit for both types of service", func(t *testing.T) {
-			svcs := []*types.ExternalService{
-				{Kind: extsvc.KindGitLab, NamespaceOrgID: orgID},
-				{Kind: extsvc.KindGitHub, NamespaceOrgID: orgID},
-			}
-
-			externalServices := database.NewMockExternalServiceStore()
-			externalServices.ListFunc.SetDefaultReturn(svcs, nil)
-			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
-
-			result, err := newSchemaResolver(db).AddExternalService(ctx, &addExternalServiceArgs{
-				Input: addExternalServiceInput{
-					Namespace:   &marshaledOrgID,
-					Kind:        extsvc.KindGitLab,
-					DisplayName: "GitLab",
-					Config:      "{\n  \"url\": \"https://gitlab.com\",\n  \"token\": \"dfdf\",\n  \"projectQuery\": [\n    \"projects?membership=true&archived=no\"\n  ]\n}",
-				},
-			})
-			if want := backend.ErrExternalServicesQuotaReached; err != want {
-				t.Errorf("got err %v, want %v", err, want)
-			}
-			if result != nil {
-				t.Errorf("got result %v, want nil", result)
-			}
-		})
 	})
 
 	t.Run("cloud mode, user mode enabled, user namespace requested", func(t *testing.T) {
@@ -498,32 +472,6 @@ func TestAddExternalService(t *testing.T) {
 				},
 			})
 			if want := backend.ErrExternalServiceLimitPerKindReached; err != want {
-				t.Errorf("got err %v, want %v", err, want)
-			}
-			if result != nil {
-				t.Errorf("got result %v, want nil", result)
-			}
-		})
-
-		t.Run("user has reached the limit for both types of service", func(t *testing.T) {
-			svcs := []*types.ExternalService{
-				{Kind: extsvc.KindGitLab, NamespaceOrgID: orgID},
-				{Kind: extsvc.KindGitHub, NamespaceOrgID: orgID},
-			}
-
-			externalServices := database.NewMockExternalServiceStore()
-			externalServices.ListFunc.SetDefaultReturn(svcs, nil)
-			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
-
-			result, err := newSchemaResolver(db).AddExternalService(ctx, &addExternalServiceArgs{
-				Input: addExternalServiceInput{
-					Namespace:   &marshaledUserID,
-					Kind:        extsvc.KindGitLab,
-					DisplayName: "GitLab",
-					Config:      "{\n  \"url\": \"https://gitlab.com\",\n  \"token\": \"dfdf\",\n  \"projectQuery\": [\n    \"projects?membership=true&archived=no\"\n  ]\n}",
-				},
-			})
-			if want := backend.ErrExternalServicesQuotaReached; err != want {
 				t.Errorf("got err %v, want %v", err, want)
 			}
 			if result != nil {

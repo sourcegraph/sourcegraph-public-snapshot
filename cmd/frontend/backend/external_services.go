@@ -11,7 +11,6 @@ import (
 )
 
 var ErrNoAccessExternalService = errors.New("the authenticated user does not have access to this external service")
-var ErrExternalServicesQuotaReached = errors.New("maximum number of external services has been reached")
 var ErrExternalServiceLimitPerKindReached = errors.New("cannot add more than one external service of a given kind")
 var ErrExternalServiceKindNotSupported = errors.New("external service kind not supported on Cloud mode")
 
@@ -57,10 +56,6 @@ func CheckExternalServicesQuota(ctx context.Context, db database.DB, kind string
 	services, err := servicesCountPerKind(ctx, db, orgID, userID)
 	if err != nil {
 		return err
-	}
-
-	if services[extsvc.KindGitHub] >= limitPerKind && services[extsvc.KindGitLab] >= limitPerKind {
-		return ErrExternalServicesQuotaReached
 	}
 
 	if kind == extsvc.KindGitHub {
