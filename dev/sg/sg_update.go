@@ -23,8 +23,8 @@ var updateCommand = &cli.Command{
 
 Requires a local copy of the 'sourcegraph/sourcegraph' codebase.`,
 	Category: CategoryUtil,
-	Action: func(ctx *cli.Context) error {
-		_, err := updateToPrebuiltSG(ctx.Context)
+	Action: func(cmd *cli.Context) error {
+		_, err := updateToPrebuiltSG(cmd.Context)
 		return err
 	},
 }

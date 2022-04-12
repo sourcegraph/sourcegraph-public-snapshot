@@ -73,7 +73,9 @@ var (
 	}
 )
 
-func dbAddUserAction(ctx *cli.Context) error {
+func dbAddUserAction(cmd *cli.Context) error {
+	ctx := cmd.Context
+
 	// Read the configuration.
 	ok, _ := parseConf(configFlag, overwriteConfigFlag)
 	if !ok {
@@ -87,12 +89,12 @@ func dbAddUserAction(ctx *cli.Context) error {
 	}
 	db := database.NewDB(conn)
 
-	username := ctx.String("username")
-	password := ctx.String("password")
+	username := cmd.String("username")
+	password := cmd.String("password")
 
 	// Create the user, generating an email based on the username.
 	email := fmt.Sprintf("%s@sourcegraph.com", username)
-	user, err := db.Users().Create(ctx.Context, database.NewUser{
+	user, err := db.Users().Create(ctx, database.NewUser{
 		Username:        username,
 		Email:           email,
 		EmailIsVerified: true,
@@ -103,7 +105,7 @@ func dbAddUserAction(ctx *cli.Context) error {
 	}
 
 	// Make the user site admin.
-	err = db.Users().SetIsSiteAdmin(ctx.Context, user.ID, true)
+	err = db.Users().SetIsSiteAdmin(ctx, user.ID, true)
 	if err != nil {
 		return err
 	}

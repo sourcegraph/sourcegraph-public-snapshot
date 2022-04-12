@@ -91,7 +91,7 @@ var sg = &cli.App{
 			EnvVars:     []string{"SG_SKIP_AUTO_UPDATE"},
 		},
 	},
-	Before: func(ctx *cli.Context) error {
+	Before: func(cmd *cli.Context) error {
 		if verboseFlag {
 			stdout.Out.SetVerbose()
 		}
@@ -102,9 +102,9 @@ var sg = &cli.App{
 			writeWarningLinef("Failed to set max open files: %s", err)
 		}
 
-		if ctx.Args().First() != "update" {
+		if cmd.Args().First() != "update" {
 			// If we're not running "sg update ...", we want to check the version first
-			err := checkSgVersion(ctx.Context)
+			err := checkSgVersion(cmd.Context)
 			if err != nil {
 				writeWarningLinef("Checking sg version and updating failed: %s", err)
 				// Do not exit here, so we don't break user flow when they want to
@@ -113,7 +113,7 @@ var sg = &cli.App{
 		}
 
 		for _, hook := range postInitHooks {
-			hook(ctx)
+			hook(cmd)
 		}
 
 		return nil
@@ -126,7 +126,7 @@ var sg = &cli.App{
 		lintCommand,
 		dbCommand,
 		migrationCommand,
-		// ciCommand,
+		ciCommand,
 		// generateCommand,
 
 		// Dev environment

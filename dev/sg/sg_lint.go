@@ -32,16 +32,16 @@ var lintCommand = &cli.Command{
 			Destination: &lintGenerateAnnotations,
 		},
 	},
-	Action: func(ctx *cli.Context) error {
-		if ctx.NArg() > 0 {
-			writeFailureLinef("unrecognized command %q provided", ctx.Args().First())
+	Action: func(cmd *cli.Context) error {
+		if cmd.NArg() > 0 {
+			writeFailureLinef("unrecognized command %q provided", cmd.Args().First())
 			return flag.ErrHelp
 		}
 		var fns []lint.Runner
 		for _, c := range allLintTargets {
 			fns = append(fns, c.Linters...)
 		}
-		return runCheckScriptsAndReport(ctx.Context, fns...)
+		return runCheckScriptsAndReport(cmd.Context, fns...)
 	},
 	Subcommands: allLintTargets.Commands(),
 }
@@ -130,12 +130,12 @@ func (lt lintTargets) Commands() (cmds []*cli.Command) {
 			Name:  c.Name,
 			Usage: c.Help,
 			Flags: c.Flags,
-			Action: func(ctx *cli.Context) error {
-				if ctx.NArg() > 0 {
-					writeFailureLinef("unrecognized argument %q provided", ctx.Args().First())
+			Action: func(cmd *cli.Context) error {
+				if cmd.NArg() > 0 {
+					writeFailureLinef("unrecognized argument %q provided", cmd.Args().First())
 					return flag.ErrHelp
 				}
-				return runCheckScriptsAndReport(ctx.Context, c.Linters...)
+				return runCheckScriptsAndReport(cmd.Context, c.Linters...)
 			},
 		})
 	}
