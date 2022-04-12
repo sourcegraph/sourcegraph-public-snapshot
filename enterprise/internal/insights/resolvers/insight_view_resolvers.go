@@ -134,9 +134,7 @@ func filterRepositories(ctx context.Context, filters types.InsightViewFilters, r
 	if err != nil {
 		return nil, errors.Wrap(err, "unwrapSearchContexts")
 	}
-	for _, s := range inc {
-		includedWrapped = append(includedWrapped, s)
-	}
+	includedWrapped = append(includedWrapped, inc...)
 	if filters.IncludeRepoRegex != nil && *filters.IncludeRepoRegex != "" {
 		includedWrapped = append(includedWrapped, *filters.IncludeRepoRegex)
 	}
