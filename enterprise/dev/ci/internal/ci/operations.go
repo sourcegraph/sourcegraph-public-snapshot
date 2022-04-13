@@ -196,7 +196,7 @@ func addClientLintersForChangedFiles(pipeline *bk.Pipeline) {
 		withYarnCache(),
 		bk.Cmd("dev/ci/yarn-run.sh lint:js:changed"))
 
-	pipeline.AddStep(":stylelint: Stylelint all",
+	pipeline.AddStep(":stylelint: Stylelint changed",
 		withYarnCache(),
 		bk.Cmd("dev/ci/yarn-run.sh lint:css:changed"))
 }
