@@ -11,6 +11,6 @@ import (
 // migration to cli.ActionFunc.
 func execAdapter(exec func(context.Context, []string) error) cli.ActionFunc {
 	return func(cmd *cli.Context) error {
-		return exec(cmd.Context, cmd.Args().Tail())
+		return exec(cmd.Context, cmd.Args().Slice())
 	}
 }
