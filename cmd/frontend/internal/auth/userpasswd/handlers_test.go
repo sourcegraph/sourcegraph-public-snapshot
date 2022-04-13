@@ -125,6 +125,7 @@ func TestHandleSignIn_Lockout(t *testing.T) {
 	db.UsersFunc.SetDefaultReturn(users)
 	db.EventLogsFunc.SetDefaultReturn(database.NewMockEventLogStore())
 	db.SecurityEventLogsFunc.SetDefaultReturn(database.NewMockSecurityEventLogsStore())
+	db.UserEmailsFunc.SetDefaultReturn(database.NewMockUserEmailsStore())
 
 	lockout := NewMockLockoutStore()
 	h := HandleSignIn(db, lockout)
@@ -144,6 +145,7 @@ func TestHandleSignIn_Lockout(t *testing.T) {
 	// Getting error for locked out
 	{
 		lockout.IsLockedOutFunc.SetDefaultReturn("reason", true)
+		lockout.SendUnlockAccountEmailFunc.SetDefaultReturn(nil)
 		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
 		require.NoError(t, err)
 
