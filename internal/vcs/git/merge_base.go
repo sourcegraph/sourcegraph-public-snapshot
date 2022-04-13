@@ -22,11 +22,10 @@ func MergeBase(ctx context.Context, db database.DB, repo api.RepoName, a, b api.
 	span.SetTag("B", b)
 	defer span.Finish()
 
-	cmd := gitserver.NewClient(db).Command("git", "merge-base", "--", string(a), string(b))
-	cmd.Repo = repo
+	cmd := gitserver.NewClient(db).Command(repo, "git", "merge-base", "--", string(a), string(b))
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
-		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, out))
+		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
 	}
 	return api.CommitID(bytes.TrimSpace(out)), nil
 }

@@ -107,8 +107,7 @@ func newBlobReader(ctx context.Context, db database.DB, repo api.RepoName, commi
 		return nil, err
 	}
 
-	cmd := gitserver.NewClient(db).Command("git", "show", string(commit)+":"+name)
-	cmd.Repo = repo
+	cmd := gitserver.NewClient(db).Command(repo, "git", "show", string(commit)+":"+name)
 	stdout, err := gitserver.StdoutReader(ctx, cmd)
 	if err != nil {
 		return nil, err
@@ -159,5 +158,5 @@ func (br *blobReader) convertError(err error) error {
 			return io.EOF
 		}
 	}
-	return errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", br.cmd.Args, err))
+	return errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", br.cmd.Args(), err))
 }

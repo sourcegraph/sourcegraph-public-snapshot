@@ -63,11 +63,10 @@ func LsFiles(ctx context.Context, db database.DB, checker authz.SubRepoPermissio
 		}
 	}
 
-	cmd := gitserver.NewClient(db).Command("git", args...)
-	cmd.Repo = repo
+	cmd := gitserver.NewClient(db).Command(repo, "git", args...)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, out))
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
 	}
 
 	files := strings.Split(string(out), "\x00")
@@ -81,8 +80,7 @@ func LsFiles(ctx context.Context, db database.DB, checker authz.SubRepoPermissio
 // ListFiles returns a list of root-relative file paths matching the given
 // pattern in a particular commit of a repository.
 func ListFiles(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID, pattern *regexp.Regexp, checker authz.SubRepoPermissionChecker) (_ []string, err error) {
-	cmd := gitserver.NewClient(db).Command("git", "ls-tree", "--name-only", "-r", string(commit), "--")
-	cmd.Repo = repo
+	cmd := gitserver.NewClient(db).Command(repo, "git", "ls-tree", "--name-only", "-r", string(commit), "--")
 
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
@@ -126,8 +124,7 @@ func ListDirectoryChildren(
 ) (map[string][]string, error) {
 	args := []string{"ls-tree", "--name-only", string(commit), "--"}
 	args = append(args, cleanDirectoriesForLsTree(dirnames)...)
-	cmd := gitserver.NewClient(db).Command("git", args...)
-	cmd.Repo = repo
+	cmd := gitserver.NewClient(db).Command(repo, "git", args...)
 
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
