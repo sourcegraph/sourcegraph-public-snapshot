@@ -131,7 +131,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		CommandFunc: &ClientCommandFunc{
-			defaultHook: func(string, ...string) *Cmd {
+			defaultHook: func(api.RepoName, string, ...string) *Cmd {
 				return nil
 			},
 		},
@@ -263,7 +263,7 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		CommandFunc: &ClientCommandFunc{
-			defaultHook: func(string, ...string) *Cmd {
+			defaultHook: func(api.RepoName, string, ...string) *Cmd {
 				panic("unexpected invocation of MockClient.Command")
 			},
 		},
@@ -982,23 +982,23 @@ func (c ClientBatchLogFuncCall) Results() []interface{} {
 // ClientCommandFunc describes the behavior when the Command method of the
 // parent MockClient instance is invoked.
 type ClientCommandFunc struct {
-	defaultHook func(string, ...string) *Cmd
-	hooks       []func(string, ...string) *Cmd
+	defaultHook func(api.RepoName, string, ...string) *Cmd
+	hooks       []func(api.RepoName, string, ...string) *Cmd
 	history     []ClientCommandFuncCall
 	mutex       sync.Mutex
 }
 
 // Command delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockClient) Command(v0 string, v1 ...string) *Cmd {
-	r0 := m.CommandFunc.nextHook()(v0, v1...)
-	m.CommandFunc.appendCall(ClientCommandFuncCall{v0, v1, r0})
+func (m *MockClient) Command(v0 api.RepoName, v1 string, v2 ...string) *Cmd {
+	r0 := m.CommandFunc.nextHook()(v0, v1, v2...)
+	m.CommandFunc.appendCall(ClientCommandFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the Command method of
 // the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientCommandFunc) SetDefaultHook(hook func(string, ...string) *Cmd) {
+func (f *ClientCommandFunc) SetDefaultHook(hook func(api.RepoName, string, ...string) *Cmd) {
 	f.defaultHook = hook
 }
 
@@ -1006,7 +1006,7 @@ func (f *ClientCommandFunc) SetDefaultHook(hook func(string, ...string) *Cmd) {
 // Command method of the parent MockClient instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *ClientCommandFunc) PushHook(hook func(string, ...string) *Cmd) {
+func (f *ClientCommandFunc) PushHook(hook func(api.RepoName, string, ...string) *Cmd) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1015,19 +1015,19 @@ func (f *ClientCommandFunc) PushHook(hook func(string, ...string) *Cmd) {
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ClientCommandFunc) SetDefaultReturn(r0 *Cmd) {
-	f.SetDefaultHook(func(string, ...string) *Cmd {
+	f.SetDefaultHook(func(api.RepoName, string, ...string) *Cmd {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ClientCommandFunc) PushReturn(r0 *Cmd) {
-	f.PushHook(func(string, ...string) *Cmd {
+	f.PushHook(func(api.RepoName, string, ...string) *Cmd {
 		return r0
 	})
 }
 
-func (f *ClientCommandFunc) nextHook() func(string, ...string) *Cmd {
+func (f *ClientCommandFunc) nextHook() func(api.RepoName, string, ...string) *Cmd {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1062,10 +1062,13 @@ func (f *ClientCommandFunc) History() []ClientCommandFuncCall {
 type ClientCommandFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 string
-	// Arg1 is a slice containing the values of the variadic arguments
+	Arg0 api.RepoName
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is a slice containing the values of the variadic arguments
 	// passed to this method invocation.
-	Arg1 []string
+	Arg2 []string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *Cmd
@@ -1077,11 +1080,11 @@ type ClientCommandFuncCall struct {
 // a slice of four, not two.
 func (c ClientCommandFuncCall) Args() []interface{} {
 	trailing := []interface{}{}
-	for _, val := range c.Arg1 {
+	for _, val := range c.Arg2 {
 		trailing = append(trailing, val)
 	}
 
-	return append([]interface{}{c.Arg0}, trailing...)
+	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
 }
 
 // Results returns an interface slice containing the results of this
