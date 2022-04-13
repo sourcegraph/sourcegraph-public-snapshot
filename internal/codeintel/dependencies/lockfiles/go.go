@@ -4,7 +4,6 @@ import (
 	"io"
 
 	"golang.org/x/mod/modfile"
-	"golang.org/x/mod/module"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 )
@@ -52,17 +51,12 @@ func parseGoModFile(r io.Reader) ([]reposource.PackageDependency, error) {
 			continue
 		}
 
-		v := module.Version{
-			Path:    r.Mod.Path,
-			Version: r.Mod.Version,
-		}
-
 		if s, ok := replace[r.Mod.Path]; ok && (s.Old.Version == "" || s.Old.Version == r.Mod.Version) {
-			v.Path = s.New.Path
-			v.Version = s.New.Version
+			r.Mod.Path = s.New.Path
+			r.Mod.Version = s.New.Version
 		}
 
-		deps = append(deps, reposource.NewGoDependency(v))
+		deps = append(deps, reposource.NewGoDependency(r.Mod))
 	}
 	return deps, nil
 }
