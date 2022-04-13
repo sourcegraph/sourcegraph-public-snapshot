@@ -62,7 +62,7 @@ func NewMockLockoutStore() *MockLockoutStore {
 			},
 		},
 		VerifyUnlockAccountTokenFunc: &LockoutStoreVerifyUnlockAccountTokenFunc{
-			defaultHook: func(int32, string) (bool, error) {
+			defaultHook: func(string) (bool, error) {
 				return false, nil
 			},
 		},
@@ -99,7 +99,7 @@ func NewStrictMockLockoutStore() *MockLockoutStore {
 			},
 		},
 		VerifyUnlockAccountTokenFunc: &LockoutStoreVerifyUnlockAccountTokenFunc{
-			defaultHook: func(int32, string) (bool, error) {
+			defaultHook: func(string) (bool, error) {
 				panic("unexpected invocation of MockLockoutStore.VerifyUnlockAccountToken")
 			},
 		},
@@ -664,24 +664,24 @@ func (c LockoutStoreSendUnlockAccountEmailFuncCall) Results() []interface{} {
 // VerifyUnlockAccountToken method of the parent MockLockoutStore instance
 // is invoked.
 type LockoutStoreVerifyUnlockAccountTokenFunc struct {
-	defaultHook func(int32, string) (bool, error)
-	hooks       []func(int32, string) (bool, error)
+	defaultHook func(string) (bool, error)
+	hooks       []func(string) (bool, error)
 	history     []LockoutStoreVerifyUnlockAccountTokenFuncCall
 	mutex       sync.Mutex
 }
 
 // VerifyUnlockAccountToken delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockLockoutStore) VerifyUnlockAccountToken(v0 int32, v1 string) (bool, error) {
-	r0, r1 := m.VerifyUnlockAccountTokenFunc.nextHook()(v0, v1)
-	m.VerifyUnlockAccountTokenFunc.appendCall(LockoutStoreVerifyUnlockAccountTokenFuncCall{v0, v1, r0, r1})
+func (m *MockLockoutStore) VerifyUnlockAccountToken(v0 string) (bool, error) {
+	r0, r1 := m.VerifyUnlockAccountTokenFunc.nextHook()(v0)
+	m.VerifyUnlockAccountTokenFunc.appendCall(LockoutStoreVerifyUnlockAccountTokenFuncCall{v0, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
 // VerifyUnlockAccountToken method of the parent MockLockoutStore instance
 // is invoked and the hook queue is empty.
-func (f *LockoutStoreVerifyUnlockAccountTokenFunc) SetDefaultHook(hook func(int32, string) (bool, error)) {
+func (f *LockoutStoreVerifyUnlockAccountTokenFunc) SetDefaultHook(hook func(string) (bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -690,7 +690,7 @@ func (f *LockoutStoreVerifyUnlockAccountTokenFunc) SetDefaultHook(hook func(int3
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *LockoutStoreVerifyUnlockAccountTokenFunc) PushHook(hook func(int32, string) (bool, error)) {
+func (f *LockoutStoreVerifyUnlockAccountTokenFunc) PushHook(hook func(string) (bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -699,19 +699,19 @@ func (f *LockoutStoreVerifyUnlockAccountTokenFunc) PushHook(hook func(int32, str
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *LockoutStoreVerifyUnlockAccountTokenFunc) SetDefaultReturn(r0 bool, r1 error) {
-	f.SetDefaultHook(func(int32, string) (bool, error) {
+	f.SetDefaultHook(func(string) (bool, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *LockoutStoreVerifyUnlockAccountTokenFunc) PushReturn(r0 bool, r1 error) {
-	f.PushHook(func(int32, string) (bool, error) {
+	f.PushHook(func(string) (bool, error) {
 		return r0, r1
 	})
 }
 
-func (f *LockoutStoreVerifyUnlockAccountTokenFunc) nextHook() func(int32, string) (bool, error) {
+func (f *LockoutStoreVerifyUnlockAccountTokenFunc) nextHook() func(string) (bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -748,10 +748,7 @@ func (f *LockoutStoreVerifyUnlockAccountTokenFunc) History() []LockoutStoreVerif
 type LockoutStoreVerifyUnlockAccountTokenFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 int32
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
+	Arg0 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 bool
@@ -763,7 +760,7 @@ type LockoutStoreVerifyUnlockAccountTokenFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c LockoutStoreVerifyUnlockAccountTokenFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this

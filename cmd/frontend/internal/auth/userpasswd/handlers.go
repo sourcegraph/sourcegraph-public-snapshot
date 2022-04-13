@@ -41,8 +41,7 @@ type credentials struct {
 }
 
 type unlockAccountInfo struct {
-	Token  string `json:"token"`
-	UserID int32  `json:"userId"`
+	Token string `json:"token"`
 }
 
 // HandleSignUp handles submission of the user signup form.
@@ -287,17 +286,19 @@ func HandleSignIn(db database.DB, store LockoutStore) func(w http.ResponseWriter
 		user = *u
 
 		if reason, locked := store.IsLockedOut(user.ID); locked {
-			recipient, verified, err := db.UserEmails().GetPrimaryEmail(ctx, user.ID)
-			if !verified || err != nil {
-				// log the error and proceed
-				log15.Error(fmt.Sprintf("Impossible to get primary email address for userId %d. Unlock account email can't be sent", user.ID), err)
-			}
+			if conf.CanSendEmail() {
+				recipient, verified, err := db.UserEmails().GetPrimaryEmail(ctx, user.ID)
+				if !verified || err != nil {
+					// log the error and proceed
+					log15.Error(fmt.Sprintf("Impossible to get primary email address for userId %d. Unlock account email can't be sent", user.ID), err)
+				}
 
-			err = store.SendUnlockAccountEmail(ctx, user.ID, recipient)
+				err = store.SendUnlockAccountEmail(ctx, user.ID, recipient)
 
-			if err != nil {
-				// log the error and proceed
-				log15.Error(fmt.Sprintf("Impossible to send unlock account email for userId %d", user.ID), err)
+				if err != nil {
+					// log the error and proceed
+					log15.Error(fmt.Sprintf("Impossible to send unlock account email for userId %d", user.ID), err)
+				}
 			}
 
 			httpLogAndError(w, fmt.Sprintf("Account has been locked out due to %q", reason), http.StatusUnprocessableEntity)
@@ -346,12 +347,12 @@ func HandleUnlockAccount(db database.DB, store LockoutStore) func(w http.Respons
 			return
 		}
 
-		if unlockAccountInfo.UserID == 0 || unlockAccountInfo.Token == "" {
-			http.Error(w, "Bad request: missing token or user id", http.StatusBadRequest)
+		if unlockAccountInfo.Token == "" {
+			http.Error(w, "Bad request: missing token", http.StatusBadRequest)
 			return
 		}
 
-		valid, error := store.VerifyUnlockAccountToken(unlockAccountInfo.UserID, unlockAccountInfo.Token)
+		valid, error := store.VerifyUnlockAccountToken(unlockAccountInfo.Token)
 
 		if !valid || error != nil {
 			err := "invalid token provided"
@@ -361,8 +362,6 @@ func HandleUnlockAccount(db database.DB, store LockoutStore) func(w http.Respons
 			httpLogAndError(w, err, http.StatusUnauthorized)
 			return
 		}
-
-		store.Reset(unlockAccountInfo.UserID)
 	}
 }
 

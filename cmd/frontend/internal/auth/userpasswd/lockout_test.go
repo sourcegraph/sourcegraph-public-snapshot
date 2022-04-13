@@ -172,7 +172,7 @@ func TestLockoutStore(t *testing.T) {
 
 		assert.Empty(t, err)
 
-		valid, error := s.VerifyUnlockAccountToken(1, token)
+		valid, error := s.VerifyUnlockAccountToken(token)
 
 		assert.Empty(t, error)
 
@@ -194,9 +194,11 @@ func TestLockoutStore(t *testing.T) {
 
 		assert.Empty(t, err)
 
-		valid, error := s.VerifyUnlockAccountToken(2, token)
+		s.Reset(1)
 
-		assert.EqualError(t, error, "No token exists for the specified user")
+		valid, error := s.VerifyUnlockAccountToken(token)
+
+		assert.EqualError(t, error, "No previously generated token exists for the specified user")
 		assert.False(t, valid)
 	})
 }

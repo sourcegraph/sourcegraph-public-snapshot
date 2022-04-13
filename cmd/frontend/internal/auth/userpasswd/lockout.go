@@ -30,7 +30,7 @@ type LockoutStore interface {
 	// Creates the unlock account url with the signet unlock token
 	GenerateUnlockAccountUrl(userID int32) (string, string, error)
 	// Verifies the provided unlock token is valid
-	VerifyUnlockAccountToken(userID int32, urlToken string) (bool, error)
+	VerifyUnlockAccountToken(urlToken string) (bool, error)
 	// Sends an email to the locked account email providing a temporary unlock link
 	SendUnlockAccountEmail(ctx context.Context, userID int32, userEmail string) error
 }
@@ -82,7 +82,7 @@ func (s *lockoutStore) GenerateUnlockAccountUrl(userID int32) (string, string, e
 		return "", "", errors.Newf("signing key not provided, cannot validate JWT on invitation URL. Please add AuthUnlockAccountLinkSigningKey to site configuration.")
 	}
 
-	defaultExpiryMinutes := 5
+	defaultExpiryMinutes := 30
 	if conf.SiteConfig().AuthUnlockAccountLinkExpiry > 0 {
 		defaultExpiryMinutes = conf.SiteConfig().AuthUnlockAccountLinkExpiry
 	}
@@ -111,7 +111,7 @@ func (s *lockoutStore) GenerateUnlockAccountUrl(userID int32) (string, string, e
 
 	s.unlockToken.Set(key, []byte(tokenString))
 
-	path := fmt.Sprintf("/unlock-account/%s/%d", tokenString, userID)
+	path := fmt.Sprintf("/unlock-account/%s", tokenString)
 
 	return globals.ExternalURL().ResolveReference(&url.URL{Path: path}).String(), tokenString, nil
 }
@@ -136,18 +136,11 @@ func (s *lockoutStore) SendUnlockAccountEmail(ctx context.Context, userID int32,
 	})
 }
 
-func (s *lockoutStore) VerifyUnlockAccountToken(userID int32, urlToken string) (bool, error) {
+func (s *lockoutStore) VerifyUnlockAccountToken(urlToken string) (bool, error) {
 	signingKey := conf.SiteConfig().AuthUnlockAccountLinkSigningKey
 
 	if signingKey == "" {
-		return false, errors.Newf("signing key not provided, cannot validate JWT on invitation URL. Please add AuthUnlockAccountLinkSigningKey to site configuration.")
-	}
-
-	userIdKey := strconv.Itoa(int(userID))
-	storedToken, ok := s.unlockToken.Get(userIdKey)
-
-	if !ok {
-		return false, errors.Newf("No token exists for the specified user")
+		return false, errors.Newf("signing key not provided, cannot validate JWT on account reset URL. Please add AuthUnlockAccountLinkSigningKey to site configuration.")
 	}
 
 	token, err := jwt.ParseWithClaims(urlToken, &unlockAccountClaims{}, func(token *jwt.Token) (interface{}, error) {
@@ -158,7 +151,15 @@ func (s *lockoutStore) VerifyUnlockAccountToken(userID int32, urlToken string) (
 		return false, err
 	}
 
-	if claims, ok := token.Claims.(*unlockAccountClaims); ok && token.Valid && userID == claims.UserID && string(storedToken) == urlToken {
+	if claims, ok := token.Claims.(*unlockAccountClaims); ok && token.Valid {
+		userIdKey := strconv.Itoa(int(claims.UserID))
+		storedToken, found := s.unlockToken.Get(userIdKey)
+
+		if !found || string(storedToken) != urlToken {
+			return false, errors.Newf("No previously generated token exists for the specified user")
+		}
+
+		s.Reset(claims.UserID)
 		return true, nil
 	}
 
@@ -169,6 +170,7 @@ func (s *lockoutStore) Reset(userID int32) {
 	key := strconv.Itoa(int(userID))
 	s.lockouts.Delete(key)
 	s.failedAttempts.Delete(key)
+	s.unlockToken.Delete(key)
 }
 
 var emailTemplates = txemail.MustValidate(txtypes.Templates{
@@ -212,6 +214,7 @@ Sourcegraph, 981 Mission St, San Francisco, CA 94103, USA
   <p class="mtxl">
     Please, follow this link in your browser to unlock your account and try to sign in again: <a class="btn mtm" href="{{.UnlockAccountUrl}}">Unlock your Account</a>
   </p>
+  <p class="smaller">Or visit this link in your browser: <a href="{{.UnlockAccountUrl}}">{{.UnlockAccountUrl}}</a></p>
   <small>
   <p class="mtl">
     This link will expire in {{.ExpiryMinutes}} minutes.

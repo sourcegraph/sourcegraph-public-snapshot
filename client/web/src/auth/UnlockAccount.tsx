@@ -17,7 +17,7 @@ import { getReturnTo } from './SignInSignUpCommon'
 
 import unlockAccountStyles from './SignInSignUpCommon.module.scss'
 
-interface UnlockAccountPageProps extends RouteComponentProps<{ token: string; userId: string }> {
+interface UnlockAccountPageProps extends RouteComponentProps<{ token: string }> {
     location: H.Location
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
@@ -29,7 +29,7 @@ interface UnlockAccountPageProps extends RouteComponentProps<{ token: string; us
 export const UnlockAccountPage: React.FunctionComponent<UnlockAccountPageProps> = props => {
     const [error, setError] = useState<Error | null>(null)
     const [loading, setLoading] = useState(true)
-    const { token, userId } = props.match.params
+    const { token } = props.match.params
 
     const unlockAccount = React.useCallback(async (): Promise<void> => {
         try {
@@ -44,7 +44,6 @@ export const UnlockAccountPage: React.FunctionComponent<UnlockAccountPageProps> 
                 },
                 body: JSON.stringify({
                     token,
-                    userId: Number(userId),
                 }),
             })
 
@@ -52,14 +51,14 @@ export const UnlockAccountPage: React.FunctionComponent<UnlockAccountPageProps> 
                 throw new Error('The url you provided is either expired or invalid.')
             }
 
-            eventLogger.log('OkUnlockAccount', { userId, token })
+            eventLogger.log('OkUnlockAccount', { token })
         } catch (error) {
             setError(error)
-            eventLogger.log('KoUnlockAccount', { userId, token })
+            eventLogger.log('KoUnlockAccount', { token })
         } finally {
             setLoading(false)
         }
-    }, [userId, token, props.context.xhrHeaders])
+    }, [token, props.context.xhrHeaders])
 
     useEffect(() => {
         if (props.authenticatedUser) {

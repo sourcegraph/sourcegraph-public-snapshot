@@ -186,13 +186,13 @@ func TestHandleAccount_Unlock(t *testing.T) {
 		resp := httptest.NewRecorder()
 		h(resp, req)
 		assert.Equal(t, http.StatusBadRequest, resp.Code)
-		assert.Equal(t, "Bad request: missing token or user id\n", resp.Body.String())
+		assert.Equal(t, "Bad request: missing token\n", resp.Body.String())
 	}
 
 	// Getting error for invalid token
 	{
 		lockout.VerifyUnlockAccountTokenFunc.SetDefaultReturn(false, errors.Newf("invalid token provided"))
-		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{ "userId": 1, "token": "abcd" }`))
+		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{ "token": "abcd" }`))
 		require.NoError(t, err)
 
 		resp := httptest.NewRecorder()
@@ -205,7 +205,7 @@ func TestHandleAccount_Unlock(t *testing.T) {
 	// ok result
 	{
 		lockout.VerifyUnlockAccountTokenFunc.SetDefaultReturn(true, nil)
-		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{ "userId": 1, "token": "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJpc3MiOiJodHRwczovL3NvdXJjZWdyYXBoLnRlc3Q6MzQ0MyIsInN1YiI6IjEiLCJleHAiOjE2NDk3NzgxNjl9.cm_giwkSviVRXGRCie9iii-ytJD3iAuNdtk9XmBZMrj7HHlH6vfky4ftjudAZ94HBp867cjxkuNc6OJ2uaEJFg" }`))
+		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{ "token": "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJpc3MiOiJodHRwczovL3NvdXJjZWdyYXBoLnRlc3Q6MzQ0MyIsInN1YiI6IjEiLCJleHAiOjE2NDk3NzgxNjl9.cm_giwkSviVRXGRCie9iii-ytJD3iAuNdtk9XmBZMrj7HHlH6vfky4ftjudAZ94HBp867cjxkuNc6OJ2uaEJFg" }`))
 		require.NoError(t, err)
 
 		resp := httptest.NewRecorder()
