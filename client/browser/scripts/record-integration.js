@@ -1,22 +1,26 @@
+const { Console } = require('console')
+
 const { readdir, readFile } = require('mz/fs')
 const shelljs = require('shelljs')
 
-const { compressRecordings } = require('./utils')
+const { compressRecordings, deleteRecordings } = require('./utils')
 
 const recordSnapshot = grepValue =>
-  new Promise(resolve => {
+  new Promise((resolve, reject) => {
     shelljs.exec(
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       `POLLYJS_MODE=record SOURCEGRAPH_BASE_URL=https://sourcegraph.com yarn run-integration --grep='${grepValue}'`,
       (code, stdout, stderr) => {
-        if (code !== 0) {
-          console.error(code)
-        } else {
-          console.log(`stdout: ${stdout}`)
-          console.error(`stderr: ${stderr}`)
+        console.log(`stdout: ${stdout}`)
+        console.log(`stderr: ${stderr}`)
+
+        if (code === 0) {
+          resolve()
         }
 
-        resolve()
+        const error = new Error()
+        error.code = code
+        reject(error)
       }
     )
   })
@@ -48,9 +52,14 @@ const recordTests = async () => {
   await Promise.all(testNames.map(testName => recordSnapshot(testName)))
 }
 
-;(async () => {
-  await recordTests()
-  await compressRecordings()
-})().catch(error => {
-  console.log(error)
-})
+// eslint-disable-next-line no-void
+void (async () => {
+  try {
+    await recordTests()
+    await compressRecordings()
+    process.exit(0)
+  } catch (error) {
+    await deleteRecordings()
+    process.exit(error.code ?? 1)
+  }
+})()
