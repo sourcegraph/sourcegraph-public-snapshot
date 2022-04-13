@@ -7,6 +7,7 @@ import expect from 'expect'
 import { NotebookBlockType, SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { NotebookBlock, SymbolKind } from '@sourcegraph/shared/src/schema'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
+import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -249,6 +250,7 @@ describe('Search Notebook', () => {
         const blockIds = await getBlockIds()
         expect(blockIds).toHaveLength(2)
         await percySnapshotWithVariants(driver.page, 'Search notebook')
+        await accessibilityAudit(driver.page)
     })
 
     it('Should move, duplicate, and delete blocks', async () => {
@@ -319,6 +321,7 @@ describe('Search Notebook', () => {
         )
         expect(isResultContainerVisible).toBeTruthy()
         await percySnapshotWithVariants(driver.page, 'Search notebook with markdown and query blocks')
+        await accessibilityAudit(driver.page)
     })
 
     it('Should add file block and edit it', async () => {
