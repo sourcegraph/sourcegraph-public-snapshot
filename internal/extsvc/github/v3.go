@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/google/go-github/v41/github"
-	"github.com/inconshreveable/log15"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -50,12 +49,6 @@ type V3Client struct {
 
 	// httpClient is the HTTP client used to make requests to the GitHub API.
 	httpClient httpcli.Doer
-
-	// orgsCache is the organizations cache associated with the token.
-	orgsCache *rcache.Cache
-
-	// repoCache is the repository cache associated with the token.
-	repoCache *rcache.Cache
 
 	// rateLimitMonitor is the API rate limit monitor.
 	rateLimitMonitor *ratelimit.Monitor
@@ -122,8 +115,6 @@ func newV3Client(urn string, apiURL *url.URL, a auth.Authenticator, resource str
 		httpClient:       cli,
 		rateLimit:        rl,
 		rateLimitMonitor: rlm,
-		orgsCache:        newOrgsCache(a),
-		repoCache:        newRepoCache(apiURL, a),
 		resource:         resource,
 	}
 }
@@ -150,18 +141,7 @@ func (c *V3Client) RateLimitMonitor() *ratelimit.Monitor {
 // If-Modified-Since (time) in the request header. At the moment, getConditional only supports
 // If-None-Match.
 //
-// See: https://docs.github.com/en/rest/overview/resources-in-the-rest-api#conditional-requests
-func (c *V3Client) getConditional(ctx context.Context, requestURI, etag string, result interface{}) (*httpResponseState, error) {
-	req, err := http.NewRequest("GET", requestURI, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add(headerIfNoneMatch, etag)
-
-	// Let the caller of getConditional inspect the err. We will return it as is.
-	return c.request(ctx, req, result)
-}
+// See: https://docs.github.com/en/rest/overview/resources-in-the-rest-api#conditional-request
 
 func (c *V3Client) get(ctx context.Context, requestURI string, result interface{}) (*httpResponseState, error) {
 	req, err := http.NewRequest("GET", requestURI, nil)
@@ -220,15 +200,6 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result interf
 	}
 
 	return doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
-}
-
-func newOrgsCache(a auth.Authenticator) *rcache.Cache {
-	if a == nil {
-		log15.Warn("Cannot initialize orgsCache for nil auth")
-		return nil
-	}
-
-	return rcache.New("gh_orgs:" + a.Hash())
 }
 
 // newRepoCache creates a new cache for GitHub repository metadata. The backing
@@ -488,19 +459,8 @@ func (c *V3Client) GetRepository(ctx context.Context, owner, name string) (*Repo
 	if GetRepositoryMock != nil {
 		return GetRepositoryMock(ctx, owner, name)
 	}
+	return c.getRepositoryFromAPI(ctx, owner, name)
 
-	key := ownerNameCacheKey(owner, name)
-
-	getRepoFromAPI := func(ctx context.Context) (repo *Repository, keys []string, err error) {
-		keys = append(keys, key)
-		repo, err = c.getRepositoryFromAPI(ctx, owner, name)
-		if repo != nil {
-			keys = append(keys, nodeIDCacheKey(repo.ID)) // also cache under GraphQL node ID
-		}
-		return repo, keys, err
-	}
-
-	return c.cachedGetRepository(ctx, key, getRepoFromAPI)
 }
 
 // GetOrganization gets an org from GitHub by its login.
@@ -527,40 +487,11 @@ func (c *V3Client) GetOrganization(ctx context.Context, login string) (org *OrgD
 //
 // Repeat this in a for-loop until nextSince is a non-positive integer.
 func (c *V3Client) ListOrganizations(ctx context.Context, since int) (orgs []*Org, nextSince int, err error) {
-	hash := strings.ToLower(c.auth.Hash())
-
-	// Each specific page will return a different list of organizations, so each page specific
-	// request will also have its own etag. We need to be able to identify each etag by page as well
-	// as each list of orgs by page.
-	orgsKey := fmt.Sprintf("%s-orgs-%d", hash, since)
-	etagKey := fmt.Sprintf("%s-orgs-etag-%d", hash, since)
-
 	path := fmt.Sprintf("/organizations?since=%d&per_page=100", since)
-	updateOrgsCache := func(r *httpResponseState) error {
-		if c.orgsCache == nil {
-			return nil
-		}
 
-		newEtag := r.headers.Get("Etag")
-		c.orgsCache.Set(etagKey, []byte(newEtag))
-
-		value, err := json.Marshal(orgs)
-		if err != nil {
-			return err
-		}
-
-		c.orgsCache.Set(orgsKey, value)
-		return nil
-	}
-
-	// getOrgsFromAPI fetches the new list of orgs from GitHub and updates the orgsCache.
-	getOrgsFromAPI := func() error {
-		respState, err := c.get(ctx, path, &orgs)
-		if err != nil {
-			return err
-		}
-
-		return updateOrgsCache(respState)
+	_, err = c.get(ctx, path, &orgs)
+	if err != nil {
+		return nil, -1, err
 	}
 
 	getNextSince := func() int {
@@ -570,56 +501,6 @@ func (c *V3Client) ListOrganizations(ctx context.Context, since int) (orgs []*Or
 		}
 
 		return orgs[total-1].ID
-	}
-
-	if c.orgsCache == nil {
-		log15.Warn("ListOrganizations invoked with a nil orgsCache (client probably has no authenticator) and this could be bad for API rate limits")
-
-		if err := getOrgsFromAPI(); err != nil {
-			return nil, -1, err
-		}
-
-		return orgs, getNextSince(), nil
-	}
-
-	etag, cacheHit := c.orgsCache.Get(etagKey)
-	if !cacheHit {
-		if err := getOrgsFromAPI(); err != nil {
-			return nil, -1, err
-		}
-
-		return orgs, getNextSince(), nil
-	}
-
-	respState, err := c.getConditional(ctx, path, string(etag), &orgs)
-	if err != nil {
-		return nil, -1, err
-	}
-
-	// If the resource was modified since the last time this resource was accessed, the response
-	// body will have a new response and we should return the new result now populated in orgs.
-	if respState.statusCode == 200 {
-		if err := updateOrgsCache(respState); err != nil {
-			return nil, -1, err
-		}
-
-		return orgs, getNextSince(), nil
-	}
-
-	rawOrgs, ok := c.orgsCache.Get(orgsKey)
-	if !ok {
-		// Reading the orgs from the cache failed even though the API call to GitHub succeeded. This
-		// isn't ideal and is our fault. Treat this as a cache miss and make a regular API call
-		// anyway.
-		if err := getOrgsFromAPI(); err != nil {
-			return nil, -1, err
-		}
-
-		return orgs, getNextSince(), nil
-	}
-
-	if err := json.Unmarshal(rawOrgs, &orgs); err != nil {
-		return nil, -1, err
 	}
 
 	return orgs, getNextSince(), nil
@@ -655,44 +536,6 @@ func (c *V3Client) ListTeamMembers(ctx context.Context, owner, team string, page
 	return users, len(users) > 0, nil
 }
 
-// getRepositoryFromCache attempts to get a response from the redis cache.
-// It returns nil error for cache-hit condition and non-nil error for cache-miss.
-func (c *V3Client) getRepositoryFromCache(key string) *cachedRepo {
-	b, ok := c.repoCache.Get(strings.ToLower(key))
-	if !ok {
-		return nil
-	}
-
-	var cached cachedRepo
-	if err := json.Unmarshal(b, &cached); err != nil {
-		return nil
-	}
-
-	return &cached
-}
-
-// addRepositoryToCache will cache the value for repo. The caller can provide multiple cache keys
-// for the multiple ways that this repository can be retrieved (e.g., both "owner/name" and the
-// GraphQL node ID).
-func (c *V3Client) addRepositoryToCache(keys []string, repo *cachedRepo) {
-	b, err := json.Marshal(repo)
-	if err != nil {
-		return
-	}
-	for _, key := range keys {
-		c.repoCache.Set(strings.ToLower(key), b)
-	}
-}
-
-// addRepositoriesToCache will cache repositories that exist
-// under relevant cache keys.
-func (c *V3Client) addRepositoriesToCache(repos []*Repository) {
-	for _, repo := range repos {
-		keys := []string{nameWithOwnerCacheKey(repo.NameWithOwner), nodeIDCacheKey(repo.ID)} // cache under multiple
-		c.addRepositoryToCache(keys, &cachedRepo{Repository: *repo})
-	}
-}
-
 // getPublicRepositories returns a page of public repositories that were created
 // after the repository identified by sinceRepoID.
 // An empty sinceRepoID returns the first page of results.
@@ -711,7 +554,6 @@ func (c *V3Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64
 	if err != nil {
 		return nil, err
 	}
-	c.addRepositoriesToCache(repos)
 	return repos, nil
 }
 
@@ -735,9 +577,6 @@ func (c *V3Client) ListAffiliatedRepositories(ctx context.Context, visibility Vi
 		path = fmt.Sprintf("%s&affiliation=%s", path, strings.Join(affilationsStrings, ","))
 	}
 	repos, err = c.listRepositories(ctx, path)
-	if err == nil {
-		c.addRepositoriesToCache(repos)
-	}
 
 	return repos, len(repos) > 0, 1, err
 }
@@ -786,7 +625,6 @@ func (c *V3Client) ListRepositoriesForSearch(ctx context.Context, searchString s
 	for _, restRepo := range response.Items {
 		repos = append(repos, convertRestRepo(restRepo))
 	}
-	c.addRepositoriesToCache(repos)
 
 	return RepositoryListPage{
 		TotalCount:  response.TotalCount,
