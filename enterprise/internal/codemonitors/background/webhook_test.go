@@ -38,7 +38,7 @@ func TestWebhook(t *testing.T) {
 		defer s.Close()
 
 		client := s.Client()
-		err := postWebhook(context.Background(), client, s.URL, action)
+		err := postWebhook(context.Background(), client, s.URL, generatePayload(action))
 		require.NoError(t, err)
 	})
 
@@ -60,7 +60,7 @@ func TestWebhook(t *testing.T) {
 		defer s.Close()
 
 		client := s.Client()
-		err := postWebhook(context.Background(), client, s.URL, action)
+		err := postWebhook(context.Background(), client, s.URL, generatePayload(action))
 		require.Error(t, err)
 	})
 }
