@@ -31,10 +31,7 @@ func NewBitbucketCloudSource(svc *types.ExternalService, cf *httpcli.Factory) (*
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d", svc.ID)
 	}
-	return newBitbucketCloudSource(&c, cf)
-}
 
-func newBitbucketCloudSource(c *schema.BitbucketCloudConnection, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
 	if cf == nil {
 		cf = httpcli.ExternalClientFactory
 	}
@@ -46,7 +43,7 @@ func newBitbucketCloudSource(c *schema.BitbucketCloudConnection, cf *httpcli.Fac
 		return nil, errors.Wrap(err, "creating external client")
 	}
 
-	client, err := bitbucketcloud.NewClient(c, cli)
+	client, err := bitbucketcloud.NewClient(svc.URN(), &c, cli)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating Bitbucket Cloud client")
 	}
