@@ -68,10 +68,10 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 		ops.Merge(operations.NewNamedSet("Client checks",
 			clientIntegrationTests,
 			clientChromaticTests(opts.ChromaticShouldAutoAccept),
-			frontendTests,     // ~4.5m
-			addWebApp,         // ~5.5m
-			browserUnitTests,  // ~4.5m
-			addClientLinters)) // ~9m
+			frontendTests,                // ~4.5m
+			addWebApp,                    // ~5.5m
+			addBrowserExtensionUnitTests, // ~4.5m
+			addClientLinters))            // ~9m
 	}
 
 	if diff.Has(changed.Go | changed.GraphQL) {
@@ -216,7 +216,7 @@ func getParallelTestCount(webParallelTestCount int) int {
 	return webParallelTestCount + len(browsers)
 }
 
-func browserIntegrationTests(parallelTestCount int) operations.Operation {
+func addBrowserExtensionIntegrationTests(parallelTestCount int) operations.Operation {
 	testCount := getParallelTestCount(parallelTestCount)
 	return func(pipeline *bk.Pipeline) {
 		for _, browser := range browsers {
@@ -241,7 +241,7 @@ func browserIntegrationTests(parallelTestCount int) operations.Operation {
 	}
 }
 
-func browserUnitTests(pipeline *bk.Pipeline) {
+func addBrowserExtensionUnitTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest::chrome: Test (client/browser)",
 		withYarnCache(),
 		bk.AnnotatedCmd("dev/ci/yarn-test.sh client/browser", bk.AnnotatedCmdOpts{
@@ -274,7 +274,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 	chunkCount := len(chunkedTestFiles)
 	parallelTestCount := getParallelTestCount(chunkCount)
 
-	browserIntegrationTests(chunkCount)(pipeline)
+	addBrowserExtensionIntegrationTests(chunkCount)(pipeline)
 
 	// Add pipeline step for each chunk of web integrations files.
 	for i, chunkTestFiles := range chunkedTestFiles {
