@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+option go_package = "github.com/sourcegraph/sourcegraph/internal/searcher/api";
+
+package api;
+
+service Searcher {
+    rpc SearchStructuralUnindexed(SearchStructuralUnindexedRequest) returns (stream SearchStructuralUnindexedResponse) {}
+}
+
+message SearchStructuralUnindexedRequest {
+    // Repo is the name of the repository to search. e.g. "github.com/gorilla/mux"
+    string repo = 1;
+
+    string commit = 3;
+
+    // IndexerEndpoints are the endpoints for reaching Zoekt.
+    repeated string indexer_endpoints = 4;
+
+    int32 limit = 5;
+
+    StructuralPatternInfo pattern_info = 6;
+}
+
+message StructuralPatternInfo {
+    string pattern = 1;
+    bool pattern_matches_content = 2;
+    bool pattern_matches_path = 3;
+
+    PathPatterns path_patterns = 4;
+    repeated string languages = 5;
+    string comby_rule = 6;
+}
+
+message PathPatterns {
+    string exclude = 1;
+    repeated string include = 2;
+    bool is_regexp = 3;
+    bool is_case_sensitive = 4;
+}
+
+message SearchStructuralUnindexedResponse {
+    oneof event {
+        EventMatches matches = 1;
+        EventDone done = 2;
+    }
+}
+
+message EventMatches {
+    repeated FileMatch matches = 1;
+}
+
+message FileMatch {
+    string path = 1;
+    repeated LineMatch line_matches = 2;
+
+	// MatchCount is the number of matches.  Different from len(LineMatches), as multiple
+	// lines may correspond to one logical match when doing a structural search
+    int64 match_count = 3;
+
+	// LimitHit is true if LineMatches may not include all LineMatches.
+    bool limit_hit = 4;
+}
+
+message LineMatch {
+	// Preview is the matched line.
+    string preview = 1;
+
+	// LineNumber is the 0-based line number.
+    int64 line_number = 2;
+
+    repeated OffsetLength offset_and_lengths = 3;
+}
+
+// Offsets and lengths are measured in characters, not bytes.
+message OffsetLength {
+    int64 offset = 1;
+    int64 length = 2;
+}
+
+message EventDone {
+	// LimitHit is true if the sent results may not be complete because a match limit was hit.
+    bool limit_hit = 1; 
+}
+
