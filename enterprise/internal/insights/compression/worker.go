@@ -109,22 +109,22 @@ func (i *CommitIndexer) indexAll(ctx context.Context) error {
 	return nil
 }
 
-// maxPagesPerRepo Limits the number of pages of commits indexRepository can process per run
-const maxPagesPerRepo = 25
+// maxWindowsPerRepo Limits the number of windows of commits indexRepository can process per run
+const maxWindowsPerRepo = 25
 
-// indexRepository attempts to index the commits given a repository name one page at a time.
-// This method will absorb any errors that occur during execution and skip any remaining pages.
+// indexRepository attempts to index the commits given a repository name one time window at a time.
+// This method will absorb any errors that occur during execution and skip any remaining windows.
 // If this repository already has some commits indexed, only commits made more recently than the previous index will be added.
 func (i *CommitIndexer) indexRepository(name string, id api.RepoID) error {
-	pagesProccssed := 0
-	additionalPages := true
-	// It is important that the page size stays consistent during processing for each page
+	windowsProccssed := 0
+	additionalWindows := true
+	// It is important that the window size stays consistent during processing
 	// so that it can correctly determine the time the repository has been indexed though
-	pageSize := conf.Get().InsightsCommitIndexerPageSize
-	for additionalPages && pagesProccssed < maxPagesPerRepo {
+	windowDuration := conf.Get().InsightsCommitIndexerWindowDuration
+	for additionalWindows && windowsProccssed < maxWindowsPerRepo {
 		var err error
-		additionalPages, err = i.indexNextPage(name, id, pageSize)
-		pagesProccssed++
+		additionalWindows, err = i.indexNextWindow(name, id, windowDuration)
+		windowsProccssed++
 		if err != nil {
 			log15.Error(err.Error())
 			return nil
@@ -134,7 +134,7 @@ func (i *CommitIndexer) indexRepository(name string, id api.RepoID) error {
 
 }
 
-func (i *CommitIndexer) indexNextPage(name string, id api.RepoID, pageSize int) (morePages bool, err error) {
+func (i *CommitIndexer) indexNextWindow(name string, id api.RepoID, windowDuration int) (moreWindows bool, err error) {
 	ctx, cancel := context.WithTimeout(i.background, time.Minute*45)
 	defer cancel()
 
@@ -162,8 +162,8 @@ func (i *CommitIndexer) indexNextPage(name string, id api.RepoID, pageSize int) 
 	commitLogRequestTime := i.clock().UTC()
 
 	var searchEndTime *time.Time
-	if pageSize > 0 {
-		endTime := searchStartTime.Add(time.Duration(24*pageSize) * time.Hour)
+	if windowDuration > 0 {
+		endTime := searchStartTime.Add(time.Duration(24*windowDuration) * time.Hour)
 		searchEndTime = &endTime
 	}
 
@@ -177,23 +177,23 @@ func (i *CommitIndexer) indexNextPage(name string, id api.RepoID, pageSize int) 
 
 	// default to thinking indexing is done
 	indexedThrough := commitLogRequestTime // The time we issued the git log request
-	morePages = false
+	moreWindows = false
 
-	// If we are paging though log determine if we finished
+	// If we are looking at a window of time determine if reached the end
 	if searchEndTime != nil {
-		morePages = searchEndTime.Before(commitLogRequestTime)
-		if morePages {
+		moreWindows = searchEndTime.Before(commitLogRequestTime)
+		if moreWindows {
 			indexedThrough = *searchEndTime
 		}
 	}
 
-	log15.Debug("indexing commits", "repo_id", repoId, "count", len(commits), "logSearchSize", pageSize, "indexedThrough", indexedThrough)
+	log15.Debug("indexing commits", "repo_id", repoId, "count", len(commits), "logSearchSize", windowDuration, "indexedThrough", indexedThrough)
 	err = i.commitStore.InsertCommits(ctx, repoId, commits, indexedThrough, fmt.Sprintf("|repoName:%s|repoId:%d", repoName, repoId))
 	if err != nil {
 		return false, errors.Wrapf(err, "unable to update commit index repo_id: %v", repoId)
 	}
 
-	return morePages, nil
+	return moreWindows, nil
 }
 
 // getCommits fetches the commits from the remote gitserver for a repository after a certain time.

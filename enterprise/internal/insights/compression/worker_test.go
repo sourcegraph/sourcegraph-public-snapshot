@@ -76,10 +76,10 @@ func TestCommitIndexer_indexAll(t *testing.T) {
 	}, nil)
 
 	t.Run("multi_repository", func(t *testing.T) {
-		pageSize := 0
+		windowDuration := 0
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
-				InsightsCommitIndexerPageSize: pageSize,
+				InsightsCommitIndexerWindowDuration: windowDuration,
 			},
 		})
 		defer conf.Mock(nil)
@@ -185,7 +185,7 @@ func Test_getMetadata_NoInsertRequired(t *testing.T) {
 	})
 }
 
-func TestCommitIndexer_paging(t *testing.T) {
+func TestCommitIndexer_windowing(t *testing.T) {
 	ctx := context.Background()
 	commitStore := NewMockCommitStore()
 
@@ -280,7 +280,7 @@ func TestCommitIndexer_paging(t *testing.T) {
 
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
-				InsightsCommitIndexerPageSize: 30,
+				InsightsCommitIndexerWindowDuration: 30,
 			},
 		})
 		defer conf.Mock(nil)
