@@ -33,6 +33,7 @@ import (
 
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/go-rendezvous"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -862,12 +863,6 @@ func (c *Cmd) DividedOutput(ctx context.Context) ([]byte, []byte, error) {
 	}
 
 	return stdout, stderr, nil
-}
-
-// Run starts the specified command and waits for it to complete.
-func (c *Cmd) Run(ctx context.Context) error {
-	_, _, err := c.DividedOutput(ctx)
-	return err
 }
 
 // Output runs the command and returns its standard output.
