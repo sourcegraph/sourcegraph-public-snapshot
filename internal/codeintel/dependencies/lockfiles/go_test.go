@@ -3,9 +3,10 @@ package lockfiles
 import (
 	"bytes"
 	"fmt"
-	"github.com/google/go-cmp/cmp"
 	"strings"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestParseGoModFile(t *testing.T) {
