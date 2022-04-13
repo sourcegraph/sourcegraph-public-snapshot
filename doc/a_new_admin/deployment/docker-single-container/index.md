@@ -78,32 +78,6 @@ To provide HTTP(S) authentication, assuming you're using the default `--volume $
 1. Create a file at `$HOME/.sourcegraph/config/netrc` on the host machine that contains lines of the form `machine example.com login alice password mypassword` (replacing `example.com`, `alice`, and `mypassword` with the actual values).
 1. Start (or restart) the container.
 
-## Operations
-
-### Access the database
-
-> NOTE: To execute an SQL query against the database without first creating an interactive session (as below), append `--command "SELECT * FROM users;"` to the `docker container exec` command.
-
-Get the Docker container ID for Sourcegraph:
-
-```bash
-docker ps
-CONTAINER ID        IMAGE
-d039ec989761        sourcegraph/server:VERSION
-```
-
-Open a PostgreSQL interactive terminal:
-
-```bash
-docker container exec -it d039ec989761 psql -U postgres sourcegraph
-```
-
-Run your SQL query:
-
-```sql
-SELECT * FROM users;
-```
-
 ### Expose debug port
 
 This is required to [collect debug data](../../pprof.md).
@@ -130,6 +104,32 @@ Add the following to your docker run command:
 docker run [...]
 -e (YOUR CODE)
 sourcegraph/server:3.36.2
+```
+
+## Operation
+
+### Access the database
+
+> NOTE: To execute an SQL query against the database without first creating an interactive session (as below), append `--command "SELECT * FROM users;"` to the `docker container exec` command.
+
+Get the Docker container ID for Sourcegraph:
+
+```bash
+docker ps
+CONTAINER ID        IMAGE
+d039ec989761        sourcegraph/server:VERSION
+```
+
+Open a PostgreSQL interactive terminal:
+
+```bash
+docker container exec -it d039ec989761 psql -U postgres sourcegraph
+```
+
+Run your SQL query:
+
+```sql
+SELECT * FROM users;
 ```
 
 ## Upgrade

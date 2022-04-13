@@ -55,6 +55,7 @@ By default, Sourcegraph provides versions of services it needs to operate, inclu
 
 > NOTE: As a best practice, configure your Sourcegraph instance to use an external or managed version of these services. Using a managed version of PostgreSQL can make backups and recovery easier to manage and perform. Using a managed object storage service may decrease hosting costs as persistent volumes are often more expensive than object storage space.
 
+### External services guides
 See the following guides to use an external or managed version of each service type.
 
 - See [Using your PostgreSQL server](../external_services/postgres.md) to replace the bundled PostgreSQL instances.
@@ -70,42 +71,30 @@ See the following guides to use an external or managed version of each service t
 - Google Cloud: [Cloud SQL for PostgreSQL](https://cloud.google.com/sql/docs/postgres/), [Cloud Memorystore](https://cloud.google.com/memorystore/), and [Cloud Storage](https://cloud.google.com/storage) for storing user uploads.
 - Digital Ocean: [Digital Ocean Managed Databases](https://www.digitalocean.com/products/managed-databases/) for [Postgres](https://www.digitalocean.com/products/managed-databases-postgresql/), [Redis](https://www.digitalocean.com/products/managed-databases-redis/), and [Spaces](https://www.digitalocean.com/products/spaces/) for storing user uploads.
 
-## Configuration (TBD)
+## Configuration
 
 Configuration at the deployment level focuses on ensuring your Sourcegraph runs optimally, based on the size of your repositories and the number of users. Configuration options will vary based on the type of deployment you choose, so you will want to consult the specific configuration guides for additional information.
 
-If you're looking for configuration at the Administration level, check out the [customization section TBD](TBD.
+## Customization
+
+We refer to configuration at the Administration level as Customization, check out the [customization section TBD](TBD).
 
 
 ## Upgrades and migration
 
-A new version of Sourcegraph is released every month (with patch releases in between as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) or the site admin updates page to learn about updates. We actively maintain the two most recent monthly releases of Sourcegraph.
+A new version of Sourcegraph is released every month (with patch releases in between as needed). We actively maintain the two most recent monthly releases of Sourcegraph. The [changelog](../../CHANGELOG.md) provides all information related to any changes that are/were in a release.
 
-**Regardless of your deployment type**, the following rules apply:
+### Upgrades
 
-- **Upgrade one minor version at a time**, e.g. v3.26 --> v3.27 --> v3.28.
-  - Patches (e.g. vX.X.4 vs. vX.X.5) do not have to be adopted when moving between vX.X versions.
-- **Check the [update notes for your deployment type](#update-notes) for any required manual actions** before updating.
-- Check your [out of band migration status](../migration/index.md) before an upgrade to avoid a necessary rollback while the migration finishes.
+Depending on your current version and the version you are looking to upgrade rules, there may be specific upgrade instruction and requirements. Checkout the [Upgrade docs](TBD) for additional information and instructions.
 
-### Upgrade notes
+### Migration
 
-Please see the instructions for your deployment type:
+Sourcegraph uses "migration" to refer to different, yet related activities. This includes normal database migrations which are an automatic part of the upgrade process and the [migrator service](TBD)
 
-- [Sourcegraph with Docker Compose](docker_compose.md)
-- [Sourcegraph with Kubernetes](kubernetes.md)
-- [Single-container Sourcegraph with Docker](server.md)
-- [Pure-Docker custom deployments](pure_docker.md)
+It also refers to migration from one deployment type to the other, for example moving from Docker Single Container to Docker Compose.
 
-### Migrating to a new deployment type
-
-You may need to migrate from one deployment type to another. Most commonly, this will be [from a Docker Single Container deployment to Docker Compose](../install/docker-compose/migrate.md), or from [Docker Compose to Kubernetes](LINK TBD).
-
-You may also want to check out our [Migration Docs area](../migration/index.md) for other scenarios and associated guides, including specific migration requirements and when to upgrade from/to particular versions.
-
-### Changelog
-
-For product update notes, please refer to the [changelog](../../CHANGELOG.md).
+More details on both cases are provided in our [Migration docs](TBD)
 
 ## Reference repositories
 

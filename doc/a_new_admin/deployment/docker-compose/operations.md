@@ -72,7 +72,7 @@ We **strongly** recommend that you create and run Sourcegraph from your own fork
 
 ### Enable tracing
 
-To enable [tracing](../../observability/tracing.md), add `SAMPLING_STRATEGIES_FILE=/etc/jaeger/sampling_strategies.json` to the `jaeger` container:
+To enable [tracing](../../monitoring_alerting/tracing.md), add `SAMPLING_STRATEGIES_FILE=/etc/jaeger/sampling_strategies.json` to the `jaeger` container:
 
 ```yaml
 jaeger:
