@@ -84,9 +84,9 @@ echo "--- comby install"
 ./dev/comby-install-or-upgrade.sh
 
 # For code insights test
-./dev/codeinsights-db.sh &
+# ./dev/codeinsights-db.sh &
 export CODEINSIGHTS_PGDATASOURCE=postgres://postgres:password@127.0.0.1:5435/postgres
-export DB_STARTUP_TIMEOUT=360s # codeinsights-db needs more time to start in some instances.
+export DB_STARTUP_TIMEOUT=20s # codeinsights-db needs more time to start in some instances.
 
 # Disable GraphQL logs which are wildly noisy
 export NO_GRAPHQL_LOG=true
