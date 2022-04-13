@@ -23,8 +23,14 @@ mkdir -p ./annotations/
 
 # asdf setup
 # ----------
-if [[ ! "$BUILDKITE_STEP_KEY" == "pipeline-upload" ]]; then
-  ./dev/ci/asdf-install.sh
+echo "~~~ Preparing asdf dependencies"
+
+if [[ "$BUILDKITE_STEP_KEY" == "pipeline-gen" ]]; then
+  echo "pipeline-gen step: running go install only"
+  asdf install golang
+elif [[ "$BUILDKITE_STEP_KEY" == "pipeline-upload" ]]; then
+  echo "pipeline-upload step: skipping asdf install"
 else
-  echo "skipping asdf install for pipeline upload setp"
+  echo "running normal install"
+  ./dev/ci/asdf-install.sh
 fi
