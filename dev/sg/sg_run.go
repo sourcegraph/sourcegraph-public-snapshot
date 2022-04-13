@@ -11,6 +11,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -23,17 +24,20 @@ func init() {
 }
 
 var runCommand = &cli.Command{
-	Name:        "run",
-	Usage:       "Run the given commands",
-	ArgsUsage:   "[command]",
-	Description: constructRunCmdLongHelp(),
-	Category:    CategoryDev,
+	Name:      "run",
+	Usage:     "Run the given commands",
+	ArgsUsage: "[command]",
+	Category:  CategoryDev,
 	Flags: []cli.Flag{
 		addToMacOSFirewallFlag,
 	},
 	Action: execAdapter(runExec),
 	BashComplete: completeOptions(func() (options []string) {
-		for name := range globalConf.Commands {
+		config, _ := sgconf.Get(configFile, configOverwriteFile)
+		if config == nil {
+			return
+		}
+		for name := range config.Commands {
 			options = append(options, name)
 		}
 		return
@@ -41,8 +45,8 @@ var runCommand = &cli.Command{
 }
 
 func runExec(ctx context.Context, args []string) error {
-	ok, errLine := parseConf(configFlag, overwriteConfigFlag)
-	if !ok {
+	config, errLine := sgconf.Get(configFile, configOverwriteFile)
+	if config == nil {
 		stdout.Out.WriteLine(errLine)
 		os.Exit(1)
 	}
@@ -54,7 +58,7 @@ func runExec(ctx context.Context, args []string) error {
 
 	var cmds []run.Command
 	for _, arg := range args {
-		cmd, ok := globalConf.Commands[arg]
+		cmd, ok := config.Commands[arg]
 		if !ok {
 			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: command %q not found :(", arg))
 			return flag.ErrHelp
@@ -62,20 +66,21 @@ func runExec(ctx context.Context, args []string) error {
 		cmds = append(cmds, cmd)
 	}
 
-	return run.Commands(ctx, globalConf.Env, addToMacOSFirewall, verbose, cmds...)
+	return run.Commands(ctx, config.Env, addToMacOSFirewall, verbose, cmds...)
 }
+
 func constructRunCmdLongHelp() string {
 	var out strings.Builder
 
 	fmt.Fprintf(&out, "  Runs the given command. If given a whitespace-separated list of commands it runs the set of commands.\n")
 
-	ok, warning := parseConf(configFlag, overwriteConfigFlag)
-	if ok {
+	config, warning := sgconf.Get(configFile, configOverwriteFile)
+	if config != nil {
 		fmt.Fprintf(&out, "\n")
-		fmt.Fprintf(&out, "AVAILABLE COMMANDS IN %s%s%s\n", output.StyleBold, configFlag, output.StyleReset)
+		fmt.Fprintf(&out, "AVAILABLE COMMANDS IN %s%s%s\n", output.StyleBold, configFile, output.StyleReset)
 
 		var names []string
-		for name := range globalConf.Commands {
+		for name := range config.Commands {
 			names = append(names, name)
 		}
 		sort.Strings(names)

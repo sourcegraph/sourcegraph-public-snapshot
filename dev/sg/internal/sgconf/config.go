@@ -1,4 +1,4 @@
-package main
+package sgconf
 
 import (
 	"io"
@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func ParseConfigFile(name string) (*Config, error) {
+func parseConfigFile(name string) (*Config, error) {
 	file, err := os.Open(name)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot open file %q", name)
@@ -22,10 +22,10 @@ func ParseConfigFile(name string) (*Config, error) {
 		return nil, errors.Wrap(err, "reading configuration file")
 	}
 
-	return ParseConfig(data)
+	return parseConfig(data)
 }
 
-func ParseConfig(data []byte) (*Config, error) {
+func parseConfig(data []byte) (*Config, error) {
 	var conf Config
 	if err := yaml.Unmarshal(data, &conf); err != nil {
 		return nil, err
