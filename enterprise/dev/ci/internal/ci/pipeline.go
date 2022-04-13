@@ -273,7 +273,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	ops.Apply(pipeline)
 
 	// Validate generated pipeline have unique keys
-	if err := pipeline.EnsureUniqueKeys(); err != nil {
+	if err := pipeline.EnsureUniqueKeys(make(map[string]int)); err != nil {
 		return nil, err
 	}
 
