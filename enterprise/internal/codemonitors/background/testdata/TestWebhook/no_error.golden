@@ -1,0 +1,1 @@
+{"monitorDescription":"My test monitor","monitorURL":"https://sourcegraph.com/code-monitoring/Q29kZU1vbml0b3I6NDI=?utm_source=","query":"repo:camdentest -file:id_rsa.pub BEGIN"}

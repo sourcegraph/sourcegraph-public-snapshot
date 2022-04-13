@@ -14,7 +14,7 @@ import (
 )
 
 func sendWebhookNotification(ctx context.Context, url string, args actionArgs) error {
-	return postWebhook(ctx, httpcli.ExternalDoer, url, generatePayload(args))
+	return postWebhook(ctx, httpcli.ExternalDoer, url, generateWebhookPayload(args))
 }
 
 func postWebhook(ctx context.Context, doer httpcli.Doer, url string, payload webhookPayload) error {
@@ -53,7 +53,7 @@ func SendTestWebhook(ctx context.Context, doer httpcli.Doer, description string,
 		MonitorDescription: description,
 		Query:              "test query",
 	}
-	return postWebhook(ctx, httpcli.ExternalDoer, u, generatePayload(args))
+	return postWebhook(ctx, httpcli.ExternalDoer, u, generateWebhookPayload(args))
 }
 
 type webhookPayload struct {
@@ -63,7 +63,7 @@ type webhookPayload struct {
 	Results            []webhookResult `json:"results,omitempty"`
 }
 
-func generatePayload(args actionArgs) webhookPayload {
+func generateWebhookPayload(args actionArgs) webhookPayload {
 	p := webhookPayload{
 		MonitorDescription: args.MonitorDescription,
 		MonitorURL:         getCodeMonitorURL(args.ExternalURL, args.MonitorID, args.UTMSource),

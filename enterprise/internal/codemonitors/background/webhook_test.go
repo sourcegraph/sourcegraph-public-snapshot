@@ -2,6 +2,7 @@ package background
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -18,16 +19,16 @@ func TestWebhook(t *testing.T) {
 	eu, err := url.Parse("https://sourcegraph.com")
 	require.NoError(t, err)
 
-	t.Run("no error", func(t *testing.T) {
-		action := actionArgs{
-			MonitorDescription: "My test monitor",
-			ExternalURL:        eu,
-			MonitorID:          42,
-			Query:              "repo:camdentest -file:id_rsa.pub BEGIN",
-			Results:            make([]*result.CommitMatch, 3),
-			IncludeResults:     false,
-		}
+	action := actionArgs{
+		MonitorDescription: "My test monitor",
+		ExternalURL:        eu,
+		MonitorID:          42,
+		Query:              "repo:camdentest -file:id_rsa.pub BEGIN",
+		Results:            []*result.CommitMatch{&diffResultMock, &commitResultMock},
+		IncludeResults:     false,
+	}
 
+	t.Run("no error", func(t *testing.T) {
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			b, err := io.ReadAll(r.Body)
 			require.NoError(t, err)
@@ -37,19 +38,23 @@ func TestWebhook(t *testing.T) {
 		defer s.Close()
 
 		client := s.Client()
-		err := postWebhook(context.Background(), client, s.URL, generatePayload(action))
+		err := postWebhook(context.Background(), client, s.URL, generateWebhookPayload(action))
 		require.NoError(t, err)
 	})
 
-	t.Run("error is returned", func(t *testing.T) {
-		action := actionArgs{
-			MonitorDescription: "My test monitor",
-			ExternalURL:        eu,
-			Query:              "repo:camdentest -file:id_rsa.pub BEGIN",
-			Results:            make([]*result.CommitMatch, 3),
-			IncludeResults:     false,
-		}
+	// If these tests fail, be sure to check that the changes are correct here:
+	// https://app.slack.com/block-kit-builder/T02FSM7DL#%7B%22blocks%22:%5B%5D%7D
+	t.Run("golden with results", func(t *testing.T) {
+		actionCopy := action
+		actionCopy.IncludeResults = true
 
+		j, err := json.Marshal(generateWebhookPayload(actionCopy))
+		require.NoError(t, err)
+
+		autogold.Equal(t, autogold.Raw(j))
+	})
+
+	t.Run("error is returned", func(t *testing.T) {
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			b, err := io.ReadAll(r.Body)
 			require.NoError(t, err)
@@ -59,7 +64,7 @@ func TestWebhook(t *testing.T) {
 		defer s.Close()
 
 		client := s.Client()
-		err := postWebhook(context.Background(), client, s.URL, generatePayload(action))
+		err := postWebhook(context.Background(), client, s.URL, generateWebhookPayload(action))
 		require.Error(t, err)
 	})
 }
