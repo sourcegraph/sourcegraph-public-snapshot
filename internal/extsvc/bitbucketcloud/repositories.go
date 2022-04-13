@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// Repo returns a single repository, based on its namespace and slug.
 func (c *Client) Repo(ctx context.Context, namespace, slug string) (*Repo, error) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("/2.0/repositories/%s/%s", namespace, slug), nil)
 	if err != nil {
