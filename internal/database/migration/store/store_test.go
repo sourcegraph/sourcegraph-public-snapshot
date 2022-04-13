@@ -520,8 +520,8 @@ retryLoop:
 			t.Fatalf("unexpected error: %s", err)
 		} else if !ok {
 			// Give a small amount of time for Session C to begin creating the index. Signaling
-			// when Postgres has started to create teh index is as detailed as checking the status,
-			// so weo resort to polling here for a short time.
+			// when Postgres has started to create the index is as difficult and expensive as
+			// querying the index the status, so we just poll here for a short time.
 			if time.Since(start) < missingIndexThreshold {
 				continue
 			}
