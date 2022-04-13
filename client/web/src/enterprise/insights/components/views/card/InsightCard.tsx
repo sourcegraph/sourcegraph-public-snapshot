@@ -16,7 +16,7 @@ const InsightCard = forwardRef((props, reference) => {
     return (
         <Card as={as} tabIndex={0} ref={reference} {...otherProps} className={classNames(className, styles.view)}>
             <ErrorBoundary location={useLocation()} className={styles.errorBoundary}>
-                {children as ReactNode}
+                {children}
             </ErrorBoundary>
         </Card>
     )

@@ -7,11 +7,10 @@ import useResizeObserver from 'use-resize-observer'
 import { useDebounce } from '@sourcegraph/wildcard'
 
 import { getLineColor, LegendItem, LegendList } from '../../../../../../../../charts'
+import { ScrollBox } from '../../../../../../../../views/components/view/content/chart-view-content/charts/line/components/scroll-box/ScrollBox'
 import { BackendInsightData } from '../../../../../../core'
 import { SeriesBasedChartTypes, SeriesChart } from '../../../../../views'
 import { BackendAlertOverlay } from '../backend-insight-alerts/BackendInsightAlerts'
-
-import { ScrollBox } from './scroll-box/ScrollBox'
 
 import styles from './BackendInsightChart.module.scss'
 
@@ -91,6 +90,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                     key={series.dataKey as string}
                                     color={getLineColor(series)}
                                     name={series.name}
+                                    className={styles.legendListItem}
                                 />
                             ))}
                         </LegendList>
