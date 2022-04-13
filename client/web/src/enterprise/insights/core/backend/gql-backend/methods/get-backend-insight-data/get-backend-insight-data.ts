@@ -25,6 +25,7 @@ export const getBackendInsightData = (
         client.watchQuery<GetInsightViewResult>({
             query: GET_INSIGHT_VIEW_GQL,
             variables: { id: insight.id, filters },
+            fetchPolicy: 'network-only',
         })
     ).pipe(
         // Note: this insight is guaranteed to exist since this function
