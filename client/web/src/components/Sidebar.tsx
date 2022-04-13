@@ -6,7 +6,7 @@ import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import { useRouteMatch } from 'react-router-dom'
 
-import { AnchorLink, ButtonLink, Icon, Collapse, CollapseHeader, CollapsePanel } from '@sourcegraph/wildcard'
+import { AnchorLink, ButtonLink, Icon, Collapse, CollapseHeader, CollapsePanel, H2, H3 } from '@sourcegraph/wildcard'
 
 import styles from './Sidebar.module.scss'
 
@@ -40,7 +40,7 @@ export const SidebarNavItem: React.FunctionComponent<{
  *
  * Header of a `SideBarGroup`
  */
-export const SidebarGroupHeader: React.FunctionComponent<{ label: string }> = ({ label }) => <h3>{label}</h3>
+export const SidebarGroupHeader: React.FunctionComponent<{ label: string }> = ({ label }) => <H3 as={H2}>{label}</H3>
 
 /**
  * Sidebar with collapsible items
