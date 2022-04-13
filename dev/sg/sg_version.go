@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -119,9 +120,8 @@ func checkSgVersionAndUpdate(ctx context.Context, skipUpdate bool) error {
 	rev := strings.TrimPrefix(BuildCommit, "dev-")
 	out, err := run.GitCmd("rev-list", fmt.Sprintf("%s..origin/main", rev), "./dev/sg")
 	if err != nil {
-		fmt.Printf("error getting new commits since %s in ./dev/sg: %s\n", rev, err)
-		fmt.Printf("try reinstalling sg with `%s`.\n", sgOneLineCmd)
-		os.Exit(1)
+		return errors.Newf("error getting new commits since %s in ./dev/sg: %s - try reinstalling sg with:\n\n%s",
+			rev, err, sgOneLineCmd)
 	}
 
 	out = strings.TrimSpace(out)
@@ -144,9 +144,11 @@ func checkSgVersionAndUpdate(ctx context.Context, skipUpdate bool) error {
 	stdout.Out.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "Auto updating sg ..."))
 	newPath, err := updateToPrebuiltSG(ctx)
 	if err != nil {
-		return err
+		return errors.Newf("failed to install update: %s", err)
 	}
 	writeSuccessLinef("sg has been updated!")
 	stdout.Out.Write("To see what's new, run 'sg version changelog'.")
+
+	// Run command with new binary
 	return syscall.Exec(newPath, os.Args, os.Environ())
 }

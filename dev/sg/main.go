@@ -108,7 +108,7 @@ var sg = &cli.App{
 			// If we're not running "sg update ...", we want to check the version first
 			err := checkSgVersionAndUpdate(cmd.Context, cmd.Bool("skip-auto-update"))
 			if err != nil {
-				writeWarningLinef("Checking sg version and updating failed: %s", err)
+				writeWarningLinef("update check: %s", err)
 				// Do not exit here, so we don't break user flow when they want to
 				// run `sg` but updating fails
 			}
