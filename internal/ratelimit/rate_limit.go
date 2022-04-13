@@ -18,14 +18,8 @@ const defaultBurst = 10
 // NewRegistry creates and returns an empty rate limit registry. If a global default rate limit is specified a fallback
 // rate limiter will be added.
 func NewRegistry() *Registry {
-	defaultRateLimit := conf.Get().DefaultRateLimit
-	fallbackRateLimit := rate.Limit(defaultRateLimit / 3600.0) // the rate limit in the config is in requests per hour, whereas rate.Limit is in requests per second.
-	if defaultRateLimit <= 0 {
-		fallbackRateLimit = rate.Inf
-	}
 	return &Registry{
-		rateLimiters:      make(map[string]*rate.Limiter),
-		fallbackRateLimit: fallbackRateLimit,
+		rateLimiters: make(map[string]*rate.Limiter),
 	}
 }
 
@@ -34,8 +28,7 @@ type Registry struct {
 	mu sync.Mutex
 	// rateLimiters contains mappings of external service to its *rate.Limiter. The
 	// key should be the URN of the external service.
-	rateLimiters      map[string]*rate.Limiter
-	fallbackRateLimit rate.Limit
+	rateLimiters map[string]*rate.Limiter
 }
 
 // Get returns the rate limiter configured for the given URN of an external
@@ -59,7 +52,14 @@ func (r *Registry) GetOrSet(urn string, fallback *rate.Limiter) *rate.Limiter {
 	l := r.rateLimiters[urn]
 	if l == nil {
 		if fallback == nil {
-			fallback = rate.NewLimiter(r.fallbackRateLimit, defaultBurst)
+			defaultRateLimit := conf.Get().DefaultRateLimit
+			// the rate limit in the config is in requests per hour, whereas rate.Limit is in
+			// requests per second.
+			fallbackRateLimit := rate.Limit(defaultRateLimit / 3600.0)
+			if defaultRateLimit <= 0 {
+				fallbackRateLimit = rate.Inf
+			}
+			fallback = rate.NewLimiter(fallbackRateLimit, defaultBurst)
 		}
 		r.rateLimiters[urn] = fallback
 		return fallback
