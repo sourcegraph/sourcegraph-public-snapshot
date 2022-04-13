@@ -361,7 +361,7 @@ To send logs to a Loki instance, you can provide '--out=http://127.0.0.1:3100' a
 From there, you can start exploring logs with the Grafana explore panel.
 `,
 		Flags: []cli.Flag{
-
+			&ciBuildFlag,
 			&cli.StringFlag{
 				Name:    "job",
 				Aliases: []string{"j"},
