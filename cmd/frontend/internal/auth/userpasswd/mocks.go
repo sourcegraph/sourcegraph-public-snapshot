@@ -27,9 +27,10 @@ type MockLockoutStore struct {
 	// SendUnlockAccountEmailFunc is an instance of a mock function object
 	// controlling the behavior of the method SendUnlockAccountEmail.
 	SendUnlockAccountEmailFunc *LockoutStoreSendUnlockAccountEmailFunc
-	// VerifyUnlockAccountTokenFunc is an instance of a mock function object
-	// controlling the behavior of the method VerifyUnlockAccountToken.
-	VerifyUnlockAccountTokenFunc *LockoutStoreVerifyUnlockAccountTokenFunc
+	// VerifyUnlockAccountTokenAndResetFunc is an instance of a mock
+	// function object controlling the behavior of the method
+	// VerifyUnlockAccountTokenAndReset.
+	VerifyUnlockAccountTokenAndResetFunc *LockoutStoreVerifyUnlockAccountTokenAndResetFunc
 }
 
 // NewMockLockoutStore creates a new mock of the LockoutStore interface. All
@@ -61,7 +62,7 @@ func NewMockLockoutStore() *MockLockoutStore {
 				return nil
 			},
 		},
-		VerifyUnlockAccountTokenFunc: &LockoutStoreVerifyUnlockAccountTokenFunc{
+		VerifyUnlockAccountTokenAndResetFunc: &LockoutStoreVerifyUnlockAccountTokenAndResetFunc{
 			defaultHook: func(string) (bool, error) {
 				return false, nil
 			},
@@ -98,9 +99,9 @@ func NewStrictMockLockoutStore() *MockLockoutStore {
 				panic("unexpected invocation of MockLockoutStore.SendUnlockAccountEmail")
 			},
 		},
-		VerifyUnlockAccountTokenFunc: &LockoutStoreVerifyUnlockAccountTokenFunc{
+		VerifyUnlockAccountTokenAndResetFunc: &LockoutStoreVerifyUnlockAccountTokenAndResetFunc{
 			defaultHook: func(string) (bool, error) {
-				panic("unexpected invocation of MockLockoutStore.VerifyUnlockAccountToken")
+				panic("unexpected invocation of MockLockoutStore.VerifyUnlockAccountTokenAndReset")
 			},
 		},
 	}
@@ -126,8 +127,8 @@ func NewMockLockoutStoreFrom(i LockoutStore) *MockLockoutStore {
 		SendUnlockAccountEmailFunc: &LockoutStoreSendUnlockAccountEmailFunc{
 			defaultHook: i.SendUnlockAccountEmail,
 		},
-		VerifyUnlockAccountTokenFunc: &LockoutStoreVerifyUnlockAccountTokenFunc{
-			defaultHook: i.VerifyUnlockAccountToken,
+		VerifyUnlockAccountTokenAndResetFunc: &LockoutStoreVerifyUnlockAccountTokenAndResetFunc{
+			defaultHook: i.VerifyUnlockAccountTokenAndReset,
 		},
 	}
 }
@@ -660,37 +661,37 @@ func (c LockoutStoreSendUnlockAccountEmailFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// LockoutStoreVerifyUnlockAccountTokenFunc describes the behavior when the
-// VerifyUnlockAccountToken method of the parent MockLockoutStore instance
-// is invoked.
-type LockoutStoreVerifyUnlockAccountTokenFunc struct {
+// LockoutStoreVerifyUnlockAccountTokenAndResetFunc describes the behavior
+// when the VerifyUnlockAccountTokenAndReset method of the parent
+// MockLockoutStore instance is invoked.
+type LockoutStoreVerifyUnlockAccountTokenAndResetFunc struct {
 	defaultHook func(string) (bool, error)
 	hooks       []func(string) (bool, error)
-	history     []LockoutStoreVerifyUnlockAccountTokenFuncCall
+	history     []LockoutStoreVerifyUnlockAccountTokenAndResetFuncCall
 	mutex       sync.Mutex
 }
 
-// VerifyUnlockAccountToken delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockLockoutStore) VerifyUnlockAccountToken(v0 string) (bool, error) {
-	r0, r1 := m.VerifyUnlockAccountTokenFunc.nextHook()(v0)
-	m.VerifyUnlockAccountTokenFunc.appendCall(LockoutStoreVerifyUnlockAccountTokenFuncCall{v0, r0, r1})
+// VerifyUnlockAccountTokenAndReset delegates to the next hook function in
+// the queue and stores the parameter and result values of this invocation.
+func (m *MockLockoutStore) VerifyUnlockAccountTokenAndReset(v0 string) (bool, error) {
+	r0, r1 := m.VerifyUnlockAccountTokenAndResetFunc.nextHook()(v0)
+	m.VerifyUnlockAccountTokenAndResetFunc.appendCall(LockoutStoreVerifyUnlockAccountTokenAndResetFuncCall{v0, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
-// VerifyUnlockAccountToken method of the parent MockLockoutStore instance
-// is invoked and the hook queue is empty.
-func (f *LockoutStoreVerifyUnlockAccountTokenFunc) SetDefaultHook(hook func(string) (bool, error)) {
+// VerifyUnlockAccountTokenAndReset method of the parent MockLockoutStore
+// instance is invoked and the hook queue is empty.
+func (f *LockoutStoreVerifyUnlockAccountTokenAndResetFunc) SetDefaultHook(hook func(string) (bool, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// VerifyUnlockAccountToken method of the parent MockLockoutStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *LockoutStoreVerifyUnlockAccountTokenFunc) PushHook(hook func(string) (bool, error)) {
+// VerifyUnlockAccountTokenAndReset method of the parent MockLockoutStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *LockoutStoreVerifyUnlockAccountTokenAndResetFunc) PushHook(hook func(string) (bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -698,20 +699,20 @@ func (f *LockoutStoreVerifyUnlockAccountTokenFunc) PushHook(hook func(string) (b
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *LockoutStoreVerifyUnlockAccountTokenFunc) SetDefaultReturn(r0 bool, r1 error) {
+func (f *LockoutStoreVerifyUnlockAccountTokenAndResetFunc) SetDefaultReturn(r0 bool, r1 error) {
 	f.SetDefaultHook(func(string) (bool, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *LockoutStoreVerifyUnlockAccountTokenFunc) PushReturn(r0 bool, r1 error) {
+func (f *LockoutStoreVerifyUnlockAccountTokenAndResetFunc) PushReturn(r0 bool, r1 error) {
 	f.PushHook(func(string) (bool, error) {
 		return r0, r1
 	})
 }
 
-func (f *LockoutStoreVerifyUnlockAccountTokenFunc) nextHook() func(string) (bool, error) {
+func (f *LockoutStoreVerifyUnlockAccountTokenAndResetFunc) nextHook() func(string) (bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -724,28 +725,28 @@ func (f *LockoutStoreVerifyUnlockAccountTokenFunc) nextHook() func(string) (bool
 	return hook
 }
 
-func (f *LockoutStoreVerifyUnlockAccountTokenFunc) appendCall(r0 LockoutStoreVerifyUnlockAccountTokenFuncCall) {
+func (f *LockoutStoreVerifyUnlockAccountTokenAndResetFunc) appendCall(r0 LockoutStoreVerifyUnlockAccountTokenAndResetFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
 // History returns a sequence of
-// LockoutStoreVerifyUnlockAccountTokenFuncCall objects describing the
-// invocations of this function.
-func (f *LockoutStoreVerifyUnlockAccountTokenFunc) History() []LockoutStoreVerifyUnlockAccountTokenFuncCall {
+// LockoutStoreVerifyUnlockAccountTokenAndResetFuncCall objects describing
+// the invocations of this function.
+func (f *LockoutStoreVerifyUnlockAccountTokenAndResetFunc) History() []LockoutStoreVerifyUnlockAccountTokenAndResetFuncCall {
 	f.mutex.Lock()
-	history := make([]LockoutStoreVerifyUnlockAccountTokenFuncCall, len(f.history))
+	history := make([]LockoutStoreVerifyUnlockAccountTokenAndResetFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// LockoutStoreVerifyUnlockAccountTokenFuncCall is an object that describes
-// an invocation of method VerifyUnlockAccountToken on an instance of
-// MockLockoutStore.
-type LockoutStoreVerifyUnlockAccountTokenFuncCall struct {
+// LockoutStoreVerifyUnlockAccountTokenAndResetFuncCall is an object that
+// describes an invocation of method VerifyUnlockAccountTokenAndReset on an
+// instance of MockLockoutStore.
+type LockoutStoreVerifyUnlockAccountTokenAndResetFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 string
@@ -759,12 +760,12 @@ type LockoutStoreVerifyUnlockAccountTokenFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c LockoutStoreVerifyUnlockAccountTokenFuncCall) Args() []interface{} {
+func (c LockoutStoreVerifyUnlockAccountTokenAndResetFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c LockoutStoreVerifyUnlockAccountTokenFuncCall) Results() []interface{} {
+func (c LockoutStoreVerifyUnlockAccountTokenAndResetFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }

@@ -352,7 +352,7 @@ func HandleUnlockAccount(db database.DB, store LockoutStore) func(w http.Respons
 			return
 		}
 
-		valid, error := store.VerifyUnlockAccountToken(unlockAccountInfo.Token)
+		valid, error := store.VerifyUnlockAccountTokenAndReset(unlockAccountInfo.Token)
 
 		if !valid || error != nil {
 			err := "invalid token provided"

@@ -191,7 +191,7 @@ func TestHandleAccount_Unlock(t *testing.T) {
 
 	// Getting error for invalid token
 	{
-		lockout.VerifyUnlockAccountTokenFunc.SetDefaultReturn(false, errors.Newf("invalid token provided"))
+		lockout.VerifyUnlockAccountTokenAndResetFunc.SetDefaultReturn(false, errors.Newf("invalid token provided"))
 		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{ "token": "abcd" }`))
 		require.NoError(t, err)
 
@@ -204,7 +204,7 @@ func TestHandleAccount_Unlock(t *testing.T) {
 
 	// ok result
 	{
-		lockout.VerifyUnlockAccountTokenFunc.SetDefaultReturn(true, nil)
+		lockout.VerifyUnlockAccountTokenAndResetFunc.SetDefaultReturn(true, nil)
 		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{ "token": "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJpc3MiOiJodHRwczovL3NvdXJjZWdyYXBoLnRlc3Q6MzQ0MyIsInN1YiI6IjEiLCJleHAiOjE2NDk3NzgxNjl9.cm_giwkSviVRXGRCie9iii-ytJD3iAuNdtk9XmBZMrj7HHlH6vfky4ftjudAZ94HBp867cjxkuNc6OJ2uaEJFg" }`))
 		require.NoError(t, err)
 

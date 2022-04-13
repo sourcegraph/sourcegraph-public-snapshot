@@ -30,7 +30,7 @@ type LockoutStore interface {
 	// Creates the unlock account url with the signet unlock token
 	GenerateUnlockAccountUrl(userID int32) (string, string, error)
 	// Verifies the provided unlock token is valid
-	VerifyUnlockAccountToken(urlToken string) (bool, error)
+	VerifyUnlockAccountTokenAndReset(urlToken string) (bool, error)
 	// Sends an email to the locked account email providing a temporary unlock link
 	SendUnlockAccountEmail(ctx context.Context, userID int32, userEmail string) error
 }
@@ -136,7 +136,7 @@ func (s *lockoutStore) SendUnlockAccountEmail(ctx context.Context, userID int32,
 	})
 }
 
-func (s *lockoutStore) VerifyUnlockAccountToken(urlToken string) (bool, error) {
+func (s *lockoutStore) VerifyUnlockAccountTokenAndReset(urlToken string) (bool, error) {
 	signingKey := conf.SiteConfig().AuthUnlockAccountLinkSigningKey
 
 	if signingKey == "" {
