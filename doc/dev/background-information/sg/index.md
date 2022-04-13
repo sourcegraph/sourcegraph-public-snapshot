@@ -118,8 +118,6 @@ You can get help about commands in a variety of ways:
 sg help # show all available commands
 
 # learn about a specific command or subcommand
-sg help <command>
-sg h <command>
 sg <command> -h
 sg <command> --help
 ```
