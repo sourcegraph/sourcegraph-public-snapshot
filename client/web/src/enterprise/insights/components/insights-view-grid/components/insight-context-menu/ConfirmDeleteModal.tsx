@@ -24,11 +24,10 @@ export const ConfirmDeleteModal: React.FunctionComponent<ConfirmDeleteModalProps
             ariaLabel="Delete insight modal"
             disabled={loading}
             variant="danger"
+            confirmText="Delete forever"
         >
-            <h3 className="text-danger mb-4">Delete Insight?</h3>
-            <p className="mb-4">
-                Are you sure you want to delete the insight <strong>{insight.title}</strong>?
-            </p>
+            <h3 className="text-danger mb-4">Delete `${insight.title}`?</h3>
+            <p className="mb-4">Are you sure you want to delete insight {insight.title}? This can't be undone.</p>
         </ConfirmationModal>
     )
 }
