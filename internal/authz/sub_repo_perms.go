@@ -433,6 +433,15 @@ func FilterActorFileInfos(ctx context.Context, checker SubRepoPermissionChecker,
 }
 
 func FilterActorFileInfo(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, fi fs.FileInfo) (bool, error) {
+	rc := repoContentFromFileInfo(repo, fi)
+	perms, err := ActorPermissions(ctx, checker, a, rc)
+	if err != nil {
+		return false, errors.Wrap(err, "checking sub-repo permissions")
+	}
+	return perms.Include(Read), nil
+}
+
+func repoContentFromFileInfo(repo api.RepoName, fi fs.FileInfo) RepoContent {
 	rc := RepoContent{
 		Repo: repo,
 		Path: fi.Name(),
@@ -440,9 +449,5 @@ func FilterActorFileInfo(ctx context.Context, checker SubRepoPermissionChecker, 
 	if fi.IsDir() {
 		rc.Path += "/"
 	}
-	perms, err := ActorPermissions(ctx, checker, a, rc)
-	if err != nil {
-		return false, errors.Wrap(err, "checking sub-repo permissions")
-	}
-	return perms.Include(Read), nil
+	return rc
 }
