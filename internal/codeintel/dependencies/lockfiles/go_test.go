@@ -20,6 +20,7 @@ require (
 	other.org/other/dont-replace-this v1.2.3
 	other.org/other/replace-all-versions v1.2.3
 	other.org/other/drop v1.2.3
+	other.org/other/drop-2 v1.2.3
 	other.org/other/excluded v1.2.3
 )
 
@@ -28,6 +29,7 @@ replace (
 	other.org/other/dont-replace-this v1.3.0 => other.org/other/dont-replace-this v1.4.0
 	other.org/other/replace-all-versions => other.org/other/replace-all-versions v1.3.0
 	other.org/other/drop v1.2.3 => /local/drop
+	other.org/other/drop-2 => /local/drop
 	other.org/other/doesnt-match-anything => other.org/other/doesnt-match-anything v1.0.0
 )
 

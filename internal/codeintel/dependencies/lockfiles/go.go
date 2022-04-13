@@ -35,7 +35,8 @@ func parseGoModFile(r io.Reader) ([]reposource.PackageDependency, error) {
 		// According to https://go.dev/ref/mod#go-mod-file-replace, the replacement
 		// version is empty if and only if the replacement path is local.
 		if r.New.Version == "" {
-			// Ignore dependencies which point to local modules.
+			// Ignore dependencies which point to local modules. r.Old.Version might be ""
+			// which means that all version will be replaced.
 			ignore[r.Old.Path] = r.Old.Version
 		} else {
 			replace[r.Old.Path] = r
@@ -47,7 +48,7 @@ func parseGoModFile(r io.Reader) ([]reposource.PackageDependency, error) {
 	}
 
 	for _, r := range f.Require {
-		if v, ok := ignore[r.Mod.Path]; ok && v == r.Mod.Version {
+		if s, ok := ignore[r.Mod.Path]; ok && (s == "" || s == r.Mod.Version) {
 			continue
 		}
 
