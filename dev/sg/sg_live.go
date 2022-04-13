@@ -20,7 +20,7 @@ var liveCommand = &cli.Command{
 	Category:    CategoryCompany,
 	Description: constructLiveCmdLongHelp(),
 	Action:      execAdapter(liveExec),
-	BashComplete: bashOptionsCompletion(func() (options []string) {
+	BashComplete: completeOptions(func() (options []string) {
 		return append(environmentNames(), `https\://...`)
 	}),
 }

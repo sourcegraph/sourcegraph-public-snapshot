@@ -72,7 +72,7 @@ var (
 
 			addToMacOSFirewallFlag,
 		},
-		BashComplete: bashOptionsCompletion(func() (options []string) {
+		BashComplete: completeOptions(func() (options []string) {
 			for name := range globalConf.Commandsets {
 				options = append(options, name)
 			}

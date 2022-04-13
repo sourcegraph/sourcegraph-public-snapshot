@@ -28,7 +28,7 @@ var testCommand = &cli.Command{
 	ArgsUsage: "<testsuite>",
 	Usage:     "Run the given test suite",
 	Category:  CategoryDev,
-	BashComplete: bashOptionsCompletion(func() (options []string) {
+	BashComplete: completeOptions(func() (options []string) {
 		for name := range globalConf.Tests {
 			options = append(options, name)
 		}

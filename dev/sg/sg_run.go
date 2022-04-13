@@ -33,7 +33,7 @@ var runCommand = &cli.Command{
 		addToMacOSFirewallFlag,
 	},
 	Action: execAdapter(runExec),
-	BashComplete: bashOptionsCompletion(func() (options []string) {
+	BashComplete: completeOptions(func() (options []string) {
 		for name := range globalConf.Commands {
 			options = append(options, name)
 		}
