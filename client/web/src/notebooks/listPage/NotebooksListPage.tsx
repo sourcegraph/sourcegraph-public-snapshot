@@ -10,7 +10,6 @@ import { catchError, startWith, switchMap } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
 import { PageHeader, Link, Button, useEventObservable, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -21,9 +20,8 @@ import { PageRoutes } from '../../routes.constants'
 import { fetchNotebooks as _fetchNotebooks, createNotebook as _createNotebook } from '../backend'
 
 import { ImportMarkdownNotebookButton } from './ImportMarkdownNotebookButton'
+import { NotebooksGettingStarted } from './NotebooksGettingStarted'
 import { NotebooksList } from './NotebooksList'
-
-import styles from './NotebooksListPage.module.scss'
 
 export interface NotebooksListPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
@@ -41,7 +39,7 @@ type Tabs = { tab: NotebooksTab; title: string; isActive: boolean; logName: stri
 
 function getSelectedTabFromLocation(locationSearch: string, authenticatedUser: AuthenticatedUser | null): NotebooksTab {
     if (!authenticatedUser) {
-        return { type: 'explore' }
+        return { type: 'my' }
     }
 
     const urlParameters = new URLSearchParams(locationSearch)
@@ -305,17 +303,7 @@ export const NotebooksListPage: React.FunctionComponent<NotebooksListPageProps> 
                     />
                 )}
                 {(selectedTab.type === 'my' || selectedTab.type === 'starred') && !authenticatedUser && (
-                    <UnauthenticatedNotebooksSection
-                        cta={
-                            selectedTab.type === 'my'
-                                ? 'Get started creating notebooks'
-                                : 'Get started starring notebooks'
-                        }
-                        telemetryService={telemetryService}
-                        onSelectExploreNotebooks={() =>
-                            onSelectTab({ type: 'explore' }, 'SearchNotebooksExploreNotebooksTabClick')
-                        }
-                    />
+                    <NotebooksGettingStarted telemetryService={telemetryService} />
                 )}
                 {selectedTab.type === 'explore' && (
                     <NotebooksList
@@ -326,41 +314,6 @@ export const NotebooksListPage: React.FunctionComponent<NotebooksListPageProps> 
                     />
                 )}
             </Page>
-        </div>
-    )
-}
-
-interface UnauthenticatedMyNotebooksSectionProps extends TelemetryProps {
-    cta: string
-    onSelectExploreNotebooks: () => void
-}
-
-const UnauthenticatedNotebooksSection: React.FunctionComponent<UnauthenticatedMyNotebooksSectionProps> = ({
-    telemetryService,
-    cta,
-    onSelectExploreNotebooks,
-}) => {
-    const onClick = (): void => {
-        telemetryService.log('SearchNotebooksSignUpToCreateNotebooksClick')
-    }
-
-    return (
-        <div className="d-flex justify-content-center align-items-center flex-column p-3">
-            <Button
-                as={Link}
-                onClick={onClick}
-                to={buildGetStartedURL('search-notebooks', '/notebooks')}
-                variant="primary"
-            >
-                {cta}
-            </Button>
-            <span className="my-3 text-muted">or</span>
-            <span className={classNames('d-flex align-items-center', styles.explorePublicNotebooks)}>
-                <Button className="p-1" variant="link" onClick={onSelectExploreNotebooks}>
-                    explore
-                </Button>{' '}
-                public notebooks
-            </span>
         </div>
     )
 }

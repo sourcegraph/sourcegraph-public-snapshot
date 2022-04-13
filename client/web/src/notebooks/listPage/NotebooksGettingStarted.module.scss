@@ -1,0 +1,30 @@
+.row {
+    row-gap: 1rem;
+}
+
+.narrow-list {
+    padding-inline-start: 1.5rem;
+}
+
+.description {
+    min-height: 3.75rem;
+}
+
+.panel-buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.panel-button {
+    padding: 0;
+    margin-right: 1rem;
+
+    &:hover {
+        color: var(--primary);
+    }
+}
+
+.selected-panel-button {
+    color: var(--primary);
+}
