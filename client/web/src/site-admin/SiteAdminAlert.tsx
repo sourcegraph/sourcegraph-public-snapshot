@@ -3,7 +3,7 @@ import * as React from 'react'
 import classNames from 'classnames'
 import LockIcon from 'mdi-react/LockIcon'
 
-import { Alert, AlertProps, Icon } from '@sourcegraph/wildcard'
+import { Alert, AlertProps, Icon, H5, H2 } from '@sourcegraph/wildcard'
 
 import styles from './SiteAdminAlert.module.scss'
 
@@ -21,14 +21,9 @@ export const SiteAdminAlert: React.FunctionComponent<SiteAdminAlertProps> = ({
     variant = 'warning',
 }) => (
     <Alert className={classNames(styles.siteAdminAlert, className)} variant={variant}>
-        {/**
-         * ally-ignore
-         * Rule: "heading-order" (Heading levels should only increase by one)
-         * Since `PageHeader` (which is on upper scope), renders `h1`, We could consider using `h2` tag instead, to meet accessibility criteria
-         */}
-        <h5 className="a11y-ignore">
+        <H5 as={H2}>
             <Icon as={LockIcon} /> Site admin
-        </h5>
+        </H5>
         <div>{children}</div>
     </Alert>
 )
