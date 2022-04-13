@@ -5,8 +5,7 @@ import { Meta, Story } from '@storybook/react'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../../components/WebStory'
-import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from '../../../../core/backend/gql-backend/code-insights-gql-backend'
+import { CodeInsightsBackendContext, CodeInsightsGqlBackend } from '../../../../core'
 
 import { IntroCreationPage } from './IntroCreationPage'
 

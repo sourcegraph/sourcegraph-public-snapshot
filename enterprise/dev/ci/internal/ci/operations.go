@@ -68,10 +68,9 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 		ops.Merge(operations.NewNamedSet("Client checks",
 			clientIntegrationTests,
 			clientChromaticTests(opts.ChromaticShouldAutoAccept),
-			frontendTests, // ~4.5m
-			addWebApp,     // ~5.5m
-			// Broken: https://github.com/sourcegraph/sourcegraph/issues/33484
-			// addBrowserExt,     // ~4.5m
+			frontendTests,     // ~4.5m
+			addWebApp,         // ~5.5m
+			addBrowserExt,     // ~4.5m
 			addClientLinters)) // ~9m
 	}
 
@@ -223,9 +222,8 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
 			bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
-			bk.Cmd("git-lfs fetch"),
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("yarn --cwd client/browser -s run build"),
+			bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
 			bk.Cmd("yarn run cover-browser-integration"),
 			bk.Cmd("yarn nyc report -r json"),
 			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
@@ -263,39 +261,23 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 
 	// Chunk web integration tests to save time via parallel execution.
 	chunkedTestFiles := getChunkedWebIntegrationFileNames(chunkSize)
-	// Percy finalize step should be executed after all integration tests.
-	puppeteerFinalizeDependencies := make([]bk.StepOpt, len(chunkedTestFiles))
+	chunkCount := len(chunkedTestFiles)
 
 	// Add pipeline step for each chunk of web integrations files.
 	for i, chunkTestFiles := range chunkedTestFiles {
 		stepLabel := fmt.Sprintf(":puppeteer::electric_plug: Puppeteer tests chunk #%s", fmt.Sprint(i+1))
 
-		stepKey := fmt.Sprintf("puppeteer:chunk:%s", fmt.Sprint(i+1))
-		puppeteerFinalizeDependencies[i] = bk.DependsOn(stepKey)
-
 		pipeline.AddStep(stepLabel,
 			withYarnCache(),
-			bk.Key(stepKey),
 			bk.DependsOn(prepStepKey),
-			bk.DisableManualRetry("The Percy build is finalized even if one of the concurrent agents fails. To retry correctly, restart the entire pipeline."),
+			bk.DisableManualRetry("The Percy build is not finalized if one of the concurrent agents fails. To retry correctly, restart the entire pipeline."),
 			bk.Env("PERCY_ON", "true"),
+			// If PERCY_PARALLEL_TOTAL is set, the API will wait for that many finalized builds to finalize the Percy build.
+			// https://docs.percy.io/docs/parallel-test-suites#how-it-works
+			bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(chunkCount)),
 			bk.Cmd(fmt.Sprintf(`dev/ci/yarn-web-integration.sh "%s"`, chunkTestFiles)),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
-
-	finalizeSteps := []bk.StepOpt{
-		// Allow to teardown the Percy build even if there was a failure in the earlier Percy steps.
-		bk.AllowDependencyFailure(),
-		// Percy service often fails for obscure reasons. The step is pretty fast, so we
-		// just retry a few times.
-		bk.AutomaticRetry(3),
-		// Finalize just uses a remote package.
-		// skipGitCloneStep,
-		bk.Cmd("npx @percy/cli build:finalize"),
-	}
-
-	pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests finalize",
-		append(finalizeSteps, puppeteerFinalizeDependencies...)...)
 }
 
 func clientChromaticTests(autoAcceptChanges bool) operations.Operation {
@@ -433,7 +415,7 @@ func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("yarn --cwd client/browser -s run build"),
+			bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
 			bk.Cmd("yarn -s mocha ./client/browser/src/end-to-end/github.test.ts ./client/browser/src/end-to-end/gitlab.test.ts"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
@@ -449,21 +431,21 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":rocket::chrome: Extension release",
 		withYarnCache(),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn --cwd client/browser -s run build"),
-		bk.Cmd("yarn --cwd client/browser release:chrome"))
+		bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
+		bk.Cmd("yarn workspace @sourcegraph/browser release:chrome"))
 
 	// Build and self sign the FF add-on and upload it to a storage bucket
 	pipeline.AddStep(":rocket::firefox: Extension release",
 		withYarnCache(),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn --cwd client/browser release:firefox"))
+		bk.Cmd("yarn workspace @sourcegraph/browser release:firefox"))
 
 	// Release to npm
 	pipeline.AddStep(":rocket::npm: npm Release",
 		withYarnCache(),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn --cwd client/browser -s run build"),
-		bk.Cmd("yarn --cwd client/browser release:npm"))
+		bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
+		bk.Cmd("yarn workspace @sourcegraph/browser release:npm"))
 }
 
 // Adds a Buildkite pipeline "Wait".

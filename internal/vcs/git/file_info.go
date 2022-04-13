@@ -33,7 +33,3 @@ type Submodule struct {
 type ObjectInfo interface {
 	OID() gitdomain.OID
 }
-
-type objectInfo gitdomain.OID
-
-func (oid objectInfo) OID() gitdomain.OID { return gitdomain.OID(oid) }

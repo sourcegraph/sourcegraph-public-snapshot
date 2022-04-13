@@ -70,6 +70,14 @@ And a little complicated; there's also the following reasons:
 				TestPlan: "I have a plan! No review required: this is a bot PR",
 			},
 		},
+		{
+			name:     "bad markdown still passes",
+			bodyFile: "testdata/pull_request_body/bad-markdown.md",
+			want: checkResult{
+				Reviewed: true,
+				TestPlan: "This is still a plan! No review required: just trust me",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
