@@ -19,6 +19,7 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -27,6 +28,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	nettrace "golang.org/x/net/trace"
+	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -45,8 +47,9 @@ const (
 
 // Service is the search service. It is an http.Handler.
 type Service struct {
-	Store *Store
-	Log   log15.Logger
+	GRPCServer *grpc.Server
+	Store      *Store
+	Log        log15.Logger
 }
 
 // ServeHTTP handles HTTP based search requests
@@ -54,6 +57,11 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	running.Inc()
 	defer running.Dec()
+
+	if r.ProtoMajor == 2 && strings.HasPrefix(r.Header.Get("Content-Type"), "application/grpc") {
+		s.GRPCServer.ServeHTTP(w, r)
+		return
+	}
 
 	var p protocol.Request
 	dec := json.NewDecoder(r.Body)

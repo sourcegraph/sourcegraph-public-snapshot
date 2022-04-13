@@ -11,15 +11,9 @@ service Searcher {
 message SearchStructuralUnindexedRequest {
     // Repo is the name of the repository to search. e.g. "github.com/gorilla/mux"
     string repo = 1;
-
-    string commit = 3;
-
-    // IndexerEndpoints are the endpoints for reaching Zoekt.
-    repeated string indexer_endpoints = 4;
-
-    int32 limit = 5;
-
-    StructuralPatternInfo pattern_info = 6;
+    string commit = 2;
+    int32 limit = 3;
+    StructuralPatternInfo pattern_info = 4;
 }
 
 message StructuralPatternInfo {

@@ -245,7 +245,7 @@ func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, e
 	log15.Info("structural search", "repo", string(repo))
 
 	// Cap the number of forked processes to limit the size of zip contents being mapped to memory. Resolving #7133 could help to lift this restriction.
-	numWorkers := 4
+	numWorkers := 0
 
 	matcher := toMatcher(languages, extensionHint)
 

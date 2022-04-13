@@ -16,6 +16,9 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
+	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -31,6 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
+	searcherapi "github.com/sourcegraph/sourcegraph/internal/searcher/api"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -84,31 +88,37 @@ func main() {
 	db := ensureFrontendDB()
 	git := gitserver.NewClient(db)
 
-	service := &search.Service{
-		Store: &search.Store{
-			FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
-				return git.Archive(ctx, repo, gitserver.ArchiveOptions{
-					Treeish: string(commit),
-					Format:  "tar",
-				})
-			},
-			FetchTarPaths: func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
-				pathspecs := make([]gitserver.Pathspec, len(paths))
-				for i, p := range paths {
-					pathspecs[i] = gitserver.PathspecLiteral(p)
-				}
-				return git.Archive(ctx, repo, gitserver.ArchiveOptions{
-					Treeish:   string(commit),
-					Format:    "tar",
-					Pathspecs: pathspecs,
-				})
-			},
-			FilterTar:         search.NewFilter,
-			Path:              filepath.Join(cacheDir, "searcher-archives"),
-			MaxCacheSizeBytes: cacheSizeBytes,
-			DB:                db,
+	store := &search.Store{
+		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
+			return git.Archive(ctx, repo, gitserver.ArchiveOptions{
+				Treeish: string(commit),
+				Format:  "tar",
+			})
 		},
-		Log: log15.Root(),
+		FetchTarPaths: func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
+			pathspecs := make([]gitserver.Pathspec, len(paths))
+			for i, p := range paths {
+				pathspecs[i] = gitserver.PathspecLiteral(p)
+			}
+			return git.Archive(ctx, repo, gitserver.ArchiveOptions{
+				Treeish:   string(commit),
+				Format:    "tar",
+				Pathspecs: pathspecs,
+			})
+		},
+		FilterTar:         search.NewFilter,
+		Path:              filepath.Join(cacheDir, "searcher-archives"),
+		MaxCacheSizeBytes: cacheSizeBytes,
+		DB:                db,
+	}
+
+	grpcServer := grpc.NewServer()
+	searcherapi.RegisterSearcherServer(grpcServer, &search.GRPCServer{Store: store})
+
+	service := &search.Service{
+		Store:      store,
+		GRPCServer: grpcServer,
+		Log:        log15.Root(),
 	}
 	service.Store.Start()
 
@@ -126,7 +136,7 @@ func main() {
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
 		Addr:         addr,
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		Handler: h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// For cluster liveness and readiness probes
 			if r.URL.Path == "/healthz" {
 				w.WriteHeader(200)
@@ -134,7 +144,7 @@ func main() {
 				return
 			}
 			handler.ServeHTTP(w, r)
-		}),
+		}), &http2.Server{}),
 	}
 
 	go func() {

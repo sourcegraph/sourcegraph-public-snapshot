@@ -9,9 +9,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	neturl "net/url"
 	"time"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -19,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	searcherapi "github.com/sourcegraph/sourcegraph/internal/searcher/api"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -106,6 +110,60 @@ func Search(
 		url := urls[attempt%len(urls)]
 
 		tr.LazyPrintf("attempt %d: %s", attempt, url)
+		if p.IsStructuralPat && !indexed {
+			u, err := neturl.Parse(url)
+			if err != nil {
+				return false, err
+			}
+
+			conn, err := grpc.Dial(u.Host, grpc.WithTransportCredentials(insecure.NewCredentials()))
+			if err != nil {
+				return false, err
+			}
+			defer conn.Close()
+
+			client := searcherapi.NewSearcherClient(conn)
+			stream, err := client.SearchStructuralUnindexed(ctx, &searcherapi.SearchStructuralUnindexedRequest{
+				Repo:   string(repo),
+				Commit: string(commit),
+				Limit:  p.FileMatchLimit,
+				PatternInfo: &searcherapi.StructuralPatternInfo{
+					Pattern:               p.Pattern,
+					PatternMatchesContent: p.PatternMatchesContent,
+					PatternMatchesPath:    p.PatternMatchesPath,
+					Languages:             p.Languages,
+					CombyRule:             p.CombyRule,
+					PathPatterns: &searcherapi.PathPatterns{
+						Exclude:         p.ExcludePattern,
+						Include:         p.IncludePatterns,
+						IsRegexp:        true,
+						IsCaseSensitive: p.PathPatternsAreCaseSensitive,
+					},
+				},
+			})
+			if err != nil {
+				return false, err
+			}
+
+			for {
+				message, err := stream.Recv()
+				if err == io.EOF {
+					return false, nil
+				} else if err != nil {
+					return false, err
+				}
+
+				if event := message.GetMatches(); event != nil {
+					fmt.Printf("%#v\n", event.Matches)
+					onMatches(convertProtoMatches(event.Matches))
+				} else if event := message.GetDone(); event != nil {
+					return event.LimitHit, nil
+				} else {
+					panic("unknown event type")
+				}
+			}
+		}
+
 		limitHit, err = textSearchStream(ctx, url, body, onMatches)
 		if err == nil || errcode.IsTimeout(err) {
 			return limitHit, err
@@ -125,6 +183,39 @@ func Search(
 	}
 
 	return false, err
+}
+
+func convertProtoMatches(in []*searcherapi.FileMatch) []*protocol.FileMatch {
+	out := make([]*protocol.FileMatch, len(in))
+	for i, pb := range in {
+		out[i] = &protocol.FileMatch{
+			Path:        pb.Path,
+			LineMatches: convertProtoLineMatches(pb.LineMatches),
+			MatchCount:  int(pb.MatchCount),
+			LimitHit:    pb.LimitHit,
+		}
+	}
+	return out
+}
+
+func convertProtoLineMatches(in []*searcherapi.LineMatch) []protocol.LineMatch {
+	out := make([]protocol.LineMatch, len(in))
+	for i, pb := range in {
+		out[i] = protocol.LineMatch{
+			Preview:          pb.Preview,
+			LineNumber:       int(pb.LineNumber),
+			OffsetAndLengths: convertProtoOffsetAndLengths(pb.OffsetAndLengths),
+		}
+	}
+	return out
+}
+
+func convertProtoOffsetAndLengths(in []*searcherapi.OffsetLength) [][2]int {
+	out := make([][2]int, len(in))
+	for i, pb := range in {
+		out[i] = [2]int{int(pb.Offset), int(pb.Length)}
+	}
+	return out
 }
 
 func textSearchStream(ctx context.Context, url string, body []byte, cb func([]*protocol.FileMatch)) (bool, error) {
