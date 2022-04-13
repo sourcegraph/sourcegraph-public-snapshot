@@ -28,7 +28,13 @@ var testCommand = &cli.Command{
 	ArgsUsage: "<testsuite>",
 	Usage:     "Run the given test suite",
 	Category:  CategoryDev,
-	Action:    execAdapter(testExec),
+	BashComplete: completeOptions(func() (options []string) {
+		for name := range globalConf.Tests {
+			options = append(options, name)
+		}
+		return
+	}),
+	Action: execAdapter(testExec),
 }
 
 func testExec(ctx context.Context, args []string) error {
