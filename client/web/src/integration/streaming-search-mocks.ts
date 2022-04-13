@@ -1,5 +1,6 @@
 /* eslint-disable no-template-curly-in-string */
 import { SearchGraphQlOperations } from '@sourcegraph/search'
+import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 
 import { SymbolKind, WebGraphQlOperations } from '../graphql-operations'
@@ -218,7 +219,7 @@ export const mixedSearchStreamEvents: SearchEvent[] = [
     { type: 'done', data: {} },
 ]
 
-export const highlightFileResult: Partial<WebGraphQlOperations> = {
+export const highlightFileResult: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     HighlightedFile: () => ({
         repository: {
             commit: {
