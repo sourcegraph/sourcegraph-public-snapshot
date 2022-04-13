@@ -8,11 +8,11 @@ exports[`ExtensionsQueryInputToolbar renders 1`] = `
     <div
       class="mb-3 sidebar"
     >
-      <h3
-        class="a11y-ignore"
+      <h2
+        class="h2 h3"
       >
         Categories
-      </h3>
+      </h2>
       <button
         class="btn text-left sidebar__link--inactive d-flex w-100"
         data-test-extension-category="All"
