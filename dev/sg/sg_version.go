@@ -28,7 +28,7 @@ var (
 		Subcommands: []*cli.Command{
 			{
 				Name:    "changelog",
-				Aliases: []string{"changes"},
+				Aliases: []string{"c"},
 				Usage:   "See what's changed in or since this version of sg",
 				Flags: []cli.Flag{
 					&cli.BoolFlag{
@@ -39,6 +39,7 @@ var (
 					&cli.IntFlag{
 						Name:        "limit",
 						Usage:       "Number of changelog entries to show.",
+						Value:       5,
 						Destination: &versionChangelogEntries,
 					},
 				},
@@ -80,6 +81,7 @@ func changelogExec(ctx context.Context, args []string) error {
 
 	gitLog := exec.Command("git", append(logArgs, "--", "./dev/sg")...)
 	gitLog.Env = os.Environ()
+	println(strings.Join(gitLog.Args, " "))
 	out, err := run.InRoot(gitLog)
 	if err != nil {
 		return err
@@ -100,7 +102,7 @@ func changelogExec(ctx context.Context, args []string) error {
 
 const sgOneLineCmd = `curl --proto '=https' --tlsv1.2 -sSLf https://install.sg.dev | sh`
 
-func checkSgVersion(ctx context.Context) error {
+func checkSgVersionAndUpdate(ctx context.Context, skipUpdate bool) error {
 	_, err := root.RepositoryRoot()
 	if err != nil {
 		// Ignore the error, because we only want to check the version if we're
@@ -128,7 +130,7 @@ func checkSgVersion(ctx context.Context) error {
 		return nil
 	}
 
-	if skipAutoUpdatesFlag {
+	if skipUpdate {
 		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "╭──────────────────────────────────────────────────────────────────╮  "))
 		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "│                                                                  │░░"))
 		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "│ HEY! New version of sg available. Run 'sg update' to install it. │░░"))
@@ -144,5 +146,7 @@ func checkSgVersion(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	writeSuccessLinef("sg has been updated!")
+	stdout.Out.Write("To see what's new, run 'sg version changelog'.")
 	return syscall.Exec(newPath, os.Args, os.Environ())
 }
