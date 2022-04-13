@@ -24,7 +24,7 @@ require (
 )
 
 replace (
-	other.org/other/change-minor-version v1.2.3 => other.org/other/change-minor-version v1.2.4
+	other.org/other/change-minor-version v1.2.3 => other.org/other/change-minor-version v1.3.0
 	other.org/other/dont-replace-this v1.3.0 => other.org/other/dont-replace-this v1.4.0
 	other.org/other/replace-all-versions => other.org/other/replace-all-versions v1.3.0
 	other.org/other/drop v1.2.3 => /local/drop
@@ -41,7 +41,7 @@ exclude other.org/other/excluded v1.2.3
 	}
 
 	want := []byte(`other.org/other/no-replace-statement v1.2.3
-other.org/other/change-minor-version v1.2.4
+other.org/other/change-minor-version v1.3.0
 other.org/other/dont-replace-this v1.2.3
 other.org/other/replace-all-versions v1.3.0
 `)
