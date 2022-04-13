@@ -5,197 +5,89 @@ set -e
 # Env variables:
 # - RENDER_COM_API_KEY (required)
 # - RENDER_COM_OWNER_ID (required)
-# - BUILDKITE_BRANCH (optional)
 # - BUILDKITE_PULL_REQUEST_REPO (optional)
-# - BUILDKITE_PULL_REQUEST (optional)
-# - RENDER_PREVIEW_GITHUB_TOKEN (optional)
 
 print_usage() {
-  echo "Usage: [ -b BRANCH_NAME ] [ -r REPO_URL ] [ -d ]" 1>&2
-  echo "-b: GitHub branch name" 1>&2
-  echo "-r: GitHub repository url" 1>&2
-  echo "-d: Use this flag to delete preview apps" 1>&2
+  echo "Usage: [-e EXPIRE_AFTER_DAYS]" 1>&2
+  echo "-e: Number of days since the last time PR previews were updated (defaults: 5 days)" 1>&2
 }
 
 urlencode() {
   echo "$1" | curl -Gso /dev/null -w "%{url_effective}" --data-urlencode @- "" | cut -c 3- | sed -e 's/%0A//'
 }
 
-# branch_name: BUILDKITE_BRANCH or current git branch
-branch_name="${BUILDKITE_BRANCH}"
+expire_after_days="5"
 
-if [ -z "${branch_name}" ]; then
-  branch_name=$(git rev-parse --abbrev-ref HEAD)
-fi
-
-# repo_url: BUILDKITE_PULL_REQUEST_REPO or current git remote `origin` url
-# Should be in formats:
-# - https://github.com/sourcegraph/sourcegraph
-# - git://github.com/sourcegraph/sourcegraph.git
-repo_url="${BUILDKITE_PULL_REQUEST_REPO}"
-
-if [ -z "${repo_url}" ]; then
-  repo_url=$(git config --get remote.origin.url)
-fi
-
-while getopts 'b:r:d' flag; do
+while getopts 'e:' flag; do
   case "${flag}" in
-    d) is_deleting="true" ;;
-    b) branch_name="${OPTARG}" ;;
-    r) repo_url="${OPTARG}" ;;
-    *)
-      print_usage
-      exit 1
-      ;;
+  e) expire_after_days="${OPTARG}" ;;
+  *)
+    print_usage
+    exit 1
+    ;;
   esac
 done
 
-# Get `{owner}/{repo}` part from GitHub repository url
-if [[ "$repo_url" =~ ^(https|git):\/\/github\.com\/(.*)$ ]]; then
-  owner_and_repo="${BASH_REMATCH[2]//\.git/}"
-else
-  echo "Couldn't find owner_and_repo"
-  exit 1
-fi
-
 render_api_key="${RENDER_COM_API_KEY}"
 render_owner_id="${RENDER_COM_OWNER_ID}"
-pr_number="${BUILDKITE_PULL_REQUEST}"
-github_api_key="${RENDER_PREVIEW_GITHUB_TOKEN}"
+
+expiration_date_ISO=$(date -d "$expire_after_days days ago" +"%Y-%m-%dT%H:%M:%SZ")
 
 if [[ -z "${render_api_key}" || -z "${render_owner_id}" ]]; then
   echo "RENDER_COM_API_KEY or RENDER_COM_OWNER_ID is not set"
   exit 1
 fi
 
-# App name to show on render.com dashboard and use to create
-# default url: https://<app_name_slug>.onrender.com
-pr_preview_app_name="sg-web-${branch_name}"
+# Get id list of services which are created before expiration date
+# We should take care about render.com rate limit (https://api-docs.render.com/reference/rate-limiting)
+# GET 100/minute
+# DELETE 30/minute
 
-# Get service id of preview app on render.com with app name (if exists)
-renderServiceId=$(curl -sS --request GET \
-  --url "https://api.render.com/v1/services?limit=1&type=web_service&name=$(urlencode "$pr_preview_app_name")" \
-  --header 'Accept: application/json' \
-  --header "Authorization: Bearer ${render_api_key}" | jq -r '.[].service.id')
+cursor=""
+ids=()
 
-# Delete preview app with `-d` flag set
-if [ "${is_deleting}" = "true" ]; then
-  if [ -z "${renderServiceId}" ]; then
-    echo "Render app not found"
+# Collect ids of all services which are created before expiration date and `not_suspended`
+for (( ; ; )); do
+  service_list=$(curl -sSf --request GET \
+    --url "https://api.render.com/v1/services?type=web_service&createdBefore=$(urlencode "$expiration_date_ISO")&suspended=not_suspended&ownerId=${render_owner_id}&limit=100&cursor=${cursor}" \
+    --header 'Accept: application/json' \
+    --header "Authorization: Bearer ${render_api_key}")
 
-    exit 0
+  num_of_records=$(echo "$service_list" | jq -r '. | length')
+
+  if [ "${num_of_records}" == "0" ]; then
+    break
   fi
 
-  curl -sSf -o /dev/null --request DELETE \
-    --url "https://api.render.com/v1/services/${renderServiceId}" \
+  while IFS='' read -r line; do
+    ids+=("$line")
+  done < <(echo "$service_list" | jq -r '.[].service.id')
+
+  cursor=$(echo "$service_list" | jq -r '.[-1].cursor')
+done
+
+for service_id in "${ids[@]}"; do
+  echo "Checking service: $service_id"
+
+  # Get the last deploy time
+  last_deploy_created_at=$(curl -sSf --request GET \
+    --url "https://api.render.com/v1/services/${service_id}/deploys?limit=1" \
     --header 'Accept: application/json' \
-    --header "Authorization: Bearer ${render_api_key}"
+    --header "Authorization: Bearer ${render_api_key}" | jq -r '.[].deploy.createdAt')
 
-  echo "Render app is deleted!"
+  # Remove nanosecond part out of ISO Datetime format of `createdAt` then get the UNIX timestamp
+  last_deploy_created_at_ISO="${last_deploy_created_at//.[[:digit:]]*Z/Z}"
 
-  exit 0
-fi
+  if [[ $last_deploy_created_at_ISO < $expiration_date_ISO ]]; then
+    # there are no deploy times since `expiration_date_ISO` => remove it
+    echo "-- Removing service ${service_id} (last deployed at ${last_deploy_created_at})"
 
-# Create PR app if it hasn't existed yet and get the app url
-if [ -z "${renderServiceId}" ]; then
-  echo "Creating new pr preview app..."
+    # curl -sSf -o /dev/null --request DELETE \
+    #   --url "https://api.render.com/v1/services/${service_id}" \
+    #   --header 'Accept: application/json' \
+    #   --header "Authorization: Bearer ${render_api_key}"
 
-  # New app is created with following envs
-  # - ENTERPRISE=1
-  # - NODE_ENV=production
-  # - PORT=3080 // render.com uses this env for mapping default https port
-  # - ENTERPRISE=1
-  # - SOURCEGRAPH_API_URL=https://k8s.sgdev.org
-  # - WEBPACK_SERVE_INDEX=true
-
-  pr_preview_url=$(curl -sSf --request POST \
-    --url https://api.render.com/v1/services \
-    --header 'Accept: application/json' \
-    --header 'Content-Type: application/json' \
-    --header "Authorization: Bearer ${render_api_key}" \
-    --data "
-    {
-        \"autoDeploy\": \"yes\",
-        \"envVars\": [
-            {
-                \"key\": \"ENTERPRISE\",
-                \"value\": \"1\"
-            },
-            {
-                \"key\": \"NODE_ENV\",
-                \"value\": \"production\"
-            },
-            {
-                \"key\": \"PORT\",
-                \"value\": \"3080\"
-            },
-            {
-                \"key\": \"SOURCEGRAPH_API_URL\",
-                \"value\": \"https://k8s.sgdev.org\"
-            },
-            {
-                \"key\": \"WEBPACK_SERVE_INDEX\",
-                \"value\": \"true\"
-            }
-        ],
-        \"serviceDetails\": {
-            \"pullRequestPreviewsEnabled\": \"no\",
-            \"envSpecificDetails\": {
-                \"buildCommand\": \"dev/ci/yarn-build.sh client/web\",
-                \"startCommand\": \"yarn workspace @sourcegraph/web serve:prod\"
-            },
-            \"numInstances\": 1,
-            \"plan\": \"starter\",
-            \"region\": \"oregon\",
-            \"env\": \"node\"
-        },
-        \"type\": \"web_service\",
-        \"name\": \"${pr_preview_app_name}\",
-        \"ownerId\": \"${render_owner_id}\",
-        \"repo\": \"${repo_url}\",
-        \"branch\": \"${branch_name}\"
-    }
-    " | jq -r '.service.serviceDetails.url')
-else
-  echo "Found preview id: ${renderServiceId}, getting preview url..."
-
-  pr_preview_url=$(curl -sSf --request GET \
-    --url "https://api.render.com/v1/services/${renderServiceId}" \
-    --header 'Accept: application/json' \
-    --header 'Content-Type: application/json' \
-    --header "Authorization: Bearer ${render_api_key}" | jq -r '.serviceDetails.url')
-fi
-
-echo "Preview url: ${pr_preview_url}"
-
-if [[ -n "${github_api_key}" && -n "${pr_number}" ]]; then
-
-  # GitHub pull request number and GitHub api token are set
-  # Appending `App Preview` section into PR description if it hasn't existed yet
-  github_pr_api_url="https://api.github.com/repos/${owner_and_repo}/pulls/${pr_number}"
-
-  pr_description=$(curl -sSf --request GET \
-    --url "${github_pr_api_url}" \
-    --user "apikey:${github_api_key}" \
-    --header 'Accept: application/vnd.github.v3+json' \
-    --header 'Content-Type: application/json' | jq -r '.body')
-
-  if [[ "${pr_description}" != *"## App preview"* ]]; then
-    echo "Updating PR #${pr_number} in ${owner_and_repo} description"
-
-    pr_description=$(printf '%s\n\n' "${pr_description}" \
-      "## App preview:" \
-      "- [Link](${pr_preview_url})" \
-      "Check out the [client app preview documentation](https://docs.sourcegraph.com/dev/how-to/client_pr_previews) to learn more." |
-      jq -Rs .)
-
-    curl -sSf -o /dev/null --request PATCH \
-      --url "${github_pr_api_url}" \
-      --user "apikey:${github_api_key}" \
-      --header 'Accept: application/vnd.github.v3+json' \
-      --header 'Content-Type: application/json' \
-      --data "{ \"body\": ${pr_description} }"
-  else
-    echo "PR #${pr_number} in ${owner_and_repo} description already has \"App preview\" section"
+    # To make sure we don't reach the limitation of 30/minute DELETE requests
+    sleep 2
   fi
-fi
+done
