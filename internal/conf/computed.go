@@ -268,6 +268,14 @@ func ExperimentalFeatures() schema.ExperimentalFeatures {
 	return *val
 }
 
+func Tracer() string {
+	ot := Get().ObservabilityTracing
+	if ot == nil {
+		return ""
+	}
+	return ot.Type
+}
+
 // AuthMinPasswordLength returns the value of minimum password length requirement.
 // If not set, it returns the default value 12.
 func AuthMinPasswordLength() int {

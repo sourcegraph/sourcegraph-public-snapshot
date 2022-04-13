@@ -463,21 +463,20 @@ Referenced by:
 
 # Table "public.cm_last_searched"
 ```
-   Column    |  Type  | Collation | Nullable | Default 
--------------+--------+-----------+----------+---------
- monitor_id  | bigint |           | not null | 
- args_hash   | bigint |           | not null | 
- commit_oids | text[] |           | not null | 
+   Column    |  Type   | Collation | Nullable | Default 
+-------------+---------+-----------+----------+---------
+ monitor_id  | bigint  |           | not null | 
+ commit_oids | text[]  |           | not null | 
+ repo_id     | integer |           | not null | 
 Indexes:
-    "cm_last_searched_pkey" PRIMARY KEY, btree (monitor_id, args_hash)
+    "cm_last_searched_pkey" PRIMARY KEY, btree (monitor_id, repo_id)
 Foreign-key constraints:
     "cm_last_searched_monitor_id_fkey" FOREIGN KEY (monitor_id) REFERENCES cm_monitors(id) ON DELETE CASCADE
+    "cm_last_searched_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 
 ```
 
 The last searched commit hashes for the given code monitor and unique set of search arguments
-
-**args_hash**: A unique hash of the gitserver search arguments to identify this search job
 
 **commit_oids**: The set of commit OIDs that was previously successfully searched and should be excluded on the next run
 
@@ -2063,6 +2062,7 @@ Referenced by:
     TABLE "batch_spec_workspaces" CONSTRAINT "batch_spec_workspaces_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
     TABLE "changesets" CONSTRAINT "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "cm_last_searched" CONSTRAINT "cm_last_searched_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "gitserver_repos" CONSTRAINT "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE

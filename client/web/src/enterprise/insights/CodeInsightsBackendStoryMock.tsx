@@ -1,7 +1,6 @@
 import React from 'react'
 
-import { CodeInsightsBackendContext } from './core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from './core/backend/gql-backend/code-insights-gql-backend'
+import { CodeInsightsBackendContext, CodeInsightsGqlBackend } from './core'
 
 export const CodeInsightsBackendStoryMock: React.FunctionComponent<{
     mocks: Partial<CodeInsightsGqlBackend>

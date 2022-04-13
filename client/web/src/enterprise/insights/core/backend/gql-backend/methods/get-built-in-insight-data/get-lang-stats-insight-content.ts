@@ -3,7 +3,7 @@ import { defer } from 'rxjs'
 import { map, retry } from 'rxjs/operators'
 import { PieChartContent } from 'sourcegraph'
 
-import { LangStatsInsightsSettings } from '../../../code-insights-backend-types'
+import { GetLangStatsInsightContentInput } from '../../../code-insights-backend-types'
 
 import { fetchLangStatsInsight } from './utils/fetch-lang-stats-insight'
 
@@ -20,22 +20,19 @@ const getLangColor = async (language: string): Promise<string> => {
     return 'gray'
 }
 
-export async function getLangStatsInsightContent(insight: LangStatsInsightsSettings): Promise<PieChartContent<any>> {
-    return getInsightContent({ insight, repo: insight.repository })
+export async function getLangStatsInsightContent(
+    input: GetLangStatsInsightContentInput
+): Promise<PieChartContent<any>> {
+    return getInsightContent({ ...input, repo: input.repository })
 }
 
-interface GetInsightContentInputs {
-    insight: LangStatsInsightsSettings
+interface GetInsightContentInputs extends GetLangStatsInsightContentInput {
     repo: string
     path?: string
 }
 
 async function getInsightContent(inputs: GetInsightContentInputs): Promise<PieChartContent<any>> {
-    const {
-        insight: { otherThreshold },
-        repo,
-        path,
-    } = inputs
+    const { otherThreshold, repo, path } = inputs
 
     const pathRegexp = path ? `file:^${escapeRegExp(path)}/` : ''
     const query = `repo:^${escapeRegExp(repo)}$ ${pathRegexp}`
