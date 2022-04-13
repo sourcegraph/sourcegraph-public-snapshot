@@ -595,6 +595,8 @@ type ExperimentalFeatures struct {
 	NpmPackages string `json:"npmPackages,omitempty"`
 	// Pagure description: Allow adding Pagure code host connections
 	Pagure string `json:"pagure,omitempty"`
+	// PasswordPolicy description: Enables and configures password policy. This will allow admins to enforce password complexity and length requirements.
+	PasswordPolicy *PasswordPolicy `json:"passwordPolicy,omitempty"`
 	// Perforce description: Allow adding Perforce code host connections
 	Perforce string `json:"perforce,omitempty"`
 	// Ranking description: Experimental search result ranking options.
@@ -1320,6 +1322,20 @@ type PagureRateLimit struct {
 // ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
 type ParentSourcegraph struct {
 	Url string `json:"url,omitempty"`
+}
+
+// PasswordPolicy description: Enables and configures password policy. This will allow admins to enforce password complexity and length requirements.
+type PasswordPolicy struct {
+	// Enabled description: Enables password policy
+	Enabled bool `json:"enabled,omitempty"`
+	// MinimumLength description: The minimum length required for a password
+	MinimumLength int `json:"minimumLength,omitempty"`
+	// NumberOfSpecialCharacters description: The required number of special characters
+	NumberOfSpecialCharacters int `json:"numberOfSpecialCharacters,omitempty"`
+	// RequireAtLeastOneNumber description: Does the password require a number
+	RequireAtLeastOneNumber bool `json:"requireAtLeastOneNumber,omitempty"`
+	// RequireUpperandLowerCase description: Require Mixed characters
+	RequireUpperandLowerCase bool `json:"requireUpperandLowerCase,omitempty"`
 }
 
 // PerforceAuthorization description: If non-null, enforces Perforce depot permissions.

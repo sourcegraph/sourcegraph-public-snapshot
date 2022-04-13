@@ -88,7 +88,11 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
                 logEvent('builtin')
                 return onSignUp(args)
             }}
-            context={{ authProviders: [], sourcegraphDotComMode: true }}
+            context={{
+                authProviders: [],
+                sourcegraphDotComMode: true,
+                experimentalFeatures: context.experimentalFeatures,
+            }}
             buttonLabel="Sign up"
             experimental={true}
             className="my-3"

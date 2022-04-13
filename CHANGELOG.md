@@ -20,6 +20,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Added support for LSIF upload authentication against GitLab.com on Sourcegraph Cloud. [#33254](https://github.com/sourcegraph/sourcegraph/pull/33254)
 - Add "getting started/quick start checklist for authenticated users" [#32882](https://github.com/sourcegraph/sourcegraph/pull/32882)
 - A redesigned repository page is now available under the `new-repo-page` feature flag. [#33319](https://github.com/sourcegraph/sourcegraph/pull/33319)
+- Notebooks are now enabled by default. [#33706](https://github.com/sourcegraph/sourcegraph/pull/33706)
 
 ### Changed
 
@@ -33,6 +34,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Fixed create insight button being erroneously disabled.
+- Fixed an issue where a `Warning: Sourcegraph cannot send emails!` banner would appear for all users instead of just site admins (introduced in v3.38).
 - Fixed reading search pattern type from settings [#32989](https://github.com/sourcegraph/sourcegraph/issues/32989)
 - Display a tooltip and truncate the title of a search result when content overflows [#32904](https://github.com/sourcegraph/sourcegraph/pull/32904)
 - Search patterns containing `and` and `not` expressions are now optimized to evaluate natively on the Zoekt backend for indexed code content and symbol search wherever possible. These kinds of queries are now typically an order of magnitude faster. Previous cases where no results were returned for expensive search expressions should now work and return results quickly. [#33308](https://github.com/sourcegraph/sourcegraph/pull/33308)
