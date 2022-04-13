@@ -176,7 +176,7 @@ func ListBranches(ctx context.Context, db database.DB, repo api.RepoName, opt Br
 // branches runs the `git branch` command followed by the given arguments and
 // returns the list of branches if successful.
 func branches(ctx context.Context, db database.DB, repo api.RepoName, args ...string) ([]string, error) {
-	cmd := gitserver.NewClient(db).Command(repo, "git", append([]string{"branch"}, args...)...)
+	cmd := gitserver.NewClient(db).GitCommand(repo, append([]string{"branch"}, args...)...)
 	out, err := cmd.Output(ctx)
 	if err != nil {
 		return nil, errors.Errorf("exec %v in %s failed: %v (output follows)\n\n%s", cmd.Args(), cmd.Repo(), err, out)
@@ -203,7 +203,7 @@ func GetBehindAhead(ctx context.Context, db database.DB, repo api.RepoName, left
 		return nil, err
 	}
 
-	cmd := gitserver.NewClient(db).Command(repo, "git", "rev-list", "--count", "--left-right", fmt.Sprintf("%s...%s", left, right))
+	cmd := gitserver.NewClient(db).GitCommand(repo, "rev-list", "--count", "--left-right", fmt.Sprintf("%s...%s", left, right))
 	out, err := cmd.Output(ctx)
 	if err != nil {
 		return nil, err
@@ -228,7 +228,7 @@ func ListTags(ctx context.Context, db database.DB, repo api.RepoName) ([]*Tag, e
 	// Support both lightweight tags and tag objects. For creatordate, use an %(if) to prefer the
 	// taggerdate for tag objects, otherwise use the commit's committerdate (instead of just always
 	// using committerdate).
-	cmd := gitserver.NewClient(db).Command(repo, "git", "tag", "--list", "--sort", "-creatordate", "--format", "%(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end)%00%(refname:short)%00%(if)%(creatordate:unix)%(then)%(creatordate:unix)%(else)%(*creatordate:unix)%(end)")
+	cmd := gitserver.NewClient(db).GitCommand(repo, "tag", "--list", "--sort", "-creatordate", "--format", "%(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end)%00%(refname:short)%00%(if)%(creatordate:unix)%(then)%(creatordate:unix)%(else)%(*creatordate:unix)%(end)")
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		if gitdomain.IsRepoNotExist(err) {
@@ -289,7 +289,7 @@ type Ref struct {
 
 func showRef(ctx context.Context, db database.DB, repo api.RepoName, args ...string) ([]Ref, error) {
 	cmdArgs := append([]string{"show-ref"}, args...)
-	cmd := gitserver.NewClient(db).Command(repo, "git", cmdArgs...)
+	cmd := gitserver.NewClient(db).GitCommand(repo, cmdArgs...)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		if gitdomain.IsRepoNotExist(err) {
@@ -332,7 +332,7 @@ func RevList(repo string, db database.DB, commit string, onCommit func(commit st
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	command := gitserver.NewClient(db).Command(api.RepoName(repo), "git", RevListArgs(commit)...)
+	command := gitserver.NewClient(db).GitCommand(api.RepoName(repo), RevListArgs(commit)...)
 	command.DisableTimeout()
 	stdout, err := gitserver.StdoutReader(ctx, command)
 	if err != nil {

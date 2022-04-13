@@ -172,8 +172,8 @@ type Client interface {
 	// to abort processing further results.
 	BatchLog(ctx context.Context, opts BatchLogOptions, callback BatchLogCallback) error
 
-	// Command creates a new Cmd. Command name must be 'git', otherwise it panics.
-	Command(repo api.RepoName, name string, args ...string) *Cmd
+	// GitCommand creates a new Cmd.
+	GitCommand(repo api.RepoName, args ...string) *Cmd
 
 	// CreateCommitFromPatch will attempt to create a commit from a patch
 	// If possible, the error returned will be of type protocol.CreateCommitFromPatchError
@@ -939,10 +939,7 @@ func (c *cmdReader) Close() error {
 	return c.rc.Close()
 }
 
-func (c *ClientImplementor) Command(repo api.RepoName, name string, arg ...string) *Cmd {
-	if name != "git" {
-		panic("gitserver: command name must be 'git'")
-	}
+func (c *ClientImplementor) GitCommand(repo api.RepoName, arg ...string) *Cmd {
 	return &Cmd{
 		repo:   repo,
 		execFn: c.httpPost,
@@ -1502,7 +1499,7 @@ var ambiguousArgPattern = lazyregexp.New(`ambiguous argument '([^']+)'`)
 func (c *ClientImplementor) ResolveRevisions(ctx context.Context, repo api.RepoName, revs []protocol.RevisionSpecifier) ([]string, error) {
 	args := append([]string{"rev-parse"}, revsToGitArgs(revs)...)
 
-	cmd := c.Command(repo, "git", args...)
+	cmd := c.GitCommand(repo, args...)
 	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		if gitdomain.IsRepoNotExist(err) {
