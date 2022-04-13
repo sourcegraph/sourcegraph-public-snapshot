@@ -758,53 +758,16 @@ describe('GitHub', () => {
     describe('Search pages', () => {
         const sourcegraphSearchPage = 'https://sourcegraph.com/search'
 
-        describe('Simple and advanced search pages', () => {
-            const pages = ['https://github.com/search', 'https://github.com/search/advanced']
+        const pages = [
+            { name: 'Simple search page', url: 'https://github.com/search' },
+            { name: 'Advanced search page', url: 'https://github.com/search/advanced' },
+        ]
 
-            it('render "Search on Sourcegraph" button', async () => {
-                for (const page of pages) {
+        for (const page of pages) {
+            describe(page.name, () => {
+                it('if search input has value "Search on Sourcegraph" click navigates to Sourcegraph search page with type "repo" and search query', async () => {
                     await driver.newPage()
-                    await driver.page.goto(page)
-
-                    const linkToSourcegraph = await driver.page.waitForSelector(
-                        '[data-testid="search-on-sourcegraph"]',
-                        { timeout: 3000 }
-                    )
-
-                    assert(linkToSourcegraph, 'Expected link to Sourcegraph search page exists')
-                }
-            })
-
-            it('if search input is empty "Search on Sourcegraph" click navigates to Sourcegraph search page with type "repo" and empty search query', async () => {
-                for (const page of pages) {
-                    await driver.newPage()
-                    await driver.page.goto(page)
-
-                    const linkToSourcegraph = await driver.page.waitForSelector(
-                        '[data-testid="search-on-sourcegraph"]',
-                        { timeout: 3000 }
-                    )
-                    let hasRedirectedToSourcegraphSearch = false
-                    testContext.server.get(sourcegraphSearchPage).intercept(request => {
-                        if (request.query.q === 'type:repo') {
-                            hasRedirectedToSourcegraphSearch = true
-                        }
-                    })
-
-                    await linkToSourcegraph?.click()
-                    await driver.page.waitForTimeout(3000)
-
-                    assert(
-                        hasRedirectedToSourcegraphSearch,
-                        'Expected to be redirected to Sourcegraph search page with type "repo" and empty query'
-                    )
-                }
-            })
-
-            it('if search input has value "Search on Sourcegraph" click navigates to Sourcegraph search page with type "repo" and search query', async () => {
-                for (const page of pages) {
-                    await driver.newPage()
-                    await driver.page.goto(page)
+                    await driver.page.goto(page.url)
 
                     const query = 'Hello world!'
                     const searchInput = await driver.page.waitForSelector('#search_form input[type="text"]')
@@ -812,6 +775,9 @@ describe('GitHub', () => {
                         '[data-testid="search-on-sourcegraph"]',
                         { timeout: 3000 }
                     )
+
+                    assert(linkToSourcegraph, 'Expected link to Sourcegraph search page exists')
+
                     let hasRedirectedToSourcegraphSearch = false
                     testContext.server.get(sourcegraphSearchPage).intercept(request => {
                         if (['type:repo', query].every(value => request.query.q?.includes(value))) {
@@ -827,9 +793,9 @@ describe('GitHub', () => {
                         hasRedirectedToSourcegraphSearch,
                         'Expected to be redirected to Sourcegraph search page with type "repo" and search query'
                     )
-                }
+                })
             })
-        })
+        }
 
         // global and repository search pages
         describe('Search results page', () => {
