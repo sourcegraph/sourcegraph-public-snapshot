@@ -32,6 +32,12 @@ export const NotebooksGettingStarted: React.FunctionComponent<NotebooksGettingSt
     const previousPanelIndex = (): number => (selectedPanelIndex === 0 ? panels.length - 1 : selectedPanelIndex - 1)
     const nextPanelIndex = (): number => (selectedPanelIndex === panels.length - 1 ? 0 : selectedPanelIndex + 1)
 
+    const selectPanelIndex = (index: number): void => {
+        const title = panels[index].title
+        telemetryService.log('SearchNotebooksGettingStartedPanelViewed', { title }, { title })
+        setSelectedPanelIndex(index)
+    }
+
     return (
         <Container className="mb-4">
             <div className={classNames(styles.row, 'row')}>
@@ -70,7 +76,7 @@ export const NotebooksGettingStarted: React.FunctionComponent<NotebooksGettingSt
                                         selectedPanelIndex === panelIndex && styles.selectedPanelButton
                                     )}
                                     key={`getting_started_panel_${panelIndex}`}
-                                    onClick={() => setSelectedPanelIndex(panelIndex)}
+                                    onClick={() => selectPanelIndex(panelIndex)}
                                 >
                                     {panelIndex + 1}
                                 </Button>
@@ -81,11 +87,11 @@ export const NotebooksGettingStarted: React.FunctionComponent<NotebooksGettingSt
                                 className="mr-2"
                                 variant="secondary"
                                 outline={true}
-                                onClick={() => setSelectedPanelIndex(previousPanelIndex())}
+                                onClick={() => selectPanelIndex(previousPanelIndex())}
                             >
                                 Previous
                             </Button>
-                            <Button variant="primary" onClick={() => setSelectedPanelIndex(nextPanelIndex())}>
+                            <Button variant="primary" onClick={() => selectPanelIndex(nextPanelIndex())}>
                                 Next
                             </Button>
                         </div>

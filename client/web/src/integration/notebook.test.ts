@@ -180,7 +180,11 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
         updateNotebook: notebookFixture(id, notebook.title, notebook.blocks.map(GQLBlockInputToResponse)),
     }),
     ListNotebooks: () => ({
-        notebooks: { totalCount: 0, nodes: [], pageInfo: { endCursor: null, hasNextPage: false } },
+        notebooks: {
+            totalCount: 1,
+            nodes: [notebookFixture('id', 'Title', [])],
+            pageInfo: { endCursor: null, hasNextPage: false },
+        },
     }),
 }
 
