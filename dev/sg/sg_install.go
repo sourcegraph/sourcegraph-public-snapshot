@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -12,23 +11,20 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-var (
-	installFlagSet = flag.NewFlagSet("sg install", flag.ExitOnError)
-	installCommand = &ffcli.Command{
-		Name:       "install",
-		ShortUsage: "sg install",
-		ShortHelp:  "Installs sg to a user-defined location by copying sg itself",
-		FlagSet:    installFlagSet,
-		Exec:       installExec,
-	}
-)
+var installCommand = &cli.Command{
+	Name:     "install",
+	Usage:    "Installs sg to a user-defined location by copying sg itself",
+	Category: CategoryUtil,
+	Hidden:   true, // internal command used during installation script
+	Action:   execAdapter(installExec),
+}
 
 func installExec(ctx context.Context, args []string) error {
 	probeCmdOut, err := exec.CommandContext(ctx, "sg", "-help").CombinedOutput()
