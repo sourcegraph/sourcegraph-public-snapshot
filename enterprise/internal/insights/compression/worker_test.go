@@ -3,7 +3,6 @@ package compression
 import (
 	"context"
 	"database/sql"
-	"math"
 	"testing"
 	"time"
 
@@ -61,19 +60,19 @@ func TestCommitIndexer_indexAll(t *testing.T) {
 	commitStore.GetMetadataFunc.PushReturn(CommitIndexMetadata{
 		RepoId:        1,
 		Enabled:       false,
-		LastIndexedAt: time.Now(),
+		LastIndexedAt: time.Date(1999, time.January, 1, 0, 0, 0, 0, time.UTC),
 	}, nil)
 
 	commitStore.GetMetadataFunc.PushReturn(CommitIndexMetadata{
 		RepoId:        2,
 		Enabled:       true,
-		LastIndexedAt: time.Now(),
+		LastIndexedAt: time.Date(1999, time.January, 1, 0, 0, 0, 0, time.UTC),
 	}, nil)
 
 	commitStore.GetMetadataFunc.PushReturn(CommitIndexMetadata{
 		RepoId:        3,
 		Enabled:       true,
-		LastIndexedAt: time.Now(),
+		LastIndexedAt: time.Date(1999, time.January, 1, 0, 0, 0, 0, time.UTC),
 	}, nil)
 
 	t.Run("multi_repository", func(t *testing.T) {
@@ -95,26 +94,27 @@ func TestCommitIndexer_indexAll(t *testing.T) {
 		}
 
 		// Only one repository should actually update any commits
-		if got, want := len(commitStore.InsertCommitsFunc.history), 1; got != want {
+		if got, want := len(commitStore.InsertCommitsFunc.history), 2; got != want {
 			t.Errorf("got InsertCommits invocations: %v want %v", got, want)
 		} else {
-			call := commitStore.InsertCommitsFunc.history[0]
-			for i, got := range call.Arg2 {
-				if diff := cmp.Diff(commits["really-big-repo"][i], got); diff != "" {
-					t.Errorf("unexpected commit\n%s", diff)
+			calls := map[string]CommitStoreInsertCommitsFuncCall{
+				"really-big-repo": commitStore.InsertCommitsFunc.history[0],
+				"no-commits":      commitStore.InsertCommitsFunc.history[1],
+			}
+			for repo, call := range calls {
+				// Check Indexed though is the current time
+				if diff := cmp.Diff(clock(), call.Arg3); diff != "" {
+					t.Errorf("unexpected indexed though date/time")
+				}
+				// Check the correct commits
+				for i, got := range call.Arg2 {
+					if diff := cmp.Diff(commits[repo][i], got); diff != "" {
+						t.Errorf("unexpected commit\n%s", diff)
+					}
 				}
 			}
 		}
 
-		// One repository had no commits, so only the timestamp would get updated
-		if got, want := len(commitStore.UpsertMetadataStampFunc.history), 1; got != want {
-			t.Errorf("got UpsertMetadataStamp invocations: %v want %v", got, want)
-		} else {
-			call := commitStore.UpsertMetadataStampFunc.history[0]
-			if call.Arg1 != 2 {
-				t.Errorf("unexpected repository for UpsertMetadataStamp repo_id: %v", call.Arg1)
-			}
-		}
 	})
 }
 
@@ -190,7 +190,7 @@ func TestCommitIndexer_paging(t *testing.T) {
 	commitStore := NewMockCommitStore()
 
 	maxHistorical := time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)
-	clock := func() time.Time { return time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC) }
+	clock := func() time.Time { return time.Date(2020, time.June, 1, 0, 0, 0, 0, time.UTC) }
 
 	indexer := CommitIndexer{
 		limiter:           rate.NewLimiter(10, 1),
@@ -201,55 +201,86 @@ func TestCommitIndexer_paging(t *testing.T) {
 		clock:             clock,
 	}
 
-	// Testing a scenario with 3 repos
-	// "repo-one" has less than 1 page of commits it should update index and metadata
-	// "really-big-repo" has 2 pages of commits, it should update index and metadata
-	// "no-commits" has no commits but is enabled, and will not update the index but will update the metadata
+	// Testing a scenario with 3 repos and a paging window of 30 days
+	// "repo-one" has been recently indexed and all commits are in one window
+	// "really-big-repo" has 2 windows of commits
+	// "no-commits-recent" has no commits and was recently indexed
+	// "no-commits-not-recent" has no commits but is 2 windows behind on indexing
 	commits := map[string][]*gitdomain.Commit{
 		"repo-one": {
-			commit("ref1", "2020-05-01T00:00:00+00:00"),
-			commit("ref2", "2020-05-10T00:00:00+00:00"),
+			commit("ref1", "2020-05-10T00:00:00+00:00"),
+			commit("ref2", "2020-05-12T00:00:00+00:00"),
 		},
 		"really-big-repo": {
-			commit("bigref1", "1999-04-01T00:00:00+00:00"),
-			commit("bigref2", "1999-04-03T00:00:00+00:00"),
-			commit("bigref3", "1999-04-06T00:00:00+00:00"),
-			commit("bigref4", "1999-04-09T00:00:00+00:00"),
+			commit("bigref1", "2020-04-17T00:00:00+00:00"),
+			commit("bigref2", "2020-04-18T00:00:00+00:00"),
+			commit("bigref3", "2020-05-17T00:00:00+00:00"),
+			commit("bigref4", "2020-05-18T00:00:00+00:00"),
 		},
-		"no-commits": {},
+		"no-commits-recent":     {},
+		"no-commits-not-recent": {},
+		"only-recent": {
+			commit("bigref4", "2020-05-18T00:00:00+00:00"),
+		},
 	}
 	indexer.getCommits = mockCommits(commits)
-	indexer.allReposIterator = mockIterator([]string{"repo-one", "really-big-repo", "no-commits"})
+	indexer.allReposIterator = mockIterator([]string{"repo-one", "really-big-repo", "no-commits-recent", "no-commits-not-recent", "only-recent"})
 
 	commitStore.GetMetadataFunc.PushReturn(CommitIndexMetadata{
 		RepoId:        1,
 		Enabled:       true,
-		LastIndexedAt: time.Now(),
+		LastIndexedAt: time.Date(2020, time.May, 5, 0, 0, 0, 0, time.UTC),
 	}, nil)
 
 	commitStore.GetMetadataFunc.PushReturn(CommitIndexMetadata{
 		RepoId:        2,
 		Enabled:       true,
-		LastIndexedAt: time.Now(),
+		LastIndexedAt: time.Date(2020, time.April, 5, 0, 0, 0, 0, time.UTC),
 	}, nil)
 
 	commitStore.GetMetadataFunc.PushReturn(CommitIndexMetadata{
 		RepoId:        2,
 		Enabled:       true,
-		LastIndexedAt: time.Now(),
+		LastIndexedAt: time.Date(2020, time.May, 5, 0, 0, 0, 0, time.UTC),
 	}, nil)
 
 	commitStore.GetMetadataFunc.PushReturn(CommitIndexMetadata{
 		RepoId:        3,
 		Enabled:       true,
-		LastIndexedAt: time.Now(),
+		LastIndexedAt: time.Date(2020, time.May, 5, 0, 0, 0, 0, time.UTC),
 	}, nil)
 
+	commitStore.GetMetadataFunc.PushReturn(CommitIndexMetadata{
+		RepoId:        4,
+		Enabled:       true,
+		LastIndexedAt: time.Date(2020, time.April, 5, 0, 0, 0, 0, time.UTC),
+	}, nil)
+
+	commitStore.GetMetadataFunc.PushReturn(CommitIndexMetadata{
+		RepoId:        4,
+		Enabled:       true,
+		LastIndexedAt: time.Date(2020, time.May, 5, 0, 0, 0, 0, time.UTC),
+	}, nil)
+
+	commitStore.GetMetadataFunc.PushReturn(CommitIndexMetadata{
+		RepoId:        5,
+		Enabled:       true,
+		LastIndexedAt: time.Date(2020, time.April, 5, 0, 0, 0, 0, time.UTC),
+	}, nil)
+
+	commitStore.GetMetadataFunc.PushReturn(CommitIndexMetadata{
+		RepoId:        5,
+		Enabled:       true,
+		LastIndexedAt: time.Date(2020, time.May, 5, 0, 0, 0, 0, time.UTC),
+	}, nil)
+
+	endOfApril5Window := time.Date(2020, time.April, 5, 0, 0, 0, 0, time.UTC).Add(24 * 30 * time.Hour)
+
 	t.Run("multi_repository_paging", func(t *testing.T) {
-		pageSize := 3
+
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
-				InsightsCommitIndexerPageSize: pageSize,
+				InsightsCommitIndexerPageSize: 30,
 			},
 		})
 		defer conf.Mock(nil)
@@ -258,42 +289,66 @@ func TestCommitIndexer_paging(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// Three enabled repos get metadata, repo 2 had 2 pages of commits so it makes 2 metadata calls
-		if got, want := len(commitStore.GetMetadataFunc.history), 4; got != want {
+		// 4 enabled repos get metadata, repo 2, 4 and 5 need 2 windows all others just 1
+		if got, want := len(commitStore.GetMetadataFunc.history), 8; got != want {
 			t.Errorf("got GetMetadata invocations: %v want %v", got, want)
 		}
 
-		// Repo 1 and 2 have commits, repo 1 has 1 page and repo 2 has 2 pages so 3 total calls
-		if got, want := len(commitStore.InsertCommitsFunc.history), 3; got != want {
+		// Each time though we call insert commits even if there are none repo 2, 4 and 5 need 2 windows so 8 total
+		if got, want := len(commitStore.InsertCommitsFunc.history), 8; got != want {
 			t.Errorf("got InsertCommits invocations: %v want %v", got, want)
 		} else {
-			repo1Page1 := commitStore.InsertCommitsFunc.history[0]
-			repo2Page1 := commitStore.InsertCommitsFunc.history[1]
-			repo2Page2 := commitStore.InsertCommitsFunc.history[2]
-			// All commits from repo-one because it was less than a page size
-			checkCommits(t, commits["repo-one"], repo1Page1.Arg2)
-			// One page of commits for really-big-repo because it was > one page
-			checkCommits(t, commits["really-big-repo"][:pageSize+1], repo2Page1.Arg2)
-			// The rest of the commits for really-big-repo
-			checkCommits(t, commits["really-big-repo"][pageSize:], repo2Page2.Arg2)
 
-			// "Current time" for repo-one because commit history did not fill a full page
-			checkIndexedThough(t, clock().UTC(), repo1Page1.Arg3)
-			// Time of last indexed commit because really big repo's first call was a full page
-			checkIndexedThough(t, commits["really-big-repo"][pageSize-1].Committer.Date, repo2Page1.Arg3)
-			// "Current time" for page two of really-big-repo because remaining commit history did not fill a full page
-			checkIndexedThough(t, clock().UTC(), repo2Page2.Arg3)
+			/* repo one
+			** All commits present and sets last indexed to the clock time
+			 */
+			checkCommits(t, commits["repo-one"], commitStore.InsertCommitsFunc.history[0].Arg2)
+			checkIndexedThough(t, clock().UTC(), commitStore.InsertCommitsFunc.history[0].Arg3)
+
+			/* really-big-repo
+			** Last indexed more than 1 window ago so needs to make 2 passes
+			** First Pass:
+			**    First two commits and sets last indxed to the end of the time window (last_indexed + 30 days)
+			** Second Pass:
+			**    Last two commits and sets last indexed to clock time because end of window was greater than clock
+			 */
+			checkCommits(t, commits["really-big-repo"][:2], commitStore.InsertCommitsFunc.history[1].Arg2)
+			checkIndexedThough(t, endOfApril5Window, commitStore.InsertCommitsFunc.history[1].Arg3)
+			checkCommits(t, commits["really-big-repo"][2:], commitStore.InsertCommitsFunc.history[2].Arg2)
+			checkIndexedThough(t, clock().UTC(), commitStore.InsertCommitsFunc.history[2].Arg3)
+
+			/* no-commits-recent
+			** There are no commits to save and sets last indexed to the clock time
+			 */
+			checkCommits(t, []*gitdomain.Commit{}, commitStore.InsertCommitsFunc.history[3].Arg2)
+			checkIndexedThough(t, clock().UTC(), commitStore.InsertCommitsFunc.history[3].Arg3)
+
+			/* no-commits-not-recent
+			** Last indexed is more than 1 window agao so need to make 2 passes
+			** First Pass:
+			**    No commits to save and sets last indxed to the end of the time window (last_indexed + 30 days)
+			** Second Pass:
+			**    Still no commits and sets last indexed to clock time
+			 */
+			checkCommits(t, []*gitdomain.Commit{}, commitStore.InsertCommitsFunc.history[4].Arg2)
+			checkIndexedThough(t, endOfApril5Window, commitStore.InsertCommitsFunc.history[4].Arg3)
+			checkCommits(t, []*gitdomain.Commit{}, commitStore.InsertCommitsFunc.history[5].Arg2)
+			checkIndexedThough(t, clock().UTC(), commitStore.InsertCommitsFunc.history[5].Arg3)
+
+			/* only-recent
+			** Last indexed is more than 1 window agao so need to make 2 passes
+			** First Pass:
+			**    No commits to save and sets last indxed to the end of the time window (last_indexed + 30 days)
+			** Second Pass:
+			**    Saves the 1 commit and sets last indexed to clock time
+			 */
+			checkCommits(t, []*gitdomain.Commit{}, commitStore.InsertCommitsFunc.history[6].Arg2)
+			checkIndexedThough(t, endOfApril5Window, commitStore.InsertCommitsFunc.history[6].Arg3)
+			checkCommits(t, commits["only-recent"], commitStore.InsertCommitsFunc.history[7].Arg2)
+			checkIndexedThough(t, clock().UTC(), commitStore.InsertCommitsFunc.history[7].Arg3)
+
 		}
 
-		// One repository had no commits, so only the timestamp would get updated
-		if got, want := len(commitStore.UpsertMetadataStampFunc.history), 1; got != want {
-			t.Errorf("got UpsertMetadataStamp invocations: %v want %v", got, want)
-		} else {
-			call := commitStore.UpsertMetadataStampFunc.history[0]
-			if call.Arg1 != 2 {
-				t.Errorf("unexpected repository for UpsertMetadataStamp repo_id: %v", call.Arg1)
-			}
-		}
 	})
 }
 
@@ -334,16 +389,20 @@ func commit(ref string, commitTime string) *gitdomain.Commit {
 	}
 }
 
-func mockCommits(commits map[string][]*gitdomain.Commit) func(ctx context.Context, db database.DB, name api.RepoName, after time.Time, pageSize int, operation *observation.Operation) ([]*gitdomain.Commit, error) {
-	repoPages := map[string]int{}
-	return func(ctx context.Context, db database.DB, name api.RepoName, after time.Time, pageSize int, operation *observation.Operation) ([]*gitdomain.Commit, error) {
-		if pageSize == 0 {
-			pageSize = len(commits[(string(name))])
+func mockCommits(commits map[string][]*gitdomain.Commit) func(ctx context.Context, db database.DB, name api.RepoName, after time.Time, until *time.Time, operation *observation.Operation) ([]*gitdomain.Commit, error) {
+	return func(ctx context.Context, db database.DB, name api.RepoName, after time.Time, until *time.Time, operation *observation.Operation) ([]*gitdomain.Commit, error) {
+		filteredCommits := make([]*gitdomain.Commit, 0)
+		for _, commit := range commits[string(name)] {
+			if commit.Committer.Date.Before(after) {
+				continue
+			}
+			if until != nil {
+				if commit.Committer.Date.After(*until) {
+					continue
+				}
+			}
+			filteredCommits = append(filteredCommits, commit)
 		}
-		curentPage := repoPages[string(name)]
-		repoPages[string(name)] = repoPages[string(name)] + 1
-		startItem := curentPage * pageSize
-		endItem := int(math.Min(float64(startItem+pageSize), float64(len(commits[(string(name))]))))
-		return commits[(string(name))][startItem:endItem], nil
+		return filteredCommits, nil
 	}
 }

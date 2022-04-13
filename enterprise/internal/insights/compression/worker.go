@@ -34,7 +34,7 @@ type CommitIndexer struct {
 	db                database.DB
 	limiter           *rate.Limiter
 	allReposIterator  func(ctx context.Context, each func(repoName string, id api.RepoID) error) error
-	getCommits        func(ctx context.Context, db database.DB, name api.RepoName, after time.Time, pageSize int, operation *observation.Operation) ([]*gitdomain.Commit, error)
+	getCommits        func(ctx context.Context, db database.DB, name api.RepoName, after time.Time, until *time.Time, operation *observation.Operation) ([]*gitdomain.Commit, error)
 	commitStore       CommitStore
 	maxHistoricalTime time.Time
 	background        context.Context
@@ -135,7 +135,7 @@ func (i *CommitIndexer) indexRepository(name string, id api.RepoID) error {
 }
 
 func (i *CommitIndexer) indexNextPage(name string, id api.RepoID, pageSize int) (morePages bool, err error) {
-	ctx, cancel := context.WithTimeout(i.background, time.Second*45)
+	ctx, cancel := context.WithTimeout(i.background, time.Minute*45)
 	defer cancel()
 
 	err = i.limiter.Wait(ctx)
@@ -158,50 +158,55 @@ func (i *CommitIndexer) indexNextPage(name string, id api.RepoID, pageSize int) 
 		return false, nil
 	}
 
-	searchTime := max(i.maxHistoricalTime, metadata.LastIndexedAt)
+	searchStartTime := max(i.maxHistoricalTime, metadata.LastIndexedAt)
 	commitLogRequestTime := i.clock().UTC()
 
-	logger.Debug("fetching commits", "repo_id", repoId, "after", searchTime)
-	commits, err := i.getCommits(ctx, i.db, repoName, searchTime, pageSize, i.operations.getCommits)
+	var searchEndTime *time.Time
+	if pageSize > 0 {
+		endTime := searchStartTime.Add(time.Duration(24*pageSize) * time.Hour)
+		searchEndTime = &endTime
+	}
+
+	logger.Debug("fetching commits", "repo_id", repoId, "after", searchStartTime, "until", searchEndTime)
+	commits, err := i.getCommits(ctx, i.db, repoName, searchStartTime, searchEndTime, i.operations.getCommits)
 	if err != nil {
 		return false, errors.Wrapf(err, "error fetching commits from gitserver repo_id: %v", repoId)
 	}
 
 	i.operations.countCommits.WithLabelValues().Add(float64(len(commits)))
 
-	if len(commits) == 0 {
-		logger.Debug("commit index up to date", "repo_id", repoId)
+	// default to thinking indexing is done
+	indexedThrough := commitLogRequestTime // The time we issued the git log request
+	morePages = false
 
-		if _, err = i.commitStore.UpsertMetadataStamp(ctx, repoId, commitLogRequestTime); err != nil {
-			return false, err
-
+	// If we are paging though log determine if we finished
+	if searchEndTime != nil {
+		morePages = searchEndTime.Before(commitLogRequestTime)
+		if morePages {
+			indexedThrough = *searchEndTime
 		}
-
-		return false, nil
 	}
 
-	indexedThrough := commits[len(commits)-1].Committer.Date.UTC()
-	// Index is up to date when there are fewer commits then the requested page size
-	// If the page size is 0 then all commits are fetched so the index is up to date
-	indexComplete := len(commits) < pageSize || pageSize == 0
-	if indexComplete {
-		indexedThrough = commitLogRequestTime
-	}
-	log15.Debug("indexing commits", "repo_id", repoId, "count", len(commits), "pageSize", pageSize, "indexedThrough", indexedThrough)
+	log15.Debug("indexing commits", "repo_id", repoId, "count", len(commits), "logSearchSize", pageSize, "indexedThrough", indexedThrough)
 	err = i.commitStore.InsertCommits(ctx, repoId, commits, indexedThrough, fmt.Sprintf("|repoName:%s|repoId:%d", repoName, repoId))
 	if err != nil {
 		return false, errors.Wrapf(err, "unable to update commit index repo_id: %v", repoId)
 	}
 
-	return !indexComplete, nil
+	return morePages, nil
 }
 
 // getCommits fetches the commits from the remote gitserver for a repository after a certain time.
-func getCommits(ctx context.Context, db database.DB, name api.RepoName, after time.Time, pageSize int, operation *observation.Operation) (_ []*gitdomain.Commit, err error) {
+func getCommits(ctx context.Context, db database.DB, name api.RepoName, after time.Time, until *time.Time, operation *observation.Operation) (_ []*gitdomain.Commit, err error) {
 	ctx, endObservation := operation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return git.Commits(ctx, db, name, git.CommitsOptions{N: uint(pageSize), DateOrder: true, NoEnsureRevision: true, After: after.Format(time.RFC3339)}, authz.DefaultSubRepoPermsChecker)
+	before := ""
+	if until != nil {
+		before = until.Format(time.RFC3339)
+	}
+
+	return git.Commits(ctx, db, name, git.CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after.Format(time.RFC3339), Before: before}, authz.DefaultSubRepoPermsChecker)
 }
 
 // getMetadata gets the index metadata for a repository. The metadata will be generated if it doesn't already exist, such as
