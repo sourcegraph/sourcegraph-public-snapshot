@@ -68,7 +68,7 @@
     }
 }
 
-.newNote {
+.new-note {
     background-color: var(--color-bg-2);
 
     :global(.theme-dark) & {
@@ -86,7 +86,7 @@
             display: none;
         }
 
-        .toggleIcon {
+        .toggle-icon {
             transform: rotate(180deg);
         }
     }
