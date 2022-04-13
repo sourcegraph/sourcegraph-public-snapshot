@@ -58,7 +58,7 @@ export function PieChart<Datum>(props: PieChartProps<Datum>): ReactElement | nul
     const innerWidth = width - padding.left - padding.right
     const innerHeight = height - padding.top - padding.bottom
 
-    const radius = Math.min(innerWidth, innerHeight) / 4
+    const radius = Math.min(innerWidth, innerHeight) / 3
     const centerY = innerHeight / 2
     const centerX = innerWidth / 2
 

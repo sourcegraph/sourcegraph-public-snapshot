@@ -11,8 +11,7 @@ import {
 } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
 
 import { WebStory } from '../../../components/WebStory'
-import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from '../core/backend/gql-backend/code-insights-gql-backend'
+import { CodeInsightsBackendContext, CodeInsightsGqlBackend } from '../core'
 import { DashboardPermissions } from '../pages/dashboards/dashboard-page/utils/get-dashboard-permissions'
 
 import { GaConfirmationModal } from './GaConfirmationModal'
