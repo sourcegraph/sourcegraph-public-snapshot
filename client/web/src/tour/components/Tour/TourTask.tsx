@@ -73,7 +73,13 @@ export const TourTask: React.FunctionComponent<TourTaskProps> = ({ title, steps,
 
     if (showLanguagePicker) {
         return (
-            <ItemPicker items={Object.values(TourLanguage)} onClose={onLanguageClose} onSelect={handleLanguageSelect} />
+            <ItemPicker
+                title="Please select a language:"
+                className={classNames(variant !== 'small' && 'pl-2')}
+                items={Object.values(TourLanguage)}
+                onClose={onLanguageClose}
+                onSelect={handleLanguageSelect}
+            />
         )
     }
 
@@ -94,7 +100,7 @@ export const TourTask: React.FunctionComponent<TourTaskProps> = ({ title, steps,
                     className={classNames(
                         styles.stepList,
                         'm-0',
-                        variant !== 'small' && 'flex-grow-1 d-flex flex-column justify-content-center',
+                        variant !== 'small' && 'flex-grow-1 d-flex flex-column',
                         isMultiStep && styles.isMultiStep
                     )}
                 >
