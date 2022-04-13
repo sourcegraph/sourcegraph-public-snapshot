@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestClient_Repo(t *testing.T) {
@@ -148,6 +149,59 @@ func TestClient_Repos(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestClient_ForkRepository(t *testing.T) {
+	// WHEN UPDATING: set the repository name below to an unused repository
+	// within the sourcegraph-testing account. (This probably just means you
+	// need to increment the number.) This will be used as the target for a fork
+	// of https://bitbucket.org/sourcegraph-testing/src-cli/.
+
+	repo := "src-cli-fork-00"
+
+	ctx := context.Background()
+
+	c, save := newTestClient(t)
+	defer save()
+
+	// Get the current user for use in the actual fork calls (as a workspace).
+	user, err := c.CurrentUser(ctx)
+	assert.Nil(t, err)
+	workspace := ForkInputWorkspace(user.Username)
+
+	// Get the upstream repo.
+	upstream, err := c.Repo(ctx, "sourcegraph-testing", "src-cli")
+	assert.Nil(t, err)
+
+	t.Run("success", func(t *testing.T) {
+		fork, err := c.ForkRepository(ctx, upstream, ForkInput{
+			Name:      &repo,
+			Workspace: workspace,
+		})
+		assert.Nil(t, err)
+		assert.NotNil(t, fork)
+		assert.Equal(t, repo, fork.Slug)
+		assert.Equal(t, user.Username+"/"+repo, fork.FullName)
+		assert.Equal(t, fork.Parent.FullName, upstream.FullName)
+		assertGolden(t, fork)
+	})
+
+	t.Run("failure", func(t *testing.T) {
+		// This looks a bit weird, but it's basically a patch around the fact
+		// that we need to test the case where a name isn't given, but we don't
+		// have a reliable upstream that we can fork to test that. So we'll make
+		// sure that the request is valid, and that we get the error we expect
+		// back from Bitbucket.
+		fork, err := c.ForkRepository(ctx, upstream, ForkInput{Workspace: workspace})
+		assert.Nil(t, fork)
+		assert.NotNil(t, err)
+
+		he := &httpError{}
+		if ok := errors.As(err, &he); !ok {
+			t.Fatal("could not extract httpError from error")
+		}
+		assert.Contains(t, he.Body, "Repository with this Slug and Owner already exists.")
+	})
 }
 
 func TestRepo_Namespace(t *testing.T) {
