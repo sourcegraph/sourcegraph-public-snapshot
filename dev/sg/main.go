@@ -146,15 +146,18 @@ var sg = &cli.App{
 		auditCommand,
 
 		// Util
+		helpCommand,
 		versionCommand,
 		updateCommand,
 		installCommand,
 		funkyLogoCommand,
 	},
 
-	HideVersion:            true,
 	EnableBashCompletion:   true,
 	UseShortOptionHandling: true,
+
+	HideVersion:     true,
+	HideHelpCommand: true,
 }
 
 func loadSecrets() error {

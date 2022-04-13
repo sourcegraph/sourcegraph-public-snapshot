@@ -22,9 +22,6 @@ func TestAppRun(t *testing.T) {
 func TestCommandFormatting(t *testing.T) {
 	sg.Setup()
 	for _, cmd := range sg.Commands {
-		if cmd.Name == "help" {
-			continue
-		}
 		testCommandFormatting(t, cmd)
 		// for top-level commands, also require a category
 		assert.NotEmptyf(t, cmd.Category, "top-level command %q Category should be set", cmd.Name)
