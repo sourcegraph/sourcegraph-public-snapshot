@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS lsif_uploads_audit_logs (
     -- log entry columns
     log_timestamp       timestamptz DEFAULT NOW(),
-    log_expiry          timestamptz,
+    record_deleted_at   timestamptz,
     -- associated object columns
     upload_id           integer not null,
     commit              text not null,
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS lsif_uploads_audit_logs (
 );
 
 COMMENT ON COLUMN lsif_uploads_audit_logs.log_timestamp IS 'Timestamp for this log entry.';
-COMMENT ON COLUMN lsif_uploads_audit_logs.log_expiry IS 'Set once the upload this entry is associated with is deleted. Once NOW() + log_expiry is above a certain threshold, this log entry will be deleted.';
+COMMENT ON COLUMN lsif_uploads_audit_logs.record_deleted_at IS 'Set once the upload this entry is associated with is deleted. Once NOW() - record_deleted_at is above a certain threshold, this log entry will be deleted.';
 COMMENT ON COLUMN lsif_uploads_audit_logs.transition_columns IS 'Array of changes that occurred to the upload for this entry, in the form of {"column"=>"<column name>", "old"=>"<previous value>", "new"=>"<new value>"}';
 
 CREATE INDEX IF NOT EXISTS lsif_uploads_audit_logs_upload_id ON lsif_uploads_audit_logs USING btree (upload_id);
@@ -71,7 +71,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION func_lsif_uploads_delete() RETURNS TRIGGER AS $$
     BEGIN
         UPDATE lsif_uploads_audit_logs
-        SET log_expiry = NOW()
+        SET record_deleted_at = NOW()
         WHERE upload_id IN (
             SELECT id FROM OLD
         );
@@ -82,6 +82,7 @@ $$ LANGUAGE plpgsql;
 
 -- CREATE OR REPLACE only supported in Postgres 14+
 DROP TRIGGER IF EXISTS trigger_lsif_uploads_update on lsif_uploads;
+DROP TRIGGER IF EXISTS trigger_lsif_uploads_delete on lsif_uploads;
 
 CREATE TRIGGER trigger_lsif_uploads_update
 AFTER UPDATE OF state, num_resets, num_failures, worker_hostname, expired, committed_at
