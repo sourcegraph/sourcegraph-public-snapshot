@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// CurrentUser returns the user associated with the authenticator in use.
 func (c *Client) CurrentUser(ctx context.Context) (*User, error) {
 	req, err := http.NewRequest("GET", "/2.0/user", nil)
 	if err != nil {
