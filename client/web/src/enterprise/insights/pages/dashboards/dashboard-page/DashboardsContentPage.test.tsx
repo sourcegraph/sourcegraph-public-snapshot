@@ -17,13 +17,14 @@ import {
     InsightsDashboardsResult,
     InsightSubjectsResult,
 } from '../../../../../graphql-operations'
-import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from '../../../core/backend/gql-backend/code-insights-gql-backend'
-import { GET_ACCESSIBLE_INSIGHTS_LIST } from '../../../core/backend/gql-backend/gql/GetAccessibleInsightsList'
-import { GET_DASHBOARD_INSIGHTS_GQL } from '../../../core/backend/gql-backend/gql/GetDashboardInsights'
-import { GET_INSIGHTS_GQL } from '../../../core/backend/gql-backend/gql/GetInsights'
-import { GET_INSIGHTS_DASHBOARDS_GQL } from '../../../core/backend/gql-backend/gql/GetInsightsDashboards'
-import { GET_INSIGHTS_DASHBOARD_OWNERS_GQL } from '../../../core/backend/gql-backend/gql/GetInsightSubjects'
+import { CodeInsightsBackendContext, CodeInsightsGqlBackend } from '../../../core'
+import {
+    GET_ACCESSIBLE_INSIGHTS_LIST,
+    GET_DASHBOARD_INSIGHTS_GQL,
+    GET_INSIGHTS_GQL,
+    GET_INSIGHTS_DASHBOARDS_GQL,
+    GET_INSIGHTS_DASHBOARD_OWNERS_GQL,
+} from '../../../core/backend/gql-backend'
 
 import { DashboardsContentPage } from './DashboardsContentPage'
 

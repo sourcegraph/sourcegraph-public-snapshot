@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -418,7 +419,6 @@ func RunRepoSubsetTextSearch(
 ) ([]*result.FileMatch, streaming.Stats, error) {
 	notSearcherOnly := mode != search.SearcherOnly
 	searcherArgs := &search.SearcherParameters{
-		SearcherURLs:    searcherURLs,
 		PatternInfo:     patternInfo,
 		UseFullDeadline: useFullDeadline,
 	}
@@ -467,13 +467,12 @@ func RunRepoSubsetTextSearch(
 			Typ:            search.TextRequest,
 			FileMatchLimit: patternInfo.FileMatchLimit,
 			Select:         patternInfo.Select,
-			Zoekt:          zoekt,
 			Since:          nil,
 		}
 
 		// Run literal and regexp searches on indexed repositories.
 		g.Go(func() error {
-			_, err := zoektJob.Run(ctx, nil, agg)
+			_, err := zoektJob.Run(ctx, job.RuntimeClients{Zoekt: zoekt}, agg)
 			return err
 		})
 	}
@@ -484,11 +483,10 @@ func RunRepoSubsetTextSearch(
 			PatternInfo:     searcherArgs.PatternInfo,
 			Repos:           unindexed,
 			Indexed:         false,
-			SearcherURLs:    searcherArgs.SearcherURLs,
 			UseFullDeadline: searcherArgs.UseFullDeadline,
 		}
 
-		_, err := searcherJob.Run(ctx, nil, agg)
+		_, err := searcherJob.Run(ctx, job.RuntimeClients{SearcherURLs: searcherURLs, Zoekt: zoekt}, agg)
 		return err
 	})
 

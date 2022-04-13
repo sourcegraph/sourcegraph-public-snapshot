@@ -61,8 +61,8 @@ require (
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/google/go-cmp v0.5.7
 	github.com/google/go-github v17.0.0+incompatible
-	github.com/google/go-github/v28 v28.1.1
 	github.com/google/go-github/v31 v31.0.0
+	github.com/google/go-github/v43 v43.0.0
 	github.com/google/go-querystring v1.1.0
 	github.com/google/uuid v1.3.0
 	github.com/google/zoekt v0.0.0-20211108135652-f8e8ada171c7
@@ -407,7 +407,7 @@ require (
 // or intentional forks.
 replace (
 	// We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20220408162143-ea82fcba8a68
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20220412164931-0b9c6b1ee5cd
 	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
 	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b
