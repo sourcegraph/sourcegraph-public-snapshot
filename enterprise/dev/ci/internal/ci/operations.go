@@ -366,6 +366,8 @@ func buildGoTests(f func(description, testSuffix string)) {
 		"github.com/sourcegraph/sourcegraph/internal/repos",                                     // 106s
 		"github.com/sourcegraph/sourcegraph/enterprise/internal/batches",                        // 52 + 60
 		"github.com/sourcegraph/sourcegraph/cmd/frontend",                                       // 100s
+		"github.com/sourcegraph/sourcegraph/cmd/worker",                                         // 70s
+		"github.com/sourcegraph/sourcegraph/cmd/gitserver",                                      // 30s
 		"github.com/sourcegraph/sourcegraph/enterprise/internal/database",                       // 94s
 		"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers", // 152s
 	}
