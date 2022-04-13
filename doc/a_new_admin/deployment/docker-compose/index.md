@@ -246,11 +246,9 @@ docker exec codeintel-db -c 'pg_dump -C --username sg sg' > codeintel_db.out
 
 6. Ensure the `sourcegraph_db.out` and `codeintel_db.out` files are moved to a safe and secure location. 
 
-### Restore sourcegraph databases
+### Restoring sourcegraph databases into a new environment
 
-#### Restoring sourcegraph databases into a new environment
-
-The following instructions apply only if you are restoring your databases into a new deployment of sourcegraph ie: a new virtual machine 
+The following instructions apply **only if you are restoring your databases into a new deployment•• of sourcegraph ie: a new virtual machine 
 
 If you are restoring a previously running environment, see the instructions for [restoring a previously running deployment](#restoring-sourcegraph-databases-into-an-existing-environment)
 
@@ -384,7 +382,9 @@ zoekt-webserver-0           /sbin/tini -- /bin/sh -c z ...   Up (healthy)> docke
 
 ## Upgrade and migration
 
-First, view the [Sourcegraph changelog](../../../CHANGELOG.md) to see what's changed from your current version of Sourcegraph.
+First, view the [Sourcegraph changelog](../../../CHANGELOG.md) to see what's changed from your current version of Sourcegraph. You will also want to check the [Upgrade Notes](TBD) for any specific related to your particular upgrade scenario. Finally, if your upgrade includes migration to/from another deployment type, review our [Migration guides](TBD) prior to moving forward.
+
+### Upgrade using release branch
 
 If you [configured Docker Compose with a release branch](#configure-release-branch), when you upgrade, you can merge the corresponding upstream release tag into your `release` branch.
 
@@ -505,7 +505,8 @@ To execute the database migrations independently, run the following commands:
 If you see an error message or any of the databases have been flagged as "dirty", please follow ["How to troubleshoot a dirty database"](../../../admin/how-to/dirty_database.md). A dirty database will not affect your ability to use Sourcegraph however it will need to be resolved to upgrade further. If you are unable to resolve the issues, contact support at <mailto:support@sourcegraph.com> for further assistance and provide the output of the three `psql` commands. Otherwise, you are now safe to upgrade Sourcegraph.
 
 
-### Migrating Without Code Insights
+### Migrating without Code Insights
+
 If the `DISABLE_CODE_INSIGHTS=true` feature flag is set in Sourcegraph and the `codeinsights-db` is unavailable to the `migrator` container, the standard migration process will fail. Follow these steps to execute migrations to the `frontend` and `codeintel` databases:
 
 1. Run the following `psql` commands in the containers to log the current migration state of the database:
