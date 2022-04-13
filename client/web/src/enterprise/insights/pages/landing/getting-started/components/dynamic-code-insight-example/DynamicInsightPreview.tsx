@@ -1,31 +1,29 @@
-import React from 'react'
-
-import classNames from 'classnames'
+import React, { useContext, useMemo } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useDeepMemo } from '@sourcegraph/wildcard'
 
-import { LegendItem, LegendList, ParentSize } from '../../../../../../../../charts'
-import { getSanitizedRepositories } from '../../../../../../components/creation-ui-kit'
 import {
-    InsightCard,
-    InsightCardHeader,
-    InsightCardBanner,
-    InsightCardLoading,
-    SeriesBasedChartTypes,
-    SeriesChart,
-} from '../../../../../../components/views'
-import { CodeInsightTrackType, useCodeInsightViewPings } from '../../../../../../pings'
+    getSanitizedRepositories,
+    useLivePreview,
+    StateStatus,
+    LivePreviewCard,
+    LivePreviewHeader,
+    LivePreviewLoading,
+    LivePreviewChart,
+    LivePreviewBlurBackdrop,
+    LivePreviewBanner,
+    LivePreviewLegend,
+} from '../../../../../components/creation-ui-kit'
+import { SeriesBasedChartTypes, SeriesChart } from '../../../../../components/views'
+import { CodeInsightsBackendContext, SeriesChartContent } from '../../../../../core'
+import { CodeInsightTrackType, useCodeInsightViewPings } from '../../../../../pings'
 import {
     DATA_SERIES_COLORS,
     DEFAULT_MOCK_CHART_CONTENT,
     EditableDataSeries,
-    useSearchBasedLivePreviewContent,
-} from '../../../../../insights/creation/search-insight'
-
-import styles from './DynamicInsightPreview.module.scss'
+} from '../../../../insights/creation/search-insight'
 
 const createExampleDataSeries = (query: string): EditableDataSeries[] => [
     {
@@ -48,16 +46,26 @@ interface DynamicInsightPreviewProps extends TelemetryProps {
 export const DynamicInsightPreview: React.FunctionComponent<DynamicInsightPreviewProps> = props => {
     const { disabled, repositories, query, className, telemetryService } = props
 
+    const { getSearchInsightContent } = useContext(CodeInsightsBackendContext)
+
     // Compare live insight settings with deep check to avoid unnecessary
     // search insight content fetching
-    const previewSetting = useDeepMemo({
+    const settings = useDeepMemo({
         series: createExampleDataSeries(query),
         repositories: getSanitizedRepositories(repositories),
         step: { months: 2 },
         disabled,
     })
 
-    const { loading, dataOrError } = useSearchBasedLivePreviewContent(previewSetting)
+    const getLivePreviewContent = useMemo(
+        () => ({
+            disabled: settings.disabled,
+            fetcher: () => getSearchInsightContent(settings),
+        }),
+        [settings, getSearchInsightContent]
+    )
+
+    const { state } = useLivePreview(getLivePreviewContent)
 
     const { trackMouseEnter, trackMouseLeave, trackDatumClicks } = useCodeInsightViewPings({
         telemetryService,
@@ -65,48 +73,47 @@ export const DynamicInsightPreview: React.FunctionComponent<DynamicInsightPrevie
     })
 
     return (
-        <InsightCard className={classNames(className, styles.insightCard)}>
-            <InsightCardHeader title="In-line TODO statements" />
-            {loading ? (
-                <InsightCardLoading>Loading code insight</InsightCardLoading>
-            ) : isErrorLike(dataOrError) ? (
-                <ErrorAlert error={dataOrError} />
+        <LivePreviewCard className={className}>
+            <LivePreviewHeader title="In-line TODO statements" />
+            {state.status === StateStatus.Loading ? (
+                <LivePreviewLoading>Loading code insight</LivePreviewLoading>
+            ) : state.status === StateStatus.Error ? (
+                <ErrorAlert error={state.error} />
             ) : (
-                <ParentSize className={styles.chartBlock}>
+                <LivePreviewChart>
                     {parent =>
-                        dataOrError ? (
+                        state.status === StateStatus.Data ? (
                             <SeriesChart
                                 type={SeriesBasedChartTypes.Line}
                                 width={parent.width}
                                 height={parent.height}
-                                {...dataOrError}
+                                {...state.data}
                             />
                         ) : (
                             <>
-                                <SeriesChart
+                                <LivePreviewBlurBackdrop
+                                    as={SeriesChart}
                                     type={SeriesBasedChartTypes.Line}
                                     width={parent.width}
                                     height={parent.height}
-                                    className={styles.chartWithMock}
                                     onMouseEnter={trackMouseEnter}
                                     onMouseLeave={trackMouseLeave}
                                     onDatumClick={trackDatumClicks}
-                                    {...DEFAULT_MOCK_CHART_CONTENT}
+                                    // We cast to unknown here because ForwardReferenceComponent
+                                    // doesn't support inferring as component with generic.
+                                    {...(DEFAULT_MOCK_CHART_CONTENT as SeriesChartContent<unknown>)}
                                 />
-                                <InsightCardBanner className={styles.disableBanner}>
+                                <LivePreviewBanner>
                                     The chart preview will be shown here once you have filled out the repositories and
                                     series fields.
-                                </InsightCardBanner>
+                                </LivePreviewBanner>
                             </>
                         )
                     }
-                </ParentSize>
+                </LivePreviewChart>
             )}
-            {dataOrError && !isErrorLike(dataOrError) && (
-                <LegendList className="mt-3">
-                    <LegendItem color={DATA_SERIES_COLORS.ORANGE} name="TODOs" />
-                </LegendList>
-            )}
-        </InsightCard>
+
+            {state.status === StateStatus.Data && <LivePreviewLegend series={state.data.series} />}
+        </LivePreviewCard>
     )
 }
