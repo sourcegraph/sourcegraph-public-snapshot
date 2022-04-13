@@ -202,7 +202,7 @@ func startCommandSet(ctx context.Context, set *Commandset, conf *Config, addToMa
 		env[k] = v
 	}
 
-	return run.Commands(ctx, env, addToMacOSFirewall, verboseFlag, cmds...)
+	return run.Commands(ctx, env, addToMacOSFirewall, verbose, cmds...)
 }
 
 // logLevelOverrides builds a map of commands -> log level that should be overridden in the environment.

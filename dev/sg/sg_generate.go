@@ -16,23 +16,21 @@ import (
 )
 
 var (
-	generateVerbose bool
-	generateQuiet   bool
+	generateQuiet bool
 )
 
 var generateCommand = &cli.Command{
-	Name:        "generate",
-	ArgsUsage:   "[target]",
-	Usage:       "Run code and docs generation tasks",
-	Description: "Run code and docs generation tasks - if no target is provided, all target are run with default arguments.",
-	Category:    CategoryDev,
+	Name:      "generate",
+	ArgsUsage: "[target]",
+	Usage:     "Run code and docs generation tasks",
+	Description: `Run code and docs generation tasks - if no target is provided, all target are run with default arguments.
+
+Verbose mode can be enabled with the global verbose flag, e.g.
+
+	sg --verbose generate ...
+`,
+	Category: CategoryDev,
 	Flags: []cli.Flag{
-		&cli.BoolFlag{
-			Name:        "verbose",
-			Aliases:     []string{"v"},
-			Usage:       "Display output from generate tasks",
-			Destination: &generateVerbose,
-		},
 		&cli.BoolFlag{
 			Name:        "quiet",
 			Aliases:     []string{"q"},
@@ -41,7 +39,7 @@ var generateCommand = &cli.Command{
 		},
 	},
 	Before: func(cmd *cli.Context) error {
-		if generateVerbose && generateQuiet {
+		if verbose && generateQuiet {
 			return errors.Errorf("-q and --verbose flags are exclusive")
 		}
 		return nil

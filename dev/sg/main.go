@@ -46,8 +46,10 @@ var (
 	// Note that these values are only available after the main sg CLI app has been run.
 	configFlag          string
 	overwriteConfigFlag string
-	verboseFlag         bool
 	skipAutoUpdatesFlag bool
+
+	// Global verbose mode
+	verbose bool
 
 	// postInitHooks is useful for doing anything that requires flags to be set beforehand,
 	// e.g. generating help text based on parsed config
@@ -64,37 +66,37 @@ var sg = &cli.App{
 		&cli.BoolFlag{
 			Name:        "verbose",
 			Usage:       "toggle verbose mode",
+			Aliases:     []string{"v"},
+			EnvVars:     []string{"SG_VERBOSE"},
 			Value:       false,
-			Destination: &verboseFlag,
+			Destination: &verbose,
 		},
 		&cli.StringFlag{
 			Name:        "config",
 			Usage:       "specify a sg configuration file",
-			TakesFile:   true, // Enable completions
+			EnvVars:     []string{"SG_CONFIG"},
+			TakesFile:   true,
 			Value:       defaultConfigFile,
 			Destination: &configFlag,
-			DefaultText: "path",
-			EnvVars:     []string{"SG_CONFIG"},
 		},
 		&cli.StringFlag{
 			Name:        "overwrite",
 			Usage:       "configuration overwrites file that is gitignored and can be used to, for example, add credentials",
-			TakesFile:   true, // Enable completions
+			EnvVars:     []string{"SG_OVERWRITE"},
+			TakesFile:   true,
 			Value:       defaultConfigOverwriteFile,
 			Destination: &overwriteConfigFlag,
-			DefaultText: "path",
-			EnvVars:     []string{"SG_OVERWRITE"},
 		},
 		&cli.BoolFlag{
 			Name:        "skip-auto-update",
 			Usage:       "prevent sg from automatically updating itself",
+			EnvVars:     []string{"SG_SKIP_AUTO_UPDATE"},
 			Value:       BuildCommit == "dev", // Default to skip in dev, otherwise don't
 			Destination: &skipAutoUpdatesFlag,
-			EnvVars:     []string{"SG_SKIP_AUTO_UPDATE"},
 		},
 	},
 	Before: func(cmd *cli.Context) error {
-		if verboseFlag {
+		if verbose {
 			stdout.Out.SetVerbose()
 		}
 

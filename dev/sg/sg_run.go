@@ -57,7 +57,7 @@ func runExec(ctx context.Context, args []string) error {
 		cmds = append(cmds, cmd)
 	}
 
-	return run.Commands(ctx, globalConf.Env, addToMacOSFirewall, verboseFlag, cmds...)
+	return run.Commands(ctx, globalConf.Env, addToMacOSFirewall, verbose, cmds...)
 }
 func constructRunCmdLongHelp() string {
 	var out strings.Builder
