@@ -47,7 +47,7 @@ Can also be used to install a custom build of 'sg' globally, for example:
 func installAction(cmd *cli.Context) error {
 	ctx := cmd.Context
 
-	probeCmdOut, err := exec.CommandContext(ctx, "sg", "-help").CombinedOutput()
+	probeCmdOut, err := exec.CommandContext(ctx, "sg", "help").CombinedOutput()
 	if err == nil && outputLooksLikeSG(string(probeCmdOut)) {
 		path, err := exec.LookPath("sg")
 		if err != nil {
