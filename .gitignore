@@ -170,3 +170,6 @@ annotations/
 
 # Buildkite analytics files
 test-reports/
+
+# go workspace files shouldn't be committed
+go.work
