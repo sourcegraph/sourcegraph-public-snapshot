@@ -1,0 +1,12 @@
+[
+  {
+    "path": "enterprise/internal/database",
+    "prefix": "TestCodeMonitorStoreLastSearched",
+    "reason": "Feature is experimental and not enabled for any customers"
+  },
+  {
+    "path": "enterprise/internal/codemonitors",
+    "prefix": "TestCodeMonitorHook",
+    "reason": "Feature is experimental and not enabled for any customers"
+  }
+]
