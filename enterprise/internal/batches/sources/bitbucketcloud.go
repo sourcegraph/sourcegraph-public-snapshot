@@ -256,9 +256,14 @@ func (s BitbucketCloudSource) annotatePullRequest(ctx context.Context, repo *bit
 	if err != nil {
 		return nil, errors.Wrap(err, "getting pull request statuses")
 	}
-	statuses, err := srs.All(ctx)
+	all, err := srs.All(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting pull request statuses as slice")
+	}
+
+	statuses := []*bitbucketcloud.PullRequestStatus{}
+	for _, v := range all {
+		statuses = append(statuses, v.(*bitbucketcloud.PullRequestStatus))
 	}
 
 	return &bbcs.AnnotatedPullRequest{

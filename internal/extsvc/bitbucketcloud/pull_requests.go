@@ -83,13 +83,31 @@ func (c *Client) GetPullRequest(ctx context.Context, repo *Repo, id int64) (*Pul
 }
 
 // GetPullRequestStatuses retrieves the statuses for a pull request.
-func (c *Client) GetPullRequestStatuses(repo *Repo, id int64) (*ResultSet[PullRequestStatus], error) {
+//
+// Each item in the result set is a *PullRequestStatus.
+func (c *Client) GetPullRequestStatuses(repo *Repo, id int64) (*ResultSet, error) {
 	u, err := url.Parse(fmt.Sprintf("/2.0/repositories/%s/pullrequests/%d/statuses", repo.FullName, id))
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing URL")
 	}
 
-	return newResultSet[PullRequestStatus](c, u), nil
+	return newResultSet(c, u, func(ctx context.Context, req *http.Request) (*PageToken, []interface{}, error) {
+		var page struct {
+			*PageToken
+			Values []*PullRequestStatus `json:"values"`
+		}
+
+		if err := c.do(ctx, req, &page); err != nil {
+			return nil, nil, err
+		}
+
+		values := []interface{}{}
+		for _, value := range page.Values {
+			values = append(values, value)
+		}
+
+		return page.PageToken, values, nil
+	}), nil
 }
 
 // UpdatePullRequest updates a pull request.
