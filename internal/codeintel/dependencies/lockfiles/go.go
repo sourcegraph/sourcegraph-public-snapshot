@@ -3,11 +3,10 @@ package lockfiles
 import (
 	"io"
 
-	"github.com/inconshreveable/log15"
 	"golang.org/x/mod/modfile"
+	"golang.org/x/mod/module"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 //
@@ -17,29 +16,16 @@ import (
 // based on https://go.dev/ref/mod#go-mod-file.
 func parseGoModFile(r io.Reader) ([]reposource.PackageDependency, error) {
 	var (
-		errs    errors.MultiError
 		deps    []reposource.PackageDependency
 		ignore  = make(map[string]string)
 		replace = make(map[string]*modfile.Replace)
 	)
 
-	data := make([]byte, 1024*1024)
-	n, err := r.Read(data)
-	if err == io.EOF {
-		if n == 0 {
-			return nil, nil
-		}
-		err = nil
-	}
+	data, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}
 
-	// We log the size of go.mod files to get an understanding of their distribution.
-	// We can remove this log later.
-	log15.Debug("gomod", "size", n)
-
-	data = data[0:n]
 	f, err := modfile.Parse("go.mod", data, nil)
 	if err != nil {
 		return nil, err
@@ -65,20 +51,17 @@ func parseGoModFile(r io.Reader) ([]reposource.PackageDependency, error) {
 			continue
 		}
 
-		path := r.Mod.Path
-		version := r.Mod.Version
-
-		if v, ok := replace[path]; ok && (v.Old.Version == "" || v.Old.Version == r.Mod.Version) {
-			path = v.New.Path
-			version = v.New.Version
+		v := module.Version{
+			Path:    r.Mod.Path,
+			Version: r.Mod.Version,
 		}
 
-		dep, err := reposource.ParseGoDependency(path + "@" + version)
-		if err != nil {
-			errs = errors.Append(errs, err)
-		} else {
-			deps = append(deps, dep)
+		if s, ok := replace[r.Mod.Path]; ok && (s.Old.Version == "" || s.Old.Version == r.Mod.Version) {
+			v.Path = s.New.Path
+			v.Version = s.New.Version
 		}
+
+		deps = append(deps, reposource.NewGoDependency(v))
 	}
-	return deps, errs
+	return deps, nil
 }
