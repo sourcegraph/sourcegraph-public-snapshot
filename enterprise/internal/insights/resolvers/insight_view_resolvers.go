@@ -304,8 +304,29 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 	}
 	return resolvers, nil
 }
+func searchGauge(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
+	executor := query.NewCaptureGroupExecutor(r.postgresDB, r.insightsDB, time.Now)
+	interval := timeseries.TimeInterval{
+		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
+		Value: definition.SampleIntervalValue,
+	}
+
+	gaugeDataPoints, err := executor.Gauge(ctx, definition.Query, definition.Repositories, interval)
+	if err != nil {
+		return nil, err
+	}
+
+	log15.Info("search-gauge")
+	var resolvers []graphqlbackend.InsightSeriesResolver
+	resolvers = append(resolvers, &gaugeInsightSeriesResolver{generated: gaugeDataPoints, seriesId: definition.SeriesID, label: definition.Label})
+	return resolvers, nil
+}
 
 func expandCaptureGroupSeriesJustInTime(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
+	if definition.GenerationMethod == types.SearchGauge {
+		return searchGauge(ctx, definition, r, filters)
+	}
+
 	executor := query.NewCaptureGroupExecutor(r.postgresDB, r.insightsDB, time.Now)
 	interval := timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -182,4 +183,130 @@ type GeneratedTimeSeries struct {
 	Label    string
 	Points   []TimeDataPoint
 	SeriesId string
+}
+
+type GaugeDataPoint struct {
+	Time  time.Time
+	Value float64
+}
+
+func (c *CaptureGroupExecutor) Gauge(ctx context.Context, query string, repositories []string, interval timeseries.TimeInterval) ([]GaugeDataPoint, error) {
+	repoIds := make(map[string]api.RepoID)
+	for _, repository := range repositories {
+		repo, err := c.repoStore.GetByName(ctx, api.RepoName(repository))
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to fetch repository information for repository name: %s", repository)
+		}
+		repoIds[repository] = repo.ID
+	}
+	log15.Debug("Generated repoIds", "repoids", repoIds)
+
+	frames := BuildFrames(7, interval, c.clock())
+
+	type timeCounts map[time.Time]int
+	var gauge []GaugeDataPoint
+
+	for _, repository := range repositories {
+		firstCommit, err := git.FirstEverCommit(ctx, c.db, api.RepoName(repository), authz.DefaultSubRepoPermsChecker)
+		if err != nil {
+			return nil, errors.Wrapf(err, "FirstEverCommit")
+		}
+		// uncompressed plan for now, because there is some complication between the way compressed plans are generated and needing to resolve revhashes
+		plan := c.filter.FilterFrames(ctx, frames, repoIds[repository])
+
+		// generateTimes := func() map[time.Time]int {
+		// 	times := make(map[time.Time]int)
+		// 	for _, execution := range plan.Executions {
+		// 		times[execution.RecordingTime] = 0
+		// 		for _, recording := range execution.SharedRecordings {
+		// 			times[recording] = 0
+		// 		}
+		// 	}
+		// 	return times
+		// }
+
+		// we need to perform the pivot from time -> {label, count} to label -> {time, count}
+		for _, execution := range plan.Executions {
+			if execution.RecordingTime.Before(firstCommit.Committer.Date) {
+				// this logic is faulty, but works for now. If the plan was compressed (these executions had children) we would have to
+				// iterate over the children to ensure they are also all before the first commit date. Otherwise, we would have to promote
+				// that child to the new execution, and all of the remaining children (after the promoted one) become children of the new execution.
+				// since we are using uncompressed plans (to avoid this problem and others) right now, each execution is standalone
+				continue
+			}
+
+			commits, err := git.Commits(ctx, c.db, api.RepoName(repository), git.CommitsOptions{N: 1, Before: execution.RecordingTime.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
+			if err != nil {
+				return nil, errors.Wrap(err, "git.Commits")
+			} else if len(commits) < 1 {
+				// there is no commit so skip this execution. Once again faulty logic for the same reasons as above.
+				continue
+			}
+
+			modifiedQuery := withCountUnlimited(query)
+			modifiedQuery = fmt.Sprintf("%s repo:^%s$@%s", modifiedQuery, regexp.QuoteMeta(repository), commits[0].ID)
+
+			log15.Debug("executing query", "query", modifiedQuery)
+			results, err := ComputeSearch(ctx, modifiedQuery)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to execute capture group search for repository:%s commit:%s", repository, execution.Revision)
+			}
+
+			if len(results) > 0 {
+				matched := results[0].MatchValues()
+				log15.Info("gauge matched", "values", matched, "count", len(matched))
+				v := matched[0]
+				s, err := strconv.ParseFloat(v, 64)
+				if err != nil {
+					return nil, errors.Wrapf(err, "unable to parse gauge value: %s", s)
+				}
+				gauge = append(gauge, GaugeDataPoint{
+					Time:  execution.RecordingTime,
+					Value: s,
+				})
+			}
+
+			// grouped := GroupByCaptureMatch(results)
+			// sort.Slice(grouped, func(i, j int) bool {
+			// 	return grouped[i].Value < grouped[j].Value
+			// })
+			// log15.Debug("grouped results", "grouped", grouped)
+
+			// for _, timeGroupElement := range grouped {
+			// 	value := timeGroupElement.Value
+			// 	if _, ok := pivoted[value]; !ok {
+			// 		pivoted[value] = generateTimes()
+			// 	}
+			// 	pivoted[value][execution.RecordingTime] = timeGroupElement.Count
+			// 	for _, children := range execution.SharedRecordings {
+			// 		pivoted[value][children] += timeGroupElement.Count
+			// 	}
+			// }
+		}
+	}
+
+	// var calculated []GeneratedTimeSeries
+	// seriesCount := 1
+	// for value, timeCounts := range pivoted {
+	// 	var timeseries []TimeDataPoint
+	//
+	// 	for key, val := range timeCounts {
+	// 		timeseries = append(timeseries, TimeDataPoint{
+	// 			Time:  key,
+	// 			Count: val,
+	// 		})
+	// 	}
+	//
+	// 	sort.Slice(timeseries, func(i, j int) bool {
+	// 		return timeseries[i].Time.Before(timeseries[j].Time)
+	// 	})
+	//
+	// 	calculated = append(calculated, GeneratedTimeSeries{
+	// 		Label:    value,
+	// 		Points:   timeseries,
+	// 		SeriesId: fmt.Sprintf("dynamic-series-%d", seriesCount),
+	// 	})
+	// 	seriesCount++
+	// }
+	return gauge, nil
 }
