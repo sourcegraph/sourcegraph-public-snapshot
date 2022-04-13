@@ -8,6 +8,7 @@ import {
     ExternalServiceKind,
     SharedGraphQlOperations,
 } from '@sourcegraph/shared/src/graphql-operations'
+import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -472,6 +473,7 @@ describe('Batches', () => {
             await driver.page.click('[data-testid="test-getting-started-btn"]')
             await driver.page.waitForSelector('[data-testid="test-getting-started"]')
             await percySnapshotWithVariants(driver.page, 'Batch changes getting started page')
+            await accessibilityAudit(driver.page)
         })
     })
 

@@ -214,6 +214,9 @@ func isMinorUpdateAvailable(currentVersion, updateVersion string) bool {
 }
 
 func emailSendingNotConfiguredAlert(args AlertFuncArgs) []*Alert {
+	if !args.IsSiteAdmin {
+		return nil
+	}
 	if conf.Get().EmailSmtp == nil || conf.Get().EmailSmtp.Host == "" {
 		return []*Alert{{
 			TypeValue:                 AlertTypeWarning,

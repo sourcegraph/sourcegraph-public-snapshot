@@ -91,3 +91,12 @@ func (r *IndexResolver) ProjectRoot(ctx context.Context) (_ *gql.GitTreeEntryRes
 
 	return r.locationResolver.Path(ctx, api.RepoID(r.index.RepositoryID), r.index.Commit, r.index.Root)
 }
+
+func (r *IndexResolver) Indexer() gql.CodeIntelIndexerResolver {
+	// drop the tag if it exists
+	if idx, ok := imageToIndexer[strings.Split(r.index.Indexer, ":")[0]]; ok {
+		return idx
+	}
+
+	return &codeIntelIndexerResolver{name: r.index.Indexer}
+}

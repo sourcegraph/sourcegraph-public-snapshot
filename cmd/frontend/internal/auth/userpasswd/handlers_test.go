@@ -2,11 +2,20 @@ package userpasswd
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestCheckEmailAbuse(t *testing.T) {
@@ -93,5 +102,55 @@ func TestCheckEmailFormat(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestHandleSignIn_Lockout(t *testing.T) {
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			AuthProviders: []schema.AuthProviders{
+				{
+					Builtin: &schema.BuiltinAuthProvider{
+						Type: providerType,
+					},
+				},
+			},
+		},
+	})
+	defer conf.Mock(nil)
+
+	users := database.NewMockUserStore()
+	users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+	db := database.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.EventLogsFunc.SetDefaultReturn(database.NewMockEventLogStore())
+	db.SecurityEventLogsFunc.SetDefaultReturn(database.NewMockSecurityEventLogsStore())
+
+	lockout := NewMockLockoutStore()
+	h := HandleSignIn(db, lockout)
+
+	// Normal authentication fail before lockout
+	{
+		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
+		require.NoError(t, err)
+
+		resp := httptest.NewRecorder()
+		h(resp, req)
+
+		assert.Equal(t, http.StatusUnauthorized, resp.Code)
+		assert.Equal(t, "Authentication failed\n", resp.Body.String())
+	}
+
+	// Getting error for locked out
+	{
+		lockout.IsLockedOutFunc.SetDefaultReturn("reason", true)
+		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
+		require.NoError(t, err)
+
+		resp := httptest.NewRecorder()
+		h(resp, req)
+
+		assert.Equal(t, http.StatusUnprocessableEntity, resp.Code)
+		assert.Equal(t, `Account has been locked out due to "reason"`+"\n", resp.Body.String())
 	}
 }

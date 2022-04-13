@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -304,11 +305,10 @@ func TestIndexedSearch(t *testing.T) {
 				Typ:            search.TextRequest,
 				FileMatchLimit: tt.args.fileMatchLimit,
 				Select:         tt.args.selectPath,
-				Zoekt:          zoekt,
 				Since:          tt.args.since,
 			}
 
-			_, err = zoektJob.Run(tt.args.ctx, nil, agg)
+			_, err = zoektJob.Run(tt.args.ctx, job.RuntimeClients{Zoekt: zoekt}, agg)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 				return

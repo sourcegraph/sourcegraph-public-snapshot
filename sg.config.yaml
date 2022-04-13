@@ -102,7 +102,7 @@ env:
   DISABLE_CNCF: notonmybox
 
   # Code Insights uses a separate database to architecturally isolate the component from the rest of Sourcegraph.
-  CODEINSIGHTS_PGDATASOURCE: postgres://postgres:password@127.0.0.1:5435/postgres
+  CODEINSIGHTS_PGDATASOURCE: postgres://$PGUSER:$PGPASSWORD@$PGHOST:$PGPORT/$PGDATABASE
   DB_STARTUP_TIMEOUT: 120s # codeinsights-db needs more time to start in some instances.
   DISABLE_CODE_INSIGHTS_HISTORICAL: true
   DISABLE_CODE_INSIGHTS: true
@@ -514,31 +514,6 @@ commands:
       IMAGE: sourcegraph/minio
       CONTAINER: minio
 
-  codeinsights-db:
-    cmd: |
-      docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
-      docker run --rm \
-        --name=${CONTAINER} \
-        --cpus=1 \
-        --memory=1g \
-        -e POSTGRES_PASSWORD=password \
-        -e POSTGRES_DATABASE=postgres \
-        -e POSTGRES_USER=postgres \
-        -p 0.0.0.0:$PORT:5432 \
-        -v $DISK:/var/lib/postgresql/data \
-        $IMAGE >$LOG_FILE 2>&1
-    install: |
-      mkdir -p $LOGS
-      mkdir -p $DISK
-      CACHE=true ./docker-images/codeinsights-db/build.sh >$LOG_FILE 2>&1
-    env:
-      LOGS: $HOME/.sourcegraph-dev/logs/codeinsights-db
-      LOG_FILE: $HOME/.sourcegraph-dev/logs/codeinsights-db/codeinsights-db.log
-      DISK: $HOME/.sourcegraph-dev/data/codeinsights-db
-      IMAGE: sourcegraph/codeinsights-db:dev
-      CONTAINER: codeinsights-db
-      PORT: 5435
-
   redis-postgres:
     # Add the following overwrites to your sg.config.overwrite.yaml to use the docker-compose
     # database:
@@ -718,7 +693,7 @@ commands:
     cmd: env
 
   bext:
-    cmd: yarn --cwd client/browser dev
+    cmd: yarn workspace @sourcegraph/browser dev
     install: yarn
 
 defaultCommandset: enterprise
@@ -833,7 +808,6 @@ commandsets:
       - zoekt-indexserver-1
       - zoekt-webserver-0
       - zoekt-webserver-1
-      - codeinsights-db
     env:
       DISABLE_CODE_INSIGHTS_HISTORICAL: false
       DISABLE_CODE_INSIGHTS: false
@@ -970,16 +944,16 @@ tests:
     install: ENTERPRISE=1 yarn build-web
 
   bext:
-    cmd: yarn --cwd client/browser test
+    cmd: yarn workspace @sourcegraph/browser test
 
   bext-build:
-    cmd: EXTENSION_PERMISSIONS_ALL_URLS=true yarn --cwd client/browser build
+    cmd: EXTENSION_PERMISSIONS_ALL_URLS=true yarn workspace @sourcegraph/browser build
 
   bext-integration:
-    cmd: POLLYJS_MODE=replay yarn --cwd client/browser test-integration
+    cmd: yarn workspace @sourcegraph/browser test-integration
 
   bext-e2e:
-    cmd: yarn --cwd client/browser mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts
+    cmd: yarn workspace @sourcegraph/browser mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts
     env:
       SOURCEGRAPH_BASE_URL: https://sourcegraph.com
 
@@ -987,9 +961,7 @@ tests:
     cmd: yarn run jest --testPathIgnorePatterns end-to-end regression integration storybook
 
   frontend-e2e:
-    cmd: yarn run mocha ./client/web/src/end-to-end/end-to-end.test.ts
-    env:
-      TS_NODE_PROJECT: client/web/src/end-to-end/tsconfig.json
+    cmd: yarn run test-e2e
 
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc

@@ -15,6 +15,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -77,6 +78,14 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 			}
 			if err = backend.CheckOrgAccess(ctx, r.db, namespaceOrgID); err != nil {
 				err = errors.New("the authenticated user does not belong to the organization requested")
+				return nil, err
+			}
+		}
+		if envvar.SourcegraphDotComMode() {
+			if err := backend.ExternalServiceKindSupported(args.Input.Kind); err != nil {
+				return nil, err
+			}
+			if err := backend.CheckExternalServicesQuota(ctx, r.db, args.Input.Kind, namespaceOrgID, namespaceUserID); err != nil {
 				return nil, err
 			}
 		}

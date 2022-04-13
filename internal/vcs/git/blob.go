@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -102,12 +103,11 @@ type blobReader struct {
 }
 
 func newBlobReader(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID, name string) (*blobReader, error) {
-	if err := ensureAbsoluteCommit(commit); err != nil {
+	if err := gitdomain.EnsureAbsoluteCommit(commit); err != nil {
 		return nil, err
 	}
 
-	cmd := gitserver.NewClient(db).Command("git", "show", string(commit)+":"+name)
-	cmd.Repo = repo
+	cmd := gitserver.NewClient(db).GitCommand(repo, "show", string(commit)+":"+name)
 	stdout, err := gitserver.StdoutReader(ctx, cmd)
 	if err != nil {
 		return nil, err
@@ -158,5 +158,5 @@ func (br *blobReader) convertError(err error) error {
 			return io.EOF
 		}
 	}
-	return errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", br.cmd.Args, err))
+	return errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", br.cmd.Args(), err))
 }

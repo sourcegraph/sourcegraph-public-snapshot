@@ -7,7 +7,7 @@ import { styles } from '../../../../../../components/creation-ui-kit'
 import { FormChangeEvent, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
 import { Insight } from '../../../../../../core/types'
 import { CreateInsightFormFields } from '../../types'
-import { SearchInsightLivePreview } from '../live-preview-chart/SearchInsightLivePreview'
+import { SearchInsightLivePreview } from '../live-preview-chart'
 import { SearchInsightCreationForm } from '../search-insight-creation-form/SearchInsightCreationForm'
 
 import { useEditableSeries, createDefaultEditSeries } from './hooks/use-editable-series'
@@ -70,12 +70,12 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
     }
 
     // If some fields that needed to run live preview  are invalid
-    // we should disabled live chart preview
+    // we should disable live chart preview
     const allFieldsForPreviewAreValid =
         repositories.meta.validState === 'VALID' &&
         (series.meta.validState === 'VALID' || editSeries.some(series => series.valid)) &&
         stepValue.meta.validState === 'VALID' &&
-        // For all repos mode we are not able to show the live preview chart
+        // For the "all repositories" mode we are not able to show the live preview chart
         !allReposMode.input.value
 
     const hasFilledValue =

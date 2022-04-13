@@ -4,6 +4,16 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+
+	sctypes "github.com/sourcegraph/sourcegraph/internal/types"
+
+	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
@@ -14,6 +24,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+
+	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
 )
 
 var _ graphqlbackend.InsightSeriesResolver = &insightSeriesResolver{}
@@ -60,20 +72,35 @@ func (r *insightSeriesResolver) Points(ctx context.Context, args *graphqlbackend
 		opts.To = &args.To.Time
 	}
 
+	includeRepo := func(regex ...string) {
+		opts.IncludeRepoRegex = append(opts.IncludeRepoRegex, regex...)
+	}
+	excludeRepo := func(regex ...string) {
+		opts.ExcludeRepoRegex = append(opts.ExcludeRepoRegex, regex...)
+	}
+
 	// to preserve backwards compatibility, we are going to keep the arguments on this resolver for now. Ideally
 	// we would deprecate these in favor of passing arguments from a higher level resolver (insight view) to match
 	// the model of how we want default filters to work at the insight view level. That said, we will only inherit
 	// higher resolver filters if provided filter arguments are nil.
 	if args.IncludeRepoRegex != nil {
-		opts.IncludeRepoRegex = *args.IncludeRepoRegex
+		includeRepo(*args.IncludeRepoRegex)
 	} else if r.filters.IncludeRepoRegex != nil {
-		opts.IncludeRepoRegex = *r.filters.IncludeRepoRegex
+		includeRepo(*r.filters.IncludeRepoRegex)
 	}
 	if args.ExcludeRepoRegex != nil {
-		opts.ExcludeRepoRegex = *args.ExcludeRepoRegex
+		excludeRepo(*args.ExcludeRepoRegex)
 	} else if r.filters.ExcludeRepoRegex != nil {
-		opts.ExcludeRepoRegex = *r.filters.ExcludeRepoRegex
+		excludeRepo(*r.filters.ExcludeRepoRegex)
 	}
+
+	scLoader := &scLoader{primary: r.workerBaseStore.Handle().DB()}
+	inc, exc, err := unwrapSearchContexts(ctx, scLoader, r.filters.SearchContexts)
+	if err != nil {
+		return nil, errors.Wrap(err, "unwrapSearchContexts")
+	}
+	includeRepo(inc...)
+	excludeRepo(exc...)
 
 	points, err := r.insightsStore.SeriesPoints(ctx, opts)
 	if err != nil {
@@ -84,6 +111,47 @@ func (r *insightSeriesResolver) Points(ctx context.Context, args *graphqlbackend
 		resolvers = append(resolvers, insightsDataPointResolver{point})
 	}
 	return resolvers, nil
+}
+
+// SearchContextLoader loads search contexts just from the full name of the
+// context. This will not verify that the calling context owns the context, it
+// will load regardless of the current user.
+type SearchContextLoader interface {
+	GetByName(ctx context.Context, name string) (*sctypes.SearchContext, error)
+}
+
+type scLoader struct {
+	primary dbutil.DB
+}
+
+func (l *scLoader) GetByName(ctx context.Context, name string) (*sctypes.SearchContext, error) {
+	db := database.NewDB(l.primary)
+	return searchcontexts.ResolveSearchContextSpec(ctx, db, name)
+}
+
+func unwrapSearchContexts(ctx context.Context, loader SearchContextLoader, rawContexts []string) ([]string, []string, error) {
+	var include []string
+	var exclude []string
+
+	for _, rawContext := range rawContexts {
+		searchContext, err := loader.GetByName(ctx, rawContext)
+		if err != nil {
+			return nil, nil, err
+		}
+		if searchContext.Query != "" {
+			var plan searchquery.Plan
+			plan, err := searchquery.Pipeline(
+				searchquery.Init(searchContext.Query, searchquery.SearchTypeRegex),
+			)
+			if err != nil {
+				return nil, nil, errors.Wrapf(err, "failed to parse search query for search context: %s", rawContext)
+			}
+			inc, exc := plan.ToParseTree().Repositories()
+			include = append(include, inc...)
+			exclude = append(exclude, exc...)
+		}
+	}
+	return include, exclude, nil
 }
 
 func (r *insightSeriesResolver) Status(ctx context.Context) (graphqlbackend.InsightStatusResolver, error) {

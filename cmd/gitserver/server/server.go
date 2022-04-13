@@ -27,10 +27,12 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
+	"github.com/opentracing/opentracing-go/log"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -46,6 +48,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -243,6 +246,15 @@ type Server struct {
 
 	repoUpdateLocksMu sync.Mutex // protects the map below and also updates to locks.once
 	repoUpdateLocks   map[api.RepoName]*locks
+
+	// Used for setRepoSizes function to run only during the first run of janitor
+	setRepoSizesOnce sync.Once
+
+	// operations provide uniform observability via internal/observation. This value is
+	// set by RegisterMetrics when compiled as part of the gitserver binary. The server
+	// method ensureOperations should be used in all references to avoid a nil pointer
+	// dereferencs.
+	operations *operations
 }
 
 type locks struct {
@@ -342,6 +354,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/archive", s.handleArchive)
 	mux.HandleFunc("/exec", s.handleExec)
 	mux.HandleFunc("/search", s.handleSearch)
+	mux.HandleFunc("/batch-log", s.handleBatchLog)
 	mux.HandleFunc("/p4-exec", s.handleP4Exec)
 	mux.HandleFunc("/list", s.handleList)
 	mux.HandleFunc("/list-gitolite", s.handleListGitolite)
@@ -582,7 +595,7 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 	err := store.IterateRepoGitserverStatus(ctx, options, func(repo types.RepoGitserverStatus) error {
 		repoSyncStateCounter.WithLabelValues("check").Inc()
 		// Ensure we're only dealing with repos we are responsible for
-		addr, err := gitserver.AddrForRepo(ctx, s.DB, repo.Name, gitServerAddrs)
+		addr, err := gitserver.AddrForRepo(ctx, filepath.Base(os.Args[0]), s.DB, repo.Name, gitServerAddrs)
 		if err != nil {
 			return err
 		}
@@ -985,7 +998,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		}
 		if traceID := trace.ID(ctx); traceID != "" {
 			ev.AddField("traceID", traceID)
-			ev.AddField("trace", trace.URL(traceID, conf.ExternalURL()))
+			ev.AddField("trace", trace.URL(traceID, conf.ExternalURL(), conf.Tracer()))
 		}
 		if honey.Enabled() {
 			_ = ev.Send()
@@ -1133,10 +1146,149 @@ func matchCount(cm *protocol.CommitMatch) int {
 	return 1
 }
 
+func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
+	// 🚨 SECURITY: Only allow POST requests.
+	if strings.ToUpper(r.Method) != http.MethodPost {
+		http.Error(w, "", http.StatusMethodNotAllowed)
+		return
+	}
+
+	operations := s.ensureOperations()
+
+	// Run git log for a single repository.
+	// Invoked multiple times from the handler defined below.
+	performGitLogCommand := func(ctx context.Context, repoCommit api.RepoCommit, format string) (output string, isRepoCloned bool, err error) {
+		ctx, endObservation := operations.batchLogSingle.With(ctx, &err, observation.Args{
+			LogFields: append(
+				[]log.Field{
+					log.String("format", format),
+				},
+				repoCommit.LogFields()...,
+			),
+		})
+		defer func() {
+			endObservation(1, observation.Args{LogFields: []log.Field{
+				log.Bool("isRepoCloned", isRepoCloned),
+			}})
+		}()
+
+		dir := s.dir(repoCommit.Repo)
+		if !repoCloned(dir) {
+			return "", false, nil
+		}
+
+		var buf bytes.Buffer
+		cmd := exec.CommandContext(ctx, "git", "log", "-n", "1", "--name-only", format, string(repoCommit.CommitID))
+		dir.Set(cmd)
+		cmd.Stdout = &buf
+
+		if _, err := runCommand(ctx, cmd); err != nil {
+			return "", true, err
+		}
+
+		return buf.String(), true, nil
+	}
+
+	// Handles the /batch-log route
+	instrumentedHandler := func(ctx context.Context) (statusCodeOnError int, err error) {
+		ctx, logger, endObservation := operations.batchLog.WithAndLogger(ctx, &err, observation.Args{})
+		defer func() {
+			endObservation(1, observation.Args{LogFields: []log.Field{
+				log.Int("statusCodeOnError", statusCodeOnError),
+			}})
+		}()
+
+		// Read request body
+		var req protocol.BatchLogRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			return http.StatusBadRequest, err
+		}
+		logger.Log(req.LogFields()...)
+
+		// Validate request parameters
+		if len(req.RepoCommits) == 0 {
+			// Early exit: implicitly writes 200 OK
+			_ = json.NewEncoder(w).Encode(protocol.BatchLogResponse{Results: []protocol.BatchLogResult{}})
+			return 0, nil
+		}
+		if !strings.HasPrefix(req.Format, "--format=") {
+			return http.StatusUnprocessableEntity, errors.New("format parameter expected to be of the form `--format=<git log format>`")
+		}
+
+		// Perform requests in each repository in the input batch. We perform these commands
+		// concurrently, but only allow four comands to be in-flight at a time.
+
+		limit := int64(4)
+		sem := semaphore.NewWeighted(limit)
+		g, ctx := errgroup.WithContext(ctx)
+
+		results := make([]protocol.BatchLogResult, len(req.RepoCommits))
+
+		for i, repoCommit := range req.RepoCommits {
+			// Avoid capture of loop variables
+			i, repoCommit := i, repoCommit
+
+			if err := sem.Acquire(ctx, 1); err != nil {
+				return http.StatusInternalServerError, err
+			}
+
+			g.Go(func() error {
+				defer sem.Release(1)
+
+				output, isRepoCloned, err := performGitLogCommand(ctx, repoCommit, req.Format)
+				if err == nil && !isRepoCloned {
+					err = errors.Newf("repo not found")
+				}
+				var errMessage string
+				if err != nil {
+					errMessage = err.Error()
+				}
+
+				// Concurrent write results to shared slice. This slice is already properly
+				// sized and each goroutine writes to a unique index exactly once. There should
+				// be no data race conditions possible here.
+
+				results[i] = protocol.BatchLogResult{
+					RepoCommit:    repoCommit,
+					CommandOutput: output,
+					CommandError:  errMessage,
+				}
+				return nil
+			})
+		}
+
+		if err := g.Wait(); err != nil {
+			return http.StatusInternalServerError, err
+		}
+
+		// Write payload to client: implicitly writes 200 OK
+		_ = json.NewEncoder(w).Encode(protocol.BatchLogResponse{Results: results})
+		return 0, nil
+	}
+
+	// Handle unexpected error conditions. We expect the instrumented handler to not
+	// have written the status code or any of the body if this error value is non-nil.
+	if statusCodeOnError, err := instrumentedHandler(r.Context()); err != nil {
+		http.Error(w, err.Error(), statusCodeOnError)
+		return
+	}
+}
+
+// ensureOperations returns the non-nil operations value supplied to this server
+// via RegisterMetrics (when constructed as part of the gitserver binary), or
+// constructs and memoizes a no-op operations value (for use in tests).
+func (s *Server) ensureOperations() *operations {
+	if s.operations == nil {
+		s.operations = newOperations(&observation.TestContext)
+	}
+
+	return s.operations
+}
+
 func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	// 🚨 SECURITY: Only allow POST requests.
 	// See https://github.com/sourcegraph/security-issues/issues/213.
-	if strings.ToUpper(r.Method) != "POST" {
+	if strings.ToUpper(r.Method) != http.MethodPost {
 		http.Error(w, "", http.StatusMethodNotAllowed)
 		return
 	}
@@ -1261,7 +1413,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 				if traceID := trace.ID(ctx); traceID != "" {
 					ev.AddField("traceID", traceID)
-					ev.AddField("trace", trace.URL(traceID, conf.ExternalURL()))
+					ev.AddField("trace", trace.URL(traceID, conf.ExternalURL(), conf.Tracer()))
 				}
 
 				if honey.Enabled() {
@@ -1495,7 +1647,7 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 
 				if traceID := trace.ID(ctx); traceID != "" {
 					ev.AddField("traceID", traceID)
-					ev.AddField("trace", trace.URL(traceID, conf.ExternalURL()))
+					ev.AddField("trace", trace.URL(traceID, conf.ExternalURL(), conf.Tracer()))
 				}
 
 				_ = ev.Send()

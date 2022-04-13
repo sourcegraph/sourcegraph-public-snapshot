@@ -28,7 +28,7 @@ func Handler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
 					ext.Error.Set(span, true)
 					span.SetTag("err", err)
 					traceID = trace.IDFromSpan(span)
-					traceURL = trace.URL(traceID, conf.ExternalURL())
+					traceURL = trace.URL(traceID, conf.ExternalURL(), conf.Tracer())
 				}
 				log15.Error(
 					"App HTTP handler error response",

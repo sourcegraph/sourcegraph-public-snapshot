@@ -36,34 +36,8 @@ import (
 // The metric generated here will be named as "src_bitbucket_requests_total".
 var requestCounter = metrics.NewRequestMeter("bitbucket", "Total number of requests sent to the Bitbucket API.")
 
-// These fields define the self-imposed Bitbucket rate limit (since Bitbucket Server does
-// not have a concept of rate limiting in HTTP response headers).
-//
-// See https://godoc.org/golang.org/x/time/rate#Limiter for an explanation of these fields.
-//
-// We chose the limits here based on the fact that Sourcegraph is a heavy consumer of the Bitbucket
-// Server API and that a large customer had reported to us their Bitbucket instance receives
-// ~100 req/s so it seems reasonable for us to (at max) consume ~8 req/s.
-//
-// Note that, for comparison, Bitbucket Cloud restricts "List all repositories" requests (which are
-// a good portion of our requests) to 1,000/hr, and they restrict "List a user or team's repositories"
-// requests (which are roughly equal to our repository lookup requests) to 1,000/hr. We perform a list
-// repositories request for every 1000 repositories on Bitbucket every 1m by default, so for someone
-// with 20,000 Bitbucket repositories we need 20,000/1000 requests per minute (1200/hr) + overhead for
-// repository lookup requests by users, and requests for identifying which repositories a user has
-// access to (if authorization is in use) and requests for changeset synchronization if it is in use.
-//
-// These are our default values, they can be changed in configuration
-const (
-	defaultRateLimit      = rate.Limit(8) // 480/min or 28,800/hr
-	defaultRateLimitBurst = 500
-)
-
 // Client access a Bitbucket Server via the REST API.
 type Client struct {
-	// HTTP Client used to communicate with the API
-	httpClient httpcli.Doer
-
 	// URL is the base URL of Bitbucket Server.
 	URL *url.URL
 
@@ -78,16 +52,20 @@ type Client struct {
 	//   This is generally set using SetOAuth.
 	Auth auth.Authenticator
 
-	// RateLimit is the self-imposed rate limiter (since Bitbucket does not have a concept
-	// of rate limiting in HTTP response headers).
-	RateLimit *rate.Limiter
+	// HTTP Client used to communicate with the API
+	httpClient httpcli.Doer
+
+	// RateLimit is the self-imposed rate limiter (since Bitbucket does not have a
+	// concept of rate limiting in HTTP response headers). Default limits are defined
+	// in extsvc.GetLimitFromConfig
+	rateLimit *rate.Limiter
 }
 
 // NewClient returns an authenticated Bitbucket Server API client with
 // the provided configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
-func NewClient(config *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
-	client, err := newClient(config, httpClient)
+func NewClient(urn string, config *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
+	client, err := newClient(urn, config, httpClient)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +92,7 @@ func NewClient(config *schema.BitbucketServerConnection, httpClient httpcli.Doer
 	return client, nil
 }
 
-func newClient(config *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
+func newClient(urn string, config *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
 	u, err := url.Parse(config.Url)
 	if err != nil {
 		return nil, err
@@ -125,16 +103,11 @@ func newClient(config *schema.BitbucketServerConnection, httpClient httpcli.Doer
 	}
 	httpClient = requestCounter.Doer(httpClient, categorize)
 
-	// Normally our registry will return a default infinite limiter when nothing has been
-	// synced from config. However, we always want to ensure there is at least some form of rate
-	// limiting for Bitbucket.
-	defaultLimiter := rate.NewLimiter(defaultRateLimit, defaultRateLimitBurst)
-	l := ratelimit.DefaultRegistry.GetOrSet(u.String(), defaultLimiter)
-
 	return &Client{
 		httpClient: httpClient,
 		URL:        u,
-		RateLimit:  l,
+		// Default limits are defined in extsvc.GetLimitFromConfig
+		rateLimit: ratelimit.DefaultRegistry.Get(urn),
 	}, nil
 }
 
@@ -145,7 +118,7 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
 	return &Client{
 		httpClient: c.httpClient,
 		URL:        c.URL,
-		RateLimit:  c.RateLimit,
+		rateLimit:  c.rateLimit,
 		Auth:       a,
 	}
 }
@@ -967,7 +940,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	}
 
 	startWait := time.Now()
-	if err := c.RateLimit.Wait(ctx); err != nil {
+	if err := c.rateLimit.Wait(ctx); err != nil {
 		return nil, err
 	}
 

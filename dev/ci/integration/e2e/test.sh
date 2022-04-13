@@ -6,7 +6,7 @@ set -ex
 URL="${1:-"http://localhost:7080"}"
 
 echo "--- yarn run test-e2e"
-env SOURCEGRAPH_BASE_URL="$URL" PERCY_ON=true ./node_modules/.bin/percy exec -- yarn run cover-e2e
+env SOURCEGRAPH_BASE_URL="$URL" yarn run cover-e2e
 
 echo "--- coverage"
 yarn nyc report -r json

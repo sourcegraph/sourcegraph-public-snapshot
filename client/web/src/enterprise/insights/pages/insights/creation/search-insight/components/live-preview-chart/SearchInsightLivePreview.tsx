@@ -1,74 +1,55 @@
-import React, { ReactNode, useContext, useEffect, useState } from 'react'
+import React, { useContext, useMemo } from 'react'
 
-import type { LineChartContent, ChartContent } from 'sourcegraph'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { useDeepMemo } from '@sourcegraph/wildcard'
 
-import { asError } from '@sourcegraph/common'
-import { useDebounce } from '@sourcegraph/wildcard'
-
-import { LivePreviewContainer, getSanitizedRepositories } from '../../../../../../components/creation-ui-kit'
-import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
-import { SearchBasedInsightSeries } from '../../../../../../core/types'
-import { useDistinctValue } from '../../../../../../hooks/use-distinct-value'
+import {
+    getSanitizedRepositories,
+    useLivePreview,
+    StateStatus,
+    LivePreviewCard,
+    LivePreviewLoading,
+    LivePreviewChart,
+    LivePreviewBlurBackdrop,
+    LivePreviewBanner,
+    LivePreviewLegend,
+    LivePreviewUpdateButton,
+} from '../../../../../../components/creation-ui-kit'
+import { SeriesBasedChartTypes, SeriesChart } from '../../../../../../components/views'
+import { CodeInsightsBackendContext, SeriesChartContent, SearchBasedInsightSeries } from '../../../../../../core'
 import { EditableDataSeries, InsightStep } from '../../types'
 import { getSanitizedLine } from '../../utils/insight-sanitizer'
 
-import { DEFAULT_MOCK_CHART_CONTENT } from './live-preview-mock-data'
+import { DEFAULT_MOCK_CHART_CONTENT } from './constant'
 
 export interface SearchInsightLivePreviewProps {
-    /** Custom className for the root element of live preview. */
-    className?: string
-    /** List of repositories for insights. */
-    repositories: string
-    /** All Series for live chart. */
-    series: EditableDataSeries[]
-    /** Step value for chart. */
-    stepValue: string
-
     /**
      * Disable prop to disable live preview.
      * Used in a consumer of this component when some required fields
      * for live preview are invalid.
      */
-    disabled?: boolean
-
-    /** Step mode for step value prop. */
+    disabled: boolean
+    repositories: string
+    series: EditableDataSeries[]
+    stepValue: string
     step: InsightStep
-
     isAllReposMode: boolean
 
-    withLivePreviewControls?: boolean
-    title?: string
-    children?: (data: ChartContent) => ReactNode
+    className?: string
 }
 
 /**
- * Displays live preview chart for creation UI with latest insights settings
+ * Displays live preview chart for creation UI with the latest insights settings
  * from creation UI form.
  */
 export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLivePreviewProps> = props => {
-    const {
-        series,
-        repositories,
-        step,
-        stepValue,
-        disabled = false,
-        isAllReposMode,
-        title,
-        withLivePreviewControls = true,
-        className,
-        children,
-    } = props
+    const { series, repositories, step, stepValue, disabled = false, isAllReposMode, className } = props
 
     const { getSearchInsightContent } = useContext(CodeInsightsBackendContext)
 
-    const [loading, setLoading] = useState<boolean>(false)
-    const [dataOrError, setDataOrError] = useState<LineChartContent<any, string> | Error | undefined>()
-    // Synthetic deps to trigger dry run for fetching live preview data
-    const [lastPreviewVersion, setLastPreviewVersion] = useState(0)
-
     // Compare live insight settings with deep check to avoid unnecessary
     // search insight content fetching
-    const liveSettings = useDistinctValue({
+    const settings = useDeepMemo({
         series: series
             .filter(series => series.valid)
             // Cut off all unnecessary for live preview fields in order to
@@ -80,60 +61,63 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
         disabled,
     })
 
-    const liveDebouncedSettings = useDebounce(liveSettings, 500)
+    const getLivePreviewContent = useMemo(
+        () => ({
+            disabled: settings.disabled,
+            fetcher: () => getSearchInsightContent(settings),
+        }),
+        [settings, getSearchInsightContent]
+    )
 
-    useEffect(() => {
-        let hasRequestCanceled = false
-        setLoading(true)
-        setDataOrError(undefined)
-
-        if (liveDebouncedSettings.disabled) {
-            setLoading(false)
-
-            return
-        }
-
-        getSearchInsightContent({
-            insight: liveDebouncedSettings,
-        })
-            .then(data => !hasRequestCanceled && setDataOrError(data))
-            .catch(error => !hasRequestCanceled && setDataOrError(asError(error)))
-            .finally(() => !hasRequestCanceled && setLoading(false))
-
-        return () => {
-            hasRequestCanceled = true
-        }
-    }, [lastPreviewVersion, getSearchInsightContent, liveDebouncedSettings])
+    const { state, update } = useLivePreview(getLivePreviewContent)
 
     return (
-        <LivePreviewContainer
-            dataOrError={dataOrError}
-            loading={loading}
-            title={title}
-            disabled={disabled}
-            livePreviewControls={withLivePreviewControls}
-            defaultMock={DEFAULT_MOCK_CHART_CONTENT}
-            mockMessage={
-                isAllReposMode ? (
-                    <span> Live previews are currently not available for insights running over all repositories. </span>
+        <aside className={className}>
+            <LivePreviewUpdateButton disabled={disabled} onClick={update} />
+
+            <LivePreviewCard>
+                {state.status === StateStatus.Loading ? (
+                    <LivePreviewLoading>Loading code insight</LivePreviewLoading>
+                ) : state.status === StateStatus.Error ? (
+                    <ErrorAlert error={state.error} />
                 ) : (
-                    <span>
-                        {' '}
-                        The chart preview will be shown here once you have filled out the repositories and series
-                        fields.
-                    </span>
-                )
-            }
-            description={
-                isAllReposMode
-                    ? 'Previews are only displayed only if you individually list up to 50 repositories.'
-                    : null
-            }
-            className={className}
-            chartContentClassName={title ? '' : 'pt-4'}
-            onUpdateClick={() => setLastPreviewVersion(version => version + 1)}
-        >
-            {children}
-        </LivePreviewContainer>
+                    <LivePreviewChart>
+                        {parent =>
+                            state.status === StateStatus.Data ? (
+                                <SeriesChart
+                                    type={SeriesBasedChartTypes.Line}
+                                    width={parent.width}
+                                    height={parent.height}
+                                    data-testid="code-search-insight-live-preview"
+                                    {...state.data}
+                                />
+                            ) : (
+                                <>
+                                    <LivePreviewBlurBackdrop
+                                        as={SeriesChart}
+                                        type={SeriesBasedChartTypes.Line}
+                                        width={parent.width}
+                                        height={parent.height}
+                                        // We cast to unknown here because ForwardReferenceComponent
+                                        // doesn't support inferring as component with generic.
+                                        {...(DEFAULT_MOCK_CHART_CONTENT as SeriesChartContent<unknown>)}
+                                    />
+                                    <LivePreviewBanner>
+                                        {isAllReposMode
+                                            ? 'Live previews are currently not available for insights running over all repositories.'
+                                            : 'The chart preview will be shown here once you have filled out the repositories and series fields.'}
+                                    </LivePreviewBanner>
+                                </>
+                            )
+                        }
+                    </LivePreviewChart>
+                )}
+
+                {state.status === StateStatus.Data && <LivePreviewLegend series={state.data.series} />}
+            </LivePreviewCard>
+            {isAllReposMode && (
+                <p className="mt-2">Previews are only displayed if you individually list up to 50 repositories.</p>
+            )}
+        </aside>
     )
 }

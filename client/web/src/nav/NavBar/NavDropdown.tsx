@@ -136,6 +136,7 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                                             navItemStyles.itemFocusable
                                         )}
                                         ref={menuButtonReference}
+                                        aria-label={isExpanded ? 'Hide search menu' : 'Show search menu'}
                                     >
                                         <span className={navItemStyles.itemFocusableContent}>
                                             <Icon

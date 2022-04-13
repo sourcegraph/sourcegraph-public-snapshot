@@ -3,7 +3,7 @@
 exports[`PageHeader renders correctly 1`] = `
 <body>
   <div>
-    <header
+    <div
       class="container"
     >
       <div>
@@ -72,7 +72,7 @@ exports[`PageHeader renders correctly 1`] = `
           </span>
         </h1>
       </div>
-    </header>
+    </div>
   </div>
 </body>
 `;
