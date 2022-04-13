@@ -39,9 +39,6 @@ type MockClient struct {
 	// BatchLogFunc is an instance of a mock function object controlling the
 	// behavior of the method BatchLog.
 	BatchLogFunc *ClientBatchLogFunc
-	// CommandFunc is an instance of a mock function object controlling the
-	// behavior of the method Command.
-	CommandFunc *ClientCommandFunc
 	// CreateCommitFromPatchFunc is an instance of a mock function object
 	// controlling the behavior of the method CreateCommitFromPatch.
 	CreateCommitFromPatchFunc *ClientCreateCommitFromPatchFunc
@@ -51,6 +48,9 @@ type MockClient struct {
 	// GetObjectFunc is an instance of a mock function object controlling
 	// the behavior of the method GetObject.
 	GetObjectFunc *ClientGetObjectFunc
+	// GitCommandFunc is an instance of a mock function object controlling
+	// the behavior of the method GitCommand.
+	GitCommandFunc *ClientGitCommandFunc
 	// IsRepoCloneableFunc is an instance of a mock function object
 	// controlling the behavior of the method IsRepoCloneable.
 	IsRepoCloneableFunc *ClientIsRepoCloneableFunc
@@ -130,11 +130,6 @@ func NewMockClient() *MockClient {
 				return nil
 			},
 		},
-		CommandFunc: &ClientCommandFunc{
-			defaultHook: func(api.RepoName, string, ...string) *Cmd {
-				return nil
-			},
-		},
 		CreateCommitFromPatchFunc: &ClientCreateCommitFromPatchFunc{
 			defaultHook: func(context.Context, protocol.CreateCommitFromPatchRequest) (string, error) {
 				return "", nil
@@ -148,6 +143,11 @@ func NewMockClient() *MockClient {
 		GetObjectFunc: &ClientGetObjectFunc{
 			defaultHook: func(context.Context, api.RepoName, string) (*gitdomain.GitObject, error) {
 				return nil, nil
+			},
+		},
+		GitCommandFunc: &ClientGitCommandFunc{
+			defaultHook: func(api.RepoName, ...string) *Cmd {
+				return nil
 			},
 		},
 		IsRepoCloneableFunc: &ClientIsRepoCloneableFunc{
@@ -262,11 +262,6 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.BatchLog")
 			},
 		},
-		CommandFunc: &ClientCommandFunc{
-			defaultHook: func(api.RepoName, string, ...string) *Cmd {
-				panic("unexpected invocation of MockClient.Command")
-			},
-		},
 		CreateCommitFromPatchFunc: &ClientCreateCommitFromPatchFunc{
 			defaultHook: func(context.Context, protocol.CreateCommitFromPatchRequest) (string, error) {
 				panic("unexpected invocation of MockClient.CreateCommitFromPatch")
@@ -280,6 +275,11 @@ func NewStrictMockClient() *MockClient {
 		GetObjectFunc: &ClientGetObjectFunc{
 			defaultHook: func(context.Context, api.RepoName, string) (*gitdomain.GitObject, error) {
 				panic("unexpected invocation of MockClient.GetObject")
+			},
+		},
+		GitCommandFunc: &ClientGitCommandFunc{
+			defaultHook: func(api.RepoName, ...string) *Cmd {
+				panic("unexpected invocation of MockClient.GitCommand")
 			},
 		},
 		IsRepoCloneableFunc: &ClientIsRepoCloneableFunc{
@@ -384,9 +384,6 @@ func NewMockClientFrom(i Client) *MockClient {
 		BatchLogFunc: &ClientBatchLogFunc{
 			defaultHook: i.BatchLog,
 		},
-		CommandFunc: &ClientCommandFunc{
-			defaultHook: i.Command,
-		},
 		CreateCommitFromPatchFunc: &ClientCreateCommitFromPatchFunc{
 			defaultHook: i.CreateCommitFromPatch,
 		},
@@ -395,6 +392,9 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		GetObjectFunc: &ClientGetObjectFunc{
 			defaultHook: i.GetObject,
+		},
+		GitCommandFunc: &ClientGitCommandFunc{
+			defaultHook: i.GitCommand,
 		},
 		IsRepoCloneableFunc: &ClientIsRepoCloneableFunc{
 			defaultHook: i.IsRepoCloneable,
@@ -979,120 +979,6 @@ func (c ClientBatchLogFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// ClientCommandFunc describes the behavior when the Command method of the
-// parent MockClient instance is invoked.
-type ClientCommandFunc struct {
-	defaultHook func(api.RepoName, string, ...string) *Cmd
-	hooks       []func(api.RepoName, string, ...string) *Cmd
-	history     []ClientCommandFuncCall
-	mutex       sync.Mutex
-}
-
-// Command delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockClient) Command(v0 api.RepoName, v1 string, v2 ...string) *Cmd {
-	r0 := m.CommandFunc.nextHook()(v0, v1, v2...)
-	m.CommandFunc.appendCall(ClientCommandFuncCall{v0, v1, v2, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the Command method of
-// the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientCommandFunc) SetDefaultHook(hook func(api.RepoName, string, ...string) *Cmd) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Command method of the parent MockClient instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *ClientCommandFunc) PushHook(hook func(api.RepoName, string, ...string) *Cmd) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientCommandFunc) SetDefaultReturn(r0 *Cmd) {
-	f.SetDefaultHook(func(api.RepoName, string, ...string) *Cmd {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientCommandFunc) PushReturn(r0 *Cmd) {
-	f.PushHook(func(api.RepoName, string, ...string) *Cmd {
-		return r0
-	})
-}
-
-func (f *ClientCommandFunc) nextHook() func(api.RepoName, string, ...string) *Cmd {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientCommandFunc) appendCall(r0 ClientCommandFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientCommandFuncCall objects describing
-// the invocations of this function.
-func (f *ClientCommandFunc) History() []ClientCommandFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientCommandFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientCommandFuncCall is an object that describes an invocation of method
-// Command on an instance of MockClient.
-type ClientCommandFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 api.RepoName
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Arg2 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg2 []string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *Cmd
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c ClientCommandFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg2 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientCommandFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
 // ClientCreateCommitFromPatchFunc describes the behavior when the
 // CreateCommitFromPatch method of the parent MockClient instance is
 // invoked.
@@ -1429,6 +1315,117 @@ func (c ClientGetObjectFuncCall) Args() []interface{} {
 // invocation.
 func (c ClientGetObjectFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// ClientGitCommandFunc describes the behavior when the GitCommand method of
+// the parent MockClient instance is invoked.
+type ClientGitCommandFunc struct {
+	defaultHook func(api.RepoName, ...string) *Cmd
+	hooks       []func(api.RepoName, ...string) *Cmd
+	history     []ClientGitCommandFuncCall
+	mutex       sync.Mutex
+}
+
+// GitCommand delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockClient) GitCommand(v0 api.RepoName, v1 ...string) *Cmd {
+	r0 := m.GitCommandFunc.nextHook()(v0, v1...)
+	m.GitCommandFunc.appendCall(ClientGitCommandFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the GitCommand method of
+// the parent MockClient instance is invoked and the hook queue is empty.
+func (f *ClientGitCommandFunc) SetDefaultHook(hook func(api.RepoName, ...string) *Cmd) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GitCommand method of the parent MockClient instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ClientGitCommandFunc) PushHook(hook func(api.RepoName, ...string) *Cmd) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientGitCommandFunc) SetDefaultReturn(r0 *Cmd) {
+	f.SetDefaultHook(func(api.RepoName, ...string) *Cmd {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientGitCommandFunc) PushReturn(r0 *Cmd) {
+	f.PushHook(func(api.RepoName, ...string) *Cmd {
+		return r0
+	})
+}
+
+func (f *ClientGitCommandFunc) nextHook() func(api.RepoName, ...string) *Cmd {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientGitCommandFunc) appendCall(r0 ClientGitCommandFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientGitCommandFuncCall objects describing
+// the invocations of this function.
+func (f *ClientGitCommandFunc) History() []ClientGitCommandFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientGitCommandFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientGitCommandFuncCall is an object that describes an invocation of
+// method GitCommand on an instance of MockClient.
+type ClientGitCommandFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 api.RepoName
+	// Arg1 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg1 []string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *Cmd
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c ClientGitCommandFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg1 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientGitCommandFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // ClientIsRepoCloneableFunc describes the behavior when the IsRepoCloneable

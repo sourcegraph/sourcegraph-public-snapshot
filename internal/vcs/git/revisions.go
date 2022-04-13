@@ -83,7 +83,7 @@ func ResolveRevision(ctx context.Context, db database.DB, repo api.RepoName, spe
 		spec = spec + "^0"
 	}
 
-	cmd := gitserver.NewClient(db).Command(repo, "git", "rev-parse", spec)
+	cmd := gitserver.NewClient(db).GitCommand(repo, "rev-parse", spec)
 	cmd.SetEnsureRevision(spec)
 
 	// We don't ever need to ensure that HEAD is in git-server.
