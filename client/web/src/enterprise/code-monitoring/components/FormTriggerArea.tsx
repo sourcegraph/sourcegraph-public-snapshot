@@ -190,7 +190,12 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
 
     return (
         <>
-            <h3>Trigger</h3>
+            {/*
+                a11y-ignore
+                Rule: "heading-order" (Heading levels should only increase by one)
+                Since `PageHeader` (which is on upper scope), renders `h1`, We could consider using `h2` tag instead, to meet accessibility criteria
+            */}
+            <h3 className="a11y-ignore">Trigger</h3>
             {showQueryForm && (
                 <Card className={classNames(cardClassName, 'p-3')}>
                     <div className="font-weight-bold">When there are new search results</div>

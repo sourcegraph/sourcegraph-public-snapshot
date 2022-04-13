@@ -14,8 +14,6 @@ import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
 import { CodeMonitoringPageProps } from './CodeMonitoringPage'
 import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
 
-import styles from './CodeMonitorList.module.scss'
-
 type CodeMonitorFilter = 'all' | 'user'
 
 interface CodeMonitorListProps
@@ -70,7 +68,12 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
         <>
             <div className="row mb-5">
                 <div className="d-flex flex-column col-2 mr-2">
-                    <h3>Filters</h3>
+                    {/*
+                        a11y-ignore
+                        Rule: "heading-order" (Heading levels should only increase by one)
+                        Since `PageHeader` (which is on upper scope), renders `h1`, We could consider using `h2` tag instead, to meet accessibility criteria
+                    */}
+                    <h3 className="a11y-ignore">Filters</h3>
                     <Button
                         className="text-left"
                         onClick={() => setMonitorListFilter('all')}
@@ -113,7 +116,7 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
                             cursorPaging={true}
                             withCenteredSummary={true}
                             emptyElement={<CodeMonitorEmptyList authenticatedUser={authenticatedUser} />}
-                            className={styles.list}
+                            listComponent="div"
                         />
                     </Container>
                 </div>
