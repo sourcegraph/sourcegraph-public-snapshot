@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
@@ -81,6 +82,9 @@ type resolver struct {
 	operations       *operations
 	executorResolver executor.Resolver
 	symbolsClient    *symbols.Client
+
+	// See the same field on the QueryResolver struct
+	maximumIndexesPerMonikerSearch int
 }
 
 // NewResolver creates a new resolver with the given services.
@@ -92,10 +96,11 @@ func NewResolver(
 	indexEnqueuer IndexEnqueuer,
 	hunkCache HunkCache,
 	symbolsClient *symbols.Client,
+	maximumIndexesPerMonikerSearch int,
 	observationContext *observation.Context,
 	dbConn database.DB,
 ) Resolver {
-	return newResolver(dbStore, lsifStore, gitserverClient, policyMatcher, indexEnqueuer, hunkCache, symbolsClient, observationContext, dbConn)
+	return newResolver(dbStore, lsifStore, gitserverClient, policyMatcher, indexEnqueuer, hunkCache, symbolsClient, maximumIndexesPerMonikerSearch, observationContext, dbConn)
 }
 
 func newResolver(
@@ -106,20 +111,22 @@ func newResolver(
 	indexEnqueuer IndexEnqueuer,
 	hunkCache HunkCache,
 	symbolsClient *symbols.Client,
+	maximumIndexesPerMonikerSearch int,
 	observationContext *observation.Context,
 	dbConn database.DB,
 ) *resolver {
 	return &resolver{
-		db:               dbConn,
-		dbStore:          dbStore,
-		lsifStore:        lsifStore,
-		gitserverClient:  gitserverClient,
-		policyMatcher:    policyMatcher,
-		indexEnqueuer:    indexEnqueuer,
-		hunkCache:        hunkCache,
-		symbolsClient:    symbolsClient,
-		operations:       newOperations(observationContext),
-		executorResolver: executor.New(dbConn),
+		db:                             dbConn,
+		dbStore:                        dbStore,
+		lsifStore:                      lsifStore,
+		gitserverClient:                gitserverClient,
+		policyMatcher:                  policyMatcher,
+		indexEnqueuer:                  indexEnqueuer,
+		hunkCache:                      hunkCache,
+		symbolsClient:                  symbolsClient,
+		maximumIndexesPerMonikerSearch: maximumIndexesPerMonikerSearch,
+		operations:                     newOperations(observationContext),
+		executorResolver:               executor.New(dbConn),
 	}
 }
 
@@ -212,13 +219,14 @@ func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataA
 		r.dbStore,
 		r.lsifStore,
 		cachedCommitChecker,
-		NewPositionAdjuster(args.Repo, string(args.Commit), r.hunkCache),
+		NewPositionAdjuster(gitserver.NewClient(r.db), args.Repo, string(args.Commit), r.hunkCache),
 		int(args.Repo.ID),
 		string(args.Commit),
 		args.Path,
 		dumps,
 		r.operations,
 		authz.DefaultSubRepoPermsChecker,
+		r.maximumIndexesPerMonikerSearch,
 	), nil
 }
 

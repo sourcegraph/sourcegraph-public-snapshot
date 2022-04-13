@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/RoaringBitmap/roaring"
-
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -20,8 +18,9 @@ func MockRepoPermissions(t *testing.T, db database.DB, userID int32, repoIDs ...
 
 	permsStore := edb.Perms(db, time.Now)
 
-	userIDs := roaring.New()
-	userIDs.Add(uint32(userID))
+	userIDs := map[int32]struct{}{
+		userID: {},
+	}
 	for _, id := range repoIDs {
 		err := permsStore.SetRepoPermissions(context.Background(),
 			&authz.RepoPermissions{

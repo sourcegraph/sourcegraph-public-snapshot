@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/RoaringBitmap/roaring"
 	"github.com/gitchander/permutation"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
@@ -41,23 +41,22 @@ func cleanupPermsTables(t *testing.T, s *permsStore) {
 	}
 }
 
-func bitmapToArray(bm *roaring.Bitmap) []int {
-	if bm == nil {
-		return []int{}
+func mapsetToArray(ms map[int32]struct{}) []int {
+	ints := []int{}
+	for id := range ms {
+		ints = append(ints, int(id))
 	}
+	sort.Slice(ints, func(i, j int) bool { return ints[i] < ints[j] })
 
-	uint32s := bm.ToArray()
-	ints := make([]int, len(uint32s))
-	for i := range uint32s {
-		ints[i] = int(uint32s[i])
-	}
 	return ints
 }
 
-func toBitmap(ids ...uint32) *roaring.Bitmap {
-	bm := roaring.NewBitmap()
-	bm.AddMany(ids)
-	return bm
+func toMapset(ids ...int32) map[int32]struct{} {
+	ms := map[int32]struct{}{}
+	for _, id := range ids {
+		ms[id] = struct{}{}
+	}
+	return ms
 }
 
 var now = timeutil.Now().UnixNano()
@@ -77,7 +76,7 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 			rp := &authz.RepoPermissions{
 				RepoID:  1,
 				Perm:    authz.Read,
-				UserIDs: toBitmap(2),
+				UserIDs: toMapset(2),
 			}
 			if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
@@ -92,7 +91,7 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 			if err != authz.ErrPermsNotFound {
 				t.Fatalf("err: want %q but got %v", authz.ErrPermsNotFound, err)
 			}
-			equal(t, "IDs", 0, len(bitmapToArray(up.IDs)))
+			equal(t, "IDs", 0, len(mapsetToArray(up.IDs)))
 		})
 
 		t.Run("found matching", func(t *testing.T) {
@@ -104,7 +103,7 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 			rp := &authz.RepoPermissions{
 				RepoID:  1,
 				Perm:    authz.Read,
-				UserIDs: toBitmap(2),
+				UserIDs: toMapset(2),
 			}
 			if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
@@ -118,7 +117,7 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 			if err := s.LoadUserPermissions(context.Background(), up); err != nil {
 				t.Fatal(err)
 			}
-			equal(t, "IDs", []int{1}, bitmapToArray(up.IDs))
+			equal(t, "IDs", []int{1}, mapsetToArray(up.IDs))
 			equal(t, "UpdatedAt", now, up.UpdatedAt.UnixNano())
 
 			if !up.SyncedAt.IsZero() {
@@ -135,7 +134,7 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 			rp := &authz.RepoPermissions{
 				RepoID:  1,
 				Perm:    authz.Read,
-				UserIDs: toBitmap(1, 2),
+				UserIDs: toMapset(1, 2),
 			}
 			if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
@@ -144,7 +143,7 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 			rp = &authz.RepoPermissions{
 				RepoID:  1,
 				Perm:    authz.Read,
-				UserIDs: toBitmap(2, 3),
+				UserIDs: toMapset(2, 3),
 			}
 			if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
@@ -158,7 +157,7 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 			if err := s.LoadUserPermissions(context.Background(), up1); err != nil {
 				t.Fatal(err)
 			}
-			equal(t, "IDs", []int{}, bitmapToArray(up1.IDs))
+			equal(t, "IDs", []int{}, mapsetToArray(up1.IDs))
 			equal(t, "UpdatedAt", now, up1.UpdatedAt.UnixNano())
 
 			if !up1.SyncedAt.IsZero() {
@@ -173,7 +172,7 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 			if err := s.LoadUserPermissions(context.Background(), up2); err != nil {
 				t.Fatal(err)
 			}
-			equal(t, "IDs", []int{1}, bitmapToArray(up2.IDs))
+			equal(t, "IDs", []int{1}, mapsetToArray(up2.IDs))
 			equal(t, "UpdatedAt", now, up2.UpdatedAt.UnixNano())
 
 			if !up2.SyncedAt.IsZero() {
@@ -188,7 +187,7 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 			if err := s.LoadUserPermissions(context.Background(), up3); err != nil {
 				t.Fatal(err)
 			}
-			equal(t, "IDs", []int{1}, bitmapToArray(up3.IDs))
+			equal(t, "IDs", []int{1}, mapsetToArray(up3.IDs))
 			equal(t, "UpdatedAt", now, up3.UpdatedAt.UnixNano())
 
 			if !up3.SyncedAt.IsZero() {
@@ -210,7 +209,7 @@ func testPermsStore_LoadRepoPermissions(db *sql.DB) func(*testing.T) {
 				UserID: 2,
 				Perm:   authz.Read,
 				Type:   authz.PermRepos,
-				IDs:    toBitmap(1),
+				IDs:    toMapset(1),
 			}
 			if err := s.SetUserPermissions(context.Background(), up); err != nil {
 				t.Fatal(err)
@@ -224,7 +223,7 @@ func testPermsStore_LoadRepoPermissions(db *sql.DB) func(*testing.T) {
 			if err != authz.ErrPermsNotFound {
 				t.Fatalf("err: want %q but got %q", authz.ErrPermsNotFound, err)
 			}
-			equal(t, "rp.UserIDs", []int{}, bitmapToArray(rp.UserIDs))
+			equal(t, "rp.UserIDs", []int{}, mapsetToArray(rp.UserIDs))
 		})
 
 		t.Run("found matching", func(t *testing.T) {
@@ -237,7 +236,7 @@ func testPermsStore_LoadRepoPermissions(db *sql.DB) func(*testing.T) {
 				UserID: 2,
 				Perm:   authz.Read,
 				Type:   authz.PermRepos,
-				IDs:    toBitmap(1),
+				IDs:    toMapset(1),
 			}
 			if err := s.SetUserPermissions(context.Background(), up); err != nil {
 				t.Fatal(err)
@@ -250,7 +249,7 @@ func testPermsStore_LoadRepoPermissions(db *sql.DB) func(*testing.T) {
 			if err := s.LoadRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
 			}
-			equal(t, "rp.UserIDs", []int{2}, bitmapToArray(rp.UserIDs))
+			equal(t, "rp.UserIDs", []int{2}, mapsetToArray(rp.UserIDs))
 
 			if !rp.SyncedAt.IsZero() {
 				t.Fatal("SyncedAt was updated but not supposed to")
@@ -280,11 +279,13 @@ func checkRegularPermsTable(s *permsStore, sql string, expects map[int32][]uint3
 		if expects[id] == nil {
 			return errors.Errorf("unexpected row in table: (id: %v) -> (ids: %v)", id, intIDs)
 		}
-		want := fmt.Sprintf("%v", expects[id])
 
-		have := fmt.Sprintf("%v", intIDs)
-		if have != want {
-			return errors.Errorf("intIDs - key %v: want %q but got %q", id, want, have)
+		comparator := func(a, b uint32) bool {
+			return a < b
+		}
+
+		if cmp.Diff(expects[id], intIDs, cmpopts.SortSlices(comparator)) != "" {
+			return errors.Errorf("intIDs - key %v: want %d but got %d", id, expects[id], intIDs)
 		}
 
 		delete(expects, id)
@@ -331,15 +332,15 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 				{
 					UserID: 1,
 					Perm:   authz.Read,
-					IDs:    toBitmap(1),
+					IDs:    toMapset(1),
 				}, {
 					UserID: 2,
 					Perm:   authz.Read,
-					IDs:    toBitmap(1, 2),
+					IDs:    toMapset(1, 2),
 				}, {
 					UserID: 3,
 					Perm:   authz.Read,
-					IDs:    toBitmap(3, 4),
+					IDs:    toMapset(3, 4),
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
@@ -360,19 +361,19 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 				{
 					UserID: 1,
 					Perm:   authz.Read,
-					IDs:    toBitmap(1),
+					IDs:    toMapset(1),
 				}, {
 					UserID: 1,
 					Perm:   authz.Read,
-					IDs:    toBitmap(2, 3),
+					IDs:    toMapset(2, 3),
 				}, {
 					UserID: 2,
 					Perm:   authz.Read,
-					IDs:    toBitmap(1, 2),
+					IDs:    toMapset(1, 2),
 				}, {
 					UserID: 2,
 					Perm:   authz.Read,
-					IDs:    toBitmap(1, 3),
+					IDs:    toMapset(1, 3),
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
@@ -391,11 +392,11 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 				{
 					UserID: 1,
 					Perm:   authz.Read,
-					IDs:    toBitmap(1, 2, 3),
+					IDs:    toMapset(1, 2, 3),
 				}, {
 					UserID: 1,
 					Perm:   authz.Read,
-					IDs:    toBitmap(),
+					IDs:    toMapset(),
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
@@ -414,7 +415,7 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 				{
 					UserID: 1,
 					Perm:   authz.Read,
-					IDs:    toBitmap(1, 2, 3),
+					IDs:    toMapset(1, 2, 3),
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
@@ -433,10 +434,10 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 				user := &authz.UserPermissions{
 					UserID: 1,
 					Perm:   authz.Read,
-					IDs:    toBitmap(),
+					IDs:    toMapset(),
 				}
 				for i := 1; i <= countToExceedParameterLimit; i += 1 {
-					user.IDs.Add(uint32(i))
+					user.IDs[int32(i)] = struct{}{}
 				}
 				return []*authz.UserPermissions{user}
 			}(),
@@ -468,7 +469,7 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 				UserID: 2,
 				Perm:   authz.Read,
 				Type:   authz.PermRepos,
-				IDs:    toBitmap(1),
+				IDs:    toMapset(1),
 			}
 			if err := s.SetUserPermissions(context.Background(), up); err != nil {
 				t.Fatal(err)
@@ -482,7 +483,7 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 			if err := s.LoadUserPermissions(context.Background(), up); err != nil {
 				t.Fatal(err)
 			}
-			equal(t, "up.IDs", []int{1}, bitmapToArray(up.IDs))
+			equal(t, "up.IDs", []int{1}, mapsetToArray(up.IDs))
 
 			if up.SyncedAt.IsZero() {
 				t.Fatal("SyncedAt was not updated but supposed to")
@@ -518,7 +519,7 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 								UpdatedAt: p.UpdatedAt,
 							}
 							if p.IDs != nil {
-								tmp.IDs = p.IDs.Clone()
+								tmp.IDs = p.IDs
 							}
 							return s.SetUserPermissions(ctx, tmp)
 						})
@@ -567,15 +568,15 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 				{
 					RepoID:  1,
 					Perm:    authz.Read,
-					UserIDs: toBitmap(1),
+					UserIDs: toMapset(1),
 				}, {
 					RepoID:  2,
 					Perm:    authz.Read,
-					UserIDs: toBitmap(1, 2),
+					UserIDs: toMapset(1, 2),
 				}, {
 					RepoID:  3,
 					Perm:    authz.Read,
-					UserIDs: toBitmap(3, 4),
+					UserIDs: toMapset(3, 4),
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
@@ -596,19 +597,19 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 				{
 					RepoID:  1,
 					Perm:    authz.Read,
-					UserIDs: toBitmap(1),
+					UserIDs: toMapset(1),
 				}, {
 					RepoID:  1,
 					Perm:    authz.Read,
-					UserIDs: toBitmap(2, 3),
+					UserIDs: toMapset(2, 3),
 				}, {
 					RepoID:  2,
 					Perm:    authz.Read,
-					UserIDs: toBitmap(1, 2),
+					UserIDs: toMapset(1, 2),
 				}, {
 					RepoID:  2,
 					Perm:    authz.Read,
-					UserIDs: toBitmap(3, 4),
+					UserIDs: toMapset(3, 4),
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
@@ -628,11 +629,11 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 				{
 					RepoID:  1,
 					Perm:    authz.Read,
-					UserIDs: toBitmap(1, 2, 3),
+					UserIDs: toMapset(1, 2, 3),
 				}, {
 					RepoID:  1,
 					Perm:    authz.Read,
-					UserIDs: toBitmap(),
+					UserIDs: toMapset(),
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
@@ -656,7 +657,7 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 			rp := &authz.RepoPermissions{
 				RepoID:  1,
 				Perm:    authz.Read,
-				UserIDs: toBitmap(2),
+				UserIDs: toMapset(2),
 			}
 			if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
@@ -669,7 +670,7 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 			if err := s.LoadRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
 			}
-			equal(t, "rp.UserIDs", []int{2}, bitmapToArray(rp.UserIDs))
+			equal(t, "rp.UserIDs", []int{2}, mapsetToArray(rp.UserIDs))
 
 			if rp.SyncedAt.IsZero() {
 				t.Fatal("SyncedAt was not updated but supposed to")
@@ -694,7 +695,7 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 								UpdatedAt: p.UpdatedAt,
 							}
 							if p.UserIDs != nil {
-								tmp.UserIDs = p.UserIDs.Clone()
+								tmp.UserIDs = p.UserIDs
 							}
 							return s.SetRepoPermissions(ctx, tmp)
 						})
@@ -737,7 +738,7 @@ func testPermsStore_TouchRepoPermissions(db *sql.DB) func(*testing.T) {
 		rp := &authz.RepoPermissions{
 			RepoID:  1,
 			Perm:    authz.Read,
-			UserIDs: toBitmap(2),
+			UserIDs: toMapset(2),
 		}
 		if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
 			t.Fatal(err)
@@ -757,7 +758,7 @@ func testPermsStore_TouchRepoPermissions(db *sql.DB) func(*testing.T) {
 		if err := s.LoadRepoPermissions(context.Background(), rp); err != nil {
 			t.Fatal(err)
 		}
-		equal(t, "rp.UserIDs", []int{2}, bitmapToArray(rp.UserIDs))
+		equal(t, "rp.UserIDs", []int{2}, mapsetToArray(rp.UserIDs))
 
 		// Both times should be updated to "now"
 		if rp.UpdatedAt.Unix() != now || rp.SyncedAt.Unix() != now {
@@ -798,7 +799,7 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 			if err != authz.ErrPermsNotFound {
 				t.Fatalf("err: want %q but got %q", authz.ErrPermsNotFound, err)
 			}
-			equal(t, "IDs", 0, len(bitmapToArray(alice.IDs)))
+			equal(t, "IDs", 0, len(mapsetToArray(alice.IDs)))
 		})
 
 		t.Run("no matching with different service ID", func(t *testing.T) {
@@ -831,7 +832,7 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 			if err != authz.ErrPermsNotFound {
 				t.Fatalf("err: want %q but got %q", authz.ErrPermsNotFound, err)
 			}
-			equal(t, "IDs", 0, len(bitmapToArray(alice.IDs)))
+			equal(t, "IDs", 0, len(mapsetToArray(alice.IDs)))
 		})
 
 		t.Run("found matching", func(t *testing.T) {
@@ -863,7 +864,7 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 			if err := s.LoadUserPendingPermissions(context.Background(), alice); err != nil {
 				t.Fatal(err)
 			}
-			equal(t, "IDs", []int{1}, bitmapToArray(alice.IDs))
+			equal(t, "IDs", []int{1}, mapsetToArray(alice.IDs))
 			equal(t, "UpdatedAt", now, alice.UpdatedAt.UnixNano())
 		})
 
@@ -905,7 +906,7 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 			if err := s.LoadUserPendingPermissions(context.Background(), alice); err != nil {
 				t.Fatal(err)
 			}
-			equal(t, "IDs", 0, len(bitmapToArray(alice.IDs)))
+			equal(t, "IDs", 0, len(mapsetToArray(alice.IDs)))
 
 			bob := &authz.UserPendingPermissions{
 				ServiceType: authz.SourcegraphServiceType,
@@ -917,7 +918,7 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 			if err := s.LoadUserPendingPermissions(context.Background(), bob); err != nil {
 				t.Fatal(err)
 			}
-			equal(t, "IDs", []int{1}, bitmapToArray(bob.IDs))
+			equal(t, "IDs", []int{1}, mapsetToArray(bob.IDs))
 			equal(t, "UpdatedAt", now, bob.UpdatedAt.UnixNano())
 
 			cindy := &authz.UserPendingPermissions{
@@ -930,7 +931,7 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 			if err := s.LoadUserPendingPermissions(context.Background(), cindy); err != nil {
 				t.Fatal(err)
 			}
-			equal(t, "IDs", []int{1}, bitmapToArray(cindy.IDs))
+			equal(t, "IDs", []int{1}, mapsetToArray(cindy.IDs))
 			equal(t, "UpdatedAt", now, cindy.UpdatedAt.UnixNano())
 		})
 	}
@@ -1305,7 +1306,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 							UpdatedAt: update.perm.UpdatedAt,
 						}
 						if update.perm.UserIDs != nil {
-							perm.UserIDs = update.perm.UserIDs.Clone()
+							perm.UserIDs = update.perm.UserIDs
 						}
 						g.Go(func() error {
 							return s.SetRepoPendingPermissions(ctx, &accounts, perm)
@@ -1425,7 +1426,7 @@ func testPermsStore_ListPendingUsers(db *sql.DB) func(*testing.T) {
 						UpdatedAt: update.perm.UpdatedAt,
 					}
 					if update.perm.UserIDs != nil {
-						tmp.UserIDs = update.perm.UserIDs.Clone()
+						tmp.UserIDs = update.perm.UserIDs
 					}
 					if err := s.SetRepoPendingPermissions(ctx, update.accounts, tmp); err != nil {
 						t.Fatal(err)
@@ -1503,11 +1504,11 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 						{
 							RepoID:  1,
 							Perm:    authz.Read,
-							UserIDs: toBitmap(1),
+							UserIDs: toMapset(1),
 						}, {
 							RepoID:  2,
 							Perm:    authz.Read,
-							UserIDs: toBitmap(1, 2),
+							UserIDs: toMapset(1, 2),
 						},
 					},
 					pendings: []pending{
@@ -1611,11 +1612,11 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 						{
 							RepoID:  1,
 							Perm:    authz.Read,
-							UserIDs: toBitmap(1),
+							UserIDs: toMapset(1),
 						}, {
 							RepoID:  2,
 							Perm:    authz.Read,
-							UserIDs: toBitmap(1, 2),
+							UserIDs: toMapset(1, 2),
 						},
 					},
 					pendings: []pending{
@@ -1701,11 +1702,11 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 						{
 							RepoID:  1,
 							Perm:    authz.Read,
-							UserIDs: toBitmap(1),
+							UserIDs: toMapset(1),
 						}, {
 							RepoID:  2,
 							Perm:    authz.Read,
-							UserIDs: toBitmap(1, 2),
+							UserIDs: toMapset(1, 2),
 						},
 					},
 					pendings: []pending{
@@ -2033,14 +2034,14 @@ func testPermsStore_DeleteAllUserPermissions(db *sql.DB) func(*testing.T) {
 		if err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
 			RepoID:  1,
 			Perm:    authz.Read,
-			UserIDs: toBitmap(1, 2),
+			UserIDs: toMapset(1, 2),
 		}); err != nil {
 			t.Fatal(err)
 		}
 		if err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
 			RepoID:  2,
 			Perm:    authz.Read,
-			UserIDs: toBitmap(1, 2),
+			UserIDs: toMapset(1, 2),
 		}); err != nil {
 			t.Fatal(err)
 		}
@@ -2070,7 +2071,7 @@ func testPermsStore_DeleteAllUserPermissions(db *sql.DB) func(*testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		equal(t, "p.IDs", []int{1, 2}, bitmapToArray(p.IDs))
+		equal(t, "p.IDs", []int{1, 2}, mapsetToArray(p.IDs))
 	}
 }
 
@@ -2127,7 +2128,7 @@ func testPermsStore_DeleteAllUserPendingPermissions(db *sql.DB) func(*testing.T)
 		if err != nil {
 			t.Fatal(err)
 		}
-		equal(t, "p.IDs", []int{1}, bitmapToArray(p.IDs))
+		equal(t, "p.IDs", []int{1}, mapsetToArray(p.IDs))
 	}
 }
 
@@ -2144,7 +2145,7 @@ func testPermsStore_DatabaseDeadlocks(db *sql.DB) func(*testing.T) {
 			if err := s.SetUserPermissions(ctx, &authz.UserPermissions{
 				UserID: 1,
 				Perm:   authz.Read,
-				IDs:    toBitmap(1),
+				IDs:    toMapset(1),
 			}); err != nil {
 				t.Fatal(err)
 			}
@@ -2153,7 +2154,7 @@ func testPermsStore_DatabaseDeadlocks(db *sql.DB) func(*testing.T) {
 			if err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
 				RepoID:  1,
 				Perm:    authz.Read,
-				UserIDs: toBitmap(1),
+				UserIDs: toMapset(1),
 			}); err != nil {
 				t.Fatal(err)
 			}
@@ -2449,7 +2450,7 @@ func testPermsStore_UserIDsWithOutdatedPerms(db *sql.DB) func(*testing.T) {
 				UserID: 1,
 				Perm:   authz.Read,
 				Type:   authz.PermRepos,
-				IDs:    toBitmap(1),
+				IDs:    toMapset(1),
 			},
 		)
 		if err != nil {
@@ -2461,7 +2462,7 @@ func testPermsStore_UserIDsWithOutdatedPerms(db *sql.DB) func(*testing.T) {
 			&authz.RepoPermissions{
 				RepoID:  1,
 				Perm:    authz.Read,
-				UserIDs: toBitmap(2),
+				UserIDs: toMapset(2),
 			},
 		)
 		if err != nil {
@@ -2474,7 +2475,7 @@ func testPermsStore_UserIDsWithOutdatedPerms(db *sql.DB) func(*testing.T) {
 				UserID: 3,
 				Perm:   authz.Read,
 				Type:   authz.PermRepos,
-				IDs:    toBitmap(1),
+				IDs:    toMapset(1),
 			},
 		)
 		if err != nil {
@@ -2487,7 +2488,7 @@ func testPermsStore_UserIDsWithOutdatedPerms(db *sql.DB) func(*testing.T) {
 				UserID: 4,
 				Perm:   authz.Read,
 				Type:   authz.PermRepos,
-				IDs:    toBitmap(1),
+				IDs:    toMapset(1),
 			},
 		)
 		if err != nil {
@@ -2550,7 +2551,7 @@ func testPermsStore_UserIDsWithNoPerms(db *sql.DB) func(*testing.T) {
 		err = s.SetRepoPermissions(ctx, &authz.RepoPermissions{
 			RepoID:  1,
 			Perm:    authz.Read,
-			UserIDs: toBitmap(1),
+			UserIDs: toMapset(1),
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -2619,7 +2620,7 @@ func testPermsStore_RepoIDsWithNoPerms(db *sql.DB) func(*testing.T) {
 		err = s.SetRepoPermissions(ctx, &authz.RepoPermissions{
 			RepoID:  1,
 			Perm:    authz.Read,
-			UserIDs: toBitmap(1),
+			UserIDs: toMapset(1),
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -2684,7 +2685,7 @@ func testPermsStore_UserIDsWithOldestPerms(db *sql.DB) func(*testing.T) {
 		err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
 			RepoID:  1,
 			Perm:    authz.Read,
-			UserIDs: toBitmap(1, 2),
+			UserIDs: toMapset(1, 2),
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -2779,15 +2780,15 @@ func testPermsStore_ReposIDsWithOldestPerms(db *sql.DB) func(*testing.T) {
 			{
 				RepoID:  1,
 				Perm:    authz.Read,
-				UserIDs: toBitmap(1),
+				UserIDs: toMapset(1),
 			}, {
 				RepoID:  2,
 				Perm:    authz.Read,
-				UserIDs: toBitmap(1),
+				UserIDs: toMapset(1),
 			}, {
 				RepoID:  3,
 				Perm:    authz.Read,
-				UserIDs: toBitmap(1),
+				UserIDs: toMapset(1),
 			},
 		}
 		for _, perm := range perms {
@@ -2978,7 +2979,7 @@ func testPermsStore_Metrics(db *sql.DB) func(*testing.T) {
 			err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
 				RepoID:  int32(i),
 				Perm:    authz.Read,
-				UserIDs: toBitmap(1, 2, 3, 4),
+				UserIDs: toMapset(1, 2, 3, 4),
 			})
 			if err != nil {
 				t.Fatal(err)

@@ -181,6 +181,43 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
+    public getPasswordRequirements(): JSX.Element {
+        let requirements = ''
+        const passwordPolicyReference = window.context.experimentalFeatures.passwordPolicy
+
+        if (passwordPolicyReference && passwordPolicyReference.enabled === true) {
+            if (passwordPolicyReference.minimumLength && passwordPolicyReference.minimumLength > 0) {
+                requirements +=
+                    'Your password must include at least ' +
+                    passwordPolicyReference.minimumLength.toString() +
+                    ' characters'
+            }
+            if (
+                passwordPolicyReference.numberOfSpecialCharacters &&
+                passwordPolicyReference.numberOfSpecialCharacters > 0
+            ) {
+                requirements +=
+                    ', ' + passwordPolicyReference.numberOfSpecialCharacters.toString() + ' special characters'
+            }
+            if (
+                passwordPolicyReference.requireAtLeastOneNumber &&
+                passwordPolicyReference.requireAtLeastOneNumber === true
+            ) {
+                requirements += ', at least one number'
+            }
+            if (
+                passwordPolicyReference.requireUpperandLowerCase &&
+                passwordPolicyReference.requireUpperandLowerCase === true
+            ) {
+                requirements += ', at least one uppercase letter'
+            }
+        } else {
+            requirements += 'At least 12 characters.'
+        }
+
+        return <small className="form-help text-muted">{requirements}</small>
+    }
+
     public render(): JSX.Element | null {
         return (
             <>
@@ -279,10 +316,17 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                         id="newPassword"
                                         name="newPassword"
                                         aria-label="new password"
+                                        minLength={
+                                            window.context.experimentalFeatures.passwordPolicy?.enabled &&
+                                            window.context.experimentalFeatures.passwordPolicy.minimumLength !==
+                                                undefined
+                                                ? window.context.experimentalFeatures.passwordPolicy.minimumLength
+                                                : 12
+                                        }
                                         placeholder=" "
                                         autoComplete="new-password"
                                     />
-                                    <small className="form-help text-muted">At least 12 characters</small>
+                                    {this.getPasswordRequirements()}
                                 </div>
                                 <div className="form-group">
                                     <label htmlFor="newPasswordConfirmation">Confirm new password</label>
@@ -294,6 +338,13 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                         name="newPasswordConfirmation"
                                         aria-label="new password confirmation"
                                         placeholder=" "
+                                        minLength={
+                                            window.context.experimentalFeatures.passwordPolicy?.enabled &&
+                                            window.context.experimentalFeatures.passwordPolicy.minimumLength !==
+                                                undefined
+                                                ? window.context.experimentalFeatures.passwordPolicy.minimumLength
+                                                : 12
+                                        }
                                         inputRef={this.setNewPasswordConfirmationField}
                                         autoComplete="new-password"
                                     />

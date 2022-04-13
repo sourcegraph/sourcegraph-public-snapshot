@@ -28,7 +28,7 @@ import styles from './SearchConsolePage.module.scss'
 
 interface SearchConsolePageProps
     extends SearchStreamingProps,
-        Omit<StreamingSearchResultsListProps, 'allExpanded' | 'extensionsController'>,
+        Omit<StreamingSearchResultsListProps, 'allExpanded' | 'extensionsController' | 'executedQuery'>,
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI'> {
     globbing: boolean
     isMacPlatform: boolean
@@ -174,6 +174,7 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                                 showSearchContext={showSearchContext}
                                 assetsRoot={window.context?.assetsRoot || ''}
                                 renderSearchUserNeedsCodeHost={user => <SearchUserNeedsCodeHost user={user} />}
+                                executedQuery={props.location.search}
                             />
                         ))}
                 </div>

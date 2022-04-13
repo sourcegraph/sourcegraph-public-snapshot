@@ -77,6 +77,7 @@ type LSIFUploadResolver interface {
 	StartedAt() *DateTime
 	FinishedAt() *DateTime
 	InputIndexer() string
+	Indexer() CodeIntelIndexerResolver
 	PlaceInQueue() *int32
 	AssociatedIndex(ctx context.Context) (LSIFIndexResolver, error)
 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
@@ -106,6 +107,7 @@ type LSIFIndexResolver interface {
 	InputCommit() string
 	InputRoot() string
 	InputIndexer() string
+	Indexer() CodeIntelIndexerResolver
 	QueuedAt() DateTime
 	State() string
 	Failure() *string

@@ -3,7 +3,7 @@ import React, { useContext } from 'react'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Button, Modal, Link } from '@sourcegraph/wildcard'
 
-import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'
+import { CodeInsightsBackendContext } from '../core'
 
 import { FourLineChart, LangStatsInsightChart, ThreeLineChart } from './components/MediaCharts'
 

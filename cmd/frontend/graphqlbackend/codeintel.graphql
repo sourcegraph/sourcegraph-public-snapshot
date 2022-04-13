@@ -1212,6 +1212,11 @@ type LSIFUpload implements Node {
     inputIndexer: String!
 
     """
+    The indexer used to produce this index.
+    """
+    indexer: CodeIntelIndexer
+
+    """
     The upload's current state.
     """
     state: LSIFUploadState!
@@ -1356,6 +1361,11 @@ type LSIFIndex implements Node {
     The name of the target indexer Docker image (e.g., sourcegraph/lsif-go@sha256:...).
     """
     inputIndexer: String!
+
+    """
+    The indexer used to produce the index artifact.
+    """
+    indexer: CodeIntelIndexer
 
     """
     The index's current state.

@@ -73,6 +73,10 @@ func updateToPrebuiltSG(ctx context.Context) (string, error) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		return "", errors.Newf("downloading sg: status %d", resp.StatusCode)
+	}
+
 	tmpSgPath := tmpDir + "/sg"
 	f, err := os.Create(tmpSgPath)
 	if err != nil {

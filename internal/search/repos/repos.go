@@ -441,6 +441,13 @@ func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex Excl
 		return ExcludedRepos{}, err
 	}
 
+	if len(op.Dependencies) > 0 {
+		// Dependency search only operates on package repos. Since package repos
+		// cannot be archives or forks, there will never be any excluded repos for
+		// dependency search, so we can avoid doing extra work here.
+		return ExcludedRepos{}, nil
+	}
+
 	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.DB, op.SearchContextSpec)
 	if err != nil {
 		return ExcludedRepos{}, err

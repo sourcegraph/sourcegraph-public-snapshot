@@ -34,7 +34,7 @@ func TestInferTypeScriptIndexJobsMissingTsConfig(t *testing.T) {
 				Steps:       []config.DockerStep{{Image: "sourcegraph/lsif-typescript:autoindex", Commands: []string{testCase.command}}},
 				Root:        "",
 				Indexer:     lsifTypescriptImage,
-				IndexerArgs: []string{"lsif-typescript-autoindex", "index", "--inferTSConfig"},
+				IndexerArgs: []string{"lsif-typescript-autoindex", "index", "--infer-tsconfig"},
 				Outfile:     "",
 			},
 		}

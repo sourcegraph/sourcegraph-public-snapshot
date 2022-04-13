@@ -107,7 +107,7 @@ exports[`SiteInitPage normal 1`] = `
               />
             </div>
             <small
-              class="form-text text-muted"
+              class="form-help text-muted"
             >
               At least 12 characters
             </small>

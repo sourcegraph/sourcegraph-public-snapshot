@@ -75,7 +75,7 @@ func inferSingleTypeScriptIndexJob(
 
 	indexerArgs := []string{"lsif-typescript-autoindex", "index"}
 	if shouldInferConfig {
-		indexerArgs = append(indexerArgs, "--inferTSConfig")
+		indexerArgs = append(indexerArgs, "--infer-tsconfig")
 	}
 
 	return &config.IndexJob{

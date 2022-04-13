@@ -20,7 +20,10 @@ export interface NotebookContentProps
     extends SearchStreamingProps,
         ThemeProps,
         TelemetryProps,
-        Omit<StreamingSearchResultsListProps, 'allExpanded' | 'extensionsController' | 'platformContext'>,
+        Omit<
+            StreamingSearchResultsListProps,
+            'allExpanded' | 'extensionsController' | 'platformContext' | 'executedQuery'
+        >,
         PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     globbing: boolean
@@ -28,6 +31,7 @@ export interface NotebookContentProps
     blocks: NotebookBlock[]
     exportedFileName: string
     isEmbedded?: boolean
+    outlineContainerElement?: HTMLElement | null
     onUpdateBlocks: (blocks: Block[]) => void
     onCopyNotebook: (props: Omit<CopyNotebookProps, 'title'>) => Observable<NotebookFields>
 }
@@ -51,6 +55,8 @@ export const NotebookContent: React.FunctionComponent<NotebookContentProps> = Re
         settingsCascade,
         platformContext,
         extensionsController,
+        outlineContainerElement,
+        isEmbedded,
     }) => {
         const initializerBlocks: BlockInit[] = useMemo(
             () =>
@@ -102,6 +108,8 @@ export const NotebookContent: React.FunctionComponent<NotebookContentProps> = Re
                 onSerializeBlocks={viewerCanManage ? onUpdateBlocks : noop}
                 exportedFileName={exportedFileName}
                 onCopyNotebook={onCopyNotebook}
+                outlineContainerElement={outlineContainerElement}
+                isEmbedded={isEmbedded}
             />
         )
     }

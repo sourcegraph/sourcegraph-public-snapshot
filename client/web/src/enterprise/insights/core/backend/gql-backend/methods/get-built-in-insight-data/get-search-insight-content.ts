@@ -5,7 +5,7 @@ import { retry } from 'rxjs/operators'
 import type { LineChartContent } from 'sourcegraph'
 
 import { EMPTY_DATA_POINT_VALUE } from '../../../../../../../views'
-import { SearchInsightSettings } from '../../../code-insights-backend-types'
+import { GetSearchInsightContentInput } from '../../../code-insights-backend-types'
 
 import { fetchRawSearchInsightResults, fetchSearchInsightCommits } from './utils/fetch-search-insight'
 import { queryHasCountFilter } from './utils/query-has-count-filter'
@@ -21,22 +21,23 @@ interface InsightSeriesData {
     [seriesName: string]: number
 }
 
-export async function getSearchInsightContent(insight: SearchInsightSettings): Promise<LineChartContent<any, string>> {
-    return getInsightContent({ insight, repos: insight.repositories })
+export async function getSearchInsightContent(
+    input: GetSearchInsightContentInput
+): Promise<LineChartContent<any, string>> {
+    return getInsightContent({ ...input, repos: input.repositories })
 }
 
-interface GetInsightContentInput {
-    insight: SearchInsightSettings
+interface GetInsightContentInput extends GetSearchInsightContentInput {
     repos: string[]
     path?: string
 }
 
 export async function getInsightContent(inputs: GetInsightContentInput): Promise<LineChartContent<any, string>> {
-    const { insight, repos, path } = inputs
-    const step = insight.step || { days: 1 }
+    const { series, step, repos, path } = inputs
+    const stepInterval = step || { days: 1 }
     const pathRegexp = path ? `^${escapeRegExp(path)}/` : undefined
 
-    const dates = getDaysToQuery(step)
+    const dates = getDaysToQuery(stepInterval)
 
     // -------- Initialize data ---------
     const data: InsightSeriesData[] = []
@@ -48,7 +49,7 @@ export async function getInsightContent(inputs: GetInsightContentInput): Promise
         data[dataIndex] = {
             date: date.getTime(),
             // Initialize all series with EMPTY_DATA_POINT_VALUE
-            ...Object.fromEntries(insight.series.map(series => [series.name, EMPTY_DATA_POINT_VALUE])),
+            ...Object.fromEntries(series.map(series => [series.name, EMPTY_DATA_POINT_VALUE])),
         }
     }
 
@@ -63,7 +64,7 @@ export async function getInsightContent(inputs: GetInsightContentInput): Promise
         // Instead of it we will use just EMPTY_DATA_POINT_VALUE
         .filter(commitData => commitData.commit !== null) as RepoCommit[]
 
-    const searchQueries = insight.series.flatMap(({ query, name }) =>
+    const searchQueries = series.flatMap(({ query, name }) =>
         repoCommits.map(({ date, repo, commit }) => ({
             name,
             date,
@@ -117,7 +118,7 @@ export async function getInsightContent(inputs: GetInsightContentInput): Promise
     return {
         chart: 'line' as const,
         data,
-        series: insight.series.map(series => ({
+        series: series.map(series => ({
             dataKey: series.name,
             name: series.name,
             stroke: series.stroke,
@@ -128,7 +129,7 @@ export async function getInsightContent(inputs: GetInsightContentInput): Promise
                     // Use formatISO instead of toISOString(), because toISOString() always outputs UTC.
                     // They mark the same point in time, but using the user's timezone makes the date string
                     // easier to read (else the date component may be off by one day)
-                    const after = formatISO(sub(date, step))
+                    const after = formatISO(sub(date, stepInterval))
                     const before = formatISO(date)
                     const repoFilter = `repo:^(${repos.map(escapeRegExp).join('|')})$`
                     const diffQuery = `${repoFilter} type:diff after:${after} before:${before} ${series.query}`

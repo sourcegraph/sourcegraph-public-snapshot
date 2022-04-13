@@ -5,9 +5,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/google/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -41,7 +41,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 			PatternMatchesContent:        true,
 			PatternMatchesPath:           true,
 		}
-		shouldBeAdded, err := repoShouldBeAdded(context.Background(), zoekt, repo, pat)
+		shouldBeAdded, err := repoShouldBeAdded(context.Background(), job.RuntimeClients{Zoekt: zoekt}, repo, pat)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -64,7 +64,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 			PatternMatchesContent:        true,
 			PatternMatchesPath:           true,
 		}
-		shouldBeAdded, err := repoShouldBeAdded(context.Background(), zoekt, repo, pat)
+		shouldBeAdded, err := repoShouldBeAdded(context.Background(), job.RuntimeClients{Zoekt: zoekt}, repo, pat)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -94,7 +94,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 			PatternMatchesContent:        true,
 			PatternMatchesPath:           true,
 		}
-		shouldBeAdded, err := repoShouldBeAdded(context.Background(), zoekt, repo, pat)
+		shouldBeAdded, err := repoShouldBeAdded(context.Background(), job.RuntimeClients{Zoekt: zoekt}, repo, pat)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -117,7 +117,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 			PatternMatchesContent:        true,
 			PatternMatchesPath:           true,
 		}
-		shouldBeAdded, err := repoShouldBeAdded(context.Background(), zoekt, repo, pat)
+		shouldBeAdded, err := repoShouldBeAdded(context.Background(), job.RuntimeClients{Zoekt: zoekt}, repo, pat)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -129,13 +129,12 @@ func TestRepoShouldBeAdded(t *testing.T) {
 
 // repoShouldBeAdded determines whether a repository should be included in the result set based on whether the repository fits in the subset
 // of repostiories specified in the query's `repohasfile` and `-repohasfile` fields if they exist.
-func repoShouldBeAdded(ctx context.Context, zoekt zoekt.Streamer, repo *search.RepositoryRevisions, pattern *search.TextPatternInfo) (bool, error) {
+func repoShouldBeAdded(ctx context.Context, clients job.RuntimeClients, repo *search.RepositoryRevisions, pattern *search.TextPatternInfo) (bool, error) {
 	repos := []*search.RepositoryRevisions{repo}
 	s := RepoSearch{
 		PatternInfo: pattern,
-		Zoekt:       zoekt,
 	}
-	rsta, err := s.reposToAdd(ctx, repos)
+	rsta, err := s.reposToAdd(ctx, clients, repos)
 	if err != nil {
 		return false, err
 	}
