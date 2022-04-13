@@ -200,6 +200,7 @@ Data series that comprise code insights.
  other_threshold                   | double precision       |           |          | 
  presentation_type                 | presentation_type_enum |           | not null | 'LINE'::presentation_type_enum
  is_frozen                         | boolean                |           | not null | false
+ default_filter_search_contexts    | text[]                 |           |          | 
 Indexes:
     "insight_view_pkey" PRIMARY KEY, btree (id)
     "insight_view_unique_id_unique_idx" UNIQUE, btree (unique_id)
