@@ -305,8 +305,8 @@ function pageViewQueryParameters(url: string): UTMMarker {
         ].includes(utmSource ?? '')
     ) {
         eventLogger.log('UTMCodeHostIntegration', utmProps, utmProps)
-    } else if (utmMedium === 'VSCIDE' && utmCampaign === 'vsce-sign-up') {
-        eventLogger.log('VSCIDESignUpLinkClicked', utmProps, utmProps)
+    } else if (utmMedium === 'VSCODE' && utmCampaign === 'vsce-sign-up') {
+        eventLogger.log('VSCODESignUpLinkClicked', utmProps, utmProps)
     }
 
     return utmProps

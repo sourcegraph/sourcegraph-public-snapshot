@@ -4,7 +4,7 @@ import { BehaviorSubject, Observable } from 'rxjs'
  * Adds correct theme class to <body> element,
  * returns Observable with latest theme.
  */
-export function adaptToEditorTheme(): Observable<'theme-dark' | 'theme-light' | undefined> {
+export function adaptSourcegraphThemeToEditorTheme(): Observable<'theme-dark' | 'theme-light' | undefined> {
     const body = document.querySelector<HTMLBodyElement>('body')
 
     const themes = new BehaviorSubject<'theme-dark' | 'theme-light' | undefined>(undefined)
@@ -15,11 +15,11 @@ export function adaptToEditorTheme(): Observable<'theme-dark' | 'theme-light' | 
         if (sourcegraphThemeClass !== themes.value) {
             if (sourcegraphThemeClass === 'theme-light') {
                 body?.classList.remove('theme-dark')
-                body?.classList.add('theme-light')
+                body?.classList.add('theme-light', 'sourcegraph-extension')
                 themes.next('theme-light')
             } else {
                 body?.classList.remove('theme-light')
-                body?.classList.add('theme-dark')
+                body?.classList.add('theme-dark', 'sourcegraph-extension')
                 themes.next('theme-dark')
             }
         }
@@ -32,8 +32,6 @@ export function adaptToEditorTheme(): Observable<'theme-dark' | 'theme-light' | 
     })
 
     mutationObserver.observe(body!, { childList: false, attributes: true })
-
-    // TODO: emit editor font as well for monaco
 
     return themes.asObservable()
 }
