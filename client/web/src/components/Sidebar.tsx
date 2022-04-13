@@ -1,6 +1,7 @@
 import React from 'react'
 
 import classNames from 'classnames'
+import kebabCase from 'lodash/kebabCase'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import { useRouteMatch } from 'react-router-dom'
@@ -55,7 +56,7 @@ export const SidebarCollapseItems: React.FunctionComponent<{
             <>
                 <CollapseHeader
                     aria-expanded={isOpen}
-                    aria-controls={label}
+                    aria-controls={kebabCase(label)}
                     type="button"
                     className="bg-2 border-0 d-flex justify-content-between list-group-item-action py-2 w-100"
                 >
@@ -64,7 +65,7 @@ export const SidebarCollapseItems: React.FunctionComponent<{
                     </span>
                     <Icon className={styles.chevron} as={isOpen ? MenuUpIcon : MenuDownIcon} />
                 </CollapseHeader>
-                <CollapsePanel id={label} className="border-top">
+                <CollapsePanel id={kebabCase(label)} className="border-top">
                     {children}
                 </CollapsePanel>
             </>
