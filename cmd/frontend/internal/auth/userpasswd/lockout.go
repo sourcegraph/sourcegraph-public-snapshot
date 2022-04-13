@@ -86,7 +86,7 @@ func (s *lockoutStore) GenerateUnlockAccountUrl(userID int32) (string, string, e
 	if conf.SiteConfig().AuthUnlockAccountLinkExpiry > 0 {
 		defaultExpiryMinutes = conf.SiteConfig().AuthUnlockAccountLinkExpiry
 	}
-	expiryTime := time.Now().Add(time.Duration(time.Minute * time.Duration(defaultExpiryMinutes)))
+	expiryTime := time.Now().Add(time.Minute * time.Duration(defaultExpiryMinutes))
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, &unlockAccountClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
