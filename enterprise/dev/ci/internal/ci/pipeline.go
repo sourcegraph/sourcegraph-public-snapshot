@@ -100,8 +100,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			}
 		}
 		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{
-			MinimumUpgradeableVersion: minimumUpgradeableVersion,
-			ClientLintOnlyChangedFiles:      c.RunType.Is(runtype.PullRequest),
+			MinimumUpgradeableVersion:  minimumUpgradeableVersion,
+			ClientLintOnlyChangedFiles: c.RunType.Is(runtype.PullRequest),
 		}))
 
 	case runtype.ReleaseNightly:

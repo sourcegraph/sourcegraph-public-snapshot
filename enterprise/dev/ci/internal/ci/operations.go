@@ -22,9 +22,9 @@ import (
 // e.g. by adding flags, and not as a condition for adding steps or commands.
 type CoreTestOperationsOptions struct {
 	// for clientChromaticTests
-	ChromaticShouldAutoAccept bool
-	MinimumUpgradeableVersion string
-	LintOnlyChangedFiles      bool
+	ChromaticShouldAutoAccept  bool
+	MinimumUpgradeableVersion  string
+	ClientLintOnlyChangedFiles bool
 }
 
 // CoreTestOperations is a core set of tests that should be run in most CI cases. More
@@ -75,7 +75,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 			addTypescriptCheck, // ~4m
 		)
 
-		if opts.LintOnlyChangedFiles {
+		if opts.ClientLintOnlyChangedFiles {
 			clientChecks.Append(addClientLintersForChangedFiles)
 		} else {
 			clientChecks.Append(addClientLintersForAllFiles)
