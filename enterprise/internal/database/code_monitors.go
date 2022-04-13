@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -81,8 +82,8 @@ type CodeMonitorStore interface {
 	GetActionJob(ctx context.Context, jobID int32) (*ActionJob, error)
 	EnqueueActionJobsForMonitor(ctx context.Context, monitorID int64, triggerJob int32) ([]*ActionJob, error)
 
-	UpsertLastSearched(ctx context.Context, monitorID int64, argsHash int64, lastSearched []string) error
-	GetLastSearched(ctx context.Context, monitorID int64, argsHash int64) ([]string, error)
+	UpsertLastSearched(ctx context.Context, monitorID int64, repoID api.RepoID, lastSearched []string) error
+	GetLastSearched(ctx context.Context, monitorID int64, repoID api.RepoID) ([]string, error)
 }
 
 // codeMonitorStore exposes methods to read and write codemonitors domain models

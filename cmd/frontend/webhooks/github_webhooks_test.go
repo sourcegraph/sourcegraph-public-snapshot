@@ -12,7 +12,7 @@ import (
 	"os"
 	"testing"
 
-	gh "github.com/google/go-github/v28/github"
+	gh "github.com/google/go-github/v43/github"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"

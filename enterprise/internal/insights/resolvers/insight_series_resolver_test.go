@@ -101,7 +101,7 @@ func TestResolver_InsightSeries(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			autogold.Want("insights[0][0].Points store opts", `{"SeriesID":"1234567","RepoID":null,"Excluded":null,"Included":null,"IncludeRepoRegex":"","ExcludeRepoRegex":"","From":"2006-01-02T15:04:05Z","To":"2006-01-03T15:04:05Z","Limit":0}`).Equal(t, string(json))
+			autogold.Want("insights[0][0].Points store opts", `{"SeriesID":"1234567","RepoID":null,"Excluded":null,"Included":null,"IncludeRepoRegex":null,"ExcludeRepoRegex":null,"From":"2006-01-02T15:04:05Z","To":"2006-01-03T15:04:05Z","Limit":0}`).Equal(t, string(json))
 			return []store.SeriesPoint{
 				{Time: args.From.Time, Value: 1},
 				{Time: args.From.Time, Value: 2},

@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"sync"
 
-	gh "github.com/google/go-github/v28/github"
+	gh "github.com/google/go-github/v43/github"
 	"github.com/inconshreveable/log15"
 	"golang.org/x/sync/errgroup"
 

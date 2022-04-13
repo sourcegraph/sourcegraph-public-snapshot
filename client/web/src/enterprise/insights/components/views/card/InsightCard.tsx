@@ -21,7 +21,7 @@ const InsightCard = forwardRef((props, reference) => {
     )
 }) as ForwardReferenceComponent<'section'>
 
-interface InsightCardTitleProps {
+export interface InsightCardTitleProps {
     title: string
     subtitle?: string
 
