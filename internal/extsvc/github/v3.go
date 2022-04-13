@@ -215,6 +215,7 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result interf
 			return nil, ctx.Err()
 		}
 
+		log15.Warn("internal rate limiter error", "error", err, "urn", c.urn)
 		return nil, errInternalRateLimitExceeded
 	}
 
