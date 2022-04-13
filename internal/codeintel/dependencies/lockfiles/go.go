@@ -35,6 +35,8 @@ func parseGoModFile(r io.Reader) ([]reposource.PackageDependency, error) {
 		return nil, err
 	}
 
+	// We log the size of go.mod files to get an understanding of their distribution.
+	// We can remove this log later.
 	log15.Debug("gomod", "size", n)
 
 	data = data[0:n]
