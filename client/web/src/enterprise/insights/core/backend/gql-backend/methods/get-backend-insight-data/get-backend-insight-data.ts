@@ -25,6 +25,9 @@ export const getBackendInsightData = (
         client.watchQuery<GetInsightViewResult>({
             query: GET_INSIGHT_VIEW_GQL,
             variables: { id: insight.id, filters },
+            // This query is set to network-only becasue the caching is not working correctly
+            // https://github.com/sourcegraph/sourcegraph/issues/33813
+            fetchPolicy: 'network-only',
         })
     ).pipe(
         // Note: this insight is guaranteed to exist since this function
