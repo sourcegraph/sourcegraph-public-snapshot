@@ -151,6 +151,8 @@ func TestWorkerConcurrent(t *testing.T) {
 		name := fmt.Sprintf("numHandlers=%d", numHandlers)
 
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
 			store := NewMockStore()
 			handler := NewMockHandlerWithHooks()
 			dequeueClock := glock.NewMockClock()
