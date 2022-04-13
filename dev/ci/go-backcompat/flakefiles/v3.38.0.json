@@ -13,5 +13,10 @@
     "path": "internal/database",
     "prefix": "TestUsers_CheckAndDecrementInviteQuota",
     "reason": "Test is written in a bad way (depends on default value definition, but does not affect backwards compatibility) in https://github.com/sourcegraph/sourcegraph/pull/33786."
+  },
+  {
+    "path": "internal/database/migration/store",
+    "prefix": "TestIndexStatus",
+    "reason": "Flaky condition reported in https://github.com/sourcegraph/sourcegraph/issues/33837, fixed in https://github.com/sourcegraph/sourcegraph/pull/33843."
   }
 ]

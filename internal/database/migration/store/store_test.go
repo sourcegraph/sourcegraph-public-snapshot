@@ -495,11 +495,6 @@ func TestIndexStatus(t *testing.T) {
 		return err
 	})
 
-	// Wait until we can see Session C's lock before querying index status
-	if err := whileEmpty(ctx, db, "SELECT 1 FROM pg_locks WHERE locktype = 'relation' AND mode = 'ShareUpdateExclusiveLock'"); err != nil {
-		t.Fatalf("unexpected error: %s", err)
-	}
-
 	// "waiting for old snapshots" will be the phase that is blocked by the concurrent
 	// sessions holding advisory locks. We may happen to hit one of the earlier phases
 	// if we're quick enough, so we'll keep polling progress until we hit the target.
@@ -516,12 +511,23 @@ func TestIndexStatus(t *testing.T) {
 		return value == prefix || strings.HasPrefix(value, prefix+":")
 	}
 
+	start := time.Now()
+	const missingIndexThreshold = time.Second
+
 retryLoop:
 	for {
 		if status, ok, err := store.IndexStatus(ctx, "tbl", "idx"); err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		} else if !ok {
-			t.Fatalf("expected index status")
+			// Give a small amount of time for Session C to begin creating the index. Signaling
+			// when Postgres has started to create the index is as difficult and expensive as
+			// querying the index the status, so we just poll here for a short time.
+			if remaining := time.Since(start) - missingIndexThreshold; remaining > 0 {
+				time.Sleep(time.Millisecond)
+				continue
+			}
+
+			t.Fatalf("expected index status after %s", missingIndexThreshold)
 		} else if status.Phase == nil {
 			t.Fatalf("unexpected phase. want=%q have=nil", blockingPhase)
 		} else if *status.Phase == blockingPhase {
