@@ -16,12 +16,12 @@ func UpTo(commandName string, factory RunnerFactory, out *output.Output, develop
 	flags := []cli.Flag{
 		&cli.StringFlag{
 			Name:     "db",
-			Usage:    `The target schema to modify.`,
+			Usage:    "The target `schema` to modify.",
 			Required: true,
 		},
 		&cli.StringFlag{
 			Name:     "target",
-			Usage:    `The migration to apply. Comma-separated values are accepted.`,
+			Usage:    "The `migration` to apply. Comma-separated values are accepted.",
 			Required: true,
 		},
 		&cli.BoolFlag{

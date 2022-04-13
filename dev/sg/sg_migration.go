@@ -29,7 +29,7 @@ var (
 	migrateTargetDatabase     string
 	migrateTargetDatabaseFlag = &cli.StringFlag{
 		Name:        "db",
-		Usage:       "The target database schema to modify",
+		Usage:       "The target database `schema` to modify",
 		Value:       db.DefaultDatabase.Name,
 		Destination: &migrateTargetDatabase,
 	}

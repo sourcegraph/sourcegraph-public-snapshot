@@ -73,7 +73,7 @@ var sg = &cli.App{
 		},
 		&cli.StringFlag{
 			Name:        "config",
-			Usage:       "specify a sg configuration file",
+			Usage:       "load sg configuration from `file`",
 			EnvVars:     []string{"SG_CONFIG"},
 			TakesFile:   true,
 			Value:       defaultConfigFile,
@@ -81,7 +81,7 @@ var sg = &cli.App{
 		},
 		&cli.StringFlag{
 			Name:        "overwrite",
-			Usage:       "configuration overwrites file that is gitignored and can be used to, for example, add credentials",
+			Usage:       "load sg configuration from `file` that is gitignored and can be used to, for example, add credentials",
 			EnvVars:     []string{"SG_OVERWRITE"},
 			TakesFile:   true,
 			Value:       defaultConfigOverwriteFile,

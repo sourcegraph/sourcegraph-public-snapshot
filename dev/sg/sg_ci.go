@@ -36,14 +36,14 @@ var (
 	ciBranchFlag = cli.StringFlag{
 		Name:        "branch",
 		Aliases:     []string{"b"},
-		Usage:       "Branch name of build to target (defaults to current branch)",
+		Usage:       "Branch `name` of build to target (defaults to current branch)",
 		Destination: &ciBranch,
 	}
 
 	ciBuild     string
 	ciBuildFlag = cli.StringFlag{
 		Name:        "build",
-		Usage:       "Override branch detection with a specific build number",
+		Usage:       "Override branch detection with a specific build `number`",
 		Destination: &ciBuild,
 	}
 )
@@ -235,7 +235,7 @@ Learn more about pipeline run types in https://docs.sourcegraph.com/dev/backgrou
 			&cli.StringFlag{
 				Name:    "commit",
 				Aliases: []string{"c"},
-				Usage:   "commit from the current branch to build (defaults to current commit)",
+				Usage:   "`commit` from the current branch to build (defaults to current commit)",
 			},
 			&cli.BoolFlag{
 				Name:    "force",
@@ -369,20 +369,19 @@ From there, you can start exploring logs with the Grafana explore panel.
 			&cli.StringFlag{
 				Name:    "state",
 				Aliases: []string{"s"},
-				Usage:   "Job states to export logs for",
+				Usage:   "Job `state` to export logs for (provide an empty value for all states)",
 				Value:   "failed",
 			},
-
 			&cli.StringFlag{
 				Name:    "out",
 				Aliases: []string{"o"},
-				Usage: fmt.Sprintf("Output format: one of %+v, or a URL pointing to a Loki instance, such as %q",
+				Usage: fmt.Sprintf("Output `format`: one of %+v, or a URL pointing to a Loki instance, such as %q",
 					[]string{ciLogsOutTerminal, ciLogsOutSimple, ciLogsOutJSON}, loki.DefaultLokiURL),
 				Value: ciLogsOutTerminal,
 			},
 			&cli.StringFlag{
 				Name:  "overwrite-state",
-				Usage: "State to overwrite the job state metadata",
+				Usage: "`state` to overwrite the job state metadata",
 			},
 		},
 		Action: func(cmd *cli.Context) error {

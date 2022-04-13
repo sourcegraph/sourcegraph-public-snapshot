@@ -15,12 +15,12 @@ func AddLog(commandName string, factory RunnerFactory, out *output.Output) *cli.
 	flags := []cli.Flag{
 		&cli.StringFlag{
 			Name:     "db",
-			Usage:    `The target schema to modify.`,
+			Usage:    "The target `schema` to modify.",
 			Required: true,
 		},
 		&cli.IntFlag{
 			Name:     "version",
-			Usage:    "The migration version.",
+			Usage:    "The migration `version` to log.",
 			Required: true,
 		},
 		&cli.BoolFlag{

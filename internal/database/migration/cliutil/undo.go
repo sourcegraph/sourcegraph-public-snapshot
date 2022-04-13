@@ -14,7 +14,7 @@ func Undo(commandName string, factory RunnerFactory, out *output.Output, develop
 	flags := []cli.Flag{
 		&cli.StringFlag{
 			Name:     "db",
-			Usage:    `The target schema to modify.`,
+			Usage:    "The target `schema` to modify.",
 			Required: true,
 		},
 		&cli.BoolFlag{

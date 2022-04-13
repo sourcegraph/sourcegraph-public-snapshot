@@ -38,23 +38,23 @@ var (
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:        "kind",
-				Usage:       "The kind of deployment (one of 'k8s', 'helm')",
+				Usage:       "the `kind` of deployment (one of 'k8s', 'helm')",
 				Value:       string(images.DeploymentTypeK8S),
 				Destination: &opsUpdateImagesDeploymentKindFlag,
 			},
 			&cli.StringFlag{
 				Name:        "cr-username",
-				Usage:       "Username for the container registry",
+				Usage:       "`username` for the container registry",
 				Destination: &opsUpdateImagesContainerRegistryUsernameFlag,
 			},
 			&cli.StringFlag{
 				Name:        "cr-password",
-				Usage:       "Password or access token for the container registry",
+				Usage:       "`password` or access token for the container registry",
 				Destination: &opsUpdateImagesContainerRegistryPasswordFlag,
 			},
 			&cli.StringFlag{
 				Name:        "pin-tag",
-				Usage:       "Pin all images to a specific sourcegraph tag (e.g. 3.36.2, insiders)",
+				Usage:       "pin all images to a specific sourcegraph `tag` (e.g. 3.36.2, insiders)",
 				Destination: &opsUpdateImagesPinTagFlag,
 			},
 		},

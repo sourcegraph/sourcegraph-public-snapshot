@@ -15,7 +15,7 @@ func Validate(commandName string, factory RunnerFactory, out *output.Output) *cl
 	flags := []cli.Flag{
 		&cli.StringFlag{
 			Name:  "db",
-			Usage: `The target schema(s) to modify. Comma-separated values are accepted. Supply "all" (the default) to migrate all schemas.`,
+			Usage: "The target `schema(s)` to modify. Comma-separated values are accepted. Supply \"all\" to migrate all schemas.",
 			Value: "all",
 		},
 	}
