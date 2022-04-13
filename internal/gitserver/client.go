@@ -653,7 +653,7 @@ func (c *ClientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 	ctx, endObservation := c.operations.batchLog.With(ctx, &err, observation.Args{LogFields: opts.LogFields()})
 	defer endObservation(1, observation.Args{})
 
-	// Make a request to a singlee gitserver shard and feed the results to the user-supplied
+	// Make a request to a single gitserver shard and feed the results to the user-supplied
 	// callback. This function is invoked multiple times (and concurrently) in the loops below
 	// this function definition.
 	performLogRequestToShard := func(ctx context.Context, addr string, repoCommits []api.RepoCommit) (err error) {
