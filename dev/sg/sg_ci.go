@@ -231,6 +231,7 @@ can provide it directly (for example, 'sg ci build [runtype] [argument]').
 
 Learn more about pipeline run types in https://docs.sourcegraph.com/dev/background-information/ci/reference.`,
 			strings.Join(getAllowedBuildTypeArgs(), "\n  ")),
+		BashComplete: completeOptions(getAllowedBuildTypeArgs),
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    "commit",

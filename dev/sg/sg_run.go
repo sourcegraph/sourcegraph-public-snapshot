@@ -33,6 +33,12 @@ var runCommand = &cli.Command{
 		addToMacOSFirewallFlag,
 	},
 	Action: execAdapter(runExec),
+	BashComplete: completeOptions(func() (options []string) {
+		for name := range globalConf.Commands {
+			options = append(options, name)
+		}
+		return
+	}),
 }
 
 func runExec(ctx context.Context, args []string) error {
