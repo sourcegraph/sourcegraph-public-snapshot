@@ -31,16 +31,14 @@ done
 render_api_key="${RENDER_COM_API_KEY}"
 render_owner_id="${RENDER_COM_OWNER_ID}"
 
-expiration_date_UNIX=$(date -u "-v-${expire_after_days}d" +%s)
-# expiration_date ISO format
-expiration_date_ISO=$(date -u "-v-${expire_after_days}d" +"%Y-%m-%dT%H:%M:%SZ")
+expiration_date_ISO=$(date -d "$expire_after_days days ago" +"%Y-%m-%dT%H:%M:%SZ")
 
 if [[ -z "${render_api_key}" || -z "${render_owner_id}" ]]; then
   echo "RENDER_COM_API_KEY or RENDER_COM_OWNER_ID is not set"
   exit 1
 fi
 
-# Get id list of services which are created before $expiration_date_ISO
+# Get id list of services which are created before expiration date
 # We should take care about render.com rate limit (https://api-docs.render.com/reference/rate-limiting)
 # GET 100/minute
 # DELETE 30/minute
@@ -48,7 +46,7 @@ fi
 cursor=""
 ids=()
 
-# Collect ids of all services which are created before `expiration_date_ISO` and `not_suspended`
+# Collect ids of all services which are created before expiration date and `not_suspended`
 for (( ; ; )); do
   service_list=$(curl -sSf --request GET \
     --url "https://api.render.com/v1/services?type=web_service&createdBefore=$(urlencode "$expiration_date_ISO")&suspended=not_suspended&ownerId=${render_owner_id}&limit=100&cursor=${cursor}" \
@@ -78,9 +76,9 @@ for service_id in "${ids[@]}"; do
     --header "Authorization: Bearer ${render_api_key}" | jq -r '.[].deploy.createdAt')
 
   # Remove nanosecond part out of ISO Datetime format of `createdAt` then get the UNIX timestamp
-  last_deploy_created_at_UNIX=$(date -jf "%Y-%m-%dT%H:%M:%SZ" "${last_deploy_created_at//.[[:digit:]]*Z/Z}" +%s)
+  last_deploy_created_at_ISO="${last_deploy_created_at//.[[:digit:]]*Z/Z}"
 
-  if [[ $last_deploy_created_at_UNIX -lt $expiration_date_UNIX ]]; then
+  if [[ $last_deploy_created_at_ISO < $expiration_date_ISO ]]; then
     # there are no deploy times since `expiration_date_ISO` => remove it
     echo "-- Removing service ${service_id} (last deployed at ${last_deploy_created_at})"
 
