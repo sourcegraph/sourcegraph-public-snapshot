@@ -2,21 +2,29 @@
     position: fixed;
     right: 0.75rem;
     bottom: 0.75rem;
+    width: 20rem;
+
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 
     color: var(--body-color);
     background-color: var(--color-bg-1);
 
+    border: 1px solid var(--border-color-2);
     border-radius: var(--border-radius);
 
     box-shadow: var(--dropdown-shadow);
-    border: 1px solid var(--border-color-2);
-    overflow: hidden;
 
-    width: 20rem;
-
-    h4 {
+    h2 {
+        font-size: 0.75rem;
         margin: 0;
         font-weight: 600;
+    }
+
+    h3 {
+        font-size: 0.75rem;
+        margin: 0;
     }
 
     ul {
@@ -26,13 +34,13 @@
         overflow-y: auto;
         flex: 1;
 
+        li:first-child {
+            border-top: 1px solid var(--border-color);
+        }
+
         li {
             border-bottom: 1px solid var(--border-color);
         }
-    }
-
-    .button {
-        margin: 0.75rem 0.5rem;
     }
 
     .entry {
@@ -40,32 +48,46 @@
         padding: 0.75rem 0.5rem;
         font-size: 0.75rem;
         overflow-wrap: anywhere;
-        background-color: var(--color-bg-);
+        background-color: var(--color-bg-0);
 
         &.selected {
-            background-color: var(--color-bg-3);
+            background-color: var(--color-bg-2);
+
+            :global(.theme-dark) & {
+                background-color: var(--color-bg-3);
+            }
         }
-    }
-
-    .close-button {
-        float: right;
-    }
-
-    .open-visible {
-        display: none;
     }
 
     &.open {
         max-height: 95vh;
-        display: flex;
-        flex-direction: column;
+    }
 
-        .open-visible {
-            display: initial;
+    small {
+        color: var(--text-muted);
+    }
+}
+
+.new-note {
+    background-color: var(--color-bg-2);
+
+    :global(.theme-dark) & {
+        background-color: var(--color-bg-3);
+    }
+}
+
+.header {
+    .open & {
+        border-radius: 0;
+        border-bottom: 1px solid var(--border-color-2);
+
+        // Hides the item count in the header
+        small {
+            display: none;
         }
 
-        .header {
-            border-bottom: 1px solid var(--border-color-2);
+        .toggle-icon {
+            transform: rotate(180deg);
         }
     }
 }
