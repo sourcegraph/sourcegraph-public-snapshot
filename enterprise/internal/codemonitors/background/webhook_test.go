@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
 func TestWebhook(t *testing.T) {
@@ -32,7 +31,7 @@ func TestWebhook(t *testing.T) {
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			b, err := io.ReadAll(r.Body)
 			require.NoError(t, err)
-			testutil.AssertGolden(t, "testdata/"+t.Name()+".json", true, b)
+			autogold.Equal(t, autogold.Raw(b))
 			w.WriteHeader(200)
 		}))
 		defer s.Close()
@@ -54,7 +53,7 @@ func TestWebhook(t *testing.T) {
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			b, err := io.ReadAll(r.Body)
 			require.NoError(t, err)
-			testutil.AssertGolden(t, "testdata/"+t.Name()+".json", true, b)
+			autogold.Equal(t, autogold.Raw(b))
 			w.WriteHeader(500)
 		}))
 		defer s.Close()
