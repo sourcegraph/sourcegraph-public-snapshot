@@ -23,8 +23,9 @@ var installCommand = &cli.Command{
 	Category: CategoryUtil,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
-			Name:  "force",
-			Usage: "Overwrite existing sg installation",
+			Name:    "force",
+			Aliases: []string{"f"},
+			Usage:   "Overwrite existing sg installation",
 		},
 	},
 	Hidden: true, // internal command used during installation script
@@ -79,17 +80,20 @@ func installAction(cmd *cli.Context) error {
 	stdout.Out.Write("")
 	stdout.Out.WriteLine(output.Linef("", output.StyleLogo, "Welcome to the sg installation!"))
 
-	stdout.Out.Write("")
-	stdout.Out.Writef("We are going to install %ssg%s to %s%s%s. Okay?", output.StyleBold, output.StyleReset, output.StyleBold, location, output.StyleReset)
+	// Do not prompt for installation if we are forcefully installing
+	if !cmd.Bool("force") {
+		stdout.Out.Write("")
+		stdout.Out.Writef("We are going to install %ssg%s to %s%s%s. Okay?", output.StyleBold, output.StyleReset, output.StyleBold, location, output.StyleReset)
 
-	locationOkay := getBool()
-	if !locationOkay {
-		return errors.New("user not happy with location :(")
+		locationOkay := getBool()
+		if !locationOkay {
+			return errors.New("user not happy with location :(")
+		}
 	}
 
 	currentLocation, err := os.Executable()
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	pending := stdout.Out.Pending(output.Linef("", output.StylePending, "Copying from %s%s%s to %s%s%s...", output.StyleBold, currentLocation, output.StyleReset, output.StyleBold, location, output.StyleReset))
