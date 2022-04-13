@@ -181,22 +181,22 @@ func addTypescriptCheck(pipeline *bk.Pipeline) {
 
 // Adds client linters to check all files.
 func addClientLintersForAllFiles(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":eslint: ESLint all",
+	pipeline.AddStep(":eslint: ESLint (all)",
 		withYarnCache(),
 		bk.Cmd("dev/ci/yarn-run.sh lint:js:all"))
 
-	pipeline.AddStep(":stylelint: Stylelint all",
+	pipeline.AddStep(":stylelint: Stylelint (all)",
 		withYarnCache(),
 		bk.Cmd("dev/ci/yarn-run.sh lint:css:all"))
 }
 
 // Adds client linters to check changed in PR files.
 func addClientLintersForChangedFiles(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":eslint: ESLint changed",
+	pipeline.AddStep(":eslint: ESLint (changed)",
 		withYarnCache(),
 		bk.Cmd("dev/ci/yarn-run.sh lint:js:changed"))
 
-	pipeline.AddStep(":stylelint: Stylelint changed",
+	pipeline.AddStep(":stylelint: Stylelint (changed)",
 		withYarnCache(),
 		bk.Cmd("dev/ci/yarn-run.sh lint:css:changed"))
 }
