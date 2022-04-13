@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -116,11 +117,39 @@ func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.
 	return resolvers, nil
 }
 
-func filterRepositories(filters types.InsightViewFilters, repositories []string) ([]string, error) {
+func filterRepositories(ctx context.Context, filters types.InsightViewFilters, repositories []string, scLoader SearchContextLoader) ([]string, error) {
 	matches := make(map[string]interface{})
-	// exclude
+
+	// we need to "unwrap" the search contexts and extract the regexps that compose
+	// the Sourcegraph query filters. Then we will union these sets of included /
+	// excluded regexps with the standalone filter regexp strings that are
+	// available.
+	var includedWrapped []string
+	var excludedWrapped []string
+	inc, exc, err := unwrapSearchContexts(ctx, scLoader, filters.SearchContexts)
+	if err != nil {
+		return nil, errors.Wrap(err, "unwrapSearchContexts")
+	}
+	includedWrapped = append(includedWrapped, inc...)
+	if filters.IncludeRepoRegex != nil && *filters.IncludeRepoRegex != "" {
+		includedWrapped = append(includedWrapped, *filters.IncludeRepoRegex)
+	}
+
+	// we have to wrap the excluded ones in a non-capturing group so that we can
+	// apply regexp OR semantics across the entire set
+	wrapRegexp := func(r string) string {
+		return fmt.Sprintf("(?:%s)", r)
+	}
+	for _, s := range exc {
+		excludedWrapped = append(excludedWrapped, wrapRegexp(s))
+	}
 	if filters.ExcludeRepoRegex != nil && *filters.ExcludeRepoRegex != "" {
-		excludeRegexp, err := regexp.Compile(*filters.ExcludeRepoRegex)
+		excludedWrapped = append(excludedWrapped, wrapRegexp(*filters.ExcludeRepoRegex))
+	}
+
+	// first we process the exclude regexps and remove these repos from the original search results
+	if len(excludedWrapped) > 0 {
+		excludeRegexp, err := regexp.Compile(strings.Join(excludedWrapped, "|"))
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to compile ExcludeRepoRegex")
 		}
@@ -134,14 +163,33 @@ func filterRepositories(filters types.InsightViewFilters, repositories []string)
 			matches[repository] = struct{}{}
 		}
 	}
-	// include
-	if filters.IncludeRepoRegex != nil && *filters.IncludeRepoRegex != "" {
-		includeRegexp, err := regexp.Compile(*filters.IncludeRepoRegex)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to compile IncludeRepoRegex")
+
+	// finally we process the included regexps over the set of repos that remain after we exclude
+	if len(includedWrapped) > 0 {
+		// we are iterating through a set of patterns and trying to match all of them to
+		// replicate forward lookahead semantics, which are not available in RE2. This
+		// means that every single provided regexp gets an opportunity to match and
+		// consume against the entire input string, and we only consider success if we
+		// can match every single input pattern.
+		matchAll := func(patterns []*regexp.Regexp, input string) bool {
+			for _, pattern := range patterns {
+				if !pattern.MatchString(input) {
+					return false
+				}
+			}
+			return true
+		}
+
+		patterns := make([]*regexp.Regexp, 0, len(includedWrapped))
+		for _, wrapped := range includedWrapped {
+			compile, err := regexp.Compile(wrapped)
+			if err != nil {
+				return nil, errors.Wrap(err, "regexp.Compile for included regexp set")
+			}
+			patterns = append(patterns, compile)
 		}
 		for match := range matches {
-			if !includeRegexp.MatchString(match) {
+			if !matchAll(patterns, match) {
 				delete(matches, match)
 			}
 		}
@@ -264,7 +312,8 @@ func expandCaptureGroupSeriesJustInTime(ctx context.Context, definition types.In
 		Value: definition.SampleIntervalValue,
 	}
 
-	matchedRepos, err := filterRepositories(filters, definition.Repositories)
+	scLoader := &scLoader{primary: r.postgresDB}
+	matchedRepos, err := filterRepositories(ctx, filters, definition.Repositories, scLoader)
 	if err != nil {
 		return nil, err
 	}
