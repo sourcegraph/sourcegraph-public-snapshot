@@ -66,13 +66,22 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 
 	if diff.Has(changed.Client | changed.GraphQL) {
 		// If there are any Graphql changes, they are impacting the client as well.
-		ops.Merge(operations.NewNamedSet("Client checks",
+		clientChecks := operations.NewNamedSet("Client checks",
 			clientIntegrationTests,
 			clientChromaticTests(opts.ChromaticShouldAutoAccept),
-			frontendTests, // ~4.5m
-			addWebApp,     // ~5.5m
-			addBrowserExt, // ~4.5m
-			addClientLinters(opts.LintOnlyChangedFiles))) // ~9m
+			frontendTests,      // ~4.5m
+			addWebApp,          // ~5.5m
+			addBrowserExt,      // ~4.5m
+			addTypescriptCheck, // ~4m
+		)
+
+		if opts.LintOnlyChangedFiles {
+			clientChecks.Append(addClientLintersForChangedFiles)
+		} else {
+			clientChecks.Append(addClientLintersForAllFiles)
+		}
+
+		ops.Merge(clientChecks)
 	}
 
 	if diff.Has(changed.Go | changed.GraphQL) {
@@ -163,32 +172,33 @@ func addYarnDeduplicateLint(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/check/yarn-deduplicate.sh"))
 }
 
-// Adds client linters and Typescript check.
-func addClientLinters(lintOnlyChangedFiles bool) operations.Operation {
-	return func(pipeline *bk.Pipeline) {
-		// - build-ts ~4m
-		pipeline.AddStep(":typescript: Build TS",
-			withYarnCache(),
-			bk.Cmd("dev/ci/yarn-run.sh build-ts"))
+// Adds Typescript check.
+func addTypescriptCheck(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":typescript: Build TS",
+		withYarnCache(),
+		bk.Cmd("dev/ci/yarn-run.sh build-ts"))
+}
 
-		if lintOnlyChangedFiles {
-			pipeline.AddStep(":eslint: ESLint",
-				withYarnCache(),
-				bk.Cmd("dev/ci/yarn-run.sh lint:js:changed"))
+// Adds client linters to check all files.
+func addClientLintersForAllFiles(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":eslint: ESLint all",
+		withYarnCache(),
+		bk.Cmd("dev/ci/yarn-run.sh lint:js:all"))
 
-			pipeline.AddStep(":stylelint: Stylelint",
-				withYarnCache(),
-				bk.Cmd("dev/ci/yarn-run.sh lint:css:changed"))
-		} else {
-			pipeline.AddStep(":eslint: ESLint",
-				withYarnCache(),
-				bk.Cmd("dev/ci/yarn-run.sh lint:js:all"))
+	pipeline.AddStep(":stylelint: Stylelint all",
+		withYarnCache(),
+		bk.Cmd("dev/ci/yarn-run.sh lint:css:all"))
+}
 
-			pipeline.AddStep(":stylelint: Stylelint",
-				withYarnCache(),
-				bk.Cmd("dev/ci/yarn-run.sh lint:css:all"))
-		}
-	}
+// Adds client linters to check changed in PR files.
+func addClientLintersForChangedFiles(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":eslint: ESLint changed",
+		withYarnCache(),
+		bk.Cmd("dev/ci/yarn-run.sh lint:js:changed"))
+
+	pipeline.AddStep(":stylelint: Stylelint all",
+		withYarnCache(),
+		bk.Cmd("dev/ci/yarn-run.sh lint:css:changed"))
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.

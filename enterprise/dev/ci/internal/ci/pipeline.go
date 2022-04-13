@@ -123,7 +123,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
 		ops = operations.NewSet(
-			addClientLinters(false),
+			addClientLintersForAllFiles,
 			addBrowserExt,
 			frontendTests,
 			wait,
@@ -133,7 +133,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
 		ops = operations.NewSet(
-			addClientLinters(false),
+			addClientLintersForAllFiles,
 			addBrowserExt,
 			frontendTests,
 			wait,
