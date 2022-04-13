@@ -11,6 +11,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -24,8 +25,12 @@ var updateCommand = &cli.Command{
 Requires a local copy of the 'sourcegraph/sourcegraph' codebase.`,
 	Category: CategoryUtil,
 	Action: func(cmd *cli.Context) error {
-		_, err := updateToPrebuiltSG(cmd.Context)
-		return err
+		if _, err := updateToPrebuiltSG(cmd.Context); err != nil {
+			return err
+		}
+		writeSuccessLinef("sg has been updated!")
+		stdout.Out.Write("To see what's new, run 'sg version changelog'.")
+		return nil
 	},
 }
 
