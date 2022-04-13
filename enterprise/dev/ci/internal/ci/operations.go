@@ -68,10 +68,10 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 		ops.Merge(operations.NewNamedSet("Client checks",
 			clientIntegrationTests,
 			clientChromaticTests(opts.ChromaticShouldAutoAccept),
-			frontendTests,     // ~4.5m
-			addWebApp,         // ~5.5m
-			addBrowserExt,     // ~4.5m
-			addClientLinters)) // ~9m
+			frontendTests,                // ~4.5m
+			addWebApp,                    // ~5.5m
+			addBrowserExtensionUnitTests, // ~4.5m
+			addClientLinters))            // ~9m
 	}
 
 	if diff.Has(changed.Go | changed.GraphQL) {
@@ -210,28 +210,38 @@ func addWebApp(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
-// Builds and tests the browser extension.
-func addBrowserExt(pipeline *bk.Pipeline) {
-	// Browser extension integration tests
-	for _, browser := range []string{"chrome"} {
-		pipeline.AddStep(
-			fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
-			withYarnCache(),
-			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
-			bk.Env("BROWSER", browser),
-			bk.Env("LOG_BROWSER_CONSOLE", "true"),
-			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
-			bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
-			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
-			bk.Cmd("yarn run cover-browser-integration"),
-			bk.Cmd("yarn nyc report -r json"),
-			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
-			bk.ArtifactPaths("./puppeteer/*.png"),
-		)
-	}
+var browsers = []string{"chrome"}
 
-	// Browser extension unit tests
+func getParallelTestCount(webParallelTestCount int) int {
+	return webParallelTestCount + len(browsers)
+}
+
+func addBrowserExtensionIntegrationTests(parallelTestCount int) operations.Operation {
+	testCount := getParallelTestCount(parallelTestCount)
+	return func(pipeline *bk.Pipeline) {
+		for _, browser := range browsers {
+			pipeline.AddStep(
+				fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
+				withYarnCache(),
+				bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
+				bk.Env("BROWSER", browser),
+				bk.Env("LOG_BROWSER_CONSOLE", "true"),
+				bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
+				bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
+				bk.Env("PERCY_ON", "true"),
+				bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(testCount)),
+				bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+				bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
+				bk.Cmd("yarn run cover-browser-integration"),
+				bk.Cmd("yarn nyc report -r json"),
+				bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
+				bk.ArtifactPaths("./puppeteer/*.png"),
+			)
+		}
+	}
+}
+
+func addBrowserExtensionUnitTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest::chrome: Test (client/browser)",
 		withYarnCache(),
 		bk.AnnotatedCmd("dev/ci/yarn-test.sh client/browser", bk.AnnotatedCmdOpts{
@@ -262,6 +272,9 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 	// Chunk web integration tests to save time via parallel execution.
 	chunkedTestFiles := getChunkedWebIntegrationFileNames(chunkSize)
 	chunkCount := len(chunkedTestFiles)
+	parallelTestCount := getParallelTestCount(chunkCount)
+
+	addBrowserExtensionIntegrationTests(chunkCount)(pipeline)
 
 	// Add pipeline step for each chunk of web integrations files.
 	for i, chunkTestFiles := range chunkedTestFiles {
@@ -274,7 +287,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 			bk.Env("PERCY_ON", "true"),
 			// If PERCY_PARALLEL_TOTAL is set, the API will wait for that many finalized builds to finalize the Percy build.
 			// https://docs.percy.io/docs/parallel-test-suites#how-it-works
-			bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(chunkCount)),
+			bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(parallelTestCount)),
 			bk.Cmd(fmt.Sprintf(`dev/ci/yarn-web-integration.sh "%s"`, chunkTestFiles)),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
