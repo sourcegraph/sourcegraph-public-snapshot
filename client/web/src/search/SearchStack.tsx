@@ -14,12 +14,12 @@ import classNames from 'classnames'
 import { LocationDescriptor } from 'history'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
+import DeleteIcon from 'mdi-react/DeleteIcon'
 import FileDocumentOutlineIcon from 'mdi-react/FileDocumentOutlineIcon'
 import NotebookPlusIcon from 'mdi-react/NotebookPlusIcon'
 import PenIcon from 'mdi-react/PenIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import TextBoxIcon from 'mdi-react/TextBoxIcon'
-import DeleteIcon from 'mdi-react/DeleteIcon'
 
 import { isMacPlatform } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
@@ -278,12 +278,10 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({ initial
         return null
     }
 
-    const buttonLabel = (open ? 'Open' : 'Close') + ' Notebook'
-
     return (
         <section className={classNames(styles.root, { [styles.open]: open })} id={SEARCH_STACK_ID} role="dialog">
             <Button
-                aria-label={buttonLabel}
+                aria-label={(open ? 'Close' : 'Open') + ' Notepad'}
                 variant="icon"
                 className={classNames(styles.header, 'p-2 d-flex align-items-center justify-content-between')}
                 onClick={toggleOpen}
