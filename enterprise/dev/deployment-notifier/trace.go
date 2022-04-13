@@ -16,10 +16,19 @@ import (
 
 const traceVersion = "dev"
 
-func newTraceEvent(traceID string) *libhoney.Event {
+func newTraceEvent(traceID string, r *DeploymentReport) *libhoney.Event {
 	event := libhoney.NewEvent()
-	event.AddField("meta.version", traceVersion)
-	event.AddField("trace.trace_id", traceID)
+	event.Add(map[string]string{
+		// Honeycomb fields
+		"meta.version":   traceVersion,
+		"trace.trace_id": traceID,
+
+		// Metadata related to reployment
+		"environment":         r.Environment,
+		"buildkite.build_url": r.BuildkiteBuildURL,
+		"manifest.revision":   r.ManifestRevision,
+		"deployed.at":         r.DeployedAt,
+	})
 	return event
 }
 
@@ -84,7 +93,7 @@ func GenerateDeploymentTrace(r *DeploymentReport) (*DeploymentTrace, error) {
 		prTraceID := newSpanID("pr", strconv.Itoa(pr.GetNumber()))
 
 		for _, service := range prServices {
-			prServiceEvent := newTraceEvent(deploymentTraceID)
+			prServiceEvent := newTraceEvent(deploymentTraceID, r)
 			prServiceEvent.Timestamp = pr.GetMergedAt()
 			prServiceEvent.Add(map[string]interface{}{
 				// Honeycomb fields
@@ -103,7 +112,7 @@ func GenerateDeploymentTrace(r *DeploymentReport) (*DeploymentTrace, error) {
 			spans = append(spans, prServiceEvent)
 		}
 
-		prEvent := newTraceEvent(deploymentTraceID)
+		prEvent := newTraceEvent(deploymentTraceID, r)
 		prEvent.Timestamp = pr.GetMergedAt()
 		prEvent.Add(map[string]interface{}{
 			// Honeycomb fields
@@ -123,7 +132,7 @@ func GenerateDeploymentTrace(r *DeploymentReport) (*DeploymentTrace, error) {
 		spans = append(spans, prEvent)
 	}
 
-	root := newTraceEvent(deploymentTraceID)
+	root := newTraceEvent(deploymentTraceID, r)
 	root.Timestamp = oldestPR
 	root.Add(map[string]interface{}{
 		// Honeycomb fields
@@ -133,10 +142,6 @@ func GenerateDeploymentTrace(r *DeploymentReport) (*DeploymentTrace, error) {
 		"duration_ms":   deployTime.Sub(oldestPR) / time.Millisecond,
 
 		// Extra metadata
-		"environment":            r.Environment,
-		"buildkite.build_url":    r.BuildkiteBuildURL,
-		"manifest.revision":      r.ManifestRevision,
-		"deployed.at":            r.DeployedAt,
 		"deployed.pull_requests": len(r.PullRequests),
 		"deployed.services":      len(r.Services),
 	})
