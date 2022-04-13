@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/x509"
 	"encoding/pem"
-	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -13,7 +12,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
@@ -23,17 +22,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-var (
-	setupFlagSet = flag.NewFlagSet("sg setup", flag.ExitOnError)
-	setupCommand = &ffcli.Command{
-		Name:       "setup",
-		ShortUsage: "sg setup",
-		ShortHelp:  "Reports which version of Sourcegraph is currently live in the given environment",
-		LongHelp:   "Run 'sg setup' to setup the local dev environment",
-		FlagSet:    setupFlagSet,
-		Exec:       setupExec,
-	}
-)
+var setupCommand = &cli.Command{
+	Name:     "setup",
+	Usage:    "Set up your local dev environment!",
+	Category: CategoryEnv,
+	Action:   execAdapter(setupExec),
+}
 
 func setupExec(ctx context.Context, args []string) error {
 	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {

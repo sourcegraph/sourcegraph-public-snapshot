@@ -8,27 +8,31 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-var (
-	testFlagSet = flag.NewFlagSet("sg test", flag.ExitOnError)
-	testCommand = &ffcli.Command{
-		Name:       "test",
-		ShortUsage: "sg test <testsuite>",
-		ShortHelp:  "Run the given test suite.",
-		LongHelp:   constructTestCmdLongHelp(),
-		FlagSet:    testFlagSet,
-		Exec:       testExec,
-	}
-)
+func init() {
+	postInitHooks = append(postInitHooks, func(cmd *cli.Context) error {
+		// Create 'sg test' help text after flag (and config) initialization
+		testCommand.Description = constructTestCmdLongHelp()
+		return nil
+	})
+}
+
+var testCommand = &cli.Command{
+	Name:      "test",
+	ArgsUsage: "<testsuite>",
+	Usage:     "Run the given test suite",
+	Category:  CategoryDev,
+	Action:    execAdapter(testExec),
+}
 
 func testExec(ctx context.Context, args []string) error {
-	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
+	ok, errLine := parseConf(configFlag, overwriteConfigFlag)
 	if !ok {
 		stdout.Out.WriteLine(errLine)
 		os.Exit(1)
@@ -55,20 +59,21 @@ func constructTestCmdLongHelp() string {
 
 	// Attempt to parse config to list available testsuites, but don't fail on
 	// error, because we should never error when the user wants --help output.
-	cfg := parseConfAndReset()
-
-	if cfg != nil {
+	ok, warning := parseConf(configFlag, overwriteConfigFlag)
+	if ok {
 		fmt.Fprintf(&out, "\n\n")
-		fmt.Fprintf(&out, "AVAILABLE TESTSUITES IN %s%s%s:\n", output.StyleBold, *configFlag, output.StyleReset)
+		fmt.Fprintf(&out, "AVAILABLE TESTSUITES IN %s%s%s:\n", output.StyleBold, configFlag, output.StyleReset)
 		fmt.Fprintf(&out, "\n")
 
 		var names []string
-		for name := range cfg.Tests {
+		for name := range globalConf.Tests {
 			names = append(names, name)
 		}
 		sort.Strings(names)
 		fmt.Fprint(&out, strings.Join(names, "\n"))
-
+	} else {
+		out.Write([]byte("\n"))
+		output.NewOutput(&out, output.OutputOpts{}).WriteLine(warning)
 	}
 
 	return out.String()
