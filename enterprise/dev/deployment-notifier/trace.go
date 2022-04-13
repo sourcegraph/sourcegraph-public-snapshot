@@ -39,6 +39,15 @@ func newSpanID(root string, components ...string) string {
 	return root
 }
 
+const (
+	// spans representing deploys (suffixed with '/$env')
+	spanServiceNameDeploy = "deploy"
+	// spans representing pull requests
+	spanServiceNamePullRequest = "pull_request"
+	// spans representing Sourcegraph services
+	spanServiceNameService = "service"
+)
+
 type DeploymentTrace struct {
 	Root *libhoney.Event
 	ID   string
@@ -50,14 +59,20 @@ type DeploymentTrace struct {
 //
 // The generated trace is structured as follows:
 //
-//   deploy/env/rev -----
-//     pr/1 -------------
-//     ------------ svc/1
-//     ------------ svc/2
-//         pr/2 ---------
-//         -------- svc/1
-//         -------- svc/2
-//                    ...
+// deploy/env ---------
+//   pr/1 -------------
+//   -------- service/1
+//   -------- service/2
+// 	     pr/2 ---------
+// 	     ---- service/1
+// 	     ---- service/2
+// 			        ...
+//
+// The following fields are important in each event:
+//
+// - "service.name" denotes the type of the span ("deploy/$env", "pull_request", "service")
+// - "name" denotes an identifying string for the span in the context of "service.name"
+// - "environment" denotes the deploy environment the span is related to
 //
 // Learn more about Honeycomb fields:
 //
@@ -70,7 +85,7 @@ func GenerateDeploymentTrace(r *DeploymentReport) (*DeploymentTrace, error) {
 	if len(rev) > 12 {
 		rev = rev[:12]
 	}
-	deploymentTraceID := newSpanID("deploy", r.Environment, rev)
+	deploymentTraceID := newSpanID(spanServiceNameDeploy, r.Environment, rev)
 
 	deployTime, err := time.Parse(time.RFC822Z, r.DeployedAt)
 	if err != nil {
@@ -98,7 +113,7 @@ func GenerateDeploymentTrace(r *DeploymentReport) (*DeploymentTrace, error) {
 			prServiceEvent.Add(map[string]interface{}{
 				// Honeycomb fields
 				"name":            service,
-				"service.name":    "service",
+				"service.name":    spanServiceNameService,
 				"trace.parent_id": prTraceID,
 				"trace.span_id":   newSpanID("svc", strconv.Itoa(pr.GetNumber()), service),
 				"duration_ms":     deployTime.Sub(pr.GetMergedAt()) / time.Millisecond,
@@ -117,7 +132,7 @@ func GenerateDeploymentTrace(r *DeploymentReport) (*DeploymentTrace, error) {
 		prEvent.Add(map[string]interface{}{
 			// Honeycomb fields
 			"name":            pr.GetNumber(),
-			"service.name":    "pull_request",
+			"service.name":    spanServiceNamePullRequest,
 			"trace.parent_id": deploymentTraceID,
 			"trace.span_id":   prTraceID,
 			"user":            pr.GetUser().GetLogin(),
