@@ -75,6 +75,8 @@ COPY config/*_rules.yml /sg_config_prometheus/
 COPY config/prometheus.yml /sg_config_prometheus/
 COPY config/alertmanager.yml /sg_config_prometheus/
 
+RUN chown -R sourcegraph:sourcegraph /sg_config_prometheus
+
 ENTRYPOINT ["/bin/prom-wrapper"]
 # Note that upstream's 'VOLUME' directive was deliberately removed. Including it makes it impossible
 # to chmod the directory to our 'sourcegraph' user.
