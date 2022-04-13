@@ -1,6 +1,8 @@
 CREATE TABLE IF NOT EXISTS lsif_uploads_audit_logs (
+    -- log entry columns
     log_timestamp       timestamptz DEFAULT NOW(),
     log_expiry          timestamptz,
+    -- associated object columns
     upload_id           integer not null,
     commit              text not null,
     root                text not null,
@@ -13,6 +15,10 @@ CREATE TABLE IF NOT EXISTS lsif_uploads_audit_logs (
     committed_at        timestamptz,
     transition_columns  hstore[]
 );
+
+COMMENT ON COLUMN lsif_uploads_audit_logs.log_timestamp IS 'Timestamp for this log entry.';
+COMMENT ON COLUMN lsif_uploads_audit_logs.log_expiry IS 'Set once the upload this entry is associated with is deleted. Once NOW() + log_expiry is above a certain threshold, this log entry will be deleted.';
+COMMENT ON COLUMN lsif_uploads_audit_logs.transition_columns IS 'Array of changes that occurred to the upload for this entry, in the form of {"column"=>"<column name>", "old"=>"<previous value>", "new"=>"<new value>"}';
 
 CREATE INDEX IF NOT EXISTS lsif_uploads_audit_logs_upload_id ON lsif_uploads_audit_logs USING btree (upload_id);
 CREATE INDEX IF NOT EXISTS lsif_uploads_audit_logs_timestamp ON lsif_uploads_audit_logs USING brin (log_timestamp);
