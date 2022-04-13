@@ -337,6 +337,7 @@ type InsightViewControlsInput struct {
 type InsightViewFiltersInput struct {
 	IncludeRepoRegex *string
 	ExcludeRepoRegex *string
+	SearchContexts   *[]string
 }
 
 type LineChartSearchInsightDataSeriesInput struct {

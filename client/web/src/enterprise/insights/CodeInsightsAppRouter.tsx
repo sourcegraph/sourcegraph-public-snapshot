@@ -14,7 +14,7 @@ import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../components/HeroPage'
 
-import { CodeInsightsBackendContext } from './core/backend/code-insights-backend-context'
+import { CodeInsightsBackendContext } from './core'
 import { GaConfirmationModal } from './modals/GaConfirmationModal'
 import {
     CodeInsightsRootPage,
