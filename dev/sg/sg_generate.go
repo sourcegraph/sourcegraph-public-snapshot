@@ -6,75 +6,97 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 var (
-	stdOut          = stdout.Out
-	generateFlagSet = flag.NewFlagSet("sg generate", flag.ExitOnError)
-
-	generateCommand = &ffcli.Command{
-		Name:       "generate",
-		ShortUsage: "sg generate",
-		FlagSet:    generateFlagSet,
-		Exec: func(ctx context.Context, args []string) error {
-			if len(args) > 0 {
-				writeFailureLinef("unrecognized command %q provided", args[0])
-				return flag.ErrHelp
-			}
-			var runner generate.Runner
-			for _, g := range allGenerateTargets {
-				if g.Name == args[0] {
-					runner = g.Runner
-				}
-			}
-			if runner == nil {
-				return flag.ErrHelp
-			}
-			return runGenerateScriptAndReport(ctx, runner, args)
-		},
-		Subcommands: allGenerateTargets.Commands(),
-	}
+	generateQuiet bool
 )
 
-type generateTargets []generate.Target
+var generateCommand = &cli.Command{
+	Name:      "generate",
+	ArgsUsage: "[target]",
+	Usage:     "Run code and docs generation tasks",
+	Description: `Run code and docs generation tasks - if no target is provided, all target are run with default arguments.
 
-func runGenerateScriptAndReport(ctx context.Context, runner generate.Runner, args []string) error {
+Verbose mode can be enabled with the global verbose flag, e.g.
+
+	sg --verbose generate ...
+`,
+	Category: CategoryDev,
+	Flags: []cli.Flag{
+		&cli.BoolFlag{
+			Name:        "quiet",
+			Aliases:     []string{"q"},
+			Usage:       "Suppress all output but errors from generate tasks",
+			Destination: &generateQuiet,
+		},
+	},
+	Before: func(cmd *cli.Context) error {
+		if verbose && generateQuiet {
+			return errors.Errorf("-q and --verbose flags are exclusive")
+		}
+		return nil
+	},
+	Action: func(cmd *cli.Context) error {
+		if cmd.NArg() > 0 {
+			writeFailureLinef("unrecognized command %q provided", cmd.Args().First())
+			return flag.ErrHelp
+		}
+		return allGenerateTargets.RunAll(cmd.Context)
+	},
+	Subcommands: allGenerateTargets.Commands(),
+}
+
+func runGenerateAndReport(ctx context.Context, t generate.Target, args []string) error {
 	_, err := root.RepositoryRoot()
 	if err != nil {
 		return err
 	}
-
-	report := runner(ctx, args)
+	writeFingerPointingLinef("Running target %q (%s)", t.Name, t.Help)
+	report := t.Runner(ctx, args)
 	fmt.Printf(report.Output)
-	stdOut.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "(%ds)", report.Duration/time.Second))
-	return report.Err
+	writeSuccessLinef("Target %q done (%ds)", t.Name, report.Duration/time.Second)
+	return nil
+}
+
+type generateTargets []generate.Target
+
+func (gt generateTargets) RunAll(ctx context.Context) error {
+	for _, t := range gt {
+		if err := runGenerateAndReport(ctx, t, []string{}); err != nil {
+			return errors.Wrap(err, t.Name)
+		}
+	}
+	return nil
 }
 
 // Commands converts all lint targets to CLI commands
-func (gt generateTargets) Commands() (cmds []*ffcli.Command) {
-	execFactory := func(c generate.Target) func(context.Context, []string) error {
-		return func(ctx context.Context, args []string) error {
-			if len(args) > 0 {
-				writeFailureLinef("unexpected argument %q provided", args[0])
-				return flag.ErrHelp
+func (gt generateTargets) Commands() (cmds []*cli.Command) {
+	actionFactory := func(c generate.Target) cli.ActionFunc {
+		return func(cmd *cli.Context) error {
+			_, err := root.RepositoryRoot()
+			if err != nil {
+				return err
 			}
-			return runGenerateScriptAndReport(ctx, c.Runner, args)
+			report := c.Runner(cmd.Context, cmd.Args().Tail())
+			fmt.Printf(report.Output)
+			stdout.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "(%ds)", report.Duration/time.Second))
+			return nil
 		}
 	}
 	for _, c := range gt {
-		cmds = append(cmds, &ffcli.Command{
-			Name:       c.Name,
-			ShortUsage: fmt.Sprintf("sg generate %s", c.Name),
-			ShortHelp:  c.Help,
-			LongHelp:   c.Help,
-			FlagSet:    c.FlagSet,
-			Exec:       execFactory(c)})
+		cmds = append(cmds, &cli.Command{
+			Name:   c.Name,
+			Usage:  c.Help,
+			Action: actionFactory(c),
+		})
 	}
 	return cmds
 }

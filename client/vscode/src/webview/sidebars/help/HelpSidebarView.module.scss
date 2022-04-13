@@ -1,0 +1,41 @@
+.sidebar-container {
+    padding: 0.125rem 0 0 0 !important;
+    color: var(--vscode-foreground);
+    font-size: var(--vscode-editor-font-size) !important;
+    display: flex;
+    flex-direction: column;
+
+    a {
+        color: var(--vscode-textLink-foreground);
+    }
+}
+
+.item-container {
+    display: flex;
+    flex-direction: row;
+    gap: 3px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    flex-wrap: nowrap;
+    margin: 0;
+    align-items: center;
+
+    .codicon {
+        flex-basis: 100%;
+        height: auto;
+        justify-content: center;
+    }
+
+    button,
+    span {
+        color: var(--vscode-foreground);
+        padding: 0;
+        font-weight: var(--vscode-font-weight) !important;
+        font-size: var(--vscode-editor-font-size) !important;
+    }
+
+    img {
+        width: calc(var(--vscode-font-size) * 1.05);
+        height: auto;
+    }
+}

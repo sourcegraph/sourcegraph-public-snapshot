@@ -40,6 +40,10 @@ type credentials struct {
 	LastSourceURL   string `json:"lastSourceUrl"`
 }
 
+type unlockAccountInfo struct {
+	Token string `json:"token"`
+}
+
 // HandleSignUp handles submission of the user signup form.
 func HandleSignUp(db database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -282,6 +286,21 @@ func HandleSignIn(db database.DB, store LockoutStore) func(w http.ResponseWriter
 		user = *u
 
 		if reason, locked := store.IsLockedOut(user.ID); locked {
+			if conf.CanSendEmail() {
+				recipient, verified, err := db.UserEmails().GetPrimaryEmail(ctx, user.ID)
+				if !verified || err != nil {
+					// log the error and proceed
+					log15.Error(fmt.Sprintf("Impossible to get primary email address for userId %d. Unlock account email can't be sent", user.ID), err)
+				}
+
+				err = store.SendUnlockAccountEmail(ctx, user.ID, recipient)
+
+				if err != nil {
+					// log the error and proceed
+					log15.Error(fmt.Sprintf("Impossible to send unlock account email for userId %d", user.ID), err)
+				}
+			}
+
 			httpLogAndError(w, fmt.Sprintf("Account has been locked out due to %q", reason), http.StatusUnprocessableEntity)
 			return
 		}
@@ -307,6 +326,42 @@ func HandleSignIn(db database.DB, store LockoutStore) func(w http.ResponseWriter
 		}
 
 		signInResult = database.SecurityEventNameSignInSucceeded
+	}
+}
+
+func HandleUnlockAccount(db database.DB, store LockoutStore) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if handleEnabledCheck(w) {
+
+			return
+		}
+
+		if r.Method != http.MethodPost {
+			http.Error(w, fmt.Sprintf("Unsupported method %s", r.Method), http.StatusBadRequest)
+			return
+		}
+
+		var unlockAccountInfo unlockAccountInfo
+		if err := json.NewDecoder(r.Body).Decode(&unlockAccountInfo); err != nil {
+			http.Error(w, "Could not decode request body", http.StatusBadRequest)
+			return
+		}
+
+		if unlockAccountInfo.Token == "" {
+			http.Error(w, "Bad request: missing token", http.StatusBadRequest)
+			return
+		}
+
+		valid, error := store.VerifyUnlockAccountTokenAndReset(unlockAccountInfo.Token)
+
+		if !valid || error != nil {
+			err := "invalid token provided"
+			if error != nil {
+				err = error.Error()
+			}
+			httpLogAndError(w, err, http.StatusUnauthorized)
+			return
+		}
 	}
 }
 

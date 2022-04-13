@@ -1,6 +1,7 @@
 import assert from 'assert'
 
 import { ExtensionsResult } from '@sourcegraph/shared/src/graphql-operations'
+import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -229,6 +230,7 @@ describe('Extension Registry', () => {
         await driver.page.waitForSelector('[data-testid="extension-toggle-sqs/word-count"]')
 
         await percySnapshotWithVariants(driver.page, 'Extension registry page')
+        await accessibilityAudit(driver.page)
     })
 
     describe('filtering by category', () => {
