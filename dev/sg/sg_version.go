@@ -56,6 +56,10 @@ func versionExec(ctx context.Context, args []string) error {
 }
 
 func changelogExec(ctx context.Context, args []string) error {
+	if _, err := run.GitCmd("fetch", "origin", "main"); err != nil {
+		return errors.Newf("failed to update main: %s", err)
+	}
+
 	logArgs := []string{
 		// Format nicely
 		"log", "--pretty=%C(reset)%s %C(dim)%h by %an, %ar",
@@ -82,7 +86,6 @@ func changelogExec(ctx context.Context, args []string) error {
 
 	gitLog := exec.Command("git", append(logArgs, "--", "./dev/sg")...)
 	gitLog.Env = os.Environ()
-	println(strings.Join(gitLog.Args, " "))
 	out, err := run.InRoot(gitLog)
 	if err != nil {
 		return err
@@ -117,10 +120,14 @@ func checkSgVersionAndUpdate(ctx context.Context, skipUpdate bool) error {
 		return nil
 	}
 
+	if _, err = run.GitCmd("fetch", "origin", "main"); err != nil {
+		return errors.Newf("failed to update main: %s", err)
+	}
+
 	rev := strings.TrimPrefix(BuildCommit, "dev-")
 	out, err := run.GitCmd("rev-list", fmt.Sprintf("%s..origin/main", rev), "./dev/sg")
 	if err != nil {
-		return errors.Newf("error getting new commits since %s in ./dev/sg: %s - try reinstalling sg with:\n\n%s",
+		return errors.Newf("error checking for commits since %q in ./dev/sg: %s.\nTry reinstalling sg with:\n\t%s",
 			rev, err, sgOneLineCmd)
 	}
 
