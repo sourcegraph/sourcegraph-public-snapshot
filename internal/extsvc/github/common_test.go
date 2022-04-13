@@ -86,6 +86,16 @@ func TestClient_GetRepository(t *testing.T) {
 			t.Fatal("expected repo, got nil")
 		}
 	})
+	t.Run("second run", func(t *testing.T) {
+		ctx := context.Background()
+		repo, err := cli.GetRepository(ctx, "sourcegraph-vcr-repos", "private-org-repo-1")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if repo == nil {
+			t.Fatal("expected repo, got nil")
+		}
+	})
 }
 
 // TestClient_GetRepository_nonexistent tests the behavior of GetRepository when called
