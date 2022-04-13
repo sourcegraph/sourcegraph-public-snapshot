@@ -151,6 +151,8 @@ func TestWorkerConcurrent(t *testing.T) {
 		name := fmt.Sprintf("numHandlers=%d", numHandlers)
 
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
 			store := NewMockStore()
 			handler := NewMockHandlerWithHooks()
 			dequeueClock := glock.NewMockClock()
@@ -199,7 +201,7 @@ func TestWorkerConcurrent(t *testing.T) {
 			intersecting := 0
 			for i := 0; i < NumTestRecords; i++ {
 				for j := i + 1; j < NumTestRecords; j++ {
-					if !times[1][1].Before(times[j][0]) {
+					if !times[i][1].Before(times[j][0]) {
 						if j-i > 2*numHandlers-1 {
 							// The greatest distance between two "batches" that can overlap is
 							// just under 2x the number of concurrent handler routines. For example
