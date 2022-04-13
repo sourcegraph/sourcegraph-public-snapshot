@@ -199,7 +199,7 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
                             <PageHeader
                                 className="mt-2"
                                 path={[
-                                    { icon: MagnifyIcon, to: '/search' },
+                                    { icon: MagnifyIcon, to: '/search', ariaLabel: 'Code search' },
                                     { to: '/notebooks', text: 'Notebooks' },
                                     {
                                         text: (
