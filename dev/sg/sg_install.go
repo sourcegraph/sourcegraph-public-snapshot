@@ -18,17 +18,29 @@ import (
 )
 
 var installCommand = &cli.Command{
-	Name:     "install",
-	Usage:    "Installs sg to a user-defined location by copying sg itself",
+	Name:  "install",
+	Usage: "Installs sg to a user-defined location by copying sg itself",
+	Description: `Installs sg to a user-defined location by copying sg itself.
+
+Can also be used to install a custom build of 'sg' globally, for example:
+
+	go build -o ./sg ./dev/sg && ./sg install -f -p=false
+`,
 	Category: CategoryUtil,
+	Hidden:   true, // usually an internal command used during installation script
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:    "force",
 			Aliases: []string{"f"},
 			Usage:   "Overwrite existing sg installation",
 		},
+		&cli.BoolFlag{
+			Name:    "profile",
+			Aliases: []string{"p"},
+			Usage:   "Update profile during installation",
+			Value:   true,
+		},
 	},
-	Hidden: true, // internal command used during installation script
 	Action: installAction,
 }
 
@@ -127,6 +139,27 @@ func installAction(cmd *cli.Context) error {
 	}
 	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Done!"))
 
+	// Update profile files
+	if cmd.Bool("profile") {
+		if err := updateProfiles(homeDir, sgDir); err != nil {
+			return err
+		}
+	}
+
+	stdout.Out.Write("")
+	stdout.Out.Writef("Restart your shell and run 'sg logo' to make sure it worked!")
+
+	return nil
+}
+
+func outputLooksLikeSG(out string) bool {
+	// This is a weak check, but it's better than anything else we have
+	return strings.Contains(out, "logo") &&
+		strings.Contains(out, "setup") &&
+		strings.Contains(out, "doctor")
+}
+
+func updateProfiles(homeDir, sgDir string) error {
 	// We add this to all three files, creating them if necessary, because on
 	// completely new machines it's hard to detect what gets sourced when.
 	// (On a fresh macOS installation .zshenv doesn't exist, but zsh is the
@@ -152,7 +185,7 @@ func installAction(cmd *cli.Context) error {
 		return nil
 	}
 
-	pending = stdout.Out.Pending(output.Linef("", output.StylePending, "Writing to files..."))
+	pending := stdout.Out.Pending(output.Linef("", output.StylePending, "Writing to files..."))
 
 	exportLine := fmt.Sprintf("\nexport PATH=%s:$PATH\n", sgDir)
 	lineWrittenTo := []string{}
@@ -177,16 +210,5 @@ func installAction(cmd *cli.Context) error {
 	for _, p := range lineWrittenTo {
 		stdout.Out.Writef("  %s%s", output.StyleBold, p)
 	}
-
-	stdout.Out.Write("")
-	stdout.Out.Writef("Restart your shell and run 'sg logo' to make sure it worked!")
-
 	return nil
-}
-
-func outputLooksLikeSG(out string) bool {
-	// This is a weak check, but it's better than anything else we have
-	return strings.Contains(out, "logo") &&
-		strings.Contains(out, "setup") &&
-		strings.Contains(out, "doctor")
 }
