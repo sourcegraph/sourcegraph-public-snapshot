@@ -14,7 +14,7 @@ Each section comprehensively describes the steps needed to upgrade, and any manu
 
 We made a number of changes to our built-in postgres databases (the `pgsql`, `codeintel-db`, and `codeinsights-db` container)
 
-- **CAUTION** Add the ability to customize postgres server configuration. If you have customized the config in any way, you should copy your changes to the added `postgresql.conf` file [sourcegraph/deploy-sourcegraph-docker#792](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/792)
+- **CAUTION** Add the ability to customize postgres server configuration. If you have customized the config in any way, you should copy your changes to the added `postgresql.conf` files [sourcegraph/deploy-sourcegraph-docker#792](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/792)
 - Increase the minimal memory requirement of `pgsql` and `codeintel-db` from `2GB` to `4GB`
 - `codeinsights-db` now uses vanilla postgres image [sourcegraph/deploy-sourcegraph-docker#780](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/780)
 
