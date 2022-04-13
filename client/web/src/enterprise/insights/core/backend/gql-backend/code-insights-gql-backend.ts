@@ -199,13 +199,14 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
     // This is only used to check for duplicate dashboards. Thi is not required for the new GQL API.
     // So we just return null to get the form to always accept.
-    public findDashboardByName = (name: string) => of(null)
+    public findDashboardByName = (name: string): Observable<InsightDashboard | null> => of(null)
 
-    public getDashboardOwners = () => getDashboardOwners(this.apolloClient)
+    public getDashboardOwners = (): Observable<InsightsDashboardOwner[]> => getDashboardOwners(this.apolloClient)
 
-    public createDashboard = (input: DashboardCreateInput) => createDashboard(this.apolloClient, input)
+    public createDashboard = (input: DashboardCreateInput): Observable<DashboardCreateResult> =>
+        createDashboard(this.apolloClient, input)
 
-    public deleteDashboard = ({ id }: DashboardDeleteInput) => {
+    public deleteDashboard = ({ id }: DashboardDeleteInput): Observable<void> => {
         if (!id) {
             throw new Error('`id` is required to delete a dashboard')
         }
@@ -236,20 +237,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     ): Promise<CategoricalChartContent<any>> => getLangStatsInsightContent(input).then(data => data.content)
 
     public getCaptureInsightContent = (input: CaptureInsightSettings): Promise<SeriesChartContent<any>> =>
-        getCaptureGroupInsightsPreview(this.apolloClient, input).then(data => {
-            const { data: datumList, series, xAxis } = data
-
-            // TODO: Remove this when the dashboard page has new chart fetchers
-            return {
-                data: datumList,
-                series: series.map(series => ({
-                    dataKey: series.dataKey,
-                    name: series.name ?? '',
-                    color: series.stroke,
-                })),
-                getXValue: datum => new Date(+datum[xAxis.dataKey]),
-            }
-        })
+        getCaptureGroupInsightsPreview(this.apolloClient, input)
 
     // Repositories API
     public getRepositorySuggestions = getRepositorySuggestions

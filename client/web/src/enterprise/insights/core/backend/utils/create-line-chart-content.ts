@@ -89,11 +89,11 @@ export function getDataPoints(input: GetDataPointsInput): BackendInsightDatum[] 
 }
 
 interface GenerateLinkInput {
+    series: SearchBasedInsightSeries
     previousPoint?: { dateTime: string }
     point: { dateTime: string }
     includeRepoRegexp: string
     excludeRepoRegexp: string
-    series: SearchBasedInsightSeries
 }
 
 function generateLinkURL(input: GenerateLinkInput): string {
@@ -120,6 +120,6 @@ function generateLinkURL(input: GenerateLinkInput): string {
     return `${window.location.origin}${PageRoutes.Search}?${searchQueryParameter}`
 }
 
-function getLinkKey(seriesId: string): string {
+export function getLinkKey(seriesId: string): string {
     return `${seriesId}:link`
 }
