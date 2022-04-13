@@ -41,26 +41,31 @@ var (
 		Flags: []cli.Flag{
 			&cli.StringSliceFlag{
 				Name:        "debug",
+				Aliases:     []string{"d"},
 				Usage:       "Services to set at debug log level.",
 				Destination: &debugStartServices,
 			},
 			&cli.StringSliceFlag{
 				Name:        "info",
+				Aliases:     []string{"i"},
 				Usage:       "Services to set at info log level.",
 				Destination: &infoStartServices,
 			},
 			&cli.StringSliceFlag{
 				Name:        "warn",
+				Aliases:     []string{"w"},
 				Usage:       "Services to set at warn log level.",
 				Destination: &warnStartServices,
 			},
 			&cli.StringSliceFlag{
 				Name:        "error",
+				Aliases:     []string{"e"},
 				Usage:       "Services to set at info error level.",
 				Destination: &errorStartServices,
 			},
 			&cli.StringSliceFlag{
 				Name:        "crit",
+				Aliases:     []string{"c"},
 				Usage:       "Services to set at info crit level.",
 				Destination: &critStartServices,
 			},
@@ -208,11 +213,10 @@ func startCommandSet(ctx context.Context, set *Commandset, conf *Config, addToMa
 // logLevelOverrides builds a map of commands -> log level that should be overridden in the environment.
 func logLevelOverrides() map[string]string {
 	levelServices := make(map[string][]string)
-	levelServices["debug"] = debugStartServices.Value()
-	levelServices["info"] = infoStartServices.Value()
-	levelServices["warn"] = warnStartServices.Value()
-	levelServices["error"] = errorStartServices.Value()
-	levelServices["crit"] = critStartServices.Value()
+	levelServices["info"] = parseCsvs(infoStartServices.Value())
+	levelServices["warn"] = parseCsvs(warnStartServices.Value())
+	levelServices["error"] = parseCsvs(errorStartServices.Value())
+	levelServices["crit"] = parseCsvs(critStartServices.Value())
 
 	overrides := make(map[string]string)
 	for level, services := range levelServices {
@@ -247,4 +251,23 @@ func pathExists(path string) (bool, error) {
 		return false, nil
 	}
 	return false, err
+}
+
+func parseCsvs(inputs []string) []string {
+	var allValues []string
+	for _, i := range inputs {
+		values := parseCsv(i)
+		allValues = append(allValues, values...)
+	}
+	return allValues
+}
+
+// parseCsv takes an input comma seperated string and returns a list of tokens each trimmed for whitespace
+func parseCsv(input string) []string {
+	tokens := strings.Split(input, ",")
+	results := make([]string, 0, len(tokens))
+	for _, token := range tokens {
+		results = append(results, strings.TrimSpace(token))
+	}
+	return results
 }
