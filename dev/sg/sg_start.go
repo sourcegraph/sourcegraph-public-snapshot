@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
@@ -18,23 +18,61 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
+func init() {
+	postInitHooks = append(postInitHooks, func(cmd *cli.Context) error {
+		// Create 'sg start' help text after flag (and config) initialization
+		startCommand.Description = constructStartCmdLongHelp()
+		return nil
+	})
+}
+
 var (
-	startFlagSet       = flag.NewFlagSet("sg start", flag.ExitOnError)
-	debugStartServices = startFlagSet.String("debug", "", "Comma separated list of services to set at debug log level.")
-	addToMacOSFirewall = startFlagSet.Bool("add-to-macos-firewall", true, "OSX only; Add required exceptions to the firewall")
-	infoStartServices  = startFlagSet.String("info", "", "Comma separated list of services to set at info log level.")
-	warnStartServices  = startFlagSet.String("warn", "", "Comma separated list of services to set at warn log level.")
-	errorStartServices = startFlagSet.String("error", "", "Comma separated list of services to set at error log level.")
-	critStartServices  = startFlagSet.String("crit", "", "Comma separated list of services to set at crit log level.")
+	debugStartServices cli.StringSlice
+	infoStartServices  cli.StringSlice
+	warnStartServices  cli.StringSlice
+	errorStartServices cli.StringSlice
+	critStartServices  cli.StringSlice
 
-	startCommand = &ffcli.Command{
-		Name:       "start",
-		ShortUsage: "sg start [commandset]",
-		ShortHelp:  "🌟Starts the given commandset. Without a commandset it starts the default Sourcegraph dev environment.",
-		LongHelp:   constructStartCmdLongHelp(),
+	startCommand = &cli.Command{
+		Name:      "start",
+		ArgsUsage: "[commandset]",
+		Usage:     "🌟 Starts the given commandset. Without a commandset it starts the default Sourcegraph dev environment",
+		Category:  CategoryDev,
+		Flags: []cli.Flag{
+			&cli.StringSliceFlag{
+				Name:        "debug",
+				Aliases:     []string{"d"},
+				Usage:       "Services to set at debug log level.",
+				Destination: &debugStartServices,
+			},
+			&cli.StringSliceFlag{
+				Name:        "info",
+				Aliases:     []string{"i"},
+				Usage:       "Services to set at info log level.",
+				Destination: &infoStartServices,
+			},
+			&cli.StringSliceFlag{
+				Name:        "warn",
+				Aliases:     []string{"w"},
+				Usage:       "Services to set at warn log level.",
+				Destination: &warnStartServices,
+			},
+			&cli.StringSliceFlag{
+				Name:        "error",
+				Aliases:     []string{"e"},
+				Usage:       "Services to set at info error level.",
+				Destination: &errorStartServices,
+			},
+			&cli.StringSliceFlag{
+				Name:        "crit",
+				Aliases:     []string{"c"},
+				Usage:       "Services to set at info crit level.",
+				Destination: &critStartServices,
+			},
 
-		FlagSet: startFlagSet,
-		Exec:    startExec,
+			addToMacOSFirewallFlag,
+		},
+		Action: execAdapter(startExec),
 	}
 )
 
@@ -48,16 +86,13 @@ If no commandset is specified, it starts the commandset with the name 'default'.
 Use this to start your Sourcegraph environment!
 `)
 
-	// Attempt to parse config to list available commands, but don't fail on
-	// error, because we should never error when the user wants --help output.
-	cfg := parseConfAndReset()
-
-	if cfg != nil {
+	ok, warning := parseConf(configFlag, overwriteConfigFlag)
+	if ok {
 		fmt.Fprintf(&out, "\n")
-		fmt.Fprintf(&out, "AVAILABLE COMMANDSETS IN %s%s%s\n", output.StyleBold, *configFlag, output.StyleReset)
+		fmt.Fprintf(&out, "AVAILABLE COMMANDSETS IN %s%s%s\n", output.StyleBold, configFlag, output.StyleReset)
 
 		var names []string
-		for name := range cfg.Commandsets {
+		for name := range globalConf.Commandsets {
 			switch name {
 			case "enterprise-codeintel":
 				names = append(names, fmt.Sprintf("  %s 🧠", name))
@@ -70,14 +105,15 @@ Use this to start your Sourcegraph environment!
 		sort.Strings(names)
 		fmt.Fprint(&out, strings.Join(names, "\n"))
 	} else {
-		fmt.Fprintf(&out, "\n%sNo commandsets found! Please change your current directory to the Sourcegraph repository.%s", output.StyleOrange, output.StyleReset)
+		out.Write([]byte("\n"))
+		output.NewOutput(&out, output.OutputOpts{}).WriteLine(warning)
 	}
 
 	return out.String()
 }
 
 func startExec(ctx context.Context, args []string) error {
-	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
+	ok, errLine := parseConf(configFlag, overwriteConfigFlag)
 	if !ok {
 		stdout.Out.WriteLine(errLine)
 		os.Exit(1)
@@ -138,7 +174,7 @@ func startExec(ctx context.Context, args []string) error {
 		}
 	}
 
-	return startCommandSet(ctx, set, globalConf, *addToMacOSFirewall)
+	return startCommandSet(ctx, set, globalConf, addToMacOSFirewall)
 }
 
 func startCommandSet(ctx context.Context, set *Commandset, conf *Config, addToMacOSFirewall bool) error {
@@ -171,17 +207,16 @@ func startCommandSet(ctx context.Context, set *Commandset, conf *Config, addToMa
 		env[k] = v
 	}
 
-	return run.Commands(ctx, env, addToMacOSFirewall, *verboseFlag, cmds...)
+	return run.Commands(ctx, env, addToMacOSFirewall, verbose, cmds...)
 }
 
 // logLevelOverrides builds a map of commands -> log level that should be overridden in the environment.
 func logLevelOverrides() map[string]string {
 	levelServices := make(map[string][]string)
-	levelServices["debug"] = parseCsv(*debugStartServices)
-	levelServices["info"] = parseCsv(*infoStartServices)
-	levelServices["warn"] = parseCsv(*warnStartServices)
-	levelServices["error"] = parseCsv(*errorStartServices)
-	levelServices["crit"] = parseCsv(*critStartServices)
+	levelServices["info"] = parseCsvs(infoStartServices.Value())
+	levelServices["warn"] = parseCsvs(warnStartServices.Value())
+	levelServices["error"] = parseCsvs(errorStartServices.Value())
+	levelServices["crit"] = parseCsvs(critStartServices.Value())
 
 	overrides := make(map[string]string)
 	for level, services := range levelServices {
@@ -207,16 +242,6 @@ func enrichWithLogLevels(cmd *run.Command, overrides map[string]string) {
 	}
 }
 
-// parseCsv takes an input comma seperated string and returns a list of tokens each trimmed for whitespace
-func parseCsv(input string) []string {
-	tokens := strings.Split(input, ",")
-	results := make([]string, 0, len(tokens))
-	for _, token := range tokens {
-		results = append(results, strings.TrimSpace(token))
-	}
-	return results
-}
-
 func pathExists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {
@@ -226,4 +251,23 @@ func pathExists(path string) (bool, error) {
 		return false, nil
 	}
 	return false, err
+}
+
+func parseCsvs(inputs []string) []string {
+	var allValues []string
+	for _, i := range inputs {
+		values := parseCsv(i)
+		allValues = append(allValues, values...)
+	}
+	return allValues
+}
+
+// parseCsv takes an input comma seperated string and returns a list of tokens each trimmed for whitespace
+func parseCsv(input string) []string {
+	tokens := strings.Split(input, ",")
+	results := make([]string, 0, len(tokens))
+	for _, token := range tokens {
+		results = append(results, strings.TrimSpace(token))
+	}
+	return results
 }

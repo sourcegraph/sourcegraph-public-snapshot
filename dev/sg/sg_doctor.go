@@ -2,22 +2,32 @@ package main
 
 import (
 	"context"
-	"flag"
 
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/urfave/cli/v2"
+
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var (
-	doctorFlagSet = flag.NewFlagSet("sg doctor", flag.ExitOnError)
-	doctorCommand = &ffcli.Command{
-		Name:       "doctor",
-		ShortUsage: "sg doctor",
-		ShortHelp:  "Runs checks to test whether system is in correct state to run Sourcegraph.",
-		FlagSet:    doctorFlagSet,
-		Exec:       doctorExec,
-	}
-)
+var doctorCommand = &cli.Command{
+	Name:      "doctor",
+	ArgsUsage: "[...checks]",
+	Usage:     "Run checks to test whether system is in correct state to run Sourcegraph",
+	Category:  CategoryEnv,
+	Action:    execAdapter(doctorExec),
+}
 
 func doctorExec(ctx context.Context, args []string) error {
-	return runChecks(ctx, checks)
+	if len(args) == 0 {
+		return runChecks(ctx, checks)
+	}
+	checksToRun := map[string]check.CheckFunc{}
+	for _, arg := range args {
+		c, ok := checks[arg]
+		if !ok {
+			return errors.Newf("check %q not found", arg)
+		}
+		checksToRun[arg] = c
+	}
+	return runChecks(ctx, checksToRun)
 }

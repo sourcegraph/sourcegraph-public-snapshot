@@ -32,7 +32,7 @@
 
 > ℹ️ This quickstart guide is useful to those already familiar with Helm who have a good understanding of how to use Helm in the environment they want to deploy into, and who just want to quickly deploy Sourcegraph with Helm with the default configuration. If this doesn't cover what you need to know, see the links above for platform-specific guides.
 
-To use the Helm chart, add the Sourcegraph helm repository:
+To use the Helm chart, add the Sourcegraph helm repository (on the machine used to interact with your cluster):
 
 ```sh
 helm repo add sourcegraph https://sourcegraph.github.io/deploy-sourcegraph-helm/
@@ -72,33 +72,9 @@ helm upgrade --install --values ./override.yaml --version 0.7.0 sourcegraph sour
 ```
 When making configuration changes, it's recommended to review the changes that will be applied - see [Reviewing Changes](#reviewing-changes).
 
-### Advanced Configuration Methods
+### Specific Configuration Scenarios
 
-The Helm chart is new and still under active development, and our values.yaml (and therefore the customization available to use via an override file) may not cover every need. Equally, some changes are environment or customer-specific, and so will never be part of the default Sourcegraph Helm chart.
-
-The following guidance for using Kustomize with Helm and Helm Subcharts covers both of these scenarios.
-
-If in doubt, or if you feel something ought to be added to the stock Sourcegraph Helm chart, please contact [support@sourcegraph.com](mailto:support@sourcegraph.com) or your Customer Engineer directly to discuss.
-
-#### Integrate Kustomize with Helm chart
-
-For advanced users who are looking for a temporary workaround, we __recommend__ applying [Kustomize](https://kustomize.io) on the rendered manifests from our chart. Please __do not__ maintain your own fork of our chart, this may impact our ability to support you if you run into issues.
-
-You can learn more about how to integrate Kustomize with Helm from our [example](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/kustomize-chart).
-
-#### Helm subcharts
-
-[Helm subcharts](https://helm.sh/docs/chart_template_guide/subcharts_and_globals/) can be used for permanent customizations to the official Sourcegraph helm chart. This is useful for changes such as adding a new resource unique to your deployment (PodSecurityPolicy, NetworkPolicy, additional services, etc.). These are long-lived customizations that shouldn't be contributed back to the Sourcegraph helm chart.
-
-With a subchart, you create your own helm chart and specify the Sourcegraph chart as a dependency. Any resources you place in the templates folder of your chart will be deployed, as well as the Sourcegraph resources, allowing you to extend the Sourcegraph chart without maintaining a fork.
-
-An example of a subchart is shown in the [examples/subchart](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples) folder.
-
-More details on how to create and configure a subchart can be found in the [helm documentation](https://helm.sh/docs/chart_template_guide/subcharts_and_globals).
-
-## Guides
-
-### Using external PostgreSQL databases
+#### Using external PostgreSQL databases
 
 To use external PostgreSQL databases, first review our [general recommendations](https://docs.sourcegraph.com/admin/external_services/postgres#using-your-own-postgresql-server) and [required postgres permissions](https://docs.sourcegraph.com/admin/external_services/postgres#postgres-permissions-and-database-migrations).
 
@@ -178,7 +154,7 @@ pgsql:
     port: "5432"
 ```
 
-### Using external Redis instances
+#### Using external Redis instances
 
 To use external Redis instances, first review our [general recommendations](https://docs.sourcegraph.com/admin/external_services/redis).
 
@@ -233,7 +209,7 @@ redisStore:
 
 The [using your own Redis](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/external-redis) example demonstrates this approach.
 
-### Using external Object Storage
+#### Using external Object Storage
 
 To use an external Object Storage service (S3-compatible services, or GCS), first review our [general recommendations](https://docs.sourcegraph.com/admin/external_services/object_storage). Then add the below code snippet to your override file.
 
@@ -286,7 +262,7 @@ preciseCodeIntel:
     <<: *objectStorageEnv
 ```
 
-### Using SSH to clone repositories
+#### Using SSH to clone repositories
 
 Create a [Secret](https://kubernetes.io/docs/concepts/configuration/secret/) that contains the base64 encoded contents of your SSH private key (make sure it doesn’t require a passphrase) and known_hosts file. The [Secret] will be mounted in the `gitserver` deployment to authenticate with your code host.
 
@@ -327,6 +303,30 @@ gitserver:
   sshSecret: gitserver-ssh
 ```
 
+### Advanced Configuration Methods
+
+The Helm chart is new and still under active development, and our values.yaml (and therefore the customization available to use via an override file) may not cover every need. Equally, some changes are environment or customer-specific, and so will never be part of the default Sourcegraph Helm chart.
+
+The following guidance for using Kustomize with Helm and Helm Subcharts covers both of these scenarios.
+
+> ⚠️ While both of these approaches are available, deployment changes that are not covered by Sourcegraph documentation should be discussed with either your Customer Engineer or Support contact before proceeding, to ensure the changes proposed can be supported by Sourcegraph. This also allows Sourcegraph to consider adding the required customizations to the Helm chart.
+
+#### Integrate Kustomize with Helm chart
+
+For advanced users who are looking for a temporary workaround, we __recommend__ applying [Kustomize](https://kustomize.io) on the rendered manifests from our chart. Please __do not__ maintain your own fork of our chart, this may impact our ability to support you if you run into issues.
+
+You can learn more about how to integrate Kustomize with Helm from our [example](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/kustomize-chart).
+
+#### Helm subcharts
+
+[Helm subcharts](https://helm.sh/docs/chart_template_guide/subcharts_and_globals/) can be used for permanent customizations to the official Sourcegraph helm chart. This is useful for changes such as adding a new resource unique to your deployment (PodSecurityPolicy, NetworkPolicy, additional services, etc.). These are long-lived customizations that shouldn't be contributed back to the Sourcegraph helm chart.
+
+With a subchart, you create your own helm chart and specify the Sourcegraph chart as a dependency. Any resources you place in the templates folder of your chart will be deployed, as well as the Sourcegraph resources, allowing you to extend the Sourcegraph chart without maintaining a fork.
+
+An example of a subchart is shown in the [examples/subchart](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples) folder.
+
+More details on how to create and configure a subchart can be found in the [helm documentation](https://helm.sh/docs/chart_template_guide/subcharts_and_globals).
+
 ## Cloud providers guides
 
 This section is aimed at providing high-level guidance on deploying Sourcegraph via Helm on major Cloud providers. In general, you need the following to get started:
@@ -343,7 +343,7 @@ This section is aimed at providing high-level guidance on deploying Sourcegraph 
 1. You need to have a GKE cluster (>=1.19) with the `HTTP Load Balancing` addon enabled. Alternatively, you can use your own choice of Ingress Controller and disable the `HTTP Load Balancing` add-on, [learn more](https://cloud.google.com/kubernetes-engine/docs/how-to/custom-ingress-controller).
 1. Your account should have sufficient access rights, equivalent to the `cluster-admin` ClusterRole.
 1. Connect to your cluster (via either the console or the command line using `gcloud`) and ensure the cluster is up and running by running: `kubectl get nodes` (several `ready` nodes should be listed)
-1. Have the Helm CLI installed and run the following command to link to the Sourcegraph helm repository
+1. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository (on the machine used to interact with your cluster):
 
 ```sh
 helm repo add sourcegraph https://sourcegraph.github.io/deploy-sourcegraph-helm/
@@ -477,7 +477,7 @@ Now the deployment is complete, more information on configuring the Sourcegraph 
 > You may consider deploying your own Ingress Controller instead of the ALB Ingress Controller, [learn more](https://kubernetes.github.io/ingress-nginx/)
 1. Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
 1. Connect to your cluster (via either the console or the command line using `eksctl`) and ensure the cluster is up and running using: `kubectl get nodes` (several `ready` nodes should be listed)
-1. Have the Helm CLI installed and run the following command to link to the Sourcegraph helm repository
+1. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository (on the machine used to interact with your cluster):
 
 ```sh
 helm repo add sourcegraph https://sourcegraph.github.io/deploy-sourcegraph-helm/
@@ -559,7 +559,7 @@ Now the deployment is complete, more information on configuring the Sourcegraph 
 > You may consider using your custom Ingress Controller instead of Application Gateway, [learn more](https://docs.microsoft.com/en-us/azure/aks/ingress-basic)
 1. Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
 1. Connect to your cluster (via either the console or the command line using the Azure CLI) and ensure the cluster is up and running using: `kubectl get nodes` (several `ready` nodes should be listed)
-1. Have the Helm CLI installed and run the following command to link to the Sourcegraph helm repository:
+1. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository (on the machine used to interact with your cluster):
 
 ```sh
 helm repo add sourcegraph https://sourcegraph.github.io/deploy-sourcegraph-helm/
@@ -645,7 +645,7 @@ Now the deployment is complete, more information on configuring the Sourcegraph 
    - [x] Block Storage CSI driver
 1. Your account should have sufficient access privileges, equivalent to the `cluster-admin` ClusterRole.
 1. Connect to your cluster (via either the console or the command line using the relevant CLI tool) and ensure the cluster is up and running using: `kubectl get nodes` (several `ready` nodes should be listed)
-1. Have the Helm CLI installed and run the following command to link to the Sourcegraph helm repository:
+1. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository (on the machine used to interact with your cluster):
 
 ```sh
 helm repo add sourcegraph https://sourcegraph.github.io/deploy-sourcegraph-helm/

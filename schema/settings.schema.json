@@ -154,7 +154,7 @@
         "showSearchNotebook": {
           "description": "Enables the search notebook at search/notebook",
           "type": "boolean",
-          "default": false,
+          "default": true,
           "!go": {
             "pointer": true
           }

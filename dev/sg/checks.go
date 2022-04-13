@@ -229,7 +229,7 @@ func checkSourcegraphDatabase(ctx context.Context) error {
 	// This check runs only in the `sourcegraph/sourcegraph` repository, so
 	// we try to parse the globalConf and use its `Env` to configure the
 	// Postgres connection.
-	ok, _ := parseConf(*configFlag, *overwriteConfigFlag)
+	ok, _ := parseConf(configFlag, overwriteConfigFlag)
 	if !ok {
 		return errors.New("failed to read sg.config.yaml. This step of `sg setup` needs to be run in the `sourcegraph` repository")
 	}

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,30 +9,22 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var (
-	updateFlags = flag.NewFlagSet("sg update", flag.ExitOnError)
-	// TODO: These are deprecated flags and can be removed May 1st 2022
-	_ = updateFlags.Bool("local", false, "Update to local copy of 'dev/sg'")
-	_ = updateFlags.Bool("download", true, "Download a prebuilt binary of 'sg' instead of compiling it locally")
-)
-
-var updateCommand = &ffcli.Command{
-	Name:       "update",
-	FlagSet:    updateFlags,
-	ShortUsage: "sg update",
-	ShortHelp:  "Update sg.",
-	LongHelp: `Update local sg installation with the latest changes. To see what's new, run:
+var updateCommand = &cli.Command{
+	Name:  "update",
+	Usage: "Update local sg installation",
+	Description: `Update local sg installation with the latest changes. To see what's new, run:
 
   sg version changelog -next
 
 Requires a local copy of the 'sourcegraph/sourcegraph' codebase.`,
-	Exec: func(ctx context.Context, args []string) error {
-		_, err := updateToPrebuiltSG(ctx)
+	Category: CategoryUtil,
+	Action: func(cmd *cli.Context) error {
+		_, err := updateToPrebuiltSG(cmd.Context)
 		return err
 	},
 }
