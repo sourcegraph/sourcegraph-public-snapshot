@@ -9,9 +9,39 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
+func TestClient_Repo(t *testing.T) {
+	// WHEN UPDATING: ensure the token in use can read
+	// https://bitbucket.org/sourcegraph-testing/sourcegraph/.
+
+	ctx := context.Background()
+
+	c, save := newTestClient(t)
+	defer save()
+
+	t.Run("valid repo", func(t *testing.T) {
+		repo, err := c.Repo(ctx, "sourcegraph-testing", "sourcegraph")
+		assert.NotNil(t, repo)
+		assert.Nil(t, err)
+		assertGolden(t, repo)
+	})
+
+	t.Run("invalid repo", func(t *testing.T) {
+		repo, err := c.Repo(ctx, "sourcegraph-testing", "does-not-exist")
+		assert.Nil(t, repo)
+		assert.NotNil(t, err)
+		assert.True(t, errcode.IsNotFound(err))
+	})
+}
+
 func TestClient_Repos(t *testing.T) {
+	// WHEN UPDATING: ensure the token in use can read
+	// https://bitbucket.org/sourcegraph-testing/sourcegraph/ and
+	// https://bitbucket.org/sourcegraph-testing/src-cli/.
+
 	cli, save := newTestClient(t)
 	defer save()
 
