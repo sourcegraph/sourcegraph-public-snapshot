@@ -23,4 +23,8 @@ mkdir -p ./annotations/
 
 # asdf setup
 # ----------
-./dev/ci/asdf-install.sh
+if [[ ! "$BUILDKITE_STEP_KEY" == "pipeline-upload" ]]; then
+  ./dev/ci/asdf-install.sh
+else
+  echo "skipping asdf install for pipeline upload setp"
+fi
