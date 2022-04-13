@@ -46,7 +46,6 @@ var (
 	// Note that these values are only available after the main sg CLI app has been run.
 	configFlag          string
 	overwriteConfigFlag string
-	skipAutoUpdatesFlag bool
 
 	// Global verbose mode
 	verbose bool
@@ -88,11 +87,10 @@ var sg = &cli.App{
 			Destination: &overwriteConfigFlag,
 		},
 		&cli.BoolFlag{
-			Name:        "skip-auto-update",
-			Usage:       "prevent sg from automatically updating itself",
-			EnvVars:     []string{"SG_SKIP_AUTO_UPDATE"},
-			Value:       BuildCommit == "dev", // Default to skip in dev, otherwise don't
-			Destination: &skipAutoUpdatesFlag,
+			Name:    "skip-auto-update",
+			Usage:   "prevent sg from automatically updating itself",
+			EnvVars: []string{"SG_SKIP_AUTO_UPDATE"},
+			Value:   BuildCommit == "dev", // Default to skip in dev, otherwise don't
 		},
 	},
 	Before: func(cmd *cli.Context) error {
@@ -108,9 +106,9 @@ var sg = &cli.App{
 
 		if cmd.Args().First() != "update" {
 			// If we're not running "sg update ...", we want to check the version first
-			err := checkSgVersion(cmd.Context)
+			err := checkSgVersionAndUpdate(cmd.Context, cmd.Bool("skip-auto-update"))
 			if err != nil {
-				writeWarningLinef("Checking sg version and updating failed: %s", err)
+				writeWarningLinef("update check: %s", err)
 				// Do not exit here, so we don't break user flow when they want to
 				// run `sg` but updating fails
 			}
