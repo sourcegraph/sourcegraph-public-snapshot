@@ -28,7 +28,7 @@ import { getYAxisWidth } from '../helpers/get-y-axis-width'
 import { getYTicks } from '../helpers/get-y-ticks'
 import { usePointerEventEmitters } from '../helpers/use-event-emitters'
 import { useScalesConfiguration, useXScale, useYScale } from '../helpers/use-scales'
-import { LineChartSeriesWithData, onDatumZoneClick, Point } from '../types'
+import { onDatumZoneClick, Point } from '../types'
 
 import { ActiveDatum, GlyphContent } from './GlyphContent'
 import { NonActiveBackground } from './NonActiveBackground'
@@ -240,9 +240,6 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
         : null
     const rootClasses = classNames({ [styles.contentWithCursor]: !!hoveredDatumLink })
 
-    const hoveredLineLast = (line: LineChartSeriesWithData<Datum>): number =>
-        line.dataKey === hoveredDatum?.line?.dataKey ? 1 : -1
-
     return (
         <div className={classNames(rootClasses, 'percy-inactive-element')} data-testid="line-chart__content">
             {/*
@@ -332,7 +329,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                                 fill="transparent"
                             />
 
-                            {seriesWithData.sort(hoveredLineLast).map((line, index) => (
+                            {seriesWithData.map((line, index) => (
                                 <Group
                                     key={line.dataKey as string}
                                     // eslint-disable-next-line jsx-a11y/aria-role
