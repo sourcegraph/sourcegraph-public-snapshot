@@ -199,6 +199,24 @@ asdf plugin-add rust https://github.com/asdf-community/asdf-rust.git
 asdf install rust
 `,
 			},
+			{
+				name:                 "protoc",
+				check:                check.InPath("protoc"),
+				instructionsComment:  `Souregraph requires protoc to be installed.`,
+				instructionsCommands: `apt install -y protobuf-compiler`,
+			},
+			{
+				name:                 "protoc-gen-go",
+				check:                check.InPath("protoc-gen-go"),
+				instructionsComment:  `Souregraph requires protoc-gen-go to be installed.`,
+				instructionsCommands: `go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28`,
+			},
+			{
+				name:                 "protoc-gen-go-grpc",
+				check:                check.InPath("protoc-gen-go-grpc"),
+				instructionsComment:  `Souregraph requires protoc-gen-go-grpc to be installed.`,
+				instructionsCommands: `go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2`,
+			},
 		},
 	},
 	{
