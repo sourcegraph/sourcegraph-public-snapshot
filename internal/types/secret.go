@@ -33,91 +33,52 @@ func (e *ExternalService) RedactedConfig() (string, error) {
 		return "", err
 	}
 
-	var edits []edit
+	var es edits
 	switch c := cfg.(type) {
 	case *schema.GitHubConnection:
-		if c.Token != "" {
-			edits = append(edits, edit{jsonx.MakePath("token"), redactedString(c.Token)})
-		}
+		es.redactString(c.Token, "token")
 	case *schema.GitLabConnection:
-		if c.Token != "" {
-			edits = append(edits, edit{jsonx.MakePath("token"), redactedString(c.Token)})
-		}
+		es.redactString(c.Token, "token")
 	case *schema.BitbucketServerConnection:
-		if c.Password != "" {
-			edits = append(edits, edit{jsonx.MakePath("password"), redactedString(c.Password)})
-		}
-
-		if c.Token != "" {
-			edits = append(edits, edit{jsonx.MakePath("token"), redactedString(c.Token)})
-		}
+		es.redactString(c.Password, "password")
+		es.redactString(c.Token, "token")
 	case *schema.BitbucketCloudConnection:
-		if c.AppPassword != "" {
-			edits = append(edits, edit{jsonx.MakePath("appPassword"), redactedString(c.AppPassword)})
-		}
+		es.redactString(c.AppPassword, "appPassword")
 	case *schema.AWSCodeCommitConnection:
-		if c.SecretAccessKey != "" {
-			edits = append(edits, edit{jsonx.MakePath("secretAccessKey"), redactedString(c.SecretAccessKey)})
-		}
-		if c.GitCredentials.Password != "" {
-			edits = append(edits, edit{jsonx.MakePath("gitCredentials", "password"), redactedString(c.GitCredentials.Password)})
-		}
+		es.redactString(c.SecretAccessKey, "secretAccessKey")
+		es.redactString(c.GitCredentials.Password, "gitCredentials", "password")
 	case *schema.PhabricatorConnection:
-		if c.Token != "" {
-			edits = append(edits, edit{jsonx.MakePath("token"), redactedString(c.Token)})
-		}
+		es.redactString(c.Token, "token")
 	case *schema.PerforceConnection:
-		if c.P4Passwd != "" {
-			edits = append(edits, edit{jsonx.MakePath("p4.passwd"), redactedString(c.P4Passwd)})
-		}
+		es.redactString(c.P4Passwd, "p4.passwd")
 	case *schema.GitoliteConnection:
 		// Nothing to redact
 	case *schema.GoModulesConnection:
 		for i := range c.Urls {
-			if c.Urls[i] == "" {
-				continue
-			}
-
-			redacted, err := redactedURL(c.Urls[i])
+			err = es.redactURL(c.Urls[i], "urls", i)
 			if err != nil {
 				return "", err
 			}
-
-			edits = append(edits, edit{jsonx.MakePath("urls", i), redacted})
 		}
 	case *schema.JVMPackagesConnection:
-		if c.Maven != nil && c.Maven.Credentials != "" {
-			edits = append(edits, edit{jsonx.MakePath("maven", "credentials"), redactedString(c.Maven.Credentials)})
+		if c.Maven != nil {
+			es.redactString(c.Maven.Credentials, "maven", "credentials")
 		}
 	case *schema.PagureConnection:
-		if c.Token != "" {
-			edits = append(edits, edit{jsonx.MakePath("token"), redactedString(c.Token)})
-		}
+		es.redactString(c.Token, "token")
 	case *schema.NpmPackagesConnection:
-		if c.Credentials != "" {
-			edits = append(edits, edit{jsonx.MakePath("credentials"), redactedString(c.Credentials)})
-		}
+		es.redactString(c.Credentials, "credentials")
 	case *schema.OtherExternalServiceConnection:
-		if c.Url != "" {
-			redacted, err := redactedURL(c.Url)
-			if err != nil {
-				return "", err
-			}
-			edits = append(edits, edit{jsonx.MakePath("url"), redacted})
+		err = es.redactURL(c.Url, "url")
+		if err != nil {
+			return "", err
 		}
 	default:
 		// return an error; it's safer to fail than to incorrectly return unsafe data.
 		return "", errors.Errorf("Unrecognized ExternalServiceConfig for redaction: kind %+v not implemented", reflect.TypeOf(cfg))
 	}
 
-	redacted := e.Config
-	for _, e := range edits {
-		if redacted, err = e.apply(redacted); err != nil {
-			return "", err
-		}
-	}
-
-	return redacted, nil
+	return es.apply(e.Config)
 }
 
 // UnredactConfig will replace redacted fields with their unredacted form from the 'old' ExternalService.
@@ -146,49 +107,32 @@ func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 		return err
 	}
 
-	var edits []edit
+	var es edits
+
 	switch c := newCfg.(type) {
 	case *schema.GitHubConnection:
 		o := oldCfg.(*schema.GitHubConnection)
-		if c.Token != "" {
-			edits = append(edits, edit{jsonx.MakePath("token"), unredactedString(c.Token, o.Token)})
-		}
+		es.unredactString(c.Token, o.Token, "token")
 	case *schema.GitLabConnection:
 		o := oldCfg.(*schema.GitLabConnection)
-		if c.Token != "" {
-			edits = append(edits, edit{jsonx.MakePath("token"), unredactedString(c.Token, o.Token)})
-		}
+		es.unredactString(c.Token, o.Token, "token")
 	case *schema.BitbucketServerConnection:
 		o := oldCfg.(*schema.BitbucketServerConnection)
-		if c.Password != "" {
-			edits = append(edits, edit{jsonx.MakePath("password"), unredactedString(c.Password, o.Password)})
-		}
-		if c.Token != "" {
-			edits = append(edits, edit{jsonx.MakePath("token"), unredactedString(c.Token, o.Token)})
-		}
+		es.unredactString(c.Password, o.Password, "password")
+		es.unredactString(c.Token, o.Token, "token")
 	case *schema.BitbucketCloudConnection:
 		o := oldCfg.(*schema.BitbucketCloudConnection)
-		if c.AppPassword != "" {
-			edits = append(edits, edit{jsonx.MakePath("appPassword"), unredactedString(c.AppPassword, o.AppPassword)})
-		}
+		es.unredactString(c.AppPassword, o.AppPassword, "appPassword")
 	case *schema.AWSCodeCommitConnection:
 		o := oldCfg.(*schema.AWSCodeCommitConnection)
-		if c.SecretAccessKey != "" {
-			edits = append(edits, edit{jsonx.MakePath("secretAccessKey"), unredactedString(c.SecretAccessKey, o.SecretAccessKey)})
-		}
-		if c.GitCredentials.Password != "" {
-			edits = append(edits, edit{jsonx.MakePath("gitCredentials", "password"), unredactedString(c.GitCredentials.Password, o.GitCredentials.Password)})
-		}
+		es.unredactString(c.SecretAccessKey, o.SecretAccessKey, "secretAccessKey")
+		es.unredactString(c.GitCredentials.Password, o.GitCredentials.Password, "gitCredentials", "password")
 	case *schema.PhabricatorConnection:
 		o := oldCfg.(*schema.PhabricatorConnection)
-		if c.Token != "" {
-			edits = append(edits, edit{jsonx.MakePath("token"), unredactedString(c.Token, o.Token)})
-		}
+		es.unredactString(c.Token, o.Token, "token")
 	case *schema.PerforceConnection:
 		o := oldCfg.(*schema.PerforceConnection)
-		if c.P4Passwd != "" {
-			edits = append(edits, edit{jsonx.MakePath("p4.passwd"), unredactedString(c.P4Passwd, o.P4Passwd)})
-		}
+		es.unredactString(c.P4Passwd, o.P4Passwd, "p4.passwd")
 	case *schema.GitoliteConnection:
 		// Nothing to redact
 	case *schema.GoModulesConnection:
@@ -214,50 +158,95 @@ func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 				continue
 			}
 
-			unredacted, err := unredactedURL(c.Urls[i], oldURL)
+			err = es.unredactURL(c.Urls[i], oldURL, "urls", i)
 			if err != nil {
 				return err
 			}
-
-			edits = append(edits, edit{jsonx.MakePath("urls", i), unredacted})
 		}
 	case *schema.JVMPackagesConnection:
 		o := oldCfg.(*schema.JVMPackagesConnection)
-		if c.Maven != nil && c.Maven.Credentials != "" && o.Maven != nil {
-			edits = append(edits, edit{jsonx.MakePath("maven", "credentials"), unredactedString(c.Maven.Credentials, o.Maven.Credentials)})
+		if c.Maven != nil && o.Maven != nil {
+			es.unredactString(c.Maven.Credentials, o.Maven.Credentials, "maven", "credentials")
 		}
 	case *schema.PagureConnection:
 		o := oldCfg.(*schema.PagureConnection)
-		if c.Token != "" {
-			edits = append(edits, edit{jsonx.MakePath("token"), unredactedString(c.Token, o.Token)})
-		}
+		es.unredactString(c.Token, o.Token, "token")
 	case *schema.NpmPackagesConnection:
 		o := oldCfg.(*schema.NpmPackagesConnection)
-		if c.Credentials != "" {
-			edits = append(edits, edit{jsonx.MakePath("credentials"), unredactedString(c.Credentials, o.Credentials)})
-		}
+		es.unredactString(c.Credentials, o.Credentials, "credentials")
 	case *schema.OtherExternalServiceConnection:
 		o := oldCfg.(*schema.OtherExternalServiceConnection)
-		if c.Url != "" {
-			unredacted, err := unredactedURL(c.Url, o.Url)
-			if err != nil {
-				return err
-			}
-			edits = append(edits, edit{jsonx.MakePath("url"), unredacted})
+		err = es.unredactURL(c.Url, o.Url, "url")
+		if err != nil {
+			return err
 		}
 	default:
 		// return an error; it's safer to fail than to incorrectly return unsafe data.
 		return errors.Errorf("Unrecognized ExternalServiceConfig for redaction: kind %+v not implemented", reflect.TypeOf(newCfg))
 	}
 
-	unredacted := e.Config
-	for _, e := range edits {
-		if unredacted, err = e.apply(unredacted); err != nil {
-			return err
-		}
+	unredacted, err := es.apply(e.Config)
+	if err != nil {
+		return err
 	}
 
 	e.Config = unredacted
+	return nil
+}
+
+type edits []edit
+
+func (es edits) apply(input string) (output string, err error) {
+	output = input
+	for _, e := range es {
+		if output, err = e.apply(output); err != nil {
+			return "", err
+		}
+	}
+	return
+}
+
+func (es *edits) edit(v interface{}, path ...interface{}) {
+	*es = append(*es, edit{jsonx.MakePath(path...), v})
+}
+
+func (es *edits) redactString(s string, path ...interface{}) {
+	if s != "" {
+		es.edit(redactedString(s), path...)
+	}
+}
+
+func (es *edits) unredactString(new, old string, path ...interface{}) {
+	if new != "" && old != "" {
+		es.edit(unredactedString(new, old), path...)
+	}
+}
+
+func (es *edits) redactURL(s string, path ...interface{}) error {
+	if s == "" {
+		return nil
+	}
+
+	redacted, err := redactedURL(s)
+	if err != nil {
+		return err
+	}
+
+	es.edit(redacted, path...)
+	return nil
+}
+
+func (es *edits) unredactURL(new, old string, path ...interface{}) error {
+	if new == "" || old == "" {
+		return nil
+	}
+
+	unredacted, err := unredactedURL(new, old)
+	if err != nil {
+		return err
+	}
+
+	es.edit(unredacted, path...)
 	return nil
 }
 
