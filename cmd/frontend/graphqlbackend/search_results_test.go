@@ -605,38 +605,6 @@ func TestZeroElapsedMilliseconds(t *testing.T) {
 	}
 }
 
-func TestIsContextError(t *testing.T) {
-	cases := []struct {
-		err  error
-		want bool
-	}{
-		{
-			context.Canceled,
-			true,
-		},
-		{
-			context.DeadlineExceeded,
-			true,
-		},
-		{
-			errors.Wrap(context.Canceled, "wrapped"),
-			true,
-		},
-		{
-			errors.New("not a context error"),
-			false,
-		},
-	}
-	ctx := context.Background()
-	for _, c := range cases {
-		t.Run(c.err.Error(), func(t *testing.T) {
-			if got := isContextError(ctx, c.err); got != c.want {
-				t.Fatalf("wanted %t, got %t", c.want, got)
-			}
-		})
-	}
-}
-
 // Detailed filtering tests are below in TestSubRepoFilterFunc, this test is more
 // of an integration test to ensure that things are threaded through correctly
 // from the resolver

@@ -658,12 +658,6 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	return stats, nil
 }
 
-// isContextError returns true if ctx.Err() is not nil or if err
-// is an error caused by context cancelation or timeout.
-func isContextError(ctx context.Context, err error) bool {
-	return ctx.Err() != nil || errors.IsAny(err, context.Canceled, context.DeadlineExceeded)
-}
-
 // SearchResultResolver is a resolver for the GraphQL union type `SearchResult`.
 //
 // Supported types:
