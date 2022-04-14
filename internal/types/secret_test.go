@@ -341,17 +341,17 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 			old: schema.GoModulesConnection{
 				Urls: []string{
 					"https://user:password@athens.golang.org",
-					"https://user:password@proxy.golang.org",
+					"https://user:password1@proxy.golang.org",
 				},
 			},
 			in: schema.GoModulesConnection{
 				Urls: []string{
-					"https://user:REDACTED@athens.golang.org",
+					"https://user:REDACTED@proxy.golang.org",
 				},
 			},
 			out: schema.GoModulesConnection{
 				Urls: []string{
-					"https://user:password@athens.golang.org",
+					"https://user:password1@proxy.golang.org",
 				},
 			},
 		},
