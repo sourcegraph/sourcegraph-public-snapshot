@@ -64,6 +64,7 @@ require (
 	github.com/google/go-github/v43 v43.0.0
 	github.com/google/go-querystring v1.1.0
 	github.com/google/uuid v1.3.0
+	github.com/google/zoekt v0.0.0-20211108135652-f8e8ada171c7
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/csrf v1.7.1
 	github.com/gorilla/handlers v1.5.1
@@ -112,7 +113,7 @@ require (
 	github.com/peterhellberg/link v1.1.0
 	github.com/prometheus/alertmanager v0.23.0
 	github.com/prometheus/client_golang v1.12.1
-	github.com/prometheus/common v0.32.1
+	github.com/prometheus/common v0.33.0
 	github.com/pseudomuto/protoc-gen-doc v1.5.0
 	github.com/qustavo/sqlhooks/v2 v2.1.0
 	github.com/rjeczalik/notify v0.9.2
