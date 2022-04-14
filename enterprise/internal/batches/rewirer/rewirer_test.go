@@ -26,7 +26,7 @@ func TestRewirer_Rewire(t *testing.T) {
 	unsupportedTestRepo := &types.Repo{
 		ID: unsupportedTestRepoID,
 		ExternalRepo: api.ExternalRepoSpec{
-			ServiceType: extsvc.TypeBitbucketCloud,
+			ServiceType: extsvc.TypeOther,
 		},
 	}
 	testCases := []struct {
