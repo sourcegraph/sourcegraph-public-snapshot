@@ -33,6 +33,7 @@ import (
 
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/go-rendezvous"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -172,8 +173,8 @@ type Client interface {
 	// to abort processing further results.
 	BatchLog(ctx context.Context, opts BatchLogOptions, callback BatchLogCallback) error
 
-	// Command creates a new Cmd. Command name must be 'git', otherwise it panics.
-	Command(name string, args ...string) *Cmd
+	// GitCommand creates a new Cmd.
+	GitCommand(repo api.RepoName, args ...string) *Cmd
 
 	// CreateCommitFromPatch will attempt to create a commit from a patch
 	// If possible, the error returned will be of type protocol.CreateCommitFromPatchError
@@ -487,7 +488,7 @@ type badRequestError struct{ error }
 func (e badRequestError) BadRequest() bool { return true }
 
 func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, errRes error) {
-	repoName := protocol.NormalizeRepo(c.Repo)
+	repoName := protocol.NormalizeRepo(c.repo)
 
 	span, ctx := ot.StartSpanFromContext(ctx, "Client.sendExec")
 	defer func() {
@@ -498,8 +499,8 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 		span.Finish()
 	}()
 	span.SetTag("request", "Exec")
-	span.SetTag("repo", c.Repo)
-	span.SetTag("args", c.Args[1:])
+	span.SetTag("repo", c.repo)
+	span.SetTag("args", c.args[1:])
 
 	// Check that ctx is not expired.
 	if err := ctx.Err(); err != nil {
@@ -509,11 +510,11 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 
 	req := &protocol.ExecRequest{
 		Repo:           repoName,
-		EnsureRevision: c.EnsureRevision,
-		Args:           c.Args[1:],
-		NoTimeout:      c.NoTimeout,
+		EnsureRevision: c.EnsureRevision(),
+		Args:           c.args[1:],
+		NoTimeout:      c.noTimeout,
 	}
-	resp, err := c.client.httpPost(ctx, repoName, "exec", req)
+	resp, err := c.execFn(ctx, repoName, "exec", req)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -653,7 +654,7 @@ func (c *ClientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 	ctx, endObservation := c.operations.batchLog.With(ctx, &err, observation.Args{LogFields: opts.LogFields()})
 	defer endObservation(1, observation.Args{})
 
-	// Make a request to a singlee gitserver shard and feed the results to the user-supplied
+	// Make a request to a single gitserver shard and feed the results to the user-supplied
 	// callback. This function is invoked multiple times (and concurrently) in the loops below
 	// this function definition.
 	performLogRequestToShard := func(ctx context.Context, addr string, repoCommits []api.RepoCommit) (err error) {
@@ -783,14 +784,21 @@ func (c *ClientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 		})
 	}
 
-	// Perform each batch reqeuest concurrently, but only allow four requests to be in-flight at a
-	// time. This operation returns partial results in the case of a malformed or missing repository
-	// or a bad commit reference, but does not attempt to return partial results when an entire shard
-	// is down. Any of these operations failing will cause an error to be returned from the entire
-	// BatchLog function.
+	// Perform each batch request concurrently up to a maximum limit of 32 requests
+	// in-flight at one time.
+	//
+	// This limit will be useless in practice most of the  time as we should only be
+	// making one request per shard and instances should _generally_ have fewer than
+	// 32 gitserver shards. This condition is really to catch unexpected bad behavior.
+	// At the time this limit was chosen, we have 20 gitserver shards on our Cloud
+	// environment, which holds a large proportion of GitHub repositories.
+	//
+	// This operation returns partial results in the case of a malformed or missing
+	// repository or a bad commit reference, but does not attempt to return partial
+	// results when an entire shard is down. Any of these operations failing will
+	// cause an error to be returned from the entire BatchLog function.
 
-	limit := int64(4)
-	sem := semaphore.NewWeighted(limit)
+	sem := semaphore.NewWeighted(int64(32))
 	g, ctx := errgroup.WithContext(ctx)
 
 	for addr, repoCommits := range batches {
@@ -829,23 +837,12 @@ func repoNamesFromRepoCommits(repoCommits []api.RepoCommit) []string {
 
 // Cmd represents a command to be executed remotely.
 type Cmd struct {
-	client *ClientImplementor
-
-	Args           []string
-	Repo           api.RepoName // the repository to execute the command in
-	EnsureRevision string
-	ExitStatus     int
-	NoTimeout      bool
-}
-
-func (c *ClientImplementor) Command(name string, arg ...string) *Cmd {
-	if name != "git" {
-		panic("gitserver: command name must be 'git'")
-	}
-	return &Cmd{
-		client: c,
-		Args:   append([]string{"git"}, arg...),
-	}
+	repo           api.RepoName // the repository to execute the command in
+	ensureRevision string
+	args           []string
+	noTimeout      bool
+	exitStatus     int
+	execFn         func(ctx context.Context, repo api.RepoName, op string, payload interface{}) (resp *http.Response, err error)
 }
 
 // DividedOutput runs the command and returns its standard output and standard error.
@@ -861,7 +858,7 @@ func (c *Cmd) DividedOutput(ctx context.Context) ([]byte, []byte, error) {
 		return nil, nil, err
 	}
 
-	c.ExitStatus, err = strconv.Atoi(trailer.Get("X-Exec-Exit-Status"))
+	c.exitStatus, err = strconv.Atoi(trailer.Get("X-Exec-Exit-Status"))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -872,12 +869,6 @@ func (c *Cmd) DividedOutput(ctx context.Context) ([]byte, []byte, error) {
 	}
 
 	return stdout, stderr, nil
-}
-
-// Run starts the specified command and waits for it to complete.
-func (c *Cmd) Run(ctx context.Context) error {
-	_, _, err := c.DividedOutput(ctx)
-	return err
 }
 
 // Output runs the command and returns its standard output.
@@ -893,10 +884,20 @@ func (c *Cmd) CombinedOutput(ctx context.Context) ([]byte, error) {
 }
 
 func (c *Cmd) DisableTimeout() {
-	c.NoTimeout = true
+	c.noTimeout = true
 }
 
-func (c *Cmd) String() string { return fmt.Sprintf("%q", c.Args) }
+func (c *Cmd) Repo() api.RepoName { return c.repo }
+
+func (c *Cmd) Args() []string { return c.args }
+
+func (c *Cmd) ExitStatus() int { return c.exitStatus }
+
+func (c *Cmd) SetEnsureRevision(r string) { c.ensureRevision = r }
+
+func (c *Cmd) EnsureRevision() string { return c.ensureRevision }
+
+func (c *Cmd) String() string { return fmt.Sprintf("%q", c.args) }
 
 // StdoutReader returns an io.ReadCloser of stdout of c. If the command has a
 // non-zero return value, Read returns a non io.EOF error. Do not pass in a
@@ -937,6 +938,14 @@ func (c *cmdReader) Read(p []byte) (int, error) {
 
 func (c *cmdReader) Close() error {
 	return c.rc.Close()
+}
+
+func (c *ClientImplementor) GitCommand(repo api.RepoName, arg ...string) *Cmd {
+	return &Cmd{
+		repo:   repo,
+		execFn: c.httpPost,
+		args:   append([]string{"git"}, arg...),
+	}
 }
 
 func (c *ClientImplementor) ListGitolite(ctx context.Context, gitoliteHost string) (list []*gitolite.Repo, err error) {
@@ -1491,8 +1500,7 @@ var ambiguousArgPattern = lazyregexp.New(`ambiguous argument '([^']+)'`)
 func (c *ClientImplementor) ResolveRevisions(ctx context.Context, repo api.RepoName, revs []protocol.RevisionSpecifier) ([]string, error) {
 	args := append([]string{"rev-parse"}, revsToGitArgs(revs)...)
 
-	cmd := c.Command("git", args...)
-	cmd.Repo = repo
+	cmd := c.GitCommand(repo, args...)
 	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		if gitdomain.IsRepoNotExist(err) {
@@ -1501,7 +1509,7 @@ func (c *ClientImplementor) ResolveRevisions(ctx context.Context, repo api.RepoN
 		if match := ambiguousArgPattern.FindSubmatch(stderr); match != nil {
 			return nil, &gitdomain.RevisionNotFoundError{Repo: repo, Spec: string(match[1])}
 		}
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.Args, stderr))
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.args, stderr))
 	}
 
 	return strings.Fields(string(stdout)), nil

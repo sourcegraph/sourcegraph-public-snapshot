@@ -231,7 +231,7 @@ export const NotebooksListPage: React.FunctionComponent<NotebooksListPageProps> 
         <div className="w-100">
             <Page>
                 <PageHeader
-                    path={[{ icon: MagnifyIcon, to: '/search' }, { text: 'Notebooks' }]}
+                    path={[{ icon: MagnifyIcon, to: '/search', ariaLabel: 'Code search' }, { text: 'Notebooks' }]}
                     actions={
                         authenticatedUser && (
                             <>

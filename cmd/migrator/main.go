@@ -3,14 +3,13 @@ package main
 import (
 	"context"
 	"database/sql"
-	"flag"
 	"fmt"
 	"os"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
-	"github.com/peterbourgon/ff/v3/ffcli"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/urfave/cli/v2"
 
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
@@ -42,16 +41,11 @@ func main() {
 
 func mainErr(ctx context.Context, args []string) error {
 	runnerFactory := newRunnerFactory()
-	rootFlagSet := flag.NewFlagSet(appName, flag.ExitOnError)
-	command := &ffcli.Command{
-		Name:       appName,
-		ShortUsage: fmt.Sprintf("%s <command>", appName),
-		ShortHelp:  "Validates and runs schema migrations",
-		FlagSet:    rootFlagSet,
-		Exec: func(ctx context.Context, args []string) error {
-			return flag.ErrHelp
-		},
-		Subcommands: []*ffcli.Command{
+	command := &cli.App{
+		Name:   appName,
+		Usage:  "Validates and runs schema migrations",
+		Action: cli.ShowSubcommandHelp,
+		Commands: []*cli.Command{
 			cliutil.Up(appName, runnerFactory, out, false),
 			cliutil.UpTo(appName, runnerFactory, out, false),
 			cliutil.DownTo(appName, runnerFactory, out, false),
@@ -60,11 +54,7 @@ func mainErr(ctx context.Context, args []string) error {
 		},
 	}
 
-	if err := command.Parse(args); err != nil {
-		return err
-	}
-
-	return command.Run(ctx)
+	return command.RunContext(ctx, os.Args)
 }
 
 func newRunnerFactory() func(ctx context.Context, schemaNames []string) (cliutil.Runner, error) {

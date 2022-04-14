@@ -159,6 +159,7 @@ export const useCodeIntel = ({
         repo: variables.repository,
         commit: variables.commit,
         path: variables.path,
+        filter: variables.filter ?? undefined,
         searchToken,
         fileContent,
         spec,

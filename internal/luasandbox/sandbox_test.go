@@ -89,31 +89,21 @@ func TestModule(t *testing.T) {
 	var stashedValue lua.LValue
 
 	api := map[string]lua.LGFunction{
-		"add": func(state *lua.LState) int {
-			a := state.CheckNumber(1)
-			b := state.CheckNumber(2)
-			state.Push(a + b)
-
-			return 1
-		},
-		"stash": func(state *lua.LState) int {
+		"add": WrapLuaFunction(func(state *lua.LState) error {
+			state.Push(state.CheckNumber(1) + state.CheckNumber(2))
+			return nil
+		}),
+		"stash": WrapLuaFunction(func(state *lua.LState) error {
 			stashedValue = state.CheckAny(1)
-			return 1
-		},
-	}
-
-	testModule := func(state *lua.LState) int {
-		t := state.NewTable()
-		state.SetFuncs(t, api)
-		state.Push(t)
-		return 1
+			return nil
+		}),
 	}
 
 	ctx := context.Background()
 
 	sandbox, err := newService(&observation.TestContext).CreateSandbox(ctx, CreateOptions{
 		Modules: map[string]lua.LGFunction{
-			"testmod": testModule,
+			"testmod": CreateModule(api),
 		},
 	})
 	if err != nil {

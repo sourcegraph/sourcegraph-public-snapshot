@@ -8,7 +8,7 @@ import { createBrowserHistory } from 'history'
 import ServerIcon from 'mdi-react/ServerIcon'
 import { Route, Router } from 'react-router'
 import { ScrollManager } from 'react-scroll-manager'
-import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
+import { combineLatest, from, Subscription, fromEvent, of, Subject, Observable } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
@@ -31,6 +31,8 @@ import {
 import { getEnabledExtensions } from '@sourcegraph/shared/src/api/client/enabledExtensions'
 import { preloadExtensions } from '@sourcegraph/shared/src/api/client/preload'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
+import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import {
     Controller as ExtensionsController,
     createController as createExtensionsController,
@@ -46,6 +48,7 @@ import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
+import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import {
     // This is the root Tooltip usage
     // eslint-disable-next-line no-restricted-imports
@@ -79,7 +82,6 @@ import { blockToGQLInput } from './notebooks/serialize'
 import { OrgAreaRoute } from './org/area/OrgArea'
 import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import { createPlatformContext } from './platform/context'
-import { fetchHighlightedFileLineRanges } from './repo/backend'
 import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
@@ -109,7 +111,6 @@ import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { UserSessionStores } from './UserSessionStores'
-import { globbingEnabledFromSettings } from './util/globbing'
 import { observeLocation } from './util/location'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
 
@@ -426,7 +427,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                                 }
                                                                 // Search query
                                                                 fetchHighlightedFileLineRanges={
-                                                                    fetchHighlightedFileLineRanges
+                                                                    this.fetchHighlightedFileLineRanges
                                                                 }
                                                                 // Extensions
                                                                 platformContext={this.platformContext}
@@ -564,4 +565,9 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             })
         )
     }
+    private fetchHighlightedFileLineRanges = (
+        parameters: FetchFileParameters,
+        force?: boolean | undefined
+    ): Observable<string[][]> =>
+        fetchHighlightedFileLineRanges({ ...parameters, platformContext: this.platformContext }, force)
 }

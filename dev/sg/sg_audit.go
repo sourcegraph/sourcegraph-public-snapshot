@@ -11,31 +11,36 @@ import (
 	"time"
 
 	"github.com/google/go-github/v41/github"
-	"github.com/peterbourgon/ff/v3/ffcli"
 	"github.com/slack-go/slack"
+	"github.com/urfave/cli/v2"
+
 	sgslack "github.com/sourcegraph/sourcegraph/dev/sg/internal/slack"
 	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var (
-	auditFlagSet    = flag.NewFlagSet("sg audit", flag.ExitOnError)
-	auditPRFlagSet  = flag.NewFlagSet("sg audit pr", flag.ExitOnError)
-	auditFormatFlag = auditPRFlagSet.String("format", "terminal", "Format to use for audit logs output")
-)
+var auditFormatFlag string
 
-var auditCommand = &ffcli.Command{
-	Name:       "audit",
-	ShortUsage: "sg audit [target]",
-	ShortHelp:  "Display audit trail for resources",
-	FlagSet:    auditFlagSet,
-	Exec: func(ctx context.Context, args []string) error {
-		return flag.ErrHelp
-	},
-	Subcommands: []*ffcli.Command{{
-		Name:    "pr",
-		FlagSet: auditPRFlagSet,
-		Exec: func(ctx context.Context, args []string) error {
+var auditCommand = &cli.Command{
+	Name:      "audit",
+	Usage:     "Display audit trail for resources",
+	ArgsUsage: "[target]",
+	Hidden:    true,
+	Category:  CategoryCompany,
+	Action:    cli.ShowSubcommandHelp,
+	Subcommands: []*cli.Command{{
+		Name:  "pr",
+		Usage: "Display audit trail for pull requests",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:        "format",
+				Usage:       "Format to use for audit logs output",
+				Value:       "terminal",
+				DefaultText: "[markdown|terminal]",
+				Destination: &auditFormatFlag,
+			},
+		},
+		Action: execAdapter(func(ctx context.Context, args []string) error {
 			ghc := github.NewClient(nil)
 
 			issues, err := fetchIssues(ctx, ghc)
@@ -51,7 +56,7 @@ var auditCommand = &ffcli.Command{
 				return err
 			}
 
-			switch *auditFormatFlag {
+			switch auditFormatFlag {
 			case "terminal":
 				var sb strings.Builder
 				err = formatMarkdown(prAuditIssues, &sb)
@@ -69,7 +74,7 @@ var auditCommand = &ffcli.Command{
 			}
 
 			return nil
-		},
+		}),
 	}},
 }
 
@@ -134,7 +139,7 @@ func formatMarkdown(issues []prAuditIssue, w io.Writer) error {
 
 var auditMarkdownTemplate = `*SOC2 Pull Request missing test plans :alert:*
 
-> If you are mentioned in the following list, it means that one of your pull request has been merged without the mandatory test plan and review. 
+> If you are mentioned in the following list, it means that one of your pull request has been merged without the mandatory test plan and review.
 
 In order to be compliant with SOC2, you or someone from your team *must* document in the relevant issue why it was skipped and how you made sure that the changes aren't breaking anything.
 

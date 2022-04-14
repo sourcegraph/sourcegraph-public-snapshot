@@ -1,3 +1,5 @@
+// This rule is disable to preserve 1-1 mapping between `DecoratedToken` types and classes.
+/* stylelint-disable selector-class-pattern */
 .root {
     flex: 1;
     min-width: 0;
@@ -46,6 +48,7 @@
             code {
                 background-color: rgba(220, 220, 220, 0.4);
                 border-radius: var(--border-radius);
+                /* stylelint-disable-next-line declaration-property-unit-allowed-list */
                 padding: 0 0.4em;
             }
 

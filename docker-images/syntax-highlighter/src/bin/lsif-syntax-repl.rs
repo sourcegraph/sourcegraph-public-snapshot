@@ -52,10 +52,10 @@ fn main() {
         _ => return,
     };
 
-    eprintln!("");
+    eprintln!();
     eprintln!("Usage Instructions:");
     eprintln!("- <Up> / <Down> to cycle through history");
-    eprintln!("");
+    eprintln!();
 
     while let Ok(line) = rl.readline("Query >> ") {
         if line.is_empty() {
