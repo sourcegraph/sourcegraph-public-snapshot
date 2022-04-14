@@ -16,7 +16,7 @@ func TestNormalizeRepo(t *testing.T) {
 		"myServer.Com/FooBar.git":  "myserver.com/FooBar",
 		"myServer.Com/FooBar/.git": "myserver.com/FooBar",
 
-		// support repos with suffix .git for go/ host
+		// support repos with suffix .git for Go
 		"go/git.foo.org/bar.git": "go/git.foo.org/bar.git",
 
 		// trying to escape gitserver root
