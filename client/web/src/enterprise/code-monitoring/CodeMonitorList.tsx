@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
 import { of } from 'rxjs'
 
-import { Button, Container, Link } from '@sourcegraph/wildcard'
+import { Button, Container, H2, H3, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -68,12 +68,10 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
         <>
             <div className="row mb-5">
                 <div className="d-flex flex-column col-2 mr-2">
-                    {/*
-                        a11y-ignore
-                        Rule: "heading-order" (Heading levels should only increase by one)
-                        Since `PageHeader` (which is on upper scope), renders `h1`, We could consider using `h2` tag instead, to meet accessibility criteria
+                    {/* 
+                        To fix Rule: "heading-order" (Heading levels should only increase by one)
                     */}
-                    <h3 className="a11y-ignore">Filters</h3>
+                    <H3 as={H2}>Filters</H3>
                     <Button
                         className="text-left"
                         onClick={() => setMonitorListFilter('all')}

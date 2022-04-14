@@ -12,7 +12,7 @@ import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/s
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, Card, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Card, Icon, H3, H2 } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
 import { useExperimentalFeatures } from '../../../stores'
@@ -190,12 +190,10 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
 
     return (
         <>
-            {/*
-                a11y-ignore
-                Rule: "heading-order" (Heading levels should only increase by one)
-                Since `PageHeader` (which is on upper scope), renders `h1`, We could consider using `h2` tag instead, to meet accessibility criteria
+            {/* 
+                To fix Rule: "heading-order" (Heading levels should only increase by one)
             */}
-            <h3 className="a11y-ignore">Trigger</h3>
+            <H3 as={H2}>Trigger</H3>
             {showQueryForm && (
                 <Card className={classNames(cardClassName, 'p-3')}>
                     <div className="font-weight-bold">When there are new search results</div>
