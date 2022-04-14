@@ -3,10 +3,9 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"flag"
 	"strings"
 
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -14,40 +13,38 @@ import (
 )
 
 var (
-	secretFlagSet      = flag.NewFlagSet("sg secret", flag.ExitOnError)
-	secretResetFlagSet = flag.NewFlagSet("sg secret reset", flag.ExitOnError)
+	secretListViewFlag bool
 
-	secretListFlagSet  = flag.NewFlagSet("sg secret list", flag.ExitOnError)
-	secretListViewFlag = secretListFlagSet.Bool("view", false, "Display configured secrets when listing")
-
-	secretCommand = &ffcli.Command{
-		Name:       "secret",
-		ShortUsage: "sg secret <subcommand>...",
-		ShortHelp:  "Manipulate secrets stored in memory and in file",
-		FlagSet:    secretFlagSet,
-		Subcommands: []*ffcli.Command{
+	secretCommand = &cli.Command{
+		Name:      "secret",
+		ArgsUsage: "<...subcommand>",
+		Usage:     "Manipulate secrets stored in memory and in file",
+		Category:  CategoryEnv,
+		Action:    cli.ShowSubcommandHelp,
+		Subcommands: []*cli.Command{
 			{
-				Name:       "reset",
-				ShortUsage: "sg secret reset <key>...",
-				ShortHelp:  "Remove a specific secret from secrets file",
-				FlagSet:    secretResetFlagSet,
-				Exec:       resetSecretExec,
+				Name:      "reset",
+				ArgsUsage: "<...key>",
+				Usage:     "Remove a specific secret from secrets file",
+				Action:    execAdapter(resetSecretExec),
 			},
 			{
-				Name:       "list",
-				ShortUsage: "sg secret list",
-				ShortHelp:  "List all stored secrets",
-				FlagSet:    secretListFlagSet,
-				Exec:       listSecretExec,
+				Name:  "list",
+				Usage: "List all stored secrets",
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:        "view",
+						Aliases:     []string{"v"},
+						Usage:       "Display configured secrets when listing",
+						Value:       false,
+						Destination: &secretListViewFlag,
+					},
+				},
+				Action: execAdapter(listSecretExec),
 			},
 		},
-		Exec: secretExec,
 	}
 )
-
-func secretExec(ctx context.Context, args []string) error {
-	return flag.ErrHelp
-}
 
 func resetSecretExec(ctx context.Context, args []string) error {
 	if len(args) == 0 {
@@ -76,7 +73,7 @@ func listSecretExec(ctx context.Context, args []string) error {
 	}
 	stdout.Out.WriteLine(output.Linef("", output.StyleBold, "Secrets:"))
 	keys := secretsStore.Keys()
-	if *secretListViewFlag {
+	if secretListViewFlag {
 		for _, key := range keys {
 			var val map[string]interface{}
 			if err := secretsStore.Get(key, &val); err != nil {
