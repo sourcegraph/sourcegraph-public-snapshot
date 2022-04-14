@@ -10,10 +10,13 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -41,16 +44,17 @@ func authMiddleware(next http.Handler, db database.DB, authValidators AuthValida
 			ctx, trace, endObservation := operation.WithAndLogger(r.Context(), &err, observation.Args{})
 			defer endObservation(1, observation.Args{})
 
+			repositoryName := getQuery(r, "repository")
+
 			// Skip auth check if it's not enabled in the instance's site configuration, if this
 			// user is a site admin (who can upload LSIF to any repository on the instance), or
 			// if the request a subsequent request of a multi-part upload.
-			if !conf.Get().LsifEnforceAuth || isSiteAdmin(ctx, db) || hasQuery(r, "uploadId") {
+			if !conf.Get().LsifEnforceAuth || isSiteAdmin(ctx, db) || hasWriteAccess(ctx, repositoryName, db) || hasQuery(r, "uploadId") {
 				trace.Log(log.Event("bypassing code host auth check"))
 				return 0, nil
 			}
 
 			query := r.URL.Query()
-			repositoryName := getQuery(r, "repository")
 
 			for codeHost, validator := range authValidators {
 				if !strings.HasPrefix(repositoryName, codeHost) {
@@ -76,6 +80,36 @@ func authMiddleware(next http.Handler, db database.DB, authValidators AuthValida
 	})
 }
 
+func hasWriteAccess(ctx context.Context, repoName string, db database.DB) bool {
+	user, err := database.Users(db).GetByCurrentAuthUser(ctx)
+	if err != nil {
+		if errcode.IsNotFound(err) || err == database.ErrNoCurrentUser {
+			return false
+		}
+		log15.Error("codeintel.httpapi: failed to get current user", "error", err)
+		return false
+	}
+
+	repo, err := db.Repos().GetByName(ctx, api.RepoName(repoName))
+	if err != nil {
+		log15.Error("codeintel.httpapi: failed to get repo from name", "error", err)
+		return false
+	}
+
+	repos, err := db.Authz().AuthorizedRepos(ctx, &database.AuthorizedReposArgs{
+		Repos:  []*types.Repo{repo},
+		UserID: user.ID,
+		Perm:   authz.Write,
+		Type:   authz.PermRepos,
+	})
+	if err != nil {
+		log15.Error("codeintel.httpapi: failed to get authorized repos", "error", err, "user", user.ID, "repo", repo.ID)
+		return false
+	}
+
+	return len(repos) > 0
+}
+
 func isSiteAdmin(ctx context.Context, db database.DB) bool {
 	user, err := database.Users(db).GetByCurrentAuthUser(ctx)
 	if err != nil {
@@ -83,7 +117,7 @@ func isSiteAdmin(ctx context.Context, db database.DB) bool {
 			return false
 		}
 
-		log15.Error("codeintel.httpapi: failed to get up current user", "error", err)
+		log15.Error("codeintel.httpapi: failed to get current user", "error", err)
 		return false
 	}
 
