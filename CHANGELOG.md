@@ -13,15 +13,21 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
-- Added `login` text to command text menu and ordered alphabetically [#713](https://github.com/sourcegraph/src-cli/pull/713)
-
 ### Changed
 
 ### Fixed
 
-- `src extensions copy` now removes the `url` property from extension manifests that points to the sourcegraph.com extension bundle, enabling use for air-gapped instances.
-
 ### Removed
+
+## 3.39.0
+
+### Added
+
+- Added `login` text to command text menu and ordered alphabetically [#713](https://github.com/sourcegraph/src-cli/pull/713)
+
+### Fixed
+
+- `src extensions copy` now removes the `url` property from extension manifests that points to the sourcegraph.com extension bundle, enabling use for air-gapped instances.
 
 ## 3.38.0
 
