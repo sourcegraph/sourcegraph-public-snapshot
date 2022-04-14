@@ -39,7 +39,13 @@ export const HeroPage: React.FunctionComponent<HeroPageProps> = props => (
                 )}
             </div>
         )}
-        {props.title && <div className={styles.title}>{props.title}</div>}
+        {props.title && (
+            // To fix Rule: "page-has-heading-one" (Page should contain a level-one heading)
+            // We should consider using an h1 element here.
+            <div role="heading" aria-level={1} className={styles.title}>
+                {props.title}
+            </div>
+        )}
         {props.subtitle && (
             <div data-testid="hero-page-subtitle" className={styles.subtitle}>
                 {props.subtitle}

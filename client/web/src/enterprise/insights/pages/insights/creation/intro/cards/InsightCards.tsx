@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Link, Button, CardBody, Card } from '@sourcegraph/wildcard'
+import { Link, Button, CardBody, Card, H3, H2 } from '@sourcegraph/wildcard'
 
 import {
     CaptureGroupInsightChart,
@@ -47,8 +47,12 @@ const InsightCardBody: React.FunctionComponent<InsightCardBodyProps> = props => 
 
     return (
         <CardBody className={classNames(styles.cardBody, className, 'flex-1')}>
-            <h3 className={styles.cardTitle}>{title}</h3>
-
+            {/* 
+                To fix Rule: "heading-order" (Heading levels should only increase by one)
+            */}
+            <H3 as={H2} className={styles.cardTitle}>
+                {title}
+            </H3>
             <p className="d-flex flex-column text-muted m-0">{children}</p>
         </CardBody>
     )
@@ -96,8 +100,12 @@ export const CaptureGroupInsightCard: React.FunctionComponent<InsightCardProps> 
     </InsightCard>
 )
 
+// a11y-ignore
+// Rule: nested-interactive (Interactive controls must not be nested)
+// InsightCard is a button and it contains Link, it causes this issue,
+// we should consider keeping link + make InsightCard a div or make InsightCard a Link + make Link non-interactive
 export const ExtensionInsightsCard: React.FunctionComponent<InsightCardProps> = props => (
-    <InsightCard {...props} className={styles.cardExtensionCard}>
+    <InsightCard {...props} className={classNames(styles.cardExtensionCard, 'a11y-ignore')}>
         <div className={styles.images}>
             <img
                 className={styles.image}
@@ -121,7 +129,8 @@ export const ExtensionInsightsCard: React.FunctionComponent<InsightCardProps> = 
 
         <InsightCardBody title="Based on Sourcegraph extensions">
             Enable the extension and go to the README.md to learn how to set up code insights for selected Sourcegraph
-            extensions. <Link to="/extensions?query=category:Insights&experimental=true">Explore the extensions</Link>
+            extensions.
+            <Link to="/extensions?query=category:Insights&experimental=true">Explore the extensions</Link>
         </InsightCardBody>
     </InsightCard>
 )

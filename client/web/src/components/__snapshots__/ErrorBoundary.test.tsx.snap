@@ -11,7 +11,9 @@ exports[`ErrorBoundary passes through if non-error 1`] = `
       <alertcircleicon />
     </div>
     <div
+      aria-level="1"
       class="title"
+      role="heading"
     >
       Error
     </div>
@@ -57,7 +59,9 @@ exports[`ErrorBoundary renders reload page if chunk error 1`] = `
       <reloadicon />
     </div>
     <div
+      aria-level="1"
       class="title"
+      role="heading"
     >
       Reload required
     </div>

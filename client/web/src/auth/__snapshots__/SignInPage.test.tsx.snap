@@ -40,7 +40,9 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
         </a>
       </div>
       <div
+        aria-level="1"
         class="title"
+        role="heading"
       >
         Sign in to Sourcegraph Cloud
       </div>
@@ -201,7 +203,9 @@ exports[`SignInPage renders sign in page (server) 1`] = `
         </svg>
       </div>
       <div
+        aria-level="1"
         class="title"
+        role="heading"
       >
         Sign in to Sourcegraph Server
       </div>

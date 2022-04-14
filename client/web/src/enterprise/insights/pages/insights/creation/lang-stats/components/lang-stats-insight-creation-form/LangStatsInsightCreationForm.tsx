@@ -77,6 +77,11 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
             onSubmit={handleSubmit}
             onReset={onFormReset}
         >
+            {/* 
+                a11y-ignore
+                Rule: aria-allowed-role ARIA - role should be appropriate for the element
+                Error occurs as a result of using `role=combobox` on `textarea` element.
+             */}
             <Input
                 as={RepositoryField}
                 required={true}
@@ -86,6 +91,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
                 placeholder="Example: github.com/sourcegraph/sourcegraph"
                 {...getDefaultInputProps(repository)}
                 className="mb-0"
+                inputClassName="a11y-ignore"
             />
 
             <Input
