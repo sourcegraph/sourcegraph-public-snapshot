@@ -257,6 +257,7 @@ func addBrowserExtensionIntegrationTests(parallelTestCount int) operations.Opera
 				bk.Cmd("yarn run cover-browser-integration"),
 				bk.Cmd("yarn nyc report -r json"),
 				bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
+				bk.AutomaticRetry(1), // Temporary
 				bk.ArtifactPaths("./puppeteer/*.png"),
 			)
 		}
