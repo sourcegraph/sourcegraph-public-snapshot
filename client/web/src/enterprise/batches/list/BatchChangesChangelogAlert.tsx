@@ -11,13 +11,13 @@ import styles from './BatchChangesListIntro.module.scss'
 export const BatchChangesChangelogAlert: React.FunctionComponent = () => (
     <DismissibleAlert
         className={styles.batchChangesListIntroAlert}
-        partialStorageKey="batch-changes-list-intro-changelog-3.37"
+        partialStorageKey="batch-changes-list-intro-changelog-3.39"
     >
         <Card className={classNames(styles.batchChangesListIntroCard, 'h-100')}>
             <CardBody>
-                <h4>Batch Changes updates in version 3.37</h4>
+                <h4>Batch Changes updates in version 3.39</h4>
                 <ul className="mb-0 pl-3">
-                    <li>Nothing noteworthy this time.</li>
+                    <li>Bulk operations are now available without selecting specific filters first.</li>
                 </ul>
             </CardBody>
         </Card>
