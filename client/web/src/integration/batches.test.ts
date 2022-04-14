@@ -910,6 +910,7 @@ describe('Batches', () => {
                                           }
                                         : null,
                                     requiresSSH: false,
+                                    requiresUsername: false,
                                 },
                             ],
                         },
