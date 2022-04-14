@@ -18,7 +18,7 @@
     "lint:js:all": "DOCSITE_LIST=\"$(./dev/docsite.sh -config doc/docsite.json ls)\" dev/foreach-ts-project.sh yarn -s run lint:js --quiet",
     "_lint:css": "stylelint",
     "lint:css:changed": "yarn _lint:css $(git diff --diff-filter=d --name-only main | grep -E '.s?css$' | xargs)",
-    "lint:css:all": "yarn _lint:css 'client/*/src/**/*.scss'",
+    "lint:css:all": "yarn _lint:css 'client/*/src/**/*.scss' --quiet",
     "lint:graphql": "graphql-schema-linter",
     "build-ts": "tsc -b tsconfig.all.json",
     "build-web": "yarn workspace @sourcegraph/web run build",
