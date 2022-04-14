@@ -42,7 +42,7 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
     const editUrl = dashboard?.id
         ? `/insights/edit/${insightID}?dashboardId=${dashboard.id}`
         : `/insights/edit/${insightID}`
-    const showQuickFix = insight.title.includes('[gofix]')
+    const showQuickFix = insight.title.includes('[quickfix]')
     const quickFixUrl =
         insight.type === InsightType.SearchBased
             ? `/batch-changes/create?kind=goChecker${insight.series[0]?.name}&title=${insight.title}`

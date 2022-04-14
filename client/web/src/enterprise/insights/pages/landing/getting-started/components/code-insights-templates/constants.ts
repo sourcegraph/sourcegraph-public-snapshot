@@ -811,10 +811,10 @@ const DATA_FETCHING_GQL: Template = {
 
 const GO_STATIC_CHECK_SA6005: Template = {
     type: InsightType.SearchBased,
-    title: '[gofix] - Inefficient string comparison with strings.ToLower or strings.ToUpper',
+    title: '[quickfix] - Inefficient string comparison with strings.ToLower or strings.ToUpper',
     description: '',
     templateValues: {
-        title: '[gofix] - Inefficient string comparison with strings.ToLower or strings.ToUpper',
+        title: '[quickfix] - Inefficient string comparison with strings.ToLower or strings.ToUpper',
         allRepos: true,
         series: [
             {
@@ -832,7 +832,7 @@ const GO_STATIC_CHECK_S1003: Template = {
     title: 'Replace call to strings.Index with strings.Contains',
     description: '',
     templateValues: {
-        title: '[gofix] - Replace call to strings.Index with strings.Contains',
+        title: '[quickfix] - Replace call to strings.Index with strings.Contains',
         allRepos: true,
         series: [
             {
@@ -847,10 +847,10 @@ const GO_STATIC_CHECK_S1003: Template = {
 
 const GO_STATIC_CHECK_S1002: Template = {
     type: InsightType.SearchBased,
-    title: '[gofix] - Omit comparison with boolean constant',
+    title: '[quickfix] - Omit comparison with boolean constant',
     description: '',
     templateValues: {
-        title: '[gofix] - Omit comparison with boolean constant',
+        title: '[quickfix] - Omit comparison with boolean constant',
         allRepos: true,
         series: [
             {
@@ -864,10 +864,10 @@ const GO_STATIC_CHECK_S1002: Template = {
 
 const GO_STATIC_CHECK_S1004: Template = {
     type: InsightType.SearchBased,
-    title: '[gofix] - Replace call to bytes.Compare with bytes.Equal',
+    title: '[quickfix] - Replace call to bytes.Compare with bytes.Equal',
     description: '',
     templateValues: {
-        title: '[gofix] - Replace call to bytes.Compare with bytes.Equal',
+        title: '[quickfix] - Replace call to bytes.Compare with bytes.Equal',
         allRepos: true,
         series: [
             {
@@ -882,10 +882,10 @@ const GO_STATIC_CHECK_S1004: Template = {
 
 const GO_STATIC_CHECK_S1005: Template = {
     type: InsightType.SearchBased,
-    title: '[gofix] - Drop unnecessary use of the blank identifier',
+    title: '[quickfix] - Drop unnecessary use of the blank identifier',
     description: '',
     templateValues: {
-        title: '[gofix] - Drop unnecessary use of the blank identifier',
+        title: '[quickfix] - Drop unnecessary use of the blank identifier',
         allRepos: true,
         series: [
             {
@@ -900,10 +900,10 @@ const GO_STATIC_CHECK_S1005: Template = {
 
 const GO_STATIC_CHECK_S1006: Template = {
     type: InsightType.SearchBased,
-    title: '[gofix] - Use for { ... } for infinite loops',
+    title: '[quickfix] - Use for { ... } for infinite loops',
     description: '',
     templateValues: {
-        title: '[gofix] - Use for { ... } for infinite loops',
+        title: '[quickfix] - Use for { ... } for infinite loops',
         allRepos: true,
         series: [
             {
@@ -917,10 +917,10 @@ const GO_STATIC_CHECK_S1006: Template = {
 
 const GO_STATIC_CHECK_S1010: Template = {
     type: InsightType.SearchBased,
-    title: '[gofix] - Omit default slice index',
+    title: '[quickfix] - Omit default slice index',
     description: '',
     templateValues: {
-        title: '[gofix] - Omit default slice index',
+        title: '[quickfix] - Omit default slice index',
         allRepos: true,
         series: [
             {
@@ -934,10 +934,10 @@ const GO_STATIC_CHECK_S1010: Template = {
 
 const GO_STATIC_CHECK_S1012: Template = {
     type: InsightType.SearchBased,
-    title: '[gofix] - Replace time.Now().Sub(x) with time.Since(x)',
+    title: '[quickfix] - Replace time.Now().Sub(x) with time.Since(x)',
     description: '',
     templateValues: {
-        title: '[gofix] - Replace time.Now().Sub(x) with time.Since(x)',
+        title: '[quickfix] - Replace time.Now().Sub(x) with time.Since(x)',
         allRepos: true,
         series: [
             {
@@ -954,10 +954,10 @@ const GO_STATIC_CHECK_S1012: Template = {
 
 const GO_STATIC_CHECK_S1019: Template = {
     type: InsightType.SearchBased,
-    title: '[gofix] - Simplify make call by omitting redundant arguments',
+    title: '[quickfix] - Simplify make call by omitting redundant arguments',
     description: '',
     templateValues: {
-        title: '[gofix] - Simplify make call by omitting redundant arguments',
+        title: '[quickfix] - Simplify make call by omitting redundant arguments',
         allRepos: true,
         series: [
             {
@@ -972,10 +972,10 @@ const GO_STATIC_CHECK_S1019: Template = {
 
 const GO_STATIC_CHECK_S1020: Template = {
     type: InsightType.SearchBased,
-    title: '[gofix] - Omit redundant nil check in type assertion',
+    title: '[quickfix] - Omit redundant nil check in type assertion',
     description: '',
     templateValues: {
-        title: '[gofix] - Omit redundant nil check in type assertion',
+        title: '[quickfix] - Omit redundant nil check in type assertion',
         allRepos: true,
         series: [
             {
@@ -990,10 +990,10 @@ const GO_STATIC_CHECK_S1020: Template = {
 
 const GO_STATIC_CHECK_S1023: Template = {
     type: InsightType.SearchBased,
-    title: '[gofix] - Omit redundant control flow',
+    title: '[quickfix] - Omit redundant control flow',
     description: '',
     templateValues: {
-        title: '[gofix] - Omit redundant control flow',
+        title: '[quickfix] - Omit redundant control flow',
         allRepos: true,
         series: [
             {
@@ -1008,10 +1008,10 @@ const GO_STATIC_CHECK_S1023: Template = {
 
 const GO_STATIC_CHECK_S1024: Template = {
     type: InsightType.SearchBased,
-    title: '[gofix] - Replace x.Sub(time.Now()) with time.Until(x)',
+    title: '[quickfix] - Replace x.Sub(time.Now()) with time.Until(x)',
     description: '',
     templateValues: {
-        title: '[gofix] - Replace x.Sub(time.Now()) with time.Until(x)',
+        title: '[quickfix] - Replace x.Sub(time.Now()) with time.Until(x)',
         allRepos: true,
         series: [
             {
@@ -1025,10 +1025,10 @@ const GO_STATIC_CHECK_S1024: Template = {
 
 const GO_STATIC_CHECK_S1025: Template = {
     type: InsightType.SearchBased,
-    title: '[gofix] - Don’t use fmt.Sprintf("%s", x) unnecessarily',
+    title: '[quickfix] - Don’t use fmt.Sprintf("%s", x) unnecessarily',
     description: '',
     templateValues: {
-        title: '[gofix] - Don’t use fmt.Sprintf("%s", x) unnecessarily',
+        title: '[quickfix] - Don’t use fmt.Sprintf("%s", x) unnecessarily',
         allRepos: true,
         series: [
             {
@@ -1042,10 +1042,10 @@ const GO_STATIC_CHECK_S1025: Template = {
 
 const GO_STATIC_CHECK_S1028: Template = {
     type: InsightType.SearchBased,
-    title: '[gofix] - Simplify error construction with fmt.Errorf',
+    title: '[quickfix] - Simplify error construction with fmt.Errorf',
     description: '',
     templateValues: {
-        title: '[gofix] - Simplify error construction with fmt.Errorf',
+        title: '[quickfix] - Simplify error construction with fmt.Errorf',
         allRepos: true,
         series: [
             {
@@ -1059,10 +1059,10 @@ const GO_STATIC_CHECK_S1028: Template = {
 
 const GO_STATIC_CHECK_S1029: Template = {
     type: InsightType.SearchBased,
-    title: '[gofix] - Range over the string directly',
+    title: '[quickfix] - Range over the string directly',
     description: '',
     templateValues: {
-        title: '[gofix] - Range over the string directly',
+        title: '[quickfix] - Range over the string directly',
         allRepos: true,
         series: [
             {
@@ -1076,10 +1076,10 @@ const GO_STATIC_CHECK_S1029: Template = {
 
 const GO_STATIC_CHECK_S1032: Template = {
     type: InsightType.SearchBased,
-    title: '[gofix] - Use sort.Ints(x), sort.Float64s(x), and sort.Strings(x)',
+    title: '[quickfix] - Use sort.Ints(x), sort.Float64s(x), and sort.Strings(x)',
     description: '',
     templateValues: {
-        title: '[gofix] - Use sort.Ints(x), sort.Float64s(x), and sort.Strings(x)',
+        title: '[quickfix] - Use sort.Ints(x), sort.Float64s(x), and sort.Strings(x)',
         allRepos: true,
         series: [
             {
@@ -1094,10 +1094,10 @@ const GO_STATIC_CHECK_S1032: Template = {
 
 const GO_STATIC_CHECK_S1035: Template = {
     type: InsightType.SearchBased,
-    title: '[gofix] - Redundant call to net/http.CanonicalHeaderKey in method call on net/http.Header',
+    title: '[quickfix] - Redundant call to net/http.CanonicalHeaderKey in method call on net/http.Header',
     description: '',
     templateValues: {
-        title: '[gofix] - Redundant call to net/http.CanonicalHeaderKey in method call on net/http.Header',
+        title: '[quickfix] - Redundant call to net/http.CanonicalHeaderKey in method call on net/http.Header',
         allRepos: true,
         series: [
             {
@@ -1114,10 +1114,10 @@ const GO_STATIC_CHECK_S1035: Template = {
 
 const GO_STATIC_CHECK_S1037: Template = {
     type: InsightType.SearchBased,
-    title: '[gofix] - Redundant call to net/http.CanonicalHeaderKey in method call on net/http.Header',
+    title: '[quickfix] - Redundant call to net/http.CanonicalHeaderKey in method call on net/http.Header',
     description: '',
     templateValues: {
-        title: '[gofix] - Redundant call to net/http.CanonicalHeaderKey in method call on net/http.Header',
+        title: '[quickfix] - Redundant call to net/http.CanonicalHeaderKey in method call on net/http.Header',
         allRepos: true,
         series: [
             {
@@ -1132,10 +1132,10 @@ const GO_STATIC_CHECK_S1037: Template = {
 
 const GO_STATIC_CHECK_S1038: Template = {
     type: InsightType.SearchBased,
-    title: '[gofix] - Unnecessarily complex way of printing formatted string',
+    title: '[quickfix] - Unnecessarily complex way of printing formatted string',
     description: '',
     templateValues: {
-        title: '[gofix] - Unnecessarily complex way of printing formatted string',
+        title: '[quickfix] - Unnecessarily complex way of printing formatted string',
         allRepos: true,
         series: [
             {
@@ -1149,10 +1149,10 @@ const GO_STATIC_CHECK_S1038: Template = {
 
 const GO_STATIC_CHECK_S1039: Template = {
     type: InsightType.SearchBased,
-    title: '[gofix] - Unnecessary use of fmt.Sprint',
+    title: '[quickfix] - Unnecessary use of fmt.Sprint',
     description: '',
     templateValues: {
-        title: '[gofix] Unnecessary use of fmt.Sprint',
+        title: '[quickfix] Unnecessary use of fmt.Sprint',
         allRepos: true,
         series: [
             {
