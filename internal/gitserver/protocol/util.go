@@ -10,30 +10,35 @@ import (
 
 func NormalizeRepo(input api.RepoName) api.RepoName {
 	repo := string(input)
+
+	host := ""
+	firstSlash := strings.IndexByte(repo, '/')
+	if firstSlash != -1 {
+		host = strings.ToLower(repo[:firstSlash]) // host is always case-insensitive
+	}
+
 	repo = strings.TrimSuffix(repo, ".git")
 
 	// Clean with a "/" so we get out an absolute path
 	repo = path.Clean("/" + repo)
 	repo = strings.TrimPrefix(repo, "/")
 
-	// Check if we need to do lowercasing. If we don't we can avoid the
+	// Check if we need to do lower-casing. If we don't we can avoid the
 	// allocations we do later in the function.
 	if !hasUpperASCII(repo) {
 		return api.RepoName(repo)
 	}
 
-	slash := strings.IndexByte(repo, '/')
-	if slash == -1 {
+	if host == "" {
 		return api.RepoName(repo)
 	}
-	host := strings.ToLower(repo[:slash]) // host is always case insensitive
-	path := repo[slash:]
 
+	repoPath := repo[firstSlash:]
 	if host == "github.com" {
-		return api.RepoName(host + strings.ToLower(path)) // GitHub is fully case insensitive
+		return api.RepoName(host + strings.ToLower(repoPath)) // GitHub is fully case insensitive
 	}
 
-	return api.RepoName(host + path) // other git hosts can be case sensitive on path
+	return api.RepoName(host + repoPath) // other git hosts can be case sensitive on path
 }
 
 // hasUpperASCII returns true if s contains any upper-case letters in ASCII,
