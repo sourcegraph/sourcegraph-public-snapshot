@@ -27,15 +27,8 @@ func main() {
 	}
 }
 
-const (
-	defaultSecretsFile = "sg.secrets.json"
-)
-
 var (
 	BuildCommit = "dev"
-
-	// secretsStore is instantiated when sg gets run.
-	secretsStore *secrets.Store
 
 	// configFile is the path to use with sgconf.Get - it must not be used before flag
 	// initialization.
@@ -122,10 +115,12 @@ var sg = &cli.App{
 		}
 
 		// Set up access to secrets
-		if err := loadSecrets(); err != nil {
+		secretsStore, err := loadSecrets()
+		if err != nil {
 			writeWarningLinef("failed to open secrets: %s", err)
+		} else {
+			cmd.Context = secrets.WithContext(cmd.Context, secretsStore)
 		}
-		cmd.Context = secrets.WithContext(cmd.Context, secretsStore)
 
 		// We always try to set this, since we often want to watch files, start commands, etc...
 		if err := setMaxOpenFiles(); err != nil {
@@ -187,12 +182,11 @@ var sg = &cli.App{
 	HideHelpCommand: true,
 }
 
-func loadSecrets() error {
+func loadSecrets() (*secrets.Store, error) {
 	homePath, err := root.GetSGHomePath()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	fp := filepath.Join(homePath, defaultSecretsFile)
-	secretsStore, err = secrets.LoadFile(fp)
-	return err
+	fp := filepath.Join(homePath, secrets.DefaultFile)
+	return secrets.LoadFromFile(fp)
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -51,10 +52,10 @@ func resetSecretExec(ctx context.Context, args []string) error {
 		return errors.New("no key provided to reset")
 	}
 
-	if err := loadSecrets(); err != nil {
+	secretsStore, err := secrets.FromContext(ctx)
+	if err != nil {
 		return err
 	}
-
 	for _, arg := range args {
 		if err := secretsStore.Remove(arg); err != nil {
 			return err
@@ -68,7 +69,8 @@ func resetSecretExec(ctx context.Context, args []string) error {
 }
 
 func listSecretExec(ctx context.Context, args []string) error {
-	if err := loadSecrets(); err != nil {
+	secretsStore, err := secrets.FromContext(ctx)
+	if err != nil {
 		return err
 	}
 	stdout.Out.WriteLine(output.Linef("", output.StyleBold, "Secrets:"))
