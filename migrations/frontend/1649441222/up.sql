@@ -23,6 +23,12 @@ COMMENT ON COLUMN lsif_uploads_audit_logs.transition_columns IS 'Array of change
 CREATE INDEX IF NOT EXISTS lsif_uploads_audit_logs_upload_id ON lsif_uploads_audit_logs USING btree (upload_id);
 CREATE INDEX IF NOT EXISTS lsif_uploads_audit_logs_timestamp ON lsif_uploads_audit_logs USING brin (log_timestamp);
 
+-- CREATE TYPE IF NOT EXISTS is not a thing, so we must drop it here,
+-- but also all the functions that reference the type...
+DROP FUNCTION IF EXISTS func_row_to_lsif_uploads_transition_columns;
+DROP FUNCTION IF EXISTS func_lsif_uploads_transition_columns_diff;
+DROP TYPE IF EXISTS lsif_uploads_transition_columns;
+
 CREATE TYPE lsif_uploads_transition_columns AS (
     state           text,
     expired         boolean,
