@@ -9,7 +9,7 @@ import { WebStory } from '../components/WebStory'
 import { useExperimentalFeatures, useSearchStackState } from '../stores'
 import { SearchStackEntry, SearchStackStore } from '../stores/searchStack'
 
-import { SearchStack } from './SearchStack'
+import { SearchStackContainer } from './SearchStack'
 
 function SearchStackWrapper({
     entries = [],
@@ -24,13 +24,13 @@ function SearchStackWrapper({
         useSearchStackState.setState({ entries, previousEntries, canRestoreSession }, true)
     }, [entries, previousEntries, canRestoreSession])
 
-    return <SearchStack onCreateNotebook={noop} initialOpen={open} />
+    return <SearchStackContainer onCreateNotebook={noop} initialOpen={open} />
 }
 
 export default {
     title: 'web/search/Search Stack',
     component: SearchStackWrapper,
-} as ComponentMeta<typeof SearchStack>
+} as ComponentMeta<typeof SearchStackContainer>
 
 const mockEntries: SearchStackEntry[] = [
     { id: 0, type: 'search', query: 'TODO', caseSensitive: false, patternType: SearchPatternType.literal },
