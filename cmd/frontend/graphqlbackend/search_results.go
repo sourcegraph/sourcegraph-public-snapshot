@@ -677,6 +677,4 @@ type SearchResultResolver interface {
 	ToRepository() (*RepositoryResolver, bool)
 	ToFileMatch() (*FileMatchResolver, bool)
 	ToCommitSearchResult() (*CommitSearchResultResolver, bool)
-
-	ResultCount() int32
 }
