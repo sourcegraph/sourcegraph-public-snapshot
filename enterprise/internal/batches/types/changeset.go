@@ -710,7 +710,7 @@ func (c *Changeset) Events() (events []*ChangesetEvent, err error) {
 		var kind ChangesetEventKind
 
 		for _, participant := range m.Participants {
-			if kind, err = ChangesetEventKindFor(participant); err != nil {
+			if kind, err = ChangesetEventKindFor(&participant); err != nil {
 				return
 			}
 			appendEvent(&ChangesetEvent{
