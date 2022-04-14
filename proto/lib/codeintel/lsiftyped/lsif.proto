@@ -339,6 +339,10 @@ message Occurrence {
   SyntaxKind syntax_kind = 5;
   // Diagnostics that have been reported for this specific range.
   repeated Diagnostic diagnostics = 6;
+  // (optional) The symbol name that this (reference) occurrence is scoped in e.g.
+  // if a function `foo` is called in `bar`, then that occurrence of the function
+  // call for `foo` will have its this field set to the full symbol name for `bar`.
+  string owner = 7;
 }
 
 // Represents a diagnostic, such as a compiler error or warning, which should be

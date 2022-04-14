@@ -1149,6 +1149,7 @@ export namespace lib.codeintel.lsiftyped {
             override_documentation?: string[];
             syntax_kind?: SyntaxKind;
             diagnostics?: Diagnostic[];
+            owner?: string;
         }) {
             super();
             pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [1, 4, 6], []);
@@ -1170,6 +1171,9 @@ export namespace lib.codeintel.lsiftyped {
                 }
                 if ("diagnostics" in data && data.diagnostics != undefined) {
                     this.diagnostics = data.diagnostics;
+                }
+                if ("owner" in data && data.owner != undefined) {
+                    this.owner = data.owner;
                 }
             }
         }
@@ -1209,6 +1213,12 @@ export namespace lib.codeintel.lsiftyped {
         set diagnostics(value: Diagnostic[]) {
             pb_1.Message.setRepeatedWrapperField(this, 6, value);
         }
+        get owner() {
+            return pb_1.Message.getField(this, 7) as string;
+        }
+        set owner(value: string) {
+            pb_1.Message.setField(this, 7, value);
+        }
         static fromObject(data: {
             range?: number[];
             symbol?: string;
@@ -1216,6 +1226,7 @@ export namespace lib.codeintel.lsiftyped {
             override_documentation?: string[];
             syntax_kind?: SyntaxKind;
             diagnostics?: ReturnType<typeof Diagnostic.prototype.toObject>[];
+            owner?: string;
         }) {
             const message = new Occurrence({});
             if (data.range != null) {
@@ -1236,6 +1247,9 @@ export namespace lib.codeintel.lsiftyped {
             if (data.diagnostics != null) {
                 message.diagnostics = data.diagnostics.map(item => Diagnostic.fromObject(item));
             }
+            if (data.owner != null) {
+                message.owner = data.owner;
+            }
             return message;
         }
         toObject() {
@@ -1246,6 +1260,7 @@ export namespace lib.codeintel.lsiftyped {
                 override_documentation?: string[];
                 syntax_kind?: SyntaxKind;
                 diagnostics?: ReturnType<typeof Diagnostic.prototype.toObject>[];
+                owner?: string;
             } = {};
             if (this.range != null) {
                 data.range = this.range;
@@ -1265,6 +1280,9 @@ export namespace lib.codeintel.lsiftyped {
             if (this.diagnostics != null) {
                 data.diagnostics = this.diagnostics.map((item: Diagnostic) => item.toObject());
             }
+            if (this.owner != null) {
+                data.owner = this.owner;
+            }
             return data;
         }
         serialize(): Uint8Array;
@@ -1283,6 +1301,8 @@ export namespace lib.codeintel.lsiftyped {
                 writer.writeEnum(5, this.syntax_kind);
             if (this.diagnostics !== undefined)
                 writer.writeRepeatedMessage(6, this.diagnostics, (item: Diagnostic) => item.serialize(writer));
+            if (typeof this.owner === "string" && this.owner.length)
+                writer.writeString(7, this.owner);
             if (!w)
                 return writer.getResultBuffer();
         }
@@ -1309,6 +1329,9 @@ export namespace lib.codeintel.lsiftyped {
                         break;
                     case 6:
                         reader.readMessage(message.diagnostics, () => pb_1.Message.addToRepeatedWrapperField(message, 6, Diagnostic.deserialize(reader), Diagnostic));
+                        break;
+                    case 7:
+                        message.owner = reader.readString();
                         break;
                     default: reader.skipField();
                 }

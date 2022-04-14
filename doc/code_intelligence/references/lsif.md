@@ -104,6 +104,7 @@ information.
 | repeated **override_documentation** | string | (optional) Markdown-formatted documentation for this specific range.  If empty, the `Symbol.documentation` field is used instead. One example where this field might be useful is when the symbol represents a generic function (with abstract type parameters such as `List<T>`) and at this occurrence we know the exact values (such as `List<String>`).
 |  **syntax_kind** | SyntaxKind | (optional) What syntax highlighting class should be used for this range?
 | repeated **diagnostics** | Diagnostic | Diagnostics that have been reported for this specific range.
+|  **owner** | string | (optional) The symbol name that this (reference) occurrence is scoped in e.g. if a function `foo` is called in `bar`, then that occurrence of the function call for `foo` will have its this field set to the full symbol name for `bar`.
 
 Additional notes on **range**:
 
@@ -125,6 +126,7 @@ reduce the total payload size of an index by 50% by using `repeated int32`
 instead.  The `repeated int32` encoding is admittedly more embarrassing to
 work with in some programming languages but we hope the performance
 improvements make up for it.
+
 
 
 
