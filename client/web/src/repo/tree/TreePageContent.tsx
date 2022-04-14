@@ -223,6 +223,7 @@ export const TreePageContent: React.FunctionComponent<TreePageContentProps> = ({
                     hideSearch={true}
                     emptyElement={emptyElement}
                     totalCountSummaryComponent={TotalCountSummary}
+                    listComponent="div"
                 />
             </div>
         </>

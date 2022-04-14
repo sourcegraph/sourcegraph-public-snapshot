@@ -12,6 +12,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
@@ -78,13 +79,13 @@ func dbAddUserAction(cmd *cli.Context) error {
 	ctx := cmd.Context
 
 	// Read the configuration.
-	ok, _ := parseConf(configFlag, overwriteConfigFlag)
-	if !ok {
+	conf, _ := sgconf.Get(configFile, configOverwriteFile)
+	if conf == nil {
 		return errors.New("failed to read sg.config.yaml. This command needs to be run in the `sourcegraph` repository")
 	}
 
 	// Connect to the database.
-	conn, err := connections.EnsureNewFrontendDB(postgresdsn.New("", "", globalConf.GetEnv), "frontend", &observation.TestContext)
+	conn, err := connections.EnsureNewFrontendDB(postgresdsn.New("", "", conf.GetEnv), "frontend", &observation.TestContext)
 	if err != nil {
 		return err
 	}
@@ -131,13 +132,13 @@ func dbAddUserAction(cmd *cli.Context) error {
 
 func dbResetRedisExec(ctx context.Context, args []string) error {
 	// Read the configuration.
-	ok, _ := parseConf(configFlag, overwriteConfigFlag)
-	if !ok {
+	config, _ := sgconf.Get(configFile, configOverwriteFile)
+	if config == nil {
 		return errors.New("failed to read sg.config.yaml. This command needs to be run in the `sourcegraph` repository")
 	}
 
 	// Connect to the redis database.
-	endpoint := globalConf.GetEnv("REDIS_ENDPOINT")
+	endpoint := config.GetEnv("REDIS_ENDPOINT")
 	conn, err := redis.Dial("tcp", endpoint, redis.DialConnectTimeout(5*time.Second))
 	if err != nil {
 		return errors.Wrapf(err, "failed to connect to Redis at %s", endpoint)
@@ -154,8 +155,8 @@ func dbResetRedisExec(ctx context.Context, args []string) error {
 
 func dbResetPGExec(ctx context.Context, args []string) error {
 	// Read the configuration.
-	ok, _ := parseConf(configFlag, overwriteConfigFlag)
-	if !ok {
+	config, _ := sgconf.Get(configFile, configOverwriteFile)
+	if config == nil {
 		return errors.New("failed to read sg.config.yaml. This command needs to be run in the `sourcegraph` repository")
 	}
 
@@ -172,9 +173,9 @@ func dbResetPGExec(ctx context.Context, args []string) error {
 
 	for _, name := range schemaNames {
 		if name == "frontend" {
-			dsnMap[name] = postgresdsn.New("", "", globalConf.GetEnv)
+			dsnMap[name] = postgresdsn.New("", "", config.GetEnv)
 		} else {
-			dsnMap[name] = postgresdsn.New(strings.ToUpper(name), "", globalConf.GetEnv)
+			dsnMap[name] = postgresdsn.New(strings.ToUpper(name), "", config.GetEnv)
 		}
 	}
 

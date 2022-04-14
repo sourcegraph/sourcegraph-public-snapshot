@@ -9,6 +9,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const (
+	DefaultFile = "sg.secrets.json"
+)
+
 var (
 	ErrSecretNotFound = errors.New("secret not found")
 )
@@ -21,12 +25,13 @@ type Store struct {
 
 type storeKey struct{}
 
-// FromContext fetches a store from context.
-func FromContext(ctx context.Context) *Store {
+// FromContext fetches a store from context. In sg, a store is set in the command context
+// when sg starts - if the load fails, an error is printed and a store is not set.
+func FromContext(ctx context.Context) (*Store, error) {
 	if store, ok := ctx.Value(storeKey{}).(*Store); ok {
-		return store
+		return store, nil
 	}
-	return nil
+	return nil, errors.New("secrets store not available")
 }
 
 // WithContext stores a Store in the context.
@@ -34,15 +39,15 @@ func WithContext(ctx context.Context, store *Store) context.Context {
 	return context.WithValue(ctx, storeKey{}, store)
 }
 
-// New returns an empty store that if saved, will be written at filepath.
-func New(filepath string) *Store {
+// newStore returns an empty store that if saved, will be written at filepath.
+func newStore(filepath string) *Store {
 	return &Store{filepath: filepath, m: map[string]json.RawMessage{}}
 }
 
-// LoadFile deserialize from a file into a Store, returning an error if
+// LoadFromFile deserialize from a file into a Store, returning an error if
 // deserialization fails.
-func LoadFile(filepath string) (*Store, error) {
-	s := New(filepath)
+func LoadFromFile(filepath string) (*Store, error) {
+	s := newStore(filepath)
 	f, err := os.Open(filepath)
 	if err != nil {
 		if os.IsNotExist(err) {

@@ -99,7 +99,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				ops.Append(prPreview())
 			}
 		}
-		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
+		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{
+			MinimumUpgradeableVersion:  minimumUpgradeableVersion,
+			ClientLintOnlyChangedFiles: c.RunType.Is(runtype.PullRequest),
+		}))
 
 	case runtype.ReleaseNightly:
 		ops.Append(triggerReleaseBranchHealthchecks(minimumUpgradeableVersion))
@@ -120,7 +123,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
 		ops = operations.NewSet(
-			addClientLinters,
+			addClientLintersForAllFiles,
 			addBrowserExtensionUnitTests,
 			addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
 			frontendTests,
@@ -131,7 +134,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
 		ops = operations.NewSet(
-			addClientLinters,
+			addClientLintersForAllFiles,
 			addBrowserExtensionUnitTests,
 			addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
 			frontendTests,

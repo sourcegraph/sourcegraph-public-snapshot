@@ -27,6 +27,7 @@ type InsightViewSeries struct {
 	SampleIntervalValue           int
 	DefaultFilterIncludeRepoRegex *string
 	DefaultFilterExcludeRepoRegex *string
+	DefaultFilterSearchContexts   []string
 	OtherThreshold                *float64
 	PresentationType              PresentationType
 	GeneratedFromCaptureGroups    bool
