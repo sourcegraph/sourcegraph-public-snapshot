@@ -18,6 +18,7 @@ type FeatureFlags struct {
 	AllowConditionalExec     bool
 	AllowOptionalPublished   bool
 	ServerSideBatchChanges   bool
+	BitbucketCloud           bool
 }
 
 func (ff *FeatureFlags) SetFromVersion(version string) error {
@@ -42,6 +43,7 @@ func (ff *FeatureFlags) SetFromVersion(version string) error {
 		{&ff.AllowConditionalExec, ">= 3.28.0-0", "2021-05-05"},
 		{&ff.AllowOptionalPublished, ">= 3.30.0-0", "2021-06-21"},
 		{&ff.ServerSideBatchChanges, ">= 3.37.0-0", "2022-02-08"},
+		{&ff.BitbucketCloud, ">= 3.40.0-0", "2022-04-20"},
 	} {
 		value, err := api.CheckSourcegraphVersion(version, feature.constraint, feature.minDate)
 		if err != nil {

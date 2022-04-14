@@ -555,6 +555,11 @@ func (svc *Service) ResolveRepositories(ctx context.Context, spec *batcheslib.Ba
 
 			switch st := strings.ToLower(repo.ExternalRepository.ServiceType); st {
 			case "github", "gitlab", "bitbucketserver":
+			case "bitbucketcloud":
+				if svc.features.BitbucketCloud {
+					break
+				}
+				fallthrough
 			default:
 				if !svc.allowUnsupported {
 					unsupported.Append(repo)
