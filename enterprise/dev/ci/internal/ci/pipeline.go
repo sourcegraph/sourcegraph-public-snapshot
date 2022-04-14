@@ -124,7 +124,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// builds.
 		ops = operations.NewSet(
 			addClientLintersForAllFiles,
-			addBrowserExt,
+			addBrowserExtensionUnitTests,
+			addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
 			frontendTests,
 			wait,
 			addBrowserExtensionReleaseSteps)
@@ -134,7 +135,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// e2e tests.
 		ops = operations.NewSet(
 			addClientLintersForAllFiles,
-			addBrowserExt,
+			addBrowserExtensionUnitTests,
+			addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
 			frontendTests,
 			wait,
 			addBrowserExtensionE2ESteps)
@@ -274,7 +276,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	ops.Apply(pipeline)
 
 	// Validate generated pipeline have unique keys
-	if err := pipeline.EnsureUniqueKeys(); err != nil {
+	if err := pipeline.EnsureUniqueKeys(make(map[string]int)); err != nil {
 		return nil, err
 	}
 

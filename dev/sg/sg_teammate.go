@@ -2,14 +2,13 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/google/go-github/v41/github"
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/slack"
@@ -28,21 +27,17 @@ func getTeamResolver(ctx context.Context) (team.TeammateResolver, error) {
 }
 
 var (
-	teammateFlagSet = flag.NewFlagSet("sg teammate", flag.ExitOnError)
-	teammateCommand = &ffcli.Command{
-		Name:       "teammate",
-		ShortUsage: "sg teammate [time|handbook] <nickname>",
-		ShortHelp:  "Get information about Sourcegraph teammates.",
-		LongHelp:   `Get information about Sourcegraph teammates, such as their current time and handbook page!`,
-		FlagSet:    teammateFlagSet,
-		Exec: func(ctx context.Context, args []string) error {
-			return flag.ErrHelp
-		},
-		Subcommands: []*ffcli.Command{{
-			Name:       "time",
-			ShortUsage: "sg teammate time <nickname>",
-			ShortHelp:  "Get the current time of a Sourcegraph teammate.",
-			Exec: func(ctx context.Context, args []string) error {
+	teammateCommand = &cli.Command{
+		Name:        "teammate",
+		Usage:       "Get information about Sourcegraph teammates",
+		Description: `Get information about Sourcegraph teammates, such as their current time and handbook page!`,
+		Category:    CategoryCompany,
+		Action:      cli.ShowSubcommandHelp,
+		Subcommands: []*cli.Command{{
+			Name:      "time",
+			ArgsUsage: "<nickname>",
+			Usage:     "Get the current time of a Sourcegraph teammate",
+			Action: execAdapter(func(ctx context.Context, args []string) error {
 				if len(args) == 0 {
 					return errors.New("no nickname provided")
 				}
@@ -57,12 +52,12 @@ var (
 				stdout.Out.Writef("%s's current time is %s",
 					teammate.Name, timeAtLocation(teammate.SlackTimezone))
 				return nil
-			},
+			}),
 		}, {
-			Name:       "handbook",
-			ShortUsage: "sg teammate handbook <nickname>",
-			ShortHelp:  "Open the handbook page of a Sourcegraph teammate.",
-			Exec: func(ctx context.Context, args []string) error {
+			Name:      "handbook",
+			ArgsUsage: "<nickname>",
+			Usage:     "Open the handbook page of a Sourcegraph teammate",
+			Action: execAdapter(func(ctx context.Context, args []string) error {
 				if len(args) == 0 {
 					return errors.New("no nickname provided")
 				}
@@ -76,7 +71,7 @@ var (
 				}
 				stdout.Out.Writef("Opening handbook link for %s: %s", teammate.Name, teammate.HandbookLink)
 				return open.URL(teammate.HandbookLink)
-			},
+			}),
 		}},
 	}
 )

@@ -27,13 +27,19 @@
 
 .open-on-sourcegraph {
     height: 2rem;
-    width: 2rem;
     border-radius: 3px;
     display: flex;
     justify-content: center;
     align-items: center;
+    gap: 0.25rem;
     background: rgba(9, 30, 66, 0.04);
     margin-left: 4px;
+    padding-left: 8px;
+    padding-right: 8px;
+    text-decoration: none !important;
+    color: #42526e !important;
+    font-weight: 500;
+    outline: none;
 
     &:hover {
         @extend .action-item-active-base;

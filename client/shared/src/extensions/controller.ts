@@ -53,7 +53,24 @@ export interface ExtensionsControllerProps<K extends keyof Controller = keyof Co
  * There should only be a single controller for the entire client application. The controller's model represents
  * all of the client application state that the client needs to know.
  */
-export function createController(context: PlatformContext): Controller {
+export function createController(
+    context: Pick<
+        PlatformContext,
+        | 'updateSettings'
+        | 'settings'
+        | 'getGraphQLClient'
+        | 'requestGraphQL'
+        | 'showMessage'
+        | 'showInputBox'
+        | 'sideloadedExtensionURL'
+        | 'getScriptURLForExtension'
+        | 'getStaticExtensions'
+        | 'telemetryService'
+        | 'clientApplication'
+        | 'sourcegraphURL'
+        | 'createExtensionHost'
+    >
+): Controller {
     const subscriptions = new Subscription()
 
     const initData: Omit<InitData, 'initialSettings'> = {

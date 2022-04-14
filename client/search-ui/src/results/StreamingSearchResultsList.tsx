@@ -1,12 +1,12 @@
 import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
 import AlphaSBoxIcon from 'mdi-react/AlphaSBoxIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import FileIcon from 'mdi-react/FileIcon'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
+import { useLocation } from 'react-router'
 import { Observable } from 'rxjs'
 
 import { HoverMerged } from '@sourcegraph/client-api'
@@ -48,7 +48,6 @@ export interface StreamingSearchResultsListProps
         PlatformContextProps<'requestGraphQL'> {
     isSourcegraphDotCom: boolean
     results?: AggregateStreamingSearchResults
-    location: H.Location
     allExpanded: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     authenticatedUser: AuthenticatedUser | null
@@ -75,7 +74,6 @@ export interface StreamingSearchResultsListProps
 
 export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearchResultsListProps> = ({
     results,
-    location,
     allExpanded,
     fetchHighlightedFileLineRanges,
     settingsCascade,
@@ -96,6 +94,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
+    const location = useLocation()
 
     const logSearchResultClicked = useCallback(
         (index: number, type: string) => {
