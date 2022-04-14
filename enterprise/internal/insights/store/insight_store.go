@@ -50,8 +50,9 @@ type InsightQueryArgs struct {
 	OrgID       []int
 	DashboardID int
 
-	After string
-	Limit int
+	After    string
+	Limit    int
+	IsFrozen *bool
 
 	// This field will disable user level authorization checks on the insight views. This should only be used
 	// when fetching insights from a container that also has authorization checks, such as a dashboard.
@@ -110,6 +111,13 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 	}
 	if args.After != "" {
 		preds = append(preds, sqlf.Sprintf("iv.unique_id > %s", args.After))
+	}
+	if args.IsFrozen != nil {
+		if *args.IsFrozen {
+			preds = append(preds, sqlf.Sprintf("iv.is_frozen = TRUE"))
+		} else {
+			preds = append(preds, sqlf.Sprintf("iv.is_frozen = FALSE"))
+		}
 	}
 
 	limit := sqlf.Sprintf("")
