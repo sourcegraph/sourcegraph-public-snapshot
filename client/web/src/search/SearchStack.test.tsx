@@ -60,7 +60,7 @@ describe('Search Stack', () => {
             renderSearchStack()
             userEvent.click(screen.getByRole('button', { name: 'Open Notepad' }))
 
-            userEvent.click(screen.getByRole('button', { name: 'Restore previous session' }))
+            userEvent.click(screen.getByRole('button', { name: 'Restore last session' }))
             expect(useSearchStackState.getState().entries).toEqual(mockEntries)
         })
     })
