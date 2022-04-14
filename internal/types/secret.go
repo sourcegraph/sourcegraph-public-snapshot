@@ -97,6 +97,9 @@ func (e *ExternalService) RedactedConfig() (string, error) {
 			}
 
 			config, err = patch(config, redacted, "urls", i)
+			if err != nil {
+				return "", err
+			}
 		}
 	case *schema.JVMPackagesConnection:
 		if c.Maven != nil {
