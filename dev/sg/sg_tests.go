@@ -16,10 +16,9 @@ import (
 )
 
 func init() {
-	postInitHooks = append(postInitHooks, func(cmd *cli.Context) error {
+	postInitHooks = append(postInitHooks, func(cmd *cli.Context) {
 		// Create 'sg test' help text after flag (and config) initialization
 		testCommand.Description = constructTestCmdLongHelp()
-		return nil
 	})
 }
 
