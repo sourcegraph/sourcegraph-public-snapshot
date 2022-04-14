@@ -18,7 +18,13 @@ Bulk operations allow a single action to be performed across many changesets in 
 
     <img src="https://sourcegraphstatic.com/docs/images/batch_changes/select_bulk_operation_type.png" class="screenshot">
 
+1. Once changesets are selected, a query is made to determine the bulk operations that can be applied to the selected changesets.
+
 ## Supported types of bulk operations
+
+Depending on the changesets selected, different types of bulk operations can be applied to the selectd changesets. For a bulk operation to be available, it has to be applicable to all the selected changesets.
+
+Below is a list of suppoted bulk operations for changesets and the conditions with which they're applicable:
 
 - Commenting: Post a comment on all selected changesets. This can be particularly useful for pinging people, reminding them to take a look at the changeset, or posting your favorite emoji 🦡.
 - Detach: Only available in the archived tab. Detach a selection of changesets from the batch change to remove them from the archived tab.
