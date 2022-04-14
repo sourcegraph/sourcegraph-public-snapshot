@@ -378,7 +378,7 @@ func (s *DBDashboardStore) EnsureLimitedAccessModeDashboard(ctx context.Context)
 	// This dashboard may have been previously deleted.
 	tx.RestoreDashboard(ctx, id)
 	if err != nil {
-		return 0, err
+		return 0, errors.Wrap(err, "RestoreDashboard")
 	}
 	return id, nil
 }
