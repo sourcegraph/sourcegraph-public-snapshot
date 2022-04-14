@@ -93,7 +93,7 @@ func TestCommitIndexer_indexAll(t *testing.T) {
 			t.Errorf("got GetMetadata invocations: %v want %v", got, want)
 		}
 
-		// Only one repository should actually update any commits
+		// Both enabled repositories should call insert commits
 		if got, want := len(commitStore.InsertCommitsFunc.history), 2; got != want {
 			t.Errorf("got InsertCommits invocations: %v want %v", got, want)
 		} else {
@@ -102,7 +102,7 @@ func TestCommitIndexer_indexAll(t *testing.T) {
 				"no-commits":      commitStore.InsertCommitsFunc.history[1],
 			}
 			for repo, call := range calls {
-				// Check Indexed though is the current time
+				// Check Indexed though is the clock time
 				if diff := cmp.Diff(clock(), call.Arg3); diff != "" {
 					t.Errorf("unexpected indexed though date/time")
 				}
@@ -201,7 +201,7 @@ func TestCommitIndexer_windowing(t *testing.T) {
 		clock:             clock,
 	}
 
-	// Testing a scenario with 3 repos and a paging window of 30 days
+	// Testing a scenario with 3 repos and a window of 30 days
 	// "repo-one" has been recently indexed and all commits are in one window
 	// "really-big-repo" has 2 windows of commits
 	// "no-commits-recent" has no commits and was recently indexed
@@ -396,10 +396,8 @@ func mockCommits(commits map[string][]*gitdomain.Commit) func(ctx context.Contex
 			if commit.Committer.Date.Before(after) {
 				continue
 			}
-			if until != nil {
-				if commit.Committer.Date.After(*until) {
-					continue
-				}
+			if until != nil && commit.Committer.Date.After(*until) {
+				continue
 			}
 			filteredCommits = append(filteredCommits, commit)
 		}
