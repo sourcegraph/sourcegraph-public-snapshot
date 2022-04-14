@@ -47,6 +47,8 @@ interface UseSearchBasedCodeIntelOptions {
     isArchived: boolean
 
     getSetting: SettingsGetter
+
+    filter?: string
 }
 
 export const useSearchBasedCodeIntel = (options: UseSearchBasedCodeIntelOptions): UseSearchBasedCodeIntelResult => {
@@ -110,7 +112,11 @@ export async function searchBasedReferences({
     path,
     spec,
     getSetting,
+    filter,
 }: UseSearchBasedCodeIntelOptions): Promise<Location[]> {
+    const filterReferences = (results: Location[]): Location[] =>
+        filter ? results.filter(location => location.file.includes(filter)) : results
+
     const queryTerms = referencesQuery({ searchToken, path, fileExts: spec.fileExts })
     const queryArguments = {
         repo,
@@ -118,10 +124,16 @@ export async function searchBasedReferences({
         isArchived,
         commit,
         queryTerms,
+        filterReferences,
     }
 
     const doSearch = (negateRepoFilter: boolean): Promise<Location[]> =>
-        searchWithFallback(args => searchReferences(args.queryTerms), queryArguments, negateRepoFilter, getSetting)
+        searchWithFallback(
+            args => searchAndFilterReferences({ queryTerms: args.queryTerms, filterReferences }),
+            queryArguments,
+            negateRepoFilter,
+            getSetting
+        )
 
     // Perform a search in the current git tree
     const sameRepoReferences = doSearch(false)
@@ -148,15 +160,18 @@ export async function searchBasedDefinitions({
     path,
     spec,
     getSetting,
+    filter,
 }: UseSearchBasedCodeIntelOptions): Promise<Location[]> {
-    const filterDefinitions = (results: Location[]): Location[] =>
-        spec?.filterDefinitions
-            ? spec.filterDefinitions<Location>(results, {
+    const filterDefinitions = (results: Location[]): Location[] => {
+        const filteredByName = filter ? results.filter(location => location.file.includes(filter)) : results
+        return spec?.filterDefinitions
+            ? spec.filterDefinitions<Location>(filteredByName, {
                   repo,
                   fileContent,
                   filePath: path,
               })
-            : results
+            : filteredByName
+    }
 
     // Construct base definition query without scoping terms
     const queryTerms = definitionQuery({ searchToken, path, fileExts: spec.fileExts })
@@ -232,10 +247,18 @@ async function searchAndFilterDefinitions({
     return sortByProximity(filteredResults, location.pathname)
 }
 
-async function searchReferences(terms: string[]): Promise<Location[]> {
-    const result = await executeSearchQuery(terms)
-
-    return result.flatMap(searchResultToResults).map(buildSearchBasedLocation)
+async function searchAndFilterReferences({
+    queryTerms,
+    filterReferences,
+}: {
+    /** The terms of the search query. */
+    queryTerms: string[]
+    /** The function used to filter definitions. */
+    filterReferences: (results: Location[]) => Location[]
+}): Promise<Location[]> {
+    const result = await executeSearchQuery(queryTerms)
+    const references = result.flatMap(searchResultToResults).map(buildSearchBasedLocation)
+    return filterReferences ? filterReferences(references) : references
 }
 
 async function executeSearchQuery(terms: string[]): Promise<SearchResult[]> {
