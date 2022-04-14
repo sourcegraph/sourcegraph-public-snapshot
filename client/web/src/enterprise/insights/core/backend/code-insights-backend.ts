@@ -78,6 +78,8 @@ export interface CodeInsightsBackend {
 
     hasInsights: (insightsCount: number) => Observable<boolean>
 
+    getNonFrozenInsightsCount: (insightsCount: number) => Observable<number>
+
     createInsight: (input: InsightCreateInput) => Observable<unknown>
 
     updateInsight: (event: InsightUpdateInput) => Observable<unknown>
