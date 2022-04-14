@@ -27,10 +27,11 @@ function SearchStackWrapper({
     return <SearchStackContainer onCreateNotebook={noop} initialOpen={open} />
 }
 
-export default {
+const META: ComponentMeta<typeof SearchStackContainer> = {
     title: 'web/search/Search Stack',
     component: SearchStackWrapper,
-} as ComponentMeta<typeof SearchStackContainer>
+}
+export default META
 
 const mockEntries: SearchStackEntry[] = [
     { id: 0, type: 'search', query: 'TODO', caseSensitive: false, patternType: SearchPatternType.literal },

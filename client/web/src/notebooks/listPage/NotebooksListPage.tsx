@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import NotebookPlusIcon from 'mdi-react/NotebookPlusIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
 import { Redirect, useHistory, useLocation } from 'react-router'
 import { Observable } from 'rxjs'
@@ -20,6 +19,7 @@ import { FilteredConnectionFilter } from '../../components/FilteredConnection'
 import { Page } from '../../components/Page'
 import { CreateNotebookVariables, NotebooksOrderBy } from '../../graphql-operations'
 import { PageRoutes } from '../../routes.constants'
+import { NotepadIcon } from '../../search/SearchStack'
 import { fetchNotebooks as _fetchNotebooks, createNotebook as _createNotebook } from '../backend'
 
 import { ImportMarkdownNotebookButton } from './ImportMarkdownNotebookButton'
@@ -405,7 +405,7 @@ const ToggleNotepadButton: React.FunctionComponent<TelemetryProps> = ({ telemetr
     return (
         <>
             <Button variant="secondary" type="button" onClick={onClick}>
-                <Icon as={NotebookPlusIcon} /> {notepadEnabled ? 'Disable' : 'Enable'} notepad
+                <NotepadIcon /> {notepadEnabled ? 'Disable' : 'Enable'} notepad
             </Button>
             {showCTA && (
                 <Modal aria-label="Notepad call-to-action">

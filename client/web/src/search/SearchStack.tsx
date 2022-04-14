@@ -12,12 +12,11 @@ import React, {
 
 import classNames from 'classnames'
 import { LocationDescriptor } from 'history'
+import BookPlusOutlineIcon from 'mdi-react/BookPlusOutlineIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import FileDocumentOutlineIcon from 'mdi-react/FileDocumentOutlineIcon'
-import NotebookPlusIcon from 'mdi-react/NotebookPlusIcon'
-import PenIcon from 'mdi-react/PenIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import TextBoxIcon from 'mdi-react/TextBoxIcon'
 
@@ -81,6 +80,8 @@ function useHasNewEntry(entries: SearchStackEntry[]): boolean {
 
     return previous !== undefined && previous < entries.length
 }
+
+export const NotepadIcon: React.FunctionComponent = () => <Icon as={BookPlusOutlineIcon} />
 
 export interface SearchStackContainerProps {
     initialOpen?: boolean
@@ -337,7 +338,7 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({
                 aria-expanded="true"
             >
                 <span>
-                    <Icon as={PenIcon} />
+                    <NotepadIcon />
                     <h2 className="px-1 d-inline">Notepad</h2>
                     <small>
                         ({reversedEntries.length} note{reversedEntries.length === 1 ? '' : 's'})
@@ -406,39 +407,37 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({
                             </div>
                         </div>
                     )}
-                    <div className="p-2">
+                    <div className="p-2 d-flex align-items-center">
+                        <Button
+                            onClick={createNotebook}
+                            variant="primary"
+                            size="sm"
+                            disabled={entries.length === 0}
+                            className="flex-1 mr-2"
+                        >
+                            Create Notebook
+                        </Button>
                         {restorePreviousSession && (
                             <Button
-                                className="w-100 mb-1"
+                                className="mr-2"
                                 onClick={restorePreviousSession}
                                 outline={true}
                                 variant="secondary"
                                 size="sm"
                             >
-                                Restore previous session
+                                Restore last session
                             </Button>
                         )}
-                        <div className="d-flex align-items-center">
-                            <Button
-                                onClick={createNotebook}
-                                variant="primary"
-                                size="sm"
-                                disabled={entries.length === 0}
-                                className="flex-1"
-                            >
-                                <Icon as={NotebookPlusIcon} /> Create Notebook
-                            </Button>
-                            <Button
-                                aria-label="Remove all notes"
-                                title="Remove all notes"
-                                variant="icon"
-                                className="text-muted ml-2"
-                                disabled={entries.length === 0}
-                                onClick={() => setConfirmRemoveAll(true)}
-                            >
-                                <Icon as={DeleteIcon} />
-                            </Button>
-                        </div>
+                        <Button
+                            aria-label="Remove all notes"
+                            title="Remove all notes"
+                            variant="icon"
+                            className="text-muted"
+                            disabled={entries.length === 0}
+                            onClick={() => setConfirmRemoveAll(true)}
+                        >
+                            <Icon as={DeleteIcon} />
+                        </Button>
                     </div>
                 </>
             )}

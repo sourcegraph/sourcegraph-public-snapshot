@@ -17,7 +17,10 @@
         position: fixed;
         right: 0.75rem;
         bottom: 0.75rem;
-        width: 20rem;
+
+        &.open {
+            width: 20rem;
+        }
     }
 
     h2 {
