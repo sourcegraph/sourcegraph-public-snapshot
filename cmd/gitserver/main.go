@@ -20,6 +20,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tidwall/gjson"
+	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
@@ -62,6 +63,9 @@ var (
 	syncRepoStateInterval        = env.MustGetDuration("SRC_REPOS_SYNC_STATE_INTERVAL", 10*time.Minute, "Interval between state syncs")
 	syncRepoStateBatchSize       = env.MustGetInt("SRC_REPOS_SYNC_STATE_BATCH_SIZE", 500, "Number of upserts to perform per batch")
 	syncRepoStateUpsertPerSecond = env.MustGetInt("SRC_REPOS_SYNC_STATE_UPSERT_PER_SEC", 500, "The number of upserted rows allowed per second across all gitserver instances")
+
+	batchLogPerRequestConcurrencyLimit = env.MustGetInt("SRC_BATCH_LOG_PER_REQUEST_CONCURRENCY_LIMIT", 16, "The maximum number of in-flight Git commands from a single /batch-log requests")
+	batchLogGlobalConcurrencyLimit     = env.MustGetInt("SRC_BATCH_LOG_GLOBAL_CONCURRENCY_LIMIT", 256, "The maximum number of in-flight Git commands from all /batch-log requests combined")
 )
 
 func main() {
@@ -119,6 +123,10 @@ func main() {
 		Hostname:   hostname.Get(),
 		DB:         db,
 		CloneQueue: server.NewCloneQueue(list.New()),
+		BatchLogLimitingContext: server.LimitingContext{
+			PerRequestConcurrencyLimit: batchLogPerRequestConcurrencyLimit,
+			GlobalRequestSemaphore:     semaphore.NewWeighted(batchLogGlobalConcurrencyLimit),
+		},
 	}
 
 	observationContext := &observation.Context{
