@@ -6,7 +6,7 @@ import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { setupExtensionMocking, simpleHoverProvider } from '@sourcegraph/shared/src/testing/integration/mockExtension'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
-import { retry } from '@sourcegraph/shared/src/testing/utils'
+import { readEnvironmentString, retry } from '@sourcegraph/shared/src/testing/utils'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 
 import { BrowserIntegrationTestContext, createBrowserIntegrationTestContext } from './context'
@@ -921,6 +921,14 @@ describe('GitHub', () => {
                                     hasRedirectedToSourcegraphSearch,
                                     'Expected to be redirected to Sourcegraph search page with type "commit", language "HTML" and search query'
                                 )
+
+                                if (
+                                    readEnvironmentString({ variable: 'POLLYJS_MODE', defaultValue: 'replay' }) ===
+                                    'record'
+                                ) {
+                                    // wait for timeout to omit GitHub API responding with 429 HTTP Error (Too Many Requests)
+                                    await driver.page.waitForTimeout(5000)
+                                }
                             })
                         })
                     }
