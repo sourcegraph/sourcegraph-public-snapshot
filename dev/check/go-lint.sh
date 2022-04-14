@@ -47,7 +47,7 @@ declare -A IGNORED_DIRS=(
 
 # If no args are given, traverse through each project with a `go.mod`
 if [ $# -eq 0 ]; then
-  find . -name go.mod -exec dirname '{}' \; | while read -r d; do
+  find . -name go.mod -type file -exec dirname '{}' \; | while read -r d; do
 
     # Skip any ignored directories.
     if [ -v "IGNORED_DIRS[$d]" ] ; then

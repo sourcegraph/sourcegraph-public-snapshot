@@ -127,19 +127,14 @@ pub fn lsif_highlight(q: SourcegraphQuery) -> Result<JsonValue, JsonValue> {
 }
 
 pub fn index_language(filetype: &str, code: &str) -> Result<Document, Error> {
-    let lang_config = match CONFIGURATIONS.get(filetype) {
-        Some(lang_config) => lang_config,
-        None => return Err(Error::InvalidLanguage),
-    };
-
-    index_language_with_config(code, &lang_config)
+    match CONFIGURATIONS.get(filetype) {
+        Some(lang_config) => index_language_with_config(code, lang_config),
+        None => Err(Error::InvalidLanguage),
+    }
 }
 
 pub fn make_highlight_config(name: &str, highlights: &str) -> Option<HighlightConfiguration> {
-    let config = match CONFIGURATIONS.get(name) {
-        Some(config) => config,
-        None => return None,
-    };
+    let config = CONFIGURATIONS.get(name)?;
 
     // Create HighlightConfiguration language
     let mut lang = match HighlightConfiguration::new(config.language, highlights, "", "") {
@@ -456,7 +451,7 @@ SELECT * FROM my_table
     #[test]
     fn test_all_files() -> Result<(), std::io::Error> {
         let dir = read_dir("./src/snapshots/files/")?;
-        for entry in dir.into_iter() {
+        for entry in dir {
             let entry = entry?;
             let filepath = entry.path();
             let mut file = File::open(&filepath)?;

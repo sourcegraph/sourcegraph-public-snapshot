@@ -2,26 +2,21 @@ package main
 
 import (
 	"context"
-	"flag"
 
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/rfc"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var (
-	rfcFlagSet = flag.NewFlagSet("sg rfc", flag.ExitOnError)
-	rfcCommand = &ffcli.Command{
-		Name:       "rfc",
-		ShortUsage: "sg rfc [list|search|open]",
-		ShortHelp:  "Run the given RFC command to manage RFCs.",
-		LongHelp:   `List, search and open Sourcegraph RFCs`,
-		FlagSet:    rfcFlagSet,
-		Exec:       rfcExec,
-	}
-)
+var rfcCommand = &cli.Command{
+	Name:        "rfc",
+	Usage:       "Run the given RFC command to manage RFCs",
+	Description: `List, search and open Sourcegraph RFCs`,
+	Category:    CategoryCompany,
+	Action:      execAdapter(rfcExec),
+}
 
 func rfcExec(ctx context.Context, args []string) error {
 	if len(args) == 0 {

@@ -377,10 +377,11 @@ type InsightViewPayloadResolver interface {
 }
 
 type InsightViewQueryArgs struct {
-	First   *int32
-	After   *string
-	Id      *graphql.ID
-	Filters *InsightViewFiltersInput
+	First    *int32
+	After    *string
+	Id       *graphql.ID
+	IsFrozen *bool
+	Filters  *InsightViewFiltersInput
 }
 
 type DeleteInsightViewArgs struct {

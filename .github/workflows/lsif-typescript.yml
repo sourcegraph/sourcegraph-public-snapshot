@@ -20,7 +20,7 @@ jobs:
       - name: Install lsif-typescript
         run: yarn global add @sourcegraph/lsif-typescript
       - name: Run lsif-typescript
-        run: lsif-typescript index --yarnWorkspaces
+        run: lsif-typescript index --yarn-workspaces
       - uses: actions/setup-go@v2
         with: { go-version: '1.17' }
       - name: Convert LSIF Typed into LSIF Graph

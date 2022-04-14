@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { TreeEntryFields } from '../graphql-operations'
+import { TreeEntryFields } from '@sourcegraph/shared/src/graphql-operations'
 
 /** TreeEntryInfo is the information we need to render an entry in the file tree */
 export interface TreeEntryInfo {
