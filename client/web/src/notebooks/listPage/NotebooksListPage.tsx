@@ -24,7 +24,7 @@ import { fetchNotebooks as _fetchNotebooks, createNotebook as _createNotebook } 
 
 import { ImportMarkdownNotebookButton } from './ImportMarkdownNotebookButton'
 import { NotebooksList } from './NotebooksList'
-import { NotepadCTA } from './NotepadCta'
+import { NotepadCTA, NOTEPAD_CTA_ID } from './NotepadCta'
 
 import styles from './NotebooksListPage.module.scss'
 
@@ -408,7 +408,7 @@ const ToggleNotepadButton: React.FunctionComponent<TelemetryProps> = ({ telemetr
                 <NotepadIcon /> {notepadEnabled ? 'Disable' : 'Enable'} notepad
             </Button>
             {showCTA && (
-                <Modal aria-label="Notepad call-to-action">
+                <Modal aria-labelledby={NOTEPAD_CTA_ID}>
                     <NotepadCTA onEnable={onEnableFromCTA} onCancel={onCancelFromCTA} />
                 </Modal>
             )}

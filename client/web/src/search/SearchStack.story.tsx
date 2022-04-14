@@ -17,7 +17,7 @@ function SearchStackWrapper({
     canRestoreSession = false,
     open = false,
     enableSearchStack = true,
-}: { open?: boolean; enableSearchStack?: boolean } & SearchStackStore) {
+}: { open?: boolean; enableSearchStack?: boolean } & SearchStackStore): React.ReactElement {
     useExperimentalFeatures.setState({ enableSearchStack })
 
     useEffect(() => {
