@@ -375,7 +375,7 @@ const tokenDecorators: { [key: string]: Decoration } = Object.fromEntries(
 const emptyDecorator = Decoration.mark({})
 const focusedFilterDeco = Decoration.mark({ class: styles.focusedFilter })
 
-// Chooses the correct decorator for the decorated token. Copied (and adapated)
+// Chooses the correct decorator for the decorated token. Copied (and adapted)
 // from decoratedToMonaco (decoratedToken.ts).
 const decoratedToDecoration = (token: DecoratedToken): Decoration => {
     let cssClass = 'identifier'
