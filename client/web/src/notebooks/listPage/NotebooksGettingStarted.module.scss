@@ -28,3 +28,9 @@
 .selected-panel-button {
     color: var(--primary);
 }
+
+.right {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}

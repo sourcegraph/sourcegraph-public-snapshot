@@ -72,10 +72,18 @@ export const NotebooksGettingStarted: React.FunctionComponent<NotebooksGettingSt
         <Container className="mb-4">
             <div className={classNames(styles.row, 'row')}>
                 <div className="col-12 col-md-7">
-                    <div>
+                    {/* To optimize switching between panels we pre-render all of the videos and switch between them using d-block/d-none.
+                    Otherwise we get flashing content when one video is unmounted and another video is mounted. */}
+                    {panels.map((panel, panelIndex) => (
                         <video
-                            key={`video-${selectedPanelIndex}`}
-                            className="w-100 h-auto shadow percy-hide"
+                            key={`panel-${panel.title}`}
+                            className={classNames(
+                                'w-100',
+                                'h-auto',
+                                'shadow',
+                                'percy-hide',
+                                selectedPanelIndex === panelIndex ? 'd-block' : 'd-none'
+                            )}
                             width={1280}
                             height={720}
                             autoPlay={true}
@@ -84,7 +92,7 @@ export const NotebooksGettingStarted: React.FunctionComponent<NotebooksGettingSt
                             playsInline={true}
                             controls={false}
                         >
-                            {selectedPanel.videoSources.map(videoSource => (
+                            {panel.videoSources.map(videoSource => (
                                 <source
                                     key={videoSource.src}
                                     type={`video/${videoSource.type}`}
@@ -92,7 +100,9 @@ export const NotebooksGettingStarted: React.FunctionComponent<NotebooksGettingSt
                                 />
                             ))}
                         </video>
-                    </div>
+                    ))}
+                </div>
+                <div className={classNames('col-12', 'col-md-5', styles.right)}>
                     <div className="mt-2">
                         <h2>{selectedPanel.title}</h2>
                         <p className={styles.description}>{selectedPanel.description}</p>
@@ -126,22 +136,6 @@ export const NotebooksGettingStarted: React.FunctionComponent<NotebooksGettingSt
                             </Button>
                         </div>
                     </div>
-                </div>
-                <div className="col-12 col-md-5">
-                    <h2>Automate large-scale code changes</h2>
-                    <p>
-                        Batch Changes gives you a declarative structure for finding and modifying code across all of
-                        your repositories. Its simple UI makes it easy to track and manage all of your changesets
-                        through checks and code reviews until each change is merged.
-                    </p>
-                    <h3>Common use cases</h3>
-                    <ul className={classNames(styles.narrowList, 'mb-0')}>
-                        <li>Update configuration files across many repositories</li>
-                        <li>Update libraries which call your APIs</li>
-                        <li>Rapidly fix critical security issues</li>
-                        <li>Update boilerplate code</li>
-                        <li>Pay down tech debt</li>
-                    </ul>
                 </div>
             </div>
         </Container>
