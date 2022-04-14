@@ -164,6 +164,7 @@ type CreateBatchChangesCredentialArgs struct {
 	ExternalServiceKind string
 	ExternalServiceURL  string
 	User                *graphql.ID
+	Username            *string
 	Credential          string
 }
 
