@@ -9,6 +9,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const (
+	DefaultFile = "sg.secrets.json"
+)
+
 var (
 	ErrSecretNotFound = errors.New("secret not found")
 )
