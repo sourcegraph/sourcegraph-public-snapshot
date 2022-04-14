@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const (
@@ -17,15 +17,15 @@ const (
 var (
 	globalConfOnce sync.Once
 	globalConf     *Config
-	globalConfErr  output.FancyLine
+	globalConfErr  error
 )
 
-// Get retrieves the global config files. If Config is nil, a line will be provided that
-// can be printed for an explanation as to what went wrong.
+// Get retrieves the global config files and merges them into a single sg config.
 //
 // It must not be called before flag initalization, i.e. when confFile or overwriteFile is
-// not set.
-func Get(confFile, overwriteFile string) (*Config, output.FancyLine) {
+// not set, or it will panic. This means that it can only be used in (*cli).Action,
+// (*cli).Before/(*cli).After, and postInitHooks
+func Get(confFile, overwriteFile string) (*Config, error) {
 	// If unset, Get was called in an illegal context, since sg.Before validates that the
 	// flags are non-empty.
 	if confFile == "" || overwriteFile == "" {
@@ -38,11 +38,11 @@ func Get(confFile, overwriteFile string) (*Config, output.FancyLine) {
 	return globalConf, globalConfErr
 }
 
-func parseConf(confFile, overwriteFile string) (*Config, output.FancyLine) {
+func parseConf(confFile, overwriteFile string) (*Config, error) {
 	// Try to determine root of repository, so we can look for config there
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
-		return nil, output.Linef("", output.StyleWarning, "Failed to determine repository root location: %s", err)
+		return nil, errors.Wrap(err, "Failed to determine repository root location")
 	}
 
 	// If the configFlag/overwriteConfigFlag flags have their default value, we
@@ -56,18 +56,18 @@ func parseConf(confFile, overwriteFile string) (*Config, output.FancyLine) {
 
 	conf, err := parseConfigFile(confFile)
 	if err != nil {
-		return nil, output.Linef("", output.StyleWarning, "Failed to parse %s%s%s%s as configuration file:%s\n%s", output.StyleBold, confFile, output.StyleReset, output.StyleWarning, output.StyleReset, err)
+		return nil, errors.Wrapf(err, "Failed to parse %q as configuration file", confFile)
 	}
 
 	if ok, _ := fileExists(overwriteFile); ok {
 		overwriteConf, err := parseConfigFile(overwriteFile)
 		if err != nil {
-			return nil, output.Linef("", output.StyleWarning, "Failed to parse %s%s%s%s as overwrites configuration file:%s\n%s", output.StyleBold, overwriteFile, output.StyleReset, output.StyleWarning, output.StyleReset, err)
+			return nil, errors.Wrapf(err, "Failed to parse %q as configuration overwrite file", confFile)
 		}
 		conf.Merge(overwriteConf)
 	}
 
-	return conf, output.FancyLine{}
+	return conf, nil
 }
 
 func fileExists(path string) (bool, error) {

@@ -96,36 +96,37 @@ If no commandset is specified, it starts the commandset with the name 'default'.
 Use this to start your Sourcegraph environment!
 `)
 
-	config, warning := sgconf.Get(configFile, configOverwriteFile)
-	if config != nil {
-		fmt.Fprintf(&out, "\n")
-		fmt.Fprintf(&out, "AVAILABLE COMMANDSETS IN %s%s%s\n", output.StyleBold, configFile, output.StyleReset)
-
-		var names []string
-		for name := range config.Commandsets {
-			switch name {
-			case "enterprise-codeintel":
-				names = append(names, fmt.Sprintf("  %s 🧠", name))
-			case "batches":
-				names = append(names, fmt.Sprintf("  %s 🦡", name))
-			default:
-				names = append(names, fmt.Sprintf("  %s", name))
-			}
-		}
-		sort.Strings(names)
-		fmt.Fprint(&out, strings.Join(names, "\n"))
-	} else {
+	config, err := sgconf.Get(configFile, configOverwriteFile)
+	if err != nil {
 		out.Write([]byte("\n"))
-		output.NewOutput(&out, output.OutputOpts{}).WriteLine(warning)
+		output.NewOutput(&out, output.OutputOpts{}).WriteLine(newWarningLinef(err.Error()))
+		return out.String()
 	}
+
+	fmt.Fprintf(&out, "\n")
+	fmt.Fprintf(&out, "AVAILABLE COMMANDSETS IN %s%s%s:\n", output.StyleBold, configFile, output.StyleReset)
+
+	var names []string
+	for name := range config.Commandsets {
+		switch name {
+		case "enterprise-codeintel":
+			names = append(names, fmt.Sprintf("  %s 🧠", name))
+		case "batches":
+			names = append(names, fmt.Sprintf("  %s 🦡", name))
+		default:
+			names = append(names, fmt.Sprintf("  %s", name))
+		}
+	}
+	sort.Strings(names)
+	fmt.Fprint(&out, strings.Join(names, "\n"))
 
 	return out.String()
 }
 
 func startExec(ctx context.Context, args []string) error {
-	config, errLine := sgconf.Get(configFile, configOverwriteFile)
-	if config == nil {
-		stdout.Out.WriteLine(errLine)
+	config, err := sgconf.Get(configFile, configOverwriteFile)
+	if err != nil {
+		writeWarningLinef(err.Error())
 		os.Exit(1)
 	}
 

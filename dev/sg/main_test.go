@@ -27,6 +27,7 @@ func TestAppRun(t *testing.T) {
 	assert.Contains(t, out.String(), "The Sourcegraph developer tool!")
 	// We do not want errors anywhere
 	assert.NotContains(t, out.String(), "error")
+	assert.NotContains(t, out.String(), "panic")
 	assert.Empty(t, err.String())
 }
 

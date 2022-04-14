@@ -42,9 +42,9 @@ var testCommand = &cli.Command{
 }
 
 func testExec(ctx context.Context, args []string) error {
-	config, errLine := sgconf.Get(configFile, configOverwriteFile)
-	if config == nil {
-		stdout.Out.WriteLine(errLine)
+	config, err := sgconf.Get(configFile, configOverwriteFile)
+	if err != nil {
+		writeWarningLinef(err.Error())
 		os.Exit(1)
 	}
 
@@ -69,22 +69,23 @@ func constructTestCmdLongHelp() string {
 
 	// Attempt to parse config to list available testsuites, but don't fail on
 	// error, because we should never error when the user wants --help output.
-	config, warning := sgconf.Get(configFile, configOverwriteFile)
-	if config != nil {
-		fmt.Fprintf(&out, "\n\n")
-		fmt.Fprintf(&out, "AVAILABLE TESTSUITES IN %s%s%s:\n", output.StyleBold, configFile, output.StyleReset)
-		fmt.Fprintf(&out, "\n")
-
-		var names []string
-		for name := range config.Tests {
-			names = append(names, name)
-		}
-		sort.Strings(names)
-		fmt.Fprint(&out, strings.Join(names, "\n"))
-	} else {
+	config, err := sgconf.Get(configFile, configOverwriteFile)
+	if err != nil {
 		out.Write([]byte("\n"))
-		output.NewOutput(&out, output.OutputOpts{}).WriteLine(warning)
+		output.NewOutput(&out, output.OutputOpts{}).WriteLine(newWarningLinef(err.Error()))
+		return out.String()
 	}
+
+	fmt.Fprintf(&out, "\n\n")
+	fmt.Fprintf(&out, "AVAILABLE TESTSUITES IN %s%s%s:\n", output.StyleBold, configFile, output.StyleReset)
+	fmt.Fprintf(&out, "\n")
+
+	var names []string
+	for name := range config.Tests {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	fmt.Fprint(&out, strings.Join(names, "\n"))
 
 	return out.String()
 }

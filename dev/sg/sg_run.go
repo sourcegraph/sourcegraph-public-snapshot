@@ -45,9 +45,9 @@ var runCommand = &cli.Command{
 }
 
 func runExec(ctx context.Context, args []string) error {
-	config, errLine := sgconf.Get(configFile, configOverwriteFile)
-	if config == nil {
-		stdout.Out.WriteLine(errLine)
+	config, err := sgconf.Get(configFile, configOverwriteFile)
+	if err != nil {
+		writeWarningLinef(err.Error())
 		os.Exit(1)
 	}
 
@@ -74,21 +74,22 @@ func constructRunCmdLongHelp() string {
 
 	fmt.Fprintf(&out, "  Runs the given command. If given a whitespace-separated list of commands it runs the set of commands.\n")
 
-	config, warning := sgconf.Get(configFile, configOverwriteFile)
-	if config != nil {
-		fmt.Fprintf(&out, "\n")
-		fmt.Fprintf(&out, "AVAILABLE COMMANDS IN %s%s%s\n", output.StyleBold, configFile, output.StyleReset)
-
-		var names []string
-		for name := range config.Commands {
-			names = append(names, name)
-		}
-		sort.Strings(names)
-		fmt.Fprint(&out, strings.Join(names, "\n"))
-	} else {
+	config, err := sgconf.Get(configFile, configOverwriteFile)
+	if err != nil {
 		out.Write([]byte("\n"))
-		output.NewOutput(&out, output.OutputOpts{}).WriteLine(warning)
+		output.NewOutput(&out, output.OutputOpts{}).WriteLine(newWarningLinef(err.Error()))
+		return out.String()
 	}
+
+	fmt.Fprintf(&out, "\n")
+	fmt.Fprintf(&out, "AVAILABLE COMMANDS IN %s%s%s:\n", output.StyleBold, configFile, output.StyleReset)
+
+	var names []string
+	for name := range config.Commands {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	fmt.Fprint(&out, strings.Join(names, "\n"))
 
 	return out.String()
 }
