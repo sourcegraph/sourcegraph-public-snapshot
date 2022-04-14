@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -72,6 +73,10 @@ func init() {
 			},
 			GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
 				return &server.GitRepoSyncer{}, nil
+			},
+			BatchLogLimitingContext: server.LimitingContext{
+				GlobalRequestSemaphore:     semaphore.NewWeighted(32),
+				PerRequestConcurrencyLimit: 4,
 			},
 		}).Handler(),
 	}
