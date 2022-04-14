@@ -31,8 +31,8 @@ var _ json.Marshaler = &PullRequestInput{}
 // Invoking CreatePullRequest with the same repo and options will succeed: the
 // same PR will be returned each time, and will be updated accordingly on
 // Bitbucket with any changed information in the options.
-func (c *Client) CreatePullRequest(ctx context.Context, repo *Repo, opts PullRequestInput) (*PullRequest, error) {
-	data, err := json.Marshal(&opts)
+func (c *Client) CreatePullRequest(ctx context.Context, repo *Repo, input PullRequestInput) (*PullRequest, error) {
+	data, err := json.Marshal(&input)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshalling request")
 	}
@@ -111,8 +111,8 @@ func (c *Client) GetPullRequestStatuses(repo *Repo, id int64) (*PaginatedResultS
 }
 
 // UpdatePullRequest updates a pull request.
-func (c *Client) UpdatePullRequest(ctx context.Context, repo *Repo, id int64, opts PullRequestInput) (*PullRequest, error) {
-	data, err := json.Marshal(&opts)
+func (c *Client) UpdatePullRequest(ctx context.Context, repo *Repo, id int64, input PullRequestInput) (*PullRequest, error) {
+	data, err := json.Marshal(&input)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshalling request")
 	}
@@ -130,9 +130,12 @@ func (c *Client) UpdatePullRequest(ctx context.Context, repo *Repo, id int64, op
 	return &updated, nil
 }
 
+type CommentInput struct {
+	// The content, as Markdown.
+	Content string
+}
+
 // CreatePullRequestComment adds a comment to a pull request.
-//
-// The comment content is expected to be valid Markdown.
 func (c *Client) CreatePullRequestComment(ctx context.Context, repo *Repo, id int64, input CommentInput) (*Comment, error) {
 	data, err := json.Marshal(&input)
 	if err != nil {
@@ -152,6 +155,9 @@ func (c *Client) CreatePullRequestComment(ctx context.Context, repo *Repo, id in
 	return &comment, nil
 }
 
+// MergePullRequestOpts are the options available when merging a pull request.
+//
+// All fields are optional.
 type MergePullRequestOpts struct {
 	Message           *string        `json:"message,omitempty"`
 	CloseSourceBranch *bool          `json:"close_source_branch,omitempty"`
@@ -256,7 +262,9 @@ const (
 	PullRequestStatusStateStopped    PullRequestStatusState = "STOPPED"
 )
 
-func (opts *PullRequestInput) MarshalJSON() ([]byte, error) {
+var _ json.Marshaler = &PullRequestInput{}
+
+func (input *PullRequestInput) MarshalJSON() ([]byte, error) {
 	type branch struct {
 		Name string `json:"name"`
 	}
@@ -278,28 +286,24 @@ func (opts *PullRequestInput) MarshalJSON() ([]byte, error) {
 	}
 
 	req := request{
-		Title:       opts.Title,
-		Description: opts.Description,
+		Title:       input.Title,
+		Description: input.Description,
 		Source: source{
-			Branch: branch{Name: opts.SourceBranch},
+			Branch: branch{Name: input.SourceBranch},
 		},
 	}
-	if opts.SourceRepo != nil {
+	if input.SourceRepo != nil {
 		req.Source.Repository = &repository{
-			FullName: opts.SourceRepo.FullName,
+			FullName: input.SourceRepo.FullName,
 		}
 	}
-	if opts.DestinationBranch != nil {
+	if input.DestinationBranch != nil {
 		req.Destination = &source{
-			Branch: branch{Name: *opts.DestinationBranch},
+			Branch: branch{Name: *input.DestinationBranch},
 		}
 	}
 
 	return json.Marshal(&req)
-}
-
-type CommentInput struct {
-	Content string
 }
 
 var _ json.Marshaler = &CommentInput{}

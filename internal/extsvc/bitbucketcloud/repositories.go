@@ -50,14 +50,9 @@ type ForkInputProject struct {
 
 type ForkInputWorkspace string
 
-func (fiw ForkInputWorkspace) MarshalJSON() ([]byte, error) {
-	return json.Marshal(struct {
-		Slug string `json:"slug"`
-	}{
-		Slug: string(fiw),
-	})
-}
-
+// ForkInput defines the options used when forking a repository.
+//
+// All fields are optional except for the workspace, which must be defined.
 type ForkInput struct {
 	Name        *string            `json:"name,omitempty"`
 	Workspace   ForkInputWorkspace `json:"workspace"`
@@ -71,6 +66,7 @@ type ForkInput struct {
 	Project     *ForkInputProject  `json:"project,omitempty"`
 }
 
+// ForkRepository forks the given upstream repository.
 func (c *Client) ForkRepository(ctx context.Context, upstream *Repo, input ForkInput) (*Repo, error) {
 	data, err := json.Marshal(&input)
 	if err != nil {
@@ -144,4 +140,14 @@ func (cl CloneLinks) HTTPS() (string, error) {
 		}
 	}
 	return "", errors.New("HTTPS clone link not found")
+}
+
+var _ json.Marshaler = ForkInputWorkspace("")
+
+func (fiw ForkInputWorkspace) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Slug string `json:"slug"`
+	}{
+		Slug: string(fiw),
+	})
 }
