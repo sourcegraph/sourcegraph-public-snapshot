@@ -16,12 +16,11 @@ import (
 )
 
 func main() {
-	if err := loadSecrets(); err != nil {
-		writeWarningLinef("failed to open secrets: %s", err)
+	if os.Args[len(os.Args)-1] == "--generate-bash-completion" {
+		batchCompletionMode = true
 	}
-	ctx := secrets.WithContext(context.Background(), secretsStore)
 
-	if err := sg.RunContext(ctx, os.Args); err != nil {
+	if err := sg.RunContext(context.Background(), os.Args); err != nil {
 		fmt.Printf("error: %s\n", err)
 		os.Exit(1)
 	}
@@ -51,8 +50,18 @@ var (
 	verbose bool
 
 	// postInitHooks is useful for doing anything that requires flags to be set beforehand,
-	// e.g. generating help text based on parsed config
-	postInitHooks []cli.ActionFunc
+	// e.g. generating help text based on parsed config, and are called before any command
+	// Action is executed. These should run quickly and must fail gracefully.
+	//
+	// Commands can register postInitHooks in an 'init()' function that appends to this
+	// slice.
+	postInitHooks []func(cmd *cli.Context)
+
+	// batchCompletionMode determines if we are in bash completion mode. In this mode,
+	// sg should respond quickly, so most setup tasks (e.g. postInitHooks) are skipped.
+	//
+	// Do not run complicated tasks, etc. in Before or After hooks when in this mode.
+	batchCompletionMode bool
 )
 
 // sg is the main sg CLI application.
@@ -98,14 +107,25 @@ var sg = &cli.App{
 			stdout.Out.SetVerbose()
 		}
 
-		// We always try to set this, since we
-		// often want to watch files, start commands, etc...
+		if batchCompletionMode {
+			// All other setup pertains to running commands - to keep completions fast,
+			// we skip all other setup.
+			return nil
+		}
+
+		// Set up access to secrets
+		if err := loadSecrets(); err != nil {
+			writeWarningLinef("failed to open secrets: %s", err)
+		}
+		cmd.Context = secrets.WithContext(cmd.Context, secretsStore)
+
+		// We always try to set this, since we often want to watch files, start commands, etc...
 		if err := setMaxOpenFiles(); err != nil {
 			writeWarningLinef("Failed to set max open files: %s", err)
 		}
 
+		// Check for updates, unless we are running update manually.
 		if cmd.Args().First() != "update" {
-			// If we're not running "sg update ...", we want to check the version first
 			err := checkSgVersionAndUpdate(cmd.Context, cmd.Bool("skip-auto-update"))
 			if err != nil {
 				writeWarningLinef("update check: %s", err)
@@ -114,6 +134,7 @@ var sg = &cli.App{
 			}
 		}
 
+		// Call registered hooks last
 		for _, hook := range postInitHooks {
 			hook(cmd)
 		}

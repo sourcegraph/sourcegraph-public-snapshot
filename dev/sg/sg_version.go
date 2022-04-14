@@ -104,9 +104,13 @@ func changelogExec(ctx context.Context, args []string) error {
 	return nil
 }
 
-const sgOneLineCmd = `curl --proto '=https' --tlsv1.2 -sSLf https://install.sg.dev | sh`
-
 func checkSgVersionAndUpdate(ctx context.Context, skipUpdate bool) error {
+	if BuildCommit == "dev" {
+		// If `sg` was built with a dirty `./dev/sg` directory it's a dev build
+		// and we don't need to display this message.
+		return nil
+	}
+
 	_, err := root.RepositoryRoot()
 	if err != nil {
 		// Ignore the error, because we only want to check the version if we're
@@ -114,21 +118,15 @@ func checkSgVersionAndUpdate(ctx context.Context, skipUpdate bool) error {
 		return nil
 	}
 
-	if BuildCommit == "dev" {
-		// If `sg` was built with a dirty `./dev/sg` directory it's a dev build
-		// and we don't need to display this message.
-		return nil
-	}
-
-	if _, err = run.GitCmd("fetch", "origin", "main"); err != nil {
-		return errors.Newf("failed to update main: %s", err)
-	}
-
 	rev := strings.TrimPrefix(BuildCommit, "dev-")
-	out, err := run.GitCmd("rev-list", fmt.Sprintf("%s..origin/main", rev), "./dev/sg")
+	out, err := run.GitCmd("rev-list", fmt.Sprintf("%s..origin/main", rev), "--", "./dev/sg")
 	if err != nil {
-		return errors.Newf("error checking for commits since %q in ./dev/sg: %s.\nTry reinstalling sg with:\n\t%s",
-			rev, err, sgOneLineCmd)
+		if strings.Contains(out, "bad revision") {
+			// installed revision is not available locally, that is fine - we wait for the
+			// user to eventually do a fetch
+			return errors.New("current sg version not found - you may want to run 'git fetch origin main'.")
+		}
+		return err
 	}
 
 	out = strings.TrimSpace(out)
