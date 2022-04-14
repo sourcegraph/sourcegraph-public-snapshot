@@ -68,9 +68,6 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
         <>
             <div className="row mb-5">
                 <div className="d-flex flex-column col-2 mr-2">
-                    {/* 
-                        To fix Rule: "heading-order" (Heading levels should only increase by one)
-                    */}
                     <H3 as={H2}>Filters</H3>
                     <Button
                         className="text-left"

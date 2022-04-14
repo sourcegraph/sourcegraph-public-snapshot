@@ -215,13 +215,11 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                         />
                     </div>
                     {/*
-                        Since the div is appying actionsDisabled style based on 'formCompletion.triggerCompleted' condition, it raises an accessibility "color-contrast" issue.
-                        An aria-disabled attribute was added to fix the issue. 
+                        a11y-ignore
+                        Rule: "color-contrast" (Elements must have sufficient color contrast)
+                        GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
                     */}
-                    <div
-                        className={classNames(!formCompletion.triggerCompleted && styles.actionsDisabled)}
-                        aria-disabled={!formCompletion.triggerCompleted}
-                    >
+                    <div className={classNames(!formCompletion.triggerCompleted && styles.actionsDisabled)}>
                         <FormActionArea
                             actions={currentCodeMonitorState.actions}
                             setActionsCompleted={setActionsCompleted}

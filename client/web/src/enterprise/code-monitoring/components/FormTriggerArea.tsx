@@ -190,9 +190,6 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
 
     return (
         <>
-            {/* 
-                To fix Rule: "heading-order" (Heading levels should only increase by one)
-            */}
             <H3 as={H2}>Trigger</H3>
             {showQueryForm && (
                 <Card className={classNames(cardClassName, 'p-3')}>
