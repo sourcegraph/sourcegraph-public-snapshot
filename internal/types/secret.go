@@ -130,8 +130,19 @@ func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 	case *schema.GoModulesConnection:
 		oldURLs := oldCfg.(*schema.GoModulesConnection).Urls
 		for i := range c.Urls {
-			if err := unredactURL(&c.Urls[i], oldURLs[i]); err != nil {
-				return err
+			for _, oldURL := range oldURLs {
+				redactedOldURL, err := redactedURL(oldURL)
+				if err != nil {
+					return err
+				}
+
+				if redactedOldURL != c.Urls[i] {
+					continue
+				}
+
+				if err := unredactURL(&c.Urls[i], oldURL); err != nil {
+					return err
+				}
 			}
 		}
 	case *schema.JVMPackagesConnection:

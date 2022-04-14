@@ -234,6 +234,7 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 			out:  schema.PerforceConnection{P4User: "baz", P4Passwd: "bar"},
 		},
 		{
+			// Tests that we can remove a secret field and that it won't appear redacted in the output
 			kind: extsvc.KindPagure,
 			old:  schema.PagureConnection{Url: "https://src.fedoraproject.org", Token: "bar"},
 			in:   schema.PagureConnection{Url: "https://src.fedoraproject.org"},
@@ -294,6 +295,7 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 			},
 		},
 		{
+			// Tests that swapping order of URLs doesn't affect correct unredaction.
 			kind: extsvc.KindGoModules,
 			old: schema.GoModulesConnection{
 				Urls: []string{
