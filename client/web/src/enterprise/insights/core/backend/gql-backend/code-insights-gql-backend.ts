@@ -8,6 +8,7 @@ import {
     ExampleTodoRepositoryResult,
     GetAccessibleInsightsListResult,
     GetDashboardInsightsResult,
+    GetFrozenInsightsCountResult,
     GetInsightsResult,
     HasAvailableCodeInsightResult,
     RemoveInsightViewFromDashboardResult,
@@ -127,7 +128,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
     public getNonFrozenInsightsCount = (first: number): Observable<number> =>
         fromObservableQuery(
-            this.apolloClient.watchQuery<HasAvailableCodeInsightResult>({
+            this.apolloClient.watchQuery<GetFrozenInsightsCountResult>({
                 query: gql`
                     query GetFrozenInsightsCount($first: Int!) {
                         insightViews(first: $first) {
