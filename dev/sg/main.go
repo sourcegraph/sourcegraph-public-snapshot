@@ -188,5 +188,5 @@ func loadSecrets() (*secrets.Store, error) {
 		return nil, err
 	}
 	fp := filepath.Join(homePath, secrets.DefaultFile)
-	return secrets.LoadFile(fp)
+	return secrets.LoadFromFile(fp)
 }

@@ -52,7 +52,10 @@ func resetSecretExec(ctx context.Context, args []string) error {
 		return errors.New("no key provided to reset")
 	}
 
-	secretsStore := secrets.FromContext(ctx)
+	secretsStore, err := secrets.FromContext(ctx)
+	if err != nil {
+		return err
+	}
 	for _, arg := range args {
 		if err := secretsStore.Remove(arg); err != nil {
 			return err
@@ -66,7 +69,10 @@ func resetSecretExec(ctx context.Context, args []string) error {
 }
 
 func listSecretExec(ctx context.Context, args []string) error {
-	secretsStore := secrets.FromContext(ctx)
+	secretsStore, err := secrets.FromContext(ctx)
+	if err != nil {
+		return err
+	}
 	stdout.Out.WriteLine(output.Linef("", output.StyleBold, "Secrets:"))
 	keys := secretsStore.Keys()
 	if secretListViewFlag {
