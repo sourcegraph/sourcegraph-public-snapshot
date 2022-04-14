@@ -260,9 +260,8 @@ func addVSCExt(pipeline *bk.Pipeline) {
 		withYarnCache(),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn generate"),
-		bk.Cmd("yarn --cwd client/vscode -s build"),
-		bk.Cmd("yarn --cwd client/vscode -s package"),
-		bk.Cmd("yarn --cwd client/vscode -s test --verbose"),
+		bk.Cmd("yarn --cwd client/vscode -s build:test"),
+		bk.Cmd("yarn --cwd client/vscode -s test-integration --verbose"),
 	)
 }
 

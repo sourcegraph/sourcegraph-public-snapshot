@@ -492,11 +492,11 @@ describe('Batches', () => {
                 await driver.page.evaluate(
                     () => document.querySelector<HTMLAnchorElement>('.test-batches-namespace-link')?.href
                 ),
-                testContext.driver.sourcegraphBaseUrl + '/users/alice/batch-changes'
+                driver.sourcegraphBaseUrl + '/users/alice/batch-changes'
             )
             assert.strictEqual(
                 await driver.page.evaluate(() => document.querySelector<HTMLAnchorElement>('.test-batches-link')?.href),
-                testContext.driver.sourcegraphBaseUrl + '/users/alice/batch-changes/test-batch-change'
+                driver.sourcegraphBaseUrl + '/users/alice/batch-changes/test-batch-change'
             )
 
             await percySnapshotWithVariants(driver.page, 'Batch Changes List')
@@ -515,7 +515,7 @@ describe('Batches', () => {
             await driver.page.waitForSelector('.test-batches-link')
             assert.strictEqual(
                 await driver.page.evaluate(() => document.querySelector<HTMLAnchorElement>('.test-batches-link')?.href),
-                testContext.driver.sourcegraphBaseUrl + '/users/alice/batch-changes/test-batch-change'
+                driver.sourcegraphBaseUrl + '/users/alice/batch-changes/test-batch-change'
             )
             assert.strictEqual(await driver.page.$('.test-batches-namespace-link'), null)
         })
@@ -534,7 +534,7 @@ describe('Batches', () => {
             await driver.page.waitForSelector('.test-batches-link')
             assert.strictEqual(
                 await driver.page.evaluate(() => document.querySelector<HTMLAnchorElement>('.test-batches-link')?.href),
-                testContext.driver.sourcegraphBaseUrl + '/organizations/test-org/batch-changes/test-batch-change'
+                driver.sourcegraphBaseUrl + '/organizations/test-org/batch-changes/test-batch-change'
             )
             assert.strictEqual(await driver.page.$('.test-batches-namespace-link'), null)
         })
@@ -583,7 +583,7 @@ describe('Batches', () => {
                 await Promise.all([driver.page.waitForNavigation(), driver.page.click('.test-batches-close-btn')])
                 assert.strictEqual(
                     await driver.page.evaluate(() => window.location.href),
-                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change/close'
+                    driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change/close'
                 )
                 await driver.page.waitForSelector('.test-batch-change-close-page')
                 // Change overrides to make batch change appear closed.
@@ -607,7 +607,7 @@ describe('Batches', () => {
                 assert.strictEqual(
                     await driver.page.evaluate(() => window.location.href),
                     // We now have 1 in the cache, so we'll have a starting number visible that gets set in the URL.
-                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change?visible=1'
+                    driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change?visible=1'
                 )
 
                 // Delete the closed batch change.
@@ -618,7 +618,7 @@ describe('Batches', () => {
                 ])
                 assert.strictEqual(
                     await driver.page.evaluate(() => window.location.href),
-                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes'
+                    driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes'
                 )
 
                 // Test read tab from location.
@@ -829,7 +829,7 @@ describe('Batches', () => {
                 // Expect to be back at batch change overview page.
                 assert.strictEqual(
                     await driver.page.evaluate(() => window.location.href),
-                    testContext.driver.sourcegraphBaseUrl +
+                    driver.sourcegraphBaseUrl +
                         namespaceURL +
                         '/batch-changes/test-batch-change?archivedCount=10&archivedBy=spec123'
                 )
@@ -877,7 +877,7 @@ describe('Batches', () => {
                 // Expect to be back at the batch change overview page.
                 assert.strictEqual(
                     await driver.page.evaluate(() => window.location.href),
-                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change'
+                    driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change'
                 )
             })
         }
