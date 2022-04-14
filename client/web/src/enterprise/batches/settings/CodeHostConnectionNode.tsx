@@ -110,8 +110,13 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                             </>
                         )}
                         {!isEnabled && (
+                            /*
+                                a11y-ignore
+                                Rule: "color-contrast" (Elements must have sufficient color contrast)
+                                GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                            */
                             <Button
-                                className="text-nowrap test-code-host-connection-node-btn-add"
+                                className="a11y-ignore text-nowrap test-code-host-connection-node-btn-add"
                                 onClick={onClickAdd}
                                 variant="success"
                             >
