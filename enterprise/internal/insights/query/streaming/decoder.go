@@ -1,12 +1,14 @@
 package streaming
 
 import (
+	"fmt"
+
 	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 )
 
 // TabulationDecoder will tabulate the result counts per repository.
-func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *int, map[string]*SearchMatch, []string) {
+func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *int, map[string]*SearchMatch, []string, []string) {
 	var totalCount int
 	repoCounts := make(map[string]*SearchMatch)
 	addCount := func(repo string, repoId int32, count int) {
@@ -22,11 +24,15 @@ func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *int, map[string]*Se
 		}
 	}
 	var errors []string
+	var skippedReasons []string
 
 	return streamhttp.FrontendStreamDecoder{
 		OnProgress: func(progress *streamapi.Progress) {
 			if !progress.Done {
 				return
+			}
+			for _, skipped := range progress.Skipped {
+				skippedReasons = append(skippedReasons, fmt.Sprintf("%s: %s", skipped.Reason, skipped.Message))
 			}
 		},
 		OnMatches: func(matches []streamhttp.EventMatch) {
@@ -58,7 +64,7 @@ func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *int, map[string]*Se
 		OnError: func(eventError *streamhttp.EventError) {
 			errors = append(errors, eventError.Message)
 		},
-	}, &totalCount, repoCounts, errors
+	}, &totalCount, repoCounts, skippedReasons, errors
 }
 
 type SearchMatch struct {

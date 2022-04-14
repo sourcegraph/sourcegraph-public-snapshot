@@ -285,12 +285,15 @@ func (r *workHandler) computeHandler(ctx context.Context, job *Job, series *type
 }
 
 func (r *workHandler) searchStreamHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) (err error) {
-	decoder, countPtr, streamRepoCounts, streamErrs := streaming.TabulationDecoder()
+	decoder, countPtr, streamRepoCounts, skippedReasons, streamErrs := streaming.TabulationDecoder()
 	err = streaming.Search(ctx, job.SearchQuery, decoder)
 	if err != nil {
 		return errors.Wrap(err, "streaming.Search")
 	}
 	log15.Info("Search Counts", "streaming", *countPtr)
+	if len(skippedReasons) > 0 {
+		log15.Error("insights query issue", "reasons", skippedReasons, "query", job.SearchQuery)
+	}
 	if len(streamErrs) > 0 {
 		log15.Error("streaming errors", "errors", streamErrs)
 	}
