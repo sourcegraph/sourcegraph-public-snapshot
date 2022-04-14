@@ -27,8 +27,11 @@ var lsifUploadFlags struct {
 
 	// SourcegraphInstanceOptions
 	uploadRoute      string
-	gitHubToken      string
 	maxPayloadSizeMb int64
+
+	// Codehost authorization secrets
+	gitHubToken string
+	gitLabToken string
 
 	// Output and error behavior
 	ignoreUploadFailures bool
@@ -60,8 +63,11 @@ func init() {
 
 	// SourcegraphInstanceOptions
 	lsifUploadFlagSet.StringVar(&lsifUploadFlags.uploadRoute, "upload-route", "/.api/lsif/upload", "The path of the upload route. For internal use only.")
-	lsifUploadFlagSet.StringVar(&lsifUploadFlags.gitHubToken, "github-token", "", `A GitHub access token with 'public_repo' scope that Sourcegraph uses to verify you have access to the repository.`)
 	lsifUploadFlagSet.Int64Var(&lsifUploadFlags.maxPayloadSizeMb, "max-payload-size", 100, `The maximum upload size (in megabytes). Indexes exceeding this limit will be uploaded over multiple HTTP requests.`)
+
+	// Codehost authorization secrets
+	lsifUploadFlagSet.StringVar(&lsifUploadFlags.gitHubToken, "github-token", "", `A GitHub access token with 'public_repo' scope that Sourcegraph uses to verify you have access to the repository.`)
+	lsifUploadFlagSet.StringVar(&lsifUploadFlags.gitLabToken, "gitlab-token", "", `A GitLab access token with TODO that Sourcegraph uses to verify you have access to the repository.`)
 
 	// Output and error behavior
 	lsifUploadFlagSet.BoolVar(&lsifUploadFlags.ignoreUploadFailures, "ignore-upload-failure", false, `Exit with status code zero on upload failure.`)

@@ -167,8 +167,9 @@ func lsifUploadOptions(out *output.Output) upload.UploadOptions {
 			MaxRetries:          5,
 			RetryInterval:       time.Second,
 			Path:                lsifUploadFlags.uploadRoute,
-			GitHubToken:         lsifUploadFlags.gitHubToken,
 			MaxPayloadSizeBytes: lsifUploadFlags.maxPayloadSizeMb * 1000 * 1000,
+			GitHubToken:         lsifUploadFlags.gitHubToken,
+			GitLabToken:         lsifUploadFlags.gitLabToken,
 		},
 		OutputOptions: upload.OutputOptions{
 			Output: out,

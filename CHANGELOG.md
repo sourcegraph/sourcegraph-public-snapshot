@@ -13,6 +13,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
+- `src lsif upload` now supports the `-gitlab-token` flag. [#721](https://github.com/sourcegraph/src-cli/pull/721)
+
 ### Changed
 
 ### Fixed
