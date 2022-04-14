@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestExternalService_RedactConfigSecrets(t *testing.T) {
+func TestExternalService_RedactedConfig(t *testing.T) {
 	for i, tc := range []struct {
 		kind string
 		in   interface{}
@@ -130,7 +130,7 @@ func TestExternalService_RedactConfigSecrets(t *testing.T) {
 
 			e := ExternalService{Kind: tc.kind, Config: string(cfg)}
 
-			have, err := e.RedactConfigSecrets()
+			have, err := e.RedactedConfig()
 			if err != nil {
 				t.Fatal(err)
 			}

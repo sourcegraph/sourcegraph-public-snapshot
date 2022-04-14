@@ -9,10 +9,12 @@
 package types
 
 import (
-	"encoding/json"
 	"net/url"
 	"reflect"
 
+	"github.com/sourcegraph/jsonx"
+
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -20,9 +22,8 @@ import (
 // RedactedSecret is used as a placeholder for secret fields when reading external service config
 const RedactedSecret = "REDACTED"
 
-// RedactConfigSecrets replaces any secret fields in the Config field with RedactedSecret, be sure to call
-// UnRedactExternalServiceConfig before writing back to the database, otherwise validation will throw errors.
-func (e *ExternalService) RedactConfigSecrets() (string, error) {
+// RedactedConfig returns the external service config with all secret fields replaces by RedactedSecret.
+func (e *ExternalService) RedactedConfig() (string, error) {
 	if e.Config == "" {
 		return "", nil
 	}
@@ -32,54 +33,101 @@ func (e *ExternalService) RedactConfigSecrets() (string, error) {
 		return "", err
 	}
 
+	config := e.Config
+
 	switch c := cfg.(type) {
 	case *schema.GitHubConnection:
-		redactString(&c.Token)
+		if c.Token != "" {
+			config, err = patch(config, redactedString(c.Token), "token")
+		}
 	case *schema.GitLabConnection:
-		redactString(&c.Token)
+		if c.Token != "" {
+			config, err = patch(config, redactedString(c.Token), "token")
+		}
 	case *schema.BitbucketServerConnection:
-		redactString(&c.Password)
-		redactString(&c.Token)
+		if c.Password != "" {
+			config, err = patch(config, redactedString(c.Password), "password")
+			if err != nil {
+				return "", err
+			}
+		}
+
+		if c.Token != "" {
+			config, err = patch(config, redactedString(c.Token), "token")
+			if err != nil {
+				return "", err
+			}
+		}
 	case *schema.BitbucketCloudConnection:
-		redactString(&c.AppPassword)
+		if c.AppPassword != "" {
+			config, err = patch(config, redactedString(c.AppPassword), "appPassword")
+		}
 	case *schema.AWSCodeCommitConnection:
-		redactString(&c.SecretAccessKey)
-		redactString(&c.GitCredentials.Password)
+		if c.SecretAccessKey != "" {
+			config, err = patch(config, redactedString(c.SecretAccessKey), "secretAccessKey")
+			if err != nil {
+				return "", err
+			}
+		}
+		if c.GitCredentials.Password != "" {
+			config, err = patch(config, redactedString(c.GitCredentials.Password), "gitCredentials", "password")
+			if err != nil {
+				return "", err
+			}
+		}
 	case *schema.PhabricatorConnection:
-		redactString(&c.Token)
+		if c.Token != "" {
+			config, err = patch(config, redactedString(c.Token), "token")
+		}
 	case *schema.PerforceConnection:
-		redactString(&c.P4Passwd)
+		if c.P4Passwd != "" {
+			config, err = patch(config, redactedString(c.P4Passwd), "p4.passwd")
+		}
 	case *schema.GitoliteConnection:
 		// Nothing to redact
 	case *schema.GoModulesConnection:
 		for i := range c.Urls {
-			if err := redactURL(&c.Urls[i]); err != nil {
-				return e.Config, err
+			if c.Urls[i] == "" {
+				continue
 			}
+
+			redacted, err := redactedURL(c.Urls[i])
+			if err != nil {
+				return "", err
+			}
+
+			config, err = patch(config, redacted, "urls", i)
 		}
 	case *schema.JVMPackagesConnection:
 		if c.Maven != nil {
-			redactString(&c.Maven.Credentials)
+			config, err = patch(config, redactedString(c.Maven.Credentials), "maven", "credentials")
 		}
 	case *schema.PagureConnection:
-		redactString(&c.Token)
+		if c.Token != "" {
+			config, err = patch(config, redactedString(c.Token), "token")
+		}
 	case *schema.NpmPackagesConnection:
-		redactString(&c.Credentials)
+		if c.Credentials != "" {
+			config, err = patch(config, redactedString(c.Credentials), "credentials")
+		}
 	case *schema.OtherExternalServiceConnection:
-		if err := redactURL(&c.Url); err != nil {
-			return e.Config, err
+		if c.Url != "" {
+			redacted, err := redactedURL(c.Url)
+			if err != nil {
+				return "", err
+			}
+			config, err = patch(config, redacted, "url")
 		}
 	default:
 		// return an error; it's safer to fail than to incorrectly return unsafe data.
-		return e.Config, errors.Errorf("Unrecognized ExternalServiceConfig for redaction: kind %+v not implemented", reflect.TypeOf(cfg))
+		return "", errors.Errorf("Unrecognized ExternalServiceConfig for redaction: kind %+v not implemented", reflect.TypeOf(cfg))
 	}
 
-	redacted, err := json.Marshal(cfg)
 	if err != nil {
-		return e.Config, err
+		return "", err
 	}
 
-	return string(redacted), nil
+	return config, nil
 }
 
 // UnredactConfig will replace redacted fields with their undredacted form from the 'old' ExternalService.
@@ -108,98 +156,160 @@ func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 		return err
 	}
 
+	config := e.Config
+
 	switch c := newCfg.(type) {
 	case *schema.GitHubConnection:
-		unredactString(&c.Token, oldCfg.(*schema.GitHubConnection).Token)
+		o := oldCfg.(*schema.GitHubConnection)
+		if c.Token != "" {
+			config, err = patch(config, unredactedString(c.Token, o.Token), "token")
+		}
 	case *schema.GitLabConnection:
-		unredactString(&c.Token, oldCfg.(*schema.GitLabConnection).Token)
+		o := oldCfg.(*schema.GitLabConnection)
+		if c.Token != "" {
+			config, err = patch(config, unredactedString(c.Token, o.Token), "token")
+		}
 	case *schema.BitbucketServerConnection:
-		unredactString(&c.Password, oldCfg.(*schema.BitbucketServerConnection).Password)
-		unredactString(&c.Token, oldCfg.(*schema.BitbucketServerConnection).Token)
+		o := oldCfg.(*schema.BitbucketServerConnection)
+		if c.Password != "" {
+			config, err = patch(config, unredactedString(c.Password, o.Password), "password")
+			if err != nil {
+				return err
+			}
+		}
+		if c.Token != "" {
+			config, err = patch(config, unredactedString(c.Token, o.Token), "token")
+			if err != nil {
+				return err
+			}
+		}
 	case *schema.BitbucketCloudConnection:
-		unredactString(&c.AppPassword, oldCfg.(*schema.BitbucketCloudConnection).AppPassword)
+		o := oldCfg.(*schema.BitbucketCloudConnection)
+		if c.AppPassword != "" {
+			config, err = patch(config, unredactedString(c.AppPassword, o.AppPassword), "appPassword")
+		}
 	case *schema.AWSCodeCommitConnection:
-		unredactString(&c.SecretAccessKey, oldCfg.(*schema.AWSCodeCommitConnection).SecretAccessKey)
-		unredactString(&c.GitCredentials.Password, oldCfg.(*schema.AWSCodeCommitConnection).GitCredentials.Password)
+		o := oldCfg.(*schema.AWSCodeCommitConnection)
+		if c.SecretAccessKey != "" {
+			config, err = patch(config, unredactedString(c.SecretAccessKey, o.SecretAccessKey), "secretAccessKey")
+			if err != nil {
+				return err
+			}
+		}
+		if c.GitCredentials.Password != "" {
+			config, err = patch(config, unredactedString(c.GitCredentials.Password, o.GitCredentials.Password), "gitCredentials", "password")
+			if err != nil {
+				return err
+			}
+		}
 	case *schema.PhabricatorConnection:
-		unredactString(&c.Token, oldCfg.(*schema.PhabricatorConnection).Token)
+		o := oldCfg.(*schema.PhabricatorConnection)
+		if c.Token != "" {
+			config, err = patch(config, unredactedString(c.Token, o.Token), "token")
+		}
 	case *schema.PerforceConnection:
-		unredactString(&c.P4Passwd, oldCfg.(*schema.PerforceConnection).P4Passwd)
+		o := oldCfg.(*schema.PerforceConnection)
+		if c.P4Passwd != "" {
+			config, err = patch(config, unredactedString(c.P4Passwd, o.P4Passwd), "p4.passwd")
+		}
 	case *schema.GitoliteConnection:
 		// Nothing to redact
 	case *schema.GoModulesConnection:
-		oldURLs := oldCfg.(*schema.GoModulesConnection).Urls
+		o := oldCfg.(*schema.GoModulesConnection)
+		m := make(map[string]string, len(o.Urls))
+
+		for _, oldURL := range o.Urls {
+			if oldURL == "" {
+				continue
+			}
+
+			redactedOldURL, err := redactedURL(oldURL)
+			if err != nil {
+				return err
+			}
+
+			m[redactedOldURL] = oldURL
+		}
+
 		for i := range c.Urls {
-			for _, oldURL := range oldURLs {
-				redactedOldURL, err := redactedURL(oldURL)
-				if err != nil {
-					return err
-				}
+			oldURL, ok := m[c.Urls[i]]
+			if !ok {
+				continue
+			}
 
-				if redactedOldURL != c.Urls[i] {
-					continue
-				}
+			unredacted, err := unredactedURL(c.Urls[i], oldURL)
+			if err != nil {
+				return err
+			}
 
-				if err := unredactURL(&c.Urls[i], oldURL); err != nil {
-					return err
-				}
+			config, err = patch(config, unredacted, "urls", i)
+			if err != nil {
+				return err
 			}
 		}
 	case *schema.JVMPackagesConnection:
 		o := oldCfg.(*schema.JVMPackagesConnection)
-		if c.Maven != nil && o.Maven != nil {
-			unredactString(&c.Maven.Credentials, o.Maven.Credentials)
+		if c.Maven != nil && c.Maven.Credentials != "" && o.Maven != nil {
+			config, err = patch(config, unredactedString(c.Maven.Credentials, o.Maven.Credentials), "maven", "credentials")
 		}
 	case *schema.PagureConnection:
-		unredactString(&c.Token, oldCfg.(*schema.PagureConnection).Token)
+		o := oldCfg.(*schema.PagureConnection)
+		if c.Token != "" {
+			config, err = patch(config, unredactedString(c.Token, o.Token), "token")
+		}
 	case *schema.NpmPackagesConnection:
-		unredactString(&c.Credentials, oldCfg.(*schema.NpmPackagesConnection).Credentials)
+		o := oldCfg.(*schema.NpmPackagesConnection)
+		if c.Credentials != "" {
+			config, err = patch(config, unredactedString(c.Credentials, o.Credentials), "credentials")
+		}
 	case *schema.OtherExternalServiceConnection:
 		o := oldCfg.(*schema.OtherExternalServiceConnection)
-		if err := unredactURL(&c.Url, o.Url); err != nil {
-			return err
+		if c.Url != "" {
+			unredacted, err := unredactedURL(c.Url, o.Url)
+			if err != nil {
+				return err
+			}
+			config, err = patch(config, unredacted, "url")
 		}
 	default:
 		// return an error; it's safer to fail than to incorrectly return unsafe data.
 		return errors.Errorf("Unrecognized ExternalServiceConfig for redaction: kind %+v not implemented", reflect.TypeOf(newCfg))
 	}
 
-	unredacted, err := json.Marshal(newCfg)
 	if err != nil {
 		return err
 	}
 
-	e.Config = string(unredacted)
+	e.Config = config
 	return nil
 }
 
-func redactString(s *string) {
-	if *s != "" {
-		*s = RedactedSecret
+func patch(input string, value interface{}, path ...interface{}) (string, error) {
+	edits, _, err := jsonx.ComputePropertyEdit(input, jsonx.MakePath(path...), value, nil, jsonc.DefaultFormatOptions)
+	if err != nil {
+		return input, err
 	}
+	return jsonx.ApplyEdits(input, edits...)
 }
 
-func unredactString(new *string, old string) {
-	if *new == RedactedSecret {
-		*new = old
+func redactedString(s string) string {
+	if s != "" {
+		return RedactedSecret
 	}
+	return ""
 }
 
-func redactURL(rawURL *string) (err error) {
-	if *rawURL != "" {
-		*rawURL, err = redactedURL(*rawURL)
+func unredactedString(new, old string) string {
+	if new == RedactedSecret {
+		return old
 	}
-	return
+	return new
 }
 
 func redactedURL(rawURL string) (string, error) {
 	redacted, err := url.Parse(rawURL)
 	if err != nil {
 		return "", err
-	}
-
-	if redacted.User == nil {
-		return rawURL, nil
 	}
 
 	if _, ok := redacted.User.Password(); !ok {
@@ -210,20 +320,20 @@ func redactedURL(rawURL string) (string, error) {
 	return redacted.String(), nil
 }
 
-func unredactURL(new *string, old string) error {
-	newURL, err := url.Parse(*new)
+func unredactedURL(new, old string) (string, error) {
+	newURL, err := url.Parse(new)
 	if err != nil {
-		return err
+		return new, err
 	}
 
 	oldURL, err := url.Parse(old)
 	if err != nil {
-		return err
+		return new, err
 	}
 
 	passwd, ok := newURL.User.Password()
 	if !ok || passwd != RedactedSecret {
-		return nil
+		return new, nil
 	}
 
 	oldPasswd, _ := oldURL.User.Password()
@@ -233,6 +343,5 @@ func unredactURL(new *string, old string) error {
 		newURL.User = url.User(newURL.User.Username())
 	}
 
-	*new = newURL.String()
-	return nil
+	return newURL.String(), nil
 }
