@@ -195,7 +195,13 @@ extend type Query {
     """
     Return all insight views visible to the authenticated user.
     """
-    insightViews(first: Int, after: String, id: ID, filters: InsightViewFiltersInput): InsightViewConnection!
+    insightViews(
+        first: Int
+        after: String
+        id: ID
+        isFrozen: Boolean
+        filters: InsightViewFiltersInput
+    ): InsightViewConnection!
 
     """
     Generate an ephemeral time series for a Search based code insight, generally for the purposes of live preview.

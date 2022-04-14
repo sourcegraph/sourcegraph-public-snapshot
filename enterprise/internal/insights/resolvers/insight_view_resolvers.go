@@ -914,6 +914,11 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 			// Ask for one more result than needed in order to determine if there is a next page.
 			args.Limit = int(*r.args.First) + 1
 		}
+		if r.args.IsFrozen != nil {
+			// Filter insight views by their frozen state. We use a pointer for the argument because
+			// we might want to not filter on this attribute at all, and `bool` defaults to false.
+			args.IsFrozen = r.args.IsFrozen
+		}
 		var err error
 		args.UserID, args.OrgID, err = getUserPermissions(ctx, orgStore)
 		if err != nil {
