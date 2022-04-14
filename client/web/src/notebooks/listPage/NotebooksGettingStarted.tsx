@@ -14,12 +14,42 @@ const panels = [
     {
         title: 'Enable the notepad',
         description:
-            'Create Notebooks faster with the notepad. Add searches, files, and file ranges to the notepad and create a notebook with one click.',
+            "Create notebooks while you browse. Add searches, files, and file ranges without leaving the page you're on, then create a notebook with one click.",
+        videoSources: [
+            { type: 'mp4', src: 'https://storage.googleapis.com/sourcegraph-assets/batch-changes/how-it-works.mp4' },
+        ],
     },
     {
-        title: 'Enable the notepad 2',
+        title: 'The command palette',
         description:
-            'Create Notebooks faster with the notepad. Add searches, files, and file ranges to the notepad and create a notebook with one click.',
+            'Use slash commands to choose from the available block Notebook block types. Markdown, file, symbol, and search query blocks are supported.',
+        videoSources: [
+            { type: 'mp4', src: 'https://storage.googleapis.com/sourcegraph-assets/notebooks/command_palette.mp4' },
+        ],
+    },
+    {
+        title: 'Keep your docs current-automatically-with symbol blocks',
+        description:
+            'Symbol blocks follow a chosen symbol anywhere in a file, even as it changes. Create symbol blocks to keep your docs from getting stale.',
+        videoSources: [
+            { type: 'mp4', src: 'https://storage.googleapis.com/sourcegraph-assets/notebooks/symbol_block.mp4' },
+        ],
+    },
+    {
+        title: 'Templatize Notebooks for your team',
+        description:
+            'Duplicate helpful notebooks with the copy feature. Easily create onboarding templates and duplicate them for new teammates.',
+        videoSources: [
+            { type: 'mp4', src: 'https://storage.googleapis.com/sourcegraph-assets/batch-changes/how-it-works.mp4' },
+        ],
+    },
+    {
+        title: 'Share Notebooks with your team or company',
+        description:
+            "Notebooks are private by default, but you can share them with your team (if you're using Sourcegraph organizations) or with your company.",
+        videoSources: [
+            { type: 'mp4', src: 'https://storage.googleapis.com/sourcegraph-assets/notebooks/notebook_sharing.mp4' },
+        ],
     },
 ]
 
@@ -44,6 +74,7 @@ export const NotebooksGettingStarted: React.FunctionComponent<NotebooksGettingSt
                 <div className="col-12 col-md-7">
                     <div>
                         <video
+                            key={`video-${selectedPanelIndex}`}
                             className="w-100 h-auto shadow percy-hide"
                             width={1280}
                             height={720}
@@ -53,14 +84,13 @@ export const NotebooksGettingStarted: React.FunctionComponent<NotebooksGettingSt
                             playsInline={true}
                             controls={false}
                         >
-                            <source
-                                type="video/webm"
-                                src="https://storage.googleapis.com/sourcegraph-assets/batch-changes/how-it-works.webm"
-                            />
-                            <source
-                                type="video/mp4"
-                                src="https://storage.googleapis.com/sourcegraph-assets/batch-changes/how-it-works.mp4"
-                            />
+                            {selectedPanel.videoSources.map(videoSource => (
+                                <source
+                                    key={videoSource.src}
+                                    type={`video/${videoSource.type}`}
+                                    src={videoSource.src}
+                                />
+                            ))}
                         </video>
                     </div>
                     <div className="mt-2">
