@@ -130,7 +130,7 @@ func (e *ExternalService) RedactedConfig() (string, error) {
 	return config, nil
 }
 
-// UnredactConfig will replace redacted fields with their undredacted form from the 'old' ExternalService.
+// UnredactConfig will replace redacted fields with their unredacted form from the 'old' ExternalService.
 // You should call this when accepting updated config from a user that may have been
 // previously redacted, and pass in the unredacted form directly from the DB as the 'old' parameter
 func (e *ExternalService) UnredactConfig(old *ExternalService) error {
