@@ -1558,7 +1558,9 @@ Referenced by:
     TABLE "lsif_packages" CONSTRAINT "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_references" CONSTRAINT "lsif_references_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
 Triggers:
-    trigger_lsif_uploads_update AFTER UPDATE OF state, num_resets, num_failures, worker_hostname, expired, committed_at ON lsif_uploads FOR EACH ROW EXECUTE FUNCTION func_lsif_uploads_update()
+    trigger_lsif_uploads_delete AFTER DELETE ON lsif_uploads REFERENCING OLD TABLE AS old FOR EACH STATEMENT EXECUTE FUNCTION func_lsif_uploads_delete()
+    trigger_lsif_uploads_insert AFTER INSERT ON lsif_uploads FOR EACH ROW EXECUTE FUNCTION func_lsif_uploads_insert()
+    trigger_lsif_uploads_update BEFORE UPDATE OF state, num_resets, num_failures, worker_hostname, expired, committed_at ON lsif_uploads FOR EACH ROW EXECUTE FUNCTION func_lsif_uploads_update()
 
 ```
 
@@ -1592,7 +1594,8 @@ Stores metadata about an LSIF index uploaded by a user.
 ```
        Column        |           Type           | Collation | Nullable | Default 
 ---------------------+--------------------------+-----------+----------+---------
- instant             | timestamp with time zone |           |          | now()
+ log_timestamp       | timestamp with time zone |           |          | now()
+ record_deleted_at   | timestamp with time zone |           |          | 
  upload_id           | integer                  |           | not null | 
  commit              | text                     |           | not null | 
  root                | text                     |           | not null | 
@@ -1605,10 +1608,16 @@ Stores metadata about an LSIF index uploaded by a user.
  committed_at        | timestamp with time zone |           |          | 
  transition_columns  | USER-DEFINED[]           |           |          | 
 Indexes:
-    "lsif_uploads_audit_logs_timestamp" brin (instant)
+    "lsif_uploads_audit_logs_timestamp" brin (log_timestamp)
     "lsif_uploads_audit_logs_upload_id" btree (upload_id)
 
 ```
+
+**log_timestamp**: Timestamp for this log entry.
+
+**record_deleted_at**: Set once the upload this entry is associated with is deleted. Once NOW() - record_deleted_at is above a certain threshold, this log entry will be deleted.
+
+**transition_columns**: Array of changes that occurred to the upload for this entry, in the form of {&#34;column&#34;=&gt;&#34;&lt;column name&gt;&#34;, &#34;old&#34;=&gt;&#34;&lt;previous value&gt;&#34;, &#34;new&#34;=&gt;&#34;&lt;new value&gt;&#34;}.
 
 # Table "public.lsif_uploads_visible_at_tip"
 ```
