@@ -78,6 +78,8 @@ func redactionInfo(cfg interface{}) ([]jsonStringField, error) {
 		return []jsonStringField{{[]string{"token"}, &cfg.Token}}, nil
 	case *schema.GitLabConnection:
 		return []jsonStringField{{[]string{"token"}, &cfg.Token}}, nil
+	case *schema.GerritConnection:
+		return []jsonStringField{{[]string{"password"}, &cfg.Password}}, nil
 	case *schema.BitbucketServerConnection:
 		// BitbucketServer can have a token OR password
 		fields := []jsonStringField{}

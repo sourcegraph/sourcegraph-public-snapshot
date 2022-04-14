@@ -1,0 +1,706 @@
+[
+  {
+   "ID": 0,
+   "Name": "gerrit-review.googlesource.com/TestRepo",
+   "URI": "gerrit-review.googlesource.com/TestRepo",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "TestRepo",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit-review.googlesource.com/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit-review.googlesource.com/TestRepo"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "TestRepo",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit-review.googlesource.com/apps/analytics-etl",
+   "URI": "gerrit-review.googlesource.com/apps/analytics-etl",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "apps%2Fanalytics-etl",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit-review.googlesource.com/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit-review.googlesource.com/apps%2Fanalytics-etl"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "apps%2Fanalytics-etl",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit-review.googlesource.com/apps/kibana-dashboard",
+   "URI": "gerrit-review.googlesource.com/apps/kibana-dashboard",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "apps%2Fkibana-dashboard",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit-review.googlesource.com/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit-review.googlesource.com/apps%2Fkibana-dashboard"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "apps%2Fkibana-dashboard",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit-review.googlesource.com/apps/reviewit",
+   "URI": "gerrit-review.googlesource.com/apps/reviewit",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "apps%2Freviewit",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit-review.googlesource.com/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit-review.googlesource.com/apps%2Freviewit"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "apps%2Freviewit",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit-review.googlesource.com/aws-gerrit",
+   "URI": "gerrit-review.googlesource.com/aws-gerrit",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "aws-gerrit",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit-review.googlesource.com/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit-review.googlesource.com/aws-gerrit"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "aws-gerrit",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit-review.googlesource.com/bazlets",
+   "URI": "gerrit-review.googlesource.com/bazlets",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "bazlets",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit-review.googlesource.com/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit-review.googlesource.com/bazlets"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "bazlets",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit-review.googlesource.com/buck",
+   "URI": "gerrit-review.googlesource.com/buck",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "buck",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit-review.googlesource.com/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit-review.googlesource.com/buck"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "buck",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit-review.googlesource.com/bucklets",
+   "URI": "gerrit-review.googlesource.com/bucklets",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "bucklets",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit-review.googlesource.com/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit-review.googlesource.com/bucklets"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "bucklets",
+    "name": "",
+    "parent": "",
+    "state": "READ_ONLY",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit-review.googlesource.com/docker-gerrit",
+   "URI": "gerrit-review.googlesource.com/docker-gerrit",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "docker-gerrit",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit-review.googlesource.com/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit-review.googlesource.com/docker-gerrit"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "docker-gerrit",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit-review.googlesource.com/executablewar",
+   "URI": "gerrit-review.googlesource.com/executablewar",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "executablewar",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit-review.googlesource.com/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit-review.googlesource.com/executablewar"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "executablewar",
+    "name": "",
+    "parent": "",
+    "state": "READ_ONLY",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit-review.googlesource.com/gcompute-tools",
+   "URI": "gerrit-review.googlesource.com/gcompute-tools",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "gcompute-tools",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit-review.googlesource.com/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit-review.googlesource.com/gcompute-tools"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "gcompute-tools",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit-review.googlesource.com/gerrit",
+   "URI": "gerrit-review.googlesource.com/gerrit",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "gerrit",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit-review.googlesource.com/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit-review.googlesource.com/gerrit"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "gerrit",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit-review.googlesource.com/gerrit-attic",
+   "URI": "gerrit-review.googlesource.com/gerrit-attic",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "gerrit-attic",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit-review.googlesource.com/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit-review.googlesource.com/gerrit-attic"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "gerrit-attic",
+    "name": "",
+    "parent": "",
+    "state": "READ_ONLY",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit-review.googlesource.com/gerrit-bug-reporter",
+   "URI": "gerrit-review.googlesource.com/gerrit-bug-reporter",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "gerrit-bug-reporter",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit-review.googlesource.com/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit-review.googlesource.com/gerrit-bug-reporter"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "gerrit-bug-reporter",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit-review.googlesource.com/gerrit-ci-scripts",
+   "URI": "gerrit-review.googlesource.com/gerrit-ci-scripts",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "gerrit-ci-scripts",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit-review.googlesource.com/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit-review.googlesource.com/gerrit-ci-scripts"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "gerrit-ci-scripts",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit-review.googlesource.com/gerrit-fe-dev-helper",
+   "URI": "gerrit-review.googlesource.com/gerrit-fe-dev-helper",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "gerrit-fe-dev-helper",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit-review.googlesource.com/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit-review.googlesource.com/gerrit-fe-dev-helper"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "gerrit-fe-dev-helper",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit-review.googlesource.com/gerrit-installer",
+   "URI": "gerrit-review.googlesource.com/gerrit-installer",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "gerrit-installer",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit-review.googlesource.com/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit-review.googlesource.com/gerrit-installer"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "gerrit-installer",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit-review.googlesource.com/gerrit-linter",
+   "URI": "gerrit-review.googlesource.com/gerrit-linter",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "gerrit-linter",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit-review.googlesource.com/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit-review.googlesource.com/gerrit-linter"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "gerrit-linter",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit-review.googlesource.com/gerrit-load-tests",
+   "URI": "gerrit-review.googlesource.com/gerrit-load-tests",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "gerrit-load-tests",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit-review.googlesource.com/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit-review.googlesource.com/gerrit-load-tests"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "gerrit-load-tests",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit-review.googlesource.com/gerrit-monitoring",
+   "URI": "gerrit-review.googlesource.com/gerrit-monitoring",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "gerrit-monitoring",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit-review.googlesource.com/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit-review.googlesource.com/gerrit-monitoring"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "gerrit-monitoring",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit-review.googlesource.com/gerrit-release-tools",
+   "URI": "gerrit-review.googlesource.com/gerrit-release-tools",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "gerrit-release-tools",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit-review.googlesource.com/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit-review.googlesource.com/gerrit-release-tools"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "gerrit-release-tools",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit-review.googlesource.com/gerrit-switch",
+   "URI": "gerrit-review.googlesource.com/gerrit-switch",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "gerrit-switch",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit-review.googlesource.com/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit-review.googlesource.com/gerrit-switch"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "gerrit-switch",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  }
+ ]
