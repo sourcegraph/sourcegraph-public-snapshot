@@ -135,7 +135,7 @@ func (i *CommitIndexer) indexRepository(name string, id api.RepoID) error {
 }
 
 func (i *CommitIndexer) indexNextWindow(name string, id api.RepoID, windowDuration int) (moreWindows bool, err error) {
-	ctx, cancel := context.WithTimeout(i.background, time.Minute*45)
+	ctx, cancel := context.WithTimeout(i.background, time.Second*45)
 	defer cancel()
 
 	err = i.limiter.Wait(ctx)
