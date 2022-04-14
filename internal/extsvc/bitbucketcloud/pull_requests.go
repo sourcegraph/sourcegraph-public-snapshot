@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -23,8 +22,6 @@ type PullRequestInput struct {
 	SourceRepo        *Repo
 	DestinationBranch *string
 }
-
-var _ json.Marshaler = &PullRequestInput{}
 
 // CreatePullRequest opens a new pull request.
 //
@@ -183,84 +180,6 @@ func (c *Client) MergePullRequest(ctx context.Context, repo *Repo, id int64, opt
 
 	return &pr, nil
 }
-
-// PullRequest represents a single pull request, as returned by the API.
-type PullRequest struct {
-	Links             Links                     `json:"links"`
-	ID                int64                     `json:"id"`
-	Title             string                    `json:"title"`
-	Rendered          RenderedPullRequestMarkup `json:"rendered"`
-	Summary           RenderedMarkup            `json:"summary"`
-	State             PullRequestState          `json:"state"`
-	Author            Account                   `json:"author"`
-	Source            PullRequestEndpoint       `json:"source"`
-	Destination       PullRequestEndpoint       `json:"destination"`
-	MergeCommit       *PullRequestCommit        `json:"merge_commit,omitempty"`
-	CommentCount      int64                     `json:"comment_count"`
-	TaskCount         int64                     `json:"task_count"`
-	CloseSourceBranch bool                      `json:"close_source_branch"`
-	ClosedBy          *Account                  `json:"account,omitempty"`
-	Reason            *string                   `json:"reason,omitempty"`
-	CreatedOn         time.Time                 `json:"created_on"`
-	UpdatedOn         time.Time                 `json:"updated_on"`
-	Reviewers         []Account                 `json:"reviewers"`
-	Participants      []Participant             `json:"participants"`
-}
-
-type PullRequestBranch struct {
-	Name                 string          `json:"name"`
-	MergeStrategies      []MergeStrategy `json:"merge_strategies"`
-	DefaultMergeStrategy MergeStrategy   `json:"default_merge_strategy"`
-}
-
-type PullRequestCommit struct {
-	Hash string `json:"hash"`
-}
-
-type PullRequestEndpoint struct {
-	Repo   Repo              `json:"repository"`
-	Branch PullRequestBranch `json:"branch"`
-	Commit PullRequestCommit `json:"commit"`
-}
-
-type RenderedPullRequestMarkup struct {
-	Title       RenderedMarkup `json:"title"`
-	Description RenderedMarkup `json:"description"`
-	Reason      RenderedMarkup `json:"reason"`
-}
-
-type PullRequestStatus struct {
-	Links       Links                  `json:"links"`
-	UUID        string                 `json:"uuid"`
-	Key         string                 `json:"key"`
-	RefName     string                 `json:"refname"`
-	URL         string                 `json:"url"`
-	State       PullRequestStatusState `json:"state"`
-	Name        string                 `json:"name"`
-	Description string                 `json:"description"`
-	CreatedOn   time.Time              `json:"created_on"`
-	UpdatedOn   time.Time              `json:"updated_on"`
-}
-
-type MergeStrategy string
-type PullRequestState string
-type PullRequestStatusState string
-
-const (
-	MergeStrategyMergeCommit MergeStrategy = "merge_commit"
-	MergeStrategySquash      MergeStrategy = "squash"
-	MergeStrategyFastForward MergeStrategy = "fast_forward"
-
-	PullRequestStateMerged     PullRequestState = "MERGED"
-	PullRequestStateSuperseded PullRequestState = "SUPERSEDED"
-	PullRequestStateOpen       PullRequestState = "OPEN"
-	PullRequestStateDeclined   PullRequestState = "DECLINED"
-
-	PullRequestStatusStateSuccessful PullRequestStatusState = "SUCCESSFUL"
-	PullRequestStatusStateFailed     PullRequestStatusState = "FAILED"
-	PullRequestStatusStateInProgress PullRequestStatusState = "INPROGRESS"
-	PullRequestStatusStateStopped    PullRequestStatusState = "STOPPED"
-)
 
 var _ json.Marshaler = &PullRequestInput{}
 

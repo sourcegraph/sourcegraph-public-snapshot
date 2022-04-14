@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -84,62 +83,6 @@ func (c *Client) ForkRepository(ctx context.Context, upstream *Repo, input ForkI
 	}
 
 	return &fork, nil
-}
-
-// Repo represents the Repository type returned by Bitbucket Cloud.
-//
-// When used as an input into functions, only the FullName field is actually
-// read.
-type Repo struct {
-	Slug        string     `json:"slug"`
-	Name        string     `json:"name"`
-	FullName    string     `json:"full_name"`
-	UUID        string     `json:"uuid"`
-	SCM         string     `json:"scm"`
-	Description string     `json:"description"`
-	Parent      *Repo      `json:"parent"`
-	IsPrivate   bool       `json:"is_private"`
-	Links       RepoLinks  `json:"links"`
-	ForkPolicy  ForkPolicy `json:"fork_policy"`
-}
-
-func (r *Repo) Namespace() (string, error) {
-	// Bitbucket Cloud will return cut down versions of the repository in some
-	// cases (for example, embedded in pull requests), but we always have the
-	// full name, so let's parse the namespace out of that.
-
-	// TODO: replace with strings.Cut() once we upgrade to Go 1.18.
-	parts := strings.SplitN(r.FullName, "/", 2)
-	if len(parts) < 2 {
-		return "", errors.New("cannot split namespace from repo name")
-	}
-
-	return parts[0], nil
-}
-
-type ForkPolicy string
-
-const (
-	ForkPolicyAllow    ForkPolicy = "allow_forks"
-	ForkPolicyNoPublic ForkPolicy = "no_public_forks"
-	ForkPolicyNone     ForkPolicy = "no_forks"
-)
-
-type RepoLinks struct {
-	Clone CloneLinks `json:"clone"`
-	HTML  Link       `json:"html"`
-}
-
-type CloneLinks []Link
-
-// HTTPS returns clone link named "https", it returns an error if not found.
-func (cl CloneLinks) HTTPS() (string, error) {
-	for _, l := range cl {
-		if l.Name == "https" {
-			return l.Href, nil
-		}
-	}
-	return "", errors.New("HTTPS clone link not found")
 }
 
 var _ json.Marshaler = ForkInputWorkspace("")
