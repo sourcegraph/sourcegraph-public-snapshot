@@ -129,7 +129,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         fromObservableQuery(
             this.apolloClient.watchQuery<HasAvailableCodeInsightResult>({
                 query: gql`
-                    query GetFrozenInsightsCount {
+                    query GetFrozenInsightsCount($first: Int!) {
                         insightViews(first: $first) {
                             nodes {
                                 id
