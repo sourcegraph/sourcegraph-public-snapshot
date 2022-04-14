@@ -888,6 +888,7 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 			Kind:   externalService.Kind,
 			Config: *update.Config,
 		}
+
 		err = newSvc.UnredactConfig(externalService)
 		if err != nil {
 			return errors.Wrapf(err, "error unredacting config")

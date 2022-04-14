@@ -9,16 +9,10 @@
 package types
 
 import (
-	"bytes"
+	"encoding/json"
 	"net/url"
 	"reflect"
-	"strings"
 
-	"github.com/fatih/structs"
-	jsoniter "github.com/json-iterator/go"
-	"github.com/sourcegraph/jsonx"
-
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -38,73 +32,54 @@ func (e *ExternalService) RedactConfigSecrets() (string, error) {
 		return "", err
 	}
 
-	fields, err := redactionInfo(cfg)
-	if err != nil {
-		return "", err
-	}
-
-	newCfg := e.Config
-	for _, field := range fields {
-		if newCfg, err = field.Redact(newCfg); err != nil {
-			return "", err
-		}
-	}
-	return newCfg, nil
-}
-
-// redactionInfo returns redactableFields for the given config.
-func redactionInfo(cfg interface{}) ([]redactableField, error) {
-	switch cfg := cfg.(type) {
+	switch c := cfg.(type) {
 	case *schema.GitHubConnection:
-		return []redactableField{jsonStringField{[]string{"token"}, &cfg.Token}}, nil
+		redactString(&c.Token)
 	case *schema.GitLabConnection:
-		return []redactableField{jsonStringField{[]string{"token"}, &cfg.Token}}, nil
+		redactString(&c.Token)
 	case *schema.BitbucketServerConnection:
-		// BitbucketServer can have a token OR password
-		var fields []redactableField
-		if cfg.Password != "" {
-			fields = append(fields, jsonStringField{[]string{"password"}, &cfg.Password})
-		}
-		if cfg.Token != "" {
-			fields = append(fields, jsonStringField{[]string{"token"}, &cfg.Token})
-		}
-		return fields, nil
+		redactString(&c.Password)
+		redactString(&c.Token)
 	case *schema.BitbucketCloudConnection:
-		return []redactableField{jsonStringField{[]string{"appPassword"}, &cfg.AppPassword}}, nil
+		redactString(&c.AppPassword)
 	case *schema.AWSCodeCommitConnection:
-		return []redactableField{
-			jsonStringField{[]string{"secretAccessKey"}, &cfg.SecretAccessKey},
-			jsonStringField{[]string{"gitCredentials", "password"}, &cfg.GitCredentials.Password},
-		}, nil
+		redactString(&c.SecretAccessKey)
+		redactString(&c.GitCredentials.Password)
 	case *schema.PhabricatorConnection:
-		return []redactableField{jsonStringField{[]string{"token"}, &cfg.Token}}, nil
+		redactString(&c.Token)
 	case *schema.PerforceConnection:
-		return []redactableField{jsonStringField{[]string{"p4.passwd"}, &cfg.P4Passwd}}, nil
+		redactString(&c.P4Passwd)
 	case *schema.GitoliteConnection:
-		return []redactableField{}, nil
+		// Nothing to redact
 	case *schema.GoModulesConnection:
-		return []redactableField{stringArrayField{
-			path:  jsonx.MakePath("urls"),
-			field: &cfg.Urls,
-			redactor: func(path jsonx.Path, field *string) redactableField {
-				return urlField{path, field}
-			},
-		}}, nil
-	case *schema.JVMPackagesConnection:
-		return []redactableField{jsonStringField{[]string{"maven", "credentials"}, &cfg.Maven.Credentials}}, nil
-	case *schema.PagureConnection:
-		if cfg.Token != "" {
-			return []redactableField{jsonStringField{[]string{"token"}, &cfg.Token}}, nil
+		for i := range c.Urls {
+			if err := redactURL(&c.Urls[i]); err != nil {
+				return e.Config, err
+			}
 		}
-		return []redactableField{}, nil
+	case *schema.JVMPackagesConnection:
+		if c.Maven != nil {
+			redactString(&c.Maven.Credentials)
+		}
+	case *schema.PagureConnection:
+		redactString(&c.Token)
 	case *schema.NpmPackagesConnection:
-		return []redactableField{jsonStringField{[]string{"credentials"}, &cfg.Credentials}}, nil
+		redactString(&c.Credentials)
 	case *schema.OtherExternalServiceConnection:
-		return []redactableField{jsonStringField{[]string{"url"}, &cfg.Url}}, nil
+		if err := redactURL(&c.Url); err != nil {
+			return e.Config, err
+		}
 	default:
 		// return an error; it's safer to fail than to incorrectly return unsafe data.
-		return nil, errors.Errorf("Unrecognized ExternalServiceConfig for redaction: kind %+v not implemented", reflect.TypeOf(cfg))
+		return e.Config, errors.Errorf("Unrecognized ExternalServiceConfig for redaction: kind %+v not implemented", reflect.TypeOf(cfg))
 	}
+
+	redacted, err := json.Marshal(cfg)
+	if err != nil {
+		return e.Config, err
+	}
+
+	return string(redacted), nil
 }
 
 // UnredactConfig will replace redacted fields with their undredacted form from the 'old' ExternalService.
@@ -114,6 +89,7 @@ func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 	if e == nil || old == nil || e.Config == "" || old.Config == "" {
 		return nil
 	}
+
 	if old.Kind != e.Kind {
 		return errors.Errorf(
 			"UnRedactExternalServiceConfig: unmatched external service kinds, old: %q, e: %q",
@@ -121,237 +97,131 @@ func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 			e.Kind,
 		)
 	}
-	var (
-		unredacted string
-		err        error
-	)
-	cfg, err := e.Configuration()
+
+	newCfg, err := e.Configuration()
 	if err != nil {
 		return err
 	}
-	unredacted, err = unredactFields(old.Config, e.Config, cfg)
+
+	oldCfg, err := old.Configuration()
 	if err != nil {
 		return err
 	}
-	e.Config = unredacted
+
+	switch c := newCfg.(type) {
+	case *schema.GitHubConnection:
+		unredactString(&c.Token, oldCfg.(*schema.GitHubConnection).Token)
+	case *schema.GitLabConnection:
+		unredactString(&c.Token, oldCfg.(*schema.GitLabConnection).Token)
+	case *schema.BitbucketServerConnection:
+		unredactString(&c.Password, oldCfg.(*schema.BitbucketServerConnection).Password)
+		unredactString(&c.Token, oldCfg.(*schema.BitbucketServerConnection).Token)
+	case *schema.BitbucketCloudConnection:
+		unredactString(&c.AppPassword, oldCfg.(*schema.BitbucketCloudConnection).AppPassword)
+	case *schema.AWSCodeCommitConnection:
+		unredactString(&c.SecretAccessKey, oldCfg.(*schema.AWSCodeCommitConnection).SecretAccessKey)
+		unredactString(&c.GitCredentials.Password, oldCfg.(*schema.AWSCodeCommitConnection).GitCredentials.Password)
+	case *schema.PhabricatorConnection:
+		unredactString(&c.Token, oldCfg.(*schema.PhabricatorConnection).Token)
+	case *schema.PerforceConnection:
+		unredactString(&c.P4Passwd, oldCfg.(*schema.PerforceConnection).P4Passwd)
+	case *schema.GitoliteConnection:
+		// Nothing to redact
+	case *schema.GoModulesConnection:
+		oldURLs := oldCfg.(*schema.GoModulesConnection).Urls
+		for i := range c.Urls {
+			if err := unredactURL(&c.Urls[i], oldURLs[i]); err != nil {
+				return err
+			}
+		}
+	case *schema.JVMPackagesConnection:
+		o := oldCfg.(*schema.JVMPackagesConnection)
+		if c.Maven != nil && o.Maven != nil {
+			unredactString(&c.Maven.Credentials, o.Maven.Credentials)
+		}
+	case *schema.PagureConnection:
+		unredactString(&c.Token, oldCfg.(*schema.PagureConnection).Token)
+	case *schema.NpmPackagesConnection:
+		unredactString(&c.Credentials, oldCfg.(*schema.NpmPackagesConnection).Credentials)
+	case *schema.OtherExternalServiceConnection:
+		o := oldCfg.(*schema.OtherExternalServiceConnection)
+		if err := unredactURL(&c.Url, o.Url); err != nil {
+			return err
+		}
+	default:
+		// return an error; it's safer to fail than to incorrectly return unsafe data.
+		return errors.Errorf("Unrecognized ExternalServiceConfig for redaction: kind %+v not implemented", reflect.TypeOf(newCfg))
+	}
+
+	unredacted, err := json.Marshal(newCfg)
+	if err != nil {
+		return err
+	}
+
+	e.Config = string(unredacted)
 	return nil
 }
 
-type redactableField interface {
-	Redact(input string) (output string, err error)
-	Unredact(input string) (output string, err error)
-	String() string
-}
-
-type stringArrayField struct {
-	path     jsonx.Path
-	field    *[]string
-	redactor func(path jsonx.Path, field *string) redactableField
-}
-
-func (f stringArrayField) Redact(input string) (string, error) {
-	return f.apply(input, func(input string, field redactableField) (string, error) {
-		return field.Redact(input)
-	})
-}
-
-func (f stringArrayField) Unredact(input string) (string, error) {
-	return f.apply(input, func(input string, field redactableField) (string, error) {
-		return field.Unredact(input)
-	})
-}
-
-func (f stringArrayField) String() string {
-	var b bytes.Buffer
-	b.WriteString("[")
-	for _, f := range *f.field {
-		b.WriteString(`"` + f + `"`)
-		b.WriteString(",")
+func redactString(s *string) {
+	if *s != "" {
+		*s = RedactedSecret
 	}
-
-	if b.Len() > 1 {
-		b.Truncate(b.Len() - 1)
-	}
-
-	b.WriteString("]")
-	return b.String()
 }
 
-func (f stringArrayField) apply(input string, op func(string, redactableField) (string, error)) (string, error) {
-	node, err := jsonc.ReadPath(input, f.path)
+func unredactString(new *string, old string) {
+	if *new == RedactedSecret {
+		*new = old
+	}
+}
+
+func redactURL(rawURL *string) (err error) {
+	if *rawURL != "" {
+		*rawURL, err = redactedURL(*rawURL)
+	}
+	return
+}
+
+func redactedURL(rawURL string) (string, error) {
+	redacted, err := url.Parse(rawURL)
 	if err != nil {
-		// This field was deleted, so we skip any edits to it.
-		return input, nil
-	}
-
-	if node.Type != jsonx.Array {
-		return input, errors.Errorf("invalid type %T for field %v", node.Type, f.path)
-	}
-
-	if n := len(node.Children) - len(*f.field); n > 0 {
-		*f.field = append(*f.field, make([]string, n)...)
-	}
-
-	for i := range node.Children {
-		var path jsonx.Path
-		path = append(path, f.path...)
-		path = append(path, jsonx.Segment{Index: i})
-
-		if input, err = op(input, f.redactor(path, &(*f.field)[i])); err != nil {
-			return input, err
-		}
-	}
-
-	return input, nil
-}
-
-type urlField struct {
-	path  jsonx.Path
-	field *string
-}
-
-func (f urlField) Redact(input string) (string, error) {
-	redacted, err := url.Parse(*f.field)
-	if err != nil {
-		return input, errors.Wrapf(err, "failed parsing url field")
+		return "", err
 	}
 
 	if redacted.User == nil {
-		return input, nil
+		return rawURL, nil
 	}
 
 	if _, ok := redacted.User.Password(); !ok {
-		return input, nil
+		return rawURL, nil
 	}
 
 	redacted.User = url.UserPassword(redacted.User.Username(), RedactedSecret)
-	return jsonc.EditPath(input, redacted.String(), f.path)
+	return redacted.String(), nil
 }
 
-func (f urlField) Unredact(input string) (string, error) {
-	node, err := jsonc.ReadPath(input, f.path)
-	if err != nil {
-		// This field was deleted, so we skip any edits to it.
-		return input, nil
-	}
-
-	stringValue, ok := node.Value.(string)
-	if !ok {
-		return input, errors.Errorf("invalid type %T for field %s", node.Value, f.path)
-	}
-
-	newURL, err := url.Parse(stringValue)
-	if err != nil {
-		return input, errors.Wrap(err, "failed to parse new url")
-	}
-
-	oldURL, err := url.Parse(*f.field)
-	if err != nil {
-		return input, errors.Wrap(err, "failed to parse old url")
-	}
-
-	if passwd, ok := newURL.User.Password(); ok && passwd == RedactedSecret {
-		oldPasswd, _ := oldURL.User.Password()
-		if oldPasswd != "" {
-			newURL.User = url.UserPassword(newURL.User.Username(), oldPasswd)
-		} else {
-			newURL.User = url.User(newURL.User.Username())
-		}
-	}
-
-	return jsonc.EditPath(input, newURL.String(), f.path)
-}
-
-func (f urlField) String() string {
-	if f.field == nil {
-		return ""
-	}
-	return *f.field
-}
-
-type jsonStringField struct {
-	path  []string
-	field *string
-}
-
-// Redact will unmarshal the passed JSON string into the passed value, and then replace the pointer fields you pass
-// with RedactedSecret, see RedactExternalServiceConfig for usage examples.
-// who needs generics anyway?
-func (f jsonStringField) Redact(input string) (string, error) {
-	return jsonc.Edit(input, RedactedSecret, f.path...)
-}
-
-func (f jsonStringField) Unredact(input string) (string, error) {
-	v, err := jsonc.ReadProperty(input, f.path...)
-	if err != nil {
-		// This field was deleted, so we skip any edits to it.
-		return input, nil
-	}
-
-	stringValue, ok := v.(string)
-	if !ok {
-		return input, errors.Errorf("invalid type %T for field %s", v, f.path)
-	}
-
-	// if the field has been edited we should skip unredaction to allow edits
-	if stringValue != RedactedSecret {
-		// using unicode zero width space might mean the user includes it when editing still, we strip that out here
-		return jsonc.Edit(input, strings.ReplaceAll(stringValue, RedactedSecret, ""), f.path...)
-	}
-
-	return jsonc.Edit(input, *f.field, f.path...)
-}
-
-func (f jsonStringField) String() string {
-	if f.field == nil {
-		return ""
-	}
-	return *f.field
-}
-
-func unredactFields(old, new string, cfg interface{}) (string, error) {
-	// first we zero the fields on cfg, as they will contain data we don't need from the e.Configuration() call
-	// we just want an empty struct of the correct type for marshaling into
-	if err := zeroFields(cfg); err != nil {
-		return "", err
-	}
-	if err := unmarshalConfig(old, cfg); err != nil {
-		return "", err
-	}
-	jsonStringFields, err := redactionInfo(cfg)
-	if err != nil {
-		return "", err
-	}
-
-	// and apply edits to update those fields in the new config
-	for _, field := range jsonStringFields {
-		if new, err = field.Unredact(new); err != nil {
-			return new, err
-		}
-	}
-
-	return new, err
-}
-
-// zeroFields zeroes the fields of a struct
-func zeroFields(s interface{}) error {
-	for _, f := range structs.Fields(s) {
-		if f.IsZero() {
-			continue
-		}
-		err := f.Zero()
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// config may contain comments, normalize with jsonc before unmarshaling with jsoniter
-func unmarshalConfig(buf string, v interface{}) error {
-	normalized, err := jsonc.Parse(buf)
+func unredactURL(new *string, old string) error {
+	newURL, err := url.Parse(*new)
 	if err != nil {
 		return err
 	}
-	return jsoniter.Unmarshal(normalized, v)
+
+	oldURL, err := url.Parse(old)
+	if err != nil {
+		return err
+	}
+
+	passwd, ok := newURL.User.Password()
+	if !ok || passwd != RedactedSecret {
+		return nil
+	}
+
+	oldPasswd, _ := oldURL.User.Password()
+	if oldPasswd != "" {
+		newURL.User = url.UserPassword(newURL.User.Username(), oldPasswd)
+	} else {
+		newURL.User = url.User(newURL.User.Username())
+	}
+
+	*new = newURL.String()
+	return nil
 }

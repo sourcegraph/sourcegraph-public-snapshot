@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestExternalServiVce_RedactConfigSecrets(t *testing.T) {
+func TestExternalService_RedactConfigSecrets(t *testing.T) {
 	for i, tc := range []struct {
 		kind string
 		in   interface{}
@@ -97,7 +97,12 @@ func TestExternalServiVce_RedactConfigSecrets(t *testing.T) {
 		{
 			kind: extsvc.KindOther,
 			in:   schema.OtherExternalServiceConnection{Url: "https://other.org"},
-			out:  schema.OtherExternalServiceConnection{Url: "REDACTED"},
+			out:  schema.OtherExternalServiceConnection{Url: "https://other.org"},
+		},
+		{
+			kind: extsvc.KindOther,
+			in:   schema.OtherExternalServiceConnection{Url: "https://user:pass@other.org"},
+			out:  schema.OtherExternalServiceConnection{Url: "https://user:REDACTED@other.org"},
 		},
 		{
 			kind: extsvc.KindGoModules,
@@ -254,15 +259,15 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 		},
 		{
 			kind: extsvc.KindOther,
-			old:  schema.OtherExternalServiceConnection{Url: "https://other.org"},
-			in:   schema.OtherExternalServiceConnection{Url: "REDACTED"},
-			out:  schema.OtherExternalServiceConnection{Url: "https://other.org"},
+			old:  schema.OtherExternalServiceConnection{Url: "https://user:pass@other.org"},
+			in:   schema.OtherExternalServiceConnection{Url: "https://user:REDACTED@other.org"},
+			out:  schema.OtherExternalServiceConnection{Url: "https://user:pass@other.org"},
 		},
 		{
 			kind: extsvc.KindOther,
-			old:  schema.OtherExternalServiceConnection{Url: "https://other.org"},
-			in:   schema.OtherExternalServiceConnection{Url: "https://other.corp.org"},
-			out:  schema.OtherExternalServiceConnection{Url: "https://other.corp.org"},
+			old:  schema.OtherExternalServiceConnection{Url: "https://user:pass@other.org"},
+			in:   schema.OtherExternalServiceConnection{Url: "https://user:REDACTED@other.corp.org"},
+			out:  schema.OtherExternalServiceConnection{Url: "https://user:pass@other.corp.org"},
 		},
 		{
 			kind: extsvc.KindGoModules,
