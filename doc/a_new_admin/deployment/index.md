@@ -42,6 +42,12 @@ Finally, if you're just starting out, you can [try Sourcegraph Cloud](https://so
 
 > NOTE: The Single container option is provided for local proofs-of-concept and is not intended for testing or deployed at a pre-production/production level. Some features, such as Code Insights, are not available when using this deployment type. If you're just starting out and want the absolute quickest setup time, [try Sourcegraph Cloud](https://sourcegraph.com).
 
+## Reference repositories
+
+For Docker Compose and Kubernetes deployments, Sourcegraph provides reference repositories with branches corresponding to the version of Sourcegraph you wish to deploy. The reference repository contains everything you need to spin up and configure your instance depending on your deployment type, which also assists in your upgrade process going forward. 
+
+For more information, follow the install and configuration docs for your specific deployment type: [Docker Compose](https://github.com/sourcegraph/deploy-sourcegraph-docker/) or [Kubernetes](https://github.com/sourcegraph/deploy-sourcegraph/).
+
 ## External services
 
 By default, Sourcegraph provides versions of services it needs to operate, including:
@@ -80,24 +86,16 @@ Configuration at the deployment level focuses on ensuring your Sourcegraph runs 
 We refer to configuration at the Administration level as Customization, check out the [customization section TBD](TBD).
 
 
-## Upgrades and migration
+## Upgrades
 
 A new version of Sourcegraph is released every month (with patch releases in between as needed). We actively maintain the two most recent monthly releases of Sourcegraph. The [changelog](../../CHANGELOG.md) provides all information related to any changes that are/were in a release.
 
-### Upgrades
-
 Depending on your current version and the version you are looking to upgrade rules, there may be specific upgrade instruction and requirements. Checkout the [Upgrade docs](TBD) for additional information and instructions.
 
-### Migration
+## Migration
 
 Sourcegraph uses "migration" to refer to different, yet related activities. This includes normal database migrations which are an automatic part of the upgrade process and the [migrator service](TBD)
 
 It also refers to migration from one deployment type to the other, for example moving from Docker Single Container to Docker Compose.
 
 More details on both cases are provided in our [Migration docs](TBD)
-
-## Reference repositories
-
-For Docker Compose and Kubernetes deployments, Sourcegraph provides reference repositories with branches corresponding to the version of Sourcegraph you wish to deploy. The reference repository contains everything you need to spin up and configure your instance depending on your deployment type, which also assists in your upgrade process going forward. 
-
-For more information, follow the install and configuration docs for your specific deployment type: [Docker Compose](https://github.com/sourcegraph/deploy-sourcegraph-docker/) or [Kubernetes](https://github.com/sourcegraph/deploy-sourcegraph/).
