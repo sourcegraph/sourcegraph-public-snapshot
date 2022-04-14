@@ -12,7 +12,6 @@ type ComputeResult interface {
 	RepoID() string
 	Revhash() string
 	FilePath() string
-	MatchValues() []string
 	Counts() map[string]int
 }
 
@@ -128,16 +127,6 @@ func (c ComputeMatchContext) Revhash() string {
 
 func (c ComputeMatchContext) FilePath() string {
 	return c.Path
-}
-
-func (c ComputeMatchContext) MatchValues() []string {
-	var results []string
-	for _, match := range c.Matches {
-		for _, entry := range match.Environment {
-			results = append(results, entry.Value)
-		}
-	}
-	return results
 }
 
 type ComputeMatch struct {
