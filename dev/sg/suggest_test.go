@@ -16,13 +16,13 @@ func TestMakeSuggestions(t *testing.T) {
 		{Name: "hlloo"},
 	}
 	t.Run("restrict suggestions", func(t *testing.T) {
-		suggestions := makeSuggestions(cmds, "hello", 2, 0.7)
+		suggestions := makeSuggestions(cmds, "hello", 0.3, 2)
 		assert.Len(t, suggestions, 2)
 		assert.Equal(t, "hello", suggestions[0].name)
 		assert.Equal(t, "helo", suggestions[1].name)
 	})
 	t.Run("all suggestions", func(t *testing.T) {
-		suggestions := makeSuggestions(cmds, "hello", 999, 0.7)
+		suggestions := makeSuggestions(cmds, "hello", 0.3, 999)
 		assert.Len(t, suggestions, len(cmds)-1)
 		assert.Equal(t, "hello", suggestions[0].name)
 		assert.Equal(t, "helo", suggestions[1].name)

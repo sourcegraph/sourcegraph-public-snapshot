@@ -1,11 +1,10 @@
 package main
 
 import (
-	"math"
 	"sort"
 	"strings"
 
-	"github.com/agnivade/levenshtein"
+	"github.com/agext/levenshtein"
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
@@ -44,7 +43,7 @@ func suggestCommands(cmd *cli.Context, arg string) {
 	args := reconstructArgs(cmd)
 	writeOrangeLinef("command '%s %s' not found", args, arg)
 
-	suggestions := makeSuggestions(cmds, arg, 3, 0.7)
+	suggestions := makeSuggestions(cmds, arg, 0.3, 3)
 	if len(suggestions) == 0 {
 		stdout.Out.Writef("try running '%s -h' for help", args)
 		return
@@ -59,33 +58,33 @@ func suggestCommands(cmd *cli.Context, arg string) {
 
 type commandSuggestion struct {
 	name  string
-	score int
+	score float64
 }
 
 type commandSuggestions []commandSuggestion
 
-// makeSuggestions returns the n most similar command names to arg where the levenshtein
-// score is roughly less than name * thresholdRatio.
-func makeSuggestions(cmds []*cli.Command, arg string, n int, thresholdRatio float64) commandSuggestions {
+// makeSuggestions returns the n most similar command names  to arg, from most similar to
+// least, where the levenshtein score is above the threshold.
+func makeSuggestions(cmds []*cli.Command, arg string, threshold float64, n int) commandSuggestions {
 	suggestions := commandSuggestions{}
 	for _, c := range cmds {
 		if c.Hidden || c.Name == "help" {
 			continue
 		}
 
-		closestName := commandSuggestion{score: 99999}
+		// Get the best suggestion for the names this command has, so as to make only one
+		// suggestion per command
+		closestName := commandSuggestion{}
 		for _, n := range c.Names() {
-			score := levenshtein.ComputeDistance(n, arg)
-			if closestName.score > score {
+			score := levenshtein.Match(n, arg, levenshtein.NewParams())
+			if closestName.score < score {
 				closestName.name = n
 				closestName.score = score
 			}
 		}
 
-		// Scale score threshold to length of name, i.e. to avoid dropping alias
-		// suggestions and avoid making really bad suggestions on long commands
-		threshold := int(math.Round(float64(len(closestName.name)) * thresholdRatio))
-		if closestName.score <= threshold {
+		// Only suggest above our threshold
+		if closestName.score >= threshold {
 			suggestions = append(suggestions, closestName)
 		}
 	}
@@ -102,7 +101,8 @@ func (cs commandSuggestions) Len() int {
 }
 
 func (cs commandSuggestions) Less(i, j int) bool {
-	return cs[i].score < cs[j].score
+	// Higher score = better
+	return cs[i].score > cs[j].score
 }
 
 func (cs commandSuggestions) Swap(i, j int) {
