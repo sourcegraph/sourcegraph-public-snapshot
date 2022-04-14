@@ -41,7 +41,6 @@ require (
 	github.com/dnaeon/go-vcr v1.2.0
 	github.com/docker/docker-credential-helpers v0.6.4
 	github.com/fatih/color v1.13.0
-	github.com/fatih/structs v1.1.0
 	github.com/felixge/fgprof v0.9.2
 	github.com/felixge/httpsnoop v1.0.2
 	github.com/fsnotify/fsnotify v1.5.1
