@@ -16,6 +16,24 @@ type Account struct {
 	UUID          string        `json:"uuid"`
 }
 
+type Comment struct {
+	ID        int64          `json:"id"`
+	CreatedOn time.Time      `json:"created_on"`
+	UpdatedOn time.Time      `json:"updated_on"`
+	Content   RenderedMarkup `json:"content"`
+	User      User           `json:"user"`
+	Deleted   bool           `json:"deleted"`
+	Parent    *Comment       `json:"parent,omitempty"`
+	Inline    *CommentInline `json:"inline,omitempty"`
+	Links     Links          `json:"links"`
+}
+
+type CommentInline struct {
+	To   int64  `json:"to,omitempty"`
+	From int64  `json:"from,omitempty"`
+	Path string `json:"path"`
+}
+
 type Link struct {
 	Href string `json:"href"`
 	Name string `json:"name,omitempty"`

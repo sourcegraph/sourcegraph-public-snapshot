@@ -297,3 +297,24 @@ func (opts *PullRequestInput) MarshalJSON() ([]byte, error) {
 
 	return json.Marshal(&req)
 }
+
+type CommentInput struct {
+	Content string
+}
+
+var _ json.Marshaler = &CommentInput{}
+
+func (ci *CommentInput) MarshalJSON() ([]byte, error) {
+	type content struct {
+		Raw string `json:"raw"`
+	}
+	type comment struct {
+		Content content `json:"content"`
+	}
+
+	return json.Marshal(&comment{
+		Content: content{
+			Raw: ci.Content,
+		},
+	})
+}
