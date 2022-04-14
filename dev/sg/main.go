@@ -10,9 +10,10 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func main() {
@@ -27,24 +28,21 @@ func main() {
 }
 
 const (
-	defaultConfigFile          = "sg.config.yaml"
-	defaultConfigOverwriteFile = "sg.config.overwrite.yaml"
-	defaultSecretsFile         = "sg.secrets.json"
+	defaultSecretsFile = "sg.secrets.json"
 )
 
 var (
 	BuildCommit = "dev"
 
-	// globalConf is the global config. If a command needs to access it, it *must* call
-	// `parseConf` before.
-	globalConf *Config
-
 	// secretsStore is instantiated when sg gets run.
 	secretsStore *secrets.Store
 
-	// Note that these values are only available after the main sg CLI app has been run.
-	configFlag          string
-	overwriteConfigFlag string
+	// configFile is the path to use with sgconf.Get - it must not be used before flag
+	// initialization.
+	configFile string
+	// configOverwriteFile is the path to use with sgconf.Get - it must not be used before
+	// flag initialization.
+	configOverwriteFile string
 
 	// Global verbose mode
 	verbose bool
@@ -81,19 +79,21 @@ var sg = &cli.App{
 		},
 		&cli.StringFlag{
 			Name:        "config",
+			Aliases:     []string{"c"},
 			Usage:       "load sg configuration from `file`",
 			EnvVars:     []string{"SG_CONFIG"},
 			TakesFile:   true,
-			Value:       defaultConfigFile,
-			Destination: &configFlag,
+			Value:       sgconf.DefaultFile,
+			Destination: &configFile,
 		},
 		&cli.StringFlag{
 			Name:        "overwrite",
+			Aliases:     []string{"o"},
 			Usage:       "load sg configuration from `file` that is gitignored and can be used to, for example, add credentials",
 			EnvVars:     []string{"SG_OVERWRITE"},
 			TakesFile:   true,
-			Value:       defaultConfigOverwriteFile,
-			Destination: &overwriteConfigFlag,
+			Value:       sgconf.DefaultOverwriteFile,
+			Destination: &configOverwriteFile,
 		},
 		&cli.BoolFlag{
 			Name:    "skip-auto-update",
@@ -103,14 +103,22 @@ var sg = &cli.App{
 		},
 	},
 	Before: func(cmd *cli.Context) error {
-		if verbose {
-			stdout.Out.SetVerbose()
-		}
-
 		if batchCompletionMode {
 			// All other setup pertains to running commands - to keep completions fast,
 			// we skip all other setup.
 			return nil
+		}
+
+		if verbose {
+			stdout.Out.SetVerbose()
+		}
+
+		// Validate configuration flags, which is required for sgconf.Get to work everywhere else.
+		if configFile == "" {
+			return errors.Newf("--config must not be empty")
+		}
+		if configOverwriteFile == "" {
+			return errors.Newf("--overwrite must not be empty")
 		}
 
 		// Set up access to secrets
@@ -187,43 +195,4 @@ func loadSecrets() error {
 	fp := filepath.Join(homePath, defaultSecretsFile)
 	secretsStore, err = secrets.LoadFile(fp)
 	return err
-}
-
-// parseConf parses the config file and the optional overwrite file.
-// Iear the conf has already been parsed it's a noop.
-func parseConf(confFile, overwriteFile string) (bool, output.FancyLine) {
-	if globalConf != nil {
-		return true, output.FancyLine{}
-	}
-
-	// Try to determine root of repository, so we can look for config there
-	repoRoot, err := root.RepositoryRoot()
-	if err != nil {
-		return false, output.Linef("", output.StyleWarning, "Failed to determine repository root location: %s", err)
-	}
-
-	// If the configFlag/overwriteConfigFlag flags have their default value, we
-	// take the value as relative to the root of the repository.
-	if confFile == defaultConfigFile {
-		confFile = filepath.Join(repoRoot, confFile)
-	}
-
-	if overwriteFile == defaultConfigOverwriteFile {
-		overwriteFile = filepath.Join(repoRoot, overwriteFile)
-	}
-
-	globalConf, err = ParseConfigFile(confFile)
-	if err != nil {
-		return false, output.Linef("", output.StyleWarning, "Failed to parse %s%s%s%s as configuration file:%s\n%s", output.StyleBold, confFile, output.StyleReset, output.StyleWarning, output.StyleReset, err)
-	}
-
-	if ok, _ := fileExists(overwriteFile); ok {
-		overwriteConf, err := ParseConfigFile(overwriteFile)
-		if err != nil {
-			return false, output.Linef("", output.StyleWarning, "Failed to parse %s%s%s%s as overwrites configuration file:%s\n%s", output.StyleBold, overwriteFile, output.StyleReset, output.StyleWarning, output.StyleReset, err)
-		}
-		globalConf.Merge(overwriteConf)
-	}
-
-	return true, output.FancyLine{}
 }

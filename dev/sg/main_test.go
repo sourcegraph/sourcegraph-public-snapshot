@@ -9,17 +9,31 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+// testSG creates a copy of the sg app for testing.
+func testSG() *cli.App {
+	tsg := *sg
+	return &tsg
+}
+
 func TestAppRun(t *testing.T) {
-	// Check app starts up correctly
+	sg := testSG()
+
+	// Capture output
 	var out, err bytes.Buffer
 	sg.Writer = &out
 	sg.ErrWriter = &err
+	// Check app starts up correctly
 	assert.NoError(t, sg.Run([]string{"help"}))
 	assert.Contains(t, out.String(), "The Sourcegraph developer tool!")
+	// We do not want errors anywhere
+	assert.NotContains(t, out.String(), "error")
+	assert.NotContains(t, out.String(), "panic")
 	assert.Empty(t, err.String())
 }
 
 func TestCommandFormatting(t *testing.T) {
+	sg := testSG()
+
 	sg.Setup()
 	for _, cmd := range sg.Commands {
 		testCommandFormatting(t, cmd)

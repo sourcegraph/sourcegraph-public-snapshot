@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
@@ -101,9 +102,9 @@ func makeRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, erro
 	// Try to read the `sg` configuration so we can read ENV vars from the
 	// configuration and use process env as fallback.
 	var getEnv func(string) string
-	ok, _ := parseConf(configFlag, overwriteConfigFlag)
-	if ok {
-		getEnv = globalConf.GetEnv
+	config, _ := sgconf.Get(configFile, configOverwriteFile)
+	if config != nil {
+		getEnv = config.GetEnv
 	} else {
 		getEnv = os.Getenv
 	}
