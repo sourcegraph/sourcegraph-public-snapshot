@@ -24,7 +24,7 @@ type CommitStore interface {
 	Get(ctx context.Context, id api.RepoID, start time.Time, end time.Time) ([]CommitStamp, error)
 	GetMetadata(ctx context.Context, id api.RepoID) (CommitIndexMetadata, error)
 	UpsertMetadataStamp(ctx context.Context, id api.RepoID, indexedThrough time.Time) (CommitIndexMetadata, error)
-	InsertCommits(ctx context.Context, id api.RepoID, commits []*gitdomain.Commit, commitsUntil time.Time, debugInfo string) error
+	InsertCommits(ctx context.Context, id api.RepoID, commits []*gitdomain.Commit, indexedThrough time.Time, debugInfo string) error
 }
 
 func NewCommitStore(db dbutil.DB) *DBCommitStore {
@@ -52,7 +52,7 @@ func (c *DBCommitStore) Save(ctx context.Context, id api.RepoID, commit *gitdoma
 	return nil
 }
 
-func (c *DBCommitStore) InsertCommits(ctx context.Context, id api.RepoID, commits []*gitdomain.Commit, commitsUntil time.Time, debugInfo string) (err error) {
+func (c *DBCommitStore) InsertCommits(ctx context.Context, id api.RepoID, commits []*gitdomain.Commit, indexedThrough time.Time, debugInfo string) (err error) {
 	tx, err := c.Transact(ctx)
 	if err != nil {
 		return err
@@ -66,7 +66,7 @@ func (c *DBCommitStore) InsertCommits(ctx context.Context, id api.RepoID, commit
 		}
 	}
 
-	if _, err = tx.UpsertMetadataStamp(ctx, id, commitsUntil); err != nil {
+	if _, err = tx.UpsertMetadataStamp(ctx, id, indexedThrough); err != nil {
 		return err
 	}
 

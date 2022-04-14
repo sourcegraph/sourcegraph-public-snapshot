@@ -187,7 +187,7 @@ func (i *CommitIndexer) indexNextWindow(name string, id api.RepoID, windowDurati
 		}
 	}
 
-	log15.Debug("indexing commits", "repo_id", repoId, "count", len(commits), "logSearchSize", windowDuration, "indexedThrough", indexedThrough)
+	log15.Debug("indexing commits", "repo_id", repoId, "count", len(commits), "indexedThrough", indexedThrough)
 	err = i.commitStore.InsertCommits(ctx, repoId, commits, indexedThrough, fmt.Sprintf("|repoName:%s|repoId:%d", repoName, repoId))
 	if err != nil {
 		return false, errors.Wrapf(err, "unable to update commit index repo_id: %v", repoId)
