@@ -71,6 +71,10 @@ func (i *insightViewFiltersResolver) ExcludeRepoRegex(ctx context.Context) (*str
 	return i.filters.ExcludeRepoRegex, nil
 }
 
+func (i *insightViewFiltersResolver) SearchContexts(ctx context.Context) (*[]string, error) {
+	return &i.filters.SearchContexts, nil
+}
+
 func (i *insightViewResolver) AppliedFilters(ctx context.Context) (graphqlbackend.InsightViewFiltersResolver, error) {
 	if i.overrideFilters != nil {
 		return &insightViewFiltersResolver{filters: i.overrideFilters}, nil
