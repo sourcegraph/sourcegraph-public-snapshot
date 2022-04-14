@@ -34,7 +34,8 @@ Examples:
 
   Upload an LSIF dump when lsifEnforceAuth is enabled:
 
-    	$ src lsif upload -github-token=BAZ
+    	$ src lsif upload -github-token=BAZ, or
+    	$ src lsif upload -gitlab-token=BAZ
 
   Upload an LSIF dump when the LSIF indexer does not not declare a tool name.
 
