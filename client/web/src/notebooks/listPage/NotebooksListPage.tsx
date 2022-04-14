@@ -9,19 +9,22 @@ import { Observable } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { PageHeader, Link, Button, useEventObservable, Alert, Icon } from '@sourcegraph/wildcard'
+import { PageHeader, Link, Button, useEventObservable, Alert, Icon, Modal } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { FilteredConnectionFilter } from '../../components/FilteredConnection'
 import { Page } from '../../components/Page'
 import { CreateNotebookVariables, NotebooksOrderBy } from '../../graphql-operations'
 import { PageRoutes } from '../../routes.constants'
+import { NotepadIcon } from '../../search/SearchStack'
 import { fetchNotebooks as _fetchNotebooks, createNotebook as _createNotebook } from '../backend'
 
 import { ImportMarkdownNotebookButton } from './ImportMarkdownNotebookButton'
 import { NotebooksList } from './NotebooksList'
+import { NotepadCTA, NOTEPAD_CTA_ID } from './NotepadCta'
 
 import styles from './NotebooksListPage.module.scss'
 
@@ -89,7 +92,7 @@ export const NotebooksListPage: React.FunctionComponent<NotebooksListPageProps> 
     createNotebook = _createNotebook,
 }) => {
     useEffect(() => {
-        telemetryService.logViewEvent('SearchNotebooksListPage')
+        telemetryService.logPageView('SearchNotebooksListPage')
     }, [telemetryService])
 
     const [importState, setImportState] = useState<typeof LOADING | ErrorLike | undefined>()
@@ -235,10 +238,7 @@ export const NotebooksListPage: React.FunctionComponent<NotebooksListPageProps> 
                     actions={
                         authenticatedUser && (
                             <>
-                                <Button to={PageRoutes.NotebookCreate} variant="primary" as={Link} className="mr-2">
-                                    <Icon className="mr-1" as={PlusIcon} />
-                                    Create notebook
-                                </Button>
+                                <ToggleNotepadButton telemetryService={telemetryService} />
                                 <ImportMarkdownNotebookButton
                                     telemetryService={telemetryService}
                                     authenticatedUser={authenticatedUser}
@@ -246,6 +246,10 @@ export const NotebooksListPage: React.FunctionComponent<NotebooksListPageProps> 
                                     importState={importState}
                                     setImportState={setImportState}
                                 />
+                                <Button to={PageRoutes.NotebookCreate} variant="primary" as={Link} className="ml-2">
+                                    <Icon className="mr-1" as={PlusIcon} />
+                                    Create notebook
+                                </Button>
                             </>
                         )
                     }
@@ -362,5 +366,52 @@ const UnauthenticatedNotebooksSection: React.FunctionComponent<UnauthenticatedMy
                 public notebooks
             </span>
         </div>
+    )
+}
+
+const NOTEPAD_ENABLED_EVENT = 'SearchNotepadEnabled'
+const NOTEPAD_DISABLED_EVENT = 'SearchNotepadDisabled'
+
+const ToggleNotepadButton: React.FunctionComponent<TelemetryProps> = ({ telemetryService }) => {
+    const [notepadEnabled, setNotepadEnabled] = useTemporarySetting('search.notepad.enabled')
+    const [ctaSeen, setCTASeen] = useTemporarySetting('search.notepad.ctaSeen')
+    const [showCTA, setShowCTA] = useState(false)
+
+    function onClick(): void {
+        if (!notepadEnabled && !ctaSeen) {
+            setShowCTA(true)
+        } else {
+            setNotepadEnabled(enabled => {
+                // `enabled` is the old state so we have to log the "opposite"
+                // event
+                telemetryService.log(enabled ? NOTEPAD_DISABLED_EVENT : NOTEPAD_ENABLED_EVENT)
+                return !enabled
+            })
+        }
+    }
+
+    function onEnableFromCTA(): void {
+        telemetryService.log(NOTEPAD_ENABLED_EVENT)
+        setNotepadEnabled(true)
+        setShowCTA(false)
+        setCTASeen(true)
+    }
+
+    function onCancelFromCTA(): void {
+        // We only mark the CTA as "seen" when the user enables the notepad from it
+        setShowCTA(false)
+    }
+
+    return (
+        <>
+            <Button variant="secondary" type="button" onClick={onClick}>
+                <NotepadIcon /> {notepadEnabled ? 'Disable' : 'Enable'} notepad
+            </Button>
+            {showCTA && (
+                <Modal aria-labelledby={NOTEPAD_CTA_ID}>
+                    <NotepadCTA onEnable={onEnableFromCTA} onCancel={onCancelFromCTA} />
+                </Modal>
+            )}
+        </>
     )
 }
