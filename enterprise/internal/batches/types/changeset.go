@@ -518,7 +518,6 @@ func (c *Changeset) Body() (string, error) {
 	case *gitlab.MergeRequest:
 		return m.Description, nil
 	case *bbcs.AnnotatedPullRequest:
-		// TODO: figure out what to do if this is creole.
 		return m.Rendered.Description.Raw, nil
 	default:
 		return "", errors.New("unknown changeset type")
