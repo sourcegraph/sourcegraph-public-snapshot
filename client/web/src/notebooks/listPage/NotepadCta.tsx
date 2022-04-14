@@ -21,7 +21,7 @@ export const NotepadCTA: React.FunctionComponent<NotepadCTAProps> = ({ onEnable,
                 <Illustration className="flex-shrink-0 mr-3" />
                 <p>
                     The notepad adds a toolbar to the bottom right of search results and file pages to help you create
-                    notebooks from your code navigation activities.{' '}
+                    notebooks from your code navigation activities.
                 </p>
             </div>
             <div className="float-right mt-2">
@@ -36,7 +36,7 @@ export const NotepadCTA: React.FunctionComponent<NotepadCTAProps> = ({ onEnable,
     )
 }
 
-const NotepadIllustrationLight: React.FunctionComponent<{ className: string }> = ({ className }) => (
+const NotepadIllustrationLight: React.FunctionComponent<{ className: string }> = React.memo(({ className }) => (
     <svg
         className={className}
         width="174"
@@ -158,9 +158,9 @@ const NotepadIllustrationLight: React.FunctionComponent<{ className: string }> =
             </clipPath>
         </defs>
     </svg>
-)
+))
 
-const NotepadIllustrationDark: React.FunctionComponent<{ className: string }> = ({ className }) => (
+const NotepadIllustrationDark: React.FunctionComponent<{ className: string }> = React.memo(({ className }) => (
     <svg
         className={className}
         width="174"
@@ -282,4 +282,4 @@ const NotepadIllustrationDark: React.FunctionComponent<{ className: string }> = 
             </clipPath>
         </defs>
     </svg>
-)
+))

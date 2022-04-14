@@ -370,7 +370,7 @@ const UnauthenticatedNotebooksSection: React.FunctionComponent<UnauthenticatedMy
 }
 
 const NOTEPAD_ENABLED_EVENT = 'SearchNotepadEnabled'
-const NOTEPAD_DISABLED_EVENT = 'SearchNotepadEnabled'
+const NOTEPAD_DISABLED_EVENT = 'SearchNotepadDisabled'
 
 const ToggleNotepadButton: React.FunctionComponent<TelemetryProps> = ({ telemetryService }) => {
     const [notepadEnabled, setNotepadEnabled] = useTemporarySetting('search.notepad.enabled')
@@ -398,8 +398,7 @@ const ToggleNotepadButton: React.FunctionComponent<TelemetryProps> = ({ telemetr
     }
 
     function onCancelFromCTA(): void {
-        // We only mark the CTA as "seen" when the user enables the notepad from
-        // it
+        // We only mark the CTA as "seen" when the user enables the notepad from it
         setShowCTA(false)
     }
 
