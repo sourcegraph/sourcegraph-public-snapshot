@@ -134,10 +134,7 @@ pub fn index_language(filetype: &str, code: &str) -> Result<Document, Error> {
 }
 
 pub fn make_highlight_config(name: &str, highlights: &str) -> Option<HighlightConfiguration> {
-    let config = match CONFIGURATIONS.get(name) {
-        Some(config) => config,
-        None => return None,
-    };
+    let config = CONFIGURATIONS.get(name)?;
 
     // Create HighlightConfiguration language
     let mut lang = match HighlightConfiguration::new(config.language, highlights, "", "") {
