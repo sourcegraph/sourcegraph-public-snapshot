@@ -385,6 +385,36 @@ changesetTemplate:
 `
 }
 
+function goCheckerS1002Template(name: string): string{
+    return `name: ${name}
+description: |
+    This batch change uses [Comby](https://comby.dev) to omit comparison with boolean constant
+on:
+    - repositoriesMatchingQuery: |
+        if :[1:e] == false or if :[1:e] == true patternType:structural archived:no
+
+steps:
+    - run: comby -config /tmp/rule.toml -f .go -i -exclude-dir vendor,.
+      container: comby/comby
+      files:
+        /tmp/rule.toml: |
+            [S1002_01]
+            match='if :[1:e] == true '
+            rewrite='if :[1]'
+
+            [S1002_02]
+            match='if :[1:e] == false '
+            rewrite='if !:[1]'
+
+changesetTemplate:
+    title: Omit comparison with boolean constant
+    body: This batch change uses [Comby](https://comby.dev) to omit comparison with boolean constant
+    branch: batches/\${{batch_change.name}}
+    commit:
+        message: Omit comparison with boolean constant
+`
+}
+
 function goCheckerS1003Template(name: string): string{
     return `name: ${name}
 description: |
@@ -463,36 +493,6 @@ changesetTemplate:
     branch: batches/\${{batch_change.name}}
     commit:
         message: Replace calls to strings.Index with strings.Contains.
-`
-}
-
-function goCheckerS1002Template(name: string): string{
-    return `name: ${name}
-description: |
-    This batch change uses [Comby](https://comby.dev) to omit comparison with boolean constant
-on:
-    - repositoriesMatchingQuery: |
-        if :[1:e] == false or if :[1:e] == true patternType:structural archived:no
-
-steps:
-    - run: comby -config /tmp/rule.toml -f .go -i -exclude-dir vendor,.
-      container: comby/comby
-      files:
-        /tmp/rule.toml: |
-            [S1002_01]
-            match='if :[1:e] == true '
-            rewrite='if :[1]'
-
-            [S1002_02]
-            match='if :[1:e] == false '
-            rewrite='if !:[1]'
-
-changesetTemplate:
-    title: Omit comparison with boolean constant
-    body: This batch change uses [Comby](https://comby.dev) to omit comparison with boolean constant
-    branch: batches/\${{batch_change.name}}
-    commit:
-        message: Omit comparison with boolean constant
 `
 }
 
