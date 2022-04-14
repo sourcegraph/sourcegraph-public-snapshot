@@ -2,7 +2,7 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 
-import { Link } from '@sourcegraph/wildcard'
+import { H1, Link } from '@sourcegraph/wildcard'
 
 import styles from './HeroPage.module.scss'
 
@@ -39,13 +39,7 @@ export const HeroPage: React.FunctionComponent<HeroPageProps> = props => (
                 )}
             </div>
         )}
-        {props.title && (
-            // To fix Rule: "page-has-heading-one" (Page should contain a level-one heading)
-            // We should consider using an h1 element here.
-            <div role="heading" aria-level={1} className={styles.title}>
-                {props.title}
-            </div>
-        )}
+        {props.title && <H1 className={styles.title}>{props.title}</H1>}
         {props.subtitle && (
             <div data-testid="hero-page-subtitle" className={styles.subtitle}>
                 {props.subtitle}
