@@ -267,6 +267,57 @@ func TestClient_GetPullRequest(t *testing.T) {
 	})
 }
 
+func TestClient_GetPullRequestStatuses(t *testing.T) {
+	// WHEN UPDATING: this test expects
+	// https://bitbucket.org/sourcegraph-testing/src-cli/pull-requests/6 to be
+	// open and have at least one pipeline build, and
+	// https://bitbucket.org/sourcegraph-testing/src-cli/pull-requests/1 to be
+	// open and have no builds. This shouldn't require any action on your part.
+
+	ctx := context.Background()
+
+	c, save := newTestClient(t)
+	defer save()
+
+	repo := &Repo{
+		FullName: "sourcegraph-testing/src-cli",
+	}
+
+	t.Run("not found", func(t *testing.T) {
+		rs, err := c.GetPullRequestStatuses(repo, 0)
+		// The first error doesn't trigger until we actually request a page.
+		assert.Nil(t, err)
+		assert.NotNil(t, rs)
+
+		status, err := rs.Next(ctx)
+		assert.Nil(t, status)
+		assert.NotNil(t, err)
+		assert.True(t, errcode.IsNotFound(err))
+	})
+
+	t.Run("no statuses", func(t *testing.T) {
+		rs, err := c.GetPullRequestStatuses(repo, 1)
+		assert.Nil(t, err)
+		assert.NotNil(t, rs)
+
+		status, err := rs.Next(ctx)
+		assert.Nil(t, status)
+		assert.Nil(t, err)
+	})
+
+	t.Run("has statuses", func(t *testing.T) {
+		rs, err := c.GetPullRequestStatuses(repo, 6)
+		// The first error doesn't trigger until we actually request a page.
+		assert.Nil(t, err)
+		assert.NotNil(t, rs)
+
+		statuses, err := rs.All(ctx)
+		assert.Nil(t, err)
+		assert.NotEmpty(t, statuses)
+		assertGolden(t, statuses)
+	})
+}
+
 func TestClient_MergePullRequest(t *testing.T) {
 	// WHEN UPDATING: this test expects a PR in
 	// https://bitbucket.org/sourcegraph-testing/src-cli/ to be open. Note that
