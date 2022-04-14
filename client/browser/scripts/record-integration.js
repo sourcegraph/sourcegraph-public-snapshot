@@ -1,30 +1,36 @@
+const { Console } = require('console')
+
 const { readdir, readFile } = require('mz/fs')
 const shelljs = require('shelljs')
 
-const recordSnapshot = grepValue =>
-  shelljs.exec(
-    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-    `POLLYJS_MODE=record SOURCEGRAPH_BASE_URL=https://sourcegraph.com yarn test-integration --grep='${grepValue}'`,
-    (error, stdout, stderr) => {
-      if (error) {
-        console.error(error)
-        return
-      }
-      console.log(`stdout: ${stdout}`)
-      console.error(`stderr: ${stderr}`)
-    }
-  )
+const { compressRecordings, deleteRecordings } = require('./utils')
 
-;(async () => {
+const recordSnapshot = grepValue =>
+  new Promise((resolve, reject) => {
+    shelljs.exec(
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+      `POLLYJS_MODE=record SOURCEGRAPH_BASE_URL=https://sourcegraph.com yarn run-integration --grep='${grepValue}'`,
+      (code, stdout, stderr) => {
+        console.log(`stdout: ${stdout}`)
+        console.log(`stderr: ${stderr}`)
+
+        if (code === 0) {
+          resolve()
+        }
+
+        const error = new Error()
+        error.code = code
+        reject(error)
+      }
+    )
+  })
+
+const recordTests = async () => {
   // 1. Record by --grep args
   const args = process.argv.slice(2)
   for (let index = 0; index < args.length; ++index) {
     if (args[index] === '--grep' && !!args[index + 1]) {
-      recordSnapshot(args[index + 1])
-      return
-    }
-    if (args[index].startsWith('--grep=')) {
-      recordSnapshot(args.replace('--grep=', ''))
+      await recordSnapshot(args[index + 1])
       return
     }
   }
@@ -43,9 +49,17 @@ const recordSnapshot = grepValue =>
     .filter(Boolean)
     .map(matchArray => matchArray[2])
 
-  for (const testName of testNames) {
-    recordSnapshot(testName)
+  await Promise.all(testNames.map(testName => recordSnapshot(testName)))
+}
+
+// eslint-disable-next-line no-void
+void (async () => {
+  try {
+    await recordTests()
+    await compressRecordings()
+    process.exit(0)
+  } catch (error) {
+    await deleteRecordings()
+    process.exit(error.code ?? 1)
   }
-})().catch(error => {
-  console.log(error)
-})
+})()

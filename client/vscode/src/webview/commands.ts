@@ -1,56 +1,80 @@
 import { Observable } from 'rxjs'
 import * as vscode from 'vscode'
 
-import { initializeSourcegraphSettings } from '../backend/sourcegraphSettings'
-import { ExtensionCoreAPI } from '../contract'
+import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 
-import { initializeSearchPanelWebview, initializeSearchSidebarWebview } from './initialize'
+import { initializeSourcegraphSettings } from '../backend/sourcegraphSettings'
+import { initializeCodeIntel } from '../code-intel/initialize'
+import { ExtensionCoreAPI } from '../contract'
+import { SourcegraphFileSystemProvider } from '../file-system/SourcegraphFileSystemProvider'
+import { SearchPatternType } from '../graphql-operations'
+
+import {
+    initializeHelpSidebarWebview,
+    initializeSearchPanelWebview,
+    initializeSearchSidebarWebview,
+} from './initialize'
+
+// Track current active webview panel to make sure only one panel exists at a time
+let currentSearchPanel: vscode.WebviewPanel | 'initializing' | undefined
+let searchSidebarWebviewView: vscode.WebviewView | 'initializing' | undefined
 
 export function registerWebviews({
     context,
     extensionCoreAPI,
     initializedPanelIDs,
     sourcegraphSettings,
+    fs,
+    instanceURL,
 }: {
     context: vscode.ExtensionContext
     extensionCoreAPI: ExtensionCoreAPI
     initializedPanelIDs: Observable<string>
     sourcegraphSettings: ReturnType<typeof initializeSourcegraphSettings>
+    fs: SourcegraphFileSystemProvider
+    instanceURL: string
 }): void {
-    // Track current active webview panel to make sure only one panel exists at a time
-    let currentActiveWebviewPanel: vscode.WebviewPanel | undefined
-    let searchSidebarWebviewView: vscode.WebviewView | undefined
-
     // TODO if remote files are open from previous session, we need
-    // to focus search sidebar to activate code intel (load extension host),
-    // and to do that we need to make sourcegraph:// file opening an activation event.
+    // to focus search sidebar to activate code intel (load extension host)
 
     // Open Sourcegraph search tab on `sourcegraph.search` command.
     context.subscriptions.push(
         vscode.commands.registerCommand('sourcegraph.search', async () => {
+            // If text selected, submit search for it. Capture selection first.
+            const activeEditor = vscode.window.activeTextEditor
+            const selection = activeEditor?.selection
+            const selectedQuery = activeEditor?.document.getText(selection)
+
             // Focus search sidebar in case this command was the activation event,
             // as opposed to visibiilty of sidebar.
             if (!searchSidebarWebviewView) {
                 focusSearchSidebar()
             }
 
-            if (currentActiveWebviewPanel) {
-                currentActiveWebviewPanel.reveal()
-            } else {
+            if (currentSearchPanel && currentSearchPanel !== 'initializing') {
+                currentSearchPanel.reveal()
+            } else if (!currentSearchPanel) {
                 sourcegraphSettings.refreshSettings()
 
-                const { webviewPanel } = await initializeSearchPanelWebview({
+                currentSearchPanel = 'initializing'
+
+                const { webviewPanel, searchPanelAPI } = await initializeSearchPanelWebview({
                     extensionUri: context.extensionUri,
                     extensionCoreAPI,
                     initializedPanelIDs,
                 })
 
-                currentActiveWebviewPanel = webviewPanel
+                currentSearchPanel = webviewPanel
 
                 webviewPanel.onDidChangeViewState(() => {
                     if (webviewPanel.active) {
                         extensionCoreAPI.emit({ type: 'search_panel_focused' })
                         focusSearchSidebar()
+                        searchPanelAPI.focusSearchBox().catch(() => {})
+                    }
+
+                    if (webviewPanel.visible) {
+                        searchPanelAPI.focusSearchBox().catch(() => {})
                     }
 
                     if (!webviewPanel.visible) {
@@ -60,12 +84,24 @@ export function registerWebviews({
                 })
 
                 webviewPanel.onDidDispose(() => {
-                    currentActiveWebviewPanel = undefined
+                    currentSearchPanel = undefined
                     // Ideally focus last used sidebar tab on search panel close. In lieu of that (for v1),
                     // just focus the file explorer if the search sidebar is currently focused.
-                    if (searchSidebarWebviewView?.visible) {
+                    if (searchSidebarWebviewView !== 'initializing' && searchSidebarWebviewView?.visible) {
                         focusFileExplorer()
                     }
+                    // Clear search result
+                    extensionCoreAPI.emit({ type: 'search_panel_disposed' })
+                })
+            }
+
+            if (selectedQuery) {
+                extensionCoreAPI.streamSearch(selectedQuery, {
+                    patternType: SearchPatternType.literal,
+                    caseSensitive: false,
+                    version: LATEST_VERSION,
+                    trace: undefined,
+                    sourcegraphURL: instanceURL,
                 })
             }
         })
@@ -77,7 +113,7 @@ export function registerWebviews({
             {
                 // This typically will be called only once since `retainContextWhenHidden` is set to `true`.
                 resolveWebviewView: (webviewView, _context, _token) => {
-                    initializeSearchSidebarWebview({
+                    const { searchSidebarAPI } = initializeSearchSidebarWebview({
                         extensionUri: context.extensionUri,
                         extensionCoreAPI,
                         webviewView,
@@ -85,6 +121,8 @@ export function registerWebviews({
                     searchSidebarWebviewView = webviewView
                     // Initialize search panel.
                     openSearchPanelCommand()
+
+                    initializeCodeIntel({ context, fs, searchSidebarAPI })
 
                     // Bring search panel back if it was previously closed on sidebar visibility change
                     webviewView.onDidChangeVisibility(() => {
@@ -96,6 +134,39 @@ export function registerWebviews({
             },
             { webviewOptions: { retainContextWhenHidden: true } }
         )
+    )
+
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider(
+            'sourcegraph.helpSidebar',
+            {
+                // This typically will be called only once since `retainContextWhenHidden` is set to `true`.
+                resolveWebviewView: (webviewView, _context, _token) => {
+                    initializeHelpSidebarWebview({
+                        extensionUri: context.extensionUri,
+                        extensionCoreAPI,
+                        webviewView,
+                    })
+                },
+            },
+            { webviewOptions: { retainContextWhenHidden: true } }
+        )
+    )
+
+    // Clone Remote Git Repos Locally using VS Code Git API
+    // https://github.com/microsoft/vscode/issues/48428
+    context.subscriptions.push(
+        vscode.commands.registerCommand('sourcegraph.gitClone', async () => {
+            const editor = vscode.window.activeTextEditor
+            if (!editor) {
+                throw new Error('No active editor')
+            }
+            const uri = editor.document.uri.path
+            const gitUrl = `https:/${uri.split('@')[0]}.git`
+            const vsCodeCloneUrl = `vscode://vscode.git/clone?url=${gitUrl}`
+            await vscode.env.openExternal(vscode.Uri.parse(vsCodeCloneUrl))
+            // vscode://vscode.git/clone?url=${gitUrl}
+        })
     )
 }
 
@@ -115,6 +186,12 @@ function focusSearchSidebar(): void {
             console.error(error)
         }
     )
+}
+
+export function focusSearchPanel(): void {
+    if (currentSearchPanel && currentSearchPanel !== 'initializing') {
+        currentSearchPanel.reveal()
+    }
 }
 
 function focusFileExplorer(): void {

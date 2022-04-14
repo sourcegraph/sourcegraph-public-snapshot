@@ -77,7 +77,6 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
     telemetryService,
     searchContextsEnabled,
     isSourcegraphDotCom,
-    location,
     fetchHighlightedFileLineRanges,
     authenticatedUser,
     showSearchContext,
@@ -199,7 +198,7 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
                             <PageHeader
                                 className="mt-2"
                                 path={[
-                                    { icon: MagnifyIcon, to: '/search' },
+                                    { icon: MagnifyIcon, to: '/search', ariaLabel: 'Code search' },
                                     { to: '/notebooks', text: 'Notebooks' },
                                     {
                                         text: (
@@ -283,7 +282,6 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
                                 telemetryService={telemetryService}
                                 searchContextsEnabled={searchContextsEnabled}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
-                                location={location}
                                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                 authenticatedUser={authenticatedUser}
                                 showSearchContext={showSearchContext}

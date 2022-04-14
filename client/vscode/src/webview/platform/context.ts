@@ -1,15 +1,20 @@
+import { createContext, useContext } from 'react'
+
 import * as Comlink from 'comlink'
 import { print } from 'graphql'
 import { BehaviorSubject, from, Observable } from 'rxjs'
 
 import { GraphQLResult } from '@sourcegraph/http-client'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import { TooltipController } from '@sourcegraph/wildcard'
 
 import { ExtensionCoreAPI } from '../../contract'
 
-import { vscodeTelemetryService } from './telemetryService'
+import { EventLogger } from './EventLogger'
+import { VsceTelemetryService } from './telemetryService'
 
 export interface VSCodePlatformContext
     extends Pick<
@@ -24,21 +29,25 @@ export interface VSCodePlatformContext
         | 'getStaticExtensions'
         | 'telemetryService'
         | 'clientApplication'
+        | 'forceUpdateTooltip'
     > {
     // Ensure telemetryService is non-nullable.
-    telemetryService: TelemetryService
+    telemetryService: VsceTelemetryService
     requestGraphQL: <R, V = object>(options: {
         request: string
         variables: V
         mightContainPrivateInfo: boolean
         overrideAccessToken?: string
+        overrideSourcegraphURL?: string
     }) => Observable<GraphQLResult<R>>
 }
 
 export function createPlatformContext(extensionCoreAPI: Comlink.Remote<ExtensionCoreAPI>): VSCodePlatformContext {
     const context: VSCodePlatformContext = {
-        requestGraphQL({ request, variables, overrideAccessToken }) {
-            return from(extensionCoreAPI.requestGraphQL(request, variables, overrideAccessToken))
+        requestGraphQL({ request, variables, overrideAccessToken, overrideSourcegraphURL }) {
+            return from(
+                extensionCoreAPI.requestGraphQL(request, variables, overrideAccessToken, overrideSourcegraphURL)
+            )
         },
         // TODO add true Apollo Client support for v2
         getGraphQLClient: () =>
@@ -49,12 +58,13 @@ export function createPlatformContext(extensionCoreAPI: Comlink.Remote<Extension
         settings: wrapRemoteObservable(extensionCoreAPI.observeSourcegraphSettings()),
         // TODO: implement GQL mutation, settings refresh (called by extensions, impl w/ ext. host).
         updateSettings: () => Promise.resolve(),
-        telemetryService: vscodeTelemetryService,
+        telemetryService: new EventLogger(extensionCoreAPI),
         sideloadedExtensionURL: new BehaviorSubject<string | null>(null),
         clientApplication: 'other', // TODO add 'vscode-extension' to `clientApplication`,
         getScriptURLForExtension: () => undefined,
-        // TODO showMessage
+        forceUpdateTooltip: () => TooltipController.forceUpdate(),
         // TODO showInputBox
+        // TODO showMessage
     }
 
     return context
@@ -64,5 +74,20 @@ export interface WebviewPageProps {
     extensionCoreAPI: Comlink.Remote<ExtensionCoreAPI>
     platformContext: VSCodePlatformContext
     theme: 'theme-dark' | 'theme-light'
+    authenticatedUser: AuthenticatedUser | null
+    settingsCascade: SettingsCascadeOrError
     instanceURL: string
+}
+
+// Webview page context. Used to pass to aliased components.
+export const WebviewPageContext = createContext<WebviewPageProps | undefined>(undefined)
+
+export function useWebviewPageContext(): WebviewPageProps {
+    const context = useContext(WebviewPageContext)
+
+    if (context === undefined) {
+        throw new Error('useWebviewPageContext must be used within a WebviewPageContextProvider')
+    }
+
+    return context
 }
