@@ -239,7 +239,7 @@ func getParallelTestCount(webParallelTestCount int) int {
 }
 
 func addBrowserExtensionIntegrationTests(parallelTestCount int) operations.Operation {
-	testCount := getParallelTestCount(parallelTestCount)
+	// testCount := getParallelTestCount(parallelTestCount)
 	return func(pipeline *bk.Pipeline) {
 		for _, browser := range browsers {
 			pipeline.AddStep(
@@ -249,14 +249,15 @@ func addBrowserExtensionIntegrationTests(parallelTestCount int) operations.Opera
 				bk.Env("BROWSER", browser),
 				bk.Env("LOG_BROWSER_CONSOLE", "true"),
 				bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
-				bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
-				bk.Env("PERCY_ON", "true"),
-				bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(testCount)),
+				// bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
+				// bk.Env("PERCY_ON", "true"),
+				// bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(testCount)),
 				bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 				bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
-				bk.Cmd("yarn run cover-browser-integration"),
-				bk.Cmd("yarn nyc report -r json"),
-				bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
+				bk.Cmd("yarn workspace @sourcegraph/browser -s run record-integration"),
+				// bk.Cmd("yarn run cover-browser-integration"),
+				// bk.Cmd("yarn nyc report -r json"),
+				// bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
 				bk.ArtifactPaths("./puppeteer/*.png"),
 			)
 		}
@@ -307,7 +308,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 	// Chunk web integration tests to save time via parallel execution.
 	chunkedTestFiles := getChunkedWebIntegrationFileNames(chunkSize)
 	chunkCount := len(chunkedTestFiles)
-	parallelTestCount := getParallelTestCount(chunkCount)
+	// parallelTestCount := getParallelTestCount(chunkCount)
 
 	addBrowserExtensionIntegrationTests(chunkCount)(pipeline)
 
@@ -322,7 +323,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 			bk.Env("PERCY_ON", "true"),
 			// If PERCY_PARALLEL_TOTAL is set, the API will wait for that many finalized builds to finalize the Percy build.
 			// https://docs.percy.io/docs/parallel-test-suites#how-it-works
-			bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(parallelTestCount)),
+			bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(len(chunkedTestFiles))),
 			bk.Cmd(fmt.Sprintf(`dev/ci/yarn-web-integration.sh "%s"`, chunkTestFiles)),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
