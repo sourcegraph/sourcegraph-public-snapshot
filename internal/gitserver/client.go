@@ -784,19 +784,21 @@ func (c *ClientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 		})
 	}
 
-	// Perform each batch request concurrently up to a maximum limit of 16 requests
+	// Perform each batch request concurrently up to a maximum limit of 32 requests
 	// in-flight at one time.
 	//
 	// This limit will be useless in practice most of the  time as we should only be
 	// making one request per shard and instances should _generally_ have fewer than
-	// 16 gitserver shards. This condition is really to catch unexpected bad behavior.
+	// 32 gitserver shards. This condition is really to catch unexpected bad behavior.
+	// At the time this limit was chosen, we have 20 gitserver shards on our Cloud
+	// environment, which holds a large proportion of GitHub repositories.
 	//
 	// This operation returns partial results in the case of a malformed or missing
 	// repository or a bad commit reference, but does not attempt to return partial
 	// results when an entire shard is down. Any of these operations failing will
 	// cause an error to be returned from the entire BatchLog function.
 
-	sem := semaphore.NewWeighted(int64(16))
+	sem := semaphore.NewWeighted(int64(32))
 	g, ctx := errgroup.WithContext(ctx)
 
 	for addr, repoCommits := range batches {
