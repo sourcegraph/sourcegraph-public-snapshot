@@ -80,12 +80,18 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
     initialStep = 'add-token',
 }) => {
     const labelId = 'addCredential'
+    const requiresUsername = externalServiceKind === ExternalServiceKind.BITBUCKETCLOUD
     const [credential, setCredential] = useState<string>('')
     const [sshPublicKey, setSSHPublicKey] = useState<string>()
+    const [username, setUsername] = useState<string>('')
     const [step, setStep] = useState<Step>(initialStep)
 
     const onChangeCredential = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setCredential(event.target.value)
+    }, [])
+
+    const onChangeUsername = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
+        setUsername(event.target.value)
     }, [])
 
     const [createBatchChangesCredential, { loading, error }] = useCreateBatchChangesCredential()
@@ -99,6 +105,7 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
                     variables: {
                         user: userID,
                         credential,
+                        username: requiresUsername ? username : null,
                         externalServiceKind,
                         externalServiceURL,
                     },
@@ -115,13 +122,15 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
             }
         },
         [
-            afterCreate,
+            createBatchChangesCredential,
             userID,
             credential,
+            requiresUsername,
+            username,
             externalServiceKind,
             externalServiceURL,
             requiresSSH,
-            createBatchChangesCredential,
+            afterCreate,
         ]
     )
 
@@ -165,6 +174,23 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
                         {error && <ErrorAlert error={error} />}
                         <Form onSubmit={onSubmit}>
                             <div className="form-group">
+                                {requiresUsername && (
+                                    <>
+                                        <label htmlFor="username">Username</label>
+                                        <input
+                                            id="username"
+                                            name="username"
+                                            type="text"
+                                            autoComplete="off"
+                                            className="form-control"
+                                            required={true}
+                                            spellCheck="false"
+                                            minLength={1}
+                                            value={username}
+                                            onChange={onChangeUsername}
+                                        />
+                                    </>
+                                )}
                                 <label htmlFor="token">Personal access token</label>
                                 <input
                                     id="token"

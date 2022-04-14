@@ -28,12 +28,14 @@ export const CREATE_BATCH_CHANGES_CREDENTIAL = gql`
     mutation CreateBatchChangesCredential(
         $user: ID
         $credential: String!
+        $username: String
         $externalServiceKind: ExternalServiceKind!
         $externalServiceURL: String!
     ) {
         createBatchChangesCredential(
             user: $user
             credential: $credential
+            username: $username
             externalServiceKind: $externalServiceKind
             externalServiceURL: $externalServiceURL
         ) {
