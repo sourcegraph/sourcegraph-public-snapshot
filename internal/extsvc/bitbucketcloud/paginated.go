@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-type ResultSet struct {
+type PaginatedResultSet struct {
 	client    *Client
 	mu        sync.Mutex
 	initial   *url.URL
@@ -17,15 +17,51 @@ type ResultSet struct {
 	fetch     func(context.Context, *http.Request) (*PageToken, []interface{}, error)
 }
 
-func newResultSet(c *Client, initial *url.URL, fetch func(context.Context, *http.Request) (*PageToken, []interface{}, error)) *ResultSet {
-	return &ResultSet{
+func newResultSet(c *Client, initial *url.URL, fetch func(context.Context, *http.Request) (*PageToken, []interface{}, error)) *PaginatedResultSet {
+	return &PaginatedResultSet{
 		client:  c,
 		initial: initial,
 		fetch:   fetch,
 	}
 }
 
-func (rs *ResultSet) WithPageLength(pageLen int) *ResultSet {
+// All walks the result set, returning all entries as a single slice.
+//
+// Note that this essentially consumes the result set.
+func (rs *PaginatedResultSet) All(ctx context.Context) ([]interface{}, error) {
+	rs.mu.Lock()
+	defer rs.mu.Unlock()
+
+	var nodes []interface{}
+	for {
+		node, err := rs.next(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if node == nil {
+			return nodes, nil
+		}
+		nodes = append(nodes, node)
+	}
+}
+
+// Next returns the next item in the result set, requesting the next page if
+// necessary.
+//
+// If nil, nil is returned, then there are no further results.
+func (rs *PaginatedResultSet) Next(ctx context.Context) (interface{}, error) {
+	rs.mu.Lock()
+	defer rs.mu.Unlock()
+
+	return rs.next(ctx)
+}
+
+// WithPageLength configures the size of each page that is requested by the
+// result set.
+//
+// This must be invoked before All or Next are first called, otherwise you may
+// receive inconsistent results.
+func (rs *PaginatedResultSet) WithPageLength(pageLen int) *PaginatedResultSet {
 	initial := *rs.initial
 	values := initial.Query()
 	values.Set("pagelen", strconv.Itoa(pageLen))
@@ -34,7 +70,7 @@ func (rs *ResultSet) WithPageLength(pageLen int) *ResultSet {
 	return newResultSet(rs.client, &initial, rs.fetch)
 }
 
-func (rs *ResultSet) reqPage(ctx context.Context) error {
+func (rs *PaginatedResultSet) reqPage(ctx context.Context) error {
 	req, err := rs.nextPageRequest()
 	if err != nil {
 		return err
@@ -55,7 +91,7 @@ func (rs *ResultSet) reqPage(ctx context.Context) error {
 	return nil
 }
 
-func (rs *ResultSet) nextPageRequest() (*http.Request, error) {
+func (rs *PaginatedResultSet) nextPageRequest() (*http.Request, error) {
 	if rs.pageToken != nil {
 		if rs.pageToken.Next == "" {
 			// No further pages, so do nothing, successfully.
@@ -68,14 +104,7 @@ func (rs *ResultSet) nextPageRequest() (*http.Request, error) {
 	return http.NewRequest("GET", rs.initial.String(), nil)
 }
 
-func (rs *ResultSet) Next(ctx context.Context) (interface{}, error) {
-	rs.mu.Lock()
-	defer rs.mu.Unlock()
-
-	return rs.next(ctx)
-}
-
-func (rs *ResultSet) next(ctx context.Context) (interface{}, error) {
+func (rs *PaginatedResultSet) next(ctx context.Context) (interface{}, error) {
 	// Check if we need to request the next page.
 	if len(rs.nodes) == 0 {
 		if err := rs.reqPage(ctx); err != nil {
@@ -92,53 +121,4 @@ func (rs *ResultSet) next(ctx context.Context) (interface{}, error) {
 	node := rs.nodes[0]
 	rs.nodes = rs.nodes[1:]
 	return node, nil
-}
-
-// Page returns the current page, or requests the next page if the current page
-// is empty.
-//
-// nil, nil is returned if there are no more pages.
-func (rs *ResultSet) Page(ctx context.Context) ([]interface{}, error) {
-	rs.mu.Lock()
-	defer rs.mu.Unlock()
-
-	if len(rs.nodes) > 0 {
-		nodes := rs.nodes
-		rs.nodes = []interface{}{}
-
-		return nodes, nil
-	}
-
-	if err := rs.reqPage(ctx); err != nil {
-		return nil, err
-	}
-
-	if len(rs.nodes) == 0 {
-		return nil, nil
-	}
-
-	nodes := rs.nodes
-	rs.nodes = []interface{}{}
-
-	return nodes, nil
-}
-
-// All walks the result set, returning all entries as a single slice.
-//
-// Note that this essentially consumes the result set.
-func (rs *ResultSet) All(ctx context.Context) ([]interface{}, error) {
-	rs.mu.Lock()
-	defer rs.mu.Unlock()
-
-	var nodes []interface{}
-	for {
-		node, err := rs.next(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if node == nil {
-			return nodes, nil
-		}
-		nodes = append(nodes, node)
-	}
 }
