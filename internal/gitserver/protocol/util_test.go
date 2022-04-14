@@ -9,6 +9,9 @@ import (
 func TestNormalizeRepo(t *testing.T) {
 	cases := map[api.RepoName]api.RepoName{
 		"FooBar.git":               "FooBar",
+		"foobar":                   "foobar",
+		"FooBar":                   "FooBar",
+		"foo/bar":                  "foo/bar",
 		"gitHub.Com/FooBar.git":    "github.com/foobar",
 		"myServer.Com/FooBar.git":  "myserver.com/FooBar",
 		"myServer.Com/FooBar/.git": "myserver.com/FooBar",
