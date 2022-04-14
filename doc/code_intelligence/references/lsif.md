@@ -3,34 +3,27 @@
 
 # LSIF Typed protocol reference
 
-
 ### Descriptor
-
-
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-|  **name** | string | 
-|  **disambiguator** | string | 
-|  **suffix** | Suffix | 
-
-
+|  **name** | string |
+|  **disambiguator** | string |
+|  **suffix** | Suffix |
 
 #### Suffix
 
-
-
 | Number | Name | Description |
 | ------ | ---- | ----------- |
-| 0 | UnspecifiedSuffix | 
-| 1 | Package | 
-| 2 | Type | 
-| 3 | Term | 
-| 4 | Method | 
-| 5 | TypeParameter | 
-| 6 | Parameter | 
+| 0 | UnspecifiedSuffix |
+| 1 | Package |
+| 2 | Type |
+| 3 | Term |
+| 4 | Method |
+| 5 | TypeParameter |
+| 6 | Parameter |
 | 7 | Meta | Can be used for any purpose.
-| 8 | Local | 
+| 8 | Local |
 ### Diagnostic
 
 Represents a diagnostic, such as a compiler error or warning, which should be
@@ -42,11 +35,7 @@ reported for a document.
 |  **code** | string | Code of this diagnostic, which might appear in the user interface.
 |  **message** | string | Message of this diagnostic.
 |  **source** | string | Human-readable string describing the source of this diagnostic, e.g. 'typescript' or 'super lint'.
-| repeated **tags** | DiagnosticTag | 
-
-
-
-
+| repeated **tags** | DiagnosticTag |
 
 ### Document
 
@@ -57,8 +46,6 @@ Document defines the metadata about a source file on disk.
 |  **relative_path** | string | (Required) Path to the text document relative to the directory supplied in the associated `Metadata.project_root`. Not URI-encoded. This value should not begin with a directory separator.
 | repeated **occurrences** | Occurrence | Occurrences that appear in this file.
 | repeated **symbols** | SymbolInformation | Symbols that are defined within this document.
-
-
 
 ### Index
 
@@ -75,11 +62,7 @@ once in the stream. Other field values may appear in any order.
 | repeated **documents** | Document | Documents that belong to this index.
 | repeated **external_symbols** | SymbolInformation | (optional) Symbols that are referenced from this index but are defined in an external package (a separate `Index` message).  Leave this field empty if you assume the external package will get indexed separately. If the external package won't get indexed for some reason then you can use this field to provide hover documentation for those external symbols.
 
-
-
 ### Metadata
-
-
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
@@ -87,9 +70,6 @@ once in the stream. Other field values may appear in any order.
 |  **tool_info** | ToolInfo | Information about the tool that produced this index.
 |  **project_root** | string | URI-encoded absolute path to the root directory of this index. All documents in this index must appear in a subdirectory of this root directory.
 |  **text_document_encoding** | TextEncoding | Text encoding of the source files on disk that are referenced from `Document.relative_path`.
-
-
-
 
 ### Occurrence
 
@@ -104,6 +84,7 @@ information.
 | repeated **override_documentation** | string | (optional) Markdown-formatted documentation for this specific range.  If empty, the `Symbol.documentation` field is used instead. One example where this field might be useful is when the symbol represents a generic function (with abstract type parameters such as `List<T>`) and at this occurrence we know the exact values (such as `List<String>`).
 |  **syntax_kind** | SyntaxKind | (optional) What syntax highlighting class should be used for this range?
 | repeated **diagnostics** | Diagnostic | Diagnostics that have been reported for this specific range.
+| **owner** | string | (optional) The symbol name that this (reference) occurrence is scoped in e.g. if a function `foo` is called in `bar`, then that occurrence of the function call for `foo` will have its this field set to the full symbol name for `bar`.
 
 Additional notes on **range**:
 
@@ -126,36 +107,22 @@ instead.  The `repeated int32` encoding is admittedly more embarrassing to
 work with in some programming languages but we hope the performance
 improvements make up for it.
 
-
-
-
-
-
 ### Package
-
-
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-|  **manager** | string | 
-|  **name** | string | 
-|  **version** | string | 
-
-
+|  **manager** | string |
+|  **name** | string |
+|  **version** | string |
 
 ### Relationship
 
-
-
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-|  **symbol** | string | 
-|  **is_reference** | bool | When resolving "Find references", this field documents what other symbols should be included together with this symbol. For example, consider the following TypeScript code that defines two symbols `Animal#sound()` and `Dog#sound()`: ```ts interface Animal {           ^^^^^^ definition Animal#   sound(): string   ^^^^^ definition Animal#sound() } class Dog implements Animal {       ^^^ definition Dog#, implementation_symbols = Animal#   public sound(): string { return "woof" }          ^^^^^ definition Dog#sound(), references_symbols = Animal#sound(), implementation_symbols = Animal#sound() } const animal: Animal = new Dog()               ^^^^^^ reference Animal# console.log(animal.sound())                    ^^^^^ reference Animal#sound() ``` Doing "Find references" on the symbol `Animal#sound()` should return references to the `Dog#sound()` method as well. Vice-versa, doing "Find references" on the `Dog#sound()` method should include references to the `Animal#sound()` method as well.
+|  **symbol** | string |
+|  **is_reference** | bool | When resolving "Find references", this field documents what other symbols should be included together with this symbol. For example, consider the following TypeScript code that defines two symbols `Animal#sound()` and `Dog#sound()`: ```ts interface Animal {           ^^^^^^ definition Animal#   sound(): string   ^^^^^ definition Animal#sound() } class Dog implements Animal {       ^^^ definition Dog#, implementation_symbols = Animal#   public sound(): string { return "woof" }          ^^^^^ definition Dog#sound(), references_symbols = Animal#sound(), implementation_symbols = Animal#sound() } const animal: Animal = new Dog()               ^^^^^^ reference Animal# console.log(animal.sound())                    ^^^^^ reference Animal#sound()``` Doing "Find references" on the symbol `Animal#sound()` should return references to the `Dog#sound()` method as well. Vice-versa, doing "Find references" on the `Dog#sound()` method should include references to the `Animal#sound()` method as well.
 |  **is_implementation** | bool | Similar to `references_symbols` but for "Go to implementation". It's common for the `implementation_symbols` and `references_symbols` fields have the same values but that's not always the case. In the TypeScript example above, observe that `implementation_symbols` has the value `"Animal#"` for the "Dog#" symbol while `references_symbols` is empty. When requesting "Find references" on the "Animal#" symbol we don't want to include references to "Dog#" even if "Go to implementation" on the "Animal#" symbol should navigate to the "Dog#" symbol.
 |  **is_type_definition** | bool | Similar to `references_symbols` but for "Go to type definition".
-
-
-
 
 ### Symbol
 
@@ -165,6 +132,7 @@ the docstring.
 
 Symbol has a standardized string representation, which can be used
 interchangeably with `Symbol`. The syntax for Symbol is the following:
+
 ```
   <symbol>               ::= <scheme> ' ' <package> ' ' { <descriptor> } | 'local ' <local-id>
   <package>              ::= <manager> ' ' <package-name> ' ' <version>
@@ -191,11 +159,9 @@ interchangeably with `Symbol`. The syntax for Symbol is the following:
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-|  **scheme** | string | 
-|  **package** | Package | 
-| repeated **descriptors** | Descriptor | 
-
-
+|  **scheme** | string |
+|  **package** | Package |
+| repeated **descriptors** | Descriptor |
 
 ### SymbolInformation
 
@@ -208,17 +174,10 @@ docstring or what package it's defined it.
 | repeated **documentation** | string | (optional, but strongly recommended) The markdown-formatted documentation for this symbol. This field is repeated to allow different kinds of documentation.  For example, it's nice to include both the signature of a method (parameters and return type) along with the accompanying docstring.
 | repeated **relationships** | Relationship | (optional) Relationships to other symbols (e.g., implements, type definition).
 
-
-
 ### ToolInfo
-
-
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 |  **name** | string | Name of the indexer that produced this index.
 |  **version** | string | Version of the indexer that produced this index.
 | repeated **arguments** | string | Command-line arguments that were used to invoke this indexer.
-
-
-
