@@ -71,38 +71,6 @@ func newTestClient(t testing.TB) (*Client, func()) {
 	}
 }
 
-// NewTestClient returns a bitbucketcloud.Client that records its interactions
-// to testdata/vcr/.
-func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
-	t.Helper()
-
-	cassette := filepath.Join("testdata/vcr/", normalize(name))
-	rec, err := httptestutil.NewRecorder(cassette, update)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	hc, err := httpcli.NewFactory(nil, httptestutil.NewRecorderOpt(rec)).Doer()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	cli, err := NewClient("urn", &schema.BitbucketCloudConnection{
-		ApiURL:      "https://api.bitbucket.org",
-		Username:    bbtest.GetenvTestBitbucketCloudUsername(),
-		AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
-	}, hc)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return cli, func() {
-		if err := rec.Stop(); err != nil {
-			t.Errorf("failed to update test data: %s", err)
-		}
-	}
-}
-
 var normalizer = lazyregexp.New("[^A-Za-z0-9-]+")
 
 func normalize(path string) string {
