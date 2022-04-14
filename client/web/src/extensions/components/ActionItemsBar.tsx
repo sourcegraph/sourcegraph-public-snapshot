@@ -321,10 +321,6 @@ export const ActionItemsToggle: React.FunctionComponent<ActionItemsToggleProps> 
 
     return barInPage ? (
         <>
-            {/*
-                To fix Rule: "list" (<ul> and <ol> must only directly contain <li>, <script> or <template> elements)
-                Used li element to satisfy the accessibility criteria
-             */}
             <li className={styles.dividerVertical} />
             <li className={classNames('nav-item mr-2', className)}>
                 <div className={classNames(styles.toggleContainer, isOpen && styles.toggleContainerOpen)}>
@@ -349,7 +345,5 @@ export const ActionItemsToggle: React.FunctionComponent<ActionItemsToggleProps> 
 }
 
 const ActionItemsDivider: React.FunctionComponent<{ className?: string }> = ({ className }) => (
-    // To fix Rule: "listitem" (<li> elements must be contained in a <ul> or <ol>)
-    // Used div element to satisfy the accessibility criteria
     <div className={classNames('position-relative rounded-sm d-flex', styles.dividerHorizontal, className)} />
 )
