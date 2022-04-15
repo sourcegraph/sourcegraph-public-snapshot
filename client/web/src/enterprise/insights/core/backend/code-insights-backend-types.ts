@@ -149,3 +149,8 @@ export interface UiFeaturesConfig {
     licensed: boolean
     insightsLimit: number | null
 }
+
+export interface HasInsightsInput {
+    first: number
+    isFrozen?: boolean
+}
