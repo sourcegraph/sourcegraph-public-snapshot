@@ -15,7 +15,6 @@ export interface VSCodeTestDriver {
 }
 
 export async function launchVsCode(vscodeExecutablePath: string): Promise<VSCodeTestDriver> {
-    console.log('calling launch vscode')
     const extensionDevelopmentPath = path.join(__dirname, '..')
 
     const userDataDirectory = mkdtempSync(path.join(tmpdir(), 'vsce'))
