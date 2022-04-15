@@ -24,7 +24,10 @@ const panels = [
         description:
             'Use slash commands to choose from the available block Notebook block types. Markdown, file, symbol, and search query blocks are supported.',
         videoSources: [
-            { type: 'mp4', src: 'https://storage.googleapis.com/sourcegraph-assets/notebooks/command_palette.mp4' },
+            {
+                type: 'mp4',
+                src: 'https://storage.googleapis.com/sourcegraph-assets/notebooks/notebooks_command_palette.mp4',
+            },
         ],
     },
     {
@@ -32,15 +35,10 @@ const panels = [
         description:
             'Symbol blocks follow a chosen symbol anywhere in a file, even as it changes. Create symbol blocks to keep your docs from getting stale.',
         videoSources: [
-            { type: 'mp4', src: 'https://storage.googleapis.com/sourcegraph-assets/notebooks/symbol_block.mp4' },
-        ],
-    },
-    {
-        title: 'Templatize Notebooks for your team',
-        description:
-            'Duplicate helpful notebooks with the copy feature. Easily create onboarding templates and duplicate them for new teammates.',
-        videoSources: [
-            { type: 'mp4', src: 'https://storage.googleapis.com/sourcegraph-assets/batch-changes/how-it-works.mp4' },
+            {
+                type: 'mp4',
+                src: 'https://storage.googleapis.com/sourcegraph-assets/notebooks/notebooks_symbol_block.mp4',
+            },
         ],
     },
     {
@@ -48,7 +46,7 @@ const panels = [
         description:
             "Notebooks are private by default, but you can share them with your team (if you're using Sourcegraph organizations) or with your company.",
         videoSources: [
-            { type: 'mp4', src: 'https://storage.googleapis.com/sourcegraph-assets/notebooks/notebook_sharing.mp4' },
+            { type: 'mp4', src: 'https://storage.googleapis.com/sourcegraph-assets/notebooks/notebooks_sharing.mp4' },
         ],
     },
 ]
