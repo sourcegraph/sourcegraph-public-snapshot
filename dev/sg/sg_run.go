@@ -8,30 +8,46 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-var (
-	runFlagSet              = flag.NewFlagSet("sg run", flag.ExitOnError)
-	runFlagAddToMacFirewall = runFlagSet.Bool("add-to-macos-firewall", true, "OSX only; Add required exceptions to the firewall")
-	runCommand              = &ffcli.Command{
-		Name:       "run",
-		ShortUsage: "sg run <command>...",
-		ShortHelp:  "Run the given commands.",
-		LongHelp:   constructRunCmdLongHelp(),
-		FlagSet:    runFlagSet,
-		Exec:       runExec,
-	}
-)
+func init() {
+	postInitHooks = append(postInitHooks, func(cmd *cli.Context) {
+		// Create 'sg run' help text after flag (and config) initialization
+		runCommand.Description = constructRunCmdLongHelp()
+	})
+}
+
+var runCommand = &cli.Command{
+	Name:      "run",
+	Usage:     "Run the given commands",
+	ArgsUsage: "[command]",
+	Category:  CategoryDev,
+	Flags: []cli.Flag{
+		addToMacOSFirewallFlag,
+	},
+	Action: execAdapter(runExec),
+	BashComplete: completeOptions(func() (options []string) {
+		config, _ := sgconf.Get(configFile, configOverwriteFile)
+		if config == nil {
+			return
+		}
+		for name := range config.Commands {
+			options = append(options, name)
+		}
+		return
+	}),
+}
 
 func runExec(ctx context.Context, args []string) error {
-	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
-	if !ok {
-		stdout.Out.WriteLine(errLine)
+	config, err := sgconf.Get(configFile, configOverwriteFile)
+	if err != nil {
+		writeWarningLinef(err.Error())
 		os.Exit(1)
 	}
 
@@ -42,7 +58,7 @@ func runExec(ctx context.Context, args []string) error {
 
 	var cmds []run.Command
 	for _, arg := range args {
-		cmd, ok := globalConf.Commands[arg]
+		cmd, ok := config.Commands[arg]
 		if !ok {
 			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: command %q not found :(", arg))
 			return flag.ErrHelp
@@ -50,29 +66,30 @@ func runExec(ctx context.Context, args []string) error {
 		cmds = append(cmds, cmd)
 	}
 
-	return run.Commands(ctx, globalConf.Env, *runFlagAddToMacFirewall, *verboseFlag, cmds...)
+	return run.Commands(ctx, config.Env, addToMacOSFirewall, verbose, cmds...)
 }
+
 func constructRunCmdLongHelp() string {
 	var out strings.Builder
 
 	fmt.Fprintf(&out, "  Runs the given command. If given a whitespace-separated list of commands it runs the set of commands.\n")
 
-	// Attempt to parse config to list available commands, but don't fail on
-	// error, because we should never error when the user wants --help output.
-	cfg := parseConfAndReset()
-
-	if cfg != nil {
-		fmt.Fprintf(&out, "\n")
-		fmt.Fprintf(&out, "AVAILABLE COMMANDS IN %s%s%s\n", output.StyleBold, *configFlag, output.StyleReset)
-
-		var names []string
-		for name := range cfg.Commands {
-			names = append(names, name)
-		}
-		sort.Strings(names)
-		fmt.Fprint(&out, strings.Join(names, "\n"))
-
+	config, err := sgconf.Get(configFile, configOverwriteFile)
+	if err != nil {
+		out.Write([]byte("\n"))
+		output.NewOutput(&out, output.OutputOpts{}).WriteLine(newWarningLinef(err.Error()))
+		return out.String()
 	}
+
+	fmt.Fprintf(&out, "\n")
+	fmt.Fprintf(&out, "AVAILABLE COMMANDS IN %s%s%s:\n", output.StyleBold, configFile, output.StyleReset)
+
+	var names []string
+	for name := range config.Commands {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	fmt.Fprint(&out, strings.Join(names, "\n"))
 
 	return out.String()
 }

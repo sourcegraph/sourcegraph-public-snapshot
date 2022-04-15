@@ -21,7 +21,7 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "eslint": "eslint 'src/*.[jt]s?(x)'",
+    "lint:js": "eslint 'src/*.[jt]s?(x)'",
     "docs": "typedoc",
     "prepublishOnly": "yarn run eslint && yarn run docs"
   },

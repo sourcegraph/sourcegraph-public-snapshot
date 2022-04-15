@@ -40,7 +40,7 @@ export interface SearchSidebarProps
 
     /**
      * Not yet implemented in the VS Code extension (blocked on Apollo Client integration).
-     * */
+     */
     getRevisions?: (revisionsProps: Omit<RevisionsProps, 'query'>) => (query: string) => JSX.Element
 
     /**

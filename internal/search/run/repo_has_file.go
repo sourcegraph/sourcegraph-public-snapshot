@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
@@ -18,7 +19,7 @@ import (
 
 var MockReposContainingPath func() ([]*result.FileMatch, error)
 
-func (s *RepoSearch) reposContainingPath(ctx context.Context, repos []*search.RepositoryRevisions, pattern string) ([]*result.FileMatch, error) {
+func (s *RepoSearch) reposContainingPath(ctx context.Context, clients job.RuntimeClients, repos []*search.RepositoryRevisions, pattern string) ([]*result.FileMatch, error) {
 	if MockReposContainingPath != nil {
 		return MockReposContainingPath()
 	}
@@ -45,15 +46,13 @@ func (s *RepoSearch) reposContainingPath(ctx context.Context, repos []*search.Re
 		RepoOptions:     s.RepoOptions,
 		Features:        s.Features,
 		Mode:            s.Mode,
-		Zoekt:           s.Zoekt,
-		SearcherURLs:    s.SearcherURLs,
 		UseFullDeadline: true,
 	}
 
 	indexed, unindexed, err := zoektutil.PartitionRepos(
 		ctx,
 		newArgs.Repos,
-		newArgs.Zoekt,
+		clients.Zoekt,
 		search.TextRequest,
 		newArgs.PatternInfo.Index,
 		query.ContainsRefGlobs(newArgs.Query),
@@ -63,7 +62,6 @@ func (s *RepoSearch) reposContainingPath(ctx context.Context, repos []*search.Re
 	}
 
 	searcherArgs := &search.SearcherParameters{
-		SearcherURLs:    newArgs.SearcherURLs,
 		PatternInfo:     newArgs.PatternInfo,
 		UseFullDeadline: newArgs.UseFullDeadline,
 	}
@@ -99,7 +97,6 @@ func (s *RepoSearch) reposContainingPath(ctx context.Context, repos []*search.Re
 			Typ:            typ,
 			FileMatchLimit: newArgs.PatternInfo.FileMatchLimit,
 			Select:         newArgs.PatternInfo.Select,
-			Zoekt:          newArgs.Zoekt,
 		}
 
 		zoektJob := &zoektutil.ZoektRepoSubsetSearch{
@@ -108,13 +105,12 @@ func (s *RepoSearch) reposContainingPath(ctx context.Context, repos []*search.Re
 			Typ:            search.TextRequest,
 			FileMatchLimit: zoektArgs.FileMatchLimit,
 			Select:         zoektArgs.Select,
-			Zoekt:          zoektArgs.Zoekt,
 			Since:          nil,
 		}
 
 		// Run literal and regexp searches on indexed repositories.
 		g.Go(func() error {
-			_, err := zoektJob.Run(ctx, nil, agg)
+			_, err := zoektJob.Run(ctx, clients, agg)
 			return err
 		})
 	}
@@ -125,11 +121,10 @@ func (s *RepoSearch) reposContainingPath(ctx context.Context, repos []*search.Re
 			PatternInfo:     searcherArgs.PatternInfo,
 			Repos:           unindexed,
 			Indexed:         false,
-			SearcherURLs:    searcherArgs.SearcherURLs,
 			UseFullDeadline: searcherArgs.UseFullDeadline,
 		}
 
-		_, err := searcherJob.Run(ctx, nil, agg)
+		_, err := searcherJob.Run(ctx, clients, agg)
 		return err
 	})
 
@@ -148,13 +143,13 @@ func (s *RepoSearch) reposContainingPath(ctx context.Context, repos []*search.Re
 
 // reposToAdd determines which repositories should be included in the result set based on whether they fit in the subset
 // of repostiories specified in the query's `repohasfile` and `-repohasfile` fields if they exist.
-func (s *RepoSearch) reposToAdd(ctx context.Context, repos []*search.RepositoryRevisions) ([]*search.RepositoryRevisions, error) {
+func (s *RepoSearch) reposToAdd(ctx context.Context, clients job.RuntimeClients, repos []*search.RepositoryRevisions) ([]*search.RepositoryRevisions, error) {
 	// matchCounts will contain the count of repohasfile patterns that matched.
 	// For negations, we will explicitly set this to -1 if it matches.
 	matchCounts := make(map[api.RepoID]int)
 	if len(s.PatternInfo.FilePatternsReposMustInclude) > 0 {
 		for _, pattern := range s.PatternInfo.FilePatternsReposMustInclude {
-			matches, err := s.reposContainingPath(ctx, repos, pattern)
+			matches, err := s.reposContainingPath(ctx, clients, repos, pattern)
 			if err != nil {
 				return nil, err
 			}
@@ -178,7 +173,7 @@ func (s *RepoSearch) reposToAdd(ctx context.Context, repos []*search.RepositoryR
 
 	if len(s.PatternInfo.FilePatternsReposMustExclude) > 0 {
 		for _, pattern := range s.PatternInfo.FilePatternsReposMustExclude {
-			matches, err := s.reposContainingPath(ctx, repos, pattern)
+			matches, err := s.reposContainingPath(ctx, clients, repos, pattern)
 			if err != nil {
 				return nil, err
 			}

@@ -13,14 +13,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import {
-    FeedbackBadge,
-    LoadingSpinner,
-    PageHeader,
-    useEventObservable,
-    useObservable,
-    Alert,
-} from '@sourcegraph/wildcard'
+import { LoadingSpinner, PageHeader, useEventObservable, useObservable, Alert } from '@sourcegraph/wildcard'
 
 import { Block } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -84,7 +77,6 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
     telemetryService,
     searchContextsEnabled,
     isSourcegraphDotCom,
-    location,
     fetchHighlightedFileLineRanges,
     authenticatedUser,
     showSearchContext,
@@ -204,12 +196,9 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
                     {isNotebookLoaded(notebookOrError) && (
                         <>
                             <PageHeader
-                                className="mt-3"
-                                annotation={
-                                    <FeedbackBadge status="beta" feedback={{ mailto: 'support@sourcegraph.com' }} />
-                                }
+                                className="mt-2"
                                 path={[
-                                    { icon: MagnifyIcon, to: '/search' },
+                                    { icon: MagnifyIcon, to: '/search', ariaLabel: 'Code search' },
                                     { to: '/notebooks', text: 'Notebooks' },
                                     {
                                         text: (
@@ -293,7 +282,6 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
                                 telemetryService={telemetryService}
                                 searchContextsEnabled={searchContextsEnabled}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
-                                location={location}
                                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                 authenticatedUser={authenticatedUser}
                                 showSearchContext={showSearchContext}

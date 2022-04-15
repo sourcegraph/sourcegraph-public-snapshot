@@ -124,11 +124,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                             <span className="tablist-wrapper--tab-label">Symbols</span>
                         </Tab>
                     </TabList>
-                    <div
-                        aria-hidden={true}
-                        className={classNames('flex w-100 overflow-auto explorer', styles.tabpanels)}
-                        tabIndex={-1}
-                    >
+                    <div className={classNames('flex w-100 overflow-auto explorer', styles.tabpanels)} tabIndex={-1}>
                         <TabPanels>
                             <TabPanel>
                                 <Tree

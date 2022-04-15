@@ -248,18 +248,12 @@ abc.txt
 				t.Skip("skipping comby test when not on CI")
 			}
 
-			// CI can be very busy, so give lots of time to fetchTimeout.
-			fetchTimeout := 500 * time.Millisecond
-			if deadline, ok := t.Deadline(); ok {
-				fetchTimeout = time.Until(deadline) / 2
-			}
-
 			req := protocol.Request{
 				Repo:         "foo",
 				URL:          "u",
 				Commit:       "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 				PatternInfo:  test.arg,
-				FetchTimeout: fetchTimeout.String(),
+				FetchTimeout: fetchTimeoutForCI(t),
 			}
 			m, err := doSearch(ts.URL, &req)
 			if err != nil {
@@ -458,9 +452,17 @@ func newStore(t *testing.T, files map[string]struct {
 	body string
 	typ  fileType
 }) *search.Store {
-	writeTar := func(w io.Writer) error {
+	writeTar := func(w io.Writer, paths []string) error {
+		if paths == nil {
+			for name := range files {
+				paths = append(paths, name)
+			}
+			sort.Strings(paths)
+		}
+
 		tarW := tar.NewWriter(w)
-		for name, file := range files {
+		for _, name := range paths {
+			file := files[name]
 			var hdr *tar.Header
 			switch file.typ {
 			case typeFile:
@@ -501,13 +503,30 @@ func newStore(t *testing.T, files map[string]struct {
 		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 			r, w := io.Pipe()
 			go func() {
-				err := writeTar(w)
+				err := writeTar(w, nil)
+				w.CloseWithError(err)
+			}()
+			return r, nil
+		},
+		FetchTarPaths: func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
+			r, w := io.Pipe()
+			go func() {
+				err := writeTar(w, paths)
 				w.CloseWithError(err)
 			}()
 			return r, nil
 		},
 		Path: t.TempDir(),
 	}
+}
+
+// fetchTimeoutForCI gives a large timeout for CI. CI can be very busy, so we
+// give a large timeout instead of giving bad signal on PRs.
+func fetchTimeoutForCI(t *testing.T) string {
+	if deadline, ok := t.Deadline(); ok {
+		return (time.Until(deadline) / 2).String()
+	}
+	return (500 * time.Millisecond).String()
 }
 
 func toString(m []protocol.FileMatch) string {

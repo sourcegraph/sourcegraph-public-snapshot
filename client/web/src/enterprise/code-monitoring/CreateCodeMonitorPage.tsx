@@ -73,7 +73,10 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<CreateCodeMoni
         <div className="container col-8">
             <PageTitle title="Create new code monitor" />
             <PageHeader
-                path={[{ icon: CodeMonitoringLogo, to: '/code-monitoring' }, { text: 'Create code monitor' }]}
+                path={[
+                    { icon: CodeMonitoringLogo, to: '/code-monitoring', ariaLabel: 'Code monitoring logo' },
+                    { text: 'Create code monitor' },
+                ]}
                 description={
                     <>
                         Code monitors watch your code for specific triggers and run actions in response.{' '}

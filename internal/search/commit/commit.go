@@ -17,7 +17,7 @@ import (
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -35,26 +35,25 @@ type CommitSearch struct {
 	Limit                int
 	CodeMonitorID        *int64
 	IncludeModifiedFiles bool
-	Gitserver            GitserverClient `json:"-"`
 
 	// CodeMonitorSearchWrapper, if set, will wrap the commit search with extra logic specific to code monitors.
 	CodeMonitorSearchWrapper CodeMonitorHook `json:"-"`
 }
 
 type DoSearchFunc func(*gitprotocol.SearchRequest) error
-type CodeMonitorHook func(context.Context, database.DB, GitserverClient, *gitprotocol.SearchRequest, DoSearchFunc) error
+type CodeMonitorHook func(context.Context, database.DB, GitserverClient, *gitprotocol.SearchRequest, api.RepoID, DoSearchFunc) error
 
 type GitserverClient interface {
 	Search(_ context.Context, _ *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error)
 	ResolveRevisions(context.Context, api.RepoName, []gitprotocol.RevisionSpecifier) ([]string, error)
 }
 
-func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx, stream, finish := jobutil.StartSpan(ctx, stream, j)
+func (j *CommitSearch) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+	tr, ctx, stream, finish := job.StartSpan(ctx, stream, j)
 	defer func() { finish(alert, err) }()
 	tr.TagFields(trace.LazyFields(j.Tags))
 
-	if err := j.ExpandUsernames(ctx, db); err != nil {
+	if err := j.ExpandUsernames(ctx, clients.DB); err != nil {
 		return nil, err
 	}
 
@@ -69,7 +68,7 @@ func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming
 	}
 
 	var repoRevs []*search.RepositoryRevisions
-	repos := searchrepos.Resolver{DB: db, Opts: j.RepoOpts}
+	repos := searchrepos.Resolver{DB: clients.DB, Opts: j.RepoOpts}
 	err = repos.Paginate(ctx, &opts, func(page *searchrepos.Resolved) error {
 		if repoRevs = page.RepoRevs; page.Next != nil {
 			return newReposLimitError(opts.Limit, j.HasTimeFilter, resultType)
@@ -109,7 +108,7 @@ func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming
 		}
 
 		doSearch := func(args *gitprotocol.SearchRequest) error {
-			limitHit, err := j.Gitserver.Search(ctx, args, onMatches)
+			limitHit, err := clients.Gitserver.Search(ctx, args, onMatches)
 			stream.Send(streaming.SearchEvent{
 				Stats: streaming.Stats{
 					IsLimitHit: limitHit,
@@ -120,7 +119,7 @@ func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming
 
 		bounded.Go(func() error {
 			if j.CodeMonitorSearchWrapper != nil {
-				return j.CodeMonitorSearchWrapper(ctx, db, j.Gitserver, args, doSearch)
+				return j.CodeMonitorSearchWrapper(ctx, clients.DB, clients.Gitserver, args, repoRev.Repo.ID, doSearch)
 			}
 			return doSearch(args)
 		})

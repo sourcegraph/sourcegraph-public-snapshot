@@ -1,11 +1,12 @@
 import React from 'react'
 
 import classNames from 'classnames'
+import kebabCase from 'lodash/kebabCase'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import { useRouteMatch } from 'react-router-dom'
 
-import { AnchorLink, ButtonLink, Icon, Collapse, CollapseHeader, CollapsePanel } from '@sourcegraph/wildcard'
+import { AnchorLink, ButtonLink, Icon, Collapse, CollapseHeader, CollapsePanel, H2, H3 } from '@sourcegraph/wildcard'
 
 import styles from './Sidebar.module.scss'
 
@@ -39,7 +40,7 @@ export const SidebarNavItem: React.FunctionComponent<{
  *
  * Header of a `SideBarGroup`
  */
-export const SidebarGroupHeader: React.FunctionComponent<{ label: string }> = ({ label }) => <h3>{label}</h3>
+export const SidebarGroupHeader: React.FunctionComponent<{ label: string }> = ({ label }) => <H3 as={H2}>{label}</H3>
 
 /**
  * Sidebar with collapsible items
@@ -55,7 +56,7 @@ export const SidebarCollapseItems: React.FunctionComponent<{
             <>
                 <CollapseHeader
                     aria-expanded={isOpen}
-                    aria-controls={label}
+                    aria-controls={kebabCase(label)}
                     type="button"
                     className="bg-2 border-0 d-flex justify-content-between list-group-item-action py-2 w-100"
                 >
@@ -64,7 +65,7 @@ export const SidebarCollapseItems: React.FunctionComponent<{
                     </span>
                     <Icon className={styles.chevron} as={isOpen ? MenuUpIcon : MenuDownIcon} />
                 </CollapseHeader>
-                <CollapsePanel id={label} className="border-top">
+                <CollapsePanel id={kebabCase(label)} className="border-top">
                     {children}
                 </CollapsePanel>
             </>

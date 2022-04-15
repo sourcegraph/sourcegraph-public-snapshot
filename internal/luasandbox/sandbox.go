@@ -32,15 +32,15 @@ func (s *Sandbox) RunScript(ctx context.Context, opts RunOptions, script string)
 	ctx, endObservation := s.operations.runScript.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	f := func() error {
-		if err := s.state.DoString(script); err != nil {
+	f := func(ctx context.Context, state *lua.LState) error {
+		if err := state.DoString(script); err != nil {
 			return err
 		}
 
-		retValue = s.state.Get(lua.MultRet)
+		retValue = state.Get(lua.MultRet)
 		return nil
 	}
-	err = s.run(ctx, opts, f)
+	err = s.RunGoCallback(ctx, opts, f)
 	return
 }
 
@@ -49,20 +49,20 @@ func (s *Sandbox) Call(ctx context.Context, opts RunOptions, luaFunction *lua.LF
 	ctx, endObservation := s.operations.call.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	f := func() error {
-		s.state.Push(luaFunction)
+	f := func(ctx context.Context, state *lua.LState) error {
+		state.Push(luaFunction)
 		for _, arg := range args {
-			s.state.Push(luar.New(s.state, arg))
+			state.Push(luar.New(s.state, arg))
 		}
 
-		if err := s.state.PCall(len(args), lua.MultRet, nil); err != nil {
+		if err := state.PCall(len(args), lua.MultRet, nil); err != nil {
 			return err
 		}
 
-		retValue = s.state.Get(lua.MultRet)
+		retValue = state.Get(lua.MultRet)
 		return nil
 	}
-	err = s.run(ctx, opts, f)
+	err = s.RunGoCallback(ctx, opts, f)
 	return
 }
 
@@ -74,17 +74,17 @@ func (s *Sandbox) CallGenerator(ctx context.Context, opts RunOptions, luaFunctio
 	ctx, endObservation := s.operations.callGenerator.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	f := func() error {
+	f := func(ctx context.Context, state *lua.LState) error {
 		luaArgs := make([]lua.LValue, 0, len(args))
 		for _, arg := range args {
 			luaArgs = append(luaArgs, luar.New(s.state, arg))
 		}
 
-		co, _ := s.state.NewThread()
+		co, _ := state.NewThread()
 
 	loop:
 		for {
-			state, err, yieldedValues := s.state.Resume(co, luaFunction, luaArgs...)
+			state, err, yieldedValues := state.Resume(co, luaFunction, luaArgs...)
 			switch state {
 			case lua.ResumeError:
 				return err
@@ -101,7 +101,7 @@ func (s *Sandbox) CallGenerator(ctx context.Context, opts RunOptions, luaFunctio
 
 		return nil
 	}
-	err = s.run(ctx, opts, f)
+	err = s.RunGoCallback(ctx, opts, f)
 	return
 }
 
@@ -111,7 +111,12 @@ type RunOptions struct {
 
 const DefaultTimeout = time.Millisecond * 200
 
-func (s *Sandbox) run(ctx context.Context, opts RunOptions, f func() error) (err error) {
+// RunGoCallback invokes the given Go callback with exclusive access to the state of the
+// sandbox.
+func (s *Sandbox) RunGoCallback(ctx context.Context, opts RunOptions, f func(ctx context.Context, state *lua.LState) error) (err error) {
+	ctx, endObservation := s.operations.runGoCallback.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	s.m.Lock()
 	defer s.m.Unlock()
 
@@ -124,5 +129,5 @@ func (s *Sandbox) run(ctx context.Context, opts RunOptions, f func() error) (err
 	s.state.SetContext(ctx)
 	defer s.state.RemoveContext()
 
-	return f()
+	return f(ctx, s.state)
 }

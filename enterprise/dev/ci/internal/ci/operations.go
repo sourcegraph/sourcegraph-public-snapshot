@@ -22,8 +22,9 @@ import (
 // e.g. by adding flags, and not as a condition for adding steps or commands.
 type CoreTestOperationsOptions struct {
 	// for clientChromaticTests
-	ChromaticShouldAutoAccept bool
-	MinimumUpgradeableVersion string
+	ChromaticShouldAutoAccept  bool
+	MinimumUpgradeableVersion  string
+	ClientLintOnlyChangedFiles bool
 }
 
 // CoreTestOperations is a core set of tests that should be run in most CI cases. More
@@ -65,13 +66,23 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 
 	if diff.Has(changed.Client | changed.GraphQL) {
 		// If there are any Graphql changes, they are impacting the client as well.
-		ops.Merge(operations.NewNamedSet("Client checks",
+		clientChecks := operations.NewNamedSet("Client checks",
 			clientIntegrationTests,
 			clientChromaticTests(opts.ChromaticShouldAutoAccept),
-			frontendTests,     // ~4.5m
-			addWebApp,         // ~5.5m
-			addBrowserExt,     // ~4.5m
-			addClientLinters)) // ~9m
+			frontendTests,                // ~4.5m
+			addWebApp,                    // ~5.5m
+			addBrowserExtensionUnitTests, // ~4.5m
+			addVSCExt,                    // ~5.5m
+			addTypescriptCheck,           // ~4m
+		)
+
+		if opts.ClientLintOnlyChangedFiles {
+			clientChecks.Append(addClientLintersForChangedFiles)
+		} else {
+			clientChecks.Append(addClientLintersForAllFiles)
+		}
+
+		ops.Merge(clientChecks)
 	}
 
 	if diff.Has(changed.Go | changed.GraphQL) {
@@ -142,14 +153,14 @@ func addCheck(pipeline *bk.Pipeline) {
 func addPrettier(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":lipstick: Prettier",
 		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-run.sh prettier-check"))
+		bk.Cmd("dev/ci/yarn-run.sh format:check"))
 }
 
 // yarn ~41s + ~1s
 func addGraphQLLint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":lipstick: :graphql: GraphQL lint",
 		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-run.sh graphql-lint"))
+		bk.Cmd("dev/ci/yarn-run.sh lint:graphql"))
 }
 
 func addSVGLint(pipeline *bk.Pipeline) {
@@ -162,22 +173,33 @@ func addYarnDeduplicateLint(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/check/yarn-deduplicate.sh"))
 }
 
-// Adds client linters and Typescript check.
-func addClientLinters(pipeline *bk.Pipeline) {
-	// - ESLint ~9m
-	pipeline.AddStep(":eslint: ESLint",
-		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-run.sh all:eslint"))
-
-	// - build-ts ~4m
+// Adds Typescript check.
+func addTypescriptCheck(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":typescript: Build TS",
 		withYarnCache(),
 		bk.Cmd("dev/ci/yarn-run.sh build-ts"))
+}
 
-	// - Stylelint ~2m
-	pipeline.AddStep(":stylelint: Stylelint",
+// Adds client linters to check all files.
+func addClientLintersForAllFiles(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":eslint: ESLint (all)",
 		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-run.sh all:stylelint"))
+		bk.Cmd("dev/ci/yarn-run.sh lint:js:all"))
+
+	pipeline.AddStep(":stylelint: Stylelint (all)",
+		withYarnCache(),
+		bk.Cmd("dev/ci/yarn-run.sh lint:css:all"))
+}
+
+// Adds client linters to check changed in PR files.
+func addClientLintersForChangedFiles(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":eslint: ESLint (changed)",
+		withYarnCache(),
+		bk.Cmd("dev/ci/yarn-run.sh lint:js:changed"))
+
+	pipeline.AddStep(":stylelint: Stylelint (changed)",
+		withYarnCache(),
+		bk.Cmd("dev/ci/yarn-run.sh lint:css:changed"))
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
@@ -210,30 +232,39 @@ func addWebApp(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
-// Builds and tests the browser extension.
-func addBrowserExt(pipeline *bk.Pipeline) {
-	// Broken: https://github.com/sourcegraph/sourcegraph/issues/33484
-	// Browser extension integration tests
-	// for _, browser := range []string{"chrome"} {
-	// 	pipeline.AddStep(
-	// 		fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
-	// 		withYarnCache(),
-	// 		bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
-	// 		bk.Env("BROWSER", browser),
-	// 		bk.Env("LOG_BROWSER_CONSOLE", "true"),
-	// 		bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
-	// 		bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
-	// 		bk.Cmd("git-lfs fetch"),
-	// 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-	// 		bk.Cmd("yarn --cwd client/browser -s run build"),
-	// 		bk.Cmd("yarn run cover-browser-integration"),
-	// 		bk.Cmd("yarn nyc report -r json"),
-	// 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
-	// 		bk.ArtifactPaths("./puppeteer/*.png"),
-	// 	)
-	// }
+var browsers = []string{"chrome"}
 
-	// Browser extension unit tests
+func getParallelTestCount(webParallelTestCount int) int {
+	return webParallelTestCount + len(browsers)
+}
+
+func addBrowserExtensionIntegrationTests(parallelTestCount int) operations.Operation {
+	testCount := getParallelTestCount(parallelTestCount)
+	return func(pipeline *bk.Pipeline) {
+		for _, browser := range browsers {
+			pipeline.AddStep(
+				fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
+				withYarnCache(),
+				bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
+				bk.Env("BROWSER", browser),
+				bk.Env("LOG_BROWSER_CONSOLE", "true"),
+				bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
+				bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
+				bk.Env("PERCY_ON", "true"),
+				bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(testCount)),
+				bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+				bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
+				bk.Cmd("yarn run cover-browser-integration"),
+				bk.Cmd("yarn nyc report -r json"),
+				bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
+				bk.AutomaticRetry(1), // Temporary
+				bk.ArtifactPaths("./puppeteer/*.png"),
+			)
+		}
+	}
+}
+
+func addBrowserExtensionUnitTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest::chrome: Test (client/browser)",
 		withYarnCache(),
 		bk.AnnotatedCmd("dev/ci/yarn-test.sh client/browser", bk.AnnotatedCmdOpts{
@@ -242,6 +273,19 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 			},
 		}),
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
+}
+
+// Builds and tests the VS Code extensions.
+func addVSCExt(pipeline *bk.Pipeline) {
+	pipeline.AddStep(
+		":vscode: Puppeteer tests for VS Code extension",
+		withYarnCache(),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("yarn generate"),
+		bk.Cmd("yarn --cwd client/vscode -s build"),
+		bk.Cmd("yarn --cwd client/vscode -s package"),
+		bk.Cmd("yarn --cwd client/vscode -s test --verbose"),
+	)
 }
 
 func clientIntegrationTests(pipeline *bk.Pipeline) {
@@ -264,6 +308,9 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 	// Chunk web integration tests to save time via parallel execution.
 	chunkedTestFiles := getChunkedWebIntegrationFileNames(chunkSize)
 	chunkCount := len(chunkedTestFiles)
+	parallelTestCount := getParallelTestCount(chunkCount)
+
+	addBrowserExtensionIntegrationTests(chunkCount)(pipeline)
 
 	// Add pipeline step for each chunk of web integrations files.
 	for i, chunkTestFiles := range chunkedTestFiles {
@@ -276,7 +323,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 			bk.Env("PERCY_ON", "true"),
 			// If PERCY_PARALLEL_TOTAL is set, the API will wait for that many finalized builds to finalize the Percy build.
 			// https://docs.percy.io/docs/parallel-test-suites#how-it-works
-			bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(chunkCount)),
+			bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(parallelTestCount)),
 			bk.Cmd(fmt.Sprintf(`dev/ci/yarn-web-integration.sh "%s"`, chunkTestFiles)),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
@@ -417,7 +464,7 @@ func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("yarn --cwd client/browser -s run build"),
+			bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
 			bk.Cmd("yarn -s mocha ./client/browser/src/end-to-end/github.test.ts ./client/browser/src/end-to-end/gitlab.test.ts"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
@@ -433,21 +480,21 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":rocket::chrome: Extension release",
 		withYarnCache(),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn --cwd client/browser -s run build"),
-		bk.Cmd("yarn --cwd client/browser release:chrome"))
+		bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
+		bk.Cmd("yarn workspace @sourcegraph/browser release:chrome"))
 
 	// Build and self sign the FF add-on and upload it to a storage bucket
 	pipeline.AddStep(":rocket::firefox: Extension release",
 		withYarnCache(),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn --cwd client/browser release:firefox"))
+		bk.Cmd("yarn workspace @sourcegraph/browser release:firefox"))
 
 	// Release to npm
 	pipeline.AddStep(":rocket::npm: npm Release",
 		withYarnCache(),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn --cwd client/browser -s run build"),
-		bk.Cmd("yarn --cwd client/browser release:npm"))
+		bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
+		bk.Cmd("yarn workspace @sourcegraph/browser release:npm"))
 }
 
 // Adds a Buildkite pipeline "Wait".

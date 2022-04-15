@@ -12,14 +12,14 @@ import { useField } from '../../../../../components/form/hooks/useField'
 import { useForm } from '../../../../../components/form/hooks/useForm'
 import { InsightQueryInput } from '../../../../../components/form/query-input/InsightQueryInput'
 import { RepositoriesField } from '../../../../../components/form/repositories-field/RepositoriesField'
-import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
+import { CodeInsightsBackendContext } from '../../../../../core'
 import { getQueryPatternTypeFilter } from '../../../../insights/creation/search-insight'
 import {
     repositoriesExistValidator,
     repositoriesFieldValidator,
 } from '../../../../insights/creation/search-insight/components/search-insight-creation-content/validators'
 
-import { DynamicInsightPreview } from './DynamicInsightPreivew/DynamicInsightPreview'
+import { DynamicInsightPreview } from './DynamicInsightPreview'
 
 import styles from './DynamicCodeInsightExample.module.scss'
 

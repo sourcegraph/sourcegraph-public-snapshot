@@ -259,7 +259,7 @@ A tsvector search index over API documentation (private repos only)
 
 **lang_name_id**: The programming language (or indexer name) that produced the result. Foreign key into lsif_data_docs_search_lang_names_private.
 
-**path_id**: The fully qualified documentation page path ID, e.g. including "#section". See GraphQL codeintel.schema:documentationPage for what this is.
+**path_id**: The fully qualified documentation page path ID, e.g. including &#34;#section&#34;. See GraphQL codeintel.schema:documentationPage for what this is.
 
 **repo_id**: The repo ID, from the main app DB repo table. Used to search over a select set of repos by ID.
 
@@ -329,7 +329,7 @@ A tsvector search index over API documentation (public repos only)
 
 **lang_name_id**: The programming language (or indexer name) that produced the result. Foreign key into lsif_data_docs_search_lang_names_public.
 
-**path_id**: The fully qualified documentation page path ID, e.g. including "#section". See GraphQL codeintel.schema:documentationPage for what this is.
+**path_id**: The fully qualified documentation page path ID, e.g. including &#34;#section&#34;. See GraphQL codeintel.schema:documentationPage for what this is.
 
 **repo_id**: The repo ID, from the main app DB repo table. Used to search over a select set of repos by ID.
 
