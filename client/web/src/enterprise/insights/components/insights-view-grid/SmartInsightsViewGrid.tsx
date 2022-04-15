@@ -6,10 +6,10 @@ import { Layout, Layouts } from 'react-grid-layout'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { ViewGrid } from '../../../../views'
-import { Insight } from '../../core/types'
+import { Insight } from '../../core'
 import { getTrackingTypeByInsightType } from '../../pings'
 
-import { SmartInsight } from './components/smart-insight/SmartInsight'
+import { SmartInsight } from './components/SmartInsight'
 import { insightLayoutGenerator, recalculateGridLayout } from './utils/grid-layout-generator'
 
 interface SmartInsightsViewGridProps extends TelemetryProps {

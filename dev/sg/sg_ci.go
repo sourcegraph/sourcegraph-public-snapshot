@@ -74,7 +74,7 @@ var ciCommand = &cli.Command{
 
 Note that Sourcegraph's CI pipelines are under our enterprise license: https://github.com/sourcegraph/sourcegraph/blob/main/LICENSE.enterprise`,
 	Category: CategoryDev,
-	Action:   cli.ShowSubcommandHelp,
+	Action:   suggestSubcommandsAction,
 	Subcommands: []*cli.Command{{
 		Name:    "preview",
 		Aliases: []string{"plan"},
@@ -361,7 +361,7 @@ To send logs to a Loki instance, you can provide '--out=http://127.0.0.1:3100' a
 From there, you can start exploring logs with the Grafana explore panel.
 `,
 		Flags: []cli.Flag{
-
+			&ciBuildFlag,
 			&cli.StringFlag{
 				Name:    "job",
 				Aliases: []string{"j"},
