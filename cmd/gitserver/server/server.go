@@ -40,6 +40,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/adapters"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -1768,7 +1769,7 @@ func setGitAttributes(dir GitDir) error {
 		return errors.Wrap(err, "failed to set git attributes")
 	}
 
-	_, err := updateFileIfDifferent(
+	_, err := fileutil.UpdateFileIfDifferent(
 		filepath.Join(infoDir, "attributes"),
 		[]byte(`# Managed by Sourcegraph gitserver.
 
@@ -1999,7 +2000,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 
 	if overwrite {
 		// remove the current repo by putting it into our temporary directory
-		err := renameAndSync(dstPath, filepath.Join(filepath.Dir(tmpPath), "old"))
+		err := fileutil.RenameAndSync(dstPath, filepath.Join(filepath.Dir(tmpPath), "old"))
 		if err != nil && !os.IsNotExist(err) {
 			return errors.Wrapf(err, "failed to remove old clone")
 		}
@@ -2008,7 +2009,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 	if err := os.MkdirAll(filepath.Dir(dstPath), os.ModePerm); err != nil {
 		return err
 	}
-	if err := renameAndSync(tmpPath, dstPath); err != nil {
+	if err := fileutil.RenameAndSync(tmpPath, dstPath); err != nil {
 		return err
 	}
 
@@ -2509,7 +2510,7 @@ func setLastChanged(dir GitDir) error {
 		stamp = computeLatestCommitTimestamp(dir)
 	}
 
-	_, err = updateFileIfDifferent(hashFile, hash)
+	_, err = fileutil.UpdateFileIfDifferent(hashFile, hash)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update %s", hashFile)
 	}
