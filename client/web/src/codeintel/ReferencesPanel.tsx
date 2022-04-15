@@ -54,7 +54,7 @@ import { parseBrowserRepoURL } from '../util/url'
 
 import { findLanguageSpec } from './language-specs/languages'
 import { LanguageSpec } from './language-specs/languagespec'
-import { Location, RepoLocationGroup, LocationGroup, locationGroupQuality, buildRepoLocationGroups } from './location'
+import { Location, LocationGroup, locationGroupQuality, buildRepoLocationGroups } from './location'
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
 import { newSettingsGetter } from './settings'
 import { findSearchToken } from './token'
@@ -344,6 +344,10 @@ export const ReferencesList: React.FunctionComponent<
         panelHistory.push(appendJumpToFirstQueryParameter(url) + toViewStateHash('references'))
     }
 
+    const navigateToUrl = (url: string): void => {
+        props.externalHistory.push(url)
+    }
+
     if (loading && !data) {
         return <LoadingCodeIntel />
     }
@@ -377,6 +381,7 @@ export const ReferencesList: React.FunctionComponent<
                         setActiveLocation={onReferenceClick}
                         filter={props.filter}
                         activeLocation={activeLocation}
+                        navigateToUrl={navigateToUrl}
                     />
                     <CollapsibleLocationList
                         {...props}
@@ -388,6 +393,7 @@ export const ReferencesList: React.FunctionComponent<
                         setActiveLocation={onReferenceClick}
                         filter={props.filter}
                         activeLocation={activeLocation}
+                        navigateToUrl={navigateToUrl}
                     />
                     {implementations.length > 0 && (
                         <CollapsibleLocationList
@@ -400,6 +406,7 @@ export const ReferencesList: React.FunctionComponent<
                             setActiveLocation={onReferenceClick}
                             filter={props.filter}
                             activeLocation={activeLocation}
+                            navigateToUrl={navigateToUrl}
                         />
                     )}
                 </div>
@@ -412,7 +419,7 @@ export const ReferencesList: React.FunctionComponent<
                                     to={activeLocation.url}
                                     onClick={event => {
                                         event.preventDefault()
-                                        props.externalHistory.push(activeLocation.url)
+                                        navigateToUrl(activeLocation.url)
                                     }}
                                 >
                                     <Icon as={OpenInAppIcon} />
@@ -452,6 +459,7 @@ interface CollapsibleLocationListProps {
     hasMore: boolean
     fetchMore?: () => void
     loadingMore: boolean
+    navigateToUrl: (url: string) => void
 }
 
 const CollapsibleLocationList: React.FunctionComponent<CollapsibleLocationListProps> = props => (
@@ -488,6 +496,7 @@ const CollapsibleLocationList: React.FunctionComponent<CollapsibleLocationListPr
                             activeLocation={props.activeLocation}
                             setActiveLocation={props.setActiveLocation}
                             filter={props.filter}
+                            navigateToUrl={props.navigateToUrl}
                         />
                     ) : (
                         <p className="text-muted pl-2">
@@ -622,6 +631,7 @@ interface LocationsListProps {
     activeLocation?: Location
     setActiveLocation: (reference: Location | undefined) => void
     filter: string | undefined
+    navigateToUrl: (url: string) => void
 }
 
 const LocationsList: React.FunctionComponent<LocationsListProps> = ({
@@ -629,68 +639,63 @@ const LocationsList: React.FunctionComponent<LocationsListProps> = ({
     activeLocation,
     setActiveLocation,
     filter,
+    navigateToUrl,
 }) => {
     const repoLocationGroups = useMemo(() => buildRepoLocationGroups(locations), [locations])
 
     return (
         <>
-            {repoLocationGroups.map(repoReferenceGroup => (
-                <CollapsibleRepoLocationGroup
-                    key={repoReferenceGroup.repoName}
-                    repoLocationGroup={repoReferenceGroup}
-                    activeLocation={activeLocation}
-                    setActiveLocation={setActiveLocation}
-                    getLineContent={getLineContent}
-                    filter={filter}
-                />
-            ))}
+            {repoLocationGroups.map(repoLocationGroup => {
+                const repoUrl = `/${repoLocationGroup.repoName}`
+                return (
+                    <Collapse key={repoLocationGroup.repoName} openByDefault={true}>
+                        {({ isOpen }) => (
+                            <>
+                                <CollapseHeader
+                                    as={Button}
+                                    aria-expanded={isOpen}
+                                    type="button"
+                                    className="bg-transparent py-1 border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
+                                >
+                                    <span className="p-0 mb-0">
+                                        {isOpen ? (
+                                            <Icon aria-label="Close" as={ChevronDownIcon} />
+                                        ) : (
+                                            <Icon aria-label="Expand" as={ChevronRightIcon} />
+                                        )}
+
+                                        <Link
+                                            to={repoUrl}
+                                            onClick={event => {
+                                                event.preventDefault()
+                                                navigateToUrl(repoUrl)
+                                            }}
+                                        >
+                                            {displayRepoName(repoLocationGroup.repoName)}
+                                        </Link>
+                                    </span>
+                                </CollapseHeader>
+
+                                <CollapsePanel id={repoLocationGroup.repoName}>
+                                    {repoLocationGroup.referenceGroups.map(group => (
+                                        <ReferenceGroup
+                                            key={group.path + group.repoName}
+                                            group={group}
+                                            activeLocation={activeLocation}
+                                            setActiveLocation={setActiveLocation}
+                                            getLineContent={getLineContent}
+                                            filter={filter}
+                                        />
+                                    ))}
+                                </CollapsePanel>
+                            </>
+                        )}
+                    </Collapse>
+                )
+            })}
         </>
     )
 }
-
-const CollapsibleRepoLocationGroup: React.FunctionComponent<{
-    repoLocationGroup: RepoLocationGroup
-    activeLocation?: Location
-    setActiveLocation: (reference: Location | undefined) => void
-    getLineContent: (location: Location) => string
-    filter: string | undefined
-}> = ({ repoLocationGroup, setActiveLocation, getLineContent, activeLocation, filter }) => (
-    <Collapse openByDefault={true}>
-        {({ isOpen }) => (
-            <>
-                <CollapseHeader
-                    as={Button}
-                    aria-expanded={isOpen}
-                    type="button"
-                    className="bg-transparent py-1 border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
-                >
-                    <span className="p-0 mb-0">
-                        {isOpen ? (
-                            <Icon aria-label="Close" as={ChevronDownIcon} />
-                        ) : (
-                            <Icon aria-label="Expand" as={ChevronRightIcon} />
-                        )}
-
-                        <Link to={`/${repoLocationGroup.repoName}`}>{displayRepoName(repoLocationGroup.repoName)}</Link>
-                    </span>
-                </CollapseHeader>
-
-                <CollapsePanel id={repoLocationGroup.repoName}>
-                    {repoLocationGroup.referenceGroups.map(group => (
-                        <ReferenceGroup
-                            key={group.path + group.repoName}
-                            group={group}
-                            activeLocation={activeLocation}
-                            setActiveLocation={setActiveLocation}
-                            getLineContent={getLineContent}
-                            filter={filter}
-                        />
-                    ))}
-                </CollapsePanel>
-            </>
-        )}
-    </Collapse>
-)
 
 const ReferenceGroup: React.FunctionComponent<{
     group: LocationGroup

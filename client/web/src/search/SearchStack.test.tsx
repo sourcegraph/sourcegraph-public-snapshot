@@ -6,16 +6,21 @@ import { noop } from 'lodash'
 import sinon from 'sinon'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
 import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 
-import { useExperimentalFeatures, useSearchStackState } from '../stores'
+import { useSearchStackState } from '../stores'
 import { addSearchStackEntry, SearchStackEntry } from '../stores/searchStack'
 
-import { SearchStack, SearchStackProps } from './SearchStack'
+import { SearchStackContainer, SearchStackProps } from './SearchStack'
 
 describe('Search Stack', () => {
-    const renderSearchStack = (props?: Partial<SearchStackProps>): RenderWithBrandedContextResult =>
-        renderWithBrandedContext(<SearchStack onCreateNotebook={noop} {...props} />)
+    const renderSearchStack = (props?: Partial<SearchStackProps>, enabled = true): RenderWithBrandedContextResult =>
+        renderWithBrandedContext(
+            <MockTemporarySettings settings={{ 'search.notepad.enabled': enabled }}>
+                <SearchStackContainer onCreateNotebook={noop} {...props} />
+            </MockTemporarySettings>
+        )
 
     function open() {
         userEvent.click(screen.getByRole('button', { name: 'Open Notepad' }))
@@ -30,15 +35,12 @@ describe('Search Stack', () => {
 
     describe('closed state', () => {
         it('does not render anything if feature is disabled dand there are no notes', () => {
-            useExperimentalFeatures.setState({ enableSearchStack: false })
-
-            renderSearchStack()
+            renderSearchStack({}, false)
 
             expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
         })
 
         it('shows button to open notepad', () => {
-            useExperimentalFeatures.setState({ enableSearchStack: true })
             useSearchStackState.setState({ entries: mockEntries })
 
             renderSearchStack()
@@ -48,10 +50,6 @@ describe('Search Stack', () => {
     })
 
     describe('restore previous session', () => {
-        beforeEach(() => {
-            useExperimentalFeatures.setState({ enableSearchStack: true })
-        })
-
         it('restores the previous session', () => {
             useSearchStackState.setState({
                 entries: [],
@@ -62,14 +60,13 @@ describe('Search Stack', () => {
             renderSearchStack()
             userEvent.click(screen.getByRole('button', { name: 'Open Notepad' }))
 
-            userEvent.click(screen.getByRole('button', { name: 'Restore previous session' }))
+            userEvent.click(screen.getByRole('button', { name: 'Restore last session' }))
             expect(useSearchStackState.getState().entries).toEqual(mockEntries)
         })
     })
 
     describe('with notes', () => {
         beforeEach(() => {
-            useExperimentalFeatures.setState({ enableSearchStack: true })
             useSearchStackState.setState({
                 entries: [
                     {
@@ -145,7 +142,6 @@ describe('Search Stack', () => {
 
     describe('selection', () => {
         beforeEach(() => {
-            useExperimentalFeatures.setState({ enableSearchStack: true })
             useSearchStackState.setState({
                 entries: [
                     {

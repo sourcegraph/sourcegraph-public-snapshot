@@ -173,3 +173,6 @@ test-reports/
 
 # go workspace files shouldn't be committed
 go.work
+
+# binary
+/sg

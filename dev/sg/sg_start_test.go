@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 	"github.com/sourcegraph/sourcegraph/lib/output/outputtest"
@@ -20,16 +21,16 @@ func TestStartCommandSet(t *testing.T) {
 
 	buf := useOutputBuffer(t)
 
-	commandSet := &Commandset{Name: "test-set", Commands: []string{"test-cmd-1"}}
+	commandSet := &sgconf.Commandset{Name: "test-set", Commands: []string{"test-cmd-1"}}
 	command := run.Command{
 		Name:    "test-cmd-1",
 		Install: "echo 'booting up horsegraph'",
 		Cmd:     "echo 'horsegraph booted up. mount your horse.' && echo 'quitting. not horsing around anymore.'",
 	}
 
-	testConf := &Config{
+	testConf := &sgconf.Config{
 		Commands:    map[string]run.Command{"test-cmd-1": command},
-		Commandsets: map[string]*Commandset{"test-set": commandSet},
+		Commandsets: map[string]*sgconf.Commandset{"test-set": commandSet},
 	}
 
 	if err := startCommandSet(ctx, commandSet, testConf, false); err != nil {
@@ -60,16 +61,16 @@ func TestStartCommandSet_InstallError(t *testing.T) {
 
 			buf := useOutputBuffer(t)
 
-			commandSet := &Commandset{Name: "test-set", Commands: []string{"test-cmd-1"}}
+			commandSet := &sgconf.Commandset{Name: "test-set", Commands: []string{"test-cmd-1"}}
 			command := run.Command{
 				Name:    "test-cmd-1",
 				Install: "echo 'booting up horsegraph' && exit 1",
 				Cmd:     "echo 'never appears'",
 			}
 
-			testConf := &Config{
+			testConf := &sgconf.Config{
 				Commands:    map[string]run.Command{"test-cmd-1": command},
-				Commandsets: map[string]*Commandset{"test-set": commandSet},
+				Commandsets: map[string]*sgconf.Commandset{"test-set": commandSet},
 			}
 
 			err := startCommandSet(ctx, commandSet, testConf, withPostInstallCallback)
