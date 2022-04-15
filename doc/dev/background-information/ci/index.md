@@ -234,7 +234,7 @@ Will result in a single trace span for the `./dev/check/docsite.sh` script. But 
   pipeline.AddStep(fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
     // ...
     bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-    bk.Cmd("yarn --cwd client/browser -s run build"),
+    bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
     bk.Cmd("yarn run cover-browser-integration"),
     bk.Cmd("yarn nyc report -r json"),
     bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),

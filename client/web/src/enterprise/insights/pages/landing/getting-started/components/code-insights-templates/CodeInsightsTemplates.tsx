@@ -21,8 +21,7 @@ import {
     Link,
 } from '@sourcegraph/wildcard'
 
-import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
-import { InsightType } from '../../../../../core/types'
+import { CodeInsightsBackendContext, InsightType } from '../../../../../core'
 import { encodeCaptureInsightURL } from '../../../../insights/creation/capture-group'
 import { encodeSearchInsightUrl } from '../../../../insights/creation/search-insight'
 import {

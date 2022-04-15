@@ -463,21 +463,20 @@ Referenced by:
 
 # Table "public.cm_last_searched"
 ```
-   Column    |  Type  | Collation | Nullable | Default 
--------------+--------+-----------+----------+---------
- monitor_id  | bigint |           | not null | 
- args_hash   | bigint |           | not null | 
- commit_oids | text[] |           | not null | 
+   Column    |  Type   | Collation | Nullable | Default 
+-------------+---------+-----------+----------+---------
+ monitor_id  | bigint  |           | not null | 
+ commit_oids | text[]  |           | not null | 
+ repo_id     | integer |           | not null | 
 Indexes:
-    "cm_last_searched_pkey" PRIMARY KEY, btree (monitor_id, args_hash)
+    "cm_last_searched_pkey" PRIMARY KEY, btree (monitor_id, repo_id)
 Foreign-key constraints:
     "cm_last_searched_monitor_id_fkey" FOREIGN KEY (monitor_id) REFERENCES cm_monitors(id) ON DELETE CASCADE
+    "cm_last_searched_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 
 ```
 
 The last searched commit hashes for the given code monitor and unique set of search arguments
-
-**args_hash**: A unique hash of the gitserver search arguments to identify this search job
 
 **commit_oids**: The set of commit OIDs that was previously successfully searched and should be excluded on the next run
 
@@ -599,8 +598,6 @@ Slack webhook actions configured on code monitors
  num_failures      | integer                  |           | not null | 0
  log_contents      | text                     |           |          | 
  query_string      | text                     |           |          | 
- results           | boolean                  |           |          | 
- num_results       | integer                  |           |          | 
  worker_hostname   | text                     |           | not null | ''::text
  last_heartbeat_at | timestamp with time zone |           |          | 
  execution_logs    | json[]                   |           |          | 
@@ -616,10 +613,6 @@ Referenced by:
     TABLE "cm_action_jobs" CONSTRAINT "cm_action_jobs_trigger_event_fk" FOREIGN KEY (trigger_event) REFERENCES cm_trigger_jobs(id) ON DELETE CASCADE
 
 ```
-
-**num_results**: DEPRECATED: replaced by len(search_results). Can be removed after version 3.37 release cut
-
-**results**: DEPRECATED: replaced by len(search_results) > 0. Can be removed after version 3.37 release cut
 
 # Table "public.cm_webhooks"
 ```
@@ -1082,7 +1075,7 @@ Referenced by:
 
 ```
 
-See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job&patternType=literal)
+See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job&amp;patternType=literal)
 
 **cost**: Integer representing a cost approximation of executing this search query.
 
@@ -1278,7 +1271,7 @@ Indexes:
 
 ```
 
-Stores whether or not the nearest upload data for a repository is out of date (when update_token > dirty_token).
+Stores whether or not the nearest upload data for a repository is out of date (when update_token &gt; dirty_token).
 
 **dirty_token**: Set to the value of update_token visible to the transaction that updates the commit graph. Updates of dirty_token during this time will cause a second update.
 
@@ -1354,7 +1347,7 @@ Stores metadata about a code intel index job.
 
 **indexer**: The docker image used to run the index command (e.g. sourcegraph/lsif-go).
 
-**indexer_args**: The command run inside the indexer image to produce the index file (e.g. ['lsif-node', '-p', '.'])
+**indexer_args**: The command run inside the indexer image to produce the index file (e.g. [&#39;lsif-node&#39;, &#39;-p&#39;, &#39;.&#39;])
 
 **local_steps**: A list of commands to run inside the indexer image prior to running the indexer command.
 
@@ -1411,7 +1404,7 @@ Associates commits with the complete set of uploads visible from that commit. Ev
 
 **commit_bytea**: A 40-char revhash. Note that this commit may not be resolvable in the future.
 
-**uploads**: Encodes an {upload_id => distance} map that includes an entry for every upload visible from the commit. There is always at least one entry with a distance of zero.
+**uploads**: Encodes an {upload_id =&gt; distance} map that includes an entry for every upload visible from the commit. There is always at least one entry with a distance of zero.
 
 # Table "public.lsif_nearest_uploads_links"
 ```
@@ -2069,6 +2062,7 @@ Referenced by:
     TABLE "batch_spec_workspaces" CONSTRAINT "batch_spec_workspaces_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
     TABLE "changesets" CONSTRAINT "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "cm_last_searched" CONSTRAINT "cm_last_searched_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "gitserver_repos" CONSTRAINT "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
@@ -2435,7 +2429,7 @@ Foreign-key constraints:
  created_at              | timestamp with time zone |           | not null | now()
  updated_at              | timestamp with time zone |           | not null | now()
  deleted_at              | timestamp with time zone |           |          | 
- invite_quota            | integer                  |           | not null | 15
+ invite_quota            | integer                  |           | not null | 100
  passwd                  | text                     |           |          | 
  passwd_reset_code       | text                     |           |          | 
  passwd_reset_time       | timestamp with time zone |           |          | 

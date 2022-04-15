@@ -1,0 +1,125 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.bitbucket.org/2.0/
+    method: GET
+  response:
+    body: |
+      Bitbucket Cloud recently stopped supporting account passwords for API authentication.
+      See our community post for more details: https://atlassian.community/t5/x/x/ba-p/1948231
+      App passwords are recommended for most use cases and can be created in your Personal settings:
+      https://bitbucket.org/account/settings/app-passwords/
+      For more details on API authentication methods see our documentation:
+      https://developer.atlassian.com/cloud/bitbucket/rest/intro/#authentication
+    headers:
+      Content-Length:
+      - "469"
+      Content-Type:
+      - text/plain
+      Date:
+      - Mon, 21 Mar 2022 04:52:30 GMT
+      Etag:
+      - '"935f9cc870c47576216a47e768df0190"'
+      Server:
+      - nginx
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Vary:
+      - Origin
+      Www-Authenticate:
+      - Basic realm="Bitbucket.org HTTP"
+      X-B3-Traceid:
+      - 7f2727d84905a35a
+      X-Dc-Location:
+      - Micros
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Render-Time:
+      - "0.0158710479736"
+      X-Request-Count:
+      - "2374"
+      X-Served-By:
+      - eabd82ee3759
+      X-Static-Version:
+      - 59cf4fcf4761
+      X-Usage-Input-Ops:
+      - "0"
+      X-Usage-Output-Ops:
+      - "0"
+      X-Usage-System-Time:
+      - "0.000472"
+      X-Usage-User-Time:
+      - "0.013659"
+      X-Version:
+      - 59cf4fcf4761
+    status: 401 Unauthorized
+    code: 401
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.bitbucket.org/2.0/
+    method: GET
+  response:
+    body: '{"type": "error", "error": {"message": "Resource not found", "detail":
+      "There is no API hosted at this URL.\n\nFor information about our API''s, please
+      refer to the documentation at: https://developer.atlassian.com/bitbucket/api/2/reference/"}}'
+    headers:
+      Cache-Control:
+      - private
+      Content-Length:
+      - "243"
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 21 Mar 2022 04:52:31 GMT
+      Etag:
+      - '"2b62f73138bb745c0a65d30d15361a22"'
+      Server:
+      - nginx
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Vary:
+      - Authorization, Origin, cookie, user-context
+      X-B3-Traceid:
+      - d703dd82cd77f035
+      X-Credential-Type:
+      - apppassword
+      X-Dc-Location:
+      - Micros
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Oauth-Scopes:
+      - project
+      X-Render-Time:
+      - "0.0446810722351"
+      X-Request-Count:
+      - "4097"
+      X-Served-By:
+      - af25156bd914
+      X-Static-Version:
+      - 59cf4fcf4761
+      X-Usage-Input-Ops:
+      - "0"
+      X-Usage-Output-Ops:
+      - "0"
+      X-Usage-System-Time:
+      - "0.001912"
+      X-Usage-User-Time:
+      - "0.024541"
+      X-Version:
+      - 59cf4fcf4761
+      X-View-Name:
+      - bitbucket.apps.bb.api.v20.handlers.NotFoundHandler
+    status: 404 Not Found
+    code: 404
+    duration: ""

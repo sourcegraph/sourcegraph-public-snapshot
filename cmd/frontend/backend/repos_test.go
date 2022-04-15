@@ -157,7 +157,7 @@ func TestReposGetInventory(t *testing.T) {
 		}
 		return &util.FileInfo{Name_: path, Mode_: os.ModeDir, Sys_: gitObjectInfo(wantRootOID)}, nil
 	}
-	git.Mocks.ReadDir = func(commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error) {
+	gitserver.Mocks.ReadDir = func(commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error) {
 		if commit != wantCommitID {
 			t.Errorf("got commit %q, want %q", commit, wantCommitID)
 		}
@@ -188,7 +188,10 @@ func TestReposGetInventory(t *testing.T) {
 		}
 		return io.NopCloser(bytes.NewReader(data)), nil
 	}
-	defer git.ResetMocks()
+	defer func() {
+		git.ResetMocks()
+		gitserver.Mocks.ReadDir = nil
+	}()
 
 	tests := []struct {
 		useEnhancedLanguageDetection bool

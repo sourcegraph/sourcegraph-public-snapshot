@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -39,15 +39,14 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatis
 }
 
 func (srs *searchResultsStats) getResults(ctx context.Context) (result.Matches, error) {
-	args := srs.sr.JobArgs()
 	srs.once.Do(func() {
-		j, err := job.ToSearchJob(args, srs.sr.SearchInputs.Query, srs.sr.db)
+		j, err := jobutil.ToSearchJob(srs.sr.SearchInputs, srs.sr.SearchInputs.Query)
 		if err != nil {
 			srs.err = err
 			return
 		}
 		agg := streaming.NewAggregatingStream()
-		_, err = j.Run(ctx, srs.sr.db, agg)
+		_, err = j.Run(ctx, srs.sr.JobClients(), agg)
 		if err != nil {
 			srs.err = err
 			return

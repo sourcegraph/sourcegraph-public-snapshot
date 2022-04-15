@@ -1,21 +1,14 @@
 import { ApolloClient, gql } from '@apollo/client'
-import { startCase } from 'lodash'
-import openColor from 'open-color'
-import { LineChartContent } from 'sourcegraph'
 
 import {
     GetCaptureGroupInsightPreviewResult,
     GetCaptureGroupInsightPreviewVariables,
 } from '../../../../../../graphql-operations'
-import { CaptureInsightSettings } from '../../code-insights-backend-types'
-import { getDataPoints, InsightDataSeriesData } from '../../utils/create-line-chart-content'
+import { CaptureInsightSettings, SeriesChartContent } from '../../code-insights-backend-types'
+import { getDataPoints, getLinkKey, InsightDataSeriesData } from '../../utils/create-line-chart-content'
 import { getStepInterval } from '../utils/get-step-interval'
 
-import { MAX_NUMBER_OF_SERIES } from './get-backend-insight-data/deserializators'
-
-const SERIES_COLORS = Object.keys(openColor)
-    .filter(name => name !== 'white' && name !== 'black' && name !== 'gray')
-    .map(name => ({ name: startCase(name), color: `var(--oc-${name}-7)` }))
+import { DATA_SERIES_COLORS_LIST, MAX_NUMBER_OF_SERIES } from './get-backend-insight-data/deserializators'
 
 const GET_CAPTURE_GROUP_INSIGHT_PREVIEW_GQL = gql`
     query GetCaptureGroupInsightPreview($input: SearchInsightLivePreviewInput!) {
@@ -28,11 +21,15 @@ const GET_CAPTURE_GROUP_INSIGHT_PREVIEW_GQL = gql`
         }
     }
 `
+export interface CaptureGroupInsightDatum {
+    dateTime: number
+    [seriesKey: string]: number | string
+}
 
 export const getCaptureGroupInsightsPreview = (
     client: ApolloClient<unknown>,
     input: CaptureInsightSettings
-): Promise<LineChartContent<any, string>> => {
+): Promise<SeriesChartContent<CaptureGroupInsightDatum>> => {
     const [unit, value] = getStepInterval(input.step)
 
     return client
@@ -65,19 +62,33 @@ export const getCaptureGroupInsightsPreview = (
                 ...series,
             }))
 
+            // TODO Revisit live preview and dashboard insight resolver methods in order to
+            // improve series data handling and manipulation
+            const seriesMetadata = indexedSeries.map((generatedSeries, index) => ({
+                id: generatedSeries.seriesId,
+                name: generatedSeries.label,
+                query: input.query,
+                stroke: DATA_SERIES_COLORS_LIST[index % DATA_SERIES_COLORS_LIST.length],
+            }))
+
+            const seriesDefinitionMap = Object.fromEntries(
+                seriesMetadata.map(definition => [definition.id, definition])
+            )
+
             return {
-                chart: 'line',
-                data: getDataPoints(indexedSeries),
-                series: indexedSeries.map((series, index) => ({
-                    dataKey: series.seriesId,
-                    name: series.label,
-                    stroke: SERIES_COLORS[index % SERIES_COLORS.length].color,
+                data: getDataPoints({
+                    series: indexedSeries,
+                    seriesDefinitionMap,
+                    includeRepoRegexp: '',
+                    excludeRepoRegexp: '',
+                }),
+                series: indexedSeries.map((line, index) => ({
+                    dataKey: line.seriesId,
+                    name: line.label,
+                    color: DATA_SERIES_COLORS_LIST[index % DATA_SERIES_COLORS_LIST.length],
+                    getLinkURL: datum => `${datum[getLinkKey(line.seriesId)]}`,
                 })),
-                xAxis: {
-                    dataKey: 'dateTime',
-                    scale: 'time',
-                    type: 'number',
-                },
+                getXValue: datum => new Date(datum.dateTime),
             }
         })
 }

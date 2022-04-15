@@ -47,7 +47,7 @@ describe.skip('[VISUAL] Code insights page', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
 
     async function takeChartSnapshot(name: string): Promise<void> {
-        await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
+        await driver.page.waitForSelector('svg circle')
         await delay(500)
         await percySnapshotWithVariants(driver.page, name)
     }

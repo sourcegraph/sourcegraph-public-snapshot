@@ -1,7 +1,4 @@
 import { Observable } from 'rxjs'
-import { LineChartContent, PieChartContent } from 'sourcegraph'
-
-import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
 import { BackendInsight, Insight, InsightDashboard, InsightsDashboardOwner } from '../types'
 
@@ -23,12 +20,11 @@ import {
     AccessibleInsightInfo,
     RemoveInsightFromDashboardInput,
     RepositorySuggestionData,
+    CategoricalChartContent,
+    SeriesChartContent,
+    UiFeaturesConfig,
+    InsightContent,
 } from './code-insights-backend-types'
-
-export interface UiFeaturesConfig {
-    licensed: boolean
-    insightsLimit: number | null
-}
 
 /**
  * The main interface for code insights backend. Each backend versions should
@@ -99,19 +95,19 @@ export interface CodeInsightsBackend {
      * Returns extension like built-in insight that is fetched via frontend
      * network utils to Sourcegraph search API.
      */
-    getBuiltInInsightData: (input: GetBuiltInsightInput) => Observable<ViewProviderResult>
+    getBuiltInInsightData: (input: GetBuiltInsightInput) => Observable<InsightContent<unknown>>
 
     /**
      * Returns content for the search based insight live preview chart.
      */
-    getSearchInsightContent: (input: GetSearchInsightContentInput) => Promise<LineChartContent<any, string>>
+    getSearchInsightContent: (input: GetSearchInsightContentInput) => Promise<SeriesChartContent<unknown>>
 
     /**
      * Returns content for the code stats insight live preview chart.
      */
-    getLangStatsInsightContent: (input: GetLangStatsInsightContentInput) => Promise<PieChartContent<any>>
+    getLangStatsInsightContent: (input: GetLangStatsInsightContentInput) => Promise<CategoricalChartContent<unknown>>
 
-    getCaptureInsightContent: (input: CaptureInsightSettings) => Promise<LineChartContent<any, string>>
+    getCaptureInsightContent: (input: CaptureInsightSettings) => Promise<SeriesChartContent<unknown>>
 
     /**
      * Returns a list of suggestions for the repositories' field in the insight creation UI.

@@ -279,6 +279,7 @@ type InsightSeriesQueryStatusResolver interface {
 type InsightViewFiltersResolver interface {
 	IncludeRepoRegex(ctx context.Context) (*string, error)
 	ExcludeRepoRegex(ctx context.Context) (*string, error)
+	SearchContexts(ctx context.Context) (*[]string, error)
 }
 
 type CreateLineChartSearchInsightArgs struct {
@@ -337,6 +338,7 @@ type InsightViewControlsInput struct {
 type InsightViewFiltersInput struct {
 	IncludeRepoRegex *string
 	ExcludeRepoRegex *string
+	SearchContexts   *[]string
 }
 
 type LineChartSearchInsightDataSeriesInput struct {
@@ -375,10 +377,11 @@ type InsightViewPayloadResolver interface {
 }
 
 type InsightViewQueryArgs struct {
-	First   *int32
-	After   *string
-	Id      *graphql.ID
-	Filters *InsightViewFiltersInput
+	First    *int32
+	After    *string
+	Id       *graphql.ID
+	IsFrozen *bool
+	Filters  *InsightViewFiltersInput
 }
 
 type DeleteInsightViewArgs struct {
