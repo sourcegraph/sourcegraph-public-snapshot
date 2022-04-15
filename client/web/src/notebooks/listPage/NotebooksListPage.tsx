@@ -20,8 +20,9 @@ import { PageRoutes } from '../../routes.constants'
 import { fetchNotebooks as _fetchNotebooks, createNotebook as _createNotebook } from '../backend'
 
 import { ImportMarkdownNotebookButton } from './ImportMarkdownNotebookButton'
-import { NotebooksGettingStarted } from './NotebooksGettingStarted'
+import { NotebooksGettingStartedTab } from './NotebooksGettingStartedTab'
 import { NotebooksList } from './NotebooksList'
+import { NotebooksOverview } from './NotebooksOverview'
 
 export interface NotebooksListPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
@@ -34,12 +35,13 @@ type NotebooksTab =
     | { type: 'explore' }
     | { type: 'starred' }
     | { type: 'org'; name: string; id: string }
+    | { type: 'getting-started' }
 
 type Tabs = { tab: NotebooksTab; title: string; isActive: boolean; logName: string }[]
 
 function getSelectedTabFromLocation(locationSearch: string, authenticatedUser: AuthenticatedUser | null): NotebooksTab {
     if (!authenticatedUser) {
-        return { type: 'my' }
+        return { type: 'getting-started' }
     }
 
     const urlParameters = new URLSearchParams(locationSearch)
@@ -50,6 +52,8 @@ function getSelectedTabFromLocation(locationSearch: string, authenticatedUser: A
             return { type: 'explore' }
         case 'starred':
             return { type: 'starred' }
+        case 'getting-started':
+            return { type: 'getting-started' }
     }
 
     const orgName = urlParameters.get('org')
@@ -198,6 +202,12 @@ export const NotebooksListPage: React.FunctionComponent<NotebooksListPageProps> 
                 isActive: selectedTab.type === 'explore',
                 logName: 'ExploreNotebooks',
             },
+            {
+                tab: { type: 'getting-started' },
+                title: 'Getting Started',
+                isActive: selectedTab.type === 'getting-started',
+                logName: 'GettingStarted',
+            },
         ],
         [selectedTab, orgTabs]
     )
@@ -303,7 +313,7 @@ export const NotebooksListPage: React.FunctionComponent<NotebooksListPageProps> 
                     />
                 )}
                 {(selectedTab.type === 'my' || selectedTab.type === 'starred') && !authenticatedUser && (
-                    <NotebooksGettingStarted telemetryService={telemetryService} />
+                    <NotebooksOverview />
                 )}
                 {selectedTab.type === 'explore' && (
                     <NotebooksList
@@ -312,6 +322,9 @@ export const NotebooksListPage: React.FunctionComponent<NotebooksListPageProps> 
                         filters={filters}
                         telemetryService={telemetryService}
                     />
+                )}
+                {selectedTab.type === 'getting-started' && (
+                    <NotebooksGettingStartedTab telemetryService={telemetryService} />
                 )}
             </Page>
         </div>

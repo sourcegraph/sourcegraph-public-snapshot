@@ -9,7 +9,7 @@ import { ListNotebooksResult, ListNotebooksVariables, NotebookFields, NotebooksO
 import { fetchNotebooks as _fetchNotebooks } from '../backend'
 
 import { NotebookNode, NotebookNodeProps } from './NotebookNode'
-import { NotebooksGettingStarted } from './NotebooksGettingStarted'
+import { NotebooksOverview } from './NotebooksOverview'
 
 import styles from './NotebooksList.module.scss'
 
@@ -81,7 +81,7 @@ export const NotebooksList: React.FunctionComponent<NotebooksListProps> = ({
                 cursorPaging={true}
                 inputClassName={styles.filterInput}
                 inputPlaceholder="Search notebooks by title and content"
-                emptyElement={<NotebooksGettingStarted telemetryService={telemetryService} />}
+                emptyElement={<NotebooksOverview />}
             />
         </div>
     )
