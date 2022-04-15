@@ -890,11 +890,9 @@ const GO_STATIC_CHECK_S1004: Template = {
             },
             {
                 name: 'S1004 - fixed',
-                query:
-                    '!bytes.Equal(:[1], :[2]) or bytes.Equal(:[1], :[2]) patternType:structural archived:no',
+                query: '!bytes.Equal(:[1], :[2]) or bytes.Equal(:[1], :[2]) patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GREEN,
             },
-
         ],
     },
 }
@@ -915,11 +913,9 @@ const GO_STATIC_CHECK_S1005: Template = {
             },
             {
                 name: 'S1005 - fixed',
-                query:
-                    'for range or for :[1] := range or for :[1] = range patternType:structural archived:no',
+                query: 'for range or for :[1] := range or for :[1] = range patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GREEN,
             },
-
         ],
     },
 }
@@ -939,8 +935,7 @@ const GO_STATIC_CHECK_S1006: Template = {
             },
             {
                 name: 'S1006 - fixed',
-                query:
-                    'for {:[x]} patternType:structural archived:no',
+                query: 'for {:[x]} patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GREEN,
             },
         ],
@@ -962,8 +957,7 @@ const GO_STATIC_CHECK_S1010: Template = {
             },
             {
                 name: 'S1010 - fixed',
-                query:
-                    ':[s.][:] patternType:structural archived:no',
+                query: ':[s.][:] patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GREEN,
             },
         ],
@@ -985,8 +979,7 @@ const GO_STATIC_CHECK_S1012: Template = {
             },
             {
                 name: 'S1012 - fixed',
-                query:
-                    'time.Since(:[x]) patternType:structural archived:no',
+                query: 'time.Since(:[x]) patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GREEN,
             },
         ],
@@ -1033,10 +1026,10 @@ const GO_STATIC_CHECK_S1020: Template = {
                 query:
                     'if :[_.], ok := :[i.].(:[T]); :[i.] != nil && ok {:[body]} or if :[_.], ok := :[i.].(:[T]); ok && :[i.] != nil {:[body]} or if :[i.] != nil {  if :[_.], ok := :[i.].(:[T]); ok {:[body]}} patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
-            },            {
+            },
+            {
                 name: 'S1020 - fixed',
-                query:
-                    'if :[_.], ok := :[i.].(:[T]); ok {:[body]} patternType:structural archived:no',
+                query: 'if :[_.], ok := :[i.].(:[T]); ok {:[body]} patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GREEN,
             },
         ],
@@ -1056,10 +1049,10 @@ const GO_STATIC_CHECK_S1023: Template = {
                 query:
                     'func() {:[body] return } or func :[fn.](:[args]) {:[body] return } patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
-            },            {
+            },
+            {
                 name: 'S1023 - fixed',
-                query:
-                    'func() {:[body]} or func :[fn.](:[args]) {:[body]} patternType:structural archived:no',
+                query: 'func() {:[body]} or func :[fn.](:[args]) {:[body]} patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GREEN,
             },
         ],
@@ -1081,8 +1074,7 @@ const GO_STATIC_CHECK_S1024: Template = {
             },
             {
                 name: 'S1024 - fixed',
-                query:
-                    'func() {:[body]} or func :[fn.](:[args]) {:[body]} patternType:structural archived:no',
+                query: 'func() {:[body]} or func :[fn.](:[args]) {:[body]} patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GREEN,
             },
         ],
@@ -1104,8 +1096,7 @@ const GO_STATIC_CHECK_S1025: Template = {
             },
             {
                 name: 'S1025 - fixed',
-                query:
-                    'fmt.Println(":[s]") patternType:structural archived:no',
+                query: 'fmt.Println(":[s]") patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GREEN,
             },
         ],
@@ -1127,8 +1118,7 @@ const GO_STATIC_CHECK_S1028: Template = {
             },
             {
                 name: 'S1028 - fixed',
-                query:
-                    'fmt.Errorf(:[1]) patternType:structural archived:no',
+                query: 'fmt.Errorf(:[1]) patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GREEN,
             },
         ],
@@ -1150,8 +1140,7 @@ const GO_STATIC_CHECK_S1029: Template = {
             },
             {
                 name: 'S1029 - fixed',
-                query:
-                    'for _, :[r] := range :[s] patternType:structural archived:no',
+                query: 'for _, :[r] := range :[s] patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GREEN,
             },
         ],
@@ -1218,8 +1207,7 @@ const GO_STATIC_CHECK_S1037: Template = {
             },
             {
                 name: 'S1037 - fixed',
-                query:
-                    'time.Sleep(:[t]) patternType:structural archived:no',
+                query: 'time.Sleep(:[t]) patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GREEN,
             },
         ],
@@ -1241,8 +1229,7 @@ const GO_STATIC_CHECK_S1038: Template = {
             },
             {
                 name: 'S1038 - fixed',
-                query:
-                    'time.Sleep(:[t]) patternType:structural archived:no',
+                query: 'time.Sleep(:[t]) patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GREEN,
             },
         ],
@@ -1264,8 +1251,7 @@ const GO_STATIC_CHECK_S1039: Template = {
             },
             {
                 name: 'S1025 - fixed',
-                query:
-                    '":[s]" patternType:structural archived:no',
+                query: '":[s]" patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GREEN,
             },
         ],

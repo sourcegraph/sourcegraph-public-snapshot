@@ -137,7 +137,7 @@ interface CreatePageProps extends SettingsCascadeProps<Settings> {
     namespaceID?: Scalars['ID']
 }
 
-function getTitle():string {
+function getTitle(): string {
     const parameters = new URLSearchParams(location.search)
     if (parameters.has('title')) {
         return `Create batch change for ${parameters.get('title') ?? ''}`
@@ -176,65 +176,65 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
         if (parameters.has('kind')) {
             switch (parameters.get('kind')) {
                 case 'goCheckerSA6005':
-                    setTemplate(goCheckerSA6005Template(nameInput));
-                    break;
+                    setTemplate(goCheckerSA6005Template(nameInput))
+                    break
                 case 'goCheckerS1002':
-                    setTemplate(goCheckerS1002Template(nameInput));
-                    break;
+                    setTemplate(goCheckerS1002Template(nameInput))
+                    break
                 case 'goCheckerS1003':
-                    setTemplate(goCheckerS1003Template(nameInput));
-                    break;
+                    setTemplate(goCheckerS1003Template(nameInput))
+                    break
                 case 'goCheckerS1004':
-                    setTemplate(goCheckerS1004Template(nameInput));
-                    break;
+                    setTemplate(goCheckerS1004Template(nameInput))
+                    break
                 case 'goCheckerS1005':
-                    setTemplate(goCheckerS1005Template(nameInput));
-                    break;
+                    setTemplate(goCheckerS1005Template(nameInput))
+                    break
                 case 'goCheckerS1006':
-                    setTemplate(goCheckerS1006Template(nameInput));
-                    break;
+                    setTemplate(goCheckerS1006Template(nameInput))
+                    break
                 case 'goCheckerS1010':
-                    setTemplate(goCheckerS1010Template(nameInput));
-                    break;
+                    setTemplate(goCheckerS1010Template(nameInput))
+                    break
                 case 'goCheckerS1012':
-                    setTemplate(goCheckerS1012Template(nameInput));
-                    break;
+                    setTemplate(goCheckerS1012Template(nameInput))
+                    break
                 case 'goCheckerS1019':
-                    setTemplate(goCheckerS1019Template(nameInput));
-                    break;
+                    setTemplate(goCheckerS1019Template(nameInput))
+                    break
                 case 'goCheckerS1020':
-                    setTemplate(goCheckerS1020Template(nameInput));
-                    break;
+                    setTemplate(goCheckerS1020Template(nameInput))
+                    break
                 case 'goCheckerS1023':
-                    setTemplate(goCheckerS1023Template(nameInput));
-                    break;
+                    setTemplate(goCheckerS1023Template(nameInput))
+                    break
                 case 'goCheckerS1024':
-                    setTemplate(goCheckerS1024Template(nameInput));
-                    break;
+                    setTemplate(goCheckerS1024Template(nameInput))
+                    break
                 case 'goCheckerS1025':
-                    setTemplate(goCheckerS1025Template(nameInput));
-                    break;
+                    setTemplate(goCheckerS1025Template(nameInput))
+                    break
                 case 'goCheckerS1028':
-                    setTemplate(goCheckerS1028Template(nameInput));
-                    break;
+                    setTemplate(goCheckerS1028Template(nameInput))
+                    break
                 case 'goCheckerS1029':
-                    setTemplate(goCheckerS1029Template(nameInput));
-                    break;
+                    setTemplate(goCheckerS1029Template(nameInput))
+                    break
                 case 'goCheckerS1032':
-                    setTemplate(goCheckerS1032Template(nameInput));
-                    break;
+                    setTemplate(goCheckerS1032Template(nameInput))
+                    break
                 case 'goCheckerS1035':
-                    setTemplate(goCheckerS1035Template(nameInput));
-                    break;
+                    setTemplate(goCheckerS1035Template(nameInput))
+                    break
                 case 'goCheckerS1037':
-                    setTemplate(goCheckerS1037Template(nameInput));
-                    break;
+                    setTemplate(goCheckerS1037Template(nameInput))
+                    break
                 case 'goCheckerS1038':
-                    setTemplate(goCheckerS1038Template(nameInput));
-                    break;
+                    setTemplate(goCheckerS1038Template(nameInput))
+                    break
                 case 'goCheckerS1039':
-                    setTemplate(goCheckerS1039Template(nameInput));
-                    break;
+                    setTemplate(goCheckerS1039Template(nameInput))
+                    break
             }
         }
     }, [location.search, nameInput])
@@ -347,7 +347,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
     )
 }
 
-function goCheckerSA6005Template(name: string): string{
+function goCheckerSA6005Template(name: string): string {
     return `name: ${name}
 description: |
     This batch change uses [Comby](https://comby.dev) to improve inefficient string comparison with strings.ToLower or strings.ToUpper
@@ -385,7 +385,7 @@ changesetTemplate:
 `
 }
 
-function goCheckerS1002Template(name: string): string{
+function goCheckerS1002Template(name: string): string {
     return `name: ${name}
 description: |
     This batch change uses [Comby](https://comby.dev) to omit comparison with boolean constant
@@ -415,7 +415,7 @@ changesetTemplate:
 `
 }
 
-function goCheckerS1003Template(name: string): string{
+function goCheckerS1003Template(name: string): string {
     return `name: ${name}
 description: |
     This batch change uses [Comby](https://comby.dev) to replace calls to strings.Index with strings.Contains.
@@ -496,7 +496,7 @@ changesetTemplate:
 `
 }
 
-function goCheckerS1004Template(name: string): string{
+function goCheckerS1004Template(name: string): string {
     return `name: ${name}
 description: |
     This batch change uses [Comby](https://comby.dev) to replace call to bytes.Compare with bytes.Equal
@@ -526,7 +526,7 @@ changesetTemplate:
 `
 }
 
-function goCheckerS1005Template(name: string): string{
+function goCheckerS1005Template(name: string): string {
     return `name: ${name}
 description: |
     This batch change uses [Comby](https://comby.dev) to drop unnecessary use of the blank identifier
@@ -563,7 +563,7 @@ changesetTemplate:
 `
 }
 
-function goCheckerS1006Template(name: string): string{
+function goCheckerS1006Template(name: string): string {
     return `name: ${name}
 description: |
     This batch change uses [Comby](https://comby.dev) to use for { ... } for infinite loops
@@ -587,7 +587,7 @@ changesetTemplate:
 `
 }
 
-function goCheckerS1010Template(name: string): string{
+function goCheckerS1010Template(name: string): string {
     return `name: ${name}
 description: |
     This batch change uses [Comby](https://comby.dev) to omit default slice index
@@ -611,7 +611,7 @@ changesetTemplate:
 `
 }
 
-function goCheckerS1012Template(name: string): string{
+function goCheckerS1012Template(name: string): string {
     return `name: ${name}
 description: |
     This batch change uses [Comby](https://comby.dev) to replace time.Now().Sub(x) with time.Since(x)
@@ -635,7 +635,7 @@ changesetTemplate:
 `
 }
 
-function goCheckerS1019Template(name: string): string{
+function goCheckerS1019Template(name: string): string {
     return `name: ${name}
 description: |
     This batch change uses [Comby](https://comby.dev) to simplify make call by omitting redundant arguments
@@ -668,7 +668,7 @@ changesetTemplate:
 `
 }
 
-function goCheckerS1020Template(name: string): string{
+function goCheckerS1020Template(name: string): string {
     return `name: ${name}
 description: |
     This batch change uses [Comby](https://comby.dev) to omit redundant nil check in type assertion
@@ -704,7 +704,7 @@ changesetTemplate:
 `
 }
 
-function goCheckerS1023Template(name: string): string{
+function goCheckerS1023Template(name: string): string {
     return `name: ${name}
 description: |
     This batch change uses [Comby](https://comby.dev) to omit redundant control flow
@@ -734,7 +734,7 @@ changesetTemplate:
 `
 }
 
-function goCheckerS1024Template(name: string): string{
+function goCheckerS1024Template(name: string): string {
     return `name: ${name}
 description: |
     This batch change uses [Comby](https://comby.dev) to replace x.Sub(time.Now()) with time.Until(x)
@@ -763,7 +763,7 @@ changesetTemplate:
 `
 }
 
-function goCheckerS1025Template(name: string): string{
+function goCheckerS1025Template(name: string): string {
     return `name: ${name}
 description: |
     This batch change uses [Comby](https://comby.dev) to enforce don’t use fmt.Sprintf("%s", x) unnecessarily
@@ -787,7 +787,7 @@ changesetTemplate:
 `
 }
 
-function goCheckerS1028Template(name: string): string{
+function goCheckerS1028Template(name: string): string {
     return `name: ${name}
 description: |
     This batch change uses [Comby](https://comby.dev) to simplify error construction with fmt.Errorf
@@ -812,7 +812,7 @@ changesetTemplate:
 `
 }
 
-function goCheckerS1029Template(name: string): string{
+function goCheckerS1029Template(name: string): string {
     return `name: ${name}
 description: |
     This batch change uses [Comby](https://comby.dev) to range over the string directly
@@ -837,7 +837,7 @@ changesetTemplate:
 `
 }
 
-function goCheckerS1032Template(name: string): string{
+function goCheckerS1032Template(name: string): string {
     return `name: ${name}
 description: |
     This batch change uses [Comby](https://comby.dev) to use sort.Ints(x), sort.Float64s(x), and sort.Strings(x)
@@ -870,7 +870,7 @@ changesetTemplate:
 `
 }
 
-function goCheckerS1035Template(name: string): string{
+function goCheckerS1035Template(name: string): string {
     return `name: ${name}
 description: |
     This batch change uses [Comby](https://comby.dev) to remove redundant call to net/http.CanonicalHeaderKey in method call on net/http.Header
@@ -907,7 +907,7 @@ changesetTemplate:
 `
 }
 
-function goCheckerS1037Template(name: string): string{
+function goCheckerS1037Template(name: string): string {
     return `name: ${name}
 description: |
     This batch change uses [Comby](https://comby.dev) to remove redundant call to net/http.CanonicalHeaderKey in method call on net/http.Header
@@ -935,7 +935,7 @@ changesetTemplate:
 `
 }
 
-function goCheckerS1038Template(name: string): string{
+function goCheckerS1038Template(name: string): string {
     return `name: ${name}
 description: |
     This batch change uses [Comby](https://comby.dev) to remove redundant call to net/http.CanonicalHeaderKey in method call on net/http.Header
@@ -963,7 +963,7 @@ changesetTemplate:
 `
 }
 
-function goCheckerS1039Template(name: string): string{
+function goCheckerS1039Template(name: string): string {
     return `name: ${name}
 description: |
     This batch change uses [Comby](https://comby.dev) to improve unnecessary use of fmt.Sprint
