@@ -16,6 +16,21 @@ urlencode() {
   echo "$1" | curl -Gso /dev/null -w "%{url_effective}" --data-urlencode @- "" | cut -c 3- | sed -e 's/%0A//'
 }
 
+get_days_ago_in_ISO() {
+  unameOut="$(uname -s)"
+  case "${unameOut}" in
+  Linux*) machine=Linux ;;
+  Darwin*) machine=Mac ;;
+  *) ;;
+  esac
+
+  if [[ $machine = "Mac" ]]; then
+    date -u "-v-$1d" +"%Y-%m-%dT%H:%M:%SZ"
+  else
+    date -d "$1 days ago" +"%Y-%m-%dT%H:%M:%SZ"
+  fi
+}
+
 expire_after_days="5"
 
 while getopts 'e:' flag; do
@@ -31,7 +46,7 @@ done
 render_api_key="${RENDER_COM_API_KEY}"
 render_owner_id="${RENDER_COM_OWNER_ID}"
 
-expiration_date_ISO=$(date -d "$expire_after_days days ago" +"%Y-%m-%dT%H:%M:%SZ")
+expiration_date_ISO=$(get_days_ago_in_ISO "$expire_after_days")
 
 if [[ -z "${render_api_key}" || -z "${render_owner_id}" ]]; then
   echo "RENDER_COM_API_KEY or RENDER_COM_OWNER_ID is not set"
@@ -46,10 +61,12 @@ fi
 cursor=""
 ids=()
 
-# Collect ids of all services which are created before expiration date and `not_suspended`
+# Collect ids of all services which are updated before expiration date and `not_suspended`
+# We use `updatedBefore` since the services are updated on deployments
 for (( ; ; )); do
+  # render.com API > List services: https://api-docs.render.com/reference/get-services
   service_list=$(curl -sSf --request GET \
-    --url "https://api.render.com/v1/services?type=web_service&createdBefore=$(urlencode "$expiration_date_ISO")&suspended=not_suspended&ownerId=${render_owner_id}&limit=100&cursor=${cursor}" \
+    --url "https://api.render.com/v1/services?type=web_service&updatedBefore=$(urlencode "$expiration_date_ISO")&suspended=not_suspended&ownerId=${render_owner_id}&limit=100&cursor=${cursor}" \
     --header 'Accept: application/json' \
     --header "Authorization: Bearer ${render_api_key}")
 
@@ -67,27 +84,13 @@ for (( ; ; )); do
 done
 
 for service_id in "${ids[@]}"; do
-  echo "Checking service: $service_id"
+  echo "Deleting service: $service_id"
 
-  # Get the last deploy time
-  last_deploy_created_at=$(curl -sSf --request GET \
-    --url "https://api.render.com/v1/services/${service_id}/deploys?limit=1" \
-    --header 'Accept: application/json' \
-    --header "Authorization: Bearer ${render_api_key}" | jq -r '.[].deploy.createdAt')
+  # curl -sSf -o /dev/null --request DELETE \
+  #   --url "https://api.render.com/v1/services/${service_id}" \
+  #   --header 'Accept: application/json' \
+  #   --header "Authorization: Bearer ${render_api_key}"
 
-  # Remove nanosecond part out of ISO Datetime format of `createdAt` then get the UNIX timestamp
-  last_deploy_created_at_ISO="${last_deploy_created_at//.[[:digit:]]*Z/Z}"
-
-  if [[ $last_deploy_created_at_ISO < $expiration_date_ISO ]]; then
-    # there are no deploy times since `expiration_date_ISO` => remove it
-    echo "-- Removing service ${service_id} (last deployed at ${last_deploy_created_at})"
-
-    # curl -sSf -o /dev/null --request DELETE \
-    #   --url "https://api.render.com/v1/services/${service_id}" \
-    #   --header 'Accept: application/json' \
-    #   --header "Authorization: Bearer ${render_api_key}"
-
-    # To make sure we don't reach the limitation of 30/minute DELETE requests
-    sleep 2
-  fi
+  # To make sure we don't reach the limitation of 30/minute DELETE requests
+  sleep 2
 done
