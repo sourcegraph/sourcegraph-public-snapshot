@@ -26,11 +26,11 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
     authenticatedUser,
     _testStartOpen,
 }) => {
-    const [webhookEnabled, setWebhookEnabled] = useState(action ? action.enabled : true)
+    const [enabled, setEnabled] = useState(action ? action.enabled : true)
 
     const toggleWebhookEnabled: (enabled: boolean, saveImmediately: boolean) => void = useCallback(
         (enabled, saveImmediately) => {
-            setWebhookEnabled(enabled)
+            setEnabled(enabled)
             if (action && saveImmediately) {
                 setAction({ ...action, enabled })
             }
@@ -53,15 +53,15 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
                 __typename: 'MonitorWebhook',
                 id: action ? action.id : '',
                 url,
-                enabled: webhookEnabled,
+                enabled,
                 includeResults,
             })
         },
-        [action, includeResults, setAction, url, webhookEnabled]
+        [action, includeResults, setAction, url, enabled]
     )
 
     const onCancel: React.FormEventHandler = useCallback(() => {
-        setWebhookEnabled(action ? action.enabled : true)
+        setEnabled(action ? action.enabled : true)
         setUrl(action && action.__typename === 'MonitorWebhook' ? action.url : '')
         setIncludeResults(action ? action.includeResults : false)
     }, [action])
@@ -111,7 +111,7 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
             disabled={disabled}
             completed={!!action}
             completedSubtitle="The webhook at the specified URL will be called."
-            actionEnabled={webhookEnabled}
+            actionEnabled={enabled}
             toggleActionEnabled={toggleWebhookEnabled}
             canSubmit={!!urlIsValid}
             includeResults={includeResults}

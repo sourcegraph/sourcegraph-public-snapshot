@@ -26,11 +26,11 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
     monitorName,
     _testStartOpen,
 }) => {
-    const [webhookEnabled, setWebhookEnabled] = useState(action ? action.enabled : true)
+    const [enabled, setEnabled] = useState(action ? action.enabled : true)
 
     const toggleWebhookEnabled: (enabled: boolean, saveImmediately: boolean) => void = useCallback(
         (enabled, saveImmediately) => {
-            setWebhookEnabled(enabled)
+            setEnabled(enabled)
             if (action && saveImmediately) {
                 setAction({ ...action, enabled })
             }
@@ -53,15 +53,15 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
                 __typename: 'MonitorSlackWebhook',
                 id: action ? action.id : '',
                 url,
-                enabled: webhookEnabled,
+                enabled,
                 includeResults,
             })
         },
-        [action, includeResults, setAction, url, webhookEnabled]
+        [action, includeResults, setAction, url, enabled]
     )
 
     const onCancel: React.FormEventHandler = useCallback(() => {
-        setWebhookEnabled(action ? action.enabled : true)
+        setEnabled(action ? action.enabled : true)
         setUrl(action && action.__typename === 'MonitorSlackWebhook' ? action.url : '')
         setIncludeResults(action ? action.includeResults : false)
     }, [action])
@@ -112,7 +112,7 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
             disabled={disabled}
             completed={!!action}
             completedSubtitle="Notification will be sent to the specified Slack webhook URL."
-            actionEnabled={webhookEnabled}
+            actionEnabled={enabled}
             toggleActionEnabled={toggleWebhookEnabled}
             canSubmit={urlIsValid}
             includeResults={includeResults}
