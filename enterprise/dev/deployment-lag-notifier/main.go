@@ -23,6 +23,7 @@ type Flags struct {
 	Environment     string
 	SlackWebhookURL string
 	NumCommits      int
+	AllowedAge      string
 }
 
 // Parse parses the CLI flags and stores them in a configuration struct
@@ -30,7 +31,8 @@ func (f *Flags) Parse() {
 	flag.BoolVar(&f.DryRun, "dry-run", false, "Print to stdout instead of sending to Slack")
 	flag.StringVar(&f.Environment, "env", Getenv("SG_ENVIRONMENT", "cloud"), "Environment to check against")
 	flag.StringVar(&f.SlackWebhookURL, "slack-webhook-url", os.Getenv("SLACK_WEBHOOK_URL"), "Slack webhook URL to post to")
-	flag.IntVar(&f.NumCommits, "num-commits", 20, "Number of commits to allow deployed version to drift from main")
+	flag.IntVar(&f.NumCommits, "num-commits", 30, "Number of commits to allow deployed version to drift from main")
+	flag.StringVar(&f.AllowedAge, "allowed-age", "3h", "Duration (in time.Duration format) deployed version can differ from tip of main")
 	flag.Parse()
 }
 
@@ -91,6 +93,29 @@ func getLiveVersion(client *http.Client, url string) (string, error) {
 	return version, nil
 }
 
+// checkForCommit checks for the current version in the
+// last 20 commits
+func checkForCommit(version string, commits []Commit) bool {
+	found := false
+	for _, c := range commits {
+		if c.Sha == version[:7] {
+			found = true
+		}
+	}
+
+	return found
+}
+
+// commitTooOld compares the age of the current commit to the age of the tip of main
+// and if the threshold (set by flags.CommitAge) is exceeded, return true
+func commitTooOld(curr, tip Commit, threshold time.Duration) (bool, time.Duration) {
+	drift := tip.Date.Sub(curr.Date)
+	if drift > threshold {
+		return true, drift
+	}
+	return false, drift
+}
+
 func main() {
 	flags := &Flags{}
 	flags.Parse()
@@ -106,6 +131,11 @@ func main() {
 		log.Fatalf("Environment \"%s\" not found. Valid options are: \n%s\n", flags.Environment, s)
 	}
 
+	allowedAge, err := time.ParseDuration(flags.AllowedAge)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	version, err := getLiveVersion(&client, url)
 	if err != nil {
 		log.Fatal(err)
@@ -116,6 +146,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	fmt.Println(commitLog)
+
 	currentCommit, err := getCommit(&client, version)
 	if err != nil {
 		log.Fatal(err)
@@ -123,10 +155,25 @@ func main() {
 
 	slack := NewSlackClient(flags.SlackWebhookURL)
 
-	current := checkForCommit(version, commitLog)
+	inAllowedNumCommits := checkForCommit(version, commitLog)
+
+	timeExceeded, drift := commitTooOld(currentCommit, commitLog[0], allowedAge)
+
 	// Always at least print locally when running a dry-run
-	if !current || flags.DryRun {
-		msg, err := createMessage(version[:7], flags.Environment, currentCommit, flags.NumCommits)
+	if !inAllowedNumCommits || timeExceeded || flags.DryRun {
+
+		td := TemplateData{
+			Version:          version,
+			Environment:      flags.Environment,
+			CommitTooOld:     timeExceeded,
+			Threshold:        allowedAge.String(),
+			Drift:            drift.String(),
+			InAllowedCommits: inAllowedNumCommits,
+			NumCommits:       flags.NumCommits,
+		}
+
+		// msg, err := createMessage(version[:7], flags.Environment, currentCommit, flags.NumCommits)
+		msg, err := createMessage(td)
 		if !flags.DryRun {
 			err = slack.PostMessage(msg)
 			if err != nil {
@@ -136,7 +183,6 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Println(msg.String())
 	}
 
 	log.Printf("Cloud is current? %v\n", checkForCommit(version, commitLog))

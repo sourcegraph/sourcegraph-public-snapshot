@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -77,30 +76,37 @@ func (s *SlackClient) PostMessage(b bytes.Buffer) error {
 	return nil
 }
 
+type TemplateData struct {
+	Version     string
+	Environment string
+
+	CommitTooOld bool
+	Threshold    string
+	Drift        string
+
+	InAllowedCommits bool
+	NumCommits       int
+}
+
 // createMessage renders a template and returns teh result as a bytes.Buffer to either
 // be printed or posted to Slack
-func createMessage(version, environment string, current Commit, numCommits int) (bytes.Buffer, error) {
+func createMessage(td TemplateData) (bytes.Buffer, error) {
 	var msg bytes.Buffer
 
-	drift := time.Now().Sub(current.Date).Hours()
-
-	var slackTemplate = `:warning: *{{.Environment}}*'s version was not found in the last {{.NumCommits}} commits.
-
+	var slackTemplate = `:warning: *{{.Environment}}*'s version may be out of date.
 Current version: ` + "`{{ .Version }}`" + ` was committed *{{.Drift}} hours ago*. 
+
+*Alerts*:
+{{- if not .InAllowedCommits}} 
+• ` + "`{{.Version}}`" + ` was not found in the last ` + "`{{.NumCommits}}`" + ` commits.
+{{- end}}
+{{- if .CommitTooOld}}
+• ` + "`{{.Version}}`" + ` was committed ` + "`{{.Drift}}`" + ` hours ago and exceeds the threshold of ` + "`{{.Threshold}}`" + `
+{{- end}}
 
 Check <https://github.com/sourcegraph/deploy-sourcegraph-cloud/pulls|deploy-sourcegraph-cloud> to see if a release is blocked.
 
-cc <!subteam^S02NFV6A536|devops-support>
-`
-
-	type templateData struct {
-		Version     string
-		Environment string
-		Drift       string
-		NumCommits  int
-	}
-
-	td := templateData{Version: version, Environment: environment, Drift: fmt.Sprintf("%.2f", drift), NumCommits: numCommits}
+cc <!subteam^S02NFV6A536|devops-support>`
 
 	tpl, err := template.New("slack-message").Parse(slackTemplate)
 	if err != nil {

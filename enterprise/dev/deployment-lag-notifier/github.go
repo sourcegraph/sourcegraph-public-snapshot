@@ -124,21 +124,8 @@ func getCommitLog(client *http.Client, numCommits int) ([]Commit, error) {
 		lines := strings.Split(g.Commit.Message, "\n")
 		message := g.Sha[:7]
 		commits = append(commits,
-			Commit{Sha: message, Author: g.Commit.Author.Name, Message: lines[0]})
+			Commit{Sha: message, Author: g.Commit.Author.Name, Message: lines[0], Date: g.Commit.Author.Date})
 	}
 
 	return commits, nil
-}
-
-// checkForCommit checks for the current version in the
-// last 20 commits
-func checkForCommit(version string, commits []Commit) bool {
-	found := false
-	for _, c := range commits {
-		if c.Sha == version[:7] {
-			found = true
-		}
-	}
-
-	return found
 }
