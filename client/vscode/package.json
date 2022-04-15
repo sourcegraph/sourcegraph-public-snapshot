@@ -62,12 +62,6 @@
         "category": "Sourcegraph",
         "title": "Remove Repository from Sourcegraph File System",
         "icon": "$(trash)"
-      },
-      {
-        "command": "sourcegraph.openLocalCopy",
-        "category": "Sourcegraph",
-        "title": "Open Remote File Locally",
-        "icon": "$(folder-opened)"
       }
     ],
     "viewsContainers": {
@@ -200,11 +194,6 @@
         {
           "command": "sourcegraph.search",
           "group": "sourcegraph"
-        },
-        {
-          "command": "sourcegraph.openLocalCopy",
-          "when": "resourceScheme == sourcegraph && editorReadonly",
-          "group": "sourcegraph"
         }
       ],
       "view/title": [
@@ -217,11 +206,6 @@
       "editor/title": [
         {
           "command": "sourcegraph.openInBrowser",
-          "when": "resourceScheme == sourcegraph && editorReadonly",
-          "group": "navigation"
-        },
-        {
-          "command": "sourcegraph.openLocalCopy",
           "when": "resourceScheme == sourcegraph && editorReadonly",
           "group": "navigation"
         }
