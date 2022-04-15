@@ -44,7 +44,8 @@ jobs:
           fetch-depth: 1
 
       - name: Clean up inactive PR preview apps
-        run: ./dev/ci/render-pr-preview-cleanup.sh -e 5 # 5 days from the last update
+        # This job removes PR preview apps which don't have any updates in last 5 days
+        run: ./dev/ci/render-pr-preview-cleanup.sh -e 5
         env:
           RENDER_COM_API_KEY: ${{ secrets.RENDER_COM_API_KEY }}
           RENDER_COM_OWNER_ID: ${{ secrets.RENDER_COM_OWNER_ID }}

@@ -28,3 +28,9 @@ We do not create client PR previews [if Go or GraphQL is changed](https://source
 ## Why does a search query fail with an error?
 
 The preview app is deployed with `SOURCEGRAPHDOTCOM_MODE=false`, which means that the user should be authenticated to use all web application features similar to [the dogfood instance](https://k8s.sgdev.org/). Make sure that you're logged in. If it doesn't fix the issue, please report it in Slack.
+
+## Why is my preview inactive?
+
+## Where to find the script that cleans up previews?
+
+## What is the default cleanup schedule and the default preview lifetime?

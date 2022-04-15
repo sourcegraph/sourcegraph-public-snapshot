@@ -24,6 +24,7 @@ get_days_ago_in_ISO() {
   *) ;;
   esac
 
+  # `date` in macos is different from Linux
   if [[ $machine = "Mac" ]]; then
     date -u "-v-$1d" +"%Y-%m-%dT%H:%M:%SZ"
   else
