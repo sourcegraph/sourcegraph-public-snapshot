@@ -14,6 +14,7 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 ## Unreleased
 
 - Fix Sourcegraph buttons styles on Bitbucket cloud: [issues/32598](https://github.com/sourcegraph/sourcegraph/issues/32598), [pull/33787](https://github.com/sourcegraph/sourcegraph/pull/33787)
+- Fix repo visibility check logic: [issues/29244](https://github.com/sourcegraph/sourcegraph/issues/29244), [pull/33352](https://github.com/sourcegraph/sourcegraph/pull/33352)
 
 ## Chrome & Firefox 22.4.7.1712, Safari v1.13
 
