@@ -3,7 +3,6 @@ module github.com/sourcegraph/sourcegraph/lib
 go 1.16
 
 require (
-	github.com/alecthomas/kingpin v2.2.6+incompatible
 	github.com/alecthomas/units v0.0.0-20211218093645-b94a6e3cc137 // indirect
 	github.com/cockroachdb/errors v1.8.9
 	github.com/derision-test/go-mockgen v1.1.2
@@ -31,6 +30,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0
+	go.uber.org/zap v1.21.0
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20220209214540-3681064d5158
 	golang.org/x/tools v0.1.9 // indirect

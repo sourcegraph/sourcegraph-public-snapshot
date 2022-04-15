@@ -1,11 +1,7 @@
 package workerutil
 
 import (
-	"flag"
-	"os"
 	"testing"
-
-	"github.com/inconshreveable/log15"
 )
 
 func TestMain(m *testing.M) {
@@ -14,9 +10,9 @@ func TestMain(m *testing.M) {
 	//
 	// If logs are needed to debug unit test behavior, then temporarily
 	// comment out the following lines.
-	logger = log15.New()
-	logger.SetHandler(log15.DiscardHandler())
+	// logger = log15.New()
+	// logger.SetHandler(log15.DiscardHandler())
 
-	flag.Parse()
-	os.Exit(m.Run())
+	// flag.Parse()
+	// os.Exit(m.Run())
 }
