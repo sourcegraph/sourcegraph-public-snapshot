@@ -3,6 +3,7 @@ import React, { useCallback, useState } from 'react'
 import classNames from 'classnames'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
+import { isErrorLike } from '@sourcegraph/common'
 import { Button, Card } from '@sourcegraph/wildcard'
 
 import styles from '../CodeMonitorForm.module.scss'
@@ -19,12 +20,23 @@ export interface ActionEditorProps {
     actionEnabled: boolean
     toggleActionEnabled: (enabled: boolean, saveImmediately: boolean) => void
 
+    includeResults: boolean
+    toggleIncludeResults: (includeResults: boolean) => void
+
     canSubmit?: boolean
     onSubmit: React.FormEventHandler
     onCancel?: React.FormEventHandler
 
     canDelete: boolean
     onDelete: React.FormEventHandler
+
+    // Test action
+    testState: 'called' | 'loading' | Error | undefined
+
+    testButtonDisabledReason?: string // If defined, the test button is disabled and this is the reason why
+    testButtonText: string
+    testAgainButtonText: string
+    onTest: () => void
 
     // For testing purposes only
     _testStartOpen?: boolean
@@ -40,11 +52,18 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
     idName,
     actionEnabled,
     toggleActionEnabled,
+    includeResults,
+    toggleIncludeResults,
     canSubmit = true,
     onSubmit,
     onCancel,
     canDelete,
     onDelete,
+    testState,
+    testButtonDisabledReason,
+    testButtonText,
+    testAgainButtonText,
+    onTest,
     children,
     _testStartOpen = false,
 }) => {
@@ -89,6 +108,58 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
                     <span className="text-muted">{subtitle}</span>
 
                     {children}
+
+                    <div className="d-flex align-items-center mb-3">
+                        <div>
+                            <Toggle
+                                title="Include search results in message"
+                                value={includeResults}
+                                onToggle={toggleIncludeResults}
+                                className="mr-2"
+                                aria-labelledby={`code-monitoring-${idName}-include-results-toggle`}
+                                data-testid={`include-results-toggle-${idName}`}
+                            />
+                        </div>
+                        <span id={`code-monitoring-${idName}-form-actions-include-results-toggle`}>
+                            Include search results in sent message
+                        </span>
+                    </div>
+
+                    <div className="flex mt-1">
+                        <Button
+                            className="mr-2"
+                            variant="secondary"
+                            outline={!testButtonDisabledReason}
+                            disabled={!!testButtonDisabledReason || testState === 'loading' || testState === 'called'}
+                            onClick={onTest}
+                            size="sm"
+                            data-testid={`send-test-${idName}`}
+                        >
+                            {testButtonText}
+                        </Button>
+                        {testState === 'called' && !testButtonDisabledReason && (
+                            <Button
+                                className="p-0"
+                                onClick={onTest}
+                                variant="link"
+                                size="sm"
+                                data-testid={`send-test-${idName}-again`}
+                            >
+                                {testAgainButtonText}
+                            </Button>
+                        )}
+                        {testButtonDisabledReason && (
+                            <div className={classNames('mt-2', styles.testActionError)}>{testButtonDisabledReason}</div>
+                        )}
+                        {isErrorLike(testState) && (
+                            <div
+                                className={classNames('mt-2', styles.testActionError)}
+                                data-testid={`test-${idName}-error`}
+                            >
+                                {testState.message}
+                            </div>
+                        )}
+                    </div>
 
                     <div className="d-flex align-items-center my-4">
                         <div>
