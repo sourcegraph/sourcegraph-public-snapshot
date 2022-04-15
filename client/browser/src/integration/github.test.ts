@@ -14,6 +14,17 @@ import { closeInstallPageTab, percySnapshot } from './shared'
 
 describe('GitHub', () => {
     let driver: Driver
+    before(async () => {
+        driver = await createDriverForTest({ loadExtension: true })
+        await closeInstallPageTab(driver.browser)
+        if (driver.sourcegraphBaseUrl !== 'https://sourcegraph.com') {
+            await driver.setExtensionSourcegraphUrl()
+        }
+    })
+    after(async () => {
+        await driver?.close()
+    })
+
     let testContext: BrowserIntegrationTestContext
 
     const mockUrls = (urls: string[]) => {
@@ -25,12 +36,6 @@ describe('GitHub', () => {
     }
 
     beforeEach(async function () {
-        driver = await createDriverForTest({ loadExtension: true })
-        await closeInstallPageTab(driver.browser)
-        if (driver.sourcegraphBaseUrl !== 'https://sourcegraph.com') {
-            await driver.setExtensionSourcegraphUrl()
-        }
-
         testContext = await createBrowserIntegrationTestContext({
             driver,
             currentTest: this.currentTest!,
@@ -112,7 +117,7 @@ describe('GitHub', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(async () => {
         await testContext?.dispose()
-        await driver?.close()
+        // await driver?.close()
     })
 
     it('adds "View on Sourcegraph" buttons to files', async () => {
