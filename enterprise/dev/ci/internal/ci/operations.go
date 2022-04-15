@@ -275,6 +275,9 @@ func recordBrowserExtensionIntegrationTests(pipeline *bk.Pipeline) {
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
 			bk.Cmd("yarn workspace @sourcegraph/browser -s run record-integration"),
+			// Retry may help in case if command failed due to hitting the rate limit or similar kind of error on the code host:
+			// https://docs.github.com/en/rest/reference/search#rate-limit
+			bk.AutomaticRetry(1),
 			bk.ArtifactPaths("./puppeteer/*.png"),
 		)
 	}
