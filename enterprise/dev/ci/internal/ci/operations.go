@@ -284,6 +284,7 @@ func addVSCExt(pipeline *bk.Pipeline) {
 		bk.Cmd("yarn --cwd client/vscode -s build"),
 		bk.Cmd("yarn --cwd client/vscode -s package"),
 		bk.Cmd("yarn --cwd client/vscode -s test --verbose"),
+		bk.AutomaticRetry(1),
 	)
 }
 
