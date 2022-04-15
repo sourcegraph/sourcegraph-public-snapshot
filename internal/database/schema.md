@@ -1075,7 +1075,7 @@ Referenced by:
 
 ```
 
-See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job&patternType=literal)
+See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job&amp;patternType=literal)
 
 **cost**: Integer representing a cost approximation of executing this search query.
 
@@ -1271,7 +1271,7 @@ Indexes:
 
 ```
 
-Stores whether or not the nearest upload data for a repository is out of date (when update_token > dirty_token).
+Stores whether or not the nearest upload data for a repository is out of date (when update_token &gt; dirty_token).
 
 **dirty_token**: Set to the value of update_token visible to the transaction that updates the commit graph. Updates of dirty_token during this time will cause a second update.
 
@@ -1347,7 +1347,7 @@ Stores metadata about a code intel index job.
 
 **indexer**: The docker image used to run the index command (e.g. sourcegraph/lsif-go).
 
-**indexer_args**: The command run inside the indexer image to produce the index file (e.g. ['lsif-node', '-p', '.'])
+**indexer_args**: The command run inside the indexer image to produce the index file (e.g. [&#39;lsif-node&#39;, &#39;-p&#39;, &#39;.&#39;])
 
 **local_steps**: A list of commands to run inside the indexer image prior to running the indexer command.
 
@@ -1404,7 +1404,7 @@ Associates commits with the complete set of uploads visible from that commit. Ev
 
 **commit_bytea**: A 40-char revhash. Note that this commit may not be resolvable in the future.
 
-**uploads**: Encodes an {upload_id => distance} map that includes an entry for every upload visible from the commit. There is always at least one entry with a distance of zero.
+**uploads**: Encodes an {upload_id =&gt; distance} map that includes an entry for every upload visible from the commit. There is always at least one entry with a distance of zero.
 
 # Table "public.lsif_nearest_uploads_links"
 ```

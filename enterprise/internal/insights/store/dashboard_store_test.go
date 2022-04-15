@@ -270,6 +270,67 @@ func TestDeleteDashboard(t *testing.T) {
 	})
 }
 
+func TestRestoreDashboard(t *testing.T) {
+	insightsDB := dbtest.NewInsightsDB(t)
+	now := time.Now().Truncate(time.Microsecond).Round(0)
+	ctx := context.Background()
+
+	_, err := insightsDB.Exec(`
+		INSERT INTO dashboard (id, title, deleted_at)
+		VALUES (1, 'test dashboard 1', NULL), (2, 'test dashboard 2', NOW());
+		INSERT INTO dashboard_grants (dashboard_id, global)
+		VALUES (1, true), (2, true);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	store := NewDashboardStore(insightsDB)
+	store.Now = func() time.Time {
+		return now
+	}
+
+	t.Run("test restore dashboard", func(t *testing.T) {
+		got, err := store.GetDashboards(ctx, DashboardQueryArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("BeforeRestore", []*types.Dashboard{
+			{
+				ID:           1,
+				Title:        "test dashboard 1",
+				UserIdGrants: []int64{},
+				OrgIdGrants:  []int64{},
+				GlobalGrant:  true,
+			},
+		}).Equal(t, got)
+
+		err = store.RestoreDashboard(ctx, 2)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, err = store.GetDashboards(ctx, DashboardQueryArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("AfterRestore", []*types.Dashboard{
+			{
+				ID:           1,
+				Title:        "test dashboard 1",
+				UserIdGrants: []int64{},
+				OrgIdGrants:  []int64{},
+				GlobalGrant:  true,
+			},
+			{
+				ID:           2,
+				Title:        "test dashboard 2",
+				UserIdGrants: []int64{},
+				OrgIdGrants:  []int64{},
+				GlobalGrant:  true,
+			},
+		}).Equal(t, got)
+	})
+}
+
 func TestAddViewsToDashboard(t *testing.T) {
 	insightsDB := dbtest.NewInsightsDB(t)
 	now := time.Now().Truncate(time.Microsecond).Round(0)

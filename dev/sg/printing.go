@@ -19,8 +19,12 @@ func writeFailureLinef(fmtStr string, args ...interface{}) {
 	stdout.Out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, fmtStr, args...))
 }
 
+func newWarningLinef(fmtStr string, args ...interface{}) output.FancyLine {
+	return output.Linef(output.EmojiWarningSign, output.StyleYellow, fmtStr, args...)
+}
+
 func writeWarningLinef(fmtStr string, args ...interface{}) {
-	stdout.Out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleYellow, fmtStr, args...))
+	stdout.Out.WriteLine(newWarningLinef(fmtStr, args...))
 }
 
 func writeSkippedLinef(fmtStr string, args ...interface{}) {

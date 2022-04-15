@@ -12,12 +12,11 @@ import React, {
 
 import classNames from 'classnames'
 import { LocationDescriptor } from 'history'
+import BookPlusOutlineIcon from 'mdi-react/BookPlusOutlineIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import FileDocumentOutlineIcon from 'mdi-react/FileDocumentOutlineIcon'
-import NotebookPlusIcon from 'mdi-react/NotebookPlusIcon'
-import PenIcon from 'mdi-react/PenIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import TextBoxIcon from 'mdi-react/TextBoxIcon'
 
@@ -27,11 +26,11 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendContextFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { buildSearchURLQuery, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, TextArea, Icon } from '@sourcegraph/wildcard'
 
 import { BlockInput } from '../notebooks'
-import { useExperimentalFeatures } from '../stores'
 import {
     useSearchStackState,
     restorePreviousSession,
@@ -42,6 +41,7 @@ import {
     SearchStackEntryInput,
     addSearchStackEntry,
     setEntryAnnotation,
+    SearchStackEntryID,
 } from '../stores/searchStack'
 
 import styles from './SearchStack.module.scss'
@@ -81,18 +81,67 @@ function useHasNewEntry(entries: SearchStackEntry[]): boolean {
     return previous !== undefined && previous < entries.length
 }
 
-export interface SearchStackProps {
+export const NotepadIcon: React.FunctionComponent = () => <Icon as={BookPlusOutlineIcon} />
+
+export interface SearchStackContainerProps {
     initialOpen?: boolean
     onCreateNotebook: (blocks: BlockInput[]) => void
 }
 
-export const SearchStack: React.FunctionComponent<SearchStackProps> = ({ initialOpen = false, onCreateNotebook }) => {
-    const [open, setOpen] = useState(initialOpen)
-    const [confirmRemoveAll, setConfirmRemoveAll] = useState(false)
-    const addableEntry = useSearchStackState(state => state.addableEntry)
+export const SearchStackContainer: React.FunctionComponent<SearchStackContainerProps> = ({
+    initialOpen,
+    onCreateNotebook,
+}) => {
+    const newEntry = useSearchStackState(state => state.addableEntry)
     const entries = useSearchStackState(state => state.entries)
     const canRestore = useSearchStackState(state => state.canRestoreSession)
-    const enableSearchStack = useExperimentalFeatures(features => features.enableSearchStack)
+    const [enableSearchStack] = useTemporarySetting('search.notepad.enabled')
+
+    if (enableSearchStack) {
+        return (
+            <SearchStack
+                className={styles.fixed}
+                initialOpen={initialOpen}
+                onCreateNotebook={onCreateNotebook}
+                newEntry={newEntry}
+                entries={entries}
+                restorePreviousSession={canRestore ? restorePreviousSession : undefined}
+                addEntry={addSearchStackEntry}
+                removeEntry={removeFromSearchStack}
+            />
+        )
+    }
+
+    return null
+}
+
+export interface SearchStackProps {
+    className?: string
+    initialOpen?: boolean
+    onCreateNotebook: (blocks: BlockInput[]) => void
+    newEntry?: SearchStackEntryInput | null
+    entries: SearchStackEntry[]
+    addEntry: typeof addSearchStackEntry
+    removeEntry: (ids: SearchStackEntryID[] | SearchStackEntryID) => void
+    restorePreviousSession?: () => void
+    // This is only used in our CTA to prevent notes from being rendered as
+    // selected
+    selectable?: boolean
+}
+
+export const SearchStack: React.FunctionComponent<SearchStackProps> = ({
+    className,
+    initialOpen = false,
+    onCreateNotebook,
+    entries,
+    restorePreviousSession,
+    addEntry,
+    removeEntry,
+    newEntry,
+    selectable = true,
+}) => {
+    const [open, setOpen] = useState(initialOpen)
+    const [confirmRemoveAll, setConfirmRemoveAll] = useState(false)
     const [selectedEntries, setSelectedEntries] = useState<number[]>([])
     const isMacPlatform_ = useMemo(isMacPlatform, [])
 
@@ -100,12 +149,12 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({ initial
     const hasNewEntry = useHasNewEntry(reversedEntries)
 
     useLayoutEffect(() => {
-        if (hasNewEntry) {
+        if (hasNewEntry && selectable) {
             // Always select the new entry. This is also avoids problems with
             // getting the selection index out of sync.
             setSelectedEntries([0])
         }
-    }, [hasNewEntry])
+    }, [hasNewEntry, selectable])
 
     const toggleSelectedEntry = useCallback(
         (position: number, event: MouseEvent | KeyboardEvent) => {
@@ -148,9 +197,9 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({ initial
                 const entryPosition = reversedEntries.findIndex(entry => entry.id === toDelete.id)
                 setSelectedEntries(selection => adjustSelection(selection, entryPosition))
             }
-            removeFromSearchStack([toDelete.id])
+            removeEntry([toDelete.id])
         },
-        [reversedEntries, selectedEntries, setSelectedEntries]
+        [reversedEntries, selectedEntries, setSelectedEntries, removeEntry]
     )
 
     const createNotebook = useCallback(() => {
@@ -274,12 +323,12 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({ initial
         [reversedEntries, selectedEntries, deleteSelectedEntries, isMacPlatform_]
     )
 
-    if (!enableSearchStack || (reversedEntries.length === 0 && !addableEntry)) {
-        return null
-    }
-
     return (
-        <section className={classNames(styles.root, { [styles.open]: open })} id={SEARCH_STACK_ID} role="dialog">
+        <section
+            className={classNames(styles.root, className, { [styles.open]: open })}
+            id={SEARCH_STACK_ID}
+            role="dialog"
+        >
             <Button
                 aria-label={(open ? 'Close' : 'Open') + ' Notepad'}
                 variant="icon"
@@ -289,7 +338,7 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({ initial
                 aria-expanded="true"
             >
                 <span>
-                    <Icon as={PenIcon} />
+                    <NotepadIcon />
                     <h2 className="px-1 d-inline">Notepad</h2>
                     <small>
                         ({reversedEntries.length} note{reversedEntries.length === 1 ? '' : 's'})
@@ -301,10 +350,10 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({ initial
             </Button>
             {open && (
                 <>
-                    {addableEntry && (
+                    {newEntry && (
                         <div className={classNames(styles.newNote, 'p-2')}>
-                            <h3>Create new note from current {addableEntry.type === 'file' ? 'file' : 'search'}:</h3>
-                            <AddEntryButton entry={addableEntry} />
+                            <h3>Create new note from current {newEntry.type === 'file' ? 'file' : 'search'}:</h3>
+                            <AddEntryButton entry={newEntry} addEntry={addEntry} />
                         </div>
                     )}
                     <h3 className="p-2">
@@ -358,39 +407,37 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({ initial
                             </div>
                         </div>
                     )}
-                    <div className="p-2">
-                        {canRestore && (
+                    <div className="p-2 d-flex align-items-center">
+                        <Button
+                            onClick={createNotebook}
+                            variant="primary"
+                            size="sm"
+                            disabled={entries.length === 0}
+                            className="flex-1 mr-2"
+                        >
+                            Create Notebook
+                        </Button>
+                        {restorePreviousSession && (
                             <Button
-                                className="w-100 mb-1"
+                                className="mr-2"
                                 onClick={restorePreviousSession}
                                 outline={true}
                                 variant="secondary"
                                 size="sm"
                             >
-                                Restore previous session
+                                Restore last session
                             </Button>
                         )}
-                        <div className="d-flex align-items-center">
-                            <Button
-                                onClick={createNotebook}
-                                variant="primary"
-                                size="sm"
-                                disabled={entries.length === 0}
-                                className="flex-1"
-                            >
-                                <Icon as={NotebookPlusIcon} /> Create Notebook
-                            </Button>
-                            <Button
-                                aria-label="Remove all notes"
-                                title="Remove all notes"
-                                variant="icon"
-                                className="text-muted ml-2"
-                                disabled={entries.length === 0}
-                                onClick={() => setConfirmRemoveAll(true)}
-                            >
-                                <Icon as={DeleteIcon} />
-                            </Button>
-                        </div>
+                        <Button
+                            aria-label="Remove all notes"
+                            title="Remove all notes"
+                            variant="icon"
+                            className="text-muted"
+                            disabled={entries.length === 0}
+                            onClick={() => setConfirmRemoveAll(true)}
+                        >
+                            <Icon as={DeleteIcon} />
+                        </Button>
                     </div>
                 </>
             )}
@@ -400,9 +447,10 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({ initial
 
 interface AddEntryButtonProps {
     entry: SearchStackEntryInput
+    addEntry: typeof addSearchStackEntry
 }
 
-const AddEntryButton: React.FunctionComponent<AddEntryButtonProps> = ({ entry }) => {
+const AddEntryButton: React.FunctionComponent<AddEntryButtonProps> = ({ entry, addEntry }) => {
     let button: React.ReactElement
     switch (entry.type) {
         case 'search':
@@ -415,7 +463,7 @@ const AddEntryButton: React.FunctionComponent<AddEntryButtonProps> = ({ entry })
                     className="w-100"
                     onClick={event => {
                         event.stopPropagation()
-                        addSearchStackEntry(entry)
+                        addEntry(entry)
                     }}
                 >
                     <Icon as={SearchIcon} /> Add search
@@ -433,7 +481,7 @@ const AddEntryButton: React.FunctionComponent<AddEntryButtonProps> = ({ entry })
                         className={classNames({ 'flex-1': true, 'mr-1': !!entry.lineRange })}
                         onClick={event => {
                             event.stopPropagation()
-                            addSearchStackEntry(entry, 'file')
+                            addEntry(entry, 'file')
                         }}
                     >
                         <Icon as={FileDocumentOutlineIcon} /> Add as file
@@ -447,7 +495,7 @@ const AddEntryButton: React.FunctionComponent<AddEntryButtonProps> = ({ entry })
                             className="flex-1 ml-1"
                             onClick={event => {
                                 event.stopPropagation()
-                                addSearchStackEntry(entry, 'range')
+                                addEntry(entry, 'range')
                             }}
                         >
                             <Icon as={CodeBracketsIcon} /> Add as range {formatLineRange(entry.lineRange)}
