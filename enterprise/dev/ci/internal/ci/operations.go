@@ -257,7 +257,6 @@ func addBrowserExtensionIntegrationTests(parallelTestCount int) operations.Opera
 				bk.Cmd("yarn run cover-browser-integration"),
 				bk.Cmd("yarn nyc report -r json"),
 				bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
-				bk.AutomaticRetry(1), // Temporary
 				bk.ArtifactPaths("./puppeteer/*.png"),
 			)
 		}
@@ -325,6 +324,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 			// https://docs.percy.io/docs/parallel-test-suites#how-it-works
 			bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(parallelTestCount)),
 			bk.Cmd(fmt.Sprintf(`dev/ci/yarn-web-integration.sh "%s"`, chunkTestFiles)),
+			bk.AutomaticRetry(1), // Temporary
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
 }
