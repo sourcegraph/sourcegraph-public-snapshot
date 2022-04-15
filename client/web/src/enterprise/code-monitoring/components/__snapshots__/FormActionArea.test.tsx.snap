@@ -58,7 +58,7 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
           class="toggle mr-2 inlineCenter"
           data-testid="include-results-toggle-email"
           role="switch"
-          title="Include search results in sent message"
+          title="Include search results in message"
           type="button"
           value="0"
         >
