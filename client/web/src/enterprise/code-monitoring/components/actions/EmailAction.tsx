@@ -44,23 +44,20 @@ export const EmailAction: React.FunctionComponent<ActionProps> = ({
     const onSubmit: React.FormEventHandler = useCallback(
         event => {
             event.preventDefault()
-            if (!action) {
-                // We are creating a new monitor if there are no actions yet.
-                // The ID can be empty here, since we'll generate a new ID when we send the creation request.
-                setAction({
-                    __typename: 'MonitorEmail',
-                    id: '',
-                    recipients: { nodes: [{ id: authenticatedUser.id }] },
-                    enabled: emailNotificationEnabled,
-                    includeResults,
-                })
-            }
+            setAction({
+                __typename: 'MonitorEmail',
+                id: action ? action.id : '',
+                recipients: { nodes: [{ id: authenticatedUser.id }] },
+                enabled: emailNotificationEnabled,
+                includeResults,
+            })
         },
         [action, authenticatedUser.id, emailNotificationEnabled, includeResults, setAction]
     )
 
     const onCancel: React.FormEventHandler = useCallback(() => {
         setEmailNotificationEnabled(action ? action.enabled : true)
+        setIncludeResults(action ? action.includeResults : false)
     }, [action])
 
     const onDelete: React.FormEventHandler = useCallback(() => {

@@ -63,6 +63,7 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
     const onCancel: React.FormEventHandler = useCallback(() => {
         setWebhookEnabled(action ? action.enabled : true)
         setUrl(action && action.__typename === 'MonitorWebhook' ? action.url : '')
+        setIncludeResults(action ? action.includeResults : false)
     }, [action])
 
     const onDelete: React.FormEventHandler = useCallback(() => {
