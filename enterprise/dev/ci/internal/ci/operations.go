@@ -257,7 +257,6 @@ func addBrowserExtensionIntegrationTests(parallelTestCount int) operations.Opera
 				bk.Cmd("yarn run cover-browser-integration"),
 				bk.Cmd("yarn nyc report -r json"),
 				bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
-				bk.AutomaticRetry(1), // Temporary
 				bk.ArtifactPaths("./puppeteer/*.png"),
 			)
 		}
@@ -276,7 +275,6 @@ func recordBrowserExtensionIntegrationTests(pipeline *bk.Pipeline) {
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
 			bk.Cmd("yarn workspace @sourcegraph/browser -s run record-integration"),
-			bk.AutomaticRetry(1), // Temporary
 			bk.ArtifactPaths("./puppeteer/*.png"),
 		)
 	}
