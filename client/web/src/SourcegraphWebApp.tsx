@@ -91,7 +91,7 @@ import { LayoutRouteProps } from './routes'
 import { PageRoutes } from './routes.constants'
 import { parseSearchURL } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
-import { SearchStack } from './search/SearchStack'
+import { SearchStackContainer } from './search/SearchStack'
 import { listUserRepositories } from './site-admin/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -334,9 +334,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
 
         this.subscriptions.add(
             fetchFeatureFlags().subscribe(event => {
-                // Disabling linter here because this is not yet used anywhere.
-                // This can be re-enabled as soon as feature flags are leveraged.
-                // eslint-disable-next-line react/no-unused-state
                 this.setState({ featureFlags: event })
             })
         )
@@ -476,7 +473,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                         </CodeHostScopeProvider>
                                                     )}
                                                 />
-                                                <SearchStack onCreateNotebook={this.onCreateNotebook} />
+                                                <SearchStackContainer onCreateNotebook={this.onCreateNotebook} />
                                                 <IdeExtensionTracker />
                                                 <BrowserExtensionTracker />
                                             </Router>

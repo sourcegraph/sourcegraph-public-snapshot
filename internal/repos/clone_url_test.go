@@ -114,10 +114,7 @@ func TestBitbucketCloudCloneURLs(t *testing.T) {
 		FullName: "sg/sourcegraph",
 	}
 
-	repo.Links.Clone = []struct {
-		Href string "json:\"href\""
-		Name string "json:\"name\""
-	}{
+	repo.Links.Clone = []bitbucketcloud.Link{
 		{Name: "https", Href: "https://asdine@bitbucket.org/sg/sourcegraph.git"},
 		{Name: "ssh", Href: "git@bitbucket.org/sg/sourcegraph.git"},
 	}

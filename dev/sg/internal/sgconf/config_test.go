@@ -1,4 +1,4 @@
-package main
+package sgconf
 
 import (
 	"testing"
@@ -40,7 +40,7 @@ commandsets:
       - gitserver
 `
 
-	have, err := ParseConfig([]byte(input))
+	have, err := parseConfig([]byte(input))
 	if err != nil {
 		t.Errorf("unexpected error: %s", err)
 	}
@@ -92,7 +92,7 @@ commands:
       - enterprise/internal
       - enterprise/cmd/frontend
 `
-	config, err := ParseConfig([]byte(a))
+	config, err := parseConfig([]byte(a))
 	if err != nil {
 		t.Errorf("unexpected error: %s", err)
 	}
@@ -104,7 +104,7 @@ commands:
       EXTSVC_CONFIG_FILE: ''
 `
 
-	overwrite, err := ParseConfig([]byte(b))
+	overwrite, err := parseConfig([]byte(b))
 	if err != nil {
 		t.Errorf("unexpected error: %s", err)
 	}
