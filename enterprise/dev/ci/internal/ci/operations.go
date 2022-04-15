@@ -239,7 +239,7 @@ func getParallelTestCount(webParallelTestCount int) int {
 }
 
 func addBrowserExtensionIntegrationTests(parallelTestCount int) operations.Operation {
-	// testCount := getParallelTestCount(parallelTestCount)
+	testCount := getParallelTestCount(parallelTestCount)
 	return func(pipeline *bk.Pipeline) {
 		for _, browser := range browsers {
 			pipeline.AddStep(
@@ -249,19 +249,36 @@ func addBrowserExtensionIntegrationTests(parallelTestCount int) operations.Opera
 				bk.Env("BROWSER", browser),
 				bk.Env("LOG_BROWSER_CONSOLE", "false"),
 				bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
-				// bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
-				// bk.Env("PERCY_ON", "true"),
-				// bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(testCount)),
+				bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
+				bk.Env("PERCY_ON", "true"),
+				bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(testCount)),
 				bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 				bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
-				bk.Cmd("yarn workspace @sourcegraph/browser -s run record-integration"),
-				// bk.Cmd("yarn run cover-browser-integration"),
-				// bk.Cmd("yarn nyc report -r json"),
-				// bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
+				bk.Cmd("yarn run cover-browser-integration"),
+				bk.Cmd("yarn nyc report -r json"),
+				bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
 				bk.AutomaticRetry(1), // Temporary
 				bk.ArtifactPaths("./puppeteer/*.png"),
 			)
 		}
+	}
+}
+
+func recordBrowserExtensionIntegrationTests(pipeline *bk.Pipeline) {
+	for _, browser := range browsers {
+		pipeline.AddStep(
+			fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
+			withYarnCache(),
+			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
+			bk.Env("BROWSER", browser),
+			bk.Env("LOG_BROWSER_CONSOLE", "false"),
+			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
+			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
+			bk.Cmd("yarn workspace @sourcegraph/browser -s run record-integration"),
+			bk.AutomaticRetry(1), // Temporary
+			bk.ArtifactPaths("./puppeteer/*.png"),
+		)
 	}
 }
 
