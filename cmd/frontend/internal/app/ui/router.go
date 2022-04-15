@@ -2,6 +2,8 @@ package ui
 
 import (
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	muxtrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/gorilla/mux"
 	"log"
 	"net/http"
 	"net/url"
@@ -16,8 +18,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
-	muxtrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/gorilla/mux"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -128,7 +128,7 @@ func InitRouter(db database.DB, codeIntelResolver graphqlbackend.CodeIntelResolv
 var mockServeRepo func(w http.ResponseWriter, r *http.Request)
 
 func newRouter() *muxtrace.Router {
-	r := muxtrace.NewRouter()
+	r := muxtrace.NewRouter(muxtrace.WithAnalyticsRate(tracer.MUX_ANALYTICS_TRACE_RATE))
 	r.StrictSlash(true)
 
 	// Top-level routes.

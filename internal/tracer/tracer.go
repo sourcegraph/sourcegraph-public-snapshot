@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"strconv"
 	"sync"
 
 	"github.com/inconshreveable/log15"
@@ -33,7 +34,18 @@ func init() {
 	if _, err := maxprocs.Set(); err != nil {
 		log15.Error("automaxprocs failed", "error", err)
 	}
+	if r := os.Getenv("MUX_ANALYTICS_TRACE_RATE"); r != "" {
+		rate, err := strconv.ParseFloat(r, 64)
+		if err != nil {
+			log15.Error("Failed to parse MUX_ANALYTICS_TRACE_RATE", "error", err)
+			return
+		}
+		MUX_ANALYTICS_TRACE_RATE = rate
+	}
+
 }
+
+var MUX_ANALYTICS_TRACE_RATE = 0.1
 
 // options control the behavior of a TracerType
 type options struct {
