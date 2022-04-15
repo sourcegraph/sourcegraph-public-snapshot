@@ -5,15 +5,15 @@ import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 
 import { Button, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
-import { InsightFilters } from '../../../../../../core/types'
+import { InsightFilters } from '../../../../../../core'
 import { SubmissionResult } from '../../../../../form/hooks/useForm'
 import { hasActiveFilters } from '../drill-down-filters-panel/components/drill-down-filters-form/DrillDownFiltersForm'
 import { DrillDownInsightCreationFormValues } from '../drill-down-filters-panel/components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
 import { DrillDownFiltersPanel } from '../drill-down-filters-panel/DrillDownFiltersPanel'
 
-import styles from './DrillDownFiltersPanel.module.scss'
+import styles from './DrillDownFiltersPopover.module.scss'
 
-interface DrillDownFiltersProps {
+interface DrillDownFiltersPopoverProps {
     isOpen: boolean
     initialFiltersValue: InsightFilters
     originalFiltersValue: InsightFilters
@@ -28,7 +28,7 @@ interface DrillDownFiltersProps {
 // the filter panel should not trigger react-grid-layout events.
 const handleMouseDown: DOMAttributes<HTMLElement>['onMouseDown'] = event => event.stopPropagation()
 
-export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersProps> = props => {
+export const DrillDownFiltersPopover: React.FunctionComponent<DrillDownFiltersPopoverProps> = props => {
     const {
         isOpen,
         popoverTargetRef,

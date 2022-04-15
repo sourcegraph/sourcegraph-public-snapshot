@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-import { InsightFilters } from '../../../../../../core/types'
+import { InsightFilters } from '../../../../../../core'
 import { FormChangeEvent, SubmissionResult } from '../../../../../form/hooks/useForm'
 
 import {
