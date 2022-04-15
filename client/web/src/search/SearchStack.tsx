@@ -549,6 +549,17 @@ const SearchStackEntryComponent: React.FunctionComponent<SearchStackEntryCompone
 
     const deletionLabel = selected ? 'Remove all selected notes' : 'Remove note'
 
+    const toggleAnnotationInput = useCallback(
+        (show: boolean) => {
+            setShowAnnotationInput(show)
+            if (!show) {
+                // Persist the entry annotation when hiding the annotation input.
+                setEntryAnnotation(entry, annotation)
+            }
+        },
+        [entry, annotation, setShowAnnotationInput]
+    )
+
     return (
         <div className={classNames(styles.entry, { [styles.selected]: selected })}>
             <div className="d-flex">
@@ -566,7 +577,7 @@ const SearchStackEntryComponent: React.FunctionComponent<SearchStackEntryCompone
                         className="text-muted"
                         onClick={event => {
                             event.stopPropagation()
-                            setShowAnnotationInput(show => !show)
+                            toggleAnnotationInput(!showAnnotationInput)
                         }}
                     >
                         <Icon as={TextBoxIcon} />
@@ -601,7 +612,7 @@ const SearchStackEntryComponent: React.FunctionComponent<SearchStackEntryCompone
                                 break
                             case 'Enter':
                                 if (isMetaKey(event, isMacPlatform())) {
-                                    setShowAnnotationInput(false)
+                                    toggleAnnotationInput(false)
                                 }
                                 break
                         }
