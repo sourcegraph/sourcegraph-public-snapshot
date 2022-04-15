@@ -325,10 +325,12 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 
 	// Chunk web integration tests to save time via parallel execution.
 	chunkedTestFiles := getChunkedWebIntegrationFileNames(chunkSize)
-	chunkCount := len(chunkedTestFiles)
+	// chunkCount := len(chunkedTestFiles)
 	// parallelTestCount := getParallelTestCount(chunkCount)
 
-	addBrowserExtensionIntegrationTests(chunkCount)(pipeline)
+	recordBrowserExtensionIntegrationTests(pipeline)
+
+	// addBrowserExtensionIntegrationTests(chunkCount)(pipeline)
 
 	// Add pipeline step for each chunk of web integrations files.
 	for i, chunkTestFiles := range chunkedTestFiles {
