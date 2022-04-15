@@ -76,7 +76,7 @@ export const SelfHostedCta: React.FunctionComponent<SelfHostedCtaProps> = ({
                 <div>
                     <Link
                         onClick={helpGettingStartedCTAOnClick}
-                        to=" https://info.sourcegraph.com/talk-to-a-developer?form_submission_source=inproduct&utm_campaign=inproduct-talktoadev&utm_medium=direct_traffic&utm_source=in-product&utm_term=null&utm_content=talktoadevform"
+                        to="https://info.sourcegraph.com/talk-to-a-developer?form_submission_source=inproduct&utm_campaign=inproduct-talktoadev&utm_medium=direct_traffic&utm_source=in-product&utm_term=null&utm_content=talktoadevform"
                         {...linkProps}
                     >
                         Speak to an engineer
