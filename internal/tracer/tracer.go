@@ -3,6 +3,7 @@ package tracer
 import (
 	"fmt"
 	"io"
+	"os"
 	"reflect"
 	"sync"
 
@@ -39,7 +40,7 @@ type options struct {
 	TracerType
 	externalURL string
 	debug       bool
-	// these values are not configurable at runtime
+	// these values are not configurable by site config
 	serviceName string
 	version     string
 	env         string
@@ -69,6 +70,9 @@ func Init(c conftypes.WatchableSiteConfig) {
 	opts.serviceName = env.MyName
 	if version.IsDev(version.Version()) {
 		opts.env = "dev"
+	}
+	if d := os.Getenv("DD_ENV"); d != "" {
+		opts.env = d
 	}
 	opts.version = version.Version()
 
@@ -173,7 +177,7 @@ func newTracer(opts *options, prevTracer TracerType) (opentracing.Tracer, io.Clo
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "jaegercfg.FromEnv failed")
 	}
-	cfg.Tags = append(cfg.Tags, opentracing.Tag{Key: "service.version", Value: version.Version()})
+	cfg.Tags = append(cfg.Tags, opentracing.Tag{Key: "service.version", Value: opts.version}, opentracing.Tag{Key: "service.env", Value: opts.env})
 	if reflect.DeepEqual(cfg.Sampler, &jaegercfg.SamplerConfig{}) {
 		// Default sampler configuration for when it is not specified via
 		// JAEGER_SAMPLER_* env vars. In most cases, this is sufficient
