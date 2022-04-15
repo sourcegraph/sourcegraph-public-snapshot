@@ -117,7 +117,6 @@ describe('GitHub', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(async () => {
         await testContext?.dispose()
-        // await driver?.close()
     })
 
     it('adds "View on Sourcegraph" buttons to files', async () => {
