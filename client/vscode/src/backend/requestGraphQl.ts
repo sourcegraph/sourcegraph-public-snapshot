@@ -2,7 +2,7 @@ import { asError } from '@sourcegraph/common'
 import { checkOk, GraphQLResult, GRAPHQL_URI, isHTTPAuthError } from '@sourcegraph/http-client'
 
 import { accessTokenSetting, handleAccessTokenError } from '../settings/accessTokenSetting'
-import { endpointSetting } from '../settings/endpointSetting'
+import { endpointSetting, endpointRequestHeadersSetting } from '../settings/endpointSetting'
 
 let invalidated = false
 
@@ -16,7 +16,8 @@ export function invalidateClient(): void {
 export const requestGraphQLFromVSCode = async <R, V = object>(
     request: string,
     variables: V,
-    overrideAccessToken?: string
+    overrideAccessToken?: string,
+    overrideSourcegraphURL?: string
 ): Promise<GraphQLResult<R>> => {
     if (invalidated) {
         throw new Error(
@@ -26,9 +27,11 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
 
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
     const apiURL = `${GRAPHQL_URI}${nameMatch ? '?' + nameMatch[1] : ''}`
-
-    const headers: HeadersInit = []
-    const sourcegraphURL = endpointSetting()
+    // load custom headers from user setting if any
+    const customHeaders = endpointRequestHeadersSetting()
+    // return empty array if no custom header is provided in configuration
+    const headers: HeadersInit = Object.entries(customHeaders)
+    const sourcegraphURL = overrideSourcegraphURL || endpointSetting()
     const accessToken = accessTokenSetting()
 
     // Add Access Token to request header

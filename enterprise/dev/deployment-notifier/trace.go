@@ -16,10 +16,19 @@ import (
 
 const traceVersion = "dev"
 
-func newTraceEvent(traceID string) *libhoney.Event {
+func newTraceEvent(traceID string, r *DeploymentReport) *libhoney.Event {
 	event := libhoney.NewEvent()
-	event.AddField("meta.version", traceVersion)
-	event.AddField("trace.trace_id", traceID)
+	event.Add(map[string]string{
+		// Honeycomb fields
+		"meta.version":   traceVersion,
+		"trace.trace_id": traceID,
+
+		// Metadata related to reployment
+		"environment":         r.Environment,
+		"buildkite.build_url": r.BuildkiteBuildURL,
+		"manifest.revision":   r.ManifestRevision,
+		"deployed.at":         r.DeployedAt,
+	})
 	return event
 }
 
@@ -29,6 +38,15 @@ func newSpanID(root string, components ...string) string {
 	}
 	return root
 }
+
+const (
+	// spans representing deploys (suffixed with '/$env')
+	spanServiceNameDeploy = "deploy"
+	// spans representing pull requests
+	spanServiceNamePullRequest = "pull_request"
+	// spans representing Sourcegraph services
+	spanServiceNameService = "service"
+)
 
 type DeploymentTrace struct {
 	Root *libhoney.Event
@@ -41,14 +59,20 @@ type DeploymentTrace struct {
 //
 // The generated trace is structured as follows:
 //
-//   deploy/env/rev -----
-//     pr/1 -------------
-//     ------------ svc/1
-//     ------------ svc/2
-//         pr/2 ---------
-//         -------- svc/1
-//         -------- svc/2
-//                    ...
+// deploy/env ---------
+//   pr/1 -------------
+//   -------- service/1
+//   -------- service/2
+// 	     pr/2 ---------
+// 	     ---- service/1
+// 	     ---- service/2
+// 			        ...
+//
+// The following fields are important in each event:
+//
+// - "service.name" denotes the type of the span ("deploy/$env", "pull_request", "service")
+// - "name" denotes an identifying string for the span in the context of "service.name"
+// - "environment" denotes the deploy environment the span is related to
 //
 // Learn more about Honeycomb fields:
 //
@@ -61,7 +85,7 @@ func GenerateDeploymentTrace(r *DeploymentReport) (*DeploymentTrace, error) {
 	if len(rev) > 12 {
 		rev = rev[:12]
 	}
-	deploymentTraceID := newSpanID("deploy", r.Environment, rev)
+	deploymentTraceID := newSpanID(spanServiceNameDeploy, r.Environment, rev)
 
 	deployTime, err := time.Parse(time.RFC822Z, r.DeployedAt)
 	if err != nil {
@@ -84,12 +108,12 @@ func GenerateDeploymentTrace(r *DeploymentReport) (*DeploymentTrace, error) {
 		prTraceID := newSpanID("pr", strconv.Itoa(pr.GetNumber()))
 
 		for _, service := range prServices {
-			prServiceEvent := newTraceEvent(deploymentTraceID)
+			prServiceEvent := newTraceEvent(deploymentTraceID, r)
 			prServiceEvent.Timestamp = pr.GetMergedAt()
 			prServiceEvent.Add(map[string]interface{}{
 				// Honeycomb fields
 				"name":            service,
-				"service.name":    "service",
+				"service.name":    spanServiceNameService,
 				"trace.parent_id": prTraceID,
 				"trace.span_id":   newSpanID("svc", strconv.Itoa(pr.GetNumber()), service),
 				"duration_ms":     deployTime.Sub(pr.GetMergedAt()) / time.Millisecond,
@@ -103,12 +127,12 @@ func GenerateDeploymentTrace(r *DeploymentReport) (*DeploymentTrace, error) {
 			spans = append(spans, prServiceEvent)
 		}
 
-		prEvent := newTraceEvent(deploymentTraceID)
+		prEvent := newTraceEvent(deploymentTraceID, r)
 		prEvent.Timestamp = pr.GetMergedAt()
 		prEvent.Add(map[string]interface{}{
 			// Honeycomb fields
 			"name":            pr.GetNumber(),
-			"service.name":    "pull_request",
+			"service.name":    spanServiceNamePullRequest,
 			"trace.parent_id": deploymentTraceID,
 			"trace.span_id":   prTraceID,
 			"user":            pr.GetUser().GetLogin(),
@@ -123,7 +147,7 @@ func GenerateDeploymentTrace(r *DeploymentReport) (*DeploymentTrace, error) {
 		spans = append(spans, prEvent)
 	}
 
-	root := newTraceEvent(deploymentTraceID)
+	root := newTraceEvent(deploymentTraceID, r)
 	root.Timestamp = oldestPR
 	root.Add(map[string]interface{}{
 		// Honeycomb fields
@@ -133,10 +157,6 @@ func GenerateDeploymentTrace(r *DeploymentReport) (*DeploymentTrace, error) {
 		"duration_ms":   deployTime.Sub(oldestPR) / time.Millisecond,
 
 		// Extra metadata
-		"environment":            r.Environment,
-		"buildkite.build_url":    r.BuildkiteBuildURL,
-		"manifest.revision":      r.ManifestRevision,
-		"deployed.at":            r.DeployedAt,
 		"deployed.pull_requests": len(r.PullRequests),
 		"deployed.services":      len(r.Services),
 	})

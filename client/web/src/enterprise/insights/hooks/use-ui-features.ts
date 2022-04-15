@@ -3,8 +3,7 @@ import { useContext, useMemo } from 'react'
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'
-import { Insight, InsightDashboard, isSearchBasedInsight } from '../core/types'
+import { CodeInsightsBackendContext, Insight, InsightDashboard, isSearchBasedInsight } from '../core'
 import {
     getDashboardPermissions,
     getTooltipMessage,

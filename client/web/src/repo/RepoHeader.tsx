@@ -251,7 +251,12 @@ export const RepoHeader: React.FunctionComponent<Props> = ({ onLifecyclePropsCha
                                 </RepoHeaderActionDropdownToggle>
                                 <MenuList position={Position.bottomEnd}>
                                     {rightActions.map((a, index) => (
-                                        <MenuItem className="p-0" key={a.id || index} onSelect={noop}>
+                                        <MenuItem
+                                            className="p-0"
+                                            key={a.id || index}
+                                            onSelect={noop}
+                                            onMouseUp={event => event.preventDefault()}
+                                        >
                                             {a.element}
                                         </MenuItem>
                                     ))}

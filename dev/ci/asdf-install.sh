@@ -5,13 +5,13 @@
 # In most cases you should not need to call this script directly.
 if [[ ! "$BUILDKITE" == "true" ]]; then
   # Not-in-buildkite simple install.
-  echo "~~~ asdf install"
+  echo "asdf install"
   asdf install
   echo "done installing"
   # We can't use exit 0 here, it would prevent the variables to be exported (that's a particular buildkite hook peculiarity).
 else
   # We need awscli to use asdf cache
-  echo "~~~ asdf install from cache"
+  echo "asdf install from cache"
   asdf install awscli
   echo "done installing awscli"
 

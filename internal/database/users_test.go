@@ -203,7 +203,7 @@ func TestUsers_CheckAndDecrementInviteQuota(t *testing.T) {
 	}
 	// Check that it's within some reasonable bounds. The upper bound number here can increased
 	// if we increase the default.
-	if lo, hi := 0, 15; inviteQuota <= lo || inviteQuota > hi {
+	if lo, hi := 0, 100; inviteQuota <= lo || inviteQuota > hi {
 		t.Fatalf("got default user invite quota %d, want in [%d,%d)", inviteQuota, lo, hi)
 	}
 

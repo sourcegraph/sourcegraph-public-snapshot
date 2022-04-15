@@ -131,15 +131,15 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	return nil, fmt.Sprintf("No user exists matching any of the verified emails: %s.\n\nFirst error was: %s", strings.Join(verifiedEmails, ", "), firstSafeErrMsg), firstErr
 }
 
-func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, token *oauth2.Token, providerID string) (safeErrMsg string, err error) {
+func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, token *oauth2.Token, providerID string) (svc *types.ExternalService, safeErrMsg string, err error) {
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
-		return "Must be authenticated to create code host connection from OAuth flow.", errors.New("unauthenticated request")
+		return nil, "Must be authenticated to create code host connection from OAuth flow.", errors.New("unauthenticated request")
 	}
 
 	p := oauth.GetProvider(extsvc.TypeGitHub, providerID)
 	if p == nil {
-		return "Could not find OAuth provider for the state.", errors.Errorf("provider not found for %q", providerID)
+		return nil, "Could not find OAuth provider for the state.", errors.Errorf("provider not found for %q", providerID)
 	}
 
 	ghUser, err := github.UserFromContext(ctx)
@@ -149,7 +149,7 @@ func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, toke
 		} else {
 			err = errors.New("could not read user from context")
 		}
-		return "Could not read GitHub user from callback request.", err
+		return nil, "Could not read GitHub user from callback request.", err
 	}
 
 	// We have a special flow enabled when a user added code host has been created
@@ -172,9 +172,8 @@ func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, toke
 		Kinds:           []string{extsvc.KindGitHub},
 	})
 	if err != nil {
-		return "Error checking for existing external service", err
+		return nil, "Error checking for existing external service", err
 	}
-	var svc *types.ExternalService
 	now := time.Now()
 	if len(services) == 0 {
 		// Nothing found, create new one
@@ -193,13 +192,13 @@ func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, toke
 			UpdatedAt:       now,
 		}
 	} else if len(services) > 1 {
-		return "Multiple services of same kind found for user", errors.New("multiple services of same kind found for user")
+		return nil, "Multiple services of same kind found for user", errors.New("multiple services of same kind found for user")
 	} else {
 		// We have an existing service, update it
 		svc = services[0]
 		newConfig, err := jsonc.Edit(svc.Config, token.AccessToken, "token")
 		if err != nil {
-			return "Error updating OAuth token", err
+			return nil, "Error updating OAuth token", err
 		}
 		svc.Config = newConfig
 		svc.UpdatedAt = now
@@ -207,9 +206,9 @@ func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, toke
 
 	err = tx.Upsert(ctx, svc)
 	if err != nil {
-		return "Could not create code host connection.", err
+		return nil, "Could not create code host connection.", err
 	}
-	return "", nil // success
+	return svc, "", nil // success
 }
 
 func (s *sessionIssuerHelper) DeleteStateCookie(w http.ResponseWriter) {

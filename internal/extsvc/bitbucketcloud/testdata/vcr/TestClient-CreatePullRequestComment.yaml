@@ -1,0 +1,142 @@
+---
+version: 1
+interactions:
+- request:
+    body: '{"content":{"raw":"A test comment created at 01 Apr 22 17:16 PDT"}}'
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/0/comments
+    method: POST
+  response:
+    body: Not Found
+    headers:
+      Cache-Control:
+      - no-cache, no-store, must-revalidate, max-age=0
+      Content-Length:
+      - "9"
+      Content-Type:
+      - text/plain
+      Date:
+      - Sat, 02 Apr 2022 00:16:29 GMT
+      Expires:
+      - Sat, 02 Apr 2022 00:16:29 GMT
+      Server:
+      - nginx
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Vary:
+      - Authorization, Origin, cookie, user-context
+      X-Accepted-Oauth-Scopes:
+      - pullrequest
+      X-B3-Traceid:
+      - 82a88ab455d7d44c
+      X-Credential-Type:
+      - apppassword
+      X-Dc-Location:
+      - Micros
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Oauth-Scopes:
+      - pipeline, pullrequest:write, account
+      X-Render-Time:
+      - "0.0404598712921"
+      X-Request-Count:
+      - "1782"
+      X-Served-By:
+      - 08cdf708c3dc
+      X-Static-Version:
+      - dae4c42881ef
+      X-Usage-Input-Ops:
+      - "0"
+      X-Usage-Output-Ops:
+      - "0"
+      X-Usage-System-Time:
+      - "0.000000"
+      X-Usage-User-Time:
+      - "0.031465"
+      X-Version:
+      - dae4c42881ef
+      X-View-Name:
+      - bitbucket.apps.pullrequests.api.v20.handlers.PullRequestCommentsHandler
+    status: 404 Not Found
+    code: 404
+    duration: ""
+- request:
+    body: '{"content":{"raw":"A test comment created at 01 Apr 22 17:16 PDT"}}'
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/1/comments
+    method: POST
+  response:
+    body: '{"links": {"self": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/1/comments/291995686"},
+      "html": {"href": "https://bitbucket.org/sourcegraph-testing/src-cli/pull-requests/1/_/diff#comment-291995686"}},
+      "deleted": false, "pullrequest": {"type": "pullrequest", "id": 1, "links": {"self":
+      {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/1"},
+      "html": {"href": "https://bitbucket.org/sourcegraph-testing/src-cli/pull-requests/1"}},
+      "title": "Always open PR"}, "content": {"raw": "A test comment created at 01
+      Apr 22 17:16 PDT", "markup": "markdown", "html": "<p>A test comment created
+      at 01 Apr 22 17:16 PDT</p>", "type": "rendered"}, "created_on": "2022-04-02T00:16:29.553212+00:00",
+      "user": {"display_name": "Sourcegraph Testing", "uuid": "{4b85b785-1433-4092-8512-20302f4a03be}",
+      "links": {"self": {"href": "https://api.bitbucket.org/2.0/users/%7B4b85b785-1433-4092-8512-20302f4a03be%7D"},
+      "html": {"href": "https://bitbucket.org/%7B4b85b785-1433-4092-8512-20302f4a03be%7D/"},
+      "avatar": {"href": "https://secure.gravatar.com/avatar/f964dc31564db8243e952bdaeabbe884?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FST-2.png"}},
+      "type": "user", "nickname": "Sourcegraph Testing", "account_id": "623316f53fbb880068413f6b"},
+      "updated_on": "2022-04-02T00:16:29.553287+00:00", "type": "pullrequest_comment",
+      "id": 291995686}'
+    headers:
+      Cache-Control:
+      - no-cache, no-store, must-revalidate, max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Sat, 02 Apr 2022 00:16:29 GMT
+      Expires:
+      - Sat, 02 Apr 2022 00:16:29 GMT
+      Location:
+      - https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/1/comments/291995686
+      Server:
+      - nginx
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Vary:
+      - Authorization, Origin
+      - Accept-Encoding
+      X-Accepted-Oauth-Scopes:
+      - pullrequest
+      X-B3-Traceid:
+      - 1ebed1d5974a2a73
+      X-Credential-Type:
+      - apppassword
+      X-Dc-Location:
+      - Micros
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Oauth-Scopes:
+      - pipeline, pullrequest:write, account
+      X-Render-Time:
+      - "0.188960075378"
+      X-Request-Count:
+      - "1802"
+      X-Served-By:
+      - df6c375b58bc
+      X-Static-Version:
+      - dae4c42881ef
+      X-Usage-Input-Ops:
+      - "0"
+      X-Usage-Output-Ops:
+      - "0"
+      X-Usage-System-Time:
+      - "0.006384"
+      X-Usage-User-Time:
+      - "0.067194"
+      X-Version:
+      - dae4c42881ef
+      X-View-Name:
+      - bitbucket.apps.pullrequests.api.v20.handlers.PullRequestCommentsHandler
+    status: 201 Created
+    code: 201
+    duration: ""

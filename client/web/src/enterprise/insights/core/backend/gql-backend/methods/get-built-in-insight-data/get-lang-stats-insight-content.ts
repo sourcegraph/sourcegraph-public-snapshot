@@ -1,11 +1,18 @@
 import { escapeRegExp, partition, sum } from 'lodash'
 import { defer } from 'rxjs'
 import { map, retry } from 'rxjs/operators'
-import { PieChartContent } from 'sourcegraph'
 
-import { GetLangStatsInsightContentInput } from '../../../code-insights-backend-types'
+import { InsightContentType } from '../../../../types/insight/common'
+import { GetLangStatsInsightContentInput, InsightCategoricalContent } from '../../../code-insights-backend-types'
 
 import { fetchLangStatsInsight } from './utils/fetch-lang-stats-insight'
+
+interface LangStatsDatum {
+    totalLines: number
+    name: string
+    linkURL: string
+    fill: string
+}
 
 const getLangColor = async (language: string): Promise<string> => {
     const { default: languagesMap } = await import('linguist-languages')
@@ -22,7 +29,7 @@ const getLangColor = async (language: string): Promise<string> => {
 
 export async function getLangStatsInsightContent(
     input: GetLangStatsInsightContentInput
-): Promise<PieChartContent<any>> {
+): Promise<InsightCategoricalContent<LangStatsDatum>> {
     return getInsightContent({ ...input, repo: input.repository })
 }
 
@@ -31,7 +38,7 @@ interface GetInsightContentInputs extends GetLangStatsInsightContentInput {
     path?: string
 }
 
-async function getInsightContent(inputs: GetInsightContentInputs): Promise<PieChartContent<any>> {
+async function getInsightContent(inputs: GetInsightContentInputs): Promise<InsightCategoricalContent<LangStatsDatum>> {
     const { otherThreshold, repo, path } = inputs
 
     const pathRegexp = path ? `file:^${escapeRegExp(path)}/` : ''
@@ -66,15 +73,13 @@ async function getInsightContent(inputs: GetInsightContentInputs): Promise<PieCh
     )
 
     return {
-        chart: 'pie' as const,
-        pies: [
-            {
-                data,
-                dataKey: 'totalLines',
-                nameKey: 'name',
-                fillKey: 'fill',
-                linkURLKey: 'linkURL',
-            },
-        ],
+        type: InsightContentType.Categorical,
+        content: {
+            data,
+            getDatumColor: datum => datum.fill,
+            getDatumLink: datum => datum.linkURL,
+            getDatumName: datum => datum.name,
+            getDatumValue: datum => datum.totalLines,
+        },
     }
 }

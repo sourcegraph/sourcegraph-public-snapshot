@@ -1,4 +1,4 @@
-import React, { ReactElement, useMemo, useRef, useState, SVGProps } from 'react'
+import React, { ReactElement, useMemo, useState, SVGProps } from 'react'
 
 import { curveLinear } from '@visx/curve'
 import { Group } from '@visx/group'
@@ -51,8 +51,8 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
     } = props
 
     const [activePoint, setActivePoint] = useState<Point<D> & { element?: Element }>()
-    const yAxisReference = useRef<SVGGElement>(null)
-    const xAxisReference = useRef<SVGGElement>(null)
+    const [yAxisElement, setYAxisElement] = useState<SVGGElement | null>(null)
+    const [xAxisReference, setXAxisElement] = useState<SVGGElement | null>(null)
 
     const { width, height, margin } = useMemo(
         () =>
@@ -62,11 +62,11 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
                 margin: {
                     top: 10,
                     right: 20,
-                    left: yAxisReference.current?.getBoundingClientRect().width,
-                    bottom: xAxisReference.current?.getBoundingClientRect().height,
+                    left: yAxisElement?.getBoundingClientRect().width,
+                    bottom: xAxisReference?.getBoundingClientRect().height,
                 },
             }),
-        [outerWidth, outerHeight]
+        [yAxisElement, xAxisReference, outerWidth, outerHeight]
     )
 
     const dataSeries = useMemo(() => getSeriesData({ data, series, stacked, getXValue }), [
@@ -147,7 +147,7 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
             {...handlers}
         >
             <AxisLeft
-                ref={yAxisReference}
+                ref={setYAxisElement}
                 scale={yScale}
                 width={width}
                 height={height}
@@ -155,7 +155,7 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
                 left={margin.left}
             />
 
-            <AxisBottom ref={xAxisReference} scale={xScale} top={margin.top + height} width={width} />
+            <AxisBottom ref={setXAxisElement} scale={xScale} top={margin.top + height} width={width} />
 
             <NonActiveBackground
                 data={data}
