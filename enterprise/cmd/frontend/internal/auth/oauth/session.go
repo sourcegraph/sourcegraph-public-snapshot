@@ -11,10 +11,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type SessionData struct {
@@ -28,7 +31,7 @@ type SessionData struct {
 
 type SessionIssuerHelper interface {
 	GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error)
-	CreateCodeHostConnection(ctx context.Context, token *oauth2.Token, providerID string) (safeErrMsg string, err error)
+	CreateCodeHostConnection(ctx context.Context, token *oauth2.Token, providerID string) (svc *types.ExternalService, safeErrMsg string, err error)
 	DeleteStateCookie(w http.ResponseWriter)
 	SessionData(token *oauth2.Token) SessionData
 }
@@ -71,11 +74,16 @@ func SessionIssuer(db database.DB, s SessionIssuerHelper, sessionKey string) htt
 		defer s.DeleteStateCookie(w)
 
 		if state.Op == LoginStateOpCreateCodeHostConnection {
-			safeErrMsg, err := s.CreateCodeHostConnection(ctx, token, state.ProviderID)
+			svc, safeErrMsg, err := s.CreateCodeHostConnection(ctx, token, state.ProviderID)
 			if err != nil {
 				log15.Error("OAuth failed: error upserting code host connection from OAuth token.", "error", err, "userErr", safeErrMsg)
 				http.Error(w, safeErrMsg, http.StatusInternalServerError)
 				return
+			}
+
+			if err := backend.SyncExternalService(ctx, svc, 5*time.Second, repoupdater.DefaultClient); err != nil {
+				log15.Error("OAuth failed: error syncing external service", "error", err)
+				http.Error(w, "error syncing code host", http.StatusInternalServerError)
 			}
 
 			http.Redirect(w, r, auth.SafeRedirectURL(state.Redirect), http.StatusFound)
