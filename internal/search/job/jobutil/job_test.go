@@ -104,6 +104,13 @@ func TestToSearchInputs(t *testing.T) {
   ComputeExcludedRepos)
 `).Equal(t, test("type:symbol test", search.Streaming, query.ParseRegexp))
 
+	autogold.Want("symbol", `
+(PARALLEL
+  REPOPAGER
+    ZoektSymbolSearch)
+  ComputeExcludedRepos)
+`).Equal(t, test("type:symbol repo:github.com/sourcegraph/sourcegraph", search.Streaming, query.ParseRegexp))
+
 	autogold.Want("commit", `
 (PARALLEL
   Commit

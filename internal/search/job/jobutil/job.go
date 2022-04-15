@@ -125,42 +125,38 @@ func ToSearchJob(searchInputs *run.SearchInputs, q query.Q) (job.Job, error) {
 
 		// Create Symbol Search Jobs
 		if resultTypes.Has(result.TypeSymbol) {
-			// Create Global Symbol Search jobs.
+			// Create indexed symbol search jobs
+			var symbolSearchJobs []job.Job
 			if repoUniverseSearch {
 				job, err := builder.newZoektGlobalSearch(search.SymbolRequest)
 				if err != nil {
 					return nil, err
 				}
 				addJob(true, job)
+			} else if runZoektOverRepos {
+				job, err := builder.newZoektSearch(search.SymbolRequest)
+				if err != nil {
+					return nil, err
+				}
+				symbolSearchJobs = append(symbolSearchJobs, job)
 			}
 
-			{
-				var symbolSearchJobs []job.Job
-				if runZoektOverRepos {
-					job, err := builder.newZoektSearch(search.SymbolRequest)
-					if err != nil {
-						return nil, err
-					}
-					symbolSearchJobs = append(symbolSearchJobs, job)
-				}
+			// Create Symbol Search jobs over repo set.
+			if !skipRepoSubsetSearch {
+				symbolSearchJobs = append(symbolSearchJobs, &searcher.SymbolSearcher{
+					PatternInfo: patternInfo,
+					Limit:       maxResults,
+				})
+			}
 
-				// Create Symbol Search jobs over repo set.
-				if !skipRepoSubsetSearch {
-					symbolSearchJobs = append(symbolSearchJobs, &searcher.SymbolSearcher{
-						PatternInfo: patternInfo,
-						Limit:       maxResults,
-					})
-				}
-
-				if len(symbolSearchJobs) > 0 {
-					required := useFullDeadline || resultTypes.Without(result.TypeSymbol) == 0
-					addJob(required, &repoPagerJob{
-						child:            NewParallelJob(symbolSearchJobs...),
-						repoOptions:      repoOptions,
-						useIndex:         q.Index(),
-						containsRefGlobs: query.ContainsRefGlobs(q),
-					})
-				}
+			if len(symbolSearchJobs) > 0 {
+				required := useFullDeadline || resultTypes.Without(result.TypeSymbol) == 0
+				addJob(required, &repoPagerJob{
+					child:            NewParallelJob(symbolSearchJobs...),
+					repoOptions:      repoOptions,
+					useIndex:         q.Index(),
+					containsRefGlobs: query.ContainsRefGlobs(q),
+				})
 			}
 		}
 
