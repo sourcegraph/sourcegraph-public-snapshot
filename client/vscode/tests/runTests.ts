@@ -170,9 +170,11 @@ async function getSearchPanelWebview(page: puppeteer.Page): Promise<puppeteer.Fr
         }
 
         try {
-            const brandHeader = await frame.waitForSelector('[data-testid="brand-header"]')
+            const brandHeader = await frame.waitForSelector('[data-testid="brand-header"]', {
+                timeout: 10000,
+            })
             if (!brandHeader) {
-                throw new Error('Expected search panel to render brand header')
+                throw new Error('Expected search panel to render brand header - not found')
             }
         } catch {
             errorMessages[4] = 'Expected search panel to render brand header'

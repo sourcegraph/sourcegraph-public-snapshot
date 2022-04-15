@@ -62,6 +62,12 @@
         "category": "Sourcegraph",
         "title": "Remove Repository from Sourcegraph File System",
         "icon": "$(trash)"
+      },
+      {
+        "command": "sourcegraph.openLocalCopy",
+        "category": "Sourcegraph",
+        "title": "Open Remote File Locally",
+        "icon": "$(folder-opened)"
       }
     ],
     "viewsContainers": {
@@ -150,6 +156,12 @@
             }
           ],
           "description": "Each value pair will be added to the request headers made to your instance."
+        },
+        "sourcegraph.basePath": {
+          "description": "The file path on the machine to the folder that is expected to contain all repositories.",
+          "type": "string",
+          "default": null,
+          "examples": ["/Users/USERNAME/Documents/"]
         }
       }
     },
@@ -188,6 +200,11 @@
         {
           "command": "sourcegraph.search",
           "group": "sourcegraph"
+        },
+        {
+          "command": "sourcegraph.openLocalCopy",
+          "when": "resourceScheme == sourcegraph && editorReadonly",
+          "group": "sourcegraph"
         }
       ],
       "view/title": [
@@ -202,12 +219,17 @@
           "command": "sourcegraph.openInBrowser",
           "when": "resourceScheme == sourcegraph && editorReadonly",
           "group": "navigation"
+        },
+        {
+          "command": "sourcegraph.openLocalCopy",
+          "when": "resourceScheme == sourcegraph && editorReadonly",
+          "group": "navigation"
         }
       ]
     }
   },
   "scripts": {
-    "lint:js": "eslint --cache '**/*.[jt]s?(x)'",
+    "eslint": "eslint --cache '**/*.[jt]s?(x)'",
     "test": "ts-node ./tests/runTests.ts",
     "package": "ts-node ./scripts/package.ts",
     "task:gulp": "cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",

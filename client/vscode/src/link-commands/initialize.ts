@@ -8,12 +8,19 @@ import { SourcegraphUri } from '../file-system/SourcegraphUri'
 import { LocalStorageService, ANONYMOUS_USER_ID_KEY } from '../settings/LocalStorageService'
 
 import { browserActions } from './browserActionsNode'
+import { openLocalCopy } from './openLocalCopy'
 
 export function initializeCodeSharingCommands(
     context: vscode.ExtensionContext,
     eventSourceType: EventSource,
     localStorageService: LocalStorageService
 ): void {
+    // Open remote file locally
+    context.subscriptions.push(
+        vscode.commands.registerCommand('sourcegraph.openLocalCopy', async () => {
+            await openLocalCopy()
+        })
+    )
     // Open local file or remote Sourcegraph file in browser
     context.subscriptions.push(
         vscode.commands.registerCommand('sourcegraph.openInBrowser', async () => {
