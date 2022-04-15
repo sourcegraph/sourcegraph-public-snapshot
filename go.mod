@@ -130,6 +130,7 @@ require (
 	github.com/slack-go/slack v0.10.1
 	github.com/smacker/go-tree-sitter v0.0.0-20220209044044-0d3022e933c3
 	github.com/snabb/sitemap v1.0.0
+	github.com/sourcegraph/codenotify v0.5.2-0.20220415141925-41450faf3c5e
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
 	github.com/sourcegraph/go-ctags v0.0.0-20220404085534-f974026334d7
 	github.com/sourcegraph/go-diff v0.6.1

@@ -19,6 +19,8 @@ deployment-notifier -environment $MY_ENV -slack.token=$SLACK_TOKEN -slack.webhoo
 - `-slack.token` Slack Token used to find the matching Slack handle for pull request authors.
 - `-slack.webhook` Slack webhook URL to post the notifications on.
 - `-honeycomb.token` Honeycomb API token that is used to upload deployment traces.
+- `-codeowners` (defaults to `false`) computes the codeowners for each PR and annotate the pull requests on Slack with mentions (expensive, it requires a full clone).
+  - requires `-slack.token` to resolve to Slack handles, will fall back to GitHub handles otherwise.
 
 ## How it works
 

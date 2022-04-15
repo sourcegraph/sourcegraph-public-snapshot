@@ -30,14 +30,16 @@ var (
 type DeploymentNotifier struct {
 	dd               DeploymentDiffer
 	ghc              *github.Client
+	or               CodeOwnerResolver
 	environment      string
 	manifestRevision string
 }
 
-func NewDeploymentNotifier(ghc *github.Client, dd DeploymentDiffer, environment, manifestRevision string) *DeploymentNotifier {
+func NewDeploymentNotifier(ghc *github.Client, dd DeploymentDiffer, or CodeOwnerResolver, environment string, manifestRevision string) *DeploymentNotifier {
 	return &DeploymentNotifier{
 		dd:               dd,
 		ghc:              ghc,
+		or:               or,
 		environment:      environment,
 		manifestRevision: manifestRevision,
 	}
@@ -52,8 +54,9 @@ type DeploymentReport struct {
 	// Services, PullRequests are a summary of all services and pull requests included in
 	// this deployment. For more accurate association of PRs to which services got deployed,
 	// use ServicesPerPullRequest instead.
-	Services     []string
-	PullRequests []*github.PullRequest
+	Services               []string
+	PullRequests           []*github.PullRequest
+	PullRequestsCodeOwners map[int][]string
 
 	// ServicesPerPullRequest is an accurate representation of exactly which pull requests
 	// are associated with each service, because each service might be deployed with a
@@ -116,13 +119,29 @@ func (dn *DeploymentNotifier) Report(ctx context.Context) (*DeploymentReport, er
 		return nil, ErrNoRelevantChanges
 	}
 
+	// tmpFolder, err := os.MkdirTemp("", "sourcegraph-xxxxxx")
+	// defer func() {
+	// 	_ = os.RemoveAll(tmpFolder)
+	// }()
+
+	prOwners := map[int][]string{}
+	for _, pr := range prs {
+		// get the owners
+		ref := pr.GetMergeCommitSHA()
+		prOwners[pr.GetNumber()], err = dn.or.Resolve(ref)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &DeploymentReport{
-		Environment:       dn.environment,
-		PullRequests:      prs,
-		DeployedAt:        time.Now().In(time.UTC).Format(time.RFC822Z),
-		Services:          deployedServices,
-		BuildkiteBuildURL: os.Getenv("BUILDKITE_BUILD_URL"),
-		ManifestRevision:  dn.manifestRevision,
+		Environment:            dn.environment,
+		PullRequests:           prs,
+		PullRequestsCodeOwners: prOwners,
+		DeployedAt:             time.Now().In(time.UTC).Format(time.RFC822Z),
+		Services:               deployedServices,
+		BuildkiteBuildURL:      os.Getenv("BUILDKITE_BUILD_URL"),
+		ManifestRevision:       dn.manifestRevision,
 
 		ServicesPerPullRequest: makeServicesPerPullRequest(prServicesMap),
 	}, nil

@@ -24,6 +24,9 @@ var slackTemplate = `:arrow_left: *{{.Environment}}* deployment (<{{.BuildURL}}|
 - Pull Requests:
 {{- range .PullRequests }}
     - <{{ .WebURL }}|{{ .Name }}> {{ .AuthorSlackID }}
+    {{- if .Owners }}
+      - Owners: {{- range .Owners}}{{ . }}{{" "}}{{- end}}
+    {{- end }}
 {{- end }}`
 
 type slackSummaryPresenter struct {
@@ -37,6 +40,7 @@ type pullRequestPresenter struct {
 	Name          string
 	AuthorSlackID string
 	WebURL        string
+	Owners        []string
 }
 
 func slackSummary(ctx context.Context, teammates team.TeammateResolver, report *DeploymentReport, traceURL string) (string, error) {
@@ -63,10 +67,23 @@ func slackSummary(ctx context.Context, teammates team.TeammateResolver, report *
 			}
 		}
 
+		ghOwners := report.PullRequestsCodeOwners[pr.GetNumber()]
+		slackOwners := make([]string, 0, len(ghOwners))
+		for _, ghOwner := range ghOwners {
+			teammate, err := teammates.ResolveByGitHubHandle(ctx, ghOwner)
+			if err != nil {
+				// TODO handle teams
+				slackOwners = append(slackOwners, "`"+ghOwner+"`")
+			} else {
+				slackOwners = append(slackOwners, fmt.Sprintf("<@%s>", teammate.SlackID))
+			}
+		}
+
 		presenter.PullRequests = append(presenter.PullRequests, pullRequestPresenter{
 			Name:          pr.GetTitle(),
 			WebURL:        pr.GetHTMLURL(),
 			AuthorSlackID: authorSlackID,
+			Owners:        slackOwners,
 		})
 	}
 

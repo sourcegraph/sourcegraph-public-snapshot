@@ -73,6 +73,7 @@ func TestDeploymentNotifier(t *testing.T) {
 		dn := NewDeploymentNotifier(
 			ghc,
 			NewMockManifestDeployementsDiffer(m),
+			NewMockCodeOwnerResolver(nil),
 			"tests",
 			"",
 		)
@@ -99,6 +100,7 @@ func TestDeploymentNotifier(t *testing.T) {
 		dn := NewDeploymentNotifier(
 			ghc,
 			NewMockManifestDeployementsDiffer(m),
+			NewMockCodeOwnerResolver(nil),
 			"tests",
 			"",
 		)
@@ -133,6 +135,7 @@ func TestDeploymentNotifier(t *testing.T) {
 		dn := NewDeploymentNotifier(
 			ghc,
 			NewMockManifestDeployementsDiffer(m),
+			NewMockCodeOwnerResolver(nil),
 			"tests",
 			"",
 		)
@@ -166,6 +169,7 @@ func TestDeploymentNotifier(t *testing.T) {
 		dn := NewDeploymentNotifier(
 			ghc,
 			NewMockManifestDeployementsDiffer(m),
+			NewMockCodeOwnerResolver(nil),
 			"tests",
 			"",
 		)

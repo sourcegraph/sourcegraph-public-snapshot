@@ -23,6 +23,7 @@ import (
 type Flags struct {
 	GitHubToken          string
 	DryRun               bool
+	CodeOwners           bool
 	Environment          string
 	SlackToken           string
 	SlackAnnounceWebhook string
@@ -34,6 +35,7 @@ func (f *Flags) Parse() {
 	flag.StringVar(&f.GitHubToken, "github.token", os.Getenv("GITHUB_TOKEN"), "mandatory github token")
 	flag.StringVar(&f.Environment, "environment", "", "Environment being deployed")
 	flag.BoolVar(&f.DryRun, "dry", false, "Pretend to post notifications, printing to stdout instead")
+	flag.BoolVar(&f.CodeOwners, "codeowners", false, "Mention code owners for each PR on Slack")
 	flag.StringVar(&f.SlackToken, "slack.token", "", "mandatory slack api token")
 	flag.StringVar(&f.SlackAnnounceWebhook, "slack.webhook", "", "Slack Webhook URL to post the results on")
 	flag.StringVar(&f.HoneycombToken, "honeycomb.token", "", "mandatory honeycomb api token")
@@ -71,10 +73,24 @@ func main() {
 		log.Fatal(err)
 	}
 
-	dd := NewManifestDeploymentDiffer(changedFiles)
+	var or CodeOwnerResolver
+	if flags.CodeOwners {
+		tmpDir, err := os.MkdirTemp("", "sourcegraph-clone-xxxxx")
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer func() {
+			os.RemoveAll(tmpDir)
+		}()
+		or = NewGitCodeOwnerResolver("git@github.com:sourcegraph/sourcegraph.git", tmpDir)
+	} else {
+		or = NewMockCodeOwnerResolver(nil)
+	}
+
 	dn := NewDeploymentNotifier(
 		ghc,
-		dd,
+		NewManifestDeploymentDiffer(changedFiles),
+		or,
 		flags.Environment,
 		manifestRevision,
 	)
@@ -97,13 +113,14 @@ func main() {
 		}
 	}
 
-	// Notifcations
+	// Notifications
 	slc := slack.New(flags.SlackToken)
 	teammates := team.NewTeammateResolver(ghc, slc)
 	if flags.DryRun {
 		fmt.Println("Github\n---")
 		for _, pr := range report.PullRequests {
 			fmt.Println("-", pr.GetNumber())
+			fmt.Println("  - code owners:", strings.Join(report.PullRequestsCodeOwners[pr.GetNumber()], ", "))
 		}
 		out, err := renderComment(report, traceURL)
 		if err != nil {
