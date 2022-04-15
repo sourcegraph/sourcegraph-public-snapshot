@@ -1,7 +1,5 @@
 import { Observable } from 'rxjs'
 
-import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-
 import { BackendInsight, Insight, InsightDashboard, InsightsDashboardOwner } from '../types'
 
 import {
@@ -25,6 +23,7 @@ import {
     CategoricalChartContent,
     SeriesChartContent,
     UiFeaturesConfig,
+    InsightContent,
 } from './code-insights-backend-types'
 
 /**
@@ -96,7 +95,7 @@ export interface CodeInsightsBackend {
      * Returns extension like built-in insight that is fetched via frontend
      * network utils to Sourcegraph search API.
      */
-    getBuiltInInsightData: (input: GetBuiltInsightInput) => Observable<ViewProviderResult>
+    getBuiltInInsightData: (input: GetBuiltInsightInput) => Observable<InsightContent<unknown>>
 
     /**
      * Returns content for the search based insight live preview chart.

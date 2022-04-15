@@ -3,8 +3,7 @@ import { useCallback, useContext, useState } from 'react'
 import { ErrorLike } from '@sourcegraph/common'
 
 import { eventLogger } from '../../../tracking/eventLogger'
-import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'
-import { Insight, InsightDashboard } from '../core/types'
+import { CodeInsightsBackendContext, Insight, InsightDashboard } from '../core'
 import { getTrackingTypeByInsightType } from '../pings'
 
 interface RemoveInsightInput {
