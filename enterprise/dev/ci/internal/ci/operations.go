@@ -325,12 +325,10 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 
 	// Chunk web integration tests to save time via parallel execution.
 	chunkedTestFiles := getChunkedWebIntegrationFileNames(chunkSize)
-	// chunkCount := len(chunkedTestFiles)
-	// parallelTestCount := getParallelTestCount(chunkCount)
+	chunkCount := len(chunkedTestFiles)
+	parallelTestCount := getParallelTestCount(chunkCount)
 
-	recordBrowserExtensionIntegrationTests(pipeline)
-
-	// addBrowserExtensionIntegrationTests(chunkCount)(pipeline)
+	addBrowserExtensionIntegrationTests(chunkCount)(pipeline)
 
 	// Add pipeline step for each chunk of web integrations files.
 	for i, chunkTestFiles := range chunkedTestFiles {
@@ -343,7 +341,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 			bk.Env("PERCY_ON", "true"),
 			// If PERCY_PARALLEL_TOTAL is set, the API will wait for that many finalized builds to finalize the Percy build.
 			// https://docs.percy.io/docs/parallel-test-suites#how-it-works
-			bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(len(chunkedTestFiles))),
+			bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(parallelTestCount)),
 			bk.Cmd(fmt.Sprintf(`dev/ci/yarn-web-integration.sh "%s"`, chunkTestFiles)),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
