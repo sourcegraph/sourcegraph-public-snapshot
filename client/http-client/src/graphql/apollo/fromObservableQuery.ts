@@ -1,4 +1,5 @@
 import { ApolloQueryResult, ObservableQuery } from '@apollo/client'
+import { OperationVariables } from '@apollo/client/core/types'
 import { Observable } from 'rxjs'
 
 /**
@@ -8,8 +9,8 @@ import { Observable } from 'rxjs'
  * const rxjsObservable = fromObservableQuery(client.watchQuery(query))
  * ```
  */
-export function fromObservableQuery<T extends object>(
-    observableQuery: ObservableQuery<T>
+export function fromObservableQuery<T extends object, Variables = OperationVariables>(
+    observableQuery: ObservableQuery<T, Variables>
 ): Observable<ApolloQueryResult<T>> {
     return new Observable<ApolloQueryResult<T>>(subscriber => {
         const subscription = observableQuery.subscribe(subscriber)
