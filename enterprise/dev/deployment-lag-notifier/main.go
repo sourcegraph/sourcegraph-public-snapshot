@@ -172,7 +172,6 @@ func main() {
 			NumCommits:       flags.NumCommits,
 		}
 
-		// msg, err := createMessage(version[:7], flags.Environment, currentCommit, flags.NumCommits)
 		msg, err := createMessage(td)
 		if !flags.DryRun {
 			err = slack.PostMessage(msg)

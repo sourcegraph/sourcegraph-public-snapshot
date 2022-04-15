@@ -69,13 +69,14 @@ func (s *SlackClient) PostMessage(b bytes.Buffer) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		log.Println("Response body: ", string(body))
+		log.Println(string(body))
 		return errors.Newf("received non-200 status code %v", resp.StatusCode)
 	}
 
 	return nil
 }
 
+// TemplateData represents all the data required to correctly render the template
 type TemplateData struct {
 	Version     string
 	Environment string
@@ -113,7 +114,6 @@ cc <!subteam^S02NFV6A536|devops-support>`
 		return msg, err
 	}
 
-	// tw := tabwriter.NewWriter(&msg, 0, 8, 2, '\t', 0)
 	tw := tabwriter.NewWriter(&msg, 0, 8, 1, '\t', 0)
 
 	err = tpl.Execute(tw, td)
