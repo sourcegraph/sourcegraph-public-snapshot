@@ -426,11 +426,11 @@ interface LocalCodeIntelPayload {
 
 interface LocalSymbol {
     hover?: string
-    def: Range
-    refs?: Range[]
+    def: LocalRange
+    refs?: LocalRange[]
 }
 
-interface Range {
+interface LocalRange {
     row: number
     column: number
     length: number
@@ -441,7 +441,7 @@ interface Position {
     column: number
 }
 
-const isInRange = (position: Position, range: Range): boolean => {
+const isInRange = (position: Position, range: LocalRange): boolean => {
     if (position.row !== range.row) {
         return false
     }
@@ -459,7 +459,7 @@ interface GenericBlobResponse<R> {
     repository: { commit: { blob: R | null } | null } | null
 }
 
-const rangeToExtensionRange = (range: Range): ExtensionRange => ({
+const rangeToExtensionRange = (range: LocalRange): ExtensionRange => ({
     start: {
         line: range.row,
         character: range.column,
