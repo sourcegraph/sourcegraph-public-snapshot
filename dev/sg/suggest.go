@@ -63,7 +63,7 @@ type commandSuggestion struct {
 
 type commandSuggestions []commandSuggestion
 
-// makeSuggestions returns the n most similar command names  to arg, from most similar to
+// makeSuggestions returns the n most similar command names to arg, from most similar to
 // least, where the levenshtein score is above the threshold.
 func makeSuggestions(cmds []*cli.Command, arg string, threshold float64, n int) commandSuggestions {
 	suggestions := commandSuggestions{}
