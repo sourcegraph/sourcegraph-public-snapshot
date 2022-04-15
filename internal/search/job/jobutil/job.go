@@ -134,10 +134,8 @@ func ToSearchJob(searchInputs *run.SearchInputs, q query.Q) (job.Job, error) {
 				addJob(true, job)
 			}
 
-			// Create Symbol Search jobs over repo set.
-			if !skipRepoSubsetSearch {
+			{
 				var symbolSearchJobs []job.Job
-
 				if runZoektOverRepos {
 					job, err := builder.newZoektSearch(search.SymbolRequest)
 					if err != nil {
@@ -146,18 +144,23 @@ func ToSearchJob(searchInputs *run.SearchInputs, q query.Q) (job.Job, error) {
 					symbolSearchJobs = append(symbolSearchJobs, job)
 				}
 
-				symbolSearchJobs = append(symbolSearchJobs, &searcher.SymbolSearcher{
-					PatternInfo: patternInfo,
-					Limit:       maxResults,
-				})
+				// Create Symbol Search jobs over repo set.
+				if !skipRepoSubsetSearch {
+					symbolSearchJobs = append(symbolSearchJobs, &searcher.SymbolSearcher{
+						PatternInfo: patternInfo,
+						Limit:       maxResults,
+					})
+				}
 
-				required := useFullDeadline || resultTypes.Without(result.TypeSymbol) == 0
-				addJob(required, &repoPagerJob{
-					child:            NewParallelJob(symbolSearchJobs...),
-					repoOptions:      repoOptions,
-					useIndex:         q.Index(),
-					containsRefGlobs: query.ContainsRefGlobs(q),
-				})
+				if len(symbolSearchJobs) > 0 {
+					required := useFullDeadline || resultTypes.Without(result.TypeSymbol) == 0
+					addJob(required, &repoPagerJob{
+						child:            NewParallelJob(symbolSearchJobs...),
+						repoOptions:      repoOptions,
+						useIndex:         q.Index(),
+						containsRefGlobs: query.ContainsRefGlobs(q),
+					})
+				}
 			}
 		}
 
