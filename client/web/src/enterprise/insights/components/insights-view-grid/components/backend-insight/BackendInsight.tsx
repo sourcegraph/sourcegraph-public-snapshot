@@ -20,7 +20,6 @@ import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
 
 import {
     BackendInsightErrorAlert,
-    EMPTY_DRILLDOWN_FILTERS,
     DrillDownFiltersPopover,
     DrillDownInsightCreationFormValues,
     BackendInsightChart,
@@ -58,9 +57,7 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
 
     // Original insight filters values that are stored in setting subject with insight
     // configuration object, They are updated  whenever the user clicks update/save button
-    const [originalInsightFilters, setOriginalInsightFilters] = useState(
-        cachedInsight.filters ?? EMPTY_DRILLDOWN_FILTERS
-    )
+    const [originalInsightFilters, setOriginalInsightFilters] = useState(cachedInsight.filters)
 
     // Live valid filters from filter form. They are updated whenever the user is changing
     // filter value in filters fields.
@@ -152,7 +149,7 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
                     <>
                         <DrillDownFiltersPopover
                             isOpen={isFiltersOpen}
-                            popoverTargetRef={insightCardReference}
+                            anchor={insightCardReference}
                             initialFiltersValue={filters}
                             originalFiltersValue={originalInsightFilters}
                             onFilterChange={setFilters}

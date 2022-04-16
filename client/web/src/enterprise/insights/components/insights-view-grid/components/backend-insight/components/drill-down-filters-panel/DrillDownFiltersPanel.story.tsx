@@ -24,14 +24,10 @@ const backendMock = {
     findInsightByName: () => of(null),
 }
 
-const EMPTY_DRILLDOWN_FILTERS: DrillDownFiltersFormValues = {
-    excludeRepoRegexp: '',
-    includeRepoRegexp: '',
-}
-
 const DRILLDOWN_FILTERS: DrillDownFiltersFormValues = {
     excludeRepoRegexp: 'sourcegraph/',
     includeRepoRegexp: '',
+    contexts: [],
 }
 
 export const DrillDownFiltersPanel: Story = () => (
@@ -45,7 +41,7 @@ export const DrillDownFiltersPanel: Story = () => (
         <article>
             <h2>Filters Form</h2>
             <DrillDownFiltersForm
-                initialFiltersValue={EMPTY_DRILLDOWN_FILTERS}
+                initialFiltersValue={DRILLDOWN_FILTERS}
                 originalFiltersValue={DRILLDOWN_FILTERS}
                 onFilterSave={fakeAPIRequest}
                 onFiltersChange={() => {}}
