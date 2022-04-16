@@ -326,17 +326,6 @@ export const NotebooksListPage: React.FunctionComponent<NotebooksListPageProps> 
                         telemetryService={telemetryService}
                     />
                 )}
-                {selectedTab.type === 'explore' && (
-                    <NotebooksList
-                        logEventName="ExploreNotebooks"
-                        fetchNotebooks={fetchNotebooks}
-                        filters={filters}
-                        telemetryService={telemetryService}
-                    />
-                )}
-                {selectedTab.type === 'getting-started' && (
-                    <NotebooksGettingStartedTab telemetryService={telemetryService} />
-                )}
                 {(selectedTab.type === 'my' || selectedTab.type === 'starred') && !authenticatedUser && (
                     <UnauthenticatedNotebooksSection
                         cta={
@@ -350,7 +339,53 @@ export const NotebooksListPage: React.FunctionComponent<NotebooksListPageProps> 
                         }
                     />
                 )}
+                {selectedTab.type === 'explore' && (
+                    <NotebooksList
+                        logEventName="ExploreNotebooks"
+                        fetchNotebooks={fetchNotebooks}
+                        filters={filters}
+                        telemetryService={telemetryService}
+                    />
+                )}
+                {selectedTab.type === 'getting-started' && (
+                    <NotebooksGettingStartedTab telemetryService={telemetryService} />
+                )}
             </Page>
+        </div>
+    )
+}
+
+interface UnauthenticatedMyNotebooksSectionProps extends TelemetryProps {
+    cta: string
+    onSelectExploreNotebooks: () => void
+}
+
+const UnauthenticatedNotebooksSection: React.FunctionComponent<UnauthenticatedMyNotebooksSectionProps> = ({
+    telemetryService,
+    cta,
+    onSelectExploreNotebooks,
+}) => {
+    const onClick = (): void => {
+        telemetryService.log('SearchNotebooksSignUpToCreateNotebooksClick')
+    }
+
+    return (
+        <div className="d-flex justify-content-center align-items-center flex-column p-3">
+            <Button
+                as={Link}
+                onClick={onClick}
+                to={buildGetStartedURL('search-notebooks', '/notebooks')}
+                variant="primary"
+            >
+                {cta}
+            </Button>
+            <span className="my-3 text-muted">or</span>
+            <span className={classNames('d-flex align-items-center', styles.explorePublicNotebooks)}>
+                <Button className="p-1" variant="link" onClick={onSelectExploreNotebooks}>
+                    explore
+                </Button>{' '}
+                public notebooks
+            </span>
         </div>
     )
 }
@@ -399,40 +434,5 @@ const ToggleNotepadButton: React.FunctionComponent<TelemetryProps> = ({ telemetr
                 </Modal>
             )}
         </>
-    )
-}
-
-interface UnauthenticatedMyNotebooksSectionProps extends TelemetryProps {
-    cta: string
-    onSelectExploreNotebooks: () => void
-}
-
-const UnauthenticatedNotebooksSection: React.FunctionComponent<UnauthenticatedMyNotebooksSectionProps> = ({
-    telemetryService,
-    cta,
-    onSelectExploreNotebooks,
-}) => {
-    const onClick = (): void => {
-        telemetryService.log('SearchNotebooksSignUpToCreateNotebooksClick')
-    }
-
-    return (
-        <div className="d-flex justify-content-center align-items-center flex-column p-3">
-            <Button
-                as={Link}
-                onClick={onClick}
-                to={buildGetStartedURL('search-notebooks', '/notebooks')}
-                variant="primary"
-            >
-                {cta}
-            </Button>
-            <span className="my-3 text-muted">or</span>
-            <span className={classNames('d-flex align-items-center', styles.explorePublicNotebooks)}>
-                <Button className="p-1" variant="link" onClick={onSelectExploreNotebooks}>
-                    explore
-                </Button>{' '}
-                public notebooks
-            </span>
-        </div>
     )
 }
