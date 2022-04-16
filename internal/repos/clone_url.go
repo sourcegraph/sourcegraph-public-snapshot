@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	"net/url"
+	"strings"
 
 	"github.com/inconshreveable/log15"
 
@@ -220,7 +221,10 @@ func gerritCloneURL(project *gerrit.Project, cfg *schema.GerritConnection) strin
 		return cfg.Url
 	}
 	u.User = url.UserPassword(cfg.Username, cfg.Password)
-	u.Path = project.ID
+
+	// Gerrit encodes slashes in IDs, so need to decode them.
+	u.Path = strings.ReplaceAll(project.ID, "%2F", "/")
+
 	return u.String()
 }
 
