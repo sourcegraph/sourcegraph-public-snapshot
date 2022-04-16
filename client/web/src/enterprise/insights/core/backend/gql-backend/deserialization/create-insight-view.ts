@@ -17,6 +17,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
         isFrozen: insight.isFrozen,
         dashboardReferenceCount: insight.dashboardReferenceCount,
     }
+
     switch (insight.presentation.__typename) {
         case 'LineChartInsightViewPresentation': {
             const isBackendInsight = insight.dataSeriesDefinitions.every(series => series.isCalculated)
@@ -32,18 +33,20 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
             if (isCaptureGroupInsight) {
                 // It's safe because capture group insight always has only 1 data series
                 const { query } = insight.dataSeriesDefinitions[0] ?? {}
+                const { presentation, appliedFilters } = insight
 
                 return {
                     ...baseInsight,
                     executionType: InsightExecutionType.Backend,
                     type: InsightType.CaptureGroup,
-                    title: insight.presentation.title,
+                    title: presentation.title,
                     repositories,
                     query,
                     step,
                     filters: {
-                        includeRepoRegexp: insight.appliedFilters.includeRepoRegex ?? '',
-                        excludeRepoRegexp: insight.appliedFilters.excludeRepoRegex ?? '',
+                        includeRepoRegexp: appliedFilters.includeRepoRegex ?? '',
+                        excludeRepoRegexp: appliedFilters.excludeRepoRegex ?? '',
+                        contexts: appliedFilters.searchContexts ?? [],
                     },
                 }
             }
@@ -63,16 +66,19 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
             }))
 
             if (isBackendInsight) {
+                const { presentation, appliedFilters } = insight
+
                 return {
                     ...baseInsight,
                     executionType: InsightExecutionType.Backend,
                     type: InsightType.SearchBased,
-                    title: insight.presentation.title,
+                    title: presentation.title,
                     series,
                     step,
                     filters: {
-                        includeRepoRegexp: insight.appliedFilters.includeRepoRegex ?? '',
-                        excludeRepoRegexp: insight.appliedFilters.excludeRepoRegex ?? '',
+                        includeRepoRegexp: appliedFilters.includeRepoRegex ?? '',
+                        excludeRepoRegexp: appliedFilters.excludeRepoRegex ?? '',
+                        contexts: appliedFilters.searchContexts ?? [],
                     },
                 }
             }
