@@ -11,11 +11,12 @@ import { DashboardInsightsContext } from './DashboardInsightsContext'
 
 interface DashboardInsightsProps extends TelemetryProps {
     dashboard: InsightDashboard
+    className?: string
     onAddInsightRequest: () => void
 }
 
 export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> = props => {
-    const { telemetryService, dashboard, onAddInsightRequest } = props
+    const { telemetryService, dashboard, className, onAddInsightRequest } = props
 
     const { getInsights } = useContext(CodeInsightsBackendContext)
 
@@ -30,7 +31,7 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
     return (
         <DashboardInsightsContext.Provider value={{ dashboard }}>
             {insights.length > 0 ? (
-                <SmartInsightsViewGrid insights={insights} telemetryService={telemetryService} />
+                <SmartInsightsViewGrid insights={insights} telemetryService={telemetryService} className={className} />
             ) : (
                 <EmptyInsightDashboard dashboard={dashboard} onAddInsight={onAddInsightRequest} />
             )}
