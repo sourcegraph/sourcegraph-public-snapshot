@@ -233,6 +233,8 @@ func ParseServiceType(s string) (string, bool) {
 		return TypeBitbucketServer, true
 	case bbcLower:
 		return TypeBitbucketCloud, true
+	case TypeGerrit:
+		return TypeGerrit, true
 	case TypeGitHub:
 		return TypeGitHub, true
 	case TypeGitLab:

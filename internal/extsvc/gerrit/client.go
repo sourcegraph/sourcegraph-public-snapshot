@@ -67,7 +67,7 @@ func NewClient(config *schema.GerritConnection, httpClient httpcli.Doer) (*Clien
 		Config:     config,
 		URL:        u,
 		RateLimit:  l,
-		NoAuth:     true,
+		NoAuth:     false,
 	}, nil
 }
 

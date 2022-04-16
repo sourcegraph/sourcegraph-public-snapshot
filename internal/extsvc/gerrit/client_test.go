@@ -73,6 +73,8 @@ func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 		t.Fatal(err)
 	}
 
+	cli.SetNoAuth(true)
+
 	return cli, func() {
 		if err := rec.Stop(); err != nil {
 			t.Errorf("failed to update test data: %s", err)

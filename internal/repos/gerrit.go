@@ -78,7 +78,7 @@ func (s *GerritSource) ListRepos(ctx context.Context, results chan SourceResult)
 		sort.Strings(pageKeySlice)
 
 		for _, p := range pageKeySlice {
-			repo, err := s.makeRepo(pageAsMap[p])
+			repo, err := s.makeRepo(p, pageAsMap[p])
 			if err != nil {
 				results <- SourceResult{Source: s, Err: err}
 				return
@@ -100,30 +100,29 @@ func (s *GerritSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }
 
-func (s *GerritSource) makeRepo(p *gerrit.Project) (*types.Repo, error) {
+func (s *GerritSource) makeRepo(projectName string, p *gerrit.Project) (*types.Repo, error) {
 	urn := s.svc.URN()
 
-	fullURL, err := urlx.Parse(s.cli.URL.String() + p.ID)
+	fullURL, err := urlx.Parse(s.cli.URL.String() + projectName)
 	if err != nil {
 		return nil, err
 	}
 
 	name := path.Join(fullURL.Host, fullURL.Path)
-
 	return &types.Repo{
 		Name:        api.RepoName(name),
 		URI:         name,
 		Description: p.Description,
 		Fork:        p.Parent != "",
 		ExternalRepo: api.ExternalRepoSpec{
-			ID:          p.ID,
+			ID:          projectName,
 			ServiceType: extsvc.TypeGerrit,
 			ServiceID:   s.serviceID,
 		},
 		Sources: map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
-				CloneURL: s.cli.URL.String() + p.ID,
+				CloneURL: name,
 			},
 		},
 		Metadata: p,
