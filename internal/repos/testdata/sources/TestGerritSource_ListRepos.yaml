@@ -20,13 +20,13 @@ interactions:
       Content-Disposition:
       - attachment
       Content-Security-Policy-Report-Only:
-      - 'script-src ''nonce-KwbG9cZviY4hafXPTgXn+w'' ''unsafe-inline'' ''strict-dynamic''
+      - 'script-src ''nonce-JQwUgzATRXxs/afjhwwniQ'' ''unsafe-inline'' ''strict-dynamic''
         https: http: ''unsafe-eval'';object-src ''none'';base-uri ''self'';report-uri
         https://csp.withgoogle.com/csp/gerritcodereview/1'
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 14 Apr 2022 20:35:27 GMT
+      - Sat, 16 Apr 2022 20:54:04 GMT
       Expires:
       - Mon, 01 Jan 1990 00:00:00 GMT
       Pragma:

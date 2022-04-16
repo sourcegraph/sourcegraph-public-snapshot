@@ -115,14 +115,14 @@ func (s *GerritSource) makeRepo(projectName string, p *gerrit.Project) (*types.R
 		Description: p.Description,
 		Fork:        p.Parent != "",
 		ExternalRepo: api.ExternalRepoSpec{
-			ID:          projectName,
+			ID:          p.ID,
 			ServiceType: extsvc.TypeGerrit,
 			ServiceID:   s.serviceID,
 		},
 		Sources: map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
-				CloneURL: name,
+				CloneURL: fullURL.String(),
 			},
 		},
 		Metadata: p,

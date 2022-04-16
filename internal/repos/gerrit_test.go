@@ -32,7 +32,10 @@ func TestGerritSource_ListRepos(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	src.perPage = 25 // 2 pages for 47 results
+	// Unauthenticated client.
+	src.cli.SetNoAuth(true)
+
+	src.perPage = 25
 
 	repos, err := listAll(context.Background(), src)
 	if err != nil {

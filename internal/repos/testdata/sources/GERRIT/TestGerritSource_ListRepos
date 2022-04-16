@@ -50,7 +50,7 @@
    "Sources": {
     "extsvc:gerrit:0": {
      "ID": "extsvc:gerrit:0",
-     "CloneURL": "https://gerrit-review.googlesource.com/apps%2Fanalytics-etl"
+     "CloneURL": "https://gerrit-review.googlesource.com/apps/analytics-etl"
     }
    },
    "Metadata": {
@@ -82,7 +82,7 @@
    "Sources": {
     "extsvc:gerrit:0": {
      "ID": "extsvc:gerrit:0",
-     "CloneURL": "https://gerrit-review.googlesource.com/apps%2Fkibana-dashboard"
+     "CloneURL": "https://gerrit-review.googlesource.com/apps/kibana-dashboard"
     }
    },
    "Metadata": {
@@ -114,7 +114,7 @@
    "Sources": {
     "extsvc:gerrit:0": {
      "ID": "extsvc:gerrit:0",
-     "CloneURL": "https://gerrit-review.googlesource.com/apps%2Freviewit"
+     "CloneURL": "https://gerrit-review.googlesource.com/apps/reviewit"
     }
    },
    "Metadata": {
