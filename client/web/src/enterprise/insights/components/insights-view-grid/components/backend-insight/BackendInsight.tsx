@@ -11,12 +11,12 @@ import { BackendInsight, CodeInsightsBackendContext, InsightFilters } from '../.
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight'
 import { LazyQueryStatus } from '../../../../hooks/use-parallel-requests/use-parallel-request'
 import { useRemoveInsightFromDashboard } from '../../../../hooks/use-remove-insight'
-import { DashboardInsightsContext } from '../../../../pages/dashboards/dashboard-page/components/dashboards-content/components/dashboard-inisghts/DashboardInsightsContext'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../pings'
 import { FORM_ERROR, SubmissionErrors } from '../../../form/hooks/useForm'
 import { InsightCard, InsightCardBanner, InsightCardHeader, InsightCardLoading } from '../../../views'
 import { useInsightData } from '../../hooks/use-insight-data'
 import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
+import { InsightContext } from '../InsightContext'
 
 import {
     BackendInsightErrorAlert,
@@ -42,7 +42,7 @@ interface BackendInsightProps
 export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = props => {
     const { telemetryService, insight, innerRef, resizing, ...otherProps } = props
 
-    const { dashboard } = useContext(DashboardInsightsContext)
+    const { dashboard } = useContext(InsightContext)
     const { getBackendInsightData, createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
 
     // Visual line chart settings

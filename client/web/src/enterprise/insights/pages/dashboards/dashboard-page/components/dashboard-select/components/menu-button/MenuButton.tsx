@@ -5,10 +5,10 @@ import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 
-import { InsightDashboard, isCustomDashboard } from '../../../../../../../core/types'
+import { TruncatedText } from '../../../../../../../components'
+import { InsightDashboard, isCustomDashboard } from '../../../../../../../core'
 import { getDashboardOwnerName, getDashboardTitle } from '../../helpers/get-dashboard-title'
 import { InsightsBadge } from '../insights-badge/InsightsBadge'
-import { TruncatedText } from '../trancated-text/TrancatedText'
 
 import styles from './MenuButton.module.scss'
 

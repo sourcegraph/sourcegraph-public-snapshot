@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { Button, FlexTextArea, Label } from '@sourcegraph/wildcard'
 
-import { TruncatedText } from '../../../../../../../../../../pages/dashboards/dashboard-page/components/dashboard-select/components'
+import { TruncatedText } from '../../../../../../../../../trancated-text/TrancatedText'
 
 import styles from './DrillDownRegExpInput.module.scss'
 
