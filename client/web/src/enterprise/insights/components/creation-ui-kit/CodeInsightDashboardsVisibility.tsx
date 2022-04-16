@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Alert } from '@sourcegraph/wildcard/out/src'
+import { Alert } from '@sourcegraph/wildcard'
 
 export interface CodeInsightDashboardsVisibilityProps extends React.HTMLAttributes<HTMLDivElement> {
     dashboardCount: number
