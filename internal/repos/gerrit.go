@@ -2,9 +2,10 @@ package repos
 
 import (
 	"context"
-	"github.com/goware/urlx"
 	"path"
 	"sort"
+
+	"github.com/goware/urlx"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"

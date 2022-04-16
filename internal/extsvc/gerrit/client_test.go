@@ -3,20 +3,19 @@ package gerrit
 import (
 	"context"
 	"flag"
-	"github.com/dnaeon/go-vcr/cassette"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/inconshreveable/log15"
-
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	"net/http"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var update = flag.Bool("update", false, "update testdata")

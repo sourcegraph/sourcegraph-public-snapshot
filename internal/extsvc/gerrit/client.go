@@ -156,6 +156,13 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	}
 
 	// The first 4 characters of the Gerrit API responses need to be stripped, see: https://gerrit-review.googlesource.com/Documentation/rest-api.html#output .
+	if len(bs) < 4 {
+		return nil, errors.WithStack(&httpError{
+			URL:        req.URL,
+			StatusCode: resp.StatusCode,
+			Body:       bs,
+		})
+	}
 	return resp, json.Unmarshal(bs[4:], result)
 }
 
