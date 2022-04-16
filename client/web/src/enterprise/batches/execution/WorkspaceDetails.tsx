@@ -135,13 +135,13 @@ const WorkspaceHeader: React.FunctionComponent<WorkspaceHeaderProps> = ({
         </div>
         <div className="d-flex align-items-center">
             {typeof workspace.placeInQueue === 'number' && (
-                <Badge variant="secondary" className="text-uppercase">
-                    <Icon as={TimerSandIcon} />{' '}
-                    <strong>
+                <>
+                    <Icon as={TimerSandIcon} />
+                    <strong className="ml-1 mr-1">
                         <NumberInQueue number={workspace.placeInQueue} />
-                    </strong>{' '}
+                    </strong>
                     in queue
-                </Badge>
+                </>
             )}
             {workspace.__typename === 'VisibleBatchSpecWorkspace' && workspace.path && (
                 <span className={styles.workspaceDetail}>{workspace.path}</span>
