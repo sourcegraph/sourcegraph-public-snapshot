@@ -70,7 +70,7 @@ describe('Backend insight drill down filters', () => {
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
-        await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
+        await driver.page.waitForSelector('svg circle')
 
         await driver.page.click('button[aria-label="Filters"]')
         await driver.page.waitForSelector('[role="dialog"][aria-label="Drill-down filters panel"]')
@@ -147,7 +147,7 @@ describe('Backend insight drill down filters', () => {
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
-        await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
+        await driver.page.waitForSelector('svg circle')
 
         await driver.page.click('button[aria-label="Active filters"]')
         await driver.page.waitForSelector('[role="dialog"][aria-label="Drill-down filters panel"]')

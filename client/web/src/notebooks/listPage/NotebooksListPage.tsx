@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
-import MagnifyIcon from 'mdi-react/MagnifyIcon'
+import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
 import { Redirect, useHistory, useLocation } from 'react-router'
 import { Observable } from 'rxjs'
@@ -234,7 +234,7 @@ export const NotebooksListPage: React.FunctionComponent<NotebooksListPageProps> 
         <div className="w-100">
             <Page>
                 <PageHeader
-                    path={[{ icon: MagnifyIcon, to: '/search', ariaLabel: 'Code search' }, { text: 'Notebooks' }]}
+                    path={[{ icon: BookOutlineIcon, text: 'Notebooks' }]}
                     actions={
                         authenticatedUser && (
                             <>

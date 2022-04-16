@@ -20,19 +20,19 @@ export function generatePointsField<Datum>(input: PointsFieldInput<Datum>): Poin
     return dataSeries.flatMap(series => {
         const { data, dataKey, getLinkURL = NULL_LINK } = series
 
-        return (data as SeriesDatum<Datum>[]).filter(isDatumWithValidNumber).map((data, index) => {
-            const datumValue = getDatumValue(data)
+        return (data as SeriesDatum<Datum>[]).filter(isDatumWithValidNumber).map((datum, index) => {
+            const datumValue = getDatumValue(datum)
 
             return {
                 id: `${dataKey as string}-${index}`,
                 seriesKey: dataKey as string,
                 value: datumValue,
                 y: yScale(datumValue),
-                x: xScale(data.x),
-                time: data.x,
+                x: xScale(datum.x),
+                time: datum.x,
                 color: series.color ?? 'green',
-                linkUrl: getLinkURL(data.datum, index),
-                datum: data.datum,
+                linkUrl: getLinkURL(datum.datum, index),
+                datum: datum.datum,
             }
         })
     })

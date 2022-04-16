@@ -74,7 +74,7 @@ var ciCommand = &cli.Command{
 
 Note that Sourcegraph's CI pipelines are under our enterprise license: https://github.com/sourcegraph/sourcegraph/blob/main/LICENSE.enterprise`,
 	Category: CategoryDev,
-	Action:   cli.ShowSubcommandHelp,
+	Action:   suggestSubcommandsAction,
 	Subcommands: []*cli.Command{{
 		Name:    "preview",
 		Aliases: []string{"plan"},

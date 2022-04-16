@@ -1325,7 +1325,7 @@ func TestSyncExternalService_ContextTimeout(t *testing.T) {
 	ctx := context.Background()
 	svc := &types.ExternalService{}
 
-	err := syncExternalService(ctx, svc, 0*time.Millisecond, repoupdater.NewClient(s.URL))
+	err := backend.SyncExternalService(ctx, svc, 0*time.Millisecond, repoupdater.NewClient(s.URL))
 
 	if err == nil {
 		t.Error("Expected error but got nil")

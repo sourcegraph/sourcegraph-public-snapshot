@@ -230,53 +230,14 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
     // Live preview fetchers
     public getSearchInsightContent = (input: GetSearchInsightContentInput): Promise<SeriesChartContent<any>> =>
-        getSearchInsightContent(input).then(data => {
-            const { data: datumList, series, xAxis } = data
-
-            // TODO: Remove this when the dashboard page has new chart fetchers
-            return {
-                data: datumList,
-                series: series.map(series => ({
-                    dataKey: series.dataKey,
-                    name: series.name ?? '',
-                    color: series.stroke,
-                    getLinkURL: datum => series.linkURLs?.[+datum[xAxis.dataKey]] ?? undefined,
-                })),
-                getXValue: datum => new Date(+datum[xAxis.dataKey]),
-            }
-        })
+        getSearchInsightContent(input).then(data => data.content)
 
     public getLangStatsInsightContent = (
         input: GetLangStatsInsightContentInput
-    ): Promise<CategoricalChartContent<any>> =>
-        getLangStatsInsightContent(input).then(data => {
-            const { data: dataList, dataKey, nameKey, fillKey = '', linkURLKey = '' } = data.pies[0]
-
-            // TODO: Remove this when the dashboard page has new chart fetchers
-            return {
-                data: dataList,
-                getDatumValue: datum => datum[dataKey],
-                getDatumColor: datum => datum[fillKey ?? ''],
-                getDatumName: datum => datum[nameKey],
-                getDatumLink: datum => datum[linkURLKey],
-            }
-        })
+    ): Promise<CategoricalChartContent<any>> => getLangStatsInsightContent(input).then(data => data.content)
 
     public getCaptureInsightContent = (input: CaptureInsightSettings): Promise<SeriesChartContent<any>> =>
-        getCaptureGroupInsightsPreview(this.apolloClient, input).then(data => {
-            const { data: datumList, series, xAxis } = data
-
-            // TODO: Remove this when the dashboard page has new chart fetchers
-            return {
-                data: datumList,
-                series: series.map(series => ({
-                    dataKey: series.dataKey,
-                    name: series.name ?? '',
-                    color: series.stroke,
-                })),
-                getXValue: datum => new Date(+datum[xAxis.dataKey]),
-            }
-        })
+        getCaptureGroupInsightsPreview(this.apolloClient, input)
 
     // Repositories API
     public getRepositorySuggestions = getRepositorySuggestions

@@ -44,8 +44,10 @@ func TestCommandFormatting(t *testing.T) {
 
 func testCommandFormatting(t *testing.T, cmd *cli.Command) {
 	t.Run(cmd.Name, func(t *testing.T) {
+		assert.NotEmpty(t, cmd.Name, "Name should be set")
 		assert.NotEmpty(t, cmd.Usage, "Usage should be set")
 		assert.False(t, strings.HasSuffix(cmd.Usage, "."), "Usage should not end with period")
+		assert.NotNil(t, cmd.Action, "Action must be provided (for parent commands, 'suggestSubcommandsAction'")
 
 		for _, subCmd := range cmd.Subcommands {
 			testCommandFormatting(t, subCmd)

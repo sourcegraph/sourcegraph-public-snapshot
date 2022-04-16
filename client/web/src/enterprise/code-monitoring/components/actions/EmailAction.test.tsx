@@ -42,6 +42,27 @@ describe('EmailAction', () => {
         })
     })
 
+    test('enable include results', () => {
+        const setActionSpy = sinon.spy()
+        const { getByTestId } = render(
+            <MockedTestProvider>
+                <EmailAction {...props} setAction={setActionSpy} />
+            </MockedTestProvider>
+        )
+
+        userEvent.click(getByTestId('form-action-toggle-email'))
+        userEvent.click(getByTestId('include-results-toggle-email'))
+        userEvent.click(getByTestId('submit-action-email'))
+
+        sinon.assert.calledOnceWithExactly(setActionSpy, {
+            __typename: 'MonitorEmail',
+            enabled: true,
+            includeResults: true,
+            id: '',
+            recipients: { nodes: [{ id: 'userID' }] },
+        })
+    })
+
     test('open and delete', () => {
         const setActionSpy = sinon.spy()
         const { getByTestId } = render(
