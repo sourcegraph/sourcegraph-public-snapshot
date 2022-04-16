@@ -169,6 +169,17 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
     ...commonWebGraphQlResults,
     ...highlightFileResult,
     ...viewerSettings,
+    GetTemporarySettings: () => ({
+        temporarySettings: {
+            __typename: 'TemporarySettings',
+            contents: JSON.stringify({
+                'user.daysActiveCount': 1,
+                'user.lastDayActive': new Date().toDateString(),
+                'search.usedNonGlobalContext': true,
+                'search.notebooks.gettingStartedTabSeen': true,
+            }),
+        },
+    }),
     RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
     ResolveRev: () => createResolveRevisionResult('/github.com/sourcegraph/sourcegraph'),
     FetchNotebook: ({ id }) => ({

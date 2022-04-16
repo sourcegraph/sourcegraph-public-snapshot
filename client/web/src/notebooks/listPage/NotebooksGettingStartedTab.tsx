@@ -98,10 +98,10 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<NotebooksGettin
                             Notebooks make creating and sharing knowledge something you'll want to do, not something you
                             avoid.
                         </p>
-                        <h3>Use notebooks for&hellip;</h3>
+                        <h3>Use notebooks to&hellip;</h3>
                         <ul className={classNames(styles.narrowList, 'mb-0')}>
                             <li>
-                                Onboarding a new teammate: Create{' '}
+                                Onboard a new teammate: Create{' '}
                                 <Link
                                     target="_blank"
                                     rel="noopener noreferrer"
@@ -111,18 +111,20 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<NotebooksGettin
                                 </Link>{' '}
                                 that stay up to date
                             </li>
-                            <li>Better PR walkthroughs: Quickly link to impacted code that wasn't part of the PR</li>
                             <li>
-                                Tracking symbol definitions: Use symbol blocks to ensure you're always reading the
-                                latest docs
+                                Create better PR walkthroughs: Quickly link to impacted code that wasn't part of the PR
                             </li>
                             <li>
-                                Long-form documentation: ocument complex systems like CI with query blocks and
+                                Track symbol definitions: Use symbol blocks to ensure you're always reading the latest
+                                docs
+                            </li>
+                            <li>
+                                Create long-form documentation: ocument complex systems like CI with query blocks and
                                 structural search to highlight critical code
                             </li>
                             <li>
                                 <Link target="_blank" rel="noopener noreferrer" to="/help/notebooks/notebook-embedding">
-                                    Embedding Notebooks
+                                    Embed Notebooks
                                 </Link>{' '}
                                 in existing documentation: view Notebooks content in your existing knowledge management
                                 system
