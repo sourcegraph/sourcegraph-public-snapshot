@@ -24,7 +24,6 @@ import { fetchNotebooks as _fetchNotebooks, createNotebook as _createNotebook } 
 import { ImportMarkdownNotebookButton } from './ImportMarkdownNotebookButton'
 import { NotebooksGettingStartedTab } from './NotebooksGettingStartedTab'
 import { NotebooksList } from './NotebooksList'
-import { NotebooksOverview } from './NotebooksOverview'
 import { NotepadCTA, NOTEPAD_CTA_ID } from './NotepadCta'
 
 export interface NotebooksListPageProps extends TelemetryProps {
@@ -104,6 +103,14 @@ export const NotebooksListPage: React.FunctionComponent<NotebooksListPageProps> 
     const [selectedTab, setSelectedTab] = useState<NotebooksTab>(
         getSelectedTabFromLocation(location.search, authenticatedUser)
     )
+
+    const [hasSeenGettingStartedTab] = useTemporarySetting('search.notebooks.gettingStartedTabSeen', false)
+
+    useEffect(() => {
+        if (typeof hasSeenGettingStartedTab !== 'undefined' && !hasSeenGettingStartedTab) {
+            setSelectedTab({ type: 'getting-started' })
+        }
+    }, [hasSeenGettingStartedTab, setSelectedTab])
 
     const onSelectTab = useCallback(
         (tab: NotebooksTab, logName: string) => {
@@ -315,9 +322,6 @@ export const NotebooksListPage: React.FunctionComponent<NotebooksListPageProps> 
                         filters={filters}
                         telemetryService={telemetryService}
                     />
-                )}
-                {(selectedTab.type === 'my' || selectedTab.type === 'starred') && !authenticatedUser && (
-                    <NotebooksOverview />
                 )}
                 {selectedTab.type === 'explore' && (
                     <NotebooksList
