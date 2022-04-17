@@ -8,6 +8,8 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Container, Icon, Link } from '@sourcegraph/wildcard'
 
 import { PageRoutes } from '../../routes.constants'
+import { ThemePreference } from '../../stores/themeState'
+import { useTheme } from '../../theme'
 
 import styles from './NotebooksGettingStartedTab.module.scss'
 
@@ -18,40 +20,31 @@ const functionalityPanels = [
         title: 'The command palette',
         description:
             'Use slash commands to choose from the available block Notebook block types. Markdown, file, symbol, and search query blocks are supported.',
-        videoSources: [
-            {
-                type: 'webm',
-                src: 'https://storage.googleapis.com/sourcegraph-assets/notebooks/notebooks_command_palette.webm',
-            },
-            {
-                type: 'mp4',
-                src: 'https://storage.googleapis.com/sourcegraph-assets/notebooks/notebooks_command_palette.mp4',
-            },
-        ],
+        image: {
+            light: 'https://storage.googleapis.com/sourcegraph-assets/notebooks/notebooks_command_palette_light.png',
+            dark: 'https://storage.googleapis.com/sourcegraph-assets/notebooks/notebooks_command_palette_dark.png',
+            alt: 'Notebooks command pallete',
+        },
     },
     {
         title: 'Keep your docs current with symbol blocks',
         description:
             'Symbol blocks follow a chosen symbol anywhere in a file, even as it changes. Create symbol blocks to keep your docs from getting stale.',
-        videoSources: [
-            {
-                type: 'webm',
-                src: 'https://storage.googleapis.com/sourcegraph-assets/notebooks/notebooks_symbol_block.webm',
-            },
-            {
-                type: 'mp4',
-                src: 'https://storage.googleapis.com/sourcegraph-assets/notebooks/notebooks_symbol_block.mp4',
-            },
-        ],
+        image: {
+            light: 'https://storage.googleapis.com/sourcegraph-assets/notebooks/notebooks_symbol_block_light.png',
+            dark: 'https://storage.googleapis.com/sourcegraph-assets/notebooks/notebooks_symbol_block_dark.png',
+            alt: 'Notebook symbol block',
+        },
     },
     {
         title: 'Share Notebooks with your team or company',
         description:
             "Notebooks are private by default, but you can share them with your team (if you're using Sourcegraph organizations) or with your company.",
-        videoSources: [
-            { type: 'webm', src: 'https://storage.googleapis.com/sourcegraph-assets/notebooks/notebooks_sharing.webm' },
-            { type: 'mp4', src: 'https://storage.googleapis.com/sourcegraph-assets/notebooks/notebooks_sharing.mp4' },
-        ],
+        image: {
+            light: 'https://storage.googleapis.com/sourcegraph-assets/notebooks/notebooks_sharing_light.png',
+            dark: 'https://storage.googleapis.com/sourcegraph-assets/notebooks/notebooks_sharing_dark.png',
+            alt: 'Notebooks sharing dialog',
+        },
     },
 ]
 
@@ -70,6 +63,8 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<NotebooksGettin
         const canAutoplay = window.matchMedia('(prefers-reduced-motion: no-preference)').matches
         return canAutoplay ? { autoPlay: true, loop: true, controls: false } : { controls: true }
     }, [])
+
+    const isLightTheme = useTheme().enhancedThemePreference === ThemePreference.Light
 
     return (
         <>
@@ -119,7 +114,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<NotebooksGettin
                                 docs
                             </li>
                             <li>
-                                Create long-form documentation: ocument complex systems like CI with query blocks and
+                                Create long-form documentation: document complex systems like CI with query blocks and
                                 structural search to highlight critical code
                             </li>
                             <li>
@@ -160,11 +155,25 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<NotebooksGettin
                     </Container>
                 </div>
             </div>
-            <h3>Using the notepad</h3>
+            <h3>Powerful creation features</h3>
             <Container className="mb-4">
                 <div className={classNames(styles.row, 'row', 'mb-4')}>
                     <div className="col-12 col-md-6">
-                        <strong>Text</strong>
+                        <strong>Enable the notepad for frictionless knowledge sharing</strong>
+                        <p className="mt-1">
+                            With the notepad, create notebooks while you browse. Add searches, files, and file ranges
+                            without leaving the page you're on, then create a notebook of it all with one click.
+                        </p>
+                        <strong>Compose rich documentation with multiple block types</strong>
+                        <p className="mt-1">
+                            Create text content with Markdown blocks, track symbols within files with symbol blocks, and
+                            add whole files or line ranges with file blocks.
+                        </p>
+                        <strong>Copy existing notebooks to leverage company or community knowledge</strong>
+                        <p className="mt-1">
+                            Copy useful notebooks, such as this one on log4j detection, and modify it to run on your
+                            codebase
+                        </p>
                     </div>
                     <div className="col-12 col-md-6">
                         <video
@@ -172,12 +181,10 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<NotebooksGettin
                             muted={true}
                             playsInline={true}
                             controls={true}
-                        >
-                            <source
-                                type="video/mp4"
-                                src="https://storage.googleapis.com/sourcegraph-assets/notebooks/notepad_small_browser.mp4"
-                            />
-                        </video>
+                            src={`https://storage.googleapis.com/sourcegraph-assets/notebooks/notepad_overview_${
+                                isLightTheme ? 'light' : 'dark'
+                            }.mp4`}
+                        />
                     </div>
                 </div>
             </Container>
@@ -186,6 +193,11 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<NotebooksGettin
                 {functionalityPanels.map(panel => (
                     <div key={panel.title} className="col-12 col-md-4">
                         <Container>
+                            <img
+                                className="w-100"
+                                src={isLightTheme ? panel.image.light : panel.image.dark}
+                                alt={panel.image.alt}
+                            />
                             <div className="my-2">
                                 <strong>{panel.title}</strong>
                             </div>
