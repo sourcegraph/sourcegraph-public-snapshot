@@ -67,7 +67,7 @@ func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 		Url: "https://gerrit-review.googlesource.com",
 	}
 
-	cli, err := NewClient(c, hc)
+	cli, err := NewClient("urn", c, hc)
 	if err != nil {
 		t.Fatal(err)
 	}

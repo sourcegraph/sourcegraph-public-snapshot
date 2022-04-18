@@ -16,7 +16,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -36,8 +35,9 @@ type Client struct {
 	// URL is the base URL of Gerrit.
 	URL *url.URL
 
-	// RateLimit is the self-imposed rate limiter.
-	RateLimit *rate.Limiter
+	// RateLimit is the self-imposed rate limiter (since Gerrit does not have a concept
+	// of rate limiting in HTTP response headers).
+	rateLimit *rate.Limiter
 
 	// NoAuth determines whether the calls made by the client should use authentication.
 	NoAuth bool
@@ -46,7 +46,7 @@ type Client struct {
 // NewClient returns an authenticated Gerrit API client with
 // the provided configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
-func NewClient(config *schema.GerritConnection, httpClient httpcli.Doer) (*Client, error) {
+func NewClient(urn string, config *schema.GerritConnection, httpClient httpcli.Doer) (*Client, error) {
 	u, err := url.Parse(config.Url)
 	if err != nil {
 		return nil, err
@@ -56,17 +56,11 @@ func NewClient(config *schema.GerritConnection, httpClient httpcli.Doer) (*Clien
 		httpClient = httpcli.ExternalDoer
 	}
 
-	// Normally our registry will return a default infinite limiter when nothing has been
-	// synced from config. However, we always want to ensure there is at least some form of rate
-	// limiting for Gerrit.
-	defaultLimiter := rate.NewLimiter(defaultRateLimit, defaultRateLimitBurst)
-	l := ratelimit.DefaultRegistry.GetOrSet(u.String(), defaultLimiter)
-
 	return &Client{
 		httpClient: httpClient,
 		Config:     config,
 		URL:        u,
-		RateLimit:  l,
+		rateLimit:  ratelimit.DefaultRegistry.Get(urn),
 		NoAuth:     false,
 	}, nil
 }
@@ -130,7 +124,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	}
 
 	startWait := time.Now()
-	if err := c.RateLimit.Wait(ctx); err != nil {
+	if err := c.rateLimit.Wait(ctx); err != nil {
 		return nil, err
 	}
 
@@ -153,20 +147,20 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return nil, errors.WithStack(&httpError{
+		return nil, &httpError{
 			URL:        req.URL,
 			StatusCode: resp.StatusCode,
 			Body:       bs,
-		})
+		}
 	}
 
 	// The first 4 characters of the Gerrit API responses need to be stripped, see: https://gerrit-review.googlesource.com/Documentation/rest-api.html#output .
 	if len(bs) < 4 {
-		return nil, errors.WithStack(&httpError{
+		return nil, &httpError{
 			URL:        req.URL,
 			StatusCode: resp.StatusCode,
 			Body:       bs,
-		})
+		}
 	}
 	return resp, json.Unmarshal(bs[4:], result)
 }

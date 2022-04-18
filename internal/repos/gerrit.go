@@ -42,7 +42,7 @@ func NewGerritSource(svc *types.ExternalService, cf *httpcli.Factory) (*GerritSo
 		return nil, err
 	}
 
-	cli, err := gerrit.NewClient(&c, httpCli)
+	cli, err := gerrit.NewClient(svc.URN(), &c, httpCli)
 	if err != nil {
 		return nil, err
 	}
