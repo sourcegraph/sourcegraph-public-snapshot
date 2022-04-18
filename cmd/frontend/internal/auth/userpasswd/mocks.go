@@ -12,9 +12,9 @@ import (
 // github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd)
 // used for unit testing.
 type MockLockoutStore struct {
-	// GenerateUnlockAccountUrlFunc is an instance of a mock function object
-	// controlling the behavior of the method GenerateUnlockAccountUrl.
-	GenerateUnlockAccountUrlFunc *LockoutStoreGenerateUnlockAccountUrlFunc
+	// GenerateUnlockAccountURLFunc is an instance of a mock function object
+	// controlling the behavior of the method GenerateUnlockAccountURL.
+	GenerateUnlockAccountURLFunc *LockoutStoreGenerateUnlockAccountURLFunc
 	// IncreaseFailedAttemptFunc is an instance of a mock function object
 	// controlling the behavior of the method IncreaseFailedAttempt.
 	IncreaseFailedAttemptFunc *LockoutStoreIncreaseFailedAttemptFunc
@@ -37,7 +37,7 @@ type MockLockoutStore struct {
 // methods return zero values for all results, unless overwritten.
 func NewMockLockoutStore() *MockLockoutStore {
 	return &MockLockoutStore{
-		GenerateUnlockAccountUrlFunc: &LockoutStoreGenerateUnlockAccountUrlFunc{
+		GenerateUnlockAccountURLFunc: &LockoutStoreGenerateUnlockAccountURLFunc{
 			defaultHook: func(int32) (string, string, error) {
 				return "", "", nil
 			},
@@ -74,9 +74,9 @@ func NewMockLockoutStore() *MockLockoutStore {
 // interface. All methods panic on invocation, unless overwritten.
 func NewStrictMockLockoutStore() *MockLockoutStore {
 	return &MockLockoutStore{
-		GenerateUnlockAccountUrlFunc: &LockoutStoreGenerateUnlockAccountUrlFunc{
+		GenerateUnlockAccountURLFunc: &LockoutStoreGenerateUnlockAccountURLFunc{
 			defaultHook: func(int32) (string, string, error) {
-				panic("unexpected invocation of MockLockoutStore.GenerateUnlockAccountUrl")
+				panic("unexpected invocation of MockLockoutStore.GenerateUnlockAccountURL")
 			},
 		},
 		IncreaseFailedAttemptFunc: &LockoutStoreIncreaseFailedAttemptFunc{
@@ -112,8 +112,8 @@ func NewStrictMockLockoutStore() *MockLockoutStore {
 // overwritten.
 func NewMockLockoutStoreFrom(i LockoutStore) *MockLockoutStore {
 	return &MockLockoutStore{
-		GenerateUnlockAccountUrlFunc: &LockoutStoreGenerateUnlockAccountUrlFunc{
-			defaultHook: i.GenerateUnlockAccountUrl,
+		GenerateUnlockAccountURLFunc: &LockoutStoreGenerateUnlockAccountURLFunc{
+			defaultHook: i.GenerateUnlockAccountURL,
 		},
 		IncreaseFailedAttemptFunc: &LockoutStoreIncreaseFailedAttemptFunc{
 			defaultHook: i.IncreaseFailedAttempt,
@@ -133,37 +133,37 @@ func NewMockLockoutStoreFrom(i LockoutStore) *MockLockoutStore {
 	}
 }
 
-// LockoutStoreGenerateUnlockAccountUrlFunc describes the behavior when the
-// GenerateUnlockAccountUrl method of the parent MockLockoutStore instance
+// LockoutStoreGenerateUnlockAccountURLFunc describes the behavior when the
+// GenerateUnlockAccountURL method of the parent MockLockoutStore instance
 // is invoked.
-type LockoutStoreGenerateUnlockAccountUrlFunc struct {
+type LockoutStoreGenerateUnlockAccountURLFunc struct {
 	defaultHook func(int32) (string, string, error)
 	hooks       []func(int32) (string, string, error)
-	history     []LockoutStoreGenerateUnlockAccountUrlFuncCall
+	history     []LockoutStoreGenerateUnlockAccountURLFuncCall
 	mutex       sync.Mutex
 }
 
-// GenerateUnlockAccountUrl delegates to the next hook function in the queue
+// GenerateUnlockAccountURL delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockLockoutStore) GenerateUnlockAccountUrl(v0 int32) (string, string, error) {
-	r0, r1, r2 := m.GenerateUnlockAccountUrlFunc.nextHook()(v0)
-	m.GenerateUnlockAccountUrlFunc.appendCall(LockoutStoreGenerateUnlockAccountUrlFuncCall{v0, r0, r1, r2})
+func (m *MockLockoutStore) GenerateUnlockAccountURL(v0 int32) (string, string, error) {
+	r0, r1, r2 := m.GenerateUnlockAccountURLFunc.nextHook()(v0)
+	m.GenerateUnlockAccountURLFunc.appendCall(LockoutStoreGenerateUnlockAccountURLFuncCall{v0, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the
-// GenerateUnlockAccountUrl method of the parent MockLockoutStore instance
+// GenerateUnlockAccountURL method of the parent MockLockoutStore instance
 // is invoked and the hook queue is empty.
-func (f *LockoutStoreGenerateUnlockAccountUrlFunc) SetDefaultHook(hook func(int32) (string, string, error)) {
+func (f *LockoutStoreGenerateUnlockAccountURLFunc) SetDefaultHook(hook func(int32) (string, string, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GenerateUnlockAccountUrl method of the parent MockLockoutStore instance
+// GenerateUnlockAccountURL method of the parent MockLockoutStore instance
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *LockoutStoreGenerateUnlockAccountUrlFunc) PushHook(hook func(int32) (string, string, error)) {
+func (f *LockoutStoreGenerateUnlockAccountURLFunc) PushHook(hook func(int32) (string, string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -171,20 +171,20 @@ func (f *LockoutStoreGenerateUnlockAccountUrlFunc) PushHook(hook func(int32) (st
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *LockoutStoreGenerateUnlockAccountUrlFunc) SetDefaultReturn(r0 string, r1 string, r2 error) {
+func (f *LockoutStoreGenerateUnlockAccountURLFunc) SetDefaultReturn(r0 string, r1 string, r2 error) {
 	f.SetDefaultHook(func(int32) (string, string, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *LockoutStoreGenerateUnlockAccountUrlFunc) PushReturn(r0 string, r1 string, r2 error) {
+func (f *LockoutStoreGenerateUnlockAccountURLFunc) PushReturn(r0 string, r1 string, r2 error) {
 	f.PushHook(func(int32) (string, string, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *LockoutStoreGenerateUnlockAccountUrlFunc) nextHook() func(int32) (string, string, error) {
+func (f *LockoutStoreGenerateUnlockAccountURLFunc) nextHook() func(int32) (string, string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -197,28 +197,28 @@ func (f *LockoutStoreGenerateUnlockAccountUrlFunc) nextHook() func(int32) (strin
 	return hook
 }
 
-func (f *LockoutStoreGenerateUnlockAccountUrlFunc) appendCall(r0 LockoutStoreGenerateUnlockAccountUrlFuncCall) {
+func (f *LockoutStoreGenerateUnlockAccountURLFunc) appendCall(r0 LockoutStoreGenerateUnlockAccountURLFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
 // History returns a sequence of
-// LockoutStoreGenerateUnlockAccountUrlFuncCall objects describing the
+// LockoutStoreGenerateUnlockAccountURLFuncCall objects describing the
 // invocations of this function.
-func (f *LockoutStoreGenerateUnlockAccountUrlFunc) History() []LockoutStoreGenerateUnlockAccountUrlFuncCall {
+func (f *LockoutStoreGenerateUnlockAccountURLFunc) History() []LockoutStoreGenerateUnlockAccountURLFuncCall {
 	f.mutex.Lock()
-	history := make([]LockoutStoreGenerateUnlockAccountUrlFuncCall, len(f.history))
+	history := make([]LockoutStoreGenerateUnlockAccountURLFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// LockoutStoreGenerateUnlockAccountUrlFuncCall is an object that describes
-// an invocation of method GenerateUnlockAccountUrl on an instance of
+// LockoutStoreGenerateUnlockAccountURLFuncCall is an object that describes
+// an invocation of method GenerateUnlockAccountURL on an instance of
 // MockLockoutStore.
-type LockoutStoreGenerateUnlockAccountUrlFuncCall struct {
+type LockoutStoreGenerateUnlockAccountURLFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 int32
@@ -235,13 +235,13 @@ type LockoutStoreGenerateUnlockAccountUrlFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c LockoutStoreGenerateUnlockAccountUrlFuncCall) Args() []interface{} {
+func (c LockoutStoreGenerateUnlockAccountURLFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c LockoutStoreGenerateUnlockAccountUrlFuncCall) Results() []interface{} {
+func (c LockoutStoreGenerateUnlockAccountURLFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 

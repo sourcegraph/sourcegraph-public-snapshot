@@ -1322,6 +1322,28 @@
       "default": 14400,
       "group": "Authentication"
     },
+    "auth.lockout": {
+      "description": "The config options for account lockout",
+      "type": "object",
+      "properties": {
+        "failedAttemptThreshold": {
+          "description": "The threshold of failed sign-in attempts in a consecutive period",
+          "type": "integer",
+          "default": 5
+        },
+        "lockoutPeriod": {
+          "description": "The number of seconds for the lockout period",
+          "type": "integer",
+          "default": 1800
+        },
+        "consecutivePeriod": {
+          "description": "The number of seconds to be considered as a consecutive period",
+          "type": "integer",
+          "default": 3600
+        }
+      },
+      "group": "Authentication"
+    },
     "auth.unlockAccountLinkSigningKey": {
       "description": "Base64 encoded HMAC Signing key to sign a JWT token, which is attached to each invitation URL.",
       "type": "string",
