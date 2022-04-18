@@ -267,7 +267,7 @@ type LimitingContext struct {
 	// can be made from the same request.
 	PerRequestConcurrencyLimit int64
 
-	// GlobalRequestSemaphore is used to control the total number of goroutines that an run
+	// GlobalRequestSemaphore is used to control the total number of goroutines that can run
 	// over all currently in-flight requests.
 	GlobalRequestSemaphore *semaphore.Weighted
 }
