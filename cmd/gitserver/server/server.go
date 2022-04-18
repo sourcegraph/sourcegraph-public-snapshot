@@ -1235,9 +1235,11 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 			// Avoid capture of loop variables
 			i, repoCommit := i, repoCommit
 
+			start := time.Now()
 			if err := s.GlobalBatchLogSemaphore.Acquire(ctx, 1); err != nil {
 				return http.StatusInternalServerError, err
 			}
+			s.operations.batchLogSemaphoreWait.Observe(time.Since(start).Seconds())
 
 			g.Go(func() error {
 				defer s.GlobalBatchLogSemaphore.Release(1)
