@@ -1,3 +1,4 @@
+export * from './esbuild/plugins'
 export * from './paths'
 export * from './webpack/babel-loader'
 export * from './webpack/css-loader'

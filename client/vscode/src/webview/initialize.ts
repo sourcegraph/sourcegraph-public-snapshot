@@ -23,14 +23,14 @@ export async function initializeSearchPanelWebview({
     searchPanelAPI: Comlink.Remote<SearchPanelAPI>
     webviewPanel: vscode.WebviewPanel
 }> {
+    const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist')
+
     const panel = vscode.window.createWebviewPanel('sourcegraphSearch', 'Sourcegraph', vscode.ViewColumn.One, {
         enableScripts: true,
         retainContextWhenHidden: true,
         enableFindWidget: true,
-        localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'dist', 'webview')],
+        localResourceRoots: [webviewPath],
     })
-
-    const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webview')
 
     const scriptSource = panel.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'searchPanel.js'))
     const cssModuleSource = panel.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'searchPanel.css'))
@@ -53,7 +53,6 @@ export async function initializeSearchPanelWebview({
     // Expose the "Core" extension API to the Webview.
     Comlink.expose(extensionCoreAPI, expose)
 
-    // Use a nonce to only allow specific scripts to be run
     const nonce = getNonce()
 
     panel.iconPath = vscode.Uri.joinPath(extensionUri, 'images', 'logo.svg')
@@ -85,7 +84,7 @@ export async function initializeSearchPanelWebview({
     </head>
     <body class="search-panel">
         <div id="root" />
-        <script nonce="${nonce}" src="${scriptSource.toString()}"></script>
+        <script type="module" nonce="${nonce}" src="${scriptSource.toString()}"></script>
     </body>
     </html>`
 
@@ -107,12 +106,12 @@ export function initializeSearchSidebarWebview({
 }): {
     searchSidebarAPI: Comlink.Remote<SearchSidebarAPI>
 } {
+    const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist')
+
     webviewView.webview.options = {
         enableScripts: true,
-        localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'dist', 'webview')],
+        localResourceRoots: [webviewPath],
     }
-
-    const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webview')
 
     const scriptSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'searchSidebar.js'))
     const cssModuleSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'searchSidebar.css'))
@@ -151,7 +150,7 @@ export function initializeSearchSidebarWebview({
     </head>
     <body class="search-sidebar">
         <div id="root" />
-        <script src="${scriptSource.toString()}"></script>
+        <script type="module" src="${scriptSource.toString()}"></script>
     </body>
     </html>`
 
@@ -169,12 +168,12 @@ export function initializeHelpSidebarWebview({
 }): {
     helpSidebarAPI: Comlink.Remote<HelpSidebarAPI>
 } {
+    const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist')
+
     webviewView.webview.options = {
         enableScripts: true,
-        localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'dist', 'webview')],
+        localResourceRoots: [webviewPath],
     }
-
-    const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webview')
 
     const scriptSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'helpSidebar.js'))
     const cssModuleSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'helpSidebar.css'))
@@ -202,7 +201,7 @@ export function initializeHelpSidebarWebview({
         <link rel="stylesheet" href="${cssModuleSource.toString()}" />
     </head>
         <div id="root" />
-        <script src="${scriptSource.toString()}"></script>
+        <script type="module" src="${scriptSource.toString()}"></script>
     </body>
     </html>`
 

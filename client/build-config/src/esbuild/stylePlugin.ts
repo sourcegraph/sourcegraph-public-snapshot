@@ -9,7 +9,7 @@ import sass from 'sass'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import postcssConfig from '../../../../postcss.config'
-import { ROOT_PATH } from '../utils'
+import { ROOT_PATH } from '../paths'
 
 /**
  * An esbuild plugin that builds .css and .scss stylesheets (including support for CSS modules).
@@ -99,12 +99,12 @@ export const stylePlugin: esbuild.Plugin = {
 
         build.onResolve({ filter: /\.s?css$/, namespace: 'file' }, async args => {
             const inputPath = path.join(args.resolveDir, args.path)
+
             const { outputPath, outputContents, includedFiles } = await cachedTransform({
                 inputPath,
                 inputContents: await fs.promises.readFile(inputPath, 'utf8'),
             })
             const isCSSModule = outputPath.endsWith('.module.css')
-
             return {
                 path: outputPath,
                 namespace: isCSSModule ? 'css-module' : 'css',
