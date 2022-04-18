@@ -118,7 +118,13 @@ func DecodeSlice(value lua.LValue) (values []lua.LValue, _ error) {
 	}
 
 	if err := ForEach(table, func(key, value lua.LValue) error {
-		// TODO - check key, ordering?
+		if table.Len() == 0 {
+			// There are key/value pairs but they're associative, not indexed.
+			// Throw here as we're decoding a table that's of an unexpected
+			// shape.
+			return NewTypeError("array", value)
+		}
+
 		values = append(values, value)
 		return nil
 	}); err != nil {
