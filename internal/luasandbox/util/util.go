@@ -1,7 +1,8 @@
-package luasandbox
+package util
 
 import (
 	lua "github.com/yuin/gopher-lua"
+	luar "layeh.com/gopher-luar"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -17,14 +18,29 @@ func CreateModule(api map[string]lua.LGFunction) lua.LGFunction {
 	})
 }
 
-// WrapLuaFunction invokes the given callback and returns 2 (raising an error) if the
-// returned error is non-nil, and returns 1 (success) otherwise. This wrapper function
-// makes no assumptions about how the called function modifies the Lua virtual machine
-// state.
+// WrapLuaFunction invokes the given callback and returns 1 on success. This assumes
+// the underlying function pushed a single return value onto the stack. An error is
+// raised on failure (and the stack is assumed to be untouched).
 func WrapLuaFunction(f func(state *lua.LState) error) func(state *lua.LState) int {
 	return func(state *lua.LState) int {
 		if err := f(state); err != nil {
 			state.RaiseError(err.Error())
+			return 0
+		}
+
+		return 1
+	}
+}
+
+// WrapSoftFailingLuaFunction invokes the given callback and returns 1 on success. This
+// assumes the underlying function pushed a single return value onto the stack. A nil value
+// and the error message is pushed to the stack on failure and 2 is returned. This allows
+// the `value, err = call()` idiom.
+func WrapSoftFailingLuaFunction(f func(state *lua.LState) error) func(state *lua.LState) int {
+	return func(state *lua.LState) int {
+		if err := f(state); err != nil {
+			state.Push(lua.LNil)
+			state.Push(luar.New(state, err.Error()))
 			return 2
 		}
 
