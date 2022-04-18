@@ -478,6 +478,12 @@ func TestListOrganizations(t *testing.T) {
 		if nextSince < 1 {
 			t.Fatalf("expected nextSince to be a positive int but got %v", nextSince)
 		}
+
+		// Make the same API call again. This should hit the cache.
+		_, _, err = cli.ListOrganizations(context.Background(), 0)
+		if err != nil {
+			t.Fatal(err)
+		}
 	})
 	t.Run("enterprise-pagination", func(t *testing.T) {
 		rcache.SetupForTest(t)
