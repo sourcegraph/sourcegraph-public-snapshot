@@ -844,6 +844,11 @@ describe('GitHub', () => {
             ]
 
             for (let index = 0; index < pages.length; index++) {
+                // Reduce the number of tests for search results pages.
+                // We record and run the global search results page test on a smaller viewport (M) and repo search results page on a larger (L).
+                // As these two pages follow the same logic and use similar search input elements per viewport we're still able to catch regressions, but reduce:
+                // - the number of calls to GitHub search API which can result in 429 HTTP Errors (Too Many Requests)
+                // - the size of recordings added to the repository.
                 const page = pages[index]
                 const viewportConfig = viewportConfigs[index]
 
