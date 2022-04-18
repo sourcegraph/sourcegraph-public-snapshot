@@ -8,11 +8,6 @@ on:
     # At minute 0 past every 12th hour
     - cron: '0 */12 * * *'
 
-  # For testing
-  push:
-    branches:
-      - contractors/SG-33486
-
 jobs:
   remove-pr-preview-app:
     if: github.event_name == 'pull_request'
@@ -34,7 +29,7 @@ jobs:
           BUILDKITE_BRANCH: ${{ github.head_ref }}
 
   clean-up-inactive-pr-preview-apps:
-    if: github.event_name == 'schedule' || github.event_name == 'push'
+    if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
 
     steps:

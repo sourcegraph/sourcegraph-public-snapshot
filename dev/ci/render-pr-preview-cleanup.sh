@@ -5,7 +5,6 @@ set -e
 # Env variables:
 # - RENDER_COM_API_KEY (required)
 # - RENDER_COM_OWNER_ID (required)
-# - BUILDKITE_PULL_REQUEST_REPO (optional)
 
 print_usage() {
   echo "Usage: [-e EXPIRE_AFTER_DAYS]" 1>&2
@@ -87,10 +86,10 @@ done
 for service_id in "${ids[@]}"; do
   echo "Deleting service: $service_id"
 
-  # curl -sSf -o /dev/null --request DELETE \
-  #   --url "https://api.render.com/v1/services/${service_id}" \
-  #   --header 'Accept: application/json' \
-  #   --header "Authorization: Bearer ${render_api_key}"
+  curl -sSf -o /dev/null --request DELETE \
+    --url "https://api.render.com/v1/services/${service_id}" \
+    --header 'Accept: application/json' \
+    --header "Authorization: Bearer ${render_api_key}"
 
   # To make sure we don't reach the limitation of 30/minute DELETE requests
   sleep 2

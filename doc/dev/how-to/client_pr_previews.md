@@ -31,6 +31,12 @@ The preview app is deployed with `SOURCEGRAPHDOTCOM_MODE=false`, which means tha
 
 ## Why is my preview inactive?
 
+Previews are made inactive, when they exceeds the preview liftime. This is done to save resource (which is required to keep preview active over an extended period) from beign spent on redundant previews.
+
 ## Where to find the script that cleans up previews?
 
+The preview cleanup script is located [here](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/ci/render-pr-preview-cleanup.sh)
+
 ## What is the default cleanup schedule and the default preview lifetime?
+
+The Default cleanup schedule runs every 12th hour, where default preview lifetime is 5 days. This can be modified through the `-e` (e.g `-e 5` for 5 days) flag passed to the preview script. Preview would also be removed once a PR gets closed or merged.
