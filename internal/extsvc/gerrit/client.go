@@ -91,8 +91,13 @@ func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (*List
 		opts.Cursor = &Pagination{PerPage: 100, Page: 1}
 	}
 
+	// Set the desired project type to CODE (ALL/CODE/PERMISSIONS).
 	qs.Set("type", "CODE")
+
+	// Number of results to return.
 	qs.Set("n", fmt.Sprintf("%d", opts.Cursor.PerPage))
+
+	// Skip the first S projects.
 	qs.Set("S", fmt.Sprintf("%d", (opts.Cursor.Page-1)*opts.Cursor.PerPage))
 
 	urlPath := "projects/"
