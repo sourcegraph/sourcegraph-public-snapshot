@@ -2,7 +2,7 @@ name: PR Preview
 
 on:
   pull_request:
-    types: [opened, synchronize, closed]
+    types: [closed]
 
   schedule:
     # At minute 0 past every 12th hour
@@ -20,7 +20,6 @@ jobs:
           fetch-depth: 1
 
       - name: Delete PR preview app
-        if: github.event.action == 'closed'
         run: ./dev/ci/render-pr-preview.sh -d
         env:
           RENDER_COM_API_KEY: ${{ secrets.RENDER_COM_API_KEY }}
