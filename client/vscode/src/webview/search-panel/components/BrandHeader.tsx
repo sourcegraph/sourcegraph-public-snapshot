@@ -16,7 +16,7 @@ export const BrandHeader: React.FunctionComponent<Pick<WebviewPageProps, 'theme'
             alt="Sourcegraph logo"
         />
         <div data-testid="brand-header" className={classNames(styles.logoText)}>
-            Search your code and 2M+ open source repositories
+            Search your code and 2M+ open source repositories WITH ESBUILD!
         </div>
     </>
 )

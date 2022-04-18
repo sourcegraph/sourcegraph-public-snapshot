@@ -1,7 +1,7 @@
 @import './forkedBranded.scss';
 @import './theming/highlight.scss';
 @import './theming/monaco.scss';
-@import '~@vscode/codicons/dist/codicon.css';
+@import '../../../../node_modules/@vscode/codicons/dist/codicon.css';
 
 :root {
     // v2/debt: redefine our CSS variables using VS Code's CSS variables
