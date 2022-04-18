@@ -843,87 +843,85 @@ describe('GitHub', () => {
                 },
             ]
 
-            for (const page of pages) {
-                describe(page.name, () => {
-                    for (const viewportConfig of viewportConfigs) {
-                        describe(`Viewport: ${viewportConfig.name}`, () => {
-                            it('"Search on Sourcegraph" click navigates to Sourcegraph search page with proper result type, language and search query from search input', async () => {
-                                const initialQuery = 'fix'
+            for (let index = 0; index < pages.length; index++) {
+                // Reduce the number of tests for search results pages.
+                // We record and run the global search results page test on a smaller viewport (M) and repo search results page on a larger (L).
+                // As these two pages follow the same logic and use similar search input elements per viewport we're still able to catch regressions, but reduce:
+                // - the number of calls to GitHub search API which can result in 429 HTTP Errors (Too Many Requests)
+                // - the size of recordings added to the repository.
+                const page = pages[index]
+                const viewportConfig = viewportConfigs[index]
 
-                                const url = buildGitHubSearchResultsURL(page.url, initialQuery)
-                                const query = 'issue'
+                describe(`${page.name}: viewport ${viewportConfig.name}`, () => {
+                    it('"Search on Sourcegraph" click navigates to Sourcegraph search page with proper result type, language and search query from search input', async () => {
+                        const initialQuery = 'fix'
 
-                                await driver.newPage()
-                                await driver.page.goto(url)
-                                await driver.page.setViewport(viewportConfig.viewport)
+                        const url = buildGitHubSearchResultsURL(page.url, initialQuery)
+                        const query = 'issue'
 
-                                let hasRedirectedToSourcegraphSearch = false
-                                let lang = ''
-                                testContext.server.get(sourcegraphSearchPage).intercept(request => {
-                                    const resultQuery = `${initialQuery} ${query}`
-                                    const parameters = ['type:commit', `lang:${lang}`, resultQuery]
+                        await driver.newPage()
+                        await driver.page.goto(url)
+                        await driver.page.setViewport(viewportConfig.viewport)
 
-                                    if (page.url === repoSearchPage) {
-                                        parameters.push(`repo:${repo}`)
-                                    }
+                        let hasRedirectedToSourcegraphSearch = false
+                        let lang = ''
+                        testContext.server.get(sourcegraphSearchPage).intercept(request => {
+                            const resultQuery = `${initialQuery} ${query}`
+                            const parameters = ['type:commit', `lang:${lang}`, resultQuery]
 
-                                    hasRedirectedToSourcegraphSearch = parameters.every(value =>
-                                        request.query.q?.includes(value)
-                                    )
-                                })
+                            if (page.url === repoSearchPage) {
+                                parameters.push(`repo:${repo}`)
+                            }
 
-                                // filter results by language (handled by client-side routing)
-                                const langLinkHandle = await driver.page.$(
-                                    'ul.filter-list li:first-child a.filter-item'
-                                )
-                                assert(langLinkHandle, 'Expected language result type link to exist')
-                                lang = await langLinkHandle.evaluate(node => {
-                                    if (!(node instanceof HTMLAnchorElement) || !node.href) {
-                                        return ''
-                                    }
-
-                                    return new URL(node.href).searchParams.get('l') || ''
-                                })
-                                await langLinkHandle.click()
-                                await driver.page.waitForTimeout(3000)
-
-                                // filter results by type (handled by client-side routing)
-                                const commitsLinkHandle = await driver.page.$(
-                                    "nav.menu a.menu-item[href*='type=commits']"
-                                )
-                                assert(commitsLinkHandle, 'Expected commits result type link to exist')
-                                await commitsLinkHandle.click()
-                                await driver.page.waitForTimeout(3000)
-
-                                const searchInput = await driver.page.waitForSelector(
-                                    viewportConfig.searchInputSelector
-                                )
-                                // For some reason puppeteer when typing into input field prepends the exising value.
-                                // To replicate the natural behavior we navigate to the end of exisiting value and then start typing.
-                                await searchInput?.focus()
-                                for (const _char of initialQuery) {
-                                    await driver.page.keyboard.press('ArrowRight')
-                                }
-                                await searchInput?.type(` ${query}`, { delay: 100 })
-                                await driver.page.keyboard.press('Escape') // if input focus opened dropdown, ensure the latter is closed
-
-                                const linkToSourcegraph = await driver.page.waitForSelector(
-                                    viewportConfig.sourcegraphButtonSelector,
-                                    {
-                                        timeout: 3000,
-                                    }
-                                )
-                                assert(linkToSourcegraph, 'Expected link to Sourcegraph search page exists')
-                                await linkToSourcegraph?.click()
-                                await driver.page.waitForTimeout(3000)
-
-                                assert(
-                                    hasRedirectedToSourcegraphSearch,
-                                    'Expected to be redirected to Sourcegraph search page with type "commit", language "HTML" and search query'
-                                )
-                            })
+                            hasRedirectedToSourcegraphSearch = parameters.every(value =>
+                                request.query.q?.includes(value)
+                            )
                         })
-                    }
+
+                        // filter results by language (handled by client-side routing)
+                        const langLinkHandle = await driver.page.$('ul.filter-list li:first-child a.filter-item')
+                        assert(langLinkHandle, 'Expected language result type link to exist')
+                        lang = await langLinkHandle.evaluate(node => {
+                            if (!(node instanceof HTMLAnchorElement) || !node.href) {
+                                return ''
+                            }
+
+                            return new URL(node.href).searchParams.get('l') || ''
+                        })
+                        await langLinkHandle.click()
+                        await driver.page.waitForTimeout(3000)
+
+                        // filter results by type (handled by client-side routing)
+                        const commitsLinkHandle = await driver.page.$("nav.menu a.menu-item[href*='type=commits']")
+                        assert(commitsLinkHandle, 'Expected commits result type link to exist')
+                        await commitsLinkHandle.click()
+                        await driver.page.waitForTimeout(3000)
+
+                        const searchInput = await driver.page.waitForSelector(viewportConfig.searchInputSelector)
+                        // For some reason puppeteer when typing into input field prepends the exising value.
+                        // To replicate the natural behavior we navigate to the end of exisiting value and then start typing.
+                        await searchInput?.focus()
+                        for (const _char of initialQuery) {
+                            await driver.page.keyboard.press('ArrowRight')
+                        }
+                        await searchInput?.type(` ${query}`, { delay: 100 })
+                        await driver.page.keyboard.press('Escape') // if input focus opened dropdown, ensure the latter is closed
+
+                        const linkToSourcegraph = await driver.page.waitForSelector(
+                            viewportConfig.sourcegraphButtonSelector,
+                            {
+                                timeout: 3000,
+                            }
+                        )
+                        assert(linkToSourcegraph, 'Expected link to Sourcegraph search page exists')
+                        await linkToSourcegraph?.click()
+                        await driver.page.waitForTimeout(3000)
+
+                        assert(
+                            hasRedirectedToSourcegraphSearch,
+                            'Expected to be redirected to Sourcegraph search page with type "commit", language "HTML" and search query'
+                        )
+                    })
                 })
             }
         })
