@@ -69,6 +69,7 @@ func (s *Sandbox) RunScriptNamed(ctx context.Context, opts RunOptions, fs FS, na
 
 	f := func(ctx context.Context, state *lua.LState) error {
 		state.SetGlobal("loadfile", makeScopedLoadfile(state, fs))
+		defer state.SetGlobal("loadfile", lua.LNil)
 
 		if err := state.DoString(script); err != nil {
 			return err

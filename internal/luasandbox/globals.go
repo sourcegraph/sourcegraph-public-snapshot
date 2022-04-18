@@ -4,7 +4,7 @@ var globalsToUnset = []string{
 	// "_printregs",
 	// "assert",
 	// "collectgarbage",
-	// "dofile",
+	"dofile",
 	// "error",
 	// "getfenv",
 	// "getmetatable",
