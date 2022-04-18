@@ -48,6 +48,8 @@ The simplest way to get started with Notebooks is to create one using the web in
 
 You can also create web-based notebooks by importing plain old Markdown files and then augmenting them with Sourcegraph notebook block types in the web interface. A new notebook will automatically be created when you import a standard markdown file. From there, you can modify it however you like in the web interface.
 
+Web-based notebooks are automatically saved as they're edited. There is currently no version control, version history, or versioning system.
+
 ### File-based notebooks
 Alternatively, you can create notebooks using text files with the `.md.snb` file extension. These files are rendered specially by Sourcegraph (either on sourcegraph.com or within your Sourcegraph instance) to display notebook blocks alongside standard Markdown blocks.
 
@@ -55,11 +57,14 @@ Whenever you view a `.md.snb` file on Sourcegraph, you'll see a "Run all blocks"
 
 File-based notebooks have the advantage of living anywhere you store text files. The disadvantage comes during composition, as you won't be able to see the contents of your blocks while you create your notebook.
 
-### A combined approach
+### Combined approaches
+#### Compose online and export to disk
 If you prefer to keep your notebooks in your repos but want to compose them on the web, you can get the best of both worlds by composing your notebooks on your sourcegraph instance and then exporting them to your 
 
+#### Embed notebooks anywhere
+Sourcegraph notebooks can be [embedded](../notebooks/notebook-embedding.md) anywhere that allows iFrames. Notebooks hosted on sourcegraph.com can be embedded anywhere. Notebooks hosted on your private instance are subject to your organization's security policies, but can generally be viewed by any user with access to your instance as long as they're logged in.
 
-# Notebook blocks
+## Notebook blocks
 The currently supported block types are:
 - Query
 - File
@@ -68,13 +73,13 @@ The currently supported block types are:
 
 [Read more about block types](../notebooks/blocks.md).
 
-# Searching notebooks
+## Searching notebooks
 Notebooks created through the web interface are full text searchable from the /notebooks page. Each tab has its own search box and each search box is scoped to that tab. The exception is the Explore tab, which searches all notebooks you have access to.
 
 Searches will match on notebook titles and any text in Markdown blocks. Searching through other block types is not supported because they are dynamic in nature.
 
 
-## Accessing Notebooks in older versions of Sourcegraph
+## Enabling Notebooks in older versions of Sourcegraph
 In versions older than 3.39 (beginning in 3.36) Notebooks are behind an experimental feature flag. If you're running versions 3.36-3.38 and want to try out Notebooks, enable them in global settings:
 
 ```
