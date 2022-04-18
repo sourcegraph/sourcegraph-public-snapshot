@@ -1,5 +1,4 @@
-import { ApolloQueryResult, ObservableQuery } from '@apollo/client'
-import { OperationVariables } from '@apollo/client/core/types'
+import { ApolloQueryResult, ObservableQuery, OperationVariables } from '@apollo/client'
 import { Observable } from 'rxjs'
 
 /**
