@@ -129,8 +129,11 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
             <hr className={classNames(styles.separator, styles.separatorSmall)} />
 
             <small className={styles.description}>
-                Use <Link to="/">query-based search context (beta)</Link> or regular expression to change the scope of
-                this insight.
+                Use{' '}
+                <Link to="/help/code_search/how-to/search_contexts#beta-query-based-search-contexts">
+                    query-based search context (beta)
+                </Link>{' '}
+                or regular expression to change the scope of this insight.
             </small>
 
             <fieldset className={styles.fieldset}>
