@@ -247,7 +247,7 @@ func addBrowserExtensionIntegrationTests(parallelTestCount int) operations.Opera
 				withYarnCache(),
 				bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
 				bk.Env("BROWSER", browser),
-				bk.Env("LOG_BROWSER_CONSOLE", "true"),
+				bk.Env("LOG_BROWSER_CONSOLE", "false"),
 				bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
 				bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
 				bk.Env("PERCY_ON", "true"),
@@ -260,6 +260,26 @@ func addBrowserExtensionIntegrationTests(parallelTestCount int) operations.Opera
 				bk.ArtifactPaths("./puppeteer/*.png"),
 			)
 		}
+	}
+}
+
+func recordBrowserExtensionIntegrationTests(pipeline *bk.Pipeline) {
+	for _, browser := range browsers {
+		pipeline.AddStep(
+			fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
+			withYarnCache(),
+			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
+			bk.Env("BROWSER", browser),
+			bk.Env("LOG_BROWSER_CONSOLE", "false"),
+			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
+			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
+			bk.Cmd("yarn workspace @sourcegraph/browser -s run record-integration"),
+			// Retry may help in case if command failed due to hitting the rate limit or similar kind of error on the code host:
+			// https://docs.github.com/en/rest/reference/search#rate-limit
+			bk.AutomaticRetry(1),
+			bk.ArtifactPaths("./puppeteer/*.png"),
+		)
 	}
 }
 
