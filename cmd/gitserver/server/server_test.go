@@ -21,6 +21,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/inconshreveable/log15"
+	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -1245,7 +1246,9 @@ func TestHandleBatchLog(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
-			server := &Server{}
+			server := &Server{
+				GlobalBatchLogSemaphore: semaphore.NewWeighted(8),
+			}
 			h := server.Handler()
 
 			w := httptest.ResponseRecorder{Body: new(bytes.Buffer)}
