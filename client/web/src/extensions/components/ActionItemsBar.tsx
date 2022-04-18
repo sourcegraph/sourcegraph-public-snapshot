@@ -19,7 +19,7 @@ import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, LoadingSpinner, useObservable, Link, ButtonLink, Icon } from '@sourcegraph/wildcard'
 
@@ -173,19 +173,13 @@ export function useWebActionItems(): Pick<ActionItemsBarProps, 'useActionItemsBa
     }
 }
 
-export interface ActionItemsBarProps extends ExtensionsControllerProps, PlatformContextProps, TelemetryProps {
+export interface ActionItemsBarProps extends ExtensionsControllerProps, TelemetryProps {
     useActionItemsBar: () => { isOpen: boolean | undefined; barReference: React.RefCallback<HTMLElement> }
     location: H.Location
-}
-
-export interface ActionItemsToggleProps extends ExtensionsControllerProps<'extHostAPI'> {
-    useActionItemsToggle: () => {
-        isOpen: boolean | undefined
-        toggle: () => void
-        toggleReference: React.RefCallback<HTMLElement>
-        barInPage: boolean
-    }
-    className?: string
+    platformContext: Pick<
+        PlatformContext,
+        'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'
+    >
 }
 
 const actionItemClassName = classNames(
@@ -194,9 +188,9 @@ const actionItemClassName = classNames(
 )
 
 /**
- *
+ * TODO: description
  */
-export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
+export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionItemsBar(props) {
     const { isOpen, barReference } = props.useActionItemsBar()
 
     const {
@@ -307,6 +301,16 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
         </div>
     )
 })
+
+export interface ActionItemsToggleProps extends ExtensionsControllerProps<'extHostAPI'> {
+    useActionItemsToggle: () => {
+        isOpen: boolean | undefined
+        toggle: () => void
+        toggleReference: React.RefCallback<HTMLElement>
+        barInPage: boolean
+    }
+    className?: string
+}
 
 export const ActionItemsToggle: React.FunctionComponent<ActionItemsToggleProps> = ({
     useActionItemsToggle,
