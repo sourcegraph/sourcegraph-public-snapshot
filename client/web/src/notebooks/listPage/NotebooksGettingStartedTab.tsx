@@ -76,16 +76,10 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<NotebooksGettin
                             muted={true}
                             playsInline={true}
                             {...videoAutoplayAttributes}
-                        >
-                            <source
-                                type="video/webm"
-                                src="https://storage.googleapis.com/sourcegraph-assets/notebooks/notebooks_overview.webm"
-                            />
-                            <source
-                                type="video/mp4"
-                                src="https://storage.googleapis.com/sourcegraph-assets/notebooks/notebooks_overview.mp4"
-                            />
-                        </video>
+                            src={`https://storage.googleapis.com/sourcegraph-assets/notebooks/notebooks_overview${
+                                isLightTheme ? '_light' : ''
+                            }.mp4`}
+                        />
                     </div>
                     <div className="col-12 col-md-6">
                         <h2>Create living documentation effortlessly</h2>
