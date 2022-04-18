@@ -16,22 +16,15 @@ import {
     HTTPS_WEB_SERVER_URL,
     HTTP_WEB_SERVER_URL,
     PROXY_ROUTES,
+    printSuccessBanner,
 } from '../utils'
 import { getHTMLPage } from '../webpack/get-html-webpack-plugins'
 
 // TODO: migrate webpack.config.js to TS to use `import` in this file.
 // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
 const webpackConfig = require('../../webpack.config') as Configuration
-// TODO: migrate webpack.config.js to TS to use `import` in this file.
-// eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
-const printSuccessBanner = require('../utils/success-banner') as (lines: string[], log: () => void) => void
 
-const {
-    SOURCEGRAPH_API_URL,
-    SOURCEGRAPH_HTTPS_PORT,
-    CLIENT_PROXY_DEVELOPMENT_PORT,
-    IS_HOT_RELOAD_ENABLED,
-} = environmentConfig
+const { SOURCEGRAPH_API_URL, SOURCEGRAPH_HTTPS_PORT, SOURCEGRAPH_HTTP_PORT } = environmentConfig
 
 interface DevelopmentServerInit {
     proxyRoutes: string[]
@@ -39,10 +32,7 @@ interface DevelopmentServerInit {
 }
 
 async function startDevelopmentServer(): Promise<void> {
-    signale.start(
-        `Starting ${environmentConfig.DEV_WEB_BUILDER} dev server with environment config:\n`,
-        environmentConfig
-    )
+    signale.start(`Starting ${environmentConfig.DEV_WEB_BUILDER} dev server.`)
 
     if (!SOURCEGRAPH_API_URL) {
         throw new Error('development.server.ts only supports *web-standalone* usage')
@@ -79,11 +69,11 @@ async function startWebpackDevelopmentServer({
         // react-refresh plugin triggers page reload if needed.
         liveReload: false,
         allowedHosts: 'all',
-        hot: IS_HOT_RELOAD_ENABLED,
+        hot: true,
         historyApiFallback: {
             disableDotRule: true,
         },
-        port: CLIENT_PROXY_DEVELOPMENT_PORT,
+        port: SOURCEGRAPH_HTTP_PORT,
         client: {
             overlay: false,
             webSocketTransport: 'ws',

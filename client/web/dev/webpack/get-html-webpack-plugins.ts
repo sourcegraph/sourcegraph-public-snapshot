@@ -2,6 +2,7 @@ import path from 'path'
 
 import HtmlWebpackHarddiskPlugin from 'html-webpack-harddisk-plugin'
 import HtmlWebpackPlugin, { TemplateParameter, Options } from 'html-webpack-plugin'
+import signale from 'signale'
 import { WebpackPluginInstance } from 'webpack'
 
 import { createJsContext, environmentConfig, STATIC_ASSETS_PATH } from '../utils'
@@ -77,6 +78,8 @@ const getBundleFromPath = (files: string[], filePrefix: string): string | undefi
     files.find(file => file.startsWith(`/.assets/${filePrefix}`))
 
 export const getHTMLWebpackPlugins = (): WebpackPluginInstance[] => {
+    signale.info('Serving `index.html` with `HTMLWebpackPlugin`.')
+
     const htmlWebpackPlugin = new HtmlWebpackPlugin({
         // `TemplateParameter` can be mutated. We need to tell TS that we didn't touch it.
         templateContent: (({ htmlWebpackPlugin }: TemplateParameter): string => {
