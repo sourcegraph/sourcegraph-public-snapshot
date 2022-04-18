@@ -175,6 +175,8 @@ var sg = &cli.App{
 		funkyLogoCommand,
 	},
 
+	CommandNotFound: suggestCommands,
+
 	EnableBashCompletion:   true,
 	UseShortOptionHandling: true,
 

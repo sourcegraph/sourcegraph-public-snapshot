@@ -3,10 +3,10 @@ import React from 'react'
 import { ListboxOption } from '@reach/listbox'
 import classNames from 'classnames'
 
-import { CustomInsightDashboard } from '../../../../../../../core/types'
+import { TruncatedText } from '../../../../../../../components'
+import { CustomInsightDashboard } from '../../../../../../../core'
 import { getDashboardOwnerName, getDashboardTitle } from '../../helpers/get-dashboard-title'
 import { InsightsBadge } from '../insights-badge/InsightsBadge'
-import { TruncatedText } from '../trancated-text/TrancatedText'
 
 import styles from './SelectOption.module.scss'
 

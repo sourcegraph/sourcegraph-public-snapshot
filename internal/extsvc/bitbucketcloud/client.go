@@ -15,6 +15,7 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -96,22 +97,25 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
 	}
 }
 
-// Repos returns a list of repositories that are fetched and populated based on given account
-// name and pagination criteria. If the account requested is a team, results will be filtered
-// down to the ones that the app password's user has access to.
-// If the argument pageToken.Next is not empty, it will be used directly as the URL to make
-// the request. The PageToken it returns may also contain the URL to the next page for
-// succeeding requests if any.
-func (c *Client) Repos(ctx context.Context, pageToken *PageToken, accountName string) ([]*Repo, *PageToken, error) {
-	var repos []*Repo
-	var next *PageToken
-	var err error
-	if pageToken.HasMore() {
-		next, err = c.reqPage(ctx, pageToken.Next, &repos)
-	} else {
-		next, err = c.page(ctx, fmt.Sprintf("/2.0/repositories/%s", accountName), nil, pageToken, &repos)
+// Ping makes a request to the API root, thereby validating that the current
+// authenticator is valid.
+func (c *Client) Ping(ctx context.Context) error {
+	// This relies on an implementation detail: Bitbucket Cloud doesn't have an
+	// API endpoint at /2.0/, but does the authentication check before returning
+	// the 404, so we can distinguish based on the response code.
+	//
+	// The reason we do this is because there literally isn't an API call
+	// available that doesn't require a specific scope.
+	req, err := http.NewRequest("GET", "/2.0/", nil)
+	if err != nil {
+		return errors.Wrap(err, "creating request")
 	}
-	return repos, next, err
+
+	err = c.do(ctx, req, nil)
+	if err != nil && !errcode.IsNotFound(err) {
+		return err
+	}
+	return nil
 }
 
 func (c *Client) page(ctx context.Context, path string, qry url.Values, token *PageToken, results interface{}) (*PageToken, error) {
@@ -156,7 +160,13 @@ func (c *Client) reqPage(ctx context.Context, url string, results interface{}) (
 
 func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) error {
 	req.URL = c.URL.ResolveReference(req.URL)
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+
+	// If the request doesn't expect a body, then including a content-type can
+	// actually cause errors on the Bitbucket side. So we need to pick apart the
+	// request just a touch to figure out if we should add the header.
+	if req.Body != nil {
+		req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	}
 
 	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx),
 		req.WithContext(ctx),
@@ -193,7 +203,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		return errors.WithStack(&httpError{
 			URL:        req.URL,
 			StatusCode: resp.StatusCode,
-			Body:       bs,
+			Body:       string(bs),
 		})
 	}
 
@@ -229,46 +239,10 @@ func (t *PageToken) Values() url.Values {
 	return v
 }
 
-type Repo struct {
-	Slug        string `json:"slug"`
-	Name        string `json:"name"`
-	FullName    string `json:"full_name"`
-	UUID        string `json:"uuid"`
-	SCM         string `json:"scm"`
-	Description string `json:"description"`
-	Parent      *Repo  `json:"parent"`
-	IsPrivate   bool   `json:"is_private"`
-	Links       Links  `json:"links"`
-}
-
-type Links struct {
-	Clone CloneLinks `json:"clone"`
-	HTML  Link       `json:"html"`
-}
-
-type CloneLinks []struct {
-	Href string `json:"href"`
-	Name string `json:"name"`
-}
-
-type Link struct {
-	Href string `json:"href"`
-}
-
-// HTTPS returns clone link named "https", it returns an error if not found.
-func (cl CloneLinks) HTTPS() (string, error) {
-	for _, l := range cl {
-		if l.Name == "https" {
-			return l.Href, nil
-		}
-	}
-	return "", errors.New("HTTPS clone link not found")
-}
-
 type httpError struct {
 	StatusCode int
 	URL        *url.URL
-	Body       []byte
+	Body       string
 }
 
 func (e *httpError) Error() string {

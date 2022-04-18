@@ -2,10 +2,15 @@ package backend
 
 import (
 	"context"
+	"time"
+
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -105,7 +110,7 @@ func servicesCountPerKind(ctx context.Context, db database.DB, orgID, userID int
 	return svcMap, nil
 }
 
-// ExternalServiceSupported checks if a given external service is supported on Cloud mode.
+// ExternalServiceKindSupported checks if a given external service is supported on Cloud mode.
 // Services currently supported are GitHub and GitLab
 func ExternalServiceKindSupported(kind string) error {
 	if kind == extsvc.KindGitHub || kind == extsvc.KindGitLab {
@@ -113,4 +118,46 @@ func ExternalServiceKindSupported(kind string) error {
 	}
 
 	return ErrExternalServiceKindNotSupported
+}
+
+// repoupdaterClient is an interface with only the methods required in SyncExternalService. As a
+// result instead of using the entire repoupdater client implementation, we use a thinner API which
+// only needs the SyncExternalService method to be defined on the object.
+type repoupdaterClient interface {
+	SyncExternalService(ctx context.Context, svc api.ExternalService) (*protocol.ExternalServiceSyncResult, error)
+}
+
+// SyncExternalService will eagerly trigger a repo-updater sync. It accepts a
+// timeout as an argument which is recommended to be 5 seconds unless the caller
+// has special requirements for it to be larger or smaller.
+func SyncExternalService(ctx context.Context, svc *types.ExternalService, timeout time.Duration, client repoupdaterClient) error {
+	// Set a timeout to validate external service sync. It usually fails in
+	// under 5s if there is a problem.
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	_, err := client.SyncExternalService(ctx, api.ExternalService{
+		ID:              svc.ID,
+		Kind:            svc.Kind,
+		DisplayName:     svc.DisplayName,
+		Config:          svc.Config,
+		CreatedAt:       svc.CreatedAt,
+		UpdatedAt:       svc.UpdatedAt,
+		DeletedAt:       svc.DeletedAt,
+		LastSyncAt:      svc.LastSyncAt,
+		NextSyncAt:      svc.NextSyncAt,
+		NamespaceUserID: svc.NamespaceUserID,
+		NamespaceOrgID:  svc.NamespaceOrgID,
+	})
+
+	// If context error is anything but a deadline exceeded error, we do not want to propagate
+	// it. But we definitely want to log the error as a warning.
+	if ctx.Err() != nil && ctx.Err() != context.DeadlineExceeded {
+		log15.Warn("SyncExternalService: context error discarded", "err", ctx.Err())
+		return nil
+	}
+
+	// err is either nil or contains an actual error from the API call. And we return it
+	// nonetheless.
+	return errors.Wrapf(err, "error in SyncExternalService for service %q with ID %d", svc.Kind, svc.ID)
 }

@@ -136,7 +136,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops = operations.NewSet(
 			addClientLintersForAllFiles,
 			addBrowserExtensionUnitTests,
-			addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
+			recordBrowserExtensionIntegrationTests,
 			frontendTests,
 			wait,
 			addBrowserExtensionE2ESteps)

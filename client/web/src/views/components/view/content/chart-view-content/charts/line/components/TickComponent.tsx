@@ -3,7 +3,6 @@ import React from 'react'
 import { TickLabelProps, TickRendererProps } from '@visx/axis/lib/types'
 import { Group } from '@visx/group'
 import { Text } from '@visx/text'
-import { TextProps } from '@visx/text/lib/Text'
 import { format } from 'd3-format'
 import { timeFormat } from 'd3-time-format'
 
@@ -21,6 +20,10 @@ export const numberFormatter = (number: number): string => {
 export const dateTickFormatter = timeFormat('%d %b')
 // Year + full name of month + full name of week day
 export const dateLabelFormatter = timeFormat('%d %B %A')
+
+interface TextProps {
+    'aria-label': string
+}
 
 // Label props generators for x and y axes.
 // We need separate x and y generators because we need formatted value
@@ -44,7 +47,7 @@ export const Tick: React.FunctionComponent<TickRendererProps> = props => {
     return (
         // eslint-disable-next-line jsx-a11y/aria-role
         <Group role="text" aria-label={tickLabelProps['aria-label']}>
-            <Text aria-hidden={true} x={xPosition} y={yPosition} {...tickLabelProps}>
+            <Text aria-hidden={true} x={xPosition} y={yPosition} {...(tickLabelProps as TextProps)}>
                 {formattedValue}
             </Text>
         </Group>

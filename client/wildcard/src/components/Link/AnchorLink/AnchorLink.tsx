@@ -36,3 +36,5 @@ export const AnchorLink = React.forwardRef(({ to, as: Component, children, class
         </Component>
     )
 }) as ForwardReferenceComponent<Link<unknown>, AnchorLinkProps>
+
+AnchorLink.displayName = 'AnchorLink'

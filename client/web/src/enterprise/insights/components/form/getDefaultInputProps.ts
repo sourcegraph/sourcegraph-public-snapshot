@@ -1,8 +1,8 @@
 import { InputStatus, InputProps } from '@sourcegraph/wildcard'
 
-import { Field } from './hooks/useField'
+import { useFieldAPI } from './hooks/useField'
 
-function getDefaultInputStatus({ meta }: Field): InputStatus {
+function getDefaultInputStatus<T>({ meta }: useFieldAPI<T>): InputStatus {
     const isValidated = meta.initialValue || meta.touched
 
     if (meta.validState === 'CHECKING') {
@@ -20,13 +20,13 @@ function getDefaultInputStatus({ meta }: Field): InputStatus {
     return InputStatus.initial
 }
 
-function getDefaultInputError({ meta }: Field): Pick<InputProps, 'error'> {
+function getDefaultInputError<T>({ meta }: useFieldAPI<T>): Pick<InputProps, 'error'> {
     return meta.touched && meta.error
 }
 
-type GetDefaultInputPropsResult = Pick<InputProps, 'error' | 'status'> & Field['input']
+type GetDefaultInputPropsResult<T> = Pick<InputProps, 'error' | 'status'> & useFieldAPI<T>['input']
 
-export function getDefaultInputProps(field: Field): GetDefaultInputPropsResult {
+export function getDefaultInputProps<T>(field: useFieldAPI<T>): GetDefaultInputPropsResult<T> {
     return {
         status: getDefaultInputStatus(field),
         error: getDefaultInputError(field),
