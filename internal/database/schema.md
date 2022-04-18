@@ -982,6 +982,17 @@ Referenced by:
 
 **rollout**: Rollout only defined when flag_type is rollout. Increments of 0.01%
 
+# Table "public.github_internal_repo_user_permissions"
+```
+  Column  |   Type    | Collation | Nullable |     Default     
+----------+-----------+-----------+----------+-----------------
+ user_id  | integer   |           | not null | 
+ repo_ids | integer[] |           | not null | '{}'::integer[]
+Indexes:
+    "github_internal_repo_user_permissions_user_id" btree (user_id)
+
+```
+
 # Table "public.gitserver_relocator_jobs"
 ```
       Column       |           Type           | Collation | Nullable |                       Default                        
