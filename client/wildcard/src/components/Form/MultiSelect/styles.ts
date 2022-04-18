@@ -73,7 +73,7 @@ export const STYLES: StylesConfig = {
         background: state.isFocused ? 'var(--secondary-3)' : 'var(--secondary)',
         borderStyle: 'solid',
         borderWidth: '1px',
-        borderColor: state.isFocused ? 'var(--select-button-border-color)' :  'transparent',
+        borderColor: state.isFocused ? 'var(--select-button-border-color)' : 'transparent',
         '&:hover': {
             background: 'var(--secondary-3)',
             borderColor: 'var(--select-button-border-color)',

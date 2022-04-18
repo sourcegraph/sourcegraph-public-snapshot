@@ -86,7 +86,7 @@ export const MultiSelectExamples: Story = () => (
         </Grid>
 
         <h2>Pre-selected values (300px wide container)</h2>
-        <div style={{ width: '300px '}}>
+        <div style={{ width: '300px ' }}>
             <SelectWithValues />
         </div>
     </>
