@@ -250,26 +250,15 @@ type Server struct {
 	// Used for setRepoSizes function to run only during the first run of janitor
 	setRepoSizesOnce sync.Once
 
-	// BatchLogLimitingContext holds shared context for configuring the limit of in-flight
-	// git requests that come from a /batch-log request. This configuration limits on both
-	// a per-request and global basis.
-	BatchLogLimitingContext LimitingContext
+	// GlobalBatchLogSemaphore is a semaphore shared between all requests to ensure that a
+	// maximum number of Git subprocesses are active for all /batch-log requests combined.
+	GlobalBatchLogSemaphore *semaphore.Weighted
 
 	// operations provide uniform observability via internal/observation. This value is
 	// set by RegisterMetrics when compiled as part of the gitserver binary. The server
 	// method ensureOperations should be used in all references to avoid a nil pointer
 	// dereferencs.
 	operations *operations
-}
-
-type LimitingContext struct {
-	// PerRequestConcurrencyLimit indicates the maximum number of in-flight git requests that
-	// can be made from the same request.
-	PerRequestConcurrencyLimit int64
-
-	// GlobalRequestSemaphore is used to control the total number of goroutines that can run
-	// over all currently in-flight requests.
-	GlobalRequestSemaphore *semaphore.Weighted
 }
 
 type locks struct {
@@ -1238,31 +1227,20 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 		g, ctx := errgroup.WithContext(ctx)
 		results := make([]protocol.BatchLogResult, len(req.RepoCommits))
 
-		if s.BatchLogLimitingContext.PerRequestConcurrencyLimit == 0 || s.BatchLogLimitingContext.GlobalRequestSemaphore == nil {
-			return http.StatusInternalServerError, errors.New("batch-log limiting context is not initialized")
+		if s.GlobalBatchLogSemaphore == nil {
+			return http.StatusInternalServerError, errors.New("s.GlobalBatchLogSemaphore not initialized")
 		}
-		localSemaphore := semaphore.NewWeighted(s.BatchLogLimitingContext.PerRequestConcurrencyLimit)
-		globalSemaphore := s.BatchLogLimitingContext.GlobalRequestSemaphore
 
 		for i, repoCommit := range req.RepoCommits {
 			// Avoid capture of loop variables
 			i, repoCommit := i, repoCommit
 
-			// First, ensure we can acquire the request-local semaphore before trying to manipulate
-			// global state. Once we get our request semaphore, we need to ensure that there are not
-			// too many concurrent /batch-log requests fighting for the same shared resource.
-
-			if err := localSemaphore.Acquire(ctx, 1); err != nil {
-				return http.StatusInternalServerError, err
-			}
-			if err := globalSemaphore.Acquire(ctx, 1); err != nil {
-				localSemaphore.Release(1)
+			if err := s.GlobalBatchLogSemaphore.Acquire(ctx, 1); err != nil {
 				return http.StatusInternalServerError, err
 			}
 
 			g.Go(func() error {
-				defer localSemaphore.Release(1)
-				defer globalSemaphore.Release(1)
+				defer s.GlobalBatchLogSemaphore.Release(1)
 
 				output, isRepoCloned, err := performGitLogCommand(ctx, repoCommit, req.Format)
 				if err == nil && !isRepoCloned {

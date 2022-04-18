@@ -74,10 +74,7 @@ func init() {
 			GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
 				return &server.GitRepoSyncer{}, nil
 			},
-			BatchLogLimitingContext: server.LimitingContext{
-				GlobalRequestSemaphore:     semaphore.NewWeighted(32),
-				PerRequestConcurrencyLimit: 4,
-			},
+			GlobalBatchLogSemaphore: semaphore.NewWeighted(32),
 		}).Handler(),
 	}
 	go func() {

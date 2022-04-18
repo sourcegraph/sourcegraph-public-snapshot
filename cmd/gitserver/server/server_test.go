@@ -1247,10 +1247,7 @@ func TestHandleBatchLog(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			server := &Server{
-				BatchLogLimitingContext: LimitingContext{
-					PerRequestConcurrencyLimit: 4,
-					GlobalRequestSemaphore:     semaphore.NewWeighted(8),
-				},
+				GlobalBatchLogSemaphore: semaphore.NewWeighted(8),
 			}
 			h := server.Handler()
 
