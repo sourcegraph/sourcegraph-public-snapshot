@@ -1,6 +1,5 @@
 import React from 'react'
 
-import AccountGroupIcon from 'mdi-react/AccountGroupIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import CursorPointerIcon from 'mdi-react/CursorPointerIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
@@ -351,21 +350,6 @@ export const authenticatedTasks: TourTaskType[] = [
                     type: 'new-tab-link',
                     value:
                         'https://docs.sourcegraph.com/integration/editor?utm_medium=direct-traffic&utm_source=in-product&utm_content=getting-started',
-                },
-            },
-        ],
-    },
-    {
-        title: 'Create a team',
-        icon: <AccountGroupIcon size="2.3rem" />,
-        steps: [
-            {
-                id: 'CreateTeam',
-                label: 'Sourcegraph helps teams from 2 to any size collaborate.',
-                action: {
-                    type: 'new-tab-link',
-                    value:
-                        'https://share.hsforms.com/14OQ3RoPpQTOXvZlUpgx6-A1n7ku?utm_medium=direct-traffic&utm_source=in-product&utm_content=getting-started',
                 },
             },
         ],
