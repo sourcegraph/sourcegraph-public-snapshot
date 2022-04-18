@@ -11,6 +11,7 @@ export const createJITMigrationToGQLInsightMetadataFixture = (options: InsightOp
     isFrozen: false,
     appliedFilters: {
         __typename: 'InsightViewFilters',
+        searchContexts: [],
         includeRepoRegex: '',
         excludeRepoRegex: '',
     },
