@@ -158,6 +158,7 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
     )
 }
 
+// TODO: Deprecate this component once Tabs 2-4 on the Create form is active
 const TabBar: React.FunctionComponent<{ url: string; batchSpec: BatchSpecExecutionFields }> = ({ url, batchSpec }) => (
     <div className="mb-3">
         <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">

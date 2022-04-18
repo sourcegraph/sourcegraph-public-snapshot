@@ -5,6 +5,7 @@ import classNames from 'classnames'
 import { compact, noop } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
+import LockIcon from 'mdi-react/LockIcon'
 import { useHistory } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -27,12 +28,12 @@ import {
     FeedbackBadge,
     Icon,
     Panel,
-    Checkbox,
     Tabs,
     Tab,
     TabList,
     TabPanel,
     TabPanels,
+    RadioButton,
 } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
@@ -266,17 +267,33 @@ const BatchConfigurationPage: React.FunctionComponent<BatchConfigurationPageProp
                     placeholder="My batch change name"
                     disabled={isReadOnly}
                 />
-                <h3 className="text-muted mt-3">
+                <hr className="my-3" />
+                <h3 className="text-muted">
                     Visibility <Icon data-tooltip="Coming soon" as={InfoCircleOutlineIcon} />
                 </h3>
                 <div className="form-group mb-1">
-                    <Checkbox
+                    <RadioButton
                         name="visibility"
                         value="public"
+                        className="mr-2"
                         checked={true}
+                        disabled={true}
                         label="Public"
                         aria-label="Public"
+                    />
+                </div>
+                <div className="form-group mb-0">
+                    <RadioButton
+                        name="visibility"
+                        value="private"
+                        className="mr-2 mb-0"
                         disabled={true}
+                        label={
+                            <>
+                                Private <Icon className="text-warning" aria-hidden={true} as={LockIcon} />
+                            </>
+                        }
+                        aria-label="Private"
                     />
                 </div>
             </Container>
