@@ -37,7 +37,7 @@ func WrapLuaFunction(f func(state *lua.LState) error) func(state *lua.LState) in
 // the key's value. A table with non-string keys, a key absent from the given decoders map,
 // or an error from the decoder invocation all result in an error from this function.
 func DecodeTable(table *lua.LTable, decoders map[string]func(lua.LValue) error) error {
-	return forEach(table, func(key, value lua.LValue) error {
+	return ForEach(table, func(key, value lua.LValue) error {
 		fieldName, err := assertLuaString(key)
 		if err != nil {
 			return err
@@ -52,9 +52,14 @@ func DecodeTable(table *lua.LTable, decoders map[string]func(lua.LValue) error) 
 	})
 }
 
-// forEach invokes the given callback on each key/value pair in the given table. An
+// ForEach invokes the given callback on each key/value pair in the given table. An
 // error produced by the callback will skip invocation on any remaining keys.
-func forEach(table *lua.LTable, f func(key, value lua.LValue) error) (err error) {
+func ForEach(value lua.LValue, f func(key, value lua.LValue) error) (err error) {
+	table, ok := value.(*lua.LTable)
+	if !ok {
+		return NewTypeError("table", value)
+	}
+
 	table.ForEach(func(key, value lua.LValue) {
 		if err == nil {
 			err = f(key, value)
@@ -112,7 +117,7 @@ func DecodeSlice(value lua.LValue) (values []lua.LValue, _ error) {
 		return nil, NewTypeError("table", value)
 	}
 
-	if err := forEach(table, func(key, value lua.LValue) error {
+	if err := ForEach(table, func(key, value lua.LValue) error {
 		// TODO - check key, ordering?
 		values = append(values, value)
 		return nil
