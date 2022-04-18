@@ -7,8 +7,15 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 
 import { WebStory } from '../../../../components/WebStory'
 import { CodeInsightsBackendStoryMock } from '../../CodeInsightsBackendStoryMock'
-import { BackendInsightData, SeriesChartContent } from '../../core'
-import { BackendInsight, Insight, InsightExecutionType, InsightType, isCaptureGroupInsight } from '../../core/types'
+import {
+    BackendInsightData,
+    SeriesChartContent,
+    BackendInsight,
+    Insight,
+    InsightExecutionType,
+    InsightType,
+    isCaptureGroupInsight,
+} from '../../core'
 
 import { SmartInsightsViewGrid } from './SmartInsightsViewGrid'
 
@@ -33,7 +40,7 @@ const insightsWithManyLines: Insight[] = [
         title: 'Backend insight #2',
         series: [{ id: '', query: '', stroke: '', name: '' }],
         step: { weeks: 2 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
+        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', contexts: [] },
         dashboardReferenceCount: 0,
         isFrozen: false,
     },
@@ -44,7 +51,7 @@ const insightsWithManyLines: Insight[] = [
         title: 'Backend insight #3',
         series: [],
         step: { weeks: 2 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
+        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', contexts: [] },
         dashboardReferenceCount: 0,
         isFrozen: false,
     },
@@ -62,7 +69,7 @@ const insightsWithManyLines: Insight[] = [
             { id: '', query: '', stroke: '', name: '' },
         ],
         step: { weeks: 2 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
+        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', contexts: [] },
         dashboardReferenceCount: 0,
         isFrozen: false,
     },
@@ -73,7 +80,7 @@ const insightsWithManyLines: Insight[] = [
         title: 'Backend insight #2',
         series: [{ id: '', query: '', stroke: '', name: '' }],
         step: { weeks: 2 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
+        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', contexts: [] },
         dashboardReferenceCount: 0,
         isFrozen: false,
     },
@@ -105,7 +112,7 @@ const insightsWithManyLines: Insight[] = [
             { id: '', query: '', stroke: '', name: '' },
         ],
         step: { weeks: 2 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
+        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', contexts: [] },
         dashboardReferenceCount: 0,
         isFrozen: false,
     },
@@ -116,7 +123,7 @@ const insightsWithManyLines: Insight[] = [
         title: 'Backend insight #2',
         series: [{ id: '', query: '', stroke: '', name: '' }],
         step: { weeks: 2 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
+        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', contexts: [] },
         dashboardReferenceCount: 0,
         isFrozen: false,
     },
@@ -127,7 +134,7 @@ const insightsWithManyLines: Insight[] = [
         title: 'Backend insight #2',
         series: [{ id: '', query: '', stroke: '', name: '' }],
         step: { weeks: 2 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
+        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', contexts: [] },
         dashboardReferenceCount: 0,
         isFrozen: false,
     },
