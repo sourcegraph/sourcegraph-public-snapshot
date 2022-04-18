@@ -19,7 +19,7 @@
       ],
       "stopOnEntry": false,
       "sourceMaps": true,
-      "outFiles": ["${workspaceRoot}/client/vscode/dist/node/*.js"],
+      "outFiles": ["${workspaceRoot}/client/vscode/dist/*.js"],
     },
     {
       "name": "Launch VS Code Web Extension",

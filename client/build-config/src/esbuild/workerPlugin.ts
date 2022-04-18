@@ -2,7 +2,7 @@ import path from 'path'
 
 import * as esbuild from 'esbuild'
 
-import { BUILD_OPTIONS } from './build'
+import { packageResolutionPlugin, RXJS_RESOLUTIONS } from '@sourcegraph/build-config'
 
 async function buildWorker(
     workerPath: string,
@@ -12,7 +12,12 @@ async function buildWorker(
         entryPoints: [workerPath],
         bundle: true,
         write: false,
-        plugins: BUILD_OPTIONS.plugins?.filter(plugin => plugin.name === 'packageResolution'),
+        plugins: [
+            packageResolutionPlugin({
+                path: require.resolve('path-browserify'),
+                ...RXJS_RESOLUTIONS,
+            }),
+        ],
         sourcemap: true,
         metafile: true,
         ...extraConfig,

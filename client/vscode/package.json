@@ -5,7 +5,7 @@
   "version": "2.2.1",
   "description": "Sourcegraph for VS Code",
   "publisher": "sourcegraph",
-  "sideEffects": false,
+  "sideEffects": true,
   "license": "Apache-2.0",
   "icon": "images/logo.png",
   "repository": {
@@ -25,7 +25,7 @@
   "activationEvents": [
     "*"
   ],
-  "main": "./dist/node/extension.js",
+  "main": "./dist/extension.js",
   "browser": "./dist/webworker/extension.js",
   "contributes": {
     "commands": [
@@ -219,6 +219,8 @@
     "test": "ts-node ./tests/runTests.ts",
     "package": "ts-node ./scripts/package.ts",
     "task:gulp": "cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
+    "build:esbuild": "NODE_ENV=development yarn task:gulp esbuild",
+    "watch:esbuild": "NODE_ENV=development WATCH=true yarn task:guild esbuild",
     "build": "yarn task:gulp webpack",
     "build:node": "NODE_ENV=production TARGET_TYPE=node yarn task:gulp webpack",
     "build:web": "NODE_ENV=production TARGET_TYPE=webworker yarn task:gulp webpack",
