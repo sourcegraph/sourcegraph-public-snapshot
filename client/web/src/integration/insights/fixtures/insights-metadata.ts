@@ -77,6 +77,7 @@ export const STORYBOOK_GROWTH_INSIGHT_METADATA_FIXTURE: InsightViewNode = {
         __typename: 'InsightViewFilters',
         includeRepoRegex: '',
         excludeRepoRegex: '',
+        searchContexts: [],
     },
     presentation: {
         __typename: 'LineChartInsightViewPresentation',
@@ -119,6 +120,7 @@ export const SOURCEGRAPH_LANG_STATS_INSIGHT_METADATA_FIXTURE: InsightViewNode = 
         __typename: 'InsightViewFilters',
         includeRepoRegex: '',
         excludeRepoRegex: '',
+        searchContexts: [],
     },
     presentation: {
         __typename: 'PieChartInsightViewPresentation',
