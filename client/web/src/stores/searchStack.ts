@@ -7,8 +7,7 @@ import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
-
-import { useExperimentalFeatures } from './experimentalFeatures'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 
 export type SearchStackEntryID = number
 export interface SearchEntry {
@@ -84,7 +83,7 @@ export const useSearchStackState = create<SearchStackStore>(() => {
  * the component gets unmounted.
  */
 export function useSearchStack(newEntry: SearchStackEntryInput | null): void {
-    const enableSearchStack = useExperimentalFeatures(features => features.enableSearchStack)
+    const [enableSearchStack] = useTemporarySetting('search.notepad.enabled')
     useEffect(() => {
         if (enableSearchStack && newEntry) {
             let entry: SearchStackEntryInput = newEntry

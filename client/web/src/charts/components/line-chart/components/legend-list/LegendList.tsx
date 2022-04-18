@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { LiHTMLAttributes } from 'react'
 
 import classNames from 'classnames'
 
@@ -18,18 +18,18 @@ export const LegendList: React.FunctionComponent<LegendListProps> = props => {
     )
 }
 
-interface LegendItemProps {
+interface LegendItemProps extends LiHTMLAttributes<HTMLLIElement> {
     color: string
     name: string
 }
 
-export const LegendItem: React.FunctionComponent<LegendItemProps> = props => (
-    <li className={styles.legendItem}>
+export const LegendItem: React.FunctionComponent<LegendItemProps> = ({ color, name, className, ...attributes }) => (
+    <li {...attributes} className={classNames(styles.legendItem, className)}>
         <div
             /* eslint-disable-next-line react/forbid-dom-props */
-            style={{ backgroundColor: props.color }}
+            style={{ backgroundColor: color }}
             className={styles.legendMark}
         />
-        {props.name}
+        {name}
     </li>
 )

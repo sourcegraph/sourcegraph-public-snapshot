@@ -1,5 +1,4 @@
 import { Duration } from 'date-fns'
-import { LineChartContent as LegacyLineChartContent } from 'sourcegraph'
 
 import { Series } from '../../../../charts'
 import {
@@ -12,6 +11,7 @@ import {
     SearchBackendBasedInsight,
     SearchRuntimeBasedInsight,
 } from '../types'
+import { InsightContentType } from '../types/insight/common'
 
 export interface CategoricalChartContent<Datum> {
     data: Datum[]
@@ -26,6 +26,18 @@ export interface SeriesChartContent<Datum> {
     series: Series<Datum>[]
     getXValue: (datum: Datum) => Date
 }
+
+export interface InsightCategoricalContent<Datum> {
+    type: InsightContentType.Categorical
+    content: CategoricalChartContent<Datum>
+}
+
+export interface InsightSeriesContent<Datum> {
+    type: InsightContentType.Series
+    content: SeriesChartContent<Datum>
+}
+
+export type InsightContent<Datum> = InsightSeriesContent<Datum> | InsightCategoricalContent<Datum>
 
 export interface DashboardCreateInput {
     name: string
@@ -103,14 +115,14 @@ export interface AccessibleInsightInfo {
     title: string
 }
 
+export interface BackendInsightDatum {
+    dateTime: number
+    [seriesKey: string]: number | string
+}
+
 export interface BackendInsightData {
-    id: string
-    view: {
-        title: string
-        subtitle?: string
-        content: LegacyLineChartContent<any, string>[]
-        isFetchingHistoricalData: boolean
-    }
+    content: SeriesChartContent<any>
+    isFetchingHistoricalData: boolean
 }
 
 export interface GetBuiltInsightInput {
