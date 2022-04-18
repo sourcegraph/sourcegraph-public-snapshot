@@ -868,6 +868,8 @@ func uploadBuildeventTrace() operations.Operation {
 func prPreview() operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":globe_with_meridians: Client PR preview",
+			// Soft-fail with code 222 if nothing has changed
+			bk.SoftFail(222),
 			bk.Cmd("dev/ci/render-pr-preview.sh"))
 	}
 }
