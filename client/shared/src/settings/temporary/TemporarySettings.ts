@@ -17,6 +17,7 @@ export interface TemporarySettingsSchema {
     'search.contexts.ctaDismissed': boolean
     'search.notepad.enabled': boolean
     'search.notepad.ctaSeen': boolean
+    'search.notebooks.gettingStartedTabSeen': boolean
     'insights.freeGaAccepted': boolean
     'insights.freeGaExpiredAccepted': boolean
     'insights.wasMainPageOpen': boolean

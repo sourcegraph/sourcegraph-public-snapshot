@@ -169,6 +169,17 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
     ...commonWebGraphQlResults,
     ...highlightFileResult,
     ...viewerSettings,
+    GetTemporarySettings: () => ({
+        temporarySettings: {
+            __typename: 'TemporarySettings',
+            contents: JSON.stringify({
+                'user.daysActiveCount': 1,
+                'user.lastDayActive': new Date().toDateString(),
+                'search.usedNonGlobalContext': true,
+                'search.notebooks.gettingStartedTabSeen': true,
+            }),
+        },
+    }),
     RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
     ResolveRev: () => createResolveRevisionResult('/github.com/sourcegraph/sourcegraph'),
     FetchNotebook: ({ id }) => ({
@@ -181,7 +192,11 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
         updateNotebook: notebookFixture(id, notebook.title, notebook.blocks.map(GQLBlockInputToResponse)),
     }),
     ListNotebooks: () => ({
-        notebooks: { totalCount: 0, nodes: [], pageInfo: { endCursor: null, hasNextPage: false } },
+        notebooks: {
+            totalCount: 1,
+            nodes: [notebookFixture('id', 'Title', [])],
+            pageInfo: { endCursor: null, hasNextPage: false },
+        },
     }),
 }
 
