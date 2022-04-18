@@ -564,7 +564,7 @@ Go,github.com/kevinburke/ssh_config,v1.2.0,MIT,"",Approved
 Go,github.com/klauspost/compress,v1.14.2,"Apache 2.0,MIT,New BSD","",Approved
 Go,github.com/kr/pretty,v0.3.0,MIT,"",Approved
 Go,github.com/kr/text,v0.2.0,MIT,"",Approved
-Go,github.com/layeh/gopher-json,v0.0.0-20201124131017-552bb3c4c3bf,unknown,"",Not approved
+Go,github.com/layeh/gopher-json,v0.0.0-20201124131017-552bb3c4c3bf,Public domain,"",Approved
 Go,github.com/lib/pq,v1.10.4,MIT,"",Approved
 Go,github.com/lucasb-eyer/go-colorful,v1.2.0,MIT,"",Approved
 Go,github.com/machinebox/graphql,v0.2.2,Apache 2.0,"",Approved
