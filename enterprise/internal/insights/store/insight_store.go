@@ -546,6 +546,7 @@ func (s *InsightStore) CreateView(ctx context.Context, view types.InsightView, g
 		view.UniqueID,
 		view.Filters.IncludeRepoRegex,
 		view.Filters.ExcludeRepoRegex,
+		pq.Array(view.Filters.SearchContexts),
 		view.OtherThreshold,
 		view.PresentationType,
 	))
@@ -577,6 +578,7 @@ func (s *InsightStore) UpdateView(ctx context.Context, view types.InsightView) (
 		view.Description,
 		view.Filters.IncludeRepoRegex,
 		view.Filters.ExcludeRepoRegex,
+		pq.Array(view.Filters.SearchContexts),
 		view.OtherThreshold,
 		view.PresentationType,
 		view.UniqueID,
@@ -885,14 +887,14 @@ WHERE s.series_id = %s AND vs.insight_series_id = s.id AND vs.insight_view_id = 
 const createInsightViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:CreateView
 INSERT INTO insight_view (title, description, unique_id, default_filter_include_repo_regex, default_filter_exclude_repo_regex,
-	other_threshold, presentation_type)
-VALUES (%s, %s, %s, %s, %s, %s, %s)
+default_filter_search_contexts, other_threshold, presentation_type)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 returning id;`
 
 const updateInsightViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:UpdateView
 UPDATE insight_view SET title = %s, description = %s, default_filter_include_repo_regex = %s, default_filter_exclude_repo_regex = %s,
-other_threshold = %s, presentation_type = %s
+default_filter_search_contexts = %s, other_threshold = %s, presentation_type = %s
 WHERE unique_id = %s
 RETURNING id;`
 
