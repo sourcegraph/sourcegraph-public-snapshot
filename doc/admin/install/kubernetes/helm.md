@@ -305,7 +305,7 @@ Alternatively, you may manually create the secret from a manifest file.
 
 > WARNING: Do NOT commit the secret manifest into your Git repository unless you are okay with storing sensitive information in plaintext and your repository is private.
 
-Create the a file with the following and save it as `gitserver-ssh.Secret.yaml`
+Create a file with the following and save it as `gitserver-ssh.Secret.yaml`
 ```sh
 apiVersion: v1
 kind: Secret
@@ -429,7 +429,7 @@ frontend:
 
 If using your own certificate, you can do so with [TLS Secrets](https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets).
 
-Create the a file with the following and save it as `sourcegraph-frontend-tls.Secret.yaml`
+Create a file with the following and save it as `sourcegraph-frontend-tls.Secret.yaml`
 ```yaml
 apiVersion: v1
 kind: Secret
@@ -719,7 +719,7 @@ frontend:
 
 You also have the option to manually configure TLS certificate via [TLS Secrets](https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets).
 
-Create the a file with the following and save it as `sourcegraph-frontend-tls.Secret.yaml`
+Create a file with the following and save it as `sourcegraph-frontend-tls.Secret.yaml`
 ```yaml
 apiVersion: v1
 kind: Secret
