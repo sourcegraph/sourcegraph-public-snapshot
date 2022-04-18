@@ -3128,7 +3128,7 @@ type BatchChangesCodeHost {
     requiresSSH: Boolean!
 
     """
-    If true, this code host requires credentials to have a user name as well as a password.
+    If true, this code host requires credentials to have a username as well as a personal access token.
     """
     requiresUsername: Boolean!
 
