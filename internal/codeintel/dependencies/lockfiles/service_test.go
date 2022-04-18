@@ -12,7 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/unpack"
+	"github.com/sourcegraph/sourcegraph/internal/unpack/unpacktest"
 )
 
 func TestListDependencies(t *testing.T) {
@@ -107,6 +107,6 @@ require github.com/pborman/uuid v1.2.1
 
 func zipArchive(t testing.TB, files map[string]io.Reader) func(context.Context, api.RepoName, gitserver.ArchiveOptions) (io.ReadCloser, error) {
 	return func(ctx context.Context, name api.RepoName, options gitserver.ArchiveOptions) (io.ReadCloser, error) {
-		return unpack.CreateTestZipArchive(t, files)
+		return unpacktest.CreateZipArchive(t, files)
 	}
 }

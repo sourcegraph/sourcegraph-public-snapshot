@@ -1,4 +1,4 @@
-package unpack
+package unpacktest
 
 import (
 	"archive/zip"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func CreateTestZipArchive(t testing.TB, files map[string]io.Reader) (io.ReadCloser, error) {
+func CreateZipArchive(t testing.TB, files map[string]io.Reader) (io.ReadCloser, error) {
 	var b bytes.Buffer
 	zw := zip.NewWriter(&b)
 	defer zw.Close()
