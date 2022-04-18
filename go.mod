@@ -96,6 +96,7 @@ require (
 	github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513
 	github.com/kr/text v0.2.0
 	github.com/kylelemons/godebug v1.1.0
+	github.com/layeh/gopher-json v0.0.0-20201124131017-552bb3c4c3bf
 	github.com/lib/pq v1.10.4
 	github.com/machinebox/graphql v0.2.2
 	github.com/mattn/go-sqlite3 v1.14.12
