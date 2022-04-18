@@ -164,6 +164,7 @@ type CreateBatchChangesCredentialArgs struct {
 	ExternalServiceKind string
 	ExternalServiceURL  string
 	User                *graphql.ID
+	Username            *string
 	Credential          string
 }
 
@@ -529,6 +530,7 @@ type BatchChangesCodeHostResolver interface {
 	ExternalServiceKind() string
 	ExternalServiceURL() string
 	RequiresSSH() bool
+	RequiresUsername() bool
 	HasWebhooks() bool
 	Credential() BatchChangesCredentialResolver
 }
