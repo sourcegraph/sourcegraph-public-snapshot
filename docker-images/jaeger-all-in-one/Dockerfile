@@ -5,7 +5,7 @@
 ARG JAEGER_VERSION
 FROM jaegertracing/all-in-one:${JAEGER_VERSION} as base
 
-FROM sourcegraph/alpine-3.12:137550_2022-03-17_32d45d6a2a7f@sha256:d67684c174c577e7d61b4d7ef9d173fb73973f5b941bd65401dad90fc5e74353
+FROM sourcegraph/alpine-3.12:142406_2022-04-14_8836ac3499f4@sha256:4681a48d1fb9a73fef1b540c08b3411f797351bbeda749f5dca21213a1e71526
 USER root
 RUN apk update
 RUN apk --no-cache add bash curl apk-tools>=2.10.8-r0 krb5-libs>=1.18.4-r0

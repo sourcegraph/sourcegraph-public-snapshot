@@ -12,6 +12,7 @@ require (
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PuerkitoBio/rehttp v1.1.0
 	github.com/RoaringBitmap/roaring v0.9.4
+	github.com/agext/levenshtein v1.2.3
 	github.com/aws/aws-sdk-go-v2 v1.13.0
 	github.com/aws/aws-sdk-go-v2/config v1.13.1
 	github.com/aws/aws-sdk-go-v2/credentials v1.8.0
@@ -41,7 +42,6 @@ require (
 	github.com/dnaeon/go-vcr v1.2.0
 	github.com/docker/docker-credential-helpers v0.6.4
 	github.com/fatih/color v1.13.0
-	github.com/fatih/structs v1.1.0
 	github.com/felixge/fgprof v0.9.2
 	github.com/felixge/httpsnoop v1.0.2
 	github.com/fsnotify/fsnotify v1.5.1
@@ -114,7 +114,7 @@ require (
 	github.com/peterhellberg/link v1.1.0
 	github.com/prometheus/alertmanager v0.23.0
 	github.com/prometheus/client_golang v1.12.1
-	github.com/prometheus/common v0.33.0
+	github.com/prometheus/common v0.32.1
 	github.com/pseudomuto/protoc-gen-doc v1.5.0
 	github.com/qustavo/sqlhooks/v2 v2.1.0
 	github.com/rjeczalik/notify v0.9.2
@@ -192,7 +192,6 @@ require (
 	github.com/DataDog/sketches-go v1.4.1 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
-	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/alecthomas/chroma v0.10.0 // indirect
 	github.com/cockroachdb/errors v1.8.9 // indirect
 	github.com/containerd/typeurl v1.0.2 // indirect
@@ -409,7 +408,7 @@ require (
 // or intentional forks.
 replace (
 	// We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20220413163148-ad62e0ac6243
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20220415201645-48d1beaad294
 	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
 	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b

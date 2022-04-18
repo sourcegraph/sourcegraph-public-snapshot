@@ -5,6 +5,7 @@ import { useLocation } from 'react-router-dom'
 
 import { Card, ForwardReferenceComponent, LoadingSpinner } from '@sourcegraph/wildcard'
 
+import { getLineColor, LegendItem, LegendList, Series } from '../../../../../charts'
 import { ErrorBoundary } from '../../../../../components/ErrorBoundary'
 
 import styles from './InsightCard.module.scss'
@@ -75,19 +76,38 @@ const InsightCardBanner: React.FunctionComponent<HTMLAttributes<HTMLDivElement>>
     </div>
 )
 
+interface InsightCardLegendProps extends React.HTMLAttributes<HTMLUListElement> {
+    series: Series<any>[]
+}
+
+const InsightCardLegend: React.FunctionComponent<InsightCardLegendProps> = props => {
+    const { series, ...attributes } = props
+
+    return (
+        <LegendList {...attributes}>
+            {series.map(series => (
+                <LegendItem key={series.dataKey as string} color={getLineColor(series)} name={series.name} />
+            ))}
+        </LegendList>
+    )
+}
+
 const Root = InsightCard
 const Header = InsightCardHeader
 const Loading = InsightCardLoading
 const Banner = InsightCardBanner
+const Legends = InsightCardLegend
 
 export {
     InsightCard,
     InsightCardHeader,
     InsightCardLoading,
     InsightCardBanner,
+    InsightCardLegend,
     // * as Card imports
     Root,
     Header,
     Loading,
     Banner,
+    Legends,
 }

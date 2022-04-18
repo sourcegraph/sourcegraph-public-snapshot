@@ -67,7 +67,7 @@ describe('Code insights page', () => {
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
-        await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
+        await driver.page.waitForSelector('svg circle')
 
         const variables = await testContext.waitForGraphQLRequest(async () => {
             await driver.page.click('[data-testid="insight-card.001"] [data-testid="InsightContextMenuButton"]')

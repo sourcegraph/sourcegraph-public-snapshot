@@ -71,6 +71,10 @@ func (i *insightViewFiltersResolver) ExcludeRepoRegex(ctx context.Context) (*str
 	return i.filters.ExcludeRepoRegex, nil
 }
 
+func (i *insightViewFiltersResolver) SearchContexts(ctx context.Context) (*[]string, error) {
+	return &i.filters.SearchContexts, nil
+}
+
 func (i *insightViewResolver) AppliedFilters(ctx context.Context) (graphqlbackend.InsightViewFiltersResolver, error) {
 	if i.overrideFilters != nil {
 		return &insightViewFiltersResolver{filters: i.overrideFilters}, nil
@@ -487,12 +491,10 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 		dashboardIds = append(dashboardIds, lamDashboardId)
 	}
 
-	filters := types.InsightViewFilters{}
+	var filters types.InsightViewFilters
 	if args.Input.ViewControls != nil {
-		filters.IncludeRepoRegex = args.Input.ViewControls.Filters.IncludeRepoRegex
-		filters.ExcludeRepoRegex = args.Input.ViewControls.Filters.ExcludeRepoRegex
+		filters = filtersFromInput(&args.Input.ViewControls.Filters)
 	}
-
 	view, err := insightTx.CreateView(ctx, types.InsightView{
 		Title:            emptyIfNil(args.Input.Options.Title),
 		UniqueID:         ksuid.New().String(),
@@ -559,12 +561,13 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 		return nil, errors.New("No insight view found with this id")
 	}
 
+	var filters types.InsightViewFilters
+	filters = filtersFromInput(&args.Input.ViewControls.Filters)
+
 	view, err := tx.UpdateView(ctx, types.InsightView{
-		UniqueID: insightViewId,
-		Title:    emptyIfNil(args.Input.PresentationOptions.Title),
-		Filters: types.InsightViewFilters{
-			IncludeRepoRegex: args.Input.ViewControls.Filters.IncludeRepoRegex,
-			ExcludeRepoRegex: args.Input.ViewControls.Filters.ExcludeRepoRegex},
+		UniqueID:         insightViewId,
+		Title:            emptyIfNil(args.Input.PresentationOptions.Title),
+		Filters:          filters,
 		PresentationType: types.Line,
 	})
 	if err != nil {
@@ -1110,4 +1113,16 @@ func createInsightLicenseCheck(ctx context.Context, insightTx *store.InsightStor
 	}
 
 	return 0, nil
+}
+
+func filtersFromInput(input *graphqlbackend.InsightViewFiltersInput) types.InsightViewFilters {
+	filters := types.InsightViewFilters{}
+	if input != nil {
+		filters.IncludeRepoRegex = input.IncludeRepoRegex
+		filters.ExcludeRepoRegex = input.ExcludeRepoRegex
+		if input.SearchContexts != nil {
+			filters.SearchContexts = *input.SearchContexts
+		}
+	}
+	return filters
 }
