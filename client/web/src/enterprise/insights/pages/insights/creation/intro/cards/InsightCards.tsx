@@ -47,9 +47,6 @@ const InsightCardBody: React.FunctionComponent<InsightCardBodyProps> = props => 
 
     return (
         <CardBody className={classNames(styles.cardBody, className, 'flex-1')}>
-            {/* 
-                To fix Rule: "heading-order" (Heading levels should only increase by one)
-            */}
             <H3 as={H2} className={styles.cardTitle}>
                 {title}
             </H3>
