@@ -20,7 +20,7 @@ import (
 
 // ReadFile returns the first maxBytes of the named file at commit. If maxBytes <= 0, the entire
 // file is read. (If you just need to check a file's existence, use Stat, not ReadFile.)
-func ReadFile(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID, name string, maxBytes int64, checker authz.SubRepoPermissionChecker) ([]byte, error) {
+func ReadFile(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID, name string, checker authz.SubRepoPermissionChecker) ([]byte, error) {
 	if Mocks.ReadFile != nil {
 		return Mocks.ReadFile(commit, name)
 	}
@@ -36,9 +36,6 @@ func ReadFile(ctx context.Context, db database.DB, repo api.RepoName, commit api
 	defer br.Close()
 
 	r := io.Reader(br)
-	if maxBytes > 0 {
-		r = io.LimitReader(r, maxBytes)
-	}
 	data, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
