@@ -41,7 +41,7 @@ Inspired by Jupyter Notebooks and powered by Markdown and Sourcegraph's code sea
 Notebooks have powerful content creation features, like a [notepad](../notebooks/notepad.md) and multiple block types, each with their own unique capabilities. If you're familiar with Jupyter Notebooks, then you already understand the blocks concept. You can add as many of each block as you want to a Sourcegraph notebook.
 
 ## Notebook types
-Notebooks can be created in two ways. Through the web interface or via special Markdown files with the special `.md.snb` extension. To view file-based notebooks you must view the files in the file view on sourcegraph.com or on your Sourcegraph instance.
+Notebooks can be created in two ways. Through the web interface or via special Markdown files with the special `.snb.md` extension. To view file-based notebooks you must view the files in the file view on sourcegraph.com or on your Sourcegraph instance.
 
 ### Web-based notebooks
 The simplest way to get started with Notebooks is to create one using the web interface. Notebooks created this way have the advantage of being interactive, letting you see the content of your blocks in realtime as you create your notebook. You can also utilize the [notepad](../notebooks/notepad.md) to dramatically speed up notebook creation.
@@ -51,9 +51,9 @@ You can also create web-based notebooks by importing plain old Markdown files an
 Web-based notebooks are automatically saved as they're edited. There is currently no version control, version history, or versioning system.
 
 ### File-based notebooks
-Alternatively, you can create notebooks using text files with the `.md.snb` file extension. These files are rendered specially by Sourcegraph (either on sourcegraph.com or within your Sourcegraph instance) to display notebook blocks alongside standard Markdown blocks.
+Alternatively, you can create notebooks using text files with the `.snb.md` file extension. These files are rendered specially by Sourcegraph (either on sourcegraph.com or within your Sourcegraph instance) to display notebook blocks alongside standard Markdown blocks.
 
-Whenever you view a `.md.snb` file on Sourcegraph, you'll see a "Run all blocks" button near the top of the notebook, which will execute all the notebook blocks at once. Markdown and file blocks are rendered by default.
+Whenever you view a `.snb.md` file on Sourcegraph, you'll see a "Run all blocks" button near the top of the notebook, which will execute all the notebook blocks at once. Markdown and file blocks are rendered by default.
 
 File-based notebooks have the advantage of living anywhere you store text files. The disadvantage comes during composition, as you won't be able to see the contents of your blocks while you create your notebook.
 
@@ -62,10 +62,12 @@ File-based notebooks have the advantage of living anywhere you store text files.
 If you prefer to keep your notebooks in your repos but want to compose them on the web, you can get the best of both worlds by composing your notebooks on your sourcegraph instance and then exporting them to your 
 
 #### Embed notebooks anywhere
-Sourcegraph notebooks can be [embedded](../notebooks/notebook-embedding.md) anywhere that allows iFrames. Notebooks hosted on sourcegraph.com can be embedded anywhere. Notebooks hosted on your private instance are subject to your organization's security policies, but can generally be viewed by any user with access to your instance as long as they're logged in.
+Sourcegraph notebooks can be [embedded](../notebooks/notebook-embedding.md) anywhere that allows iframes. Notebooks hosted on sourcegraph.com can be embedded anywhere. Notebooks hosted on your private instance are subject to your organization's security policies, but can generally be viewed by any user with access to your instance as long as they're logged in.
 
 ## Notebook blocks
+
 The currently supported block types are:
+
 - Query
 - File
 - Symbol
@@ -74,9 +76,9 @@ The currently supported block types are:
 [Read more about block types](../notebooks/blocks.md).
 
 ## Searching notebooks
-Notebooks created through the web interface are full text searchable from the /notebooks page. Each tab has its own search box and each search box is scoped to that tab. The exception is the Explore tab, which searches all notebooks you have access to.
+Notebooks created through the web interface are full text searchable from the `/notebooks` page. Each tab has its own search box and each search box is scoped to that tab. The exception is the Explore tab, which searches all notebooks you have access to.
 
-Searches will match on notebook titles and any text in Markdown blocks. Searching through other block types is not supported because they are dynamic in nature.
+Searches will match on notebook titles and any text in blocks. For example any text in Markdown blocks and any of the query text in file, symbol, and search query blocks. Searching through results in symbol, file, and query block types is not supported because they are dynamic in nature.
 
 
 ## Enabling Notebooks in older versions of Sourcegraph

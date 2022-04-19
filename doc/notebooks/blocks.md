@@ -11,9 +11,9 @@ Query blocks support the full Sourcegraph search query language, allowing you to
 ## Symbol blocks
 With symbol blocks, you can identify the symbol you want to highlight. Symbol blocks are special. As long as the symbol definition stays within the file you selected when you created the block, you don't need to update it when the file changes. Symbol blocks "follow" the symbol around the file and so always display its current location.
 
-Symbol blocks are a subset of the query block, providing some UI affordances to make it easier to find symbols, such as a default `type:symbol` in the query, as well as a purpose-built typeahead specialized for symbol selection.
+Symbol blocks provide some UI affordances to make it easier to find symbols, such as a default `type:symbol` in the query, as well as a purpose-built typeahead specialized for symbol selection.
 
 ## File blocks
 File blocks are similar to symbol blocks in that they are some special affordances to make them easier to create. You can add an entire file the file block, or you can select a line range of a file. File ranges are great for embedding code snippets into a notebook or highlighting important files. File blocks are editable so you can modify a full file to only show a line range from it, or remove the line range to show an entire file.
 
-If you're viewing a file in Sourcegraph search, you can also copy the URL and paste it directly into a file block. If you have a line range selected it will be preserved.
+If you're viewing a file in Sourcegraph search, you can also copy the URL and paste it directly into a file block or the command palette. If you have a line range selected it will be preserved on paste.
