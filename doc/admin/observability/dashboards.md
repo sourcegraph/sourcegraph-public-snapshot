@@ -8251,7 +8251,7 @@ Query: `sum(increase(src_codeintel_background_documentation_search_records_remov
 
 <br />
 
-#### worker: src_codeintel_background_audit_log_records_expired_total
+#### worker: codeintel_background_audit_log_records_expired_total
 
 <p class="subtitle">Lsif upload audit log records deleted every 5m</p>
 
@@ -8266,7 +8266,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100520` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_src_codeintel_background_audit_log_records_expired_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_audit_log_records_expired_total{job=~"^worker.*"}[5m]))`
 
 </details>
 
