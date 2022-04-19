@@ -1,8 +1,9 @@
 package encoders
 
 import (
-	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
 )
 
 type ResourceEncoder struct{ otfields.Resource }

@@ -3,8 +3,9 @@ package logtest
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func TestExport(t *testing.T) {

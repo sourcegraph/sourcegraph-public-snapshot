@@ -1,8 +1,6 @@
 package log
 
-const (
-	envSrcLogFormat = "SRC_LOG_FORMAT"
-)
+const envSrcLogFormat = "SRC_LOG_FORMAT"
 
 type Output string
 

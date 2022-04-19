@@ -9,14 +9,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// Get returns the global logger and sets it up with the given scope and OpenTelemetry
-// compliant implementation. Instead of using this everywhere a log is needed, callers
-// should hold a reference to the Logger and pass it in to places that need to log.
-func Get(scope string) Logger {
-	adapted := &zapAdapter{Logger: global.Get()}
-	return adapted.Scoped(scope).With(otfields.AttributesNamespace)
-}
-
 type TraceContext = otfields.TraceContext
 
 // Logger is an OpenTelemetry-compliant logger. All functions that log output should hold
@@ -59,6 +51,14 @@ type Logger interface {
 	// Sync flushes any buffered log entries. Applications should take care to call Sync
 	// before exiting.
 	Sync() error
+}
+
+// Get returns the global logger and sets it up with the given scope and OpenTelemetry
+// compliant implementation. Instead of using this everywhere a log is needed, callers
+// should hold a reference to the Logger and pass it in to places that need to log.
+func Get(scope string) Logger {
+	adapted := &zapAdapter{Logger: global.Get()}
+	return adapted.Scoped(scope).With(otfields.AttributesNamespace)
 }
 
 type zapAdapter struct {
