@@ -46,10 +46,10 @@ export class EventLogger implements VsceTelemetryService {
      * Log a pageview.
      * Page titles should be specific and human-readable in pascal case, e.g. "SearchResults" or "Blob" or "NewOrg"
      */
-    public logPageView(pageTitle: string, eventProperties?: any, publicArgument?: any, url?: string): void {
-        if (pageTitle) {
+    public logPageView(eventName: string, eventProperties?: any, publicArgument?: any, url?: string): void {
+        if (eventName) {
             this.tracker(
-                `View${pageTitle}`,
+                `${eventName}Viewed`,
                 { ...eventProperties, ...this.editorInfo },
                 { ...publicArgument, ...this.editorInfo },
                 url

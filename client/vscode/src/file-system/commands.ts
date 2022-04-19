@@ -37,21 +37,32 @@ async function getLocalCopy(remoteUri: SourcegraphUri): Promise<vscode.TextDocum
     const filePath = remoteUri.path || '' // ex: "client/vscode/package.json"
     // Get basePath from configuration
     const basePath = vscode.workspace.getConfiguration('sourcegraph').get<string>('basePath') || null
-    const workspaceFilePath =
-        (await vscode.workspace.findFiles(filePath, null, 1).then(result => result[0].path)) || null
+    const workspaceFilePath = await vscode.workspace
+        .findFiles(filePath, null, 1)
+        .then(result => result[0]?.path || null)
     // If basePath is not configured, we will try to find file in the current workspace
-    const relativePath = basePath ? `${basePath}${repoName}/${filePath}` : workspaceFilePath
+    const absolutePath = basePath
+        ? vscode.Uri.joinPath(vscode.Uri.parse(basePath), repoName, filePath)
+        : workspaceFilePath
+        ? vscode.Uri.file(workspaceFilePath)
+        : null
     // if both basePath and workspaceFilePath are null, the operation will fail
-    if (!relativePath) {
+    if (!absolutePath) {
         throw new Error('Try to configure your basePath to open this file.')
     }
     // Set current workspace folder path as basePath if it doesn't exist
     if (!basePath && workspaceFilePath) {
-        await vscode.workspace
-            .getConfiguration('sourcegraph')
-            .update('basePath', workspaceFilePath.split(repoName).shift(), vscode.ConfigurationTarget.Global)
+        // get current workspace folder uri
+        const workspaceFolderUri = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(workspaceFilePath))?.uri
+        if (workspaceFolderUri) {
+            // go one level up and set that as the new basePath
+            const newBasePath = vscode.workspace.asRelativePath(vscode.Uri.joinPath(workspaceFolderUri, '../'))
+            await vscode.workspace
+                .getConfiguration('sourcegraph')
+                .update('basePath', newBasePath, vscode.ConfigurationTarget.Global)
+        }
     }
-    const textDocument = await vscode.workspace.openTextDocument(vscode.Uri.file(relativePath))
+    const textDocument = await vscode.workspace.openTextDocument(absolutePath)
     return textDocument
 }
 
