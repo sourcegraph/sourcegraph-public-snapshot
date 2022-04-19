@@ -10,6 +10,7 @@ import (
 
 var defaultAPIs = map[string]luasandbox.LuaLib{
 	"sg.path_patterns": libs.Patterns,
+	"sg.recognizers":   libs.Recognizers,
 }
 
 var defaultModules = (func() map[string]lua.LGFunction {
