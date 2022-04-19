@@ -9,7 +9,7 @@ import (
 )
 
 func TestInitLogger(t *testing.T) {
-	logger, dumpLogs := logtest.Get(t)
+	logger, exportLogs := logtest.Get(t)
 	assert.NotNil(t, logger)
 
 	logger.Debug("a debug message") // 1
@@ -21,9 +21,9 @@ func TestInitLogger(t *testing.T) {
 	logger.Info("goodbye", log.String("world", "hello")) // 3
 	logger.Warn("another message")                       // 4
 
-	lines := dumpLogs()
-	assert.Len(t, lines, 4)
-	for _, l := range lines {
+	logs := exportLogs()
+	assert.Len(t, logs, 4)
+	for _, l := range logs {
 		assert.Equal(t, l.Scope, "TestInitLogger") // scope is always applied
 	}
 }

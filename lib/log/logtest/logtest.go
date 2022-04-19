@@ -1,9 +1,11 @@
 package logtest
 
 import (
+	"encoding/json"
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -20,6 +22,10 @@ import (
 //
 // testing.M is an unused argument, used to indicate this function should be called in
 // TestMain.
+//
+// level can be used to configure the log level for this package's tests, which can be
+// helpful for exceptionally noisy tests. You can also consider using 'libtest.Get(t)'
+// and printing logs manually with 'DumpLogs'
 func Init(_ *testing.M, level log.Level) {
 	pc, _, _, _ := runtime.Caller(1)
 	details := runtime.FuncForPC(pc)
@@ -31,6 +37,7 @@ func Init(_ *testing.M, level log.Level) {
 	}, zap.NewAtomicLevelAt(level.Parse()), "console", true)
 }
 
+// configurableAdapter exposes internal APIs on zapAdapter
 type configurableAdapter interface {
 	log.Logger
 
@@ -38,22 +45,27 @@ type configurableAdapter interface {
 }
 
 type CapturedLog struct {
-	Scope      string
-	Level      log.Level
-	Message    string
-	Attributes map[string]interface{}
+	Time    time.Time
+	Scope   string
+	Level   log.Level
+	Message string
+	Fields  map[string]interface{}
 }
 
 // Get retrieves a logger from log.Get with the test's name and returns a callback,
-// dumpLogs, which flushes the logger buffer and returns log entries.
-//
-// The logger is scoped to the test name.
-func Get(t testing.TB) (logger log.Logger, dumpLogs func() []CapturedLog) {
+// dumpLogs, which flushes the logger buffer and returns log entries. The returned logger
+// is scoped to the test name.
+func Get(t testing.TB) (logger log.Logger, exportLogs func() []CapturedLog) {
 	root := log.Get(t.Name())
 
+	// Cast into internal API
 	configurable := root.(configurableAdapter)
-	observeCore, entries := observer.New(zap.DebugLevel)
+
+	observerCore, entries := observer.New(zap.DebugLevel) // capture levels
 	logger = configurable.WithOptions(zap.WrapCore(func(c zapcore.Core) zapcore.Core {
+		// Set up AttributesNamespace to mirror the underlying core created by log.Get()
+		observeCore := observerCore.With([]zapcore.Field{otfields.AttributesNamespace})
+		// Tee to both the underlying core, and our observer core
 		return zapcore.NewTee(observeCore, c)
 	}))
 
@@ -63,12 +75,32 @@ func Get(t testing.TB) (logger log.Logger, dumpLogs func() []CapturedLog) {
 		logs := make([]CapturedLog, len(entries))
 		for i, e := range entries {
 			logs[i] = CapturedLog{
-				Scope:      e.LoggerName,
-				Level:      log.Level(e.Level.String()),
-				Message:    e.Message,
-				Attributes: e.ContextMap(),
+				Time:    e.Time,
+				Scope:   e.LoggerName,
+				Level:   log.Level(e.Level.String()),
+				Message: e.Message,
+				Fields:  e.ContextMap(),
 			}
 		}
 		return logs
 	}
+}
+
+// DumpLogs dumps a JSON summary of each log entry.
+func DumpLogs(t testing.TB, logs []CapturedLog) {
+	for _, log := range logs {
+		b, err := json.Marshal(&log)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+		t.Log(string(b))
+	}
+}
+
+// DumpLogsIfFailed calls DumpLogs if the test failed, otherwise does nothing.
+func DumpLogsIfFailed(t testing.TB, logs []CapturedLog) {
+	if !t.Failed() {
+		return
+	}
+	DumpLogs(t, logs)
 }

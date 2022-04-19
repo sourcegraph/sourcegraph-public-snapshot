@@ -14,16 +14,22 @@ type Field = zapcore.Field
 var (
 	// String constructs a field with the given key and value.
 	String = zap.String
+	// Strings constructs a field that carries a slice of strings.
+	Strings = zap.Strings
+
 	// Int constructs a field with the given key and value.
 	Int = zap.Int
 	// Ints constructs a field that carries a slice of integers.
 	Ints = zap.Ints
+
 	// Float64 constructs a field that carries a float64. The way the floating-point value
 	// is represented is encoder-dependent, so marshaling is necessarily lazy.
 	Float64 = zap.Float64
+
 	// Duration constructs a field with the given key and value. The encoder controls how
 	// the duration is serialized.
 	Duration = zap.Duration
+
 	// Time constructs a Field with the given key and value. The encoder controls how the
 	// time is serialized.
 	Time = zap.Time
@@ -45,7 +51,3 @@ var (
 	// third-party libraries.
 	Namespace = zap.Namespace
 )
-
-// attributesNamespace is the namespace under which all arbitrary fields are logged, as
-// per the OpenTelemetry spec.
-var attributesNamespace = Namespace("Attributes")

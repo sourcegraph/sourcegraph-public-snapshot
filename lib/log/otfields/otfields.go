@@ -1,5 +1,7 @@
 package otfields
 
+import "go.uber.org/zap"
+
 // Resource represents a service instance.
 //
 // https://opentelemetry.io/docs/reference/specification/Resource/semantic_conventions/#service
@@ -18,3 +20,9 @@ type TraceContext struct {
 	TraceID string
 	SpanID  string
 }
+
+// attributesNamespace is the namespace under which all arbitrary fields are logged, as
+// per the OpenTelemetry spec.
+//
+// Only for internal use.
+var AttributesNamespace = zap.Namespace("Attributes")

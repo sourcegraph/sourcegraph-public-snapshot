@@ -14,7 +14,7 @@ import (
 // should hold a reference to the Logger and pass it in to places that need to log.
 func Get(scope string) Logger {
 	adapted := &zapAdapter{Logger: global.Get()}
-	return adapted.Scoped(scope).With(attributesNamespace)
+	return adapted.Scoped(scope).With(otfields.AttributesNamespace)
 }
 
 type TraceContext = otfields.TraceContext
@@ -120,6 +120,8 @@ func (z *zapAdapter) WithTrace(trace TraceContext) Logger {
 	}
 }
 
+// WithOptions is an internal API used to allow packages like logtest to hook into the
+// underlying zap logger.
 func (z *zapAdapter) WithOptions(options ...zap.Option) Logger {
 	return &zapAdapter{
 		Logger:     z.Logger.WithOptions(options...),
