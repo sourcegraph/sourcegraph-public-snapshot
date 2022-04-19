@@ -436,11 +436,19 @@ func GetLimitFromConfig(kind string, config interface{}) (rate.Limit, error) {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.NpmPackagesConnection:
+		// Unlike the GitHub or GitLab APIs, the public npm registry (i.e. https://registry.npmjs.org)
+		// doesn't document an enforced req/s rate limit AND we do a lot more individual
+		// requests in comparison since they don't offer enough batch APIs. For private registries,
+		// site-admins can manually configure their desired rate limits if needed.
 		limit = rate.Inf
 		if c != nil && c.RateLimit != nil {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.GoModulesConnection:
+		// Unlike the GitHub or GitLab APIs, the public npm registry (i.e. https://proxy.golang.org)
+		// doesn't document an enforced req/s rate limit AND we do a lot more individual
+		// requests in comparison since they don't offer enough batch APIs. For private proxies,
+		// site-admins can manually configure their desired rate limits if needed.
 		limit = rate.Inf
 		if c != nil && c.RateLimit != nil {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
