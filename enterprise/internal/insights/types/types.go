@@ -27,6 +27,7 @@ type InsightViewSeries struct {
 	SampleIntervalValue           int
 	DefaultFilterIncludeRepoRegex *string
 	DefaultFilterExcludeRepoRegex *string
+	DefaultFilterSearchContexts   []string
 	OtherThreshold                *float64
 	PresentationType              PresentationType
 	GeneratedFromCaptureGroups    bool
@@ -51,6 +52,7 @@ type Insight struct {
 type InsightViewFilters struct {
 	IncludeRepoRegex *string
 	ExcludeRepoRegex *string
+	SearchContexts   []string
 }
 
 // InsightViewSeriesMetadata contains metadata about a viewable insight series such as render properties.

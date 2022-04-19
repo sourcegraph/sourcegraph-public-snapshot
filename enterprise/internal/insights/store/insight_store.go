@@ -50,8 +50,9 @@ type InsightQueryArgs struct {
 	OrgID       []int
 	DashboardID int
 
-	After string
-	Limit int
+	After    string
+	Limit    int
+	IsFrozen *bool
 
 	// This field will disable user level authorization checks on the insight views. This should only be used
 	// when fetching insights from a container that also has authorization checks, such as a dashboard.
@@ -110,6 +111,13 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 	}
 	if args.After != "" {
 		preds = append(preds, sqlf.Sprintf("iv.unique_id > %s", args.After))
+	}
+	if args.IsFrozen != nil {
+		if *args.IsFrozen {
+			preds = append(preds, sqlf.Sprintf("iv.is_frozen = TRUE"))
+		} else {
+			preds = append(preds, sqlf.Sprintf("iv.is_frozen = FALSE"))
+		}
 	}
 
 	limit := sqlf.Sprintf("")
@@ -223,6 +231,7 @@ func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.Insig
 			Filters: types.InsightViewFilters{
 				IncludeRepoRegex: seriesSet[0].DefaultFilterIncludeRepoRegex,
 				ExcludeRepoRegex: seriesSet[0].DefaultFilterExcludeRepoRegex,
+				SearchContexts:   seriesSet[0].DefaultFilterSearchContexts,
 			},
 			OtherThreshold:   seriesSet[0].OtherThreshold,
 			PresentationType: seriesSet[0].PresentationType,
@@ -446,6 +455,7 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 			&temp.JustInTime,
 			&temp.GenerationMethod,
 			&temp.IsFrozen,
+			pq.Array(&temp.DefaultFilterSearchContexts),
 		); err != nil {
 			return []types.InsightViewSeries{}, err
 		}
@@ -536,6 +546,7 @@ func (s *InsightStore) CreateView(ctx context.Context, view types.InsightView, g
 		view.UniqueID,
 		view.Filters.IncludeRepoRegex,
 		view.Filters.ExcludeRepoRegex,
+		pq.Array(view.Filters.SearchContexts),
 		view.OtherThreshold,
 		view.PresentationType,
 	))
@@ -567,6 +578,7 @@ func (s *InsightStore) UpdateView(ctx context.Context, view types.InsightView) (
 		view.Description,
 		view.Filters.IncludeRepoRegex,
 		view.Filters.ExcludeRepoRegex,
+		pq.Array(view.Filters.SearchContexts),
 		view.OtherThreshold,
 		view.PresentationType,
 		view.UniqueID,
@@ -875,14 +887,14 @@ WHERE s.series_id = %s AND vs.insight_series_id = s.id AND vs.insight_view_id = 
 const createInsightViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:CreateView
 INSERT INTO insight_view (title, description, unique_id, default_filter_include_repo_regex, default_filter_exclude_repo_regex,
-	other_threshold, presentation_type)
-VALUES (%s, %s, %s, %s, %s, %s, %s)
+default_filter_search_contexts, other_threshold, presentation_type)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 returning id;`
 
 const updateInsightViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:UpdateView
 UPDATE insight_view SET title = %s, description = %s, default_filter_include_repo_regex = %s, default_filter_exclude_repo_regex = %s,
-other_threshold = %s, presentation_type = %s
+default_filter_search_contexts = %s, other_threshold = %s, presentation_type = %s
 WHERE unique_id = %s
 RETURNING id;`
 
@@ -901,7 +913,8 @@ SELECT iv.id, 0 as dashboard_insight_id, iv.unique_id, iv.title, iv.description,
 i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
 i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
 i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
-iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen
+iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen,
+default_filter_search_contexts
 FROM (%s) iv
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
          JOIN insight_series i ON ivs.insight_series_id = i.id
@@ -914,7 +927,8 @@ SELECT iv.id, dbiv.id as dashboard_insight_id, iv.unique_id, iv.title, iv.descri
 i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
 i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
 i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
-iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen
+iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen,
+default_filter_search_contexts
 FROM dashboard_insight_view as dbiv
 		 JOIN insight_view iv ON iv.id = dbiv.insight_view_id
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
@@ -955,7 +969,8 @@ SELECT iv.id, 0 as dashboard_insight_id, iv.unique_id, iv.title, iv.description,
        i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
        i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
        i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
-	   iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen
+	   iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen,
+default_filter_search_contexts
 FROM insight_view iv
 JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
 JOIN insight_series i ON ivs.insight_series_id = i.id

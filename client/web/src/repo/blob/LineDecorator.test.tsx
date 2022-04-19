@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { render, within } from '@testing-library/react'
+import { render, within, waitFor } from '@testing-library/react'
 import { ReplaySubject } from 'rxjs'
 import { TextDocumentDecoration, ThemableDecorationStyle } from 'sourcegraph'
 
@@ -55,7 +55,7 @@ describe('LineDecorator', () => {
         render(<LineDecorator {...props} />)
 
         const container = within(codeElement)
-        expect(container.getByTestId('line-decoration')).toBeVisible()
+        waitFor(() => expect(container.getByTestId('line-decoration')).toBeVisible())
         expect(codeElement).toMatchSnapshot()
     })
 
@@ -79,7 +79,7 @@ describe('LineDecorator', () => {
         render(<LineDecorator {...props} />)
 
         const container = within(codeElement)
-        expect(container.getByTestId('line-decoration')).toBeVisible()
+        waitFor(() => expect(container.getByTestId('line-decoration')).toBeVisible())
         expect(codeElement).toMatchSnapshot()
     })
 

@@ -10,7 +10,7 @@
   ],
   "main": "lib/index.js",
   "scripts": {
-    "eslint": "echo 'TODO: add proper ESLint config, issue #19448'",
+    "lint:js": "echo 'TODO: add proper ESLint config, issue #19448'",
     "test": "mocha tests --recursive"
   },
   "dependencies": {

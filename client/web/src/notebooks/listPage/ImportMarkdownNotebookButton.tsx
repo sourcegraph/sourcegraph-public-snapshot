@@ -89,7 +89,12 @@ export const ImportMarkdownNotebookButton: React.FunctionComponent<ImportMarkdow
                 onChange={onFileInputChange}
                 data-testid="import-markdown-notebook-file-input"
             />
-            <Button variant="secondary" onClick={onImportButtonClick} disabled={importState === LOADING}>
+            <Button
+                variant="secondary"
+                onClick={onImportButtonClick}
+                disabled={importState === LOADING}
+                className="ml-2"
+            >
                 <Icon className="mr-1" as={UploadIcon} />
                 <span>{importState === LOADING ? 'Importing...' : 'Import Markdown notebook'}</span>
             </Button>

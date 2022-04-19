@@ -112,6 +112,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                     onClick={toggleShowCommitMessageBody}
                     variant="secondary"
                     size="sm"
+                    aria-label={showCommitMessageBody ? 'Hide commit message body' : 'Show commit message body'}
                 >
                     <Icon as={DotsHorizontalIcon} />
                 </Button>

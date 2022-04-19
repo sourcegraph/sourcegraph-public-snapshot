@@ -5,8 +5,7 @@ import { useHistory } from 'react-router'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
-import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
-import { CreationInsightInput } from '../../../core/backend/code-insights-backend-types'
+import { CodeInsightsBackendContext, CreationInsightInput } from '../../../core'
 import { useQueryParameters } from '../../../hooks/use-query-parameters'
 
 import { CaptureGroupCreationPage } from './capture-group'

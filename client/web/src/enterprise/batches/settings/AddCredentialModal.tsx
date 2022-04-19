@@ -21,6 +21,7 @@ export interface AddCredentialModalProps {
     externalServiceKind: ExternalServiceKind
     externalServiceURL: string
     requiresSSH: boolean
+    requiresUsername: boolean
 
     /** For testing only. */
     initialStep?: Step
@@ -54,9 +55,17 @@ const helpTexts: Record<ExternalServiceKind, JSX.Element> = {
             with <code>write</code> permissions on the project and repository level.
         </>
     ),
+    [ExternalServiceKind.BITBUCKETCLOUD]: (
+        <>
+            <Link to={HELP_TEXT_LINK_URL} rel="noreferrer noopener" target="_blank">
+                Create a new access token
+            </Link>{' '}
+            with <code>account:read</code>, <code>repo:write</code>, <code>pr:write</code>, and{' '}
+            <code>pipeline:read</code> permissions.
+        </>
+    ),
 
     // These are just for type completeness and serve as placeholders for a bright future.
-    [ExternalServiceKind.BITBUCKETCLOUD]: <span>Unsupported</span>,
     [ExternalServiceKind.GITOLITE]: <span>Unsupported</span>,
     [ExternalServiceKind.GOMODULES]: <span>Unsupported</span>,
     [ExternalServiceKind.JVMPACKAGES]: <span>Unsupported</span>,
@@ -77,15 +86,21 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
     externalServiceKind,
     externalServiceURL,
     requiresSSH,
+    requiresUsername,
     initialStep = 'add-token',
 }) => {
     const labelId = 'addCredential'
     const [credential, setCredential] = useState<string>('')
     const [sshPublicKey, setSSHPublicKey] = useState<string>()
+    const [username, setUsername] = useState<string>('')
     const [step, setStep] = useState<Step>(initialStep)
 
     const onChangeCredential = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setCredential(event.target.value)
+    }, [])
+
+    const onChangeUsername = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
+        setUsername(event.target.value)
     }, [])
 
     const [createBatchChangesCredential, { loading, error }] = useCreateBatchChangesCredential()
@@ -99,6 +114,7 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
                     variables: {
                         user: userID,
                         credential,
+                        username: requiresUsername ? username : null,
                         externalServiceKind,
                         externalServiceURL,
                     },
@@ -115,13 +131,15 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
             }
         },
         [
-            afterCreate,
+            createBatchChangesCredential,
             userID,
             credential,
+            requiresUsername,
+            username,
             externalServiceKind,
             externalServiceURL,
             requiresSSH,
-            createBatchChangesCredential,
+            afterCreate,
         ]
     )
 
@@ -165,6 +183,23 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
                         {error && <ErrorAlert error={error} />}
                         <Form onSubmit={onSubmit}>
                             <div className="form-group">
+                                {requiresUsername && (
+                                    <>
+                                        <label htmlFor="username">Username</label>
+                                        <input
+                                            id="username"
+                                            name="username"
+                                            type="text"
+                                            autoComplete="off"
+                                            className="form-control mb-2"
+                                            required={true}
+                                            spellCheck="false"
+                                            minLength={1}
+                                            value={username}
+                                            onChange={onChangeUsername}
+                                        />
+                                    </>
+                                )}
                                 <label htmlFor="token">Personal access token</label>
                                 <input
                                     id="token"

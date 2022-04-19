@@ -2,13 +2,19 @@
 
 package userpasswd
 
-import "sync"
+import (
+	"context"
+	"sync"
+)
 
 // MockLockoutStore is a mock implementation of the LockoutStore interface
 // (from the package
 // github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd)
 // used for unit testing.
 type MockLockoutStore struct {
+	// GenerateUnlockAccountURLFunc is an instance of a mock function object
+	// controlling the behavior of the method GenerateUnlockAccountURL.
+	GenerateUnlockAccountURLFunc *LockoutStoreGenerateUnlockAccountURLFunc
 	// IncreaseFailedAttemptFunc is an instance of a mock function object
 	// controlling the behavior of the method IncreaseFailedAttempt.
 	IncreaseFailedAttemptFunc *LockoutStoreIncreaseFailedAttemptFunc
@@ -18,12 +24,24 @@ type MockLockoutStore struct {
 	// ResetFunc is an instance of a mock function object controlling the
 	// behavior of the method Reset.
 	ResetFunc *LockoutStoreResetFunc
+	// SendUnlockAccountEmailFunc is an instance of a mock function object
+	// controlling the behavior of the method SendUnlockAccountEmail.
+	SendUnlockAccountEmailFunc *LockoutStoreSendUnlockAccountEmailFunc
+	// VerifyUnlockAccountTokenAndResetFunc is an instance of a mock
+	// function object controlling the behavior of the method
+	// VerifyUnlockAccountTokenAndReset.
+	VerifyUnlockAccountTokenAndResetFunc *LockoutStoreVerifyUnlockAccountTokenAndResetFunc
 }
 
 // NewMockLockoutStore creates a new mock of the LockoutStore interface. All
 // methods return zero values for all results, unless overwritten.
 func NewMockLockoutStore() *MockLockoutStore {
 	return &MockLockoutStore{
+		GenerateUnlockAccountURLFunc: &LockoutStoreGenerateUnlockAccountURLFunc{
+			defaultHook: func(int32) (string, string, error) {
+				return "", "", nil
+			},
+		},
 		IncreaseFailedAttemptFunc: &LockoutStoreIncreaseFailedAttemptFunc{
 			defaultHook: func(int32) {
 				return
@@ -39,6 +57,16 @@ func NewMockLockoutStore() *MockLockoutStore {
 				return
 			},
 		},
+		SendUnlockAccountEmailFunc: &LockoutStoreSendUnlockAccountEmailFunc{
+			defaultHook: func(context.Context, int32, string) error {
+				return nil
+			},
+		},
+		VerifyUnlockAccountTokenAndResetFunc: &LockoutStoreVerifyUnlockAccountTokenAndResetFunc{
+			defaultHook: func(string) (bool, error) {
+				return false, nil
+			},
+		},
 	}
 }
 
@@ -46,6 +74,11 @@ func NewMockLockoutStore() *MockLockoutStore {
 // interface. All methods panic on invocation, unless overwritten.
 func NewStrictMockLockoutStore() *MockLockoutStore {
 	return &MockLockoutStore{
+		GenerateUnlockAccountURLFunc: &LockoutStoreGenerateUnlockAccountURLFunc{
+			defaultHook: func(int32) (string, string, error) {
+				panic("unexpected invocation of MockLockoutStore.GenerateUnlockAccountURL")
+			},
+		},
 		IncreaseFailedAttemptFunc: &LockoutStoreIncreaseFailedAttemptFunc{
 			defaultHook: func(int32) {
 				panic("unexpected invocation of MockLockoutStore.IncreaseFailedAttempt")
@@ -61,6 +94,16 @@ func NewStrictMockLockoutStore() *MockLockoutStore {
 				panic("unexpected invocation of MockLockoutStore.Reset")
 			},
 		},
+		SendUnlockAccountEmailFunc: &LockoutStoreSendUnlockAccountEmailFunc{
+			defaultHook: func(context.Context, int32, string) error {
+				panic("unexpected invocation of MockLockoutStore.SendUnlockAccountEmail")
+			},
+		},
+		VerifyUnlockAccountTokenAndResetFunc: &LockoutStoreVerifyUnlockAccountTokenAndResetFunc{
+			defaultHook: func(string) (bool, error) {
+				panic("unexpected invocation of MockLockoutStore.VerifyUnlockAccountTokenAndReset")
+			},
+		},
 	}
 }
 
@@ -69,6 +112,9 @@ func NewStrictMockLockoutStore() *MockLockoutStore {
 // overwritten.
 func NewMockLockoutStoreFrom(i LockoutStore) *MockLockoutStore {
 	return &MockLockoutStore{
+		GenerateUnlockAccountURLFunc: &LockoutStoreGenerateUnlockAccountURLFunc{
+			defaultHook: i.GenerateUnlockAccountURL,
+		},
 		IncreaseFailedAttemptFunc: &LockoutStoreIncreaseFailedAttemptFunc{
 			defaultHook: i.IncreaseFailedAttempt,
 		},
@@ -78,7 +124,125 @@ func NewMockLockoutStoreFrom(i LockoutStore) *MockLockoutStore {
 		ResetFunc: &LockoutStoreResetFunc{
 			defaultHook: i.Reset,
 		},
+		SendUnlockAccountEmailFunc: &LockoutStoreSendUnlockAccountEmailFunc{
+			defaultHook: i.SendUnlockAccountEmail,
+		},
+		VerifyUnlockAccountTokenAndResetFunc: &LockoutStoreVerifyUnlockAccountTokenAndResetFunc{
+			defaultHook: i.VerifyUnlockAccountTokenAndReset,
+		},
 	}
+}
+
+// LockoutStoreGenerateUnlockAccountURLFunc describes the behavior when the
+// GenerateUnlockAccountURL method of the parent MockLockoutStore instance
+// is invoked.
+type LockoutStoreGenerateUnlockAccountURLFunc struct {
+	defaultHook func(int32) (string, string, error)
+	hooks       []func(int32) (string, string, error)
+	history     []LockoutStoreGenerateUnlockAccountURLFuncCall
+	mutex       sync.Mutex
+}
+
+// GenerateUnlockAccountURL delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockLockoutStore) GenerateUnlockAccountURL(v0 int32) (string, string, error) {
+	r0, r1, r2 := m.GenerateUnlockAccountURLFunc.nextHook()(v0)
+	m.GenerateUnlockAccountURLFunc.appendCall(LockoutStoreGenerateUnlockAccountURLFuncCall{v0, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the
+// GenerateUnlockAccountURL method of the parent MockLockoutStore instance
+// is invoked and the hook queue is empty.
+func (f *LockoutStoreGenerateUnlockAccountURLFunc) SetDefaultHook(hook func(int32) (string, string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GenerateUnlockAccountURL method of the parent MockLockoutStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *LockoutStoreGenerateUnlockAccountURLFunc) PushHook(hook func(int32) (string, string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *LockoutStoreGenerateUnlockAccountURLFunc) SetDefaultReturn(r0 string, r1 string, r2 error) {
+	f.SetDefaultHook(func(int32) (string, string, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *LockoutStoreGenerateUnlockAccountURLFunc) PushReturn(r0 string, r1 string, r2 error) {
+	f.PushHook(func(int32) (string, string, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *LockoutStoreGenerateUnlockAccountURLFunc) nextHook() func(int32) (string, string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LockoutStoreGenerateUnlockAccountURLFunc) appendCall(r0 LockoutStoreGenerateUnlockAccountURLFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// LockoutStoreGenerateUnlockAccountURLFuncCall objects describing the
+// invocations of this function.
+func (f *LockoutStoreGenerateUnlockAccountURLFunc) History() []LockoutStoreGenerateUnlockAccountURLFuncCall {
+	f.mutex.Lock()
+	history := make([]LockoutStoreGenerateUnlockAccountURLFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LockoutStoreGenerateUnlockAccountURLFuncCall is an object that describes
+// an invocation of method GenerateUnlockAccountURL on an instance of
+// MockLockoutStore.
+type LockoutStoreGenerateUnlockAccountURLFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 string
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LockoutStoreGenerateUnlockAccountURLFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LockoutStoreGenerateUnlockAccountURLFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // LockoutStoreIncreaseFailedAttemptFunc describes the behavior when the
@@ -384,4 +548,224 @@ func (c LockoutStoreResetFuncCall) Args() []interface{} {
 // invocation.
 func (c LockoutStoreResetFuncCall) Results() []interface{} {
 	return []interface{}{}
+}
+
+// LockoutStoreSendUnlockAccountEmailFunc describes the behavior when the
+// SendUnlockAccountEmail method of the parent MockLockoutStore instance is
+// invoked.
+type LockoutStoreSendUnlockAccountEmailFunc struct {
+	defaultHook func(context.Context, int32, string) error
+	hooks       []func(context.Context, int32, string) error
+	history     []LockoutStoreSendUnlockAccountEmailFuncCall
+	mutex       sync.Mutex
+}
+
+// SendUnlockAccountEmail delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockLockoutStore) SendUnlockAccountEmail(v0 context.Context, v1 int32, v2 string) error {
+	r0 := m.SendUnlockAccountEmailFunc.nextHook()(v0, v1, v2)
+	m.SendUnlockAccountEmailFunc.appendCall(LockoutStoreSendUnlockAccountEmailFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// SendUnlockAccountEmail method of the parent MockLockoutStore instance is
+// invoked and the hook queue is empty.
+func (f *LockoutStoreSendUnlockAccountEmailFunc) SetDefaultHook(hook func(context.Context, int32, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SendUnlockAccountEmail method of the parent MockLockoutStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *LockoutStoreSendUnlockAccountEmailFunc) PushHook(hook func(context.Context, int32, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *LockoutStoreSendUnlockAccountEmailFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *LockoutStoreSendUnlockAccountEmailFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32, string) error {
+		return r0
+	})
+}
+
+func (f *LockoutStoreSendUnlockAccountEmailFunc) nextHook() func(context.Context, int32, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LockoutStoreSendUnlockAccountEmailFunc) appendCall(r0 LockoutStoreSendUnlockAccountEmailFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LockoutStoreSendUnlockAccountEmailFuncCall
+// objects describing the invocations of this function.
+func (f *LockoutStoreSendUnlockAccountEmailFunc) History() []LockoutStoreSendUnlockAccountEmailFuncCall {
+	f.mutex.Lock()
+	history := make([]LockoutStoreSendUnlockAccountEmailFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LockoutStoreSendUnlockAccountEmailFuncCall is an object that describes an
+// invocation of method SendUnlockAccountEmail on an instance of
+// MockLockoutStore.
+type LockoutStoreSendUnlockAccountEmailFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LockoutStoreSendUnlockAccountEmailFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LockoutStoreSendUnlockAccountEmailFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// LockoutStoreVerifyUnlockAccountTokenAndResetFunc describes the behavior
+// when the VerifyUnlockAccountTokenAndReset method of the parent
+// MockLockoutStore instance is invoked.
+type LockoutStoreVerifyUnlockAccountTokenAndResetFunc struct {
+	defaultHook func(string) (bool, error)
+	hooks       []func(string) (bool, error)
+	history     []LockoutStoreVerifyUnlockAccountTokenAndResetFuncCall
+	mutex       sync.Mutex
+}
+
+// VerifyUnlockAccountTokenAndReset delegates to the next hook function in
+// the queue and stores the parameter and result values of this invocation.
+func (m *MockLockoutStore) VerifyUnlockAccountTokenAndReset(v0 string) (bool, error) {
+	r0, r1 := m.VerifyUnlockAccountTokenAndResetFunc.nextHook()(v0)
+	m.VerifyUnlockAccountTokenAndResetFunc.appendCall(LockoutStoreVerifyUnlockAccountTokenAndResetFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// VerifyUnlockAccountTokenAndReset method of the parent MockLockoutStore
+// instance is invoked and the hook queue is empty.
+func (f *LockoutStoreVerifyUnlockAccountTokenAndResetFunc) SetDefaultHook(hook func(string) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// VerifyUnlockAccountTokenAndReset method of the parent MockLockoutStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *LockoutStoreVerifyUnlockAccountTokenAndResetFunc) PushHook(hook func(string) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *LockoutStoreVerifyUnlockAccountTokenAndResetFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(string) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *LockoutStoreVerifyUnlockAccountTokenAndResetFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(string) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *LockoutStoreVerifyUnlockAccountTokenAndResetFunc) nextHook() func(string) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LockoutStoreVerifyUnlockAccountTokenAndResetFunc) appendCall(r0 LockoutStoreVerifyUnlockAccountTokenAndResetFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// LockoutStoreVerifyUnlockAccountTokenAndResetFuncCall objects describing
+// the invocations of this function.
+func (f *LockoutStoreVerifyUnlockAccountTokenAndResetFunc) History() []LockoutStoreVerifyUnlockAccountTokenAndResetFuncCall {
+	f.mutex.Lock()
+	history := make([]LockoutStoreVerifyUnlockAccountTokenAndResetFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LockoutStoreVerifyUnlockAccountTokenAndResetFuncCall is an object that
+// describes an invocation of method VerifyUnlockAccountTokenAndReset on an
+// instance of MockLockoutStore.
+type LockoutStoreVerifyUnlockAccountTokenAndResetFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LockoutStoreVerifyUnlockAccountTokenAndResetFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LockoutStoreVerifyUnlockAccountTokenAndResetFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }

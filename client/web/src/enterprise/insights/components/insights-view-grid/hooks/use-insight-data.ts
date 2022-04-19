@@ -1,19 +1,14 @@
-import { useContext, useEffect, useState } from 'react'
+import { RefObject, useContext, useEffect, useState } from 'react'
 
 import { ObservableInput } from 'rxjs'
 
-import { ErrorLike } from '@sourcegraph/common'
-
-import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from '../../../core/backend/gql-backend/code-insights-gql-backend'
-import { useLazyParallelRequest } from '../../../hooks/use-parallel-requests/use-parallel-request'
+import { CodeInsightsBackendContext, CodeInsightsGqlBackend } from '../../../core'
+import { LazyQueryState, useLazyParallelRequest } from '../../../hooks/use-parallel-requests/use-parallel-request'
 
 export interface UseInsightDataResult<T> {
-    data: T | undefined
-    error: ErrorLike | undefined
-    loading: boolean
     isVisible: boolean
     query: (request: () => ObservableInput<T>) => void
+    state: LazyQueryState<T>
 }
 
 /**
@@ -26,15 +21,15 @@ export interface UseInsightDataResult<T> {
  */
 export function useInsightData<D>(
     request: () => ObservableInput<D>,
-    reference: React.RefObject<HTMLElement>
+    reference: RefObject<HTMLElement>
 ): UseInsightDataResult<D> {
     const api = useContext(CodeInsightsBackendContext)
     const isGqlAPI = api instanceof CodeInsightsGqlBackend
 
-    const { data, loading, error, query } = useLazyParallelRequest<D>()
+    const { state, query } = useLazyParallelRequest<D>()
 
     // All non GQL API implementations do not support partial loading,
-    // allowing insights fetching for these API whether insights are
+    // allowing insights fetching for this API whether insights are
     // in a viewport or not.
     const [isVisible, setVisibility] = useState<boolean>(!isGqlAPI)
     const [hasIntersected, setHasIntersected] = useState<boolean>(!isGqlAPI)
@@ -77,5 +72,5 @@ export function useInsightData<D>(
         return () => observer.unobserve(element)
     }, [isGqlAPI, reference])
 
-    return { data, loading, error, isVisible, query }
+    return { state, isVisible, query }
 }

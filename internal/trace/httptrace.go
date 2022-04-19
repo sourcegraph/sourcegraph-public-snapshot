@@ -9,9 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-
 	"github.com/felixge/httpsnoop"
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
@@ -21,6 +18,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -155,7 +154,14 @@ func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) h
 		defer span.Finish()
 
 		traceID := IDFromSpan(span)
-		traceURL := URL(traceID, siteConfig.SiteConfig().ExternalURL)
+		var traceType string
+		if ob := siteConfig.SiteConfig().ObservabilityTracing; ob == nil {
+			traceType = ""
+		} else {
+			traceType = ob.Type
+		}
+
+		traceURL := URL(traceID, siteConfig.SiteConfig().ExternalURL, traceType)
 
 		rw.Header().Set("X-Trace", traceURL)
 		ctx = opentracing.ContextWithSpan(ctx, span)

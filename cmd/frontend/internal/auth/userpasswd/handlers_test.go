@@ -125,6 +125,7 @@ func TestHandleSignIn_Lockout(t *testing.T) {
 	db.UsersFunc.SetDefaultReturn(users)
 	db.EventLogsFunc.SetDefaultReturn(database.NewMockEventLogStore())
 	db.SecurityEventLogsFunc.SetDefaultReturn(database.NewMockSecurityEventLogsStore())
+	db.UserEmailsFunc.SetDefaultReturn(database.NewMockUserEmailsStore())
 
 	lockout := NewMockLockoutStore()
 	h := HandleSignIn(db, lockout)
@@ -144,6 +145,7 @@ func TestHandleSignIn_Lockout(t *testing.T) {
 	// Getting error for locked out
 	{
 		lockout.IsLockedOutFunc.SetDefaultReturn("reason", true)
+		lockout.SendUnlockAccountEmailFunc.SetDefaultReturn(nil)
 		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
 		require.NoError(t, err)
 
@@ -152,5 +154,64 @@ func TestHandleSignIn_Lockout(t *testing.T) {
 
 		assert.Equal(t, http.StatusUnprocessableEntity, resp.Code)
 		assert.Equal(t, `Account has been locked out due to "reason"`+"\n", resp.Body.String())
+	}
+}
+
+func TestHandleAccount_Unlock(t *testing.T) {
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			AuthProviders: []schema.AuthProviders{
+				{
+					Builtin: &schema.BuiltinAuthProvider{
+						Type: providerType,
+					},
+				},
+			},
+		},
+	})
+	defer conf.Mock(nil)
+
+	db := database.NewMockDB()
+	db.EventLogsFunc.SetDefaultReturn(database.NewMockEventLogStore())
+	db.SecurityEventLogsFunc.SetDefaultReturn(database.NewMockSecurityEventLogsStore())
+
+	lockout := NewMockLockoutStore()
+	h := HandleUnlockAccount(db, lockout)
+
+	// bad request if missing token or user id
+	{
+		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
+		require.NoError(t, err)
+
+		resp := httptest.NewRecorder()
+		h(resp, req)
+		assert.Equal(t, http.StatusBadRequest, resp.Code)
+		assert.Equal(t, "Bad request: missing token\n", resp.Body.String())
+	}
+
+	// Getting error for invalid token
+	{
+		lockout.VerifyUnlockAccountTokenAndResetFunc.SetDefaultReturn(false, errors.Newf("invalid token provided"))
+		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{ "token": "abcd" }`))
+		require.NoError(t, err)
+
+		resp := httptest.NewRecorder()
+		h(resp, req)
+
+		assert.Equal(t, http.StatusUnauthorized, resp.Code)
+		assert.Equal(t, "invalid token provided\n", resp.Body.String())
+	}
+
+	// ok result
+	{
+		lockout.VerifyUnlockAccountTokenAndResetFunc.SetDefaultReturn(true, nil)
+		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{ "token": "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJpc3MiOiJodHRwczovL3NvdXJjZWdyYXBoLnRlc3Q6MzQ0MyIsInN1YiI6IjEiLCJleHAiOjE2NDk3NzgxNjl9.cm_giwkSviVRXGRCie9iii-ytJD3iAuNdtk9XmBZMrj7HHlH6vfky4ftjudAZ94HBp867cjxkuNc6OJ2uaEJFg" }`))
+		require.NoError(t, err)
+
+		resp := httptest.NewRecorder()
+		h(resp, req)
+
+		assert.Equal(t, http.StatusOK, resp.Code)
+		assert.Equal(t, "", resp.Body.String())
 	}
 }

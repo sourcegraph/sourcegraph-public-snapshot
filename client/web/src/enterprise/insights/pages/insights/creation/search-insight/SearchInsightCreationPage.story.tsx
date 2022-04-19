@@ -9,10 +9,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { WebStory } from '../../../../../../components/WebStory'
 import { CodeInsightsBackendStoryMock } from '../../../../CodeInsightsBackendStoryMock'
 
-import {
-    DEFAULT_MOCK_CHART_CONTENT,
-    getRandomDataForMock,
-} from './components/live-preview-chart/live-preview-mock-data'
+import { DEFAULT_MOCK_CHART_CONTENT, getRandomDataForMock } from './components/live-preview-chart/constant'
 import { SearchInsightCreationPage as SearchInsightCreationPageComponent } from './SearchInsightCreationPage'
 
 const defaultStory: Meta = {

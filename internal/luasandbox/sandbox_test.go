@@ -6,8 +6,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	lua "github.com/yuin/gopher-lua"
 
+	"github.com/sourcegraph/sourcegraph/internal/luasandbox/util"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -88,31 +90,21 @@ func TestModule(t *testing.T) {
 	var stashedValue lua.LValue
 
 	api := map[string]lua.LGFunction{
-		"add": func(state *lua.LState) int {
-			a := state.CheckNumber(1)
-			b := state.CheckNumber(2)
-			state.Push(a + b)
-
-			return 1
-		},
-		"stash": func(state *lua.LState) int {
+		"add": util.WrapLuaFunction(func(state *lua.LState) error {
+			state.Push(state.CheckNumber(1) + state.CheckNumber(2))
+			return nil
+		}),
+		"stash": util.WrapLuaFunction(func(state *lua.LState) error {
 			stashedValue = state.CheckAny(1)
-			return 1
-		},
-	}
-
-	testModule := func(state *lua.LState) int {
-		t := state.NewTable()
-		state.SetFuncs(t, api)
-		state.Push(t)
-		return 1
+			return nil
+		}),
 	}
 
 	ctx := context.Background()
 
 	sandbox, err := newService(&observation.TestContext).CreateSandbox(ctx, CreateOptions{
 		Modules: map[string]lua.LGFunction{
-			"testmod": testModule,
+			"testmod": util.CreateModule(api),
 		},
 	})
 	if err != nil {
@@ -172,5 +164,59 @@ func TestCall(t *testing.T) {
 		} else if int(lua.LVAsNumber(retValue)) != expectedValue {
 			t.Errorf("unexpected value from callback #%d. want=%d have=%v", value, expectedValue, retValue)
 		}
+	}
+}
+
+func TestCallGenerator(t *testing.T) {
+	ctx := context.Background()
+
+	sandbox, err := newService(&observation.TestContext).CreateSandbox(ctx, CreateOptions{})
+	if err != nil {
+		t.Fatalf("unexpected error creating sandbox: %s", err)
+	}
+	defer sandbox.Close()
+
+	script := `
+		local value = 0
+		local callback = function(upperBound, multiplier)
+			for i=1,upperBound-1 do
+				value = value + 1
+				coroutine.yield(value * multiplier)
+			end
+
+			return (value + 1) * multiplier
+		end
+		return callback
+	`
+	retValue, err := sandbox.RunScript(ctx, RunOptions{}, script)
+	if err != nil {
+		t.Fatalf("unexpected error running script: %s", err)
+	}
+	callback, ok := retValue.(*lua.LFunction)
+	if !ok {
+		t.Fatalf("unexpected return type")
+	}
+
+	upperBound := 5
+	multiplier := 6
+
+	retValues, err := sandbox.CallGenerator(ctx, RunOptions{}, callback, upperBound, multiplier)
+	if err != nil {
+		t.Fatalf("unexpected error invoking callback: %s", err)
+	}
+
+	values := make([]int, 0, len(retValues))
+	for _, retValue := range retValues {
+		values = append(values, int(lua.LVAsNumber(retValue)))
+	}
+	expectedValues := []int{
+		6,  // 1 * 6
+		12, // 2*6
+		18, // 3*6
+		24, // 4*6
+		30, //  5 * 6 (the return)
+	}
+	if diff := cmp.Diff(expectedValues, values); diff != "" {
+		t.Errorf("unexpected file contents (-want +got):\n%s", diff)
 	}
 }

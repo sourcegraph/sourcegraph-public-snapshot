@@ -6,7 +6,7 @@ import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 
 import { Link, Menu, MenuButton, MenuDivider, MenuItem, MenuLink, MenuList, Position } from '@sourcegraph/wildcard'
 
-import { Insight, InsightDashboard, isVirtualDashboard } from '../../../../core/types'
+import { Insight, InsightDashboard, isVirtualDashboard } from '../../../../core'
 import { useUiFeatures } from '../../../../hooks/use-ui-features'
 
 import styles from './InsightContextMenu.module.scss'

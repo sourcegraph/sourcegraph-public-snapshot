@@ -7,8 +7,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../components/PageTitle'
-import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
-import { ALL_INSIGHTS_DASHBOARD } from '../../../core/constants'
+import { CodeInsightsBackendContext, ALL_INSIGHTS_DASHBOARD } from '../../../core'
 
 import { DashboardsContent } from './components/dashboards-content/DashboardsContent'
 

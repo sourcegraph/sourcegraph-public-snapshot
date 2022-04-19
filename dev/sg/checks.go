@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v4"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
@@ -36,6 +37,7 @@ var checks = map[string]check.CheckFunc{
 	"yarn":                  check.Combine(check.InPath("yarn"), checkYarnVersion("~> 1.22.4")),
 	"go":                    check.Combine(check.InPath("go"), checkGoVersion("1.17.5")),
 	"node":                  check.Combine(check.InPath("node"), check.CommandOutputContains(`node -e "console.log(\"foobar\")"`, "foobar")),
+	"rust":                  check.Combine(check.InPath("cargo"), check.CommandOutputContains(`cargo version`, "1.58.0")),
 	"docker-installed":      check.WrapErrMessage(check.InPath("docker"), "if Docker is installed and the check fails, you might need to start Docker.app and restart terminal and 'sg setup'"),
 	"docker": check.WrapErrMessage(
 		check.Combine(check.InPath("docker"), check.CommandExitCode("docker info", 0)),
@@ -228,8 +230,8 @@ func checkSourcegraphDatabase(ctx context.Context) error {
 	// This check runs only in the `sourcegraph/sourcegraph` repository, so
 	// we try to parse the globalConf and use its `Env` to configure the
 	// Postgres connection.
-	ok, _ := parseConf(*configFlag, *overwriteConfigFlag)
-	if !ok {
+	config, _ := sgconf.Get(configFile, configOverwriteFile)
+	if config == nil {
 		return errors.New("failed to read sg.config.yaml. This step of `sg setup` needs to be run in the `sourcegraph` repository")
 	}
 
@@ -241,7 +243,7 @@ func checkSourcegraphDatabase(ctx context.Context) error {
 			return val
 		}
 		// Otherwise check in globalConf.Env
-		return globalConf.Env[key]
+		return config.Env[key]
 	}
 
 	dsn := postgresdsn.New("", "", getEnv)

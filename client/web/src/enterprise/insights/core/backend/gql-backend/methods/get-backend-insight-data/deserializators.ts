@@ -12,14 +12,10 @@ export const createBackendInsightData = (insight: BackendInsight, response: Insi
     const seriesMetadata = getParsedDataSeriesMetadata(insight, seriesData)
 
     return {
-        id: insight.id,
-        view: {
-            title: insight.title,
-            content: [createLineChartContent(seriesData, seriesMetadata, insight.filters)],
-            isFetchingHistoricalData: seriesData.some(
-                ({ status: { pendingJobs, backfillQueuedAt } }) => pendingJobs > 0 || backfillQueuedAt === null
-            ),
-        },
+        content: createLineChartContent(seriesData, seriesMetadata, insight.filters),
+        isFetchingHistoricalData: seriesData.some(
+            ({ status: { pendingJobs, backfillQueuedAt } }) => pendingJobs > 0 || backfillQueuedAt === null
+        ),
     }
 }
 

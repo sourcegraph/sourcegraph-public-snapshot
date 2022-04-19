@@ -1,17 +1,17 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 
 import { noop } from 'lodash'
-import { useLocation } from 'react-router-dom'
 import { NEVER } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
+import { fetchHighlightedFileLineRanges as fetchHighlightedFileLineRangesShared } from '@sourcegraph/shared/src/backend/file'
+import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { Alert, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { createPlatformContext } from '../../platform/context'
-import { fetchHighlightedFileLineRanges } from '../../repo/backend'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchNotebook } from '../backend'
 import { convertNotebookTitleToFileName } from '../serialize'
@@ -50,7 +50,18 @@ export const EmbeddedNotebookPage: React.FunctionComponent<EmbeddedNotebookPageP
         )
     )
 
-    const location = useLocation()
+    const fetchHighlightedFileLineRanges = useCallback(
+        (parameters: FetchFileParameters, force?: boolean) =>
+            fetchHighlightedFileLineRangesShared(
+                {
+                    ...parameters,
+                    platformContext,
+                },
+                force
+            ),
+        [platformContext]
+    )
+
     return (
         <div className="p-3">
             {notebookOrError === LOADING && (
@@ -66,7 +77,6 @@ export const EmbeddedNotebookPage: React.FunctionComponent<EmbeddedNotebookPageP
             {notebookOrError && notebookOrError !== LOADING && !isErrorLike(notebookOrError) && (
                 <NotebookContent
                     {...props}
-                    location={location}
                     blocks={notebookOrError.blocks}
                     onUpdateBlocks={noop}
                     viewerCanManage={false}

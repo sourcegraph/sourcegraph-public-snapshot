@@ -3,6 +3,7 @@ import React, { useEffect, useMemo } from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 import BarChartIcon from 'mdi-react/BarChartIcon'
+import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import { of } from 'rxjs'
@@ -26,15 +27,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import {
-    ProductStatusBadge,
-    useObservable,
-    Button,
-    Link,
-    FeedbackPrompt,
-    ButtonLink,
-    PopoverTrigger,
-} from '@sourcegraph/wildcard'
+import { useObservable, Button, Link, FeedbackPrompt, ButtonLink, PopoverTrigger } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -207,17 +200,9 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
         const items: (NavDropdownItem | false)[] = [
             searchContextsEnabled &&
                 !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
-            !!showSearchNotebook && {
-                path: PageRoutes.Notebooks,
-                content: (
-                    <>
-                        Notebooks <ProductStatusBadge className="ml-1" status="beta" />
-                    </>
-                ),
-            },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [searchContextsEnabled, showSearchNotebook, showSearchContext])
+    }, [searchContextsEnabled, showSearchContext])
 
     return (
         <>
@@ -237,6 +222,11 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         mobileHomeItem={{ content: 'Search home' }}
                         items={searchNavBarItems}
                     />
+                    {showSearchNotebook && (
+                        <NavItem icon={BookOutlineIcon}>
+                            <NavLink to={PageRoutes.Notebooks}>Notebooks</NavLink>
+                        </NavItem>
+                    )}
                     {enableCodeMonitoring && (
                         <NavItem icon={CodeMonitoringLogo}>
                             <NavLink to="/code-monitoring">Monitoring</NavLink>

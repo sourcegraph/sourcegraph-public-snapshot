@@ -1,5 +1,4 @@
 import { Duration } from 'date-fns'
-import { LineChartContent as LegacyLineChartContent } from 'sourcegraph'
 
 import { Series } from '../../../../charts'
 import {
@@ -12,8 +11,9 @@ import {
     SearchBackendBasedInsight,
     SearchRuntimeBasedInsight,
 } from '../types'
+import { InsightContentType } from '../types/insight/common'
 
-export interface PieChartContent<Datum> {
+export interface CategoricalChartContent<Datum> {
     data: Datum[]
     getDatumValue: (datum: Datum) => number
     getDatumName: (datum: Datum) => string
@@ -21,11 +21,23 @@ export interface PieChartContent<Datum> {
     getDatumLink?: (datum: Datum) => string | undefined
 }
 
-export interface LineChartContent<Datum> {
+export interface SeriesChartContent<Datum> {
     data: Datum[]
     series: Series<Datum>[]
     getXValue: (datum: Datum) => Date
 }
+
+export interface InsightCategoricalContent<Datum> {
+    type: InsightContentType.Categorical
+    content: CategoricalChartContent<Datum>
+}
+
+export interface InsightSeriesContent<Datum> {
+    type: InsightContentType.Series
+    content: SeriesChartContent<Datum>
+}
+
+export type InsightContent<Datum> = InsightSeriesContent<Datum> | InsightCategoricalContent<Datum>
 
 export interface DashboardCreateInput {
     name: string
@@ -92,17 +104,6 @@ export interface RemoveInsightFromDashboardInput {
     dashboardId: string
 }
 
-export interface SearchInsightSettings {
-    series: SearchBasedInsightSeries[]
-    step: Duration
-    repositories: string[]
-}
-
-export interface LangStatsInsightsSettings {
-    repository: string
-    otherThreshold: number
-}
-
 export interface CaptureInsightSettings {
     repositories: string[]
     query: string
@@ -114,14 +115,14 @@ export interface AccessibleInsightInfo {
     title: string
 }
 
+export interface BackendInsightDatum {
+    dateTime: number
+    [seriesKey: string]: number | string
+}
+
 export interface BackendInsightData {
-    id: string
-    view: {
-        title: string
-        subtitle?: string
-        content: LegacyLineChartContent<any, string>[]
-        isFetchingHistoricalData: boolean
-    }
+    content: SeriesChartContent<any>
+    isFetchingHistoricalData: boolean
 }
 
 export interface GetBuiltInsightInput {
@@ -129,14 +130,27 @@ export interface GetBuiltInsightInput {
 }
 
 export interface GetSearchInsightContentInput {
-    insight: SearchInsightSettings
+    series: SearchBasedInsightSeries[]
+    step: Duration
+    repositories: string[]
 }
 
 export interface GetLangStatsInsightContentInput {
-    insight: LangStatsInsightsSettings
+    repository: string
+    otherThreshold: number
 }
 
 export interface RepositorySuggestionData {
     id: string
     name: string
+}
+
+export interface UiFeaturesConfig {
+    licensed: boolean
+    insightsLimit: number | null
+}
+
+export interface HasInsightsInput {
+    first: number
+    isFrozen?: boolean
 }

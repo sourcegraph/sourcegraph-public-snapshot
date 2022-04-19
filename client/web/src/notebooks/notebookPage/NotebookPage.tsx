@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
+import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { catchError, delay, startWith, switchMap } from 'rxjs/operators'
@@ -13,14 +13,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import {
-    FeedbackBadge,
-    LoadingSpinner,
-    PageHeader,
-    useEventObservable,
-    useObservable,
-    Alert,
-} from '@sourcegraph/wildcard'
+import { LoadingSpinner, PageHeader, useEventObservable, useObservable, Alert } from '@sourcegraph/wildcard'
 
 import { Block } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -84,7 +77,6 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
     telemetryService,
     searchContextsEnabled,
     isSourcegraphDotCom,
-    location,
     fetchHighlightedFileLineRanges,
     authenticatedUser,
     showSearchContext,
@@ -204,13 +196,9 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
                     {isNotebookLoaded(notebookOrError) && (
                         <>
                             <PageHeader
-                                className="mt-3"
-                                annotation={
-                                    <FeedbackBadge status="beta" feedback={{ mailto: 'support@sourcegraph.com' }} />
-                                }
+                                className="mt-2"
                                 path={[
-                                    { icon: MagnifyIcon, to: '/search' },
-                                    { to: '/notebooks', text: 'Notebooks' },
+                                    { to: '/notebooks', icon: BookOutlineIcon, ariaLabel: 'Notebooks' },
                                     {
                                         text: (
                                             <NotebookTitle
@@ -293,7 +281,6 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
                                 telemetryService={telemetryService}
                                 searchContextsEnabled={searchContextsEnabled}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
-                                location={location}
                                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                 authenticatedUser={authenticatedUser}
                                 showSearchContext={showSearchContext}

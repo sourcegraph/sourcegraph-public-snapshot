@@ -9,8 +9,7 @@ import { Button } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../../../components/HeroPage'
 import { LimitedAccessLabel } from '../../../../../components/limited-access-label/LimitedAccessLabel'
-import { ALL_INSIGHTS_DASHBOARD } from '../../../../../core/constants'
-import { InsightDashboard, isVirtualDashboard } from '../../../../../core/types'
+import { InsightDashboard, isVirtualDashboard, ALL_INSIGHTS_DASHBOARD } from '../../../../../core'
 import { useUiFeatures } from '../../../../../hooks/use-ui-features'
 import { AddInsightModal } from '../add-insight-modal/AddInsightModal'
 import { DashboardMenu, DashboardMenuAction } from '../dashboard-menu/DashboardMenu'
@@ -140,6 +139,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                 <DashboardInsights
                     dashboard={currentDashboard}
                     telemetryService={telemetryService}
+                    className={styles.insights}
                     onAddInsightRequest={handleAddInsightRequest}
                 />
             ) : (

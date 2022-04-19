@@ -321,7 +321,7 @@ export const ActionItemsToggle: React.FunctionComponent<ActionItemsToggleProps> 
 
     return barInPage ? (
         <>
-            <div className={styles.dividerVertical} />
+            <li className={styles.dividerVertical} />
             <li className={classNames('nav-item mr-2', className)}>
                 <div className={classNames(styles.toggleContainer, isOpen && styles.toggleContainerOpen)}>
                     <ButtonLink
@@ -345,5 +345,5 @@ export const ActionItemsToggle: React.FunctionComponent<ActionItemsToggleProps> 
 }
 
 const ActionItemsDivider: React.FunctionComponent<{ className?: string }> = ({ className }) => (
-    <li className={classNames('position-relative rounded-sm d-flex', styles.dividerHorizontal, className)} />
+    <div className={classNames('position-relative rounded-sm d-flex', styles.dividerHorizontal, className)} />
 )

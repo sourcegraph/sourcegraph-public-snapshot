@@ -2,9 +2,7 @@ import React from 'react'
 
 import { renderHook } from '@testing-library/react-hooks'
 
-import { CodeInsightsBackend } from '../core/backend/code-insights-backend'
-import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from '../core/backend/gql-backend/code-insights-gql-backend'
+import { CodeInsightsBackend, CodeInsightsBackendContext, CodeInsightsGqlBackend } from '../core'
 
 import { useUiFeatures } from './use-ui-features'
 
