@@ -231,15 +231,15 @@ type RepoOptions struct {
 
 	// Explicit forks indicates whether `fork:` was set explicitly in the query,
 	// or whether the values were set from defaults.
-	ExplicitFork bool
-	NoForks      bool
-	OnlyForks    bool
+	ForkSet   bool
+	NoForks   bool
+	OnlyForks bool
 
-	// ExplicitArchived indicates whether `archived:` was set explicitly in the query,
+	// ArchivedSet indicates whether `archived:` was set explicitly in the query,
 	// or whether the values were set from defaults.
-	ExplicitArchived bool
-	NoArchived       bool
-	OnlyArchived     bool
+	ArchivedSet  bool
+	NoArchived   bool
+	OnlyArchived bool
 }
 
 func (op *RepoOptions) String() string {

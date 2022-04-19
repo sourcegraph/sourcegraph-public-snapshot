@@ -281,10 +281,10 @@ func TestPrettyJSON(t *testing.T) {
           "Visibility": "Any",
           "Limit": 0,
           "Cursors": null,
-          "ExplicitFork": false,
+          "ForkSet": false,
           "NoForks": true,
           "OnlyForks": false,
-          "ExplicitArchived": false,
+          "ArchivedSet": false,
           "NoArchived": true,
           "OnlyArchived": false
         },
@@ -339,10 +339,10 @@ func TestPrettyJSON(t *testing.T) {
           "Visibility": "Any",
           "Limit": 0,
           "Cursors": null,
-          "ExplicitFork": false,
+          "ForkSet": false,
           "NoForks": true,
           "OnlyForks": false,
-          "ExplicitArchived": false,
+          "ArchivedSet": false,
           "NoArchived": true,
           "OnlyArchived": false
         }

@@ -473,7 +473,7 @@ func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex Excl
 		ExcludedRepos
 	}
 
-	if !op.ExplicitFork && !ExactlyOneRepo(includePatterns) {
+	if !op.ForkSet && !ExactlyOneRepo(includePatterns) {
 		g.Go(func() error {
 			// 'fork:...' was not specified and Forks are excluded, find out
 			// which repos are excluded.
@@ -493,7 +493,7 @@ func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex Excl
 		})
 	}
 
-	if !op.ExplicitArchived && !ExactlyOneRepo(includePatterns) {
+	if !op.ArchivedSet && !ExactlyOneRepo(includePatterns) {
 		g.Go(func() error {
 			// Archived...: was not specified and archives are excluded,
 			// find out which repos are excluded.
