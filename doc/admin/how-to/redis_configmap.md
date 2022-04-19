@@ -3,7 +3,8 @@
 
 
 ```
-Note: This document was prepared as guidance for a customer support inquiry.
+Note: This document was prepared as guidance for a customer support inquiry. It is intended to orient you to the required changes.
+Please review the [Caveats](#caveats) to better understand the limitations of this guide.
 ```
 
 
@@ -43,10 +44,10 @@ Reference Materials
 
 
 
-1. Locate the original redis-cache configuration file: [https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/redis-cache/redis.conf](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/redis-cache/redis.conf) Use this as the “Default redis.conf file” content in the ConfigMap
+1. Locate the original redis-cache configuration file: [https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/redis-cache/redis.conf](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/redis-cache/redis.conf) Use this as the “Default redis.conf file” content in the ConfigMap. Adding `requirepass` sets the password for Redis authentication.
 2. Create the redis-cache-conf ConfigMap:
 
-```
+<pre>
 apiVersion: v1
 data:
   redis.conf: |
@@ -66,7 +67,7 @@ data:
     ###################
     ## Customization ##
     ###################
-    requirepass demopasswordchangeme123
+    <b>requirepass demopasswordchangeme123</b>
 
 kind: ConfigMap
 metadata:
@@ -74,7 +75,7 @@ metadata:
     app.kubernetes.io/component: redis-cache
     deploy: sourcegraph
   name: redis-cache-conf
-```
+</pre>
 
 
 3. Modify the `apps_v1_deployment_redis-cache.yaml` manifest. Add the corresponding `volumeMounts:` and `volumes:`
