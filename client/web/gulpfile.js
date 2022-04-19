@@ -49,8 +49,14 @@ const logWebpackStats = stats => {
   signale.info(stats.toString(WEBPACK_STATS_OPTIONS))
 }
 
+function createWebApplicationCompiler() {
+  signale.info('Building web application with the environment config', ENVIRONMENT_CONFIG)
+
+  return createWebpackCompiler(webpackConfig)
+}
+
 async function webpack() {
-  const compiler = createWebpackCompiler(webpackConfig)
+  const compiler = createWebApplicationCompiler()
   /** @type {import('webpack').Stats} */
   const stats = await new Promise((resolve, reject) => {
     compiler.run((error, stats) => (error ? reject(error) : resolve(stats)))
@@ -67,7 +73,7 @@ const webBuild = DEV_WEB_BUILDER === 'webpack' ? webpack : buildEsbuild
  * Watch files and update the webpack bundle on disk without starting a dev server.
  */
 async function watchWebpack() {
-  const compiler = createWebpackCompiler(webpackConfig)
+  const compiler = createWebApplicationCompiler()
   compiler.hooks.watchRun.tap('Notify', () => signale.info('Webpack compiling...'))
   await new Promise(() => {
     compiler.watch({ aggregateTimeout: 300 }, (error, stats) => {
@@ -134,7 +140,7 @@ async function webpackDevelopmentServer() {
     webpackConfig.plugins.push(new DevServerPlugin(options))
   }
 
-  const compiler = createWebpackCompiler(webpackConfig)
+  const compiler = createWebApplicationCompiler()
   let compilationDoneOnce = false
   compiler.hooks.done.tap('Print external URL', stats => {
     stats = stats.toJson()

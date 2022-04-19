@@ -32,7 +32,7 @@ interface DevelopmentServerInit {
 }
 
 async function startDevelopmentServer(): Promise<void> {
-    signale.start(`Starting ${ENVIRONMENT_CONFIG.DEV_WEB_BUILDER} dev server.`)
+    signale.start(`Starting ${ENVIRONMENT_CONFIG.DEV_WEB_BUILDER} dev server.`, ENVIRONMENT_CONFIG)
 
     if (!SOURCEGRAPH_API_URL) {
         throw new Error('development.server.ts only supports *web-standalone* usage')

@@ -22,7 +22,7 @@ function startProductionServer(): void {
         throw new Error('production.server.ts only supports *web-standalone* usage')
     }
 
-    signale.await('Starting production server')
+    signale.await('Starting production server', ENVIRONMENT_CONFIG)
 
     const app = express()
 

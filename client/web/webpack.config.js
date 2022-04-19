@@ -7,7 +7,6 @@ const CompressionPlugin = require('compression-webpack-plugin')
 const CssMinimizerWebpackPlugin = require('css-minimizer-webpack-plugin')
 const mapValues = require('lodash/mapValues')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
-const signale = require('signale')
 const webpack = require('webpack')
 const { WebpackManifestPlugin } = require('webpack-manifest-plugin')
 
@@ -30,8 +29,6 @@ const {
 const { IS_PRODUCTION, IS_DEVELOPMENT, ENVIRONMENT_CONFIG } = require('./dev/utils')
 const { getHTMLWebpackPlugins } = require('./dev/webpack/get-html-webpack-plugins')
 const { isHotReloadEnabled } = require('./src/integration/environment')
-
-signale.info('Building web application with the environment config', ENVIRONMENT_CONFIG)
 
 const {
   NODE_ENV,
