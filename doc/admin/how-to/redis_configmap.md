@@ -169,7 +169,7 @@ metadata:
           name: redis-data
           subPathExpr: $(POD_NAME)
         - mountPath: /etc/redis/
-          name: redis-cache-conf
+          name: redis-store-conf
 … truncated for brevity …
       volumes:
       - configMap:
