@@ -45,6 +45,11 @@ func (s *Service) CreateSandbox(ctx context.Context, opts CreateOptions) (_ *San
 		state.PreloadModule(name, loader)
 	}
 
+	// De-register global functions that could do something unwanted
+	for _, name := range globalsToUnset {
+		state.SetGlobal(name, lua.LNil)
+	}
+
 	return &Sandbox{
 		state:      state,
 		operations: s.operations,
