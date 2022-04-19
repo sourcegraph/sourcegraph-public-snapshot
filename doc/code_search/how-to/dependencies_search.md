@@ -18,14 +18,16 @@ r:deps(^github\.com/sourcegraph/sourcegraph$@3.37) Observable cannot be called a
 ```
 
 Search only npm dependencies:
+
 ```sgquery
 r:deps(^github\.com/sourcegraph/sourcegraph$@3.37) r:^npm throw
-`````
+```
 
 Search only Go dependencies:
+
 ```sgquery
 r:deps(^github\.com/sourcegraph/sourcegraph$@3.37) r:^go fmt.Println
-`````
+```
 
 ### Compatibility
 
