@@ -1,6 +1,6 @@
 import { getEnvironmentBoolean } from '@sourcegraph/build-config'
 
-export const environmentConfig = {
+export const ENVIRONMENT_CONFIG = {
     STORIES_GLOB: process.env.STORIES_GLOB,
     WEBPACK_DLL_PLUGIN: getEnvironmentBoolean('WEBPACK_DLL_PLUGIN'),
     WEBPACK_PROGRESS_PLUGIN: getEnvironmentBoolean('WEBPACK_PROGRESS_PLUGIN'),

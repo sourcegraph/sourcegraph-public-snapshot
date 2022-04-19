@@ -27,11 +27,11 @@ const {
   STATOSCOPE_STATS,
 } = require('@sourcegraph/build-config')
 
-const { IS_PRODUCTION, IS_DEVELOPMENT, environmentConfig } = require('./dev/utils')
+const { IS_PRODUCTION, IS_DEVELOPMENT, ENVIRONMENT_CONFIG } = require('./dev/utils')
 const { getHTMLWebpackPlugins } = require('./dev/webpack/get-html-webpack-plugins')
 const { isHotReloadEnabled } = require('./src/integration/environment')
 
-signale.info('Building web application with the environment config', environmentConfig)
+signale.info('Building web application with the environment config', ENVIRONMENT_CONFIG)
 
 const {
   NODE_ENV,
@@ -44,7 +44,7 @@ const {
   WEBPACK_SERVE_INDEX,
   WEBPACK_BUNDLE_ANALYZER,
   WEBPACK_USE_NAMED_CHUNKS,
-} = environmentConfig
+} = ENVIRONMENT_CONFIG
 
 const IS_PERSISTENT_CACHE_ENABLED = IS_DEVELOPMENT && !IS_CI
 const IS_EMBED_ENTRY_POINT_ENABLED = ENTERPRISE && (IS_PRODUCTION || (IS_DEVELOPMENT && EMBED_DEVELOPMENT))

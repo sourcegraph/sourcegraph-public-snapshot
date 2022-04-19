@@ -30,7 +30,7 @@ const {
 const { build: buildEsbuild } = require('./dev/esbuild/build')
 const { esbuildDevelopmentServer } = require('./dev/esbuild/server')
 const {
-  environmentConfig,
+  ENVIRONMENT_CONFIG,
   HTTPS_WEB_SERVER_URL,
   WEBPACK_STATS_OPTIONS,
   DEV_SERVER_LISTEN_ADDR,
@@ -40,7 +40,7 @@ const {
 } = require('./dev/utils')
 const webpackConfig = require('./webpack.config')
 
-const { DEV_WEB_BUILDER, SOURCEGRAPH_HTTPS_DOMAIN, SOURCEGRAPH_HTTPS_PORT } = environmentConfig
+const { DEV_WEB_BUILDER, SOURCEGRAPH_HTTPS_DOMAIN, SOURCEGRAPH_HTTPS_PORT } = ENVIRONMENT_CONFIG
 
 /**
  * @param {import('webpack').Stats} stats

@@ -8,7 +8,7 @@ import { DEFAULT_SITE_CONFIG_PATH } from './constants'
 
 type WEB_BUILDER = 'esbuild' | 'webpack'
 
-export const environmentConfig = {
+export const ENVIRONMENT_CONFIG = {
     /**
      * ----------------------------------------
      * Build configuration.
@@ -58,7 +58,7 @@ export const environmentConfig = {
     SITE_CONFIG_PATH: process.env.SITE_CONFIG_PATH || DEFAULT_SITE_CONFIG_PATH,
 }
 
-const { NODE_ENV, SOURCEGRAPH_HTTPS_DOMAIN, SOURCEGRAPH_HTTPS_PORT, SOURCEGRAPH_HTTP_PORT } = environmentConfig
+const { NODE_ENV, SOURCEGRAPH_HTTPS_DOMAIN, SOURCEGRAPH_HTTPS_PORT, SOURCEGRAPH_HTTP_PORT } = ENVIRONMENT_CONFIG
 
 export const IS_DEVELOPMENT = NODE_ENV === 'development'
 export const IS_PRODUCTION = NODE_ENV === 'production'

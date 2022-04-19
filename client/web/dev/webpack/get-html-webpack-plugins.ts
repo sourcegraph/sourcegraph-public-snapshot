@@ -5,9 +5,9 @@ import HtmlWebpackPlugin, { TemplateParameter, Options } from 'html-webpack-plug
 import signale from 'signale'
 import { WebpackPluginInstance } from 'webpack'
 
-import { createJsContext, environmentConfig, STATIC_ASSETS_PATH } from '../utils'
+import { createJsContext, ENVIRONMENT_CONFIG, STATIC_ASSETS_PATH } from '../utils'
 
-const { SOURCEGRAPH_HTTPS_PORT, NODE_ENV } = environmentConfig
+const { SOURCEGRAPH_HTTPS_PORT, NODE_ENV } = ENVIRONMENT_CONFIG
 
 export interface WebpackManifest {
     /** Main app entry JS bundle */
@@ -46,7 +46,7 @@ export const getHTMLPage = ({
         <meta name="color-scheme" content="light dark"/>
         ${cssBundle ? `<link rel="stylesheet" href="${cssBundle}">` : ''}
         ${
-            environmentConfig.SOURCEGRAPHDOTCOM_MODE
+            ENVIRONMENT_CONFIG.SOURCEGRAPHDOTCOM_MODE
                 ? '<script src="https://js.sentry-cdn.com/ae2f74442b154faf90b5ff0f7cd1c618.min.js" crossorigin="anonymous"></script>'
                 : ''
         }

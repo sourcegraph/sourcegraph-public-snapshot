@@ -8,14 +8,14 @@ import signale from 'signale'
 import {
     PROXY_ROUTES,
     getAPIProxySettings,
-    environmentConfig,
+    ENVIRONMENT_CONFIG,
     STATIC_ASSETS_PATH,
     STATIC_INDEX_PATH,
     HTTP_WEB_SERVER_URL,
     HTTPS_WEB_SERVER_URL,
 } from '../utils'
 
-const { SOURCEGRAPH_API_URL, SOURCEGRAPH_HTTP_PORT } = environmentConfig
+const { SOURCEGRAPH_API_URL, SOURCEGRAPH_HTTP_PORT } = ENVIRONMENT_CONFIG
 
 function startProductionServer(): void {
     if (!SOURCEGRAPH_API_URL) {

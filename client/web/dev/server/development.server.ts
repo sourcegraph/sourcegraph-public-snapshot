@@ -8,7 +8,7 @@ import WebpackDevServer, { ProxyConfigArrayItem } from 'webpack-dev-server'
 import { getManifest } from '../esbuild/manifestPlugin'
 import { esbuildDevelopmentServer } from '../esbuild/server'
 import {
-    environmentConfig,
+    ENVIRONMENT_CONFIG,
     getAPIProxySettings,
     shouldCompressResponse,
     STATIC_ASSETS_PATH,
@@ -24,7 +24,7 @@ import { getHTMLPage } from '../webpack/get-html-webpack-plugins'
 // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
 const webpackConfig = require('../../webpack.config') as Configuration
 
-const { SOURCEGRAPH_API_URL, SOURCEGRAPH_HTTPS_PORT, SOURCEGRAPH_HTTP_PORT } = environmentConfig
+const { SOURCEGRAPH_API_URL, SOURCEGRAPH_HTTPS_PORT, SOURCEGRAPH_HTTP_PORT } = ENVIRONMENT_CONFIG
 
 interface DevelopmentServerInit {
     proxyRoutes: string[]
@@ -32,7 +32,7 @@ interface DevelopmentServerInit {
 }
 
 async function startDevelopmentServer(): Promise<void> {
-    signale.start(`Starting ${environmentConfig.DEV_WEB_BUILDER} dev server.`)
+    signale.start(`Starting ${ENVIRONMENT_CONFIG.DEV_WEB_BUILDER} dev server.`)
 
     if (!SOURCEGRAPH_API_URL) {
         throw new Error('development.server.ts only supports *web-standalone* usage')
@@ -45,7 +45,7 @@ async function startDevelopmentServer(): Promise<void> {
         }),
     }
 
-    switch (environmentConfig.DEV_WEB_BUILDER) {
+    switch (ENVIRONMENT_CONFIG.DEV_WEB_BUILDER) {
         case 'webpack':
             await startWebpackDevelopmentServer(init)
             break
