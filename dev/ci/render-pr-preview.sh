@@ -40,13 +40,13 @@ fi
 
 while getopts 'b:r:d' flag; do
   case "${flag}" in
-  d) is_deleting="true" ;;
-  b) branch_name="${OPTARG}" ;;
-  r) repo_url="${OPTARG}" ;;
-  *)
-    print_usage
-    exit 1
-    ;;
+    d) is_deleting="true" ;;
+    b) branch_name="${OPTARG}" ;;
+    r) repo_url="${OPTARG}" ;;
+    *)
+      print_usage
+      exit 1
+      ;;
   esac
 done
 
@@ -185,7 +185,8 @@ if [[ -n "${github_api_key}" && -n "${pr_number}" ]]; then
 
     pr_description=$(printf '%s\n\n' "${pr_description}" \
       "## App preview:" \
-      "- [Link](${pr_preview_url})" |
+      "- [Link](${pr_preview_url})" \
+      "Check out the [client app preview documentation](https://docs.sourcegraph.com/dev/how-to/client_pr_previews) to learn more." |
       jq -Rs .)
 
     curl -sSf -o /dev/null --request PATCH \
