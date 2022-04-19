@@ -74,26 +74,28 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 	}
 }
 
-func setupDependenciesService(t *testing.T, drs []dependencies.DependencyRepo) (context.Context, DependenciesService) {
+func setupDependenciesService(t *testing.T, dependencyRepos []dependencies.DependencyRepo) (context.Context, DependenciesService) {
 	t.Helper()
 	ctx := context.Background()
 	depsSvc := NewMockDependenciesService()
 
 	depsSvc.ListDependencyReposFunc.SetDefaultHook(func(ctx context.Context, opts dependencies.ListDependencyReposOpts) (matching []dependencies.DependencyRepo, _ error) {
-		sort.Slice(drs, func(i, j int) bool {
+		sort.Slice(dependencyRepos, func(i, j int) bool {
 			if opts.NewestFirst {
-				return drs[i].ID > drs[j].ID
+				return dependencyRepos[i].ID > dependencyRepos[j].ID
 			} else {
-				return drs[i].ID < drs[j].ID
+				return dependencyRepos[i].ID < dependencyRepos[j].ID
 			}
 		})
 
-		for _, dependencyRepo := range drs {
+		for _, dependencyRepo := range dependencyRepos {
+			// Skip any dependency repos that do not match scheme or, optionally, name
 			matches := dependencyRepo.Scheme == opts.Scheme && (opts.Name == "" || dependencyRepo.Name == opts.Name)
 			if !matches {
 				continue
 			}
 
+			// Skip any dependency repos that are not within the remaining result set during pagination
 			inPage := opts.After == 0 || ((opts.NewestFirst && opts.After > dependencyRepo.ID) || (!opts.NewestFirst && opts.After < dependencyRepo.ID))
 			if !inPage {
 				continue
