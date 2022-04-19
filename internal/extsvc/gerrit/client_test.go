@@ -30,7 +30,7 @@ func TestClient_ListProjects(t *testing.T) {
 		Cursor: &Pagination{PerPage: 5, Page: 1},
 	}
 
-	resp, err := cli.ListProjects(ctx, args)
+	resp, _, err := cli.ListProjects(ctx, args)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,6 +62,7 @@ func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	hc = httpcli.GerritUnauthenticateMiddleware(hc)
 
 	c := &schema.GerritConnection{
 		Url: "https://gerrit-review.googlesource.com",
@@ -71,8 +72,6 @@ func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	cli.SetNoAuth(true)
 
 	return cli, func() {
 		if err := rec.Stop(); err != nil {

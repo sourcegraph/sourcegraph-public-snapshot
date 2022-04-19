@@ -5,9 +5,10 @@ import (
 	"testing"
 
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -16,7 +17,7 @@ func TestGerritSource_ListRepos(t *testing.T) {
 	conf := &schema.GerritConnection{
 		Url: "https://gerrit-review.googlesource.com",
 	}
-	cf, save := newClientFactory(t, t.Name())
+	cf, save := newClientFactory(t, t.Name(), httpcli.GerritUnauthenticateMiddleware)
 	defer save(t)
 
 	lg := log15.New()
@@ -31,9 +32,6 @@ func TestGerritSource_ListRepos(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	// Unauthenticated client.
-	src.cli.SetNoAuth(true)
 
 	src.perPage = 25
 

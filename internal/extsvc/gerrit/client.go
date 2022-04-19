@@ -19,11 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-const (
-	defaultRateLimit      = rate.Limit(8) // 480/min or 28,800/hr
-	defaultRateLimitBurst = 500
-)
-
 // Client access a Gerrit via the REST API.
 type Client struct {
 	// HTTP Client used to communicate with the API
@@ -38,9 +33,6 @@ type Client struct {
 	// RateLimit is the self-imposed rate limiter (since Gerrit does not have a concept
 	// of rate limiting in HTTP response headers).
 	rateLimit *rate.Limiter
-
-	// NoAuth determines whether the calls made by the client should use authentication.
-	NoAuth bool
 }
 
 // NewClient returns an authenticated Gerrit API client with
@@ -61,7 +53,6 @@ func NewClient(urn string, config *schema.GerritConnection, httpClient httpcli.D
 		Config:     config,
 		URL:        u,
 		rateLimit:  ratelimit.DefaultRegistry.Get(urn),
-		NoAuth:     false,
 	}, nil
 }
 
@@ -72,11 +63,6 @@ type ListProjectsArgs struct {
 
 // ListProjectsResponse defines a response struct returned from ListProjects method calls.
 type ListProjectsResponse map[string]*Project
-
-// SetNoAuth used for testing
-func (c *Client) SetNoAuth(auth bool) {
-	c.NoAuth = auth
-}
 
 func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (projects *ListProjectsResponse, nextPage bool, err error) {
 
@@ -101,11 +87,7 @@ func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (proje
 	// Set the desired project type to CODE (ALL/CODE/PERMISSIONS).
 	qsCodeProjects.Set("type", "CODE")
 
-	urlPath := "projects/"
-	// Add a prefix for authenticated requests.
-	if !c.NoAuth {
-		urlPath = "a/" + urlPath
-	}
+	urlPath := "a/projects/"
 
 	uAllProjects := url.URL{Path: urlPath, RawQuery: qsAllProjects.Encode()}
 
@@ -142,9 +124,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	req.URL = c.URL.ResolveReference(req.URL)
 
 	// Add Basic Auth headers for authenticated requests.
-	if !c.NoAuth {
-		req.Header.Add("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(c.Config.Username+":"+c.Config.Password)))
-	}
+	req.Header.Add("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(c.Config.Username+":"+c.Config.Password)))
 
 	startWait := time.Now()
 	if err := c.rateLimit.Wait(ctx); err != nil {
