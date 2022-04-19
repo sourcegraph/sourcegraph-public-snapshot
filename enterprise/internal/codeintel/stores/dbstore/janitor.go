@@ -298,3 +298,22 @@ func scanTripleOfCounts(rows *sql.Rows, queryErr error) (value1, value2, value3 
 
 	return value1, value2, value3, nil
 }
+
+// DeleteOldAuditLogs removes lsif_upload audit log records older than the given max age.
+func (s *Store) DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (_ int, err error) {
+	ctx, endObservation := s.operations.deleteOldAuditLogs.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(deleteOldAuditLogsQuery, now, int(maxAge/time.Second))))
+	return count, err
+}
+
+const deleteOldAuditLogsQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/janitor.go:DeleteOldAuditLogs
+WITH deleted AS (
+	DELETE FROM lsif_uploads_audit_logs
+	WHERE %s - log_timestamp > (%s * '1 second'::interval)
+	RETURNING upload_id
+)
+SELECT count(*) FROM deleted
+`

@@ -8251,6 +8251,27 @@ Query: `sum(increase(src_codeintel_background_documentation_search_records_remov
 
 <br />
 
+#### worker: codeintel_background_audit_log_records_expired_total
+
+<p class="subtitle">Lsif upload audit log records deleted every 5m</p>
+
+Number of LSIF upload audit log records deleted due to expiration every 5m
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100520` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_background_audit_log_records_expired_total{job=~"^worker.*"}[5m]))`
+
+</details>
+
+<br />
+
 #### worker: codeintel_background_errors_total
 
 <p class="subtitle">Janitor operation errors every 5m</p>
@@ -8259,7 +8280,7 @@ Number of code intelligence janitor errors every 5m
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100520` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100521` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
