@@ -28,7 +28,7 @@ func (s *RepoSearch) Run(ctx context.Context, clients job.RuntimeClients, stream
 	defer func() { finish(alert, err) }()
 
 	repos := &searchrepos.Resolver{DB: clients.DB, Opts: s.RepoOptions}
-	err = repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
+	err = repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
 		tr.LogFields(otlog.Int("resolved.len", len(page.RepoRevs)))
 
 		// Filter the repos if there is a repohasfile: or -repohasfile field.
