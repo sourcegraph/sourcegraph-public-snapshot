@@ -8,7 +8,13 @@ import (
 )
 
 type operations struct {
-	inferIndexJobs *observation.Operation
+	createSandbox              *observation.Operation
+	inferIndexJobs             *observation.Operation
+	invokeLinearizedRecognizer *observation.Operation
+	invokeRecognizers          *observation.Operation
+	resolveFileContents        *observation.Operation
+	resolvePaths               *observation.Operation
+	setupRecognizers           *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -28,6 +34,12 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		inferIndexJobs: op("InferIndexJobs"),
+		createSandbox:              op("createSandbox"),
+		inferIndexJobs:             op("InferIndexJobs"),
+		invokeLinearizedRecognizer: op("invokeLinearizedRecognizer"),
+		invokeRecognizers:          op("invokeRecognizers"),
+		resolveFileContents:        op("resolveFileContents"),
+		resolvePaths:               op("resolvePaths"),
+		setupRecognizers:           op("setupRecognizers"),
 	}
 }
