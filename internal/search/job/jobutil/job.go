@@ -292,12 +292,10 @@ func ToSearchJob(searchInputs *run.SearchInputs, q query.Q) (job.Job, error) {
 						mode = search.SkipUnindexed
 					}
 					addJob(true, &run.RepoSearch{
-						RepoOptions:     repoOptions,
-						Features:        features,
-						UseFullDeadline: useFullDeadline,
-						Query:           q,
-						PatternInfo:     patternInfo,
-						Mode:            mode,
+						RepoOptions: repoOptions,
+						Features:    features,
+						PatternInfo: patternInfo,
+						Mode:        mode,
 					})
 				}
 			}
