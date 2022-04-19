@@ -407,9 +407,9 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 	return res.Resolved, err
 }
 
-// computeExcluded computes the ExcludedRepos that the given RepoOptions would not match. This is
+// computeExcludedRepos computes the ExcludedRepos that the given RepoOptions would not match. This is
 // used to show in the search UI what repos are excluded precisely.
-func computeExcluded(ctx context.Context, db database.DB, op search.RepoOptions) (ex ExcludedRepos, err error) {
+func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOptions) (ex ExcludedRepos, err error) {
 	tr, ctx := trace.New(ctx, "searchrepos.Excluded", op.String())
 	defer func() {
 		tr.LazyPrintf("excluded repos: %+v", ex)
