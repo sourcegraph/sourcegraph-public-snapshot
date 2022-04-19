@@ -1,13 +1,16 @@
 package luasandbox
 
 import (
+	"bytes"
 	"context"
+	"os"
 	"sync"
 	"time"
 
 	lua "github.com/yuin/gopher-lua"
 	luar "layeh.com/gopher-luar"
 
+	"github.com/sourcegraph/sourcegraph/internal/luasandbox/util"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -32,7 +35,42 @@ func (s *Sandbox) RunScript(ctx context.Context, opts RunOptions, script string)
 	ctx, endObservation := s.operations.runScript.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
+	return s.RunScriptNamed(ctx, opts, singleScriptFS{script}, "main.lua")
+}
+
+type FS interface {
+	ReadFile(name string) ([]byte, error)
+}
+
+type singleScriptFS struct {
+	script string
+}
+
+func (fs singleScriptFS) ReadFile(name string) ([]byte, error) {
+	if name != "main.lua" {
+		return nil, os.ErrNotExist
+	}
+
+	return []byte(fs.script), nil
+}
+
+// RunScriptNamed runs the Lua script with the given name in the given filesystem.
+// This method will set the global `loadfile` function so that Lua scripts relative
+// to the given filesystem can be imported modularly.
+func (s *Sandbox) RunScriptNamed(ctx context.Context, opts RunOptions, fs FS, name string) (retValue lua.LValue, err error) {
+	ctx, endObservation := s.operations.runScriptNamed.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	contents, err := fs.ReadFile(name)
+	if err != nil {
+		return nil, err
+	}
+	script := string(contents)
+
 	f := func(ctx context.Context, state *lua.LState) error {
+		state.SetGlobal("loadfile", makeScopedLoadfile(state, fs))
+		defer state.SetGlobal("loadfile", lua.LNil)
+
 		if err := state.DoString(script); err != nil {
 			return err
 		}
@@ -42,6 +80,27 @@ func (s *Sandbox) RunScript(ctx context.Context, opts RunOptions, script string)
 	}
 	err = s.RunGoCallback(ctx, opts, f)
 	return
+}
+
+// makeScopedLoadfile creates a Lua function that will read the file relative to the given
+// filesystem indiciated by the invocation parameter and return the resulting function.
+func makeScopedLoadfile(state *lua.LState, fs FS) *lua.LFunction {
+	return state.NewFunction(util.WrapLuaFunction(func(state *lua.LState) error {
+		filename := state.CheckString(1)
+
+		contents, err := fs.ReadFile(filename)
+		if err != nil {
+			return err
+		}
+
+		fn, err := state.Load(bytes.NewReader(contents), filename)
+		if err != nil {
+			return err
+		}
+
+		state.Push(luar.New(state, fn))
+		return nil
+	}))
 }
 
 // Call invokes the given function bound to this sandbox within the sandbox.

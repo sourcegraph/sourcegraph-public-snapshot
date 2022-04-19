@@ -31,7 +31,7 @@ describe('overlay_position', () => {
                             target: rectangle(128, 220, 60, 16),
                             hoverOverlayElement: rectangle(28, 38, 350, 150),
                         }),
-                        { left: 100, top: 50 }
+                        { left: 100, bottom: 400 }
                     )
                 })
 
@@ -62,7 +62,7 @@ describe('overlay_position', () => {
                             target: rectangle(128, 220, 60, 16),
                             hoverOverlayElement: rectangle(28, -362, 350, 150),
                         }),
-                        { left: 100, top: 450 }
+                        { left: 100, bottom: 2400 }
                     )
                 })
 
@@ -96,7 +96,7 @@ describe('overlay_position', () => {
                             target: rectangle(128, 220, 60, 16),
                             hoverOverlayElement: rectangle(28, 38, 350, 150),
                         }),
-                        { left: 100, top: 50 }
+                        { left: 100, bottom: 400 }
                     )
                 })
 
@@ -127,7 +127,7 @@ describe('overlay_position', () => {
                             target: rectangle(128, 220, 60, 16),
                             hoverOverlayElement: rectangle(-172, -362, 350, 150),
                         }),
-                        { left: 300, top: 450 }
+                        { left: 300, bottom: 0 }
                     )
                 })
 

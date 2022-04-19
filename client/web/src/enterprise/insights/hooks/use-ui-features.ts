@@ -42,7 +42,7 @@ export interface UseUiFeatures {
 }
 
 export function useUiFeatures(): UseUiFeatures {
-    const { UIFeatures, hasInsights } = useContext(CodeInsightsBackendContext)
+    const { UIFeatures, getActiveInsightsCount } = useContext(CodeInsightsBackendContext)
     const { licensed, insightsLimit } = UIFeatures
 
     return useMemo(
@@ -92,11 +92,13 @@ export function useUiFeatures(): UseUiFeatures {
                 }),
                 getCreationPermissions: () =>
                     insightsLimit !== null
-                        ? hasInsights(insightsLimit).pipe(map(reachedLimit => ({ available: !reachedLimit })))
+                        ? getActiveInsightsCount(insightsLimit).pipe(
+                              map(insightCount => ({ available: insightCount < insightsLimit }))
+                          )
                         : of({ available: true }),
                 getEditPermissions: (insight: Insight) => of({ available: licensed || !insight.isFrozen }),
             },
         }),
-        [licensed, insightsLimit, hasInsights]
+        [licensed, insightsLimit, getActiveInsightsCount]
     )
 }

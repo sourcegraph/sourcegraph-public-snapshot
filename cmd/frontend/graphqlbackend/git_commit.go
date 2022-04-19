@@ -219,7 +219,9 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	}
 
 	// Note: args.Recursive is deprecated
-	treeEntry.isRecursive = args.Recursive
+	if treeEntry != nil {
+		treeEntry.isRecursive = args.Recursive
+	}
 	return treeEntry, nil
 }
 

@@ -140,6 +140,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                     externalServiceKind={node.externalServiceKind}
                     externalServiceURL={node.externalServiceURL}
                     requiresSSH={node.requiresSSH}
+                    requiresUsername={node.requiresUsername}
                 />
             )}
         </>

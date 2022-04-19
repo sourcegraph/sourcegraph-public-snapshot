@@ -55,6 +55,11 @@
       "type": "boolean",
       "default": false
     },
+    "defaultRateLimit": {
+      "description": "The rate limit (in requests per hour) for the default rate limiter in the rate limiters registry. By default this is disabled and the default rate limit is infinity.",
+      "type": "number",
+      "default": -1
+    },
     "experimentalFeatures": {
       "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
       "type": "object",
@@ -1320,6 +1325,28 @@
       "description": "The duration (in seconds) that a password reset link is considered valid.",
       "type": "integer",
       "default": 14400,
+      "group": "Authentication"
+    },
+    "auth.lockout": {
+      "description": "The config options for account lockout",
+      "type": "object",
+      "properties": {
+        "failedAttemptThreshold": {
+          "description": "The threshold of failed sign-in attempts in a consecutive period",
+          "type": "integer",
+          "default": 5
+        },
+        "lockoutPeriod": {
+          "description": "The number of seconds for the lockout period",
+          "type": "integer",
+          "default": 1800
+        },
+        "consecutivePeriod": {
+          "description": "The number of seconds to be considered as a consecutive period",
+          "type": "integer",
+          "default": 3600
+        }
+      },
       "group": "Authentication"
     },
     "auth.unlockAccountLinkSigningKey": {

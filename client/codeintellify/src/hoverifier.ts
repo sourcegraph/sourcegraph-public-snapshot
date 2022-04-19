@@ -272,7 +272,7 @@ interface InternalHoverifierState<C extends object, D, A> {
     hoverOrError?: typeof LOADING | (HoverAttachment & D) | null | ErrorLike
 
     /** The desired position of the hover overlay */
-    hoverOverlayPosition?: { left: number; top: number }
+    hoverOverlayPosition?: { left: number } & ({ top: number } | { bottom: number })
 
     /** The currently hovered token */
     hoveredToken?: HoveredToken & C
@@ -770,7 +770,6 @@ export function createHoverifier<C extends object, D, A>({
                             highlightedRange,
                             hoverOrError,
                             hoveredTokenElement,
-                            hoverOverlayPosition: undefined,
                         })
                     }
                 )

@@ -286,20 +286,23 @@ func HandleSignIn(db database.DB, store LockoutStore) func(w http.ResponseWriter
 		user = *u
 
 		if reason, locked := store.IsLockedOut(user.ID); locked {
-			if conf.CanSendEmail() {
-				recipient, verified, err := db.UserEmails().GetPrimaryEmail(ctx, user.ID)
-				if !verified || err != nil {
-					// log the error and proceed
-					log15.Error(fmt.Sprintf("Impossible to get primary email address for userId %d. Unlock account email can't be sent", user.ID), err)
+			func() {
+				if !conf.CanSendEmail() {
+					return
+				}
+
+				recipient, _, err := db.UserEmails().GetPrimaryEmail(ctx, user.ID)
+				if err != nil {
+					log15.Error("Error getting primary email address", "userID", user.ID, "error", err)
+					return
 				}
 
 				err = store.SendUnlockAccountEmail(ctx, user.ID, recipient)
-
 				if err != nil {
-					// log the error and proceed
-					log15.Error(fmt.Sprintf("Impossible to send unlock account email for userId %d", user.ID), err)
+					log15.Error("Error sending unlock account email", "userID", user.ID, "error", err)
+					return
 				}
-			}
+			}()
 
 			httpLogAndError(w, fmt.Sprintf("Account has been locked out due to %q", reason), http.StatusUnprocessableEntity)
 			return

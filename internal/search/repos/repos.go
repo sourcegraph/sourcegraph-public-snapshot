@@ -407,19 +407,15 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 	return res.Resolved, err
 }
 
-// Excluded computes the ExcludedRepos that the given RepoOptions would not match. This is
+// computeExcludedRepos computes the ExcludedRepos that the given RepoOptions would not match. This is
 // used to show in the search UI what repos are excluded precisely.
-func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex ExcludedRepos, err error) {
+func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOptions) (ex ExcludedRepos, err error) {
 	tr, ctx := trace.New(ctx, "searchrepos.Excluded", op.String())
 	defer func() {
 		tr.LazyPrintf("excluded repos: %+v", ex)
 		tr.SetError(err)
 		tr.Finish()
 	}()
-
-	if op.Query == nil {
-		return ExcludedRepos{}, nil
-	}
 
 	includePatterns := op.RepoFilters
 	if includePatterns != nil {
@@ -448,7 +444,7 @@ func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex Excl
 		return ExcludedRepos{}, nil
 	}
 
-	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.DB, op.SearchContextSpec)
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, db, op.SearchContextSpec)
 	if err != nil {
 		return ExcludedRepos{}, err
 	}
@@ -477,14 +473,14 @@ func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex Excl
 		ExcludedRepos
 	}
 
-	if op.Query.Fork() == nil && !ExactlyOneRepo(includePatterns) {
+	if !op.ForkSet && !ExactlyOneRepo(includePatterns) {
 		g.Go(func() error {
 			// 'fork:...' was not specified and Forks are excluded, find out
 			// which repos are excluded.
 			selectForks := options
 			selectForks.OnlyForks = true
 			selectForks.NoForks = false
-			numExcludedForks, err := r.DB.Repos().Count(ctx, selectForks)
+			numExcludedForks, err := db.Repos().Count(ctx, selectForks)
 			if err != nil {
 				return err
 			}
@@ -497,14 +493,14 @@ func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex Excl
 		})
 	}
 
-	if op.Query.Archived() == nil && !ExactlyOneRepo(includePatterns) {
+	if !op.ArchivedSet && !ExactlyOneRepo(includePatterns) {
 		g.Go(func() error {
 			// Archived...: was not specified and archives are excluded,
 			// find out which repos are excluded.
 			selectArchived := options
 			selectArchived.OnlyArchived = true
 			selectArchived.NoArchived = false
-			numExcludedArchived, err := r.DB.Repos().Count(ctx, selectArchived)
+			numExcludedArchived, err := db.Repos().Count(ctx, selectArchived)
 			if err != nil {
 				return err
 			}
