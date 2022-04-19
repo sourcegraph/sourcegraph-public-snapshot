@@ -24,6 +24,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The Code Insights GraphQL API now accepts Search Contexts as a filter and will extract the expressions embedded the `repo` and `-repo` search query fields from the contexts to apply them as filters on the insight. [#33866](https://github.com/sourcegraph/sourcegraph/pull/33866)
 - The Code Insights commit indexer can now index commits in smaller batches. Set the number of days per batch in the site setting `insights.commit.indexer.windowDuration`. A value of 0 (default) will disable batching. [#33666](https://github.com/sourcegraph/sourcegraph/pull/33666)
 - Support account lockout after consecutive failed sign-in attempts for builtin authentication provider (i.e. username and password), new config options are added to the site configuration under `"auth.lockout"` to customize the threshold, length of lockout and consecutive periods. [#33999](https://github.com/sourcegraph/sourcegraph/pull/33999)
+- pgsql-exporter for Code Insights has been added to docker-compose and Kubernetes deployments to gather database-level metrics. [#780](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/780), [#4111](https://github.com/sourcegraph/deploy-sourcegraph/pull/4111)
 - `repo:dependencies(...)` predicate can now search through the [Go dependencies of your repositories](https://docs.sourcegraph.com/code_search/how-to/dependencies_search). [#32658](https://github.com/sourcegraph/sourcegraph/issues/32658)
 
 ### Changed
@@ -35,6 +36,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Update "getting started/quick start checklist for visitors" to a new design [#32882](https://github.com/sourcegraph/sourcegraph/pull/32882)
 - Code Insights: Capture group values are now restricted to 100 characters. [#32828](https://github.com/sourcegraph/sourcegraph/pull/32828)
 - Repositories for which gitserver's janitor job "sg maintenance" fails will eventually be re-cloned if "DisableAutoGitUpdates" is set to false (default) in site configuration. [#33432](https://github.com/sourcegraph/sourcegraph/pull/33432)
+- The Code Insights database is now based on Postgres 12, removing the dependency on TimescaleDB. [#32697](https://github.com/sourcegraph/sourcegraph/pull/32697)
 
 ### Fixed
 
@@ -88,7 +90,6 @@ All notable changes to Sourcegraph are documented in this file.
 - The SSH library used to push Batch Change branches to code hosts has been updated to prevent issues pushing to github.com or GitHub Enterprise releases after March 15, 2022. [#32641](https://github.com/sourcegraph/sourcegraph/issues/32641)
 - Bumped the minimum supported version of Docker Compose from `1.22.0` to `1.29.0`. [#32631](https://github.com/sourcegraph/sourcegraph/pull/32631)
 - [Code host API rate limit configuration](https://docs.sourcegraph.com/admin/repo/update_frequency#code-host-api-rate-limiting) no longer based on code host URLs but only takes effect on each individual external services. To enforce API rate limit, please add configuration to all external services that are intended to be rate limited. [#32768](https://github.com/sourcegraph/sourcegraph/pull/32768)
-- The Code Insights database is now based on Postgres 12, removing the dependency on TimescaleDB. [#32697](https://github.com/sourcegraph/sourcegraph/pull/32697)
 
 ### Fixed
 
