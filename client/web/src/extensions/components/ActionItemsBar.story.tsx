@@ -30,12 +30,12 @@ const mockContributions: Evaluated<Contributions> = {
             iconURL: mockIconURL,
             label: 'Some label',
             pressed: index < 2,
+            description: 'Some description',
         },
         command: 'open',
         active: true,
         category: 'Some category',
         title: 'Some title',
-        description: 'Some description',
     })),
     menus: {
         [ContributableMenu.EditorTitle]: mockActionItems.map(id => ({
@@ -88,7 +88,7 @@ export const Default: React.FunctionComponent = () => {
             location={LOCATION}
             useActionItemsBar={useActionItemsBar}
             extensionsController={mockExtensionsController}
-            platformContext={NOOP_PLATFORM_CONTEXT}
+            platformContext={NOOP_PLATFORM_CONTEXT as any}
             telemetryService={NOOP_TELEMETRY_SERVICE}
         />
     )
