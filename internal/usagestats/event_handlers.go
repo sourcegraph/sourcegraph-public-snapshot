@@ -271,6 +271,5 @@ func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 
 	parsedURL.RawQuery = urlQueryParams.Encode()
 
-	
 	return parsedURL.String(), nil
 }
