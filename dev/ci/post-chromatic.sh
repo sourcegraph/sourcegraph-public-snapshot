@@ -39,7 +39,7 @@ fi
 
 if [[ -n "${github_api_key}" && -n "${pr_number}" ]]; then
   # GitHub pull request number and GitHub api token are set
-  # Appending `App Preview` section into PR description if it hasn't existed yet
+  # Appending Storybook link into App preview section
   github_pr_api_url="https://api.github.com/repos/${owner_and_repo}/pulls/${pr_number}"
 
   pr_description=$(curl -sSf --request GET \
@@ -55,10 +55,7 @@ if [[ -n "${github_api_key}" && -n "${pr_number}" ]]; then
     # shellcheck disable=SC2001
     pr_description=$(echo "$pr_description" | sed -e "s|\[Link\](https:\/\/.*.onrender.com).*|& \n- [Storybook](${chromatic_storybok_url})|")
 
-    echo "New PR description:"
-    echo "$pr_description"
-
-    curl -sSf -o /dev/null --request PATCH \
+    curl --request PATCH \
       --url "${github_pr_api_url}" \
       --user "apikey:${github_api_key}" \
       --header 'Accept: application/vnd.github.v3+json' \
