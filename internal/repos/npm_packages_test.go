@@ -18,14 +18,7 @@ import (
 )
 
 func TestGetNpmDependencyRepos(t *testing.T) {
-	ctx, depsSvc := setupDependenciesService(t, parseDepStrs(t, []string{
-		"pkg1@1",
-		"pkg1@2",
-		"pkg2@1",
-		"@scope/pkg1@1",
-		"pkg1@3",
-		"pkg2@0.1-abc",
-	}))
+	ctx, depsSvc := setupDependenciesService(t, testDependencyRepos)
 
 	type testCase struct {
 		pkgName string
@@ -119,15 +112,23 @@ func setupDependenciesService(t *testing.T, drs []dependencies.DependencyRepo) (
 	return ctx, depsSvc
 }
 
-func parseDepStrs(t *testing.T, depStrs []string) []dependencies.DependencyRepo {
-	parsedDependencyRepos := []dependencies.DependencyRepo{}
-	for i, depStr := range depStrs {
+var testDependencies = []string{
+	"@scope/pkg1@1",
+	"pkg1@1",
+	"pkg1@2",
+	"pkg1@3",
+	"pkg2@0.1-abc",
+	"pkg2@1",
+}
+var testDependencyRepos = func() []dependencies.DependencyRepo {
+	dependencyRepos := []dependencies.DependencyRepo{}
+	for i, depStr := range testDependencies {
 		dep, err := reposource.ParseNpmDependency(depStr)
 		if err != nil {
-			t.Fatal(err)
+			panic(err.Error())
 		}
 
-		parsedDependencyRepos = append(parsedDependencyRepos, dependencies.DependencyRepo{
+		dependencyRepos = append(dependencyRepos, dependencies.DependencyRepo{
 			ID:      i + 1,
 			Scheme:  dependencies.NpmPackagesScheme,
 			Name:    dep.PackageSyntax(),
@@ -135,20 +136,11 @@ func parseDepStrs(t *testing.T, depStrs []string) []dependencies.DependencyRepo 
 		})
 	}
 
-	return parsedDependencyRepos
-}
+	return dependencyRepos
+}()
 
 func TestListRepos(t *testing.T) {
-	dependencies := []string{
-		"pkg1@1",
-		"pkg1@2",
-		"pkg2@1",
-		"@scope/pkg1@1",
-		"pkg1@3",
-		"pkg2@0.1-abc",
-	}
-	sort.Strings(dependencies)
-	ctx, depsSvc := setupDependenciesService(t, parseDepStrs(t, dependencies))
+	ctx, depsSvc := setupDependenciesService(t, testDependencyRepos)
 
 	dir, err := os.MkdirTemp("", "")
 	require.Nil(t, err)
@@ -161,7 +153,7 @@ func TestListRepos(t *testing.T) {
 	packageSource, err := NewNpmPackagesSource(&svc)
 	require.Nil(t, err)
 	packageSource.SetDependenciesService(depsSvc)
-	packageSource.client = npmtest.NewMockClient(t, dependencies...)
+	packageSource.client = npmtest.NewMockClient(t, testDependencies...)
 	results := make(chan SourceResult, 10)
 	go func() {
 		packageSource.ListRepos(ctx, results)
@@ -179,7 +171,7 @@ func TestListRepos(t *testing.T) {
 	sort.Sort(types.Repos(have))
 
 	var want []*types.Repo
-	for _, dep := range dependencies {
+	for _, dep := range testDependencies {
 		dep, err := reposource.ParseNpmDependency(dep)
 		if err != nil {
 			t.Fatal(err)
