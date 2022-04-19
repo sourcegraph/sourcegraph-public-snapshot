@@ -277,43 +277,16 @@ func TestPrettyJSON(t *testing.T) {
           "Dependencies": null,
           "CaseSensitiveRepoFilters": false,
           "SearchContextSpec": "",
-          "NoForks": true,
-          "OnlyForks": false,
-          "NoArchived": true,
-          "OnlyArchived": false,
           "CommitAfter": "",
           "Visibility": "Any",
           "Limit": 0,
           "Cursors": null,
-          "Query": [
-            {
-              "Kind": 1,
-              "Operands": [
-                {
-                  "field": "repo",
-                  "value": "foo",
-                  "negated": false
-                },
-                {
-                  "value": "bar",
-                  "negated": false
-                }
-              ],
-              "Annotation": {
-                "labels": 0,
-                "range": {
-                  "start": {
-                    "line": 0,
-                    "column": 0
-                  },
-                  "end": {
-                    "line": 0,
-                    "column": 0
-                  }
-                }
-              }
-            }
-          ]
+          "ForkSet": false,
+          "NoForks": true,
+          "OnlyForks": false,
+          "ArchivedSet": false,
+          "NoArchived": true,
+          "OnlyArchived": false
         },
         "Features": {
           "ContentBasedLangFilters": false
@@ -362,43 +335,16 @@ func TestPrettyJSON(t *testing.T) {
           "Dependencies": null,
           "CaseSensitiveRepoFilters": false,
           "SearchContextSpec": "",
-          "NoForks": true,
-          "OnlyForks": false,
-          "NoArchived": true,
-          "OnlyArchived": false,
           "CommitAfter": "",
           "Visibility": "Any",
           "Limit": 0,
           "Cursors": null,
-          "Query": [
-            {
-              "Kind": 1,
-              "Operands": [
-                {
-                  "field": "repo",
-                  "value": "foo",
-                  "negated": false
-                },
-                {
-                  "value": "bar",
-                  "negated": false
-                }
-              ],
-              "Annotation": {
-                "labels": 0,
-                "range": {
-                  "start": {
-                    "line": 0,
-                    "column": 0
-                  },
-                  "end": {
-                    "line": 0,
-                    "column": 0
-                  }
-                }
-              }
-            }
-          ]
+          "ForkSet": false,
+          "NoForks": true,
+          "OnlyForks": false,
+          "ArchivedSet": false,
+          "NoArchived": true,
+          "OnlyArchived": false
         }
       }
     }
