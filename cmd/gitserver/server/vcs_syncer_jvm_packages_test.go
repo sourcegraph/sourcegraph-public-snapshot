@@ -141,8 +141,8 @@ func TestNoMaliciousFiles(t *testing.T) {
 	createMaliciousJar(t, jarPath)
 
 	s := JVMPackagesSyncer{
-		Config:    &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
-		DepsStore: NewMockDependenciesStore(),
+		Config:  &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
+		DepsSvc: NewMockDependenciesService(),
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -193,8 +193,8 @@ func TestJVMCloneCommand(t *testing.T) {
 	coursier.CoursierBinary = coursierScript(t, dir)
 
 	s := JVMPackagesSyncer{
-		Config:    &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
-		DepsStore: NewMockDependenciesStore(),
+		Config:  &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
+		DepsSvc: NewMockDependenciesService(),
 	}
 	bareGitDirectory := path.Join(dir, "git")
 

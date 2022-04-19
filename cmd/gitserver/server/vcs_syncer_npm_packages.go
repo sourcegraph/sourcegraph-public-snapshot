@@ -12,7 +12,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -38,7 +38,7 @@ var (
 type NpmPackagesSyncer struct {
 	// Configuration object describing the connection to the npm registry.
 	connection schema.NpmPackagesConnection
-	depsStore  repos.DependenciesStore
+	depsSvc    repos.DependenciesService
 	// The client to use for making queries against npm.
 	client npm.Client
 }
@@ -47,7 +47,7 @@ type NpmPackagesSyncer struct {
 // the client for the syncer is configured based on the connection parameter.
 func NewNpmPackagesSyncer(
 	connection schema.NpmPackagesConnection,
-	dbStore repos.DependenciesStore,
+	depsSvc repos.DependenciesService,
 	customClient npm.Client,
 	urn string,
 ) *NpmPackagesSyncer {
@@ -55,7 +55,7 @@ func NewNpmPackagesSyncer(
 	if client == nil {
 		client = npm.NewHTTPClient(urn, connection.Registry, connection.Credentials)
 	}
-	return &NpmPackagesSyncer{connection, dbStore, client}
+	return &NpmPackagesSyncer{connection, depsSvc, client}
 }
 
 var _ VCSSyncer = &NpmPackagesSyncer{}
@@ -186,8 +186,8 @@ func (s *NpmPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 		}
 	}
 
-	dbDeps, err := s.depsStore.ListDependencyRepos(ctx, dependenciesStore.ListDependencyReposOpts{
-		Scheme:      dependenciesStore.NpmPackagesScheme,
+	dbDeps, err := s.depsSvc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
+		Scheme:      dependencies.NpmPackagesScheme,
 		Name:        repoPackage.PackageSyntax(),
 		NewestFirst: true,
 	})

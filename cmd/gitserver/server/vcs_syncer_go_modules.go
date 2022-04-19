@@ -14,7 +14,7 @@ import (
 	"golang.org/x/mod/module"
 	modzip "golang.org/x/mod/zip"
 
-	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
@@ -37,16 +37,16 @@ var placeholderGoDependency = func() *reposource.GoDependency {
 // from Go module proxies and converting them to Git repositories.
 type GoModulesSyncer struct {
 	connection *schema.GoModulesConnection
-	depsStore  repos.DependenciesStore
+	depsSvc    repos.DependenciesService
 	client     *gomodproxy.Client
 }
 
 func NewGoModulesSyncer(
 	connection *schema.GoModulesConnection,
-	depStore repos.DependenciesStore,
+	depsSvc repos.DependenciesService,
 	client *gomodproxy.Client,
 ) *GoModulesSyncer {
-	return &GoModulesSyncer{connection, depStore, client}
+	return &GoModulesSyncer{connection, depsSvc, client}
 }
 
 var _ VCSSyncer = &GoModulesSyncer{}
@@ -170,8 +170,8 @@ func (s *GoModulesSyncer) moduleVersions(ctx context.Context, mod string) (versi
 		}
 	}
 
-	depRepos, err := s.depsStore.ListDependencyRepos(ctx, dependenciesStore.ListDependencyReposOpts{
-		Scheme:      dependenciesStore.GoModulesScheme,
+	depRepos, err := s.depsSvc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
+		Scheme:      dependencies.GoModulesScheme,
 		Name:        mod,
 		NewestFirst: true,
 	})

@@ -4,6 +4,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
-type DependenciesStore interface {
-	repos.DependenciesStore
+type DependenciesService interface {
+	repos.DependenciesService
 }

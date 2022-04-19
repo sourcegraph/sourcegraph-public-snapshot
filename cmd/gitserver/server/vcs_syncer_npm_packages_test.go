@@ -19,7 +19,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmtest"
@@ -54,7 +54,7 @@ func TestNoMaliciousFilesNpm(t *testing.T) {
 
 	s := NewNpmPackagesSyncer(
 		schema.NpmPackagesConnection{Dependencies: []string{}},
-		NewMockDependenciesStore(),
+		NewMockDependenciesService(),
 		nil,
 		"urn",
 	)
@@ -118,7 +118,7 @@ func TestNpmCloneCommand(t *testing.T) {
 	}
 	s := NewNpmPackagesSyncer(
 		schema.NpmPackagesConnection{Dependencies: []string{}},
-		NewMockDependenciesStore(),
+		NewMockDependenciesService(),
 		&client,
 		"urn",
 	)
@@ -173,23 +173,23 @@ func TestNpmCloneCommand(t *testing.T) {
 	checkTagRemoved()
 
 	// Now run the same tests with the database output instead.
-	mockStore := NewStrictMockDependenciesStore()
-	s.depsStore = mockStore
+	mockStore := NewStrictMockDependenciesService()
+	s.depsSvc = mockStore
 
-	mockStore.ListDependencyReposFunc.PushReturn([]dependenciesStore.DependencyRepo{
+	mockStore.ListDependencyReposFunc.PushReturn([]dependencies.DependencyRepo{
 		{ID: 0, Name: "example", Version: exampleNpmVersion},
 	}, nil)
 	s.runCloneCommand(t, bareGitDirectory, []string{})
 	checkSingleTag()
 
-	mockStore.ListDependencyReposFunc.PushReturn([]dependenciesStore.DependencyRepo{
+	mockStore.ListDependencyReposFunc.PushReturn([]dependencies.DependencyRepo{
 		{ID: 0, Name: "example", Version: exampleNpmVersion},
 		{ID: 1, Name: "example", Version: exampleNpmVersion2},
 	}, nil)
 	s.runCloneCommand(t, bareGitDirectory, []string{})
 	checkTagAdded()
 
-	mockStore.ListDependencyReposFunc.PushReturn([]dependenciesStore.DependencyRepo{
+	mockStore.ListDependencyReposFunc.PushReturn([]dependencies.DependencyRepo{
 		{ID: 0, Name: "example", Version: "1.0.0"},
 	}, nil)
 	s.runCloneCommand(t, bareGitDirectory, []string{})

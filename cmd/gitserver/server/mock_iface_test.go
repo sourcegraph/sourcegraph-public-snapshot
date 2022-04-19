@@ -6,87 +6,87 @@ import (
 	"context"
 	"sync"
 
-	store "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
+	dependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 )
 
-// MockDependenciesStore is a mock implementation of the DependenciesStore
-// interface (from the package
+// MockDependenciesService is a mock implementation of the
+// DependenciesService interface (from the package
 // github.com/sourcegraph/sourcegraph/cmd/gitserver/server) used for unit
 // testing.
-type MockDependenciesStore struct {
+type MockDependenciesService struct {
 	// ListDependencyReposFunc is an instance of a mock function object
 	// controlling the behavior of the method ListDependencyRepos.
-	ListDependencyReposFunc *DependenciesStoreListDependencyReposFunc
+	ListDependencyReposFunc *DependenciesServiceListDependencyReposFunc
 }
 
-// NewMockDependenciesStore creates a new mock of the DependenciesStore
+// NewMockDependenciesService creates a new mock of the DependenciesService
 // interface. All methods return zero values for all results, unless
 // overwritten.
-func NewMockDependenciesStore() *MockDependenciesStore {
-	return &MockDependenciesStore{
-		ListDependencyReposFunc: &DependenciesStoreListDependencyReposFunc{
-			defaultHook: func(context.Context, store.ListDependencyReposOpts) ([]store.DependencyRepo, error) {
+func NewMockDependenciesService() *MockDependenciesService {
+	return &MockDependenciesService{
+		ListDependencyReposFunc: &DependenciesServiceListDependencyReposFunc{
+			defaultHook: func(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.DependencyRepo, error) {
 				return nil, nil
 			},
 		},
 	}
 }
 
-// NewStrictMockDependenciesStore creates a new mock of the
-// DependenciesStore interface. All methods panic on invocation, unless
+// NewStrictMockDependenciesService creates a new mock of the
+// DependenciesService interface. All methods panic on invocation, unless
 // overwritten.
-func NewStrictMockDependenciesStore() *MockDependenciesStore {
-	return &MockDependenciesStore{
-		ListDependencyReposFunc: &DependenciesStoreListDependencyReposFunc{
-			defaultHook: func(context.Context, store.ListDependencyReposOpts) ([]store.DependencyRepo, error) {
-				panic("unexpected invocation of MockDependenciesStore.ListDependencyRepos")
+func NewStrictMockDependenciesService() *MockDependenciesService {
+	return &MockDependenciesService{
+		ListDependencyReposFunc: &DependenciesServiceListDependencyReposFunc{
+			defaultHook: func(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.DependencyRepo, error) {
+				panic("unexpected invocation of MockDependenciesService.ListDependencyRepos")
 			},
 		},
 	}
 }
 
-// NewMockDependenciesStoreFrom creates a new mock of the
-// MockDependenciesStore interface. All methods delegate to the given
+// NewMockDependenciesServiceFrom creates a new mock of the
+// MockDependenciesService interface. All methods delegate to the given
 // implementation, unless overwritten.
-func NewMockDependenciesStoreFrom(i DependenciesStore) *MockDependenciesStore {
-	return &MockDependenciesStore{
-		ListDependencyReposFunc: &DependenciesStoreListDependencyReposFunc{
+func NewMockDependenciesServiceFrom(i DependenciesService) *MockDependenciesService {
+	return &MockDependenciesService{
+		ListDependencyReposFunc: &DependenciesServiceListDependencyReposFunc{
 			defaultHook: i.ListDependencyRepos,
 		},
 	}
 }
 
-// DependenciesStoreListDependencyReposFunc describes the behavior when the
-// ListDependencyRepos method of the parent MockDependenciesStore instance
-// is invoked.
-type DependenciesStoreListDependencyReposFunc struct {
-	defaultHook func(context.Context, store.ListDependencyReposOpts) ([]store.DependencyRepo, error)
-	hooks       []func(context.Context, store.ListDependencyReposOpts) ([]store.DependencyRepo, error)
-	history     []DependenciesStoreListDependencyReposFuncCall
+// DependenciesServiceListDependencyReposFunc describes the behavior when
+// the ListDependencyRepos method of the parent MockDependenciesService
+// instance is invoked.
+type DependenciesServiceListDependencyReposFunc struct {
+	defaultHook func(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.DependencyRepo, error)
+	hooks       []func(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.DependencyRepo, error)
+	history     []DependenciesServiceListDependencyReposFuncCall
 	mutex       sync.Mutex
 }
 
 // ListDependencyRepos delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockDependenciesStore) ListDependencyRepos(v0 context.Context, v1 store.ListDependencyReposOpts) ([]store.DependencyRepo, error) {
+func (m *MockDependenciesService) ListDependencyRepos(v0 context.Context, v1 dependencies.ListDependencyReposOpts) ([]dependencies.DependencyRepo, error) {
 	r0, r1 := m.ListDependencyReposFunc.nextHook()(v0, v1)
-	m.ListDependencyReposFunc.appendCall(DependenciesStoreListDependencyReposFuncCall{v0, v1, r0, r1})
+	m.ListDependencyReposFunc.appendCall(DependenciesServiceListDependencyReposFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the ListDependencyRepos
-// method of the parent MockDependenciesStore instance is invoked and the
+// method of the parent MockDependenciesService instance is invoked and the
 // hook queue is empty.
-func (f *DependenciesStoreListDependencyReposFunc) SetDefaultHook(hook func(context.Context, store.ListDependencyReposOpts) ([]store.DependencyRepo, error)) {
+func (f *DependenciesServiceListDependencyReposFunc) SetDefaultHook(hook func(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.DependencyRepo, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// ListDependencyRepos method of the parent MockDependenciesStore instance
+// ListDependencyRepos method of the parent MockDependenciesService instance
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *DependenciesStoreListDependencyReposFunc) PushHook(hook func(context.Context, store.ListDependencyReposOpts) ([]store.DependencyRepo, error)) {
+func (f *DependenciesServiceListDependencyReposFunc) PushHook(hook func(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.DependencyRepo, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -94,20 +94,20 @@ func (f *DependenciesStoreListDependencyReposFunc) PushHook(hook func(context.Co
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *DependenciesStoreListDependencyReposFunc) SetDefaultReturn(r0 []store.DependencyRepo, r1 error) {
-	f.SetDefaultHook(func(context.Context, store.ListDependencyReposOpts) ([]store.DependencyRepo, error) {
+func (f *DependenciesServiceListDependencyReposFunc) SetDefaultReturn(r0 []dependencies.DependencyRepo, r1 error) {
+	f.SetDefaultHook(func(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.DependencyRepo, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *DependenciesStoreListDependencyReposFunc) PushReturn(r0 []store.DependencyRepo, r1 error) {
-	f.PushHook(func(context.Context, store.ListDependencyReposOpts) ([]store.DependencyRepo, error) {
+func (f *DependenciesServiceListDependencyReposFunc) PushReturn(r0 []dependencies.DependencyRepo, r1 error) {
+	f.PushHook(func(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.DependencyRepo, error) {
 		return r0, r1
 	})
 }
 
-func (f *DependenciesStoreListDependencyReposFunc) nextHook() func(context.Context, store.ListDependencyReposOpts) ([]store.DependencyRepo, error) {
+func (f *DependenciesServiceListDependencyReposFunc) nextHook() func(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.DependencyRepo, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -120,37 +120,37 @@ func (f *DependenciesStoreListDependencyReposFunc) nextHook() func(context.Conte
 	return hook
 }
 
-func (f *DependenciesStoreListDependencyReposFunc) appendCall(r0 DependenciesStoreListDependencyReposFuncCall) {
+func (f *DependenciesServiceListDependencyReposFunc) appendCall(r0 DependenciesServiceListDependencyReposFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
 // History returns a sequence of
-// DependenciesStoreListDependencyReposFuncCall objects describing the
+// DependenciesServiceListDependencyReposFuncCall objects describing the
 // invocations of this function.
-func (f *DependenciesStoreListDependencyReposFunc) History() []DependenciesStoreListDependencyReposFuncCall {
+func (f *DependenciesServiceListDependencyReposFunc) History() []DependenciesServiceListDependencyReposFuncCall {
 	f.mutex.Lock()
-	history := make([]DependenciesStoreListDependencyReposFuncCall, len(f.history))
+	history := make([]DependenciesServiceListDependencyReposFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// DependenciesStoreListDependencyReposFuncCall is an object that describes
-// an invocation of method ListDependencyRepos on an instance of
-// MockDependenciesStore.
-type DependenciesStoreListDependencyReposFuncCall struct {
+// DependenciesServiceListDependencyReposFuncCall is an object that
+// describes an invocation of method ListDependencyRepos on an instance of
+// MockDependenciesService.
+type DependenciesServiceListDependencyReposFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 store.ListDependencyReposOpts
+	Arg1 dependencies.ListDependencyReposOpts
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []store.DependencyRepo
+	Result0 []dependencies.DependencyRepo
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -158,12 +158,12 @@ type DependenciesStoreListDependencyReposFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c DependenciesStoreListDependencyReposFuncCall) Args() []interface{} {
+func (c DependenciesServiceListDependencyReposFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c DependenciesStoreListDependencyReposFuncCall) Results() []interface{} {
+func (c DependenciesServiceListDependencyReposFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
