@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	api "github.com/sourcegraph/sourcegraph/internal/api"
-	store "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
+	store "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
 	reposource "github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 )
 
