@@ -526,6 +526,11 @@ func (c *V3Client) GetOrganization(ctx context.Context, login string) (org *OrgD
 // orgs, nextSince, err := ListOrganizations(ctx, nextSince)
 //
 // Repeat this in a for-loop until nextSince is a non-positive integer.
+// integer.
+//
+// 🚀🚀🚀
+//
+// This API supports conditional requests and the underlying httpcache transport can leverage this to use the cache to return responses.
 func (c *V3Client) ListOrganizations(ctx context.Context, since int) (orgs []*Org, nextSince int, err error) {
 	hash := strings.ToLower(c.auth.Hash())
 
