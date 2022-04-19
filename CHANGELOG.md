@@ -17,6 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Added a site config value `defaultRateLimit` to optionally configure a global default rate limit for external services.
 -
 
 ### Changed
