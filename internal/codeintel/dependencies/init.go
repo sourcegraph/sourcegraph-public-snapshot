@@ -26,7 +26,7 @@ var (
 	syncerSemaphoreWeight    = env.MustGetInt("CODEINTEL_DEPENDENCIES_LOCKFILES_SYNCER_WEIGHT", 64, "The maximum number of concurrent routines actively syncing repositories.")
 )
 
-func GetService(db database.DB, syncer Syncer) *Service {
+func GetService(db database.DB, gitService GitService, syncer Syncer) *Service {
 	svcOnce.Do(func() {
 		observationContext := &observation.Context{
 			Logger:     log15.Root(),
@@ -34,7 +34,6 @@ func GetService(db database.DB, syncer Syncer) *Service {
 			Registerer: prometheus.DefaultRegisterer,
 		}
 
-		gitService := lockfiles.NewDefaultGitService(nil, db)
 		lockfilesService := lockfiles.GetService(gitService)
 		lockfilesSemaphore := semaphore.NewWeighted(int64(lockfilesSemaphoreWeight))
 		syncerSemaphore := semaphore.NewWeighted(int64(syncerSemaphoreWeight))
