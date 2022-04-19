@@ -3,8 +3,7 @@ import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter } from '@sourcegraph/shared/src/search/query/token'
 
 import { getSanitizedRepositories } from '../../../../../components/creation-ui-kit'
-import { MinimalCaptureGroupInsightData } from '../../../../../core/backend/code-insights-backend-types'
-import { InsightExecutionType, InsightType } from '../../../../../core/types'
+import { InsightExecutionType, InsightType, MinimalCaptureGroupInsightData } from '../../../../../core'
 import { CaptureGroupFormFields } from '../types'
 
 export function getSanitizedCaptureGroupInsight(values: CaptureGroupFormFields): MinimalCaptureGroupInsightData {
@@ -18,6 +17,7 @@ export function getSanitizedCaptureGroupInsight(values: CaptureGroupFormFields):
         filters: {
             includeRepoRegexp: '',
             excludeRepoRegexp: '',
+            contexts: [],
             repositories: [],
         },
     }

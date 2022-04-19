@@ -84,6 +84,7 @@ func SessionIssuer(db database.DB, s SessionIssuerHelper, sessionKey string) htt
 			if err := backend.SyncExternalService(ctx, svc, 5*time.Second, repoupdater.DefaultClient); err != nil {
 				log15.Error("OAuth failed: error syncing external service", "error", err)
 				http.Error(w, "error syncing code host", http.StatusInternalServerError)
+				return
 			}
 
 			http.Redirect(w, r, auth.SafeRedirectURL(state.Redirect), http.StatusFound)

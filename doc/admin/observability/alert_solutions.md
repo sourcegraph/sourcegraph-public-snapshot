@@ -3080,7 +3080,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
-- Check for unusual spikes in user added repos. Each user is only allowed to add 2000 and we have a site wide limit of 400k.
+- Check for unusual spikes in user added repos. Each user is only allowed to add 2000 and we have a site wide limit of 800k.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-user-added-repos).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 

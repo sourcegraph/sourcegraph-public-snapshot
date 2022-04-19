@@ -7,11 +7,11 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Input, Link } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
+import { TruncatedText } from '../../../../../../../components'
 import { useCheckboxes } from '../../../../../../../components/form/hooks/useCheckboxes'
 import { useField } from '../../../../../../../components/form/hooks/useField'
 import { SubmissionErrors, useForm, FORM_ERROR } from '../../../../../../../components/form/hooks/useForm'
-import { AccessibleInsightInfo } from '../../../../../../../core/backend/code-insights-backend-types'
-import { TruncatedText } from '../../../dashboard-select/components/trancated-text/TrancatedText'
+import { AccessibleInsightInfo } from '../../../../../../../core'
 
 import styles from './AddInsightModalContent.module.scss'
 

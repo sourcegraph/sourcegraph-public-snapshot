@@ -249,6 +249,7 @@ func (d Diff) Len() int {
 // SyncRepo syncs a single repository by name and associates it with an external service.
 //
 // It works for repos from:
+//
 // 1. Public "cloud_default" code hosts since we don't sync them in the background
 //    (which would delete lazy synced repos).
 // 2. Any package hosts (i.e. npm, Maven, etc) since callers are expected to store
@@ -295,7 +296,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 			_, _, _ = s.syncGroup.Do(string(name), func() (interface{}, error) {
 				updatedRepo, err := s.syncRepo(ctx, codehost, name, repo)
 				if err != nil {
-					log15.Error("Error syncing repo in the background", "name", name, "error", err)
+					log15.Error("SyncRepo", "name", name, "error", err, "background", background)
 				}
 				return updatedRepo, nil
 			})
@@ -307,6 +308,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 		return s.syncRepo(ctx, codehost, name, repo)
 	})
 	if err != nil {
+		log15.Error("SyncRepo", "name", name, "error", err, "background", background)
 		return nil, err
 	}
 	return updatedRepo.(*types.Repo), nil
@@ -325,7 +327,7 @@ func (s *Syncer) syncRepo(
 	svcs, err := s.Store.ExternalServiceStore.List(ctx, database.ExternalServicesListOptions{
 		Kinds: []string{extsvc.TypeToKind(codehost.ServiceType)},
 		// Since package host external services have the set of repositories to sync in
-		// the lsif_dependency_repos table, we can lazy-sync individual repos wihout wiping them
+		// the lsif_dependency_repos table, we can lazy-sync individual repos without wiping them
 		// out in the next full background sync as long as we add them to that table.
 		//
 		// This permits lazy-syncing of package repos in on-prem instances as well as in cloud.

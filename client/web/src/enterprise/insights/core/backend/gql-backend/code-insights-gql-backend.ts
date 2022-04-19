@@ -8,6 +8,7 @@ import {
     ExampleTodoRepositoryResult,
     GetAccessibleInsightsListResult,
     GetDashboardInsightsResult,
+    GetFrozenInsightsCountResult,
     GetInsightsResult,
     HasAvailableCodeInsightResult,
     RemoveInsightViewFromDashboardResult,
@@ -108,23 +109,38 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             })
         )
 
-    public hasInsights = (insightsCount: number): Observable<boolean> =>
+    public hasInsights = (first: number): Observable<boolean> =>
         fromObservableQuery(
             this.apolloClient.watchQuery<HasAvailableCodeInsightResult>({
                 query: gql`
-                    query HasAvailableCodeInsight {
-                        insightViews {
+                    query HasAvailableCodeInsight($first: Int!) {
+                        insightViews(first: $first) {
                             nodes {
                                 id
-                                isFrozen
                             }
                         }
                     }
                 `,
-                variables: { count: insightsCount },
+                variables: { first },
                 nextFetchPolicy: 'cache-only',
             })
-        ).pipe(map(({ data }) => data.insightViews.nodes.filter(node => !node.isFrozen).length === insightsCount))
+        ).pipe(map(({ data }) => data.insightViews.nodes.length === first))
+
+    public getActiveInsightsCount = (first: number): Observable<number> =>
+        fromObservableQuery(
+            this.apolloClient.watchQuery<GetFrozenInsightsCountResult>({
+                query: gql`
+                    query GetFrozenInsightsCount($first: Int!) {
+                        insightViews(first: $first, isFrozen: false) {
+                            nodes {
+                                id
+                            }
+                        }
+                    }
+                `,
+                variables: { first },
+            })
+        ).pipe(map(({ data }) => data.insightViews.nodes.length))
 
     // TODO: This method is used only for insight title validation but since we don't have
     // limitations about title field in gql api remove this method and async validation for
