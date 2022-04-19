@@ -53,9 +53,9 @@ if [[ -n "${github_api_key}" && -n "${pr_number}" ]]; then
     echo "Updating PR #${pr_number} in ${owner_and_repo} description"
 
     # shellcheck disable=SC2001
-    pr_description=$(echo "$pr_description" | sed -e "s|\[Link\](https:\/\/.*.onrender.com).*|& \n- [Storybook](${chromatic_storybok_url})|" | jq -Rs .)
+    pr_description=$(echo "$pr_description" | sed -e "s|\[Link\](https:\/\/.*.onrender.com)|& \n- [Storybook](${chromatic_storybok_url})|" | jq -Rs .)
 
-    curl --request PATCH \
+    curl -sSf -o /dev/null --request PATCH \
       --url "${github_pr_api_url}" \
       --user "apikey:${github_api_key}" \
       --header 'Accept: application/vnd.github.v3+json' \
