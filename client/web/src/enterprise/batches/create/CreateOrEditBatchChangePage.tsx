@@ -248,7 +248,7 @@ const BatchConfigurationPage: React.FunctionComponent<BatchConfigurationPageProp
     }
 
     return (
-        <Form className="container my-4 pb-5 w-50" onSubmit={handleCreate}>
+        <Form className={styles.batchConfigForm} onSubmit={handleCreate}>
             <Container className="mb-4">
                 {error && <ErrorAlert error={error} />}
                 <NamespaceSelector

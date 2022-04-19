@@ -1,3 +1,5 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .editor-layout-container {
     // Default of min-height: auto when this element is display: flex allows children to
     // set its height. We want to keep this fixed and have children overflow: auto
@@ -51,4 +53,14 @@
     justify-content: flex-end;
     align-items: center;
     gap: 0.625rem;
+}
+
+.batch-config-form {
+    margin: 1.5rem auto;
+    padding-bottom: 3rem;
+    width: 50%;
+
+    @media (--sm-breakpoint-down) {
+        width: 100%;
+    }
 }
