@@ -39,38 +39,29 @@ func (s *RepoSearch) reposContainingPath(ctx context.Context, clients job.Runtim
 	if err != nil {
 		return nil, err
 	}
-	newArgs := &RepoSearch{
-		Query:           q,
-		PatternInfo:     &p,
-		Repos:           repos,
-		RepoOptions:     s.RepoOptions,
-		Features:        s.Features,
-		Mode:            s.Mode,
-		UseFullDeadline: true,
-	}
 
 	indexed, unindexed, err := zoektutil.PartitionRepos(
 		ctx,
-		newArgs.Repos,
+		repos,
 		clients.Zoekt,
 		search.TextRequest,
-		newArgs.PatternInfo.Index,
-		query.ContainsRefGlobs(newArgs.Query),
+		p.Index,
+		query.ContainsRefGlobs(q),
 	)
 	if err != nil {
 		return nil, err
 	}
 
 	searcherArgs := &search.SearcherParameters{
-		PatternInfo:     newArgs.PatternInfo,
-		UseFullDeadline: newArgs.UseFullDeadline,
+		PatternInfo:     &p,
+		UseFullDeadline: true,
 	}
 
 	agg := streaming.NewAggregatingStream()
 
 	g, ctx := errgroup.WithContext(ctx)
 
-	if newArgs.Mode != search.SearcherOnly {
+	if s.Mode != search.SearcherOnly {
 		typ := search.TextRequest
 
 		b, err := query.ToBasicQuery(q)
@@ -87,7 +78,7 @@ func (s *RepoSearch) reposContainingPath(ctx context.Context, clients job.Runtim
 				resultTypes = resultTypes.With(result.TypeFromString[t])
 			}
 		}
-		zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &newArgs.Features, typ)
+		zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &s.Features, typ)
 		if err != nil {
 			return nil, err
 		}
@@ -95,8 +86,8 @@ func (s *RepoSearch) reposContainingPath(ctx context.Context, clients job.Runtim
 		zoektArgs := search.ZoektParameters{
 			Query:          zoektQuery,
 			Typ:            typ,
-			FileMatchLimit: newArgs.PatternInfo.FileMatchLimit,
-			Select:         newArgs.PatternInfo.Select,
+			FileMatchLimit: p.FileMatchLimit,
+			Select:         p.Select,
 		}
 
 		zoektJob := &zoektutil.ZoektRepoSubsetSearch{
