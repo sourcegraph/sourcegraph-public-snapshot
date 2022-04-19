@@ -59,7 +59,7 @@ File-based notebooks have the advantage of living anywhere you store text files.
 
 ### Combined approaches
 #### Compose online and export to disk
-If you prefer to keep your notebooks in your repos but want to compose them on the web, you can get the best of both worlds by composing your notebooks on your sourcegraph instance and then exporting them to your 
+If you prefer to keep your notebooks in your repos but want to compose them on the web, you can get the best of both worlds by composing your notebooks on your sourcegraph instance and then exporting them to your repositories on disk.
 
 #### Embed notebooks anywhere
 Sourcegraph notebooks can be [embedded](../notebooks/notebook-embedding.md) anywhere that allows iframes. Notebooks hosted on sourcegraph.com can be embedded anywhere. Notebooks hosted on your private instance are subject to your organization's security policies, but can generally be viewed by any user with access to your instance as long as they're logged in.
