@@ -149,7 +149,7 @@ metadata:
 6. Modify the apps_v1_deployment_redis-store.yaml manifest. Add the corresponding volumeMounts: and volumes: \
 
 
-```
+<pre>
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -163,6 +163,7 @@ metadata:
     spec:
       containers:
 … truncated for brevity … 
+<b>
         volumeMounts:
         - mountPath: /redis-data
           name: redis-data
@@ -174,25 +175,28 @@ metadata:
       - configMap:
           name: redis-store-conf
         name: redis-store-conf
-```
+</b>
+</pre>
 
 
 7. Modify the manifests for all services listed in[ Configure custom Redis](https://docs.sourcegraph.com/admin/install/kubernetes/configure#configure-custom-redis). The listing below is an example of the two environment variables that must be added to the services listed in the documentation.
 
 
-```
+<pre>
 apiVersion: apps/v1
 kind: Deployment
 … truncated for brevity …
     spec:
       containers:
 … truncated for brevity …
+<b>
         env:
         - name: REDIS_CACHE_ENDPOINT
           value: redis://:demopasswordchangeme123@redis-cache:6379
         - name: REDIS_STORE_ENDPOINT
           value: redis://:demopasswordchangeme123@redis-store:6379
-```
+</b>
+</pre>
 
 
 
