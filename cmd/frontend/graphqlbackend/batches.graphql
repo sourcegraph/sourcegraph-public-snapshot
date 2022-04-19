@@ -1653,6 +1653,12 @@ extend type Mutation {
         externalServiceURL: String!
 
         """
+        The username associated with the credential, if required by the external
+        service kind.
+        """
+        username: String
+
+        """
         The credential to be stored. This can never be retrieved through the API and will be stored encrypted.
         """
         credential: String!
@@ -3120,6 +3126,11 @@ type BatchChangesCodeHost {
     an SSH key to be configured.
     """
     requiresSSH: Boolean!
+
+    """
+    If true, this code host requires credentials to have a username as well as a personal access token.
+    """
+    requiresUsername: Boolean!
 
     """
     If true, the code host has webhooks configured.

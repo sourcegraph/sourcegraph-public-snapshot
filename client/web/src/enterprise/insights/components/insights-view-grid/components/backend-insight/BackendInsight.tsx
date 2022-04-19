@@ -11,16 +11,15 @@ import { BackendInsight, CodeInsightsBackendContext, InsightFilters } from '../.
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight'
 import { LazyQueryStatus } from '../../../../hooks/use-parallel-requests/use-parallel-request'
 import { useRemoveInsightFromDashboard } from '../../../../hooks/use-remove-insight'
-import { DashboardInsightsContext } from '../../../../pages/dashboards/dashboard-page/components/dashboards-content/components/dashboard-inisghts/DashboardInsightsContext'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../pings'
 import { FORM_ERROR, SubmissionErrors } from '../../../form/hooks/useForm'
 import { InsightCard, InsightCardBanner, InsightCardHeader, InsightCardLoading } from '../../../views'
 import { useInsightData } from '../../hooks/use-insight-data'
 import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
+import { InsightContext } from '../InsightContext'
 
 import {
     BackendInsightErrorAlert,
-    EMPTY_DRILLDOWN_FILTERS,
     DrillDownFiltersPopover,
     DrillDownInsightCreationFormValues,
     BackendInsightChart,
@@ -43,7 +42,7 @@ interface BackendInsightProps
 export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = props => {
     const { telemetryService, insight, innerRef, resizing, ...otherProps } = props
 
-    const { dashboard } = useContext(DashboardInsightsContext)
+    const { dashboard } = useContext(InsightContext)
     const { getBackendInsightData, createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
 
     // Visual line chart settings
@@ -58,9 +57,7 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
 
     // Original insight filters values that are stored in setting subject with insight
     // configuration object, They are updated  whenever the user clicks update/save button
-    const [originalInsightFilters, setOriginalInsightFilters] = useState(
-        cachedInsight.filters ?? EMPTY_DRILLDOWN_FILTERS
-    )
+    const [originalInsightFilters, setOriginalInsightFilters] = useState(cachedInsight.filters)
 
     // Live valid filters from filter form. They are updated whenever the user is changing
     // filter value in filters fields.
@@ -152,7 +149,7 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
                     <>
                         <DrillDownFiltersPopover
                             isOpen={isFiltersOpen}
-                            popoverTargetRef={insightCardReference}
+                            anchor={insightCardReference}
                             initialFiltersValue={filters}
                             originalFiltersValue={originalInsightFilters}
                             onFilterChange={setFilters}

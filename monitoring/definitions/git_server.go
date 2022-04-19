@@ -32,7 +32,6 @@ func GitServer() *monitoring.Container {
 			},
 		},
 		Groups: []monitoring.Group{
-			shared.GitServer.NewAPIGroup(containerName),
 			{
 				Title: "General",
 				Rows: []monitoring.Row{
@@ -259,6 +258,8 @@ func GitServer() *monitoring.Container {
 					},
 				},
 			},
+			shared.GitServer.NewAPIGroup(containerName),
+			shared.GitServer.NewBatchLogSemaphoreWait(containerName),
 			{
 				Title:  "Gitservice for internal cloning",
 				Hidden: true,

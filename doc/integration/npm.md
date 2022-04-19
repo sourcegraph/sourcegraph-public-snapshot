@@ -1,4 +1,4 @@
-# npm dependency integration with Sourcegraph
+# npm dependencies integration with Sourcegraph
 
 You can use Sourcegraph with npm packages from any npm registry, including open source code from npmjs.com or a private registry such as Verdaccio.
 This integration makes it possible to search and navigate through the source code of published JavaScript or TypeScript packages (for example, [`@types/gzip-js@0.3.3`](https://sourcegraph.com/npm/types/gzip-js@v0.3.3/-/blob/index.d.ts)).
@@ -9,7 +9,7 @@ Feature | Supported?
 [Credentials](#credentials) | ✅
 [Rate limiting](#rate-limiting) | ✅
 [Repository permissions](#repository-syncing) | ❌
-[Multiple npm dependency code hosts](#multiple-npm-dependency-code-hosts) | ❌
+[Multiple npm dependencies code hosts](#multiple-npm-dependency-code-hosts) | ❌
 
 ## Repository syncing
 
@@ -25,10 +25,7 @@ Use the `"credentials"` section of the JSON configuration to provide an access t
 
 ## Rate limiting
 
-By default, requests to the npm dependency code host will be rate-limited
-based on a default internal limit. ([source](https://github.com/sourcegraph/sourcegraph/blob/main/schema/npm-packages.schema.json))
-
-To manually set the value, add the following to your code host configuration:
+By default, requests to the npm dependency code host won't be rate limited. To configure rate-limiting, add the following to your code host configuration:
 
 ```json
 "rateLimit": {
@@ -38,20 +35,11 @@ To manually set the value, add the following to your code host configuration:
 ```
 where the `requestsPerHour` field is set based on your requirements.
 
-**Not recommended**: Rate-limiting can be turned off entirely as well.
-This increases the risk of overloading the code host.
-
-```json
-"rateLimit": {
-  "enabled": false
-}
-```
-
 ## Repository permissions
 
 ⚠️ npm dependency repositories are visible by all users of the Sourcegraph instance.
 
-## Multiple npm dependency code hosts
+## Multiple npm dependencies code hosts
 
 ⚠️ It's only possible to create one npm dependency code host for each Sourcegraph instance.
 See the issue [sourcegraph#32499](https://github.com/sourcegraph/sourcegraph/issues/32499) for more details about this limitation. In most situations, it's possible to work around this limitation by configurating a single private npm registry to proxy multiple underlying registries.

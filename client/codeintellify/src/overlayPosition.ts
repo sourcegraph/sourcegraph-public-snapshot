@@ -12,12 +12,7 @@ export interface CalculateOverlayPositionOptions {
     hoverOverlayElement: HasGetBoundingClientRect
 }
 
-export interface CSSOffsets {
-    /** Offset from the left in pixel */
-    left: number
-    /** Offset from the top in pixel */
-    top: number
-}
+export type CSSOffsets = { left: number } & ({ top: number } | { bottom: number })
 
 /**
  * Calculates the desired position of the hover overlay depending on the container,
@@ -35,19 +30,21 @@ export const calculateOverlayPosition = ({
     // If the relativeElement is scrolled horizontally, we need to account for the offset (if not scrollLeft will be 0)
     const relativeHoverOverlayLeft = targetBounds.left + relativeElement.scrollLeft - relativeElementBounds.left
 
-    let relativeHoverOverlayTop: number
     // Check if the top of the hover overlay would be outside of the relative element or the viewport
     if (targetBounds.top - hoverOverlayBounds.height < Math.max(relativeElementBounds.top, 0)) {
         // Position it below the target
         // If the relativeElement is scrolled, we need to account for the offset (if not scrollTop will be 0)
-        relativeHoverOverlayTop = targetBounds.bottom - relativeElementBounds.top + relativeElement.scrollTop
-    } else {
-        // Else position it above the target
-        // Caculate the offset from the top of the relativeElement content to the top of the target
-        // If the relativeElement is scrolled, we need to account for the offset (if not scrollTop will be 0)
-        const relativeTargetTop = targetBounds.top - relativeElementBounds.top + relativeElement.scrollTop
-        relativeHoverOverlayTop = relativeTargetTop - hoverOverlayBounds.height
+        return {
+            left: relativeHoverOverlayLeft,
+            top: targetBounds.bottom - relativeElementBounds.top + relativeElement.scrollTop,
+        }
     }
 
-    return { left: relativeHoverOverlayLeft, top: relativeHoverOverlayTop }
+    // Else position it above the target
+    // If the relativeElement is scrolled, we need to account for the offset (if not scrollTop will be 0)
+    return {
+        left: relativeHoverOverlayLeft,
+        bottom:
+            relativeElementBounds.height - (targetBounds.top - relativeElementBounds.top + relativeElement.scrollTop),
+    }
 }

@@ -34,6 +34,7 @@ add('View', () => (
                     externalServiceKind: ExternalServiceKind.GITHUB,
                     externalServiceURL: 'https://github.com/',
                     requiresSSH: true,
+                    requiresUsername: false,
                 }}
                 credential={credential}
                 onClose={noop}

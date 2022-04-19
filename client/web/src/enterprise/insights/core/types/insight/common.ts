@@ -25,6 +25,7 @@ export enum InsightContentType {
 export interface InsightFilters {
     includeRepoRegexp: string
     excludeRepoRegexp: string
+    contexts: string[]
     repositories?: string[]
 }
 
