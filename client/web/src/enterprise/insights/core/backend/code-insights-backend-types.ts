@@ -114,8 +114,9 @@ export interface AccessibleInsightInfo {
 }
 
 export interface BackendInsightDatum {
-    dateTime: number
-    [seriesKey: string]: number | string
+    dateTime: Date
+    value: number | null
+    link?: string
 }
 
 export interface BackendInsightData {
