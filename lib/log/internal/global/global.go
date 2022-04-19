@@ -22,18 +22,18 @@ func Get() *zap.Logger {
 	return globalLogger
 }
 
-// Init initializes the global lgoger once.
-func Init(r otfields.Resource, level zap.AtomicLevel, format string, development bool) {
+// Init initializes the global logger once.
+func Init(r otfields.Resource, level zap.AtomicLevel, format encoders.OutputFormat, development bool) {
 	globalLoggerInit.Do(func() {
 		globalLogger = initLogger(r, level, format, development)
 	})
 }
 
-func initLogger(r otfields.Resource, level zap.AtomicLevel, encoding string, development bool) *zap.Logger {
+func initLogger(r otfields.Resource, level zap.AtomicLevel, format encoders.OutputFormat, development bool) *zap.Logger {
 	cfg := zap.Config{
 		Level:            level,
 		EncoderConfig:    encoders.OpenTelemetryConfig,
-		Encoding:         encoding,
+		Encoding:         string(format),
 		OutputPaths:      []string{"stderr"},
 		ErrorOutputPaths: []string{"stderr"},
 

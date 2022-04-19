@@ -1,6 +1,4 @@
-package log
-
-const envSrcLogFormat = "SRC_LOG_FORMAT"
+package encoders
 
 type OutputFormat string
 
@@ -12,7 +10,7 @@ const (
 // ParseOutputFormat parses the given format string as a supported output format, while
 // trying to maintain some degree of back-compat with the intent of previously supported
 // log formats.
-func parseOutputFormat(format string) OutputFormat {
+func ParseOutputFormat(format string) OutputFormat {
 	switch format {
 	case string(OutputJSON),
 		// True 'logfmt' has significant limitations around certain field types:

@@ -5,6 +5,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/sourcegraph/sourcegraph/lib/log/internal/encoders"
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/global"
 	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
 )
@@ -20,5 +21,6 @@ type Resource = otfields.Resource
 // If Init is not called, Get will panic.
 func Init(r Resource) {
 	level := zap.NewAtomicLevelAt(Level(os.Getenv(envSrcLogLevel)).Parse())
-	global.Init(r, level, os.Getenv(envSrcLogFormat), os.Getenv("SRC_DEVELOPMENT") == "true")
+	format := encoders.ParseOutputFormat(os.Getenv(envSrcLogFormat))
+	global.Init(r, level, format, os.Getenv("SRC_DEVELOPMENT") == "true")
 }

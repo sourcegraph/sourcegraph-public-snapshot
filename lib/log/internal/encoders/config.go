@@ -18,19 +18,8 @@ var OpenTelemetryConfig = zapcore.EncoderConfig{
 	TimeKey:    "Timestamp",
 	EncodeTime: zapcore.EpochNanosTimeEncoder,
 	// https://opentelemetry.io/docs/reference/specification/logs/data-model/#severity-fields
-	LevelKey: "SeverityText",
-	EncodeLevel: func(l zapcore.Level, enc zapcore.PrimitiveArrayEncoder) {
-		switch l {
-		case zapcore.DPanicLevel:
-			// DPanicLevel is not really 'FATAL', but we use it as 'Critical' which
-			// implies very important, so maybe it works. Alternatively, we can use
-			// 'ERROR4' which is allowed in the spec.
-			enc.AppendString("FATAL")
-		default:
-			// All the other levels conform more or less to the OT spec.
-			zapcore.CapitalLevelEncoder(l, enc)
-		}
-	},
+	LevelKey:    "SeverityText",
+	EncodeLevel: zapcore.CapitalLevelEncoder, // most levels correspond to the OT level text
 	// https://opentelemetry.io/docs/reference/specification/logs/data-model/#field-body
 	MessageKey: "Body",
 

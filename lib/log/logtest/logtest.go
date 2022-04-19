@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap/zaptest/observer"
 
 	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/log/internal/encoders"
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/global"
 	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
 )
@@ -29,12 +30,11 @@ import (
 func Init(_ *testing.M, level log.Level) {
 	pc, _, _, _ := runtime.Caller(1)
 	details := runtime.FuncForPC(pc)
-	nameParts := strings.Split(details.Name(), "/")
-	packageName := strings.Join(nameParts[:len(nameParts)-1], "/")
+	nameParts := strings.Split(details.Name(), ".")
 	global.Init(otfields.Resource{
-		Name:      packageName,
+		Name:      strings.Join(nameParts[:len(nameParts)-1], "."),
 		Namespace: "test",
-	}, zap.NewAtomicLevelAt(level.Parse()), "console", true)
+	}, zap.NewAtomicLevelAt(level.Parse()), encoders.OutputConsole, true)
 }
 
 // configurableAdapter exposes internal APIs on zapAdapter

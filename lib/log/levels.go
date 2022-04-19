@@ -20,6 +20,10 @@ const (
 	LevelNone Level = "none"
 )
 
+// Parse parses the given level string as a supported output format, while trying to
+// maintain some degree of back-compat with the intent of previously supported log levels.
+//
+// This is exported only for internal use.
 func (l Level) Parse() zapcore.Level {
 	switch Level(strings.ToLower(string(l))) {
 	case LevelDebug, "dbug":
@@ -28,7 +32,10 @@ func (l Level) Parse() zapcore.Level {
 		return zapcore.InfoLevel
 	case LevelWarn:
 		return zapcore.WarnLevel
-	case LevelError, "eror", "crit":
+	case LevelError, "eror",
+		// We do not want to introduce 'Critical' support yet, since there are already an
+		// abundance of log levels. Users of 'Critical' should just use 'Error' instead.
+		"crit":
 		return zapcore.ErrorLevel
 	case LevelNone:
 		// Logger does not export anything at the fatal level, so this effectively
