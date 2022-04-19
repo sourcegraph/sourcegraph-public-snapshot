@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { ComboboxList, ComboboxOption, ComboboxOptionText } from '@reach/combobox'
+import classNames from 'classnames'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -12,6 +13,7 @@ import styles from './SuggestionPanel.module.scss'
 interface SuggestionsPanelProps {
     value: string | null
     suggestions?: Error | RepositorySuggestion[]
+    className?: string
 }
 
 interface RepositorySuggestion {
@@ -23,11 +25,11 @@ interface RepositorySuggestion {
  * Renders suggestion panel for repositories combobox component.
  */
 export const SuggestionsPanel: React.FunctionComponent<SuggestionsPanelProps> = props => {
-    const { value, suggestions } = props
+    const { value, suggestions, className } = props
 
     if (suggestions === undefined) {
         return (
-            <div className={styles.loadingPanel}>
+            <div className={classNames(styles.loadingPanel, classNames)}>
                 <LoadingSpinner inline={false} />
             </div>
         )
@@ -37,11 +39,15 @@ export const SuggestionsPanel: React.FunctionComponent<SuggestionsPanelProps> = 
         return <ErrorAlert className="m-1" error={suggestions} data-testid="repository-suggestions-error" />
     }
 
+    if (suggestions.length === 0) {
+        return null
+    }
+
     const searchValue = value ?? ''
     const isValueEmpty = searchValue.trim() === ''
 
     return (
-        <ComboboxList className={styles.suggestionsList}>
+        <ComboboxList className={classNames(styles.suggestionsList, className)}>
             {suggestions.map(suggestion => (
                 <ComboboxOption className={styles.suggestionsListItem} key={suggestion.id} value={suggestion.name}>
                     <SourceRepositoryIcon className="mr-1" size="1rem" />

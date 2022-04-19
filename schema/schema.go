@@ -72,6 +72,16 @@ type AuthAccessTokens struct {
 	Allow string `json:"allow,omitempty"`
 }
 
+// AuthLockout description: The config options for account lockout
+type AuthLockout struct {
+	// ConsecutivePeriod description: The number of seconds to be considered as a consecutive period
+	ConsecutivePeriod int `json:"consecutivePeriod,omitempty"`
+	// FailedAttemptThreshold description: The threshold of failed sign-in attempts in a consecutive period
+	FailedAttemptThreshold int `json:"failedAttemptThreshold,omitempty"`
+	// LockoutPeriod description: The number of seconds for the lockout period
+	LockoutPeriod int `json:"lockoutPeriod,omitempty"`
+}
+
 // AuthProviderCommon description: Common properties for authentication providers.
 type AuthProviderCommon struct {
 	// DisplayName description: The name to use when displaying this authentication provider in the UI. Defaults to an auto-generated name with the type of authentication provider and other relevant identifiers (such as a hostname).
@@ -1691,6 +1701,8 @@ type SiteConfiguration struct {
 	AuthAccessTokens *AuthAccessTokens `json:"auth.accessTokens,omitempty"`
 	// AuthEnableUsernameChanges description: Enables users to change their username after account creation. Warning: setting this to be true has security implications if you have enabled (or will at any point in the future enable) repository permissions with an option that relies on username equivalency between Sourcegraph and an external service or authentication provider. Do NOT set this to true if you are using non-built-in authentication OR rely on username equivalency for repository permissions.
 	AuthEnableUsernameChanges bool `json:"auth.enableUsernameChanges,omitempty"`
+	// AuthLockout description: The config options for account lockout
+	AuthLockout *AuthLockout `json:"auth.lockout,omitempty"`
 	// AuthMinPasswordLength description: The minimum number of Unicode code points that a password must contain.
 	AuthMinPasswordLength int `json:"auth.minPasswordLength,omitempty"`
 	// AuthPasswordResetLinkExpiry description: The duration (in seconds) that a password reset link is considered valid.

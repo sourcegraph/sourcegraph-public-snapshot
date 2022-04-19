@@ -91,6 +91,7 @@ describe('Backend insight drill down filters', () => {
 
         assert.deepStrictEqual(variables.input.viewControls, {
             filters: {
+                searchContexts: [],
                 includeRepoRegex: '',
                 excludeRepoRegex: 'github.com/sourcegraph/sourcegraph',
             },
@@ -102,6 +103,7 @@ describe('Backend insight drill down filters', () => {
             ...createJITMigrationToGQLInsightMetadataFixture({ type: 'calculated' }),
             appliedFilters: {
                 __typename: 'InsightViewFilters',
+                searchContexts: [],
                 includeRepoRegex: '',
                 excludeRepoRegex: 'github.com/sourcegraph/sourcegraph',
             },
@@ -151,6 +153,8 @@ describe('Backend insight drill down filters', () => {
 
         await driver.page.click('button[aria-label="Active filters"]')
         await driver.page.waitForSelector('[role="dialog"][aria-label="Drill-down filters panel"]')
+
+        await driver.page.type('[name="includeRepoRegexp"]', 'github.com/sourcegraph/sourcegraph')
 
         await driver.page.click(
             '[role="dialog"][aria-label="Drill-down filters panel"] button[data-testid="save-as-new-view-button"]'
@@ -207,7 +211,8 @@ describe('Backend insight drill down filters', () => {
             },
             viewControls: {
                 filters: {
-                    includeRepoRegex: '',
+                    searchContexts: [],
+                    includeRepoRegex: 'github.com/sourcegraph/sourcegraph',
                     excludeRepoRegex: 'github.com/sourcegraph/sourcegraph',
                 },
             },
