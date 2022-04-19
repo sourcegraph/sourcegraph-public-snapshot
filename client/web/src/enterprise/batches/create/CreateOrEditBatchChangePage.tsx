@@ -304,7 +304,7 @@ const BatchConfigurationPage: React.FunctionComponent<BatchConfigurationPageProp
                 </div>
             </Container>
 
-            {isReadOnly ? null : (
+            {!isReadOnly && (
                 <div className={styles.ctaGroup}>
                     <Button variant="secondary" type="button" outline={true} onClick={handleCancel}>
                         Cancel
