@@ -27,11 +27,13 @@ type LockoutStore interface {
 	IncreaseFailedAttempt(userID int32)
 	// Reset clears the failed login attempt count and releases the lockout.
 	Reset(userID int32)
-	// Creates the unlock account url with the signet unlock token
-	GenerateUnlockAccountUrl(userID int32) (string, string, error)
-	// Verifies the provided unlock token is valid
+	// GenerateUnlockAccountURL creates the URL to unlock account with a signet
+	// unlock token.
+	GenerateUnlockAccountURL(userID int32) (string, string, error)
+	// VerifyUnlockAccountTokenAndReset verifies the provided unlock token is valid.
 	VerifyUnlockAccountTokenAndReset(urlToken string) (bool, error)
-	// Sends an email to the locked account email providing a temporary unlock link
+	// SendUnlockAccountEmail sends an email to the locked account email providing a
+	// temporary unlock link.
 	SendUnlockAccountEmail(ctx context.Context, userID int32, userEmail string) error
 }
 
@@ -75,9 +77,8 @@ type unlockAccountClaims struct {
 	jwt.RegisteredClaims
 }
 
-func (s *lockoutStore) GenerateUnlockAccountUrl(userID int32) (string, string, error) {
+func (s *lockoutStore) GenerateUnlockAccountURL(userID int32) (string, string, error) {
 	signingKey := conf.SiteConfig().AuthUnlockAccountLinkSigningKey
-
 	if signingKey == "" {
 		return "", "", errors.Newf("signing key not provided, cannot validate JWT on unlock account URL. Please add AuthUnlockAccountLinkSigningKey to site configuration.")
 	}
@@ -117,7 +118,7 @@ func (s *lockoutStore) GenerateUnlockAccountUrl(userID int32) (string, string, e
 }
 
 func (s *lockoutStore) SendUnlockAccountEmail(ctx context.Context, userID int32, recipientEmail string) error {
-	unlockUrl, _, err := s.GenerateUnlockAccountUrl(userID)
+	unlockUrl, _, err := s.GenerateUnlockAccountURL(userID)
 
 	if err != nil {
 		return err
