@@ -2,10 +2,14 @@ name: PR Preview
 
 on:
   pull_request:
-    types: [opened, synchronize, closed]
+    types: [closed]
+
+  check_run:
+    types: [completed]
 
 jobs:
-  preview-deployment:
+  remove-pr-preview-app:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
 
     steps:
@@ -15,11 +19,20 @@ jobs:
           fetch-depth: 1
 
       - name: Delete PR preview app
-        if: github.event.action == 'closed'
         run: ./dev/ci/render-pr-preview.sh -d
         env:
           RENDER_COM_API_KEY: ${{ secrets.RENDER_COM_API_KEY }}
           RENDER_COM_OWNER_ID: ${{ secrets.RENDER_COM_OWNER_ID }}
-
           BUILDKITE_PULL_REQUEST_REPO: "https://github.com/${{ github.repository }}"
           BUILDKITE_BRANCH: ${{ github.head_ref }}
+
+  chromatic-pr-preview-app:
+    if: github.event_name == 'check_run'
+    runs-on: ubuntu-latest
+
+    steps:
+      - run: |
+          echo "$CHECK_RUN_NAME - $CHECK_RUN_URL"
+        env:
+          CHECK_RUN_NAME: ${{ github.event.check_run.name }}
+          CHECK_RUN_URL: ${{ github.event.check_run.details_url }}
