@@ -457,7 +457,7 @@ func TestGetOrganization(t *testing.T) {
 // with username milton in 1password. The token used for this test is named sourcegraph-vcr-token
 // and is also saved in 1Password under this account.
 func TestListOrganizations(t *testing.T) {
-	t.Run("enterprise-integration-without-cache", func(t *testing.T) {
+	t.Run("enterprise-integration", func(t *testing.T) {
 		cli, save := newV3TestEnterpriseClient(t, "ListOrganizations")
 		defer save()
 
@@ -480,11 +480,24 @@ func TestListOrganizations(t *testing.T) {
 		}
 
 		// Make the same API call again. This should hit the cache.
-		_, _, err = cli.ListOrganizations(context.Background(), 0)
+		orgs, nextSince, err = cli.ListOrganizations(context.Background(), 0)
 		if err != nil {
 			t.Fatal(err)
 		}
+
+		if orgs == nil {
+			t.Fatal("expected orgs but got nil")
+		}
+
+		if len(orgs) != 100 {
+			t.Fatalf("expected 100 orgs but got %d", len(orgs))
+		}
+
+		if nextSince < 1 {
+			t.Fatalf("expected nextSince to be a positive int but got %v", nextSince)
+		}
 	})
+
 	t.Run("enterprise-pagination", func(t *testing.T) {
 		rcache.SetupForTest(t)
 
