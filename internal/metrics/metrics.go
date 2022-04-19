@@ -134,12 +134,14 @@ func (t *requestCounterMiddleware) RoundTrip(r *http.Request) (resp *http.Respon
 	}
 
 	d := time.Since(start)
+
 	t.meter.counter.With(map[string]string{
 		labelCategory: category,
 		labelCode:     code,
 		labelHost:     r.URL.Host,
 		labelTask:     TaskFromContext(r.Context()),
 	}).Inc()
+	log15.Debug("requestcounter increased")
 
 	t.meter.duration.WithLabelValues(category, code, r.URL.Host).Observe(d.Seconds())
 	log15.Debug("TRACE "+t.meter.subsystem, "host", r.URL.Host, "path", r.URL.Path, "code", code, "duration", d)
