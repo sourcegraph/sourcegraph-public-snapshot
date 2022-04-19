@@ -18,10 +18,64 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func TestReadDir_SubRepoFiltering(t *testing.T) {
+	ctx := actor.WithActor(context.Background(), &actor.Actor{
+		UID: 1,
+	})
+	gitCommands := []string{
+		"touch file1",
+		"git add file1",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"mkdir app",
+		"touch app/file2",
+		"git add app",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	}
+	repo := MakeGitRepository(t, gitCommands...)
+	commitID := api.CommitID("b1c725720de2bbd0518731b4a61959797ff345f3")
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				SubRepoPermissions: &schema.SubRepoPermissions{
+					Enabled: true,
+				},
+			},
+		},
+	})
+	defer conf.Mock(nil)
+	srpGetter := database.NewMockSubRepoPermsStore()
+	testSubRepoPerms := map[api.RepoName]authz.SubRepoPermissions{
+		repo: {
+			PathIncludes: []string{"**"},
+			PathExcludes: []string{"app/**"},
+		},
+	}
+	srpGetter.GetByUserFunc.SetDefaultReturn(testSubRepoPerms, nil)
+	checker, err := authz.NewSubRepoPermsClient(srpGetter)
+	if err != nil {
+		t.Fatalf("unexpected error creating sub-repo perms client: %s", err)
+	}
+
+	db := database.NewMockDB()
+	client := gitserver.NewClient(db)
+	files, err := client.ReadDir(ctx, db, checker, repo, commitID, "", false)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	if len(files) != 1 {
+		t.Fatalf("expected only one file to be returned, got %d", len(files))
+	}
+	if files[0].Name() != "file1" {
+		t.Errorf("unexpected file returned from ReadDir: %s", files[0].Name())
+	}
+}
 
 func TestRepository_FileSystem_Symlinks(t *testing.T) {
 	t.Parallel()
