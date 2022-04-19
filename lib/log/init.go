@@ -10,6 +10,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
 )
 
+const (
+	envSrcDevelopment = "SRC_DEVELOPMENT"
+	envSrcLogFormat   = "SRC_LOG_FORMAT"
+	envSrcLogLevel    = "SRC_LOG_LEVEL"
+)
+
 type Resource = otfields.Resource
 
 // Init initializes the log package's global logger as a logger of the given resource.
@@ -22,5 +28,6 @@ type Resource = otfields.Resource
 func Init(r Resource) {
 	level := zap.NewAtomicLevelAt(Level(os.Getenv(envSrcLogLevel)).Parse())
 	format := encoders.ParseOutputFormat(os.Getenv(envSrcLogFormat))
-	global.Init(r, level, format, os.Getenv("SRC_DEVELOPMENT") == "true")
+	development := os.Getenv(envSrcDevelopment) == "true"
+	global.Init(r, level, format, development)
 }

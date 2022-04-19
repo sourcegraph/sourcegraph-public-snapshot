@@ -50,6 +50,9 @@ func initLogger(r otfields.Resource, level zap.AtomicLevel, format encoders.Outp
 		panic(err)
 	}
 
-	// Instantiate global
+	if development {
+		return logger
+	}
+	// If not in development, log OpenTelemetry Resource field
 	return logger.With(zap.Object("Resource", &encoders.ResourceEncoder{Resource: r}))
 }

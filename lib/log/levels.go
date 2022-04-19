@@ -6,8 +6,6 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-const envSrcLogLevel = "SRC_LOG_LEVEL"
-
 type Level string
 
 const (
