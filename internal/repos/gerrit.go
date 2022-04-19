@@ -62,7 +62,7 @@ func (s *GerritSource) ListRepos(ctx context.Context, results chan SourceResult)
 	}
 
 	for {
-		page, err := s.cli.ListProjects(ctx, args)
+		page, nextPage, err := s.cli.ListProjects(ctx, args)
 		if err != nil {
 			results <- SourceResult{Source: s, Err: err}
 			return
@@ -87,8 +87,7 @@ func (s *GerritSource) ListRepos(ctx context.Context, results chan SourceResult)
 			results <- SourceResult{Source: s, Repo: repo}
 		}
 
-		// If there are fewer results than we were expecting, we've reached the end of pagination
-		if len(pageAsMap) < args.Cursor.PerPage {
+		if !nextPage {
 			break
 		}
 

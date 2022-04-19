@@ -78,21 +78,28 @@ func (c *Client) SetNoAuth(auth bool) {
 	c.NoAuth = auth
 }
 
-func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (*ListProjectsResponse, error) {
-	qs := make(url.Values)
+func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (projects *ListProjectsResponse, nextPage bool, err error) {
+
+	// Unfortunately Gerrit APIs are quite limited and don't support pagination well.
+	// Currently, if you want to only get CODE projects and know if there is another page
+	// to query for, the only way to do that is to query twice and compare the results.
+	qsAllProjects := make(url.Values)
+	qsCodeProjects := make(url.Values)
 
 	if opts.Cursor == nil {
 		opts.Cursor = &Pagination{PerPage: 100, Page: 1}
 	}
 
-	// Set the desired project type to CODE (ALL/CODE/PERMISSIONS).
-	qs.Set("type", "CODE")
-
 	// Number of results to return.
-	qs.Set("n", fmt.Sprintf("%d", opts.Cursor.PerPage))
+	qsAllProjects.Set("n", fmt.Sprintf("%d", opts.Cursor.PerPage))
+	qsCodeProjects.Set("n", fmt.Sprintf("%d", opts.Cursor.PerPage))
 
 	// Skip the first S projects.
-	qs.Set("S", fmt.Sprintf("%d", (opts.Cursor.Page-1)*opts.Cursor.PerPage))
+	qsAllProjects.Set("S", fmt.Sprintf("%d", (opts.Cursor.Page-1)*opts.Cursor.PerPage))
+	qsCodeProjects.Set("S", fmt.Sprintf("%d", (opts.Cursor.Page-1)*opts.Cursor.PerPage))
+
+	// Set the desired project type to CODE (ALL/CODE/PERMISSIONS).
+	qsCodeProjects.Set("type", "CODE")
 
 	urlPath := "projects/"
 	// Add a prefix for authenticated requests.
@@ -100,19 +107,35 @@ func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (*List
 		urlPath = "a/" + urlPath
 	}
 
-	u := url.URL{Path: urlPath, RawQuery: qs.Encode()}
+	uAllProjects := url.URL{Path: urlPath, RawQuery: qsAllProjects.Encode()}
 
-	req, err := http.NewRequest("GET", u.String(), nil)
+	reqAllProjects, err := http.NewRequest("GET", uAllProjects.String(), nil)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
-	var resp ListProjectsResponse
-	if _, err = c.do(ctx, req, &resp); err != nil {
-		return nil, err
+	var respAllProjects ListProjectsResponse
+	if _, err = c.do(ctx, reqAllProjects, &respAllProjects); err != nil {
+		return nil, false, err
 	}
 
-	return &resp, nil
+	uCodeProjects := url.URL{Path: urlPath, RawQuery: qsCodeProjects.Encode()}
+
+	reqCodeProjects, err := http.NewRequest("GET", uCodeProjects.String(), nil)
+	if err != nil {
+		return nil, false, err
+	}
+
+	var respCodeProjects ListProjectsResponse
+	if _, err = c.do(ctx, reqCodeProjects, &respCodeProjects); err != nil {
+		return nil, false, err
+	}
+
+	// If the amount of Projects we get back from AllProjects is greater than or equal to
+	// the amount we asked for in a page, then there is another page.
+	nextPage = len(respAllProjects) >= opts.Cursor.PerPage
+
+	return &respCodeProjects, nextPage, nil
 }
 
 func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (*http.Response, error) {
