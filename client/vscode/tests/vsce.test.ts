@@ -1,6 +1,7 @@
 import { downloadAndUnzipVSCode } from '@vscode/test-electron'
 
 import { mixedSearchStreamEvents, highlightFileResult } from '@sourcegraph/search'
+import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { setupExtensionMocking } from '@sourcegraph/shared/src/testing/integration/mockExtension'
 
 import { createVSCodeIntegrationTestContext, VSCodeIntegrationTestContext } from './context'
@@ -39,9 +40,34 @@ describe('VS Code extension', () => {
             sourcegraphBaseUrl,
         })
 
+        const userSettings: Settings = {
+            extensions: {},
+        }
+
         testContext.overrideGraphQL({
             Extensions,
+
             ...highlightFileResult,
+            ViewerSettings: () => ({
+                viewerSettings: {
+                    __typename: 'SettingsCascade',
+                    final: JSON.stringify(userSettings),
+                    subjects: [
+                        {
+                            __typename: 'User',
+                            displayName: 'Test User',
+                            id: 'TestUserSettingsID',
+                            latestSettings: {
+                                id: 123,
+                                contents: JSON.stringify(userSettings),
+                            },
+                            username: 'test',
+                            viewerCanAdminister: true,
+                            settingsURL: '/users/test/settings',
+                        },
+                    ],
+                },
+            }),
         })
 
         testContext.overrideSearchStreamEvents([...mixedSearchStreamEvents])

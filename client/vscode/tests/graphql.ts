@@ -62,4 +62,14 @@ export const commonVSCodeGraphQlResults: Partial<
             },
         ],
     }),
+    IsSearchContextAvailable: () => ({
+        isSearchContextAvailable: true,
+    }),
+    SiteProductVersion: () => ({
+        __typename: 'Query',
+        site: {
+            __typename: 'Site',
+            productVersion: '3.38.2',
+        },
+    }),
 }

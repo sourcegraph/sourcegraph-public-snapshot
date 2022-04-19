@@ -32,7 +32,7 @@ export function initializeInstantVersionNumber(localStorageService: LocalStorage
 }
 
 const siteVersionQuery = gql`
-    query {
+    query SiteProductVersion {
         site {
             productVersion
         }
