@@ -16,6 +16,13 @@ type JITExecutor interface {
 	Execute(ctx context.Context, query string, repositories []string, interval timeseries.TimeInterval) ([]GeneratedTimeSeries, error)
 }
 
+type GeneratedTimeSeries struct {
+	Label    string
+	Points   []TimeDataPoint
+	SeriesId string
+}
+
+type timeCounts map[time.Time]int
 type justInTimeExecutor struct {
 	db        database.DB
 	repoStore database.RepoStore
@@ -65,10 +72,4 @@ func BuildFrames(numPoints int, interval timeseries.TimeInterval, now time.Time)
 		return frames[i].From.Before(frames[j].From)
 	})
 	return frames
-}
-
-type GeneratedTimeSeries struct {
-	Label    string
-	Points   []TimeDataPoint
-	SeriesId string
 }
