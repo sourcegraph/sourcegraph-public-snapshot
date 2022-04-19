@@ -167,7 +167,7 @@ the docstring.
 
 Symbol has a standardized string representation, which can be used
 interchangeably with `Symbol`. The syntax for Symbol is the following:
-```
+```bnf
   <symbol>               ::= <scheme> ' ' <package> ' ' { <descriptor> } | 'local ' <local-id>
   <package>              ::= <manager> ' ' <package-name> ' ' <version>
   <scheme>               ::= any UTF-8, escape spaces with double space.
