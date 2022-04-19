@@ -9,6 +9,8 @@ set -eu -o pipefail
 
 chromatic_publish_output=$(</dev/stdin)
 
+echo "$chromatic_publish_output"
+
 # Chromatic preview url from Chromatic publish output (`-m 1` for getting first match)
 chromatic_storybok_url=$(echo "$chromatic_publish_output" | grep -oh -m 1 "https:\/\/[[:alnum:]]*\-[[:alnum:]]*\.chromatic\.com")
 
@@ -16,6 +18,8 @@ if [ -z "${chromatic_storybok_url}" ]; then
   echo "Couldn't find Chromatic preview url"
   exit 1
 fi
+
+echo "Found $chromatic_storybok_url"
 
 # repo_url: BUILDKITE_PULL_REQUEST_REPO or current git remote `origin` url
 # Should be in formats:
@@ -34,7 +38,6 @@ else
 fi
 
 if [[ -n "${github_api_key}" && -n "${pr_number}" ]]; then
-
   # GitHub pull request number and GitHub api token are set
   # Appending `App Preview` section into PR description if it hasn't existed yet
   github_pr_api_url="https://api.github.com/repos/${owner_and_repo}/pulls/${pr_number}"
@@ -49,8 +52,8 @@ if [[ -n "${github_api_key}" && -n "${pr_number}" ]]; then
   if [[ "${pr_description}" == *"## App preview"* ]]; then
     echo "Updating PR #${pr_number} in ${owner_and_repo} description"
 
-    pr_description=$(echo "$pr_description" | sed -e '/\[Link\](https:\/\/.*.onrender.com).*/a\
-- [Storybook](https://5f0f381c0e50750022dc6bf7-fayzipwrry.chromatic.com)')
+    # shellcheck disable=SC2001
+    pr_description=$(echo "$pr_description" | sed -e "s|\[Link\](https:\/\/.*.onrender.com).*|& \n- [Storybook]($chromatic_storybok_url)|")
 
     curl -sSf -o /dev/null --request PATCH \
       --url "${github_pr_api_url}" \
