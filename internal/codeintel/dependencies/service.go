@@ -218,3 +218,50 @@ func constructLogFields(repoRevs map[api.RepoName]types.RevSpecSet) []log.Field 
 		log.Int("repoRevs", len(repoRevs)),
 	}
 }
+
+type (
+	ListDependencyReposOpts store.ListDependencyReposOpts
+	DependencyRepo          store.DependencyRepo
+)
+
+const (
+	JVMPackagesScheme = store.JVMPackagesScheme
+	NpmPackagesScheme = store.NpmPackagesScheme
+	GoModulesScheme   = store.GoModulesScheme
+)
+
+func (s *Service) ListDependencyRepos(ctx context.Context, opts ListDependencyReposOpts) ([]DependencyRepo, error) {
+	drs, err := s.dependenciesStore.ListDependencyRepos(ctx, store.ListDependencyReposOpts(opts))
+	if err != nil {
+		return nil, err
+	}
+
+	return from(drs), nil
+}
+
+func (s *Service) UpsertDependencyRepos(ctx context.Context, deps []DependencyRepo) ([]DependencyRepo, error) {
+	drs, err := s.dependenciesStore.UpsertDependencyRepos(ctx, to(deps))
+	if err != nil {
+		return nil, err
+	}
+
+	return from(drs), nil
+}
+
+func to(local []DependencyRepo) []store.DependencyRepo {
+	remote := make([]store.DependencyRepo, 0, len(local))
+	for _, v := range local {
+		remote = append(remote, store.DependencyRepo(v))
+	}
+
+	return remote
+}
+
+func from(remote []store.DependencyRepo) []DependencyRepo {
+	local := make([]DependencyRepo, 0, len(remote))
+	for _, v := range remote {
+		local = append(local, DependencyRepo(v))
+	}
+
+	return local
+}
