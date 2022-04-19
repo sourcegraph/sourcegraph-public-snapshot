@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -92,15 +93,17 @@ type RepoGetter interface {
 
 type DBSource interface {
 	Source
-	SetDB(dbutil.DB)
+	SetDependenciesService(depsSvc DependenciesService)
 }
 
 // WithDB returns a decorator used in NewSourcer that calls SetDB on Sources that
 // can be upgraded to it.
 func WithDB(db dbutil.DB) func(Source) Source {
+	depsSvc := dependencies.GetService(database.NewDB(db), dependencies.ErrorSyncer)
+
 	return func(src Source) Source {
 		if s, ok := src.(DBSource); ok {
-			s.SetDB(db)
+			s.SetDependenciesService(depsSvc)
 			return s
 		}
 		return src
