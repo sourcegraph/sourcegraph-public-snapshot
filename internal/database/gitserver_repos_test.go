@@ -347,6 +347,7 @@ func TestGitserverReposGetByNames(t *testing.T) {
 	}
 
 	repoIdx := 0
+	gitserverRepoStore := &gitserverRepoStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Creating tc.reposNumber repos
@@ -365,14 +366,8 @@ func TestGitserverReposGetByNames(t *testing.T) {
 				idToExpectedRepo[gitserverRepo.RepoID] = gitserverRepo
 			}
 
-			// Mock maxNumPostgresParameters to test how well does batching work
-			MaxNumPostgresParametersMock = func() int {
-				return tc.batchSize
-			}
-			defer ResetMaxNumPostgresParametersMock()
-
 			// GetByNames should now work
-			fromDB, err := GitserverRepos(db).GetByNames(ctx, repoNames...)
+			fromDB, err := gitserverRepoStore.getByNames(ctx, tc.batchSize, repoNames...)
 			if err != nil {
 				t.Fatal(err)
 			}

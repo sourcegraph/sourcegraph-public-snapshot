@@ -336,20 +336,11 @@ JOIN repo r on r.id = g.repo_id
 WHERE r.name IN (%s)
 `
 
-var MaxNumPostgresParametersMock func() int
-
-func ResetMaxNumPostgresParametersMock() {
-	MaxNumPostgresParametersMock = nil
+func (s *gitserverRepoStore) GetByNames(ctx context.Context, names ...api.RepoName) ([]*types.GitserverRepo, error) {
+	return s.getByNames(ctx, batch.MaxNumPostgresParameters, names...)
 }
 
-func (s *gitserverRepoStore) GetByNames(ctx context.Context, names ...api.RepoName) ([]*types.GitserverRepo, error) {
-	var maxNumPostgresParameters int
-	if MaxNumPostgresParametersMock != nil {
-		maxNumPostgresParameters = MaxNumPostgresParametersMock()
-	} else {
-		maxNumPostgresParameters = batch.MaxNumPostgresParameters
-	}
-
+func (s *gitserverRepoStore) getByNames(ctx context.Context, maxNumPostgresParameters int, names ...api.RepoName) ([]*types.GitserverRepo, error) {
 	remainingNames := len(names)
 	nameQueries := make([]*sqlf.Query, 0)
 	batchSize := 0
@@ -357,24 +348,22 @@ func (s *gitserverRepoStore) GetByNames(ctx context.Context, names ...api.RepoNa
 
 	// iterating len(names) + 1 times because last iteration is needed for the last batch
 	for i := 0; i <= len(names); i++ {
-		if remainingNames == 0 {
-			// last batch: execute query and break out of the loop
-			if res, err := s.sendBatchQuery(ctx, maxNumPostgresParameters, nameQueries); err == nil {
+		if remainingNames == 0 || batchSize == maxNumPostgresParameters {
+			// executing the DB query
+			if res, err := s.sendBatchQuery(ctx, batchSize, nameQueries); err == nil {
 				repos = append(repos, res...)
 			} else {
 				return nil, err
 			}
-			break
-		}
-		if batchSize == maxNumPostgresParameters {
-			// batch is full: execute query and clear any variables for a new batch
-			if res, err := s.sendBatchQuery(ctx, maxNumPostgresParameters, nameQueries); err == nil {
-				repos = append(repos, res...)
+
+			if remainingNames == 0 {
+				// last batch: break out of the loop
+				break
 			} else {
-				return nil, err
+				// intermediate batch: reset variables required for a new batch
+				batchSize = 0
+				nameQueries = nil
 			}
-			batchSize = 0
-			nameQueries = nil
 		}
 		nameQueries = append(nameQueries, sqlf.Sprintf("%s", names[i]))
 		batchSize++
@@ -384,12 +373,13 @@ func (s *gitserverRepoStore) GetByNames(ctx context.Context, names ...api.RepoNa
 	return repos, nil
 }
 
-func (s *gitserverRepoStore) sendBatchQuery(ctx context.Context, maxNumPostgresParameters int, nameQueries []*sqlf.Query) ([]*types.GitserverRepo, error) {
-	repos := make([]*types.GitserverRepo, 0, maxNumPostgresParameters)
+func (s *gitserverRepoStore) sendBatchQuery(ctx context.Context, batchSize int, nameQueries []*sqlf.Query) ([]*types.GitserverRepo, error) {
+	repos := make([]*types.GitserverRepo, 0, batchSize)
 	rows, err := s.Query(ctx, sqlf.Sprintf(getByNamesQueryTemplate, sqlf.Join(nameQueries, ",")))
 	if err != nil {
 		return nil, err
 	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
 		repo, err := scanSingleGitserverRepo(rows)
