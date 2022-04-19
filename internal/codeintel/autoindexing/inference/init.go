@@ -28,7 +28,7 @@ func GetService(db database.DB) *Service {
 
 		svc = newService(
 			luasandbox.GetService(),
-			nil, // TODO - create concrete version
+			NewDefaultGitService(nil, db),
 			observationContext,
 		)
 	})
