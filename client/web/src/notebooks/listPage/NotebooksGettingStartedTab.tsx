@@ -17,16 +17,6 @@ interface NotebooksGettingStartedTabProps extends TelemetryProps {}
 
 const functionalityPanels = [
     {
-        title: 'The command palette',
-        description:
-            'Use slash commands to choose from the available block Notebook block types. Markdown, file, symbol, and search query blocks are supported.',
-        image: {
-            light: 'https://storage.googleapis.com/sourcegraph-assets/notebooks/notebooks_command_palette_light.png',
-            dark: 'https://storage.googleapis.com/sourcegraph-assets/notebooks/notebooks_command_palette_dark.png',
-            alt: 'Notebooks command pallete',
-        },
-    },
-    {
         title: 'Keep your docs current with symbol blocks',
         description:
             'Symbol blocks follow a chosen symbol anywhere in a file, even as it changes. Create symbol blocks to keep your docs from getting stale.',
@@ -34,6 +24,16 @@ const functionalityPanels = [
             light: 'https://storage.googleapis.com/sourcegraph-assets/notebooks/notebooks_symbol_block_light.png',
             dark: 'https://storage.googleapis.com/sourcegraph-assets/notebooks/notebooks_symbol_block_dark.png',
             alt: 'Notebook symbol block',
+        },
+    },
+    {
+        title: 'The command palette',
+        description:
+            'Use slash commands to choose from the available block Notebook block types. Markdown, file, symbol, and search query blocks are supported.',
+        image: {
+            light: 'https://storage.googleapis.com/sourcegraph-assets/notebooks/notebooks_command_palette_light.png',
+            dark: 'https://storage.googleapis.com/sourcegraph-assets/notebooks/notebooks_command_palette_dark.png',
+            alt: 'Notebooks command pallete',
         },
     },
     {
@@ -72,14 +72,25 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<NotebooksGettin
                 <div className={classNames(styles.row, 'row')}>
                     <div className="col-12 col-md-6">
                         <video
+                            key={`notebooks_overview_video_${isLightTheme}`}
                             className="w-100 h-auto shadow percy-hide"
                             muted={true}
                             playsInline={true}
                             {...videoAutoplayAttributes}
-                            src={`https://storage.googleapis.com/sourcegraph-assets/notebooks/notebooks_overview${
-                                isLightTheme ? '_light' : ''
-                            }.mp4`}
-                        />
+                        >
+                            <source
+                                type="video/webm"
+                                src={`https://storage.googleapis.com/sourcegraph-assets/notebooks/notebooks_overview_v3_${
+                                    isLightTheme ? 'light' : 'dark'
+                                }.webm`}
+                            />
+                            <source
+                                type="video/mp4"
+                                src={`https://storage.googleapis.com/sourcegraph-assets/notebooks/notebooks_overview_v3_${
+                                    isLightTheme ? 'light' : 'dark'
+                                }.mp4`}
+                            />
+                        </video>
                     </div>
                     <div className="col-12 col-md-6">
                         <h2>Create living documentation effortlessly</h2>
@@ -89,34 +100,19 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<NotebooksGettin
                         </p>
                         <h3>Use notebooks to&hellip;</h3>
                         <ul className={classNames(styles.narrowList, 'mb-0')}>
-                            <li>
-                                Onboard a new teammate: Create{' '}
-                                <Link
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    to="https://sourcegraph.com/notebooks/Tm90ZWJvb2s6NDEy"
-                                >
-                                    focused docs
-                                </Link>{' '}
-                                that stay up to date
+                            <li className="mb-1">Create focused onboarding docs that stay up to date</li>
+                            <li className="mb-1">Prepare pull request walkthroughs for your teammates</li>
+                            <li className="mb-1">
+                                Document complex systems to make them more approachable to new engineers
                             </li>
-                            <li>
-                                Create better PR walkthroughs: Quickly link to impacted code that wasn't part of the PR
+                            <li className="mb-1">
+                                Track symbol definitions to ensure you're always reading the latest docs
                             </li>
-                            <li>
-                                Track symbol definitions: Use symbol blocks to ensure you're always reading the latest
-                                docs
-                            </li>
-                            <li>
-                                Create long-form documentation: document complex systems like CI with query blocks and
-                                structural search to highlight critical code
-                            </li>
-                            <li>
+                            <li className="mb-1">
                                 <Link target="_blank" rel="noopener noreferrer" to="/help/notebooks/notebook-embedding">
-                                    Embed Notebooks
+                                    Embed
                                 </Link>{' '}
-                                in existing documentation: view Notebooks content in your existing knowledge management
-                                system
+                                the most current code anywhere you host your docs
                             </li>
                         </ul>
                     </div>
@@ -162,11 +158,6 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<NotebooksGettin
                         <p className="mt-1">
                             Create text content with Markdown blocks, track symbols within files with symbol blocks, and
                             add whole files or line ranges with file blocks.
-                        </p>
-                        <strong>Copy existing notebooks to leverage company or community knowledge</strong>
-                        <p className="mt-1">
-                            Copy useful notebooks, such as this one on log4j detection, and modify it to run on your
-                            codebase
                         </p>
                     </div>
                     <div className="col-12 col-md-6">
