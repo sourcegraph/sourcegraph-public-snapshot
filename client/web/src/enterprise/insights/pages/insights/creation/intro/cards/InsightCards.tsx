@@ -12,25 +12,22 @@ import {
 
 import styles from './InsightCards.module.scss'
 
-interface InsightCardProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
+interface InsightCardProps extends React.HTMLAttributes<HTMLDivElement> {
+    handleCreate?: () => void
+}
 
 /**
  * Low-level styled component for building insight link card for
  * the creation page gallery.
  */
 const InsightCard: React.FunctionComponent<InsightCardProps> = props => {
-    const { children, ...otherProps } = props
+    const { children, onClick, handleCreate, ...otherProps } = props
 
     return (
-        <Card
-            as="button"
-            {...otherProps}
-            type="button"
-            className={classNames(styles.card, 'p-3', otherProps.className)}
-        >
+        <Card {...otherProps} className={classNames(styles.card, 'p-3', otherProps.className)}>
             {children}
 
-            <Button as="div" className="mt-3 w-100" variant="secondary" size="sm">
+            <Button className="mt-3 w-100" variant="secondary" onClick={handleCreate}>
                 Create
             </Button>
         </Card>
@@ -97,12 +94,8 @@ export const CaptureGroupInsightCard: React.FunctionComponent<InsightCardProps> 
     </InsightCard>
 )
 
-// a11y-ignore
-// Rule: nested-interactive (Interactive controls must not be nested)
-// InsightCard is a button and it contains Link, it causes this issue,
-// we should consider keeping link + make InsightCard a div or make InsightCard a Link + make Link non-interactive
 export const ExtensionInsightsCard: React.FunctionComponent<InsightCardProps> = props => (
-    <InsightCard {...props} className={classNames(styles.cardExtensionCard, 'a11y-ignore')}>
+    <InsightCard {...props} className={classNames(styles.cardExtensionCard)}>
         <div className={styles.images}>
             <img
                 className={styles.image}
