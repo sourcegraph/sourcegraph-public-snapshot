@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -396,10 +395,6 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 		wantName   = "alice"
 		wantUserID = 123
 	)
-	queryInfo, err := query.ParseLiteral("foo")
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	repos := database.NewMockRepoStore()
 	repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
@@ -447,7 +442,6 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 	db.NamespacesFunc.SetDefaultReturn(ns)
 
 	op := search.RepoOptions{
-		Query:             queryInfo,
 		SearchContextSpec: "@" + wantName,
 	}
 	repositoryResolver := &Resolver{DB: db}
@@ -525,12 +519,7 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 	db.ReposFunc.SetDefaultReturn(repos)
 	db.SearchContextsFunc.SetDefaultReturn(sc)
 
-	queryInfo, err := query.ParseLiteral("foo")
-	if err != nil {
-		t.Fatal(err)
-	}
 	op := search.RepoOptions{
-		Query:             queryInfo,
 		SearchContextSpec: "searchcontext",
 	}
 	repositoryResolver := &Resolver{DB: db}
