@@ -7,7 +7,7 @@ Dependencies search is a code search feature that lets you search through the de
 
 ### Setup
 
-Configure a package host connection for each kind of dependency you want to search over. Currently only [npm dependencies](../../integration/npm.md) are supported.
+Configure a package host connection for each kind of dependency you want to search over.
 
 ### Use cases
 
@@ -17,18 +17,30 @@ Resolve an incident faster by [quickly finding where an error comes from](https:
 r:deps(^github\.com/sourcegraph/sourcegraph$@3.37) Observable cannot be called as a function
 ```
 
+Search only npm dependencies:
+```sgquery
+r:deps(^github\.com/sourcegraph/sourcegraph$@3.37) r:^npm throw
+`````
+
+Search only Go dependencies:
+```sgquery
+r:deps(^github\.com/sourcegraph/sourcegraph$@3.37) r:^go fmt.Println
+`````
+
 ### Compatibility
 
 The following table outlines the kinds of dependency repositories that dependency search supports and how it finds those dependencies in your repositories.
 
-Kind | How | Supported
----- | ------ | ---------
-[npm](../../integration/npm.md) | `package-lock.json` | ✅
-[npm](../../integration/npm.md) | `yarn.lock` | ✅
-[JVM](../../integration/jvm.md) | `gradle.lockfile` | ❌
-[JVM](../../integration/jvm.md) | `pom.xml` | ❌
-Go | `go.sum` | ❌
-Python | `poetry.lock` | ❌
+Kind                            | How                       | Direct | Transitive
+------------------------------- |-------------------------- |------- | ----------
+[npm](../../integration/npm.md) | `package-lock.json`       | ✅     | ✅
+[npm](../../integration/npm.md) | lsif-typescript uploads   | ✅     | ✅
+[npm](../../integration/npm.md) | `yarn.lock`               | ✅     | ✅
+[Go](../../integration/go.md)   | `go.mod`                  | ✅     | ✅ with Go >= 1.17 go.mod files
+[Go](../../integration/go.md)   | lsif-go uploads           | ❌     | ❌
+[JVM](../../integration/jvm.md) | `gradle.lockfile`         | ❌     | ❌
+[JVM](../../integration/jvm.md) | `pom.xml`                 | ❌     | ❌
+Python                          | `poetry.lock`             | ❌     | ❌
 
 ### Reference
 
