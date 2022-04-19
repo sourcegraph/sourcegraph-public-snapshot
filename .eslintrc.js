@@ -116,6 +116,12 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
         ],
       },
     ],
+    'react/display-name': [
+      'warning',
+      {
+        ignoreTranspilerName: false,
+      },
+    ],
     '@sourcegraph/wildcard/forbid-class-name': [
       'error',
       {
