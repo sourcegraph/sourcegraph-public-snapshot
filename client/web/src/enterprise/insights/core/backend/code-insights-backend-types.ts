@@ -22,9 +22,7 @@ export interface CategoricalChartContent<Datum> {
 }
 
 export interface SeriesChartContent<Datum> {
-    data: Datum[]
     series: Series<Datum>[]
-    getXValue: (datum: Datum) => Date
 }
 
 export interface InsightCategoricalContent<Datum> {
