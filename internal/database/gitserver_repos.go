@@ -350,20 +350,20 @@ func (s *gitserverRepoStore) getByNames(ctx context.Context, maxNumPostgresParam
 	for i := 0; i <= len(names); i++ {
 		if remainingNames == 0 || batchSize == maxNumPostgresParameters {
 			// executing the DB query
-			if res, err := s.sendBatchQuery(ctx, batchSize, nameQueries); err == nil {
-				repos = append(repos, res...)
-			} else {
+			res, err := s.sendBatchQuery(ctx, batchSize, nameQueries)
+			if err != nil {
 				return nil, err
 			}
+			repos = append(repos, res...)
 
 			if remainingNames == 0 {
 				// last batch: break out of the loop
 				break
-			} else {
-				// intermediate batch: reset variables required for a new batch
-				batchSize = 0
-				nameQueries = nil
 			}
+
+			// intermediate batch: reset variables required for a new batch
+			batchSize = 0
+			nameQueries = nil
 		}
 		nameQueries = append(nameQueries, sqlf.Sprintf("%s", names[i]))
 		batchSize++
