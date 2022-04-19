@@ -183,8 +183,10 @@ if [[ -n "${github_api_key}" && -n "${pr_number}" ]]; then
   if [[ "${pr_description}" != *"## App preview"* ]]; then
     echo "Updating PR #${pr_number} in ${owner_and_repo} description"
 
-    pr_description=$(echo "$pr_description" | sed -e '/\[Link\](https:\/\/.*.onrender.com).*/a\
-- [Storybook](https://5f0f381c0e50750022dc6bf7-fayzipwrry.chromatic.com)')
+    pr_description=$(printf '%s\n\n' "${pr_description}" \
+      "## App preview:" \
+      "- [Link](${pr_preview_url})" |
+      jq -Rs .)
 
     curl -sSf -o /dev/null --request PATCH \
       --url "${github_pr_api_url}" \
