@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -20,23 +19,7 @@ type RepoSearch struct {
 	RepoOptions search.RepoOptions
 	Features    search.Features
 
-	Repos []*search.RepositoryRevisions
-
 	Mode search.GlobalSearchMode
-
-	// Query is the parsed query from the user. You should be using Pattern
-	// instead, but Query is useful for checking extra fields that are set and
-	// ignored by Pattern, such as index:no
-	Query query.Q
-
-	// UseFullDeadline indicates that the search should try do as much work as
-	// it can within context.Deadline. If false the search should try and be
-	// as fast as possible, even if a "slow" deadline is set.
-	//
-	// For example searcher will wait to full its archive cache for a
-	// repository if this field is true. Another example is we set this field
-	// to true if the user requests a specific timeout or maximum result size.
-	UseFullDeadline bool
 }
 
 func (s *RepoSearch) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
