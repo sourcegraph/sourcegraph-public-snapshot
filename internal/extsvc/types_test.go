@@ -112,7 +112,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			name:   "NPM default",
 			config: `{"registry": "https://registry.npmjs.org"}`,
 			kind:   KindNpmPackages,
-			want:   rate.Inf,
+			want:   3000.0 / 3600.0,
 		},
 		{
 			name:   "NPM non-default",
@@ -124,7 +124,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			name:   "Go mod default",
 			config: `{"urls": ["https://example.com"]}`,
 			kind:   KindGoModules,
-			want:   rate.Inf,
+			want:   57600.0 / 3600.0,
 		},
 		{
 			name:   "Go mod non-default",
