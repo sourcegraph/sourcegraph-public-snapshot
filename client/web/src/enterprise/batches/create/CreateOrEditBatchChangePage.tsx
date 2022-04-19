@@ -273,6 +273,13 @@ const BatchConfigurationPage: React.FunctionComponent<BatchConfigurationPageProp
                     placeholder="My batch change name"
                     disabled={isReadOnly}
                 />
+                <small className="text-muted">
+                    Give it a short, descriptive name to reference the batch change on Sourcegraph. Do not include
+                    confidential information.{' '}
+                    <span className={classNames(isNameValid === false && 'text-danger')}>
+                        Only regular characters, _ and - are allowed.
+                    </span>
+                </small>
                 <hr className="my-3" />
                 <h3 className="text-muted">
                     Visibility <Icon data-tooltip="Coming soon" as={InfoCircleOutlineIcon} />
