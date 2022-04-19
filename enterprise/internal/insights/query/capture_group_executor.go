@@ -23,7 +23,7 @@ type CaptureGroupExecutor struct {
 	justInTimeExecutor
 }
 
-func NewCaptureGroupExecutor(postgres, insightsDb dbutil.DB, clock func() time.Time) JITExecutor {
+func NewCaptureGroupExecutor(postgres, insightsDb dbutil.DB, clock func() time.Time) *CaptureGroupExecutor {
 	return &CaptureGroupExecutor{
 		justInTimeExecutor: justInTimeExecutor{
 			db:        database.NewDB(postgres),

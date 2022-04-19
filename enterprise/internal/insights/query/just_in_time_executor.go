@@ -1,7 +1,6 @@
 package query
 
 import (
-	"context"
 	"sort"
 	"strings"
 	"time"
@@ -11,10 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
-
-type JITExecutor interface {
-	Execute(ctx context.Context, query string, repositories []string, interval timeseries.TimeInterval) ([]GeneratedTimeSeries, error)
-}
 
 type GeneratedTimeSeries struct {
 	Label    string
