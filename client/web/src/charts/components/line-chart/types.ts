@@ -1,6 +1,6 @@
 export interface Point<D> {
     id: string
-    seriesKey: string
+    seriesId: string | number
     value: number
     time: Date
     x: number
