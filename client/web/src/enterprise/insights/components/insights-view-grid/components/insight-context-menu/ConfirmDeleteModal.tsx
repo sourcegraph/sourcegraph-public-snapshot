@@ -1,9 +1,8 @@
 import React from 'react'
 
-import { ConfirmationModal, ConfirmationModalProps } from '@sourcegraph/wildcard'
-
 import { Insight } from '../../../../core/types'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight'
+import { ConfirmationModal, ConfirmationModalProps } from '../ConfirmationModal'
 
 interface ConfirmDeleteModalProps extends Pick<ConfirmationModalProps, 'showModal' | 'onCancel'> {
     insight: Insight
