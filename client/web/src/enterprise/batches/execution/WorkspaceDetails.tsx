@@ -13,6 +13,7 @@ import LinkVariantRemoveIcon from 'mdi-react/LinkVariantRemoveIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SyncIcon from 'mdi-react/SyncIcon'
+import TimelineClockOutlineIcon from 'mdi-react/TimelineClockOutlineIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import { useHistory } from 'react-router'
 
@@ -117,7 +118,7 @@ const WorkspaceHeader: React.FunctionComponent<WorkspaceHeaderProps> = ({
 }) => (
     <>
         <div className="d-flex align-items-center justify-content-between mb-2">
-            <h3 className="m-0">
+            <h3 className={styles.workspaceName}>
                 <WorkspaceStateIcon cachedResultFound={workspace.cachedResultFound} state={workspace.state} />{' '}
                 {workspace.__typename === 'VisibleBatchSpecWorkspace'
                     ? workspace.repository.name
@@ -135,13 +136,13 @@ const WorkspaceHeader: React.FunctionComponent<WorkspaceHeaderProps> = ({
         </div>
         <div className="d-flex align-items-center">
             {typeof workspace.placeInQueue === 'number' && (
-                <>
-                    <Icon as={TimerSandIcon} />
+                <span className={classNames(styles.workspaceDetail, 'd-flex align-items-center')}>
+                    <Icon as={TimelineClockOutlineIcon} />
                     <strong className="ml-1 mr-1">
                         <NumberInQueue number={workspace.placeInQueue} />
                     </strong>
                     in queue
-                </>
+                </span>
             )}
             {workspace.__typename === 'VisibleBatchSpecWorkspace' && workspace.path && (
                 <span className={styles.workspaceDetail}>{workspace.path}</span>
@@ -160,11 +161,9 @@ const WorkspaceHeader: React.FunctionComponent<WorkspaceHeaderProps> = ({
                 </span>
             )}
             {toggleShowTimeline && !workspace.cachedResultFound && workspace.state !== BatchSpecWorkspaceState.SKIPPED && (
-                <span className={styles.workspaceDetail}>
-                    <Button className="m-0 p-0" onClick={toggleShowTimeline} variant="link">
-                        Timeline
-                    </Button>
-                </span>
+                <Button className={styles.workspaceDetail} onClick={toggleShowTimeline} variant="link">
+                    Timeline
+                </Button>
             )}
         </div>
         <hr />
