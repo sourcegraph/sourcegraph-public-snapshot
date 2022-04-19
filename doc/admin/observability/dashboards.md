@@ -14615,6 +14615,108 @@ Query: `index_queue_len{instance=~`${instance:regex}`}`
 
 <br />
 
+#### zoekt: indexed_queueing_delay_heatmap
+
+<p class="subtitle">Job queuing delay heatmap</p>
+
+The queueing delay represents the amount of time an indexing job spent in the queue before it was processed.
+
+Large queueing delays can be an indicator of:
+	- resource saturation
+	- each Zoekt replica has too many jobs for it to be able to process all of them promptly. In this scenario, consider adding additional Zoekt replicas to distribute the work better .
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100410` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (le) (increase(index_queue_age_seconds_bucket[$__rate_interval]))`
+
+</details>
+
+<br />
+
+#### zoekt: indexed_queueing_delay_p99_9
+
+<p class="subtitle">99.9th percentile job queuing delay over 5m</p>
+
+The queueing delay represents the amount of time an indexing job spent in the queue before it was processed.
+
+Large queueing delays can be an indicator of:
+	- resource saturation
+	- each Zoekt replica has too many jobs for it to be able to process all of them promptly. In this scenario, consider adding additional Zoekt replicas to distribute the work better.
+
+The 99.9 percentile dashboard is useful for capturing the long tail of queueing delays (on the order of 24+ hours, etc.).
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100420` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.999, sum by (le, name)(rate(index_queue_age_seconds_bucket[5m])))`
+
+</details>
+
+<br />
+
+#### zoekt: indexed_queueing_delay_p90
+
+<p class="subtitle">90th percentile job queueing delay over 5m</p>
+
+The queueing delay represents the amount of time an indexing job spent in the queue before it was processed.
+
+Large queueing delays can be an indicator of:
+	- resource saturation
+	- each Zoekt replica has too many jobs for it to be able to process all of them promptly. In this scenario, consider adding additional Zoekt replicas to distribute the work better.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100421` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name)(rate(index_queue_age_seconds_bucket[5m])))`
+
+</details>
+
+<br />
+
+#### zoekt: indexed_queueing_delay_p75
+
+<p class="subtitle">75th percentile job queueing delay over 5m</p>
+
+The queueing delay represents the amount of time an indexing job spent in the queue before it was processed.
+
+Large queueing delays can be an indicator of:
+	- resource saturation
+	- each Zoekt replica has too many jobs for it to be able to process all of them promptly. In this scenario, consider adding additional Zoekt replicas to distribute the work better.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100422` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name)(rate(index_queue_age_seconds_bucket[5m])))`
+
+</details>
+
+<br />
+
 ### Zoekt: Compound shards (experimental)
 
 #### zoekt: compound_shards_aggregate
