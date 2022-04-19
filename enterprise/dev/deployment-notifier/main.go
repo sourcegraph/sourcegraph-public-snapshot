@@ -198,6 +198,7 @@ func (o *OkayMetricsClient) post(event *okayEvent) error {
 		return err
 	}
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", o.token))
+	req.Header.Add("Content-Type", "application/json")
 	resp, err := o.cli.Do(req)
 	if err != nil {
 		return err
@@ -263,7 +264,7 @@ func reportDeploymentMetrics(report *DeploymentReport, token string, dryRun bool
 
 	for _, pr := range report.PullRequests {
 		durationInMin := deployTime.Sub(pr.GetMergedAt()) / time.Minute
-		okayCli.Push("qa.deployment", deployTime, map[string]interface{}{
+		err := okayCli.Push("qa.deployment", deployTime, map[string]interface{}{
 			// context
 			"environment":           report.Environment,
 			"author":                pr.GetUser().GetLogin(),
@@ -275,6 +276,9 @@ func reportDeploymentMetrics(report *DeploymentReport, token string, dryRun bool
 			// duration
 			"duration.minutes": durationInMin,
 		})
+		if err != nil {
+			return err
+		}
 	}
 	return okayCli.Flush()
 }
