@@ -103,11 +103,10 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<NotebooksGettin
                             <li className="mb-1">Create focused onboarding docs that stay up to date</li>
                             <li className="mb-1">Prepare pull request walkthroughs for your teammates</li>
                             <li className="mb-1">
-                                Track symbol definitions to ensure you're always reading the latest docs
+                                Document complex systems to make them more approachable to new engineers
                             </li>
                             <li className="mb-1">
-                                Document complex systems using query blocks and structural search to highlight critical
-                                code
+                                Track symbol definitions to ensure you're always reading the latest docs
                             </li>
                             <li className="mb-1">
                                 <Link target="_blank" rel="noopener noreferrer" to="/help/notebooks/notebook-embedding">
