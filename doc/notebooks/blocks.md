@@ -6,7 +6,7 @@ Blocks are the compositional units of a notebook. You can interleave the various
 Markdown blocks support standard Markdown formatting, enabling you to create headings, lists, code blocks, and more. They are the foundational block type for providing additional context to the specialized block types described below.
 
 ## Query blocks
-Query blocks support the full Sourcegraph search query language, allowing you to use any of our search types, filters, patterns, and predicates to display the most relevant results.
+Query blocks support the full Sourcegraph search query language, allowing you to use our full [search syntax](../code_search/reference/index.md), including any of our types, filters, patterns, and predicates, to display the most relevant results.
 
 ## Symbol blocks
 With symbol blocks, you can identify the symbol you want to highlight. Symbol blocks are special. As long as the symbol definition stays within the file you selected when you created the block, you don't need to update it when the file changes. Symbol blocks "follow" the symbol around the file and so always display its current location.

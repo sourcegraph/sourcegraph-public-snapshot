@@ -46,7 +46,7 @@ Notebooks can be created in two ways. Through the web interface or via special M
 ### Web-based notebooks
 The simplest way to get started with Notebooks is to create one using the web interface. Notebooks created this way have the advantage of being interactive, letting you see the content of your blocks in realtime as you create your notebook. You can also utilize the [notepad](../notebooks/notepad.md) to dramatically speed up notebook creation.
 
-You can also create web-based notebooks by importing plain old Markdown files and then augmenting them with Sourcegraph notebook block types in the web interface. A new notebook will automatically be created when you import a standard markdown file. From there, you can modify it however you like in the web interface.
+You can also create web-based notebooks by importing plain Markdown files and then augmenting them with Sourcegraph notebook block types in the web interface. A new notebook will automatically be created when you import a standard markdown file. From there, you can modify it however you like in the web interface.
 
 Web-based notebooks are automatically saved as they're edited. There is currently no version control, version history, or versioning system.
 
