@@ -46,6 +46,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -61,6 +62,7 @@ var (
 	wantPctFree                    = env.MustGetInt("SRC_REPOS_DESIRED_PERCENT_FREE", 10, "Target percentage of free space on disk.")
 	janitorInterval                = env.MustGetDuration("SRC_REPOS_JANITOR_INTERVAL", 1*time.Minute, "Interval between cleanup runs")
 	syncRepoStateInterval          = env.MustGetDuration("SRC_REPOS_SYNC_STATE_INTERVAL", 10*time.Minute, "Interval between state syncs")
+	rateLimitSyncInterval          = env.MustGetDuration("SRC_REPOS_SYNC_RATE_LIMIT_INTERVAL", 5*time.Minute, "Interval between rate limit syncs")
 	syncRepoStateBatchSize         = env.MustGetInt("SRC_REPOS_SYNC_STATE_BATCH_SIZE", 500, "Number of upserts to perform per batch")
 	syncRepoStateUpsertPerSecond   = env.MustGetInt("SRC_REPOS_SYNC_STATE_UPSERT_PER_SEC", 500, "The number of upserted rows allowed per second across all gitserver instances")
 	batchLogGlobalConcurrencyLimit = env.MustGetInt("SRC_BATCH_LOG_GLOBAL_CONCURRENCY_LIMIT", 256, "The maximum number of in-flight Git commands from all /batch-log requests combined")
@@ -148,12 +150,22 @@ func main() {
 	// Ready immediately
 	ready := make(chan struct{})
 	close(ready)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Best effort attempt to sync rate limiters early on. If it fails, we'll try
+	// again in the background sync below
+	rateLimitSyncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, externalServiceStore)
+	if err := rateLimitSyncer.SyncRateLimiters(ctx); err != nil {
+		log15.Warn("error performing initial rate limit sync", "error", err)
+	}
+
+	go syncRateLimiters(ctx, rateLimitSyncer, rateLimitSyncInterval)
 	go debugserver.NewServerRoutine(ready).Start()
 	go gitserver.Janitor(janitorInterval)
 	go gitserver.SyncRepoState(syncRepoStateInterval, syncRepoStateBatchSize, syncRepoStateUpsertPerSecond)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	gitserver.StartClonePipeline(ctx)
 
 	addr := os.Getenv("GITSERVER_ADDR")
@@ -433,4 +445,27 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 		return server.NewGoModulesSyncer(&c, codeintelDB, cli), nil
 	}
 	return &server.GitRepoSyncer{}, nil
+}
+
+// Sync rate limiters from config. Since we don't have a trigger that watches for
+// changes to rate limits we'll run this periodically in the background.
+func syncRateLimiters(ctx context.Context, syncer *repos.RateLimitSyncer, interval time.Duration) {
+	for {
+		sleep(ctx, interval)
+		if err := ctx.Err(); err != nil {
+			log15.Warn("context error in syncRateLimiters, terminating", "error", err)
+			return
+		}
+		if err := syncer.SyncRateLimiters(ctx); err != nil {
+			log15.Warn("error syncing rate limits", "error", err)
+		}
+	}
+}
+
+// sleep is a context aware time.Sleep
+func sleep(ctx context.Context, d time.Duration) {
+	select {
+	case <-ctx.Done():
+	case <-time.After(d):
+	}
 }
