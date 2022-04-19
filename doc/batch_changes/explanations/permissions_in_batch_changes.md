@@ -17,7 +17,7 @@ Users have admin permissions on the batch changes they created and read access t
 
 ### Namespaces
 
-Batch changes can be created either under the user's or an organization's namespace. If placed under an organization namespace, all users of the organizations have admin access on the batch change.
+Batch changes can be created either under the user's or an organization's namespace. If placed under an organization namespace, all users of the organization have admin access on the batch change.
 
 ### Batch Change access for each permission level
 
