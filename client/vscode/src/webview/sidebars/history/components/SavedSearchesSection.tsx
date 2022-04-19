@@ -7,7 +7,7 @@ import { catchError } from 'rxjs/operators'
 
 import { gql } from '@sourcegraph/http-client'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
-import { useObservable } from '@sourcegraph/wildcard'
+import { Icon, useObservable } from '@sourcegraph/wildcard'
 
 import { SavedSearchesResult, SavedSearchesVariables, SearchPatternType } from '../../../../graphql-operations'
 import { HistorySidebarProps } from '../HistorySidebarView'
@@ -92,9 +92,9 @@ export const SavedSearchesSection: React.FunctionComponent<HistorySidebarProps> 
             >
                 <h5 className="flex-grow-1">Saved Searches</h5>
                 {collapsed ? (
-                    <ChevronLeftIcon className="icon-inline mr-1" />
+                    <Icon className="mr-1" as={ChevronLeftIcon} />
                 ) : (
-                    <ChevronDownIcon className="icon-inline mr-1" />
+                    <Icon className="mr-1" as={ChevronDownIcon} />
                 )}
             </button>
 
