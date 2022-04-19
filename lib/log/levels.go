@@ -1,42 +1,40 @@
 package log
 
 import (
-	"os"
 	"strings"
-	"time"
 
-	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
 const envSrcLogLevel = "SRC_LOG_LEVEL"
 
-func parseLevel(l string) zapcore.Level {
-	switch strings.ToLower(l) {
-	case "debug", "dbug":
+type Level string
+
+const (
+	LevelDebug Level = "debug"
+	LevelInfo  Level = "info"
+	LevelWarn  Level = "warn"
+	LevelError Level = "error"
+
+	// LevelNone silences all log output.
+	LevelNone Level = "none"
+)
+
+func (l Level) Parse() zapcore.Level {
+	switch Level(strings.ToLower(string(l))) {
+	case LevelDebug, "dbug":
 		return zapcore.DebugLevel
-	case "info":
+	case LevelInfo:
 		return zapcore.InfoLevel
-	case "warn":
+	case LevelWarn:
 		return zapcore.WarnLevel
-	case "error", "eror":
+	case LevelError, "eror", "crit":
 		return zapcore.ErrorLevel
-	case "crit":
-		return zapcore.DPanicLevel
+	case LevelNone:
+		// Logger does not export anything at the fatal level, so this effectively
+		// silences all output.
+		return zapcore.FatalLevel
 	}
 	// Quietly fall back to info
 	return zapcore.InfoLevel
-}
-
-func watchLogLevel(logLevel zap.AtomicLevel) {
-	ticker := time.NewTicker(10 * time.Second)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ticker.C:
-		}
-
-		level := parseLevel(os.Getenv(envSrcLogLevel))
-		logLevel.SetLevel(level)
-	}
 }

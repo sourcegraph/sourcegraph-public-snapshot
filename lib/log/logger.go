@@ -1,20 +1,41 @@
 package log
 
 import (
+	"strings"
+
+	"github.com/sourcegraph/sourcegraph/lib/log/internal/encoders"
+	"github.com/sourcegraph/sourcegraph/lib/log/internal/global"
+	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
 	"go.uber.org/zap"
 )
 
-type TraceContext struct {
-	TraceID string
-	SpanID  string
+// Get returns the global logger and sets it up with the given scope and OpenTelemetry
+// compliant implementation. Instead of using this everywhere a log is needed, callers
+// should hold a reference to the Logger and pass it in to places that need to log.
+func Get(scope string) Logger {
+	adapted := &zapAdapter{Logger: global.Get()}
+	return adapted.Scoped(scope).With(attributesNamespace)
 }
 
+type TraceContext = otfields.TraceContext
+
+// Logger is an OpenTelemetry-compliant logger. All functions that log output should hold
+// a reference to a Logger that gets passed in from callers, so as to maintain fields and
+// context.
 type Logger interface {
-	// Named creates a new Logger with segment attached to the name.
-	Named(segment string) Logger
-	// With creates a new Logger with the given fields.
+	// Scoped creates a new Logger with scope attached as part of its instrumentation
+	// scope.
+	//
+	// https://opentelemetry.io/docs/reference/specification/logs/data-model/#field-instrumentationscope
+	Scoped(scope string) Logger
+
+	// With creates a new Logger with the given fields as attributes.
+	//
+	// https://opentelemetry.io/docs/reference/specification/logs/data-model/#field-attributes
 	With(...Field) Logger
 	// WithTrace creates a new Logger with the given trace context.
+	//
+	// https://opentelemetry.io/docs/reference/specification/logs/data-model/#trace-context-fields
 	WithTrace(TraceContext) Logger
 
 	// Debug logs a debug message, including any fields accumulated on the Logger.
@@ -34,11 +55,6 @@ type Logger interface {
 	// Error logs are high-priority. If an application is running smoothly, it shouldn't
 	// generate any error-level logs.
 	Error(string, ...Field)
-	// Critical logs a critical message, including any fields accumulated on the
-	// Logger. In development mode, this also causes a panic.
-	//
-	// Critical logs are particularly important logs.
-	Critical(string, ...Field)
 
 	// Sync flushes any buffered log entries. Applications should take care to call Sync
 	// before exiting.
@@ -48,54 +64,67 @@ type Logger interface {
 type zapAdapter struct {
 	*zap.Logger
 
-	// allFields is a read-only copy of all allFields used in this logger, for the
+	// scope is a read-only copy of this logger's full scope so that we can rebuild
+	// loggers from root.
+	scope string
+
+	// attributes is a read-only copy of all attributes used in this logger, for the
 	// purposes of being able to rebuild loggers from a root logger to bypass the
 	// Attributes namespace.
-	allFields []Field
+	attributes []Field
 
-	// options preserves options from initLogger, for a similar purpose to allFields
+	// options preserves options from initLogger, for a similar purpose to attributes
+	// and scope.
 	options []zap.Option
 }
 
 var _ Logger = &zapAdapter{}
 
-func (z *zapAdapter) Named(segment string) Logger {
+func (z *zapAdapter) Scoped(scope string) Logger {
+	var newScope string
+	if z.scope == "" {
+		newScope = scope
+	} else {
+		newScope = strings.Join([]string{z.scope, scope}, ".")
+	}
 	return &zapAdapter{
-		Logger:    z.Logger.Named(segment),
-		allFields: z.allFields,
-		options:   z.options,
+		Logger:     z.Logger.Named(scope), // name -> scope in OT
+		scope:      newScope,
+		attributes: z.attributes,
+		options:    z.options,
 	}
 }
 
 func (z *zapAdapter) With(fields ...Field) Logger {
 	return &zapAdapter{
-		Logger:    z.Logger.With(fields...),
-		allFields: append(z.allFields, fields...),
-		options:   z.options,
+		Logger:     z.Logger.With(fields...),
+		scope:      z.scope,
+		attributes: append(z.attributes, fields...),
+		options:    z.options,
 	}
 }
 
 func (z *zapAdapter) WithTrace(trace TraceContext) Logger {
-	allFields := append([]Field{zap.Inline(&traceContext{trace})}, z.allFields...)
-	logger := getGlobal().Logger.With(allFields...)
+	newLogger := global.Get().
+		Named(z.scope).
+		With(zap.Inline(&encoders.TraceContextEncoder{TraceContext: trace})).
+		With(z.attributes...)
 	if len(z.options) > 0 {
-		logger = logger.WithOptions(z.options...)
+		newLogger = newLogger.WithOptions(z.options...)
 	}
 	return &zapAdapter{
-		Logger:    logger,
-		allFields: allFields,
-		options:   z.options,
+		Logger:     newLogger,
+		scope:      z.scope,
+		attributes: z.attributes,
+		options:    z.options,
 	}
 }
 
-func (z *zapAdapter) Critical(msg string, fields ...Field) {
-	z.Logger.DPanic(msg, fields...)
-}
-
-func (z *zapAdapter) withOptions(options ...zap.Option) Logger {
+func (z *zapAdapter) WithOptions(options ...zap.Option) Logger {
 	return &zapAdapter{
-		Logger:    z.Logger.WithOptions(options...),
-		allFields: z.allFields,
-		options:   append(z.options, options...),
+		Logger:     z.Logger.WithOptions(options...),
+		scope:      z.scope,
+		attributes: z.attributes,
+		options:    append(z.options, options...),
 	}
 }

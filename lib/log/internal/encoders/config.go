@@ -1,13 +1,17 @@
-package log
+package encoders
 
-import "go.uber.org/zap/zapcore"
+import (
+	"time"
 
-// openTelemetryEncoderConfig configures Zap to comply with the OT logs spec:
+	"go.uber.org/zap/zapcore"
+)
+
+// OpenTelemetryConfig configures Zap to comply with the OT logs spec:
 // https://opentelemetry.io/docs/reference/specification/logs/data-model/
 //
 // For what we want output to look like in production, see:
 // https://opentelemetry.io/docs/reference/specification/logs/data-model/#example-log-records
-var openTelemetryEncoderConfig = zapcore.EncoderConfig{
+var OpenTelemetryConfig = zapcore.EncoderConfig{
 	// https://opentelemetry.io/docs/reference/specification/logs/data-model/#field-instrumentationscope
 	NameKey: "InstrumentationScope",
 	// https://opentelemetry.io/docs/reference/specification/logs/data-model/#field-timestamp
@@ -31,51 +35,30 @@ var openTelemetryEncoderConfig = zapcore.EncoderConfig{
 	MessageKey: "Body",
 
 	// These don't really have an equivalent in the OT spec, and we can't stick it under
-	// Attributes because they are top-level traits, so we just capitalize them and hope
-	// for the best.
+	// Attributes because they are top-level traits in Zap, so we just capitalize them and
+	// hope for the best.
 	CallerKey:     "Caller",
 	FunctionKey:   "Function",
 	StacktraceKey: "Stacktrace",
 
 	// Defaults
 	LineEnding:     zapcore.DefaultLineEnding,
-	EncodeDuration: zapcore.StringDurationEncoder,
+	EncodeDuration: zapcore.SecondsDurationEncoder,
 	EncodeCaller:   zapcore.ShortCallerEncoder,
 }
 
-// Resource represents a service instance.
-//
-// https://opentelemetry.io/docs/reference/specification/Resource/semantic_conventions/#service
-type Resource struct {
-	Name      string
-	Namespace string
-	// InstanceID must be unique for each Name, Namespace pair.
-	InstanceID string
-	Version    string
-}
-
-func (r *Resource) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddString("name", r.Name)
-	enc.AddString("namespace", r.Namespace)
-	enc.AddString("instance.id", r.InstanceID)
-	enc.AddString("version", r.Version)
-	return nil
-}
-
-// attributesNamespace should be included as the last field of all log getters of this
-// package.
-//
-// It logs all fields under 'Attributes' to conform with OpenTelemetry spec
-// https://opentelemetry.io/docs/reference/specification/logs/data-model/#field-attributes
-var attributesNamespace = Namespace("Attributes")
-
-// https://opentelemetry.io/docs/reference/specification/logs/data-model/#trace-context-fields
-type traceContext struct {
-	TraceContext
-}
-
-func (c *traceContext) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddString("TraceId", c.TraceID)
-	enc.AddString("SpanId", c.SpanID)
-	return nil
+// ApplyDevConfig applies options for dev environments to the encoder config
+func ApplyDevConfig(cfg zapcore.EncoderConfig) zapcore.EncoderConfig {
+	// Nice colors based on log level
+	cfg.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	// TODO maybe enable this in dev? these get rather verbose, however
+	cfg.FunctionKey = zapcore.OmitKey
+	// Encode time in simpler format, omitting date since in dev this is likely a
+	// short-lived instance.
+	cfg.EncodeTime = func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+		enc.AppendString(t.Format("15:04:05"))
+	}
+	// Human-readable durations
+	cfg.EncodeDuration = zapcore.StringDurationEncoder
+	return cfg
 }
