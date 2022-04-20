@@ -5,7 +5,6 @@ export interface Point<D> {
     time: Date
     x: number
     y: number
-    datum: D
     linkUrl?: string
     color: string
 }

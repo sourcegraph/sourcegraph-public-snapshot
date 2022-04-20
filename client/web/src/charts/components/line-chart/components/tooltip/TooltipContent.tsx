@@ -17,7 +17,7 @@ export function getLineStroke<Datum>(line: Series<Datum>): string {
 
 const MAX_ITEMS_IN_TOOLTIP = 10
 
-export type MinimumPointInfo<Datum> = Pick<Point<Datum>, 'datum' | 'seriesId' | 'value' | 'time'>
+export type MinimumPointInfo<Datum> = Pick<Point<Datum>, 'seriesId' | 'value' | 'time'>
 
 export interface TooltipContentProps<Datum> {
     series: Series<Datum>[]
