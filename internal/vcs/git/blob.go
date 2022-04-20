@@ -98,7 +98,7 @@ type blobReader struct {
 	repo   api.RepoName
 	commit api.CommitID
 	name   string
-	cmd    gitserver.Command
+	cmd    gitserver.GitCommand
 	rc     io.ReadCloser
 }
 

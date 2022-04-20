@@ -175,8 +175,8 @@ type Client interface {
 	// to abort processing further results.
 	BatchLog(ctx context.Context, opts BatchLogOptions, callback BatchLogCallback) error
 
-	// GitCommand creates a new Command.
-	GitCommand(repo api.RepoName, args ...string) Command
+	// GitCommand creates a new GitCommand.
+	GitCommand(repo api.RepoName, args ...string) GitCommand
 
 	// CreateCommitFromPatch will attempt to create a commit from a patch
 	// If possible, the error returned will be of type protocol.CreateCommitFromPatchError
@@ -837,8 +837,8 @@ func repoNamesFromRepoCommits(repoCommits []api.RepoCommit) []string {
 	return repoNames
 }
 
-// Command is an interface describing a command to be executed remotely.
-type Command interface {
+// GitCommand is an interface describing a git command to be executed remotely.
+type GitCommand interface {
 	// DividedOutput runs the command and returns its standard output and standard error.
 	DividedOutput(ctx context.Context) ([]byte, []byte, error)
 
@@ -980,7 +980,7 @@ func (c *cmdReader) Close() error {
 	return c.rc.Close()
 }
 
-func (c *ClientImplementor) GitCommand(repo api.RepoName, arg ...string) Command {
+func (c *ClientImplementor) GitCommand(repo api.RepoName, arg ...string) GitCommand {
 	return &Cmd{
 		repo:   repo,
 		execFn: c.httpPost,
