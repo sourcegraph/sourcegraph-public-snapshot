@@ -314,20 +314,6 @@ func (q Q) Exists(field string) bool {
 	return found
 }
 
-func (q Q) Values(field string) []*Value {
-	var values []*Value
-	if field == "" {
-		VisitPattern(q, func(value string, _ bool, annotation Annotation) {
-			values = append(values, q.valueToTypedValue(field, value, annotation.Labels)...)
-		})
-	} else {
-		VisitField(q, field, func(value string, _ bool, _ Annotation) {
-			values = append(values, q.valueToTypedValue(field, value, None)...)
-		})
-	}
-	return values
-}
-
 func (q Q) BoolValue(field string) bool {
 	result := false
 	VisitField(q, field, func(value string, _ bool, _ Annotation) {
@@ -430,76 +416,4 @@ func parseRegexpOrPanic(field, value string) *regexp.Regexp {
 		panic(fmt.Sprintf("Value %s for field %s invalid regex: %s", field, value, err.Error()))
 	}
 	return r
-}
-
-// valueToTypedValue approximately preserves the field validation of our
-// previous query processing. It does not check the validity of field negation
-// or if the same field is specified more than once. This role is now performed
-// by validate.go.
-func (q Q) valueToTypedValue(field, value string, label labels) []*Value {
-	switch field {
-	case
-		FieldDefault:
-		if label.IsSet(Literal) {
-			return []*Value{{String: &value}}
-		}
-		if label.IsSet(Regexp) {
-			regexp, err := regexp.Compile(value)
-			if err != nil {
-				panic(fmt.Sprintf("Invariant broken: value must have been checked to be valid regexp. Error: %s", err))
-			}
-			return []*Value{{Regexp: regexp}}
-		}
-		// All patterns should have a label after parsing, but if not, treat the pattern as a string literal.
-		return []*Value{{String: &value}}
-
-	case
-		FieldCase:
-		b, _ := parseBool(value)
-		return []*Value{{Bool: &b}}
-
-	case
-		FieldRepo, "r":
-		return []*Value{{Regexp: parseRegexpOrPanic(field, value)}}
-
-	case
-		FieldContext:
-		return []*Value{{String: &value}}
-
-	case
-		FieldFile, "f":
-		return []*Value{{Regexp: parseRegexpOrPanic(field, value)}}
-
-	case
-		FieldFork,
-		FieldArchived,
-		FieldLang, "l", "language",
-		FieldType,
-		FieldPatternType,
-		FieldContent:
-		return []*Value{{String: &value}}
-
-	case FieldRepoHasFile:
-		return []*Value{{Regexp: parseRegexpOrPanic(field, value)}}
-
-	case
-		FieldRepoHasCommitAfter,
-		FieldBefore, "until",
-		FieldAfter, "since":
-		return []*Value{{String: &value}}
-
-	case
-		FieldAuthor,
-		FieldCommitter,
-		FieldMessage, "m", "msg":
-		return []*Value{{Regexp: parseRegexpOrPanic(field, value)}}
-
-	case
-		FieldIndex,
-		FieldCount,
-		FieldTimeout,
-		FieldCombyRule:
-		return []*Value{{String: &value}}
-	}
-	return []*Value{{String: &value}}
 }
