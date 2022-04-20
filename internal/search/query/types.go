@@ -97,13 +97,16 @@ func (b Basic) MapParameters(parameters []Parameter) Basic {
 	return Basic{Parameters: parameters, Pattern: b.Pattern}
 }
 
-// GetCount returns the string value of the "count:" field. Returns empty string if none.
-func (b Basic) GetCount() string {
-	var countStr string
-	VisitField(ToNodes(b.Parameters), "count", func(value string, _ bool, _ Annotation) {
-		countStr = value
+// Count returns the string value of the "count:" field. Returns empty string if none.
+func (b Basic) Count() (count *int) {
+	VisitField(ToNodes(b.Parameters), FieldCount, func(value string, _ bool, _ Annotation) {
+		c, err := strconv.Atoi(value)
+		if err != nil {
+			panic(fmt.Sprintf("Value %q for count cannot be parsed as an int", value))
+		}
+		count = &c
 	})
-	return countStr
+	return count
 }
 
 // GetTimeout returns the time.Duration value from the `timeout:` field.
