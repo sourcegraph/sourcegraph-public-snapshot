@@ -10,15 +10,16 @@ import (
 )
 
 func GetService(db database.DB, syncer dependencies.Syncer) *dependencies.Service {
-	return dependencies.GetService(db, NewGitService(db), syncer)
-}
+	if syncer == nil {
+		// If no syncer is supplied, then we can expect to be in gitserver or repo-updater
+		// service, which doesn't need any of the service behaviors dependenet on the syncer.
+		// We install a fail-fast syncer here because we don't expect this value to ever be
+		// exercised in a production setup.
 
-// GetServiceWithoutSyncer should be used when constructing a dependencies service that only uses the
-// system-level behaviors (e.g., listing repositories to sync since the last request). This syncer value
-// will issue errors on invocation indicating that gitserver/repoupdater services are not expected to
-// invoke such methods.
-func GetServiceWithoutSyncer(db database.DB) *dependencies.Service {
-	return dependencies.GetService(db, NewGitService(db), &errorSyncer{})
+		syncer = &errorSyncer{}
+	}
+
+	return dependencies.GetService(db, NewGitService(db), syncer)
 }
 
 type errorSyncer struct{}
