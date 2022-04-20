@@ -97,22 +97,16 @@ func (b Basic) MapParameters(parameters []Parameter) Basic {
 	return Basic{Parameters: parameters, Pattern: b.Pattern}
 }
 
-// AddCount adds a count parameter to a basic query. Behavior of AddCount on a
-// query that already has a count parameter is undefined.
-func (b Basic) AddCount(count int) Basic {
-	return b.MapParameters(append(b.Parameters, Parameter{
-		Field: "count",
-		Value: strconv.FormatInt(int64(count), 10),
-	}))
-}
-
-// GetCount returns the string value of the "count:" field. Returns empty string if none.
-func (b Basic) GetCount() string {
-	var countStr string
-	VisitField(ToNodes(b.Parameters), "count", func(value string, _ bool, _ Annotation) {
-		countStr = value
+// Count returns the string value of the "count:" field. Returns empty string if none.
+func (b Basic) Count() (count *int) {
+	VisitField(ToNodes(b.Parameters), FieldCount, func(value string, _ bool, _ Annotation) {
+		c, err := strconv.Atoi(value)
+		if err != nil {
+			panic(fmt.Sprintf("Value %q for count cannot be parsed as an int", value))
+		}
+		count = &c
 	})
-	return countStr
+	return count
 }
 
 // GetTimeout returns the time.Duration value from the `timeout:` field.

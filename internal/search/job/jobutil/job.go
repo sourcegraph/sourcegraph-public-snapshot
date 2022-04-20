@@ -1,7 +1,6 @@
 package jobutil
 
 import (
-	"strconv"
 	"strings"
 
 	"github.com/grafana/regexp"
@@ -758,9 +757,8 @@ var metricFeatureFlagUnavailable = promauto.NewCounter(prometheus.CounterOpts{
 })
 
 func computeFileMatchLimit(q query.Basic, p search.Protocol) int {
-	if count := q.GetCount(); count != "" {
-		v, _ := strconv.Atoi(count) // Invariant: count is validated.
-		return v
+	if count := q.Count(); count != nil {
+		return *count
 	}
 
 	if q.IsStructural() {
