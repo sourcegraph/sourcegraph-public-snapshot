@@ -28,11 +28,7 @@ func NewRecorder(file string, record bool, filters ...cassette.Filter) (*recorde
 	}
 
 	filters = append(filters, func(i *cassette.Interaction) error {
-		delete(i.Request.Headers, "Authorization")
-		// This is used for GitLab.
-		delete(i.Request.Headers, "Private-Token")
-		delete(i.Response.Headers, "Set-Cookie")
-		// Delete anything that looks risky
+		// Delete anything that looks risky on both requests and responses
 		riskyHeaderKeys := []string{
 			"auth", "cookie", "token",
 		}
