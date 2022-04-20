@@ -3,8 +3,8 @@ import React from 'react'
 import { createLocation, createMemoryHistory } from 'history'
 
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
-import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
@@ -92,7 +92,7 @@ describe('GlobalNavbar', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
 
             const active = await driver.page.evaluate(() =>
-                document.querySelector(`[data-test-id="${PageRoutes.Search}"]`).getAttribute('data-test-active')
+                document.querySelector(`[data-test-id="${PageRoutes.Search}"]`)?.getAttribute('data-test-active')
             )
 
             expect(active).toEqual('true')
@@ -102,7 +102,7 @@ describe('GlobalNavbar', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/github.com/sourcegraph-testing/zap')
 
             const active = await driver.page.evaluate(() =>
-                document.querySelector(`[data-test-id="${PageRoutes.Search}"]`).getAttribute('data-test-active')
+                document.querySelector(`[data-test-id="${PageRoutes.Search}"]`)?.getAttribute('data-test-active')
             )
 
             expect(active).toEqual('true')
@@ -112,7 +112,7 @@ describe('GlobalNavbar', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/github.com/sourcegraph-testing/zap/-/blob/README.md')
 
             const active = await driver.page.evaluate(() =>
-                document.querySelector(`[data-test-id="${PageRoutes.Search}"]`).getAttribute('data-test-active')
+                document.querySelector(`[data-test-id="${PageRoutes.Search}"]`)?.getAttribute('data-test-active')
             )
 
             expect(active).toEqual('true')
@@ -122,7 +122,7 @@ describe('GlobalNavbar', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/batch-changes')
 
             const active = await driver.page.evaluate(() =>
-                document.querySelector(`[data-test-id="${PageRoutes.Search}"]`).getAttribute('data-test-active')
+                document.querySelector(`[data-test-id="${PageRoutes.Search}"]`)?.getAttribute('data-test-active')
             )
 
             expect(active).toEqual('false')

@@ -19,7 +19,6 @@ import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/dri
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { WebGraphQlOperations } from '../graphql-operations'
-import { PageRoutes } from '../routes.constants'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
