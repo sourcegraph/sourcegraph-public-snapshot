@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -40,7 +41,12 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatis
 
 func (srs *searchResultsStats) getResults(ctx context.Context) (result.Matches, error) {
 	srs.once.Do(func() {
-		j, err := jobutil.ToSearchJob(srs.sr.SearchInputs, srs.sr.SearchInputs.Query)
+		b, err := query.ToBasicQuery(srs.sr.SearchInputs.Query)
+		if err != nil {
+			srs.err = err
+			return
+		}
+		j, err := jobutil.ToSearchJob(srs.sr.SearchInputs, b)
 		if err != nil {
 			srs.err = err
 			return

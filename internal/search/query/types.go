@@ -206,6 +206,23 @@ func (b Basic) Index() YesNoOnly {
 	return *v
 }
 
+func (b Basic) Fork() *YesNoOnly {
+	return Q(ToNodes(b.Parameters)).yesNoOnlyValue(FieldFork)
+}
+
+func (b Basic) Archived() *YesNoOnly {
+	return Q(ToNodes(b.Parameters)).yesNoOnlyValue(FieldArchived)
+}
+
+func (b Basic) Repositories() (repos, excludeRepos []string) {
+	return Q(ToNodes(b.Parameters)).Repositories()
+}
+
+func (b Basic) Visibility() RepoVisibility {
+	visibilityStr := b.FindValue(FieldVisibility)
+	return ParseVisibility(visibilityStr)
+}
+
 // PatternString returns the simple string pattern of a basic query. It assumes
 // there is only on pattern atom.
 func (b Basic) PatternString() string {
@@ -250,6 +267,27 @@ func (b Basic) Exists(field string) bool {
 		found = true
 	})
 	return found
+}
+
+func (b Basic) Dependencies() (dependencies []string) {
+	VisitPredicate(b.ToParseTree(), func(field, name, value string) {
+		if field == FieldRepo && (name == "dependencies" || name == "deps") {
+			dependencies = append(dependencies, value)
+		}
+	})
+	return dependencies
+}
+
+func (b Basic) MaxResults(defaultLimit int) int {
+	if count := b.Count(); count != nil {
+		return *count
+	}
+
+	if defaultLimit != 0 {
+		return defaultLimit
+	}
+
+	return limits.DefaultMaxSearchResults
 }
 
 // A query is a tree of Nodes. We choose the type name Q so that external uses like query.Q do not stutter.
