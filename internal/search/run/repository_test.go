@@ -32,16 +32,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 				},
 			}}, nil
 		}
-		pat := &search.TextPatternInfo{
-			Pattern:                      "",
-			FilePatternsReposMustInclude: []string{"foo"},
-			IsRegExp:                     true,
-			FileMatchLimit:               1,
-			PathPatternsAreCaseSensitive: false,
-			PatternMatchesContent:        true,
-			PatternMatchesPath:           true,
-		}
-		shouldBeAdded, err := repoShouldBeAdded(context.Background(), job.RuntimeClients{Zoekt: zoekt}, repo, pat)
+		shouldBeAdded, err := repoShouldBeAdded(context.Background(), job.RuntimeClients{Zoekt: zoekt}, repo, []string{"foo"}, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -55,16 +46,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 		MockReposContainingPath = func() ([]*result.FileMatch, error) {
 			return nil, nil
 		}
-		pat := &search.TextPatternInfo{
-			Pattern:                      "",
-			FilePatternsReposMustInclude: []string{"foo"},
-			IsRegExp:                     true,
-			FileMatchLimit:               1,
-			PathPatternsAreCaseSensitive: false,
-			PatternMatchesContent:        true,
-			PatternMatchesPath:           true,
-		}
-		shouldBeAdded, err := repoShouldBeAdded(context.Background(), job.RuntimeClients{Zoekt: zoekt}, repo, pat)
+		shouldBeAdded, err := repoShouldBeAdded(context.Background(), job.RuntimeClients{Zoekt: zoekt}, repo, []string{"foo"}, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -85,16 +67,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 				},
 			}}, nil
 		}
-		pat := &search.TextPatternInfo{
-			Pattern:                      "",
-			FilePatternsReposMustExclude: []string{"foo"},
-			IsRegExp:                     true,
-			FileMatchLimit:               1,
-			PathPatternsAreCaseSensitive: false,
-			PatternMatchesContent:        true,
-			PatternMatchesPath:           true,
-		}
-		shouldBeAdded, err := repoShouldBeAdded(context.Background(), job.RuntimeClients{Zoekt: zoekt}, repo, pat)
+		shouldBeAdded, err := repoShouldBeAdded(context.Background(), job.RuntimeClients{Zoekt: zoekt}, repo, nil, []string{"foo"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -108,16 +81,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 		MockReposContainingPath = func() ([]*result.FileMatch, error) {
 			return nil, nil
 		}
-		pat := &search.TextPatternInfo{
-			Pattern:                      "",
-			FilePatternsReposMustExclude: []string{"foo"},
-			IsRegExp:                     true,
-			FileMatchLimit:               1,
-			PathPatternsAreCaseSensitive: false,
-			PatternMatchesContent:        true,
-			PatternMatchesPath:           true,
-		}
-		shouldBeAdded, err := repoShouldBeAdded(context.Background(), job.RuntimeClients{Zoekt: zoekt}, repo, pat)
+		shouldBeAdded, err := repoShouldBeAdded(context.Background(), job.RuntimeClients{Zoekt: zoekt}, repo, nil, []string{"foo"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -129,10 +93,11 @@ func TestRepoShouldBeAdded(t *testing.T) {
 
 // repoShouldBeAdded determines whether a repository should be included in the result set based on whether the repository fits in the subset
 // of repostiories specified in the query's `repohasfile` and `-repohasfile` fields if they exist.
-func repoShouldBeAdded(ctx context.Context, clients job.RuntimeClients, repo *search.RepositoryRevisions, pattern *search.TextPatternInfo) (bool, error) {
+func repoShouldBeAdded(ctx context.Context, clients job.RuntimeClients, repo *search.RepositoryRevisions, filePatternsInclude, filePatternsExclude []string) (bool, error) {
 	repos := []*search.RepositoryRevisions{repo}
 	s := RepoSearch{
-		PatternInfo: pattern,
+		FilePatternsReposMustInclude: filePatternsInclude,
+		FilePatternsReposMustExclude: filePatternsExclude,
 	}
 	rsta, err := s.reposToAdd(ctx, clients, repos)
 	if err != nil {

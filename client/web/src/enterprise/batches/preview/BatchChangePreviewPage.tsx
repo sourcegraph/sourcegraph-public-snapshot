@@ -67,6 +67,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
                             {
                                 icon: BatchChangesIcon,
                                 to: '/batch-changes',
+                                ariaLabel: 'Batch changes',
                             },
                             { to: `${spec.namespace.url}/batch-changes`, text: spec.namespace.namespaceName },
                             { text: spec.description.name },

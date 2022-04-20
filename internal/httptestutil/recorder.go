@@ -28,10 +28,20 @@ func NewRecorder(file string, record bool, filters ...cassette.Filter) (*recorde
 	}
 
 	filters = append(filters, func(i *cassette.Interaction) error {
-		delete(i.Request.Headers, "Authorization")
-		// This is used for GitLab.
-		delete(i.Request.Headers, "Private-Token")
-		delete(i.Response.Headers, "Set-Cookie")
+		// Delete anything that looks risky on both requests and responses
+		riskyHeaderKeys := []string{
+			"auth", "cookie", "token",
+		}
+		for _, headers := range []http.Header{i.Request.Headers, i.Response.Headers} {
+			for k := range headers {
+				for _, riskyKey := range riskyHeaderKeys {
+					if strings.Contains(strings.ToLower(k), riskyKey) {
+						delete(headers, k)
+						break
+					}
+				}
+			}
+		}
 		return nil
 	})
 

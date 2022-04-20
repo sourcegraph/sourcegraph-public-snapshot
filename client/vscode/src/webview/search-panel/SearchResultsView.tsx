@@ -15,7 +15,12 @@ import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/com
 import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { CtaAlert } from '@sourcegraph/shared/src/components/CtaAlert'
-import { appendContextFilter, updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
+import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
+import {
+    appendContextFilter,
+    sanitizeQueryForTelemetry,
+    updateFilters,
+} from '@sourcegraph/shared/src/search/query/transformer'
 import { LATEST_VERSION, RepositoryMatch, SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
@@ -61,6 +66,11 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
         setDismissSearchCta(true)
         await extensionCoreAPI.setLocalStorageItem(DISMISS_SEARCH_CTA_KEY, 'true')
     }, [extensionCoreAPI])
+
+    const isSourcegraphDotCom = useMemo(() => {
+        const hostname = new URL(instanceURL).hostname
+        return hostname === 'sourcegraph.com' || hostname === 'www.sourcegraph.com'
+    }, [instanceURL])
 
     useEffect(() => {
         showCtaAlert
@@ -173,10 +183,57 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     console.error('Error updating sidebar query state from panel', error)
                 })
 
+            // Log Search History
+            const hostname = new URL(instanceURL).hostname
+            let queryString = `${userQueryState.query}${caseSensitive ? ' case:yes' : ''}`
+            if (context.selectedSearchContextSpec) {
+                queryString = appendContextFilter(queryString, context.selectedSearchContextSpec)
+            }
+            const metrics = queryString ? collectMetrics(queryString) : undefined
+            platformContext.telemetryService.log(
+                'SearchResultsQueried',
+                {
+                    code_search: {
+                        query_data: {
+                            query: metrics,
+                            combined: queryString,
+                            empty: !queryString,
+                        },
+                    },
+                },
+                {
+                    code_search: {
+                        query_data: {
+                            // 🚨 PRIVACY: never provide any private query data in the
+                            // { code_search: query_data: query } property,
+                            // which is also potentially exported in pings data.
+                            query: metrics,
+
+                            // 🚨 PRIVACY: Only collect the full query string for unauthenticated users
+                            // on Sourcegraph.com, and only after sanitizing to remove certain filters.
+                            combined:
+                                !authenticatedUser && isSourcegraphDotCom
+                                    ? sanitizeQueryForTelemetry(queryString)
+                                    : undefined,
+                            empty: !queryString,
+                        },
+                    },
+                },
+                `https://${hostname}/search?q=${encodeURIComponent(queryString)}&patternType=${patternType}`
+            )
             // Clear repo view
             setRepoToShow(null)
         },
-        [userQueryState.query, context.submittedSearchQueryState, extensionCoreAPI]
+        [
+            context.submittedSearchQueryState,
+            context.selectedSearchContextSpec,
+            userQueryState.query,
+            extensionCoreAPI,
+            instanceURL,
+            platformContext.telemetryService,
+            authenticatedUser,
+            isSourcegraphDotCom,
+        ]
     )
 
     // Submit new search on change
@@ -257,11 +314,6 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
             ),
         [context]
     )
-
-    const isSourcegraphDotCom = useMemo(() => {
-        const hostname = new URL(instanceURL).hostname
-        return hostname === 'sourcegraph.com' || hostname === 'www.sourcegraph.com'
-    }, [instanceURL])
 
     const onSignUpClick = useCallback(
         (event?: React.FormEvent): void => {

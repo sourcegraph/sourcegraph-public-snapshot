@@ -25,7 +25,8 @@ Each entry in the `"urls"` array can contain basic auth if needed (e.g. `https:/
 
 ## Rate limiting
 
-By default, requests to configured Go module proxies won't be rate-limited. To configure rate limiting, add the following to your code host configuration:
+By default, requests to the Go module proxies will be rate-limited
+based on a default internal limit. ([source](https://github.com/sourcegraph/sourcegraph/blob/main/schema/go-modules.schema.json))
 
 ```json
 "rateLimit": {
@@ -34,6 +35,15 @@ By default, requests to configured Go module proxies won't be rate-limited. To c
 }
 ```
 where the `requestsPerHour` field is set based on your requirements.
+
+**Not recommended**: Rate-limiting can be turned off entirely as well.
+This increases the risk of overloading the proxy.
+
+```json
+"rateLimit": {
+  "enabled": false
+}
+```
 
 ## Repository permissions
 

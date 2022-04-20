@@ -17,6 +17,7 @@ import { Link } from '@sourcegraph/wildcard'
 import awsCodeCommitSchemaJSON from '../../../../../schema/aws_codecommit.schema.json'
 import bitbucketCloudSchemaJSON from '../../../../../schema/bitbucket_cloud.schema.json'
 import bitbucketServerSchemaJSON from '../../../../../schema/bitbucket_server.schema.json'
+import gerritSchemaJSON from '../../../../../schema/gerrit.schema.json'
 import githubSchemaJSON from '../../../../../schema/github.schema.json'
 import gitlabSchemaJSON from '../../../../../schema/gitlab.schema.json'
 import gitoliteSchemaJSON from '../../../../../schema/gitolite.schema.json'
@@ -1241,6 +1242,27 @@ const PAGURE: AddExternalServiceOptions = {
     editorActions: [],
 }
 
+const GERRIT: AddExternalServiceOptions = {
+    kind: ExternalServiceKind.GERRIT,
+    title: 'Gerrit',
+    icon: GitIcon,
+    jsonSchema: gerritSchemaJSON,
+    defaultDisplayName: 'Gerrit',
+    defaultConfig: `{
+  "url": "https://gerrit.example.com",
+}`,
+    instructions: (
+        <div>
+            <ol>
+                <li>
+                    In the configuration below, set <Field>url</Field> to the URL of Gerrit instance.
+                </li>
+            </ol>
+        </div>
+    ),
+    editorActions: [],
+}
+
 const NPM_PACKAGES: AddExternalServiceOptions = {
     kind: ExternalServiceKind.NPMPACKAGES,
     title: 'npm Dependencies',
@@ -1322,6 +1344,7 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     ...(window.context?.experimentalFeatures?.perforce === 'enabled' ? { perforce: PERFORCE } : {}),
     ...(window.context?.experimentalFeatures?.jvmPackages === 'disabled' ? {} : { jvmPackages: JVM_PACKAGES }),
     ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
+    ...(window.context?.experimentalFeatures?.gerrit === 'enabled' ? { gerrit: GERRIT } : {}),
     ...(window.context?.experimentalFeatures?.npmPackages === 'disabled' ? {} : { npmPackages: NPM_PACKAGES }),
 }
 
@@ -1344,6 +1367,7 @@ export const defaultExternalServices: Record<ExternalServiceKind, AddExternalSer
     [ExternalServiceKind.OTHER]: GENERIC_GIT,
     [ExternalServiceKind.AWSCODECOMMIT]: AWS_CODE_COMMIT,
     [ExternalServiceKind.PERFORCE]: PERFORCE,
+    [ExternalServiceKind.GERRIT]: GERRIT,
     [ExternalServiceKind.GOMODULES]: GO_MODULES,
     [ExternalServiceKind.JVMPACKAGES]: JVM_PACKAGES,
     [ExternalServiceKind.PAGURE]: PAGURE,

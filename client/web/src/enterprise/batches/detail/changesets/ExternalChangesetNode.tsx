@@ -81,6 +81,10 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
         selectable?.onSelect(node.id)
     }, [selectable, node.id])
 
+    const tooltipLabel = viewerCanAdminister
+        ? 'Click to select changeset for bulk operation'
+        : 'You do not have permission to perform this operation'
+
     return (
         <>
             <Button
@@ -103,11 +107,8 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                         checked={selected}
                         onChange={toggleSelected}
                         disabled={!viewerCanAdminister}
-                        tooltip={
-                            viewerCanAdminister
-                                ? 'Click to select changeset for bulk operation'
-                                : 'You do not have permission to perform this operation'
-                        }
+                        tooltip={tooltipLabel}
+                        aria-label={tooltipLabel}
                     />
                 </div>
             ) : (
