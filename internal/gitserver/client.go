@@ -175,8 +175,8 @@ type Client interface {
 	// to abort processing further results.
 	BatchLog(ctx context.Context, opts BatchLogOptions, callback BatchLogCallback) error
 
-	// GitCommand creates a new Cmd.
-	GitCommand(repo api.RepoName, args ...string) *Cmd
+	// GitCommand creates a new GitCommand.
+	GitCommand(repo api.RepoName, args ...string) GitCommand
 
 	// CreateCommitFromPatch will attempt to create a commit from a patch
 	// If possible, the error returned will be of type protocol.CreateCommitFromPatchError
@@ -837,6 +837,44 @@ func repoNamesFromRepoCommits(repoCommits []api.RepoCommit) []string {
 	return repoNames
 }
 
+// GitCommand is an interface describing a git command to be executed remotely.
+type GitCommand interface {
+	// DividedOutput runs the command and returns its standard output and standard error.
+	DividedOutput(ctx context.Context) ([]byte, []byte, error)
+
+	// Output runs the command and returns its standard output.
+	Output(ctx context.Context) ([]byte, error)
+
+	// CombinedOutput runs the command and returns its combined standard output and standard error.
+	CombinedOutput(ctx context.Context) ([]byte, error)
+
+	// DisableTimeout turns command timeout off
+	DisableTimeout()
+
+	// Repo returns repo against which the command is run
+	Repo() api.RepoName
+
+	// Args returns arguments of the command
+	Args() []string
+
+	// ExitStatus returns exit status of the command
+	ExitStatus() int
+
+	// SetEnsureRevision sets the revision which should be ensured when the command is ran
+	SetEnsureRevision(r string)
+
+	// EnsureRevision returns ensureRevision parameter of the command
+	EnsureRevision() string
+
+	// String returns string representation of the command (in fact prints args parameter of the command)
+	String() string
+
+	// StdoutReader returns an io.ReadCloser of stdout of c. If the command has a
+	// non-zero return value, Read returns a non io.EOF error. Do not pass in a
+	// started command.
+	StdoutReader(ctx context.Context) (io.ReadCloser, error)
+}
+
 // Cmd represents a command to be executed remotely.
 type Cmd struct {
 	repo           api.RepoName // the repository to execute the command in
@@ -904,7 +942,7 @@ func (c *Cmd) String() string { return fmt.Sprintf("%q", c.args) }
 // StdoutReader returns an io.ReadCloser of stdout of c. If the command has a
 // non-zero return value, Read returns a non io.EOF error. Do not pass in a
 // started command.
-func StdoutReader(ctx context.Context, c *Cmd) (io.ReadCloser, error) {
+func (c *Cmd) StdoutReader(ctx context.Context) (io.ReadCloser, error) {
 	rc, trailer, err := c.sendExec(ctx)
 	if err != nil {
 		return nil, err
@@ -942,7 +980,7 @@ func (c *cmdReader) Close() error {
 	return c.rc.Close()
 }
 
-func (c *ClientImplementor) GitCommand(repo api.RepoName, arg ...string) *Cmd {
+func (c *ClientImplementor) GitCommand(repo api.RepoName, arg ...string) GitCommand {
 	return &Cmd{
 		repo:   repo,
 		execFn: c.httpPost,
@@ -1511,7 +1549,7 @@ func (c *ClientImplementor) ResolveRevisions(ctx context.Context, repo api.RepoN
 		if match := ambiguousArgPattern.FindSubmatch(stderr); match != nil {
 			return nil, &gitdomain.RevisionNotFoundError{Repo: repo, Spec: string(match[1])}
 		}
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.args, stderr))
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.Args(), stderr))
 	}
 
 	return strings.Fields(string(stdout)), nil
