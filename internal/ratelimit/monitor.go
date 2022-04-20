@@ -5,6 +5,9 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 // DefaultMonitorRegistry is the default global rate limit monitor registry. It will hold rate limit mappings
@@ -159,6 +162,11 @@ func (c *Monitor) RecommendedWaitForBackgroundOp(cost int) (timeRemaining time.D
 	return timeRemaining * time.Duration(cost) / time.Duration(limitRemaining)
 }
 
+var monitorUpdateErrorsTotal = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_ratelimit_monitor_update_errors_total",
+	Help: "Number of times Monitor.Update encountered an error",
+}, []string{"kind"})
+
 // Update updates the monitor's rate limit information based on the HTTP response headers.
 func (c *Monitor) Update(h http.Header) {
 	if cached := h.Get("X-From-Cache"); cached != "" {
@@ -178,16 +186,19 @@ func (c *Monitor) Update(h http.Header) {
 	limit, err := strconv.Atoi(h.Get(c.HeaderPrefix + "RateLimit-Limit"))
 	if err != nil {
 		c.known = false
+		monitorUpdateErrorsTotal.WithLabelValues("x-rateLimit-limit").Inc()
 		return
 	}
 	remaining, err := strconv.Atoi(h.Get(c.HeaderPrefix + "RateLimit-Remaining"))
 	if err != nil {
 		c.known = false
+		monitorUpdateErrorsTotal.WithLabelValues("x-rateLimit-remaining").Inc()
 		return
 	}
 	resetAtSeconds, err := strconv.ParseInt(h.Get(c.HeaderPrefix+"RateLimit-Reset"), 10, 64)
 	if err != nil {
 		c.known = false
+		monitorUpdateErrorsTotal.WithLabelValues("x-rateLimit-reset").Inc()
 		return
 	}
 	c.known = true
