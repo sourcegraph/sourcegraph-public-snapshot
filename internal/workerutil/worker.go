@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/derision-test/glock"
-	"github.com/opentracing/opentracing-go/log"
+	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // ErrJobAlreadyExists occurs when a duplicate job identifier is dequeued.
@@ -35,6 +36,8 @@ type Worker struct {
 	wg               sync.WaitGroup  // tracks active handler routines
 	finished         chan struct{}   // signals that Start has finished
 	runningIDSet     *IDSet          // tracks the running job IDs to heartbeat
+
+	logger log.Logger
 }
 
 type WorkerOptions struct {
@@ -89,6 +92,7 @@ func newWorker(ctx context.Context, store Store, handler Handler, options Worker
 	if options.Name == "" {
 		panic("no name supplied to github.com/sourcegraph/sourcegraph/internal/workerutil:newWorker")
 	}
+	logger := log.Scoped("worker."+options.Name, "a worker process for "+options.WorkerHostname).With(log.String("name", options.Name))
 
 	if options.WorkerHostname == "" {
 		options.WorkerHostname = hostname.Get()
@@ -113,6 +117,7 @@ func newWorker(ctx context.Context, store Store, handler Handler, options Worker
 		cancel:           cancel,
 		finished:         make(chan struct{}),
 		runningIDSet:     newIDSet(),
+		logger:           logger,
 	}
 }
 
@@ -134,7 +139,9 @@ func (w *Worker) Start() {
 			ids := w.runningIDSet.Slice()
 			knownIDs, err := w.store.Heartbeat(w.ctx, ids)
 			if err != nil {
-				logger.Error("Failed to refresh heartbeats", "name", w.options.Name, "ids", ids, "error", err)
+				w.logger.Error("Failed to refresh heartbeats",
+					log.Ints("ids", ids),
+					log.Error(err))
 			}
 			knownIDsMap := map[int]struct{}{}
 			for _, id := range knownIDs {
@@ -143,7 +150,8 @@ func (w *Worker) Start() {
 
 			for _, id := range ids {
 				if _, ok := knownIDsMap[id]; !ok {
-					logger.Error("Removed unknown job from running set", "id", id)
+					w.logger.Error("Removed unknown job from running set",
+						log.Int("id", id))
 					w.runningIDSet.Remove(id)
 				}
 			}
@@ -173,7 +181,9 @@ loop:
 				break loop
 			}
 
-			logger.Error("Failed to dequeue and handle record", "name", w.options.Name, "err", err)
+			w.logger.Error("Failed to dequeue and handle record",
+				log.String("name", w.options.Name),
+				log.Error(err))
 		}
 
 		delay := w.options.Interval
@@ -200,7 +210,7 @@ loop:
 		}
 	}
 
-	logger.Info("Shutting down dequeue loop", "name", w.options.Name, "reason", reason)
+	w.logger.Info("Shutting down dequeue loop", log.String("reason", reason))
 	w.wg.Wait()
 }
 
@@ -268,17 +278,20 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 
 	// Register the record as running so it is included in heartbeat updates.
 	if !w.runningIDSet.Add(record.RecordID(), cancel) {
-		workerSpan.LogFields(log.Error(ErrJobAlreadyExists))
+		workerSpan.LogFields(otlog.Error(ErrJobAlreadyExists))
 		workerSpan.Finish()
 		return false, ErrJobAlreadyExists
 	}
 
 	w.options.Metrics.numJobs.Inc()
-	logger.Info("Dequeued record for processing", "name", w.options.Name, "id", record.RecordID(), "traceID", trace.IDFromSpan(workerSpan))
+	processLog := w.logger.WithTrace(log.TraceContext{
+		TraceID: trace.IDFromSpan(workerSpan),
+	})
+	processLog.Info("Dequeued record for processing", log.Int("id", record.RecordID()))
 
 	if hook, ok := w.handler.(WithHooks); ok {
 		preCtx, endObservation := w.options.Metrics.operations.preHandle.With(handleCtx, nil, observation.Args{})
-		hook.PreHandle(preCtx, record)
+		hook.PreHandle(preCtx, processLog, record)
 		endObservation(1, observation.Args{})
 	}
 
@@ -293,7 +306,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 				// workerCtxWithSpan
 				postCtx, endObservation := w.options.Metrics.operations.postHandle.With(workerCtxWithSpan, nil, observation.Args{})
 				defer endObservation(1, observation.Args{})
-				hook.PostHandle(postCtx, record)
+				hook.PostHandle(postCtx, processLog, record)
 			}
 
 			// Remove the record from the set of running jobs, so it is not included
@@ -305,8 +318,8 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 			workerSpan.Finish()
 		}()
 
-		if err := w.handle(handleCtx, workerCtxWithSpan, record); err != nil {
-			logger.Error("Failed to finalize record", "name", w.options.Name, "err", err)
+		if err := w.handle(handleCtx, workerCtxWithSpan, processLog, record); err != nil {
+			processLog.Error("Failed to finalize record", log.Error(err))
 		}
 	}()
 
@@ -315,9 +328,11 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 
 // handle processes the given record. This method returns an error only if there is an issue updating
 // the record to a terminal state - no handler errors will bubble up.
-func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err error) {
+func (w *Worker) handle(ctx, workerContext context.Context, processLog log.Logger, record Record) (err error) {
 	ctx, endOperation := w.options.Metrics.operations.handle.With(ctx, &err, observation.Args{})
 	defer endOperation(1, observation.Args{})
+
+	recordLog := processLog.With(log.Int("record.id", record.RecordID()))
 
 	// If a maximum runtime is configured, set a deadline on the handle context.
 	if w.options.MaximumRuntimePerJob > 0 {
@@ -326,7 +341,7 @@ func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err 
 		defer cancel()
 	}
 
-	handleErr := w.handler.Handle(ctx, record)
+	handleErr := w.handler.Handle(ctx, recordLog, record)
 
 	if w.options.MaximumRuntimePerJob > 0 && errors.Is(handleErr, context.DeadlineExceeded) {
 		handleErr = errors.Wrap(handleErr, fmt.Sprintf("job exceeded maximum execution time of %s", w.options.MaximumRuntimePerJob))
@@ -336,23 +351,23 @@ func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err 
 		if marked, markErr := w.store.MarkFailed(workerContext, record.RecordID(), handleErr.Error()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkFailed")
 		} else if marked {
-			logger.Warn("Marked record as failed", "name", w.options.Name, "id", record.RecordID(), "err", handleErr)
+			recordLog.Warn("Marked record as failed", log.Error(handleErr))
 		}
 	} else if handleErr != nil {
 		if marked, markErr := w.store.MarkErrored(workerContext, record.RecordID(), handleErr.Error()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkErrored")
 		} else if marked {
-			logger.Warn("Marked record as errored", "name", w.options.Name, "id", record.RecordID(), "err", handleErr)
+			recordLog.Warn("Marked record as errored", log.Error(handleErr))
 		}
 	} else {
 		if marked, markErr := w.store.MarkComplete(workerContext, record.RecordID()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkComplete")
 		} else if marked {
-			logger.Debug("Marked record as complete", "name", w.options.Name, "id", record.RecordID())
+			recordLog.Debug("Marked record as complete")
 		}
 	}
 
-	logger.Debug("Handled record", "name", w.options.Name, "id", record.RecordID())
+	recordLog.Debug("Handled record")
 	return nil
 }
 
@@ -366,7 +381,7 @@ func (w *Worker) isJobCanceled(id int, handleErr, ctxErr error) bool {
 // preDequeueHook invokes the handler's pre-dequeue hook if it exists.
 func (w *Worker) preDequeueHook(ctx context.Context) (dequeueable bool, extraDequeueArguments interface{}, err error) {
 	if o, ok := w.handler.(WithPreDequeue); ok {
-		return o.PreDequeue(ctx)
+		return o.PreDequeue(ctx, w.logger)
 	}
 
 	return true, nil, nil

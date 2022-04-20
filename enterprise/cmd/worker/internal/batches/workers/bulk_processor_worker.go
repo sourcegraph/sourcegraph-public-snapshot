@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // NewBulkOperationWorker creates a dbworker.Worker that fetches enqueued changeset_jobs
@@ -45,7 +46,7 @@ type bulkProcessorWorker struct {
 }
 
 func (b *bulkProcessorWorker) HandlerFunc() workerutil.HandlerFunc {
-	return func(ctx context.Context, record workerutil.Record) (err error) {
+	return func(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
 		job := record.(*btypes.ChangesetJob)
 
 		tx, err := b.store.Transact(ctx)

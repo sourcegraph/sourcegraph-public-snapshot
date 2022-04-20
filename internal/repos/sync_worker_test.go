@@ -2,6 +2,7 @@ package repos_test
 
 import (
 	"context"
+	"log"
 	"testing"
 	"time"
 
@@ -80,7 +81,7 @@ type fakeRepoSyncHandler struct {
 	jobChan chan *repos.SyncJob
 }
 
-func (h *fakeRepoSyncHandler) Handle(ctx context.Context, record workerutil.Record) error {
+func (h *fakeRepoSyncHandler) Handle(ctx context.Context, _ log.Logger, record workerutil.Record) error {
 	sj, ok := record.(*repos.SyncJob)
 	if !ok {
 		return errors.Errorf("expected repos.SyncJob, got %T", record)
