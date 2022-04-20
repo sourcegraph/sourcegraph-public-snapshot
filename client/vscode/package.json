@@ -25,7 +25,7 @@
   "activationEvents": [
     "*"
   ],
-  "main": "./dist/extension.js",
+  "main": "./dist/node/extension.js",
   "browser": "./dist/webworker/extension.js",
   "contributes": {
     "commands": [
@@ -220,6 +220,7 @@
     "package": "ts-node ./scripts/package.ts",
     "task:gulp": "cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
     "build:esbuild": "NODE_ENV=development yarn task:gulp esbuild",
+    "build:esbuild:web": "NODE_ENV=development TARGET_TYPE=webworker yarn task:gulp esbuild",
     "watch:esbuild": "NODE_ENV=development WATCH=true yarn task:guild esbuild",
     "build": "yarn task:gulp webpack",
     "build:node": "NODE_ENV=production TARGET_TYPE=node yarn task:gulp webpack",

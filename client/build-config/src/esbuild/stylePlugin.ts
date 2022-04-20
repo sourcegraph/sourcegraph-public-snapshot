@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 
+import { ResolverFactory, CachedInputFileSystem } from 'enhanced-resolve'
 import esbuild from 'esbuild'
 import postcss from 'postcss'
 import postcssModules from 'postcss-modules'
@@ -9,7 +10,7 @@ import sass from 'sass'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import postcssConfig from '../../../../postcss.config'
-import { ROOT_PATH } from '../paths'
+import { NODE_MODULES_PATH, ROOT_PATH } from '../paths'
 
 /**
  * An esbuild plugin that builds .css and .scss stylesheets (including support for CSS modules).
@@ -97,8 +98,30 @@ export const stylePlugin: esbuild.Plugin = {
             return output
         }
 
+        // TODO explain and refactor) (point is to support module paths)
+        // look in node_modules for module paths.
+        // https://github.com/webpack/enhanced-resolve
+        const myResolver = ResolverFactory.createResolver({
+            fileSystem: new CachedInputFileSystem(fs, 4000),
+            extensions: ['.css', '.scss'],
+            symlinks: true, // Resolve workspace symlinks
+            modules: [NODE_MODULES_PATH],
+        })
+
         build.onResolve({ filter: /\.s?css$/, namespace: 'file' }, async args => {
-            const inputPath = path.join(args.resolveDir, args.path)
+            const inputPath = await new Promise<string>((resolve, reject) => {
+                myResolver.resolve({}, args.resolveDir, args.path, {}, (error, filepath) => {
+                    if (error) {
+                        reject(error)
+                        return
+                    }
+                    if (!filepath) {
+                        reject(new Error('Could not find TODO')) // TODO
+                        return
+                    }
+                    resolve(filepath)
+                })
+            })
 
             const { outputPath, outputContents, includedFiles } = await cachedTransform({
                 inputPath,

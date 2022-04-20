@@ -12,11 +12,12 @@ export const packageResolutionPlugin = (resolutions: Resolutions): esbuild.Plugi
     name: 'packageResolution',
     setup: build => {
         const filter = new RegExp(`^(${Object.keys(resolutions).join('|')})$`)
-        build.onResolve({ filter, namespace: 'file' }, args =>
-            (args.kind === 'import-statement' || args.kind === 'require-call') && resolutions[args.path]
-                ? { path: resolutions[args.path] }
-                : undefined
-        )
+        build.onResolve({ filter, namespace: 'file' }, args => {
+            if ((args.kind === 'import-statement' || args.kind === 'require-call') && resolutions[args.path]) {
+                return { path: resolutions[args.path] }
+            }
+            return undefined
+        })
     },
 })
 
