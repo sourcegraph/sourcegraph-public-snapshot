@@ -82,7 +82,7 @@ func (p *repoPagerJob) Run(ctx context.Context, clients job.RuntimeClients, stre
 		return err
 	}
 
-	return maxAlerter.Alert, repoResolver.Paginate(ctx, nil, pager)
+	return maxAlerter.Alert, repoResolver.Paginate(ctx, pager)
 }
 
 func (p *repoPagerJob) Name() string {

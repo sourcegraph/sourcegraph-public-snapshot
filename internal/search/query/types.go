@@ -306,6 +306,14 @@ func (q Q) Index() YesNoOnly {
 	return *v
 }
 
+func (q Q) Exists(field string) bool {
+	found := false
+	VisitField(q, field, func(_ string, _ bool, _ Annotation) {
+		found = true
+	})
+	return found
+}
+
 func (q Q) Values(field string) []*Value {
 	var values []*Value
 	if field == "" {
@@ -318,17 +326,6 @@ func (q Q) Values(field string) []*Value {
 		})
 	}
 	return values
-}
-
-func (q Q) Fields() map[string][]*Value {
-	fields := make(map[string][]*Value)
-	VisitPattern(q, func(_ string, _ bool, _ Annotation) {
-		fields[""] = q.Values("")
-	})
-	VisitParameter(q, func(field, _ string, _ bool, _ Annotation) {
-		fields[field] = q.Values(field)
-	})
-	return fields
 }
 
 func (q Q) BoolValue(field string) bool {
