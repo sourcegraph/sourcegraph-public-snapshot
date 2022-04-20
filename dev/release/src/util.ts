@@ -81,15 +81,7 @@ export function changelogURL(version: string): string {
     return `https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#${versionAnchor}`
 }
 
-export function ensureBranchUpToDate(branch: string): void {
-    const currentBranch = execa.sync('git', ['rev-parse', '--abbrev-ref', 'HEAD']).stdout.trim()
-    if (currentBranch !== branch) {
-        console.log(
-            `Expected to be on branch ${branch}, but was on ${currentBranch}. Run \`git checkout ${branch}\` to switch to the main branch.`
-        )
-        process.exit(1)
-    }
-    execa.sync('git', ['remote', 'update'], { stdout: 'ignore' })
+function ensureBranchUpToDate(branch: string): void {
     const { stdout } = execa.sync('git', ['status', '-uno'])
     if (stdout.includes('Your branch is behind')) {
         console.log(
@@ -103,7 +95,20 @@ export function ensureBranchUpToDate(branch: string): void {
 }
 
 export function ensureMainBranchUpToDate(): void {
-    ensureBranchUpToDate('main')
+    const mainBranch = 'main'
+    const currentBranch = execa.sync('git', ['rev-parse', '--abbrev-ref', 'HEAD']).stdout.trim()
+    if (currentBranch !== mainBranch) {
+        console.log(
+            `Expected to be on branch ${mainBranch}, but was on ${currentBranch}. Run \`git checkout ${mainBranch}\` to switch to the main branch.`
+        )
+        process.exit(1)
+    }
+    execa.sync('git', ['remote', 'update'], { stdout: 'ignore' })
+    ensureBranchUpToDate(mainBranch)
+}
+
+export function ensureReleaseBranchUpToDate(branch: string): void {
+    ensureBranchUpToDate(branch)
 }
 
 interface ContainerRegistryCredential {
