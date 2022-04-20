@@ -837,17 +837,41 @@ func repoNamesFromRepoCommits(repoCommits []api.RepoCommit) []string {
 	return repoNames
 }
 
+// Command is an interface describing a command to be executed remotely.
 type Command interface {
+	// DividedOutput runs the command and returns its standard output and standard error.
 	DividedOutput(ctx context.Context) ([]byte, []byte, error)
+
+	// Output runs the command and returns its standard output.
 	Output(ctx context.Context) ([]byte, error)
+
+	// CombinedOutput runs the command and returns its combined standard output and standard error.
 	CombinedOutput(ctx context.Context) ([]byte, error)
+
+	// DisableTimeout turns command timeout off
 	DisableTimeout()
+
+	// Repo returns repo against which the command is run
 	Repo() api.RepoName
+
+	// Args returns arguments of the command
 	Args() []string
+
+	// ExitStatus returns exit status of the command
 	ExitStatus() int
+
+	// SetEnsureRevision sets the revision which should be ensured when the command is ran
 	SetEnsureRevision(r string)
+
+	// EnsureRevision returns ensureRevision parameter of the command
 	EnsureRevision() string
+
+	// String returns string representation of the command (in fact prints args parameter of the command)
 	String() string
+
+	// StdoutReader returns an io.ReadCloser of stdout of c. If the command has a
+	// non-zero return value, Read returns a non io.EOF error. Do not pass in a
+	// started command.
 	StdoutReader(ctx context.Context) (io.ReadCloser, error)
 }
 
