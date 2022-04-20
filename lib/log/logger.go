@@ -2,6 +2,7 @@ package log
 
 import (
 	"strings"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/encoders"
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/global"
@@ -18,6 +19,8 @@ type Logger interface {
 	// Scoped creates a new Logger with scope attached as part of its instrumentation
 	// scope. For example, if the underlying logger is scoped 'foo', then
 	// 'logger.Scoped("bar")' will create a logger with scope 'foo.bar'.
+	//
+	// Scopes should be static values, NOT dynamic values like identifiers or parameters.
 	//
 	// https://opentelemetry.io/docs/reference/specification/logs/data-model/#field-instrumentationscope
 	Scoped(scope string, description string) Logger
@@ -57,6 +60,8 @@ type Logger interface {
 // Scoped returns the global logger and sets it up with the given scope and OpenTelemetry
 // compliant implementation. Instead of using this everywhere a log is needed, callers
 // should hold a reference to the Logger and pass it in to places that need to log.
+//
+// Scopes should be static values, NOT dynamic values like identifiers or parameters.
 func Scoped(scope string, description string) Logger {
 	adapted := &zapAdapter{Logger: global.Get()}
 	return adapted.Scoped(scope, description).With(otfields.AttributesNamespace)
@@ -81,6 +86,9 @@ type zapAdapter struct {
 
 var _ Logger = &zapAdapter{}
 
+// createdScopes tracks the scopes that have been created so far.
+var createdScopes sync.Map
+
 func (z *zapAdapter) Scoped(scope string, description string) Logger {
 	var newScope string
 	if z.scope == "" {
@@ -95,9 +103,11 @@ func (z *zapAdapter) Scoped(scope string, description string) Logger {
 		options:    z.options,
 	}
 	if len(description) > 0 {
-		scopedLogger.Debug("logger.scoped",
-			zap.String("scope", scope),
-			zap.String("description", description))
+		if _, alreadyLogged := createdScopes.LoadOrStore(newScope, struct{}{}); !alreadyLogged {
+			scopedLogger.Debug("logger.scoped",
+				zap.String("scope", scope),
+				zap.String("description", description))
+		}
 	}
 	return scopedLogger
 }
