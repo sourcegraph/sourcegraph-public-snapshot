@@ -272,7 +272,7 @@ interface InternalHoverifierState<C extends object, D, A> {
     hoverOrError?: typeof LOADING | (HoverAttachment & D) | null | ErrorLike
 
     /** The desired position of the hover overlay */
-    hoverOverlayPosition?: { left: number } & ({ top: number } | { bottom: number })
+    hoverOverlayPosition?: { left: number; top: number }
 
     /** The currently hovered token */
     hoveredToken?: HoveredToken & C
