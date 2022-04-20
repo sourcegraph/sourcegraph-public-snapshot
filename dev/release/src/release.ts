@@ -445,7 +445,7 @@ CI checks in this repository should pass, and a manual review should confirm if 
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
                         edits: [
-                            `${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version}/g' 'website/src/components/GetStarted.tsx'`,
+                            `${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version}/g' 'website/src/components/Install/index.tsx'`,
                             `${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version}/g' 'website/src/pages/get-started.tsx'`,
                         ],
                         ...prBodyAndDraftState(
