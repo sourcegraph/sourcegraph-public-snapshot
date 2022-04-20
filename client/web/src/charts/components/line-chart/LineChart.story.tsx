@@ -145,7 +145,7 @@ const STANDARD_SERIES: Series<StandardDatum>[] = [
     },
 ]
 
-export const PlainChart = () => (
+const PlainChart = () => (
     <div style={{ width: 400, height: 400 }}>
         <ParentSize className="flex-1">
             {({ width, height }) => <LineChart width={width} height={height} series={STANDARD_SERIES} />}

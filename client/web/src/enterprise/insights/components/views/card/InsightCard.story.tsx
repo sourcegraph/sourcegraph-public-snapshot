@@ -85,64 +85,57 @@ export const InsightCardShowcase: Story = () => (
 )
 
 interface StandardDatum {
-    a: number | null
-    b: number | null
-    c: number | null
+    value: number
     x: number
 }
 
-const DATA: StandardDatum[] = [
-    {
-        x: 1588965700286 - 4 * 24 * 60 * 60 * 1000,
-        a: 4000,
-        b: 15000,
-        c: 5000,
-    },
-    {
-        x: 1588965700286 - 3 * 24 * 60 * 60 * 1000,
-        a: 4000,
-        b: 26000,
-        c: 5000,
-    },
-    {
-        x: 1588965700286 - 2 * 24 * 60 * 60 * 1000,
-        a: 5600,
-        b: 20000,
-        c: 5000,
-    },
-    {
-        x: 1588965700286 - 24 * 60 * 60 * 1000,
-        a: 9800,
-        b: 19000,
-        c: 5000,
-    },
-    {
-        x: 1588965700286,
-        a: 6000,
-        b: 17000,
-        c: 5000,
-    },
-]
+const getXValue = (datum: StandardDatum): Date => new Date(datum.x)
+const getYValue = (datum: StandardDatum): number => datum.value
 
 const SERIES: Series<StandardDatum>[] = [
     {
-        dataKey: 'a',
+        id: 'series_001',
+        data: [
+            { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 4000 },
+            { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 4000 },
+            { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 5600 },
+            { x: 1588965700286 - 24 * 60 * 60 * 1000, value: 9800 },
+            { x: 1588965700286, value: 6000 },
+        ],
         name: 'A metric',
         color: 'var(--blue)',
+        getXValue,
+        getYValue,
     },
     {
-        dataKey: 'b',
+        id: 'series_002',
+        data: [
+            { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 15000 },
+            { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 26000 },
+            { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 20000 },
+            { x: 1588965700286 - 24 * 60 * 60 * 1000, value: 19000 },
+            { x: 1588965700286, value: 17000 },
+        ],
         name: 'B metric',
         color: 'var(--orange)',
+        getXValue,
+        getYValue,
     },
     {
-        dataKey: 'c',
+        id: 'series_003',
+        data: [
+            { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 5000 },
+            { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 5000 },
+            { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 5000 },
+            { x: 1588965700286 - 24 * 60 * 60 * 1000, value: 5000 },
+            { x: 1588965700286, value: 5000 },
+        ],
         name: 'C metric',
         color: 'var(--indigo)',
+        getXValue,
+        getYValue,
     },
 ]
-
-const getXValue = (datum: { x: number }) => new Date(datum.x)
 
 function InsightCardWithChart() {
     return (
@@ -166,9 +159,7 @@ function InsightCardWithChart() {
                 {parent => (
                     <SeriesChart
                         type={SeriesBasedChartTypes.Line}
-                        data={DATA}
                         series={SERIES}
-                        getXValue={getXValue}
                         width={parent.width}
                         height={parent.height}
                     />
@@ -176,7 +167,7 @@ function InsightCardWithChart() {
             </ParentSize>
             <LegendList className="mt-3">
                 {SERIES.map(line => (
-                    <LegendItem key={line.dataKey.toString()} color={getLineColor(line)} name={line.name} />
+                    <LegendItem key={line.id} color={getLineColor(line)} name={line.name} />
                 ))}
             </LegendList>
         </Card.Root>
