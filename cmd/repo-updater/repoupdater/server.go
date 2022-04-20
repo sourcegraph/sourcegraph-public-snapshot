@@ -13,7 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
+	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -194,7 +194,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	var sourcer repos.Sourcer
 	if sourcer = s.Sourcer; sourcer == nil {
 		db := database.NewDB(s.Handle().DB())
-		depsSvc := live.GetServiceWithoutSyncer(db)
+		depsSvc := livedependencies.GetServiceWithoutSyncer(db)
 		sourcer = repos.NewSourcer(database.NewDB(s.Handle().DB()), httpcli.ExternalClientFactory, repos.WithDB(depsSvc))
 	}
 	src, err := sourcer(&types.ExternalService{
