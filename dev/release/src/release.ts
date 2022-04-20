@@ -286,6 +286,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             const { upcoming: release } = await releaseVersions(config)
             const branch = `${release.major}.${release.minor}`
             const tag = `v${release.version}${candidate === 'final' ? '' : `-rc.${candidate}`}`
+            ensureReleaseBranchUpToDate(branch)
             await createTag(
                 await getAuthenticatedGitHubClient(),
                 {
@@ -297,7 +298,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 config.dryRun.tags || false
             )
             console.log('!!')
-            ensureReleaseBranchUpToDate(branch)
+
         },
     },
     {
