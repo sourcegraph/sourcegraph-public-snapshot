@@ -5,6 +5,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/google/uuid"
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/encoders"
 	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
 )
@@ -16,17 +17,22 @@ var (
 
 // Get retrieves the initialized global logger, or panics otherwise.
 func Get() *zap.Logger {
-	if globalLogger == nil {
-		panic("lib/log.Init has not been called")
+	if !IsInitialized() {
+		panic("global logger not initialized - have you called lib/log.Init?")
 	}
 	return globalLogger
 }
 
-// Init initializes the global logger once.
+// Init initializes the global logger once. Subsequent calls are no-op.
 func Init(r otfields.Resource, level zap.AtomicLevel, format encoders.OutputFormat, development bool) {
 	globalLoggerInit.Do(func() {
 		globalLogger = initLogger(r, level, format, development)
 	})
+}
+
+// IsInitialized indicates if the global logger is initialized.
+func IsInitialized() bool {
+	return globalLogger != nil
 }
 
 func initLogger(r otfields.Resource, level zap.AtomicLevel, format encoders.OutputFormat, development bool) *zap.Logger {
@@ -53,6 +59,13 @@ func initLogger(r otfields.Resource, level zap.AtomicLevel, format encoders.Outp
 	if development {
 		return logger
 	}
-	// If not in development, log OpenTelemetry Resource field
-	return logger.With(zap.Object("Resource", &encoders.ResourceEncoder{Resource: r}))
+
+	// If not in development, log OpenTelemetry Resource field and generate an InstanceID
+	// to uniquely identify this resource.
+	//
+	// See examples: https://opentelemetry.io/docs/reference/specification/logs/data-model/#example-log-records
+	return logger.With(zap.Object("Resource", &encoders.ResourceEncoder{
+		Resource:   r,
+		InstanceID: uuid.New().String(),
+	}))
 }

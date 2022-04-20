@@ -6,18 +6,30 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
 )
 
-type ResourceEncoder struct{ otfields.Resource }
+type ResourceEncoder struct {
+	otfields.Resource
+
+	// InstanceID is a UUID generated on initialization, as part of the OpenTelemetry log
+	// spec:
+	// https://opentelemetry.io/docs/reference/specification/resource/semantic_conventions/#service
+	InstanceID string
+}
 
 func (r *ResourceEncoder) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddString("name", r.Name)
-	if len(r.Namespace) > 0 {
-		enc.AddString("namespace", r.Namespace)
+	if len(r.Name) > 0 {
+		enc.AddString("service.name", r.Name)
+	} else {
+		enc.AddString("service.name", "unknown_service")
 	}
-	if len(r.InstanceID) > 0 {
-		enc.AddString("instance.id", r.InstanceID)
+
+	if len(r.Namespace) > 0 {
+		enc.AddString("service.namespace", r.Namespace)
 	}
 	if len(r.Version) > 0 {
-		enc.AddString("version", r.Version)
+		enc.AddString("service.version", r.Version)
+	}
+	if len(r.InstanceID) > 0 {
+		enc.AddString("service.instance.id", r.InstanceID)
 	}
 	return nil
 }

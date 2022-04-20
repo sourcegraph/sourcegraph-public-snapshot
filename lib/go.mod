@@ -11,6 +11,7 @@ require (
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-cmp v0.5.7
+	github.com/google/uuid v1.3.0
 	github.com/grafana/regexp v0.0.0-20220202152701-6a046c4caf32
 	github.com/hexops/autogold v1.3.0
 	github.com/hexops/gotextdiff v1.0.3

@@ -6,11 +6,16 @@ import "go.uber.org/zap"
 //
 // https://opentelemetry.io/docs/reference/specification/Resource/semantic_conventions/#service
 type Resource struct {
-	Name      string
+	// Name is the logical name of the service. Must be the same for all instances of
+	// horizontally scaled services. Optional, and falls back to 'unknown_service' as per
+	// the OpenTelemetry spec.
+	Name string
+	// Namespace helps to distinguish a group of services, for example the team name that
+	// owns a group of services. Optional.
 	Namespace string
-	// InstanceID must be unique for each Name, Namespace pair.
-	InstanceID string
-	Version    string
+	// Version is the version string of the service API or implementation. For Sourcegraph
+	// services, this should be from 'internal/version.Version()'
+	Version string
 }
 
 // TraceContext represents a trace to associate with log entries.
