@@ -7,6 +7,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -52,7 +53,7 @@ type ListDependencyReposOpts struct {
 	NewestFirst bool
 }
 
-func (s *Store) ListDependencyRepos(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []DependencyRepo, err error) {
+func (s *Store) ListDependencyRepos(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shared.Repo, err error) {
 	ctx, endObservation := s.operations.listDependencyRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("scheme", opts.Scheme),
 	}})
@@ -112,7 +113,7 @@ func makeLimit(limit int) *sqlf.Query {
 
 // UpsertDependencyRepos creates the given dependency repos if they doesn't yet exist. The values that
 // did not exist previously are returned.
-func (s *Store) UpsertDependencyRepos(ctx context.Context, deps []DependencyRepo) (newDeps []DependencyRepo, err error) {
+func (s *Store) UpsertDependencyRepos(ctx context.Context, deps []shared.Repo) (newDeps []shared.Repo, err error) {
 	ctx, endObservation := s.operations.upsertDependencyRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numDeps", len(deps)),
 	}})
@@ -133,7 +134,7 @@ func (s *Store) UpsertDependencyRepos(ctx context.Context, deps []DependencyRepo
 	}
 
 	returningScanner := func(rows dbutil.Scanner) error {
-		var dependencyRepo DependencyRepo
+		var dependencyRepo shared.Repo
 		if err = rows.Scan(
 			&dependencyRepo.ID,
 			&dependencyRepo.Scheme,

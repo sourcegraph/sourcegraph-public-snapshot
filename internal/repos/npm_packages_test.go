@@ -75,11 +75,11 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 	}
 }
 
-func testDependenciesService(ctx context.Context, t *testing.T, dependencyRepos []dependencies.DependencyRepo) DependenciesService {
+func testDependenciesService(ctx context.Context, t *testing.T, dependencyRepos []dependencies.Repo) DependenciesService {
 	t.Helper()
 	depsSvc := NewMockDependenciesService()
 
-	depsSvc.ListDependencyReposFunc.SetDefaultHook(func(ctx context.Context, opts dependencies.ListDependencyReposOpts) (matching []dependencies.DependencyRepo, _ error) {
+	depsSvc.ListDependencyReposFunc.SetDefaultHook(func(ctx context.Context, opts dependencies.ListDependencyReposOpts) (matching []dependencies.Repo, _ error) {
 		sort.Slice(dependencyRepos, func(i, j int) bool {
 			if opts.NewestFirst {
 				return dependencyRepos[i].ID > dependencyRepos[j].ID
@@ -122,15 +122,15 @@ var testDependencies = []string{
 	"pkg2@0.1-abc",
 	"pkg2@1",
 }
-var testDependencyRepos = func() []dependencies.DependencyRepo {
-	dependencyRepos := []dependencies.DependencyRepo{}
+var testDependencyRepos = func() []dependencies.Repo {
+	dependencyRepos := []dependencies.Repo{}
 	for i, depStr := range testDependencies {
 		dep, err := reposource.ParseNpmDependency(depStr)
 		if err != nil {
 			panic(err.Error())
 		}
 
-		dependencyRepos = append(dependencyRepos, dependencies.DependencyRepo{
+		dependencyRepos = append(dependencyRepos, dependencies.Repo{
 			ID:      i + 1,
 			Scheme:  dependencies.NpmPackagesScheme,
 			Name:    dep.PackageSyntax(),

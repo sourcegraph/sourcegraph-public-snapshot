@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
@@ -19,24 +20,24 @@ func TestUpsertDependencyRepo(t *testing.T) {
 	db := database.NewDB(dbtest.NewDB(t))
 	store := TestStore(db)
 
-	batches := [][]DependencyRepo{
+	batches := [][]shared.Repo{
 		{
 			// Test same-set flushes
-			DependencyRepo{Scheme: "npm", Name: "bar", Version: "2.0.0"}, // id=1
-			DependencyRepo{Scheme: "npm", Name: "bar", Version: "2.0.0"}, // id=2, duplicate
+			shared.Repo{Scheme: "npm", Name: "bar", Version: "2.0.0"}, // id=1
+			shared.Repo{Scheme: "npm", Name: "bar", Version: "2.0.0"}, // id=2, duplicate
 		},
 		{
-			DependencyRepo{Scheme: "npm", Name: "bar", Version: "3.0.0"}, // id=3
-			DependencyRepo{Scheme: "npm", Name: "foo", Version: "1.0.0"}, // id=4
+			shared.Repo{Scheme: "npm", Name: "bar", Version: "3.0.0"}, // id=3
+			shared.Repo{Scheme: "npm", Name: "foo", Version: "1.0.0"}, // id=4
 		},
 		{
 			// Test different-set flushes
-			DependencyRepo{Scheme: "npm", Name: "foo", Version: "1.0.0"}, // id=5, duplicate
-			DependencyRepo{Scheme: "npm", Name: "foo", Version: "2.0.0"}, // id=6
+			shared.Repo{Scheme: "npm", Name: "foo", Version: "1.0.0"}, // id=5, duplicate
+			shared.Repo{Scheme: "npm", Name: "foo", Version: "2.0.0"}, // id=6
 		},
 	}
 
-	var allNewDeps []DependencyRepo
+	var allNewDeps []shared.Repo
 	for _, batch := range batches {
 		newDeps, err := store.UpsertDependencyRepos(ctx, batch)
 		if err != nil {
@@ -46,7 +47,7 @@ func TestUpsertDependencyRepo(t *testing.T) {
 		allNewDeps = append(allNewDeps, newDeps...)
 	}
 
-	want := []DependencyRepo{
+	want := []shared.Repo{
 		{ID: 1, Scheme: "npm", Name: "bar", Version: "2.0.0"},
 		{ID: 3, Scheme: "npm", Name: "bar", Version: "3.0.0"},
 		{ID: 4, Scheme: "npm", Name: "foo", Version: "1.0.0"},
@@ -57,7 +58,7 @@ func TestUpsertDependencyRepo(t *testing.T) {
 	}
 
 	have, err := store.ListDependencyRepos(ctx, ListDependencyReposOpts{
-		Scheme: NpmPackagesScheme,
+		Scheme: shared.NpmPackagesScheme,
 	})
 	if err != nil {
 		t.Fatal(err)

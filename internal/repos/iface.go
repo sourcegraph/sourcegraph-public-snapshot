@@ -7,5 +7,5 @@ import (
 )
 
 type DependenciesService interface {
-	ListDependencyRepos(ctx context.Context, opts dependencies.ListDependencyReposOpts) ([]dependencies.DependencyRepo, error)
+	ListDependencyRepos(ctx context.Context, opts dependencies.ListDependencyReposOpts) ([]dependencies.Repo, error)
 }

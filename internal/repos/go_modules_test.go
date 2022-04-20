@@ -13,7 +13,7 @@ import (
 
 func TestGoModulesSource_ListRepos(t *testing.T) {
 	ctx := context.Background()
-	depsSvc := testDependenciesService(ctx, t, []dependencies.DependencyRepo{
+	depsSvc := testDependenciesService(ctx, t, []dependencies.Repo{
 		{
 			ID:      1,
 			Scheme:  dependencies.GoModulesScheme,

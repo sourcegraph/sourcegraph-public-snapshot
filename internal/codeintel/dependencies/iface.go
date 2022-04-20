@@ -10,8 +10,8 @@ import (
 )
 
 type Store interface {
-	ListDependencyRepos(ctx context.Context, opts store.ListDependencyReposOpts) ([]store.DependencyRepo, error)
-	UpsertDependencyRepos(ctx context.Context, deps []store.DependencyRepo) ([]store.DependencyRepo, error)
+	ListDependencyRepos(ctx context.Context, opts store.ListDependencyReposOpts) ([]Repo, error)
+	UpsertDependencyRepos(ctx context.Context, deps []Repo) ([]Repo, error)
 }
 
 type LockfilesService interface {

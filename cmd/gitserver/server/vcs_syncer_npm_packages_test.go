@@ -176,20 +176,20 @@ func TestNpmCloneCommand(t *testing.T) {
 	mockStore := NewStrictMockDependenciesService()
 	s.depsSvc = mockStore
 
-	mockStore.ListDependencyReposFunc.PushReturn([]dependencies.DependencyRepo{
+	mockStore.ListDependencyReposFunc.PushReturn([]dependencies.Repo{
 		{ID: 0, Name: "example", Version: exampleNpmVersion},
 	}, nil)
 	s.runCloneCommand(t, bareGitDirectory, []string{})
 	checkSingleTag()
 
-	mockStore.ListDependencyReposFunc.PushReturn([]dependencies.DependencyRepo{
+	mockStore.ListDependencyReposFunc.PushReturn([]dependencies.Repo{
 		{ID: 0, Name: "example", Version: exampleNpmVersion},
 		{ID: 1, Name: "example", Version: exampleNpmVersion2},
 	}, nil)
 	s.runCloneCommand(t, bareGitDirectory, []string{})
 	checkTagAdded()
 
-	mockStore.ListDependencyReposFunc.PushReturn([]dependencies.DependencyRepo{
+	mockStore.ListDependencyReposFunc.PushReturn([]dependencies.Repo{
 		{ID: 0, Name: "example", Version: "1.0.0"},
 	}, nil)
 	s.runCloneCommand(t, bareGitDirectory, []string{})
