@@ -20,5 +20,5 @@ func TestExport(t *testing.T) {
 	assert.Equal(t, logs[0].Message, "hello world")
 	assert.Equal(t, logs[0].Fields["Attributes"], map[string]interface{}{"key": "value"})
 
-	DumpLogs(t, logs)
+	Dump(t, logs)
 }
