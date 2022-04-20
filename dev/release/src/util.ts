@@ -81,12 +81,11 @@ export function changelogURL(version: string): string {
     return `https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#${versionAnchor}`
 }
 
-export function ensureMainBranchUpToDate(): void {
-    const mainBranch = 'main'
+export function ensureBranchUpToDate(branch: string): void {
     const currentBranch = execa.sync('git', ['rev-parse', '--abbrev-ref', 'HEAD']).stdout.trim()
-    if (currentBranch !== mainBranch) {
+    if (currentBranch !== branch) {
         console.log(
-            `Expected to be on branch ${mainBranch}, but was on ${currentBranch}. Run \`git checkout ${mainBranch}\` to switch to the main branch.`
+            `Expected to be on branch ${branch}, but was on ${currentBranch}. Run \`git checkout ${branch}\` to switch to the main branch.`
         )
         process.exit(1)
     }
@@ -94,14 +93,19 @@ export function ensureMainBranchUpToDate(): void {
     const { stdout } = execa.sync('git', ['status', '-uno'])
     if (stdout.includes('Your branch is behind')) {
         console.log(
-            `Your branch is behind the ${mainBranch} branch. You should run \`git pull\` to update your ${mainBranch} branch.`
+            `Your branch is behind the ${branch} branch. You should run \`git pull\` to update your ${branch} branch.`
         )
         process.exit(1)
     } else if (stdout.includes('Your branch is ahead')) {
-        console.log(`Your branch is ahead of the ${mainBranch} branch.`)
+        console.log(`Your branch is ahead of the ${branch} branch.`)
         process.exit(1)
     }
 }
+
+export function ensureMainBranchUpToDate(): void {
+    ensureBranchUpToDate('main')
+}
+
 interface ContainerRegistryCredential {
     username: string
     password: string

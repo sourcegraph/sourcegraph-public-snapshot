@@ -23,7 +23,7 @@ import {
 } from './github'
 import { ensureEvent, getClient, EventOptions, calendarTime } from './google-calendar'
 import { postMessage, slackURL } from './slack'
-import { cacheFolder, formatDate, timezoneLink, hubSpotFeedbackFormStub, ensureDocker, changelogURL } from './util'
+import { cacheFolder, formatDate, timezoneLink, hubSpotFeedbackFormStub, ensureDocker, changelogURL, ensureBranchUpToDate } from './util'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 
@@ -261,11 +261,10 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             const blockingMessage =
                 blockingIssues.length === 0
                     ? 'There are no release-blocking issues'
-                    : `There ${
-                          blockingIssues.length === 1
-                              ? 'is 1 release-blocking issue'
-                              : `are ${blockingIssues.length} release-blocking issues`
-                      }`
+                    : `There ${blockingIssues.length === 1
+                        ? 'is 1 release-blocking issue'
+                        : `are ${blockingIssues.length} release-blocking issues`
+                    }`
 
             const message = `:mega: *${release.version} Release Status Update*
 
@@ -287,6 +286,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             const { upcoming: release } = await releaseVersions(config)
             const branch = `${release.major}.${release.minor}`
             const tag = `v${release.version}${candidate === 'final' ? '' : `-rc.${candidate}`}`
+            ensureBranchUpToDate(branch)
             await createTag(
                 await getAuthenticatedGitHubClient(),
                 {
@@ -472,8 +472,7 @@ CI checks in this repository should pass, and a manual review should confirm if 
                         title: defaultPRMessage,
                         edits: [`tools/update-docker-tags.sh ${release.version}`],
                         ...prBodyAndDraftState([
-                            `Follow the [release guide](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/RELEASING.md) to complete this PR ${
-                                notPatchRelease ? '' : '(note: `pure-docker` release is optional for patch releases)'
+                            `Follow the [release guide](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/RELEASING.md) to complete this PR ${notPatchRelease ? '' : '(note: `pure-docker` release is optional for patch releases)'
                             }`,
                         ]),
                     },
