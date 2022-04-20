@@ -4,8 +4,7 @@ import PlusIcon from 'mdi-react/PlusIcon'
 
 import { Button, Link, Card } from '@sourcegraph/wildcard'
 
-import { ALL_INSIGHTS_DASHBOARD } from '../../../../../../../core/constants'
-import { InsightDashboard } from '../../../../../../../core/types'
+import { ALL_INSIGHTS_DASHBOARD, InsightDashboard } from '../../../../../../../core'
 import { useUiFeatures } from '../../../../../../../hooks/use-ui-features'
 import { isDashboardConfigurable } from '../../utils/is-dashboard-configurable'
 

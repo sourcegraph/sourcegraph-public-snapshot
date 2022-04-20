@@ -83,10 +83,17 @@ asdf reshim golang
 echo "--- comby install"
 ./dev/comby-install-or-upgrade.sh
 
-# For code insights test
-./dev/codeinsights-db.sh &
-export CODEINSIGHTS_PGDATASOURCE=postgres://postgres:password@127.0.0.1:5435/postgres
-export DB_STARTUP_TIMEOUT=360s # codeinsights-db needs more time to start in some instances.
+# Temporary fix to keep the backcompat test operational until the next release.
+# This is needed because the go-test.sh is protected and the backcompat tests are 
+# not checking out the old version when the tests with the old code against the latest
+# commit database schema.
+# TODO @jhchabran remove this when we release the next version.
+if [ "v3.38.0" == "$(git describe --tags)" ];then
+  # For code insights test
+  ./dev/codeinsights-db.sh &
+  export CODEINSIGHTS_PGDATASOURCE=postgres://postgres:password@127.0.0.1:5435/postgres
+  export DB_STARTUP_TIMEOUT=360s # codeinsights-db needs more time to start in some instances.
+fi
 
 # Disable GraphQL logs which are wildly noisy
 export NO_GRAPHQL_LOG=true

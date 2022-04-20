@@ -39,6 +39,7 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
             filters: {
                 excludeRepoRegexp: '',
                 includeRepoRegexp: '',
+                contexts: [],
                 repositories: [],
             },
         }

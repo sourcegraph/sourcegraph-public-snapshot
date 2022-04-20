@@ -22,8 +22,9 @@ import (
 // e.g. by adding flags, and not as a condition for adding steps or commands.
 type CoreTestOperationsOptions struct {
 	// for clientChromaticTests
-	ChromaticShouldAutoAccept bool
-	MinimumUpgradeableVersion string
+	ChromaticShouldAutoAccept  bool
+	MinimumUpgradeableVersion  string
+	ClientLintOnlyChangedFiles bool
 }
 
 // CoreTestOperations is a core set of tests that should be run in most CI cases. More
@@ -65,14 +66,22 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 
 	if diff.Has(changed.Client | changed.GraphQL) {
 		// If there are any Graphql changes, they are impacting the client as well.
-		ops.Merge(operations.NewNamedSet("Client checks",
+		clientChecks := operations.NewNamedSet("Client checks",
 			clientIntegrationTests,
 			clientChromaticTests(opts.ChromaticShouldAutoAccept),
 			frontendTests,                // ~4.5m
 			addWebApp,                    // ~5.5m
 			addBrowserExtensionUnitTests, // ~4.5m
-			addVSCExt,                    // ~5.5m
-			addClientLinters))            // ~9m
+			addTypescriptCheck,           // ~4m
+		)
+
+		if opts.ClientLintOnlyChangedFiles {
+			clientChecks.Append(addClientLintersForChangedFiles)
+		} else {
+			clientChecks.Append(addClientLintersForAllFiles)
+		}
+
+		ops.Merge(clientChecks)
 	}
 
 	if diff.Has(changed.Go | changed.GraphQL) {
@@ -143,14 +152,14 @@ func addCheck(pipeline *bk.Pipeline) {
 func addPrettier(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":lipstick: Prettier",
 		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-run.sh prettier-check"))
+		bk.Cmd("dev/ci/yarn-run.sh format:check"))
 }
 
 // yarn ~41s + ~1s
 func addGraphQLLint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":lipstick: :graphql: GraphQL lint",
 		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-run.sh graphql-lint"))
+		bk.Cmd("dev/ci/yarn-run.sh lint:graphql"))
 }
 
 func addSVGLint(pipeline *bk.Pipeline) {
@@ -163,22 +172,33 @@ func addYarnDeduplicateLint(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/check/yarn-deduplicate.sh"))
 }
 
-// Adds client linters and Typescript check.
-func addClientLinters(pipeline *bk.Pipeline) {
-	// - ESLint ~9m
-	pipeline.AddStep(":eslint: ESLint",
-		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-run.sh all:eslint"))
-
-	// - build-ts ~4m
+// Adds Typescript check.
+func addTypescriptCheck(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":typescript: Build TS",
 		withYarnCache(),
 		bk.Cmd("dev/ci/yarn-run.sh build-ts"))
+}
 
-	// - Stylelint ~2m
-	pipeline.AddStep(":stylelint: Stylelint",
+// Adds client linters to check all files.
+func addClientLintersForAllFiles(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":eslint: ESLint (all)",
 		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-run.sh all:stylelint"))
+		bk.Cmd("dev/ci/yarn-run.sh lint:js:all"))
+
+	pipeline.AddStep(":stylelint: Stylelint (all)",
+		withYarnCache(),
+		bk.Cmd("dev/ci/yarn-run.sh lint:css:all"))
+}
+
+// Adds client linters to check changed in PR files.
+func addClientLintersForChangedFiles(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":eslint: ESLint (changed)",
+		withYarnCache(),
+		bk.Cmd("dev/ci/yarn-run.sh lint:js:changed"))
+
+	pipeline.AddStep(":stylelint: Stylelint (changed)",
+		withYarnCache(),
+		bk.Cmd("dev/ci/yarn-run.sh lint:css:changed"))
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
@@ -226,7 +246,7 @@ func addBrowserExtensionIntegrationTests(parallelTestCount int) operations.Opera
 				withYarnCache(),
 				bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
 				bk.Env("BROWSER", browser),
-				bk.Env("LOG_BROWSER_CONSOLE", "true"),
+				bk.Env("LOG_BROWSER_CONSOLE", "false"),
 				bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
 				bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
 				bk.Env("PERCY_ON", "true"),
@@ -239,6 +259,26 @@ func addBrowserExtensionIntegrationTests(parallelTestCount int) operations.Opera
 				bk.ArtifactPaths("./puppeteer/*.png"),
 			)
 		}
+	}
+}
+
+func recordBrowserExtensionIntegrationTests(pipeline *bk.Pipeline) {
+	for _, browser := range browsers {
+		pipeline.AddStep(
+			fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
+			withYarnCache(),
+			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
+			bk.Env("BROWSER", browser),
+			bk.Env("LOG_BROWSER_CONSOLE", "false"),
+			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
+			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
+			bk.Cmd("yarn workspace @sourcegraph/browser -s run record-integration"),
+			// Retry may help in case if command failed due to hitting the rate limit or similar kind of error on the code host:
+			// https://docs.github.com/en/rest/reference/search#rate-limit
+			bk.AutomaticRetry(1),
+			bk.ArtifactPaths("./puppeteer/*.png"),
+		)
 	}
 }
 
@@ -302,6 +342,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 			// https://docs.percy.io/docs/parallel-test-suites#how-it-works
 			bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(parallelTestCount)),
 			bk.Cmd(fmt.Sprintf(`dev/ci/yarn-web-integration.sh "%s"`, chunkTestFiles)),
+			bk.AutomaticRetry(1), // Temporary
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
 }
@@ -824,6 +865,8 @@ func uploadBuildeventTrace() operations.Operation {
 func prPreview() operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":globe_with_meridians: Client PR preview",
+			// Soft-fail with code 222 if nothing has changed
+			bk.SoftFail(222),
 			bk.Cmd("dev/ci/render-pr-preview.sh"))
 	}
 }

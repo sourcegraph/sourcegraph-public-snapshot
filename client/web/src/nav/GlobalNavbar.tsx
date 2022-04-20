@@ -3,6 +3,7 @@ import React, { useEffect, useMemo } from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 import BarChartIcon from 'mdi-react/BarChartIcon'
+import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import { of } from 'rxjs'
@@ -199,13 +200,9 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
         const items: (NavDropdownItem | false)[] = [
             searchContextsEnabled &&
                 !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
-            !!showSearchNotebook && {
-                path: PageRoutes.Notebooks,
-                content: 'Notebooks',
-            },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [searchContextsEnabled, showSearchNotebook, showSearchContext])
+    }, [searchContextsEnabled, showSearchContext])
 
     return (
         <>
@@ -225,6 +222,11 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         mobileHomeItem={{ content: 'Search home' }}
                         items={searchNavBarItems}
                     />
+                    {showSearchNotebook && (
+                        <NavItem icon={BookOutlineIcon}>
+                            <NavLink to={PageRoutes.Notebooks}>Notebooks</NavLink>
+                        </NavItem>
+                    )}
                     {enableCodeMonitoring && (
                         <NavItem icon={CodeMonitoringLogo}>
                             <NavLink to="/code-monitoring">Monitoring</NavLink>

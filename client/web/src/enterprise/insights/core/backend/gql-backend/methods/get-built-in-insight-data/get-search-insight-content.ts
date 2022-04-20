@@ -1,11 +1,11 @@
-import { formatISO, isAfter, startOfDay, sub, Duration } from 'date-fns'
+import { Duration, formatISO, isAfter, startOfDay, sub } from 'date-fns'
 import escapeRegExp from 'lodash/escapeRegExp'
 import { defer } from 'rxjs'
 import { retry } from 'rxjs/operators'
-import type { LineChartContent } from 'sourcegraph'
 
 import { EMPTY_DATA_POINT_VALUE } from '../../../../../../../views'
-import { GetSearchInsightContentInput } from '../../../code-insights-backend-types'
+import { InsightContentType } from '../../../../types/insight/common'
+import { GetSearchInsightContentInput, InsightSeriesContent } from '../../../code-insights-backend-types'
 
 import { fetchRawSearchInsightResults, fetchSearchInsightCommits } from './utils/fetch-search-insight'
 import { queryHasCountFilter } from './utils/query-has-count-filter'
@@ -23,7 +23,7 @@ interface InsightSeriesData {
 
 export async function getSearchInsightContent(
     input: GetSearchInsightContentInput
-): Promise<LineChartContent<any, string>> {
+): Promise<InsightSeriesContent<InsightSeriesData>> {
     return getInsightContent({ ...input, repos: input.repositories })
 }
 
@@ -32,7 +32,9 @@ interface GetInsightContentInput extends GetSearchInsightContentInput {
     path?: string
 }
 
-export async function getInsightContent(inputs: GetInsightContentInput): Promise<LineChartContent<any, string>> {
+export async function getInsightContent(
+    inputs: GetInsightContentInput
+): Promise<InsightSeriesContent<InsightSeriesData>> {
     const { series, step, repos, path } = inputs
     const stepInterval = step || { days: 1 }
     const pathRegexp = path ? `^${escapeRegExp(path)}/` : undefined
@@ -116,14 +118,16 @@ export async function getInsightContent(inputs: GetInsightContentInput): Promise
     }
 
     return {
-        chart: 'line' as const,
-        data,
-        series: series.map(series => ({
-            dataKey: series.name,
-            name: series.name,
-            stroke: series.stroke,
-            linkURLs: Object.fromEntries(
-                dates.map(date => {
+        type: InsightContentType.Series,
+        content: {
+            data,
+            getXValue: datum => new Date(datum.date),
+            series: series.map(series => ({
+                dataKey: series.name,
+                name: series.name,
+                color: series.stroke,
+                getLinkURL: datum => {
+                    const date = datum.date
                     // Link to diff search that explains what new cases were added between two data points
                     const url = new URL('/search', window.location.origin)
                     // Use formatISO instead of toISOString(), because toISOString() always outputs UTC.
@@ -136,14 +140,9 @@ export async function getInsightContent(inputs: GetInsightContentInput): Promise
 
                     url.searchParams.set('q', diffQuery)
 
-                    return [date.getTime(), url.href]
-                })
-            ),
-        })),
-        xAxis: {
-            dataKey: 'date' as const,
-            type: 'number' as const,
-            scale: 'time' as const,
+                    return url.href
+                },
+            })),
         },
     }
 }

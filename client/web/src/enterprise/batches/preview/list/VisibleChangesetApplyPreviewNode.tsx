@@ -227,6 +227,7 @@ const SelectBox: React.FunctionComponent<{
             checked={selectable.isSelected(isPublishableResult.changesetSpecID)}
             onChange={toggleSelected}
             tooltip="Click to select changeset for bulk-modifying the publication state"
+            aria-label="Click to select changeset for bulk-modifying the publication state"
         />
     ) : (
         <InputTooltip
@@ -235,6 +236,7 @@ const SelectBox: React.FunctionComponent<{
             checked={false}
             disabled={true}
             tooltip={isPublishableResult.reason}
+            aria-label={isPublishableResult.reason}
         />
     )
 

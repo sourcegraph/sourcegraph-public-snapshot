@@ -44,10 +44,12 @@ export const buildSearchBasedLocation = (node: Result): Location => ({
     commitID: node.rev,
     content: node.content,
     url: node.url,
-    lines: node.content.split(/\r?\n/),
+    lines: split(node.content),
     precise: false,
     range: node.range,
 })
+
+export const split = (content: string): string[] => content.split(/\r?\n/)
 
 export const buildPreciseLocation = (node: LocationFields): Location => {
     const location: Location = {

@@ -1,9 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"runtime"
@@ -11,6 +11,8 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -24,8 +26,12 @@ var updateCommand = &cli.Command{
 Requires a local copy of the 'sourcegraph/sourcegraph' codebase.`,
 	Category: CategoryUtil,
 	Action: func(cmd *cli.Context) error {
-		_, err := updateToPrebuiltSG(cmd.Context)
-		return err
+		if _, err := updateToPrebuiltSG(cmd.Context); err != nil {
+			return err
+		}
+		writeSuccessLinef("sg has been updated!")
+		stdout.Out.Write("To see what's new, run 'sg version changelog'.")
+		return nil
 	},
 }
 
@@ -68,25 +74,18 @@ func updateToPrebuiltSG(ctx context.Context) (string, error) {
 		return "", errors.Newf("downloading sg: status %d", resp.StatusCode)
 	}
 
-	tmpSgPath := tmpDir + "/sg"
-	f, err := os.Create(tmpSgPath)
-	if err != nil {
-		return "", err
-	}
-
-	_, err = io.Copy(f, resp.Body)
-	if err != nil {
-		return "", err
-	}
-	err = os.Chmod(tmpSgPath, 0755)
-	if err != nil {
-		return "", err
-	}
-
 	currentExecPath, err := os.Executable()
 	if err != nil {
 		return "", err
 	}
 
-	return currentExecPath, os.Rename(tmpSgPath, currentExecPath)
+	content := &bytes.Buffer{}
+	content.ReadFrom(resp.Body)
+
+	_, err = fileutil.UpdateFileIfDifferent(currentExecPath, content.Bytes())
+	if err != nil {
+		return "", err
+	}
+
+	return currentExecPath, nil
 }

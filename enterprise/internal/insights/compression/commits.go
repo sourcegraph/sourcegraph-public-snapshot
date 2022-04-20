@@ -23,8 +23,8 @@ type CommitStore interface {
 	Save(ctx context.Context, id api.RepoID, commit *gitdomain.Commit, debugInfo string) error
 	Get(ctx context.Context, id api.RepoID, start time.Time, end time.Time) ([]CommitStamp, error)
 	GetMetadata(ctx context.Context, id api.RepoID) (CommitIndexMetadata, error)
-	UpsertMetadataStamp(ctx context.Context, id api.RepoID) (CommitIndexMetadata, error)
-	InsertCommits(ctx context.Context, id api.RepoID, commits []*gitdomain.Commit, debugInfo string) error
+	UpsertMetadataStamp(ctx context.Context, id api.RepoID, indexedThrough time.Time) (CommitIndexMetadata, error)
+	InsertCommits(ctx context.Context, id api.RepoID, commits []*gitdomain.Commit, indexedThrough time.Time, debugInfo string) error
 }
 
 func NewCommitStore(db dbutil.DB) *DBCommitStore {
@@ -52,7 +52,7 @@ func (c *DBCommitStore) Save(ctx context.Context, id api.RepoID, commit *gitdoma
 	return nil
 }
 
-func (c *DBCommitStore) InsertCommits(ctx context.Context, id api.RepoID, commits []*gitdomain.Commit, debugInfo string) (err error) {
+func (c *DBCommitStore) InsertCommits(ctx context.Context, id api.RepoID, commits []*gitdomain.Commit, indexedThrough time.Time, debugInfo string) (err error) {
 	tx, err := c.Transact(ctx)
 	if err != nil {
 		return err
@@ -66,7 +66,7 @@ func (c *DBCommitStore) InsertCommits(ctx context.Context, id api.RepoID, commit
 		}
 	}
 
-	if _, err = tx.UpsertMetadataStamp(ctx, id); err != nil {
+	if _, err = tx.UpsertMetadataStamp(ctx, id, indexedThrough); err != nil {
 		return err
 	}
 
@@ -108,8 +108,8 @@ func (c *DBCommitStore) GetMetadata(ctx context.Context, id api.RepoID) (CommitI
 }
 
 // UpsertMetadataStamp inserts (or updates, if the row already exists) the index metadata timestamp for a given repository
-func (c *DBCommitStore) UpsertMetadataStamp(ctx context.Context, id api.RepoID) (CommitIndexMetadata, error) {
-	row := c.QueryRow(ctx, sqlf.Sprintf(upsertCommitIndexMetadataStampStr, id))
+func (c *DBCommitStore) UpsertMetadataStamp(ctx context.Context, id api.RepoID, indexedThrough time.Time) (CommitIndexMetadata, error) {
+	row := c.QueryRow(ctx, sqlf.Sprintf(upsertCommitIndexMetadataStampStr, id, indexedThrough))
 
 	var metadata CommitIndexMetadata
 	if err := row.Scan(&metadata.RepoId, &metadata.Enabled, &metadata.LastIndexedAt); err != nil {
@@ -154,6 +154,6 @@ const upsertCommitIndexMetadataStampStr = `
 INSERT INTO commit_index_metadata(repo_id)
 VALUES (%v)
 ON CONFLICT (repo_id) DO UPDATE
-SET last_indexed_at = CURRENT_TIMESTAMP
+SET last_indexed_at = %v
 RETURNING repo_id, enabled, last_indexed_at;
 `
