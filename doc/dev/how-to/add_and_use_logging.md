@@ -70,7 +70,7 @@ func (w *Worker) DoSomething(params ...int) {
   _, err := doTheThing()
   if err != nil {
     // Use the provided logger instance
-    w.logger.Error("Failed to do the thing",
+    w.logger.Warn("Failed to do the thing",
       log.Ints("params", params),
       log.Error(err))
   }
