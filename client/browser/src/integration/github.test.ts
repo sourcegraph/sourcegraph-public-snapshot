@@ -803,7 +803,6 @@ describe('GitHub', () => {
         const isCI = readEnvironmentBoolean({ variable: 'CI', defaultValue: false }) === true
         // global and repository search pages
         ;(isRecordMode && isCI ? describe.skip : describe)('Search results page', () => {
-            console.log('I am here to trigger clinet checks')
             beforeEach(() => {
                 mockUrls([
                     'https://github.com/_graphql/GetSuggestedNavigationDestinations',
