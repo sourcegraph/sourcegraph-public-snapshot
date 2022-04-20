@@ -112,6 +112,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                     {
                         icon: BatchChangesIcon,
                         to: '/batch-changes',
+                        ariaLabel: 'Batch changes',
                     },
                     { to: `${batchChange.namespace.url}/batch-changes`, text: batchChange.namespace.namespaceName },
                     { text: batchChange.name },

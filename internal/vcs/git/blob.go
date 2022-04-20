@@ -20,31 +20,27 @@ import (
 
 // ReadFile returns the first maxBytes of the named file at commit. If maxBytes <= 0, the entire
 // file is read. (If you just need to check a file's existence, use Stat, not ReadFile.)
-func ReadFile(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID, name string, maxBytes int64, checker authz.SubRepoPermissionChecker) ([]byte, error) {
+func ReadFile(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID, name string, checker authz.SubRepoPermissionChecker) ([]byte, error) {
 	if Mocks.ReadFile != nil {
 		return Mocks.ReadFile(commit, name)
-	}
-	a := actor.FromContext(ctx)
-	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, name); err != nil {
-		return nil, err
-	} else if !hasAccess {
-		return nil, os.ErrNotExist
 	}
 
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: ReadFile")
 	span.SetTag("Name", name)
 	defer span.Finish()
 
-	if err := checkSpecArgSafety(string(commit)); err != nil {
-		return nil, err
-	}
-
-	name = util.Rel(name)
-	b, err := readFileBytes(ctx, db, repo, commit, name, maxBytes)
+	br, err := NewFileReader(ctx, db, repo, commit, name, checker)
 	if err != nil {
 		return nil, err
 	}
-	return b, nil
+	defer br.Close()
+
+	r := io.Reader(br)
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 // NewFileReader returns an io.ReadCloser reading from the named file at commit.
@@ -70,24 +66,6 @@ func NewFileReader(ctx context.Context, db database.DB, repo api.RepoName, commi
 		return nil, errors.Wrapf(err, "getting blobReader for %q", name)
 	}
 	return br, nil
-}
-
-func readFileBytes(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID, name string, maxBytes int64) ([]byte, error) {
-	br, err := newBlobReader(ctx, db, repo, commit, name)
-	if err != nil {
-		return nil, err
-	}
-	defer br.Close()
-
-	r := io.Reader(br)
-	if maxBytes > 0 {
-		r = io.LimitReader(r, maxBytes)
-	}
-	data, err := io.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
 }
 
 // blobReader, which should be created using newBlobReader, is a struct that allows

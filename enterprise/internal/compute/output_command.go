@@ -65,7 +65,7 @@ func resultContent(ctx context.Context, db database.DB, r result.Match) (string,
 	case *result.RepoMatch:
 		return string(m.Name), true, nil
 	case *result.FileMatch:
-		contentBytes, err := git.ReadFile(ctx, db, m.Repo.Name, m.CommitID, m.Path, 0, authz.DefaultSubRepoPermsChecker)
+		contentBytes, err := git.ReadFile(ctx, db, m.Repo.Name, m.CommitID, m.Path, authz.DefaultSubRepoPermsChecker)
 		if err != nil {
 			return "", false, err
 		}

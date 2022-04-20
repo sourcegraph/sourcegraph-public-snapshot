@@ -318,37 +318,66 @@ func TestGitserverReposGetByNames(t *testing.T) {
 	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
-	// Creating 2 repos
-	repo1, gitserverRepo1 := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:         "github.com/sourcegraph/repo1",
-		URI:          "github.com/sourcegraph/repo1",
-		ExternalRepo: api.ExternalRepoSpec{},
-		ShardID:      "test1",
-	})
-
-	repo2, gitserverRepo2 := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:         "github.com/sourcegraph/repo2",
-		URI:          "github.com/sourcegraph/repo2",
-		ExternalRepo: api.ExternalRepoSpec{},
-		ShardID:      "test2",
-	})
-
-	idToExpectedRepo := map[api.RepoID]*types.GitserverRepo{
-		gitserverRepo1.RepoID: gitserverRepo1,
-		gitserverRepo2.RepoID: gitserverRepo2,
+	type testCase struct {
+		name        string
+		reposNumber int
+		batchSize   int
+	}
+	testCases := []testCase{
+		{
+			name:        "GetReposByNames: repos=10, batch=3",
+			reposNumber: 10,
+			batchSize:   3,
+		},
+		{
+			name:        "GetReposByNames: repos=5, batch=30",
+			reposNumber: 5,
+			batchSize:   30,
+		},
+		{
+			name:        "GetReposByNames: repos=10, batch=5",
+			reposNumber: 10,
+			batchSize:   5,
+		},
+		{
+			name:        "GetReposByNames: repos=1, batch=3",
+			reposNumber: 1,
+			batchSize:   3,
+		},
 	}
 
-	// GetByNames should now work
-	fromDB, err := GitserverRepos(db).GetByNames(ctx, repo1.Name, repo2.Name)
-	if err != nil {
-		t.Fatal(err)
-	}
+	repoIdx := 0
+	gitserverRepoStore := &gitserverRepoStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Creating tc.reposNumber repos
+			repoNames := make([]api.RepoName, 0)
+			idToExpectedRepo := make(map[api.RepoID]*types.GitserverRepo, 0)
+			for i := 0; i < tc.reposNumber; i++ {
+				repoName := fmt.Sprintf("github.com/sourcegraph/repo%d", repoIdx)
+				repoIdx++
+				repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
+					Name:         api.RepoName(repoName),
+					URI:          repoName,
+					ExternalRepo: api.ExternalRepoSpec{},
+					ShardID:      shardID,
+				})
+				repoNames = append(repoNames, repo.Name)
+				idToExpectedRepo[gitserverRepo.RepoID] = gitserverRepo
+			}
 
-	if diff := cmp.Diff(idToExpectedRepo[fromDB[0].RepoID], fromDB[0], cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
-		t.Fatal(diff)
-	}
-	if diff := cmp.Diff(idToExpectedRepo[fromDB[1].RepoID], fromDB[1], cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
-		t.Fatal(diff)
+			// GetByNames should now work
+			fromDB, err := gitserverRepoStore.getByNames(ctx, tc.batchSize, repoNames...)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			for i := 0; i < tc.reposNumber; i++ {
+				if diff := cmp.Diff(idToExpectedRepo[fromDB[i].RepoID], fromDB[i], cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+					t.Fatal(diff)
+				}
+			}
+		})
 	}
 }
 

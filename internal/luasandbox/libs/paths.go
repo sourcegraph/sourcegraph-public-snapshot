@@ -15,6 +15,11 @@ type pathAPI struct{}
 
 func (api pathAPI) LuaAPI() map[string]lua.LGFunction {
 	return map[string]lua.LGFunction{
+		"ancestors": util.WrapLuaFunction(func(state *lua.LState) error {
+			state.Push(luar.New(state, ancestorDirs(state.CheckString(1))))
+			return nil
+		}),
+
 		"basename": util.WrapLuaFunction(func(state *lua.LState) error {
 			state.Push(luar.New(state, filepath.Base(state.CheckString(1))))
 			return nil
@@ -25,8 +30,8 @@ func (api pathAPI) LuaAPI() map[string]lua.LGFunction {
 			return nil
 		}),
 
-		"ancestors": util.WrapLuaFunction(func(state *lua.LState) error {
-			state.Push(luar.New(state, ancestorDirs(state.CheckString(1))))
+		"join": util.WrapLuaFunction(func(state *lua.LState) error {
+			state.Push(luar.New(state, filepath.Join(state.CheckString(1), state.CheckString(2))))
 			return nil
 		}),
 	}

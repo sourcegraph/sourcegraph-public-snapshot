@@ -277,7 +277,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
             <div className="list-group position-relative" ref={nextContainerElement}>
                 <ConnectionContainer>
                     {error && <ConnectionError errors={[error.message]} />}
-                    <ConnectionList className={styles.batchChangeChangesetsGrid}>
+                    <ConnectionList as="div" className={styles.batchChangeChangesetsGrid}>
                         {connection?.nodes?.length ? (
                             <BatchChangeChangesetsHeader
                                 allSelected={showSelectRow && areAllVisibleSelected()}

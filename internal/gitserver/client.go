@@ -159,6 +159,8 @@ type Client interface {
 	// AddrForRepo returns the gitserver address to use for the given repo name.
 	AddrForRepo(context.Context, api.RepoName) (string, error)
 
+	// Addrs returns the addresses for gitservers. It is safe for concurrent
+	// use. It may return different results at different times.
 	Addrs() []string
 
 	// Archive produces an archive from a Git repository.

@@ -1562,13 +1562,11 @@ func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, ra
 		return newHttpResponseState(resp.StatusCode, resp.Header), &err
 	}
 
-	// If this is a conditional request (If-None-Match or If-Modified-Since header in the request)
-	// and the response is a 304 (resource not modified), the body is empty. Return early. It is now
-	// the caller's responsibility to read from a cache.
+	// If the resource is not modified, the body is empty. Return early. This is expected for
+	// resources that support conditional requests.
 	//
 	// See: https://docs.github.com/en/rest/overview/resources-in-the-rest-api#conditional-requests
-	if (req.Header.Get(headerIfNoneMatch) != "" || req.Header.Get(headerIfModifiedSince) != "") &&
-		resp.StatusCode == 304 {
+	if resp.StatusCode == 304 {
 		return newHttpResponseState(resp.StatusCode, resp.Header), nil
 	}
 

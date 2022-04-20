@@ -12,7 +12,7 @@ import { QueryState } from '@sourcegraph/search'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
-import { PageHeader, useObservable } from '@sourcegraph/wildcard'
+import { Icon, PageHeader, useObservable } from '@sourcegraph/wildcard'
 
 import { WebviewPageProps } from '../platform/context'
 
@@ -86,7 +86,7 @@ export const RepoView: React.FunctionComponent<RepoViewProps> = ({
                 onClick={onBackToSearchResults}
                 className="btn btn-sm btn-link btn-outline-secondary text-decoration-none border-0"
             >
-                <ArrowLeftIcon className="icon-inline mr-1" />
+                <Icon className="mr-1" as={ArrowLeftIcon} />
                 Back to search view
             </button>
             {directoryStack.length > 0 && (
@@ -95,7 +95,7 @@ export const RepoView: React.FunctionComponent<RepoViewProps> = ({
                     onClick={onPreviousDirectory}
                     className="btn btn-sm btn-link btn-outline-secondary text-decoration-none border-0"
                 >
-                    <ArrowLeftIcon className="icon-inline mr-1" />
+                    <Icon className="mr-1" as={ArrowLeftIcon} />
                     Back to previous directory
                 </button>
             )}
@@ -133,10 +133,10 @@ export const RepoView: React.FunctionComponent<RepoViewProps> = ({
                                 >
                                     <span>
                                         {entry.isDirectory && (
-                                            <FolderOutlineIcon className="icon-inline mr-1 text-muted" />
+                                            <Icon className="mr-1 text-muted" as={FolderOutlineIcon} />
                                         )}
                                         {!entry.isDirectory && (
-                                            <FileDocumentOutlineIcon className="icon-inline mr-1 text-muted" />
+                                            <Icon className="mr-1 text-muted" as={FileDocumentOutlineIcon} />
                                         )}
                                         {entry.name}
                                         {entry.isDirectory && '/'}

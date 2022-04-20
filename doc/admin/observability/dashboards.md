@@ -3664,13 +3664,13 @@ Query: `round(sum(increase(src_search_ranking_result_clicked_sum{type="commit"}[
 
 ### Frontend: Sentinel queries (only on sourcegraph.com)
 
-#### frontend: mean_successful_sentinel_duration_over_1h30m
+#### frontend: mean_successful_sentinel_duration_over_2h
 
-<p class="subtitle">Mean successful sentinel search duration over 1h30m</p>
+<p class="subtitle">Mean successful sentinel search duration over 2h</p>
 
 Mean search duration for all successful sentinel queries
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-mean-successful-sentinel-duration-over-1h30m) for 2 alerts related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#frontend-mean-successful-sentinel-duration-over-2h) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102800` on your Sourcegraph instance.
 
@@ -3679,19 +3679,19 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102800`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(src_search_response_latency_seconds_sum{source=~`searchblitz.*`, status=`success`}[1h30m])) / sum(rate(src_search_response_latency_seconds_count{source=~`searchblitz.*`, status=`success`}[1h30m]))`
+Query: `sum(rate(src_search_response_latency_seconds_sum{source=~`searchblitz.*`, status=`success`}[2h])) / sum(rate(src_search_response_latency_seconds_count{source=~`searchblitz.*`, status=`success`}[2h]))`
 
 </details>
 
 <br />
 
-#### frontend: mean_sentinel_stream_latency_over_1h30m
+#### frontend: mean_sentinel_stream_latency_over_2h
 
-<p class="subtitle">Mean successful sentinel stream latency over 1h30m</p>
+<p class="subtitle">Mean successful sentinel stream latency over 2h</p>
 
 Mean time to first result for all successful streaming sentinel queries
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-mean-sentinel-stream-latency-over-1h30m) for 2 alerts related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#frontend-mean-sentinel-stream-latency-over-2h) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102801` on your Sourcegraph instance.
 
@@ -3700,19 +3700,19 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102801`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*"}[1h30m])) / sum(rate(src_search_streaming_latency_seconds_count{source=~"searchblitz.*"}[1h30m]))`
+Query: `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*"}[2h])) / sum(rate(src_search_streaming_latency_seconds_count{source=~"searchblitz.*"}[2h]))`
 
 </details>
 
 <br />
 
-#### frontend: 90th_percentile_successful_sentinel_duration_over_1h30m
+#### frontend: 90th_percentile_successful_sentinel_duration_over_2h
 
-<p class="subtitle">90th percentile successful sentinel search duration over 1h30m</p>
+<p class="subtitle">90th percentile successful sentinel search duration over 2h</p>
 
 90th percentile search duration for all successful sentinel queries
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-successful-sentinel-duration-over-1h30m) for 2 alerts related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-successful-sentinel-duration-over-2h) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102810` on your Sourcegraph instance.
 
@@ -3721,19 +3721,19 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102810`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[1h30m]), "source", "$1", "source", "searchblitz_(.*)")))`
+Query: `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[2h]), "source", "$1", "source", "searchblitz_(.*)")))`
 
 </details>
 
 <br />
 
-#### frontend: 90th_percentile_sentinel_stream_latency_over_1h30m
+#### frontend: 90th_percentile_sentinel_stream_latency_over_2h
 
-<p class="subtitle">90th percentile successful sentinel stream latency over 1h30m</p>
+<p class="subtitle">90th percentile successful sentinel stream latency over 2h</p>
 
 90th percentile time to first result for all successful streaming sentinel queries
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-sentinel-stream-latency-over-1h30m) for 2 alerts related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-sentinel-stream-latency-over-2h) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102811` on your Sourcegraph instance.
 
@@ -3742,7 +3742,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102811`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[1h30m]), "source", "$1", "source", "searchblitz_(.*)")))`
+Query: `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[2h]), "source", "$1", "source", "searchblitz_(.*)")))`
 
 </details>
 
@@ -8251,6 +8251,27 @@ Query: `sum(increase(src_codeintel_background_documentation_search_records_remov
 
 <br />
 
+#### worker: codeintel_background_audit_log_records_expired_total
+
+<p class="subtitle">Lsif upload audit log records deleted every 5m</p>
+
+Number of LSIF upload audit log records deleted due to expiration every 5m
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100520` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_background_audit_log_records_expired_total{job=~"^worker.*"}[5m]))`
+
+</details>
+
+<br />
+
 #### worker: codeintel_background_errors_total
 
 <p class="subtitle">Janitor operation errors every 5m</p>
@@ -8259,7 +8280,7 @@ Number of code intelligence janitor errors every 5m
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100520` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100521` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
@@ -14610,6 +14631,108 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100401` on yo
 <summary>Technical details</summary>
 
 Query: `index_queue_len{instance=~`${instance:regex}`}`
+
+</details>
+
+<br />
+
+#### zoekt: indexed_queueing_delay_heatmap
+
+<p class="subtitle">Job queuing delay heatmap</p>
+
+The queueing delay represents the amount of time an indexing job spent in the queue before it was processed.
+
+Large queueing delays can be an indicator of:
+	- resource saturation
+	- each Zoekt replica has too many jobs for it to be able to process all of them promptly. In this scenario, consider adding additional Zoekt replicas to distribute the work better .
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100410` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (le) (increase(index_queue_age_seconds_bucket[$__rate_interval]))`
+
+</details>
+
+<br />
+
+#### zoekt: indexed_queueing_delay_p99_9
+
+<p class="subtitle">99.9th percentile job queuing delay over 5m</p>
+
+The queueing delay represents the amount of time an indexing job spent in the queue before it was processed.
+
+Large queueing delays can be an indicator of:
+	- resource saturation
+	- each Zoekt replica has too many jobs for it to be able to process all of them promptly. In this scenario, consider adding additional Zoekt replicas to distribute the work better.
+
+The 99.9 percentile dashboard is useful for capturing the long tail of queueing delays (on the order of 24+ hours, etc.).
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100420` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.999, sum by (le, name)(rate(index_queue_age_seconds_bucket[5m])))`
+
+</details>
+
+<br />
+
+#### zoekt: indexed_queueing_delay_p90
+
+<p class="subtitle">90th percentile job queueing delay over 5m</p>
+
+The queueing delay represents the amount of time an indexing job spent in the queue before it was processed.
+
+Large queueing delays can be an indicator of:
+	- resource saturation
+	- each Zoekt replica has too many jobs for it to be able to process all of them promptly. In this scenario, consider adding additional Zoekt replicas to distribute the work better.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100421` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name)(rate(index_queue_age_seconds_bucket[5m])))`
+
+</details>
+
+<br />
+
+#### zoekt: indexed_queueing_delay_p75
+
+<p class="subtitle">75th percentile job queueing delay over 5m</p>
+
+The queueing delay represents the amount of time an indexing job spent in the queue before it was processed.
+
+Large queueing delays can be an indicator of:
+	- resource saturation
+	- each Zoekt replica has too many jobs for it to be able to process all of them promptly. In this scenario, consider adding additional Zoekt replicas to distribute the work better.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100422` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name)(rate(index_queue_age_seconds_bucket[5m])))`
 
 </details>
 
