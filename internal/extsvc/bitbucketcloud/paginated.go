@@ -9,7 +9,7 @@ import (
 )
 
 type PaginatedResultSet struct {
-	client    *Client
+	client    *client
 	mu        sync.Mutex
 	initial   *url.URL
 	pageToken *PageToken
@@ -17,7 +17,7 @@ type PaginatedResultSet struct {
 	fetch     func(context.Context, *http.Request) (*PageToken, []interface{}, error)
 }
 
-func newResultSet(c *Client, initial *url.URL, fetch func(context.Context, *http.Request) (*PageToken, []interface{}, error)) *PaginatedResultSet {
+func newResultSet(c *client, initial *url.URL, fetch func(context.Context, *http.Request) (*PageToken, []interface{}, error)) *PaginatedResultSet {
 	return &PaginatedResultSet{
 		client:  c,
 		initial: initial,

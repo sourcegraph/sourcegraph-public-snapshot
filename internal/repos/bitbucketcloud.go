@@ -26,7 +26,7 @@ type BitbucketCloudSource struct {
 	svc     *types.ExternalService
 	config  *schema.BitbucketCloudConnection
 	exclude excludeFunc
-	client  *bitbucketcloud.Client
+	client  bitbucketcloud.Client
 }
 
 var _ UserSource = &BitbucketCloudSource{}
