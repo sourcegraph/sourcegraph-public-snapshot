@@ -60,22 +60,22 @@ type CapturedLog struct {
 	Fields  map[string]interface{}
 }
 
-// Get retrieves a logger from log.Get with the test's name.
+// Get retrieves a logger from scoped to the the given test.
 //
-// Unlike log.Get(), logtest.Get() is safe to use without initialization.
-func Get(t testing.TB) log.Logger {
+// Unlike log.Scoped(), logtest.Scoped() is safe to use without initialization.
+func Scoped(t testing.TB) log.Logger {
 	// initialize just in case - the underlying call to log.Init is no-op if this has
 	// already been done. We allow this in testing for convenience.
 	Init(nil)
 
-	return log.Get(t.Name())
+	return log.Scoped(t.Name())
 }
 
-// GetCaptured retrieves a logger from log.Get with the test's name. and returns a
+// GetCaptured retrieves a logger from scoped to the the given test, and returns a
 // callback, dumpLogs, which flushes the logger buffer and returns log entries. The
 // returned logger does not
-func GetCaptured(t testing.TB) (logger log.Logger, exportLogs func() []CapturedLog) {
-	root := Get(t)
+func Captured(t testing.TB) (logger log.Logger, exportLogs func() []CapturedLog) {
+	root := Scoped(t)
 
 	// Cast into internal API
 	configurable := root.(configurableAdapter)

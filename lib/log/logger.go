@@ -16,7 +16,8 @@ type TraceContext = otfields.TraceContext
 // context.
 type Logger interface {
 	// Scoped creates a new Logger with scope attached as part of its instrumentation
-	// scope.
+	// scope. For example, if the underlying logger is scoped 'foo', then
+	// 'logger.Scoped("bar")' will create a logger with scope 'foo.bar'.
 	//
 	// https://opentelemetry.io/docs/reference/specification/logs/data-model/#field-instrumentationscope
 	Scoped(scope string) Logger
@@ -53,10 +54,10 @@ type Logger interface {
 	Sync() error
 }
 
-// Get returns the global logger and sets it up with the given scope and OpenTelemetry
+// Scoped returns the global logger and sets it up with the given scope and OpenTelemetry
 // compliant implementation. Instead of using this everywhere a log is needed, callers
 // should hold a reference to the Logger and pass it in to places that need to log.
-func Get(scope string) Logger {
+func Scoped(scope string) Logger {
 	adapted := &zapAdapter{Logger: global.Get()}
 	return adapted.Scoped(scope).With(otfields.AttributesNamespace)
 }

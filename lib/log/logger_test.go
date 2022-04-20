@@ -9,7 +9,7 @@ import (
 )
 
 func TestInitLogger(t *testing.T) {
-	logger, exportLogs := logtest.GetCaptured(t)
+	logger, exportLogs := logtest.Captured(t)
 	assert.NotNil(t, logger)
 
 	logger.Debug("a debug message") // 1

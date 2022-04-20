@@ -9,7 +9,7 @@ import (
 )
 
 func TestExport(t *testing.T) {
-	logger, exportLogs := GetCaptured(t)
+	logger, exportLogs := Captured(t)
 	assert.NotNil(t, logger)
 
 	logger.Info("hello world", log.String("key", "value"))

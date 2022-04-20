@@ -10,20 +10,20 @@ The recommended logger at Sourcegraph is `github.com/sourcegraph/sourcegraph/lib
 2. An initialization function to be called in `func main()`, `log.Init`
    1. Log level can be configured with `SRC_LOG_LEVEL`
    2. Do not use call this in an `init()` function
-3. A getter to retrieve a `log.Logger` instance, `lib.Get`
-   1. `lib.Get` will panic if `log.Init` is not called.
+3. A getter to retrieve a `log.Logger` instance, `lib.Scoped`
+   1. `lib.Scoped` will panic if `log.Init` is not called.
 
 For testing purposes, we also provide:
 
 1. An initialization function to be called in `func TestMain(*testing.M)`, `logtest.Init`
-2. A getter to retrieve a `log.Logger` instance and a callback to programmatically iterate log output, `libtest.Get`
-   1. The standard `lib.Get` will also work after `libtest.Init`
-   2. Exported logs from `libtest.Get` can be dumped using the utility function `libtest.DumpLogs` and `libtest.DumpLogsIfFailed`
+2. A getter to retrieve a `log.Logger` instance and a callback to programmatically iterate log output, `libtest.Scoped`
+   1. The standard `lib.Scoped` will also work after `libtest.Init`
+   2. Exported logs from `libtest.Scoped` can be dumped using the utility function `libtest.DumpLogs` and `libtest.DumpLogsIfFailed`
 
 ## Core concepts
 
 1. `lib/log` intentionally does not export directly usable log functions. Users should hold their own references to loggers, so that fields can be attached and log output can be more useful with additional context, and pass `Logger` instances to components as required.
-   1. Do not call `log.Get` wherever you need to log - consider passing a `Logger` around explicitly.
+   1. Do not call `log.Scoped` wherever you need to log - consider passing a `Logger` around explicitly.
    2. [Do not add `Logger` to `context.Context`](https://dave.cheney.net/2017/01/26/context-is-for-cancelation).
    3. [Do not create package-level logger instances](https://dave.cheney.net/2017/01/23/the-package-level-logger-anti-pattern).
 2. `lib/log` should export everything that is required for logging - do not directly import a third-party logging package such as `zap`, `log15`, or `log`.
@@ -56,7 +56,7 @@ When your service starts logging, get a `Logger` instance, attach some relevant 
 import "github.com/sourcegraph/sourcegraph/lib/log"
 
 func newWorker(/* ... */) *Worker {
-  logger := log.Get("worker").With(log.String("name", options.Name))
+  logger := log.Scoped("worker").With(log.String("name", options.Name))
   // ...
   return &Worker{
     logger: logger,
@@ -105,7 +105,7 @@ This format omits fields like OpenTelemetry Resource and renders certain field t
 
 ## Testing usage
 
-In the absense of `log.Init` in `main()`, `lib/log` can be initialized using `libtest` in packages that use `log.Get`:
+In the absense of `log.Init` in `main()`, `lib/log` can be initialized using `libtest` in packages that use `log.Scoped`:
 
 ```go
 import (
@@ -123,7 +123,7 @@ func TestMain(m *testing.M) {
 
 You can control the log level used during initialization with `logtest.InitWithLevel`.
 
-If the code you are testing accepts `Logger` instances as a parameter, you can skip the above and simply use `logtest.Get` to instantiate a `Logger` to provide. You can also use `logtest.GetCaptured`, which also provides a callback for exporting logs, though be wary of making overly strict assertions on log entries to avoid brittle tests:
+If the code you are testing accepts `Logger` instances as a parameter, you can skip the above and simply use `logtest.Scoped` to instantiate a `Logger` to provide. You can also use `logtest.Captured`, which also provides a callback for exporting logs, though be wary of making overly strict assertions on log entries to avoid brittle tests:
 
 ```go
 import (
@@ -133,7 +133,7 @@ import (
 )
 
 func TestFooBar(t *testing.T) {
-  logger, exportLogs := logtest.GetCaptured(t)
+  logger, exportLogs := logtest.Captured(t)
 
   t.Run("test my thing", func(t *testing.T) {
     fooBar(logger)
