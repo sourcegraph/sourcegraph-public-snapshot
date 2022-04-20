@@ -771,7 +771,6 @@ type BatchSpecWorkspaceResolutionResolver interface {
 	FailureMessage() *string
 
 	Workspaces(ctx context.Context, args *ListWorkspacesArgs) (BatchSpecWorkspaceConnectionResolver, error)
-	Unsupported(ctx context.Context) RepositoryConnectionResolver
 
 	RecentlyCompleted(ctx context.Context, args *ListRecentlyCompletedWorkspacesArgs) BatchSpecWorkspaceConnectionResolver
 	RecentlyErrored(ctx context.Context, args *ListRecentlyErroredWorkspacesArgs) BatchSpecWorkspaceConnectionResolver
@@ -799,28 +798,34 @@ type BatchSpecWorkspaceResolver interface {
 	QueuedAt() *DateTime
 	StartedAt() *DateTime
 	FinishedAt() *DateTime
-	FailureMessage() *string
-
 	CachedResultFound() bool
-	Stages() BatchSpecWorkspaceStagesResolver
-
-	Repository(ctx context.Context) (*RepositoryResolver, error)
 	BatchSpec(ctx context.Context) (BatchSpecResolver, error)
-
-	Branch(ctx context.Context) (*GitRefResolver, error)
-	Path() string
-	Step(ctx context.Context, args BatchSpecWorkspaceStepArgs) (BatchSpecWorkspaceStepResolver, error)
-	Steps(ctx context.Context) ([]BatchSpecWorkspaceStepResolver, error)
-	SearchResultPaths() []string
 	OnlyFetchWorkspace() bool
-
 	Ignored() bool
 	Unsupported() bool
-
-	ChangesetSpecs(ctx context.Context) (*[]ChangesetSpecResolver, error)
 	DiffStat(ctx context.Context) (*DiffStat, error)
 	PlaceInQueue() *int32
 
+	ToHiddenBatchSpecWorkspace() (HiddenBatchSpecWorkspaceResolver, bool)
+	ToVisibleBatchSpecWorkspace() (VisibleBatchSpecWorkspaceResolver, bool)
+}
+
+type HiddenBatchSpecWorkspaceResolver interface {
+	BatchSpecWorkspaceResolver
+}
+
+type VisibleBatchSpecWorkspaceResolver interface {
+	BatchSpecWorkspaceResolver
+
+	FailureMessage() *string
+	Stages() BatchSpecWorkspaceStagesResolver
+	Repository(ctx context.Context) (*RepositoryResolver, error)
+	Branch(ctx context.Context) (*GitRefResolver, error)
+	Path() string
+	Step(args BatchSpecWorkspaceStepArgs) (BatchSpecWorkspaceStepResolver, error)
+	Steps() ([]BatchSpecWorkspaceStepResolver, error)
+	SearchResultPaths() []string
+	ChangesetSpecs(ctx context.Context) (*[]VisibleChangesetSpecResolver, error)
 	Executor(ctx context.Context) (*gql.ExecutorResolver, error)
 }
 
