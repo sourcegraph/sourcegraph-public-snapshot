@@ -60,8 +60,8 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
 
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
-    const { delete: handleDelete, loading: isDeleting } = useDeleteInsight()
-    const { remove: handleRemove, loading: isRemoving } = useRemoveInsightFromDashboard()
+    const { loading: isDeleting } = useDeleteInsight()
+    const { loading: isRemoving } = useRemoveInsightFromDashboard()
 
     const { trackDatumClicks, trackMouseLeave, trackMouseEnter } = useCodeInsightViewPings({
         telemetryService,
