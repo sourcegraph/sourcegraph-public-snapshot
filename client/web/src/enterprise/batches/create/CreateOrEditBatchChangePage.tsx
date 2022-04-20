@@ -479,6 +479,8 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
         </>
     )
 
+    const isValidationError = Boolean(codeErrors.validation)
+
     return (
         <BatchChangePage
             namespace={batchChange.namespace}
@@ -498,6 +500,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
                         onChange={clearErrorsAndHandleCodeChange}
                     />
                     <EditorFeedbackPanel
+                        isValidationError={isValidationError}
                         errors={compact([codeErrors.update, codeErrors.validation, previewError, executeError])}
                     />
 
