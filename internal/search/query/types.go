@@ -97,15 +97,6 @@ func (b Basic) MapParameters(parameters []Parameter) Basic {
 	return Basic{Parameters: parameters, Pattern: b.Pattern}
 }
 
-// AddCount adds a count parameter to a basic query. Behavior of AddCount on a
-// query that already has a count parameter is undefined.
-func (b Basic) AddCount(count int) Basic {
-	return b.MapParameters(append(b.Parameters, Parameter{
-		Field: "count",
-		Value: strconv.FormatInt(int64(count), 10),
-	}))
-}
-
 // GetCount returns the string value of the "count:" field. Returns empty string if none.
 func (b Basic) GetCount() string {
 	var countStr string
