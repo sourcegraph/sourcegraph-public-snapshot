@@ -188,7 +188,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = props => {
                     </TabPanel>
 
                     <TabPanel>
-                        <div>Batch Specification</div>
+                        <div>Batch spec</div>
                     </TabPanel>
 
                     <TabPanel>
