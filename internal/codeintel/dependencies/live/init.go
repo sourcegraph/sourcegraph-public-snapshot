@@ -1,3 +1,7 @@
+// This package contains the version of the dependencies service initialization that should
+// be used in all non-test uses. We need to have a separate package here because gitserver
+// requires the dependencies service (abstractly), but our gitService dependency requires
+// the internal/vcs/git. This breaks that circular dependency.
 package live
 
 import (
