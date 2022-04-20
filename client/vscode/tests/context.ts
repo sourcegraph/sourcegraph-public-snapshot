@@ -46,33 +46,30 @@ export async function createVSCodeIntegrationTestContext(
 
     let searchStreamEventOverrides: SearchEvent[] = []
 
-    // Debt: the VS Code extension seems to use both endpoints, should standardize.
-    for (const path of ['/search/stream?*params', '/.api/search/stream?*params']) {
-        sharedTestContext.server.options(new URL(path, sourcegraphBaseUrl).href).intercept((request, response) => {
-            console.log('options for stream!')
-            response
-                .setHeader('Access-Control-Allow-Origin', '*')
-                .setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-                .send(200)
-        })
+    const streamApiPath = '/.api/search/stream?*params'
+    sharedTestContext.server.options(new URL(streamApiPath, sourcegraphBaseUrl).href).intercept((request, response) => {
+        response
+            .setHeader('Access-Control-Allow-Origin', '*')
+            .setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+            .send(200)
+    })
 
-        sharedTestContext.server.get(new URL(path, sourcegraphBaseUrl).href).intercept((request, response) => {
-            if (!searchStreamEventOverrides || searchStreamEventOverrides.length === 0) {
-                throw new Error(
-                    'Search stream event overrides missing. Call overrideSearchStreamEvents() to set the events.'
-                )
-            }
+    sharedTestContext.server.get(new URL(streamApiPath, sourcegraphBaseUrl).href).intercept((request, response) => {
+        if (!searchStreamEventOverrides || searchStreamEventOverrides.length === 0) {
+            throw new Error(
+                'Search stream event overrides missing. Call overrideSearchStreamEvents() to set the events.'
+            )
+        }
 
-            const responseContent = searchStreamEventOverrides
-                .map(event => `event: ${event.type}\ndata: ${JSON.stringify(event.data)}\n\n`)
-                .join('')
-            response
-                .status(200)
-                .setHeader('Access-Control-Allow-Origin', '*')
-                .type('text/event-stream')
-                .send(responseContent)
-        })
-    }
+        const responseContent = searchStreamEventOverrides
+            .map(event => `event: ${event.type}\ndata: ${JSON.stringify(event.data)}\n\n`)
+            .join('')
+        response
+            .status(200)
+            .setHeader('Access-Control-Allow-Origin', '*')
+            .type('text/event-stream')
+            .send(responseContent)
+    })
 
     return {
         ...sharedTestContext,

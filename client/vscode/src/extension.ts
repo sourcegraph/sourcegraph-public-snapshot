@@ -122,7 +122,8 @@ export function activate(context: vscode.ExtensionContext): void {
         focusSearchPanel,
         streamSearch,
         fetchStreamSuggestions: (query, sourcegraphURL) =>
-            proxySubscribable(fetchStreamSuggestions(query, sourcegraphURL)),
+            // Use api endpoint for stream search
+            proxySubscribable(fetchStreamSuggestions(query, `${sourcegraphURL}/.api`)),
         setSelectedSearchContextSpec: spec => {
             stateMachine.emit({ type: 'set_selected_search_context_spec', spec })
             return localStorageService.setValue(SELECTED_SEARCH_CONTEXT_SPEC_KEY, spec)
