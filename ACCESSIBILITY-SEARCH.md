@@ -10,7 +10,7 @@ https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=accessib
 
 Taken from the [user journey list document](https://docs.google.com/document/d/1IA90OFew5MTcxFndKS2Xn4vb8sOt68sj537P7AGj_Tk/edit?usp=sharing). Use this for further context.
 
-Please take these following use cases and replicate them when running your audit.
+Please take these following use cases and replicate them when running your audit:
 
 Submit search:
 
