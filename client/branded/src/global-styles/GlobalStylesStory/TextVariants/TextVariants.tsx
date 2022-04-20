@@ -1,4 +1,4 @@
-import React, { ElementType } from 'react'
+import { ElementType, FunctionComponent, Fragment } from 'react'
 
 import classNames from 'classnames'
 
@@ -17,7 +17,7 @@ interface TextLabelProps {
     className?: string
 }
 
-const TextLabel: React.FunctionComponent<TextLabelProps> = props => {
+const TextLabel: FunctionComponent<TextLabelProps> = props => {
     const { size, weight, name, className } = props
     const label = `This is ${name} / ${size} / ${weight}`
 
@@ -39,12 +39,12 @@ interface TextVariantsProps {
     className?: string
 }
 
-const TextVariations: React.FunctionComponent<TextVariantsProps> = props => {
+const TextVariations: FunctionComponent<TextVariantsProps> = props => {
     const { component: Component, name, weights = ['Regular'], className } = props
 
     const textVariations = SIZE_VARIANTS.flatMap(size =>
         weights.map(weight => {
-            const SizeWrapper = size === 'Small' ? 'small' : React.Fragment
+            const SizeWrapper = size === 'Small' ? 'small' : Fragment
 
             return (
                 <Component key={`${size}/${weight}`} className={classNames(styles.textVariant, className)}>
@@ -59,7 +59,7 @@ const TextVariations: React.FunctionComponent<TextVariantsProps> = props => {
     return <>{textVariations}</>
 }
 
-export const TextVariants: React.FunctionComponent = () => (
+export const TextVariants: FunctionComponent = () => (
     <table className="table">
         <tbody>
             <tr>

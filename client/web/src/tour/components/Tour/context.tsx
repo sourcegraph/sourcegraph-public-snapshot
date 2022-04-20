@@ -1,4 +1,4 @@
-import React from 'react'
+import { createContext } from 'react'
 
 import { TourLanguage, TourTaskStepType } from './types'
 
@@ -23,4 +23,4 @@ interface TourContextType {
      */
     onRestart: (step: TourTaskStepType) => void
 }
-export const TourContext = React.createContext<TourContextType>({} as TourContextType)
+export const TourContext = createContext<TourContextType>({} as TourContextType)

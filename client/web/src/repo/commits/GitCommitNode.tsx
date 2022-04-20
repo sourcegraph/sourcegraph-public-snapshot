@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'

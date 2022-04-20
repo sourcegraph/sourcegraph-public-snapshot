@@ -1,4 +1,5 @@
-import React, { useContext, useMemo } from 'react'
+import { useContext, useMemo } from 'react'
+import * as React from 'react'
 
 import { useHistory } from 'react-router'
 

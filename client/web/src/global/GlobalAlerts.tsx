@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { PureComponent } from 'react'
 
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
@@ -37,7 +37,7 @@ interface State {
 /**
  * Fetches and displays relevant global alerts at the top of the page
  */
-export class GlobalAlerts extends React.PureComponent<Props, State> {
+export class GlobalAlerts extends PureComponent<Props, State> {
     public state: State = {}
 
     private subscriptions = new Subscription()

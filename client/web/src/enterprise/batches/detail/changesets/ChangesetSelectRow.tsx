@@ -1,4 +1,5 @@
-import React, { useMemo, useContext } from 'react'
+import { useMemo, useContext } from 'react'
+import * as React from 'react'
 
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import { of } from 'rxjs'

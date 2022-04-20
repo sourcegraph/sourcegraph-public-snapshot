@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { PureComponent } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
@@ -53,7 +53,7 @@ interface UserNodeState {
     removalOrError?: null | ErrorLike
 }
 
-class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
+class UserNode extends PureComponent<UserNodeProps, UserNodeState> {
     public state: UserNodeState = {
         removalOrError: null,
     }
@@ -166,7 +166,7 @@ interface State extends HasOneMember {
 /**
  * The organizations members page
  */
-export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
+export class OrgSettingsMembersPage extends PureComponent<Props, State> {
     private componentUpdates = new Subject<Props>()
     private userUpdates = new Subject<void>()
     private subscriptions = new Subscription()

@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { lazy, PureComponent, Suspense } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
@@ -61,11 +61,11 @@ const emptySettings = '{\n  // add settings here (Ctrl+Space to see hints)\n}'
 
 const disposableToFn = (disposable: _monaco.IDisposable) => () => disposable.dispose()
 
-const MonacoSettingsEditor = React.lazy(async () => ({
+const MonacoSettingsEditor = lazy(async () => ({
     default: (await import('./MonacoSettingsEditor')).MonacoSettingsEditor,
 }))
 
-export class SettingsFile extends React.PureComponent<Props, State> {
+export class SettingsFile extends PureComponent<Props, State> {
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
     private editor?: _monaco.editor.ICodeEditor
@@ -190,7 +190,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                         ))}
                     </div>
                 </div>
-                <React.Suspense fallback={<LoadingSpinner className="mt-2" />}>
+                <Suspense fallback={<LoadingSpinner className="mt-2" />}>
                     <MonacoSettingsEditor
                         value={contents}
                         jsonSchema={this.props.jsonSchema}
@@ -200,7 +200,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                         isLightTheme={this.props.isLightTheme}
                         onDidSave={this.save}
                     />
-                </React.Suspense>
+                </Suspense>
             </div>
         )
     }

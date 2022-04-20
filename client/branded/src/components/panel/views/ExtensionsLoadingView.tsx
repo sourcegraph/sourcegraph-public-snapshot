@@ -1,4 +1,4 @@
-import React from 'react'
+import { FunctionComponent } from 'react'
 
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
 
@@ -10,7 +10,7 @@ interface ExtensionsLoadingPanelViewProps {
     className?: string
 }
 
-export const ExtensionsLoadingPanelView: React.FunctionComponent<ExtensionsLoadingPanelViewProps> = props => {
+export const ExtensionsLoadingPanelView: FunctionComponent<ExtensionsLoadingPanelViewProps> = props => {
     const { className } = props
 
     return (

@@ -1,4 +1,4 @@
-import React from 'react'
+import { Fragment } from 'react'
 
 import { storiesOf } from '@storybook/react'
 import { upperFirst } from 'lodash'
@@ -42,7 +42,7 @@ add('BatchChangeStatePill', () => (
         {props => (
             <div className="d-flex flex-column align-items-start">
                 {STATE_COMBINATIONS.map(({ state, latestExecutionState, currentSpecID, latestSpecID }) => (
-                    <React.Fragment key={`${state}-${latestExecutionState || ''}`}>
+                    <Fragment key={`${state}-${latestExecutionState || ''}`}>
                         <h3>
                             {upperFirst(state.toLowerCase())}
                             {latestExecutionState ? `, ${upperFirst(latestExecutionState.toLowerCase())}` : ''}
@@ -56,7 +56,7 @@ add('BatchChangeStatePill', () => (
                             currentSpecID={currentSpecID}
                             latestSpecID={latestSpecID}
                         />
-                    </React.Fragment>
+                    </Fragment>
                 ))}
             </div>
         )}

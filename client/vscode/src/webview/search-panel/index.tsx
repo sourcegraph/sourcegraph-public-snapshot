@@ -1,6 +1,6 @@
 import '../platform/polyfills'
-
-import React, { useMemo } from 'react'
+import { useMemo } from 'react'
+import * as React from 'react'
 
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react'

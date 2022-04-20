@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
+import * as React from 'react'
 
 import AddIcon from 'mdi-react/AddIcon'
 import { RouteComponentProps } from 'react-router'

@@ -1,7 +1,7 @@
 // We want to polyfill first.
 import '../../shared/polyfills'
 
-import React from 'react'
+import * as React from 'react'
 
 import { render } from 'react-dom'
 

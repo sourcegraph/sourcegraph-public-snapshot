@@ -1,4 +1,4 @@
-import React from 'react'
+import { forwardRef } from 'react'
 
 import { MenuLink as ReachMenuLink, MenuLinkProps as ReachMenuLinkProps } from '@reach/menu-button'
 import classNames from 'classnames'
@@ -17,6 +17,6 @@ export type MenuLinkProps = ReachMenuLinkProps
  *
  * @see — Docs https://reach.tech/menu-button#menulink
  */
-export const MenuLink = React.forwardRef(({ className, ...props }, reference) => (
+export const MenuLink = forwardRef(({ className, ...props }, reference) => (
     <ReachMenuLink ref={reference} {...props} className={classNames('dropdown-item', styles.item, className)} />
 )) as ForwardReferenceComponent<'a', MenuLinkProps>

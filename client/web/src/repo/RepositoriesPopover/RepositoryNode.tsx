@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'

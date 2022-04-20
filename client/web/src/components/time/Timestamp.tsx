@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import * as React from 'react'
 
 import { parseISO, format } from 'date-fns'
 import formatDistance from 'date-fns/formatDistance'

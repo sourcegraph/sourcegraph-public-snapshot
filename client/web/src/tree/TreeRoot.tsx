@@ -1,5 +1,5 @@
 /* eslint jsx-a11y/no-noninteractive-tabindex: warn*/
-import * as React from 'react'
+import { Component } from 'react'
 
 import * as H from 'history'
 import { EMPTY, merge, of, Subject, Subscription } from 'rxjs'
@@ -64,7 +64,7 @@ interface TreeRootState {
     fileDecorationsByPath: FileDecorationsByPath
 }
 
-export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
+export class TreeRoot extends Component<TreeRootProps, TreeRootState> {
     public node: TreeNode
     private subscriptions = new Subscription()
     private componentUpdates = new Subject<TreeRootProps>()

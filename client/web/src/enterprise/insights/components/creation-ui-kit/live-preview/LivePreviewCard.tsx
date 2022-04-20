@@ -1,4 +1,5 @@
-import React, { forwardRef, HTMLAttributes } from 'react'
+import { forwardRef, HTMLAttributes } from 'react'
+import * as React from 'react'
 
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'

@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback } from 'react'
+import * as React from 'react'
 
 import { subDays } from 'date-fns'
 import * as H from 'history'

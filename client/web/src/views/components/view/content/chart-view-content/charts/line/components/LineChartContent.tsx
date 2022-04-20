@@ -1,4 +1,5 @@
-import React, { ReactElement, useCallback, useMemo, useState, MouseEvent, useRef } from 'react'
+import { ReactElement, useCallback, useMemo, useState, MouseEvent, useRef } from 'react'
+import * as React from 'react'
 
 import { curveLinear } from '@visx/curve'
 import { GridRows } from '@visx/grid'

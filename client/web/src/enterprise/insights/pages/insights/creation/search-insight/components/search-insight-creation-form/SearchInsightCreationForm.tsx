@@ -1,4 +1,5 @@
-import React, { FormEventHandler, RefObject, useMemo } from 'react'
+import { FormEventHandler, RefObject, useMemo } from 'react'
+import * as React from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Input, Link, useObservable } from '@sourcegraph/wildcard'

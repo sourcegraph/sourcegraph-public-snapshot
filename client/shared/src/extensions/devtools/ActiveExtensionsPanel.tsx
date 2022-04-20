@@ -1,4 +1,5 @@
-import React, { useCallback, useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
+import * as React from 'react'
 
 import { from } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'

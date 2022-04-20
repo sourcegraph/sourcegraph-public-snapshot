@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import { ListboxOption } from '@reach/listbox'
 import classNames from 'classnames'

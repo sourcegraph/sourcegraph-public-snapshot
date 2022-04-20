@@ -1,4 +1,5 @@
-import React, { ReactElement, useMemo, useState } from 'react'
+import { ReactElement, useMemo, useState } from 'react'
+import * as React from 'react'
 
 import { Group } from '@visx/group'
 import Pie, { PieArcDatum } from '@visx/shape/lib/shapes/Pie'

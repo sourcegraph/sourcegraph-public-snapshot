@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
+import * as React from 'react'
 
 import { subDays, startOfDay } from 'date-fns'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'

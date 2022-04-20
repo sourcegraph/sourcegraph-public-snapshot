@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from 'react'
+import { Fragment, FunctionComponent } from 'react'
 
 import { Meta } from '@storybook/react'
 
@@ -45,7 +45,7 @@ export const InProgress: FunctionComponent = () => (
                 </TerminalLine>
 
                 {cloningStatusLines?.map(({ id, title, details, progress }) => (
-                    <React.Fragment key={id}>
+                    <Fragment key={id}>
                         <TerminalLine>
                             <TerminalTitle>{title}</TerminalTitle>
                         </TerminalLine>
@@ -55,7 +55,7 @@ export const InProgress: FunctionComponent = () => (
                         <TerminalLine>
                             <TerminalProgress character="#" progress={progress} />
                         </TerminalLine>
-                    </React.Fragment>
+                    </Fragment>
                 ))}
             </Terminal>
         </div>

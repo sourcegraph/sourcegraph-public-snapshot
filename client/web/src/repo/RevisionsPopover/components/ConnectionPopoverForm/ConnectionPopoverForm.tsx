@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import { ConnectionForm } from '../../../../components/FilteredConnection/ui'
 import { ConnectionFormProps } from '../../../../components/FilteredConnection/ui/ConnectionForm'

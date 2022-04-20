@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import { useState, useCallback } from 'react'
 
 import { Meta } from '@storybook/react'
 
@@ -33,7 +33,7 @@ const Story: Meta = {
 export default Story
 
 export const Simple = () => {
-    const [selected, setSelected] = React.useState('')
+    const [selected, setSelected] = useState('')
 
     const handleChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setSelected(event.target.value)

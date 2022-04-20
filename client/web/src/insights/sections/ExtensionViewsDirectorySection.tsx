@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react'
+import { useMemo } from 'react'
+import * as React from 'react'
 
 import { EMPTY, from } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'

@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { PureComponent } from 'react'
 
 import VisibilitySensor from 'react-visibility-sensor'
 
@@ -37,7 +37,7 @@ interface Props<TItem, TExtraItemProps> {
 
 interface State {}
 
-export class VirtualList<TItem, TExtraItemProps = undefined> extends React.PureComponent<
+export class VirtualList<TItem, TExtraItemProps = undefined> extends PureComponent<
     Props<TItem, TExtraItemProps>,
     State
 > {

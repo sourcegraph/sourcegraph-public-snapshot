@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 // We're using marked import here to access the `marked` package type definitions.

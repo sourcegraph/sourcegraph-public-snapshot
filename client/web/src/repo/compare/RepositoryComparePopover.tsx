@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
+import * as React from 'react'
 
 import { escapeRevspecForURL } from '@sourcegraph/common'
 import { Button, Popover, PopoverContent, PopoverTrigger, Position, Icon, useObservable } from '@sourcegraph/wildcard'

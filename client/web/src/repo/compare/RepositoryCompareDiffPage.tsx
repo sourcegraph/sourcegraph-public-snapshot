@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { PureComponent } from 'react'
 
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
@@ -88,7 +88,7 @@ interface RepositoryCompareDiffPageProps
 }
 
 /** A page with the file diffs in the comparison. */
-export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCompareDiffPageProps> {
+export class RepositoryCompareDiffPage extends PureComponent<RepositoryCompareDiffPageProps> {
     public render(): JSX.Element | null {
         return (
             <div className="repository-compare-page">

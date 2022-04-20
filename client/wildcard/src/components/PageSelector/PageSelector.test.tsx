@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { render, RenderResult, cleanup, fireEvent } from '@testing-library/react'
 import sinon from 'sinon'
 

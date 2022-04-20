@@ -1,4 +1,4 @@
-import React from 'react'
+import { PureComponent } from 'react'
 
 import classNames from 'classnames'
 import { cloneDeep } from 'lodash'
@@ -37,7 +37,7 @@ interface State {}
 /**
  * Editor for Batch specs using Monaco editor.
  */
-export class MonacoBatchSpecEditor extends React.PureComponent<Props, State> {
+export class MonacoBatchSpecEditor extends PureComponent<Props, State> {
     public state: State = {}
 
     private monaco: typeof monaco | null = null

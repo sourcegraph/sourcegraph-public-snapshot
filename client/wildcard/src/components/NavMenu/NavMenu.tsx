@@ -1,4 +1,5 @@
-import React, { forwardRef, ReactNode } from 'react'
+import { forwardRef, ReactNode } from 'react'
+import * as React from 'react'
 
 import * as H from 'history'
 import { MdiReactIconProps } from 'mdi-react'

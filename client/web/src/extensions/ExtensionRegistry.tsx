@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback } from 'react'
+import * as React from 'react'
 
 import * as H from 'history'
 import { concat, of, timer } from 'rxjs'

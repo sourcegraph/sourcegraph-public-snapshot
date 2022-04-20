@@ -1,4 +1,5 @@
-import React, { AnchorHTMLAttributes, HTMLAttributes } from 'react'
+import { AnchorHTMLAttributes, HTMLAttributes } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 

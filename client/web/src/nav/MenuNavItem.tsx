@@ -1,4 +1,5 @@
-import React, { ComponentType, forwardRef } from 'react'
+import { ComponentType, forwardRef } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'

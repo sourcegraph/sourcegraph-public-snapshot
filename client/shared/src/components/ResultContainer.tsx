@@ -1,5 +1,6 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-static-element-interactions: warn */
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 import ArrowCollapseUpIcon from 'mdi-react/ArrowCollapseUpIcon'

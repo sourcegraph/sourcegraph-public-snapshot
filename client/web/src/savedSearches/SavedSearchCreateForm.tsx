@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { Component } from 'react'
 
 import { RouteComponentProps } from 'react-router'
 import { concat, Subject, Subscription } from 'rxjs'
@@ -24,7 +24,7 @@ interface State {
     createdOrError: undefined | typeof LOADING | true | ErrorLike
 }
 
-export class SavedSearchCreateForm extends React.Component<Props, State> {
+export class SavedSearchCreateForm extends Component<Props, State> {
     constructor(props: Props) {
         super(props)
         this.state = {

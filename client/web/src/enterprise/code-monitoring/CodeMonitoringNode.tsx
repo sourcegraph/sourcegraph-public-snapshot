@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo } from 'react'
+import * as React from 'react'
 
 import * as H from 'history'
 import { Observable, concat, of } from 'rxjs'

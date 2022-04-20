@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react'
+import { FunctionComponent, ComponentType, ReactNode } from 'react'
 
 import classNames from 'classnames'
 
@@ -10,7 +10,7 @@ import styles from './FormFieldVariants.module.scss'
 type FieldVariants = 'standard' | 'invalid' | 'valid' | 'disabled'
 
 interface WithVariantsProps {
-    field: React.ComponentType<{
+    field: ComponentType<{
         className?: string
         disabled?: boolean
         message?: ReactNode
@@ -20,12 +20,12 @@ interface WithVariantsProps {
 
 const FieldMessageText = 'Helper text'
 
-const FieldMessage: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+const FieldMessage: FunctionComponent<{ className?: string }> = ({ className }) => (
     <small className={className}>{FieldMessageText}</small>
 )
 
 // Use this temporarily for form components which ones we haven't implemented in wilcard package yet
-const WithVariantsAndMessageElements: React.FunctionComponent<WithVariantsProps> = ({ field: Field }) => (
+const WithVariantsAndMessageElements: FunctionComponent<WithVariantsProps> = ({ field: Field }) => (
     <>
         <Field variant="standard" message={<FieldMessage className="field-message" />} />
         <Field variant="invalid" className="is-invalid" message={<FieldMessage className="invalid-feedback" />} />
@@ -34,7 +34,7 @@ const WithVariantsAndMessageElements: React.FunctionComponent<WithVariantsProps>
     </>
 )
 
-const WithVariants: React.FunctionComponent<WithVariantsProps> = ({ field: Field }) => (
+const WithVariants: FunctionComponent<WithVariantsProps> = ({ field: Field }) => (
     <>
         <Field variant="standard" message={FieldMessageText} />
         <Field variant="invalid" message={FieldMessageText} />
@@ -43,7 +43,7 @@ const WithVariants: React.FunctionComponent<WithVariantsProps> = ({ field: Field
     </>
 )
 
-export const FormFieldVariants: React.FunctionComponent = () => (
+export const FormFieldVariants: FunctionComponent = () => (
     <div className={styles.grid}>
         <WithVariantsAndMessageElements
             field={({ className, message, ...props }) => (

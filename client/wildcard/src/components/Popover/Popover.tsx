@@ -1,4 +1,4 @@
-import React, {
+import {
     createContext,
     forwardRef,
     MutableRefObject,
@@ -8,6 +8,7 @@ import React, {
     useMemo,
     useState,
 } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'

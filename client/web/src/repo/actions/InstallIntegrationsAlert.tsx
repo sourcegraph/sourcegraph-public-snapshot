@@ -1,4 +1,5 @@
-import React, { useCallback, useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
+import * as React from 'react'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { useLocalStorage } from '@sourcegraph/wildcard'

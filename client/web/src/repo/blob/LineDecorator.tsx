@@ -1,4 +1,4 @@
-import React, { useLayoutEffect } from 'react'
+import { memo, useState, useLayoutEffect } from 'react'
 
 import isAbsoluteUrl from 'is-absolute-url'
 import ReactDOM from 'react-dom'
@@ -27,9 +27,9 @@ export interface LineDecoratorProps extends ThemeProps {
 /**
  * Component that decorates lines of code and appends line attachments set by extensions
  */
-export const LineDecorator = React.memo<LineDecoratorProps>(
+export const LineDecorator = memo<LineDecoratorProps>(
     ({ getCodeElementFromLineNumber, line, decorations, portalID, isLightTheme, codeViewElements }) => {
-        const [portalNode, setPortalNode] = React.useState<HTMLDivElement | null>(null)
+        const [portalNode, setPortalNode] = useState<HTMLDivElement | null>(null)
 
         // `LineDecorator` uses `useLayoutEffect` instead of `useEffect` in order to synchronously re-render
         // after mount/decoration updates, but before the browser has painted DOM updates.

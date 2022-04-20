@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import { VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { formatPersonName, PersonLink } from '../../../../person/PersonLink'

@@ -1,4 +1,4 @@
-import React from 'react'
+import { forwardRef } from 'react'
 
 import classNames from 'classnames'
 
@@ -11,7 +11,7 @@ export interface CardProps {}
 /**
  * Card Element
  */
-export const Card = React.forwardRef(({ children, className, as: Component = 'div', ...attributes }, reference) => {
+export const Card = forwardRef(({ children, className, as: Component = 'div', ...attributes }, reference) => {
     const { isBranded } = useWildcardTheme()
 
     return (

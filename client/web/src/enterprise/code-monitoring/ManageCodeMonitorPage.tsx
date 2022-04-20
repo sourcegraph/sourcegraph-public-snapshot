@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
+import * as React from 'react'
 
 import * as H from 'history'
 import { RouteComponentProps } from 'react-router'

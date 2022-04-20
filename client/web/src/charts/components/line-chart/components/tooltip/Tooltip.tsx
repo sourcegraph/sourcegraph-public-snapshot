@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
+import * as React from 'react'
 
 import { PopoverContent, Position, Point as PopoverPoint, createRectangle } from '@sourcegraph/wildcard'
 

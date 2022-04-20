@@ -1,4 +1,5 @@
-import React, { useMemo, useContext } from 'react'
+import { useMemo, useContext } from 'react'
+import * as React from 'react'
 
 import { noop } from 'lodash'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'

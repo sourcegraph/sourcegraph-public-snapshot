@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { Component } from 'react'
 
 import { RepoHeaderContribution, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 
@@ -14,7 +14,7 @@ interface Props extends RepoHeaderContribution, RepoHeaderContributionsLifecycle
  * It is called a "portal" because it is similar to the React concept of a "portal": it effectively renders an
  * element in a different DOM hierarchy (i.e., in RepoHeader).
  */
-export class RepoHeaderContributionPortal extends React.Component<Props> {
+export class RepoHeaderContributionPortal extends Component<Props> {
     public componentDidMount(): void {
         this.addOrUpdateContribution()
     }

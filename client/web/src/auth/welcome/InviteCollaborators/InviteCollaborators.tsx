@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState, useRef } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
+import * as React from 'react'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'

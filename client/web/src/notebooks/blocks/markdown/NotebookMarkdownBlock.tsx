@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
+import * as React from 'react'
 
 import { defaultKeymap, indentWithTab } from '@codemirror/commands'
 import { tags, HighlightStyle, classHighlightStyle } from '@codemirror/highlight'

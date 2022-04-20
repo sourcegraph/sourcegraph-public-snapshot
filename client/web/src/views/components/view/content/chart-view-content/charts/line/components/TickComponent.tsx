@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import { TickLabelProps, TickRendererProps } from '@visx/axis/lib/types'
 import { Group } from '@visx/group'

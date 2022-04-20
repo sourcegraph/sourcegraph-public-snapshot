@@ -1,4 +1,4 @@
-import React from 'react'
+import { Component } from 'react'
 
 import * as H from 'history'
 import { Subscription } from 'rxjs'
@@ -17,7 +17,7 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
  * A component that registers global contributions. It is implemented as a React component so that its
  * registrations use the React lifecycle.
  */
-export class GlobalContributions extends React.Component<Props> {
+export class GlobalContributions extends Component<Props> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {

@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useCallback } from 'react'
+import * as React from 'react'
 
 import { noop } from 'lodash'
 import { NEVER } from 'rxjs'

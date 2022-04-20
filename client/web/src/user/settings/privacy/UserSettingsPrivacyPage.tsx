@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import * as React from 'react'
 
 import { gql, useMutation } from '@apollo/client'
 import { debounce } from 'lodash'

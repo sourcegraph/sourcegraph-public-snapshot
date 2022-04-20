@@ -1,4 +1,5 @@
-import React, { forwardRef, HTMLAttributes, ReactNode } from 'react'
+import { forwardRef, HTMLAttributes, ReactNode } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'

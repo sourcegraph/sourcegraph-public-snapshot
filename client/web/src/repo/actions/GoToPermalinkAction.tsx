@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { PureComponent } from 'react'
 
 import * as H from 'history'
 import LinkIcon from 'mdi-react/LinkIcon'
@@ -17,7 +17,7 @@ import { RepoHeaderContext } from '../RepoHeader'
  * A repository header action that replaces the revision in the URL with the canonical 40-character
  * Git commit SHA.
  */
-export class GoToPermalinkAction extends React.PureComponent<
+export class GoToPermalinkAction extends PureComponent<
     {
         /**
          * The current (possibly undefined or non-full-SHA) Git revision.

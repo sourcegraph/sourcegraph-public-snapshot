@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { PureComponent } from 'react'
 
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
@@ -205,7 +205,7 @@ interface State {
 
 const toPx = (number: number): string => `${number}px`
 
-export class MonacoEditor extends React.PureComponent<Props, State> {
+export class MonacoEditor extends PureComponent<Props, State> {
     private subscriptions = new Subscription()
 
     private componentUpdates = new Subject<Props>()

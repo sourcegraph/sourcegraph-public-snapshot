@@ -1,4 +1,5 @@
-import React, { useContext, useMemo, useEffect } from 'react'
+import { useContext, useMemo, useEffect } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'

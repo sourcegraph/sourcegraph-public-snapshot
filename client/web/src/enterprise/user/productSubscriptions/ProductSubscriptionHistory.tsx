@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import { parseISO } from 'date-fns'
 import format from 'date-fns/format'

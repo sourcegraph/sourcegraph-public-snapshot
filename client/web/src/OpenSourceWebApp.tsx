@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 

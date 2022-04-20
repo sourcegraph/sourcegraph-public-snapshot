@@ -1,4 +1,5 @@
-import React, { memo, useCallback, useEffect, useState } from 'react'
+import { memo, useCallback, useEffect, useState } from 'react'
+import * as React from 'react'
 
 import { isEqual } from 'lodash'
 import { Layout, Layouts } from 'react-grid-layout'

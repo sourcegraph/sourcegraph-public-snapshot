@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 
 import { ComponentStory, ComponentMeta } from '@storybook/react'
 import { noop } from 'lodash'

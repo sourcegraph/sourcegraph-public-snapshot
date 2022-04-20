@@ -1,4 +1,5 @@
-import React, { createContext, Dispatch, SetStateAction, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, Dispatch, SetStateAction, useContext, useEffect, useMemo, useState } from 'react'
+import * as React from 'react'
 
 import { Remote } from 'comlink'
 import { isEqual } from 'lodash'

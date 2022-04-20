@@ -1,4 +1,5 @@
-import React, { useCallback, useRef } from 'react'
+import { useCallback, useRef } from 'react'
+import * as React from 'react'
 
 import UploadIcon from 'mdi-react/UploadIcon'
 import * as uuid from 'uuid'

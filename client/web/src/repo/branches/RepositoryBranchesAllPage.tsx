@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { PureComponent } from 'react'
 
 import { RouteComponentProps } from 'react-router-dom'
 import { Observable } from 'rxjs'
@@ -14,7 +14,7 @@ import { RepositoryBranchesAreaPageProps } from './RepositoryBranchesArea'
 interface Props extends RepositoryBranchesAreaPageProps, RouteComponentProps<{}> {}
 
 /** A page that shows all of a repository's branches. */
-export class RepositoryBranchesAllPage extends React.PureComponent<Props> {
+export class RepositoryBranchesAllPage extends PureComponent<Props> {
     public componentDidMount(): void {
         eventLogger.logViewEvent('RepositoryBranchesAll')
     }

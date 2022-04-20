@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { PureComponent } from 'react'
 
 import * as H from 'history'
 import HistoryIcon from 'mdi-react/HistoryIcon'
@@ -23,7 +23,7 @@ import { BlobPanelTabID } from '../panel/BlobPanel'
 /**
  * A repository header action that toggles the visibility of the history panel.
  */
-export class ToggleHistoryPanel extends React.PureComponent<
+export class ToggleHistoryPanel extends PureComponent<
     {
         location: H.Location
         history: H.History

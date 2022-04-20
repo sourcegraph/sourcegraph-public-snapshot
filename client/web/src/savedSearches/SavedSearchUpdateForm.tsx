@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { Component } from 'react'
 
 import { RouteComponentProps } from 'react-router'
 import { concat, of, Subject, Subscription } from 'rxjs'
@@ -37,7 +37,7 @@ interface State {
     updatedOrError: null | true | typeof LOADING | ErrorLike
 }
 
-export class SavedSearchUpdateForm extends React.Component<Props, State> {
+export class SavedSearchUpdateForm extends Component<Props, State> {
     constructor(props: Props) {
         super(props)
         this.state = {

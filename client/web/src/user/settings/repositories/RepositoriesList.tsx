@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import { useHistory, useLocation } from 'react-router'
 import { Observable } from 'rxjs'

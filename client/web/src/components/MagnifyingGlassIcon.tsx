@@ -1,6 +1,6 @@
-import * as React from 'react'
+import { memo } from 'react'
 
-export const MagnifyingGlassIcon = React.memo(() => (
+export const MagnifyingGlassIcon = memo(() => (
     <svg width="55" height="55" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path
             d="M21.5 24.644L25.517 27l-1.066-4.44L28 19.573l-4.674-.392L21.5 15l-1.826 4.181-4.674.392 3.543 2.987-1.06 4.44 4.017-2.356z"

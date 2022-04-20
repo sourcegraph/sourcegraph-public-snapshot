@@ -1,11 +1,11 @@
 /* eslint-disable react/forbid-dom-props */
-import React from 'react'
+import { FunctionComponent } from 'react'
 
 import { getSemanticColorVariables } from '../utils'
 
 import styles from './ColorVariants.module.scss'
 
-export const ColorVariants: React.FunctionComponent = () => (
+export const ColorVariants: FunctionComponent = () => (
     <div className={styles.grid}>
         {getSemanticColorVariables().map(variant => (
             <div className="m-2 text-center" key={variant}>

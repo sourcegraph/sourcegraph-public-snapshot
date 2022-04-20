@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { PureComponent } from 'react'
 
 import classNames from 'classnames'
 import { from, Subject, Subscription } from 'rxjs'
@@ -40,7 +40,7 @@ interface NotificationItemState {
 /**
  * A notification message displayed in a {@link module:./Notifications.Notifications} component.
  */
-export class NotificationItem extends React.PureComponent<NotificationItemProps, NotificationItemState> {
+export class NotificationItem extends PureComponent<NotificationItemProps, NotificationItemState> {
     private componentUpdates = new Subject<NotificationItemProps>()
     private subscription = new Subscription()
     constructor(props: NotificationItemProps) {

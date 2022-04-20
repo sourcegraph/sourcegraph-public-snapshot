@@ -1,4 +1,5 @@
-import React, { useEffect, useCallback, useMemo } from 'react'
+import { useEffect, useCallback, useMemo } from 'react'
+import * as React from 'react'
 
 import { CtaAlert } from '@sourcegraph/shared/src/components/CtaAlert'
 import { AlertLink } from '@sourcegraph/wildcard'

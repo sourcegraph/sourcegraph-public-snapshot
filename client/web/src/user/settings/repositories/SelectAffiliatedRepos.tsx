@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useState, FunctionComponent, Dispatch, SetStateAction } from 'react'
+import { useCallback, useEffect, useState, FunctionComponent, Dispatch, SetStateAction } from 'react'
+import * as React from 'react'
 
 import { FetchResult } from '@apollo/client'
 import classNames from 'classnames'

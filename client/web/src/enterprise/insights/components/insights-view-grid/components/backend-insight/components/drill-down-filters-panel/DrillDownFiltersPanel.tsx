@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
+import * as React from 'react'
 
 import { InsightFilters } from '../../../../../../core'
 import { FormChangeEvent, SubmissionResult } from '../../../../../form/hooks/useForm'

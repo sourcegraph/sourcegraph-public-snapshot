@@ -1,4 +1,5 @@
-import React, { ReactNode } from 'react'
+import { ReactNode } from 'react'
+import * as React from 'react'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'

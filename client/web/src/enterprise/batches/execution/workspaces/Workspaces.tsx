@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
+import * as React from 'react'
 
 import { Scalars } from '../../../../graphql-operations'
 import { Header as WorkspacesListHeader } from '../../workspaces-list'

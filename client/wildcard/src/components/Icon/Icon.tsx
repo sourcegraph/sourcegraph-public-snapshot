@@ -1,4 +1,4 @@
-import React, { ComponentType, ElementType, PropsWithChildren } from 'react'
+import { forwardRef, ComponentType, ElementType, PropsWithChildren } from 'react'
 
 import classNames from 'classnames'
 import { MdiReactIconProps } from 'mdi-react'
@@ -17,7 +17,7 @@ export interface IconProps extends Omit<MdiReactIconProps, 'children'> {
     size?: typeof ICON_SIZES[number]
 }
 
-export const Icon = React.forwardRef((props, reference) => {
+export const Icon = forwardRef((props, reference) => {
     const { children, inline = true, className, size, as: Component = 'svg', ...attributes } = props
 
     return (

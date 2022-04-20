@@ -1,10 +1,10 @@
-import * as React from 'react'
+import { Component } from 'react'
 
 interface Props {
     title?: string
 }
 
-export class PageTitle extends React.Component<Props, {}> {
+export class PageTitle extends Component<Props, {}> {
     public static titleSet = false
 
     public componentDidMount(): void {

@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { PureComponent } from 'react'
 
 import { RouteComponentProps } from 'react-router'
 
@@ -27,7 +27,7 @@ interface State {
 /**
  * Displays a page where the settings for a subject can be edited.
  */
-export class SettingsPage extends React.PureComponent<Props, State> {
+export class SettingsPage extends PureComponent<Props, State> {
     public state: State = {}
 
     public render(): JSX.Element | null {

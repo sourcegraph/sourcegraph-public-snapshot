@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
+import * as React from 'react'
 
 import { Meta, Story } from '@storybook/react'
 import BarChartIcon from 'mdi-react/BarChartIcon'

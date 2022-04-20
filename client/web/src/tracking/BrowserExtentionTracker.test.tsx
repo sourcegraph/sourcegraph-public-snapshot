@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import { act, cleanup, render } from '@testing-library/react'
 import { renderHook, cleanup as hookCleanup } from '@testing-library/react-hooks'

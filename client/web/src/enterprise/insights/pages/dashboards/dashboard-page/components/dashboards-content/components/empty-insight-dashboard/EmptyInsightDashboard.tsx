@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import PlusIcon from 'mdi-react/PlusIcon'
 

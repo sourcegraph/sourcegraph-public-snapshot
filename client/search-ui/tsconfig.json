@@ -6,7 +6,7 @@
     "rootDir": ".",
     "outDir": "./out",
     "baseUrl": "./src",
-    "jsx": "react",
+    "jsx": "react-jsx",
   },
   "include": ["./src/**/*", "./*.ts"],
   "exclude": ["../../node_modules", "./node_modules", "./out"],

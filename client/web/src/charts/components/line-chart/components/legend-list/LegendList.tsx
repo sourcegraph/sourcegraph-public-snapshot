@@ -1,14 +1,14 @@
-import React, { LiHTMLAttributes } from 'react'
+import { LiHTMLAttributes, HTMLAttributes, FunctionComponent } from 'react'
 
 import classNames from 'classnames'
 
 import styles from './LegendList.module.scss'
 
-interface LegendListProps extends React.HTMLAttributes<HTMLUListElement> {
+interface LegendListProps extends HTMLAttributes<HTMLUListElement> {
     className?: string
 }
 
-export const LegendList: React.FunctionComponent<LegendListProps> = props => {
+export const LegendList: FunctionComponent<LegendListProps> = props => {
     const { className, ...attributes } = props
 
     return (
@@ -23,7 +23,7 @@ interface LegendItemProps extends LiHTMLAttributes<HTMLLIElement> {
     name: string
 }
 
-export const LegendItem: React.FunctionComponent<LegendItemProps> = ({ color, name, className, ...attributes }) => (
+export const LegendItem: FunctionComponent<LegendItemProps> = ({ color, name, className, ...attributes }) => (
     <li {...attributes} className={classNames(styles.legendItem, className)}>
         <div
             /* eslint-disable-next-line react/forbid-dom-props */

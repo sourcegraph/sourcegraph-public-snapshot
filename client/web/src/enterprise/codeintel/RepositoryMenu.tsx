@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import AlertIcon from 'mdi-react/AlertIcon'
 import CheckIcon from 'mdi-react/CheckIcon'

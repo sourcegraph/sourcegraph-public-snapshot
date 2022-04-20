@@ -1,4 +1,5 @@
-import React, { Ref, useCallback, useContext, useRef, useState } from 'react'
+import { Ref, useCallback, useContext, useRef, useState } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'

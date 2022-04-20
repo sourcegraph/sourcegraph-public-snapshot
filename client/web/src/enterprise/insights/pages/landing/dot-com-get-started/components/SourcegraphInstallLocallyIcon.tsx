@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 export const SourcegraphInstallLocallyIcon: React.FunctionComponent<React.SVGProps<SVGSVGElement>> = props => (
     <svg {...props} width="51" height="82" viewBox="0 0 51 82" fill="none" xmlns="http://www.w3.org/2000/svg">

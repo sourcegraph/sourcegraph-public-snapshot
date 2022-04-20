@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
 import { ButtonLink } from '@sourcegraph/wildcard'

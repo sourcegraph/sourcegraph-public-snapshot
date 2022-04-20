@@ -1,6 +1,6 @@
-import * as React from 'react'
+import { memo } from 'react'
 
-export const BookmarkRadialGradientIcon = React.memo(() => (
+export const BookmarkRadialGradientIcon = memo(() => (
     <svg width="26" height="26" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path
             d="M20.143 21.667L13 18.517l-7.143 3.15V2.889h14.286v18.778zm0-21.667H5.857C5.1 0 4.373.304 3.837.846A2.905 2.905 0 003 2.89V26l10-4.333L23 26V2.889c0-.766-.301-1.501-.837-2.043A2.842 2.842 0 0020.143 0z"
@@ -27,7 +27,7 @@ export const BookmarkRadialGradientIcon = React.memo(() => (
     </svg>
 ))
 
-export const ExtensionRadialGradientIcon = React.memo(() => (
+export const ExtensionRadialGradientIcon = memo(() => (
     <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
         <g clipPath="url(#clip0_26_5030)">
             <path
@@ -73,7 +73,7 @@ export const ExtensionRadialGradientIcon = React.memo(() => (
     </svg>
 ))
 
-export const SearchBetaIcon = React.memo(() => (
+export const SearchBetaIcon = memo(() => (
     <svg width="77" height="60" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="4.25" width="60" height="60" rx="4" fill="url(#paint0_linear)" />
         <rect x="4.25" width="60" height="60" rx="4" fill="url(#paint1_radial)" fillOpacity=".4" />
@@ -132,7 +132,7 @@ export const SearchBetaIcon = React.memo(() => (
     </svg>
 ))
 
-export const CodeMonitorRadialGradientIcon = React.memo(() => (
+export const CodeMonitorRadialGradientIcon = memo(() => (
     <svg width="26" height="26" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path
             fillRule="evenodd"
@@ -163,7 +163,7 @@ export const CodeMonitorRadialGradientIcon = React.memo(() => (
     </svg>
 ))
 
-export const VSCodeIcon = React.memo(({ width = 30, height = 30 }: { width?: number; height?: number } = {}) => (
+export const VSCodeIcon = memo(({ width = 30, height = 30 }: { width?: number; height?: number } = {}) => (
     <svg width={width} height={height} viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path
             d="M22.0834 21.3325V8.46915L13.5834 14.9008L22.0834 21.3325ZM1.14506 11.0192C0.939444 10.7993 0.822721 10.511 0.817486 10.21C0.812252 9.90905 0.918879 9.61685 1.11672 9.38999L2.81672 7.81749C3.10006 7.56249 3.79422 7.44915 4.30422 7.81749L9.14922 11.515L20.3834 1.24415C20.8367 0.79082 21.6159 0.606653 22.5084 1.07415L28.1751 3.77999C28.6851 4.07749 29.1667 4.54499 29.1667 5.40915V24.5342C29.1667 25.1008 28.7559 25.71 28.3167 25.9508L22.0834 28.9258C21.6301 29.11 20.7801 28.94 20.4826 28.6425L9.12089 18.3008L4.30422 21.9842C3.76589 22.3525 3.10006 22.2533 2.81672 21.9842L1.11672 20.4258C0.663389 19.9583 0.720056 19.1933 1.18756 18.7258L5.43756 14.9008"
@@ -172,7 +172,7 @@ export const VSCodeIcon = React.memo(({ width = 30, height = 30 }: { width?: num
     </svg>
 ))
 
-export const JetBrainsIcon = React.memo(({ width = 30, height = 30 }: { width?: number; height?: number } = {}) => (
+export const JetBrainsIcon = memo(({ width = 30, height = 30 }: { width?: number; height?: number } = {}) => (
     <svg width={width} height={height} viewBox="22 22 61 61" xmlns="http://www.w3.org/2000/svg">
         <path d="M22.5 22.5h60v60h-60z" />
         <g fill="#fff">
@@ -183,7 +183,7 @@ export const JetBrainsIcon = React.memo(({ width = 30, height = 30 }: { width?: 
     </svg>
 ))
 
-export const AtomIcon = React.memo(({ width = 30, height = 30 }: { width?: number; height?: number } = {}) => (
+export const AtomIcon = memo(({ width = 30, height = 30 }: { width?: number; height?: number } = {}) => (
     <svg width={width} height={height} viewBox="0 0 615 600" xmlns="http://www.w3.org/2000/svg">
         <defs>
             <filter id="d" x="-.023" y="-.025" width="1.046" height="1.05" colorInterpolationFilters="sRGB">
@@ -235,7 +235,7 @@ export const AtomIcon = React.memo(({ width = 30, height = 30 }: { width?: numbe
     </svg>
 ))
 
-export const SublimeTextIcon = React.memo(({ width = 30, height = 30 }: { width?: number; height?: number } = {}) => (
+export const SublimeTextIcon = memo(({ width = 30, height = 30 }: { width?: number; height?: number } = {}) => (
     <svg
         width={width}
         height={height}

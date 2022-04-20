@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
+import * as React from 'react'
 
 import { number } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'

@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import { ComboboxList, ComboboxOption, ComboboxOptionText } from '@reach/combobox'
 import classNames from 'classnames'

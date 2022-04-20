@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'

@@ -1,4 +1,5 @@
-import React, { FocusEventHandler, MouseEventHandler } from 'react'
+import { FocusEventHandler, MouseEventHandler } from 'react'
+import * as React from 'react'
 
 import { GlyphDot } from '@visx/glyph'
 

@@ -1,4 +1,5 @@
-import React, { useCallback } from 'react'
+import { useCallback } from 'react'
+import * as React from 'react'
 
 interface TrackAnchorClickProps {
     onClick: (event: React.MouseEvent) => void

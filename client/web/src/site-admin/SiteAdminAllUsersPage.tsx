@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { PureComponent, Component } from 'react'
 
 import * as H from 'history'
 import { isEqual } from 'lodash'
@@ -68,7 +68,7 @@ For more information about what data is deleted, see https://github.com/sourcegr
 
 Are you ABSOLUTELY certain you wish to delete this user and all associated data?`
 
-class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
+class UserNode extends PureComponent<UserNodeProps, UserNodeState> {
     public state: UserNodeState = {
         loading: false,
     }
@@ -390,7 +390,7 @@ interface State {
 /**
  * A page displaying the users on this site.
  */
-export class SiteAdminAllUsersPage extends React.Component<Props, State> {
+export class SiteAdminAllUsersPage extends Component<Props, State> {
     public state: State = {}
 
     private userUpdates = new Subject<void>()

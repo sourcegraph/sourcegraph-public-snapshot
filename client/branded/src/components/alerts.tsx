@@ -1,4 +1,4 @@
-import React, { HTMLAttributes } from 'react'
+import { HTMLAttributes, CSSProperties, FunctionComponent } from 'react'
 
 import { upperFirst } from 'lodash'
 
@@ -12,7 +12,7 @@ export const renderError = (error: unknown): string =>
         .replace(/^<p>/, '')
         .replace(/<\/p>$/, '')
 
-export const ErrorMessage: React.FunctionComponent<{ className?: string; error: unknown }> = ({ className, error }) => (
+export const ErrorMessage: FunctionComponent<{ className?: string; error: unknown }> = ({ className, error }) => (
     <Markdown className={className} wrapper="span" dangerousInnerHTML={renderError(error)} />
 )
 
@@ -35,7 +35,7 @@ export type ErrorAlertProps = {
     prefix?: string
 
     className?: string
-    style?: React.CSSProperties
+    style?: CSSProperties
 
     /**
      * The Alert variant to display. Defaults to "danger"
@@ -50,7 +50,7 @@ export type ErrorAlertProps = {
  * bullet points, respect line breaks, code and bolded elements.
  * Made to work with Go `multierror`.
  */
-export const ErrorAlert: React.FunctionComponent<ErrorAlertProps> = ({
+export const ErrorAlert: FunctionComponent<ErrorAlertProps> = ({
     error,
     className,
     icon = true,

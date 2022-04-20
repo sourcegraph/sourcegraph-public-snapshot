@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
+import * as React from 'react'
 
 import { gql } from '@sourcegraph/http-client'
 import { percentageDone } from '@sourcegraph/shared/src/components/activation/Activation'

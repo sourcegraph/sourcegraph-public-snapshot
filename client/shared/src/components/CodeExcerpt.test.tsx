@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { Component } from 'react'
 
 import { cleanup, getByText, render } from '@testing-library/react'
 import _VisibilitySensor from 'react-visibility-sensor'
@@ -13,7 +13,7 @@ import {
 
 import { CodeExcerpt } from './CodeExcerpt'
 
-export class MockVisibilitySensor extends React.Component<{ onChange?: (isVisible: boolean) => void }> {
+export class MockVisibilitySensor extends Component<{ onChange?: (isVisible: boolean) => void }> {
     constructor(props: { onChange?: (isVisible: boolean) => void }) {
         super(props)
         if (props.onChange) {

@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import { Edit, FormattingOptions, JSONPath } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'

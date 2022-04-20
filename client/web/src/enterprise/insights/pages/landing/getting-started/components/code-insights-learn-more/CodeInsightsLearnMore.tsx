@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Link, PopoverTrigger, FeedbackPrompt } from '@sourcegraph/wildcard'

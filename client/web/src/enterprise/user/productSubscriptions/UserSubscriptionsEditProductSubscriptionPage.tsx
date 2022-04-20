@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useCallback } from 'react'
+import { useEffect, useMemo, useCallback } from 'react'
+import * as React from 'react'
 
 import * as H from 'history'
 import ArrowLeftIcon from 'mdi-react/ArrowLeftIcon'

@@ -1,4 +1,5 @@
-import React, { useContext, useMemo } from 'react'
+import { useContext, useMemo } from 'react'
+import * as React from 'react'
 
 import { useRouteMatch } from 'react-router'
 import { Redirect } from 'react-router-dom'

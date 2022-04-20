@@ -1,4 +1,5 @@
-import React, { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'

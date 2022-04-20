@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CancelIcon from 'mdi-react/CancelIcon'

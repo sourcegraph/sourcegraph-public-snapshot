@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { Component } from 'react'
 
 import classNames from 'classnames'
 import { isEqual } from 'lodash'
@@ -137,7 +137,7 @@ interface State extends HoverState<HoverContext, HoverMerged, ActionItemAction> 
 const DIFF_MODE_VISUALIZER = 'diff-mode-visualizer'
 
 /** Displays a commit. */
-export class RepositoryCommitPage extends React.Component<Props, State> {
+export class RepositoryCommitPage extends Component<Props, State> {
     private componentUpdates = new Subject<Props>()
 
     /** Emits whenever the ref callback for the hover element is called */

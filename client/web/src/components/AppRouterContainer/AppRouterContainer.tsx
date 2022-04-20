@@ -1,4 +1,5 @@
-import React, { HTMLAttributes } from 'react'
+import { HTMLAttributes } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 import { ElementScroller } from 'react-scroll-manager'

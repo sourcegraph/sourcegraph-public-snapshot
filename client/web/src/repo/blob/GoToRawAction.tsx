@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { PureComponent } from 'react'
 
 import FileDownloadOutlineIcon from 'mdi-react/FileDownloadOutlineIcon'
 
@@ -14,7 +14,7 @@ interface Props extends RepoSpec, Partial<RevisionSpec>, FileSpec, RepoHeaderCon
 /**
  * A repository header action that replaces the blob in the URL with the raw URL.
  */
-export class GoToRawAction extends React.PureComponent<Props> {
+export class GoToRawAction extends PureComponent<Props> {
     private onClick(): void {
         this.props.telemetryService.log('RawFileDownload', {
             repoName: this.props.repoName,

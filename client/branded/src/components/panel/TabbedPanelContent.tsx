@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, memo, ReactFragment } from 'react'
 
 import classNames from 'classnames'
 import { Remote } from 'comlink'
@@ -58,7 +58,7 @@ export interface PanelViewWithComponent extends PanelViewData {
     /**
      * The React element to render in the panel view.
      */
-    reactElement?: React.ReactFragment
+    reactElement?: ReactFragment
 
     // Should the content of the panel be put inside a wrapper container with padding or not.
     noWrapper?: boolean
@@ -73,7 +73,7 @@ export interface PanelViewWithComponent extends PanelViewData {
 interface TabbedPanelItem {
     id: string
 
-    label: React.ReactFragment
+    label: ReactFragment
     /**
      * Controls the relative order of panel items. The items are laid out from highest priority (at the beginning)
      * to lowest priority (at the end). The default is 0.
@@ -136,7 +136,7 @@ export function useBuiltinTabbedPanelViews(builtinPanels: BuiltinTabbedPanelDefi
  *
  * Other components can contribute panel items to the panel with the `useBuildinPanelViews` hook.
  */
-export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
+export const TabbedPanelContent = memo<TabbedPanelContentProps>(props => {
     // Ensures that we don't show a misleading empty state when extensions haven't loaded yet.
     const areExtensionsReady = useObservable(
         useMemo(() => haveInitialExtensionsLoaded(props.extensionsController.extHostAPI), [props.extensionsController])

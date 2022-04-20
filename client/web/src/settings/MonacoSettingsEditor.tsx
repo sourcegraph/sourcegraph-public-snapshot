@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { PureComponent } from 'react'
 
 import * as jsonc from '@sqs/jsonc-parser'
 import classNames from 'classnames'
@@ -50,7 +50,7 @@ interface State {}
 /**
  * A JSON settings editor using the Monaco editor.
  */
-export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
+export class MonacoSettingsEditor extends PureComponent<Props, State> {
     public state: State = {}
 
     private monaco: typeof monaco | null = null

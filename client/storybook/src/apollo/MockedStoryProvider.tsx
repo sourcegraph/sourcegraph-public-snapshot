@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import { ApolloLink } from '@apollo/client'
 import { MockedProvider, MockedProviderProps, MockedResponse, MockLink } from '@apollo/client/testing'

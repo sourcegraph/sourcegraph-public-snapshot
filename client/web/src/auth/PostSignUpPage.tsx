@@ -1,4 +1,5 @@
-import React, { FunctionComponent, useState, useEffect, useCallback, useRef } from 'react'
+import { FunctionComponent, useState, useEffect, useCallback, useRef } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 import { useLocation, useHistory } from 'react-router'

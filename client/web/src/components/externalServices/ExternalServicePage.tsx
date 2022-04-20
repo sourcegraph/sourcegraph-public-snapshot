@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback } from 'react'
+import * as React from 'react'
 
 import { parse as parseJSONC } from '@sqs/jsonc-parser'
 import * as H from 'history'

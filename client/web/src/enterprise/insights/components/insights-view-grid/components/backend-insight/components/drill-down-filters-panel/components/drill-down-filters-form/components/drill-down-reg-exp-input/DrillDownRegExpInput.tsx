@@ -1,4 +1,4 @@
-import React, { ChangeEvent, forwardRef, InputHTMLAttributes, PropsWithChildren, Ref } from 'react'
+import { ChangeEvent, forwardRef, InputHTMLAttributes, PropsWithChildren, Ref } from 'react'
 
 import classNames from 'classnames'
 

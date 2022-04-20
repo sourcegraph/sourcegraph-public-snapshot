@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
+import * as React from 'react'
 
 import { EMPTY, from, combineLatest, ReplaySubject, BehaviorSubject, Observable } from 'rxjs'
 import { concatMap, distinctUntilChanged, filter, map, mapTo, switchMap } from 'rxjs/operators'

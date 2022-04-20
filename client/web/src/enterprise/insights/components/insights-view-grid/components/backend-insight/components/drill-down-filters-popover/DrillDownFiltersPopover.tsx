@@ -1,4 +1,5 @@
-import React, { DOMAttributes, useRef } from 'react'
+import { DOMAttributes, useRef } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'

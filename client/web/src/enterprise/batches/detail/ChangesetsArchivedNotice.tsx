@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
+import * as React from 'react'
 
 import * as H from 'history'
 import ArchiveIcon from 'mdi-react/ArchiveIcon'

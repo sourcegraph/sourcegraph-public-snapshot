@@ -1,4 +1,5 @@
-import React, { SVGProps } from 'react'
+import { SVGProps } from 'react'
+import * as React from 'react'
 
 export const CodeMonitoringLogo: React.FunctionComponent<SVGProps<SVGSVGElement>> = (
     props: SVGProps<SVGSVGElement>

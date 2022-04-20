@@ -1,4 +1,4 @@
-import React from 'react'
+import { FunctionComponent, MouseEvent } from 'react'
 
 import classNames from 'classnames'
 
@@ -10,10 +10,10 @@ interface HierarchicalLocationsViewButtonProps {
     groupKey: string
     groupCount: number
     isActive: boolean
-    onClick: (event: React.MouseEvent<HTMLElement>) => void
+    onClick: (event: MouseEvent<HTMLElement>) => void
 }
 
-export const HierarchicalLocationsViewButton: React.FunctionComponent<HierarchicalLocationsViewButtonProps> = props => {
+export const HierarchicalLocationsViewButton: FunctionComponent<HierarchicalLocationsViewButtonProps> = props => {
     const { groupKey, groupCount, isActive, onClick } = props
 
     return (

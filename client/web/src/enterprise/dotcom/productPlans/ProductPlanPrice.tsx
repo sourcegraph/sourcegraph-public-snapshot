@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import { pluralize } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'

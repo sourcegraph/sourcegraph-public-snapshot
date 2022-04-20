@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import { forwardRef, useMemo } from 'react'
 
 import { MenuButton as ReachMenuButton } from '@reach/menu-button'
 import { uniqueId } from 'lodash'
@@ -15,7 +15,7 @@ export type MenuButtonProps = Omit<ButtonProps, 'as'>
  *
  * @see — Docs https://reach.tech/menu-button#menubutton
  */
-export const MenuButton = React.forwardRef(({ children, id, ...props }, reference) => {
+export const MenuButton = forwardRef(({ children, id, ...props }, reference) => {
     // To fix rule: "duplicate-id-active"
     // Document has active elements with the same id attribute: menu-button--menu
     const uniqueMenuId = useMemo(() => id ?? uniqueId('menu-button-'), [id])
@@ -29,6 +29,6 @@ export const MenuButton = React.forwardRef(({ children, id, ...props }, referenc
     )
 }) as ForwardReferenceComponent<'button', MenuButtonProps>
 
-const PopoverTriggerButton = React.forwardRef((props, reference) => (
+const PopoverTriggerButton = forwardRef((props, reference) => (
     <PopoverTrigger ref={reference} as={Button} {...props} />
 )) as ForwardReferenceComponent<'button', ButtonProps>

@@ -2,7 +2,8 @@
  * Forked component from @visx/text package.
  * Removed https://github.com/airbnb/visx/issues/1111 when will be resolved
  * */
-import React, { ReactElement } from 'react'
+import { ReactElement } from 'react'
+import * as React from 'react'
 
 import { useText, TextProps as OriginTextProps } from '@visx/text'
 

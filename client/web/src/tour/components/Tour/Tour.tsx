@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
+import * as React from 'react'
 
 import { uniq } from 'lodash'
 

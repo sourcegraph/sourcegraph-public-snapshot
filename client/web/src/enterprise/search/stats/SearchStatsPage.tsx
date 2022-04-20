@@ -1,4 +1,5 @@
-import React, { useCallback, useState, useMemo } from 'react'
+import { useCallback, useState, useMemo } from 'react'
+import * as React from 'react'
 
 import * as H from 'history'
 import ChartLineIcon from 'mdi-react/ChartLineIcon'

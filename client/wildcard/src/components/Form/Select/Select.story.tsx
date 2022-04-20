@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import { useState, useCallback } from 'react'
 
 import { Meta, Story } from '@storybook/react'
 
@@ -31,7 +31,7 @@ const config: Meta = {
 export default config
 
 const BaseSelect = (props: { id: string } & Pick<SelectProps, 'isCustomStyle' | 'isValid' | 'disabled'>) => {
-    const [selected, setSelected] = React.useState('')
+    const [selected, setSelected] = useState('')
 
     const handleChange = useCallback<React.ChangeEventHandler<HTMLSelectElement>>(event => {
         setSelected(event.target.value)

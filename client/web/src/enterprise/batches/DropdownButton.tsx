@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import * as React from 'react'
 
 import VisuallyHidden from '@reach/visually-hidden'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, Dispatch, SetStateAction } from 'react'
+import { useState, useEffect, Dispatch, SetStateAction } from 'react'
+import * as React from 'react'
 
 import { ApolloError, useQuery } from '@apollo/client'
 import * as H from 'history'

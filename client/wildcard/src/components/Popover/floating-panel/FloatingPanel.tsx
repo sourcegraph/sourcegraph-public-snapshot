@@ -1,4 +1,5 @@
-import React, { forwardRef, PropsWithChildren, useLayoutEffect, useRef, useState } from 'react'
+import { forwardRef, PropsWithChildren, useLayoutEffect, useRef, useState } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 import { createPortal } from 'react-dom'

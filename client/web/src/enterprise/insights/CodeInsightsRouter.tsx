@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'

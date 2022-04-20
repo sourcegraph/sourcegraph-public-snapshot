@@ -1,4 +1,5 @@
-import React, { useCallback, useState } from 'react'
+import { useCallback, useState } from 'react'
+import * as React from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'

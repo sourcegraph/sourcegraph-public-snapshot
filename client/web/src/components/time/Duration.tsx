@@ -1,4 +1,5 @@
-import React, { useEffect, useReducer } from 'react'
+import { useEffect, useReducer } from 'react'
+import * as React from 'react'
 
 import { parseISO } from 'date-fns'
 

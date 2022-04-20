@@ -1,4 +1,4 @@
-import React from 'react'
+import { forwardRef } from 'react'
 
 import { DialogProps, DialogOverlay, DialogContent } from '@reach/dialog'
 import classNames from 'classnames'
@@ -43,7 +43,7 @@ export type ModalProps = VisiblyLabelledModal | InvisiblyLabelledModal
  * @see — Building accessible Modals: https://www.w3.org/TR/2019/NOTE-wai-aria-practices-1.1-20190814/examples/dialog-modal/dialog.html
  * @see — Docs https://reach.tech/dialog
  */
-export const Modal = React.forwardRef(
+export const Modal = forwardRef(
     (
         {
             children,

@@ -1,4 +1,5 @@
-import React, { forwardRef } from 'react'
+import { forwardRef } from 'react'
+import * as React from 'react'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'

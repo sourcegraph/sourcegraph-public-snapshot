@@ -1,4 +1,5 @@
-import React, { Fragment, useMemo } from 'react'
+import { Fragment, useMemo } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 

@@ -1,4 +1,5 @@
-import React, { ReactElement, useCallback, useMemo } from 'react'
+import { ReactElement, useCallback, useMemo } from 'react'
+import * as React from 'react'
 
 import { AxisBottom, AxisLeft } from '@visx/axis'
 import { localPoint } from '@visx/event'

@@ -1,4 +1,5 @@
-import React, { useMemo, useRef } from 'react'
+import { useMemo, useRef } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 import { identity } from 'lodash'

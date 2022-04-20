@@ -1,4 +1,5 @@
-import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
+import { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
+import * as React from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'

@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 import { isPlainObject, noop } from 'lodash'

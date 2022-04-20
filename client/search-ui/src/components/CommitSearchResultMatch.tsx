@@ -1,4 +1,4 @@
-import React from 'react'
+import { Component } from 'react'
 
 import classNames from 'classnames'
 import { isEqual, range } from 'lodash'
@@ -27,10 +27,7 @@ interface CommitSearchResultMatchState {
     HTML?: string
 }
 
-export class CommitSearchResultMatch extends React.Component<
-    CommitSearchResultMatchProps,
-    CommitSearchResultMatchState
-> {
+export class CommitSearchResultMatch extends Component<CommitSearchResultMatchProps, CommitSearchResultMatchState> {
     public state: CommitSearchResultMatchState = {}
     private tableContainerElement: HTMLElement | null = null
     private visibilitySensorOffset = { bottom: -500 }

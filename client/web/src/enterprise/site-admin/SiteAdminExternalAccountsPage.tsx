@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { Component } from 'react'
 
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
@@ -37,7 +37,7 @@ interface FilterParameters {
 /**
  * Displays the external accounts (from authentication providers) associated with the user's account.
  */
-export class SiteAdminExternalAccountsPage extends React.Component<Props> {
+export class SiteAdminExternalAccountsPage extends Component<Props> {
     private subscriptions = new Subscription()
     private externalAccountUpdates = new Subject<void>()
 

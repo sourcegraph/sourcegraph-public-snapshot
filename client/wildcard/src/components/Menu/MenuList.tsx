@@ -1,4 +1,4 @@
-import React from 'react'
+import { forwardRef } from 'react'
 
 import { MenuPopover as ReachMenuPopover, MenuItems } from '@reach/menu-button'
 import classNames from 'classnames'
@@ -12,7 +12,7 @@ export interface MenuListProps extends Omit<PopoverProps, 'popoverPosition'> {
     position?: Position
 }
 
-export const MenuList = React.forwardRef((props, reference) => {
+export const MenuList = forwardRef((props, reference) => {
     const { children, position = Position.bottomStart, targetPadding = DEFAULT_MENU_LIST_PADDING, ...rest } = props
 
     return (
@@ -38,7 +38,7 @@ export interface PopoverProps extends PopoverContentProps {
     popoverPosition: Position
 }
 
-const Popover = React.forwardRef(({ popoverPosition, ...props }, reference) => (
+const Popover = forwardRef(({ popoverPosition, ...props }, reference) => (
     <PopoverContent
         {...props}
         as={MenuItems}

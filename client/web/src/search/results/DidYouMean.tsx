@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
+import * as React from 'react'
 
 import { CaseSensitivityProps, SearchPatternTypeProps, SearchContextProps } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'

@@ -1,4 +1,5 @@
-import React, { useContext, useEffect } from 'react'
+import { useContext, useEffect } from 'react'
+import * as React from 'react'
 
 import { render } from '@testing-library/react'
 import { act } from 'react-dom/test-utils'

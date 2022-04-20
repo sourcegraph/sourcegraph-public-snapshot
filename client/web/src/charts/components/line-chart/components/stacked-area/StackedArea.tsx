@@ -1,4 +1,5 @@
-import React, { memo, useMemo } from 'react'
+import { memo, useMemo } from 'react'
+import * as React from 'react'
 
 import { ScaleLinear, ScaleTime } from 'd3-scale'
 import * as uuid from 'uuid'

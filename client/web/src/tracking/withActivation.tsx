@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import * as H from 'history'
 import { combineLatest, merge, Observable, Subject, Subscription } from 'rxjs'

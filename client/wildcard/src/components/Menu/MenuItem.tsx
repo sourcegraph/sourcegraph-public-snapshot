@@ -1,4 +1,4 @@
-import React from 'react'
+import { forwardRef } from 'react'
 
 import { MenuItem as ReachMenuItem, MenuItemProps as ReachMenuItemProps } from '@reach/menu-button'
 import classNames from 'classnames'
@@ -16,7 +16,7 @@ export type MenuItemProps = ReachMenuItemProps
  *
  * @see — Docs https://reach.tech/menu-button#menuitem
  */
-export const MenuItem = React.forwardRef(({ children, className, ...props }, reference) => (
+export const MenuItem = forwardRef(({ children, className, ...props }, reference) => (
     <ReachMenuItem ref={reference} {...props} className={classNames('dropdown-item', styles.item, className)}>
         {children}
     </ReachMenuItem>

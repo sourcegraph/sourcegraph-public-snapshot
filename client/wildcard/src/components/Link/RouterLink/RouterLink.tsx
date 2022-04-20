@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { forwardRef } from 'react'
 
 import isAbsoluteUrl from 'is-absolute-url'
 // eslint-disable-next-line no-restricted-imports
@@ -12,7 +12,7 @@ import { AnchorLink, AnchorLinkProps } from '../AnchorLink'
  * absolute URL to <Link> will create an (almost certainly invalid) URL where the absolute URL is resolved to the
  * current URL, such as https://example.com/a/b/https://example.com/c/d.
  */
-export const RouterLink = React.forwardRef(({ to, children, ...rest }, reference) => (
+export const RouterLink = forwardRef(({ to, children, ...rest }, reference) => (
     <AnchorLink
         to={to}
         as={typeof to === 'string' && isAbsoluteUrl(to) ? undefined : (Link as Link<unknown>)}

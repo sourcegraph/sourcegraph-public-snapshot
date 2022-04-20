@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { PureComponent } from 'react'
 
 import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
@@ -34,7 +34,7 @@ interface State {
 /**
  * The repository settings options page.
  */
-export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
+export class RepoSettingsOptionsPage extends PureComponent<Props, State> {
     private repoUpdates = new Subject<void>()
     private subscriptions = new Subscription()
 

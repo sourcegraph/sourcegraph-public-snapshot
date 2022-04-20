@@ -1,4 +1,4 @@
-import React from 'react'
+import { createContext } from 'react'
 
 import { throwError } from 'rxjs'
 
@@ -58,4 +58,4 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public UIFeatures = { licensed: false, insightsLimit: null }
 }
 
-export const CodeInsightsBackendContext = React.createContext<CodeInsightsBackend>(new FakeDefaultCodeInsightsBackend())
+export const CodeInsightsBackendContext = createContext<CodeInsightsBackend>(new FakeDefaultCodeInsightsBackend())

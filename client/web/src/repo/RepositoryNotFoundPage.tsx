@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { PureComponent } from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -38,7 +38,7 @@ interface State {
  * A page informing the user that an error occurred while trying to display the repository. It
  * attempts to present the user with actions to solve the problem.
  */
-export class RepositoryNotFoundPage extends React.PureComponent<Props, State> {
+export class RepositoryNotFoundPage extends PureComponent<Props, State> {
     public state: State = {
         showAdd: false,
     }

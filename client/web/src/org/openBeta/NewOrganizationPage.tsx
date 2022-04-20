@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import * as React from 'react'
 
 import { ApolloError, gql, useLazyQuery, useMutation } from '@apollo/client'
 import classNames from 'classnames'

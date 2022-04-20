@@ -1,4 +1,5 @@
-import React, { useContext } from 'react'
+import { useContext } from 'react'
+import * as React from 'react'
 
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'

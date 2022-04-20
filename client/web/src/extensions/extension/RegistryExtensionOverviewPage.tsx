@@ -1,4 +1,5 @@
-import React, { useMemo, useEffect } from 'react'
+import { useMemo, useEffect } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'

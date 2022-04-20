@@ -1,4 +1,5 @@
-import React, { PropsWithChildren, ReactNode, RefObject } from 'react'
+import { PropsWithChildren, ReactNode, RefObject } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 

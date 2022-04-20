@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
+import * as React from 'react'
 
 import { isEmpty, noop } from 'lodash'
 import * as Monaco from 'monaco-editor'

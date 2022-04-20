@@ -1,4 +1,5 @@
-import React, { FunctionComponent, useState, useEffect, useCallback, createContext, useContext } from 'react'
+import { FunctionComponent, useState, useEffect, useCallback, createContext, useContext } from 'react'
+import * as React from 'react'
 
 import { queryExternalServicesScope } from '../../components/externalServices/backend'
 import { ExternalServiceKind } from '../../graphql-operations'

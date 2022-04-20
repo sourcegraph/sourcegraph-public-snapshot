@@ -1,4 +1,4 @@
-import React, {
+import {
     useCallback,
     useRef,
     useEffect,
@@ -7,6 +7,7 @@ import React, {
     useMemo,
     useState,
 } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'

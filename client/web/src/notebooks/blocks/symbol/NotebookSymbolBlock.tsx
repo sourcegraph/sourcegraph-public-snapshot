@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 import { debounce } from 'lodash'

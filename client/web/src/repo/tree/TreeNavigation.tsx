@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import AccountIcon from 'mdi-react/AccountIcon'
 import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'

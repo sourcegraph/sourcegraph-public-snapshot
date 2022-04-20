@@ -1,4 +1,5 @@
-import React, { FunctionComponent, useMemo, useState } from 'react'
+import { FunctionComponent, useMemo, useState } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 

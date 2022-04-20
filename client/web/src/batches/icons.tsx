@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 /**
  * The internal type used for base icons, which accept both a class name and a

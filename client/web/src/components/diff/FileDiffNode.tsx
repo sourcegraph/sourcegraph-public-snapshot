@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from 'react'
+import { useState, useCallback } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'

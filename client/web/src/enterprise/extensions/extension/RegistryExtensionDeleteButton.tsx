@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { PureComponent } from 'react'
 
 import { upperFirst } from 'lodash'
 import DeleteIcon from 'mdi-react/DeleteIcon'
@@ -30,7 +30,7 @@ interface RegistryExtensionDeleteButtonState {
 }
 
 /** A button that deletes an extension from the registry. */
-export class RegistryExtensionDeleteButton extends React.PureComponent<
+export class RegistryExtensionDeleteButton extends PureComponent<
     RegistryExtensionDeleteButtonProps,
     RegistryExtensionDeleteButtonState
 > {

@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
+import * as React from 'react'
 
 import { gql, useQuery } from '@apollo/client'
 import { Location } from 'history'

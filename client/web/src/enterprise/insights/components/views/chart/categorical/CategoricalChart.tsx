@@ -1,4 +1,5 @@
-import React, { SVGProps } from 'react'
+import { SVGProps } from 'react'
+import * as React from 'react'
 
 import { CategoricalLikeChart, PieChart } from '../../../../../../charts'
 import { CategoricalBasedChartTypes } from '../../types'

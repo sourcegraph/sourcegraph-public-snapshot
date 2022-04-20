@@ -1,4 +1,5 @@
-import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'react'
+import { ReactNode, useCallback, useEffect, useRef, useState } from 'react'
+import * as React from 'react'
 
 import CloseIcon from 'mdi-react/CloseIcon'
 import TickIcon from 'mdi-react/TickIcon'

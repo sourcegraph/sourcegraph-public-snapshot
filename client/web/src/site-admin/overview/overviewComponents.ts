@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 /**
  * Additional components to render on the SiteAdminOverviewPage.

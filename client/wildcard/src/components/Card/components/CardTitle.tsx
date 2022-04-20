@@ -1,4 +1,4 @@
-import React from 'react'
+import { forwardRef } from 'react'
 
 import classNames from 'classnames'
 
@@ -8,7 +8,7 @@ import styles from './CardTitle.module.scss'
 
 interface CardTitleProps {}
 
-export const CardTitle = React.forwardRef(({ as: Component = 'h3', children, className, ...attributes }, reference) => (
+export const CardTitle = forwardRef(({ as: Component = 'h3', children, className, ...attributes }, reference) => (
     <Component ref={reference} className={classNames(styles.cardTitle, className)} {...attributes}>
         {children}
     </Component>

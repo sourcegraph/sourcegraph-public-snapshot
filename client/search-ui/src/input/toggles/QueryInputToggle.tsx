@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useRef, useMemo } from 'react'
+import { useCallback, useEffect, useRef, useMemo } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 import { fromEvent } from 'rxjs'

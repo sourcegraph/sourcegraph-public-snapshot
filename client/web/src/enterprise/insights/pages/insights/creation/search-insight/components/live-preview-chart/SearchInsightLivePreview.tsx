@@ -1,4 +1,5 @@
-import React, { useContext, useMemo } from 'react'
+import { useContext, useMemo } from 'react'
+import * as React from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useDeepMemo } from '@sourcegraph/wildcard'

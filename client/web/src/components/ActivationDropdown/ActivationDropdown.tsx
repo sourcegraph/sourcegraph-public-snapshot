@@ -1,4 +1,4 @@
-import React from 'react'
+import { PureComponent } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
@@ -32,7 +32,7 @@ const animationDurationMillis = 3260
  * Renders the activation status navlink item, a dropdown button that shows activation
  * status in the navbar.
  */
-export class ActivationDropdown extends React.PureComponent<ActivationDropdownProps, State> {
+export class ActivationDropdown extends PureComponent<ActivationDropdownProps, State> {
     public state: State = { animate: false, displayEvenIfFullyCompleted: false }
     private componentUpdates = new Subject<ActivationDropdownProps>()
     private subscriptions = new Subscription()

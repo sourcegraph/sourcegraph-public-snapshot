@@ -1,4 +1,5 @@
-import React, { VideoHTMLAttributes } from 'react'
+import { VideoHTMLAttributes } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'

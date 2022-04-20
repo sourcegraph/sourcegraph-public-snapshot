@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import { MdiReactIconComponentType } from 'mdi-react'
 import JsonIcon from 'mdi-react/CodeJsonIcon'

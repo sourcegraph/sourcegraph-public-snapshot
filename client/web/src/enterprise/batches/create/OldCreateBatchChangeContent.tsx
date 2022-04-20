@@ -1,4 +1,5 @@
-import React, { useCallback, useState } from 'react'
+import { useCallback, useState } from 'react'
+import * as React from 'react'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { Container, Button, Link } from '@sourcegraph/wildcard'

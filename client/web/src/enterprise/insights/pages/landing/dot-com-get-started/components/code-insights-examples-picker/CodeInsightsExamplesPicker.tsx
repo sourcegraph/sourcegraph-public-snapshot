@@ -1,4 +1,5 @@
-import React, { useLayoutEffect, useState } from 'react'
+import { useLayoutEffect, useState } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 import { throttle } from 'lodash'

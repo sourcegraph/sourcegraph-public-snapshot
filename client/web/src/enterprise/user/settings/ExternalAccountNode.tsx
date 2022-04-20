@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { PureComponent } from 'react'
 
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, filter, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
@@ -78,7 +78,7 @@ interface ExternalAccountNodeState {
     showData: boolean
 }
 
-export class ExternalAccountNode extends React.PureComponent<ExternalAccountNodeProps, ExternalAccountNodeState> {
+export class ExternalAccountNode extends PureComponent<ExternalAccountNodeProps, ExternalAccountNodeState> {
     public state: ExternalAccountNodeState = {
         deletionOrError: null,
         showData: false,

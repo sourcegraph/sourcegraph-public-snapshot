@@ -1,4 +1,4 @@
-import React, { ReactElement, useMemo } from 'react'
+import { ReactElement, useMemo } from 'react'
 
 import CodeTagsIcon from 'mdi-react/CodeTagsIcon'
 import FunctionIcon from 'mdi-react/FunctionIcon'

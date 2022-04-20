@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import { SearchPatternTypeProps } from '@sourcegraph/search'
 import { ButtonLink, Icon } from '@sourcegraph/wildcard'

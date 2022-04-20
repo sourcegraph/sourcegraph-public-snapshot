@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from 'react'
+import { useState, useCallback } from 'react'
+import * as React from 'react'
 
 import addDays from 'date-fns/addDays'
 import endOfDay from 'date-fns/endOfDay'

@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useMemo, memo } from 'react'
+import { useState, useCallback, useMemo, memo } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 import WarningIcon from 'mdi-react/WarningIcon'

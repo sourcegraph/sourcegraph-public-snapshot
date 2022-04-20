@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import * as React from 'react'
 
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 

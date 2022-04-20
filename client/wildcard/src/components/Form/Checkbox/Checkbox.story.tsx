@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import { useState, useCallback } from 'react'
 
 import { Meta, Story } from '@storybook/react'
 
@@ -31,7 +31,7 @@ const config: Meta = {
 export default config
 
 const BaseCheckbox = ({ name, ...props }: { name: string } & Pick<CheckboxProps, 'isValid' | 'disabled'>) => {
-    const [isChecked, setChecked] = React.useState(false)
+    const [isChecked, setChecked] = useState(false)
 
     const handleChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setChecked(event.target.checked)

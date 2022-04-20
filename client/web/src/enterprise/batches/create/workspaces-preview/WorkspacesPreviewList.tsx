@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import { Connection } from '../../../../components/FilteredConnection'
 import { UseConnectionResult } from '../../../../components/FilteredConnection/hooks/useConnection'

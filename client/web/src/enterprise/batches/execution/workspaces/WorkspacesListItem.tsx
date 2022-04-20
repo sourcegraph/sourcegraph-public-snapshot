@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import { DiffStat } from '../../../../components/diff/DiffStat'
 import { BatchSpecWorkspaceListFields } from '../../../../graphql-operations'

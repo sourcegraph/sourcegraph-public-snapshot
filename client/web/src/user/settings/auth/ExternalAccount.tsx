@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from 'react'
+import { useState, useCallback } from 'react'
+import * as React from 'react'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { Button, Link } from '@sourcegraph/wildcard'

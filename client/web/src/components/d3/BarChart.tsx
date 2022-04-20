@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { Component } from 'react'
 
 import { axisBottom, AxisContainerElement } from 'd3-axis'
 import { scaleBand, scaleLinear, scaleOrdinal } from 'd3-scale'
@@ -44,7 +44,7 @@ interface Props<T extends BarChartSeries> extends ThemeProps {
     className?: string
 }
 
-export class BarChart<T extends BarChartSeries> extends React.Component<Props<T>> {
+export class BarChart<T extends BarChartSeries> extends Component<Props<T>> {
     private svgRef: SVGSVGElement | null = null
 
     public componentDidMount(): void {

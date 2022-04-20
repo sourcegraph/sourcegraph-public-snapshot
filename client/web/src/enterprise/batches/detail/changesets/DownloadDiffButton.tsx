@@ -1,4 +1,5 @@
-import React, { useCallback, useState } from 'react'
+import { useCallback, useState } from 'react'
+import * as React from 'react'
 
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import DownloadIcon from 'mdi-react/DownloadIcon'

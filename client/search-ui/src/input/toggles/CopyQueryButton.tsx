@@ -1,4 +1,5 @@
-import React, { useCallback, useRef, useEffect } from 'react'
+import { useCallback, useRef, useEffect } from 'react'
+import * as React from 'react'
 
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'

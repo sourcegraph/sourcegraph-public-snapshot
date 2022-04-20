@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
+import * as React from 'react'
 
 import PlusIcon from 'mdi-react/PlusIcon'
 import { matchPath, useHistory } from 'react-router'

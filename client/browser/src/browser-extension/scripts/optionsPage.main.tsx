@@ -1,7 +1,8 @@
 // We want to polyfill first.
 import '../../shared/polyfills'
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import * as React from 'react'
 
 import { trimEnd, uniq } from 'lodash'
 import { render } from 'react-dom'

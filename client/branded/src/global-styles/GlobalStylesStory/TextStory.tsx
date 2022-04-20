@@ -1,4 +1,4 @@
-import React from 'react'
+import { FunctionComponent } from 'react'
 import 'storybook-addon-designs'
 
 import { Link } from '@sourcegraph/wildcard'
@@ -6,7 +6,7 @@ import { Link } from '@sourcegraph/wildcard'
 import { SEMANTIC_COLORS } from './constants'
 import { TextVariants } from './TextVariants'
 
-export const TextStory: React.FunctionComponent = () => (
+export const TextStory: FunctionComponent = () => (
     <>
         <h2>Headings</h2>
         <table className="table">

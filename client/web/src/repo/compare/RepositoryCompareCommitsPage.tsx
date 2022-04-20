@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { PureComponent } from 'react'
 
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
@@ -61,7 +61,7 @@ function queryRepositoryComparisonCommits(args: {
 interface Props extends RepositoryCompareAreaPageProps, RouteComponentProps<{}> {}
 
 /** A page with a list of commits in the comparison. */
-export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
+export class RepositoryCompareCommitsPage extends PureComponent<Props> {
     private componentUpdates = new Subject<Props>()
     private updates = new Subject<void>()
     private subscriptions = new Subscription()

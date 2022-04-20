@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import { action } from '@storybook/addon-actions'
 import { DecoratorFn, Meta, Story } from '@storybook/react'

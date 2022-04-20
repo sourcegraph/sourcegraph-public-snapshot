@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import { memo, useEffect } from 'react'
 
 import { getOverrideKey } from './lib/getOverrideKey'
 import { parseUrlOverrideFeatureFlags } from './lib/parseUrlOverrideFeatureFlags'
@@ -12,7 +12,7 @@ import { parseUrlOverrideFeatureFlags } from './lib/parseUrlOverrideFeatureFlags
  * Remove/reset local override: "/?feature-flag-key=my-feature"
  * Multiple values: /?feature-flag-key=my-feature-one,my-feature-two&feature-flag-value=false,true
  */
-export const OverrideFeatureFlagsAgent = React.memo(() => {
+export const OverrideFeatureFlagsAgent = memo(() => {
     useEffect(() => {
         try {
             const overrideFeatureFlags = parseUrlOverrideFeatureFlags(location.search) || {}

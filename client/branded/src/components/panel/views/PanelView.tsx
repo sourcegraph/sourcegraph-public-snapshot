@@ -1,4 +1,4 @@
-import React from 'react'
+import { memo } from 'react'
 
 import * as H from 'history'
 import { Observable } from 'rxjs'
@@ -28,7 +28,7 @@ interface Props extends ExtensionsControllerProps, SettingsCascadeProps, Telemet
 /**
  * A panel view contributed by an extension using {@link sourcegraph.app.createPanelView}.
  */
-export const PanelView = React.memo<Props>(props => {
+export const PanelView = memo<Props>(props => {
     const panelView = (
         <>
             {props.panelView.content && (

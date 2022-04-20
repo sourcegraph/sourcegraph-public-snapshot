@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import ContentSaveIcon from 'mdi-react/ContentSaveIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'

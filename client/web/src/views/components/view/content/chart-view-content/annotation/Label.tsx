@@ -1,7 +1,8 @@
 // This component is a fork of Label component from @visx/annotaion package
 // Replace this component by original when https://github.com/airbnb/visx/issues/1111 will be resolved
 
-import React, { ReactElement, useContext, useMemo } from 'react'
+import { ReactElement, useContext, useMemo } from 'react'
+import * as React from 'react'
 
 import { AnnotationContext } from '@visx/annotation'
 import Group from '@visx/group/lib/Group'

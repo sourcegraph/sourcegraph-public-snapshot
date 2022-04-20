@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import { useMemo, FunctionComponent } from 'react'
 
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
@@ -20,7 +20,7 @@ interface CodeSnippetProps {
     className?: string
 }
 
-export const CodeSnippet: React.FunctionComponent<CodeSnippetProps> = ({
+export const CodeSnippet: FunctionComponent<CodeSnippetProps> = ({
     code,
     language,
     className,

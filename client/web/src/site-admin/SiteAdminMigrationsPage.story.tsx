@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { storiesOf } from '@storybook/react'
 import * as H from 'history'
 import { Observable, of } from 'rxjs'

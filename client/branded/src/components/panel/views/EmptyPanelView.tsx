@@ -1,4 +1,4 @@
-import React from 'react'
+import { FunctionComponent } from 'react'
 
 import classNames from 'classnames'
 import CancelIcon from 'mdi-react/CancelIcon'
@@ -11,7 +11,7 @@ interface EmptyPanelViewProps {
     className?: string
 }
 
-export const EmptyPanelView: React.FunctionComponent<EmptyPanelViewProps> = props => {
+export const EmptyPanelView: FunctionComponent<EmptyPanelViewProps> = props => {
     const { className, children } = props
 
     return (

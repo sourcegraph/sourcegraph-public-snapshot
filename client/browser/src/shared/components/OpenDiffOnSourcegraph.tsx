@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { Component } from 'react'
 
 import classNames from 'classnames'
 import { Subject, Subscription } from 'rxjs'
@@ -22,7 +22,7 @@ interface State {
     fileDiff: FileDiffConnectionFields | undefined
 }
 
-export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
+export class OpenDiffOnSourcegraph extends Component<Props, State> {
     private subscriptions = new Subscription()
     private componentUpdates = new Subject<Props>()
 

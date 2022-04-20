@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { PureComponent } from 'react'
 
 import * as H from 'history'
 import AddIcon from 'mdi-react/AddIcon'
@@ -33,7 +33,7 @@ interface RegistryExtensionNodeSiteAdminState {
 }
 
 /** Displays an extension in a row with actions intended for site admins. */
-class RegistryExtensionNodeSiteAdminRow extends React.PureComponent<
+class RegistryExtensionNodeSiteAdminRow extends PureComponent<
     RegistryExtensionNodeSiteAdminProps,
     RegistryExtensionNodeSiteAdminState
 > {
@@ -143,7 +143,7 @@ class RegistryExtensionNodeSiteAdminRow extends React.PureComponent<
 interface Props extends RouteComponentProps<{}> {}
 
 /** Displays all registry extensions on this site. */
-export class SiteAdminRegistryExtensionsPage extends React.PureComponent<Props> {
+export class SiteAdminRegistryExtensionsPage extends PureComponent<Props> {
     public static FILTERS: FilteredConnectionFilter[] = [
         {
             id: 'filter',

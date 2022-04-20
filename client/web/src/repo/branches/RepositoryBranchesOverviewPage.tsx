@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { PureComponent } from 'react'
 
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import { RouteComponentProps } from 'react-router-dom'
@@ -81,7 +81,7 @@ interface State {
 }
 
 /** A page with an overview of the repository's branches. */
-export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, State> {
+export class RepositoryBranchesOverviewPage extends PureComponent<Props, State> {
     public state: State = {}
 
     private componentUpdates = new Subject<Props>()

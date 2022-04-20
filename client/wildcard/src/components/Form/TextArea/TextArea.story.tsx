@@ -1,4 +1,5 @@
-import React, { useCallback, useState } from 'react'
+import { useCallback, useState } from 'react'
+import * as React from 'react'
 
 import { Meta } from '@storybook/react'
 import { StoryFnReactReturnType } from '@storybook/react/dist/ts3.9/client/preview/types'

@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 /**
  * Displays a "/"-separated path with the last path component bolded.

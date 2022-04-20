@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { Meta, Story } from '@storybook/react'
 import delay from 'delay'
 import { noop } from 'lodash'

@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import { ExtensionViewsDirectorySection, ExtensionViewsDirectorySectionProps } from './ExtensionViewsDirectorySection'
 import { ExtensionViewsHomepageSection, ExtensionViewsHomepageSectionProps } from './ExtensionViewsHomepageSection'

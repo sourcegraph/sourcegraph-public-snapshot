@@ -1,4 +1,5 @@
-import React, { SVGProps } from 'react'
+import { SVGProps } from 'react'
+import * as React from 'react'
 
 import { LineChart, SeriesLikeChart } from '../../../../../../charts'
 import { SeriesBasedChartTypes } from '../../types'

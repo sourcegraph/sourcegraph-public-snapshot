@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
 import FormatLetterCaseIcon from 'mdi-react/FormatLetterCaseIcon'

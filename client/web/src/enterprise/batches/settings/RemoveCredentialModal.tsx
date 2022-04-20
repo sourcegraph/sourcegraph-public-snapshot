@@ -1,4 +1,5 @@
-import React, { useCallback } from 'react'
+import { useCallback } from 'react'
+import * as React from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, LoadingSpinner, Modal } from '@sourcegraph/wildcard'

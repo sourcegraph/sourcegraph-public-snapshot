@@ -1,4 +1,4 @@
-import React from 'react'
+import { forwardRef } from 'react'
 
 import classNames from 'classnames'
 
@@ -11,7 +11,7 @@ import styles from './Heading.module.scss'
 type H1Props = HeadingProps
 
 // eslint-disable-next-line id-length
-export const H1 = React.forwardRef(({ children, as = 'h1', className, ...props }, reference) => (
+export const H1 = forwardRef(({ children, as = 'h1', className, ...props }, reference) => (
     <Heading as={as} className={classNames(styles.h1, className)} {...props} ref={reference}>
         {children}
     </Heading>

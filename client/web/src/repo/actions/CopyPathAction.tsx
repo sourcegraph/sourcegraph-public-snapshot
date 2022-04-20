@@ -1,4 +1,5 @@
-import React, { useState, useLayoutEffect } from 'react'
+import { useState, useLayoutEffect } from 'react'
+import * as React from 'react'
 
 import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'

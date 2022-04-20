@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { PureComponent } from 'react'
 
 import { uniqueId } from 'lodash'
 import { from, merge, Subscription } from 'rxjs'
@@ -27,7 +27,7 @@ interface NotificationsState {
 /**
  * A notifications center that displays global, non-modal messages.
  */
-export class Notifications extends React.PureComponent<NotificationsProps, NotificationsState> {
+export class Notifications extends PureComponent<NotificationsProps, NotificationsState> {
     /**
      * The maximum number of notifications at a time. Older notifications are truncated when the length exceeds
      * this number.

@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import { Page } from '../../../../components/Page'
 import { useUiFeatures } from '../../hooks/use-ui-features'

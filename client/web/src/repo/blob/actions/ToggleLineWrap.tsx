@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { PureComponent } from 'react'
 
 import WrapIcon from 'mdi-react/WrapIcon'
 import { fromEvent, Subject, Subscription } from 'rxjs'
@@ -14,7 +14,7 @@ import { RepoHeaderContext } from '../../RepoHeader'
 /**
  * A repository header action that toggles the line wrapping behavior for long lines in code files.
  */
-export class ToggleLineWrap extends React.PureComponent<
+export class ToggleLineWrap extends PureComponent<
     {
         /**
          * Called when the line wrapping behavior is toggled, with the new value (true means on,

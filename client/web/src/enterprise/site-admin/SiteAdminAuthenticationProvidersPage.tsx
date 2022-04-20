@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { PureComponent, Component } from 'react'
 
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
@@ -22,7 +22,7 @@ interface AuthProviderNodeProps {
 /** Whether to show experimental auth features. */
 export const authExp = localStorage.getItem('authExp') !== null
 
-class AuthProviderNode extends React.PureComponent<AuthProviderNodeProps> {
+class AuthProviderNode extends PureComponent<AuthProviderNodeProps> {
     public render(): JSX.Element | null {
         return (
             <li className="list-group-item py-2">
@@ -71,7 +71,7 @@ class FilteredAuthProviderConnection extends FilteredConnection<GQL.IAuthProvide
 /**
  * A page displaying the auth providers in site configuration.
  */
-export class SiteAdminAuthenticationProvidersPage extends React.Component<Props> {
+export class SiteAdminAuthenticationProvidersPage extends Component<Props> {
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminAuthentication')
     }

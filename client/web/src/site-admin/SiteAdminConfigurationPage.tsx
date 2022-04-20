@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { Component } from 'react'
 
 import * as jsonc from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
@@ -219,7 +219,7 @@ const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
 /**
  * A page displaying the site configuration.
  */
-export class SiteAdminConfigurationPage extends React.Component<Props, State> {
+export class SiteAdminConfigurationPage extends Component<Props, State> {
     public state: State = {
         loading: true,
         restartToApply: window.context.needServerRestart,

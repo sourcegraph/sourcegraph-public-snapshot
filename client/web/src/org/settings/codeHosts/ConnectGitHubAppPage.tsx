@@ -1,4 +1,5 @@
-import React, { useEffect, useState, HTMLAttributes } from 'react'
+import { useEffect, useState, HTMLAttributes } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'

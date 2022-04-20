@@ -1,4 +1,4 @@
-import React from 'react'
+import { PureComponent } from 'react'
 
 import classNames from 'classnames'
 import { range, isEqual } from 'lodash'
@@ -102,7 +102,7 @@ const domFunctions: DOMFunctions = {
 /**
  * A code excerpt that displays syntax highlighting and match range highlighting.
  */
-export class CodeExcerpt extends React.PureComponent<Props, State> {
+export class CodeExcerpt extends PureComponent<Props, State> {
     public state: State = {}
     private tableContainerElements = new BehaviorSubject<HTMLElement | null>(null)
     private propsChanges = new Subject<Props>()

@@ -1,4 +1,5 @@
-import React, { ReactElement, useCallback, useMemo, useState } from 'react'
+import { ReactElement, useCallback, useMemo, useState } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'

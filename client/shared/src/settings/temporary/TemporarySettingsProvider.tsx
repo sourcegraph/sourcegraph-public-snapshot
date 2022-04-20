@@ -1,4 +1,5 @@
-import React, { createContext, useEffect } from 'react'
+import { createContext, useEffect } from 'react'
+import * as React from 'react'
 
 import { migrateLocalStorageToTemporarySettings } from './migrateLocalStorageToTemporarySettings'
 import { TemporarySettingsStorage } from './TemporarySettingsStorage'

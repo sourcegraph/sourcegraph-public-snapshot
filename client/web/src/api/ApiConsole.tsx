@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { PureComponent } from 'react'
 
 import * as _graphiqlModule from 'graphiql' // type only
 import * as H from 'history'
@@ -58,7 +58,7 @@ interface Parameters {
 /**
  * Component to show the GraphQL API console.
  */
-export class ApiConsole extends React.PureComponent<Props, State> {
+export class ApiConsole extends PureComponent<Props, State> {
     public state: State = { parameters: {} }
 
     private updates = new Subject<Parameters>()

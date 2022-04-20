@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import { splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { Button, Modal } from '@sourcegraph/wildcard'

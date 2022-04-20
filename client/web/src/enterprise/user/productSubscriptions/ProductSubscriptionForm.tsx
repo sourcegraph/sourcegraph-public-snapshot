@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
+import * as React from 'react'
 
 import * as H from 'history'
 import { ReactStripeElements } from 'react-stripe-elements'

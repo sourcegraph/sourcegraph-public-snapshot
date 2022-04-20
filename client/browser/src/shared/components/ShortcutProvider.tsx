@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { Component } from 'react'
 
 import { Context, ContextProvider, ProviderProps, ShortcutManager } from '@slimsag/react-shortcuts'
 
@@ -23,7 +23,7 @@ interface GlobalContext {
 // manage it ourselves here. If we did not do this, we would have multiple
 // ShortcutManagers and each would register their own conflicting document
 // event handlers.
-export class ShortcutProvider extends React.Component<ProviderProps, never> {
+export class ShortcutProvider extends Component<ProviderProps, never> {
     public componentDidMount(): void {
         const globals = global as GlobalContext
         if (!globals.browserExtensionShortcutManager) {

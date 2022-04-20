@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
+import * as React from 'react'
 
 import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'

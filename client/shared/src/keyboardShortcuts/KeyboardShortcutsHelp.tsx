@@ -1,4 +1,5 @@
-import React, { useCallback, useState } from 'react'
+import { useCallback, useState } from 'react'
+import * as React from 'react'
 
 import { Shortcut, ModifierKey, Key } from '@slimsag/react-shortcuts'
 import CloseIcon from 'mdi-react/CloseIcon'

@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react'
+import { useMemo } from 'react'
+import * as React from 'react'
 
 import { SubmissionErrors } from '../../../../components/form/hooks/useForm'
 import { MinimalLangStatsInsightData } from '../../../../core/backend/code-insights-backend-types'

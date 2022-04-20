@@ -1,4 +1,5 @@
-import React, { useEffect, useCallback, useState, useMemo } from 'react'
+import { useEffect, useCallback, useState, useMemo } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'

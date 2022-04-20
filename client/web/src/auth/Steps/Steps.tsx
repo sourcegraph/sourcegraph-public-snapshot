@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useReducer } from 'react'
+import { useEffect, useMemo, useReducer } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'

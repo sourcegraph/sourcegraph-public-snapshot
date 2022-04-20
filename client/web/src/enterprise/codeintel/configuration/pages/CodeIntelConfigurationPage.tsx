@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
+import { Fragment, FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
@@ -165,13 +165,13 @@ export const PoliciesNode: FunctionComponent<PoliciesNodeProps> = ({ node: polic
                             {' '}
                             in repositories matching{' '}
                             {policy.repositoryPatterns.map((pattern, index) => (
-                                <React.Fragment key={pattern}>
+                                <Fragment key={pattern}>
                                     {index !== 0 &&
                                         (index === (policy.repositoryPatterns || []).length - 1 ? <>, or </> : <>, </>)}
                                     <span key={pattern} className="text-monospace">
                                         {pattern}
                                     </span>
-                                </React.Fragment>
+                                </Fragment>
                             ))}
                         </>
                     ) : (

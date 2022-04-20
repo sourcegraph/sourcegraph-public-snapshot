@@ -1,4 +1,5 @@
-import React, { RefObject, useEffect, useMemo, useRef } from 'react'
+import { RefObject, useEffect, useMemo, useRef } from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'

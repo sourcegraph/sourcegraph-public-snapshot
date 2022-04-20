@@ -1,4 +1,5 @@
-import React, { useEffect, useCallback, useMemo } from 'react'
+import { useEffect, useCallback, useMemo } from 'react'
+import * as React from 'react'
 
 import * as H from 'history'
 import { Observable } from 'rxjs'

@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { PureComponent } from 'react'
 
 import { RouteComponentProps } from 'react-router'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
@@ -99,7 +99,7 @@ interface State {
 }
 
 /** A page with an overview of the comparison. */
-export class RepositoryCompareOverviewPage extends React.PureComponent<Props, State> {
+export class RepositoryCompareOverviewPage extends PureComponent<Props, State> {
     public state: State = {}
 
     private componentUpdates = new Subject<Props>()
