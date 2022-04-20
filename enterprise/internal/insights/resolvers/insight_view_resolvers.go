@@ -117,6 +117,9 @@ func (i *insightViewResolver) registerDataSeriesGenerators() {
 	jitCaptureGroupGenerator.SetNext(recordedCaptureGroupGenerator)
 	recordedCaptureGroupGenerator.SetNext(recordedGenerator)
 	recordedGenerator.SetNext(jitStreamingGenerator)
+	// build the chain of generators
+	jitCaptureGroupGenerator.SetNext(recordedCaptureGroupGenerator)
+	recordedCaptureGroupGenerator.SetNext(recordedGenerator)
 
 	// set the local variable to the first generator in the chain
 	i.dataSeriesGenerator = jitCaptureGroupGenerator
@@ -133,6 +136,9 @@ func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.
 	}
 	// Ensure that the data series generators have been registered
 	i.registerDataSeriesGenerators()
+	if i.dataSeriesGenerator == nil {
+		return nil, errors.New("no dataseries resolver generator registered")
+	}
 
 	var filters *types.InsightViewFilters
 	if i.overrideFilters != nil {

@@ -10,30 +10,40 @@ import (
 
 func NormalizeRepo(input api.RepoName) api.RepoName {
 	repo := string(input)
-	repo = strings.TrimSuffix(repo, ".git")
 
 	// Clean with a "/" so we get out an absolute path
 	repo = path.Clean("/" + repo)
 	repo = strings.TrimPrefix(repo, "/")
 
-	// Check if we need to do lowercasing. If we don't we can avoid the
-	// allocations we do later in the function.
-	if !hasUpperASCII(repo) {
-		return api.RepoName(repo)
-	}
-
+	// This needs to be called after "path.Clean" because the host might be removed
+	// e.g. github.com/../foo/bar
+	host, repoPath := "", ""
 	slash := strings.IndexByte(repo, '/')
 	if slash == -1 {
-		return api.RepoName(repo)
-	}
-	host := strings.ToLower(repo[:slash]) // host is always case insensitive
-	path := repo[slash:]
-
-	if host == "github.com" {
-		return api.RepoName(host + strings.ToLower(path)) // GitHub is fully case insensitive
+		repoPath = repo
+	} else {
+		// host is always case-insensitive
+		host, repoPath = strings.ToLower(repo[:slash]), repo[slash:]
 	}
 
-	return api.RepoName(host + path) // other git hosts can be case sensitive on path
+	trimGit := func(s string) string {
+		s = strings.TrimSuffix(s, ".git")
+		return strings.TrimSuffix(s, "/")
+	}
+
+	switch host {
+	case "github.com":
+		repoPath = trimGit(repoPath)
+
+		// GitHub is fully case-insensitive.
+		repoPath = strings.ToLower(repoPath)
+	case "go":
+		// support suffix ".git"
+	default:
+		repoPath = trimGit(repoPath)
+	}
+
+	return api.RepoName(host + repoPath)
 }
 
 // hasUpperASCII returns true if s contains any upper-case letters in ASCII,

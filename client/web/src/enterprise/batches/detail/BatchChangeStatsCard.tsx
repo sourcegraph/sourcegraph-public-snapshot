@@ -49,11 +49,19 @@ export const BatchChangeStatsCard: React.FunctionComponent<BatchChangeStatsCardP
         <div className={classNames(className)}>
             <div className="d-flex flex-wrap align-items-center flex-grow-1">
                 <h2 className="m-0">
-                    <BatchChangeStateBadge isClosed={!!closedAt} className={styles.batchChangeStatsCardStateBadge} />
+                    {/*
+                        a11y-ignore
+                        Rule: "color-contrast" (Elements must have sufficient color contrast)
+                        GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                    */}
+                    <BatchChangeStateBadge
+                        isClosed={!!closedAt}
+                        className={classNames('a11y-ignore', styles.batchChangeStatsCardStateBadge)}
+                    />
                 </h2>
                 <div className={classNames(styles.batchChangeStatsCardDivider, 'mx-3')} />
                 <div className="d-flex align-items-center">
-                    <h1 className="d-inline mb-0">
+                    <h1 className="d-inline mb-0" aria-label="Batch Change Status">
                         <Icon
                             className={classNames('mr-2', isCompleted ? 'text-success' : 'text-muted')}
                             as={BatchChangeStatusIcon}

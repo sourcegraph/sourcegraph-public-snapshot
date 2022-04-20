@@ -12,7 +12,6 @@ import { InsightContentType } from '../../../core/types/insight/common'
 import { useDeleteInsight } from '../../../hooks/use-delete-insight'
 import { LazyQueryStatus } from '../../../hooks/use-parallel-requests/use-parallel-request'
 import { useRemoveInsightFromDashboard } from '../../../hooks/use-remove-insight'
-import { DashboardInsightsContext } from '../../../pages/dashboards/dashboard-page/components/dashboards-content/components/dashboard-inisghts/DashboardInsightsContext'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../pings'
 import {
     CategoricalBasedChartTypes,
@@ -28,6 +27,7 @@ import {
 import { useInsightData } from '../hooks/use-insight-data'
 
 import { InsightContextMenu } from './insight-context-menu/InsightContextMenu'
+import { InsightContext } from './InsightContext'
 
 interface BuiltInInsightProps extends TelemetryProps, React.HTMLAttributes<HTMLElement> {
     insight: SearchRuntimeBasedInsight | LangStatsInsight
@@ -46,7 +46,7 @@ interface BuiltInInsightProps extends TelemetryProps, React.HTMLAttributes<HTMLE
 export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
     const { insight, resizing, telemetryService, innerRef, ...otherProps } = props
     const { getBuiltInInsightData } = useContext(CodeInsightsBackendContext)
-    const { dashboard } = useContext(DashboardInsightsContext)
+    const { dashboard } = useContext(InsightContext)
 
     const insightCardReference = useRef<HTMLDivElement>(null)
     const mergedInsightCardReference = useMergeRefs([insightCardReference, innerRef])
@@ -60,8 +60,8 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
 
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
-    const { delete: handleDelete, loading: isDeleting } = useDeleteInsight()
-    const { remove: handleRemove, loading: isRemoving } = useRemoveInsightFromDashboard()
+    const { loading: isDeleting } = useDeleteInsight()
+    const { loading: isRemoving } = useRemoveInsightFromDashboard()
 
     const { trackDatumClicks, trackMouseLeave, trackMouseEnter } = useCodeInsightViewPings({
         telemetryService,
@@ -84,8 +84,6 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
                         menuButtonClassName="ml-1 d-inline-flex"
                         zeroYAxisMin={zeroYAxisMin}
                         onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
-                        onRemoveFromDashboard={dashboard => handleRemove({ insight, dashboard })}
-                        onDelete={() => handleDelete(insight)}
                     />
                 )}
             </InsightCardHeader>

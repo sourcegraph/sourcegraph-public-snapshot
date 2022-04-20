@@ -10,11 +10,12 @@ import { noop } from 'lodash'
 
 import { SeriesLikeChart } from '../../types'
 
-import { AxisBottom, AxisLeft, Tooltip, TooltipContent, NonActiveBackground, PointGlyph } from './components'
+import { AxisBottom, AxisLeft, Tooltip, TooltipContent, PointGlyph } from './components'
 import { StackedArea } from './components/stacked-area/StackedArea'
 import { useChartEventHandlers } from './hooks/event-listeners'
 import { Point } from './types'
 import {
+    SeriesDatum,
     getDatumValue,
     isDatumWithValidNumber,
     getSeriesData,
@@ -22,7 +23,6 @@ import {
     getChartContentSizes,
     getMinMaxBoundaries,
 } from './utils'
-import { SeriesDatum } from './utils/data-series-processing/types'
 
 import styles from './LineChart.module.scss'
 
@@ -156,17 +156,6 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
             />
 
             <AxisBottom ref={setXAxisElement} scale={xScale} top={margin.top + height} width={width} />
-
-            <NonActiveBackground
-                data={data}
-                series={series}
-                width={width}
-                height={height}
-                top={margin.top}
-                left={margin.left}
-                getXValue={getXValue}
-                xScale={xScale}
-            />
 
             <Group top={margin.top}>
                 {stacked && <StackedArea dataSeries={dataSeries} xScale={xScale} yScale={yScale} />}

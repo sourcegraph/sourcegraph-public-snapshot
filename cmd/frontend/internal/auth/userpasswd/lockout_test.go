@@ -98,7 +98,7 @@ func TestLockoutStore(t *testing.T) {
 
 		s := NewLockoutStore(2, time.Minute, time.Second)
 
-		path, _, err := s.GenerateUnlockAccountUrl(1)
+		path, _, err := s.GenerateUnlockAccountURL(1)
 
 		assert.EqualError(t, err, "signing key not provided, cannot validate JWT on unlock account URL. Please add AuthUnlockAccountLinkSigningKey to site configuration.")
 		assert.Empty(t, path)
@@ -113,7 +113,7 @@ func TestLockoutStore(t *testing.T) {
 		mockSiteConfigSigningKey()
 		defer mockDefaultSiteConfig()
 
-		path, _, err := s.GenerateUnlockAccountUrl(1)
+		path, _, err := s.GenerateUnlockAccountURL(1)
 
 		assert.Empty(t, err)
 
@@ -130,7 +130,7 @@ func TestLockoutStore(t *testing.T) {
 		signingKey := mockSiteConfigSigningKey()
 		defer mockDefaultSiteConfig()
 
-		_, token, err := s.GenerateUnlockAccountUrl(1)
+		_, token, err := s.GenerateUnlockAccountURL(1)
 
 		assert.Empty(t, err)
 
@@ -168,7 +168,7 @@ func TestLockoutStore(t *testing.T) {
 		mockSiteConfigSigningKey()
 		defer mockDefaultSiteConfig()
 
-		_, token, err := s.GenerateUnlockAccountUrl(1)
+		_, token, err := s.GenerateUnlockAccountURL(1)
 
 		assert.Empty(t, err)
 
@@ -190,7 +190,7 @@ func TestLockoutStore(t *testing.T) {
 		mockSiteConfigSigningKey()
 		defer mockDefaultSiteConfig()
 
-		_, token, err := s.GenerateUnlockAccountUrl(1)
+		_, token, err := s.GenerateUnlockAccountURL(1)
 
 		assert.Empty(t, err)
 

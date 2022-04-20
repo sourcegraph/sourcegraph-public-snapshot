@@ -251,6 +251,10 @@ type Server struct {
 	// Used for setRepoSizes function to run only during the first run of janitor
 	setRepoSizesOnce sync.Once
 
+	// GlobalBatchLogSemaphore is a semaphore shared between all requests to ensure that a
+	// maximum number of Git subprocesses are active for all /batch-log requests combined.
+	GlobalBatchLogSemaphore *semaphore.Weighted
+
 	// operations provide uniform observability via internal/observation. This value is
 	// set by RegisterMetrics when compiled as part of the gitserver binary. The server
 	// method ensureOperations should be used in all references to avoid a nil pointer
@@ -1217,24 +1221,29 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Perform requests in each repository in the input batch. We perform these commands
-		// concurrently, but only allow four comands to be in-flight at a time.
+		// concurrently, but only allow for so many commands to be in-flight at a time so that
+		// we don't overwhelm a shard with either a large request or too many concurrent batch
+		// requests.
 
-		limit := int64(4)
-		sem := semaphore.NewWeighted(limit)
 		g, ctx := errgroup.WithContext(ctx)
-
 		results := make([]protocol.BatchLogResult, len(req.RepoCommits))
+
+		if s.GlobalBatchLogSemaphore == nil {
+			return http.StatusInternalServerError, errors.New("s.GlobalBatchLogSemaphore not initialized")
+		}
 
 		for i, repoCommit := range req.RepoCommits {
 			// Avoid capture of loop variables
 			i, repoCommit := i, repoCommit
 
-			if err := sem.Acquire(ctx, 1); err != nil {
+			start := time.Now()
+			if err := s.GlobalBatchLogSemaphore.Acquire(ctx, 1); err != nil {
 				return http.StatusInternalServerError, err
 			}
+			s.operations.batchLogSemaphoreWait.Observe(time.Since(start).Seconds())
 
 			g.Go(func() error {
-				defer sem.Release(1)
+				defer s.GlobalBatchLogSemaphore.Release(1)
 
 				output, isRepoCloned, err := performGitLogCommand(ctx, repoCommit, req.Format)
 				if err == nil && !isRepoCloned {
@@ -1245,8 +1254,8 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 					errMessage = err.Error()
 				}
 
-				// Concurrent write results to shared slice. This slice is already properly
-				// sized and each goroutine writes to a unique index exactly once. There should
+				// Concurrently write results to shared slice. This slice is already properly
+				// sized, and each goroutine writes to a unique index exactly once. There should
 				// be no data race conditions possible here.
 
 				results[i] = protocol.BatchLogResult{

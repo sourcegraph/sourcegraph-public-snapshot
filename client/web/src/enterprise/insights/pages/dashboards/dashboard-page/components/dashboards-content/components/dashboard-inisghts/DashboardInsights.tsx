@@ -3,19 +3,18 @@ import React, { useContext, useMemo } from 'react'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
-import { SmartInsightsViewGrid } from '../../../../../../../components/insights-view-grid/SmartInsightsViewGrid'
+import { SmartInsightsViewGrid, InsightContext } from '../../../../../../../components'
 import { CodeInsightsBackendContext, InsightDashboard } from '../../../../../../../core'
 import { EmptyInsightDashboard } from '../empty-insight-dashboard/EmptyInsightDashboard'
 
-import { DashboardInsightsContext } from './DashboardInsightsContext'
-
 interface DashboardInsightsProps extends TelemetryProps {
     dashboard: InsightDashboard
+    className?: string
     onAddInsightRequest: () => void
 }
 
 export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> = props => {
-    const { telemetryService, dashboard, onAddInsightRequest } = props
+    const { telemetryService, dashboard, className, onAddInsightRequest } = props
 
     const { getInsights } = useContext(CodeInsightsBackendContext)
 
@@ -28,12 +27,12 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
     }
 
     return (
-        <DashboardInsightsContext.Provider value={{ dashboard }}>
+        <InsightContext.Provider value={{ dashboard }}>
             {insights.length > 0 ? (
-                <SmartInsightsViewGrid insights={insights} telemetryService={telemetryService} />
+                <SmartInsightsViewGrid insights={insights} telemetryService={telemetryService} className={className} />
             ) : (
                 <EmptyInsightDashboard dashboard={dashboard} onAddInsight={onAddInsightRequest} />
             )}
-        </DashboardInsightsContext.Provider>
+        </InsightContext.Provider>
     )
 }

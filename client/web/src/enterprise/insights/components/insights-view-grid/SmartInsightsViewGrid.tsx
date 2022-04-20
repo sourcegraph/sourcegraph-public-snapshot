@@ -18,6 +18,7 @@ interface SmartInsightsViewGridProps extends TelemetryProps {
      * insights.
      */
     insights: Insight[]
+    className?: string
 }
 
 /**
@@ -25,7 +26,7 @@ interface SmartInsightsViewGridProps extends TelemetryProps {
  * the insights settings (settings cascade subjects).
  */
 export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGridProps> = memo(props => {
-    const { telemetryService, insights } = props
+    const { telemetryService, insights, className } = props
 
     const [layouts, setLayouts] = useState<Layouts>({})
     const [resizingView, setResizeView] = useState<Layout | null>(null)
@@ -73,6 +74,7 @@ export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGri
     return (
         <ViewGrid
             layouts={layouts}
+            className={className}
             onResizeStart={handleResizeStart}
             onResizeStop={handleResizeStop}
             onDragStart={trackUICustomization}
