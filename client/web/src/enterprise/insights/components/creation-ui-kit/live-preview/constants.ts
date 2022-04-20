@@ -1,4 +1,4 @@
-import { SeriesChartContent } from '../../../../../../core'
+import { SeriesChartContent } from '../../../core'
 
 const getYValue = (datum: MockSeriesDatum): number => datum.value
 const getXValue = (datum: MockSeriesDatum): Date => new Date(datum.x)
@@ -8,7 +8,7 @@ interface MockSeriesDatum {
     x: number
 }
 
-export const MOCK_CHART_CONTENT: SeriesChartContent<MockSeriesDatum> = {
+export const SERIES_MOCK_CHART: SeriesChartContent<MockSeriesDatum> = {
     series: [
         {
             id: 'series_001',
