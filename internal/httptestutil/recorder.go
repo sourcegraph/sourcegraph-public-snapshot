@@ -30,7 +30,7 @@ func NewRecorder(file string, record bool, filters ...cassette.Filter) (*recorde
 	filters = append(filters, func(i *cassette.Interaction) error {
 		// Delete anything that looks risky on both requests and responses
 		riskyHeaderKeys := []string{
-			"auth", "cookie", "token",
+			"auth", "bearer", "cookie", "token",
 		}
 		for _, headers := range []http.Header{i.Request.Headers, i.Response.Headers} {
 			for k := range headers {
