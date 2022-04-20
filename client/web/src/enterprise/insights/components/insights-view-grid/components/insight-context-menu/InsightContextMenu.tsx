@@ -96,7 +96,7 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
 
                         {quickFixUrl && showQuickFix && (
                             <MenuLink as={Link} className={styles.item} to={quickFixUrl}>
-                                Quick fix
+                                Golang quick fixes
                             </MenuLink>
                         )}
 
