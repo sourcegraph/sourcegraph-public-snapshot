@@ -21,7 +21,7 @@ docker container run -e LOGO=false ... sourcegraph/server
 
 See [sourcegraph/sourcegraph#398](https://github.com/sourcegraph/sourcegraph/issues/398) for more information.
 
-> WARNING: Running Sourcegraph on ARM / ARM64 images is not supported for production deployments.
+> WARNING: Running Sourcegraph on Docker Toolbox for Windows is not supported for production deployments.
 
 ### Submitting a metrics dump
 
