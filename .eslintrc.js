@@ -132,6 +132,14 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
       },
     ],
     'react/jsx-no-target-blank': ['error', { allowReferrer: true }],
+    'no-restricted-syntax': [
+      'warn',
+      {
+        selector: 'CallExpression[callee.name="useLocalStorage"]',
+        message:
+          'Consider using useTemporarySetting instead of useLocalStorage so settings are synced when users log in elsewhere. More info at https://docs.sourcegraph.com/dev/background-information/web/temporary_settings',
+      },
+    ],
   },
   overrides: [
     {
