@@ -70,7 +70,6 @@ func (r *Resolver) Paginate(ctx context.Context, handle func(*Resolved) error) (
 		tr.Finish()
 	}()
 
-
 	opts := r.Opts
 	if opts.Limit == 0 {
 		opts.Limit = 500
