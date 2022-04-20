@@ -9,7 +9,7 @@ import (
 )
 
 func TestExport(t *testing.T) {
-	logger, exportLogs := Get(t)
+	logger, exportLogs := GetCaptured(t)
 	assert.NotNil(t, logger)
 
 	logger.Info("hello world", log.String("key", "value"))
@@ -19,6 +19,4 @@ func TestExport(t *testing.T) {
 	assert.Equal(t, logs[0].Scope, "TestExport")
 	assert.Equal(t, logs[0].Message, "hello world")
 	assert.Equal(t, logs[0].Fields["Attributes"], map[string]interface{}{"key": "value"})
-
-	Dump(t, logs)
 }

@@ -112,16 +112,18 @@ import (
   "os"
   "testing"
 
-  "github.com/sourcegraph/sourcegraph/lib/log"
+  "github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestMain(m *testing.M) {
-  Init(m, log.LevelDebug)
+  logtest.Init(m)
   os.Exit(m.Run())
 }
 ```
 
-If the code you are testing accepts `Logger` instances as a parameter, you can skip the above and simply use `logtest.Get`, which also provides a callback for exporting logs:
+You can control the log level used during initialization with `logtest.InitWithLevel`.
+
+If the code you are testing accepts `Logger` instances as a parameter, you can skip the above and simply use `logtest.Get` to instantiate a `Logger` to provide. You can also use `logtest.GetCaptured`, which also provides a callback for exporting logs, though be wary of making overly strict assertions on log entries to avoid brittle tests:
 
 ```go
 import (
@@ -131,15 +133,13 @@ import (
 )
 
 func TestFooBar(t *testing.T) {
-  logger, exportLogs := logtest.Get(t)
+  logger, exportLogs := logtest.GetCaptured(t)
 
   t.Run("test my thing", func(t *testing.T) {
-    myThing(logger)
+    fooBar(logger)
   })
 
   // export log entries that were written during this time
   logs := exportLogs()
-  // assert against logs, or simply dump them
-  logtest.DumpIfFailed(t, logs)
 }
 ```

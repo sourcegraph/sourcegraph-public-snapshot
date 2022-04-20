@@ -1,7 +1,7 @@
 package logtest
 
 import (
-	"encoding/json"
+	"flag"
 	"testing"
 	"time"
 
@@ -17,15 +17,26 @@ import (
 
 // Init can be used to instantiate the log package for running tests, to be called in
 // TestMain for the relevant package. Remember to call (*testing.M).Run() after initializing
-// the logger! Initialization sets the resource name to the name of the calling package.
+// the logger!
 //
 // testing.M is an unused argument, used to indicate this function should be called in
 // TestMain.
-//
-// level can be used to configure the log level for this package's tests, which can be
-// helpful for exceptionally noisy tests. You can also consider using 'libtest.Get(t)'
-// and printing logs manually with 'DumpLogs'
-func Init(_ *testing.M, level log.Level) {
+func Init(_ *testing.M) {
+	// ensure Verbose is set up
+	testing.Init()
+	flag.Parse()
+	// set reasonable defaults
+	if testing.Verbose() {
+		initGlobal(zapcore.DebugLevel)
+	} else {
+		initGlobal(zapcore.WarnLevel)
+	}
+}
+
+// InitWithLevel does the same thing as Init, but uses the provided log level to configur
+// the log level for this package's tests, which can be helpful for exceptionally noisy
+// tests.
+func InitWithLevel(_ *testing.M, level log.Level) {
 	initGlobal(level.Parse())
 }
 
@@ -49,17 +60,22 @@ type CapturedLog struct {
 	Fields  map[string]interface{}
 }
 
-// Get retrieves a logger from log.Get with the test's name and returns a callback,
-// dumpLogs, which flushes the logger buffer and returns log entries. The returned logger
-// is scoped to the test name.
+// Get retrieves a logger from log.Get with the test's name.
 //
 // Unlike log.Get(), logtest.Get() is safe to use without initialization.
-func Get(t testing.TB) (logger log.Logger, exportLogs func() []CapturedLog) {
+func Get(t testing.TB) log.Logger {
 	// initialize just in case - the underlying call to log.Init is no-op if this has
 	// already been done. We allow this in testing for convenience.
-	initGlobal(zapcore.DebugLevel)
+	Init(nil)
 
-	root := log.Get(t.Name())
+	return log.Get(t.Name())
+}
+
+// GetCaptured retrieves a logger from log.Get with the test's name. and returns a
+// callback, dumpLogs, which flushes the logger buffer and returns log entries. The
+// returned logger does not
+func GetCaptured(t testing.TB) (logger log.Logger, exportLogs func() []CapturedLog) {
+	root := Get(t)
 
 	// Cast into internal API
 	configurable := root.(configurableAdapter)
@@ -67,9 +83,9 @@ func Get(t testing.TB) (logger log.Logger, exportLogs func() []CapturedLog) {
 	observerCore, entries := observer.New(zap.DebugLevel) // capture all levels
 	logger = configurable.WithOptions(zap.WrapCore(func(c zapcore.Core) zapcore.Core {
 		// Set up AttributesNamespace to mirror the underlying core created by log.Get()
-		observeCore := observerCore.With([]zapcore.Field{otfields.AttributesNamespace})
+		observerCore = observerCore.With([]zapcore.Field{otfields.AttributesNamespace})
 		// Tee to both the underlying core, and our observer core
-		return zapcore.NewTee(observeCore, c)
+		return zapcore.NewTee(observerCore, c)
 	}))
 
 	return logger, func() []CapturedLog {
@@ -87,23 +103,4 @@ func Get(t testing.TB) (logger log.Logger, exportLogs func() []CapturedLog) {
 		}
 		return logs
 	}
-}
-
-// Dump dumps a JSON summary of each log entry.
-func Dump(t testing.TB, logs []CapturedLog) {
-	for _, log := range logs {
-		b, err := json.Marshal(&log)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-		t.Log(string(b))
-	}
-}
-
-// DumpLogsIfFailed calls Dump if the test failed, otherwise does nothing.
-func DumpIfFailed(t testing.TB, logs []CapturedLog) {
-	if !t.Failed() {
-		return
-	}
-	Dump(t, logs)
 }
