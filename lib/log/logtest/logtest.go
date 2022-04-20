@@ -2,8 +2,6 @@ package logtest
 
 import (
 	"encoding/json"
-	"runtime"
-	"strings"
 	"testing"
 	"time"
 
@@ -28,13 +26,12 @@ import (
 // helpful for exceptionally noisy tests. You can also consider using 'libtest.Get(t)'
 // and printing logs manually with 'DumpLogs'
 func Init(_ *testing.M, level log.Level) {
-	pc, _, _, _ := runtime.Caller(1)
-	details := runtime.FuncForPC(pc)
-	nameParts := strings.Split(details.Name(), ".")
-	global.Init(otfields.Resource{
-		Name:      strings.Join(nameParts[:len(nameParts)-1], "."),
-		Namespace: "test",
-	}, zap.NewAtomicLevelAt(level.Parse()), encoders.OutputConsole, true)
+	initGlobal(level.Parse())
+}
+
+func initGlobal(level zapcore.Level) {
+	// use an empty resource, we don't log output Resource in dev mode anyway
+	global.Init(otfields.Resource{}, zap.NewAtomicLevelAt(level), encoders.OutputConsole, true)
 }
 
 // configurableAdapter exposes internal APIs on zapAdapter
@@ -55,13 +52,19 @@ type CapturedLog struct {
 // Get retrieves a logger from log.Get with the test's name and returns a callback,
 // dumpLogs, which flushes the logger buffer and returns log entries. The returned logger
 // is scoped to the test name.
+//
+// Unlike log.Get(), logtest.Get() is safe to use without initialization.
 func Get(t testing.TB) (logger log.Logger, exportLogs func() []CapturedLog) {
+	// initialize just in case - the underlying call to log.Init is no-op if this has
+	// already been done. We allow this in testing for convenience.
+	initGlobal(zapcore.DebugLevel)
+
 	root := log.Get(t.Name())
 
 	// Cast into internal API
 	configurable := root.(configurableAdapter)
 
-	observerCore, entries := observer.New(zap.DebugLevel) // capture levels
+	observerCore, entries := observer.New(zap.DebugLevel) // capture all levels
 	logger = configurable.WithOptions(zap.WrapCore(func(c zapcore.Core) zapcore.Core {
 		// Set up AttributesNamespace to mirror the underlying core created by log.Get()
 		observeCore := observerCore.With([]zapcore.Field{otfields.AttributesNamespace})
@@ -86,8 +89,8 @@ func Get(t testing.TB) (logger log.Logger, exportLogs func() []CapturedLog) {
 	}
 }
 
-// DumpLogs dumps a JSON summary of each log entry.
-func DumpLogs(t testing.TB, logs []CapturedLog) {
+// Dump dumps a JSON summary of each log entry.
+func Dump(t testing.TB, logs []CapturedLog) {
 	for _, log := range logs {
 		b, err := json.Marshal(&log)
 		if err != nil {
@@ -97,10 +100,10 @@ func DumpLogs(t testing.TB, logs []CapturedLog) {
 	}
 }
 
-// DumpLogsIfFailed calls DumpLogs if the test failed, otherwise does nothing.
-func DumpLogsIfFailed(t testing.TB, logs []CapturedLog) {
+// DumpLogsIfFailed calls Dump if the test failed, otherwise does nothing.
+func DumpIfFailed(t testing.TB, logs []CapturedLog) {
 	if !t.Failed() {
 		return
 	}
-	DumpLogs(t, logs)
+	Dump(t, logs)
 }
