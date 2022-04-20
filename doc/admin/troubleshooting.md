@@ -21,6 +21,8 @@ docker container run -e LOGO=false ... sourcegraph/server
 
 See [sourcegraph/sourcegraph#398](https://github.com/sourcegraph/sourcegraph/issues/398) for more information.
 
+> WARNING: Running Sourcegraph on ARM / ARM64 images is not supported for production deployments.
+
 ### Submitting a metrics dump
 
 If you encounter performance or instability issues with Sourcegraph, we may ask you to submit a metrics dump to us. This allows us to inspect the performance and health of various parts of your Sourcegraph instance in the past and can often be the most effective way for us to identify the cause of your issue.
