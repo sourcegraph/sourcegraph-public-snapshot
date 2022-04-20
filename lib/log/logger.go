@@ -20,7 +20,7 @@ type Logger interface {
 	// 'logger.Scoped("bar")' will create a logger with scope 'foo.bar'.
 	//
 	// https://opentelemetry.io/docs/reference/specification/logs/data-model/#field-instrumentationscope
-	Scoped(scope string) Logger
+	Scoped(scope string, description string) Logger
 
 	// With creates a new Logger with the given fields as attributes.
 	//
@@ -57,9 +57,9 @@ type Logger interface {
 // Scoped returns the global logger and sets it up with the given scope and OpenTelemetry
 // compliant implementation. Instead of using this everywhere a log is needed, callers
 // should hold a reference to the Logger and pass it in to places that need to log.
-func Scoped(scope string) Logger {
+func Scoped(scope string, description string) Logger {
 	adapted := &zapAdapter{Logger: global.Get()}
-	return adapted.Scoped(scope).With(otfields.AttributesNamespace)
+	return adapted.Scoped(scope, description).With(otfields.AttributesNamespace)
 }
 
 type zapAdapter struct {
@@ -81,19 +81,25 @@ type zapAdapter struct {
 
 var _ Logger = &zapAdapter{}
 
-func (z *zapAdapter) Scoped(scope string) Logger {
+func (z *zapAdapter) Scoped(scope string, description string) Logger {
 	var newScope string
 	if z.scope == "" {
 		newScope = scope
 	} else {
 		newScope = strings.Join([]string{z.scope, scope}, ".")
 	}
-	return &zapAdapter{
+	scopedLogger := &zapAdapter{
 		Logger:     z.Logger.Named(scope), // name -> scope in OT
 		scope:      newScope,
 		attributes: z.attributes,
 		options:    z.options,
 	}
+	if len(description) > 0 {
+		scopedLogger.Debug("logger.scoped",
+			zap.String("scope", scope),
+			zap.String("description", description))
+	}
+	return scopedLogger
 }
 
 func (z *zapAdapter) With(fields ...Field) Logger {

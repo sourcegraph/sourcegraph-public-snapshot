@@ -68,7 +68,7 @@ func Scoped(t testing.TB) log.Logger {
 	// already been done. We allow this in testing for convenience.
 	Init(nil)
 
-	return log.Scoped(t.Name())
+	return log.Scoped(t.Name(), "")
 }
 
 // GetCaptured retrieves a logger from scoped to the the given test, and returns a

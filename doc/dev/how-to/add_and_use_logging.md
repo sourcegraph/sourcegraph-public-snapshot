@@ -56,7 +56,8 @@ When your service starts logging, get a `Logger` instance, attach some relevant 
 import "github.com/sourcegraph/sourcegraph/lib/log"
 
 func newWorker(/* ... */) *Worker {
-  logger := log.Scoped("worker").With(log.String("name", options.Name))
+  logger := log.Scoped("worker", "the worker process handles ...").
+    With(log.String("name", options.Name))
   // ...
   return &Worker{
     logger: logger,
