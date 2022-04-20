@@ -8,9 +8,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
 
 import { BackendInsight, CodeInsightsBackendContext, InsightFilters } from '../../../../core'
-import { useDeleteInsight } from '../../../../hooks/use-delete-insight'
 import { LazyQueryStatus } from '../../../../hooks/use-parallel-requests/use-parallel-request'
-import { useRemoveInsightFromDashboard } from '../../../../hooks/use-remove-insight'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../pings'
 import { FORM_ERROR, SubmissionErrors } from '../../../form/hooks/useForm'
 import { InsightCard, InsightCardBanner, InsightCardHeader, InsightCardLoading } from '../../../views'
@@ -79,8 +77,6 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
     )
 
     // Handle insight delete and remove actions
-    const { loading: isDeleting, delete: handleDelete } = useDeleteInsight()
-    const { remove: handleRemove, loading: isRemoving } = useRemoveInsightFromDashboard()
 
     const handleFilterSave = async (filters: InsightFilters): Promise<SubmissionErrors> => {
         try {
@@ -163,8 +159,6 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
                             menuButtonClassName="ml-1 d-inline-flex"
                             zeroYAxisMin={zeroYAxisMin}
                             onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
-                            onRemoveFromDashboard={dashboard => handleRemove({ insight, dashboard })}
-                            onDelete={() => handleDelete(insight)}
                         />
                     </>
                 )}
@@ -172,10 +166,8 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
 
             {resizing ? (
                 <InsightCardBanner>Resizing</InsightCardBanner>
-            ) : state.status === LazyQueryStatus.Loading || isDeleting || !isVisible ? (
-                <InsightCardLoading>{isDeleting ? 'Deleting code insight' : 'Loading code insight'}</InsightCardLoading>
-            ) : isRemoving ? (
-                <InsightCardLoading>Removing insight from the dashboard</InsightCardLoading>
+            ) : state.status === LazyQueryStatus.Loading || !isVisible ? (
+                <InsightCardLoading>Loading code insight</InsightCardLoading>
             ) : state.status === LazyQueryStatus.Error ? (
                 <BackendInsightErrorAlert error={state.error} />
             ) : (

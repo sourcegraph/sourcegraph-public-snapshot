@@ -48,6 +48,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- Code Insights: Replaced native window confirmation dialog with branded modal. [#33637](https://github.com/sourcegraph/sourcegraph/pull/33637)
 - Code Insights: Series data is now sorted by semantic version then alphabetically.
 - Code Insights: Added locked insights overlays for frozen insights while in limited access mode. Restricted insight editing save change button for frozen insights. [#33062](https://github.com/sourcegraph/sourcegraph/pull/33062)
 - Code Insights: A global dashboard will now be automatically created while in limited access mode to provide consistent visibility for unlocked insights. This dashboard cannot be deleted or modified while in limited access mode. [#32992](https://github.com/sourcegraph/sourcegraph/pull/32992)
