@@ -466,6 +466,8 @@ func TestGetOrganization(t *testing.T) {
 }
 
 func TestGetRepository(t *testing.T) {
+	rcache.SetupForTest(t)
+
 	cli, save := newV3TestClient(t, "GetRepository")
 	defer save()
 
@@ -478,15 +480,25 @@ func TestGetRepository(t *testing.T) {
 		if repo == nil {
 			t.Fatal("expected repo, but got nil")
 		}
+
+		want := "sourcegraph/sourcegraph"
+		if repo.NameWithOwner != want {
+			t.Fatalf("expected NameWithOwner %s, but got %s", want, repo.NameWithOwner)
+		}
 	})
 	t.Run("second run", func(t *testing.T) {
-		repo2, err := cli.GetRepository(context.Background(), "sourcegraph", "sourcegraph")
+		repo, err := cli.GetRepository(context.Background(), "sourcegraph", "sourcegraph")
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if repo2 == nil {
+		if repo == nil {
 			t.Fatal("expected repo, but got nil")
+		}
+
+		want := "sourcegraph/sourcegraph"
+		if repo.NameWithOwner != want {
+			t.Fatalf("expected NameWithOwner %s, but got %s", want, repo.NameWithOwner)
 		}
 	})
 
