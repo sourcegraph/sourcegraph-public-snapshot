@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	dependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 )
 
 // MockDependenciesService is a mock implementation of the
@@ -25,7 +26,7 @@ type MockDependenciesService struct {
 func NewMockDependenciesService() *MockDependenciesService {
 	return &MockDependenciesService{
 		ListDependencyReposFunc: &DependenciesServiceListDependencyReposFunc{
-			defaultHook: func(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.DependencyRepo, error) {
+			defaultHook: func(context.Context, dependencies.ListDependencyReposOpts) ([]shared.Repo, error) {
 				return nil, nil
 			},
 		},
@@ -38,7 +39,7 @@ func NewMockDependenciesService() *MockDependenciesService {
 func NewStrictMockDependenciesService() *MockDependenciesService {
 	return &MockDependenciesService{
 		ListDependencyReposFunc: &DependenciesServiceListDependencyReposFunc{
-			defaultHook: func(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.DependencyRepo, error) {
+			defaultHook: func(context.Context, dependencies.ListDependencyReposOpts) ([]shared.Repo, error) {
 				panic("unexpected invocation of MockDependenciesService.ListDependencyRepos")
 			},
 		},
@@ -60,15 +61,15 @@ func NewMockDependenciesServiceFrom(i DependenciesService) *MockDependenciesServ
 // the ListDependencyRepos method of the parent MockDependenciesService
 // instance is invoked.
 type DependenciesServiceListDependencyReposFunc struct {
-	defaultHook func(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.DependencyRepo, error)
-	hooks       []func(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.DependencyRepo, error)
+	defaultHook func(context.Context, dependencies.ListDependencyReposOpts) ([]shared.Repo, error)
+	hooks       []func(context.Context, dependencies.ListDependencyReposOpts) ([]shared.Repo, error)
 	history     []DependenciesServiceListDependencyReposFuncCall
 	mutex       sync.Mutex
 }
 
 // ListDependencyRepos delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockDependenciesService) ListDependencyRepos(v0 context.Context, v1 dependencies.ListDependencyReposOpts) ([]dependencies.DependencyRepo, error) {
+func (m *MockDependenciesService) ListDependencyRepos(v0 context.Context, v1 dependencies.ListDependencyReposOpts) ([]shared.Repo, error) {
 	r0, r1 := m.ListDependencyReposFunc.nextHook()(v0, v1)
 	m.ListDependencyReposFunc.appendCall(DependenciesServiceListDependencyReposFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -77,7 +78,7 @@ func (m *MockDependenciesService) ListDependencyRepos(v0 context.Context, v1 dep
 // SetDefaultHook sets function that is called when the ListDependencyRepos
 // method of the parent MockDependenciesService instance is invoked and the
 // hook queue is empty.
-func (f *DependenciesServiceListDependencyReposFunc) SetDefaultHook(hook func(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.DependencyRepo, error)) {
+func (f *DependenciesServiceListDependencyReposFunc) SetDefaultHook(hook func(context.Context, dependencies.ListDependencyReposOpts) ([]shared.Repo, error)) {
 	f.defaultHook = hook
 }
 
@@ -86,7 +87,7 @@ func (f *DependenciesServiceListDependencyReposFunc) SetDefaultHook(hook func(co
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *DependenciesServiceListDependencyReposFunc) PushHook(hook func(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.DependencyRepo, error)) {
+func (f *DependenciesServiceListDependencyReposFunc) PushHook(hook func(context.Context, dependencies.ListDependencyReposOpts) ([]shared.Repo, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -94,20 +95,20 @@ func (f *DependenciesServiceListDependencyReposFunc) PushHook(hook func(context.
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *DependenciesServiceListDependencyReposFunc) SetDefaultReturn(r0 []dependencies.DependencyRepo, r1 error) {
-	f.SetDefaultHook(func(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.DependencyRepo, error) {
+func (f *DependenciesServiceListDependencyReposFunc) SetDefaultReturn(r0 []shared.Repo, r1 error) {
+	f.SetDefaultHook(func(context.Context, dependencies.ListDependencyReposOpts) ([]shared.Repo, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *DependenciesServiceListDependencyReposFunc) PushReturn(r0 []dependencies.DependencyRepo, r1 error) {
-	f.PushHook(func(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.DependencyRepo, error) {
+func (f *DependenciesServiceListDependencyReposFunc) PushReturn(r0 []shared.Repo, r1 error) {
+	f.PushHook(func(context.Context, dependencies.ListDependencyReposOpts) ([]shared.Repo, error) {
 		return r0, r1
 	})
 }
 
-func (f *DependenciesServiceListDependencyReposFunc) nextHook() func(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.DependencyRepo, error) {
+func (f *DependenciesServiceListDependencyReposFunc) nextHook() func(context.Context, dependencies.ListDependencyReposOpts) ([]shared.Repo, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -150,7 +151,7 @@ type DependenciesServiceListDependencyReposFuncCall struct {
 	Arg1 dependencies.ListDependencyReposOpts
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []dependencies.DependencyRepo
+	Result0 []shared.Repo
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
