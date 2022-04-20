@@ -13,7 +13,10 @@ interface EditorFeedbackPanelProps {
     isValidationError: boolean
 }
 
-export const EditorFeedbackPanel: React.FunctionComponent<EditorFeedbackPanelProps> = ({ errors, isValidationError }) => {
+export const EditorFeedbackPanel: React.FunctionComponent<EditorFeedbackPanelProps> = ({
+    errors,
+    isValidationError,
+}) => {
     if (errors.length === 0) {
         return null
     }
@@ -21,7 +24,8 @@ export const EditorFeedbackPanel: React.FunctionComponent<EditorFeedbackPanelPro
     return (
         <div className={classNames(styles.panel, 'rounded border bg-1 p-2 w-100 mt-2')}>
             <h4 className="text-danger text-uppercase">
-                <Icon className="text-danger" as={AlertCircleIcon} /> {isValidationError ? 'Validation Errors' : 'Errors found'}
+                <Icon className="text-danger" as={AlertCircleIcon} />{' '}
+                {isValidationError ? 'Validation Errors' : 'Errors found'}
             </h4>
             {errors.map(error => (
                 <ErrorMessage className="text-monospace" error={error} key={String(error)} />
