@@ -7,9 +7,9 @@
     display: inline-block;
     &:not(:last-child) {
         &::after {
-            margin: 0 0.375rem;
+            padding: 0 0.375rem;
             height: 1rem;
-            content: ' ';
+            content: '';
             border-right: 1px solid var(--border-color-2);
         }
     }

@@ -40,18 +40,15 @@ export const WorkspacesPreviewListItem: React.FunctionComponent<WorkspacesPrevie
         [toBeExcluded, workspace.cachedResultFound]
     )
 
-    if (workspace.__typename === 'HiddenBatchSpecWorkspace') {
-        return (
-            <ListItem className={isStale ? styles.stale : undefined}>
-                <Descriptor workspace={undefined} statusIndicator={statusIndicator} />
-            </ListItem>
-        )
-    }
-
     return (
         <ListItem className={isStale ? styles.stale : undefined}>
-            <Descriptor workspace={workspace} statusIndicator={statusIndicator} />
-            {toBeExcluded ? null : <ExcludeButton handleExclude={handleExclude} />}
+            <Descriptor
+                workspace={workspace.__typename === 'HiddenBatchSpecWorkspace' ? undefined : workspace}
+                statusIndicator={statusIndicator}
+            />
+            {workspace.__typename !== 'HiddenBatchSpecWorkspace' && toBeExcluded ? null : (
+                <ExcludeButton handleExclude={handleExclude} />
+            )}
         </ListItem>
     )
 }

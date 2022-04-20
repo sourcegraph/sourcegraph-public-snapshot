@@ -1,7 +1,8 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
+import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
-import { cloneDeep, noop } from 'lodash'
+import { cloneDeep } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
@@ -61,7 +62,7 @@ import styles from './WorkspaceDetails.module.scss'
 export interface WorkspaceDetailsProps extends ThemeProps {
     id: Scalars['ID']
     /** Handler to deselect the current workspace, i.e. close the details panel. */
-    deselectWorkspace: () => void
+    deselectWorkspace?: () => void
 }
 
 export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = ({
@@ -70,21 +71,21 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
     deselectWorkspace,
 }) => {
     // Fetch and poll latest workspace information.
-    const workspaceOrLoadingOrError = useBatchSpecWorkspace(id)
+    const { loading, error, data } = useBatchSpecWorkspace(id)
 
-    if (workspaceOrLoadingOrError === true) {
+    if ((loading && data === undefined) || data === undefined) {
         return <LoadingSpinner />
     }
 
-    if (workspaceOrLoadingOrError === null) {
+    if (data === null) {
         return <NotFoundPage />
     }
 
-    if (isErrorLike(workspaceOrLoadingOrError)) {
-        return <ErrorAlert error={workspaceOrLoadingOrError} />
+    if (error) {
+        return <ErrorAlert error={error} />
     }
 
-    const workspace = workspaceOrLoadingOrError
+    const workspace = data
 
     if (workspace.__typename === 'HiddenBatchSpecWorkspace') {
         return (
@@ -106,7 +107,7 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
 
 interface WorkspaceHeaderProps extends Pick<WorkspaceDetailsProps, 'deselectWorkspace'> {
     workspace: HiddenBatchSpecWorkspaceFields | VisibleBatchSpecWorkspaceFields
-    toggleShowTimeline: () => void
+    toggleShowTimeline?: () => void
 }
 
 const WorkspaceHeader: React.FunctionComponent<WorkspaceHeaderProps> = ({
@@ -157,15 +158,13 @@ const WorkspaceHeader: React.FunctionComponent<WorkspaceHeaderProps> = ({
                     </strong>
                 </div>
             )}
-            {workspace.__typename === 'VisibleBatchSpecWorkspace' &&
-                !workspace.cachedResultFound &&
-                workspace.state !== BatchSpecWorkspaceState.SKIPPED && (
-                    <div className={styles.detailItem}>
-                        <Button className="text-muted m-0 p-0" onClick={toggleShowTimeline} variant="link">
-                            Timeline
-                        </Button>
-                    </div>
-                )}
+            {toggleShowTimeline && !workspace.cachedResultFound && workspace.state !== BatchSpecWorkspaceState.SKIPPED && (
+                <div className={styles.detailItem}>
+                    <Button className="text-muted m-0 p-0" onClick={toggleShowTimeline} variant="link">
+                        Timeline
+                    </Button>
+                </div>
+            )}
         </div>
         <hr />
     </>
@@ -180,11 +179,12 @@ const HiddenWorkspaceDetails: React.FunctionComponent<HiddenWorkspaceDetailsProp
     deselectWorkspace,
 }) => (
     <>
-        <WorkspaceHeader deselectWorkspace={deselectWorkspace} toggleShowTimeline={noop} workspace={workspace} />
+        <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
         <IgnoredBanner workspace={workspace} />
         <UnsupportedBanner workspace={workspace} />
         <h1 className="text-center text-muted mt-5">
             <Icon as={EyeOffOutlineIcon} />
+            <VisuallyHidden>Hidden Workspace</VisuallyHidden>
         </h1>
         <p className="text-center">This workspace is hidden due to permissions.</p>
         <p className="text-center">Contact the owner of this batch change for more information.</p>

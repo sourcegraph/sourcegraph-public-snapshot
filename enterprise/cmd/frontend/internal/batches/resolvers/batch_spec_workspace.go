@@ -294,13 +294,13 @@ func (r *batchSpecWorkspaceResolver) State() string {
 }
 
 func (r *batchSpecWorkspaceResolver) ChangesetSpecs(ctx context.Context) (*[]graphqlbackend.VisibleChangesetSpecResolver, error) {
-	// If the workspace has been skipped and no cached result was found, there are definitely no changeset specs.
-	if r.workspace.Skipped && !r.CachedResultFound() {
+	// If this is a hidden resolver, we don't return changeset specs, since we only return visible changeset spec resolvers here.
+	if _, ok := r.ToHiddenBatchSpecWorkspace(); ok {
 		return nil, nil
 	}
 
-	// If this is a hidden resolver, we don't return changeset specs, since we only return visible changeset spec resolvers here.
-	if _, ok := r.ToHiddenBatchSpecWorkspace(); ok {
+	// If the workspace has been skipped and no cached result was found, there are definitely no changeset specs.
+	if r.workspace.Skipped && !r.CachedResultFound() {
 		return nil, nil
 	}
 

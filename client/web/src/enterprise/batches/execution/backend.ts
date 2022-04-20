@@ -251,9 +251,13 @@ export const BATCH_SPEC_WORKSPACE_BY_ID = gql`
     ${batchSpecWorkspaceFieldsFragment}
 `
 
-export const useBatchSpecWorkspace = (
-    id: Scalars['ID']
-): VisibleBatchSpecWorkspaceFields | HiddenBatchSpecWorkspaceFields | null | ErrorLike | true => {
+interface BatchSpecWorkspaceHookResult {
+    data?: VisibleBatchSpecWorkspaceFields | HiddenBatchSpecWorkspaceFields | null
+    error?: ErrorLike
+    loading: boolean
+}
+
+export const useBatchSpecWorkspace = (id: Scalars['ID']): BatchSpecWorkspaceHookResult => {
     const { loading, data, error } = useQuery<BatchSpecWorkspaceByIDResult, BatchSpecWorkspaceByIDVariables>(
         BATCH_SPEC_WORKSPACE_BY_ID,
         {
@@ -272,28 +276,22 @@ export const useBatchSpecWorkspace = (
         }
     )
 
-    if (loading) {
-        return loading
+    const result: BatchSpecWorkspaceHookResult = {
+        loading,
+        error: error ? asError(error) : undefined,
     }
 
-    if (error) {
-        return asError(error)
-    }
-
-    if (data) {
-        if (!data.node) {
-            return null
-        }
+    if (data?.node) {
         if (
             data.node.__typename !== 'HiddenBatchSpecWorkspace' &&
             data.node.__typename !== 'VisibleBatchSpecWorkspace'
         ) {
             throw new Error(`Node is a ${data.node.__typename}, not a BatchSpecWorkspace`)
         }
-        return data.node
+        result.data = data.node
     }
 
-    throw new Error('unreachable?')
+    return result
 }
 
 export async function cancelBatchSpecExecution(id: Scalars['ID']): Promise<BatchSpecExecutionFields> {

@@ -150,7 +150,6 @@ func queryAndAssertBatchSpecWorkspace(t *testing.T, ctx context.Context, s *grap
 	}
 }
 
-// TODO: Need to adjust the query
 const queryBatchSpecWorkspaceNode = `
 query($batchSpecWorkspace: ID!) {
   node(id: $batchSpecWorkspace) {

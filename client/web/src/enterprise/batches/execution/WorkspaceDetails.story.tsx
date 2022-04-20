@@ -23,7 +23,7 @@ const { add } = storiesOf('web/batches/execution/WorkspaceDetails', module).addD
     <div className="p-3 container">{story()}</div>
 ))
 
-const hiddenWorkspace: HiddenBatchSpecWorkspaceFields = {
+const HIDDEN_WORKSPACE: HiddenBatchSpecWorkspaceFields = {
     __typename: 'HiddenBatchSpecWorkspace',
     id: 'id123',
     queuedAt: subMinutes(new Date(), 10).toISOString(),
@@ -43,8 +43,8 @@ const hiddenWorkspace: HiddenBatchSpecWorkspaceFields = {
     cachedResultFound: false,
 }
 
-const visibleWorkspace: VisibleBatchSpecWorkspaceFields = {
-    ...hiddenWorkspace,
+const VISIBLE_WORKSPACE: VisibleBatchSpecWorkspaceFields = {
+    ...HIDDEN_WORKSPACE,
     __typename: 'VisibleBatchSpecWorkspace',
     steps: [],
     path: '',
@@ -91,6 +91,6 @@ function addStory(name: string, node: BatchSpecWorkspaceByIDResult['node']) {
     })
 }
 
-addStory('Hidden workspace', hiddenWorkspace)
-addStory('Visible workspace', visibleWorkspace)
+addStory('Hidden workspace', HIDDEN_WORKSPACE)
+addStory('Visible workspace', VISIBLE_WORKSPACE)
 addStory('Not found', null)

@@ -30,7 +30,7 @@ export const Descriptor = <Workspace extends WorkspaceBaseFields>({
         <div className={styles.status}>{statusIndicator}</div>
         <div className="flex-1">
             <h4 className={styles.name}>{workspace?.repository.name ?? 'Workspace in hidden repository'}</h4>
-            {workspace?.path !== '' && workspace?.path !== '/' ? (
+            {workspace && workspace.path !== '' && workspace.path !== '/' ? (
                 <span className={styles.path}>{workspace?.path}</span>
             ) : null}
             {workspace && (
