@@ -28,7 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shim"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -104,7 +104,7 @@ func main() {
 	db := database.NewDB(sqlDB)
 
 	repoStore := database.Repos(db)
-	depsSvc := dependencies.GetService(db, shim.NewGitService(db), dependencies.ErrorSyncer)
+	depsSvc := live.GetServiceWithoutSyncer(db)
 	externalServiceStore := database.ExternalServices(db)
 
 	err = keyring.Init(ctx)
