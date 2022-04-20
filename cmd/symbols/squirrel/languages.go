@@ -10,6 +10,7 @@ import (
 	"github.com/smacker/go-tree-sitter/csharp"
 	"github.com/smacker/go-tree-sitter/golang"
 	"github.com/smacker/go-tree-sitter/java"
+	"github.com/smacker/go-tree-sitter/javascript"
 	"github.com/smacker/go-tree-sitter/python"
 )
 
@@ -157,6 +158,38 @@ var langToLangSpec = map[string]LangSpec{
 (expression_statement          (assignment left: (pattern_list (identifier) @definition))) ; x, y = ...
 (for_statement           left: (identifier) @definition)                                   ; for x in ...: ...
 (for_statement           left: (pattern_list (identifier) @definition))                    ; for x, y in ...: ...
+`,
+	},
+	"javascript": {
+		language: javascript.GetLanguage(),
+		commentStyle: CommentStyle{
+			nodeTypes:     []string{"comment"},
+			stripRegex:    javaStyleStripRegex,
+			ignoreRegex:   javaStyleIgnoreRegex,
+			codeFenceName: "javascript",
+		},
+		localsQuery: `
+(class_declaration)              @scope ; class C { ... }
+(method_definition)              @scope ; class ... { f() { ... } }
+(statement_block)                @scope ; { ... }
+(for_statement)                  @scope ; for (let i = 0; ...) ...
+(for_in_statement)               @scope ; for (const x of xs) ...
+(catch_clause)                   @scope ; catch (e) ...
+(function)                       @scope ; function(x) { ... }
+(function_declaration)           @scope ; function f(x) { ... }
+(generator_function)             @scope ; function*(x) { ... }
+(generator_function_declaration) @scope ; function *f(x) { ... }
+(arrow_function)                 @scope ; x => ...
+
+(variable_declarator name: (identifier) @definition)                                   ; const x = ...
+(function_declaration name: (identifier) @definition)                                  ; function f() { ... }
+(generator_function_declaration name: (identifier) @definition)                        ; function *f() { ... }
+(formal_parameters (identifier) @definition)                                           ; function(x) { ... }
+(formal_parameters (rest_pattern (identifier) @definition))                            ; function(...x) { ... }
+(formal_parameters (assignment_pattern left: (identifier) @definition))                ; function(x = 5) { ... }
+(formal_parameters (assignment_pattern left: (rest_pattern (identifier) @definition))) ; function(...x = []) { ... }
+(for_in_statement left: (identifier) @definition)                                      ; for (const x of xs) ...
+(catch_clause parameter: (identifier) @definition)                                     ; catch (e) ...
 `,
 	},
 }
