@@ -9,7 +9,6 @@ import (
 // interfaces to further configure the behavior of the worker routine.
 type Handler interface {
 	// Handle processes a single record.
-	// TODO: introduce log.Logger as a parameter here
 	Handle(ctx context.Context, record Record) error
 }
 
