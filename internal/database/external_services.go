@@ -233,6 +233,9 @@ type ExternalServicesListOptions struct {
 	// When specified, only include external services with ID below this number
 	// (because we're sorting results by ID in descending order).
 	AfterID int64
+	// When specified, only include external services with that were updated after
+	// the specified time.
+	UpdatedAfter time.Time
 	// Possible values are ASC or DESC. Defaults to DESC.
 	OrderByDirection string
 	// When true, will only return services that have the cloud_default flag set to
@@ -281,6 +284,9 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	}
 	if o.AfterID > 0 {
 		conds = append(conds, sqlf.Sprintf(`id < %d`, o.AfterID))
+	}
+	if !o.UpdatedAfter.IsZero() {
+		conds = append(conds, sqlf.Sprintf(`updated_at > %s`, o.UpdatedAfter))
 	}
 	if o.OnlyCloudDefault {
 		conds = append(conds, sqlf.Sprintf("cloud_default = true"))
