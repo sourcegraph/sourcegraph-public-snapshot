@@ -297,8 +297,6 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 },
                 config.dryRun.tags || false
             )
-            console.log('!!')
-
         },
     },
     {
