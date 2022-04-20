@@ -1508,12 +1508,6 @@ func newHttpResponseState(statusCode int, headers http.Header) *httpResponseStat
 	}
 }
 
-// These headers are used for conditional requests.
-var (
-	headerIfNoneMatch     = "If-None-Match"
-	headerIfModifiedSince = "If-Modified-Since"
-)
-
 func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result interface{}) (responseState *httpResponseState, err error) {
 	req.URL.Path = path.Join(apiURL.Path, req.URL.Path)
 	req.URL = apiURL.ResolveReference(req.URL)
