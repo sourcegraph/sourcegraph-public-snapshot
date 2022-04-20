@@ -160,6 +160,16 @@ def f(p1, p2: bool, p3 = False, p4: bool = False):
 	except Exception as e:
 		#     v f.e ref
 		print(e)
+
+	#     v f.j ref
+	#           v f.j def
+	#           v f.j ref
+	print(j for j in range(10))
+
+	#      v f.k ref
+	#            v f.k def
+	#            v f.k ref
+	print([k for k in range(10)])
 `}, {
 		path: "test.js",
 		contents: `
