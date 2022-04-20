@@ -10,7 +10,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmpackages"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmtest"
@@ -77,39 +80,13 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 
 func testDependenciesService(ctx context.Context, t *testing.T, dependencyRepos []dependencies.Repo) DependenciesService {
 	t.Helper()
-	depsSvc := NewMockDependenciesService()
+	db := database.NewDB(dbtest.NewDB(t))
+	depsSvc := live.TestService(db, nil)
 
-	depsSvc.ListDependencyReposFunc.SetDefaultHook(func(ctx context.Context, opts dependencies.ListDependencyReposOpts) (matching []dependencies.Repo, _ error) {
-		sort.Slice(dependencyRepos, func(i, j int) bool {
-			if opts.NewestFirst {
-				return dependencyRepos[i].ID > dependencyRepos[j].ID
-			} else {
-				return dependencyRepos[i].ID < dependencyRepos[j].ID
-			}
-		})
-
-		for _, dependencyRepo := range dependencyRepos {
-			// Skip any dependency repos that do not match scheme or, optionally, name
-			matches := dependencyRepo.Scheme == opts.Scheme && (opts.Name == "" || dependencyRepo.Name == opts.Name)
-			if !matches {
-				continue
-			}
-
-			// Skip any dependency repos that are not within the remaining result set during pagination
-			inPage := opts.After == 0 || ((opts.NewestFirst && opts.After > dependencyRepo.ID) || (!opts.NewestFirst && opts.After < dependencyRepo.ID))
-			if !inPage {
-				continue
-			}
-
-			matching = append(matching, dependencyRepo)
-		}
-
-		if opts.Limit != 0 && len(matching) > opts.Limit {
-			matching = matching[:opts.Limit]
-		}
-
-		return matching, nil
-	})
+	_, err := depsSvc.UpsertDependencyRepos(ctx, dependencyRepos)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
 
 	return depsSvc
 }
