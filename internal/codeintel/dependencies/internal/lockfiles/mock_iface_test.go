@@ -13,7 +13,7 @@ import (
 
 // MockGitService is a mock implementation of the GitService interface (from
 // the package
-// github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/lockfiles)
+// github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/lockfiles)
 // used for unit testing.
 type MockGitService struct {
 	// ArchiveFunc is an instance of a mock function object controlling the

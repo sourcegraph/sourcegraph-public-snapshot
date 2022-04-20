@@ -1,7 +1,7 @@
-package store
+package shared
 
 const (
+	GoModulesScheme   = "go"
 	JVMPackagesScheme = "semanticdb"
 	NpmPackagesScheme = "npm"
-	GoModulesScheme   = "go"
 )

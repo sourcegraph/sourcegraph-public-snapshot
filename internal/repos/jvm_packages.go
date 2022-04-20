@@ -6,10 +6,8 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
@@ -22,9 +20,9 @@ import (
 // A JVMPackagesSource creates git repositories from `*-sources.jar` files of
 // published Maven dependencies from the JVM ecosystem.
 type JVMPackagesSource struct {
-	svc       *types.ExternalService
-	config    *schema.JVMPackagesConnection
-	depsStore DependenciesStore
+	svc     *types.ExternalService
+	config  *schema.JVMPackagesConnection
+	depsSvc *dependencies.Service
 }
 
 // NewJVMPackagesSource returns a new MavenSource from the given external
@@ -37,15 +35,15 @@ func NewJVMPackagesSource(svc *types.ExternalService) (*JVMPackagesSource, error
 	return newJVMPackagesSource(svc, &c)
 }
 
-func (s *JVMPackagesSource) SetDB(db dbutil.DB) {
-	s.depsStore = dependenciesStore.GetStore(database.NewDB(db))
+func (s *JVMPackagesSource) SetDependenciesService(depsSvc *dependencies.Service) {
+	s.depsSvc = depsSvc
 }
 
 func newJVMPackagesSource(svc *types.ExternalService, c *schema.JVMPackagesConnection) (*JVMPackagesSource, error) {
 	return &JVMPackagesSource{
-		svc:       svc,
-		config:    c,
-		depsStore: nil, // set via SetDB decorator
+		svc:     svc,
+		config:  c,
+		depsSvc: nil, // set via SetDependenciesService decorator
 	}, nil
 }
 
@@ -83,8 +81,8 @@ func (s *JVMPackagesSource) listDependentRepos(ctx context.Context, results chan
 		timedOut        int
 	)
 	for {
-		dbDeps, err := s.depsStore.ListDependencyRepos(ctx, dependenciesStore.ListDependencyReposOpts{
-			Scheme:      dependenciesStore.JVMPackagesScheme,
+		dbDeps, err := s.depsSvc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
+			Scheme:      dependencies.JVMPackagesScheme,
 			After:       lastID,
 			Limit:       100,
 			NewestFirst: true,

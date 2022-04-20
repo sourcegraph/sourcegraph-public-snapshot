@@ -5,8 +5,10 @@ import (
 	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -52,7 +54,7 @@ type ListDependencyReposOpts struct {
 	NewestFirst bool
 }
 
-func (s *Store) ListDependencyRepos(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []DependencyRepo, err error) {
+func (s *Store) ListDependencyRepos(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shared.Repo, err error) {
 	ctx, endObservation := s.operations.listDependencyRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("scheme", opts.Scheme),
 	}})
@@ -76,7 +78,7 @@ func (s *Store) ListDependencyRepos(ctx context.Context, opts ListDependencyRepo
 }
 
 const listDependencyReposQuery = `
--- source: internal/codeintel/dependencies/store/store.go:ListDependencyRepos
+-- source: internal/codeintel/dependencies/internal/store/store.go:ListDependencyRepos
 SELECT id, scheme, name, version
 FROM lsif_dependency_repos
 WHERE %s
@@ -112,7 +114,7 @@ func makeLimit(limit int) *sqlf.Query {
 
 // UpsertDependencyRepos creates the given dependency repos if they doesn't yet exist. The values that
 // did not exist previously are returned.
-func (s *Store) UpsertDependencyRepos(ctx context.Context, deps []DependencyRepo) (newDeps []DependencyRepo, err error) {
+func (s *Store) UpsertDependencyRepos(ctx context.Context, deps []shared.Repo) (newDeps []shared.Repo, err error) {
 	ctx, endObservation := s.operations.upsertDependencyRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numDeps", len(deps)),
 	}})
@@ -133,7 +135,7 @@ func (s *Store) UpsertDependencyRepos(ctx context.Context, deps []DependencyRepo
 	}
 
 	returningScanner := func(rows dbutil.Scanner) error {
-		var dependencyRepo DependencyRepo
+		var dependencyRepo shared.Repo
 		if err = rows.Scan(
 			&dependencyRepo.ID,
 			&dependencyRepo.Scheme,
@@ -160,3 +162,23 @@ func (s *Store) UpsertDependencyRepos(ctx context.Context, deps []DependencyRepo
 	)
 	return newDeps, err
 }
+
+// DeleteDependencyReposByID removes the dependency repos with the given ids, if they exist.
+func (s *Store) DeleteDependencyReposByID(ctx context.Context, ids ...int) (err error) {
+	ctx, endObservation := s.operations.deleteDependencyReposByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numIDs", len(ids)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if len(ids) == 0 {
+		return nil
+	}
+
+	return s.Exec(ctx, sqlf.Sprintf(deleteDependencyReposByIDQuery, pq.Array(ids)))
+}
+
+const deleteDependencyReposByIDQuery = `
+-- source: internal/codeintel/dependencies/internal/store/store.go:DeleteDependencyReposByID
+DELETE FROM lsif_dependency_repos
+WHERE id = ANY(%s)
+`
