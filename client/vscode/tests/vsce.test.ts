@@ -1,5 +1,3 @@
-import assert from 'assert'
-
 import { downloadAndUnzipVSCode } from '@vscode/test-electron'
 
 import { mixedSearchStreamEvents, highlightFileResult } from '@sourcegraph/search'
@@ -30,6 +28,15 @@ describe('VS Code extension', () => {
             },
             vsCodeDriver.page
         )
+    })
+
+    afterEach(async () => {
+        // Close Remote File
+        await vsCodeDriver.page.waitForSelector('.tabs-container .active .tab-actions', { visible: true })
+        await vsCodeDriver.page.click('.tabs-container .active .tab-actions', { delay: 50 })
+        // Close Search Panel
+        await vsCodeDriver.page.waitForSelector('.tabs-container .active .tab-actions', { visible: true })
+        await vsCodeDriver.page.click('.tabs-container .active .tab-actions', { delay: 50 })
     })
 
     // Debt: reset VS Code extension state between test cases in `afterEach` once we
@@ -74,7 +81,7 @@ describe('VS Code extension', () => {
                 repository: {
                     commit: {
                         blob: {
-                            content: '\rtesting\n',
+                            content: 'testing\rvsce\n',
                             binary: false,
                             byteSize: 2,
                         },
@@ -114,7 +121,7 @@ describe('VS Code extension', () => {
         // Submit new search from sidebar filter
         try {
             await sidebarFrame.waitForSelector('.search-sidebar .search-filter-keyword', { visible: true })
-            await sidebarFrame.click('.search-sidebar .search-filter-keyword', { delay: 100 })
+            await sidebarFrame.click('.search-sidebar .search-filter-keyword', { delay: 50 })
             await searchPanelFrame.waitForSelector('.test-search-result', { visible: true })
         } catch {
             throw new Error('Timeout waiting for filtered search results to render')
@@ -122,14 +129,14 @@ describe('VS Code extension', () => {
 
         // Open Repo page from search results
         await searchPanelFrame.waitForSelector('.test-search-result button', { visible: true })
-        await searchPanelFrame.click('.test-search-result button', { delay: 100 })
+        await searchPanelFrame.click('.test-search-result button', { delay: 50 })
 
         // Redirect back to search results from Repo Page
         try {
             await searchPanelFrame.waitForSelector('.test-back-to-search-view-btn', { visible: true })
-            await searchPanelFrame.click('.test-back-to-search-view-btn', { delay: 100 })
+            await searchPanelFrame.click('.test-back-to-search-view-btn', { delay: 50 })
         } catch {
-            throw new Error('Timeout waiting for back to search results button from repo display page to render')
+            throw new Error('Timeout waiting for search results to render after viewing repo page')
         }
 
         // Open remote file from search results
@@ -140,22 +147,13 @@ describe('VS Code extension', () => {
             throw new Error('Timeout waiting for search results to render after nevigating back from repo display page')
         }
 
-        try {
-            await searchPanelFrame.waitForSelector('.file.monaco-breadcrumb-item .monaco-icon-name-container', {
-                visible: true,
-            })
-            const fileNameText = await searchPanelFrame.evaluate(
-                () => document.querySelector('.file.monaco-breadcrumb-item .monaco-icon-name-container')?.textContent
-            )
-            console.log(fileNameText)
-            assert(fileNameText === 'bool_or_string_test.go', 'expected remote file to open')
-        } catch {
-            throw new Error('Timeout waiting for search results to render after nevigating back from repo display page')
+        // Look for file title
+        const remoteFileTitle = await vsCodeDriver.page.title()
+        if (!remoteFileTitle.includes('bool_or_string_test.go')) {
+            throw new Error('Timeout waiting for remote file to render')
         }
     })
 
     // Potential future test cases:
-    // - Clicking search result opens remote files
     // - Sourcegraph extensions work on remote files
-    // DONE - Clicking sidebar filter updates query (and executes for some?)
 })

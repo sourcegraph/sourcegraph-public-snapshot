@@ -74,18 +74,18 @@ export const commonVSCodeGraphQlResults: Partial<
     }),
     RepositoryMetadata: () => ({
         __typename: 'Query',
-        repositoryRedirect: null
+        repositoryRedirect: null,
     }),
     TreeEntries: () => ({
         __typename: 'Query',
-        repository: null
+        repository: null,
     }),
     FileNames: () => ({
         __typename: 'Query',
-        repository: null
+        repository: null,
     }),
     BlobContent: () => ({
         __typename: 'Query',
-        repository: null
-    })
+        repository: null,
+    }),
 }
