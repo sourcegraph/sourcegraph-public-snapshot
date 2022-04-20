@@ -20,11 +20,11 @@ If you combine both filters, the inclusion pattern will be applied first, then t
 
 ### `context:` Query-based search context filters 
 
-You can use a [query-based search context](../../code_search/how-to/search_contexts.md#beta-query-based-search-contexts) to filter your insights to only results matching repositories that match the `repo:` filter of the query-based context. 
+You can use a [query-based search context](../../code_search/how-to/search_contexts.md#beta-query-based-search-contexts) to filter your insights to only results matching repositories that match the `repo:` or `-repo:` filter of the query-based context. 
 
 You can use this to filter multiple insights to a group of repositories that need only be maintained in one location. When you update a context that's being used as a filter, the next time you load the page, the filtered insight will reflect the updated context. 
 
-At this time, all other filter keywords are not yet supported – only the `repo:` keyword of a context is recognized. When creating your context, you can define any group of repos using the syntax `repo:(^github\.com/sourcegraph/sourcegraph$|^github\.com/sourcegraph/about$...)`. 
+At this time, all other filter keywords are not yet supported – only the `repo:` and `-repo:` keywords of a context are recognized. When creating your context, you can define any group of repos using the syntax `repo:(^github\.com/sourcegraph/sourcegraph$|^github\.com/sourcegraph/about$...)`. 
 
 ### Setting more than one filter 
 
