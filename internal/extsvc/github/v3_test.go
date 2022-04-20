@@ -456,23 +456,26 @@ func TestGetRepository(t *testing.T) {
 	cli, save := newV3TestClient(t, "GetRepository")
 	defer save()
 
-	repo, err := cli.GetRepository(context.Background(), "sourcegraph", "sourcegraph")
-	if err != nil {
-		t.Fatal(err)
-	}
+	t.Run("first run", func(t *testing.T) {
+		repo, err := cli.GetRepository(context.Background(), "sourcegraph", "sourcegraph")
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	if repo == nil {
-		t.Fatal("expected repo, but got nil")
-	}
+		if repo == nil {
+			t.Fatal("expected repo, but got nil")
+		}
+	})
+	t.Run("second run", func(t *testing.T) {
+		repo2, err := cli.GetRepository(context.Background(), "sourcegraph", "sourcegraph")
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	repo2, err := cli.GetRepository(context.Background(), "sourcegraph", "sourcegraph")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if repo2 == nil {
-		t.Fatal("expected repo, but got nil")
-	}
+		if repo2 == nil {
+			t.Fatal("expected repo, but got nil")
+		}
+	})
 }
 
 // ListOrganizations is primarily used for GitHub Enterprise clients. As a result we test against
