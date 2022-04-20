@@ -3,12 +3,10 @@ package resolvers
 import (
 	"context"
 	"fmt"
-	"sort"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 
 	"github.com/grafana/regexp"
@@ -19,10 +17,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -43,8 +39,9 @@ var _ graphqlbackend.InsightDataSeriesDefinition = &insightDataSeriesDefinitionU
 var _ graphqlbackend.InsightViewConnectionResolver = &InsightViewQueryConnectionResolver{}
 
 type insightViewResolver struct {
-	view            *types.Insight
-	overrideFilters *types.InsightViewFilters
+	view                *types.Insight
+	overrideFilters     *types.InsightViewFilters
+	dataSeriesGenerator insightSeriesResolverGenerator
 
 	baseInsightResolver
 }
@@ -82,12 +79,54 @@ func (i *insightViewResolver) AppliedFilters(ctx context.Context) (graphqlbacken
 	return &insightViewFiltersResolver{filters: &i.view.Filters}, nil
 }
 
+// registerDataSeriesGenerators if the generators that create resolvers for DataSeries haven't been generated then loadthem
+func (i *insightViewResolver) registerDataSeriesGenerators() {
+	// already registered no op
+	if i.dataSeriesGenerator != nil {
+		return
+	}
+
+	// create the known ways to resolve a data series
+	jitCaptureGroupGenerator := newSeriesResolverGenerator(
+		func(series types.InsightViewSeries) bool {
+			return series.JustInTime && series.GeneratedFromCaptureGroups
+		},
+		expandCaptureGroupSeriesJustInTime,
+	)
+	recordedCaptureGroupGenerator := newSeriesResolverGenerator(
+		func(series types.InsightViewSeries) bool {
+			return !series.JustInTime && series.GeneratedFromCaptureGroups
+		},
+		expandCaptureGroupSeriesRecorded,
+	)
+	recordedGenerator := newSeriesResolverGenerator(
+		func(series types.InsightViewSeries) bool {
+			return !series.JustInTime && !series.GeneratedFromCaptureGroups
+		},
+		recordedSeries,
+	)
+
+	// build the chain of generators
+	jitCaptureGroupGenerator.SetNext(recordedCaptureGroupGenerator)
+	recordedCaptureGroupGenerator.SetNext(recordedGenerator)
+
+	// set the local variable to the first generator in the chain
+	i.dataSeriesGenerator = jitCaptureGroupGenerator
+
+	return
+}
+
 func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.InsightSeriesResolver, error) {
 	var resolvers []graphqlbackend.InsightSeriesResolver
 	if i.view.IsFrozen {
 		// if the view is frozen, we do not show time series data. This is just a basic limitation to prevent
 		// easy mis-use of unlicensed features.
 		return nil, nil
+	}
+	// Ensure that the data series generators have been registered
+	i.registerDataSeriesGenerators()
+	if i.dataSeriesGenerator == nil {
+		return nil, errors.New("no dataseries resolver generator registered")
 	}
 
 	var filters *types.InsightViewFilters
@@ -97,26 +136,12 @@ func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.
 		filters = &i.view.Filters
 	}
 
-	for j, current := range i.view.Series {
-		if current.GeneratedFromCaptureGroups && current.JustInTime {
-			// this works fine for now because these are all just-in-time series. As soon as we start including global / recorded
-			// series, we need to have some logic to either fetch from the database or calculate the time series.
-			expanded, err := expandCaptureGroupSeriesJustInTime(ctx, current, i.baseInsightResolver, *filters)
-			if err != nil {
-				return nil, errors.Wrapf(err, "expandCaptureGroupSeriesJustInTime for seriesID: %s", current.SeriesID)
-			}
-			resolvers = append(resolvers, expanded...)
-		} else if current.GeneratedFromCaptureGroups && !current.JustInTime {
-			return expandCaptureGroupSeriesRecorded(ctx, current, i.baseInsightResolver, *filters)
-		} else {
-			resolvers = append(resolvers, &insightSeriesResolver{
-				insightsStore:   i.timeSeriesStore,
-				workerBaseStore: i.workerBaseStore,
-				series:          i.view.Series[j],
-				metadataStore:   i.insightStore,
-				filters:         *filters,
-			})
+	for _, current := range i.view.Series {
+		seriesResolvers, err := i.dataSeriesGenerator.Generate(ctx, current, i.baseInsightResolver, *filters)
+		if err != nil {
+			return nil, errors.Wrapf(err, "generate for seriesID: %s", current.SeriesID)
 		}
+		resolvers = append(resolvers, seriesResolvers...)
 	}
 	return resolvers, nil
 }
@@ -204,135 +229,6 @@ func filterRepositories(ctx context.Context, filters types.InsightViewFilters, r
 		results = append(results, match)
 	}
 	return results, nil
-}
-
-func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
-	var opts store.SeriesPointsOpts
-
-	// Query data points only for the series we are representing.
-	seriesID := definition.SeriesID
-	opts.SeriesID = &seriesID
-
-	// Default to last 12mo of data
-	frames := query.BuildFrames(12, timeseries.TimeInterval{
-		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
-		Value: definition.SampleIntervalValue,
-	}, time.Now())
-	oldest := time.Now().AddDate(-1, 0, 0)
-	if len(frames) != 0 {
-		possibleOldest := frames[0].From
-		if possibleOldest.Before(oldest) {
-			oldest = possibleOldest
-		}
-	}
-	opts.From = &oldest
-
-	includeRepo := func(regex ...string) {
-		opts.IncludeRepoRegex = append(opts.IncludeRepoRegex, regex...)
-	}
-	excludeRepo := func(regex ...string) {
-		opts.ExcludeRepoRegex = append(opts.ExcludeRepoRegex, regex...)
-	}
-
-	if filters.IncludeRepoRegex != nil {
-		includeRepo(*filters.IncludeRepoRegex)
-	}
-	if filters.ExcludeRepoRegex != nil {
-		excludeRepo(*filters.ExcludeRepoRegex)
-	}
-	scLoader := &scLoader{primary: r.workerBaseStore.Handle().DB()}
-	inc, exc, err := unwrapSearchContexts(ctx, scLoader, filters.SearchContexts)
-	if err != nil {
-		return nil, errors.Wrap(err, "unwrapSearchContexts")
-	}
-	includeRepo(inc...)
-	excludeRepo(exc...)
-
-	groupedByCapture := make(map[string][]store.SeriesPoint)
-	allPoints, err := r.timeSeriesStore.SeriesPoints(ctx, opts)
-	if err != nil {
-		return nil, err
-	}
-
-	for i := range allPoints {
-		point := allPoints[i]
-		if point.Capture == nil {
-			// skip nil values, this shouldn't be a real possibility
-			continue
-		}
-		groupedByCapture[*point.Capture] = append(groupedByCapture[*point.Capture], point)
-	}
-
-	status, err := queryrunner.QueryJobsStatus(ctx, r.workerBaseStore, seriesID)
-	if err != nil {
-		return nil, errors.Wrap(err, "QueryJobsStatus")
-	}
-	statusResolver := NewStatusResolver(status, definition.BackfillQueuedAt)
-
-	var resolvers []graphqlbackend.InsightSeriesResolver
-	for capturedValue, points := range groupedByCapture {
-		sort.Slice(points, func(i, j int) bool {
-			return points[i].Time.Before(points[j].Time)
-		})
-		resolvers = append(resolvers, &precalculatedInsightSeriesResolver{
-			insightsStore:   r.timeSeriesStore,
-			workerBaseStore: r.workerBaseStore,
-			series:          definition,
-			metadataStore:   r.insightStore,
-			points:          points,
-			label:           capturedValue,
-			filters:         filters,
-			seriesId:        fmt.Sprintf("%s-%s", seriesID, capturedValue),
-			statusResolver:  statusResolver,
-		})
-	}
-	if len(resolvers) == 0 {
-		// We are manually populating a mostly empty resolver here - this slightly hacky solution is to unify the
-		// expectations of the webapp when querying for series state. For a standard search series there is
-		// always a resolver since each series maps one to one with it's definition.
-		// With a capture groups series we derive each unique series dynamically - which means it's possible to have a
-		// series definition with zero resulting series. This most commonly occurs when the insight is just created,
-		// before any data has been generated yet. Without this,
-		// our capture groups insights don't share the loading state behavior.
-		resolvers = append(resolvers, &precalculatedInsightSeriesResolver{
-			insightsStore:   r.timeSeriesStore,
-			workerBaseStore: r.workerBaseStore,
-			series:          definition,
-			metadataStore:   r.insightStore,
-			statusResolver:  statusResolver,
-			seriesId:        definition.SeriesID,
-			points:          nil,
-			label:           definition.Label,
-			filters:         filters,
-		})
-	}
-	return resolvers, nil
-}
-
-func expandCaptureGroupSeriesJustInTime(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
-	executor := query.NewCaptureGroupExecutor(r.postgresDB, r.insightsDB, time.Now)
-	interval := timeseries.TimeInterval{
-		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
-		Value: definition.SampleIntervalValue,
-	}
-
-	scLoader := &scLoader{primary: r.postgresDB}
-	matchedRepos, err := filterRepositories(ctx, filters, definition.Repositories, scLoader)
-	if err != nil {
-		return nil, err
-	}
-	log15.Debug("capture group series", "seriesId", definition.SeriesID, "filteredRepos", matchedRepos)
-	generatedSeries, err := executor.Execute(ctx, definition.Query, matchedRepos, interval)
-	if err != nil {
-		return nil, errors.Wrap(err, "CaptureGroupExecutor.Execute")
-	}
-
-	var resolvers []graphqlbackend.InsightSeriesResolver
-	for i := range generatedSeries {
-		resolvers = append(resolvers, &dynamicInsightSeriesResolver{generated: &generatedSeries[i]})
-	}
-
-	return resolvers, nil
 }
 
 func (i *insightViewResolver) Presentation(ctx context.Context) (graphqlbackend.InsightPresentation, error) {
