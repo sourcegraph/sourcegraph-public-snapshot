@@ -175,8 +175,8 @@ type Client interface {
 	// to abort processing further results.
 	BatchLog(ctx context.Context, opts BatchLogOptions, callback BatchLogCallback) error
 
-	// GitCommand creates a new Cmd.
-	GitCommand(repo api.RepoName, args ...string) *Cmd
+	// GitCommand creates a new Command.
+	GitCommand(repo api.RepoName, args ...string) Command
 
 	// CreateCommitFromPatch will attempt to create a commit from a patch
 	// If possible, the error returned will be of type protocol.CreateCommitFromPatchError
