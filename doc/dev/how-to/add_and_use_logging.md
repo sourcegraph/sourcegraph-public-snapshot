@@ -95,10 +95,10 @@ func (w *Worker) DoBigThing(params ...int) {
 With `SRC_DEVELOPMENT=true` and `SRC_LOG_FORMAT=condensed` or `SRC_LOG_FORMAT=console`, loggers will generate a human-readable summary format like the following:
 
 ```none
-16:40:24        DEBUG   TestInitLogger  log/logger_test.go:15   a debug message {"Attributes": {}}
-16:40:24        INFO    TestInitLogger  log/logger_test.go:18   hello world     {"Attributes": {"some": "field", "hello": "world"}}
-16:40:24        INFO    TestInitLogger  log/logger_test.go:21   goodbye {"TraceId": "asdf", "Attributes": {"some": "field", "world": "hello"}}
-16:40:24        WARN    TestInitLogger  log/logger_test.go:22   another message {"TraceId": "asdf", "Attributes": {"some": "field"}}
+DEBUG   TestInitLogger  log/logger_test.go:15   a debug message {"Attributes": {}}
+INFO    TestInitLogger  log/logger_test.go:18   hello world     {"Attributes": {"some": "field", "hello": "world"}}
+INFO    TestInitLogger  log/logger_test.go:21   goodbye {"TraceId": "asdf", "Attributes": {"some": "field", "world": "hello"}}
+WARN    TestInitLogger  log/logger_test.go:22   another message {"TraceId": "asdf", "Attributes": {"some": "field"}}
 ```
 
 This format omits fields like OpenTelemetry Resource and renders certain field types in a more friendly manner. Levels are also coloured, and the caller link with `filename:line` should be clickable in iTerm and VS Code such that you can jump straight to the source of the log entry.

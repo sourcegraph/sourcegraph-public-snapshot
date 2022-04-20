@@ -2,7 +2,6 @@ package encoders
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/fatih/color"
 	"go.uber.org/zap/zapcore"
@@ -42,19 +41,12 @@ var OpenTelemetryConfig = zapcore.EncoderConfig{
 func ApplyDevConfig(cfg zapcore.EncoderConfig) zapcore.EncoderConfig {
 	// Nice colors based on log level
 	cfg.EncodeLevel = zapcore.CapitalColorLevelEncoder
-	// TODO maybe enable this in dev? these get rather verbose, however
-	cfg.FunctionKey = zapcore.OmitKey
-	// Encode time in simpler format, omitting date since in dev this is likely a
-	// short-lived instance.
-	cfg.EncodeTime = func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
-		enc.AppendString(t.Format("15:04:05"))
-	}
 	// Human-readable durations
 	cfg.EncodeDuration = zapcore.StringDurationEncoder
 	// Make callers clickable in iTerm
 	cfg.EncodeCaller = func(entry zapcore.EntryCaller, enc zapcore.PrimitiveArrayEncoder) {
 		// Link to open the file:line in VS Code.
-		url := "vscode://file/" + fmt.Sprintf("%s", entry.FullPath())
+		url := "vscode://file/" + entry.FullPath()
 
 		// Constructs an escape sequence that iTerm recognizes as a link.
 		// See https://iterm2.com/documentation-escape-codes.html
@@ -62,5 +54,8 @@ func ApplyDevConfig(cfg zapcore.EncoderConfig) zapcore.EncoderConfig {
 
 		enc.AppendString(color.New(color.Faint).Sprint(link))
 	}
+	// TODO maybe introduce config for omitting these? they get rather verbose however
+	cfg.FunctionKey = zapcore.OmitKey
+	cfg.TimeKey = zapcore.OmitKey
 	return cfg
 }
