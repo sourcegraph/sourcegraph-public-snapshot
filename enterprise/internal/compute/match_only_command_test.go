@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/types"
+
 	"github.com/grafana/regexp"
 	"github.com/hexops/autogold"
 
@@ -28,7 +30,10 @@ func environment(r *MatchContext) interface{} {
 
 func Test_matchOnly(t *testing.T) {
 	data := &result.FileMatch{
-		File: result.File{Path: "bedge"},
+		File: result.File{Path: "bedge", Repo: types.MinimalRepo{
+			ID:   5,
+			Name: "codehost.com/myorg/myrepo",
+		}},
 		LineMatches: []*result.LineMatch{
 			{
 				Preview:    "abcdefgh",
@@ -46,7 +51,9 @@ func Test_matchOnly(t *testing.T) {
 
 	autogold.Want("compute regexp submatch empty environment", `{
   "matches": [],
-  "path": "bedge"
+  "path": "bedge",
+  "repositoryID": 5,
+  "repository": "codehost.com/myorg/myrepo"
 }`).Equal(t, test("nothing", match))
 
 	autogold.Want("compute named regexp submatch", `{
@@ -136,7 +143,9 @@ func Test_matchOnly(t *testing.T) {
       }
     }
   ],
-  "path": "bedge"
+  "path": "bedge",
+  "repositoryID": 5,
+  "repository": "codehost.com/myorg/myrepo"
 }`).Equal(t, test("a(b(c))(de)f(g)h", match))
 
 	autogold.Want("compute regexp submatch includes all matches on line", `{
@@ -206,7 +215,9 @@ func Test_matchOnly(t *testing.T) {
       }
     }
   ],
-  "path": "bedge"
+  "path": "bedge",
+  "repositoryID": 5,
+  "repository": "codehost.com/myorg/myrepo"
 }`).Equal(t, test("([ag])", match))
 
 }
