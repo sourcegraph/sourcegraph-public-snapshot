@@ -21,11 +21,16 @@ type Resource = otfields.Resource
 // Init initializes the log package's global logger as a logger of the given resource.
 // It must be called on service startup, i.e. 'main()', NOT on an 'init()' function.
 //
-// Subsequent calls will be a no-op, so do not call this within a non-service context.
+// Subsequent calls will panic, so do not call this within a non-service context.
+//
 // For testing, you can use 'logtest.Init' to initialize the logging library.
 //
 // If Init is not called, Get will panic.
 func Init(r Resource) {
+	if global.IsInitialized() {
+		panic("log.Init initialized multiple times")
+	}
+
 	level := zap.NewAtomicLevelAt(Level(os.Getenv(envSrcLogLevel)).Parse())
 	format := encoders.ParseOutputFormat(os.Getenv(envSrcLogFormat))
 	development := os.Getenv(envSrcDevelopment) == "true"
