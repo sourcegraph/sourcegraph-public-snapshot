@@ -62,8 +62,6 @@ interactions:
       - "0.040365"
       X-Varied-Accept:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      X-Varied-Authorization:
-      - Bearer 07ced379e40646a09ff56d2e7f3570609ddcc8b9
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -132,8 +130,6 @@ interactions:
       - "0.040365"
       X-Varied-Accept:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      X-Varied-Authorization:
-      - Bearer 07ced379e40646a09ff56d2e7f3570609ddcc8b9
       X-Xss-Protection:
       - "0"
     status: 200 OK
