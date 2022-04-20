@@ -136,7 +136,10 @@ import styles from './codeHost.module.scss'
 
 registerHighlightContributions()
 
-export type OverlayPosition = { left: number } & ({ top: number } | { bottom: number })
+export interface OverlayPosition {
+    top: number
+    left: number
+}
 
 export type ObserveMutations = (
     target: Node,
