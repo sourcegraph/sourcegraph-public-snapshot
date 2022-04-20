@@ -801,6 +801,7 @@ describe('GitHub', () => {
 
         // global and repository search pages
         describe('Search results page', () => {
+            console.log('I am here to trigger clinet checks')
             beforeEach(() => {
                 mockUrls([
                     'https://github.com/_graphql/GetSuggestedNavigationDestinations',
