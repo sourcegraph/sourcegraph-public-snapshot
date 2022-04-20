@@ -595,8 +595,11 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 
 	for {
 		// Query search results.
-		var err error
-		j, err := jobutil.ToSearchJob(r.SearchInputs, r.SearchInputs.Query)
+		b, err := query.ToBasicQuery(r.SearchInputs.Query)
+		if err != nil {
+			return nil, err
+		}
+		j, err := jobutil.ToSearchJob(r.SearchInputs, b)
 		if err != nil {
 			return nil, err
 		}

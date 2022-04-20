@@ -38,25 +38,20 @@ import (
 // query on all indexed repositories) then we need to convert our tree to
 // Zoekt's internal inputs and representation. These concerns are all handled by
 // toSearchJob.
-func ToSearchJob(searchInputs *run.SearchInputs, q query.Q) (job.Job, error) {
-	maxResults := q.MaxResults(searchInputs.DefaultLimit())
-
-	b, err := query.ToBasicQuery(q)
-	if err != nil {
-		return nil, err
-	}
-	types, _ := q.StringValues(query.FieldType)
+func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error) {
+	maxResults := b.MaxResults(searchInputs.DefaultLimit())
+	types, _ := b.IncludeExcludeValues(query.FieldType)
 	resultTypes := search.ComputeResultTypes(types, b, searchInputs.PatternType)
 	patternInfo := search.ToTextPatternInfo(b, resultTypes, searchInputs.Protocol)
 
 	// searcher to use full deadline if timeout: set or we are streaming.
-	useFullDeadline := q.Timeout() != nil || q.Count() != nil || searchInputs.Protocol == search.Streaming
+	useFullDeadline := b.GetTimeout() != nil || b.Count() != nil || searchInputs.Protocol == search.Streaming
 
 	fileMatchLimit := int32(computeFileMatchLimit(b, searchInputs.Protocol))
 	selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
 
 	features := toFeatures(searchInputs.Features)
-	repoOptions := toRepoOptions(q, searchInputs.UserSettings)
+	repoOptions := toRepoOptions(b, searchInputs.UserSettings)
 
 	builder := &jobBuilder{
 		query:          b,
@@ -117,7 +112,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, q query.Q) (job.Job, error) {
 					child:            NewParallelJob(textSearchJobs...),
 					repoOptions:      repoOptions,
 					useIndex:         b.Index(),
-					containsRefGlobs: query.ContainsRefGlobs(q),
+					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
 				})
 			}
 		}
@@ -154,8 +149,8 @@ func ToSearchJob(searchInputs *run.SearchInputs, q query.Q) (job.Job, error) {
 				addJob(required, &repoPagerJob{
 					child:            NewParallelJob(symbolSearchJobs...),
 					repoOptions:      repoOptions,
-					useIndex:         q.Index(),
-					containsRefGlobs: query.ContainsRefGlobs(q),
+					useIndex:         b.Index(),
+					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
 				})
 			}
 		}
@@ -171,7 +166,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, q query.Q) (job.Job, error) {
 				required = resultTypes.Without(result.TypeCommit) == 0
 			}
 			addJob(required, &commit.CommitSearch{
-				Query:                commit.QueryToGitQuery(q, diff),
+				Query:                commit.QueryToGitQuery(b.ToParseTree(), diff),
 				RepoOpts:             repoOptions,
 				Diff:                 diff,
 				HasTimeFilter:        b.Exists("after") || b.Exists("before"),
@@ -202,7 +197,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, q query.Q) (job.Job, error) {
 				ZoektArgs:        zoektArgs,
 				SearcherArgs:     searcherArgs,
 				UseIndex:         b.Index(),
-				ContainsRefGlobs: query.ContainsRefGlobs(q),
+				ContainsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
 				RepoOpts:         repoOptions,
 			})
 		}
@@ -229,7 +224,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, q query.Q) (job.Job, error) {
 
 				// Don't run a repo search if the search contains fields that aren't on the allowlist.
 				exists := true
-				query.VisitParameter(q, func(field, _ string, _ bool, _ query.Annotation) {
+				query.VisitParameter(b.ToParseTree(), func(field, _ string, _ bool, _ query.Annotation) {
 					if _, ok := fieldAllowlist[field]; !ok {
 						exists = false
 					}
@@ -246,7 +241,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, q query.Q) (job.Job, error) {
 				}
 
 				opts.RepoFilters = append(make([]string, 0, len(opts.RepoFilters)), opts.RepoFilters...)
-				opts.CaseSensitiveRepoFilters = q.IsCaseSensitive()
+				opts.CaseSensitiveRepoFilters = b.IsCaseSensitive()
 
 				patternPrefix := strings.SplitN(pattern, "@", 2)
 				if len(patternPrefix) == 1 {
@@ -319,8 +314,8 @@ func ToSearchJob(searchInputs *run.SearchInputs, q query.Q) (job.Job, error) {
 	return job, nil
 }
 
-func toRepoOptions(q query.Q, userSettings *schema.Settings) search.RepoOptions {
-	repoFilters, minusRepoFilters := q.Repositories()
+func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOptions {
+	repoFilters, minusRepoFilters := b.Repositories()
 
 	var settingForks, settingArchived bool
 	if v := userSettings.SearchIncludeForks; v != nil {
@@ -337,7 +332,7 @@ func toRepoOptions(q query.Q, userSettings *schema.Settings) search.RepoOptions 
 		// (2) user/org/global setting includes forks
 		fork = query.Yes
 	}
-	if setFork := q.Fork(); setFork != nil {
+	if setFork := b.Fork(); setFork != nil {
 		fork = *setFork
 	}
 
@@ -348,25 +343,23 @@ func toRepoOptions(q query.Q, userSettings *schema.Settings) search.RepoOptions 
 		// (2) user/org/global setting includes archives in all searches
 		archived = query.Yes
 	}
-	if setArchived := q.Archived(); setArchived != nil {
+	if setArchived := b.Archived(); setArchived != nil {
 		archived = *setArchived
 	}
 
-	visibilityStr, _ := q.StringValue(query.FieldVisibility)
-	visibility := query.ParseVisibility(visibilityStr)
-
-	commitAfter, _ := q.StringValue(query.FieldRepoHasCommitAfter)
-	searchContextSpec, _ := q.StringValue(query.FieldContext)
+	visibility := b.Visibility()
+	commitAfter := b.FindValue(query.FieldRepoHasCommitAfter)
+	searchContextSpec := b.FindValue(query.FieldContext)
 
 	return search.RepoOptions{
 		RepoFilters:       repoFilters,
 		MinusRepoFilters:  minusRepoFilters,
-		Dependencies:      q.Dependencies(),
+		Dependencies:      b.Dependencies(),
 		SearchContextSpec: searchContextSpec,
-		ForkSet:           q.Fork() != nil,
+		ForkSet:           b.Fork() != nil,
 		OnlyForks:         fork == query.Only,
 		NoForks:           fork == query.No,
-		ArchivedSet:       q.Archived() != nil,
+		ArchivedSet:       b.Archived() != nil,
 		OnlyArchived:      archived == query.Only,
 		NoArchived:        archived == query.No,
 		Visibility:        visibility,
@@ -587,10 +580,10 @@ func toPatternExpressionJob(inputs *run.SearchInputs, q query.Basic) (job.Job, e
 		case query.Or:
 			return toOrJob(inputs, q)
 		case query.Concat:
-			return ToSearchJob(inputs, q.ToParseTree())
+			return ToSearchJob(inputs, q)
 		}
 	case query.Pattern:
-		return ToSearchJob(inputs, q.ToParseTree())
+		return ToSearchJob(inputs, q)
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
 		return NewNoopJob(), nil
@@ -608,7 +601,7 @@ func ToEvaluateJob(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
 		err error
 	)
 	if q.Pattern == nil {
-		job, err = ToSearchJob(inputs, query.ToNodes(q.Parameters))
+		job, err = ToSearchJob(inputs, q)
 	} else {
 		job, err = toPatternExpressionJob(inputs, q)
 		if err != nil {
@@ -617,7 +610,7 @@ func ToEvaluateJob(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
 		if _, ok := q.Pattern.(query.Pattern); !ok {
 			// This pattern is not an atomic Pattern, but an
 			// expression. Optimize the expression for backends.
-			job, err = optimizeJobs(job, inputs, q.ToParseTree())
+			job, err = optimizeJobs(job, inputs, q)
 		}
 	}
 	if err != nil {
@@ -637,7 +630,7 @@ func ToEvaluateJob(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
 // converts them directly to native queries for a backed. Currently that backend
 // is Zoekt. It removes unoptimized Zoekt jobs from the baseJob and repalces it
 // with the optimized ones.
-func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Q) (job.Job, error) {
+func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
 	candidateOptimizedJobs, err := ToSearchJob(inputs, q)
 	if err != nil {
 		return nil, err
@@ -721,7 +714,7 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Q) (job.Job
 				child:            job,
 				repoOptions:      toRepoOptions(q, inputs.UserSettings),
 				useIndex:         q.Index(),
-				containsRefGlobs: query.ContainsRefGlobs(q),
+				containsRefGlobs: query.ContainsRefGlobs(q.ToParseTree()),
 			}
 		}
 	}
