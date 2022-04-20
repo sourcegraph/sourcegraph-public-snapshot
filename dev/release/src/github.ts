@@ -523,7 +523,6 @@ async function cloneRepo(
     const tmpdir = await mkdtemp(path.join(os.tmpdir(), `sg-release-${owner}-${repo}-`))
     console.log(`Created temp directory ${tmpdir}`)
     const fetchFlags = '--depth 1'
-    const cloneFlags = `${fetchFlags} --reference-if-able ${process.cwd()}/../..`
 
     // Determine whether or not to create the base branch, or use the existing one
     let revisionExists = true
@@ -545,6 +544,12 @@ async function cloneRepo(
               `git fetch ${fetchFlags} origin ${checkout.revision}:${checkout.revision} || true ; git checkout ${checkout.revision}`
             : // create from HEAD and publish base branch if it does not yet exist
               `git checkout -b ${checkout.revision} ; git push origin ${checkout.revision}:${checkout.revision}`
+
+    // PERF: if we have a local clone using reference avoids needing to fetch
+    // all the objects from the remote. We assume the local clone will exist
+    // in the same directory as the current sourcegraph/sourcegraph clone.
+    const localSourcegraphRepo = `${process.cwd()}/../..`
+    const cloneFlags = `${fetchFlags} --reference-if-able ${localSourcegraphRepo}/../${repo}`
 
     // Set up repository
     const setupScript = `set -ex
