@@ -90,16 +90,16 @@ type RepoGetter interface {
 	GetRepo(context.Context, string) (*types.Repo, error)
 }
 
-type DBSource interface {
+type DependenciesServiceSource interface {
 	Source
 	SetDependenciesService(depsSvc DependenciesService)
 }
 
-// WithDB returns a decorator used in NewSourcer that calls SetDB on Sources that
-// can be upgraded to it.
-func WithDB(depsSvc *dependencies.Service) func(Source) Source {
+// WithDependenciesService returns a decorator used in NewSourcer that calls SetDB on
+// Sources that can be upgraded to it.
+func WithDependenciesService(depsSvc *dependencies.Service) func(Source) Source {
 	return func(src Source) Source {
-		if s, ok := src.(DBSource); ok {
+		if s, ok := src.(DependenciesServiceSource); ok {
 			s.SetDependenciesService(depsSvc)
 			return s
 		}

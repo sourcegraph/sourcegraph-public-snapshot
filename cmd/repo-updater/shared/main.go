@@ -129,7 +129,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		m.MustRegister(prometheus.DefaultRegisterer)
 
 		depsSvc := livedependencies.GetService(db, nil)
-		src = repos.NewSourcer(db, cf, repos.WithDB(depsSvc), repos.ObservedSource(log15.Root(), m))
+		src = repos.NewSourcer(db, cf, repos.WithDependenciesService(depsSvc), repos.ObservedSource(log15.Root(), m))
 	}
 
 	updateScheduler := repos.NewUpdateScheduler(db)
