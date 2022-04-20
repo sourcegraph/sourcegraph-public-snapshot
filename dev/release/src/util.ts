@@ -81,17 +81,21 @@ export function changelogURL(version: string): string {
     return `https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#${versionAnchor}`
 }
 
-function ensureBranchUpToDate(branch: string): void {
+function ensureBranchUpToDate(branch: string): boolean {
     const { stdout } = execa.sync('git', ['status', '-uno'])
     if (stdout.includes('Your branch is behind')) {
         console.log(
             `Your branch is behind the ${branch} branch. You should run \`git pull\` to update your ${branch} branch.`
         )
-        process.exit(1)
-    } else if (stdout.includes('Your branch is ahead')) {
-        console.log(`Your branch is ahead of the ${branch} branch.`)
-        process.exit(1)
+        return false
     }
+
+    if (stdout.includes('Your branch is ahead')) {
+        console.log(`Your branch is ahead of the ${branch} branch.`)
+        return false
+    }
+
+    return true
 }
 
 export function ensureMainBranchUpToDate(): void {
@@ -104,14 +108,19 @@ export function ensureMainBranchUpToDate(): void {
         process.exit(1)
     }
     execa.sync('git', ['remote', 'update'], { stdout: 'ignore' })
-    ensureBranchUpToDate(mainBranch)
+    if (!ensureBranchUpToDate(mainBranch)) {
+        process.exit(1)
+    }
 }
 
 export function ensureReleaseBranchUpToDate(branch: string): void {
     const currentBranch = execa.sync('git', ['rev-parse', '--abbrev-ref', 'HEAD']).stdout.trim()
     execa.sync('git', ['checkout', branch])
-    ensureBranchUpToDate(branch)
+    const isReleaseBranchToDate = ensureBranchUpToDate(branch)
     execa.sync('git', ['checkout', currentBranch])
+    if (!isReleaseBranchToDate) {
+        process.exit(1)
+    }
 }
 
 interface ContainerRegistryCredential {
