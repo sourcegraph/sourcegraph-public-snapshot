@@ -409,7 +409,7 @@ func LogSearchLatency(ctx context.Context, db database.DB, wg *sync.WaitGroup, s
 			types = append(types, "regexp")
 		} else if q.IsStructural() {
 			types = append(types, "structural")
-		} else if len(si.Query.Fields()["file"]) > 0 {
+		} else if si.Query.Exists(query.FieldFile) {
 			// No search pattern specified and file: is specified.
 			types = append(types, "file")
 		} else {
