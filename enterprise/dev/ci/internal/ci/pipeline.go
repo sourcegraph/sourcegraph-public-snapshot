@@ -95,10 +95,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 			// Do not create client PR preview if Go or GraphQL is changed to avoid confusing
 			// preview behavior, because only Client code is used to deploy application preview.
-			// Disable these checks temporarily
-			// if !c.Diff.Has(changed.Go) && !c.Diff.Has(changed.GraphQL) {
-			ops.Append(prPreview())
-			// }
+			if !c.Diff.Has(changed.Go) && !c.Diff.Has(changed.GraphQL) {
+				ops.Append(prPreview())
+			}
 		}
 		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{
 			MinimumUpgradeableVersion:  minimumUpgradeableVersion,

@@ -34,9 +34,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 }
 
 /**
- * Simple button
- *
- * Faking client changes
+ * Simple button.
  *
  * Style can be configured using different button `variant`s.
  *
@@ -109,3 +107,5 @@ export const Button = React.forwardRef(
         return buttonComponent
     }
 ) as ForwardReferenceComponent<'button', ButtonProps>
+
+Button.displayName = 'Button'
