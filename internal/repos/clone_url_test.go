@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
@@ -228,6 +229,24 @@ func TestGitLabCloneURLs(t *testing.T) {
 				t.Fatalf("wrong cloneURL, got: %q, want: %q", got, test.Want)
 			}
 		})
+	}
+}
+
+func TestGerritCloneURL(t *testing.T) {
+	cfg := schema.GerritConnection{
+		Url:      "https://gerrit.com",
+		Username: "admin",
+		Password: "pa$$word",
+	}
+
+	project := &gerrit.Project{
+		ID: "test-project",
+	}
+
+	got := gerritCloneURL(project, &cfg)
+	want := "https://admin:pa$$word@gerrit.com/test-project"
+	if got != want {
+		t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
 	}
 }
 

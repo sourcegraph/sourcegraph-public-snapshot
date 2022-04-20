@@ -275,6 +275,11 @@ func TestUniqueCodeHostIdentifier(t *testing.T) {
 			want: "eu-west-1:accesskey",
 		},
 		{
+			kind:   KindGerrit,
+			config: `{"url": "https://example.com"}`,
+			want:   "https://example.com/",
+		},
+		{
 			kind:   KindBitbucketServer,
 			config: `{"url": "https://bitbucket.sgdev.org/"}`,
 			want:   "https://bitbucket.sgdev.org/",
