@@ -84,8 +84,6 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
                         menuButtonClassName="ml-1 d-inline-flex"
                         zeroYAxisMin={zeroYAxisMin}
                         onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
-                        onRemoveFromDashboard={dashboard => handleRemove({ insight, dashboard })}
-                        onDelete={() => handleDelete(insight)}
                     />
                 )}
             </InsightCardHeader>
