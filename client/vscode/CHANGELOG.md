@@ -2,7 +2,13 @@
 
 The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release versions and major.ODD_NUMBER.patch (eg. 2.1.1) for pre-release versions.
 
-## Next Release - 2.2.1
+## Next Release - 2.2.2
+
+### Changes
+
+### Fixes
+
+## 2.2.1
 
 ### Changes
 
@@ -10,6 +16,8 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 - Add CONTRIBUTING guide [issue/26536](https://github.com/sourcegraph/sourcegraph/issues/26536)
 - Display error message when connected to unsupported instances [issue/31808](https://github.com/sourcegraph/sourcegraph/issues/31808)
 - Log events with `IDEEXTENSION` as event source for instances on 3.38.0 and above [issue/32851](https://github.com/sourcegraph/sourcegraph/issues/32851)
+- Add new configuration setting: sourcegraph.basePath [issue/32633](https://github.com/sourcegraph/sourcegraph/issues/32633)
+- Add ability to open local copy of a search result if file exists in current workspace or basePath [issue/32633](https://github.com/sourcegraph/sourcegraph/issues/32633)
 
 ### Fixes
 

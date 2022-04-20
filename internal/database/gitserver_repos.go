@@ -320,12 +320,7 @@ WHERE r.name = %s
 	return scanSingleGitserverRepo(s.QueryRow(ctx, sqlf.Sprintf(q, name)))
 }
 
-func (s *gitserverRepoStore) GetByNames(ctx context.Context, names ...api.RepoName) ([]*types.GitserverRepo, error) {
-	if len(names) > batch.MaxNumPostgresParameters {
-		return nil, errors.Newf("getting GitserverRepos by names: too many names provided: %v", len(names))
-	}
-
-	q := `
+const getByNamesQueryTemplate = `
 -- source: internal/database/gitserver_repos.go:gitserverRepoStore.GetByName
 SELECT
        g.repo_id,
@@ -340,17 +335,51 @@ FROM gitserver_repos g
 JOIN repo r on r.id = g.repo_id
 WHERE r.name IN (%s)
 `
-	nameQueries := []*sqlf.Query{}
-	for _, v := range names {
-		nameQueries = append(nameQueries, sqlf.Sprintf("%s", v))
+
+func (s *gitserverRepoStore) GetByNames(ctx context.Context, names ...api.RepoName) ([]*types.GitserverRepo, error) {
+	return s.getByNames(ctx, batch.MaxNumPostgresParameters, names...)
+}
+
+func (s *gitserverRepoStore) getByNames(ctx context.Context, maxNumPostgresParameters int, names ...api.RepoName) ([]*types.GitserverRepo, error) {
+	remainingNames := len(names)
+	nameQueries := make([]*sqlf.Query, 0)
+	batchSize := 0
+	repos := make([]*types.GitserverRepo, 0, remainingNames)
+
+	// iterating len(names) + 1 times because last iteration is needed for the last batch
+	for i := 0; i <= len(names); i++ {
+		if remainingNames == 0 || batchSize == maxNumPostgresParameters {
+			// executing the DB query
+			res, err := s.sendBatchQuery(ctx, batchSize, nameQueries)
+			if err != nil {
+				return nil, err
+			}
+			repos = append(repos, res...)
+
+			if remainingNames == 0 {
+				// last batch: break out of the loop
+				break
+			}
+
+			// intermediate batch: reset variables required for a new batch
+			batchSize = 0
+			nameQueries = nil
+		}
+		nameQueries = append(nameQueries, sqlf.Sprintf("%s", names[i]))
+		batchSize++
+		remainingNames--
 	}
 
-	rows, err := s.Query(ctx, sqlf.Sprintf(q, sqlf.Join(nameQueries, ",")))
+	return repos, nil
+}
+
+func (s *gitserverRepoStore) sendBatchQuery(ctx context.Context, batchSize int, nameQueries []*sqlf.Query) ([]*types.GitserverRepo, error) {
+	repos := make([]*types.GitserverRepo, 0, batchSize)
+	rows, err := s.Query(ctx, sqlf.Sprintf(getByNamesQueryTemplate, sqlf.Join(nameQueries, ",")))
 	if err != nil {
 		return nil, err
 	}
-
-	repos := make([]*types.GitserverRepo, 0, len(names))
+	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
 		repo, err := scanSingleGitserverRepo(rows)
@@ -359,8 +388,7 @@ WHERE r.name IN (%s)
 		}
 		repos = append(repos, repo)
 	}
-
-	return repos, nil
+	return repos, err
 }
 
 // ScannerWithError captures Scan and Err methods of sql.Rows and sql.Row.

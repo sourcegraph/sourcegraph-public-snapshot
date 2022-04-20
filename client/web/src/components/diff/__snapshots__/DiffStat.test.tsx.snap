@@ -7,17 +7,17 @@ exports[`DiffStat expandedCounts 1`] = `
     data-tooltip="1 addition, 2 changes, 3 deletions"
   >
     <strong
-      class="text-success mr-1"
+      class="a11y-ignore text-success mr-1"
     >
       +1
     </strong>
     <strong
-      class="text-warning mr-1"
+      class="a11y-ignore text-warning mr-1"
     >
       •2
     </strong>
     <strong
-      class="text-danger"
+      class="a11y-ignore text-danger"
     >
       −3
     </strong>
@@ -72,17 +72,17 @@ exports[`DiffStatStack 1`] = `
       data-tooltip="1 addition, 2 changes, 3 deletions"
     >
       <strong
-        class="text-success mr-1"
+        class="a11y-ignore text-success mr-1"
       >
         +1
       </strong>
       <strong
-        class="text-warning mr-1"
+        class="a11y-ignore text-warning mr-1"
       >
         •2
       </strong>
       <strong
-        class="text-danger"
+        class="a11y-ignore text-danger"
       >
         −3
       </strong>

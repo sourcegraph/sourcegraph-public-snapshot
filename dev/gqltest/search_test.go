@@ -1455,7 +1455,7 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 				require.Zero(t, results.MatchCount)
 				require.Equal(t, results.Alert, &gqltestutil.SearchAlert{
 					Title:       "No dependency repositories found",
-					Description: "Dependency repos are cloned on-demand when first searched. Try again in a few seconds if you know the given repositories have dependencies.\n\nOnly npm dependencies from `package-lock.json` and `yarn.lock` files are currently supported.",
+					Description: "Dependency repos are cloned on-demand when first searched. Try again in a few seconds if you know the given repositories have dependencies.\n\nRead more about dependencies search [here](https://docs.sourcegraph.com/code_search/how-to/dependencies_search).",
 				})
 			})
 		}

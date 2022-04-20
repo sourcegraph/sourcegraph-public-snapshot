@@ -292,12 +292,11 @@ func ToSearchJob(searchInputs *run.SearchInputs, q query.Q) (job.Job, error) {
 						mode = search.SkipUnindexed
 					}
 					addJob(true, &run.RepoSearch{
-						RepoOptions:     repoOptions,
-						Features:        features,
-						UseFullDeadline: useFullDeadline,
-						Query:           q,
-						PatternInfo:     patternInfo,
-						Mode:            mode,
+						RepoOptions:                  repoOptions,
+						Features:                     features,
+						FilePatternsReposMustInclude: patternInfo.FilePatternsReposMustInclude,
+						FilePatternsReposMustExclude: patternInfo.FilePatternsReposMustExclude,
+						Mode:                         mode,
 					})
 				}
 			}
@@ -365,13 +364,14 @@ func toRepoOptions(q query.Q, userSettings *schema.Settings) search.RepoOptions 
 		MinusRepoFilters:  minusRepoFilters,
 		Dependencies:      q.Dependencies(),
 		SearchContextSpec: searchContextSpec,
+		ForkSet:           q.Fork() != nil,
 		OnlyForks:         fork == query.Only,
 		NoForks:           fork == query.No,
+		ArchivedSet:       q.Archived() != nil,
 		OnlyArchived:      archived == query.Only,
 		NoArchived:        archived == query.No,
 		Visibility:        visibility,
 		CommitAfter:       commitAfter,
-		Query:             q,
 	}
 }
 

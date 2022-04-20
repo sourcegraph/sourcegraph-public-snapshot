@@ -38,7 +38,15 @@ const StateBadge: React.FunctionComponent<{ state: BatchChangeState }> = ({ stat
     switch (state) {
         case BatchChangeState.OPEN:
             return (
-                <Badge variant="success" className={classNames(styles.batchChangeNodeBadge, 'text-uppercase')}>
+                /*
+                        a11y-ignore
+                        Rule: "color-contrast" (Elements must have sufficient color contrast)
+                        GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                    */
+                <Badge
+                    variant="success"
+                    className={classNames('a11y-ignore', styles.batchChangeNodeBadge, 'text-uppercase')}
+                >
                     Open
                 </Badge>
             )

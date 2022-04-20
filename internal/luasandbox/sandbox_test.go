@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	lua "github.com/yuin/gopher-lua"
 
+	"github.com/sourcegraph/sourcegraph/internal/luasandbox/util"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -89,11 +90,11 @@ func TestModule(t *testing.T) {
 	var stashedValue lua.LValue
 
 	api := map[string]lua.LGFunction{
-		"add": WrapLuaFunction(func(state *lua.LState) error {
+		"add": util.WrapLuaFunction(func(state *lua.LState) error {
 			state.Push(state.CheckNumber(1) + state.CheckNumber(2))
 			return nil
 		}),
-		"stash": WrapLuaFunction(func(state *lua.LState) error {
+		"stash": util.WrapLuaFunction(func(state *lua.LState) error {
 			stashedValue = state.CheckAny(1)
 			return nil
 		}),
@@ -103,7 +104,7 @@ func TestModule(t *testing.T) {
 
 	sandbox, err := newService(&observation.TestContext).CreateSandbox(ctx, CreateOptions{
 		Modules: map[string]lua.LGFunction{
-			"testmod": CreateModule(api),
+			"testmod": util.CreateModule(api),
 		},
 	})
 	if err != nil {

@@ -400,6 +400,9 @@ const fetchLocalCodeIntelPayload = cache(
         }
 
         const payload = JSON.parse(payloadString) as LocalCodeIntelPayload
+        if (!payload) {
+            return undefined
+        }
 
         for (const symbol of payload.symbols) {
             if (symbol.refs) {
@@ -420,9 +423,9 @@ interface RepositoryCommitPath {
 
 type RepositoryCommitPathPosition = RepositoryCommitPath & Position
 
-interface LocalCodeIntelPayload {
+type LocalCodeIntelPayload = {
     symbols: LocalSymbol[]
-}
+} | null
 
 interface LocalSymbol {
     hover?: string

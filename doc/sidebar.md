@@ -34,7 +34,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Explanations](code_insights/explanations/index.md)
   - [How-to guides](code_insights/how-tos/index.md)
   - [References](code_insights/references/index.md)
-- [Notebooks (Beta)](notebooks/index.md)
+- [Notebooks](notebooks/index.md)
   - [Quickstart](notebooks/quickstart.md)
 - [Integrations](integration/index.md)
   - [Browser extension](integration/browser_extension/index.md)

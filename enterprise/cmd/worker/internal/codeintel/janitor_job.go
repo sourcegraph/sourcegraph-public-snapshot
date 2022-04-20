@@ -78,6 +78,7 @@ func (j *janitorJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutin
 		janitor.NewUploadExpirer(dbStoreShim, policyMatcher, janitorConfigInst.RepositoryProcessDelay, janitorConfigInst.RepositoryBatchSize, janitorConfigInst.UploadProcessDelay, janitorConfigInst.UploadBatchSize, janitorConfigInst.PolicyBatchSize, janitorConfigInst.CommitBatchSize, janitorConfigInst.BranchesCacheMaxKeys, janitorConfigInst.CleanupTaskInterval, metrics),
 		janitor.NewExpiredUploadDeleter(dbStoreShim, janitorConfigInst.CleanupTaskInterval, metrics),
 		janitor.NewHardDeleter(dbStoreShim, lsifStoreShim, janitorConfigInst.CleanupTaskInterval, metrics),
+		janitor.NewAuditLogJanitor(dbStoreShim, janitorConfigInst.AuditLogMaxAge, janitorConfigInst.CleanupTaskInterval, metrics),
 
 		// Current indexes
 		janitor.NewDocumentationSearchCurrentJanitor(lsifStoreShim, janitorConfigInst.DocumentationSearchCurrentMinimumTimeSinceLastCheck, janitorConfigInst.DocumentationSearchCurrentBatchSize, janitorConfigInst.CleanupTaskInterval, metrics),

@@ -8,7 +8,7 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { AuthenticatedUser } from '../../auth'
 
 import { CodeInsightsBackendContext } from './core'
-import { useGetApi } from './hooks/use-get-api'
+import { useApi } from './hooks/use-api'
 
 const CodeInsightsAppLazyRouter = lazyComponent(() => import('./CodeInsightsAppRouter'), 'CodeInsightsAppRouter')
 
@@ -32,7 +32,7 @@ export interface CodeInsightsRouterProps extends SettingsCascadeProps<Settings>,
 }
 
 export const CodeInsightsRouter: React.FunctionComponent<CodeInsightsRouterProps> = props => {
-    const api = useGetApi()
+    const api = useApi()
 
     if (!api) {
         return null
