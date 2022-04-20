@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/inconshreveable/log15"
 )
 
 // DefaultMonitorRegistry is the default global rate limit monitor registry. It will hold rate limit mappings
@@ -175,19 +177,36 @@ func (c *Monitor) Update(h http.Header) {
 	}
 
 	// See https://developer.github.com/v3/#rate-limiting.
-	limit, err := strconv.Atoi(h.Get(c.HeaderPrefix + "RateLimit-Limit"))
+	headerLimit := h.Get(c.HeaderPrefix + "RateLimit-Limit")
+	limit, err := strconv.Atoi(headerLimit)
 	if err != nil {
 		c.known = false
+		log15.Error("Monitor.Update",
+			"Failed to parse header X-RateLimit-Limit", err,
+			"X-RateLimit-Limit", headerLimit,
+		)
 		return
 	}
-	remaining, err := strconv.Atoi(h.Get(c.HeaderPrefix + "RateLimit-Remaining"))
+
+	headerRemaining := h.Get(c.HeaderPrefix + "RateLimit-Remaining")
+	remaining, err := strconv.Atoi(headerRemaining)
 	if err != nil {
 		c.known = false
+		log15.Error("Monitor.Update",
+			"Failed to parse header X-RateLimit-Limit", err,
+			"X-RateLimit-Remaining", headerRemaining,
+		)
 		return
 	}
-	resetAtSeconds, err := strconv.ParseInt(h.Get(c.HeaderPrefix+"RateLimit-Reset"), 10, 64)
+
+	headerReset := h.Get(c.HeaderPrefix + "RateLimit-Reset")
+	resetAtSeconds, err := strconv.ParseInt(headerReset, 10, 64)
 	if err != nil {
 		c.known = false
+		log15.Error("Monitor.Update",
+			"Failed to parse header X-RateLimit-Reset", err,
+			"X-RateLimit-Reset", headerReset,
+		)
 		return
 	}
 	c.known = true
