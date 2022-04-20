@@ -3,13 +3,14 @@ package main
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func main() {
 	log.Init(log.Resource{
-		Name:    "worker",
+		Name:    env.MyName,
 		Version: version.Version(),
 	})
 
