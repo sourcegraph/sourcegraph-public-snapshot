@@ -124,6 +124,42 @@ namespace Foo {
         }
     }
 }
+`}, {
+		path: "test.py",
+		contents: `
+#     vv f.p1 def
+#     vv f.p1 ref
+#         vv f.p2 def
+#         vv f.p2 ref
+#                   vv f.p3 def
+#                   vv f.p3 ref
+#                               vv f.p4 def
+#                               vv f.p4 ref
+def f(p1, p2: bool, p3 = False, p4: bool = False):
+	#     vv f.p1 ref
+	#         vv f.p2 ref
+	#             vv f.p3 ref
+	#                 vv f.p4 ref
+	print(p1, p2, p3, p4)
+
+	x = 5 # < "x" f.x def < "x" f.x ref
+
+	#     v f.x ref
+	print(x)
+
+	#   v f.i def
+	#   v f.i ref
+	for i in range(10):
+		#     v f.i ref
+		print(i)
+
+	try:
+		pass
+	#                   v f.e def
+	#                   v f.e ref
+	except Exception as e:
+		#     v f.e ref
+		print(e)
 `},
 	}
 
