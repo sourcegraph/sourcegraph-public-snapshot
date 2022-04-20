@@ -8,11 +8,15 @@ interface ErrorContext {
     errorInfo?: ErrorInfo
 }
 
+export function isDatadogRumAvailable(): boolean {
+    return typeof DD_RUM !== 'undefined'
+}
+
 export const DatadogClient = {
     addError: (error: unknown, context: ErrorContext): void => {
         // Temporary solution for checking the availability of the
         // Datadog SDK until we decide to move forward with this service.
-        if (typeof DD_RUM !== 'undefined') {
+        if (isDatadogRumAvailable()) {
             DD_RUM.addError(error, context)
         }
     },

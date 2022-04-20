@@ -4,6 +4,8 @@ import type { RumGlobal } from '@datadog/browser-rum-slim'
 import { authenticatedUser } from '../../auth'
 import { shouldErrorBeReported } from '../shouldErrorBeReported'
 
+import { isDatadogRumAvailable } from './datadogClient'
+
 declare global {
     const DD_RUM: RumGlobal
 }
@@ -16,7 +18,7 @@ declare global {
  */
 export function initDatadog(): void {
     if (
-        typeof DD_RUM !== 'undefined' &&
+        isDatadogRumAvailable() &&
         window.context.datadog &&
         (process.env.NODE_ENV === 'production' || process.env.ENABLE_MONITORING)
     ) {
