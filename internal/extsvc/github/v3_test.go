@@ -471,6 +471,8 @@ func TestGetRepository(t *testing.T) {
 	cli, save := newV3TestClient(t, "GetRepository")
 	defer save()
 
+	var remaining int
+
 	t.Run("first run", func(t *testing.T) {
 		repo, err := cli.GetRepository(context.Background(), "sourcegraph", "sourcegraph")
 		if err != nil {
@@ -485,6 +487,8 @@ func TestGetRepository(t *testing.T) {
 		if repo.NameWithOwner != want {
 			t.Fatalf("expected NameWithOwner %s, but got %s", want, repo.NameWithOwner)
 		}
+
+		remaining, _, _, _ = cli.RateLimitMonitor().Get()
 	})
 	t.Run("second run", func(t *testing.T) {
 		repo, err := cli.GetRepository(context.Background(), "sourcegraph", "sourcegraph")
@@ -499,6 +503,11 @@ func TestGetRepository(t *testing.T) {
 		want := "sourcegraph/sourcegraph"
 		if repo.NameWithOwner != want {
 			t.Fatalf("expected NameWithOwner %s, but got %s", want, repo.NameWithOwner)
+		}
+
+		remaining2, _, _, _ := cli.RateLimitMonitor().Get()
+		if remaining2 < remaining {
+			t.Fatalf("expected cached repsonse, but API quota used")
 		}
 	})
 
