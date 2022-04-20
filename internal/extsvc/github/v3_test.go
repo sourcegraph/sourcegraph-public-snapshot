@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
@@ -725,7 +726,7 @@ func TestV3Client_Fork(t *testing.T) {
 					assert.Equal(t, *org, owner)
 				}
 
-				testutil.AssertGolden(t, testName, update(testName), fork)
+				testutil.AssertGolden(t, filepath.Join("testdata", "golden", testName), update(testName), fork)
 			})
 		}
 	})
@@ -741,7 +742,7 @@ func TestV3Client_Fork(t *testing.T) {
 		assert.NotNil(t, err)
 		assert.Nil(t, fork)
 
-		testutil.AssertGolden(t, testName, update(testName), fork)
+		testutil.AssertGolden(t, filepath.Join("testdata", "golden", testName), update(testName), fork)
 	})
 }
 
