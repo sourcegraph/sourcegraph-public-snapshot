@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "noEmit": true,
+    "allowJs": true,
+  },
+  "extends": "./tsconfig.json",
+  "include": ["./*", "./.*", "client/*/*", "client/*/.*"],
+}

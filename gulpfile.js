@@ -1,6 +1,7 @@
 // @ts-check
 
 const gulp = require('gulp')
+
 const {
   graphQlSchema,
   graphQlOperations,
@@ -23,13 +24,13 @@ const build = gulp.series(generate, webWebpack)
 /**
  * Watches everything and rebuilds on file changes.
  */
-const dev = gulp.series(generate, gulp.parallel(watchGenerators, developmentServer))
+const development = gulp.series(generate, gulp.parallel(watchGenerators, developmentServer))
 
 module.exports = {
   generate,
   watchGenerate,
   build,
-  dev,
+  dev: development,
   schema,
   graphQlSchema,
   watchGraphQlSchema,

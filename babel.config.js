@@ -1,7 +1,8 @@
 // @ts-check
+const path = require('path')
+
 const logger = require('gulplog')
 const semver = require('semver')
-const path = require('path')
 
 /** @type {import('@babel/core').ConfigFunction} */
 module.exports = api => {

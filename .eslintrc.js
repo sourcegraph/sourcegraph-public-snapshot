@@ -14,7 +14,7 @@ const config = {
       jsx: true,
     },
     EXPERIMENTAL_useSourceOfProjectReferenceRedirect: true,
-    project: __dirname + '/tsconfig.json',
+    project: __dirname + '/tsconfig.eslint.json',
   },
   settings: {
     react: {
