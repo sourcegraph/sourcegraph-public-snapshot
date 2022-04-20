@@ -183,6 +183,7 @@ export const useWorkspacesPreview = (
                     startPolling(POLLING_INTERVAL)
                 })
                 .catch((error: Error) => setError(error.message))
+                .finally(() => setIsInProgress(false))
         },
         [
             batchSpecID,
