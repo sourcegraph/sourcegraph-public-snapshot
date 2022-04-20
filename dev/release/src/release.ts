@@ -23,7 +23,7 @@ import {
 } from './github'
 import { ensureEvent, getClient, EventOptions, calendarTime } from './google-calendar'
 import { postMessage, slackURL } from './slack'
-import { cacheFolder, formatDate, timezoneLink, hubSpotFeedbackFormStub, ensureDocker, changelogURL, ensureBranchUpToDate } from './util'
+import { cacheFolder, formatDate, timezoneLink, hubSpotFeedbackFormStub, ensureDocker, changelogURL, ensureReleaseBranchUpToDate } from './util'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 
@@ -286,7 +286,6 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             const { upcoming: release } = await releaseVersions(config)
             const branch = `${release.major}.${release.minor}`
             const tag = `v${release.version}${candidate === 'final' ? '' : `-rc.${candidate}`}`
-            ensureBranchUpToDate(branch)
             await createTag(
                 await getAuthenticatedGitHubClient(),
                 {
@@ -297,6 +296,8 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 },
                 config.dryRun.tags || false
             )
+            console.log('!!')
+            ensureReleaseBranchUpToDate(branch)
         },
     },
     {
