@@ -25,7 +25,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- Code Insights: Fixed line chart data series hover effect. Now the active line will be rendered on top of the others.
 
 ### Removed
 

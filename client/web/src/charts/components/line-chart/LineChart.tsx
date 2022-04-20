@@ -32,6 +32,9 @@ export interface LineChartContentProps<Datum> extends SeriesLikeChart<Datum>, SV
     zeroYAxisMin?: boolean
 }
 
+const sortByDataKey = (dataKey: string | number | symbol, activeDataKey: string): number =>
+    dataKey === activeDataKey ? 1 : -1
+
 /**
  * Visual component that renders svg line chart with pre-defined sizes, tooltip,
  * voronoi area distribution.
@@ -160,33 +163,37 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
             <Group top={margin.top}>
                 {stacked && <StackedArea dataSeries={dataSeries} xScale={xScale} yScale={yScale} />}
 
-                {dataSeries.map(line => (
-                    <LinePath
-                        key={line.dataKey as string}
-                        data={line.data as SeriesDatum<D>[]}
-                        curve={curveLinear}
-                        defined={isDatumWithValidNumber}
-                        x={data => xScale(data.x)}
-                        y={data => yScale(getDatumValue(data))}
-                        stroke={line.color}
-                        strokeWidth={2}
-                        strokeLinecap="round"
-                    />
-                ))}
+                {[...dataSeries]
+                    .sort(series => sortByDataKey(series.dataKey, activePoint?.seriesKey || ''))
+                    .map(line => (
+                        <LinePath
+                            key={line.dataKey as string}
+                            data={line.data as SeriesDatum<D>[]}
+                            curve={curveLinear}
+                            defined={isDatumWithValidNumber}
+                            x={data => xScale(data.x)}
+                            y={data => yScale(getDatumValue(data))}
+                            stroke={line.color}
+                            strokeWidth={2}
+                            strokeLinecap="round"
+                        />
+                    ))}
 
-                {points.map(point => (
-                    <PointGlyph
-                        key={point.id}
-                        left={point.x}
-                        top={point.y}
-                        active={activePoint?.id === point.id}
-                        color={point.color}
-                        linkURL={point.linkUrl}
-                        onClick={onDatumClick}
-                        onFocus={event => setActivePoint({ ...point, element: event.target })}
-                        onBlur={() => setActivePoint(undefined)}
-                    />
-                ))}
+                {[...points]
+                    .sort(point => sortByDataKey(point.seriesKey, activePoint?.seriesKey || ''))
+                    .map(point => (
+                        <PointGlyph
+                            key={point.id}
+                            left={point.x}
+                            top={point.y}
+                            active={activePoint?.id === point.id}
+                            color={point.color}
+                            linkURL={point.linkUrl}
+                            onClick={onDatumClick}
+                            onFocus={event => setActivePoint({ ...point, element: event.target })}
+                            onBlur={() => setActivePoint(undefined)}
+                        />
+                    ))}
             </Group>
 
             {activePoint && (
