@@ -63,20 +63,14 @@ type Resolver struct {
 	Opts search.RepoOptions
 }
 
-func (r *Resolver) Paginate(ctx context.Context, op *search.RepoOptions, handle func(*Resolved) error) (err error) {
+func (r *Resolver) Paginate(ctx context.Context, handle func(*Resolved) error) (err error) {
 	tr, ctx := trace.New(ctx, "searchrepos.Paginate", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	var opts search.RepoOptions
-	if op != nil {
-		opts = *op
-	} else {
-		opts = r.Opts
-	}
-
+	opts := r.Opts
 	if opts.Limit == 0 {
 		opts.Limit = 500
 	}
