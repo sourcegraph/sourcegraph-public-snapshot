@@ -35,6 +35,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 /**
  * Simple button
+ *
  * Faking client changes
  *
  * Style can be configured using different button `variant`s.
