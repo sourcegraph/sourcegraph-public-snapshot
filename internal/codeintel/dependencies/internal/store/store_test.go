@@ -67,3 +67,43 @@ func TestUpsertDependencyRepo(t *testing.T) {
 		t.Fatalf("mismatch (-have, +want): %s", diff)
 	}
 }
+
+func TestDeleteDependencyReposByID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	db := database.NewDB(dbtest.NewDB(t))
+	store := TestStore(db)
+
+	repos := []shared.Repo{
+		// Test same-set flushes
+		{ID: 1, Scheme: "npm", Name: "bar", Version: "2.0.0"},
+		{ID: 2, Scheme: "npm", Name: "bar", Version: "3.0.0"}, // deleted
+		{ID: 3, Scheme: "npm", Name: "foo", Version: "1.0.0"}, // deleted
+		{ID: 4, Scheme: "npm", Name: "foo", Version: "2.0.0"},
+	}
+
+	if _, err := store.UpsertDependencyRepos(ctx, repos); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.DeleteDependencyReposByID(ctx, 2, 3); err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	have, err := store.ListDependencyRepos(ctx, ListDependencyReposOpts{
+		Scheme: shared.NpmPackagesScheme,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []shared.Repo{
+		{ID: 1, Scheme: "npm", Name: "bar", Version: "2.0.0"},
+		{ID: 4, Scheme: "npm", Name: "foo", Version: "2.0.0"},
+	}
+	if diff := cmp.Diff(have, want); diff != "" {
+		t.Fatalf("mismatch (-have, +want): %s", diff)
+	}
+}

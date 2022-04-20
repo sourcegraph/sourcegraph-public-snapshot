@@ -247,3 +247,7 @@ func (s *Service) UpsertDependencyRepos(ctx context.Context, deps []Repo) ([]Rep
 
 	return drs, nil
 }
+
+func (s *Service) DeleteDependencyReposByID(ctx context.Context, ids ...int) error {
+	return s.dependenciesStore.DeleteDependencyReposByID(ctx, ids...)
+}

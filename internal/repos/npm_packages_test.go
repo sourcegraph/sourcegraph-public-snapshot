@@ -78,7 +78,7 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 	}
 }
 
-func testDependenciesService(ctx context.Context, t *testing.T, dependencyRepos []dependencies.Repo) DependenciesService {
+func testDependenciesService(ctx context.Context, t *testing.T, dependencyRepos []dependencies.Repo) *dependencies.Service {
 	t.Helper()
 	db := database.NewDB(dbtest.NewDB(t))
 	depsSvc := live.TestService(db, nil)

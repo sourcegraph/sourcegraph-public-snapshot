@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/unpack"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -38,7 +37,7 @@ var (
 type NpmPackagesSyncer struct {
 	// Configuration object describing the connection to the npm registry.
 	connection schema.NpmPackagesConnection
-	depsSvc    repos.DependenciesService
+	depsSvc    *dependencies.Service
 	// The client to use for making queries against npm.
 	client npm.Client
 }
@@ -47,7 +46,7 @@ type NpmPackagesSyncer struct {
 // the client for the syncer is configured based on the connection parameter.
 func NewNpmPackagesSyncer(
 	connection schema.NpmPackagesConnection,
-	depsSvc repos.DependenciesService,
+	depsSvc *dependencies.Service,
 	customClient npm.Client,
 	urn string,
 ) *NpmPackagesSyncer {

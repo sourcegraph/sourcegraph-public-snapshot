@@ -25,7 +25,7 @@ import (
 type GoModulesSource struct {
 	svc     *types.ExternalService
 	config  *schema.GoModulesConnection
-	depsSvc DependenciesService
+	depsSvc *dependencies.Service
 	client  *gomodproxy.Client
 }
 
@@ -181,7 +181,7 @@ func (s *GoModulesSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }
 
-func (s *GoModulesSource) SetDependenciesService(depsSvc DependenciesService) {
+func (s *GoModulesSource) SetDependenciesService(depsSvc *dependencies.Service) {
 	s.depsSvc = depsSvc
 }
 

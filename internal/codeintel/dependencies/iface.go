@@ -12,6 +12,7 @@ import (
 type Store interface {
 	ListDependencyRepos(ctx context.Context, opts store.ListDependencyReposOpts) ([]Repo, error)
 	UpsertDependencyRepos(ctx context.Context, deps []Repo) ([]Repo, error)
+	DeleteDependencyReposByID(ctx context.Context, ids ...int) error
 }
 
 type LockfilesService interface {

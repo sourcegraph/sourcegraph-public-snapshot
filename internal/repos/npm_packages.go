@@ -22,7 +22,7 @@ import (
 type NpmPackagesSource struct {
 	svc        *types.ExternalService
 	connection schema.NpmPackagesConnection
-	depsSvc    DependenciesService
+	depsSvc    *dependencies.Service
 	client     npm.Client
 }
 
@@ -165,7 +165,7 @@ func (s *NpmPackagesSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }
 
-func (s *NpmPackagesSource) SetDependenciesService(depsSvc DependenciesService) {
+func (s *NpmPackagesSource) SetDependenciesService(depsSvc *dependencies.Service) {
 	s.depsSvc = depsSvc
 }
 

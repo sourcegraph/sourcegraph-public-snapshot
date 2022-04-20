@@ -92,7 +92,7 @@ type RepoGetter interface {
 
 type DependenciesServiceSource interface {
 	Source
-	SetDependenciesService(depsSvc DependenciesService)
+	SetDependenciesService(depsSvc *dependencies.Service)
 }
 
 // WithDependenciesService returns a decorator used in NewSourcer that calls SetDB on

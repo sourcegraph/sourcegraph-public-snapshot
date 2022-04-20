@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
@@ -161,3 +162,24 @@ func (s *Store) UpsertDependencyRepos(ctx context.Context, deps []shared.Repo) (
 	)
 	return newDeps, err
 }
+
+// DeleteDependencyReposByID creates the given dependency repos if they doesn't yet exist. The values that
+// did not exist previously are returned.
+func (s *Store) DeleteDependencyReposByID(ctx context.Context, ids ...int) (err error) {
+	ctx, endObservation := s.operations.deleteDependencyReposByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numIDs", len(ids)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if len(ids) == 0 {
+		return nil
+	}
+
+	return s.Exec(ctx, sqlf.Sprintf(deleteDependencyReposByIDQuery, pq.Array(ids)))
+}
+
+const deleteDependencyReposByIDQuery = `
+-- source: internal/codeintel/dependencies/internal/store/store.go:DeleteDependencyReposByID
+DELETE FROM lsif_dependency_repos
+WHERE id = ANY(%s)
+`

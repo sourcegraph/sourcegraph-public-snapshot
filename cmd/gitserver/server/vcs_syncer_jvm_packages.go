@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -48,7 +47,7 @@ var placeholderMavenDependency = func() *reposource.MavenDependency {
 
 type JVMPackagesSyncer struct {
 	Config  *schema.JVMPackagesConnection
-	DepsSvc repos.DependenciesService
+	DepsSvc *dependencies.Service
 }
 
 var _ VCSSyncer = &JVMPackagesSyncer{}

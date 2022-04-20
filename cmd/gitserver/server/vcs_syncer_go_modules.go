@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/unpack"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -37,13 +36,13 @@ var placeholderGoDependency = func() *reposource.GoDependency {
 // from Go module proxies and converting them to Git repositories.
 type GoModulesSyncer struct {
 	connection *schema.GoModulesConnection
-	depsSvc    repos.DependenciesService
+	depsSvc    *dependencies.Service
 	client     *gomodproxy.Client
 }
 
 func NewGoModulesSyncer(
 	connection *schema.GoModulesConnection,
-	depsSvc repos.DependenciesService,
+	depsSvc *dependencies.Service,
 	client *gomodproxy.Client,
 ) *GoModulesSyncer {
 	return &GoModulesSyncer{connection, depsSvc, client}

@@ -22,7 +22,7 @@ import (
 type JVMPackagesSource struct {
 	svc     *types.ExternalService
 	config  *schema.JVMPackagesConnection
-	depsSvc DependenciesService
+	depsSvc *dependencies.Service
 }
 
 // NewJVMPackagesSource returns a new MavenSource from the given external
@@ -35,7 +35,7 @@ func NewJVMPackagesSource(svc *types.ExternalService) (*JVMPackagesSource, error
 	return newJVMPackagesSource(svc, &c)
 }
 
-func (s *JVMPackagesSource) SetDependenciesService(depsSvc DependenciesService) {
+func (s *JVMPackagesSource) SetDependenciesService(depsSvc *dependencies.Service) {
 	s.depsSvc = depsSvc
 }
 
