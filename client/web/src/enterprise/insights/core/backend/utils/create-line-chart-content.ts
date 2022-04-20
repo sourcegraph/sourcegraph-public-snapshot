@@ -64,8 +64,8 @@ interface GenerateLinkInput {
     series: SearchBasedInsightSeries
     previousPoint?: { dateTime: string }
     point: { dateTime: string }
-    includeRepoRegexp: string
-    excludeRepoRegexp: string
+    includeRepoRegexp?: string
+    excludeRepoRegexp?: string
 }
 
 export function generateLinkURL(input: GenerateLinkInput): string {

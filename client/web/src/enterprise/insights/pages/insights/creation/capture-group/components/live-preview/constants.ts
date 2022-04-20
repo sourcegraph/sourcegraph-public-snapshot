@@ -1,32 +1,46 @@
-import { SeriesChartContent } from '../../../../../../core/backend/code-insights-backend-types'
+import { SeriesChartContent } from '../../../../../../core'
 
-interface MockDatum {
+const getYValue = (datum: MockSeriesDatum): number => datum.value
+const getXValue = (datum: MockSeriesDatum): Date => new Date(datum.x)
+
+interface MockSeriesDatum {
+    value: number
     x: number
-    a: number
-    b: number
 }
 
-export const MOCK_CHART_CONTENT: SeriesChartContent<MockDatum> = {
-    data: [
-        { x: 1588965700286 - 6 * 24 * 60 * 60 * 1000, a: 20, b: 200 },
-        { x: 1588965700286 - 5 * 24 * 60 * 60 * 1000, a: 40, b: 177 },
-        { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: 110, b: 150 },
-        { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: 105, b: 165 },
-        { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 160, b: 100 },
-        { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, a: 184, b: 85 },
-        { x: 1588965700286, a: 200, b: 50 },
-    ],
+export const MOCK_CHART_CONTENT: SeriesChartContent<MockSeriesDatum> = {
     series: [
         {
-            dataKey: 'a',
+            id: 'series_001',
+            data: [
+                { x: 1588965700286 - 6 * 24 * 60 * 60 * 1000, value: 20 },
+                { x: 1588965700286 - 5 * 24 * 60 * 60 * 1000, value: 40 },
+                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 110 },
+                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 105 },
+                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 160 },
+                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 184 },
+                { x: 1588965700286, value: 200 },
+            ],
             name: 'Go 1.11',
             color: 'var(--oc-indigo-7)',
+            getYValue,
+            getXValue,
         },
         {
-            dataKey: 'b',
+            id: 'series_002',
+            data: [
+                { x: 1588965700286 - 6 * 24 * 60 * 60 * 1000, value: 200 },
+                { x: 1588965700286 - 5 * 24 * 60 * 60 * 1000, value: 177 },
+                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 150 },
+                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 165 },
+                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 100 },
+                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 85 },
+                { x: 1588965700286, value: 50 },
+            ],
             name: 'Go 1.12',
             color: 'var(--oc-orange-7)',
+            getYValue,
+            getXValue,
         },
     ],
-    getXValue: datum => new Date(datum.x),
 }
