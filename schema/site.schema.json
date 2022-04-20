@@ -175,6 +175,12 @@
           "enum": ["enabled", "disabled"],
           "default": "disabled"
         },
+        "gerrit": {
+          "description": "Allow adding Gerrit code host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
         "subRepoPermissions": {
           "type": "object",
           "additionalProperties": false,
