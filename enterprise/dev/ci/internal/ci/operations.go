@@ -293,18 +293,6 @@ func addBrowserExtensionUnitTests(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
-// Builds and tests the VS Code extensions.
-func addVSCExt(pipeline *bk.Pipeline) {
-	pipeline.AddStep(
-		":vscode: Puppeteer tests for VS Code extension",
-		withYarnCache(),
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn generate"),
-		bk.Cmd("yarn --cwd client/vscode -s build:test"),
-		bk.Cmd("yarn --cwd client/vscode -s test-integration --verbose"),
-	)
-}
-
 func clientIntegrationTests(pipeline *bk.Pipeline) {
 	chunkSize := 2
 	prepStepKey := "puppeteer:prep"
