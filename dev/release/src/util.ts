@@ -108,7 +108,10 @@ export function ensureMainBranchUpToDate(): void {
 }
 
 export function ensureReleaseBranchUpToDate(branch: string): void {
+    const currentBranch = execa.sync('git', ['rev-parse', '--abbrev-ref', 'HEAD']).stdout.trim()
+    execa.sync('git', ['checkout', branch])
     ensureBranchUpToDate(branch)
+    execa.sync('git', ['checkout', currentBranch])
 }
 
 interface ContainerRegistryCredential {
