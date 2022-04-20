@@ -801,7 +801,9 @@ describe('GitHub', () => {
 
         const isRecordMode = readEnvironmentString({ variable: 'POLLYJS_MODE', defaultValue: 'replay' }) === 'record'
         const isCI = readEnvironmentBoolean({ variable: 'CI', defaultValue: false }) === true
+
         // global and repository search pages
+        // do not record in CI (see https://github.com/sourcegraph/sourcegraph/pull/34171)
         ;(isRecordMode && isCI ? describe.skip : describe)('Search results page', () => {
             beforeEach(() => {
                 mockUrls([
