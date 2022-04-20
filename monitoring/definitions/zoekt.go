@@ -343,13 +343,15 @@ func Zoekt() *monitoring.Container {
 					},
 					{
 						{
-							Name:        "indexed_queueing_delay_p99_9",
-							Description: "99.9th percentile job queuing delay over 5m",
+							Name:        "indexed_queueing_delay_p99_9_aggregate",
+							Description: "99.9th percentile job queuing delay over 5m (aggregate)",
 							Query:       "histogram_quantile(0.999, sum by (le, name)(rate(index_queue_age_seconds_bucket[5m])))",
 							NoAlert:     true,
 							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
 							Owner:       monitoring.ObservableOwnerSearchCore,
 							Interpretation: `
+							This dashboard shows the p99.9 job queueing delay aggregated across all Zoekt instances.
+
 							The queueing delay represents the amount of time an indexing job spent in the queue before it was processed.
 
 							Large queueing delays can be an indicator of:
@@ -360,13 +362,15 @@ func Zoekt() *monitoring.Container {
 						`,
 						},
 						{
-							Name:        "indexed_queueing_delay_p90",
-							Description: "90th percentile job queueing delay over 5m",
+							Name:        "indexed_queueing_delay_p90_aggregate",
+							Description: "90th percentile job queueing delay over 5m (aggregate)",
 							Query:       "histogram_quantile(0.90, sum by (le, name)(rate(index_queue_age_seconds_bucket[5m])))",
 							NoAlert:     true,
 							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
 							Owner:       monitoring.ObservableOwnerSearchCore,
 							Interpretation: `
+							This dashboard shows the p90 job queueing delay aggregated across all Zoekt instances.
+
 							The queueing delay represents the amount of time an indexing job spent in the queue before it was processed.
 
 							Large queueing delays can be an indicator of:
@@ -375,13 +379,70 @@ func Zoekt() *monitoring.Container {
 						`,
 						},
 						{
-							Name:        "indexed_queueing_delay_p75",
-							Description: "75th percentile job queueing delay over 5m",
+							Name:        "indexed_queueing_delay_p75_aggregate",
+							Description: "75th percentile job queueing delay over 5m (aggregate)",
 							Query:       "histogram_quantile(0.75, sum by (le, name)(rate(index_queue_age_seconds_bucket[5m])))",
 							NoAlert:     true,
 							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
 							Owner:       monitoring.ObservableOwnerSearchCore,
 							Interpretation: `
+							This dashboard shows the p75 job queueing delay aggregated across all Zoekt instances.
+
+							The queueing delay represents the amount of time an indexing job spent in the queue before it was processed.
+
+							Large queueing delays can be an indicator of:
+								- resource saturation
+								- each Zoekt replica has too many jobs for it to be able to process all of them promptly. In this scenario, consider adding additional Zoekt replicas to distribute the work better.
+						`,
+						},
+					},
+					{
+						{
+							Name:        "indexed_queueing_delay_p99_9_per_instance",
+							Description: "99.9th percentile job queuing delay over 5m (per instance)",
+							Query:       "histogram_quantile(0.999, sum by (le, instance)(rate(index_queue_age_seconds_bucket{instance=~`${instance:regex}`}[5m])))",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+							This dashboard shows the p99.9 job queueing delay, broken out per Zoekt instance.
+
+							The queueing delay represents the amount of time an indexing job spent in the queue before it was processed.
+
+							Large queueing delays can be an indicator of:
+								- resource saturation
+								- each Zoekt replica has too many jobs for it to be able to process all of them promptly. In this scenario, consider adding additional Zoekt replicas to distribute the work better.
+
+							The 99.9 percentile dashboard is useful for capturing the long tail of queueing delays (on the order of 24+ hours, etc.).
+						`,
+						},
+						{
+							Name:        "indexed_queueing_delay_p90_per_instance",
+							Description: "90th percentile job queueing delay over 5m (per instance)",
+							Query:       "histogram_quantile(0.90, sum by (le, instance)(rate(index_queue_age_seconds_bucket{instance=~`${instance:regex}`}[5m])))",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+							This dashboard shows the p90 job queueing delay, broken out per Zoekt instance.
+
+							The queueing delay represents the amount of time an indexing job spent in the queue before it was processed.
+
+							Large queueing delays can be an indicator of:
+								- resource saturation
+								- each Zoekt replica has too many jobs for it to be able to process all of them promptly. In this scenario, consider adding additional Zoekt replicas to distribute the work better.
+						`,
+						},
+						{
+							Name:        "indexed_queueing_delay_p75_per_instance",
+							Description: "75th percentile job queueing delay over 5m (per instance)",
+							Query:       "histogram_quantile(0.75, sum by (le, instance)(rate(index_queue_age_seconds_bucket{instance=~`${instance:regex}`}[5m])))",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+							This dashboard shows the p75 job queueing delay, broken out per Zoekt instance.
+
 							The queueing delay represents the amount of time an indexing job spent in the queue before it was processed.
 
 							Large queueing delays can be an indicator of:
