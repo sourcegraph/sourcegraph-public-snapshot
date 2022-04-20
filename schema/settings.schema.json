@@ -223,7 +223,7 @@
           }
         },
         "enableSearchStack": {
-          "description": "Enables search stack",
+          "description": "DEPRECATED: You can enable/disable the notepad on the notebooks list page.",
           "type": "boolean",
           "default": false,
           "!go": {
