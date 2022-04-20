@@ -77,6 +77,7 @@ const (
 	KindAWSCodeCommit   = "AWSCODECOMMIT"
 	KindBitbucketServer = "BITBUCKETSERVER"
 	KindBitbucketCloud  = "BITBUCKETCLOUD"
+	KindGerrit          = "GERRIT"
 	KindGitHub          = "GITHUB"
 	KindGitLab          = "GITLAB"
 	KindGitolite        = "GITOLITE"
@@ -104,6 +105,9 @@ const (
 	// TypeBitbucketCloud is the (api.ExternalRepoSpec).ServiceType value for Bitbucket Cloud projects. The
 	// ServiceID value is the base URL to the Bitbucket Cloud.
 	TypeBitbucketCloud = "bitbucketCloud"
+
+	// TypeGerrit is the (api.ExternalRepoSpec).ServiceType value for Gerrit projects.
+	TypeGerrit = "gerrit"
 
 	// TypeGitHub is the (api.ExternalRepoSpec).ServiceType value for GitHub repositories. The ServiceID value
 	// is the base URL to the GitHub instance (https://github.com or the GitHub Enterprise URL).
@@ -148,6 +152,8 @@ func KindToType(kind string) string {
 		return TypeBitbucketServer
 	case KindBitbucketCloud:
 		return TypeBitbucketCloud
+	case KindGerrit:
+		return TypeGerrit
 	case KindGitHub:
 		return TypeGitHub
 	case KindGitLab:
@@ -181,6 +187,8 @@ func TypeToKind(t string) string {
 		return KindBitbucketServer
 	case TypeBitbucketCloud:
 		return KindBitbucketCloud
+	case TypeGerrit:
+		return KindGerrit
 	case TypeGitHub:
 		return KindGitHub
 	case TypeGitLab:
@@ -225,6 +233,8 @@ func ParseServiceType(s string) (string, bool) {
 		return TypeBitbucketServer, true
 	case bbcLower:
 		return TypeBitbucketCloud, true
+	case TypeGerrit:
+		return TypeGerrit, true
 	case TypeGitHub:
 		return TypeGitHub, true
 	case TypeGitLab:
@@ -260,6 +270,8 @@ func ParseServiceKind(s string) (string, bool) {
 		return KindBitbucketServer, true
 	case KindBitbucketCloud:
 		return KindBitbucketCloud, true
+	case KindGerrit:
+		return KindGerrit, true
 	case KindGitHub:
 		return KindGitHub, true
 	case KindGitLab:
@@ -305,6 +317,8 @@ func ParseConfig(kind, config string) (cfg interface{}, _ error) {
 		cfg = &schema.BitbucketServerConnection{}
 	case KindBitbucketCloud:
 		cfg = &schema.BitbucketCloudConnection{}
+	case KindGerrit:
+		cfg = &schema.GerritConnection{}
 	case KindGitHub:
 		cfg = &schema.GitHubConnection{}
 	case KindGitLab:
@@ -529,6 +543,8 @@ func UniqueCodeHostIdentifier(kind, config string) (string, error) {
 	case *schema.BitbucketServerConnection:
 		rawURL = c.Url
 	case *schema.BitbucketCloudConnection:
+		rawURL = c.Url
+	case *schema.GerritConnection:
 		rawURL = c.Url
 	case *schema.PhabricatorConnection:
 		rawURL = c.Url

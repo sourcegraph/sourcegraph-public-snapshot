@@ -47,6 +47,8 @@ func NewSource(db database.DB, svc *types.ExternalService, cf *httpcli.Factory) 
 		return NewGithubSource(externalServicesStore, svc, cf)
 	case extsvc.KindGitLab:
 		return NewGitLabSource(svc, cf)
+	case extsvc.KindGerrit:
+		return NewGerritSource(svc, cf)
 	case extsvc.KindBitbucketServer:
 		return NewBitbucketServerSource(svc, cf)
 	case extsvc.KindBitbucketCloud:

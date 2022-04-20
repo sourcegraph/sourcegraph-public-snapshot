@@ -1,6 +1,6 @@
 # Sourcegraph Cloud
 
-[Sourcegraph Cloud](https://sourcegraph.com/search) lets you search across your code from GitHub.com or GitLab.com, and across any open-source project on GitHub.com or Gitlab.com. Sourcegraph Cloud is in beta, allowing any individual to sign-up, connect personal repositories, and search across personal code. If you are interested in onboarding your organization to Sourcegraph Cloud, [join our waitlist](https://share.hsforms.com/14OQ3RoPpQTOXvZlUpgx6-A1n7ku?utm_medium=direct-traffic&utm_source=docs&utm_content=cloud-product-beta-teams).
+[Sourcegraph Cloud](https://sourcegraph.com/search) lets you search across your code from GitHub.com or GitLab.com, and across any open-source project on GitHub.com or Gitlab.com. Sourcegraph Cloud is in beta, allowing any individual to sign-up, connect personal repositories, and search across personal code. 
 
 Note that you can search across a maximum of 2,000 repositories at once using Sourcegraph Cloud. To search across more than 2,000 repositories at once or to search code hosted in an on-prem environment, [run your own Sourcegraph instance](../../../admin/install/index.md).
 
@@ -56,7 +56,7 @@ It's easy to share Sourcegraph with your team. Each team member must [sign up fo
 
 ### How do I use Sourcegraph Cloud for my organization?
 
-Organizational support on Sourcegraph Cloud is currently in private-beta. To gain access to this functionality, please [join our waitlist](https://share.hsforms.com/14OQ3RoPpQTOXvZlUpgx6-A1n7ku?utm_medium=direct-traffic&utm_source=docs&utm_content=cloud-product-beta-teams) and we'll get in touch if you are a good fit. 
+Organizational support on Sourcegraph Cloud is currently in private-beta. We are no longer accepting new teams to the beta at this time. 
 
 ### What if my code is not hosted on Github.com or Gitlab.com?
 

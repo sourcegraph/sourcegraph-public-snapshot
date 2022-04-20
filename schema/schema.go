@@ -597,6 +597,8 @@ type ExperimentalFeatures struct {
 	EnablePostSignupFlow bool `json:"enablePostSignupFlow,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
 	EventLogging string `json:"eventLogging,omitempty"`
+	// Gerrit description: Allow adding Gerrit code host connections
+	Gerrit string `json:"gerrit,omitempty"`
 	// GitServerPinnedRepos description: List of repositories pinned to specific gitserver instances. The specified repositories will remain at their pinned servers on scaling the cluster. If the specified pinned server differs from the current server that stores the repository, then it must be re-cloned to the specified server.
 	GitServerPinnedRepos map[string]string `json:"gitServerPinnedRepos,omitempty"`
 	// JvmPackages description: Allow adding JVM packages code host connections
@@ -675,6 +677,16 @@ type FusionClient struct {
 	Refresh int `json:"refresh,omitempty"`
 	// Retries description: How many times a command should be retried before the process exits in a failure
 	Retries int `json:"retries,omitempty"`
+}
+
+// GerritConnection description: Configuration for a connection to Gerrit.
+type GerritConnection struct {
+	// Password description: The password associated with the Gerrit username used for authentication.
+	Password string `json:"password"`
+	// Url description: URL of a Gerrit instance, such as https://gerrit.example.com.
+	Url string `json:"url"`
+	// Username description: A username for authentication withe the Gerrit code host.
+	Username string `json:"username"`
 }
 
 // GitCommitAuthor description: The author of the Git commit.

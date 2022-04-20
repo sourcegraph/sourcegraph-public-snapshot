@@ -328,7 +328,8 @@ function mockCommonGraphQLResponses(
                 closedAt: null,
                 createdAt: subDays(now, 5).toISOString(),
                 updatedAt: subDays(now, 5).toISOString(),
-                description: '### Very cool batch change',
+                // To fix accessibility rule: "heading-order"
+                description: '## Very cool batch change',
                 creator: {
                     url: '/users/alice',
                     username: 'alice',
@@ -500,6 +501,7 @@ describe('Batches', () => {
             )
 
             await percySnapshotWithVariants(driver.page, 'Batch Changes List')
+            await accessibilityAudit(driver.page)
         })
 
         it('lists user batch changes', async () => {
@@ -544,6 +546,7 @@ describe('Batches', () => {
         it('is styled correctly', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/batch-changes/create')
             await percySnapshotWithVariants(driver.page, 'Create batch change')
+            await accessibilityAudit(driver.page)
         })
     })
 
@@ -565,6 +568,7 @@ describe('Batches', () => {
                 // View overview page.
                 await driver.page.waitForSelector('.test-batch-change-details-page')
                 await percySnapshotWithVariants(driver.page, 'Batch change details page')
+                await accessibilityAudit(driver.page)
 
                 // Expand one changeset.
                 await driver.page.click('.test-batches-expand-changeset')
@@ -814,6 +818,7 @@ describe('Batches', () => {
                 // View overview page.
                 await driver.page.waitForSelector('.test-batch-change-apply-page')
                 await percySnapshotWithVariants(driver.page, 'Batch change preview page')
+                await accessibilityAudit(driver.page)
 
                 // Expand one changeset.
                 await driver.page.click('.test-batches-expand-preview')
@@ -940,6 +945,7 @@ describe('Batches', () => {
             // View settings page.
             await driver.page.waitForSelector('.test-batches-settings-page')
             await percySnapshotWithVariants(driver.page, 'User batch changes settings page')
+            await accessibilityAudit(driver.page)
             // Wait for list to load.
             await driver.page.waitForSelector('.test-code-host-connection-node')
             // Check no credential is configured.

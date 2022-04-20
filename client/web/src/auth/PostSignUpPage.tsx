@@ -151,7 +151,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                     <StepList numeric={true} className={styles.container}>
                                         <Step borderColor="purple">Connect with code hosts</Step>
                                         <Step borderColor="blue">Add repositories</Step>
-                                        <Step borderColor="green">Invite collaborators</Step>
+                                        <Step borderColor="orange">Invite collaborators</Step>
                                     </StepList>
                                     <StepPanels>
                                         <StepPanel>

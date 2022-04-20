@@ -138,8 +138,8 @@ func (s *RepoSearch) reposToAdd(ctx context.Context, clients job.RuntimeClients,
 	// matchCounts will contain the count of repohasfile patterns that matched.
 	// For negations, we will explicitly set this to -1 if it matches.
 	matchCounts := make(map[api.RepoID]int)
-	if len(s.PatternInfo.FilePatternsReposMustInclude) > 0 {
-		for _, pattern := range s.PatternInfo.FilePatternsReposMustInclude {
+	if len(s.FilePatternsReposMustInclude) > 0 {
+		for _, pattern := range s.FilePatternsReposMustInclude {
 			matches, err := s.reposContainingPath(ctx, clients, repos, pattern)
 			if err != nil {
 				return nil, err
@@ -162,8 +162,8 @@ func (s *RepoSearch) reposToAdd(ctx context.Context, clients job.RuntimeClients,
 		}
 	}
 
-	if len(s.PatternInfo.FilePatternsReposMustExclude) > 0 {
-		for _, pattern := range s.PatternInfo.FilePatternsReposMustExclude {
+	if len(s.FilePatternsReposMustExclude) > 0 {
+		for _, pattern := range s.FilePatternsReposMustExclude {
 			matches, err := s.reposContainingPath(ctx, clients, repos, pattern)
 			if err != nil {
 				return nil, err
@@ -176,7 +176,7 @@ func (s *RepoSearch) reposToAdd(ctx context.Context, clients job.RuntimeClients,
 
 	var rsta []*search.RepositoryRevisions
 	for _, r := range repos {
-		if count, ok := matchCounts[r.Repo.ID]; ok && count == len(s.PatternInfo.FilePatternsReposMustInclude) {
+		if count, ok := matchCounts[r.Repo.ID]; ok && count == len(s.FilePatternsReposMustInclude) {
 			rsta = append(rsta, r)
 		}
 	}

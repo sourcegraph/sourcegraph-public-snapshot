@@ -248,26 +248,6 @@ func TestPrettyJSON(t *testing.T) {
     },
     {
       "RepoSearch": {
-        "PatternInfo": {
-          "Pattern": "bar",
-          "IsNegated": false,
-          "IsRegExp": true,
-          "IsStructuralPat": false,
-          "CombyRule": "",
-          "IsWordMatch": false,
-          "IsCaseSensitive": false,
-          "FileMatchLimit": 500,
-          "Index": "yes",
-          "Select": [],
-          "IncludePatterns": null,
-          "ExcludePattern": "",
-          "FilePatternsReposMustInclude": null,
-          "FilePatternsReposMustExclude": null,
-          "PathPatternsAreCaseSensitive": false,
-          "PatternMatchesContent": true,
-          "PatternMatchesPath": true,
-          "Languages": null
-        },
         "RepoOptions": {
           "RepoFilters": [
             "foo",
@@ -288,41 +268,12 @@ func TestPrettyJSON(t *testing.T) {
           "NoArchived": true,
           "OnlyArchived": false
         },
+        "FilePatternsReposMustInclude": null,
+        "FilePatternsReposMustExclude": null,
         "Features": {
           "ContentBasedLangFilters": false
         },
-        "Repos": null,
-        "Mode": 0,
-        "Query": [
-          {
-            "Kind": 1,
-            "Operands": [
-              {
-                "field": "repo",
-                "value": "foo",
-                "negated": false
-              },
-              {
-                "value": "bar",
-                "negated": false
-              }
-            ],
-            "Annotation": {
-              "labels": 0,
-              "range": {
-                "start": {
-                  "line": 0,
-                  "column": 0
-                },
-                "end": {
-                  "line": 0,
-                  "column": 0
-                }
-              }
-            }
-          }
-        ],
-        "UseFullDeadline": true
+        "Mode": 0
       }
     },
     {

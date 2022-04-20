@@ -39,6 +39,8 @@ func (e *ExternalService) RedactedConfig() (string, error) {
 		es.redactString(c.Token, "token")
 	case *schema.GitLabConnection:
 		es.redactString(c.Token, "token")
+	case *schema.GerritConnection:
+		es.redactString(c.Password, "password")
 	case *schema.BitbucketServerConnection:
 		es.redactString(c.Password, "password")
 		es.redactString(c.Token, "token")
