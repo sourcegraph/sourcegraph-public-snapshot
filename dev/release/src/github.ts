@@ -523,6 +523,7 @@ async function cloneRepo(
     const tmpdir = await mkdtemp(path.join(os.tmpdir(), `sg-release-${owner}-${repo}-`))
     console.log(`Created temp directory ${tmpdir}`)
     const fetchFlags = '--depth 1'
+    const cloneFlags = `${fetchFlags} --reference-if-able ${process.cwd()}/../..`
 
     // Determine whether or not to create the base branch, or use the existing one
     let revisionExists = true
@@ -548,7 +549,7 @@ async function cloneRepo(
     // Set up repository
     const setupScript = `set -ex
 
-git clone ${fetchFlags} git@github.com:${owner}/${repo} || git clone ${fetchFlags} https://github.com/${owner}/${repo};
+git clone ${cloneFlags} git@github.com:${owner}/${repo} || git clone ${cloneFlags} https://github.com/${owner}/${repo};
 cd ${repo};
 ${checkoutCommand};`
     await execa('bash', ['-c', setupScript], { stdio: 'inherit', cwd: tmpdir })
