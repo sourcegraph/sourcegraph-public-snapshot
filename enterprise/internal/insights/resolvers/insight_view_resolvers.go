@@ -125,6 +125,9 @@ func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.
 	}
 	// Ensure that the data series generators have been registered
 	i.registerDataSeriesGenerators()
+	if i.dataSeriesGenerator == nil {
+		return nil, errors.New("no dataseries resolver generator registered")
+	}
 
 	var filters *types.InsightViewFilters
 	if i.overrideFilters != nil {
