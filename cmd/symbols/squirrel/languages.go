@@ -12,6 +12,7 @@ import (
 	"github.com/smacker/go-tree-sitter/java"
 	"github.com/smacker/go-tree-sitter/javascript"
 	"github.com/smacker/go-tree-sitter/python"
+	"github.com/smacker/go-tree-sitter/typescript/tsx"
 )
 
 //go:embed language-file-extensions.json
@@ -190,6 +191,38 @@ var langToLangSpec = map[string]LangSpec{
 (formal_parameters (assignment_pattern left: (rest_pattern (identifier) @definition))) ; function(...x = []) { ... }
 (for_in_statement left: (identifier) @definition)                                      ; for (const x of xs) ...
 (catch_clause parameter: (identifier) @definition)                                     ; catch (e) ...
+`,
+	},
+	"typescript": {
+		language: tsx.GetLanguage(),
+		commentStyle: CommentStyle{
+			nodeTypes:     []string{"comment"},
+			stripRegex:    javaStyleStripRegex,
+			ignoreRegex:   javaStyleIgnoreRegex,
+			codeFenceName: "typescript",
+		},
+		localsQuery: `
+(class_declaration)              @scope ; class C { ... }
+(method_definition)              @scope ; class ... { f() { ... } }
+(statement_block)                @scope ; { ... }
+(for_statement)                  @scope ; for (let i = 0; ...) ...
+(for_in_statement)               @scope ; for (const x of xs) ...
+(catch_clause)                   @scope ; catch (e) ...
+(function)                       @scope ; function(x) { ... }
+(function_declaration)           @scope ; function f(x) { ... }
+(generator_function)             @scope ; function*(x) { ... }
+(generator_function_declaration) @scope ; function *f(x) { ... }
+(arrow_function)                 @scope ; x => ...
+
+(variable_declarator name: (identifier) @definition)            ; const x = ...
+(function_declaration name: (identifier) @definition)           ; function f() { ... }
+(generator_function_declaration name: (identifier) @definition) ; function *f() { ... }
+(required_parameter (identifier) @definition)                   ; function(x) { ... }
+(required_parameter (rest_pattern (identifier) @definition))    ; function(...x) { ... }
+(optional_parameter (identifier) @definition)                   ; function(x?) { ... }
+(optional_parameter (rest_pattern (identifier) @definition))    ; function(...x?) { ... }
+(for_in_statement left: (identifier) @definition)               ; for (const x of xs) ...
+(catch_clause parameter: (identifier) @definition)              ; catch (e) ...
 `,
 	},
 }

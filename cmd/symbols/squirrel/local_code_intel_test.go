@@ -206,6 +206,52 @@ const f = (p1, p2 = 3, ...p3) => {
 		console.log(e)
 	}
 }
+`}, {
+		path: "test.ts",
+		contents: `
+//    v f def
+//    v f ref
+//         vv f.p1 def
+//         vv f.p1 ref
+//                      vv f.p2 def
+//                      vv f.p2 ref
+//                                 vv f.p3 def
+//                                 vv f.p3 ref
+const f = (p1?: number, p2 = 3, ...p3) => {
+	//          vv f.p1 ref
+	//              vv f.p2 ref
+	//                  vv f.p3 ref
+	console.log(p1, p2, p3)
+
+	//    v f.x def
+	//    v f.x ref
+	const x: number = 5
+
+	//       v f.g def
+	//       v f.g ref
+	function g() {}
+
+	// "g" here should be a reference to the function, but the way locals are modeled isn't sophisticated
+	// enough (yet?) to express bindings that also escape their lexical scope.
+
+	//          v f.x ref
+	console.log(x, g)
+
+	//       v f.i def
+	//       v f.i ref
+	for (let i = 0; ; ) {
+		//          v f.i ref
+		console.log(i)
+	}
+
+	try { }
+	//     v f.e def
+	//     v f.e ref
+	catch (e) {
+		//          v f.e ref
+		console.log(e)
+	}
+}
 `},
 	}
 
