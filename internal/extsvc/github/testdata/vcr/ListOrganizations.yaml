@@ -29,9 +29,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 19 Apr 2022 22:04:27 GMT
+      - Wed, 20 Apr 2022 11:36:47 GMT
       Etag:
-      - W/"b3835171df683313be604937d1012ab7cc04fb1134b34fcb4302b208b0e60b06"
+      - W/"3c307138d4492bfa6544e3ed36db7115549ca91cf550c2bf8b33b00fd8af75e5"
       Link:
       - <https://ghe.sgdev.org/api/v3/organizations?since=113&per_page=100>; rel="next",
         <https://ghe.sgdev.org/api/v3/organizations{?since}>; rel="first"
@@ -43,8 +43,6 @@ interactions:
       - max-age=31536000; includeSubdomains
       Vary:
       - Accept, Authorization, Cookie, X-GitHub-OTP
-      X-Accepted-Oauth-Scopes:
-      - ""
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
@@ -55,11 +53,9 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - d585eb26-7d3d-4d54-9352-167f8310f840
-      X-Oauth-Scopes:
-      - repo
+      - 5df64ab0-ca0c-4252-b5c0-c819ab044607
       X-Runtime-Rack:
-      - "0.040365"
+      - "0.032450"
       X-Varied-Accept:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       X-Xss-Protection:
@@ -95,9 +91,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 19 Apr 2022 22:04:27 GMT
+      - Wed, 20 Apr 2022 11:36:47 GMT
       Etag:
-      - W/"b3835171df683313be604937d1012ab7cc04fb1134b34fcb4302b208b0e60b06"
+      - W/"3c307138d4492bfa6544e3ed36db7115549ca91cf550c2bf8b33b00fd8af75e5"
       Link:
       - <https://ghe.sgdev.org/api/v3/organizations?since=113&per_page=100>; rel="next",
         <https://ghe.sgdev.org/api/v3/organizations{?since}>; rel="first"
@@ -109,8 +105,6 @@ interactions:
       - max-age=31536000; includeSubdomains
       Vary:
       - Accept, Authorization, Cookie, X-GitHub-OTP
-      X-Accepted-Oauth-Scopes:
-      - ""
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
@@ -123,11 +117,9 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - d585eb26-7d3d-4d54-9352-167f8310f840
-      X-Oauth-Scopes:
-      - repo
+      - 5df64ab0-ca0c-4252-b5c0-c819ab044607
       X-Runtime-Rack:
-      - "0.040365"
+      - "0.032450"
       X-Varied-Accept:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       X-Xss-Protection:

@@ -134,7 +134,6 @@ func (t *requestCounterMiddleware) RoundTrip(r *http.Request) (resp *http.Respon
 	}
 
 	d := time.Since(start)
-
 	t.meter.counter.With(map[string]string{
 		labelCategory: category,
 		labelCode:     code,

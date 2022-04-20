@@ -471,44 +471,48 @@ func TestGetRepository(t *testing.T) {
 	cli, save := newV3TestClient(t, "GetRepository")
 	defer save()
 
-	var remaining int
+	t.Run("cached-response", func(t *testing.T) {
+		var remaining int
 
-	t.Run("first run", func(t *testing.T) {
-		repo, err := cli.GetRepository(context.Background(), "sourcegraph", "sourcegraph")
-		if err != nil {
-			t.Fatal(err)
-		}
+		t.Run("first run", func(t *testing.T) {
+			repo, err := cli.GetRepository(context.Background(), "sourcegraph", "sourcegraph")
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		if repo == nil {
-			t.Fatal("expected repo, but got nil")
-		}
+			if repo == nil {
+				t.Fatal("expected repo, but got nil")
+			}
 
-		want := "sourcegraph/sourcegraph"
-		if repo.NameWithOwner != want {
-			t.Fatalf("expected NameWithOwner %s, but got %s", want, repo.NameWithOwner)
-		}
+			want := "sourcegraph/sourcegraph"
+			if repo.NameWithOwner != want {
+				t.Fatalf("expected NameWithOwner %s, but got %s", want, repo.NameWithOwner)
+			}
 
-		remaining, _, _, _ = cli.RateLimitMonitor().Get()
-	})
-	t.Run("second run", func(t *testing.T) {
-		repo, err := cli.GetRepository(context.Background(), "sourcegraph", "sourcegraph")
-		if err != nil {
-			t.Fatal(err)
-		}
+			remaining, _, _, _ = cli.RateLimitMonitor().Get()
+		})
 
-		if repo == nil {
-			t.Fatal("expected repo, but got nil")
-		}
+		t.Run("second run", func(t *testing.T) {
+			repo, err := cli.GetRepository(context.Background(), "sourcegraph", "sourcegraph")
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		want := "sourcegraph/sourcegraph"
-		if repo.NameWithOwner != want {
-			t.Fatalf("expected NameWithOwner %s, but got %s", want, repo.NameWithOwner)
-		}
+			if repo == nil {
+				t.Fatal("expected repo, but got nil")
+			}
 
-		remaining2, _, _, _ := cli.RateLimitMonitor().Get()
-		if remaining2 < remaining {
-			t.Fatalf("expected cached repsonse, but API quota used")
-		}
+			want := "sourcegraph/sourcegraph"
+			if repo.NameWithOwner != want {
+				t.Fatalf("expected NameWithOwner %s, but got %s", want, repo.NameWithOwner)
+			}
+
+			remaining2, _, _, _ := cli.RateLimitMonitor().Get()
+			if remaining2 < remaining {
+				t.Fatalf("expected cached repsonse, but API quota used")
+			}
+
+		})
 	})
 
 	t.Run("repo not found", func(t *testing.T) {
@@ -531,45 +535,53 @@ func TestGetRepository(t *testing.T) {
 // with username milton in 1password. The token used for this test is named sourcegraph-vcr-token
 // and is also saved in 1Password under this account.
 func TestListOrganizations(t *testing.T) {
-	t.Run("enterprise-integration", func(t *testing.T) {
+	// Note: Testing against enterprise does not return the x-rate-remaining header at the moment,
+	// as a result it is not possible to assert the remaining API calls after each APi request the
+	// way we do in TestGetRepository.
+	t.Run("enterprise-integration-cached-response", func(t *testing.T) {
+		rcache.SetupForTest(t)
+
 		cli, save := newV3TestEnterpriseClient(t, "ListOrganizations")
 		defer save()
 
-		// Simplest way to initialise a client with no cache.
-		orgs, nextSince, err := cli.ListOrganizations(context.Background(), 0)
-		if err != nil {
-			t.Fatal(err)
-		}
+		t.Run("first run", func(t *testing.T) {
+			orgs, nextSince, err := cli.ListOrganizations(context.Background(), 0)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		if orgs == nil {
-			t.Fatal("expected orgs but got nil")
-		}
+			if orgs == nil {
+				t.Fatal("expected orgs but got nil")
+			}
 
-		if len(orgs) != 100 {
-			t.Fatalf("expected 100 orgs but got %d", len(orgs))
-		}
+			if len(orgs) != 100 {
+				t.Fatalf("expected 100 orgs but got %d", len(orgs))
+			}
 
-		if nextSince < 1 {
-			t.Fatalf("expected nextSince to be a positive int but got %v", nextSince)
-		}
+			if nextSince < 1 {
+				t.Fatalf("expected nextSince to be a positive int but got %v", nextSince)
+			}
+		})
 
-		// Make the same API call again. This should hit the cache.
-		orgs, nextSince, err = cli.ListOrganizations(context.Background(), 0)
-		if err != nil {
-			t.Fatal(err)
-		}
+		t.Run("second run", func(t *testing.T) {
+			// Make the same API call again. This should hit the cache.
+			orgs, nextSince, err := cli.ListOrganizations(context.Background(), 0)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		if orgs == nil {
-			t.Fatal("expected orgs but got nil")
-		}
+			if orgs == nil {
+				t.Fatal("expected orgs but got nil")
+			}
 
-		if len(orgs) != 100 {
-			t.Fatalf("expected 100 orgs but got %d", len(orgs))
-		}
+			if len(orgs) != 100 {
+				t.Fatalf("expected 100 orgs but got %d", len(orgs))
+			}
 
-		if nextSince < 1 {
-			t.Fatalf("expected nextSince to be a positive int but got %v", nextSince)
-		}
+			if nextSince < 1 {
+				t.Fatalf("expected nextSince to be a positive int but got %v", nextSince)
+			}
+		})
 	})
 
 	t.Run("enterprise-pagination", func(t *testing.T) {
