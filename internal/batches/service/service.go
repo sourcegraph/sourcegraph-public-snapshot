@@ -463,10 +463,12 @@ const namespaceQuery = `
 query NamespaceQuery($name: String!) {
     user(username: $name) {
         id
+        url
     }
 
     organization(name: $name) {
         id
+        url
     }
 }
 `
@@ -475,50 +477,72 @@ const usernameQuery = `
 query GetCurrentUserID {
     currentUser {
         id
+        url
     }
 }
 `
 
-func (svc *Service) ResolveNamespace(ctx context.Context, namespace string) (string, error) {
+type Namespace struct {
+	ID  string
+	URL string
+}
+
+func (svc *Service) ResolveNamespace(ctx context.Context, namespace string) (Namespace, error) {
 	if namespace == "" {
 		// if no namespace is provided, default to logged in user as namespace
 		var resp struct {
 			Data struct {
 				CurrentUser struct {
-					ID string `json:"id"`
+					ID  string `json:"id"`
+					URL string `json:"url"`
 				} `json:"currentUser"`
 			} `json:"data"`
 		}
 		if ok, err := svc.client.NewRequest(usernameQuery, nil).DoRaw(ctx, &resp); err != nil || !ok {
-			return "", errors.WithMessage(err, "failed to resolve namespace: no user logged in")
+			return Namespace{}, errors.WithMessage(err, "failed to resolve namespace: no user logged in")
 		}
 
 		if resp.Data.CurrentUser.ID == "" {
-			return "", errors.New("cannot resolve current user")
+			return Namespace{}, errors.New("cannot resolve current user")
 		}
-		return resp.Data.CurrentUser.ID, nil
+		return Namespace{
+			ID:  resp.Data.CurrentUser.ID,
+			URL: resp.Data.CurrentUser.URL,
+		}, nil
 	}
 
 	var result struct {
 		Data struct {
-			User         *struct{ ID string }
-			Organization *struct{ ID string }
+			User *struct {
+				ID  string
+				URL string
+			}
+			Organization *struct {
+				ID  string
+				URL string
+			}
 		}
 		Errors []interface{}
 	}
 	if ok, err := svc.client.NewRequest(namespaceQuery, map[string]interface{}{
 		"name": namespace,
 	}).DoRaw(ctx, &result); err != nil || !ok {
-		return "", err
+		return Namespace{}, err
 	}
 
 	if result.Data.User != nil {
-		return result.Data.User.ID, nil
+		return Namespace{
+			ID:  result.Data.User.ID,
+			URL: result.Data.User.URL,
+		}, nil
 	}
 	if result.Data.Organization != nil {
-		return result.Data.Organization.ID, nil
+		return Namespace{
+			ID:  result.Data.Organization.ID,
+			URL: result.Data.Organization.URL,
+		}, nil
 	}
-	return "", fmt.Errorf("failed to resolve namespace %q: no user or organization found", namespace)
+	return Namespace{}, fmt.Errorf("failed to resolve namespace %q: no user or organization found", namespace)
 }
 
 func (svc *Service) ResolveRepositories(ctx context.Context, spec *batcheslib.BatchSpec) ([]*graphql.Repository, error) {

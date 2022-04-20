@@ -298,7 +298,7 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 	if err != nil {
 		return err
 	}
-	ui.ResolvingNamespaceSuccess(namespace)
+	ui.ResolvingNamespaceSuccess(namespace.ID)
 
 	var workspaceCreator workspace.Creator
 
@@ -441,7 +441,7 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 	}
 
 	ui.CreatingBatchSpec()
-	id, url, err := svc.CreateBatchSpec(ctx, namespace, rawSpec, ids)
+	id, url, err := svc.CreateBatchSpec(ctx, namespace.ID, rawSpec, ids)
 	if err != nil {
 		return ui.CreatingBatchSpecError(err)
 	}

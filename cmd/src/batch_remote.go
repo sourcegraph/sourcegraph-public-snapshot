@@ -63,7 +63,7 @@ Examples:
 		// may as well validate it at the same time so we don't even have to go to
 		// the backend if it's invalid.
 		ui.ParsingBatchSpec()
-		_, raw, err := parseBatchSpec(file, svc)
+		spec, raw, err := parseBatchSpec(file, svc)
 		if err != nil {
 			ui.ParsingBatchSpecFailure(err)
 			return err
@@ -72,17 +72,17 @@ Examples:
 
 		// We're going to need the namespace ID, so let's figure that out.
 		ui.ResolvingNamespace()
-		namespaceID, err := svc.ResolveNamespace(ctx, flags.namespace)
+		namespace, err := svc.ResolveNamespace(ctx, flags.namespace)
 		if err != nil {
 			return err
 		}
-		ui.ResolvingNamespaceSuccess(namespaceID)
+		ui.ResolvingNamespaceSuccess(namespace.ID)
 
 		ui.SendingBatchSpec()
 		batchSpecID, err := svc.UpsertBatchSpecInput(
 			ctx,
 			raw,
-			namespaceID,
+			namespace.ID,
 			flags.allowIgnored,
 			flags.allowUnsupported,
 			flags.clearCache,
@@ -121,7 +121,14 @@ Examples:
 		}
 		ui.ExecutingBatchSpecSuccess()
 
-		ui.RemoteSuccess(strings.TrimSuffix(cfg.Endpoint, "/") + "/batch-changes/executions/" + batchSpecID)
+		executionURL := fmt.Sprintf(
+			"%s/%s/batch-changes/%s/executions/%s",
+			strings.TrimSuffix(cfg.Endpoint, "/"),
+			strings.TrimPrefix(namespace.URL, "/"),
+			spec.Name,
+			batchSpecID,
+		)
+		ui.RemoteSuccess(executionURL)
 
 		return nil
 	}
