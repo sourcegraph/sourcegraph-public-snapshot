@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
-	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -125,12 +124,6 @@ func (pkg *NpmPackage) CloneURL() string {
 	return string(pkg.RepoName())
 }
 
-// MatchesDependencyString checks if a dependency (= package + version pair)
-// refers to the same package as pkg.
-func (pkg *NpmPackage) MatchesDependencyString(depPackageSyntax string) bool {
-	return strings.HasPrefix(depPackageSyntax, pkg.PackageSyntax()+"@")
-}
-
 // Format a package using (@scope/)?name syntax.
 //
 // This is largely for "lower-level" code interacting with the npm API.
@@ -157,6 +150,9 @@ type NpmDependency struct {
 	// See https://docs.npmjs.com/cli/v8/using-npm/config#tag for more details
 	// about tags.
 	Version string
+
+	// The URL of the tarball to download. Possibly empty.
+	TarballURL string
 }
 
 // ParseNpmDependency parses a string in a '(@scope/)?module@version' format into an NpmDependency.
@@ -187,7 +183,7 @@ func ParseNpmDependency(dependency string) (*NpmDependency, error) {
 		}
 	}
 	scope, name, version := result["scope"], result["name"], result["version"]
-	return &NpmDependency{&NpmPackage{scope, name}, version}, nil
+	return &NpmDependency{NpmPackage: &NpmPackage{scope, name}, Version: version}, nil
 }
 
 // PackageManagerSyntax returns the dependency in npm/Yarn syntax. The returned

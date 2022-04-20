@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"context"
 	"fmt"
-	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -19,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -109,16 +107,6 @@ fi
 	return coursierPath.Name()
 }
 
-func (s JVMPackagesSyncer) runCloneCommand(t *testing.T, bareGitDirectory string, dependencies []string) {
-	url := vcs.URL{
-		URL: url.URL{Path: examplePackageUrl},
-	}
-	s.Config.Maven.Dependencies = dependencies
-	cmd, err := s.CloneCommand(context.Background(), &url, bareGitDirectory)
-	assert.Nil(t, err)
-	assert.Nil(t, cmd.Run())
-}
-
 var maliciousPaths []string = []string{
 	// Absolute paths
 	"/sh", "/usr/bin/sh",
@@ -133,25 +121,24 @@ var maliciousPaths []string = []string{
 const harmlessPath = "src/harmless.java"
 
 func TestNoMaliciousFiles(t *testing.T) {
-	dir, err := os.MkdirTemp("", "")
-	assert.Nil(t, err)
-	defer os.RemoveAll(dir)
+	dir := t.TempDir()
 
-	jarPath := path.Join(dir, "sampletext.zip")
 	extractPath := path.Join(dir, "extracted")
 	assert.Nil(t, os.Mkdir(extractPath, os.ModePerm))
 
-	createMaliciousJar(t, jarPath)
-
-	s := JVMPackagesSyncer{
-		Config:  &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
-		DepsSvc: live.TestService(database.NewDB(dbtest.NewDB(t)), nil),
+	s := jvmPackagesSyncer{
+		config: &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
+		fetch: func(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenDependency) (sourceCodeJarPath string, err error) {
+			jarPath := path.Join(dir, "sampletext.zip")
+			createMaliciousJar(t, jarPath)
+			return jarPath, nil
+		},
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cancel now  to prevent any network IO
 	dep := &reposource.MavenDependency{MavenModule: &reposource.MavenModule{}}
-	err = s.commitJar(ctx, dep, extractPath, jarPath, &schema.JVMPackagesConnection{Maven: &schema.Maven{}})
+	err := s.Download(ctx, extractPath, dep)
 	assert.NotNil(t, err)
 
 	dirEntries, err := os.ReadDir(extractPath)
@@ -195,13 +182,11 @@ func TestJVMCloneCommand(t *testing.T) {
 
 	coursier.CoursierBinary = coursierScript(t, dir)
 
-	s := JVMPackagesSyncer{
-		Config:  &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
-		DepsSvc: live.TestService(database.NewDB(dbtest.NewDB(t)), nil),
-	}
+	depsSvc := live.TestService(database.NewDB(dbtest.NewDB(t)), nil)
+	s := NewJVMPackagesSyncer(&schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}}, depsSvc).(*vcsDependenciesSyncer)
 	bareGitDirectory := path.Join(dir, "git")
 
-	s.runCloneCommand(t, bareGitDirectory, []string{exampleVersionedPackage})
+	s.runCloneCommand(t, examplePackageUrl, bareGitDirectory, []string{exampleVersionedPackage})
 	assertCommandOutput(t,
 		exec.Command("git", "tag", "--list"),
 		bareGitDirectory,
@@ -213,7 +198,7 @@ func TestJVMCloneCommand(t *testing.T) {
 		exampleFileContents,
 	)
 
-	s.runCloneCommand(t, bareGitDirectory, []string{exampleVersionedPackage, exampleVersionedPackage2})
+	s.runCloneCommand(t, examplePackageUrl, bareGitDirectory, []string{exampleVersionedPackage, exampleVersionedPackage2})
 	assertCommandOutput(t,
 		exec.Command("git", "tag", "--list"),
 		bareGitDirectory,
@@ -245,7 +230,7 @@ func TestJVMCloneCommand(t *testing.T) {
 		exampleFileContents2,
 	)
 
-	s.runCloneCommand(t, bareGitDirectory, []string{exampleVersionedPackage})
+	s.runCloneCommand(t, examplePackageUrl, bareGitDirectory, []string{exampleVersionedPackage})
 	assertCommandOutput(t,
 		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleVersion, exampleFilePath)),
 		bareGitDirectory,
@@ -256,15 +241,4 @@ func TestJVMCloneCommand(t *testing.T) {
 		bareGitDirectory,
 		"v1.0.0\n", // verify that the v2.0.0 tag has been removed.
 	)
-}
-
-// Sanity check errors.HasType
-func TestErrorHasType(t *testing.T) {
-	err := &coursier.ErrNoSources{}
-	if !errors.HasType(err, &coursier.ErrNoSources{}) {
-		t.Fatal("should be true")
-	}
-	if errors.Is(nil, &coursier.ErrNoSources{}) {
-		t.Fatal("should be false")
-	}
 }
