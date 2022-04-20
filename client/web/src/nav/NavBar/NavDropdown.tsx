@@ -118,6 +118,8 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({
                                     'align-items-center',
                                     'p-0'
                                 )}
+                                data-test-id={toggleItem.path}
+                                data-test-active={isItemSelected}
                                 onMouseEnter={() => setIsOverButton(true)}
                                 onMouseLeave={() => setIsOverButton(false)}
                             >
