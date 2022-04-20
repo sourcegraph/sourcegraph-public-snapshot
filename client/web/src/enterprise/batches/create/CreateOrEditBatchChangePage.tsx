@@ -173,7 +173,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = props => {
                 <TabList>
                     <Tab className="text-content py-2 px-3">1. Configuration</Tab>
                     <Tab className="text-content py-2 px-3" disabled={isNewBatchChange}>
-                        2. Batch Specification
+                        2. Batch spec
                     </Tab>
                     <Tab className="text-content py-2 px-3" disabled={isNewBatchChange}>
                         3. Execution
