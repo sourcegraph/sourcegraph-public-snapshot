@@ -5,10 +5,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -101,16 +99,13 @@ type ZoektParameters struct {
 	Typ            IndexedRequestType
 	FileMatchLimit int32
 	Select         filter.SelectPath
-
-	Zoekt zoekt.Streamer
 }
 
 // SearcherParameters the inputs for a search fulfilled by the Searcher service
 // (cmd/searcher). Searcher fulfills (1) unindexed literal and regexp searches
 // and (2) structural search requests.
 type SearcherParameters struct {
-	SearcherURLs *endpoint.Map
-	PatternInfo  *TextPatternInfo
+	PatternInfo *TextPatternInfo
 
 	// UseFullDeadline indicates that the search should try do as much work as
 	// it can within context.Deadline. If false the search should try and be
@@ -228,15 +223,23 @@ type RepoOptions struct {
 	Dependencies             []string
 	CaseSensitiveRepoFilters bool
 	SearchContextSpec        string
-	NoForks                  bool
-	OnlyForks                bool
-	NoArchived               bool
-	OnlyArchived             bool
-	CommitAfter              string
-	Visibility               query.RepoVisibility
-	Limit                    int
-	Cursors                  []*types.Cursor
-	Query                    query.Q
+
+	CommitAfter string
+	Visibility  query.RepoVisibility
+	Limit       int
+	Cursors     []*types.Cursor
+
+	// Explicit forks indicates whether `fork:` was set explicitly in the query,
+	// or whether the values were set from defaults.
+	ForkSet   bool
+	NoForks   bool
+	OnlyForks bool
+
+	// ArchivedSet indicates whether `archived:` was set explicitly in the query,
+	// or whether the values were set from defaults.
+	ArchivedSet  bool
+	NoArchived   bool
+	OnlyArchived bool
 }
 
 func (op *RepoOptions) String() string {

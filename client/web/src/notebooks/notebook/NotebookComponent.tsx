@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import classNames from 'classnames'
 import { debounce, noop } from 'lodash'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import DownloadIcon from 'mdi-react/DownloadIcon'
@@ -13,8 +14,7 @@ import { catchError, delay, filter, map, startWith, switchMap, tap, withLatestFr
 import { HoverMerged } from '@sourcegraph/client-api'
 import { createHoverifier } from '@sourcegraph/codeintellify'
 import { asError, isDefined, isErrorLike, property } from '@sourcegraph/common'
-import { useQueryIntelligence } from '@sourcegraph/search'
-import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
+import { StreamingSearchResultsListProps, useQueryIntelligence } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
@@ -43,6 +43,7 @@ import { NotebookSymbolBlock } from '../blocks/symbol/NotebookSymbolBlock'
 
 import { NotebookBlockSeparator } from './NotebookBlockSeparator'
 import { NotebookCommandPaletteInput } from './NotebookCommandPaletteInput'
+import { NotebookOutline } from './NotebookOutline'
 import { focusBlock, useNotebookEventHandlers } from './useNotebookEventHandlers'
 
 import { Notebook, CopyNotebookProps } from '.'
@@ -53,7 +54,7 @@ export interface NotebookComponentProps
     extends SearchStreamingProps,
         ThemeProps,
         TelemetryProps,
-        Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded'> {
+        Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded' | 'executedQuery'> {
     globbing: boolean
     isReadOnly?: boolean
     blocks: BlockInit[]
@@ -65,6 +66,7 @@ export interface NotebookComponentProps
     >
     exportedFileName: string
     isEmbedded?: boolean
+    outlineContainerElement?: HTMLElement | null
     onSerializeBlocks: (blocks: Block[]) => void
     onCopyNotebook: (props: Omit<CopyNotebookProps, 'title'>) => Observable<NotebookFields>
 }
@@ -114,6 +116,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
         globbing,
         searchContextsEnabled,
         settingsCascade,
+        outlineContainerElement,
     }) => {
         const notebook = useMemo(
             () =>
@@ -124,6 +127,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
             [initialBlocks, fetchHighlightedFileLineRanges, extensionsController.extHostAPI]
         )
 
+        const notebookElement = useRef<HTMLDivElement | null>(null)
         const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null)
         const [blocks, setBlocks] = useState<Block[]>(notebook.getBlocks())
         const commandPaletteInputReference = useRef<HTMLInputElement>(null)
@@ -348,11 +352,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
 
         // Element reference subjects passed to `hoverifier`
         const notebookElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
-        const nextNotebookElement = useCallback(
-            (blockElement: HTMLElement | null) => notebookElements.next(blockElement),
-            [notebookElements]
-        )
-
+        useEffect(() => notebookElements.next(notebookElement.current), [notebookElement, notebookElements])
         const hoverOverlayElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
         const nextOverlayElement = useCallback(
             (overlayElement: HTMLElement | null) => hoverOverlayElements.next(overlayElement),
@@ -423,7 +423,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
 
                 switch (block.type) {
                     case 'md':
-                        return <NotebookMarkdownBlock {...block} {...blockProps} />
+                        return <NotebookMarkdownBlock {...block} {...blockProps} isEmbedded={isEmbedded} />
                     case 'file':
                         return (
                             <NotebookFileBlock
@@ -475,6 +475,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                 onDeleteBlock,
                 onMoveBlock,
                 onDuplicateBlock,
+                isEmbedded,
                 isLightTheme,
                 isReadOnly,
                 selectedBlockId,
@@ -494,12 +495,23 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
 
         const location = useLocation()
 
+        useEffect(() => {
+            const headingId = location.hash.slice(1)
+            if (!headingId) {
+                return
+            }
+            const heading = document.querySelector(`[id="${headingId}"]`)
+            heading?.scrollIntoView()
+            // Scroll to heading only on mount.
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, [])
+
         if (copiedNotebookOrError && !isErrorLike(copiedNotebookOrError) && copiedNotebookOrError !== LOADING) {
             return <Redirect to={PageRoutes.Notebook.replace(':id', copiedNotebookOrError.id)} />
         }
 
         return (
-            <div className={styles.searchNotebook} ref={nextNotebookElement}>
+            <div className={classNames(styles.searchNotebook)} ref={notebookElement}>
                 <div className="pb-1">
                     <Button
                         className="mr-2"
@@ -549,6 +561,13 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                         index={blocks.length}
                         onAddBlock={onAddBlock}
                         onFocusPreviousBlock={onFocusLastBlock}
+                    />
+                )}
+                {notebookElement.current && outlineContainerElement && (
+                    <NotebookOutline
+                        notebookElement={notebookElement.current}
+                        outlineContainerElement={outlineContainerElement}
+                        blocks={blocks}
                     />
                 )}
                 {hoverState.hoverOverlayProps && (

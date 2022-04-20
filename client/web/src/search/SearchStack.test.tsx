@@ -6,19 +6,24 @@ import { noop } from 'lodash'
 import sinon from 'sinon'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
 import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 
-import { useExperimentalFeatures, useSearchStackState } from '../stores'
+import { useSearchStackState } from '../stores'
 import { addSearchStackEntry, SearchStackEntry } from '../stores/searchStack'
 
-import { SearchStack, SearchStackProps } from './SearchStack'
+import { SearchStackContainer, SearchStackProps } from './SearchStack'
 
 describe('Search Stack', () => {
-    const renderSearchStack = (props?: Partial<SearchStackProps>): RenderWithBrandedContextResult =>
-        renderWithBrandedContext(<SearchStack onCreateNotebook={noop} {...props} />)
+    const renderSearchStack = (props?: Partial<SearchStackProps>, enabled = true): RenderWithBrandedContextResult =>
+        renderWithBrandedContext(
+            <MockTemporarySettings settings={{ 'search.notepad.enabled': enabled }}>
+                <SearchStackContainer onCreateNotebook={noop} {...props} />
+            </MockTemporarySettings>
+        )
 
     function open() {
-        userEvent.click(screen.getByRole('button', { name: 'Open search session' }))
+        userEvent.click(screen.getByRole('button', { name: 'Open Notepad' }))
     }
 
     afterEach(cleanup)
@@ -28,36 +33,23 @@ describe('Search Stack', () => {
         { id: 1, type: 'file', path: 'path/to/file', repo: 'test', revision: 'master', lineRange: null },
     ]
 
-    describe('inital state', () => {
-        it('does not render anything if feature is disabled', () => {
-            useExperimentalFeatures.setState({ enableSearchStack: false })
-            useSearchStackState.setState({ addableEntry: mockEntries[0] })
+    describe('closed state', () => {
+        it('does not render anything if feature is disabled dand there are no notes', () => {
+            renderSearchStack({}, false)
+
+            expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+        })
+
+        it('shows button to open notepad', () => {
+            useSearchStackState.setState({ entries: mockEntries })
 
             renderSearchStack()
 
-            expect(screen.queryByRole('button', { name: 'Add search' })).not.toBeInTheDocument()
-        })
-
-        it('shows the add button if an entry can be added', () => {
-            useExperimentalFeatures.setState({ enableSearchStack: true })
-            useSearchStackState.setState({ canRestoreSession: true, addableEntry: mockEntries[0] })
-
-            expect(renderSearchStack().asFragment()).toMatchSnapshot()
-        })
-
-        it('shows the top of the stack if entries exist', () => {
-            useExperimentalFeatures.setState({ enableSearchStack: true })
-            useSearchStackState.setState({ canRestoreSession: true, entries: mockEntries })
-
-            expect(renderSearchStack().asFragment()).toMatchSnapshot()
+            expect(screen.queryByRole('button', { name: 'Open Notepad' })).toBeInTheDocument()
         })
     })
 
     describe('restore previous session', () => {
-        beforeEach(() => {
-            useExperimentalFeatures.setState({ enableSearchStack: true })
-        })
-
         it('restores the previous session', () => {
             useSearchStackState.setState({
                 entries: [],
@@ -66,16 +58,15 @@ describe('Search Stack', () => {
                 addableEntry: mockEntries[0],
             })
             renderSearchStack()
-            userEvent.click(screen.getByRole('button', { name: 'Open search session' }))
+            userEvent.click(screen.getByRole('button', { name: 'Open Notepad' }))
 
-            userEvent.click(screen.getByRole('button', { name: 'Restore previous session' }))
+            userEvent.click(screen.getByRole('button', { name: 'Restore last session' }))
             expect(useSearchStackState.getState().entries).toEqual(mockEntries)
         })
     })
 
-    describe('with entries', () => {
+    describe('with notes', () => {
         beforeEach(() => {
-            useExperimentalFeatures.setState({ enableSearchStack: true })
             useSearchStackState.setState({
                 entries: [
                     {
@@ -93,16 +84,13 @@ describe('Search Stack', () => {
         it('opens and closes', () => {
             renderSearchStack()
 
-            userEvent.click(screen.getByRole('button', { name: 'Open search session' }))
+            userEvent.click(screen.getByRole('button', { name: 'Open Notepad' }))
+            userEvent.click(screen.getByRole('button', { name: 'Close Notepad' }))
 
-            const closeButtons = screen.queryAllByRole('button', { name: 'Close search session' })
-            expect(closeButtons).toHaveLength(2)
-
-            userEvent.click(closeButtons[0])
-            expect(screen.queryByRole('button', { name: 'Open search session' })).toBeInTheDocument()
+            expect(screen.queryByRole('button', { name: 'Open Notepad' })).toBeInTheDocument()
         })
 
-        it('redirects to entries', () => {
+        it('redirects to notes', () => {
             renderSearchStack()
             open()
 
@@ -123,27 +111,37 @@ describe('Search Stack', () => {
             sinon.assert.calledOnce(onCreateNotebook)
         })
 
-        it('allows to delete entries', () => {
+        it('allows to delete notes', () => {
             renderSearchStack()
             open()
 
-            userEvent.click(screen.getAllByRole('button', { name: 'Remove entry' })[0])
+            userEvent.click(screen.getAllByRole('button', { name: 'Remove note' })[0])
             const entryLinks = screen.queryByRole('link')
             expect(entryLinks).toBeInTheDocument()
         })
 
-        it('opens the text annotation aria', () => {
+        it('opens the text annotation input', () => {
             renderSearchStack()
             open()
 
             userEvent.click(screen.getAllByRole('button', { name: 'Add annotation' })[0])
             expect(screen.queryByPlaceholderText('Type to add annotation...')).toBeInTheDocument()
         })
+
+        it('closes annotation input on Meta+Enter', () => {
+            renderSearchStack()
+            open()
+
+            userEvent.click(screen.getAllByRole('button', { name: 'Add annotation' })[0])
+            userEvent.type(screen.getByPlaceholderText('Type to add annotation...'), 'test')
+            userEvent.keyboard('{ctrl}{enter}')
+
+            expect(screen.queryByPlaceholderText('Type to add annotation...')).not.toBeInTheDocument()
+        })
     })
 
     describe('selection', () => {
         beforeEach(() => {
-            useExperimentalFeatures.setState({ enableSearchStack: true })
             useSearchStackState.setState({
                 entries: [
                     {
@@ -377,7 +375,7 @@ describe('Search Stack', () => {
             expect(screen.queryAllByRole('option', { selected: true })).toEqual([items[0]])
         })
 
-        it('skips over selected entries using shift+arrow-down', () => {
+        it('skips over selected notes using shift+arrow-down', () => {
             renderSearchStack()
             open()
 
@@ -397,7 +395,7 @@ describe('Search Stack', () => {
             ])
         })
 
-        it('skips over selected entries using shift+arrow-up', () => {
+        it('skips over selected notes using shift+arrow-up', () => {
             renderSearchStack()
             open()
 
@@ -439,7 +437,7 @@ describe('Search Stack', () => {
 
             const items = screen.getAllByRole('option')
             userEvent.click(items[1])
-            userEvent.click(screen.getAllByTitle('Remove entry')[0])
+            userEvent.click(screen.getAllByTitle('Remove note')[0])
 
             // Verifies that the item is still the selected one (if not it would
             // item[2] which is now the second item).
@@ -470,19 +468,19 @@ describe('Search Stack', () => {
             expect(screen.queryAllByRole('option', { selected: true })).toEqual([items[0]])
         })
 
-        it('deletes all selected entries', () => {
+        it('deletes all selected notes', () => {
             renderSearchStack()
             open()
 
             const item = screen.getAllByRole('option')
             userEvent.click(item[0])
             userEvent.click(item[2], { shiftKey: true })
-            userEvent.click(screen.queryAllByRole('button', { name: 'Remove all selected entries' })[0])
+            userEvent.click(screen.queryAllByRole('button', { name: 'Remove all selected notes' })[0])
 
             expect(screen.queryAllByRole('option').length).toBe(1)
         })
 
-        it('deletes all selected entries when Delete is pressed', () => {
+        it('deletes all selected notes when Delete is pressed', () => {
             renderSearchStack()
             open()
 
@@ -515,7 +513,7 @@ describe('Search Stack', () => {
             expect(screen.queryByRole('option', { selected: true })).not.toBeInTheDocument()
         })
 
-        it('does not select entry on typing space into the annotation area', () => {
+        it('does not select note on typing space into the annotation area', () => {
             renderSearchStack()
             open()
 

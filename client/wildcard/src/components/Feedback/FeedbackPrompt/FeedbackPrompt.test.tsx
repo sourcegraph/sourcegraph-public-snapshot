@@ -27,8 +27,8 @@ describe('FeedbackPrompt', () => {
         )
     })
 
-    afterEach(async () => {
-        await cleanup()
+    afterEach(() => {
+        cleanup()
         onSubmit.resetHistory()
     })
 

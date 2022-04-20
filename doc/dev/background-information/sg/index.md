@@ -110,6 +110,38 @@ On the next command run, if a new version is detected, `sg` will auto update bef
 
 See [configuration](#configuration) to learn more about configuring `sg` behaviour.
 
+### Help
+
+You can get help about commands in a variety of ways:
+
+```sh
+sg help # show all available commands
+
+# learn about a specific command or subcommand
+sg <command> -h
+sg <command> --help
+```
+
+### Autocompletion
+
+If you have used `sg setup`, you should have autocompletions set up for `sg`. To enable it, type out a partial command and press the <kbd>Tab</kbd> key twice. For example:
+
+```none
+sg start<tab><tab>
+```
+
+To get autocompletions for the available flags for a command, type out a command and `-` and press the <kbd>Tab</kbd> key twice. For example:
+
+```none
+sg start -<tab><tab>
+```
+
+Both of the above work if you provide partial values as well to narrow down the suggestions. For example, the following will suggest run sets that start with `web-`:
+
+```none
+sg start web-<tab><tab>
+```
+
 ### `sg start` - Start dev environments
 
 ```bash

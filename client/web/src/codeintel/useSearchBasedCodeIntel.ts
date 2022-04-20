@@ -1,23 +1,29 @@
 import { useCallback, useState } from 'react'
 
-import { flatten } from 'lodash'
+import stringify from 'fast-json-stable-stringify'
+import { flatten, sortBy } from 'lodash'
+import LRU from 'lru-cache'
 
-import {
-    appendLineRangeQueryParameter,
-    appendSubtreeQueryParameter,
-    createAggregateError,
-    ErrorLike,
-    toPositionOrRangeQueryParameter,
-} from '@sourcegraph/common'
+import { createAggregateError, ErrorLike } from '@sourcegraph/common'
+import { Range as ExtensionRange, Position as ExtensionPosition } from '@sourcegraph/extension-api-types'
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { getWebGraphQLClient } from '../backend/graphql'
-import { CodeIntelSearchResult, CodeIntelSearchVariables, LocationFields } from '../graphql-operations'
+import { CodeIntelSearchVariables } from '../graphql-operations'
 
 import { LanguageSpec } from './language-specs/languagespec'
-import { Location, buildSearchBasedLocation } from './location'
-import { CODE_INTEL_SEARCH_QUERY } from './ReferencesPanelQueries'
-import { definitionQuery, isSourcegraphDotCom, referencesQuery, searchWithFallback } from './searchBased'
+import { Location, buildSearchBasedLocation, split } from './location'
+import { CODE_INTEL_SEARCH_QUERY, LOCAL_CODE_INTEL_QUERY } from './ReferencesPanelQueries'
+import {
+    definitionQuery,
+    isExternalPrivateSymbol,
+    isSourcegraphDotCom,
+    referencesQuery,
+    SearchResult,
+    searchResultToResults,
+    searchWithFallback,
+} from './searchBased'
 import { SettingsGetter } from './settings'
 import { sortByProximity } from './sort'
 import { isDefined } from './util/helpers'
@@ -26,6 +32,7 @@ type LocationHandler = (locations: Location[]) => void
 
 interface UseSearchBasedCodeIntelResult {
     fetch: (onReferences: LocationHandler, onDefinitions: LocationHandler) => void
+    fetchReferences: (onReferences: LocationHandler) => void
     loading: boolean
     error?: ErrorLike
 }
@@ -35,6 +42,7 @@ interface UseSearchBasedCodeIntelOptions {
     commit: string
 
     path: string
+    position: ExtensionPosition
     searchToken: string
     fileContent: string
 
@@ -44,6 +52,8 @@ interface UseSearchBasedCodeIntelOptions {
     isArchived: boolean
 
     getSetting: SettingsGetter
+
+    filter?: string
 }
 
 export const useSearchBasedCodeIntel = (options: UseSearchBasedCodeIntelOptions): UseSearchBasedCodeIntelResult => {
@@ -53,10 +63,9 @@ export const useSearchBasedCodeIntel = (options: UseSearchBasedCodeIntelOptions)
     const [loadingDefinitions, setLoadingDefinitions] = useState(false)
     const [definitionsError, setDefinitionsError] = useState<ErrorLike | undefined>()
 
-    const fetch = useCallback(
-        (onReferences: LocationHandler, onDefinitions: LocationHandler) => {
+    const fetchReferences = useCallback(
+        (onReferences: LocationHandler) => {
             setLoadingReferences(true)
-            setLoadingDefinitions(true)
 
             searchBasedReferences(options)
                 .then(references => {
@@ -67,7 +76,15 @@ export const useSearchBasedCodeIntel = (options: UseSearchBasedCodeIntelOptions)
                     setReferencesError(error)
                     setLoadingReferences(false)
                 })
+        },
+        [options]
+    )
 
+    const fetch = useCallback(
+        (onReferences: LocationHandler, onDefinitions: LocationHandler) => {
+            fetchReferences(onReferences)
+
+            setLoadingDefinitions(true)
             searchBasedDefinitions(options)
                 .then(definitions => {
                     onDefinitions(definitions)
@@ -78,11 +95,16 @@ export const useSearchBasedCodeIntel = (options: UseSearchBasedCodeIntelOptions)
                     setLoadingDefinitions(false)
                 })
         },
-        [options]
+        [options, fetchReferences]
     )
 
     const errors = [definitionsError, referencesError].filter(isDefined)
-    return { fetch, loading: loadingReferences || loadingDefinitions, error: createAggregateError(errors) }
+    return {
+        fetch,
+        fetchReferences,
+        loading: loadingReferences || loadingDefinitions,
+        error: createAggregateError(errors),
+    }
 }
 
 // searchBasedReferences is 90% copy&paste from code-intel-extension's
@@ -93,9 +115,38 @@ export async function searchBasedReferences({
     commit,
     searchToken,
     path,
+    position,
+    fileContent,
     spec,
     getSetting,
+    filter,
 }: UseSearchBasedCodeIntelOptions): Promise<Location[]> {
+    const filterReferences = (results: Location[]): Location[] =>
+        filter ? results.filter(location => location.file.includes(filter)) : results
+
+    const symbol = await findSymbol({ repository: repo, commit, path, row: position.line, column: position.character })
+    if (symbol?.refs) {
+        return symbol.refs.map(reference => ({
+            repo,
+            file: path,
+            content: fileContent,
+            commitID: commit,
+            range: rangeToExtensionRange(reference),
+            url: toPrettyBlobURL({
+                filePath: path,
+                revision: commit,
+                repoName: repo,
+                commitID: commit,
+                position: {
+                    line: reference.row + 1,
+                    character: reference.column + 1,
+                },
+            }),
+            lines: split(fileContent),
+            precise: false,
+        }))
+    }
+
     const queryTerms = referencesQuery({ searchToken, path, fileExts: spec.fileExts })
     const queryArguments = {
         repo,
@@ -103,10 +154,16 @@ export async function searchBasedReferences({
         isArchived,
         commit,
         queryTerms,
+        filterReferences,
     }
 
     const doSearch = (negateRepoFilter: boolean): Promise<Location[]> =>
-        searchWithFallback(args => searchReferences(args.queryTerms), queryArguments, negateRepoFilter, getSetting)
+        searchWithFallback(
+            args => searchAndFilterReferences({ queryTerms: args.queryTerms, filterReferences }),
+            queryArguments,
+            negateRepoFilter,
+            getSetting
+        )
 
     // Perform a search in the current git tree
     const sameRepoReferences = doSearch(false)
@@ -131,17 +188,46 @@ export async function searchBasedDefinitions({
     searchToken,
     fileContent,
     path,
+    position,
     spec,
     getSetting,
+    filter,
 }: UseSearchBasedCodeIntelOptions): Promise<Location[]> {
-    const filterDefinitions = (results: Location[]): Location[] =>
-        spec?.filterDefinitions
-            ? spec.filterDefinitions<Location>(results, {
+    const symbol = await findSymbol({ repository: repo, commit, path, row: position.line, column: position.character })
+    if (symbol?.def) {
+        return [
+            {
+                repo,
+                file: path,
+                content: fileContent,
+                commitID: commit,
+                range: rangeToExtensionRange(symbol.def),
+                url: toPrettyBlobURL({
+                    filePath: path,
+                    revision: commit,
+                    repoName: repo,
+                    commitID: commit,
+                    position: {
+                        line: symbol.def.row + 1,
+                        character: symbol.def.column + 1,
+                    },
+                }),
+                lines: split(fileContent),
+                precise: false,
+            },
+        ]
+    }
+
+    const filterDefinitions = (results: Location[]): Location[] => {
+        const filteredByName = filter ? results.filter(location => location.file.includes(filter)) : results
+        return spec?.filterDefinitions
+            ? spec.filterDefinitions<Location>(filteredByName, {
                   repo,
                   fileContent,
                   filePath: path,
               })
-            : results
+            : filteredByName
+    }
 
     // Construct base definition query without scoping terms
     const queryTerms = definitionQuery({ searchToken, path, fileExts: spec.fileExts })
@@ -158,7 +244,7 @@ export async function searchBasedDefinitions({
 
     const doSearch = (negateRepoFilter: boolean): Promise<Location[]> =>
         searchWithFallback(
-            args => searchAndFilterDefinitions({ filterDefinitions, queryTerms: args.queryTerms }),
+            args => searchAndFilterDefinitions({ spec, path, filterDefinitions, queryTerms: args.queryTerms }),
             queryArguments,
             negateRepoFilter,
             getSetting
@@ -189,9 +275,15 @@ export async function searchBasedDefinitions({
  * @param args Parameter bag.
  */
 async function searchAndFilterDefinitions({
+    spec,
+    path,
     filterDefinitions,
     queryTerms,
 }: {
+    /** The LanguageSpec of the language in which we're searching */
+    spec: LanguageSpec
+    /** The file we're in */
+    path: string
     /** The function used to filter definitions. */
     filterDefinitions: (results: Location[]) => Location[]
     /** The terms of the search query. */
@@ -200,10 +292,10 @@ async function searchAndFilterDefinitions({
     // Perform search and perform pre-filtering before passing it
     // off to the language spec for the proper filtering pass.
     const result = await executeSearchQuery(queryTerms)
-    const preFilteredResults = searchResultsToLocations(result).map(buildSearchBasedLocation)
-
-    // TODO: This needs to be ported
-    // const preFilteredResults = searchResults.filter(result => !isExternalPrivateSymbol(doc, path, result))
+    const preFilteredResults = result
+        .flatMap(searchResultToResults)
+        .filter(result => !isExternalPrivateSymbol(spec, path, result))
+        .map(buildSearchBasedLocation)
 
     // Filter results based on language spec
     const filteredResults = filterDefinitions(preFilteredResults)
@@ -211,15 +303,31 @@ async function searchAndFilterDefinitions({
     return sortByProximity(filteredResults, location.pathname)
 }
 
-async function searchReferences(terms: string[]): Promise<Location[]> {
-    const result = await executeSearchQuery(terms)
-
-    return searchResultsToLocations(result).map(buildSearchBasedLocation)
+async function searchAndFilterReferences({
+    queryTerms,
+    filterReferences,
+}: {
+    /** The terms of the search query. */
+    queryTerms: string[]
+    /** The function used to filter definitions. */
+    filterReferences: (results: Location[]) => Location[]
+}): Promise<Location[]> {
+    const result = await executeSearchQuery(queryTerms)
+    const references = result.flatMap(searchResultToResults).map(buildSearchBasedLocation)
+    return filterReferences ? filterReferences(references) : references
 }
 
-async function executeSearchQuery(terms: string[]): Promise<CodeIntelSearchResult> {
+async function executeSearchQuery(terms: string[]): Promise<SearchResult[]> {
+    interface Response {
+        search: {
+            results: {
+                limitHit: boolean
+                results: (SearchResult | undefined)[]
+            }
+        }
+    }
     const client = await getWebGraphQLClient()
-    const result = await client.query<CodeIntelSearchResult, CodeIntelSearchVariables>({
+    const result = await client.query<Response, CodeIntelSearchVariables>({
         query: getDocumentNode(CODE_INTEL_SEARCH_QUERY),
         variables: {
             query: terms.join(' '),
@@ -230,67 +338,137 @@ async function executeSearchQuery(terms: string[]): Promise<CodeIntelSearchResul
         throw createAggregateError([result.error])
     }
 
-    return result.data
+    return result.data.search.results.results.filter(isDefined)
 }
 
-export function searchResultsToLocations(result: CodeIntelSearchResult): LocationFields[] {
-    if (!result || !result.search) {
-        return []
+const findSymbol = async (
+    repositoryCommitPathPosition: RepositoryCommitPathPosition
+): Promise<LocalSymbol | undefined> => {
+    const payload = await fetchLocalCodeIntelPayload(repositoryCommitPathPosition)
+    if (!payload) {
+        return
     }
 
-    const searchResults = result.search.results.results
-        .filter(value => value !== undefined)
-        .filter(result => result.__typename === 'FileMatch')
-
-    const newReferences: LocationFields[] = []
-    for (const result of searchResults) {
-        if (result.__typename !== 'FileMatch') {
-            continue
+    for (const symbol of payload.symbols) {
+        if (isInRange(repositoryCommitPathPosition, symbol.def)) {
+            return symbol
         }
 
-        const resource = {
-            path: result.file.path,
-            content: result.file.content,
-            repository: result.repository,
-            commit: {
-                oid: result.file.commit.oid,
-            },
-        }
-
-        for (const lineMatch of result.lineMatches) {
-            const positionOrRangeQueryParameter = toPositionOrRangeQueryParameter({
-                // TODO: only using first offset?
-                position: { line: lineMatch.lineNumber + 1, character: lineMatch.offsetAndLengths[0][0] + 1 },
-            })
-            const url = appendLineRangeQueryParameter(
-                appendSubtreeQueryParameter(result.file.url),
-                positionOrRangeQueryParameter
-            )
-            newReferences.push({
-                url,
-                resource,
-                range: {
-                    start: {
-                        line: lineMatch.lineNumber,
-                        character: lineMatch.offsetAndLengths[0][0],
-                    },
-                    end: {
-                        line: lineMatch.lineNumber,
-                        character: lineMatch.offsetAndLengths[0][0] + lineMatch.offsetAndLengths[0][1],
-                    },
-                },
-            })
-        }
-
-        const symbolReferences = result.symbols.map(symbol => ({
-            url: symbol.location.url,
-            resource,
-            range: symbol.location.range,
-        }))
-        for (const symbolReference of symbolReferences) {
-            newReferences.push(symbolReference)
+        for (const reference of symbol.refs ?? []) {
+            if (isInRange(repositoryCommitPathPosition, reference)) {
+                return symbol
+            }
         }
     }
 
-    return newReferences
+    return undefined
 }
+
+const cache = <Arguments extends unknown[], V>(
+    func: (...args: Arguments) => V,
+    options: LRU.Options<string, V>
+): ((...args: Arguments) => V) => {
+    const lru = new LRU<string, V>(options)
+    return (...args) => {
+        const key = stringify(args)
+        if (lru.has(key)) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            return lru.get(key)!
+        }
+        const value = func(...args)
+        lru.set(key, value)
+        return value
+    }
+}
+
+const fetchLocalCodeIntelPayload = cache(
+    async (repositoryCommitPath: RepositoryCommitPath): Promise<LocalCodeIntelPayload | undefined> => {
+        const client = await getWebGraphQLClient()
+        type LocalCodeIntelResponse = GenericBlobResponse<{ localCodeIntel: string }>
+        const result = await client.query<LocalCodeIntelResponse, RepositoryCommitPath>({
+            query: getDocumentNode(LOCAL_CODE_INTEL_QUERY),
+            variables: repositoryCommitPath,
+        })
+
+        if (result.error) {
+            throw createAggregateError([result.error])
+        }
+
+        const payloadString = result.data.repository?.commit?.blob?.localCodeIntel
+        if (!payloadString) {
+            return undefined
+        }
+
+        const payload = JSON.parse(payloadString) as LocalCodeIntelPayload
+        if (!payload) {
+            return undefined
+        }
+
+        for (const symbol of payload.symbols) {
+            if (symbol.refs) {
+                symbol.refs = sortBy(symbol.refs, reference => reference.row)
+            }
+        }
+
+        return payload
+    },
+    { max: 10 }
+)
+
+interface RepositoryCommitPath {
+    repository: string
+    commit: string
+    path: string
+}
+
+type RepositoryCommitPathPosition = RepositoryCommitPath & Position
+
+type LocalCodeIntelPayload = {
+    symbols: LocalSymbol[]
+} | null
+
+interface LocalSymbol {
+    hover?: string
+    def: LocalRange
+    refs?: LocalRange[]
+}
+
+interface LocalRange {
+    row: number
+    column: number
+    length: number
+}
+
+interface Position {
+    row: number
+    column: number
+}
+
+const isInRange = (position: Position, range: LocalRange): boolean => {
+    if (position.row !== range.row) {
+        return false
+    }
+    if (position.column < range.column) {
+        return false
+    }
+    if (position.column > range.column + range.length) {
+        return false
+    }
+    return true
+}
+
+/** The response envelope for all blob queries. */
+interface GenericBlobResponse<R> {
+    repository: { commit: { blob: R | null } | null } | null
+}
+
+const rangeToExtensionRange = (range: LocalRange): ExtensionRange => ({
+    start: {
+        line: range.row,
+        character: range.column,
+    },
+    end: {
+        line: range.row,
+        character: range.column + range.length,
+    },
+})

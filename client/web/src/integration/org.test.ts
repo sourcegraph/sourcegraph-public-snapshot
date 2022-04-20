@@ -2,6 +2,7 @@ import assert from 'assert'
 
 import { subtypeOf } from '@sourcegraph/common'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -88,6 +89,7 @@ describe('Organizations', () => {
             await driver.page.waitForSelector('.test-create-org-button')
 
             await percySnapshotWithVariants(driver.page, 'Site admin org page')
+            await accessibilityAudit(driver.page)
 
             await driver.page.click('.test-create-org-button')
 
@@ -173,6 +175,7 @@ describe('Organizations', () => {
                 })
 
                 await percySnapshotWithVariants(driver.page, 'Organization settings page')
+                await accessibilityAudit(driver.page)
             })
         })
         describe('Members tab', () => {
@@ -229,6 +232,7 @@ describe('Organizations', () => {
                 )
 
                 await percySnapshotWithVariants(driver.page, 'Organization members list')
+                await accessibilityAudit(driver.page)
 
                 // Override for the fetch post-removal
                 testContext.overrideGraphQL({

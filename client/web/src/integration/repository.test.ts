@@ -8,6 +8,7 @@ import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionM
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
+import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -405,6 +406,7 @@ describe('Repository', () => {
             await driver.page.waitForSelector('[data-testid="action-items-toggle-open"]')
 
             await percySnapshotWithVariants(driver.page, 'Repository index page')
+            await accessibilityAudit(driver.page)
 
             const numberOfFileEntries = await driver.page.evaluate(
                 () => document.querySelectorAll<HTMLButtonElement>('.test-tree-entry-file')?.length

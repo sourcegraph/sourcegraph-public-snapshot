@@ -3,7 +3,9 @@ package tracer
 import (
 	"fmt"
 	"io"
+	"os"
 	"reflect"
+	"strconv"
 	"sync"
 
 	"github.com/inconshreveable/log15"
@@ -32,30 +34,41 @@ func init() {
 	if _, err := maxprocs.Set(); err != nil {
 		log15.Error("automaxprocs failed", "error", err)
 	}
+	if r := os.Getenv("MUX_ANALYTICS_TRACE_RATE"); r != "" {
+		rate, err := strconv.ParseFloat(r, 64)
+		if err != nil {
+			log15.Error("Failed to parse MUX_ANALYTICS_TRACE_RATE", "error", err)
+			return
+		}
+		MUX_ANALYTICS_TRACE_RATE = rate
+	}
+
 }
 
-// options control the behavior of a tracerType
+var MUX_ANALYTICS_TRACE_RATE = 0.1
+
+// options control the behavior of a TracerType
 type options struct {
-	tracerType
+	TracerType
 	externalURL string
 	debug       bool
-	// these values are not configurable at runtime
+	// these values are not configurable by site config
 	serviceName string
 	version     string
 	env         string
 }
 
-type tracerType string
+type TracerType string
 
 const (
-	None    tracerType = "none"
-	Datadog tracerType = "datadog"
-	Ot      tracerType = "opentracing"
+	None    TracerType = "none"
+	Datadog TracerType = "datadog"
+	Ot      TracerType = "opentracing"
 )
 
-// isSetByUser returns true if the tracerType is one supported by the schema
+// isSetByUser returns true if the TracerType is one supported by the schema
 // should be kept in sync with ObservabilityTracing.Type in schema/site.schema.json
-func (t tracerType) isSetByUser() bool {
+func (t TracerType) isSetByUser() bool {
 	switch t {
 	case Datadog, Ot:
 		return true
@@ -69,6 +82,9 @@ func Init(c conftypes.WatchableSiteConfig) {
 	opts.serviceName = env.MyName
 	if version.IsDev(version.Version()) {
 		opts.env = "dev"
+	}
+	if d := os.Getenv("DD_ENV"); d != "" {
+		opts.env = d
 	}
 	opts.version = version.Version()
 
@@ -90,7 +106,7 @@ func initTracer(opts *options, c conftypes.WatchableSiteConfig) {
 		version:     opts.version,
 		env:         opts.env,
 		// the values below may change
-		tracerType:  None,
+		TracerType:  None,
 		debug:       false,
 		externalURL: "",
 	}
@@ -111,7 +127,7 @@ func initTracer(opts *options, c conftypes.WatchableSiteConfig) {
 				samplingStrategy = ot.TraceSelective
 				setTracer = Ot
 			}
-			if t := tracerType(tracingConfig.Type); t.isSetByUser() {
+			if t := TracerType(tracingConfig.Type); t.isSetByUser() {
 				setTracer = t
 			}
 			shouldLog = tracingConfig.Debug
@@ -124,7 +140,7 @@ func initTracer(opts *options, c conftypes.WatchableSiteConfig) {
 
 		opts := options{
 			externalURL: siteConfig.ExternalURL,
-			tracerType:  setTracer,
+			TracerType:  setTracer,
 			debug:       shouldLog,
 			serviceName: opts.serviceName,
 			version:     opts.version,
@@ -135,12 +151,12 @@ func initTracer(opts *options, c conftypes.WatchableSiteConfig) {
 			// Nothing changed
 			return
 		}
-		prevTracer := oldOpts.tracerType
+		prevTracer := oldOpts.TracerType
 		oldOpts = opts
 
 		t, closer, err := newTracer(&opts, prevTracer)
 		if err != nil {
-			log15.Warn("Could not initialize tracer", "tracer", opts.tracerType, "error", err.Error())
+			log15.Warn("Could not initialize tracer", "tracer", opts.TracerType, "error", err.Error())
 			return
 		}
 		globalTracer.set(t, closer, opts.debug)
@@ -148,15 +164,15 @@ func initTracer(opts *options, c conftypes.WatchableSiteConfig) {
 }
 
 // TODO Use openTelemetry https://github.com/sourcegraph/sourcegraph/issues/27386
-func newTracer(opts *options, prevTracer tracerType) (opentracing.Tracer, io.Closer, error) {
-	if opts.tracerType == None {
+func newTracer(opts *options, prevTracer TracerType) (opentracing.Tracer, io.Closer, error) {
+	if opts.TracerType == None {
 		log15.Info("tracing disabled")
 		if prevTracer == Datadog {
 			ddtracer.Stop()
 		}
 		return opentracing.NoopTracer{}, nil, nil
 	}
-	if opts.tracerType == Datadog {
+	if opts.TracerType == Datadog {
 		log15.Info("Datadog: tracing enabled")
 		tracer := ddopentracing.New(ddtracer.WithService(opts.serviceName),
 			ddtracer.WithDebugMode(opts.debug),
@@ -173,7 +189,7 @@ func newTracer(opts *options, prevTracer tracerType) (opentracing.Tracer, io.Clo
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "jaegercfg.FromEnv failed")
 	}
-	cfg.Tags = append(cfg.Tags, opentracing.Tag{Key: "service.version", Value: version.Version()})
+	cfg.Tags = append(cfg.Tags, opentracing.Tag{Key: "service.version", Value: opts.version}, opentracing.Tag{Key: "service.env", Value: opts.env})
 	if reflect.DeepEqual(cfg.Sampler, &jaegercfg.SamplerConfig{}) {
 		// Default sampler configuration for when it is not specified via
 		// JAEGER_SAMPLER_* env vars. In most cases, this is sufficient

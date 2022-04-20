@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -89,7 +90,6 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 			r.commit.repoResolver.RepoName(),
 			api.CommitID(r.commit.OID()),
 			r.Path(),
-			0,
 			authz.DefaultSubRepoPermsChecker,
 		)
 	})
@@ -224,7 +224,7 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	if r.isSingleChild != nil {
 		return *r.isSingleChild, nil
 	}
-	entries, err := git.ReadDir(
+	entries, err := gitserver.NewClient(r.db).ReadDir(
 		ctx,
 		r.db,
 		authz.DefaultSubRepoPermsChecker,

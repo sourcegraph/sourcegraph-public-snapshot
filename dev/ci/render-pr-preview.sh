@@ -183,7 +183,11 @@ if [[ -n "${github_api_key}" && -n "${pr_number}" ]]; then
   if [[ "${pr_description}" != *"## App preview"* ]]; then
     echo "Updating PR #${pr_number} in ${owner_and_repo} description"
 
-    pr_description=$(echo -e "${pr_description}\n## App preview:\n- [Link](${pr_preview_url})\n" | jq -Rs .)
+    pr_description=$(printf '%s\n\n' "${pr_description}" \
+      "## App preview:" \
+      "- [Link](${pr_preview_url})" \
+      "Check out the [client app preview documentation](https://docs.sourcegraph.com/dev/how-to/client_pr_previews) to learn more." |
+      jq -Rs .)
 
     curl -sSf -o /dev/null --request PATCH \
       --url "${github_pr_api_url}" \

@@ -4,9 +4,10 @@ import { storiesOf } from '@storybook/react'
 
 import { WebStory } from '../components/WebStory'
 
-import { RepositoryMenuContent } from './RepositoryMenu'
+import { RepositoryMenu, RepositoryMenuContent } from './RepositoryMenu'
 
 const defaultProps = {
+    isOpen: true,
     repoName: 'repoName',
     revision: 'commitID',
     filePath: 'foo/bar/baz.bonk',
@@ -16,4 +17,4 @@ const { add } = storiesOf('web/codeintel/RepositoryMenu', module).addDecorator(s
     <WebStory>{() => story()}</WebStory>
 ))
 
-add('Basic', () => <RepositoryMenuContent {...defaultProps} />)
+add('Unavailable', () => <RepositoryMenu {...defaultProps} content={RepositoryMenuContent} {...defaultProps} />)

@@ -6,7 +6,7 @@ import { WebStory } from '../../../components/WebStory'
 
 import { PieChart } from './PieChart'
 
-export const StoryConfig: Meta = {
+const StoryConfig: Meta = {
     title: 'web/charts/pie',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
 }

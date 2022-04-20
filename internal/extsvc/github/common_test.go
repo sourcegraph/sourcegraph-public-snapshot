@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"reflect"
 	"sort"
 	"strings"
 	"testing"
@@ -74,65 +73,29 @@ func newTestClientWithAuthenticator(t *testing.T, auth auth.Authenticator, cli h
 
 // TestClient_GetRepository tests the behavior of GetRepository.
 func TestClient_GetRepository(t *testing.T) {
-	mock := mockHTTPResponseBody{
-		responseBody: `
-{
-  "node_id": "i",
-  "full_name": "o/r",
-  "description": "d",
-  "html_url": "https://github.example.com/o/r",
-  "fork": true,
-  "stargazers_count": 30,
-  "watchers_count": 20,
-  "forks_count": 5,
-  "visibility": ""
-}
-`,
-	}
-	c := newTestClient(t, &mock)
+	cli, save := newV3TestClient(t, "GetRepository")
+	defer save()
 
-	want := Repository{
-		ID:             "i",
-		NameWithOwner:  "o/r",
-		Description:    "d",
-		URL:            "https://github.example.com/o/r",
-		IsFork:         true,
-		StargazerCount: 30,
-		ForkCount:      5,
-		// This is guarded behind a feature flag so will be empty for now. When the feature flag is
-		// enabled, it will return a repo of type "internal". We will need to fix the test
-		// then. This is blocked on our GHE instance being upgraded to 3.3.0.
-		Visibility: "",
-	}
-
-	repo, err := c.GetRepository(context.Background(), "owner", "repo")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if repo == nil {
-		t.Error("repo == nil")
-	}
-	if mock.count != 1 {
-		t.Errorf("mock.count == %d, expected to miss cache once", mock.count)
-	}
-	if !reflect.DeepEqual(repo, &want) {
-		t.Errorf("got repository %+v, want %+v", repo, &want)
-	}
-
-	// Test that repo is cached (and therefore NOT fetched) from client on second request.
-	repo, err = c.GetRepository(context.Background(), "owner", "repo")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if repo == nil {
-		t.Error("repo == nil")
-	}
-	if mock.count != 1 {
-		t.Errorf("mock.count == %d, expected to hit cache", mock.count)
-	}
-	if !reflect.DeepEqual(repo, &want) {
-		t.Errorf("got cached repository %+v, want %+v", repo, &want)
-	}
+	t.Run("first run", func(t *testing.T) {
+		ctx := context.Background()
+		repo, err := cli.GetRepository(ctx, "sourcegraph-vcr-repos", "private-org-repo-1")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if repo == nil {
+			t.Fatal("expected repo, got nil")
+		}
+	})
+	t.Run("second run", func(t *testing.T) {
+		ctx := context.Background()
+		repo, err := cli.GetRepository(ctx, "sourcegraph-vcr-repos", "private-org-repo-1")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if repo == nil {
+			t.Fatal("expected repo, got nil")
+		}
+	})
 }
 
 // TestClient_GetRepository_nonexistent tests the behavior of GetRepository when called

@@ -126,8 +126,8 @@ const RepositoriesField = forwardRef((props: RepositoryFieldProps, reference: Re
             />
 
             {panel && (
-                <ComboboxPopover className={styles.comboboxPopover}>
-                    <SuggestionsPanel value={searchValue} suggestions={suggestions} />
+                <ComboboxPopover hidden={false} className={styles.comboboxReachPopover}>
+                    <SuggestionsPanel value={searchValue} suggestions={suggestions} className={styles.popover} />
                 </ComboboxPopover>
             )}
         </Combobox>

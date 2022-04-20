@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -44,7 +45,7 @@ func InventoryContext(repo api.RepoName, db database.DB, commitID api.CommitID, 
 		ReadTree: func(ctx context.Context, path string) ([]fs.FileInfo, error) {
 			// TODO: As a perf optimization, we could read multiple levels of the Git tree at once
 			// to avoid sequential tree traversal calls.
-			return git.ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, repo, commitID, path, false)
+			return gitserver.NewClient(db).ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, repo, commitID, path, false)
 		},
 		NewFileReader: func(ctx context.Context, path string) (io.ReadCloser, error) {
 			return git.NewFileReader(ctx, db, repo, commitID, path, authz.DefaultSubRepoPermsChecker)

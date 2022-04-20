@@ -1,6 +1,10 @@
 import { getSanitizedRepositories } from '../../../../../components/creation-ui-kit'
-import { MinimalSearchBasedInsightData } from '../../../../../core/backend/code-insights-backend-types'
-import { InsightExecutionType, InsightType, SearchBasedInsightSeries } from '../../../../../core/types'
+import {
+    MinimalSearchBasedInsightData,
+    InsightExecutionType,
+    InsightType,
+    SearchBasedInsightSeries,
+} from '../../../../../core'
 import { CreateInsightFormFields, EditableDataSeries } from '../types'
 
 export function getSanitizedLine(line: EditableDataSeries): SearchBasedInsightSeries {
@@ -35,6 +39,7 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
             filters: {
                 excludeRepoRegexp: '',
                 includeRepoRegexp: '',
+                contexts: [],
                 repositories: [],
             },
         }

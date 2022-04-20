@@ -46,6 +46,7 @@ func TestHover(t *testing.T) {
 		uploads,
 		newOperations(&observation.TestContext),
 		authz.NewMockSubRepoPermissionChecker(),
+		50,
 	)
 	text, rn, exists, err := resolver.Hover(context.Background(), 10, 20)
 	if err != nil {
@@ -137,6 +138,7 @@ func TestHoverRemote(t *testing.T) {
 		uploads,
 		newOperations(&observation.TestContext),
 		authz.NewMockSubRepoPermissionChecker(),
+		50,
 	)
 	text, rn, exists, err := resolver.Hover(context.Background(), 10, 20)
 	if err != nil {

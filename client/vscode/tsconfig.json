@@ -22,6 +22,6 @@
     { "path": "../search" },
     { "path": "../search-ui" },
   ],
-  "include": ["**/*", ".*", "**/*.d.ts"],
+  "include": ["./package.json", "**/*", ".*", "**/*.d.ts"],
   "exclude": ["node_modules", "../../node_modules", ".vscode-test", "out", "dist"],
 }

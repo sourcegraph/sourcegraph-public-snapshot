@@ -378,7 +378,7 @@ func (r *Resolver) DeleteInsightsDashboard(ctx context.Context, args *graphqlbac
 		return nil, err
 	}
 
-	err = r.dashboardStore.DeleteDashboard(ctx, dashboardID.Arg)
+	err = r.dashboardStore.DeleteDashboard(ctx, int(dashboardID.Arg))
 	if err != nil {
 		return emptyResponse, err
 	}

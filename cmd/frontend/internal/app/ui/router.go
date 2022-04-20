@@ -16,8 +16,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
-	muxtrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/gorilla/mux"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -29,7 +27,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	muxtrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/gorilla/mux"
 )
 
 const (
@@ -128,7 +128,7 @@ func InitRouter(db database.DB, codeIntelResolver graphqlbackend.CodeIntelResolv
 var mockServeRepo func(w http.ResponseWriter, r *http.Request)
 
 func newRouter() *muxtrace.Router {
-	r := muxtrace.NewRouter()
+	r := muxtrace.NewRouter(muxtrace.WithAnalyticsRate(tracer.MUX_ANALYTICS_TRACE_RATE))
 	r.StrictSlash(true)
 
 	// Top-level routes.
@@ -140,6 +140,7 @@ func newRouter() *muxtrace.Router {
 	r.Path("/search/console").Methods("GET").Name(routeSearchConsole)
 	r.Path("/sign-in").Methods("GET").Name(uirouter.RouteSignIn)
 	r.Path("/sign-up").Methods("GET").Name(uirouter.RouteSignUp)
+	r.Path("/unlock-account/{token}").Methods("GET").Name(uirouter.RouteUnlockAccount)
 	r.Path("/welcome").Methods("GET").Name(routeWelcome)
 	r.PathPrefix("/insights").Methods("GET").Name(routeInsights)
 	r.PathPrefix("/batch-changes").Methods("GET").Name(routeBatchChanges)
@@ -245,6 +246,7 @@ func initRouter(db database.DB, router *muxtrace.Router, codeIntelResolver graph
 	router.Get(routeContexts).Handler(brandedNoIndex("Search Contexts"))
 	router.Get(uirouter.RouteSignIn).Handler(handler(db, serveSignIn(db)))
 	router.Get(uirouter.RouteSignUp).Handler(brandedIndex("Sign up"))
+	router.Get(uirouter.RouteUnlockAccount).Handler(brandedNoIndex("Unlock Your Account"))
 	router.Get(routeWelcome).Handler(brandedNoIndex("Welcome"))
 	router.Get(routeOrganizations).Handler(brandedNoIndex("Organization"))
 	router.Get(routeSettings).Handler(brandedNoIndex("Settings"))
@@ -476,7 +478,7 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db database.DB, e
 		ext.Error.Set(span, true)
 		span.SetTag("err", err)
 		span.SetTag("error-id", errorID)
-		traceURL = trace.URL(trace.IDFromSpan(span), conf.ExternalURL())
+		traceURL = trace.URL(trace.IDFromSpan(span), conf.ExternalURL(), conf.Tracer())
 	}
 	log15.Error("ui HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", statusCode, "error", err, "error_id", errorID, "trace", traceURL)
 
