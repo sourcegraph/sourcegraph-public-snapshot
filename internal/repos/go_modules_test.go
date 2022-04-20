@@ -1,6 +1,7 @@
 package repos
 
 import (
+	"context"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -11,7 +12,8 @@ import (
 )
 
 func TestGoModulesSource_ListRepos(t *testing.T) {
-	ctx, depsSvc := setupDependenciesService(t, []dependencies.DependencyRepo{
+	ctx := context.Background()
+	depsSvc := testDependenciesService(ctx, t, []dependencies.DependencyRepo{
 		{
 			ID:      1,
 			Scheme:  dependencies.GoModulesScheme,

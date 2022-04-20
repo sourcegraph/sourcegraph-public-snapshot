@@ -18,7 +18,8 @@ import (
 )
 
 func TestGetNpmDependencyRepos(t *testing.T) {
-	ctx, depsSvc := setupDependenciesService(t, testDependencyRepos)
+	ctx := context.Background()
+	depsSvc := testDependenciesService(ctx, t, testDependencyRepos)
 
 	type testCase struct {
 		pkgName string
@@ -74,9 +75,8 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 	}
 }
 
-func setupDependenciesService(t *testing.T, dependencyRepos []dependencies.DependencyRepo) (context.Context, DependenciesService) {
+func testDependenciesService(ctx context.Context, t *testing.T, dependencyRepos []dependencies.DependencyRepo) DependenciesService {
 	t.Helper()
-	ctx := context.Background()
 	depsSvc := NewMockDependenciesService()
 
 	depsSvc.ListDependencyReposFunc.SetDefaultHook(func(ctx context.Context, opts dependencies.ListDependencyReposOpts) (matching []dependencies.DependencyRepo, _ error) {
@@ -111,7 +111,7 @@ func setupDependenciesService(t *testing.T, dependencyRepos []dependencies.Depen
 		return matching, nil
 	})
 
-	return ctx, depsSvc
+	return depsSvc
 }
 
 var testDependencies = []string{
@@ -142,7 +142,8 @@ var testDependencyRepos = func() []dependencies.DependencyRepo {
 }()
 
 func TestListRepos(t *testing.T) {
-	ctx, depsSvc := setupDependenciesService(t, testDependencyRepos)
+	ctx := context.Background()
+	depsSvc := testDependenciesService(ctx, t, testDependencyRepos)
 
 	dir, err := os.MkdirTemp("", "")
 	require.Nil(t, err)
