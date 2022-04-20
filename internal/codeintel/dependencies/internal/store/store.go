@@ -163,8 +163,7 @@ func (s *Store) UpsertDependencyRepos(ctx context.Context, deps []shared.Repo) (
 	return newDeps, err
 }
 
-// DeleteDependencyReposByID creates the given dependency repos if they doesn't yet exist. The values that
-// did not exist previously are returned.
+// DeleteDependencyReposByID removes the dependency repos with the given ids, if they exist.
 func (s *Store) DeleteDependencyReposByID(ctx context.Context, ids ...int) (err error) {
 	ctx, endObservation := s.operations.deleteDependencyReposByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numIDs", len(ids)),
