@@ -40,6 +40,7 @@
     margin-bottom: 0.5rem;
     border-bottom: 1px solid var(--border-color);
     overflow: hidden;
+    flex-shrink: 0;
 }
 
 .download-link {
