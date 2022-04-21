@@ -152,23 +152,23 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
                 {stacked && <StackedArea dataSeries={dataSeries} xScale={xScale} yScale={yScale} />}
 
                 {[...dataSeries]
-                    .sort(series => sortByDataKey(series.dataKey, activePoint?.seriesKey || ''))
+                    .sort(series => sortByDataKey(series.id, activePoint?.seriesId || ''))
                     .map(line => (
                         <LinePath
                             key={line.id}
-                        data={line.data as SeriesDatum<D>[]}
+                            data={line.data as SeriesDatum<D>[]}
                             defined={isDatumWithValidNumber}
                             x={data => xScale(data.x)}
                             y={data => yScale(getDatumValue(data))}
                             stroke={line.color}
                             curve={curveLinear}
-                        strokeLinecap="round"
-                        strokeWidth={2}
+                            strokeLinecap="round"
+                            strokeWidth={2}
                         />
                     ))}
 
                 {[...points]
-                    .sort(point => sortByDataKey(point.seriesKey, activePoint?.seriesKey || ''))
+                    .sort(point => sortByDataKey(point.seriesId, activePoint?.seriesId || ''))
                     .map(point => (
                         <PointGlyph
                             key={point.id}

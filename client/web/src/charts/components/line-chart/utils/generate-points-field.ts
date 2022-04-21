@@ -23,7 +23,7 @@ export function generatePointsField<Datum>(input: PointsFieldInput<Datum>): Poin
 
             return {
                 id: `${id}-${index}`,
-                seriesId: id,
+                seriesId: id.toString(),
                 value: datumValue,
                 time: datum.x,
                 y: yScale(datumValue),
