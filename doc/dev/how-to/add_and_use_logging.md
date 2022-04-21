@@ -11,7 +11,7 @@ The recommended logger at Sourcegraph is `github.com/sourcegraph/sourcegraph/lib
    1. Log level can be configured with `SRC_LOG_LEVEL`
    2. Do not use this in an `init()` function
 3. A getter to retrieve a `log.Logger` instance, `log.Scoped`
-   1. `log.Scoped` will panic if `log.Init` is not called.
+   1. In development, `log.Scoped` will panic if `log.Init` is not called. In production, a no-op logger will be returned.
 
 For testing purposes, we also provide:
 
@@ -40,8 +40,10 @@ import (
 )
 
 func main() {
-  // If unintialized, calls to `log.Get` will panic. Repeated calls to `log.Init` will
-  // also panic. Make sure to call this exactly once in `main`!
+  // If unintialized, calls to `log.Scoped` will return a no-op logger in production, or
+  // panic in development.
+  //
+  // Repeated calls to `log.Init` will panic. Make sure to call this exactly once in `main`!
   log.Init(log.Resource{
     Name: env.MyName,
     /* ... optional fields */

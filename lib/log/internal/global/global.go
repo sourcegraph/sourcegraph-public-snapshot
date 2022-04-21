@@ -15,10 +15,15 @@ var (
 	globalLoggerInit sync.Once
 )
 
-// Get retrieves the initialized global logger, or panics otherwise.
-func Get() *zap.Logger {
+// Get retrieves the initialized global logger, or panics otherwise (unless safe is true,
+// in which case a no-op logger is returned)
+func Get(safe bool) *zap.Logger {
 	if !IsInitialized() {
-		panic("global logger not initialized - have you called lib/log.Init?")
+		if safe {
+			return zap.NewNop()
+		} else {
+			panic("global logger not initialized - have you called lib/log.Init or lib/logtest.Init?")
+		}
 	}
 	return globalLogger
 }
