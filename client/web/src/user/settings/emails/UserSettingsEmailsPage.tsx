@@ -73,10 +73,6 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user }) => {
         return <LoadingSpinner />
     }
 
-    if (isErrorLike(statusOrError)) {
-        return <ErrorAlert className="mt-2" error={statusOrError} />
-    }
-
     return (
         <div className={styles.userSettingsEmailsPage}>
             <PageTitle title="Emails" />
@@ -89,6 +85,7 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user }) => {
                 </Alert>
             )}
 
+            {isErrorLike(statusOrError) && <ErrorAlert className="mt-2" error={statusOrError} />}
             {isErrorLike(emailActionError) && <ErrorAlert className="mt-2" error={emailActionError} />}
 
             <Container>
