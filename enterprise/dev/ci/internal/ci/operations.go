@@ -143,7 +143,6 @@ func addDocs(pipeline *bk.Pipeline) {
 func addCheck(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":clipboard: Misc linters",
 		withYarnCache(),
-		bk.Parallelism(10),
 		bk.AnnotatedCmd("./dev/check/all.sh", bk.AnnotatedCmdOpts{
 			Annotations: &bk.AnnotationOpts{IncludeNames: true},
 		}))
