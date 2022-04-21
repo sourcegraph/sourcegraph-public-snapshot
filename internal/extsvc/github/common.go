@@ -16,6 +16,7 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/google/go-github/github"
+	"github.com/inconshreveable/log15"
 	"github.com/segmentio/fasthash/fnv1"
 	"golang.org/x/oauth2"
 
@@ -1507,12 +1508,6 @@ func newHttpResponseState(statusCode int, headers http.Header) *httpResponseStat
 	}
 }
 
-// These headers are used for conditional requests.
-var (
-	headerIfNoneMatch     = "If-None-Match"
-	headerIfModifiedSince = "If-Modified-Since"
-)
-
 func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result interface{}) (responseState *httpResponseState, err error) {
 	req.URL.Path = path.Join(apiURL.Path, req.URL.Path)
 	req.URL = apiURL.ResolveReference(req.URL)
@@ -1542,6 +1537,8 @@ func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, ra
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	log15.Debug("doRequest", "status", resp.Status, "x-ratelimit-remaining", resp.Header.Get("x-ratelimit-remaining"))
 
 	// For 401 responses we receive a remaining limit of 0. This will cause the next
 	// call to block for up to an hour because it believes we have run out of tokens.

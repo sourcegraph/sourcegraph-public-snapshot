@@ -19,7 +19,7 @@ import { FilteredConnectionFilter } from '../../components/FilteredConnection'
 import { Page } from '../../components/Page'
 import { CreateNotebookVariables, NotebooksOrderBy } from '../../graphql-operations'
 import { PageRoutes } from '../../routes.constants'
-import { NotepadIcon } from '../../search/SearchStack'
+import { NotepadIcon } from '../../search/Notepad'
 import { fetchNotebooks as _fetchNotebooks, createNotebook as _createNotebook } from '../backend'
 
 import { ImportMarkdownNotebookButton } from './ImportMarkdownNotebookButton'

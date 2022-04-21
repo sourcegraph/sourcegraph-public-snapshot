@@ -32,21 +32,21 @@ import { Button, Link, TextArea, Icon } from '@sourcegraph/wildcard'
 
 import { BlockInput } from '../notebooks'
 import {
-    useSearchStackState,
+    useNotepadState,
     restorePreviousSession,
     SearchEntry,
-    SearchStackEntry,
-    removeFromSearchStack,
-    removeAllSearchStackEntries,
-    SearchStackEntryInput,
-    addSearchStackEntry,
+    NotepadEntry,
+    removeFromNotepad,
+    removeAllNotepadEntries,
+    NotepadEntryInput,
+    addNotepadEntry,
     setEntryAnnotation,
-    SearchStackEntryID,
-} from '../stores/searchStack'
+    NotepadEntryID,
+} from '../stores/notepad'
 
-import styles from './SearchStack.module.scss'
+import styles from './Notepad.module.scss'
 
-const SEARCH_STACK_ID = 'search:search-stack'
+const NOTEPAD_ID = 'search:notepad'
 
 function isMacMetaKey(event: KeyboardEvent, isMacPlatform: boolean): boolean {
     return isMacPlatform && event.metaKey
@@ -58,7 +58,7 @@ function isMetaKey(event: KeyboardEvent, isMacPlatform: boolean): boolean {
 
 /**
  * This handler is used on mousedown to prevent text selection when multiple
- * stack entries are selected with Shift+click.
+ * entries are selected with Shift+click.
  * (tested in Firefox and Chromium)
  */
 function preventTextSelection(event: MouseEvent | KeyboardEvent): void {
@@ -68,11 +68,11 @@ function preventTextSelection(event: MouseEvent | KeyboardEvent): void {
 }
 
 /**
- * Helper hook to determine whether a new entry has been added to the search
- * stack. Whenever the number of entries increases we have a new entry. It
- * assumes that the newest entry is the first element in the input array.
+ * Helper hook to determine whether a new entry has been added to the notepad.
+ * Whenever the number of entries increases we have a new entry. It assumes that
+ * the newest entry is the first element in the input array.
  */
-function useHasNewEntry(entries: SearchStackEntry[]): boolean {
+function useHasNewEntry(entries: NotepadEntry[]): boolean {
     const previousLength = useRef<number>()
 
     const previous = previousLength.current
@@ -83,31 +83,28 @@ function useHasNewEntry(entries: SearchStackEntry[]): boolean {
 
 export const NotepadIcon: React.FunctionComponent = () => <Icon as={BookPlusOutlineIcon} />
 
-export interface SearchStackContainerProps {
+export interface NotepadContainerProps {
     initialOpen?: boolean
     onCreateNotebook: (blocks: BlockInput[]) => void
 }
 
-export const SearchStackContainer: React.FunctionComponent<SearchStackContainerProps> = ({
-    initialOpen,
-    onCreateNotebook,
-}) => {
-    const newEntry = useSearchStackState(state => state.addableEntry)
-    const entries = useSearchStackState(state => state.entries)
-    const canRestore = useSearchStackState(state => state.canRestoreSession)
-    const [enableSearchStack] = useTemporarySetting('search.notepad.enabled')
+export const NotepadContainer: React.FunctionComponent<NotepadContainerProps> = ({ initialOpen, onCreateNotebook }) => {
+    const newEntry = useNotepadState(state => state.addableEntry)
+    const entries = useNotepadState(state => state.entries)
+    const canRestore = useNotepadState(state => state.canRestoreSession)
+    const [enableNotepad] = useTemporarySetting('search.notepad.enabled')
 
-    if (enableSearchStack) {
+    if (enableNotepad) {
         return (
-            <SearchStack
+            <Notepad
                 className={styles.fixed}
                 initialOpen={initialOpen}
                 onCreateNotebook={onCreateNotebook}
                 newEntry={newEntry}
                 entries={entries}
                 restorePreviousSession={canRestore ? restorePreviousSession : undefined}
-                addEntry={addSearchStackEntry}
-                removeEntry={removeFromSearchStack}
+                addEntry={addNotepadEntry}
+                removeEntry={removeFromNotepad}
             />
         )
     }
@@ -115,21 +112,21 @@ export const SearchStackContainer: React.FunctionComponent<SearchStackContainerP
     return null
 }
 
-export interface SearchStackProps {
+export interface NotepadProps {
     className?: string
     initialOpen?: boolean
     onCreateNotebook: (blocks: BlockInput[]) => void
-    newEntry?: SearchStackEntryInput | null
-    entries: SearchStackEntry[]
-    addEntry: typeof addSearchStackEntry
-    removeEntry: (ids: SearchStackEntryID[] | SearchStackEntryID) => void
+    newEntry?: NotepadEntryInput | null
+    entries: NotepadEntry[]
+    addEntry: typeof addNotepadEntry
+    removeEntry: (ids: NotepadEntryID[] | NotepadEntryID) => void
     restorePreviousSession?: () => void
     // This is only used in our CTA to prevent notes from being rendered as
     // selected
     selectable?: boolean
 }
 
-export const SearchStack: React.FunctionComponent<SearchStackProps> = ({
+export const Notepad: React.FunctionComponent<NotepadProps> = ({
     className,
     initialOpen = false,
     onCreateNotebook,
@@ -185,14 +182,14 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({
     const deleteSelectedEntries = useCallback(() => {
         if (selectedEntries.length > 0) {
             const entryIDs = selectedEntries.map(index => reversedEntries[index].id)
-            removeFromSearchStack(entryIDs)
+            removeFromNotepad(entryIDs)
             // Clear selection for now.
             setSelectedEntries([])
         }
     }, [reversedEntries, selectedEntries, setSelectedEntries])
 
     const deleteEntry = useCallback(
-        (toDelete: SearchStackEntry) => {
+        (toDelete: NotepadEntry) => {
             if (selectedEntries.length > 0) {
                 const entryPosition = reversedEntries.findIndex(entry => entry.id === toDelete.id)
                 setSelectedEntries(selection => adjustSelection(selection, entryPosition))
@@ -324,17 +321,13 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({
     )
 
     return (
-        <section
-            className={classNames(styles.root, className, { [styles.open]: open })}
-            id={SEARCH_STACK_ID}
-            role="dialog"
-        >
+        <section className={classNames(styles.root, className, { [styles.open]: open })} id={NOTEPAD_ID} role="dialog">
             <Button
                 aria-label={(open ? 'Close' : 'Open') + ' Notepad'}
                 variant="icon"
                 className={classNames(styles.header, 'p-2 d-flex align-items-center justify-content-between')}
                 onClick={toggleOpen}
-                aria-controls={SEARCH_STACK_ID}
+                aria-controls={NOTEPAD_ID}
                 aria-expanded="true"
             >
                 <span>
@@ -378,7 +371,7 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({
                                     onMouseDown={preventTextSelection}
                                     tabIndex={0}
                                 >
-                                    <SearchStackEntryComponent
+                                    <NotepadEntryComponent
                                         entry={entry}
                                         focus={hasNewEntry && index === 0}
                                         selected={selected}
@@ -398,7 +391,7 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({
                                 <Button
                                     variant="danger"
                                     onClick={() => {
-                                        removeAllSearchStackEntries()
+                                        removeAllNotepadEntries()
                                         setConfirmRemoveAll(false)
                                     }}
                                 >
@@ -446,8 +439,8 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({
 }
 
 interface AddEntryButtonProps {
-    entry: SearchStackEntryInput
-    addEntry: typeof addSearchStackEntry
+    entry: NotepadEntryInput
+    addEntry: typeof addNotepadEntry
 }
 
 const AddEntryButton: React.FunctionComponent<AddEntryButtonProps> = ({ entry, addEntry }) => {
@@ -519,17 +512,17 @@ function stopPropagation(event: SyntheticEvent): void {
     event.stopPropagation()
 }
 
-interface SearchStackEntryComponentProps {
-    entry: SearchStackEntry
+interface NotepadEntryComponentProps {
+    entry: NotepadEntry
     /**
      * If set to true, show and focus the annotations input.
      */
     focus: boolean
     selected: boolean
-    onDelete: (entry: SearchStackEntry) => void
+    onDelete: (entry: NotepadEntry) => void
 }
 
-const SearchStackEntryComponent: React.FunctionComponent<SearchStackEntryComponentProps> = ({
+const NotepadEntryComponent: React.FunctionComponent<NotepadEntryComponentProps> = ({
     entry,
     focus = false,
     selected,
@@ -624,7 +617,7 @@ const SearchStackEntryComponent: React.FunctionComponent<SearchStackEntryCompone
 }
 
 function getUIComponentsForEntry(
-    entry: SearchStackEntry | SearchStackEntryInput
+    entry: NotepadEntry | NotepadEntryInput
 ): { icon: React.ReactElement; title: React.ReactElement; location: LocationDescriptor; body?: React.ReactElement } {
     switch (entry.type) {
         case 'search':
@@ -665,7 +658,7 @@ function getUIComponentsForEntry(
     }
 }
 
-function getLabel(entry: SearchStackEntry): string {
+function getLabel(entry: NotepadEntry): string {
     switch (entry.type) {
         case 'search':
             return `search: ${toSearchQuery(entry)}`

@@ -16,94 +16,63 @@ const StoryConfig: Meta = {
 export default StoryConfig
 
 interface StandardDatum {
-    a: number | null
-    aLink: string
-    b: number | null
-    bLink: string
-    c: number | null
-    cLink: string
-    x: number | null
+    value: number | null
+    link: string
+    x: number
 }
 
-const DATA: StandardDatum[] = [
-    {
-        x: 1588965700286 - 4 * 24 * 60 * 60 * 1000,
-        a: 4000,
-        aLink: 'https://google.com/search',
-        b: 15000,
-        bLink: 'https://yandex.com/search',
-        c: 5000,
-        cLink: 'https://twitter.com/search',
-    },
-    {
-        x: 1588965700286 - 3 * 24 * 60 * 60 * 1000,
-        a: 4000,
-        aLink: 'https://google.com/search',
-        b: 26000,
-        bLink: 'https://yandex.com/search',
-        c: 5000,
-        cLink: 'https://twitter.com/search',
-    },
-    {
-        x: 1588965700286 - 2 * 24 * 60 * 60 * 1000,
-        a: 5600,
-        aLink: 'https://google.com/search',
-        b: 20000,
-        bLink: 'https://yandex.com/search',
-        c: 5000,
-        cLink: 'https://twitter.com/search',
-    },
-    {
-        x: 1588965700286 - 1 * 24 * 60 * 60 * 1000,
-        a: 9800,
-        aLink: 'https://google.com/search',
-        b: 19000,
-        bLink: 'https://yandex.com/search',
-        c: 5000,
-        cLink: 'https://twitter.com/search',
-    },
-    {
-        x: 1588965700286,
-        a: 6000,
-        aLink: 'https://google.com/search',
-        b: 17000,
-        bLink: 'https://yandex.com/search',
-        c: 5000,
-        cLink: 'https://twitter.com/search',
-    },
-]
+const getXValue = (datum: StandardDatum): Date => new Date(datum.x)
+const getYValue = (datum: StandardDatum): number | null => datum.value
+const getLinkURL = (datum: StandardDatum): string => datum.link
 
 const SERIES: Series<StandardDatum>[] = [
     {
-        dataKey: 'a',
+        id: 'series_001',
+        data: [
+            { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 4000, link: 'https://google.com/search' },
+            { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 4000, link: 'https://google.com/search' },
+            { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 5600, link: 'https://google.com/search' },
+            { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 9800, link: 'https://google.com/search' },
+            { x: 1588965700286, value: 6000, link: 'https://google.com/search' },
+        ],
         name: 'A metric',
         color: 'var(--blue)',
-        getLinkURL: datum => datum.aLink,
+        getLinkURL,
+        getXValue,
+        getYValue,
     },
     {
-        dataKey: 'b',
+        id: 'series_002',
+        data: [
+            { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 15000, link: 'https://yandex.com/search' },
+            { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 26000, link: 'https://yandex.com/search' },
+            { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 20000, link: 'https://yandex.com/search' },
+            { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 19000, link: 'https://yandex.com/search' },
+            { x: 1588965700286, value: 17000, link: 'https://yandex.com/search' },
+        ],
         name: 'B metric',
         color: 'var(--warning)',
-        getLinkURL: datum => datum.bLink,
+        getLinkURL,
+        getXValue,
+        getYValue,
     },
     {
-        dataKey: 'c',
+        id: 'series_003',
+        data: [
+            { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 5000, link: 'https://twitter.com/search' },
+            { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 5000, link: 'https://twitter.com/search' },
+            { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 5000, link: 'https://twitter.com/search' },
+            { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 5000, link: 'https://twitter.com/search' },
+            { x: 1588965700286, value: 5000, link: 'https://twitter.com/search' },
+        ],
         name: 'C metric',
         color: 'var(--green)',
-        getLinkURL: datum => datum.cLink,
+        getLinkURL,
+        getXValue,
+        getYValue,
     },
 ]
 
-const GET_X_VALUE = (datum: StandardDatum): Date => new Date(datum.x ?? 0)
-
 export const SeriesLineChart: Story = () => (
-    <SeriesChart
-        type={SeriesBasedChartTypes.Line}
-        data={DATA}
-        series={SERIES}
-        stacked={false}
-        getXValue={GET_X_VALUE}
-        width={400}
-        height={400}
-    />
+    <SeriesChart type={SeriesBasedChartTypes.Line} series={SERIES} stacked={false} width={400} height={400} />
 )

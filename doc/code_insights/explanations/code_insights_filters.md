@@ -8,7 +8,7 @@ Filters take effect immediately, without needing to re-process the data series o
 
 ## Filter options
 
-### `repo:` filters
+### `repo:` Repo filters
 
 You can include or exclude repositories from your insight using regular expressions, the same way you can with the `repo:` filter in [Sourcegraph searches](../../code_search/reference/queries.md#keywords-all-searches).
 
@@ -17,6 +17,18 @@ For inclusion, only repositories that have a repository name matching the regula
 For exclusion, only repositories that have a repository name **not** matching the regular expression will be counted.
 
 If you combine both filters, the inclusion pattern will be applied first, then the exclusion pattern.
+
+### `context:` Query-based search context filters 
+
+You can use a [query-based search context](../../code_search/how-to/search_contexts.md#beta-query-based-search-contexts) to filter your insights to only results matching repositories that match the `repo:` or `-repo:` filter of the query-based context. 
+
+You can use this to filter multiple insights to a group of repositories that need only be maintained in one location. When you update a context that's being used as a filter, the next time you load the page, the filtered insight will reflect the updated context. 
+
+At this time, all other filter keywords are not yet supported – only the `repo:` and `-repo:` keywords of a context are recognized. When creating your context, you can define any group of repos using the syntax `repo:(^github\.com/sourcegraph/sourcegraph$|^github\.com/sourcegraph/about$...)`. 
+
+### Setting more than one filter 
+
+Filters are intersected. This means if you use the search context `context:` filter that narrows your insight down from all repositories to some repo A, repo B, and repo C, and then you use the `repo:` filter that's set only to repo A, your insight will show only results from repo A. Similarly, if you were to use the same `context:` and then also use the `-repo:` exclusion filter set to repo C, your insight would show results from repo A and repo B. 
 
 ### Other filtering options
 

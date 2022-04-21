@@ -81,6 +81,14 @@ type Factory struct {
 // too large.
 var redisCache = rcache.NewWithTTL("http", 604800)
 
+// CachedTransportOpt is the default transport cache - it will return values from
+// the cache where possible (avoiding a network request) and will additionally add
+// validators (etag/if-modified-since) to repeated requests allowing servers to
+// return 304 / Not Modified.
+//
+// Responses load from cache will have the 'X-From-Cache' header set.
+var CachedTransportOpt = NewCachedTransportOpt(redisCache, true)
+
 // ExternalClientFactory is a httpcli.Factory with common options
 // and middleware pre-set for communicating with external services.
 var ExternalClientFactory = NewExternalClientFactory()
@@ -110,7 +118,7 @@ func NewExternalClientFactory() *Factory {
 			ExpJitterDelay(externalRetryDelayBase, externalRetryDelayMax),
 		),
 		TracedTransportOpt,
-		NewCachedTransportOpt(redisCache, true),
+		CachedTransportOpt,
 	)
 }
 
@@ -326,6 +334,9 @@ func NewCertPoolOpt(certs ...string) Opt {
 
 // NewCachedTransportOpt returns an Opt that wraps the existing http.Transport
 // of an http.Client with caching using the given Cache.
+//
+// If markCachedResponses, responses returned from the cache will be given an extra header,
+// X-From-Cache.
 func NewCachedTransportOpt(c httpcache.Cache, markCachedResponses bool) Opt {
 	return func(cli *http.Client) error {
 		if cli.Transport == nil {
