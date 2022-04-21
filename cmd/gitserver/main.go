@@ -492,12 +492,19 @@ func syncRateLimiters(ctx context.Context, store database.ExternalServiceStore, 
 	})
 
 	var lastSync time.Time
+	ticker := time.NewTicker(1 * time.Minute)
 	for {
 		start := time.Now()
 		if err := syncer.SyncLimitersSince(ctx, lastSync); err != nil {
 			log15.Warn("syncRateLimiters: error syncing rate limits", "error", err)
+		} else {
+			lastSync = start
 		}
-		lastSync = start
-		time.Sleep(5 * time.Minute)
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
 	}
 }
