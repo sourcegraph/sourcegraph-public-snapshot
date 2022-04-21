@@ -35,6 +35,7 @@ import (
 
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/go-rendezvous"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -1004,7 +1005,7 @@ func (l *LocalGitCommand) DividedOutput(ctx context.Context) ([]byte, []byte, er
 		// Do not strip out existing env when setting.
 		cmd.Env = os.Environ()
 	}
-	cmd.Env = append(cmd.Env, "GIT_DIR="+string(path))
+	cmd.Env = append(cmd.Env, "GIT_DIR="+path)
 
 	err := cmd.Run()
 	exitStatus := -10810

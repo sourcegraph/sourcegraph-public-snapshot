@@ -441,11 +441,3 @@ func (q Q) MaxResults(defaultLimit int) int {
 
 	return limits.DefaultMaxSearchResults
 }
-
-func parseRegexpOrPanic(field, value string) *regexp.Regexp {
-	r, err := regexp.Compile(value)
-	if err != nil {
-		panic(fmt.Sprintf("Value %s for field %s invalid regex: %s", field, value, err.Error()))
-	}
-	return r
-}
