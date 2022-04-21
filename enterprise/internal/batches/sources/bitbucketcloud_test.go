@@ -3,10 +3,13 @@ package sources
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -51,7 +54,7 @@ func TestBitbucketCloudSource_GitserverPushConfig(t *testing.T) {
 	au := auth.BasicAuthWithSSH{
 		BasicAuth: auth.BasicAuth{Username: "user", Password: "pass"},
 	}
-	client := NewStrictMockBitbucketCloudClient()
+	s, client := mockBitbucketCloudSource(t)
 	client.AuthenticatorFunc.SetDefaultReturn(&au)
 
 	ctx := context.Background()
@@ -85,7 +88,6 @@ func TestBitbucketCloudSource_GitserverPushConfig(t *testing.T) {
 		},
 	}
 
-	s := &BitbucketCloudSource{client: client}
 	pushConfig, err := s.GitserverPushConfig(ctx, store, repo)
 	assert.Nil(t, err)
 	assert.NotNil(t, pushConfig)
@@ -94,8 +96,7 @@ func TestBitbucketCloudSource_GitserverPushConfig(t *testing.T) {
 
 func TestBitbucketCloudSource_WithAuthenticator(t *testing.T) {
 	t.Run("unsupported types", func(t *testing.T) {
-		client := NewStrictMockBitbucketCloudClient()
-		s := &BitbucketCloudSource{client: client}
+		s, _ := mockBitbucketCloudSource(t)
 
 		for _, au := range []auth.Authenticator{
 			&auth.OAuthBearerToken{},
@@ -119,12 +120,11 @@ func TestBitbucketCloudSource_WithAuthenticator(t *testing.T) {
 			t.Run(fmt.Sprintf("%T", au), func(t *testing.T) {
 				newClient := NewStrictMockBitbucketCloudClient()
 
-				client := NewStrictMockBitbucketCloudClient()
+				s, client := mockBitbucketCloudSource(t)
 				client.WithAuthenticatorFunc.SetDefaultHook(func(a auth.Authenticator) bitbucketcloud.Client {
 					assert.Same(t, au, a)
 					return newClient
 				})
-				s := &BitbucketCloudSource{client: client}
 
 				newSource, err := s.WithAuthenticator(au)
 				assert.Nil(t, err)
@@ -142,11 +142,143 @@ func TestBitbucketCloudSource_ValidateAuthenticator(t *testing.T) {
 		"error": errors.New("error"),
 	} {
 		t.Run(name, func(t *testing.T) {
-			client := NewStrictMockBitbucketCloudClient()
+			s, client := mockBitbucketCloudSource(t)
 			client.PingFunc.SetDefaultReturn(want)
-			s := &BitbucketCloudSource{client: client}
 
 			assert.Equal(t, want, s.ValidateAuthenticator(ctx))
 		})
 	}
+}
+
+func TestBitbucketCloudSource_LoadChangeset(t *testing.T) {
+	ctx := context.Background()
+
+	mockChangeset := func() (*Changeset, *types.Repo, *bitbucketcloud.Repo) {
+		bbRepo := &bitbucketcloud.Repo{FullName: "org/repo", UUID: "repo-uuid"}
+		repo := &types.Repo{Metadata: bbRepo}
+		cs := &Changeset{
+			Changeset: &btypes.Changeset{
+				ExternalID: "42",
+			},
+			TargetRepo: repo,
+		}
+
+		return cs, repo, bbRepo
+	}
+
+	t.Run("invalid external ID", func(t *testing.T) {
+		s, _ := mockBitbucketCloudSource(t)
+
+		cs, _, _ := mockChangeset()
+		cs.ExternalID = "not a number"
+
+		err := s.LoadChangeset(ctx, cs)
+		assert.NotNil(t, err)
+	})
+
+	t.Run("error getting pull request", func(t *testing.T) {
+		cs, repo, _ := mockChangeset()
+		s, client := mockBitbucketCloudSource(t)
+		want := errors.New("error")
+		client.GetPullRequestFunc.SetDefaultHook(func(ctx context.Context, r *bitbucketcloud.Repo, i int64) (*bitbucketcloud.PullRequest, error) {
+			assert.Same(t, repo.Metadata, r)
+			assert.EqualValues(t, 42, i)
+			return nil, want
+		})
+
+		err := s.LoadChangeset(ctx, cs)
+		assert.NotNil(t, err)
+		assert.ErrorIs(t, err, want)
+	})
+
+	t.Run("pull request not found", func(t *testing.T) {
+		cs, repo, _ := mockChangeset()
+		s, client := mockBitbucketCloudSource(t)
+		client.GetPullRequestFunc.SetDefaultHook(func(ctx context.Context, r *bitbucketcloud.Repo, i int64) (*bitbucketcloud.PullRequest, error) {
+			assert.Same(t, repo.Metadata, r)
+			assert.EqualValues(t, 42, i)
+			return nil, &notFoundError{}
+		})
+
+		err := s.LoadChangeset(ctx, cs)
+		assert.NotNil(t, err)
+		target := ChangesetNotFoundError{}
+		assert.ErrorAs(t, err, &target)
+		assert.Same(t, target.Changeset, cs)
+	})
+
+	t.Run("success", func(t *testing.T) {
+		cs, repo, bbRepo := mockChangeset()
+		s, client := mockBitbucketCloudSource(t)
+		mockAnnotatePullRequest(t, client)
+		pr := &bitbucketcloud.PullRequest{
+			ID: 420,
+			Source: bitbucketcloud.PullRequestEndpoint{
+				Branch: bitbucketcloud.PullRequestBranch{Name: "branch"},
+				Repo:   *bbRepo,
+			},
+			Destination: bitbucketcloud.PullRequestEndpoint{
+				Branch: bitbucketcloud.PullRequestBranch{Name: "main"},
+				Repo:   *bbRepo,
+			},
+		}
+		client.GetPullRequestFunc.SetDefaultHook(func(ctx context.Context, r *bitbucketcloud.Repo, i int64) (*bitbucketcloud.PullRequest, error) {
+			assert.Same(t, repo.Metadata, r)
+			assert.EqualValues(t, 42, i)
+			return pr, nil
+		})
+
+		err := s.LoadChangeset(ctx, cs)
+		assert.Nil(t, err)
+
+		// We're not thoroughly testing setChangesetMetadata() et al in this
+		// test, but we do want to ensure that the PR was used to populate
+		// fields on the Changeset.
+		assert.Equal(t, "420", cs.ExternalID)
+		assert.Equal(t, "refs/heads/branch", cs.ExternalBranch)
+		assert.Empty(t, cs.ExternalForkNamespace)
+	})
+}
+
+// TODO: annotatePullRequest and setChangesetMetadata need explicit unit tests.
+
+func mockBitbucketCloudSource(t *testing.T) (*BitbucketCloudSource, *MockBitbucketCloudClient) {
+	t.Helper()
+
+	client := NewStrictMockBitbucketCloudClient()
+	s := &BitbucketCloudSource{client: client}
+
+	return s, client
+}
+
+// mockAnnotatePullRequest configures the mock client to be able to return a
+// valid, empty set of statuses.
+func mockAnnotatePullRequest(t *testing.T, client *MockBitbucketCloudClient) {
+	t.Helper()
+	client.GetPullRequestStatusesFunc.SetDefaultReturn(mockEmptyResultSet(t), nil)
+}
+
+func mockEmptyResultSet(t *testing.T) *bitbucketcloud.PaginatedResultSet {
+	t.Helper()
+
+	u, err := url.Parse("https://bitbucket.org/")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return bitbucketcloud.NewPaginatedResultSet(u, func(ctx context.Context, r *http.Request) (*bitbucketcloud.PageToken, []interface{}, error) {
+		return &bitbucketcloud.PageToken{}, nil, nil
+	})
+}
+
+type notFoundError struct{}
+
+var _ error = &notFoundError{}
+
+func (notFoundError) Error() string {
+	return "not found"
+}
+
+func (notFoundError) NotFound() bool {
+	return true
 }
