@@ -517,28 +517,31 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
                     ) : null}
                 </div>
                 <Panel
+                    className="d-flex"
                     defaultSize={500}
                     minSize={405}
                     maxSize={1400}
                     position="right"
                     storageKey={WORKSPACES_PREVIEW_SIZE}
                 >
-                    <div className={styles.workspacesPreviewContainer}>
-                        <WorkspacesPreview
-                            previewDisabled={previewDisabled}
-                            preview={() => previewBatchSpec(debouncedCode)}
-                            batchSpecStale={
-                                isBatchSpecStale || isWorkspacesPreviewInProgress || resolutionState === 'CANCELED'
-                            }
-                            hasPreviewed={hasPreviewed}
-                            excludeRepo={excludeRepo}
-                            cancel={cancel}
-                            isWorkspacesPreviewInProgress={isWorkspacesPreviewInProgress}
-                            resolutionState={resolutionState}
-                            workspacesConnection={workspacesConnection}
-                            importingChangesetsConnection={importingChangesetsConnection}
-                            setFilters={setFilters}
-                        />
+                    <div className="overflow-auto">
+                        <div className={styles.workspacesPreviewContainer}>
+                            <WorkspacesPreview
+                                previewDisabled={previewDisabled}
+                                preview={() => previewBatchSpec(debouncedCode)}
+                                batchSpecStale={
+                                    isBatchSpecStale || isWorkspacesPreviewInProgress || resolutionState === 'CANCELED'
+                                }
+                                hasPreviewed={hasPreviewed}
+                                excludeRepo={excludeRepo}
+                                cancel={cancel}
+                                isWorkspacesPreviewInProgress={isWorkspacesPreviewInProgress}
+                                resolutionState={resolutionState}
+                                workspacesConnection={workspacesConnection}
+                                importingChangesetsConnection={importingChangesetsConnection}
+                                setFilters={setFilters}
+                            />
+                        </div>
                     </div>
                 </Panel>
             </div>
