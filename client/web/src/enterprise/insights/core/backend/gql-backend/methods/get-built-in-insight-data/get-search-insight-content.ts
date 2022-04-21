@@ -73,19 +73,18 @@ export async function getInsightContent(
         return { ...query, result }
     })
 
+    // Generate series map with points map for each series. All points initially
+    // have null value
     const seriesData = generateInitialDataSeries(series, dates)
 
-    // Merge initial data and search API data
     for (const { seriesId, date, result } of searchResults) {
-        const countForRepo = result?.results.matchCount ?? 0
-        const dateTime = date.getTime()
+        const countForRepo = result.results.matchCount
+        const point = seriesData[seriesId][date.getTime()]
 
-        if (seriesData[seriesId][dateTime].value === null) {
-            seriesData[seriesId][dateTime].value = countForRepo
+        if (point.value === null) {
+            point.value = countForRepo
         } else {
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            seriesData[seriesId][dateTime].value += countForRepo
+            point.value += countForRepo
         }
     }
 
@@ -199,7 +198,15 @@ interface SeriesData {
     }
 }
 
-function generateInitialDataSeries(series: { id: string }[], dates: Date[]): Record<SeriesId, SeriesData> {
+interface InitialSeriesData {
+    [id: SeriesId]: SeriesData
+}
+
+/**
+ * Generates initial series points values for each X (time) point in the dataset.
+ * So
+ */
+function generateInitialDataSeries(series: { id: string }[], dates: Date[]): InitialSeriesData {
     const store: Record<SeriesId, SeriesData> = {}
 
     for (const line of series) {
