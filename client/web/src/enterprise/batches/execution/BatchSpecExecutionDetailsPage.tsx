@@ -264,11 +264,11 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
                     </div>
                     <div className={styles.workspacesStat}>
                         <Icon as={TimelineClockOutlineIcon} />
-                        {workspacesStats.queued} queued{' '}
+                        {workspacesStats.queued} queued
                     </div>
                     <div className={styles.workspacesStat}>
                         <Icon as={CircleOffOutlineIcon} />
-                        {workspacesStats.ignored} ignored{' '}
+                        {workspacesStats.ignored} ignored
                     </div>
                 </>
             )}
@@ -455,6 +455,7 @@ const SelectedWorkspace: React.FunctionComponent<SelectedWorkspaceProps> = ({
     isLightTheme,
 }) => (
     <Card className="w-100 overflow-auto flex-grow-1">
+        {/* This is necessary to prevent the margin collapse on `Card` */}
         <div className="w-100">
             <CardBody>
                 {workspace ? (
