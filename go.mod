@@ -232,7 +232,7 @@ require (
 	github.com/spf13/cobra v1.2.1 // indirect
 	github.com/twitchtv/twirp v8.1.1+incompatible // indirect
 	go.uber.org/multierr v1.7.0 // indirect
-	go.uber.org/zap v1.20.0 // indirect
+	go.uber.org/zap v1.21.0 // indirect
 )
 
 require (
