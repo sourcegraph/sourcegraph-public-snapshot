@@ -1,4 +1,9 @@
+import fs from 'fs'
+
+import { CachedInputFileSystem, ResolverFactory } from 'enhanced-resolve'
 import * as esbuild from 'esbuild'
+
+import { NODE_MODULES_PATH } from '../paths'
 
 interface Resolutions {
     [fromModule: string]: string
@@ -12,11 +17,29 @@ export const packageResolutionPlugin = (resolutions: Resolutions): esbuild.Plugi
     name: 'packageResolution',
     setup: build => {
         const filter = new RegExp(`^(${Object.keys(resolutions).join('|')})$`)
-        build.onResolve({ filter, namespace: 'file' }, args =>
-            (args.kind === 'import-statement' || args.kind === 'require-call') && resolutions[args.path]
-                ? { path: resolutions[args.path] }
-                : undefined
-        )
+
+        const resolver = ResolverFactory.createResolver({
+            fileSystem: new CachedInputFileSystem(fs, 4000),
+            extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
+            symlinks: true, // Resolve workspace symlinks
+            modules: [NODE_MODULES_PATH],
+        })
+
+        build.onResolve({ filter, namespace: 'file' }, async args => {
+            if ((args.kind === 'import-statement' || args.kind === 'require-call') && resolutions[args.path]) {
+                const resolvedPath = await new Promise<string>((resolve, reject) => {
+                    resolver.resolve({}, args.resolveDir, resolutions[args.path], {}, (error, filepath) => {
+                        if (filepath) {
+                            resolve(filepath)
+                        } else {
+                            reject(error ?? new Error(`Could not resolve file path for ${resolutions[args.path]}`))
+                        }
+                    })
+                })
+                return { path: resolvedPath }
+            }
+            return undefined
+        })
     },
 })
 

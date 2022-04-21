@@ -23,7 +23,7 @@ export async function initializeSearchPanelWebview({
     searchPanelAPI: Comlink.Remote<SearchPanelAPI>
     webviewPanel: vscode.WebviewPanel
 }> {
-    const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist')
+    const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webview')
 
     const panel = vscode.window.createWebviewPanel('sourcegraphSearch', 'Sourcegraph', vscode.ViewColumn.One, {
         enableScripts: true,
@@ -106,7 +106,7 @@ export function initializeSearchSidebarWebview({
 }): {
     searchSidebarAPI: Comlink.Remote<SearchSidebarAPI>
 } {
-    const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist')
+    const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webview')
 
     webviewView.webview.options = {
         enableScripts: true,
@@ -168,7 +168,7 @@ export function initializeHelpSidebarWebview({
 }): {
     helpSidebarAPI: Comlink.Remote<HelpSidebarAPI>
 } {
-    const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist')
+    const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webview')
 
     webviewView.webview.options = {
         enableScripts: true,
