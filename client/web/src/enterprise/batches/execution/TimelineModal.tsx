@@ -11,13 +11,13 @@ import { Button, Modal, Icon } from '@sourcegraph/wildcard'
 
 import { ExecutionLogEntry } from '../../../components/ExecutionLogEntry'
 import { Timeline, TimelineStage } from '../../../components/Timeline'
-import { BatchSpecWorkspaceFields, BatchSpecWorkspaceState } from '../../../graphql-operations'
+import { BatchSpecWorkspaceState, VisibleBatchSpecWorkspaceFields } from '../../../graphql-operations'
 import { ExecutorNode } from '../../executors/ExecutorsListPage'
 
 import styles from './TimelineModal.module.scss'
 
 export interface TimelineModalProps {
-    node: BatchSpecWorkspaceFields
+    node: VisibleBatchSpecWorkspaceFields
     onCancel: () => void
 }
 
@@ -40,7 +40,7 @@ export const TimelineModal: React.FunctionComponent<TimelineModalProps> = ({ nod
 )
 
 interface ExecutionTimelineProps {
-    node: BatchSpecWorkspaceFields
+    node: VisibleBatchSpecWorkspaceFields
     className?: string
 
     /** For testing only. */
@@ -75,7 +75,7 @@ const ExecutionTimeline: React.FunctionComponent<ExecutionTimelineProps> = ({ no
 }
 
 const setupStage = (
-    execution: BatchSpecWorkspaceFields,
+    execution: VisibleBatchSpecWorkspaceFields,
     expand: boolean,
     now?: () => Date
 ): TimelineStage | undefined => {
@@ -94,7 +94,7 @@ const setupStage = (
 }
 
 const batchPreviewStage = (
-    execution: BatchSpecWorkspaceFields,
+    execution: VisibleBatchSpecWorkspaceFields,
     expand: boolean,
     now?: () => Date
 ): TimelineStage | undefined => {
@@ -113,7 +113,7 @@ const batchPreviewStage = (
 }
 
 const teardownStage = (
-    execution: BatchSpecWorkspaceFields,
+    execution: VisibleBatchSpecWorkspaceFields,
     expand: boolean,
     now?: () => Date
 ): TimelineStage | undefined => {

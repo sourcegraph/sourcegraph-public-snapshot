@@ -2,3 +2,15 @@
 .step-card {
     background-color: var(--body-bg);
 }
+
+.detail-item {
+    display: inline-block;
+    &:not(:last-child) {
+        &::after {
+            padding: 0 0.375rem;
+            height: 1rem;
+            content: '';
+            border-right: 1px solid var(--border-color-2);
+        }
+    }
+}

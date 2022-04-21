@@ -59,7 +59,7 @@ func TestRepository_GetCommit(t *testing.T) {
 				t.Cleanup(func() {
 					runCommitLog = oldRunCommitLog
 				})
-				runCommitLog = func(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOptions) ([]*wrappedCommit, error) {
+				runCommitLog = func(ctx context.Context, cmd gitserver.GitCommand, opt CommitsOptions) ([]*wrappedCommit, error) {
 					// Track the value of NoEnsureRevision we pass to gitserver
 					noEnsureRevision = opt.NoEnsureRevision
 					return oldRunCommitLog(ctx, cmd, opt)

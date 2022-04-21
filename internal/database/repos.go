@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
@@ -475,6 +476,8 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 		r.Metadata = new(github.Repository)
 	case extsvc.TypeGitLab:
 		r.Metadata = new(gitlab.Project)
+	case extsvc.TypeGerrit:
+		r.Metadata = new(gerrit.Project)
 	case extsvc.TypeBitbucketServer:
 		r.Metadata = new(bitbucketserver.Repo)
 	case extsvc.TypeBitbucketCloud:
@@ -498,7 +501,7 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 	case extsvc.TypeGoModules:
 		r.Metadata = &struct{}{}
 	default:
-		log15.Warn("scanRepo - unknown service type", "typ", typ)
+		log15.Warn("scanRepo - unknown service type", "type", typ)
 		return nil
 	}
 

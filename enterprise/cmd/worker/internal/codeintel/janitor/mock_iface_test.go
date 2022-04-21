@@ -24,6 +24,9 @@ type MockDBStore struct {
 	// object controlling the behavior of the method
 	// DeleteIndexesWithoutRepository.
 	DeleteIndexesWithoutRepositoryFunc *DBStoreDeleteIndexesWithoutRepositoryFunc
+	// DeleteOldAuditLogsFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteOldAuditLogs.
+	DeleteOldAuditLogsFunc *DBStoreDeleteOldAuditLogsFunc
 	// DeleteSourcedCommitsFunc is an instance of a mock function object
 	// controlling the behavior of the method DeleteSourcedCommits.
 	DeleteSourcedCommitsFunc *DBStoreDeleteSourcedCommitsFunc
@@ -94,6 +97,11 @@ func NewMockDBStore() *MockDBStore {
 		DeleteIndexesWithoutRepositoryFunc: &DBStoreDeleteIndexesWithoutRepositoryFunc{
 			defaultHook: func(context.Context, time.Time) (map[int]int, error) {
 				return nil, nil
+			},
+		},
+		DeleteOldAuditLogsFunc: &DBStoreDeleteOldAuditLogsFunc{
+			defaultHook: func(context.Context, time.Duration, time.Time) (int, error) {
+				return 0, nil
 			},
 		},
 		DeleteSourcedCommitsFunc: &DBStoreDeleteSourcedCommitsFunc{
@@ -198,6 +206,11 @@ func NewStrictMockDBStore() *MockDBStore {
 				panic("unexpected invocation of MockDBStore.DeleteIndexesWithoutRepository")
 			},
 		},
+		DeleteOldAuditLogsFunc: &DBStoreDeleteOldAuditLogsFunc{
+			defaultHook: func(context.Context, time.Duration, time.Time) (int, error) {
+				panic("unexpected invocation of MockDBStore.DeleteOldAuditLogs")
+			},
+		},
 		DeleteSourcedCommitsFunc: &DBStoreDeleteSourcedCommitsFunc{
 			defaultHook: func(context.Context, int, string, time.Duration, time.Time) (int, int, int, error) {
 				panic("unexpected invocation of MockDBStore.DeleteSourcedCommits")
@@ -295,6 +308,9 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		},
 		DeleteIndexesWithoutRepositoryFunc: &DBStoreDeleteIndexesWithoutRepositoryFunc{
 			defaultHook: i.DeleteIndexesWithoutRepository,
+		},
+		DeleteOldAuditLogsFunc: &DBStoreDeleteOldAuditLogsFunc{
+			defaultHook: i.DeleteOldAuditLogs,
 		},
 		DeleteSourcedCommitsFunc: &DBStoreDeleteSourcedCommitsFunc{
 			defaultHook: i.DeleteSourcedCommits,
@@ -578,6 +594,117 @@ func (c DBStoreDeleteIndexesWithoutRepositoryFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBStoreDeleteIndexesWithoutRepositoryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// DBStoreDeleteOldAuditLogsFunc describes the behavior when the
+// DeleteOldAuditLogs method of the parent MockDBStore instance is invoked.
+type DBStoreDeleteOldAuditLogsFunc struct {
+	defaultHook func(context.Context, time.Duration, time.Time) (int, error)
+	hooks       []func(context.Context, time.Duration, time.Time) (int, error)
+	history     []DBStoreDeleteOldAuditLogsFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteOldAuditLogs delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDBStore) DeleteOldAuditLogs(v0 context.Context, v1 time.Duration, v2 time.Time) (int, error) {
+	r0, r1 := m.DeleteOldAuditLogsFunc.nextHook()(v0, v1, v2)
+	m.DeleteOldAuditLogsFunc.appendCall(DBStoreDeleteOldAuditLogsFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the DeleteOldAuditLogs
+// method of the parent MockDBStore instance is invoked and the hook queue
+// is empty.
+func (f *DBStoreDeleteOldAuditLogsFunc) SetDefaultHook(hook func(context.Context, time.Duration, time.Time) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteOldAuditLogs method of the parent MockDBStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *DBStoreDeleteOldAuditLogsFunc) PushHook(hook func(context.Context, time.Duration, time.Time) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBStoreDeleteOldAuditLogsFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, time.Duration, time.Time) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBStoreDeleteOldAuditLogsFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, time.Duration, time.Time) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBStoreDeleteOldAuditLogsFunc) nextHook() func(context.Context, time.Duration, time.Time) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBStoreDeleteOldAuditLogsFunc) appendCall(r0 DBStoreDeleteOldAuditLogsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBStoreDeleteOldAuditLogsFuncCall objects
+// describing the invocations of this function.
+func (f *DBStoreDeleteOldAuditLogsFunc) History() []DBStoreDeleteOldAuditLogsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBStoreDeleteOldAuditLogsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBStoreDeleteOldAuditLogsFuncCall is an object that describes an
+// invocation of method DeleteOldAuditLogs on an instance of MockDBStore.
+type DBStoreDeleteOldAuditLogsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 time.Duration
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBStoreDeleteOldAuditLogsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBStoreDeleteOldAuditLogsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

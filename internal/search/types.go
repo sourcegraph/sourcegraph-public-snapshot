@@ -223,15 +223,23 @@ type RepoOptions struct {
 	Dependencies             []string
 	CaseSensitiveRepoFilters bool
 	SearchContextSpec        string
-	NoForks                  bool
-	OnlyForks                bool
-	NoArchived               bool
-	OnlyArchived             bool
-	CommitAfter              string
-	Visibility               query.RepoVisibility
-	Limit                    int
-	Cursors                  []*types.Cursor
-	Query                    query.Q
+
+	CommitAfter string
+	Visibility  query.RepoVisibility
+	Limit       int
+	Cursors     []*types.Cursor
+
+	// Explicit forks indicates whether `fork:` was set explicitly in the query,
+	// or whether the values were set from defaults.
+	ForkSet   bool
+	NoForks   bool
+	OnlyForks bool
+
+	// ArchivedSet indicates whether `archived:` was set explicitly in the query,
+	// or whether the values were set from defaults.
+	ArchivedSet  bool
+	NoArchived   bool
+	OnlyArchived bool
 }
 
 func (op *RepoOptions) String() string {

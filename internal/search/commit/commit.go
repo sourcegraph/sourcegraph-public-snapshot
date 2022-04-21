@@ -68,8 +68,8 @@ func (j *CommitSearch) Run(ctx context.Context, clients job.RuntimeClients, stre
 	}
 
 	var repoRevs []*search.RepositoryRevisions
-	repos := searchrepos.Resolver{DB: clients.DB, Opts: j.RepoOpts}
-	err = repos.Paginate(ctx, &opts, func(page *searchrepos.Resolved) error {
+	repos := searchrepos.Resolver{DB: clients.DB, Opts: opts}
+	err = repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
 		if repoRevs = page.RepoRevs; page.Next != nil {
 			return newReposLimitError(opts.Limit, j.HasTimeFilter, resultType)
 		}

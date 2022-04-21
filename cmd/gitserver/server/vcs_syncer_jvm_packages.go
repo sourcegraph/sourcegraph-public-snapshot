@@ -16,10 +16,9 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -47,8 +46,8 @@ var placeholderMavenDependency = func() *reposource.MavenDependency {
 }()
 
 type JVMPackagesSyncer struct {
-	Config    *schema.JVMPackagesConnection
-	DepsStore repos.DependenciesStore
+	Config  *schema.JVMPackagesConnection
+	DepsSvc *dependencies.Service
 }
 
 var _ VCSSyncer = &JVMPackagesSyncer{}
@@ -173,7 +172,7 @@ func (s *JVMPackagesSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vc
 // packageDependencies returns the list of JVM dependencies that belong to the given URL path.
 // The returned package dependencies are sorted by semantic versioning.
 // A URL maps to a single JVM package, which may contain multiple versions (one git tag per version).
-func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath string) (dependencies []*reposource.MavenDependency, err error) {
+func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath string) (mavenDependencies []*reposource.MavenDependency, err error) {
 	module, err := reposource.ParseMavenModule(repoUrlPath)
 	if err != nil {
 		return nil, err
@@ -193,7 +192,7 @@ func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 			exists, err := coursier.Exists(ctx, s.Config, dependency)
 			if exists {
 				totalConfigMatched++
-				dependencies = append(dependencies, dependency)
+				mavenDependencies = append(mavenDependencies, dependency)
 			} else if errors.Is(err, context.DeadlineExceeded) {
 				timedout = append(timedout, dependency)
 			}
@@ -207,8 +206,8 @@ func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 		log15.Warn("non-zero number of timed-out coursier invocations", "count", len(timedout), "dependencies", timedout)
 	}
 
-	dbDeps, err := s.DepsStore.ListDependencyRepos(ctx, dependenciesStore.ListDependencyReposOpts{
-		Scheme:      dependenciesStore.JVMPackagesScheme,
+	dbDeps, err := s.DepsSvc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
+		Scheme:      dependencies.JVMPackagesScheme,
 		Name:        repoUrlPath,
 		NewestFirst: true,
 	})
@@ -230,17 +229,17 @@ func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 			}
 			// we dont call coursier.Exists here, as existance should be verified by repo-updater
 			totalDBMatched++
-			dependencies = append(dependencies, dependency)
+			mavenDependencies = append(mavenDependencies, dependency)
 		}
 	}
 
-	if len(dependencies) == 0 {
+	if len(mavenDependencies) == 0 {
 		return nil, errors.Errorf("no JVM dependencies for URL path %s", repoUrlPath)
 	}
 
 	log15.Info("fetched maven artifact for repo path", "repoPath", repoUrlPath, "totalDB", totalDBMatched, "totalConfig", totalConfigMatched)
-	reposource.SortDependencies(dependencies)
-	return dependencies, nil
+	reposource.SortDependencies(mavenDependencies)
+	return mavenDependencies, nil
 }
 
 // gitPushDependencyTag pushes a git tag to the given bareGitDirectory path. The

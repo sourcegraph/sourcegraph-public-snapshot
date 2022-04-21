@@ -27,6 +27,7 @@ type janitorConfig struct {
 	ConfigurationPolicyMembershipBatchSize              int
 	DocumentationSearchCurrentMinimumTimeSinceLastCheck time.Duration
 	DocumentationSearchCurrentBatchSize                 int
+	AuditLogMaxAge                                      time.Duration
 
 	MetricsConfig *executorqueue.Config
 }
@@ -54,6 +55,7 @@ func (c *janitorConfig) Load() {
 	c.ConfigurationPolicyMembershipBatchSize = c.GetInt("PRECISE_CODE_INTEL_CONFIGURATION_POLICY_MEMBERSHIP_BATCH_SIZE", "100", "The maximum number of policy configurations to update repository membership for at a time.")
 	c.DocumentationSearchCurrentMinimumTimeSinceLastCheck = c.GetInterval("PRECISE_CODE_INTEL_DOCUMENTATION_SEARCH_CURRENT_MINIMUM_TIME_SINCE_LAST_CHECK", "24h", "The minimum time the documentation search current janitor will re-check records for a unique search key.")
 	c.DocumentationSearchCurrentBatchSize = c.GetInt("PRECISE_CODE_INTEL_DOCUMENTATION_SEARCH_CURRENT_BATCH_SIZE", "100", "The maximum number of unique search keys to clean up at a time.")
+	c.AuditLogMaxAge = c.GetInterval("PRECISE_CODE_INTEL_AUDIT_LOG_MAX_AGE", "720h", "The maximum time a code intel audit log record can remain on the database.")
 }
 
 func (c *janitorConfig) Validate() error {

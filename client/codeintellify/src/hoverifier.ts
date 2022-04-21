@@ -770,7 +770,6 @@ export function createHoverifier<C extends object, D, A>({
                             highlightedRange,
                             hoverOrError,
                             hoveredTokenElement,
-                            hoverOverlayPosition: undefined,
                         })
                     }
                 )

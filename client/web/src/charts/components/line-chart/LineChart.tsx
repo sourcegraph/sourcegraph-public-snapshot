@@ -10,11 +10,12 @@ import { noop } from 'lodash'
 
 import { SeriesLikeChart } from '../../types'
 
-import { AxisBottom, AxisLeft, Tooltip, TooltipContent, NonActiveBackground, PointGlyph } from './components'
+import { AxisBottom, AxisLeft, Tooltip, TooltipContent, PointGlyph } from './components'
 import { StackedArea } from './components/stacked-area/StackedArea'
 import { useChartEventHandlers } from './hooks/event-listeners'
 import { Point } from './types'
 import {
+    SeriesDatum,
     getDatumValue,
     isDatumWithValidNumber,
     getSeriesData,
@@ -22,7 +23,6 @@ import {
     getChartContentSizes,
     getMinMaxBoundaries,
 } from './utils'
-import { SeriesDatum } from './utils/data-series-processing/types'
 
 import styles from './LineChart.module.scss'
 
@@ -31,6 +31,9 @@ export interface LineChartContentProps<Datum> extends SeriesLikeChart<Datum>, SV
     height: number
     zeroYAxisMin?: boolean
 }
+
+const sortByDataKey = (dataKey: string | number | symbol, activeDataKey: string): number =>
+    dataKey === activeDataKey ? 1 : -1
 
 /**
  * Visual component that renders svg line chart with pre-defined sizes, tooltip,
@@ -157,47 +160,40 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
 
             <AxisBottom ref={setXAxisElement} scale={xScale} top={margin.top + height} width={width} />
 
-            <NonActiveBackground
-                data={data}
-                series={series}
-                width={width}
-                height={height}
-                top={margin.top}
-                left={margin.left}
-                getXValue={getXValue}
-                xScale={xScale}
-            />
-
             <Group top={margin.top}>
                 {stacked && <StackedArea dataSeries={dataSeries} xScale={xScale} yScale={yScale} />}
 
-                {dataSeries.map(line => (
-                    <LinePath
-                        key={line.dataKey as string}
-                        data={line.data as SeriesDatum<D>[]}
-                        curve={curveLinear}
-                        defined={isDatumWithValidNumber}
-                        x={data => xScale(data.x)}
-                        y={data => yScale(getDatumValue(data))}
-                        stroke={line.color}
-                        strokeWidth={2}
-                        strokeLinecap="round"
-                    />
-                ))}
+                {[...dataSeries]
+                    .sort(series => sortByDataKey(series.dataKey, activePoint?.seriesKey || ''))
+                    .map(line => (
+                        <LinePath
+                            key={line.dataKey as string}
+                            data={line.data as SeriesDatum<D>[]}
+                            curve={curveLinear}
+                            defined={isDatumWithValidNumber}
+                            x={data => xScale(data.x)}
+                            y={data => yScale(getDatumValue(data))}
+                            stroke={line.color}
+                            strokeWidth={2}
+                            strokeLinecap="round"
+                        />
+                    ))}
 
-                {points.map(point => (
-                    <PointGlyph
-                        key={point.id}
-                        left={point.x}
-                        top={point.y}
-                        active={activePoint?.id === point.id}
-                        color={point.color}
-                        linkURL={point.linkUrl}
-                        onClick={onDatumClick}
-                        onFocus={event => setActivePoint({ ...point, element: event.target })}
-                        onBlur={() => setActivePoint(undefined)}
-                    />
-                ))}
+                {[...points]
+                    .sort(point => sortByDataKey(point.seriesKey, activePoint?.seriesKey || ''))
+                    .map(point => (
+                        <PointGlyph
+                            key={point.id}
+                            left={point.x}
+                            top={point.y}
+                            active={activePoint?.id === point.id}
+                            color={point.color}
+                            linkURL={point.linkUrl}
+                            onClick={onDatumClick}
+                            onFocus={event => setActivePoint({ ...point, element: event.target })}
+                            onBlur={() => setActivePoint(undefined)}
+                        />
+                    ))}
             </Group>
 
             {activePoint && (

@@ -27,7 +27,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -101,7 +102,7 @@ func main() {
 	db := database.NewDB(sqlDB)
 
 	repoStore := database.Repos(db)
-	codeintelDB := dependenciesStore.GetStore(db)
+	depsSvc := livedependencies.GetService(db, nil)
 	externalServiceStore := database.ExternalServices(db)
 
 	err = keyring.Init(ctx)
@@ -116,7 +117,7 @@ func main() {
 			return getRemoteURLFunc(ctx, externalServiceStore, repoStore, nil, repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
-			return getVCSSyncer(ctx, externalServiceStore, repoStore, codeintelDB, repo)
+			return getVCSSyncer(ctx, externalServiceStore, repoStore, depsSvc, repo)
 		},
 		Hostname:                hostname.Get(),
 		DB:                      db,
@@ -371,8 +372,13 @@ func editGitHubAppExternalServiceConfigToken(
 	return config, nil
 }
 
-func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalServiceStore, repoStore database.RepoStore,
-	codeintelDB *dependenciesStore.Store, repo api.RepoName) (server.VCSSyncer, error) {
+func getVCSSyncer(
+	ctx context.Context,
+	externalServiceStore database.ExternalServiceStore,
+	repoStore database.RepoStore,
+	depsSvc *dependencies.Service,
+	repo api.RepoName,
+) (server.VCSSyncer, error) {
 	// We need an internal actor in case we are trying to access a private repo. We
 	// only need access in order to find out the type of code host we're using, so
 	// it's safe.
@@ -415,14 +421,14 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 		if _, err := extractOptions(&c); err != nil {
 			return nil, err
 		}
-		return &server.JVMPackagesSyncer{Config: &c, DepsStore: codeintelDB}, nil
+		return &server.JVMPackagesSyncer{Config: &c, DepsSvc: depsSvc}, nil
 	case extsvc.TypeNpmPackages:
 		var c schema.NpmPackagesConnection
 		urn, err := extractOptions(&c)
 		if err != nil {
 			return nil, err
 		}
-		return server.NewNpmPackagesSyncer(c, codeintelDB, nil, urn), nil
+		return server.NewNpmPackagesSyncer(c, depsSvc, nil, urn), nil
 	case extsvc.TypeGoModules:
 		var c schema.GoModulesConnection
 		urn, err := extractOptions(&c)
@@ -430,7 +436,7 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 			return nil, err
 		}
 		cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternalDoer)
-		return server.NewGoModulesSyncer(&c, codeintelDB, cli), nil
+		return server.NewGoModulesSyncer(&c, depsSvc, cli), nil
 	}
 	return &server.GitRepoSyncer{}, nil
 }
