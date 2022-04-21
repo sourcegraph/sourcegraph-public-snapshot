@@ -104,26 +104,6 @@ func Zoekt() *monitoring.Container {
 					},
 					{
 						{
-							Name:           "repo_index_success_speed",
-							Description:    "successful indexing durations",
-							Query:          `sum by (le, state) (increase(index_repo_seconds_bucket{state="success"}[$__rate_interval]))`,
-							NoAlert:        true,
-							Panel:          monitoring.PanelHeatmap().With(zoektHeatMapPanelOptions),
-							Owner:          monitoring.ObservableOwnerSearchCore,
-							Interpretation: "Latency increases can indicate bottlenecks in the indexserver.",
-						},
-						{
-							Name:           "repo_index_fail_speed",
-							Description:    "failed indexing durations",
-							Query:          `sum by (le, state) (increase(index_repo_seconds_bucket{state="fail"}[$__rate_interval]))`,
-							NoAlert:        true,
-							Panel:          monitoring.PanelHeatmap().With(zoektHeatMapPanelOptions),
-							Owner:          monitoring.ObservableOwnerSearchCore,
-							Interpretation: "Failures happening after a long time indicates timeouts.",
-						},
-					},
-					{
-						{
 							Name:        "repos_stopped_tracking_total_aggregate",
 							Description: "the number of repositories we stopped tracking over 5m (aggregate)",
 							Query:       `sum(increase(index_num_stopped_tracking_total[5m]))`,
@@ -290,6 +270,190 @@ func Zoekt() *monitoring.Container {
 							- success_meta -> the indexing job succeeded, but only metadata was updated
 							- noop -> the indexing job succeed, but we didn't need to update anything
 							- empty -> the indexing job succeeded, but the index was empty (i.e. the repository is empty)
+						`,
+						},
+					},
+					{
+						{
+							Name:           "repo_index_success_speed_heatmap",
+							Description:    "successful indexing durations",
+							Query:          `sum by (le, state) (increase(index_repo_seconds_bucket{state="success"}[$__rate_interval]))`,
+							NoAlert:        true,
+							Panel:          monitoring.PanelHeatmap().With(zoektHeatMapPanelOptions),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "Latency increases can indicate bottlenecks in the indexserver.",
+						},
+						{
+							Name:           "repo_index_fail_speed_heatmap",
+							Description:    "failed indexing durations",
+							Query:          `sum by (le, state) (increase(index_repo_seconds_bucket{state="fail"}[$__rate_interval]))`,
+							NoAlert:        true,
+							Panel:          monitoring.PanelHeatmap().With(zoektHeatMapPanelOptions),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "Failures happening after a long time indicates timeouts.",
+						},
+					},
+					{
+						{
+							Name:        "repo_index_success_speed_p99",
+							Description: "99th percentile successful indexing durations over 5m (aggregate)",
+							Query:       "histogram_quantile(0.99, sum by (le, name)(rate(index_repo_seconds_bucket{state=\"success\"}[5m])))",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+							This dashboard shows the p99 duration of successful indexing jobs aggregated across all Zoekt instances.
+
+							Latency increases can indicate bottlenecks in the indexserver.
+						`,
+						},
+						{
+							Name:        "repo_index_success_speed_p90",
+							Description: "90th percentile successful indexing durations over 5m (aggregate)",
+							Query:       "histogram_quantile(0.90, sum by (le, name)(rate(index_repo_seconds_bucket{state=\"success\"}[5m])))",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+							This dashboard shows the p90 duration of successful indexing jobs aggregated across all Zoekt instances.
+
+							Latency increases can indicate bottlenecks in the indexserver.
+						`,
+						},
+						{
+							Name:        "repo_index_success_speed_p75",
+							Description: "75th percentile successful indexing durations over 5m (aggregate)",
+							Query:       "histogram_quantile(0.75, sum by (le, name)(rate(index_repo_seconds_bucket{state=\"success\"}[5m])))",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+							This dashboard shows the p75 duration of successful indexing jobs aggregated across all Zoekt instances.
+
+							Latency increases can indicate bottlenecks in the indexserver.
+						`,
+						},
+					},
+					{
+						{
+							Name:        "repo_index_success_speed_p99_per_instance",
+							Description: "99th percentile successful indexing durations over 5m (per instance)",
+							Query:       "histogram_quantile(0.99, sum by (le, instance)(rate(index_repo_seconds_bucket{state=\"success\",instance=~`${instance:regex}`}[5m])))",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+							This dashboard shows the p99 duration of successful indexing jobs broken out per Zoekt instance.
+
+							Latency increases can indicate bottlenecks in the indexserver.
+						`,
+						},
+						{
+							Name:        "repo_index_success_speed_p90_per_instance",
+							Description: "90th percentile successful indexing durations over 5m (per instance)",
+							Query:       "histogram_quantile(0.90, sum by (le, instance)(rate(index_repo_seconds_bucket{state=\"success\",instance=~`${instance:regex}`}[5m])))",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+							This dashboard shows the p90 duration of successful indexing jobs broken out per Zoekt instance.
+
+							Latency increases can indicate bottlenecks in the indexserver.
+						`,
+						},
+						{
+							Name:        "repo_index_success_speed_p75_per_instance",
+							Description: "75th percentile successful indexing durations over 5m (per instance)",
+							Query:       "histogram_quantile(0.75, sum by (le, instance)(rate(index_repo_seconds_bucket{state=\"success\",instance=~`${instance:regex}`}[5m])))",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+							This dashboard shows the p75 duration of successful indexing jobs broken out per Zoekt instance.
+
+							Latency increases can indicate bottlenecks in the indexserver.
+						`,
+						},
+					},
+					{
+						{
+							Name:        "repo_index_failed_speed_p99",
+							Description: "99th percentile failed indexing durations over 5m (aggregate)",
+							Query:       "histogram_quantile(0.99, sum by (le, name)(rate(index_repo_seconds_bucket{state=\"fail\"}[5m])))",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+							This dashboard shows the p99 duration of failed indexing jobs aggregated across all Zoekt instances.
+
+							Failures happening after a long time indicates timeouts.
+						`,
+						},
+						{
+							Name:        "repo_index_failed_speed_p90",
+							Description: "90th percentile failed indexing durations over 5m (aggregate)",
+							Query:       "histogram_quantile(0.90, sum by (le, name)(rate(index_repo_seconds_bucket{state=\"fail\"}[5m])))",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+							This dashboard shows the p90 duration of failed indexing jobs aggregated across all Zoekt instances.
+
+							Failures happening after a long time indicates timeouts.
+						`,
+						},
+						{
+							Name:        "repo_index_failed_speed_p75",
+							Description: "75th percentile failed indexing durations over 5m (aggregate)",
+							Query:       "histogram_quantile(0.75, sum by (le, name)(rate(index_repo_seconds_bucket{state=\"fail\"}[5m])))",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+							This dashboard shows the p75 duration of failed indexing jobs aggregated across all Zoekt instances.
+
+							Failures happening after a long time indicates timeouts.
+						`,
+						},
+					},
+					{
+						{
+							Name:        "repo_index_failed_speed_p99_per_instance",
+							Description: "99th percentile failed indexing durations over 5m (per instance)",
+							Query:       "histogram_quantile(0.99, sum by (le, instance)(rate(index_repo_seconds_bucket{state=\"fail\",instance=~`${instance:regex}`}[5m])))",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+							This dashboard shows the p99 duration of failed indexing jobs broken out per Zoekt instance.
+
+							Failures happening after a long time indicates timeouts.
+						`,
+						},
+						{
+							Name:        "repo_index_failed_speed_p90_per_instance",
+							Description: "90th percentile failed indexing durations over 5m (per instance)",
+							Query:       "histogram_quantile(0.90, sum by (le, instance)(rate(index_repo_seconds_bucket{state=\"fail\",instance=~`${instance:regex}`}[5m])))",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+							This dashboard shows the p90 duration of failed indexing jobs broken out per Zoekt instance.
+
+							Failures happening after a long time indicates timeouts.
+						`,
+						},
+						{
+							Name:        "repo_index_failed_speed_p75_per_instance",
+							Description: "75th percentile failed indexing durations over 5m (per instance)",
+							Query:       "histogram_quantile(0.75, sum by (le, instance)(rate(index_repo_seconds_bucket{state=\"fail\",instance=~`${instance:regex}`}[5m])))",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+							This dashboard shows the p75 duration of failed indexing jobs broken out per Zoekt instance.
+
+							Failures happening after a long time indicates timeouts.
 						`,
 						},
 					},
