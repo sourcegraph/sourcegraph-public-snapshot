@@ -14,6 +14,10 @@ This job runs [out of band migrations](migration.md#mout-of-band-migrations), wh
 
 This job periodically indexes file contents at a syntactic level to build an index of search-based code intelligence.
 
+#### `codeintel-dependencies-indexer`
+
+This job periodically indexes the lockfiles found in repositories to build an index of dependencies and dependents.
+
 #### `codeintel-policies-repository-matcher`
 
 This job periodically updates an index of policy repository patterns to matching repository names.
