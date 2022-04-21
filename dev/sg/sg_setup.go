@@ -79,10 +79,8 @@ func setupExec(ctx context.Context, args []string) error {
 	for len(failed) != 0 {
 		stdout.Out.ClearScreen()
 
-		writeOrangeLinef("-------------------------------------")
-		writeOrangeLinef("|        Welcome to sg setup!       |")
-		writeOrangeLinef("-------------------------------------")
-		writeOrangeLinef("Quit any time by typing ctrl-c\n")
+		printSgSetupWelcomeScreen()
+		writeOrangeLinef("                INFO: You can quit any time by typing ctrl-c\n")
 
 		for i, category := range categories {
 			idx := i + 1

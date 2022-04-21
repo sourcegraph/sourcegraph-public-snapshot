@@ -48,6 +48,10 @@ var (
 	StyleSearchCommitSubject = Fg256Color(68)
 	StyleSearchCommitDate    = Fg256Color(23)
 
+	StyleDOS       = CombineStyles(Fg256Color(0), Bg256Color(81))
+	StyleDOSHeader = CombineStyles(Fg256Color(0), Bg256Color(201))
+	StyleDOSShadow = CombineStyles(Fg256Color(0), Bg256Color(241))
+
 	// Search alert specific colors.
 	StyleSearchAlertTitle               = Fg256Color(124)
 	StyleSearchAlertDescription         = Fg256Color(124)
