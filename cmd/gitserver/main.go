@@ -458,13 +458,8 @@ func syncSiteLevelExternalServiceRateLimiters(ctx context.Context, store databas
 	if err != nil {
 		return errors.Wrap(err, "listing external services")
 	}
-	ids := make([]int64, len(svcs))
-	for i := range svcs {
-		ids[i] = svcs[i].ID
-	}
-
 	syncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store, repos.RateLimitSyncerOpts{})
-	return syncer.SyncRateLimiters(ctx, ids...)
+	return syncer.SyncServices(svcs)
 }
 
 // Sync rate limiters from config. Since we don't have a trigger that watches for

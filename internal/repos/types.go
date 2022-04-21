@@ -96,22 +96,31 @@ func (r *RateLimitSyncer) SyncLimitersSince(ctx context.Context, updateAfter tim
 		}
 		cursor.Offset += len(services)
 
-		for _, svc := range services {
-			limit, err := extsvc.ExtractRateLimit(svc.Config, svc.Kind)
-			if err != nil {
-				if errors.HasType(err, extsvc.ErrRateLimitUnsupported{}) {
-					continue
-				}
-				return errors.Wrap(err, "getting rate limit configuration")
-			}
-
-			l := r.registry.Get(svc.URN())
-			l.SetLimit(limit)
+		if err := r.SyncServices(services); err != nil {
+			return errors.Wrap(err, "syncing services")
 		}
 
-		if len(services) < int(r.pageSize) {
+		if len(services) < r.pageSize {
 			break
 		}
+	}
+	return nil
+}
+
+// SyncServices syncs a know slice of services without fetching them from the
+// database.
+func (r *RateLimitSyncer) SyncServices(services []*types.ExternalService) error {
+	for _, svc := range services {
+		limit, err := extsvc.ExtractRateLimit(svc.Config, svc.Kind)
+		if err != nil {
+			if errors.HasType(err, extsvc.ErrRateLimitUnsupported{}) {
+				continue
+			}
+			return errors.Wrap(err, "getting rate limit configuration")
+		}
+
+		l := r.registry.Get(svc.URN())
+		l.SetLimit(limit)
 	}
 	return nil
 }
