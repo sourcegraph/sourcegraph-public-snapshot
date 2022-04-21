@@ -9,7 +9,6 @@ import (
 )
 
 type PaginatedResultSet struct {
-	client    *client
 	mu        sync.Mutex
 	initial   *url.URL
 	pageToken *PageToken
@@ -17,9 +16,8 @@ type PaginatedResultSet struct {
 	fetch     func(context.Context, *http.Request) (*PageToken, []interface{}, error)
 }
 
-func newResultSet(c *client, initial *url.URL, fetch func(context.Context, *http.Request) (*PageToken, []interface{}, error)) *PaginatedResultSet {
+func newResultSet(initial *url.URL, fetch func(context.Context, *http.Request) (*PageToken, []interface{}, error)) *PaginatedResultSet {
 	return &PaginatedResultSet{
-		client:  c,
 		initial: initial,
 		fetch:   fetch,
 	}
@@ -67,7 +65,7 @@ func (rs *PaginatedResultSet) WithPageLength(pageLen int) *PaginatedResultSet {
 	values.Set("pagelen", strconv.Itoa(pageLen))
 	initial.RawQuery = values.Encode()
 
-	return newResultSet(rs.client, &initial, rs.fetch)
+	return newResultSet(&initial, rs.fetch)
 }
 
 func (rs *PaginatedResultSet) reqPage(ctx context.Context) error {
