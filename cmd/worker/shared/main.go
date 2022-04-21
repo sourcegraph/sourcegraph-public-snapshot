@@ -40,9 +40,9 @@ func Start(additionalJobs map[string]job.Job, registerEnterpriseMigrations func(
 	registerMigrations := composeRegisterMigrations(migrators.RegisterOSSMigrations, registerEnterpriseMigrations)
 
 	builtins := map[string]job.Job{
-		"webhook-log-janitor":              webhooks.NewJanitor(),
-		"out-of-band-migrations":           migrations.NewMigrator(registerMigrations),
-		"codeintel-autoindexing-scheduler": codeintel.NewAutoindexingSchedulerJob(),
+		"webhook-log-janitor":                   webhooks.NewJanitor(),
+		"out-of-band-migrations":                migrations.NewMigrator(registerMigrations),
+		"codeintel-autoindexing-scheduler":      codeintel.NewAutoindexingSchedulerJob(),
 		"codeintel-policies-repository-matcher": codeintel.NewPoliciesRepositoryMatcherJob(),
 	}
 
