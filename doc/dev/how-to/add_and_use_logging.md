@@ -10,15 +10,15 @@ The recommended logger at Sourcegraph is `github.com/sourcegraph/sourcegraph/lib
 2. An initialization function to be called in `func main()`, `log.Init`
    1. Log level can be configured with `SRC_LOG_LEVEL`
    2. Do not use this in an `init()` function
-3. A getter to retrieve a `log.Logger` instance, `lib.Scoped`
-   1. `lib.Scoped` will panic if `log.Init` is not called.
+3. A getter to retrieve a `log.Logger` instance, `log.Scoped`
+   1. `log.Scoped` will panic if `log.Init` is not called.
 
 For testing purposes, we also provide:
 
-1. An initialization function to be called in `func TestMain(*testing.M)`, `logtest.Init`
-2. A getter to retrieve a `log.Logger` instance and a callback to programmatically iterate log output, `libtest.Scoped`
-   1. The standard `lib.Scoped` will also work after `libtest.Init`
-   2. Exported logs from `libtest.Scoped` can be dumped using the utility function `libtest.DumpLogs` and `libtest.DumpLogsIfFailed`
+1. An optional initialization function to be called in `func TestMain(*testing.M)`, `logtest.Init`
+2. A getter to retrieve a `log.Logger` instance and a callback to programmatically iterate log output, `logtest.Scoped`
+   1. The standard `logtest.Scoped` will also work after `logtest.Init`
+   2. Programatically iterable logs are available from the `logtest.Captured` logger instance
 
 ## Core concepts
 
@@ -40,6 +40,8 @@ import (
 )
 
 func main() {
+  // If unintialized, calls to `log.Get` will panic. Repeated calls to `log.Init` will
+  // also panic. Make sure to call this exactly once in `main`!
   log.Init(log.Resource{
     Name: env.MyName,
     /* ... optional fields */
