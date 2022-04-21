@@ -158,8 +158,7 @@ func main() {
 
 	// Best effort attempt to sync rate limiters for site level external services
 	// early on. If it fails, we'll try again in the background sync below.
-	rateLimitSyncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, externalServiceStore, repos.RateLimitSyncerOpts{})
-	if err := syncSiteLevelExternalServiceRateLimiters(ctx, externalServiceStore, rateLimitSyncer); err != nil {
+	if err := syncSiteLevelExternalServiceRateLimiters(ctx, externalServiceStore); err != nil {
 		log15.Warn("error performing initial site level rate limit sync", "error", err)
 	}
 
@@ -454,7 +453,7 @@ func getVCSSyncer(
 	return &server.GitRepoSyncer{}, nil
 }
 
-func syncSiteLevelExternalServiceRateLimiters(ctx context.Context, store database.ExternalServiceStore, syncer *repos.RateLimitSyncer) error {
+func syncSiteLevelExternalServiceRateLimiters(ctx context.Context, store database.ExternalServiceStore) error {
 	svcs, err := store.List(ctx, database.ExternalServicesListOptions{NoNamespace: true})
 	if err != nil {
 		return errors.Wrap(err, "listing external services")
@@ -463,6 +462,8 @@ func syncSiteLevelExternalServiceRateLimiters(ctx context.Context, store databas
 	for i := range svcs {
 		ids[i] = svcs[i].ID
 	}
+
+	syncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store, repos.RateLimitSyncerOpts{})
 	return syncer.SyncRateLimiters(ctx, ids...)
 }
 
