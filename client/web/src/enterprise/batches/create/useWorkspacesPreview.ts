@@ -182,8 +182,10 @@ export const useWorkspacesPreview = (
                         .catch((error: Error) => setError(error.message))
                     startPolling(POLLING_INTERVAL)
                 })
-                .catch((error: Error) => setError(error.message))
-                .finally(() => setIsInProgress(false))
+                .catch((error: Error) => {
+                    setError(error.message)
+                    setIsInProgress(false)
+                })
         },
         [
             batchSpecID,
