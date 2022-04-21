@@ -330,7 +330,6 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 			// https://docs.percy.io/docs/parallel-test-suites#how-it-works
 			bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(parallelTestCount)),
 			bk.Cmd(fmt.Sprintf(`dev/ci/yarn-web-integration.sh "%s"`, chunkTestFiles)),
-			bk.AutomaticRetry(1), // Temporary
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
 }
