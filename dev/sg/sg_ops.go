@@ -89,10 +89,8 @@ func opsUpdateImage(ctx context.Context, args []string) error {
 		Username:  opsUpdateImagesContainerRegistryUsernameFlag,
 		Secret:    opsUpdateImagesContainerRegistryPasswordFlag,
 	}
-	var err error
 	if opsUpdateImagesContainerRegistryUsernameFlag == "" || opsUpdateImagesContainerRegistryPasswordFlag == "" {
-		dockerCredentials, err = docker.GetCredentialsFromStore(dockerCredentials.ServerURL)
-		if err != nil {
+		if creds, err := docker.GetCredentialsFromStore(dockerCredentials.ServerURL); err != nil {
 			// We do not want any error handling here, just fallback to anonymous requests
 			writeWarningLinef("Registry credentials are not provided and could not be retrieved from docker config.")
 			writeWarningLinef("You will be using anonymous requests and may be subject to rate limiting by Docker Hub.")
@@ -100,6 +98,7 @@ func opsUpdateImage(ctx context.Context, args []string) error {
 			dockerCredentials.Secret = ""
 		} else {
 			writeFingerPointingLinef("Using credentials from docker credentials store (learn more https://docs.docker.com/engine/reference/commandline/login/#credentials-store)")
+			dockerCredentials = creds
 		}
 	}
 

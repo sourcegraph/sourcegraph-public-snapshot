@@ -2153,11 +2153,11 @@ var testGitRepoExists func(ctx context.Context, remoteURL *vcs.URL) error
 var (
 	execRunning = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "src_gitserver_exec_running",
-		Help: "number of gitserver.Command running concurrently.",
+		Help: "number of gitserver.GitCommand running concurrently.",
 	}, []string{"cmd", "repo"})
 	execDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name:    "src_gitserver_exec_duration_seconds",
-		Help:    "gitserver.Command latencies in seconds.",
+		Help:    "gitserver.GitCommand latencies in seconds.",
 		Buckets: trace.UserLatencyBuckets,
 	}, []string{"cmd", "repo", "status"})
 

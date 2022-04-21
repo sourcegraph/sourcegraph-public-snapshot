@@ -68,6 +68,20 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
         fullPage: true,
     },
     {
+        path: '/batch-changes/:batchChangeName/executions/:batchSpecID/configuration',
+        render: ({ match, ...props }: UserAreaRouteContext & RouteComponentProps<{ batchChangeName: string }>) => (
+            <CreateOrEditBatchChangePage
+                {...props}
+                initialNamespaceID={props.user.id}
+                batchChangeName={match.params.batchChangeName}
+                isReadOnly={true}
+            />
+        ),
+        condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
+            batchChangesEnabled && batchChangesExecutionEnabled,
+        fullPage: true,
+    },
+    {
         path: '/batch-changes/:batchChangeName/executions/:batchSpecID',
         render: (props: UserAreaRouteContext & RouteComponentProps<{ batchSpecID: string }>) => (
             <ExecutionArea {...props} namespaceID={props.user.id} />

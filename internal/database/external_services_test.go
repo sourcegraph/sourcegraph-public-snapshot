@@ -39,6 +39,7 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 		namespaceOrgID       int32
 		kinds                []string
 		afterID              int64
+		updatedAfter         time.Time
 		wantQuery            string
 		onlyCloudDefault     bool
 		noCachedWebhooks     bool
@@ -91,6 +92,12 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 			wantArgs:  []interface{}{int64(10)},
 		},
 		{
+			name:         "has after updated_at",
+			updatedAfter: time.Date(2013, 04, 19, 0, 0, 0, 0, time.UTC),
+			wantQuery:    "deleted_at IS NULL AND updated_at > $1",
+			wantArgs:     []interface{}{time.Date(2013, 04, 19, 0, 0, 0, 0, time.UTC)},
+		},
+		{
 			name:             "has OnlyCloudDefault",
 			onlyCloudDefault: true,
 			wantQuery:        "deleted_at IS NULL AND cloud_default = true",
@@ -110,6 +117,7 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 				NamespaceOrgID:       test.namespaceOrgID,
 				Kinds:                test.kinds,
 				AfterID:              test.afterID,
+				UpdatedAfter:         test.updatedAfter,
 				OnlyCloudDefault:     test.onlyCloudDefault,
 				NoCachedWebhooks:     test.noCachedWebhooks,
 			}
@@ -1362,12 +1370,14 @@ func TestExternalServicesStore_List(t *testing.T) {
 			NamespaceOrgID: org.ID,
 		},
 	}
+
 	for _, es := range ess {
 		err := ExternalServices(db).Create(ctx, confGet, es)
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
+	createdAt := time.Now()
 
 	t.Run("list all external services", func(t *testing.T) {
 		got, err := ExternalServices(db).List(ctx, ExternalServicesListOptions{})
@@ -1488,6 +1498,32 @@ func TestExternalServicesStore_List(t *testing.T) {
 		}
 
 		if len(ess) != 0 {
+			t.Fatalf("Want 0 external service but got %d", len(ess))
+		}
+	})
+
+	t.Run("list services updated after a certain date, expect 0", func(t *testing.T) {
+		ess, err := ExternalServices(db).List(ctx, ExternalServicesListOptions{
+			UpdatedAfter: createdAt,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		// We expect zero services to have been updated after they were created
+		if len(ess) != 0 {
+			t.Fatalf("Want 0 external service but got %d", len(ess))
+		}
+	})
+
+	t.Run("list services updated after a certain date, expect 3", func(t *testing.T) {
+		ess, err := ExternalServices(db).List(ctx, ExternalServicesListOptions{
+			UpdatedAfter: createdAt.Add(-5 * time.Minute),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		// We should find all services were updated after a time in the past
+		if len(ess) != 3 {
 			t.Fatalf("Want 0 external service but got %d", len(ess))
 		}
 	})

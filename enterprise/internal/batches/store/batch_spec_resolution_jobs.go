@@ -20,6 +20,7 @@ import (
 // modified in CreateBatchSpecResolutionJob.
 var batchSpecResolutionJobInsertColumns = SQLColumns{
 	"batch_spec_id",
+	"initiator_id",
 
 	"state",
 
@@ -27,7 +28,7 @@ var batchSpecResolutionJobInsertColumns = SQLColumns{
 	"updated_at",
 }
 
-const batchSpecResolutionJobInsertColsFmt = `(%s, %s, %s, %s)`
+const batchSpecResolutionJobInsertColsFmt = `(%s, %s, %s, %s, %s)`
 
 // ChangesetJobColumns are used by the changeset job related Store methods to query
 // and create changeset jobs.
@@ -35,6 +36,7 @@ var batchSpecResolutionJobColums = SQLColumns{
 	"batch_spec_resolution_jobs.id",
 
 	"batch_spec_resolution_jobs.batch_spec_id",
+	"batch_spec_resolution_jobs.initiator_id",
 
 	"batch_spec_resolution_jobs.state",
 	"batch_spec_resolution_jobs.failure_message",
@@ -100,8 +102,9 @@ func (s *Store) createBatchSpecResolutionJobQuery(wj *btypes.BatchSpecResolution
 
 	return sqlf.Sprintf(
 		createBatchSpecResolutionJobQueryFmtstr,
-		sqlf.Join(batchSpecResolutionJobInsertColumns.ToSqlf(), ", "),
+		sqlf.Join(batchSpecResolutionJobInsertColumns.ToSqlf(), ","),
 		wj.BatchSpecID,
+		wj.InitiatorID,
 		state,
 		wj.CreatedAt,
 		wj.UpdatedAt,
@@ -227,6 +230,7 @@ func scanBatchSpecResolutionJob(rj *btypes.BatchSpecResolutionJob, s dbutil.Scan
 	if err := s.Scan(
 		&rj.ID,
 		&rj.BatchSpecID,
+		&rj.InitiatorID,
 		&rj.State,
 		&dbutil.NullString{S: &failureMessage},
 		&dbutil.NullTime{Time: &rj.StartedAt},

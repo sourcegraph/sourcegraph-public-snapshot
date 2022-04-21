@@ -72,10 +72,11 @@ describe('Code insights page', () => {
         const variables = await testContext.waitForGraphQLRequest(async () => {
             await driver.page.click('[data-testid="insight-card.001"] [data-testid="InsightContextMenuButton"]')
 
-            await Promise.all([
-                driver.acceptNextDialog(),
-                driver.page.click('[data-testid="insight-context-menu-delete-button"]'),
-            ])
+            await driver.page.click('[data-testid="insight-context-menu-delete-button"]')
+            const [button] = await driver.page.$x("//button[contains(., 'Delete forever')]")
+            if (button) {
+                await button.click()
+            }
         }, 'DeleteInsightView')
 
         assert.strictEqual(variables.id, '001')

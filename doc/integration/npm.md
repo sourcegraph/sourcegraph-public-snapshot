@@ -25,15 +25,24 @@ Use the `"credentials"` section of the JSON configuration to provide an access t
 
 ## Rate limiting
 
-By default, requests to the npm dependency code host won't be rate limited. To configure rate-limiting, add the following to your code host configuration:
+By default, requests to the npm registry will be rate-limited based on a default [internal limit](https://github.com/sourcegraph/sourcegraph/blob/main/schema/npm-packages.schema.json) which complies with the [documented acceptable use policy](https://docs.npmjs.com/policies/open-source-terms#acceptable-use) of registry.npmjs.org (i.e. max 5 million requests per month).
 
 ```json
 "rateLimit": {
   "enabled": true,
-  "requestsPerHour": 600.0
+  "requestsPerHour": 3000.0
 }
 ```
 where the `requestsPerHour` field is set based on your requirements.
+
+**Not recommended**: Rate-limiting can be turned off entirely as well.
+This increases the risk of overloading the code host.
+
+```json
+"rateLimit": {
+  "enabled": false
+}
+```
 
 ## Repository permissions
 

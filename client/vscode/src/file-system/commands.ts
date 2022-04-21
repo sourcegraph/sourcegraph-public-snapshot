@@ -3,22 +3,67 @@ import * as vscode from 'vscode'
 import { SourcegraphFileSystemProvider } from './SourcegraphFileSystemProvider'
 import { SourcegraphUri } from './SourcegraphUri'
 
+/**
+ * Try to find local copy of the search result file first
+ * Remote copy will be opened instead if basePath is not set or local copy cannot be found
+ **/
 export async function openSourcegraphUriCommand(fs: SourcegraphFileSystemProvider, uri: SourcegraphUri): Promise<void> {
     if (uri.compareRange) {
         // noop. v2 Debt: implement. Open in browser for v1
         return
     }
-    if (!uri.revision) {
-        const metadata = await fs.repositoryMetadata(uri.repositoryName)
-        uri = uri.withRevision(metadata?.defaultBranch || 'HEAD')
+    let textDocument
+    try {
+        textDocument = await getLocalCopy(uri)
+    } catch (error) {
+        console.error('Failed to get local copy:', error)
+        if (!uri.revision) {
+            const metadata = await fs.repositoryMetadata(uri.repositoryName)
+            uri = uri.withRevision(metadata?.defaultBranch || 'HEAD')
+        }
+        // Load Remote Copy instead
+        textDocument = await vscode.workspace.openTextDocument(vscode.Uri.parse(uri.uri))
     }
-    const textDocument = await vscode.workspace.openTextDocument(vscode.Uri.parse(uri.uri))
     const selection = getSelection(uri, textDocument)
     await vscode.window.showTextDocument(textDocument, {
         selection,
         viewColumn: vscode.ViewColumn.Active,
         preview: false,
     })
+}
+
+async function getLocalCopy(remoteUri: SourcegraphUri): Promise<vscode.TextDocument> {
+    const repoName = remoteUri.repositoryName.split('/').pop() || '' // ex: github.com/sourcegraph/sourcegraph => sourcegraph
+    const filePath = remoteUri.path || '' // ex: "client/vscode/package.json"
+    // Get basePath from configuration
+    const basePath = vscode.workspace.getConfiguration('sourcegraph').get<string>('basePath') || null
+    const workspaceFilePath = await vscode.workspace
+        .findFiles(filePath, null, 1)
+        .then(result => result[0]?.path || null)
+    // If basePath is not configured, we will try to find file in the current workspace
+    const absolutePath = basePath
+        ? vscode.Uri.joinPath(vscode.Uri.parse(basePath), repoName, filePath)
+        : workspaceFilePath
+        ? vscode.Uri.file(workspaceFilePath)
+        : null
+    // if both basePath and workspaceFilePath are null, the operation will fail
+    if (!absolutePath) {
+        throw new Error('Try to configure your basePath to open this file.')
+    }
+    // Set current workspace folder path as basePath if it doesn't exist
+    if (!basePath && workspaceFilePath) {
+        // get current workspace folder uri
+        const workspaceFolderUri = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(workspaceFilePath))?.uri
+        if (workspaceFolderUri) {
+            // go one level up and set that as the new basePath
+            const newBasePath = vscode.workspace.asRelativePath(vscode.Uri.joinPath(workspaceFolderUri, '../'))
+            await vscode.workspace
+                .getConfiguration('sourcegraph')
+                .update('basePath', newBasePath, vscode.ConfigurationTarget.Global)
+        }
+    }
+    const textDocument = await vscode.workspace.openTextDocument(absolutePath)
+    return textDocument
 }
 
 function getSelection(uri: SourcegraphUri, textDocument: vscode.TextDocument): vscode.Range | undefined {

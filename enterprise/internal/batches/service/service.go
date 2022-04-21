@@ -62,7 +62,6 @@ type Service struct {
 type operations struct {
 	createBatchSpec                      *observation.Operation
 	createBatchSpecFromRaw               *observation.Operation
-	enqueueBatchSpecResolution           *observation.Operation
 	executeBatchSpec                     *observation.Operation
 	cancelBatchSpec                      *observation.Operation
 	replaceBatchSpecInput                *observation.Operation
@@ -113,7 +112,6 @@ func newOperations(observationContext *observation.Context) *operations {
 		singletonOperations = &operations{
 			createBatchSpec:                      op("CreateBatchSpec"),
 			createBatchSpecFromRaw:               op("CreateBatchSpecFromRaw"),
-			enqueueBatchSpecResolution:           op("EnqueueBatchSpecResolution"),
 			executeBatchSpec:                     op("ExecuteBatchSpec"),
 			cancelBatchSpec:                      op("CancelBatchSpec"),
 			replaceBatchSpecInput:                op("ReplaceBatchSpecInput"),
@@ -179,9 +177,7 @@ func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBa
 	}
 
 	actor := actor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
-		return nil, errors.New("no authenticated actor in context")
-	}
+	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
 
 	batchSpec := &btypes.BatchSpec{
 		RawSpec:         string(rawSpec),
@@ -344,6 +340,7 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 	}
 	spec.NamespaceOrgID = opts.NamespaceOrgID
 	spec.NamespaceUserID = opts.NamespaceUserID
+	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
 	actor := actor.FromContext(ctx)
 	spec.UserID = actor.UID
 
@@ -385,24 +382,7 @@ func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Sto
 	return tx.CreateBatchSpecResolutionJob(ctx, &btypes.BatchSpecResolutionJob{
 		State:       btypes.BatchSpecResolutionJobStateQueued,
 		BatchSpecID: opts.spec.ID,
-	})
-}
-
-type EnqueueBatchSpecResolutionOpts struct {
-	BatchSpecID int64
-
-	AllowIgnored     bool
-	AllowUnsupported bool
-}
-
-// EnqueueBatchSpecResolution creates a pending BatchSpec that will be picked up by a worker in the background.
-func (s *Service) EnqueueBatchSpecResolution(ctx context.Context, opts EnqueueBatchSpecResolutionOpts) (err error) {
-	ctx, endObservation := s.operations.enqueueBatchSpecResolution.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.CreateBatchSpecResolutionJob(ctx, &btypes.BatchSpecResolutionJob{
-		State:       btypes.BatchSpecResolutionJobStateQueued,
-		BatchSpecID: opts.BatchSpecID,
+		InitiatorID: opts.spec.UserID,
 	})
 }
 
@@ -602,6 +582,7 @@ func (s *Service) UpsertBatchSpecInput(ctx context.Context, opts UpsertBatchSpec
 	}
 	spec.NamespaceOrgID = opts.NamespaceOrgID
 	spec.NamespaceUserID = opts.NamespaceUserID
+	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
 	actor := actor.FromContext(ctx)
 	spec.UserID = actor.UID
 

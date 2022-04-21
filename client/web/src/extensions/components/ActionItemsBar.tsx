@@ -173,19 +173,9 @@ export function useWebActionItems(): Pick<ActionItemsBarProps, 'useActionItemsBa
     }
 }
 
-export interface ActionItemsBarProps extends ExtensionsControllerProps, PlatformContextProps, TelemetryProps {
+export interface ActionItemsBarProps extends ExtensionsControllerProps, TelemetryProps, PlatformContextProps {
     useActionItemsBar: () => { isOpen: boolean | undefined; barReference: React.RefCallback<HTMLElement> }
     location: H.Location
-}
-
-export interface ActionItemsToggleProps extends ExtensionsControllerProps<'extHostAPI'> {
-    useActionItemsToggle: () => {
-        isOpen: boolean | undefined
-        toggle: () => void
-        toggleReference: React.RefCallback<HTMLElement>
-        barInPage: boolean
-    }
-    className?: string
 }
 
 const actionItemClassName = classNames(
@@ -194,9 +184,9 @@ const actionItemClassName = classNames(
 )
 
 /**
- *
+ * TODO: description
  */
-export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
+export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionItemsBar(props) {
     const { isOpen, barReference } = props.useActionItemsBar()
 
     const {
@@ -307,6 +297,16 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
         </div>
     )
 })
+
+export interface ActionItemsToggleProps extends ExtensionsControllerProps<'extHostAPI'> {
+    useActionItemsToggle: () => {
+        isOpen: boolean | undefined
+        toggle: () => void
+        toggleReference: React.RefCallback<HTMLElement>
+        barInPage: boolean
+    }
+    className?: string
+}
 
 export const ActionItemsToggle: React.FunctionComponent<ActionItemsToggleProps> = ({
     useActionItemsToggle,

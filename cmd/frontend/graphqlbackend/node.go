@@ -243,9 +243,20 @@ func (r *NodeResolver) ToBulkOperation() (BulkOperationResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToBatchSpecWorkspace() (BatchSpecWorkspaceResolver, bool) {
+func (r *NodeResolver) ToHiddenBatchSpecWorkspace() (HiddenBatchSpecWorkspaceResolver, bool) {
 	n, ok := r.Node.(BatchSpecWorkspaceResolver)
-	return n, ok
+	if !ok {
+		return nil, ok
+	}
+	return n.ToHiddenBatchSpecWorkspace()
+}
+
+func (r *NodeResolver) ToVisibleBatchSpecWorkspace() (VisibleBatchSpecWorkspaceResolver, bool) {
+	n, ok := r.Node.(BatchSpecWorkspaceResolver)
+	if !ok {
+		return nil, ok
+	}
+	return n.ToVisibleBatchSpecWorkspace()
 }
 
 func (r *NodeResolver) ToInsightsDashboard() (InsightsDashboardResolver, bool) {
