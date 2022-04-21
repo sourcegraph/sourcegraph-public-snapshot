@@ -51,11 +51,6 @@ func (r *batchSpecWorkspaceResolutionResolver) Workspaces(ctx context.Context, a
 	return &batchSpecWorkspaceConnectionResolver{store: r.store, opts: opts}, nil
 }
 
-func (r *batchSpecWorkspaceResolutionResolver) Unsupported(ctx context.Context) graphqlbackend.RepositoryConnectionResolver {
-	// TODO(ssbc): not implemented
-	return nil
-}
-
 func (r *batchSpecWorkspaceResolutionResolver) RecentlyCompleted(ctx context.Context, args *graphqlbackend.ListRecentlyCompletedWorkspacesArgs) graphqlbackend.BatchSpecWorkspaceConnectionResolver {
 	// TODO(ssbc): not implemented
 	return nil

@@ -28,7 +28,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { render as renderLsifHtml } from '../../lsif/html'
 import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
 import { SearchStreamingProps } from '../../search'
-import { useSearchStack, useExperimentalFeatures } from '../../stores'
+import { useNotepad, useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
@@ -88,7 +88,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
     useEffect(() => {
         props.telemetryService.logViewEvent('Blob', { repoName, filePath })
     }, [repoName, commitID, filePath, renderMode, props.telemetryService])
-    useSearchStack(
+    useNotepad(
         useMemo(
             () => ({
                 type: 'file',

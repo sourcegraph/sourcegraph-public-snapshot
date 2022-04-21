@@ -262,7 +262,6 @@ func TestPermissionLevels(t *testing.T) {
 				currentUser             int32
 				batchSpec               string
 				wantViewerCanAdminister bool
-				wantNotFound            bool
 			}{
 				{
 					name:                    "site-admin viewing own batch spec",
@@ -311,7 +310,6 @@ func TestPermissionLevels(t *testing.T) {
 					currentUser:             userID,
 					batchSpec:               adminBatchSpecCreatedFromRawRandID,
 					wantViewerCanAdminister: false,
-					wantNotFound:            true,
 				},
 			}
 
@@ -330,17 +328,11 @@ func TestPermissionLevels(t *testing.T) {
 					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
 					apitest.MustExec(actorCtx, t, s, input, &res, queryBatchSpec)
 
-					if tc.wantNotFound {
-						if res.Node.ID != "" {
-							t.Fatalf("expected no response, but got node %s", res.Node.ID)
-						}
-					} else {
-						if have, want := res.Node.ID, graphqlID; have != want {
-							t.Fatalf("queried batch spec has wrong id %q, want %q", have, want)
-						}
-						if have, want := res.Node.ViewerCanAdminister, tc.wantViewerCanAdminister; have != want {
-							t.Fatalf("queried batch spec's ViewerCanAdminister is wrong %t, want %t", have, want)
-						}
+					if have, want := res.Node.ID, graphqlID; have != want {
+						t.Fatalf("queried batch spec has wrong id %q, want %q", have, want)
+					}
+					if have, want := res.Node.ViewerCanAdminister, tc.wantViewerCanAdminister; have != want {
+						t.Fatalf("queried batch spec's ViewerCanAdminister is wrong %t, want %t", have, want)
 					}
 				})
 			}
@@ -653,7 +645,7 @@ func TestPermissionLevels(t *testing.T) {
 					name:        "non-site-admin viewing other's workspace",
 					currentUser: userID,
 					user:        adminID,
-					wantErr:     true,
+					wantErr:     false,
 				},
 				{
 					name:        "non-site-admin viewing own workspace",
@@ -935,7 +927,19 @@ func TestPermissionLevels(t *testing.T) {
 					return fmt.Sprintf(`mutation { retryBatchSpecExecution(batchSpec: %q) { id } }`, batchSpecID)
 				},
 			},
-			// TODO: Once implemented, add test for CancelBatchSpecWorkspaceExecution
+			{
+				name: "cancelBatchSpecExecution",
+				mutationFunc: func(batchSpecID, _ string) string {
+					return fmt.Sprintf(`mutation { cancelBatchSpecExecution(batchSpec: %q) { id } }`, batchSpecID)
+				},
+			},
+			// TODO: Uncomment once implemented.
+			// {
+			// 	name: "cancelBatchSpecWorkspaceExecution",
+			// 	mutationFunc: func(_, workspaceID string) string {
+			// 		return fmt.Sprintf(`mutation { cancelBatchSpecWorkspaceExecution(batchSpecWorkspaces: [%q]) { alwaysNil } }`, workspaceID)
+			// 	},
+			// },
 			// TODO: Once implemented, add test for EnqueueBatchSpecWorkspaceExecution
 			// TODO: Once implemented, add test for ToggleBatchSpecAutoApply
 			// TODO: Once implemented, add test for DeleteBatchSpec
@@ -1157,8 +1161,8 @@ func TestRepositoryPermissions(t *testing.T) {
 
 	db := database.NewDB(dbtest.NewDB(t))
 
-	cstore := store.New(db, &observation.TestContext, nil)
-	sr := &Resolver{store: cstore}
+	bstore := store.New(db, &observation.TestContext, nil)
+	sr := &Resolver{store: bstore}
 	s, err := graphqlbackend.NewSchema(database.NewDB(db), sr, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -1172,8 +1176,8 @@ func TestRepositoryPermissions(t *testing.T) {
 	// Global test data that we reuse in every test
 	userID := ct.CreateTestUser(t, db, false).ID
 
-	repoStore := database.ReposWith(cstore)
-	esStore := database.ExternalServicesWith(cstore)
+	repoStore := database.ReposWith(bstore)
+	esStore := database.ExternalServicesWith(bstore)
 
 	// Create 2 repositories
 	repos := make([]*types.Repo, 0, 2)
@@ -1210,7 +1214,7 @@ func TestRepositoryPermissions(t *testing.T) {
 				},
 			}
 			c.SetDiffStat(changesetDiffStat.ToDiffStat())
-			if err := cstore.CreateChangeset(ctx, c); err != nil {
+			if err := bstore.CreateChangeset(ctx, c); err != nil {
 				t.Fatal(err)
 			}
 			changesets = append(changesets, c)
@@ -1220,7 +1224,7 @@ func TestRepositoryPermissions(t *testing.T) {
 			NamespaceUserID: userID,
 			UserID:          userID,
 		}
-		if err := cstore.CreateBatchSpec(ctx, spec); err != nil {
+		if err := bstore.CreateBatchSpec(ctx, spec); err != nil {
 			t.Fatal(err)
 		}
 
@@ -1232,13 +1236,13 @@ func TestRepositoryPermissions(t *testing.T) {
 			LastAppliedAt:   time.Now(),
 			BatchSpecID:     spec.ID,
 		}
-		if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {
+		if err := bstore.CreateBatchChange(ctx, batchChange); err != nil {
 			t.Fatal(err)
 		}
 		// We attach the two changesets to the batch change
 		for _, c := range changesets {
 			c.BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: batchChange.ID}}
-			if err := cstore.UpdateChangeset(ctx, c); err != nil {
+			if err := bstore.UpdateChangeset(ctx, c); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -1325,7 +1329,7 @@ func TestRepositoryPermissions(t *testing.T) {
 			NamespaceUserID: userID,
 			Spec:            &batcheslib.BatchSpec{Name: "batch-spec-and-changeset-specs"},
 		}
-		if err := cstore.CreateBatchSpec(ctx, batchSpec); err != nil {
+		if err := bstore.CreateBatchSpec(ctx, batchSpec); err != nil {
 			t.Fatal(err)
 		}
 
@@ -1339,7 +1343,7 @@ func TestRepositoryPermissions(t *testing.T) {
 				DiffStatChanged: 4,
 				DiffStatDeleted: 4,
 			}
-			if err := cstore.CreateChangesetSpec(ctx, c); err != nil {
+			if err := bstore.CreateChangesetSpec(ctx, c); err != nil {
 				t.Fatal(err)
 			}
 			changesetSpecs = append(changesetSpecs, c)
@@ -1391,6 +1395,77 @@ func TestRepositoryPermissions(t *testing.T) {
 				testChangesetSpecResponse(t, s, userCtx, c.RandID, "HiddenChangesetSpec")
 			} else {
 				testChangesetSpecResponse(t, s, userCtx, c.RandID, "VisibleChangesetSpec")
+			}
+		}
+	})
+
+	t.Run("BatchSpec and workspaces", func(t *testing.T) {
+		batchSpec := &btypes.BatchSpec{
+			UserID:          userID,
+			NamespaceUserID: userID,
+			CreatedFromRaw:  true,
+			Spec:            &batcheslib.BatchSpec{Name: "batch-spec-and-changeset-specs"},
+		}
+		if err := bstore.CreateBatchSpec(ctx, batchSpec); err != nil {
+			t.Fatal(err)
+		}
+
+		if err := bstore.CreateBatchSpecResolutionJob(ctx, &btypes.BatchSpecResolutionJob{
+			BatchSpecID: batchSpec.ID,
+			InitiatorID: userID,
+			State:       btypes.BatchSpecResolutionJobStateCompleted,
+		}); err != nil {
+			t.Fatal(err)
+		}
+
+		workspaces := make([]*btypes.BatchSpecWorkspace, 0, len(repos))
+		for _, r := range repos {
+			w := &btypes.BatchSpecWorkspace{
+				RepoID:      r.ID,
+				BatchSpecID: batchSpec.ID,
+			}
+			if err := bstore.CreateBatchSpecWorkspace(ctx, w); err != nil {
+				t.Fatal(err)
+			}
+			workspaces = append(workspaces, w)
+		}
+
+		// Query BatchSpec and check that we get all workspaces
+		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
+		testBatchSpecWorkspacesResponse(t, s, userCtx, batchSpec.RandID, wantBatchSpecWorkspacesResponse{
+			types: map[string]int{"VisibleBatchSpecWorkspace": 2},
+			count: 2,
+		})
+
+		// Now query the workspaces as single nodes, to make sure that fetching/preloading
+		// of repositories works.
+		for _, w := range workspaces {
+			// Both workspaces are visible still, so both should be VisibleBatchSpecWorkspace
+			testWorkspaceResponse(t, s, userCtx, w.ID, "VisibleBatchSpecWorkspace")
+		}
+
+		// Now we set permissions and filter out the repository of one workspace.
+		filteredRepo := workspaces[0].RepoID
+		accessibleRepo := workspaces[1].RepoID
+		ct.MockRepoPermissions(t, db, userID, accessibleRepo)
+
+		// Send query again and check that for each filtered repository we get a
+		// HiddenBatchSpecWorkspace.
+		testBatchSpecWorkspacesResponse(t, s, userCtx, batchSpec.RandID, wantBatchSpecWorkspacesResponse{
+			types: map[string]int{
+				"VisibleBatchSpecWorkspace": 1,
+				"HiddenBatchSpecWorkspace":  1,
+			},
+			count: 2,
+		})
+
+		// Query the single workspace nodes again.
+		for _, w := range workspaces {
+			// The workspace whose repository has been filtered should be hidden.
+			if w.RepoID == filteredRepo {
+				testWorkspaceResponse(t, s, userCtx, w.ID, "HiddenBatchSpecWorkspace")
+			} else {
+				testWorkspaceResponse(t, s, userCtx, w.ID, "VisibleBatchSpecWorkspace")
 			}
 		}
 	})
@@ -1528,6 +1603,101 @@ query {
 	    totalCount
 	  }
 
+      repository {
+        id
+        name
+      }
+    }
+  }
+}
+`
+
+type wantBatchSpecWorkspacesResponse struct {
+	types map[string]int
+	count int
+}
+
+func testBatchSpecWorkspacesResponse(t *testing.T, s *graphql.Schema, ctx context.Context, batchSpecRandID string, w wantBatchSpecWorkspacesResponse) {
+	t.Helper()
+
+	in := map[string]interface{}{
+		"batchSpec": string(marshalBatchSpecRandID(batchSpecRandID)),
+	}
+
+	var response struct{ Node apitest.BatchSpec }
+	apitest.MustExec(ctx, t, s, in, &response, queryBatchSpecWorkspaces)
+
+	if have, want := response.Node.ID, in["batchSpec"]; have != want {
+		t.Fatalf("batch spec id is wrong. have %q, want %q", have, want)
+	}
+
+	if diff := cmp.Diff(w.count, response.Node.WorkspaceResolution.Workspaces.TotalCount); diff != "" {
+		t.Fatalf("unexpected workspaces total count (-want +got):\n%s", diff)
+	}
+
+	types := map[string]int{}
+	for _, c := range response.Node.WorkspaceResolution.Workspaces.Nodes {
+		types[c.Typename]++
+	}
+	if diff := cmp.Diff(w.types, types); diff != "" {
+		t.Fatalf("unexpected workspace types (-want +got):\n%s", diff)
+	}
+}
+
+const queryBatchSpecWorkspaces = `
+query($batchSpec: ID!) {
+  node(id: $batchSpec) {
+    ... on BatchSpec {
+      id
+
+     workspaceResolution {
+        workspaces(first: 100) {
+          totalCount
+          nodes {
+            __typename
+            ... on HiddenBatchSpecWorkspace {
+              id
+            }
+
+            ... on VisibleBatchSpecWorkspace {
+              id
+            }
+          }
+        }
+      }
+    }
+  }
+}
+`
+
+func testWorkspaceResponse(t *testing.T, s *graphql.Schema, ctx context.Context, id int64, wantType string) {
+	t.Helper()
+
+	var res struct{ Node apitest.BatchSpecWorkspace }
+	query := fmt.Sprintf(queryWorkspacePerm, marshalBatchSpecWorkspaceID(id))
+	apitest.MustExec(ctx, t, s, nil, &res, query)
+
+	if have, want := res.Node.Typename, wantType; have != want {
+		t.Fatalf("changeset has wrong typename. want=%q, have=%q", want, have)
+	}
+
+	if wantType == "HiddenBatchSpecWorkspace" {
+		if res.Node.Repository.ID != "" {
+			t.Fatal("includes repo but shouldn't")
+		}
+	}
+}
+
+const queryWorkspacePerm = `
+query {
+  node(id: %q) {
+    __typename
+
+    ... on HiddenBatchSpecWorkspace {
+      id
+    }
+    ... on VisibleBatchSpecWorkspace {
+      id
       repository {
         id
         name

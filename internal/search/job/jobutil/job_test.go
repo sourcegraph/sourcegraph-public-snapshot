@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -14,6 +15,8 @@ import (
 func TestToSearchInputs(t *testing.T) {
 	test := func(input string, protocol search.Protocol, parser func(string) (query.Q, error)) string {
 		q, _ := parser(input)
+		b, err := query.ToBasicQuery(q)
+		require.NoError(t, err)
 		inputs := &run.SearchInputs{
 			UserSettings:        &schema.Settings{},
 			PatternType:         query.SearchTypeLiteral,
@@ -21,7 +24,7 @@ func TestToSearchInputs(t *testing.T) {
 			OnSourcegraphDotCom: true,
 		}
 
-		j, _ := ToSearchJob(inputs, q)
+		j, _ := ToSearchJob(inputs, b)
 		return "\n" + PrettySexp(j) + "\n"
 	}
 
@@ -219,7 +222,7 @@ func Test_optimizeJobs(t *testing.T) {
 
 		b, _ := query.ToBasicQuery(q)
 		baseJob, _ := toPatternExpressionJob(inputs, b)
-		optimizedJob, _ := optimizeJobs(baseJob, inputs, b.ToParseTree())
+		optimizedJob, _ := optimizeJobs(baseJob, inputs, b)
 		return "\nBASE:\n\n" + PrettySexp(baseJob) + "\n\nOPTIMIZED:\n\n" + PrettySexp(optimizedJob) + "\n"
 	}
 

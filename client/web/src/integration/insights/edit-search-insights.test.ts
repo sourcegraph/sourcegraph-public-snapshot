@@ -1,5 +1,6 @@
 import assert from 'assert'
 
+import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -301,6 +302,7 @@ describe('Code insight edit insight page', () => {
         )
 
         await percySnapshotWithVariants(driver.page, 'Code insights edit page with search-based insight creation UI')
+        await accessibilityAudit(driver.page)
 
         // Gather all filled inputs within a creation UI form.
         const grabbedInsightInfo = await driver.page.evaluate(getInsightFormValues)

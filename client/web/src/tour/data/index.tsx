@@ -248,6 +248,22 @@ export const authenticatedTasks: TourTaskType[] = [
             },
         ],
     },
+
+    {
+        title: 'Install an IDE extension',
+        icon: <PuzzleOutlineIcon size="2.3rem" />,
+        steps: [
+            {
+                id: 'InstallIDEExtension',
+                label: 'Integrate Sourcegraph with your favorite IDE',
+                action: {
+                    type: 'new-tab-link',
+                    value:
+                        'https://docs.sourcegraph.com/integration/editor?utm_medium=direct-traffic&utm_source=in-product&utm_content=getting-started',
+                },
+            },
+        ],
+    },
     {
         title: 'Find and fix vulnerabilities',
         icon: <ShieldSearchIcon size="2.3rem" />,
@@ -336,21 +352,6 @@ export const authenticatedTasks: TourTaskType[] = [
                     </>
                 ),
                 completeAfterEvents: ['findReferences'],
-            },
-        ],
-    },
-    {
-        title: 'Install an IDE extension',
-        icon: <PuzzleOutlineIcon size="2.3rem" />,
-        steps: [
-            {
-                id: 'InstallIDEExtension',
-                label: 'Integrate Sourcegraph with your favorite IDE',
-                action: {
-                    type: 'new-tab-link',
-                    value:
-                        'https://docs.sourcegraph.com/integration/editor?utm_medium=direct-traffic&utm_source=in-product&utm_content=getting-started',
-                },
             },
         ],
     },

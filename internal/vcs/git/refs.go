@@ -334,7 +334,7 @@ func RevList(repo string, db database.DB, commit string, onCommit func(commit st
 
 	command := gitserver.NewClient(db).GitCommand(api.RepoName(repo), RevListArgs(commit)...)
 	command.DisableTimeout()
-	stdout, err := gitserver.StdoutReader(ctx, command)
+	stdout, err := command.StdoutReader(ctx)
 	if err != nil {
 		return err
 	}

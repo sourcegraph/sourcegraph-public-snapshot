@@ -14,7 +14,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -141,8 +144,8 @@ func TestNoMaliciousFiles(t *testing.T) {
 	createMaliciousJar(t, jarPath)
 
 	s := JVMPackagesSyncer{
-		Config:    &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
-		DepsStore: NewMockDependenciesStore(),
+		Config:  &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
+		DepsSvc: live.TestService(database.NewDB(dbtest.NewDB(t)), nil),
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -193,8 +196,8 @@ func TestJVMCloneCommand(t *testing.T) {
 	coursier.CoursierBinary = coursierScript(t, dir)
 
 	s := JVMPackagesSyncer{
-		Config:    &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
-		DepsStore: NewMockDependenciesStore(),
+		Config:  &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
+		DepsSvc: live.TestService(database.NewDB(dbtest.NewDB(t)), nil),
 	}
 	bareGitDirectory := path.Join(dir, "git")
 

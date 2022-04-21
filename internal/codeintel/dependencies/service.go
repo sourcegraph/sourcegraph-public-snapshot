@@ -11,7 +11,8 @@ import (
 	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -61,7 +62,7 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 		return nil, err
 	}
 
-	hash := func(dep store.DependencyRepo) string {
+	hash := func(dep Repo) string {
 		return strings.Join([]string{dep.Scheme, dep.Name, dep.Version}, ":")
 	}
 
@@ -69,7 +70,7 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 	// auxiliary data structures that can be used to feed the upsert and sync operations
 	// below.
 	dependencyRevs = make(map[api.RepoName]types.RevSpecSet, len(repoRevs))
-	dependencies := []store.DependencyRepo{}
+	dependencies := []Repo{}
 	repoNamesByDependency := map[string]api.RepoName{}
 
 	for _, dep := range deps {
@@ -84,7 +85,7 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 		}
 		dependencyRevs[repo][rev] = struct{}{}
 
-		dep := store.DependencyRepo{Scheme: scheme, Name: name, Version: version}
+		dep := Repo{Scheme: scheme, Name: name, Version: version}
 		dependencies = append(dependencies, dep)
 		repoNamesByDependency[hash(dep)] = repo
 	}
@@ -217,4 +218,36 @@ func constructLogFields(repoRevs map[api.RepoName]types.RevSpecSet) []log.Field 
 	return []log.Field{
 		log.Int("repoRevs", len(repoRevs)),
 	}
+}
+
+type Repo = shared.Repo
+
+type ListDependencyReposOpts struct {
+	Scheme      string
+	Name        string
+	After       int
+	Limit       int
+	NewestFirst bool
+}
+
+func (s *Service) ListDependencyRepos(ctx context.Context, opts ListDependencyReposOpts) ([]Repo, error) {
+	drs, err := s.dependenciesStore.ListDependencyRepos(ctx, store.ListDependencyReposOpts(opts))
+	if err != nil {
+		return nil, err
+	}
+
+	return drs, nil
+}
+
+func (s *Service) UpsertDependencyRepos(ctx context.Context, deps []Repo) ([]Repo, error) {
+	drs, err := s.dependenciesStore.UpsertDependencyRepos(ctx, deps)
+	if err != nil {
+		return nil, err
+	}
+
+	return drs, nil
+}
+
+func (s *Service) DeleteDependencyReposByID(ctx context.Context, ids ...int) error {
+	return s.dependenciesStore.DeleteDependencyReposByID(ctx, ids...)
 }
