@@ -1,18 +1,14 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/google/go-github/v41/github"
@@ -167,89 +163,6 @@ func getRevision() (string, error) {
 	return strings.TrimSpace(string(output)), nil
 }
 
-type okayEvent struct {
-	Name       string                 `json:"event"`
-	Timestamp  time.Time              `json:"timestamp"`
-	Properties map[string]interface{} `json:"properties"`
-}
-
-type OkayMetricsClient struct {
-	token  string
-	cli    *http.Client
-	events []*okayEvent
-	mu     sync.Mutex
-}
-
-func NewOkayMetricsClient(client *http.Client, token string) *OkayMetricsClient {
-	return &OkayMetricsClient{
-		cli:   client,
-		token: token,
-	}
-}
-
-func (o *OkayMetricsClient) post(event *okayEvent) error {
-	b, err := json.Marshal(event)
-	if err != nil {
-		return err
-	}
-	buf := bytes.NewReader(b)
-	req, err := http.NewRequest(http.MethodPost, "https://app.okayhq.com/api/webhooks/events", buf)
-	if err != nil {
-		return err
-	}
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", o.token))
-	req.Header.Add("Content-Type", "application/json")
-	resp, err := o.cli.Do(req)
-	if err != nil {
-		return err
-	}
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			body = []byte("can't read response body")
-		}
-		defer resp.Body.Close()
-		return errors.Newf("failed to submit custom metric to OkayHQ: %q", string(body))
-	}
-	return nil
-}
-
-func (o *OkayMetricsClient) Push(name string, ts time.Time, properties map[string]interface{}) error {
-	if name == "" {
-		return errors.New("Okay metrics event name can't be blank")
-	}
-	if ts.IsZero() {
-		return errors.New("Okay metrics event timestamp name can't be zero")
-	}
-
-	o.mu.Lock()
-	defer o.mu.Unlock()
-
-	o.events = append(o.events, &okayEvent{
-		Name:       name,
-		Timestamp:  ts,
-		Properties: properties,
-	})
-
-	return nil
-}
-
-func (o *OkayMetricsClient) Flush() error {
-	o.mu.Lock()
-	defer o.mu.Unlock()
-
-	var errs error
-	for _, event := range o.events {
-		err := o.post(event)
-		if err != nil {
-			errs = errors.Append(err)
-		}
-	}
-	// Reset the internal events buffer
-	o.events = nil
-	return errs
-}
-
 func reportDeploymentMetrics(report *DeploymentReport, token string, dryRun bool) error {
 	if dryRun {
 		return nil
@@ -263,19 +176,29 @@ func reportDeploymentMetrics(report *DeploymentReport, token string, dryRun bool
 	okayCli := NewOkayMetricsClient(http.DefaultClient, token)
 
 	for _, pr := range report.PullRequests {
-		durationInMin := deployTime.Sub(pr.GetMergedAt()) / time.Minute
-		err := okayCli.Push("qa.deployment", deployTime, map[string]interface{}{
-			// context
-			"environment":           report.Environment,
-			"author":                pr.GetUser().GetLogin(),
-			"pull_request.number":   pr.GetNumber(),
-			"pull_request.title":    pr.GetTitle(),
-			"pull_request.revision": pr.GetMergeCommitSHA(),
-			"pull_request.url":      pr.GetHTMLURL(),
+		elapsed := deployTime.Sub(pr.GetMergedAt())
+		event := OkayEvent{
+			Name:        "deployment",
+			Timestamp:   deployTime,
+			GitHubLogin: pr.GetUser().GetLogin(),
+			UniqueKey:   []string{"environment", "pull_request.number", "services"},
+			Properties: map[string]interface{}{
+				"environment":           report.Environment,
+				"pull_request.number":   pr.GetNumber(),
+				"pull_request.title":    pr.GetTitle(),
+				"pull_request.revision": pr.GetMergeCommitSHA(),
+				"pull_request.url":      pr.GetHTMLURL(),
+				"services":              report.Services,
+			},
+			Metrics: map[string]OkayMetric{
+				"elapsed": {
+					Type:  "durationMs",
+					Value: float64(elapsed / time.Millisecond),
+				},
+			},
+		}
 
-			// duration
-			"duration.minutes": durationInMin,
-		})
+		err := okayCli.Push("qa.deployment", &event)
 		if err != nil {
 			return err
 		}
