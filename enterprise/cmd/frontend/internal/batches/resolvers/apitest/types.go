@@ -236,7 +236,14 @@ type BatchSpecConnection struct {
 }
 
 type BatchSpecWorkspaceResolution struct {
-	State string
+	State      string
+	Workspaces BatchSpecWorkspaceConnection
+}
+
+type BatchSpecWorkspaceConnection struct {
+	Nodes      []BatchSpecWorkspace
+	TotalCount int
+	PageInfo   PageInfo
 }
 
 // ChangesetSpecDelta is the delta between two ChangesetSpecs describing the same Changeset.

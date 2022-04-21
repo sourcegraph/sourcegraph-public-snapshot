@@ -279,6 +279,7 @@ type InsightSeriesQueryStatusResolver interface {
 type InsightViewFiltersResolver interface {
 	IncludeRepoRegex(ctx context.Context) (*string, error)
 	ExcludeRepoRegex(ctx context.Context) (*string, error)
+	SearchContexts(ctx context.Context) (*[]string, error)
 }
 
 type CreateLineChartSearchInsightArgs struct {

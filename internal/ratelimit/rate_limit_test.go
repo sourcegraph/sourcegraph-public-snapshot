@@ -5,7 +5,24 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/time/rate"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func TestDefaultRateLimiter(t *testing.T) {
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			DefaultRateLimit: 7200,
+		},
+	})
+	defer conf.Mock(nil)
+
+	r := NewRegistry()
+	got := r.Get("Unknown")
+	want := rate.NewLimiter(rate.Limit(2), defaultBurst)
+	assert.Equal(t, want, got)
+}
 
 func TestRegistry(t *testing.T) {
 	r := NewRegistry()

@@ -161,6 +161,10 @@ export const useCodeIntel = ({
         path: variables.path,
         filter: variables.filter ?? undefined,
         searchToken,
+        position: {
+            line: variables.line,
+            character: variables.character,
+        },
         fileContent,
         spec,
         isFork,

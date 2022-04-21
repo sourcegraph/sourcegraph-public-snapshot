@@ -72,7 +72,6 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 			frontendTests,                // ~4.5m
 			addWebApp,                    // ~5.5m
 			addBrowserExtensionUnitTests, // ~4.5m
-			addVSCExt,                    // ~5.5m
 			addTypescriptCheck,           // ~4m
 		)
 
@@ -247,7 +246,7 @@ func addBrowserExtensionIntegrationTests(parallelTestCount int) operations.Opera
 				withYarnCache(),
 				bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
 				bk.Env("BROWSER", browser),
-				bk.Env("LOG_BROWSER_CONSOLE", "true"),
+				bk.Env("LOG_BROWSER_CONSOLE", "false"),
 				bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
 				bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
 				bk.Env("PERCY_ON", "true"),
@@ -263,6 +262,26 @@ func addBrowserExtensionIntegrationTests(parallelTestCount int) operations.Opera
 	}
 }
 
+func recordBrowserExtensionIntegrationTests(pipeline *bk.Pipeline) {
+	for _, browser := range browsers {
+		pipeline.AddStep(
+			fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
+			withYarnCache(),
+			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
+			bk.Env("BROWSER", browser),
+			bk.Env("LOG_BROWSER_CONSOLE", "false"),
+			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
+			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
+			bk.Cmd("yarn workspace @sourcegraph/browser -s run record-integration"),
+			// Retry may help in case if command failed due to hitting the rate limit or similar kind of error on the code host:
+			// https://docs.github.com/en/rest/reference/search#rate-limit
+			bk.AutomaticRetry(1),
+			bk.ArtifactPaths("./puppeteer/*.png"),
+		)
+	}
+}
+
 func addBrowserExtensionUnitTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest::chrome: Test (client/browser)",
 		withYarnCache(),
@@ -272,19 +291,6 @@ func addBrowserExtensionUnitTests(pipeline *bk.Pipeline) {
 			},
 		}),
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
-}
-
-// Builds and tests the VS Code extensions.
-func addVSCExt(pipeline *bk.Pipeline) {
-	pipeline.AddStep(
-		":vscode: Puppeteer tests for VS Code extension",
-		withYarnCache(),
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn generate"),
-		bk.Cmd("yarn --cwd client/vscode -s build"),
-		bk.Cmd("yarn --cwd client/vscode -s package"),
-		bk.Cmd("yarn --cwd client/vscode -s test --verbose"),
-	)
 }
 
 func clientIntegrationTests(pipeline *bk.Pipeline) {
@@ -346,6 +352,7 @@ func clientChromaticTests(autoAcceptChanges bool) operations.Operation {
 			// Unless we plan on automatically accepting these changes, we only run this
 			// step on ready-for-review pull requests.
 			stepOpts = append(stepOpts, bk.IfReadyForReview())
+			chromaticCommand += " | ./dev/ci/post-chromatic.sh"
 		}
 
 		pipeline.AddStep(":chromatic: Upload Storybook to Chromatic",
@@ -846,6 +853,8 @@ func uploadBuildeventTrace() operations.Operation {
 func prPreview() operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":globe_with_meridians: Client PR preview",
+			// Soft-fail with code 222 if nothing has changed
+			bk.SoftFail(222),
 			bk.Cmd("dev/ci/render-pr-preview.sh"))
 	}
 }

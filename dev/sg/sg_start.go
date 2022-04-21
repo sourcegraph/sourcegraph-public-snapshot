@@ -12,6 +12,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -72,7 +73,11 @@ var (
 			addToMacOSFirewallFlag,
 		},
 		BashComplete: completeOptions(func() (options []string) {
-			for name := range globalConf.Commandsets {
+			config, _ := sgconf.Get(configFile, configOverwriteFile)
+			if config == nil {
+				return
+			}
+			for name := range config.Commandsets {
 				options = append(options, name)
 			}
 			return
@@ -91,36 +96,37 @@ If no commandset is specified, it starts the commandset with the name 'default'.
 Use this to start your Sourcegraph environment!
 `)
 
-	ok, warning := parseConf(configFlag, overwriteConfigFlag)
-	if ok {
-		fmt.Fprintf(&out, "\n")
-		fmt.Fprintf(&out, "AVAILABLE COMMANDSETS IN %s%s%s\n", output.StyleBold, configFlag, output.StyleReset)
-
-		var names []string
-		for name := range globalConf.Commandsets {
-			switch name {
-			case "enterprise-codeintel":
-				names = append(names, fmt.Sprintf("  %s 🧠", name))
-			case "batches":
-				names = append(names, fmt.Sprintf("  %s 🦡", name))
-			default:
-				names = append(names, fmt.Sprintf("  %s", name))
-			}
-		}
-		sort.Strings(names)
-		fmt.Fprint(&out, strings.Join(names, "\n"))
-	} else {
+	config, err := sgconf.Get(configFile, configOverwriteFile)
+	if err != nil {
 		out.Write([]byte("\n"))
-		output.NewOutput(&out, output.OutputOpts{}).WriteLine(warning)
+		output.NewOutput(&out, output.OutputOpts{}).WriteLine(newWarningLinef(err.Error()))
+		return out.String()
 	}
+
+	fmt.Fprintf(&out, "\n")
+	fmt.Fprintf(&out, "AVAILABLE COMMANDSETS IN %s%s%s:\n", output.StyleBold, configFile, output.StyleReset)
+
+	var names []string
+	for name := range config.Commandsets {
+		switch name {
+		case "enterprise-codeintel":
+			names = append(names, fmt.Sprintf("  %s 🧠", name))
+		case "batches":
+			names = append(names, fmt.Sprintf("  %s 🦡", name))
+		default:
+			names = append(names, fmt.Sprintf("  %s", name))
+		}
+	}
+	sort.Strings(names)
+	fmt.Fprint(&out, strings.Join(names, "\n"))
 
 	return out.String()
 }
 
 func startExec(ctx context.Context, args []string) error {
-	ok, errLine := parseConf(configFlag, overwriteConfigFlag)
-	if !ok {
-		stdout.Out.WriteLine(errLine)
+	config, err := sgconf.Get(configFile, configOverwriteFile)
+	if err != nil {
+		writeWarningLinef(err.Error())
 		os.Exit(1)
 	}
 
@@ -130,15 +136,15 @@ func startExec(ctx context.Context, args []string) error {
 	}
 
 	if len(args) != 1 {
-		if globalConf.DefaultCommandset != "" {
-			args = append(args, globalConf.DefaultCommandset)
+		if config.DefaultCommandset != "" {
+			args = append(args, config.DefaultCommandset)
 		} else {
 			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: No commandset specified and no 'defaultCommandset' specified in sg.config.yaml\n"))
 			return flag.ErrHelp
 		}
 	}
 
-	set, ok := globalConf.Commandsets[args[0]]
+	set, ok := config.Commandsets[args[0]]
 	if !ok {
 		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: commandset %q not found :(", args[0]))
 		return flag.ErrHelp
@@ -179,10 +185,10 @@ func startExec(ctx context.Context, args []string) error {
 		}
 	}
 
-	return startCommandSet(ctx, set, globalConf, addToMacOSFirewall)
+	return startCommandSet(ctx, set, config, addToMacOSFirewall)
 }
 
-func startCommandSet(ctx context.Context, set *Commandset, conf *Config, addToMacOSFirewall bool) error {
+func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.Config, addToMacOSFirewall bool) error {
 	if err := runChecksWithName(ctx, set.Checks); err != nil {
 		return err
 	}

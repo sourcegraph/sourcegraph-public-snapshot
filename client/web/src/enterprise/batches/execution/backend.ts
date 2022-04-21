@@ -1,7 +1,8 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { asError, ErrorLike } from '@sourcegraph/common'
+import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
 
 import { fileDiffFields } from '../../../backend/diff'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -12,7 +13,6 @@ import {
     BatchSpecExecutionFields,
     BatchSpecWorkspaceByIDResult,
     BatchSpecWorkspaceByIDVariables,
-    BatchSpecWorkspaceFields,
     BatchSpecWorkspacesResult,
     BatchSpecWorkspaceStepFileDiffsResult,
     BatchSpecWorkspaceStepFileDiffsVariables,
@@ -25,32 +25,44 @@ import {
     RetryWorkspaceExecutionVariables,
     RetryBatchSpecExecutionResult,
     RetryBatchSpecExecutionVariables,
-    BatchSpecWorkspaceListFields,
     BatchSpecWorkspaceState,
+    VisibleBatchSpecWorkspaceFields,
+    HiddenBatchSpecWorkspaceFields,
+    VisibleBatchSpecWorkspaceListFields,
+    HiddenBatchSpecWorkspaceListFields,
 } from '../../../graphql-operations'
 
 const batchSpecWorkspaceFieldsFragment = gql`
     fragment BatchSpecWorkspaceFields on BatchSpecWorkspace {
+        __typename
         id
-        steps {
-            ...BatchSpecWorkspaceStepFields
-        }
-        searchResultPaths
         queuedAt
         startedAt
         finishedAt
-        failureMessage
         state
-        changesetSpecs {
-            __typename
-            ...BatchSpecWorkspaceChangesetSpecFields
-        }
         diffStat {
             added
             changed
             deleted
         }
         placeInQueue
+        onlyFetchWorkspace
+        ignored
+        unsupported
+        cachedResultFound
+    }
+
+    fragment VisibleBatchSpecWorkspaceFields on VisibleBatchSpecWorkspace {
+        ...BatchSpecWorkspaceFields
+        steps {
+            ...BatchSpecWorkspaceStepFields
+        }
+        searchResultPaths
+        failureMessage
+        changesetSpecs {
+            __typename
+            ...BatchSpecWorkspaceChangesetSpecFields
+        }
         repository {
             name
             url
@@ -59,10 +71,6 @@ const batchSpecWorkspaceFieldsFragment = gql`
             displayName
         }
         path
-        onlyFetchWorkspace
-        ignored
-        unsupported
-        cachedResultFound
         stages {
             setup {
                 ...BatchSpecWorkspaceExecutionLogEntryFields
@@ -90,6 +98,10 @@ const batchSpecWorkspaceFieldsFragment = gql`
             firstSeenAt
             lastSeenAt
         }
+    }
+
+    fragment HiddenBatchSpecWorkspaceFields on HiddenBatchSpecWorkspace {
+        ...BatchSpecWorkspaceFields
     }
 
     fragment BatchSpecWorkspaceStepFields on BatchSpecWorkspaceStep {
@@ -224,30 +236,63 @@ export const fetchBatchSpecExecution = (id: Scalars['ID']): Observable<BatchSpec
         })
     )
 
-export const fetchBatchSpecWorkspace = (id: Scalars['ID']): Observable<BatchSpecWorkspaceFields | null> =>
-    requestGraphQL<BatchSpecWorkspaceByIDResult, BatchSpecWorkspaceByIDVariables>(
-        gql`
-            query BatchSpecWorkspaceByID($id: ID!) {
-                node(id: $id) {
-                    __typename
-                    ...BatchSpecWorkspaceFields
-                }
+export const BATCH_SPEC_WORKSPACE_BY_ID = gql`
+    query BatchSpecWorkspaceByID($id: ID!) {
+        node(id: $id) {
+            __typename
+            ... on HiddenBatchSpecWorkspace {
+                ...HiddenBatchSpecWorkspaceFields
             }
-            ${batchSpecWorkspaceFieldsFragment}
-        `,
-        { id }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(({ node }) => {
-            if (!node) {
-                return null
+            ... on VisibleBatchSpecWorkspace {
+                ...VisibleBatchSpecWorkspaceFields
             }
-            if (node.__typename !== 'BatchSpecWorkspace') {
-                throw new Error(`Node is a ${node.__typename}, not a BatchSpecWorkspace`)
-            }
-            return node
-        })
+        }
+    }
+    ${batchSpecWorkspaceFieldsFragment}
+`
+
+interface BatchSpecWorkspaceHookResult {
+    data?: VisibleBatchSpecWorkspaceFields | HiddenBatchSpecWorkspaceFields | null
+    error?: ErrorLike
+    loading: boolean
+}
+
+export const useBatchSpecWorkspace = (id: Scalars['ID']): BatchSpecWorkspaceHookResult => {
+    const { loading, data, error } = useQuery<BatchSpecWorkspaceByIDResult, BatchSpecWorkspaceByIDVariables>(
+        BATCH_SPEC_WORKSPACE_BY_ID,
+        {
+            variables: { id },
+            // Cache this data but always re-request it in the background to pick up newer changes.
+            fetchPolicy: 'cache-and-network',
+            // We continuously poll for changes to the workspace. This isn't the most effective
+            // use of network bandwidth since many of these fields aren't changing and most of
+            // the time there will be no changes at all, but it's also the easiest way to
+            // keep this in sync for now at the cost of a bit of excess network resources.
+            pollInterval: 2500,
+            // For subsequent requests while this page is open, make additional network
+            // requests; this is necessary for `refetch` to actually use the network. (see
+            // https://github.com/apollographql/apollo-client/issues/5515)
+            nextFetchPolicy: 'cache-and-network',
+        }
     )
+
+    const result: BatchSpecWorkspaceHookResult = {
+        loading,
+        error: error ? asError(error) : undefined,
+    }
+
+    if (data?.node) {
+        if (
+            data.node.__typename !== 'HiddenBatchSpecWorkspace' &&
+            data.node.__typename !== 'VisibleBatchSpecWorkspace'
+        ) {
+            throw new Error(`Node is a ${data.node.__typename}, not a BatchSpecWorkspace`)
+        }
+        result.data = data.node
+    }
+
+    return result
+}
 
 export async function cancelBatchSpecExecution(id: Scalars['ID']): Promise<BatchSpecExecutionFields> {
     const result = await requestGraphQL<CancelBatchSpecExecutionResult, CancelBatchSpecExecutionVariables>(
@@ -266,7 +311,7 @@ export async function cancelBatchSpecExecution(id: Scalars['ID']): Promise<Batch
 }
 
 const batchSpecWorkspaceStepFileDiffsFields = gql`
-    fragment BatchSpecWorkspaceStepFileDiffsFields on BatchSpecWorkspace {
+    fragment BatchSpecWorkspaceStepFileDiffsFields on VisibleBatchSpecWorkspace {
         step(index: $step) {
             diff {
                 fileDiffs(first: $first, after: $after) {
@@ -301,7 +346,9 @@ export const queryBatchSpecWorkspaceStepFileDiffs = ({
             query BatchSpecWorkspaceStepFileDiffs($node: ID!, $step: Int!, $first: Int, $after: String) {
                 node(id: $node) {
                     __typename
-                    ...BatchSpecWorkspaceStepFileDiffsFields
+                    ... on VisibleBatchSpecWorkspace {
+                        ...BatchSpecWorkspaceStepFileDiffsFields
+                    }
                 }
             }
 
@@ -314,8 +361,11 @@ export const queryBatchSpecWorkspaceStepFileDiffs = ({
             if (!node) {
                 throw new Error(`BatchSpecWorkspace with ID ${nodeID} does not exist`)
             }
-            if (node.__typename !== 'BatchSpecWorkspace') {
-                throw new Error(`The given ID is a ${node.__typename}, not a BatchSpecWorkspace`)
+            if (node.__typename === 'HiddenBatchSpecWorkspace') {
+                throw new Error('No access to this workspace')
+            }
+            if (node.__typename !== 'VisibleBatchSpecWorkspace') {
+                throw new Error(`The given ID is a ${node.__typename}, not a VisibleBatchSpecWorkspace`)
             }
             if (!node.step) {
                 throw new Error('The given Step is not available')
@@ -355,11 +405,18 @@ const BATCH_SPEC_WORKSPACES = gql`
             hasNextPage
         }
         nodes {
-            ...BatchSpecWorkspaceListFields
+            __typename
+            ... on HiddenBatchSpecWorkspace {
+                ...HiddenBatchSpecWorkspaceListFields
+            }
+            ... on VisibleBatchSpecWorkspace {
+                ...VisibleBatchSpecWorkspaceListFields
+            }
         }
     }
 
     fragment BatchSpecWorkspaceListFields on BatchSpecWorkspace {
+        __typename
         id
         state
         diffStat {
@@ -368,6 +425,14 @@ const BATCH_SPEC_WORKSPACES = gql`
             deleted
         }
         placeInQueue
+        ignored
+        unsupported
+        cachedResultFound
+    }
+
+    fragment VisibleBatchSpecWorkspaceListFields on VisibleBatchSpecWorkspace {
+        __typename
+        ...BatchSpecWorkspaceListFields
         repository {
             name
             url
@@ -376,9 +441,11 @@ const BATCH_SPEC_WORKSPACES = gql`
             displayName
         }
         path
-        ignored
-        unsupported
-        cachedResultFound
+    }
+
+    fragment HiddenBatchSpecWorkspaceListFields on HiddenBatchSpecWorkspace {
+        __typename
+        ...BatchSpecWorkspaceListFields
     }
 `
 
@@ -386,8 +453,12 @@ export const useWorkspacesListConnection = (
     batchSpecID: Scalars['ID'],
     search: string | null,
     state: BatchSpecWorkspaceState | null
-): UseConnectionResult<BatchSpecWorkspaceListFields> =>
-    useConnection<BatchSpecWorkspacesResult, BatchSpecWorkspacesVariables, BatchSpecWorkspaceListFields>({
+): UseConnectionResult<HiddenBatchSpecWorkspaceListFields | VisibleBatchSpecWorkspaceListFields> =>
+    useConnection<
+        BatchSpecWorkspacesResult,
+        BatchSpecWorkspacesVariables,
+        HiddenBatchSpecWorkspaceListFields | VisibleBatchSpecWorkspaceListFields
+    >({
         query: BATCH_SPEC_WORKSPACES,
         variables: {
             node: batchSpecID,

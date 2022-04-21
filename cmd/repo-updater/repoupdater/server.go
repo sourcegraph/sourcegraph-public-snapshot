@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -192,13 +193,17 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 
 	var sourcer repos.Sourcer
 	if sourcer = s.Sourcer; sourcer == nil {
-		sourcer = repos.NewSourcer(database.NewDB(s.Handle().DB()), httpcli.ExternalClientFactory, repos.WithDB(s.Handle().DB()))
+		db := database.NewDB(s.Handle().DB())
+		depsSvc := livedependencies.GetService(db, nil)
+		sourcer = repos.NewSourcer(database.NewDB(s.Handle().DB()), httpcli.ExternalClientFactory, repos.WithDependenciesService(depsSvc))
 	}
 	src, err := sourcer(&types.ExternalService{
-		ID:          req.ExternalService.ID,
-		Kind:        req.ExternalService.Kind,
-		DisplayName: req.ExternalService.DisplayName,
-		Config:      req.ExternalService.Config,
+		ID:              req.ExternalService.ID,
+		Kind:            req.ExternalService.Kind,
+		DisplayName:     req.ExternalService.DisplayName,
+		Config:          req.ExternalService.Config,
+		NamespaceUserID: req.ExternalService.NamespaceUserID,
+		NamespaceOrgID:  req.ExternalService.NamespaceOrgID,
 	})
 	if err != nil {
 		log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)

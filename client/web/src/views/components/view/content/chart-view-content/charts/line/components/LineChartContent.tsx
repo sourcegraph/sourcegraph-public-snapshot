@@ -281,6 +281,8 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                                     orientation="left"
                                     tickValues={yTicks}
                                     tickFormat={numberFormatter}
+                                    /* eslint-disable-next-line @typescript-eslint/ban-ts-comment */
+                                    // @ts-ignore
                                     tickLabelProps={getTickYProps}
                                     tickComponent={Tick}
                                     axisLineClassName={classNames(styles.axisLine, styles.axisLineVertical)}
@@ -295,6 +297,8 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                                     tickValues={xScale.ticks(numberOfTicksX)}
                                     tickFormat={dateTickFormatter}
                                     numTicks={numberOfTicksX}
+                                    /* eslint-disable-next-line @typescript-eslint/ban-ts-comment */
+                                    // @ts-ignore
                                     tickLabelProps={getTickXProps}
                                     tickComponent={Tick}
                                     tickLength={8}

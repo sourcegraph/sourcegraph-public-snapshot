@@ -110,7 +110,15 @@ const PlainChart = () => {
         },
     ]
 
-    return <LineChart width={400} height={400} data={DATA} series={SERIES} getXValue={getXValue} />
+    return (
+        <div style={{ width: 400, height: 400 }}>
+            <ParentSize className="flex-1">
+                {({ width, height }) => (
+                    <LineChart width={width} height={height} data={DATA} series={SERIES} getXValue={getXValue} />
+                )}
+            </ParentSize>
+        </div>
+    )
 }
 
 const PlainStackedChart = () => {

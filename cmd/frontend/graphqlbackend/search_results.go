@@ -409,7 +409,7 @@ func LogSearchLatency(ctx context.Context, db database.DB, wg *sync.WaitGroup, s
 			types = append(types, "regexp")
 		} else if q.IsStructural() {
 			types = append(types, "structural")
-		} else if len(si.Query.Fields()["file"]) > 0 {
+		} else if si.Query.Exists(query.FieldFile) {
 			// No search pattern specified and file: is specified.
 			types = append(types, "file")
 		} else {
@@ -595,8 +595,11 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 
 	for {
 		// Query search results.
-		var err error
-		j, err := jobutil.ToSearchJob(r.SearchInputs, r.SearchInputs.Query)
+		b, err := query.ToBasicQuery(r.SearchInputs.Query)
+		if err != nil {
+			return nil, err
+		}
+		j, err := jobutil.ToSearchJob(r.SearchInputs, b)
 		if err != nil {
 			return nil, err
 		}
@@ -658,12 +661,6 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	return stats, nil
 }
 
-// isContextError returns true if ctx.Err() is not nil or if err
-// is an error caused by context cancelation or timeout.
-func isContextError(ctx context.Context, err error) bool {
-	return ctx.Err() != nil || errors.IsAny(err, context.Canceled, context.DeadlineExceeded)
-}
-
 // SearchResultResolver is a resolver for the GraphQL union type `SearchResult`.
 //
 // Supported types:
@@ -677,6 +674,4 @@ type SearchResultResolver interface {
 	ToRepository() (*RepositoryResolver, bool)
 	ToFileMatch() (*FileMatchResolver, bool)
 	ToCommitSearchResult() (*CommitSearchResultResolver, bool)
-
-	ResultCount() int32
 }

@@ -8,8 +8,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/sync/semaphore"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/lockfiles"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/lockfiles"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -26,7 +26,9 @@ var (
 	syncerSemaphoreWeight    = env.MustGetInt("CODEINTEL_DEPENDENCIES_LOCKFILES_SYNCER_WEIGHT", 64, "The maximum number of concurrent routines actively syncing repositories.")
 )
 
-func GetService(db database.DB, syncer Syncer) *Service {
+// GetService creates or returns an already-initialized dependencies service. If the service is
+// new, it will use the given database handle and git/syncer instances.
+func GetService(db database.DB, gitService GitService, syncer Syncer) *Service {
 	svcOnce.Do(func() {
 		observationContext := &observation.Context{
 			Logger:     log15.Root(),
@@ -34,7 +36,6 @@ func GetService(db database.DB, syncer Syncer) *Service {
 			Registerer: prometheus.DefaultRegisterer,
 		}
 
-		gitService := lockfiles.NewDefaultGitService(nil, db)
 		lockfilesService := lockfiles.GetService(gitService)
 		lockfilesSemaphore := semaphore.NewWeighted(int64(lockfilesSemaphoreWeight))
 		syncerSemaphore := semaphore.NewWeighted(int64(syncerSemaphoreWeight))
@@ -50,4 +51,21 @@ func GetService(db database.DB, syncer Syncer) *Service {
 	})
 
 	return svc
+}
+
+// TestService creates a fresh dependencies service with the given database handle and git/syncer
+// instances.
+func TestService(db database.DB, gitService GitService, syncer Syncer) *Service {
+	lockfilesService := lockfiles.GetService(gitService)
+	lockfilesSemaphore := semaphore.NewWeighted(64)
+	syncerSemaphore := semaphore.NewWeighted(64)
+
+	return newService(
+		store.GetStore(db),
+		lockfilesService,
+		lockfilesSemaphore,
+		syncer,
+		syncerSemaphore,
+		&observation.TestContext,
+	)
 }

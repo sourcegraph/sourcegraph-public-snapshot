@@ -41,8 +41,8 @@ export const RepositoryField = forwardRef((props: RepositoryFieldProps, referenc
                 onChange={handleInputChange}
             />
 
-            <ComboboxPopover className={styles.comboboxPopover}>
-                <SuggestionsPanel value={searchValue} suggestions={suggestions} />
+            <ComboboxPopover className={styles.comboboxReachPopover}>
+                <SuggestionsPanel value={searchValue} suggestions={suggestions} className={styles.popover} />
             </ComboboxPopover>
         </Combobox>
     )

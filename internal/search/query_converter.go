@@ -2,7 +2,6 @@ package search
 
 import (
 	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
-	"strconv"
 	"strings"
 	"time"
 
@@ -78,9 +77,8 @@ func mapSlice(values []string, f func(string) string) []string {
 }
 
 func count(q query.Basic, p Protocol) int {
-	if count := q.GetCount(); count != "" {
-		v, _ := strconv.Atoi(count) // Invariant: count is validated.
-		return v
+	if count := q.Count(); count != nil {
+		return *count
 	}
 
 	if q.IsStructural() {
@@ -164,7 +162,7 @@ func TimeoutDuration(b query.Basic) time.Duration {
 	timeout := b.GetTimeout()
 	if timeout != nil {
 		d = *timeout
-	} else if b.GetCount() != "" {
+	} else if b.Count() != nil {
 		// If `count:` is set but `timeout:` is not explicitly set, use the max timeout
 		d = maxTimeout
 	}

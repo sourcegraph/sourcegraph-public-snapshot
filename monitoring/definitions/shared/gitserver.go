@@ -73,3 +73,19 @@ func (gitServer) NewClientGroup(containerName string) monitoring.Group {
 		},
 	})
 }
+
+// src_batch_log_semaphore_wait_duration_seconds_bucket
+func (gitServer) NewBatchLogSemaphoreWait(containerName string) monitoring.Group {
+	return monitoring.Group{
+		Title:  "Global operation semaphores",
+		Hidden: true,
+		Rows: []monitoring.Row{
+			{
+				NoAlertsOption("none")(Observation.Duration(ObservableConstructorOptions{
+					MetricNameRoot:        "batch_log_semaphore_wait",
+					MetricDescriptionRoot: "batch log semaphore",
+				})(containerName, monitoring.ObservableOwnerCoreApplication)).Observable(),
+			},
+		},
+	}
+}

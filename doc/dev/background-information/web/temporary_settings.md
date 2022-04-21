@@ -9,20 +9,21 @@ in the `temporary_setings` table and are queried and modified via the GraphQL AP
 
 For unauthenticated users, temporary settings are stored in `localStorage`.
 
-## Difference between temporary settings and site settings
+## Difference between temporary settings, site settings, and localStorage
 
 Site settings are the primary way to handle settings in Sourcegraph. They are accessible as
-global site settings, org settings, and user settings. These are the primary differences
-between temporary settings and site settings:
+global site settings, org settings, and user settings. Meanwhile, localStorage is a way of 
+storing settings directly in the browser. These are the primary differences between temporary 
+settings, site settings, and localStorage:
 
-|  | Site settings | Temporary settings |
-|---|---|---|
-| User editable | ✅  | ❌ |
-| Cascades from global to org to users | ✅  | ❌ |
-| Persisted across sessions | ✅  | ✅ |
-| Stored for unauthenticated users | ❌ <br /> (will use global site settings) | ✅ |
-| Typed schema | ✅  <br /> (in [`settings.schema.json`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/settings.schema.json))| ✅  <br /> (in [`TemporarySettings.ts`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/shared/src/settings/temporary/TemporarySettings.ts))|
-| Available in Go code | ✅  | ❌ |
+|  | Site settings | localStorage | Temporary settings |
+|---|---|---|---|
+| User editable | ✅  | ❌ | ❌ |
+| Cascades from global to org to users | ✅  | ❌ | ❌ |
+| Persisted across browsers when user logs in | ✅  | ❌ | ✅ |
+| Stored for unauthenticated users | ❌ <br /> (will use global site settings) | ✅ | ✅ |
+| Typed schema | ✅  <br /> (in [`settings.schema.json`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/settings.schema.json))| ❌ | ✅  <br /> (in [`TemporarySettings.ts`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/shared/src/settings/temporary/TemporarySettings.ts))|
+| Available in Go code | ✅  | ❌ | ❌ |
 
 
 ## Examples
@@ -46,6 +47,8 @@ Examples of data that should not be stored as temporary settings include:
 * Settings that need to cascade from global site settings or org settings to users
   (temporary settings don't support cascading)
 * Any settings the user would like to edit manually (temporary settings are not user-editable)
+* Any data that is specific to one device/browser (temporary settings are synced between 
+  devices for logged-in users; data that should not be synced should use localStorage)
 
 ## Using temporary settings
 

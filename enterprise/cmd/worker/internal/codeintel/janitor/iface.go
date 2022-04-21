@@ -33,6 +33,7 @@ type DBStore interface {
 	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (int, int, int, error)
 	SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []dbstore.ConfigurationPolicy, err error)
 	UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int, repositoryMatchLimit *int) (err error)
+	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (int, error)
 }
 
 type DBStoreShim struct {

@@ -21,7 +21,6 @@ import { Event } from './graphql-operations'
 import { initializeCodeSharingCommands } from './link-commands/initialize'
 import polyfillEventSource from './polyfills/eventSource'
 import { accessTokenSetting, updateAccessTokenSetting } from './settings/accessTokenSetting'
-import { displayInstanceVersionWarnings } from './settings/displayWarnings'
 import { endpointRequestHeadersSetting, endpointSetting, updateEndpointSetting } from './settings/endpointSetting'
 import { invalidateContextOnSettingsChange } from './settings/invalidation'
 import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
@@ -144,6 +143,5 @@ export function activate(context: vscode.ExtensionContext): void {
         instanceURL: initialInstanceURL,
     })
     initializeCodeSharingCommands(context, eventSourceType, localStorageService)
-    displayInstanceVersionWarnings(localStorageService)
     watchUninstall(eventSourceType, localStorageService)
 }

@@ -1,9 +1,4 @@
 .root {
-    position: fixed;
-    right: 0.75rem;
-    bottom: 0.75rem;
-    width: 20rem;
-
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -15,6 +10,18 @@
     border-radius: var(--border-radius);
 
     box-shadow: var(--dropdown-shadow);
+
+    // This is in a separate class so that we can render the widget in a
+    // different context with a different layout
+    &.fixed {
+        position: fixed;
+        right: 0.75rem;
+        bottom: 0.75rem;
+
+        &.open {
+            width: 20rem;
+        }
+    }
 
     h2 {
         font-size: 0.75rem;

@@ -32,7 +32,7 @@ var (
 		Usage:       "Get information about Sourcegraph teammates",
 		Description: `Get information about Sourcegraph teammates, such as their current time and handbook page!`,
 		Category:    CategoryCompany,
-		Action:      cli.ShowSubcommandHelp,
+		Action:      suggestSubcommandsAction,
 		Subcommands: []*cli.Command{{
 			Name:      "time",
 			ArgsUsage: "<nickname>",

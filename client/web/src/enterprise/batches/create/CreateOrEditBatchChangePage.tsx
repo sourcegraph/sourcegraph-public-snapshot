@@ -26,9 +26,14 @@ import {
     Input,
     LoadingSpinner,
     FeedbackBadge,
-    RadioButton,
     Icon,
     Panel,
+    Tabs,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    RadioButton,
 } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
@@ -72,6 +77,8 @@ export interface CreateOrEditBatchChangePageProps extends ThemeProps, SettingsCa
     initialNamespaceID?: Scalars['ID']
     /** The batch change name, if it already exists. */
     batchChangeName?: BatchChangeFields['name']
+    /** Display the configuration page in read-only mode */
+    isReadOnly?: boolean
 }
 
 /**
@@ -109,7 +116,7 @@ export const CreateOrEditBatchChangePage: React.FunctionComponent<CreateOrEditBa
     )
 
     if (!batchChangeName) {
-        return <CreatePage namespaceID={initialNamespaceID} {...props} />
+        return <CreatePage isReadOnly={false} namespaceID={initialNamespaceID} {...props} />
     }
 
     if (loading && !data) {
@@ -124,6 +131,17 @@ export const CreateOrEditBatchChangePage: React.FunctionComponent<CreateOrEditBa
         return <HeroPage icon={AlertCircleIcon} title="Batch change not found" />
     }
 
+    if (props.isReadOnly) {
+        return (
+            <CreatePage
+                isReadOnly={props.isReadOnly}
+                batchChangeName={data?.batchChange.name}
+                namespaceID={data?.batchChange.namespace.id}
+                {...props}
+            />
+        )
+    }
+
     return <EditPage batchChange={data.batchChange} refetchBatchChange={refetchBatchChange} {...props} />
 }
 
@@ -133,9 +151,77 @@ interface CreatePageProps extends SettingsCascadeProps<Settings> {
      * default to the user's own namespace.
      */
     namespaceID?: Scalars['ID']
+    /** Display configuration in read-only mode */
+    isReadOnly?: boolean
+    /** Name of batch change when in read-only mode */
+    batchChangeName?: string
 }
 
-const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, settingsCascade }) => {
+const CreatePage: React.FunctionComponent<CreatePageProps> = props => {
+    const isNewBatchChange = props.batchChangeName === undefined && !props.isReadOnly
+
+    return (
+        <div className="w-100 p-4">
+            <PageTitle title="Create new batch change" />
+            <PageHeader
+                path={[{ icon: BatchChangesIcon, to: '.' }, { text: 'Create batch change' }]}
+                className="flex-1 pb-2"
+                description="Run custom code over hundreds of repositories and manage the resulting changesets."
+                annotation={<FeedbackBadge status="experimental" feedback={{ mailto: 'support@sourcegraph.com' }} />}
+            />
+            <Tabs>
+                <TabList>
+                    <Tab className="text-content py-2 px-3">1. Configuration</Tab>
+                    <Tab className="text-content py-2 px-3" disabled={isNewBatchChange}>
+                        2. Batch spec
+                    </Tab>
+                    <Tab className="text-content py-2 px-3" disabled={isNewBatchChange}>
+                        3. Execution
+                    </Tab>
+                    <Tab className="text-content py-2 px-3" disabled={isNewBatchChange}>
+                        4. Preview
+                    </Tab>
+                </TabList>
+                <TabPanels>
+                    <TabPanel>
+                        <BatchConfigurationPage {...props} />
+                    </TabPanel>
+
+                    <TabPanel>
+                        <div>Batch spec</div>
+                    </TabPanel>
+
+                    <TabPanel>
+                        <div>Execution</div>
+                    </TabPanel>
+
+                    <TabPanel>
+                        <div>Preview</div>
+                    </TabPanel>
+                </TabPanels>
+            </Tabs>
+        </div>
+    )
+}
+
+interface BatchConfigurationPageProps extends SettingsCascadeProps<Settings> {
+    /**
+     * The namespace the batch change should be created in. If none is provided, it will
+     * default to the user's own namespace.
+     */
+    namespaceID?: Scalars['ID']
+    /** Display configuration in read-only mode */
+    isReadOnly?: boolean
+    /** Batch change when in read-only mode */
+    batchChangeName?: string
+}
+
+const BatchConfigurationPage: React.FunctionComponent<BatchConfigurationPageProps> = ({
+    namespaceID,
+    settingsCascade,
+    isReadOnly,
+    batchChangeName,
+}) => {
     const [createEmptyBatchChange, { loading, error }] = useMutation<
         CreateEmptyBatchChangeResult,
         CreateEmptyBatchChangeVariables
@@ -148,7 +234,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
         defaultSelectedNamespace
     )
 
-    const [nameInput, setNameInput] = useState('')
+    const [nameInput, setNameInput] = useState(batchChangeName || '')
     const [isNameValid, setIsNameValid] = useState<boolean>()
 
     const onNameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
@@ -168,87 +254,79 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
     }
 
     return (
-        <div className="container">
-            <div className="container col-8 my-4">
-                <PageTitle title="Create new batch change" />
-                <PageHeader
-                    path={[{ icon: BatchChangesIcon, to: '.' }, { text: 'Create batch change' }]}
-                    className="flex-1 pb-2"
-                    description="Run custom code over hundreds of repositories and manage the resulting changesets."
-                    annotation={
-                        <FeedbackBadge status="experimental" feedback={{ mailto: 'support@sourcegraph.com' }} />
-                    }
+        <Form className={styles.batchConfigForm} onSubmit={handleCreate}>
+            <Container className="mb-4">
+                {error && <ErrorAlert error={error} />}
+                <NamespaceSelector
+                    namespaces={namespaces}
+                    selectedNamespace={selectedNamespace.id}
+                    onSelect={setSelectedNamespace}
+                    disabled={isReadOnly}
                 />
-                <Form className="my-4 pb-5" onSubmit={handleCreate}>
-                    <Container className="mb-4">
-                        {error && <ErrorAlert error={error} />}
-                        <NamespaceSelector
-                            namespaces={namespaces}
-                            selectedNamespace={selectedNamespace.id}
-                            onSelect={setSelectedNamespace}
-                        />
-                        <Input
-                            label="Batch change name"
-                            value={nameInput}
-                            onChange={onNameChange}
-                            pattern={String(NAME_PATTERN)}
-                            required={true}
-                            status={isNameValid === undefined ? undefined : isNameValid ? 'valid' : 'error'}
-                        />
-                        <small className="text-muted">
-                            Give it a short, descriptive name to reference the batch change on Sourcegraph. Do not
-                            include confidential information.{' '}
-                            <span className={classNames(isNameValid === false && 'text-danger')}>
-                                Only regular characters, _ and - are allowed.
-                            </span>
-                        </small>
-                        <hr className="my-3" />
-                        <h3 className="text-muted">
-                            Visibility <Icon data-tooltip="Coming soon" as={InfoCircleOutlineIcon} />
-                        </h3>
-                        <div className="form-group mb-1">
-                            <RadioButton
-                                name="visibility"
-                                value="public"
-                                className="mr-2"
-                                checked={true}
-                                disabled={true}
-                                label="Public"
-                                aria-label="Public"
-                            />
-                        </div>
-                        <div className="form-group mb-0">
-                            <RadioButton
-                                name="visibility"
-                                value="private"
-                                className="mr-2 mb-0"
-                                disabled={true}
-                                label={
-                                    <>
-                                        Private <Icon className="text-warning" aria-hidden={true} as={LockIcon} />
-                                    </>
-                                }
-                                aria-label="Private"
-                            />
-                        </div>
-                    </Container>
-                    <div>
-                        <Button
-                            variant="primary"
-                            type="submit"
-                            onClick={handleCreate}
-                            disabled={loading || nameInput === '' || !isNameValid}
-                            className="mr-2"
-                        >
-                            Create batch change
-                        </Button>
-                        <Button variant="secondary" type="button" outline={true} onClick={handleCancel}>
-                            Cancel
-                        </Button>
-                    </div>
-                </Form>
-            </div>
-        </div>
+                <Input
+                    label="Batch change name"
+                    value={nameInput}
+                    onChange={onNameChange}
+                    pattern={String(NAME_PATTERN)}
+                    required={true}
+                    status={isNameValid === undefined ? undefined : isNameValid ? 'valid' : 'error'}
+                    placeholder="My batch change name"
+                    disabled={isReadOnly}
+                />
+                <small className="text-muted">
+                    Give it a short, descriptive name to reference the batch change on Sourcegraph. Do not include
+                    confidential information.{' '}
+                    <span className={classNames(isNameValid === false && 'text-danger')}>
+                        Only regular characters, _ and - are allowed.
+                    </span>
+                </small>
+                <hr className="my-3" />
+                <h3 className="text-muted">
+                    Visibility <Icon data-tooltip="Coming soon" as={InfoCircleOutlineIcon} />
+                </h3>
+                <div className="form-group mb-1">
+                    <RadioButton
+                        name="visibility"
+                        value="public"
+                        className="mr-2"
+                        checked={true}
+                        disabled={true}
+                        label="Public"
+                        aria-label="Public"
+                    />
+                </div>
+                <div className="form-group mb-0">
+                    <RadioButton
+                        name="visibility"
+                        value="private"
+                        className="mr-2 mb-0"
+                        disabled={true}
+                        label={
+                            <>
+                                Private <Icon className="text-warning" aria-hidden={true} as={LockIcon} />
+                            </>
+                        }
+                        aria-label="Private"
+                    />
+                </div>
+            </Container>
+
+            {!isReadOnly && (
+                <div className={styles.ctaGroup}>
+                    <Button variant="secondary" type="button" outline={true} onClick={handleCancel}>
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="primary"
+                        type="submit"
+                        onClick={handleCreate}
+                        disabled={loading || nameInput === '' || !isNameValid}
+                    >
+                        Create
+                    </Button>
+                </div>
+            )}
+        </Form>
     )
 }
 

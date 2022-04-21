@@ -29,9 +29,12 @@ func retrieveToken(ctx context.Context, out *output.Output) (string, error) {
 		return tok, nil
 	}
 
-	sec := secrets.FromContext(ctx)
+	sec, err := secrets.FromContext(ctx)
+	if err != nil {
+		return "", err
+	}
 	bkSecrets := buildkiteSecrets{}
-	err := sec.Get("buildkite", &bkSecrets)
+	err = sec.Get("buildkite", &bkSecrets)
 	if errors.Is(err, secrets.ErrSecretNotFound) {
 		str, err := getTokenFromUser(out)
 		if err != nil {

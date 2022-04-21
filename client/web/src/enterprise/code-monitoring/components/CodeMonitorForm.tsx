@@ -214,7 +214,17 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                             isSourcegraphDotCom={isSourcegraphDotCom}
                         />
                     </div>
-                    <div className={classNames(!formCompletion.triggerCompleted && styles.actionsDisabled)}>
+                    {/*
+                        a11y-ignore
+                        Rule: "color-contrast" (Elements must have sufficient color contrast)
+                        GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                    */}
+                    <div
+                        className={classNames(
+                            !formCompletion.triggerCompleted && styles.actionsDisabled,
+                            'a11y-ignore'
+                        )}
+                    >
                         <FormActionArea
                             actions={currentCodeMonitorState.actions}
                             setActionsCompleted={setActionsCompleted}
