@@ -88,10 +88,7 @@ export interface NotepadContainerProps {
     onCreateNotebook: (blocks: BlockInput[]) => void
 }
 
-export const NotepadContainer: React.FunctionComponent<NotepadContainerProps> = ({
-    initialOpen,
-    onCreateNotebook,
-}) => {
+export const NotepadContainer: React.FunctionComponent<NotepadContainerProps> = ({ initialOpen, onCreateNotebook }) => {
     const newEntry = useNotepadState(state => state.addableEntry)
     const entries = useNotepadState(state => state.entries)
     const canRestore = useNotepadState(state => state.canRestoreSession)
@@ -324,11 +321,7 @@ export const Notepad: React.FunctionComponent<NotepadProps> = ({
     )
 
     return (
-        <section
-            className={classNames(styles.root, className, { [styles.open]: open })}
-            id={NOTEPAD_ID}
-            role="dialog"
-        >
+        <section className={classNames(styles.root, className, { [styles.open]: open })} id={NOTEPAD_ID} role="dialog">
             <Button
                 aria-label={(open ? 'Close' : 'Open') + ' Notepad'}
                 variant="icon"

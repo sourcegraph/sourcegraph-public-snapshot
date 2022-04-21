@@ -223,7 +223,7 @@
           }
         },
         "enableSearchStack": {
-          "description": "DEPRECATED: You can enable/disable the notepad on the notebooks list page.",
+          "description": "REMOVED: This feature can now be enabled/disabled via the notepad button on the notebooks list page.",
           "type": "boolean",
           "default": false,
           "!go": {

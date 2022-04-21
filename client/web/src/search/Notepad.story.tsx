@@ -4,13 +4,13 @@ import { ComponentStory, ComponentMeta } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
 
 import { WebStory } from '../components/WebStory'
 import { useNotepadState } from '../stores'
 import { NotepadEntry, NotepadStore } from '../stores/notepad'
 
 import { NotepadContainer } from './Notepad'
-import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
 
 function NotepadWrapper({
     entries = [],
@@ -23,9 +23,11 @@ function NotepadWrapper({
         useNotepadState.setState({ entries, previousEntries, canRestoreSession }, true)
     }, [entries, previousEntries, canRestoreSession])
 
-    return <MockTemporarySettings settings={{ 'search.notepad.enabled': enableNotepad }}>
-        <NotepadContainer onCreateNotebook={noop} initialOpen={open} />
+    return (
+        <MockTemporarySettings settings={{ 'search.notepad.enabled': enableNotepad }}>
+            <NotepadContainer onCreateNotebook={noop} initialOpen={open} />
         </MockTemporarySettings>
+    )
 }
 
 const META: ComponentMeta<typeof NotepadContainer> = {
@@ -63,7 +65,7 @@ NotepadClosed.args = {
     entries: mockEntries,
 }
 
-export const NotepadClosedEmpty= Template.bind({})
+export const NotepadClosedEmpty = Template.bind({})
 NotepadClosedEmpty.args = {
     entries: [],
 }
@@ -73,7 +75,6 @@ NotepadOpen.args = {
     entries: mockEntries,
     open: true,
 }
-
 
 export const NotepadRestorePreviousSession = Template.bind({})
 NotepadRestorePreviousSession.args = {
