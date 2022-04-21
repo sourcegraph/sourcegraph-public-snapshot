@@ -5,6 +5,9 @@ import (
 	"encoding/hex"
 	"hash/fnv"
 	"strings"
+	"time"
+
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -22,15 +25,39 @@ type RateLimitSyncer struct {
 	registry      *ratelimit.Registry
 	serviceLister externalServiceLister
 	// How many services to fetch in each DB call
-	limit int64
+	pageSize int
+	// Rate limit to apply when making DB requests, optional.
+	limiter *rate.Limiter
+}
+
+type RateLimitSyncerOpts struct {
+	// The number of external services to fetch while paginating. Optional, will
+	// default to 500
+	PageSize int
+	// Yes, we need to rate limit our rate limit syncing. This is because when
+	// encryption is enabled on an instance fetching external services is not free as
+	// it might require a decryption step. On Cloud this incurs an API call to Cloud
+	// KMS. The limiter is optional.
+	//
+	// If a limiter is supplied we ensure that PageSize is never larger than the
+	// limiters burst size.
+	Limiter *rate.Limiter
 }
 
 // NewRateLimitSyncer returns a new syncer
-func NewRateLimitSyncer(registry *ratelimit.Registry, serviceLister externalServiceLister) *RateLimitSyncer {
+func NewRateLimitSyncer(registry *ratelimit.Registry, serviceLister externalServiceLister, opts RateLimitSyncerOpts) *RateLimitSyncer {
+	pageSize := opts.PageSize
+	if pageSize == 0 {
+		pageSize = 500
+	}
+	if opts.Limiter != nil && opts.Limiter.Burst() > pageSize {
+		pageSize = opts.Limiter.Burst()
+	}
 	r := &RateLimitSyncer{
 		registry:      registry,
 		serviceLister: serviceLister,
-		limit:         500,
+		pageSize:      pageSize,
+		limiter:       opts.Limiter,
 	}
 	return r
 }
@@ -38,14 +65,26 @@ func NewRateLimitSyncer(registry *ratelimit.Registry, serviceLister externalServ
 // SyncRateLimiters syncs rate limiters for external services, the sync will
 // happen for all external services if no IDs are given.
 func (r *RateLimitSyncer) SyncRateLimiters(ctx context.Context, ids ...int64) error {
+	return r.SyncLimitersSince(ctx, time.Time{}, ids...)
+}
+
+// SyncLimitersSince is the same as SyncRateLimiters but will only sync rate limiters
+// for external service that have been update after t.
+func (r *RateLimitSyncer) SyncLimitersSince(ctx context.Context, t time.Time, ids ...int64) error {
 	cursor := database.LimitOffset{
-		Limit: int(r.limit),
+		Limit: r.pageSize,
 	}
 	for {
+		if r.limiter != nil {
+			if err := r.limiter.WaitN(ctx, cursor.Limit); err != nil {
+				return errors.Wrap(err, "waiting for rate limiter")
+			}
+		}
 		services, err := r.serviceLister.List(ctx,
 			database.ExternalServicesListOptions{
-				IDs:         ids,
-				LimitOffset: &cursor,
+				IDs:          ids,
+				LimitOffset:  &cursor,
+				UpdatedAfter: t,
 			},
 		)
 		if err != nil {
@@ -70,7 +109,7 @@ func (r *RateLimitSyncer) SyncRateLimiters(ctx context.Context, ids ...int64) er
 			l.SetLimit(limit)
 		}
 
-		if len(services) < int(r.limit) {
+		if len(services) < int(r.pageSize) {
 			break
 		}
 	}
