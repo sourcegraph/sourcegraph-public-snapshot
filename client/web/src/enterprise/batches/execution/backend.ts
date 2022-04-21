@@ -8,8 +8,6 @@ import { fileDiffFields } from '../../../backend/diff'
 import { requestGraphQL } from '../../../backend/graphql'
 import { useConnection, UseConnectionResult } from '../../../components/FilteredConnection/hooks/useConnection'
 import {
-    BatchSpecExecutionByIDResult,
-    BatchSpecExecutionByIDVariables,
     BatchSpecExecutionFields,
     BatchSpecWorkspaceByIDResult,
     BatchSpecWorkspaceByIDVariables,
@@ -21,8 +19,6 @@ import {
     CancelBatchSpecExecutionVariables,
     Scalars,
     WorkspaceStepFileDiffConnectionFields,
-    RetryWorkspaceExecutionResult,
-    RetryWorkspaceExecutionVariables,
     RetryBatchSpecExecutionResult,
     RetryBatchSpecExecutionVariables,
     BatchSpecWorkspaceState,
@@ -220,22 +216,6 @@ export const FETCH_BATCH_SPEC_EXECUTION = gql`
     ${batchSpecExecutionFieldsFragment}
 `
 
-export const fetchBatchSpecExecution = (id: Scalars['ID']): Observable<BatchSpecExecutionFields | null> =>
-    requestGraphQL<BatchSpecExecutionByIDResult, BatchSpecExecutionByIDVariables>(FETCH_BATCH_SPEC_EXECUTION, {
-        id,
-    }).pipe(
-        map(dataOrThrowErrors),
-        map(({ node }) => {
-            if (!node) {
-                return null
-            }
-            if (node.__typename !== 'BatchSpec') {
-                throw new Error(`Node is a ${node.__typename}, not a BatchSpec`)
-            }
-            return node
-        })
-    )
-
 export const BATCH_SPEC_WORKSPACE_BY_ID = gql`
     query BatchSpecWorkspaceByID($id: ID!) {
         node(id: $id) {
@@ -269,10 +249,6 @@ export const useBatchSpecWorkspace = (id: Scalars['ID']): BatchSpecWorkspaceHook
             // the time there will be no changes at all, but it's also the easiest way to
             // keep this in sync for now at the cost of a bit of excess network resources.
             pollInterval: 2500,
-            // For subsequent requests while this page is open, make additional network
-            // requests; this is necessary for `refetch` to actually use the network. (see
-            // https://github.com/apollographql/apollo-client/issues/5515)
-            nextFetchPolicy: 'cache-and-network',
         }
     )
 
@@ -490,19 +466,27 @@ export const useWorkspacesListConnection = (
         },
     })
 
-export async function retryWorkspaceExecution(id: Scalars['ID']): Promise<void> {
-    const result = await requestGraphQL<RetryWorkspaceExecutionResult, RetryWorkspaceExecutionVariables>(
-        gql`
-            mutation RetryWorkspaceExecution($id: ID!) {
-                retryBatchSpecWorkspaceExecution(batchSpecWorkspaces: [$id]) {
-                    alwaysNil
-                }
-            }
-        `,
-        { id }
-    ).toPromise()
-    dataOrThrowErrors(result)
-}
+export const RETRY_WORKSPACE_EXECUTION = gql`
+    mutation RetryWorkspaceExecution($id: ID!) {
+        retryBatchSpecWorkspaceExecution(batchSpecWorkspaces: [$id]) {
+            alwaysNil
+        }
+    }
+`
+
+// export async function retryWorkspaceExecution(id: Scalars['ID']): Promise<void> {
+//     const result = await requestGraphQL<RetryWorkspaceExecutionResult, RetryWorkspaceExecutionVariables>(
+//         gql`
+//             mutation RetryWorkspaceExecution($id: ID!) {
+//                 retryBatchSpecWorkspaceExecution(batchSpecWorkspaces: [$id]) {
+//                     alwaysNil
+//                 }
+//             }
+//         `,
+//         { id }
+//     ).toPromise()
+//     dataOrThrowErrors(result)
+// }
 
 export async function retryBatchSpecExecution(id: Scalars['ID']): Promise<BatchSpecExecutionFields> {
     return requestGraphQL<RetryBatchSpecExecutionResult, RetryBatchSpecExecutionVariables>(

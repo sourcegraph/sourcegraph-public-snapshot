@@ -66,44 +66,31 @@ export interface WorkspaceDetailsProps extends ThemeProps {
     deselectWorkspace?: () => void
 }
 
-export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = ({
-    id,
-    isLightTheme,
-    deselectWorkspace,
-}) => {
+export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = ({ id, ...props }) => {
     // Fetch and poll latest workspace information.
     const { loading, error, data } = useBatchSpecWorkspace(id)
 
-    if ((loading && data === undefined) || data === undefined) {
+    console.log({ data })
+
+    // If we're loading and haven't received any data yet
+    if (loading && !data) {
         return <LoadingSpinner />
     }
-
-    if (data === null) {
-        return <NotFoundPage />
-    }
-
-    if (error) {
+    // If we received an error before we had received any data
+    if (error && !data) {
         return <ErrorAlert error={error} />
+    }
+    // If there weren't any errors and we just didn't receive any data
+    if (!data) {
+        return <HeroPage icon={MapSearchIcon} title="404: Not Found" />
     }
 
     const workspace = data
 
     if (workspace.__typename === 'HiddenBatchSpecWorkspace') {
-        return (
-            <HiddenWorkspaceDetails
-                deselectWorkspace={deselectWorkspace}
-                isLightTheme={isLightTheme}
-                workspace={workspace}
-            />
-        )
+        return <HiddenWorkspaceDetails {...props} workspace={workspace} />
     }
-    return (
-        <VisibleWorkspaceDetails
-            deselectWorkspace={deselectWorkspace}
-            isLightTheme={isLightTheme}
-            workspace={workspace}
-        />
-    )
+    return <VisibleWorkspaceDetails {...props} workspace={workspace} />
 }
 
 interface WorkspaceHeaderProps extends Pick<WorkspaceDetailsProps, 'deselectWorkspace'> {
@@ -166,11 +153,11 @@ const WorkspaceHeader: React.FunctionComponent<WorkspaceHeaderProps> = ({
                 </Button>
             )}
         </div>
-        <hr />
+        <hr className="mb-3" />
     </>
 )
 
-interface HiddenWorkspaceDetailsProps extends Omit<WorkspaceDetailsProps, 'id'> {
+interface HiddenWorkspaceDetailsProps extends Pick<WorkspaceDetailsProps, 'deselectWorkspace'> {
     workspace: HiddenBatchSpecWorkspaceFields
 }
 
@@ -180,8 +167,6 @@ const HiddenWorkspaceDetails: React.FunctionComponent<HiddenWorkspaceDetailsProp
 }) => (
     <>
         <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
-        <IgnoredBanner workspace={workspace} />
-        <UnsupportedBanner workspace={workspace} />
         <h1 className="text-center text-muted mt-5">
             <Icon as={EyeOffOutlineIcon} />
             <VisuallyHidden>Hidden Workspace</VisuallyHidden>
@@ -219,6 +204,14 @@ const VisibleWorkspaceDetails: React.FunctionComponent<VisibleWorkspaceDetailsPr
         setShowTimeline(false)
     }, [])
 
+    if (workspace.state === BatchSpecWorkspaceState.SKIPPED && workspace.ignored) {
+        return <IgnoredWorkspaceDetails workspace={workspace} deselectWorkspace={deselectWorkspace} />
+    }
+
+    if (workspace.state === BatchSpecWorkspaceState.SKIPPED && workspace.unsupported) {
+        return <UnsupportedWorkspaceDetails workspace={workspace} deselectWorkspace={deselectWorkspace} />
+    }
+
     return (
         <>
             {showTimeline && <TimelineModal node={workspace} onCancel={onDismissTimeline} />}
@@ -245,11 +238,8 @@ const VisibleWorkspaceDetails: React.FunctionComponent<VisibleWorkspaceDetailsPr
                 </>
             )}
 
-            <IgnoredBanner workspace={workspace} />
-            <UnsupportedBanner workspace={workspace} />
-
             {workspace.changesetSpecs && workspace.state === BatchSpecWorkspaceState.COMPLETED && (
-                <div className="my-3">
+                <div className="mb-3">
                     {workspace.changesetSpecs.length === 0 && (
                         <p className="mb-0 text-muted">This workspace generated no changeset specs.</p>
                     )}
@@ -270,46 +260,53 @@ const VisibleWorkspaceDetails: React.FunctionComponent<VisibleWorkspaceDetailsPr
                         workspaceID={workspace.id}
                         isLightTheme={isLightTheme}
                     />
-                    {index !== workspace.steps.length - 1 && <hr className="m-0" />}
+                    {index !== workspace.steps.length - 1 && <hr className="my-2" />}
                 </React.Fragment>
             ))}
         </>
     )
 }
 
-const IgnoredBanner: React.FunctionComponent<{
-    workspace: HiddenBatchSpecWorkspaceFields | VisibleBatchSpecWorkspaceFields
-}> = ({ workspace }) => {
-    if (workspace.state !== BatchSpecWorkspaceState.SKIPPED || !workspace.ignored) {
-        return null
-    }
-    return (
-        <p className="text-muted text-center py-3 mb-0">
-            <strong>
-                <Icon as={LinkVariantRemoveIcon} /> This workspace has been skipped because a <code>.batchignore</code>{' '}
-                file was found.
-            </strong>
-        </p>
-    )
+interface IgnoredWorkspaceDetailsProps extends Pick<WorkspaceDetailsProps, 'deselectWorkspace'> {
+    workspace: VisibleBatchSpecWorkspaceFields
 }
 
-const UnsupportedBanner: React.FunctionComponent<{
-    workspace: HiddenBatchSpecWorkspaceFields | VisibleBatchSpecWorkspaceFields
-}> = ({ workspace }) => {
-    if (workspace.state !== BatchSpecWorkspaceState.SKIPPED || !workspace.unsupported) {
-        return null
-    }
-    return (
-        <p className="text-muted text-center py-3 mb-0">
-            <strong>
-                <Icon as={LinkVariantRemoveIcon} /> This workspace has been skipped because it is on an unsupported code
-                host.
-            </strong>
+const IgnoredWorkspaceDetails: React.FunctionComponent<IgnoredWorkspaceDetailsProps> = ({
+    workspace,
+    deselectWorkspace,
+}) => (
+    <>
+        <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
+        <h1 className="text-center text-muted mt-5">
+            <Icon as={LinkVariantRemoveIcon} />
+            <VisuallyHidden>Ignored Workspace</VisuallyHidden>
+        </h1>
+        <p className="text-center">
+            This workspace has been skipped because a <code>.batchignore</code> file is present in the workspace
+            repository.
         </p>
-    )
+        <p className="text-center">Enable the execution option to "allow ignored" to override.</p>
+    </>
+)
+
+interface UnsupportedWorkspaceDetailsProps extends Pick<WorkspaceDetailsProps, 'deselectWorkspace'> {
+    workspace: VisibleBatchSpecWorkspaceFields
 }
 
-const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+const UnsupportedWorkspaceDetails: React.FunctionComponent<UnsupportedWorkspaceDetailsProps> = ({
+    workspace,
+    deselectWorkspace,
+}) => (
+    <>
+        <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
+        <h1 className="text-center text-muted mt-5">
+            <Icon as={LinkVariantRemoveIcon} />
+            <VisuallyHidden>Unsupported Workspace</VisuallyHidden>
+        </h1>
+        <p className="text-center">This workspace has been skipped because it is from an unsupported codehost.</p>
+        <p className="text-center">Enable the execution option to "allow unsupported" to override.</p>
+    </>
+)
 
 const NumberInQueue: React.FunctionComponent<{ number: number }> = ({ number }) => {
     let suffix: string
