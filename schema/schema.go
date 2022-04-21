@@ -604,7 +604,7 @@ type ExperimentalFeatures struct {
 	// GitServerPinnedRepos description: List of repositories pinned to specific gitserver instances. The specified repositories will remain at their pinned servers on scaling the cluster. If the specified pinned server differs from the current server that stores the repository, then it must be re-cloned to the specified server.
 	GitServerPinnedRepos map[string]string `json:"gitServerPinnedRepos,omitempty"`
 	// GitserverClientLookupTableRate description: Percentage of calls to AddrFromRepo that read from the database. Only used if enableGitserverClientLookupTable is true.
-	GitserverClientLookupTableRate *int `json:"gitserverClientLookupTable.Rate,omitempty"`
+	GitserverClientLookupTableRate int `json:"gitserverClientLookupTable.Rate,omitempty"`
 	// JvmPackages description: Allow adding JVM packages code host connections
 	JvmPackages string `json:"jvmPackages,omitempty"`
 	// NpmPackages description: Allow adding npm packages code host connections

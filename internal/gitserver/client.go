@@ -326,12 +326,7 @@ func AddrForRepo(ctx context.Context, userAgent string, db database.DB, repo api
 	// Once we determine the impact of this experiment, we can remove it.
 	if envvar.SourcegraphDotComMode() && conf.Get().ExperimentalFeatures.EnableGitserverClientLookupTable {
 		// get the rate from the configuration. The rate is a percentage, and defaults to 0.
-		var rate uint64
-		if r := conf.Get().ExperimentalFeatures.GitserverClientLookupTableRate; r != nil {
-			rate = uint64(*r)
-		} else {
-			rate = 0
-		}
+		var rate uint64 = uint64(conf.Get().ExperimentalFeatures.GitserverClientLookupTableRate)
 		if rate > 100 {
 			rate = 0
 		}

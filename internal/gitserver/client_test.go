@@ -392,8 +392,6 @@ func TestAddrForRepo(t *testing.T) {
 	}
 }
 
-func intptr(v int) *int { return &v }
-
 func TestAddrForRepoFromDB(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -408,7 +406,7 @@ func TestAddrForRepoFromDB(t *testing.T) {
 			ExperimentalFeatures: &schema.ExperimentalFeatures{
 				EnableGitserverClientLookupTable: true,
 				// Set the rate at 100% for this test
-				GitserverClientLookupTableRate: intptr(100),
+				GitserverClientLookupTableRate: 100,
 			},
 		},
 	})
@@ -562,7 +560,7 @@ func TestAddrForRepoFromDBRates(t *testing.T) {
 		SiteConfiguration: schema.SiteConfiguration{
 			ExperimentalFeatures: &schema.ExperimentalFeatures{
 				EnableGitserverClientLookupTable: true,
-				GitserverClientLookupTableRate:   intptr(50),
+				GitserverClientLookupTableRate:   50,
 			},
 		},
 	})
@@ -597,7 +595,7 @@ func TestAddrForRepoFromDBRates(t *testing.T) {
 		SiteConfiguration: schema.SiteConfiguration{
 			ExperimentalFeatures: &schema.ExperimentalFeatures{
 				EnableGitserverClientLookupTable: true,
-				GitserverClientLookupTableRate:   intptr(30),
+				GitserverClientLookupTableRate:   30,
 			},
 		},
 	})
