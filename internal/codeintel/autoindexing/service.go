@@ -31,7 +31,7 @@ func (s *Service) List(ctx context.Context, opts ListOpts) (jobs []IndexJob, err
 	ctx, endObservation := s.operations.list.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return s.autoindexingStore.List(ctx, store.ListOpts(ListOpts(opts)))
+	return s.autoindexingStore.List(ctx, store.ListOpts(opts))
 }
 
 func (s *Service) Get(ctx context.Context, id int) (job IndexJob, ok bool, err error) {
@@ -39,6 +39,7 @@ func (s *Service) Get(ctx context.Context, id int) (job IndexJob, ok bool, err e
 	defer endObservation(1, observation.Args{})
 
 	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33377
+	_ = ctx
 	return IndexJob{}, false, errors.Newf("unimplemented: autoindexing.Get")
 }
 
@@ -47,6 +48,7 @@ func (s *Service) GetBatch(ctx context.Context, ids ...int) (jobs []IndexJob, er
 	defer endObservation(1, observation.Args{})
 
 	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33377
+	_ = ctx
 	return nil, errors.Newf("unimplemented: autoindexing.GetBatch")
 }
 
@@ -55,6 +57,7 @@ func (s *Service) Delete(ctx context.Context, id int) (err error) {
 	defer endObservation(1, observation.Args{})
 
 	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33377
+	_ = ctx
 	return errors.Newf("unimplemented: autoindexing.Delete")
 }
 
@@ -63,6 +66,7 @@ func (s *Service) Enqueue(ctx context.Context, jobs []IndexJob) (err error) {
 	defer endObservation(1, observation.Args{})
 
 	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33377
+	_ = ctx
 	return errors.Newf("unimplemented: autoindexing.Enqueue")
 }
 
@@ -71,6 +75,7 @@ func (s *Service) Infer(ctx context.Context, repoID int) (jobs []IndexJob, err e
 	defer endObservation(1, observation.Args{})
 
 	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33377
+	_ = ctx
 	return nil, errors.Newf("unimplemented: autoindexing.Infer")
 }
 
@@ -79,5 +84,6 @@ func (s *Service) UpdateIndexingConfiguration(ctx context.Context, repoID int) (
 	defer endObservation(1, observation.Args{})
 
 	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33377
+	_ = ctx
 	return nil, errors.Newf("unimplemented: autoindexing.UpdateIndexingConfiguration")
 }
