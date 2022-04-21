@@ -210,8 +210,8 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                             <tr>
                                 <TreeLayerCell>
                                     {treeOrError === LOADING ? (
-                                        <div>
-                                            <LoadingSpinner className="tree-page__entries-loader" />
+                                        <div className="d-flex">
+                                            <LoadingSpinner className="tree-page__entries-loader mr-2" />
                                             Loading tree
                                         </div>
                                     ) : (
