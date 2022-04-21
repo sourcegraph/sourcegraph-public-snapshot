@@ -498,8 +498,12 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
                         onChange={clearErrorsAndHandleCodeChange}
                     />
                     <EditorFeedbackPanel
-                        isValidationError={codeErrors.validation}
-                        errors={compact([codeErrors.update, codeErrors.validation, previewError, executeError])}
+                        errors={{
+                          codeUpdate: codeErrors.update,
+                          codeValidation: codeErrors.validation,
+                          preview: previewError,
+                          execute: executeError
+                        }}
                     />
 
                     {isDownloadSpecModalOpen && !downloadSpecModalDismissed ? (
