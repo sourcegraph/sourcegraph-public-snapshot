@@ -46,7 +46,7 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 	}
 	log15.Debug("Generated repoIds", "repoids", repoIds)
 
-	frames := BuildFrames(7, interval, c.clock())
+	frames := BuildFrames(7, interval, c.clock().Truncate(time.Hour*24))
 	points := timeCounts{}
 	timeseries := []TimeDataPoint{}
 
@@ -67,7 +67,7 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 				// since we are using uncompressed plans (to avoid this problem and others) right now, each execution is standalone
 				continue
 			}
-
+			log15.Info("find last commit before", "before", execution.RecordingTime)
 			commits, err := git.Commits(ctx, c.db, api.RepoName(repository), git.CommitsOptions{N: 1, Before: execution.RecordingTime.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
 			if err != nil {
 				return nil, errors.Wrap(err, "git.Commits")
