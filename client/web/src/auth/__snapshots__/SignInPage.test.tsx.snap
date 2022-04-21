@@ -73,27 +73,14 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
               />
             </div>
             <div
-              class="form-group d-flex flex-column align-content-start"
+              class="form-group d-flex flex-column align-content-start position-relative"
             >
-              <div
-                class="d-flex justify-content-between"
+              <label
+                class="align-self-start"
+                for="password"
               >
-                <label
-                  for="password"
-                >
-                  Password
-                </label>
-                <small
-                  class="form-text text-muted"
-                >
-                  <a
-                    class="anchorLink"
-                    href="/password-reset"
-                  >
-                    Forgot password?
-                  </a>
-                </small>
-              </div>
+                Password
+              </label>
               <input
                 autocomplete="current-password"
                 class="form-control"
@@ -104,6 +91,16 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
                 type="password"
                 value=""
               />
+              <small
+                class="form-text text-muted align-self-end position-absolute"
+              >
+                <a
+                  class="anchorLink"
+                  href="/password-reset"
+                >
+                  Forgot password?
+                </a>
+              </small>
             </div>
             <div
               class="form-group"
@@ -234,27 +231,14 @@ exports[`SignInPage renders sign in page (server) 1`] = `
               />
             </div>
             <div
-              class="form-group d-flex flex-column align-content-start"
+              class="form-group d-flex flex-column align-content-start position-relative"
             >
-              <div
-                class="d-flex justify-content-between"
+              <label
+                class="align-self-start"
+                for="password"
               >
-                <label
-                  for="password"
-                >
-                  Password
-                </label>
-                <small
-                  class="form-text text-muted"
-                >
-                  <a
-                    class="anchorLink"
-                    href="/password-reset"
-                  >
-                    Forgot password?
-                  </a>
-                </small>
-              </div>
+                Password
+              </label>
               <input
                 autocomplete="current-password"
                 class="form-control"
@@ -265,6 +249,16 @@ exports[`SignInPage renders sign in page (server) 1`] = `
                 type="password"
                 value=""
               />
+              <small
+                class="form-text text-muted align-self-end position-absolute"
+              >
+                <a
+                  class="anchorLink"
+                  href="/password-reset"
+                >
+                  Forgot password?
+                </a>
+              </small>
             </div>
             <div
               class="form-group"
