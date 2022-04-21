@@ -197,13 +197,13 @@ func assertLuaString(value lua.LValue) (string, error) {
 
 // assertLuaNumber returns the given value as a number or an error if the value is
 // of a different type.
-func assertLuaNumber(value lua.LValue) (float64, error) {
-	if value.Type() != lua.LTNumber {
-		return 0, NewTypeError("number", value)
-	}
+// func assertLuaNumber(value lua.LValue) (float64, error) {
+// 	if value.Type() != lua.LTNumber {
+// 		return 0, NewTypeError("number", value)
+// 	}
 
-	return float64(lua.LVAsNumber(value)), nil
-}
+// 	return float64(lua.LVAsNumber(value)), nil
+// }
 
 // assertLuaFunction returns the given value as a function or an error if the value is
 // of a different type.
