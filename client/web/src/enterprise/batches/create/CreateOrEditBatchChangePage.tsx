@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 
 import { ApolloQueryResult } from '@apollo/client'
 import classNames from 'classnames'
-import { compact, noop } from 'lodash'
+import { noop } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import LockIcon from 'mdi-react/LockIcon'
@@ -498,7 +498,12 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
                         onChange={clearErrorsAndHandleCodeChange}
                     />
                     <EditorFeedbackPanel
-                        errors={compact([codeErrors.update, codeErrors.validation, previewError, executeError])}
+                        errors={{
+                            codeUpdate: codeErrors.update,
+                            codeValidation: codeErrors.validation,
+                            preview: previewError,
+                            execute: executeError,
+                        }}
                     />
 
                     {isDownloadSpecModalOpen && !downloadSpecModalDismissed ? (
