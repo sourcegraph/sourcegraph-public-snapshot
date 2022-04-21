@@ -34,13 +34,13 @@ type RateLimitSyncerOpts struct {
 	// The number of external services to fetch while paginating. Optional, will
 	// default to 500
 	PageSize int
-	// Yes, we need to rate limit our rate limit syncing. This is because when
-	// encryption is enabled on an instance fetching external services is not free as
-	// it might require a decryption step. On Cloud this incurs an API call to Cloud
-	// KMS. The limiter is optional.
+	// We need to rate limit our rate limit syncing (!). This is because when
+	// encryption is enabled on an instance, fetching external services is not free
+	// as it might require a decryption step. On Cloud this incurs an API call to
+	// Cloud KMS.
 	//
 	// If a limiter is supplied we ensure that PageSize is never larger than the
-	// limiters burst size.
+	// limiters burst size. The limiter is optional.
 	Limiter *rate.Limiter
 }
 
