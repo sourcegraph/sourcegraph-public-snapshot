@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/exec"
 	"runtime"
 	"strings"
 
@@ -82,10 +83,14 @@ func updateToPrebuiltSG(ctx context.Context) (string, error) {
 	content := &bytes.Buffer{}
 	content.ReadFrom(resp.Body)
 
-	_, err = fileutil.UpdateFileIfDifferent(currentExecPath, content.Bytes())
+	ok, err := fileutil.UpdateFileIfDifferent(currentExecPath, content.Bytes())
 	if err != nil {
 		return "", err
 	}
+	if !ok {
+		return currentExecPath, nil
+	}
 
-	return currentExecPath, nil
+	err = exec.Command("chmod", "+x", currentExecPath).Run()
+	return currentExecPath, err
 }

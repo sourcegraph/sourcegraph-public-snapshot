@@ -3,21 +3,19 @@ import React, { FormEventHandler, RefObject, useMemo } from 'react'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Input, Link, useObservable } from '@sourcegraph/wildcard'
 
-import { LoaderButton } from '../../../../../../../../components/LoaderButton'
-import {
-    CodeInsightDashboardsVisibility,
-    CodeInsightTimeStepPicker,
-} from '../../../../../../components/creation-ui-kit'
-import { FormGroup } from '../../../../../../components/form/form-group/FormGroup'
-import { getDefaultInputProps } from '../../../../../../components/form/getDefaultInputProps'
-import { useFieldAPI } from '../../../../../../components/form/hooks/useField'
-import { FORM_ERROR, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
-import { RepositoriesField } from '../../../../../../components/form/repositories-field/RepositoriesField'
-import { LimitedAccessLabel } from '../../../../../../components/limited-access-label/LimitedAccessLabel'
-import { Insight } from '../../../../../../core'
-import { useUiFeatures } from '../../../../../../hooks/use-ui-features'
-import { CreateInsightFormFields, EditableDataSeries } from '../../types'
-import { FormSeries } from '../form-series/FormSeries'
+import { LoaderButton } from '../../../../../../../components/LoaderButton'
+import { CodeInsightDashboardsVisibility, CodeInsightTimeStepPicker } from '../../../../../components/creation-ui-kit'
+import { FormGroup } from '../../../../../components/form/form-group/FormGroup'
+import { getDefaultInputProps } from '../../../../../components/form/getDefaultInputProps'
+import { useFieldAPI } from '../../../../../components/form/hooks/useField'
+import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
+import { RepositoriesField } from '../../../../../components/form/repositories-field/RepositoriesField'
+import { LimitedAccessLabel } from '../../../../../components/limited-access-label/LimitedAccessLabel'
+import { Insight } from '../../../../../core'
+import { useUiFeatures } from '../../../../../hooks/use-ui-features'
+import { CreateInsightFormFields, EditableDataSeries } from '../types'
+
+import { FormSeries } from './form-series/FormSeries'
 
 interface CreationSearchInsightFormProps {
     /** This component might be used in edit or creation insight case. */

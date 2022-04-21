@@ -36,67 +36,39 @@ export function createLineChartContent(
     const { includeRepoRegexp = '', excludeRepoRegexp = '' } = filters ?? {}
 
     return {
-        data: getDataPoints({ series, seriesDefinitionMap, excludeRepoRegexp, includeRepoRegexp }),
         series: series
             .map<Series<BackendInsightDatum>>(line => ({
-                dataKey: line.seriesId,
+                id: line.seriesId,
+                data: line.points.map((point, index) => ({
+                    dateTime: new Date(point.dateTime),
+                    value: point.value,
+                    link: generateLinkURL({
+                        previousPoint: line.points[index - 1],
+                        series: seriesDefinitionMap[line.seriesId],
+                        point,
+                        includeRepoRegexp,
+                        excludeRepoRegexp,
+                    }),
+                })),
                 name: seriesDefinitionMap[line.seriesId]?.name ?? line.label,
                 color: seriesDefinitionMap[line.seriesId]?.stroke,
-                getLinkURL: datum => `${datum[getLinkKey(line.seriesId)]}`,
+                getYValue: datum => datum.value,
+                getXValue: datum => datum.dateTime,
+                getLinkURL: datum => datum.link,
             }))
             .sort((a, b) => semanticSort(a.name, b.name)),
-        getXValue: datum => new Date(datum.dateTime),
     }
-}
-
-interface GetDataPointsInput {
-    series: InsightDataSeriesData[]
-    seriesDefinitionMap: SeriesDefinition
-    includeRepoRegexp: string
-    excludeRepoRegexp: string
-}
-
-/**
- * Groups data series by dateTime (x-axis) of each series
- */
-export function getDataPoints(input: GetDataPointsInput): BackendInsightDatum[] {
-    const { series, seriesDefinitionMap, includeRepoRegexp, excludeRepoRegexp } = input
-    const dataByXValue = new Map<string, BackendInsightDatum>()
-
-    for (const line of series) {
-        for (const [index, point] of line.points.entries()) {
-            let dataObject = dataByXValue.get(point.dateTime)
-            if (!dataObject) {
-                dataObject = {
-                    dateTime: Date.parse(point.dateTime),
-                    // Initialize all series to null (empty chart) value
-                    ...Object.fromEntries(series.map(line => [line.seriesId, null])),
-                }
-                dataByXValue.set(point.dateTime, dataObject)
-            }
-            dataObject[line.seriesId] = point.value
-            dataObject[getLinkKey(line.seriesId)] = generateLinkURL({
-                previousPoint: line.points[index - 1],
-                series: seriesDefinitionMap[line.seriesId],
-                point,
-                includeRepoRegexp,
-                excludeRepoRegexp,
-            })
-        }
-    }
-
-    return [...dataByXValue.values()]
 }
 
 interface GenerateLinkInput {
     series: SearchBasedInsightSeries
     previousPoint?: { dateTime: string }
     point: { dateTime: string }
-    includeRepoRegexp: string
-    excludeRepoRegexp: string
+    includeRepoRegexp?: string
+    excludeRepoRegexp?: string
 }
 
-function generateLinkURL(input: GenerateLinkInput): string {
+export function generateLinkURL(input: GenerateLinkInput): string {
     const { series, point, previousPoint, includeRepoRegexp, excludeRepoRegexp } = input
 
     const date = Date.parse(point.dateTime)
@@ -118,8 +90,4 @@ function generateLinkURL(input: GenerateLinkInput): string {
     const searchQueryParameter = buildSearchURLQuery(diffQuery, SearchPatternType.literal, false)
 
     return `${window.location.origin}${PageRoutes.Search}?${searchQueryParameter}`
-}
-
-export function getLinkKey(seriesId: string): string {
-    return `${seriesId}:link`
 }
