@@ -106,14 +106,20 @@ func (i *insightViewResolver) registerDataSeriesGenerators() {
 		recordedSeries,
 	)
 
+	jitStreamingGenerator := newSeriesResolverGenerator(
+		func(series types.InsightViewSeries) bool {
+			return series.JustInTime && !series.GeneratedFromCaptureGroups
+		},
+		streamingSeriesJustInTime,
+	)
+
 	// build the chain of generators
 	jitCaptureGroupGenerator.SetNext(recordedCaptureGroupGenerator)
 	recordedCaptureGroupGenerator.SetNext(recordedGenerator)
+	recordedGenerator.SetNext(jitStreamingGenerator)
 
-	// set the local variable to the first generator in the chain
+	// set the struct variable to the first generator in the chain
 	i.dataSeriesGenerator = jitCaptureGroupGenerator
-
-	return
 }
 
 func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.InsightSeriesResolver, error) {
