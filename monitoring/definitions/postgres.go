@@ -25,11 +25,12 @@ func Postgres() *monitoring.Container {
 				Title: "General",
 				Rows: []monitoring.Row{{
 					monitoring.Observable{
-						Name:              "connections",
-						Description:       "active connections",
-						Owner:             monitoring.ObservableOwnerDevOps,
-						DataMustExist:     false, // not deployed on docker-compose
-						Query:             `sum by (job) (pg_stat_activity_count{datname!~"template.*|postgres|cloudsqladmin"})`,
+						Name:          "connections",
+						Description:   "active connections",
+						Owner:         monitoring.ObservableOwnerDevOps,
+						DataMustExist: false, // not deployed on docker-compose
+						// codeinsights-db uses the postgres name so we need to include connection information separately
+						Query:             `sum by (job) (pg_stat_activity_count{datname!~"template.*|postgres|cloudsqladmin"}) OR sum by (job) (pg_stat_activity_count{job="codeinsights-db", datname!~"template.*|cloudsqladmin"})`,
 						Panel:             monitoring.Panel().LegendFormat("{{datname}}"),
 						Warning:           monitoring.Alert().LessOrEqual(5).For(5 * time.Minute),
 						PossibleSolutions: "none",
