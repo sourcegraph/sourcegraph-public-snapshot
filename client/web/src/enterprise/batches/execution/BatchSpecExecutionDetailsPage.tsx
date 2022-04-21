@@ -455,13 +455,19 @@ const SelectedWorkspace: React.FunctionComponent<SelectedWorkspaceProps> = ({
     isLightTheme,
 }) => (
     <Card className="w-100 overflow-auto flex-grow-1">
-        <CardBody>
-            {workspace ? (
-                <WorkspaceDetails id={workspace} isLightTheme={isLightTheme} deselectWorkspace={deselectWorkspace} />
-            ) : (
-                <h3 className="text-center my-3">Select a workspace to view details.</h3>
-            )}
-        </CardBody>
+        <div className="w-100">
+            <CardBody>
+                {workspace ? (
+                    <WorkspaceDetails
+                        id={workspace}
+                        isLightTheme={isLightTheme}
+                        deselectWorkspace={deselectWorkspace}
+                    />
+                ) : (
+                    <h3 className="text-center my-3">Select a workspace to view details.</h3>
+                )}
+            </CardBody>
+        </div>
     </Card>
 )
 

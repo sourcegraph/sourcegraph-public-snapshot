@@ -124,7 +124,7 @@ const WorkspaceHeader: React.FunctionComponent<WorkspaceHeaderProps> = ({
                     ? workspace.repository.name
                     : 'Workspace in hidden repository'}
                 {workspace.__typename === 'VisibleBatchSpecWorkspace' && (
-                    <Link to={workspace.repository.url} className="ml-2" target="_blank" rel="noopener noreferrer">
+                    <Link to={workspace.repository.url} target="_blank" rel="noopener noreferrer">
                         <Icon as={ExternalLinkIcon} />
                     </Link>
                 )}
@@ -359,7 +359,6 @@ const ChangesetSpecNode: React.FunctionComponent<{ node: BatchSpecWorkspaceChang
 
     return (
         <Collapsible
-            className="py-2"
             title={
                 <div className="d-flex justify-content-between">
                     <div>
@@ -465,7 +464,6 @@ const WorkspaceStep: React.FunctionComponent<WorkspaceStepProps> = ({
 
     return (
         <Collapsible
-            className="py-2"
             titleClassName={styles.collapsible}
             title={
                 <>
