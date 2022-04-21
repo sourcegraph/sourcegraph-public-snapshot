@@ -71,9 +71,8 @@ func Scoped(t testing.TB) log.Logger {
 	return log.Scoped(t.Name(), "")
 }
 
-// GetCaptured retrieves a logger from scoped to the the given test, and returns a
-// callback, dumpLogs, which flushes the logger buffer and returns log entries. The
-// returned logger does not
+// Captured retrieves a logger from scoped to the the given test, and returns a callback,
+// dumpLogs, which flushes the logger buffer and returns log entries.
 func Captured(t testing.TB) (logger log.Logger, exportLogs func() []CapturedLog) {
 	root := Scoped(t)
 
