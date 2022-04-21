@@ -22,6 +22,10 @@ This job will eventually (and partially) replace `codeintel-janitor`
 
 This job will eventually replace `codeintel-commitgraph`.
 
+#### `codeintel-dependencies-indexer`
+
+This job periodically indexes the lockfiles found in repositories to build an index of dependencies and dependents.
+
 #### `codeintel-policies-repository-matcher`
 
 This job periodically updates an index of policy repository patterns to matching repository names.
