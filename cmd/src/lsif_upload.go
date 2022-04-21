@@ -219,18 +219,13 @@ func (e errorWithHint) Error() string {
 	return fmt.Sprintf("%s\n\n%s\n", e.err, e.hint)
 }
 
-var errUnauthorizedHint = strings.Join([]string{
-	"You may need to specify or update your GitHub access token to use this endpoint.",
-	"See https://docs.sourcegraph.com/cli/references/lsif/upload.",
-}, "\n")
-
 // handleLSIFUploadError writes the given error to the given output. If the
 // given output object is nil then the error will be written to standard out.
 //
 // This method returns the error that should be passed back up to the runner.
 func handleLSIFUploadError(out *output.Output, err error) error {
 	if err == upload.ErrUnauthorized {
-		err = errorWithHint{err: err, hint: errUnauthorizedHint}
+		err = filterLSIFUnauthorizedError(out, err)
 	}
 
 	if lsifUploadFlags.ignoreUploadFailures {
@@ -242,7 +237,59 @@ func handleLSIFUploadError(out *output.Output, err error) error {
 	return err
 }
 
+func filterLSIFUnauthorizedError(out *output.Output, err error) error {
+	var actionableHints []string
+	needsGitHubToken := strings.HasPrefix(lsifUploadFlags.repo, "github.com")
+	needsGitLabToken := strings.HasPrefix(lsifUploadFlags.repo, "gitlab.com")
+
+	if needsGitHubToken {
+		if lsifUploadFlags.gitHubToken != "" {
+			actionableHints = append(actionableHints,
+				fmt.Sprintf("The supplied -github-token does not indicate that you have collaborator access to %s.", lsifUploadFlags.repo),
+				"Please check the value of the supplied token and its permissions on the code host and try again.",
+			)
+		} else {
+			actionableHints = append(actionableHints,
+				fmt.Sprintf("Please retry your request with a -github-token=XXX with with collaborator access to %s.", lsifUploadFlags.repo),
+				"This token will be used to check with the code host that the uploading user has write access to the target repository.",
+			)
+		}
+	} else if needsGitLabToken {
+		if lsifUploadFlags.gitLabToken != "" {
+			actionableHints = append(actionableHints,
+				fmt.Sprintf("The supplied -gitlab-token does not indicate that you have write access to %s.", lsifUploadFlags.repo),
+				"Please check the value of the supplied token and its permissions on the code host and try again.",
+			)
+		} else {
+			actionableHints = append(actionableHints,
+				fmt.Sprintf("Please retry your request with a -gitlab-token=XXX with with write access to %s.", lsifUploadFlags.repo),
+				"This token will be used to check with the code host that the uploading user has write access to the target repository.",
+			)
+		}
+	} else {
+		actionableHints = append(actionableHints,
+			"Verification is supported for the following code hosts: github.com, gitlab.com.",
+			"Please request support for additional code host verification at https://github.com/sourcegraph/sourcegraph/issues/4967.",
+		)
+	}
+
+	return errorWithHint{err: err, hint: strings.Join(mergeStringSlices(
+		[]string{"This Sourcegraph instance has enforced auth for LSIF uploads."},
+		actionableHints,
+		[]string{"For more details, see https://docs.sourcegraph.com/cli/references/lsif/upload."},
+	), "\n")}
+}
+
 // emergencyOutput creates a default Output object writing to standard out.
 func emergencyOutput() *output.Output {
 	return output.NewOutput(os.Stdout, output.OutputOpts{})
+}
+
+func mergeStringSlices(ss ...[]string) []string {
+	var combined []string
+	for _, s := range ss {
+		combined = append(combined, s...)
+	}
+
+	return combined
 }
