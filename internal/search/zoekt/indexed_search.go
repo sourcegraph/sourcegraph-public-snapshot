@@ -578,11 +578,7 @@ func (t *GlobalSearch) Run(ctx context.Context, clients job.RuntimeClients, stre
 	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	t.ZoektArgs.Query = t.GlobalZoektQuery.Generate()
 
-	g, ctx := errgroup.WithContext(ctx)
-	g.Go(func() error {
-		return DoZoektSearchGlobal(ctx, clients.Zoekt, t.ZoektArgs, stream)
-	})
-	return nil, g.Wait()
+	return nil, DoZoektSearchGlobal(ctx, clients.Zoekt, t.ZoektArgs, stream)
 }
 
 func (*GlobalSearch) Name() string {
