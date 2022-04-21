@@ -40,6 +40,7 @@ func (s *Service) Get(ctx context.Context, id int) (policy Policy, ok bool, err 
 	defer endObservation(1, observation.Args{})
 
 	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33376
+	_ = ctx
 	return Policy{}, false, errors.Newf("unimplemented: policies.Get")
 }
 
@@ -48,6 +49,7 @@ func (s *Service) Create(ctx context.Context, policy Policy) (hydratedPolicy Pol
 	defer endObservation(1, observation.Args{})
 
 	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33376
+	_ = ctx
 	return Policy{}, errors.Newf("unimplemented: policies.Create")
 }
 
@@ -56,6 +58,7 @@ func (s *Service) Update(ctx context.Context, policy Policy) (hydratedPolicy Pol
 	defer endObservation(1, observation.Args{})
 
 	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33376
+	_ = ctx
 	return Policy{}, errors.Newf("unimplemented: policies.Update")
 }
 
@@ -64,6 +67,7 @@ func (s *Service) Delete(ctx context.Context, id int) (err error) {
 	defer endObservation(1, observation.Args{})
 
 	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33376
+	_ = ctx
 	return errors.Newf("unimplemented: policies.Delete")
 }
 
@@ -72,6 +76,7 @@ func (s *Service) CommitsMatchingRetentionPolicies(ctx context.Context, repoID i
 	defer endObservation(1, observation.Args{})
 
 	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33376
+	_ = ctx
 	return nil, errors.Newf("unimplemented: policies.CommitsMatchingRetentionPolicies")
 }
 
@@ -80,5 +85,6 @@ func (s *Service) CommitsMatchingIndexingPolicies(ctx context.Context, repoID in
 	defer endObservation(1, observation.Args{})
 
 	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33376
+	_ = ctx
 	return nil, errors.Newf("unimplemented: policies.CommitsMatchingIndexingPolicies")
 }
