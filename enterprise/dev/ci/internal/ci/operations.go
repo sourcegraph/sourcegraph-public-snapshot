@@ -352,9 +352,8 @@ func clientChromaticTests(autoAcceptChanges bool) operations.Operation {
 			// Unless we plan on automatically accepting these changes, we only run this
 			// step on ready-for-review pull requests.
 			stepOpts = append(stepOpts, bk.IfReadyForReview())
+			chromaticCommand += " | ./dev/ci/post-chromatic.sh"
 		}
-
-		chromaticCommand += " | ./dev/ci/post-chromatic.sh"
 
 		pipeline.AddStep(":chromatic: Upload Storybook to Chromatic",
 			append(stepOpts, bk.Cmd(chromaticCommand))...)
