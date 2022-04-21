@@ -9,7 +9,7 @@ The recommended logger at Sourcegraph is `github.com/sourcegraph/sourcegraph/lib
    2. `log.Logger` has a variety of constructors for spawning new loggers with context, namely `Scoped`, `WithTrace`, and `WithFields`.
 2. An initialization function to be called in `func main()`, `log.Init`
    1. Log level can be configured with `SRC_LOG_LEVEL`
-   2. Do not use call this in an `init()` function
+   2. Do not use this in an `init()` function
 3. A getter to retrieve a `log.Logger` instance, `lib.Scoped`
    1. `lib.Scoped` will panic if `log.Init` is not called.
 
