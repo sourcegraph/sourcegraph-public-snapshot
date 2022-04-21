@@ -45,6 +45,7 @@ func Start(additionalJobs map[string]job.Job, registerEnterpriseMigrations func(
 		"codeintel-upload-janitor":              codeintel.NewUploadJanitorJob(),
 		"codeintel-upload-expirer":              codeintel.NewUploadExpirerJob(),
 		"codeintel-commitgraph-updater":         codeintel.NewCommitGraphUpdaterJob(),
+		"codeintel-autoindexing-scheduler":      codeintel.NewAutoindexingSchedulerJob(),
 		"codeintel-dependencies-indexer":        codeintel.NewDependenciesIndexerJob(),
 		"codeintel-policies-repository-matcher": codeintel.NewPoliciesRepositoryMatcherJob(),
 	}
