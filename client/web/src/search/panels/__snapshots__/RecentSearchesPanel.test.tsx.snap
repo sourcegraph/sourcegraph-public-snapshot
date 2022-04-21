@@ -8,11 +8,11 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
     <div
       class="d-flex border-bottom header"
     >
-      <h4
-        class="headerText"
+      <h2
+        class="h2 h4 headerText"
       >
         Recent searches
-      </h4>
+      </h2>
     </div>
     <div
       class="h-100 content"
@@ -132,11 +132,11 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
     <div
       class="d-flex border-bottom header"
     >
-      <h4
-        class="headerText"
+      <h2
+        class="h2 h4 headerText"
       >
         Recent searches
-      </h4>
+      </h2>
     </div>
     <div
       class="h-100 content"
@@ -256,11 +256,11 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
     <div
       class="d-flex border-bottom header"
     >
-      <h4
-        class="headerText"
+      <h2
+        class="h2 h4 headerText"
       >
         Recent searches
-      </h4>
+      </h2>
     </div>
     <div
       class="h-100 content"
@@ -370,11 +370,11 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
     <div
       class="d-flex border-bottom header"
     >
-      <h4
-        class="headerText"
+      <h2
+        class="h2 h4 headerText"
       >
         Recent searches
-      </h4>
+      </h2>
     </div>
     <div
       class="h-100 content"
