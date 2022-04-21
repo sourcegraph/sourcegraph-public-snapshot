@@ -15,58 +15,71 @@ const StoryConfig: Meta = {
 export default StoryConfig
 
 interface Datum {
-    a: number
-    b: number
-    c: number
+    value: number
     x: number
 }
 
+const getXValue = (datum: Datum): Date => new Date(datum.x)
+const getYValue = (datum: Datum): number => datum.value
+
 const SERIES: Series<Datum>[] = [
     {
-        dataKey: 'a',
+        id: 'a',
+        data: [{ x: 1588879300286, value: 134 }],
         name: 'A metric',
         color: 'var(--blue)',
+        getXValue,
+        getYValue,
     },
     {
-        dataKey: 'c',
+        id: 'c',
+        data: [{ x: 1588879300286, value: 190 }],
         name: 'C metric',
         color: 'var(--purple)',
+        getXValue,
+        getYValue,
     },
     {
-        dataKey: 'b',
+        id: 'b',
+        data: [{ x: 1588879300286, value: 190 }],
         name: 'B metric',
         color: 'var(--warning)',
+        getXValue,
+        getYValue,
     },
 ]
 
 const LONG_NAMED_SERIES: Series<Datum>[] = [
     {
-        dataKey: 'a',
+        id: 'a',
+        data: [{ x: 1588879300286, value: 134 }],
         name: 'In_days,_when_all_earthly+impressions_Where_utter_novelty_for_me',
         color: 'var(--blue)',
+        getXValue,
+        getYValue,
     },
     {
-        dataKey: 'c',
+        id: 'c',
+        data: [{ x: 1588879300286, value: 190 }],
         name: 'And_looks_of_maids_and_noise_of_groves,_And_nightingale’s_plea',
         color: 'var(--purple)',
+        getXValue,
+        getYValue,
     },
     {
-        dataKey: 'b',
+        id: 'b',
+        data: [{ x: 1588879300286, value: 190 }],
         name: 'When_highly_elevated_senses,_The_love,_the_liberty,_the_pride',
         color: 'var(--warning)',
+        getXValue,
+        getYValue,
     },
 ]
 
 const ACTIVE_POINT: MinimumPointInfo<Datum> = {
-    seriesKey: 'a',
+    seriesId: 'a',
     value: 200,
     time: new Date('2020-05-07T19:21:40.286Z'),
-    datum: {
-        x: 1588879300286,
-        a: 134,
-        b: 190,
-        c: 190,
-    },
 }
 
 export const TooltipLayouts: Story = () => (

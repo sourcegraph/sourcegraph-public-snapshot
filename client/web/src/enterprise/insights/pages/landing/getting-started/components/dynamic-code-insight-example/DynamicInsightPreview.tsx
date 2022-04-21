@@ -4,6 +4,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useDeepMemo } from '@sourcegraph/wildcard'
 
+import { SeriesBasedChartTypes, SeriesChart } from '../../../../../components'
 import {
     getSanitizedRepositories,
     useLivePreview,
@@ -15,15 +16,11 @@ import {
     LivePreviewBlurBackdrop,
     LivePreviewBanner,
     LivePreviewLegend,
+    SERIES_MOCK_CHART,
 } from '../../../../../components/creation-ui-kit'
-import { SeriesBasedChartTypes, SeriesChart } from '../../../../../components/views'
 import { CodeInsightsBackendContext, SeriesChartContent } from '../../../../../core'
 import { CodeInsightTrackType, useCodeInsightViewPings } from '../../../../../pings'
-import {
-    DATA_SERIES_COLORS,
-    DEFAULT_MOCK_CHART_CONTENT,
-    EditableDataSeries,
-} from '../../../../insights/creation/search-insight'
+import { DATA_SERIES_COLORS, EditableDataSeries } from '../../../../insights/creation/search-insight'
 
 const createExampleDataSeries = (query: string): EditableDataSeries[] => [
     {
@@ -101,7 +98,7 @@ export const DynamicInsightPreview: React.FunctionComponent<DynamicInsightPrevie
                                     onDatumClick={trackDatumClicks}
                                     // We cast to unknown here because ForwardReferenceComponent
                                     // doesn't support inferring as component with generic.
-                                    {...(DEFAULT_MOCK_CHART_CONTENT as SeriesChartContent<unknown>)}
+                                    {...(SERIES_MOCK_CHART as SeriesChartContent<unknown>)}
                                 />
                                 <LivePreviewBanner>
                                     The chart preview will be shown here once you have filled out the repositories and
