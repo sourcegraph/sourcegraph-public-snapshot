@@ -104,24 +104,20 @@ func Zoekt() *monitoring.Container {
 					},
 					{
 						{
-							Name:        "repo_index_success_speed",
-							Description: "successful indexing durations",
-							Query:       `sum by (le, state) (increase(index_repo_seconds_bucket{state="success"}[$__rate_interval]))`,
-							NoAlert:     true,
-							Panel: monitoring.PanelHeatmap().With(func(o monitoring.Observable, p *sdk.Panel) {
-								p.HeatmapPanel.YAxis.Format = string(monitoring.Seconds)
-							}),
+							Name:           "repo_index_success_speed",
+							Description:    "successful indexing durations",
+							Query:          `sum by (le, state) (increase(index_repo_seconds_bucket{state="success"}[$__rate_interval]))`,
+							NoAlert:        true,
+							Panel:          monitoring.PanelHeatmap().With(zoektHeatMapPanelOptions),
 							Owner:          monitoring.ObservableOwnerSearchCore,
 							Interpretation: "Latency increases can indicate bottlenecks in the indexserver.",
 						},
 						{
-							Name:        "repo_index_fail_speed",
-							Description: "failed indexing durations",
-							Query:       `sum by (le, state) (increase(index_repo_seconds_bucket{state="fail"}[$__rate_interval]))`,
-							NoAlert:     true,
-							Panel: monitoring.PanelHeatmap().With(func(o monitoring.Observable, p *sdk.Panel) {
-								p.HeatmapPanel.YAxis.Format = string(monitoring.Seconds)
-							}),
+							Name:           "repo_index_fail_speed",
+							Description:    "failed indexing durations",
+							Query:          `sum by (le, state) (increase(index_repo_seconds_bucket{state="fail"}[$__rate_interval]))`,
+							NoAlert:        true,
+							Panel:          monitoring.PanelHeatmap().With(zoektHeatMapPanelOptions),
 							Owner:          monitoring.ObservableOwnerSearchCore,
 							Interpretation: "Failures happening after a long time indicates timeouts.",
 						},
@@ -328,10 +324,8 @@ func Zoekt() *monitoring.Container {
 							Description: "job queuing delay heatmap",
 							Query:       "sum by (le) (increase(index_queue_age_seconds_bucket[$__rate_interval]))",
 							NoAlert:     true,
-							Panel: monitoring.PanelHeatmap().With(func(o monitoring.Observable, p *sdk.Panel) {
-								p.HeatmapPanel.YAxis.Format = string(monitoring.Seconds)
-							}),
-							Owner: monitoring.ObservableOwnerSearchCore,
+							Panel:       monitoring.PanelHeatmap().With(zoektHeatMapPanelOptions),
+							Owner:       monitoring.ObservableOwnerSearchCore,
 							Interpretation: `
 							The queueing delay represents the amount of time an indexing job spent in the queue before it was processed.
 
@@ -685,4 +679,25 @@ func Zoekt() *monitoring.Container {
 			shared.NewKubernetesMonitoringGroup(bundledContainerName, monitoring.ObservableOwnerSearchCore, nil),
 		},
 	}
+}
+
+func zoektHeatMapPanelOptions(_ monitoring.Observable, p *sdk.Panel) {
+	p.DataFormat = "tsbuckets"
+
+	targets := p.GetTargets()
+	if targets != nil {
+		for _, t := range *targets {
+			t.Format = "heatmap"
+			t.LegendFormat = "{{le}}"
+
+			p.SetTarget(&t)
+		}
+	}
+
+	p.HeatmapPanel.YAxis.Format = string(monitoring.Seconds)
+	p.HeatmapPanel.YBucketBound = "upper"
+
+	p.HideZeroBuckets = true
+	p.Color.Mode = "spectrum"
+	p.Color.ColorScheme = "interpolateSpectral"
 }
