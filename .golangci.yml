@@ -3,8 +3,7 @@ linters:
   disable-all: true
   enable:
     - bodyclose
-    # Disabled due to flakes: https://github.com/sourcegraph/sourcegraph/issues/33183
-    # - depguard
+    - depguard
     - forbidigo
     - gocritic
     - goimports
