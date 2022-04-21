@@ -178,13 +178,6 @@ func PartitionRepos(
 	useIndex query.YesNoOnly,
 	containsRefGlobs bool,
 ) (indexed *IndexedRepoRevs, unindexed []*search.RepositoryRevisions, err error) {
-	if zoektStreamer == nil {
-		if useIndex == query.Only {
-			return nil, nil, errors.Errorf("invalid index:%q (indexed search is not enabled)", useIndex)
-		}
-		return nil, repos, nil
-
-	}
 	// Fallback to Unindexed if the query contains valid ref-globs.
 	if containsRefGlobs {
 		return nil, repos, nil
@@ -244,10 +237,6 @@ func PartitionRepos(
 }
 
 func DoZoektSearchGlobal(ctx context.Context, client zoekt.Streamer, args *search.ZoektParameters, c streaming.Sender) error {
-	if client == nil {
-		return nil
-	}
-
 	k := ResultCountFactor(0, args.FileMatchLimit, true)
 	searchOpts := SearchOpts(ctx, k, args.FileMatchLimit, args.Select)
 
