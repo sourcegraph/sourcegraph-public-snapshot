@@ -18,11 +18,10 @@ func printSgSetupWelcomeScreen() {
 		return fmt.Sprintf("%s%s%s", output.CombineStyles(output.StyleBold, style), content, output.StyleReset)
 	}
 
-	boxContent := func(content string) string { return genLine(output.StyleDOS, content) }
-	boxHeaderContent := func(content string) string { return genLine(output.StyleDOSHeader, content) }
-	shadow := func(content string) string { return genLine(output.StyleDOSShadow, content) }
+	boxContent := func(content string) string { return genLine(output.StyleWhiteOnPurple, content) }
+	shadow := func(content string) string { return genLine(output.StyleGreyBackground, content) }
 
-	stdout.Out.Write(boxContent(`┏━`) + boxHeaderContent(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ sg ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`) + boxContent(`━┓`))
+	stdout.Out.Write(boxContent(`┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ sg ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓`))
 	stdout.Out.Write(boxContent(`┃            _       __     __                             __                ┃`))
 	stdout.Out.Write(boxContent(`┃           | |     / /__  / /________  ____ ___  ___     / /_____           ┃`) + shadow(`  `))
 	stdout.Out.Write(boxContent(`┃           | | /| / / _ \/ / ___/ __ \/ __ '__ \/ _ \   / __/ __ \          ┃`) + shadow(`  `))
