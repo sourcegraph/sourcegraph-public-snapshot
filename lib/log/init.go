@@ -6,7 +6,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/encoders"
-	"github.com/sourcegraph/sourcegraph/lib/log/internal/global"
+	"github.com/sourcegraph/sourcegraph/lib/log/internal/globallogger"
 	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
 )
 
@@ -29,11 +29,11 @@ type Resource = otfields.Resource
 //
 // If Init is not called, Get will panic.
 func Init(r Resource) {
-	if global.IsInitialized() {
+	if globallogger.IsInitialized() {
 		panic("log.Init initialized multiple times")
 	}
 
 	level := zap.NewAtomicLevelAt(Level(os.Getenv(envSrcLogLevel)).Parse())
 	format := encoders.ParseOutputFormat(os.Getenv(envSrcLogFormat))
-	global.Init(r, level, format, development)
+	globallogger.Init(r, level, format, development)
 }

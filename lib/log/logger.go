@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/encoders"
-	"github.com/sourcegraph/sourcegraph/lib/log/internal/global"
+	"github.com/sourcegraph/sourcegraph/lib/log/internal/globallogger"
 	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
 	"go.uber.org/zap"
 )
@@ -63,7 +63,7 @@ type Logger interface {
 //
 // Scopes should be static values, NOT dynamic values like identifiers or parameters.
 func Scoped(scope string, description string) Logger {
-	adapted := &zapAdapter{Logger: global.Get(development)}
+	adapted := &zapAdapter{Logger: globallogger.Get(development)}
 	return adapted.Scoped(scope, description).With(otfields.AttributesNamespace)
 }
 
@@ -122,7 +122,7 @@ func (z *zapAdapter) With(fields ...Field) Logger {
 }
 
 func (z *zapAdapter) WithTrace(trace TraceContext) Logger {
-	newLogger := global.Get(development).
+	newLogger := globallogger.Get(development).
 		Named(z.scope).
 		With(zap.Inline(&encoders.TraceContextEncoder{TraceContext: trace})).
 		With(z.attributes...)

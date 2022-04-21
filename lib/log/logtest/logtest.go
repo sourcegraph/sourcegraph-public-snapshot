@@ -11,7 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/encoders"
-	"github.com/sourcegraph/sourcegraph/lib/log/internal/global"
+	"github.com/sourcegraph/sourcegraph/lib/log/internal/globallogger"
 	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
 )
 
@@ -42,7 +42,7 @@ func InitWithLevel(_ *testing.M, level log.Level) {
 
 func initGlobal(level zapcore.Level) {
 	// use an empty resource, we don't log output Resource in dev mode anyway
-	global.Init(otfields.Resource{}, zap.NewAtomicLevelAt(level), encoders.OutputConsole, true)
+	globallogger.Init(otfields.Resource{}, zap.NewAtomicLevelAt(level), encoders.OutputConsole, true)
 }
 
 // configurableAdapter exposes internal APIs on zapAdapter
