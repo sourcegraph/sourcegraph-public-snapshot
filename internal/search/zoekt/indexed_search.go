@@ -557,9 +557,6 @@ func (z *ZoektRepoSubsetSearch) Run(ctx context.Context, clients job.RuntimeClie
 		since = z.Since
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
 	return nil, zoektSearch(ctx, z.Repos, z.Query, z.Typ, clients.Zoekt, z.FileMatchLimit, z.Select, since, stream)
 }
 
