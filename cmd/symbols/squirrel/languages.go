@@ -7,6 +7,7 @@ import (
 
 	"github.com/grafana/regexp"
 	sitter "github.com/smacker/go-tree-sitter"
+	"github.com/smacker/go-tree-sitter/cpp"
 	"github.com/smacker/go-tree-sitter/csharp"
 	"github.com/smacker/go-tree-sitter/golang"
 	"github.com/smacker/go-tree-sitter/java"
@@ -229,6 +230,30 @@ var langToLangSpec = map[string]LangSpec{
 (arrow_function parameter: (identifier) @definition)            ; x => ...
 (for_in_statement left: (identifier) @definition)               ; for (const x of xs) ...
 (catch_clause parameter: (identifier) @definition)              ; catch (e) ...
+`,
+	},
+	"cpp": {
+		language: cpp.GetLanguage(),
+		commentStyle: CommentStyle{
+			nodeTypes:     []string{"comment"},
+			stripRegex:    javaStyleStripRegex,
+			ignoreRegex:   javaStyleIgnoreRegex,
+			codeFenceName: "cpp",
+		},
+		localsQuery: `
+(compound_statement) @scope ; { ... }
+(for_statement)      @scope ; for (int i = 0; ...) ...
+(for_range_loop)     @scope ; for (int x : xs) ...
+(catch_clause)       @scope ; catch (e) ...
+(lambda_expression)  @scope ; [](auto x) { ... }
+
+(declaration                    declarator: (identifier) @definition)                        ; int x;
+(init_declarator                declarator: (identifier) @definition)                        ; int x = 5;
+(parameter_declaration          declarator: (identifier) @definition)                        ; [](auto x) { ... }
+(parameter_declaration          declarator: (reference_declarator (identifier) @definition)) ; [](int& x) { ... }
+(parameter_declaration          declarator: (pointer_declarator   (identifier) @definition)) ; [](int* x) { ... }
+(optional_parameter_declaration declarator: (identifier) @definition)                        ; [](auto x = 5) { ... }
+(for_range_loop declarator: (identifier) @definition)									     ; for (int x : xs) ...
 `,
 	},
 }

@@ -262,6 +262,45 @@ const f = (p1?: number, p2 = 3, ...p3) => {
 		console.log(e)
 	}
 }
+`}, {
+		path: "test.cpp",
+		contents: `
+//         vv f.p1 def
+//         vv f.p1 ref
+//                 vv f.p2 def
+//                 vv f.p2 ref
+//                              vv f.p3 def
+//                              vv f.p3 ref
+//                                       vv f.p4 def
+//                                       vv f.p4 ref
+void f(int p1, int p2 = 3, int& p3, int* p4)
+{
+	//  v f.x def
+	//  v f.x ref
+    int x;
+
+	//  v f.y def
+	//  v f.y ref
+    int y = 5;
+
+	//       v f.i def
+	//       v f.i ref
+    for (int i = 0; ; ) { }
+
+	//       v f.j def
+	//       v f.j ref
+    for (int j : 3) { }
+
+	//   v f.g def
+	//   v f.g ref
+	//              v f.a def
+	//              v f.a ref
+	auto g = [](int a) { };
+
+	//                                   v f.e def
+	//                                   v f.e ref
+    try { } catch (const std::exception& e) { }
+}
 `},
 	}
 
