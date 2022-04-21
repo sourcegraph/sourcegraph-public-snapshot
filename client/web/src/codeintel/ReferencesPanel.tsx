@@ -3,9 +3,9 @@ import React, { useEffect, useMemo, useState } from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 import { capitalize } from 'lodash'
+import ArrowCollapseRightIcon from 'mdi-react/ArrowCollapseRightIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import ArrowCollapseRightIcon from 'mdi-react/ArrowCollapseRightIcon'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import { MemoryRouter, useHistory, useLocation } from 'react-router'
 
@@ -202,9 +202,11 @@ const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWith
                 </Code>
             </CardHeader>
             <div className={classNames('d-flex justify-content-start', styles.filter)}>
-                <Icon as={FilterOutlineIcon} className={classNames('text-muted', styles.filterIcon)} />
+                <small>
+                    <Icon as={FilterOutlineIcon} size="sm" className={styles.filterIcon} />
+                </small>
                 <Input
-                    className={classNames('py-0 my-0 w-100')}
+                    className={classNames('py-0 my-0 w-100 text-small')}
                     type="text"
                     placeholder="Type to filter by filename"
                     value={filter === undefined ? '' : filter}
@@ -434,24 +436,28 @@ export const ReferencesList: React.FunctionComponent<
                 {activeLocation !== undefined && (
                     <div className={classNames('px-0 border-left', styles.referencesSideBlob)}>
                         <CardHeader className={classNames('d-flex', styles.cardHeader)}>
-                            <Button
-                                onClick={() => setActiveLocation(undefined)}
-                                className={classNames('btn-icon p-0', styles.referencesSideBlobCollapseButton)}
-                                title="Close panel"
-                                data-tooltip="Close panel"
-                                data-placement="left"
-                            >
-                                <Icon as={ArrowCollapseRightIcon} />
-                            </Button>
-                            <Link
-                                to={activeLocation.url}
-                                onClick={event => {
-                                    event.preventDefault()
-                                    navigateToUrl(activeLocation.url)
-                                }}
-                            >
-                                {activeLocation.file}{' '}
-                            </Link>
+                            <small>
+                                <Button
+                                    onClick={() => setActiveLocation(undefined)}
+                                    className={classNames('btn-icon p-0', styles.referencesSideBlobCollapseButton)}
+                                    title="Close panel"
+                                    data-tooltip="Close panel"
+                                    data-placement="left"
+                                    size="sm"
+                                >
+                                    <Icon size="sm" as={ArrowCollapseRightIcon} className="border-0" />
+                                </Button>
+                                <Link
+                                    to={activeLocation.url}
+                                    onClick={event => {
+                                        event.preventDefault()
+                                        navigateToUrl(activeLocation.url)
+                                    }}
+                                    className={styles.referencesSideBlobFilename}
+                                >
+                                    {activeLocation.file}{' '}
+                                </Link>
+                            </small>
                         </CardHeader>
                         <SideBlob
                             {...props}
@@ -769,7 +775,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                     aria-expanded={open}
                     type="button"
                     className={classNames(
-                        'bg-transparent py-1 border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100',
+                        'bg-transparent border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100',
                         styles.locationGroup
                     )}
                 >

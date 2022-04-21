@@ -2,16 +2,20 @@ $filter-input-height: 1.5rem;
 .filter {
     height: $filter-input-height;
     padding-left: 1rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
 
     input {
-        height: $filter-input-height;
+        height: 1rem;
+        font-size: 0.75rem;
         padding-left: 0.5rem;
+        padding-top: 0;
+        padding-bottom: 0;
         border: none;
     }
 
     &--icon {
-    margin-top: 0.3rem;
-    color: var(--icon-muted);
+        color: var(--icon-muted);
     }
 }
 
@@ -24,10 +28,6 @@ $filter-input-height: 1.5rem;
 
     font-weight: 400;
 
-    &--icon {
-      // margin-top: 0.05rem;
-    }
-
     &--repo-name {
         padding-left: 0.6rem;
     }
@@ -35,16 +35,12 @@ $filter-input-height: 1.5rem;
 
 .location-group {
     padding-left: 3.75rem;
-    padding-top: 0;
-    padding-bottom: 0;
+    padding-top: 0.2rem;
+    padding-bottom: 0.2rem;
     width: 100%;
     text-align: left;
 
     transition: none !important;
-
-    &--icon {
-      // margin-top: 0.1rem;
-    }
 
     &--filename {
         padding-left: 0.6rem;
@@ -60,7 +56,7 @@ $filter-input-height: 1.5rem;
 
 .location {
     button {
-        padding-left: 3.75rem;
+        padding-left: 3.9rem;
         padding-top: 0;
         padding-bottom: 0;
         width: 100%;
@@ -146,8 +142,12 @@ $card-header-height: 1.5rem;
         overflow: auto;
     }
 
+    &--side-blob-filename {
+      height: 1rem;
+      vertical-align: middle;
+    }
+
     &--side-blob-collapse-button {
-        height: 0.5rem;
         margin-right: 0.5rem;
     }
 
