@@ -40,6 +40,7 @@ func (s *Service) Get(ctx context.Context, id int) (upload Upload, ok bool, err 
 	defer endObservation(1, observation.Args{})
 
 	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33375
+	_ = ctx
 	return Upload{}, false, errors.Newf("unimplemented: uploads.Get")
 }
 
@@ -48,6 +49,7 @@ func (s *Service) GetBatch(ctx context.Context, ids ...int) (uploads []Upload, e
 	defer endObservation(1, observation.Args{})
 
 	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33375
+	_ = ctx
 	return nil, errors.Newf("unimplemented: uploads.GetBatch")
 }
 
@@ -59,6 +61,7 @@ func (s *Service) Enqueue(ctx context.Context, state UploadState, reader io.Read
 	defer endObservation(1, observation.Args{})
 
 	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33375
+	_ = ctx
 	return errors.Newf("unimplemented: uploads.Enqueue")
 }
 
@@ -67,6 +70,7 @@ func (s *Service) Delete(ctx context.Context, id int) (err error) {
 	defer endObservation(1, observation.Args{})
 
 	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33375
+	_ = ctx
 	return errors.Newf("unimplemented: uploads.Delete")
 }
 
@@ -75,6 +79,7 @@ func (s *Service) CommitsVisibleToUpload(ctx context.Context, id int) (commits [
 	defer endObservation(1, observation.Args{})
 
 	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33375
+	_ = ctx
 	return nil, errors.Newf("unimplemented: uploads.CommitsVisibleToUpload")
 }
 
@@ -83,5 +88,6 @@ func (s *Service) UploadsVisibleToCommit(ctx context.Context, commit string) (up
 	defer endObservation(1, observation.Args{})
 
 	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33375
+	_ = ctx
 	return nil, errors.Newf("unimplemented: uploads.UploadsVisibleToCommit")
 }
