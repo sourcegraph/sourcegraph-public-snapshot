@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { number } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import { of } from 'rxjs'

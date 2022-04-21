@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react'
+import { forwardRef } from 'react'
 
 import { ForwardReferenceComponent } from '../../../types'
 import { Label } from '../../Typography/Label'

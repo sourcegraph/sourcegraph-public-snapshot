@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useCallback, useEffect, useState } from 'react'
+import { FunctionComponent, useCallback, useEffect, useState } from 'react'
 
 import { ApolloError } from '@apollo/client'
 import * as H from 'history'

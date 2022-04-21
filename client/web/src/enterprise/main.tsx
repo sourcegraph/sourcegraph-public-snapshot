@@ -7,8 +7,6 @@ import '@sourcegraph/shared/src/polyfills'
 
 import '../sentry/init'
 
-import React from 'react'
-
 import { render } from 'react-dom'
 
 import { EnterpriseWebApp } from './EnterpriseWebApp'

@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useCallback, useMemo, useState } from 'react'
+import { FunctionComponent, useCallback, useMemo, useState } from 'react'
 
 import * as H from 'history'
 import { editor } from 'monaco-editor'

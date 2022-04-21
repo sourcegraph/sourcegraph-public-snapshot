@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FocusEventHandler, forwardRef } from 'react'
+import { ChangeEvent, FocusEventHandler, forwardRef } from 'react'
 
 import classNames from 'classnames'
 

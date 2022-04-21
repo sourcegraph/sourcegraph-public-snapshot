@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { storiesOf } from '@storybook/react'
 import { addDays } from 'date-fns'
 import { of } from 'rxjs'

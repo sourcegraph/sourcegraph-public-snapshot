@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useEffect, useState, useCallback } from 'react'
+import { FunctionComponent, useEffect, useState, useCallback } from 'react'
 
 import classNames from 'classnames'
 
