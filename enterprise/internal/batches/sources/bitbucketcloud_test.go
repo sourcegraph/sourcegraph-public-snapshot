@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -153,23 +154,10 @@ func TestBitbucketCloudSource_ValidateAuthenticator(t *testing.T) {
 func TestBitbucketCloudSource_LoadChangeset(t *testing.T) {
 	ctx := context.Background()
 
-	mockChangeset := func() (*Changeset, *types.Repo, *bitbucketcloud.Repo) {
-		bbRepo := &bitbucketcloud.Repo{FullName: "org/repo", UUID: "repo-uuid"}
-		repo := &types.Repo{Metadata: bbRepo}
-		cs := &Changeset{
-			Changeset: &btypes.Changeset{
-				ExternalID: "42",
-			},
-			TargetRepo: repo,
-		}
-
-		return cs, repo, bbRepo
-	}
-
 	t.Run("invalid external ID", func(t *testing.T) {
 		s, _ := mockBitbucketCloudSource(t)
 
-		cs, _, _ := mockChangeset()
+		cs, _, _ := mockBitbucketCloudChangeset(t)
 		cs.ExternalID = "not a number"
 
 		err := s.LoadChangeset(ctx, cs)
@@ -177,7 +165,7 @@ func TestBitbucketCloudSource_LoadChangeset(t *testing.T) {
 	})
 
 	t.Run("error getting pull request", func(t *testing.T) {
-		cs, repo, _ := mockChangeset()
+		cs, repo, _ := mockBitbucketCloudChangeset(t)
 		s, client := mockBitbucketCloudSource(t)
 		want := errors.New("error")
 		client.GetPullRequestFunc.SetDefaultHook(func(ctx context.Context, r *bitbucketcloud.Repo, i int64) (*bitbucketcloud.PullRequest, error) {
@@ -192,7 +180,7 @@ func TestBitbucketCloudSource_LoadChangeset(t *testing.T) {
 	})
 
 	t.Run("pull request not found", func(t *testing.T) {
-		cs, repo, _ := mockChangeset()
+		cs, repo, _ := mockBitbucketCloudChangeset(t)
 		s, client := mockBitbucketCloudSource(t)
 		client.GetPullRequestFunc.SetDefaultHook(func(ctx context.Context, r *bitbucketcloud.Repo, i int64) (*bitbucketcloud.PullRequest, error) {
 			assert.Same(t, repo.Metadata, r)
@@ -208,20 +196,11 @@ func TestBitbucketCloudSource_LoadChangeset(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		cs, repo, bbRepo := mockChangeset()
+		cs, repo, bbRepo := mockBitbucketCloudChangeset(t)
 		s, client := mockBitbucketCloudSource(t)
-		mockAnnotatePullRequest(t, client)
-		pr := &bitbucketcloud.PullRequest{
-			ID: 420,
-			Source: bitbucketcloud.PullRequestEndpoint{
-				Branch: bitbucketcloud.PullRequestBranch{Name: "branch"},
-				Repo:   *bbRepo,
-			},
-			Destination: bitbucketcloud.PullRequestEndpoint{
-				Branch: bitbucketcloud.PullRequestBranch{Name: "main"},
-				Repo:   *bbRepo,
-			},
-		}
+		mockAnnotatePullRequestSuccess(t, client)
+
+		pr := mockBitbucketCloudPullRequest(t, bbRepo)
 		client.GetPullRequestFunc.SetDefaultHook(func(ctx context.Context, r *bitbucketcloud.Repo, i int64) (*bitbucketcloud.PullRequest, error) {
 			assert.Same(t, repo.Metadata, r)
 			assert.EqualValues(t, 42, i)
@@ -230,17 +209,122 @@ func TestBitbucketCloudSource_LoadChangeset(t *testing.T) {
 
 		err := s.LoadChangeset(ctx, cs)
 		assert.Nil(t, err)
+		assertChangesetMatchesPullRequest(t, cs, pr)
+	})
+}
 
-		// We're not thoroughly testing setChangesetMetadata() et al in this
-		// test, but we do want to ensure that the PR was used to populate
-		// fields on the Changeset.
-		assert.Equal(t, "420", cs.ExternalID)
-		assert.Equal(t, "refs/heads/branch", cs.ExternalBranch)
-		assert.Empty(t, cs.ExternalForkNamespace)
+func TestBitbucketCloudSource_CreateChangeset(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("error creating pull request", func(t *testing.T) {
+		cs, repo, _ := mockBitbucketCloudChangeset(t)
+		s, client := mockBitbucketCloudSource(t)
+
+		want := errors.New("error")
+		client.CreatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r *bitbucketcloud.Repo, pri bitbucketcloud.PullRequestInput) (*bitbucketcloud.PullRequest, error) {
+			assert.Same(t, repo.Metadata, r)
+			assert.Equal(t, cs.Title, pri.Title)
+			return nil, want
+		})
+
+		exists, err := s.CreateChangeset(ctx, cs)
+		assert.False(t, exists)
+		assert.NotNil(t, err)
+		assert.ErrorIs(t, err, want)
+	})
+
+	t.Run("error setting changeset metadata", func(t *testing.T) {
+		cs, repo, bbRepo := mockBitbucketCloudChangeset(t)
+		s, client := mockBitbucketCloudSource(t)
+		want := mockAnnotatePullRequestError(t, client)
+
+		pr := mockBitbucketCloudPullRequest(t, bbRepo)
+		client.CreatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r *bitbucketcloud.Repo, pri bitbucketcloud.PullRequestInput) (*bitbucketcloud.PullRequest, error) {
+			assert.Same(t, repo.Metadata, r)
+			assert.Equal(t, cs.Title, pri.Title)
+			return pr, nil
+		})
+
+		exists, err := s.CreateChangeset(ctx, cs)
+		assert.False(t, exists)
+		assert.NotNil(t, err)
+		assert.ErrorIs(t, err, want)
+	})
+
+	t.Run("success", func(t *testing.T) {
+		cs, repo, bbRepo := mockBitbucketCloudChangeset(t)
+		s, client := mockBitbucketCloudSource(t)
+		mockAnnotatePullRequestSuccess(t, client)
+
+		pr := mockBitbucketCloudPullRequest(t, bbRepo)
+		client.CreatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r *bitbucketcloud.Repo, pri bitbucketcloud.PullRequestInput) (*bitbucketcloud.PullRequest, error) {
+			assert.Same(t, repo.Metadata, r)
+			assert.Equal(t, cs.Title, pri.Title)
+			return pr, nil
+		})
+
+		exists, err := s.CreateChangeset(ctx, cs)
+		assert.True(t, exists)
+		assert.Nil(t, err)
+		assertChangesetMatchesPullRequest(t, cs, pr)
 	})
 }
 
 // TODO: annotatePullRequest and setChangesetMetadata need explicit unit tests.
+
+func assertChangesetMatchesPullRequest(t *testing.T, cs *Changeset, pr *bitbucketcloud.PullRequest) {
+	t.Helper()
+
+	// We're not thoroughly testing setChangesetMetadata() et al in this
+	// assertion, but we do want to ensure that the PR was used to populate
+	// fields on the Changeset.
+	assert.EqualValues(t, strconv.FormatInt(pr.ID, 10), cs.ExternalID)
+	assert.Equal(t, "refs/heads/"+pr.Source.Branch.Name, cs.ExternalBranch)
+
+	if pr.Source.Repo.UUID != pr.Destination.Repo.UUID {
+		ns, err := pr.Source.Repo.Namespace()
+		assert.Nil(t, err)
+		assert.Equal(t, ns, cs.ExternalForkNamespace)
+	} else {
+		assert.Empty(t, cs.ExternalForkNamespace)
+	}
+}
+
+// mockBitbucketCloudChangeset creates a plausible non-forked changeset, repo,
+// and Bitbucket Cloud specific repo.
+func mockBitbucketCloudChangeset(t *testing.T) (*Changeset, *types.Repo, *bitbucketcloud.Repo) {
+	t.Helper()
+
+	bbRepo := &bitbucketcloud.Repo{FullName: "org/repo", UUID: "repo-uuid"}
+	repo := &types.Repo{Metadata: bbRepo}
+	cs := &Changeset{
+		Changeset: &btypes.Changeset{
+			ExternalID: "42",
+		},
+		RemoteRepo: repo,
+		TargetRepo: repo,
+	}
+
+	return cs, repo, bbRepo
+}
+
+// mockBitbucketCloudPullRequest returns a plausible pull request that would be
+// returned from Bitbucket Cloud for a non-forked changeset.
+func mockBitbucketCloudPullRequest(t *testing.T, repo *bitbucketcloud.Repo) *bitbucketcloud.PullRequest {
+	t.Helper()
+
+	return &bitbucketcloud.PullRequest{
+		ID: 420,
+		Source: bitbucketcloud.PullRequestEndpoint{
+			Branch: bitbucketcloud.PullRequestBranch{Name: "branch"},
+			Repo:   *repo,
+		},
+		Destination: bitbucketcloud.PullRequestEndpoint{
+			Branch: bitbucketcloud.PullRequestBranch{Name: "main"},
+			Repo:   *repo,
+		},
+	}
+}
 
 func mockBitbucketCloudSource(t *testing.T) (*BitbucketCloudSource, *MockBitbucketCloudClient) {
 	t.Helper()
@@ -251,9 +335,20 @@ func mockBitbucketCloudSource(t *testing.T) (*BitbucketCloudSource, *MockBitbuck
 	return s, client
 }
 
-// mockAnnotatePullRequest configures the mock client to be able to return a
-// valid, empty set of statuses.
-func mockAnnotatePullRequest(t *testing.T, client *MockBitbucketCloudClient) {
+// mockAnnotatePullRequestError configures the mock client to return an error
+// when GetPullRequestStatuses is invoked by annotatePullRequest.
+func mockAnnotatePullRequestError(t *testing.T, client *MockBitbucketCloudClient) error {
+	t.Helper()
+
+	err := errors.New("error")
+	client.GetPullRequestStatusesFunc.SetDefaultReturn(nil, err)
+
+	return err
+}
+
+// mockAnnotatePullRequestSuccess configures the mock client to be able to
+// return a valid, empty set of statuses.
+func mockAnnotatePullRequestSuccess(t *testing.T, client *MockBitbucketCloudClient) {
 	t.Helper()
 	client.GetPullRequestStatusesFunc.SetDefaultReturn(mockEmptyResultSet(t), nil)
 }
