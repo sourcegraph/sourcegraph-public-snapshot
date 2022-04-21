@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/md5"
+	"database/sql"
 	"encoding/binary"
 	"encoding/gob"
 	"encoding/json"
@@ -17,6 +18,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/cespare/xxhash/v2"
@@ -34,6 +36,7 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/go-rendezvous"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -302,6 +305,11 @@ var addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "Number of times gitserver.AddrForRepo was invoked",
 }, []string{"user_agent"})
 
+// addrForRepoCounter is used to track the number of times AddrForRepo is called
+// and is used to determine if we can read the gitserver location from the database.
+// See AddrForRepo for more details.
+var addrForRepoCounter uint64
+
 // AddrForRepo returns the gitserver address to use for the given repo name.
 // It should never be called with a nil addresses pointer.
 func AddrForRepo(ctx context.Context, userAgent string, db database.DB, repo api.RepoName, addresses GitServerAddresses) (string, error) {
@@ -311,6 +319,38 @@ func AddrForRepo(ctx context.Context, userAgent string, db database.DB, repo api
 	rs := string(repo)
 	if repoPinned, addr := getPinnedRepoAddr(string(repo), addresses.PinnedServers); repoPinned {
 		return addr, nil
+	}
+
+	// This is an experiment to determine the impact on using the database to determine the location of a repo.
+	// It is meant to be used exclusively on Cloud and the rate will be increased progressively.
+	// Once we determine the impact of this experiment, we can remove it.
+	if envvar.SourcegraphDotComMode() && conf.Get().ExperimentalFeatures.EnableGitserverClientLookupTable {
+		// get the rate from the configuration. The rate is a percentage, and defaults to 0.
+		var rate uint64
+		if r := conf.Get().ExperimentalFeatures.GitserverClientLookupTableRate; r != nil {
+			rate = uint64(*r)
+		} else {
+			rate = 0
+		}
+		if rate > 100 {
+			rate = 0
+		}
+
+		// We are using a modulo operation to spread the calls to the database across the rate.
+		var mod uint64
+		if rate > 0 {
+			mod = 100 / rate
+		}
+
+		if rate != 0 && atomic.AddUint64(&addrForRepoCounter, 1)%mod == 0 {
+			gr, err := database.GitserverRepos(db).GetByName(ctx, repo)
+			if err == nil {
+				return gr.ShardID, nil
+			}
+			if !errors.Is(err, sql.ErrNoRows) {
+				log15.Warn("gitserver.AddrForRepo: failed to get gitserver repo from the database", "repo", repo, "err", err)
+			}
+		}
 	}
 
 	useRendezvous, err := shouldUseRendezvousHashing(ctx, db, rs)
