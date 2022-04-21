@@ -8,10 +8,8 @@ import (
 	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
@@ -25,10 +23,10 @@ import (
 // A GoModulesSource creates git repositories from go module zip files of
 // published go dependencies from the Go ecosystem.
 type GoModulesSource struct {
-	svc       *types.ExternalService
-	config    *schema.GoModulesConnection
-	depsStore DependenciesStore
-	client    *gomodproxy.Client
+	svc     *types.ExternalService
+	config  *schema.GoModulesConnection
+	depsSvc *dependencies.Service
+	client  *gomodproxy.Client
 }
 
 // NewGoModulesSource returns a new GoModulesSource from the given external service.
@@ -46,7 +44,7 @@ func NewGoModulesSource(svc *types.ExternalService, cf *httpcli.Factory) (*GoMod
 	return &GoModulesSource{
 		svc:    svc,
 		config: &c,
-		/* dbStore initialized in SetDB */
+		/* depsSvc initialized in SetDependenciesService */
 		client: gomodproxy.NewClient(svc.URN(), c.Urls, cli),
 	}, nil
 }
@@ -92,8 +90,8 @@ func (s *GoModulesSource) ListRepos(ctx context.Context, results chan SourceResu
 	}()
 
 	for {
-		depRepos, err := s.depsStore.ListDependencyRepos(ctx, dependenciesStore.ListDependencyReposOpts{
-			Scheme:      dependenciesStore.GoModulesScheme,
+		depRepos, err := s.depsSvc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
+			Scheme:      dependencies.GoModulesScheme,
 			After:       lastID,
 			Limit:       100,
 			NewestFirst: true,
@@ -183,8 +181,8 @@ func (s *GoModulesSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }
 
-func (s *GoModulesSource) SetDB(db dbutil.DB) {
-	s.depsStore = dependenciesStore.GetStore(database.NewDB(db))
+func (s *GoModulesSource) SetDependenciesService(depsSvc *dependencies.Service) {
+	s.depsSvc = depsSvc
 }
 
 func goDependencies(connection *schema.GoModulesConnection) (dependencies []*reposource.GoDependency, err error) {

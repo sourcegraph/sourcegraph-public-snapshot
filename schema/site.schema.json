@@ -55,6 +55,11 @@
       "type": "boolean",
       "default": false
     },
+    "defaultRateLimit": {
+      "description": "The rate limit (in requests per hour) for the default rate limiter in the rate limiters registry. By default this is disabled and the default rate limit is infinity.",
+      "type": "number",
+      "default": -1
+    },
     "experimentalFeatures": {
       "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
       "type": "object",
@@ -166,6 +171,12 @@
         },
         "pagure": {
           "description": "Allow adding Pagure code host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
+        "gerrit": {
+          "description": "Allow adding Gerrit code host connections",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"

@@ -4,13 +4,16 @@ import CloseIcon from 'mdi-react/CloseIcon'
 
 import { Button, Icon } from '@sourcegraph/wildcard'
 
-import { PreviewBatchSpecWorkspaceFields } from '../../../../graphql-operations'
+import {
+    PreviewHiddenBatchSpecWorkspaceFields,
+    PreviewVisibleBatchSpecWorkspaceFields,
+} from '../../../../graphql-operations'
 import { CachedIcon, Descriptor, ExcludeIcon, ListItem } from '../../workspaces-list'
 
 import styles from './WorkspacesPreviewListItem.module.scss'
 
 interface WorkspacesPreviewListItemProps {
-    workspace: PreviewBatchSpecWorkspaceFields
+    workspace: PreviewVisibleBatchSpecWorkspaceFields | PreviewHiddenBatchSpecWorkspaceFields
     /** Whether or not this item is stale */
     isStale: boolean
     /** Function to automatically update batch spec to exclude this item. */
@@ -25,6 +28,9 @@ export const WorkspacesPreviewListItem: React.FunctionComponent<WorkspacesPrevie
     const [toBeExcluded, setToBeExcluded] = useState(false)
 
     const handleExclude = useCallback(() => {
+        if (workspace.__typename === 'HiddenBatchSpecWorkspace') {
+            return
+        }
         setToBeExcluded(true)
         exclude(workspace.repository.name, workspace.branch.displayName)
     }, [exclude, workspace])
@@ -36,8 +42,13 @@ export const WorkspacesPreviewListItem: React.FunctionComponent<WorkspacesPrevie
 
     return (
         <ListItem className={isStale ? styles.stale : undefined}>
-            <Descriptor workspace={workspace} statusIndicator={statusIndicator} />
-            {toBeExcluded ? null : <ExcludeButton handleExclude={handleExclude} />}
+            <Descriptor
+                workspace={workspace.__typename === 'HiddenBatchSpecWorkspace' ? undefined : workspace}
+                statusIndicator={statusIndicator}
+            />
+            {workspace.__typename !== 'HiddenBatchSpecWorkspace' && toBeExcluded ? null : (
+                <ExcludeButton handleExclude={handleExclude} />
+            )}
         </ListItem>
     )
 }

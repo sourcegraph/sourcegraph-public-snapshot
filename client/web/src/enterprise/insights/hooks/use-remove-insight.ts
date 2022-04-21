@@ -26,12 +26,9 @@ export function useRemoveInsightFromDashboard(): useRemoveInsightFromDashboardAP
     const handleRemove = useCallback(
         async (input: RemoveInsightInput) => {
             const { insight, dashboard } = input
-            const shouldRemove = window.confirm(
-                `Are you sure you want to remove the insight "${insight.title}" from the dashboard "${dashboard.title}"?`
-            )
 
             // Prevent double call if we already have ongoing request
-            if (loading || !shouldRemove) {
+            if (loading) {
                 return
             }
 

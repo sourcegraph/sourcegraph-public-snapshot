@@ -26,10 +26,8 @@ export function useDeleteInsight(): UseDeleteInsightAPI {
 
     const handleDelete = useCallback(
         async (insight: DeletionInsight) => {
-            const shouldDelete = window.confirm(`Are you sure you want to delete the insight "${insight.title}"?`)
-
             // Prevent double call if we already have ongoing request
-            if (loading || !shouldDelete) {
+            if (loading) {
                 return
             }
 

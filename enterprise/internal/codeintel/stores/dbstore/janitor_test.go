@@ -204,3 +204,14 @@ func TestDeleteSourcedCommits(t *testing.T) {
 		t.Errorf("unexpected index states (-want +got):\n%s", diff)
 	}
 }
+
+func TestDeleteOldAuditLogs(t *testing.T) {
+	sqlDB := dbtest.NewDB(t)
+	db := database.NewDB(sqlDB)
+	store := testStore(db)
+
+	// Sanity check for syntax only
+	if _, err := store.DeleteOldAuditLogs(context.Background(), time.Second, time.Now()); err != nil {
+		t.Fatalf("unexpected error deleting old audit logs: %s", err)
+	}
+}

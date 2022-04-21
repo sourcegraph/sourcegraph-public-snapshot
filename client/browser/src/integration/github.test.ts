@@ -6,7 +6,7 @@ import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { setupExtensionMocking, simpleHoverProvider } from '@sourcegraph/shared/src/testing/integration/mockExtension'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
-import { retry } from '@sourcegraph/shared/src/testing/utils'
+import { readEnvironmentBoolean, readEnvironmentString, retry } from '@sourcegraph/shared/src/testing/utils'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 
 import { BrowserIntegrationTestContext, createBrowserIntegrationTestContext } from './context'
@@ -799,8 +799,12 @@ describe('GitHub', () => {
             })
         }
 
+        const isRecordMode = readEnvironmentString({ variable: 'POLLYJS_MODE', defaultValue: 'replay' }) === 'record'
+        const isCI = readEnvironmentBoolean({ variable: 'CI', defaultValue: false }) === true
+
         // global and repository search pages
-        describe('Search results page', () => {
+        // do not record in CI (see https://github.com/sourcegraph/sourcegraph/pull/34171)
+        ;(isRecordMode && isCI ? describe.skip : describe)('Search results page', () => {
             beforeEach(() => {
                 mockUrls([
                     'https://github.com/_graphql/GetSuggestedNavigationDestinations',

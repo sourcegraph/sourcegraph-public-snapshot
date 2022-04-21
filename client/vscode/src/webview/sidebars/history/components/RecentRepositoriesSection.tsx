@@ -9,7 +9,7 @@ import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
-import { useObservable } from '@sourcegraph/wildcard'
+import { Icon, useObservable } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../../graphql-operations'
 import { HistorySidebarProps } from '../HistorySidebarView'
@@ -68,9 +68,9 @@ export const RecentRepositoriesSection: React.FunctionComponent<HistorySidebarPr
             >
                 <h5 className="flex-grow-1">Recent Repositories</h5>
                 {collapsed ? (
-                    <ChevronLeftIcon className="icon-inline mr-1" />
+                    <Icon className="mr-1" as={ChevronLeftIcon} />
                 ) : (
-                    <ChevronDownIcon className="icon-inline mr-1" />
+                    <Icon className="mr-1" as={ChevronDownIcon} />
                 )}
             </button>
 

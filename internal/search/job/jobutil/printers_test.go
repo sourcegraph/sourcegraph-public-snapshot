@@ -188,11 +188,12 @@ func TestPrettyJSON(t *testing.T) {
 							NewNoopJob()))))))))
 	test := func(input string) string {
 		q, _ := query.ParseLiteral(input)
+		b, _ := query.ToBasicQuery(q)
 		inputs := &run.SearchInputs{
 			UserSettings: &schema.Settings{},
 			Protocol:     search.Streaming,
 		}
-		j, _ := ToSearchJob(inputs, q)
+		j, _ := ToSearchJob(inputs, b)
 		return PrettyJSONVerbose(j)
 	}
 
@@ -248,26 +249,6 @@ func TestPrettyJSON(t *testing.T) {
     },
     {
       "RepoSearch": {
-        "PatternInfo": {
-          "Pattern": "bar",
-          "IsNegated": false,
-          "IsRegExp": true,
-          "IsStructuralPat": false,
-          "CombyRule": "",
-          "IsWordMatch": false,
-          "IsCaseSensitive": false,
-          "FileMatchLimit": 500,
-          "Index": "yes",
-          "Select": [],
-          "IncludePatterns": null,
-          "ExcludePattern": "",
-          "FilePatternsReposMustInclude": null,
-          "FilePatternsReposMustExclude": null,
-          "PathPatternsAreCaseSensitive": false,
-          "PatternMatchesContent": true,
-          "PatternMatchesPath": true,
-          "Languages": null
-        },
         "RepoOptions": {
           "RepoFilters": [
             "foo",
@@ -277,79 +258,23 @@ func TestPrettyJSON(t *testing.T) {
           "Dependencies": null,
           "CaseSensitiveRepoFilters": false,
           "SearchContextSpec": "",
-          "NoForks": true,
-          "OnlyForks": false,
-          "NoArchived": true,
-          "OnlyArchived": false,
           "CommitAfter": "",
           "Visibility": "Any",
           "Limit": 0,
           "Cursors": null,
-          "Query": [
-            {
-              "Kind": 1,
-              "Operands": [
-                {
-                  "field": "repo",
-                  "value": "foo",
-                  "negated": false
-                },
-                {
-                  "value": "bar",
-                  "negated": false
-                }
-              ],
-              "Annotation": {
-                "labels": 0,
-                "range": {
-                  "start": {
-                    "line": 0,
-                    "column": 0
-                  },
-                  "end": {
-                    "line": 0,
-                    "column": 0
-                  }
-                }
-              }
-            }
-          ]
+          "ForkSet": false,
+          "NoForks": true,
+          "OnlyForks": false,
+          "ArchivedSet": false,
+          "NoArchived": true,
+          "OnlyArchived": false
         },
+        "FilePatternsReposMustInclude": null,
+        "FilePatternsReposMustExclude": null,
         "Features": {
           "ContentBasedLangFilters": false
         },
-        "Repos": null,
-        "Mode": 0,
-        "Query": [
-          {
-            "Kind": 1,
-            "Operands": [
-              {
-                "field": "repo",
-                "value": "foo",
-                "negated": false
-              },
-              {
-                "value": "bar",
-                "negated": false
-              }
-            ],
-            "Annotation": {
-              "labels": 0,
-              "range": {
-                "start": {
-                  "line": 0,
-                  "column": 0
-                },
-                "end": {
-                  "line": 0,
-                  "column": 0
-                }
-              }
-            }
-          }
-        ],
-        "UseFullDeadline": true
+        "Mode": 0
       }
     },
     {
@@ -362,43 +287,16 @@ func TestPrettyJSON(t *testing.T) {
           "Dependencies": null,
           "CaseSensitiveRepoFilters": false,
           "SearchContextSpec": "",
-          "NoForks": true,
-          "OnlyForks": false,
-          "NoArchived": true,
-          "OnlyArchived": false,
           "CommitAfter": "",
           "Visibility": "Any",
           "Limit": 0,
           "Cursors": null,
-          "Query": [
-            {
-              "Kind": 1,
-              "Operands": [
-                {
-                  "field": "repo",
-                  "value": "foo",
-                  "negated": false
-                },
-                {
-                  "value": "bar",
-                  "negated": false
-                }
-              ],
-              "Annotation": {
-                "labels": 0,
-                "range": {
-                  "start": {
-                    "line": 0,
-                    "column": 0
-                  },
-                  "end": {
-                    "line": 0,
-                    "column": 0
-                  }
-                }
-              }
-            }
-          ]
+          "ForkSet": false,
+          "NoForks": true,
+          "OnlyForks": false,
+          "ArchivedSet": false,
+          "NoArchived": true,
+          "OnlyArchived": false
         }
       }
     }

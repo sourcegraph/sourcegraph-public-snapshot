@@ -18,7 +18,6 @@ jobs:
                   team/search-product=@benvenker @lguychard
                   team/search-core=@jjeffwarner
                   [deprecated]team/search=@lguychard @benvenker @jjeffwarner
-                  team/code-intelligence=@macraig
                   team/code-insights=@joelkw @felixfbecker @vovakulikov @unclejustin
                   team/distribution=@dan-mckean
                   team/delivery=@caugustus-sourcegraph @kevinwojo @michaellzc

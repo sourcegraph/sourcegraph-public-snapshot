@@ -16,8 +16,7 @@ func (c *ComputeExcludedRepos) Run(ctx context.Context, clients job.RuntimeClien
 	_, ctx, s, finish := job.StartSpan(ctx, s, c)
 	defer func() { finish(alert, err) }()
 
-	repositoryResolver := Resolver{DB: clients.DB}
-	excluded, err := repositoryResolver.Excluded(ctx, c.Options)
+	excluded, err := computeExcludedRepos(ctx, clients.DB, c.Options)
 	if err != nil {
 		return nil, err
 	}

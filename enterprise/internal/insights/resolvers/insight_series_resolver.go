@@ -2,7 +2,11 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
+	"sort"
 	"time"
+
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 
@@ -255,5 +259,189 @@ func (p *precalculatedInsightSeriesResolver) DirtyMetadata(ctx context.Context) 
 	for _, dqa := range data {
 		resolvers = append(resolvers, &insightDirtyQueryResolver{dqa})
 	}
+	return resolvers, nil
+}
+
+type insightSeriesResolverGenerator interface {
+	Generate(ctx context.Context, series types.InsightViewSeries, baseResolver baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error)
+	handles(series types.InsightViewSeries) bool
+	SetNext(nextGenerator insightSeriesResolverGenerator)
+}
+
+type handleSeriesFunc func(series types.InsightViewSeries) bool
+type resolverGenerator func(ctx context.Context, series types.InsightViewSeries, baseResolver baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error)
+
+type seriesResolverGenerator struct {
+	next             insightSeriesResolverGenerator
+	handelsSeries    handleSeriesFunc
+	generateResolver resolverGenerator
+}
+
+func (j *seriesResolverGenerator) handles(series types.InsightViewSeries) bool {
+	if j.handelsSeries == nil {
+		return false
+	}
+	return j.handelsSeries(series)
+}
+
+func (j *seriesResolverGenerator) SetNext(nextGenerator insightSeriesResolverGenerator) {
+	j.next = nextGenerator
+}
+
+func (j *seriesResolverGenerator) Generate(ctx context.Context, series types.InsightViewSeries, baseResolver baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
+	if j.handles(series) {
+		return j.generateResolver(ctx, series, baseResolver, filters)
+	}
+	if j.next != nil {
+		return j.next.Generate(ctx, series, baseResolver, filters)
+	} else {
+		log15.Error("no generator for insight series", "seriesID", series.SeriesID)
+		return nil, errors.New("no resolvers for insights series")
+	}
+}
+
+func newSeriesResolverGenerator(handels handleSeriesFunc, generate resolverGenerator) insightSeriesResolverGenerator {
+	return &seriesResolverGenerator{
+		handelsSeries:    handels,
+		generateResolver: generate,
+	}
+}
+
+func recordedSeries(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
+	return []graphqlbackend.InsightSeriesResolver{&insightSeriesResolver{
+		insightsStore:   r.timeSeriesStore,
+		workerBaseStore: r.workerBaseStore,
+		series:          definition,
+		metadataStore:   r.insightStore,
+		filters:         filters,
+	}}, nil
+}
+
+func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
+	var opts store.SeriesPointsOpts
+
+	// Query data points only for the series we are representing.
+	seriesID := definition.SeriesID
+	opts.SeriesID = &seriesID
+
+	// Default to last 12mo of data
+	frames := query.BuildFrames(12, timeseries.TimeInterval{
+		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
+		Value: definition.SampleIntervalValue,
+	}, time.Now())
+	oldest := time.Now().AddDate(-1, 0, 0)
+	if len(frames) != 0 {
+		possibleOldest := frames[0].From
+		if possibleOldest.Before(oldest) {
+			oldest = possibleOldest
+		}
+	}
+	opts.From = &oldest
+
+	includeRepo := func(regex ...string) {
+		opts.IncludeRepoRegex = append(opts.IncludeRepoRegex, regex...)
+	}
+	excludeRepo := func(regex ...string) {
+		opts.ExcludeRepoRegex = append(opts.ExcludeRepoRegex, regex...)
+	}
+
+	if filters.IncludeRepoRegex != nil {
+		includeRepo(*filters.IncludeRepoRegex)
+	}
+	if filters.ExcludeRepoRegex != nil {
+		excludeRepo(*filters.ExcludeRepoRegex)
+	}
+	scLoader := &scLoader{primary: r.workerBaseStore.Handle().DB()}
+	inc, exc, err := unwrapSearchContexts(ctx, scLoader, filters.SearchContexts)
+	if err != nil {
+		return nil, errors.Wrap(err, "unwrapSearchContexts")
+	}
+	includeRepo(inc...)
+	excludeRepo(exc...)
+
+	groupedByCapture := make(map[string][]store.SeriesPoint)
+	allPoints, err := r.timeSeriesStore.SeriesPoints(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range allPoints {
+		point := allPoints[i]
+		if point.Capture == nil {
+			// skip nil values, this shouldn't be a real possibility
+			continue
+		}
+		groupedByCapture[*point.Capture] = append(groupedByCapture[*point.Capture], point)
+	}
+
+	status, err := queryrunner.QueryJobsStatus(ctx, r.workerBaseStore, seriesID)
+	if err != nil {
+		return nil, errors.Wrap(err, "QueryJobsStatus")
+	}
+	statusResolver := NewStatusResolver(status, definition.BackfillQueuedAt)
+
+	var resolvers []graphqlbackend.InsightSeriesResolver
+	for capturedValue, points := range groupedByCapture {
+		sort.Slice(points, func(i, j int) bool {
+			return points[i].Time.Before(points[j].Time)
+		})
+		resolvers = append(resolvers, &precalculatedInsightSeriesResolver{
+			insightsStore:   r.timeSeriesStore,
+			workerBaseStore: r.workerBaseStore,
+			series:          definition,
+			metadataStore:   r.insightStore,
+			points:          points,
+			label:           capturedValue,
+			filters:         filters,
+			seriesId:        fmt.Sprintf("%s-%s", seriesID, capturedValue),
+			statusResolver:  statusResolver,
+		})
+	}
+	if len(resolvers) == 0 {
+		// We are manually populating a mostly empty resolver here - this slightly hacky solution is to unify the
+		// expectations of the webapp when querying for series state. For a standard search series there is
+		// always a resolver since each series maps one to one with it's definition.
+		// With a capture groups series we derive each unique series dynamically - which means it's possible to have a
+		// series definition with zero resulting series. This most commonly occurs when the insight is just created,
+		// before any data has been generated yet. Without this,
+		// our capture groups insights don't share the loading state behavior.
+		resolvers = append(resolvers, &precalculatedInsightSeriesResolver{
+			insightsStore:   r.timeSeriesStore,
+			workerBaseStore: r.workerBaseStore,
+			series:          definition,
+			metadataStore:   r.insightStore,
+			statusResolver:  statusResolver,
+			seriesId:        definition.SeriesID,
+			points:          nil,
+			label:           definition.Label,
+			filters:         filters,
+		})
+	}
+	return resolvers, nil
+}
+
+func expandCaptureGroupSeriesJustInTime(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
+	executor := query.NewCaptureGroupExecutor(r.postgresDB, r.insightsDB, time.Now)
+	interval := timeseries.TimeInterval{
+		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
+		Value: definition.SampleIntervalValue,
+	}
+
+	scLoader := &scLoader{primary: r.postgresDB}
+	matchedRepos, err := filterRepositories(ctx, filters, definition.Repositories, scLoader)
+	if err != nil {
+		return nil, err
+	}
+	log15.Debug("capture group series", "seriesId", definition.SeriesID, "filteredRepos", matchedRepos)
+	generatedSeries, err := executor.Execute(ctx, definition.Query, matchedRepos, interval)
+	if err != nil {
+		return nil, errors.Wrap(err, "CaptureGroupExecutor.Execute")
+	}
+
+	var resolvers []graphqlbackend.InsightSeriesResolver
+	for i := range generatedSeries {
+		resolvers = append(resolvers, &dynamicInsightSeriesResolver{generated: &generatedSeries[i]})
+	}
+
 	return resolvers, nil
 }
