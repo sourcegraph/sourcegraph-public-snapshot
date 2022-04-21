@@ -301,6 +301,41 @@ void f(int p1, int p2 = 3, int& p3, int* p4)
 	//                                   v f.e ref
     try { } catch (const std::exception& e) { }
 }
+`}, {
+		path: "test.rb",
+		contents: `
+//    vv f.p1 def
+//    vv f.p1 ref
+//        vv f.p2 def
+//        vv f.p2 ref
+//                 vv f.p3 def
+//                 vv f.p3 ref
+//                       vv f.p4 def
+//                       vv f.p4 ref
+def f(p1, p2 = 3, *p3, **p4)
+	x = 5 # < "x" f.x ref < "x" f.x def
+
+	#         v f.x2 def
+	#         v f.x2 ref
+	lambda { |x| 5 }
+
+	#          v f.x3 def
+	#          v f.x3 ref
+	lambda do |x| 5 end
+
+	#   v f.i def
+	#   v f.i ref
+	for i in 1..5 do end
+
+	begin
+		raise ArgumentError
+		#                   v f.e def
+		#                   v f.e ref
+	rescue ArgumentError => e
+		#    v f.e ref
+		puts e
+	end
+end
 `},
 	}
 

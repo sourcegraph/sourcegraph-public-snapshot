@@ -13,6 +13,7 @@ import (
 	"github.com/smacker/go-tree-sitter/java"
 	"github.com/smacker/go-tree-sitter/javascript"
 	"github.com/smacker/go-tree-sitter/python"
+	"github.com/smacker/go-tree-sitter/ruby"
 	"github.com/smacker/go-tree-sitter/typescript/tsx"
 )
 
@@ -254,6 +255,29 @@ var langToLangSpec = map[string]LangSpec{
 (parameter_declaration          declarator: (pointer_declarator   (identifier) @definition)) ; [](int* x) { ... }
 (optional_parameter_declaration declarator: (identifier) @definition)                        ; [](auto x = 5) { ... }
 (for_range_loop declarator: (identifier) @definition)									     ; for (int x : xs) ...
+`,
+	},
+	"ruby": {
+		language: ruby.GetLanguage(),
+		commentStyle: CommentStyle{
+			nodeTypes:     []string{"comment"},
+			stripRegex:    regexp.MustCompile(`^#`),
+			codeFenceName: "ruby",
+		},
+		localsQuery: `
+(method)   @scope ; def f() ...
+(block)    @scope ; { ... }
+(do_block) @scope ; do ... end
+
+(exception_variable   (identifier) @definition)          ; rescue ArgumentError => e
+(method_parameters    (identifier) @definition)          ; def f(x) ...
+(optional_parameter   name: (identifier) @definition)    ; def f(x = 5) ...
+(splat_parameter      name: (identifier) @definition)    ; def f(*x) ...
+(hash_splat_parameter name: (identifier) @definition)    ; def f(**x) ...
+(block_parameters     (identifier) @definition)          ; |x| ...
+(assignment           left: (identifier) @definition)    ; x = ...
+(left_assignment_list (identifier) @definition)          ; x, y = ...
+(for                  pattern: (identifier) @definition) ; for i in 1..5 ...
 `,
 	},
 }
