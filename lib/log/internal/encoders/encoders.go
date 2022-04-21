@@ -15,6 +15,8 @@ type ResourceEncoder struct {
 	InstanceID string
 }
 
+var _ zapcore.ObjectMarshaler = &ResourceEncoder{}
+
 func (r *ResourceEncoder) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	if len(r.Name) > 0 {
 		enc.AddString("service.name", r.Name)
@@ -35,6 +37,8 @@ func (r *ResourceEncoder) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 }
 
 type TraceContextEncoder struct{ otfields.TraceContext }
+
+var _ zapcore.ObjectMarshaler = &TraceContextEncoder{}
 
 func (t *TraceContextEncoder) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	if len(t.TraceID) > 0 {
