@@ -16,7 +16,10 @@ type PaginatedResultSet struct {
 	fetch     func(context.Context, *http.Request) (*PageToken, []interface{}, error)
 }
 
-func newResultSet(initial *url.URL, fetch func(context.Context, *http.Request) (*PageToken, []interface{}, error)) *PaginatedResultSet {
+// NewPaginatedResultSet instantiates a new result set. This is intended for
+// internal use only, and is exported only to simplify testing in other
+// packages.
+func NewPaginatedResultSet(initial *url.URL, fetch func(context.Context, *http.Request) (*PageToken, []interface{}, error)) *PaginatedResultSet {
 	return &PaginatedResultSet{
 		initial: initial,
 		fetch:   fetch,
@@ -65,7 +68,7 @@ func (rs *PaginatedResultSet) WithPageLength(pageLen int) *PaginatedResultSet {
 	values.Set("pagelen", strconv.Itoa(pageLen))
 	initial.RawQuery = values.Encode()
 
-	return newResultSet(&initial, rs.fetch)
+	return NewPaginatedResultSet(&initial, rs.fetch)
 }
 
 func (rs *PaginatedResultSet) reqPage(ctx context.Context) error {
