@@ -10,6 +10,10 @@ The following jobs are defined by the `worker` service.
 
 This job runs [out of band migrations](migration.md#mout-of-band-migrations), which perform large data migrations in the background over time instead of synchronously during Sourcegraph instance updates.
 
+#### `codeintel-documents-indexer`
+
+This job periodically indexes file contents at a syntactic level to build an index of search-based code intelligence.
+
 #### `codeintel-autoindexing-scheduler`
 
 This job will eventually replace `codeintel-auto-indexing`.
