@@ -50,7 +50,7 @@ func NewRateLimitSyncer(registry *ratelimit.Registry, serviceLister externalServ
 	if pageSize == 0 {
 		pageSize = 500
 	}
-	if opts.Limiter != nil && opts.Limiter.Burst() > pageSize {
+	if opts.Limiter != nil && pageSize > opts.Limiter.Burst() {
 		pageSize = opts.Limiter.Burst()
 	}
 	r := &RateLimitSyncer{
