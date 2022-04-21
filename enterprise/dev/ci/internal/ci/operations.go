@@ -354,8 +354,6 @@ func clientChromaticTests(autoAcceptChanges bool) operations.Operation {
 			stepOpts = append(stepOpts, bk.IfReadyForReview())
 		}
 
-		chromaticCommand += " | ./dev/ci/post-chromatic.sh"
-
 		pipeline.AddStep(":chromatic: Upload Storybook to Chromatic",
 			append(stepOpts, bk.Cmd(chromaticCommand))...)
 	}
