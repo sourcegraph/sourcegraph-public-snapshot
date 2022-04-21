@@ -9,13 +9,13 @@ import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/que
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 
-export type SearchStackEntryID = number
+export type NotepadEntryID = number
 export interface SearchEntry {
     type: 'search'
     /**
      * The ID is primarily used to let the UI uniquily identifiy each entry.
      */
-    id: SearchStackEntryID
+    id: NotepadEntryID
     query: string
     caseSensitive: boolean
     searchContext?: string
@@ -28,7 +28,7 @@ export interface FileEntry {
     /**
      * The ID is primarily used to let the UI uniquily identifiy each entry.
      */
-    id: SearchStackEntryID
+    id: NotepadEntryID
     path: string
     repo: string
     revision: string
@@ -36,20 +36,22 @@ export interface FileEntry {
     annotation?: string
 }
 
-export type SearchStackEntry = SearchEntry | FileEntry
-export type SearchStackEntryInput = Omit<SearchEntry, 'id'> | Omit<FileEntry, 'id'>
+export type NotepadEntry = SearchEntry | FileEntry
+export type NotepadEntryInput = Omit<SearchEntry, 'id'> | Omit<FileEntry, 'id'>
 
-export interface SearchStackStore {
+export interface NotepadStore {
     /**
-     * If a page/component has information that can be added to the search
-     * stack, it should set this value.
+     * If a page/component has information that can be added to the notepad, it
+     * should set this value.
      */
-    addableEntry: SearchStackEntryInput | null
-    entries: SearchStackEntry[]
-    previousEntries: SearchStackEntry[]
+    addableEntry: NotepadEntryInput | null
+    entries: NotepadEntry[]
+    previousEntries: NotepadEntry[]
     canRestoreSession: boolean
 }
 
+const NOTEPAD_SESSION_KEY = 'search:notepad:session'
+// TODO (@fkling): Remove fallback to old name after ~2 releases.
 const SEARCH_STACK_SESSION_KEY = 'search:search-stack:session'
 /**
  * Uniquly identifies each entry.
@@ -57,15 +59,15 @@ const SEARCH_STACK_SESSION_KEY = 'search:search-stack:session'
 let nextEntryID = 0
 
 /**
- * Hook to get the search stack's current state. Used by the SearchStack
- * component itself and by internal functions to add a new entry to the stack.
+ * Hook to get the notepad's current state. Used by the Notepad
+ * component itself and by internal functions to add a new entry to the notepad.
  * The current entries persist in local and session storage. Currently this
  * doesn't work well with multiple tabs.
  */
-export const useSearchStackState = create<SearchStackStore>(() => {
+export const useNotepadState = create<NotepadStore>(() => {
     // We have to get data for the current and previous session here (and retain
     // them) because those entries might get overwritten immediately if a page
-    // is loaded that calls addSearchStackEntry
+    // is loaded that calls addNotepadEntry
     const entriesFromSession = restoreSession(sessionStorage)
     const entriesFromPreviousSession = restoreSession(localStorage)
 
@@ -78,42 +80,43 @@ export const useSearchStackState = create<SearchStackStore>(() => {
 })
 
 /**
- * Hook to make a new entry available for adding to the search stack. Use
+ * Hook to make a new entry available for adding to the notepad. Use
  * `useMemo` to avoid unnecessary triggers and to properly remove the entry when
  * the component gets unmounted.
  */
-export function useSearchStack(newEntry: SearchStackEntryInput | null): void {
-    const [enableSearchStack] = useTemporarySetting('search.notepad.enabled')
+export function useNotepad(newEntry: NotepadEntryInput | null): void {
+    const [enableNotepad] = useTemporarySetting('search.notepad.enabled')
     useEffect(() => {
-        if (enableSearchStack && newEntry) {
-            let entry: SearchStackEntryInput = newEntry
+        if (!enableNotepad || !newEntry) {
+            return
+        }
 
-            switch (entry.type) {
-                case 'search': {
-                    // `query` most likely contains a 'context' filter that we don't
-                    // want to show (this information is kept separately in
-                    // `searchContext`).
-                    let processedQuery = entry.query
-                    const contextFilter = findFilter(entry.query, FilterType.context, FilterKind.Global)
-                    if (contextFilter) {
-                        processedQuery = omitFilter(entry.query, contextFilter)
-                    }
-                    entry = { ...entry, query: processedQuery }
-                    break
-                }
-            }
-            useSearchStackState.setState({ addableEntry: entry })
+        let entry: NotepadEntryInput = newEntry
 
-            // We have to "remove" the entry if the component unmounts.
-            return () => {
-                const currentState = useSearchStackState.getState()
-                if (currentState.addableEntry === entry) {
-                    useSearchStackState.setState({ addableEntry: null })
+        switch (entry.type) {
+            case 'search': {
+                // `query` most likely contains a 'context' filter that we don't
+                // want to show (this information is kept separately in
+                // `searchContext`).
+                let processedQuery = entry.query
+                const contextFilter = findFilter(entry.query, FilterType.context, FilterKind.Global)
+                if (contextFilter) {
+                    processedQuery = omitFilter(entry.query, contextFilter)
                 }
+                entry = { ...entry, query: processedQuery }
+                break
             }
         }
-        return // without this typescript complains
-    }, [newEntry, enableSearchStack])
+        useNotepadState.setState({ addableEntry: entry })
+
+        // We have to "remove" the entry if the component unmounts.
+        return () => {
+            const currentState = useNotepadState.getState()
+            if (currentState.addableEntry === entry) {
+                useNotepadState.setState({ addableEntry: null })
+            }
+        }
+    }, [newEntry, enableNotepad])
 }
 
 /**
@@ -121,8 +124,8 @@ export function useSearchStack(newEntry: SearchStackEntryInput | null): void {
  * If that value is a file entry, then a hint can be provided to control whether
  * the whole file or the line range should be added.
  */
-export function addSearchStackEntry(newEntry: SearchStackEntryInput, hint?: 'file' | 'range'): void {
-    const { entries } = useSearchStackState.getState()
+export function addNotepadEntry(newEntry: NotepadEntryInput, hint?: 'file' | 'range'): void {
+    const { entries } = useNotepadState.getState()
 
     let entry = newEntry
     if (entry.type === 'file' && entry.lineRange && hint === 'file') {
@@ -135,20 +138,20 @@ export function addSearchStackEntry(newEntry: SearchStackEntryInput, hint?: 'fil
     }
 
     persistSession(newState.entries)
-    useSearchStackState.setState(newState)
+    useNotepadState.setState(newState)
 }
 
 export function restorePreviousSession(): void {
-    if (useSearchStackState.getState().canRestoreSession) {
-        useSearchStackState.setState(state =>
+    if (useNotepadState.getState().canRestoreSession) {
+        useNotepadState.setState(state =>
             // TODO (@fkling): Merge current and previous session?
             ({ entries: state.previousEntries, canRestoreSession: false })
         )
     }
 }
 
-export function removeFromSearchStack(idsToDelete: SearchStackEntryID | SearchStackEntryID[]): void {
-    useSearchStackState.setState(currentState => {
+export function removeFromNotepad(idsToDelete: NotepadEntryID | NotepadEntryID[]): void {
+    useNotepadState.setState(currentState => {
         if (!Array.isArray(idsToDelete)) {
             idsToDelete = [idsToDelete]
         }
@@ -164,13 +167,13 @@ export function removeFromSearchStack(idsToDelete: SearchStackEntryID | SearchSt
     })
 }
 
-export function removeAllSearchStackEntries(): void {
+export function removeAllNotepadEntries(): void {
     persistSession([])
-    useSearchStackState.setState({ entries: [] })
+    useNotepadState.setState({ entries: [] })
 }
 
-export function setEntryAnnotation(entry: SearchStackEntry, annotation: string): void {
-    useSearchStackState.setState(state => {
+export function setEntryAnnotation(entry: NotepadEntry, annotation: string): void {
+    useNotepadState.setState(state => {
         const index = state.entries.indexOf(entry)
         if (index > -1) {
             const entriesCopy = state.entries.slice()
@@ -181,23 +184,23 @@ export function setEntryAnnotation(entry: SearchStackEntry, annotation: string):
     })
 }
 
-function restoreSession(storage: Storage): SearchStackEntry[] {
+function restoreSession(storage: Storage): NotepadEntry[] {
     return (
-        JSON.parse(storage.getItem(SEARCH_STACK_SESSION_KEY) ?? '[]')
+        JSON.parse(storage.getItem(NOTEPAD_SESSION_KEY) ?? storage.getItem(SEARCH_STACK_SESSION_KEY) ?? '[]')
             // We always "re-id" restored entries. This makes things easier (no need
             // to track which IDs have already been used)
-            .map((entry: SearchStackEntry) => ({ ...entry, id: nextEntryID++ }))
+            .map((entry: NotepadEntry) => ({ ...entry, id: nextEntryID++ }))
     )
 }
 
-function persistSession(entries: SearchStackEntry[]): void {
-    // We store search stack data in both local and session storage: This
-    // feature should really be considered to be session related but at the
-    // same time we want to make it possible to restore information from the
-    // previous session (e.g. in case the page was accidentally closed).
+function persistSession(entries: NotepadEntry[]): void {
+    // We store notepad data in both local and session storage: This feature
+    // should really be considered to be session related but at the same time we
+    // want to make it possible to restore information from the previous session
+    // (e.g. in case the page was accidentally closed).
     // Storing the entries in local storage allows us to do that (see
-    // useSearchStackState above).
+    // useNotepadState above).
     const serializedEntries = JSON.stringify(entries)
-    localStorage.setItem(SEARCH_STACK_SESSION_KEY, serializedEntries)
-    sessionStorage.setItem(SEARCH_STACK_SESSION_KEY, serializedEntries)
+    localStorage.setItem(NOTEPAD_SESSION_KEY, serializedEntries)
+    sessionStorage.setItem(NOTEPAD_SESSION_KEY, serializedEntries)
 }

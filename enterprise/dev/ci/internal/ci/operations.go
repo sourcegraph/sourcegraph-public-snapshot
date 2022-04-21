@@ -330,7 +330,6 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 			// https://docs.percy.io/docs/parallel-test-suites#how-it-works
 			bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(parallelTestCount)),
 			bk.Cmd(fmt.Sprintf(`dev/ci/yarn-web-integration.sh "%s"`, chunkTestFiles)),
-			bk.AutomaticRetry(1), // Temporary
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
 }
@@ -340,7 +339,7 @@ func clientChromaticTests(autoAcceptChanges bool) operations.Operation {
 		stepOpts := []bk.StepOpt{
 			withYarnCache(),
 			bk.AutomaticRetry(3),
-			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000 --silent"),
 			bk.Cmd("yarn gulp generate"),
 			bk.Env("MINIFY", "1"),
 		}
@@ -353,6 +352,7 @@ func clientChromaticTests(autoAcceptChanges bool) operations.Operation {
 			// Unless we plan on automatically accepting these changes, we only run this
 			// step on ready-for-review pull requests.
 			stepOpts = append(stepOpts, bk.IfReadyForReview())
+			chromaticCommand += " | ./dev/ci/post-chromatic.sh"
 		}
 
 		pipeline.AddStep(":chromatic: Upload Storybook to Chromatic",

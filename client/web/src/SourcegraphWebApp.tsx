@@ -90,8 +90,8 @@ import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps } from './routes'
 import { PageRoutes } from './routes.constants'
 import { parseSearchURL } from './search'
+import { NotepadContainer } from './search/Notepad'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
-import { SearchStackContainer } from './search/SearchStack'
 import { listUserRepositories } from './site-admin/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -473,7 +473,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                         </CodeHostScopeProvider>
                                                     )}
                                                 />
-                                                <SearchStackContainer onCreateNotebook={this.onCreateNotebook} />
+                                                <NotepadContainer onCreateNotebook={this.onCreateNotebook} />
                                                 <IdeExtensionTracker />
                                                 <BrowserExtensionTracker />
                                             </Router>

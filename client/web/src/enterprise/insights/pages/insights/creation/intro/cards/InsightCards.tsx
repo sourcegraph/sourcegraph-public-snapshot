@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Link, Button, CardBody, Card } from '@sourcegraph/wildcard'
+import { Link, Button, CardBody, Card, H3, H2 } from '@sourcegraph/wildcard'
 
 import {
     CaptureGroupInsightChart,
@@ -12,25 +12,22 @@ import {
 
 import styles from './InsightCards.module.scss'
 
-interface InsightCardProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
+interface InsightCardProps extends React.HTMLAttributes<HTMLDivElement> {
+    handleCreate?: () => void
+}
 
 /**
  * Low-level styled component for building insight link card for
  * the creation page gallery.
  */
 const InsightCard: React.FunctionComponent<InsightCardProps> = props => {
-    const { children, ...otherProps } = props
+    const { children, onClick, handleCreate, ...otherProps } = props
 
     return (
-        <Card
-            as="button"
-            {...otherProps}
-            type="button"
-            className={classNames(styles.card, 'p-3', otherProps.className)}
-        >
+        <Card {...otherProps} className={classNames(styles.card, 'p-3', otherProps.className)}>
             {children}
 
-            <Button as="div" className="mt-3 w-100" variant="secondary" size="sm">
+            <Button className="mt-3 w-100" variant="secondary" onClick={handleCreate}>
                 Create
             </Button>
         </Card>
@@ -47,8 +44,9 @@ const InsightCardBody: React.FunctionComponent<InsightCardBodyProps> = props => 
 
     return (
         <CardBody className={classNames(styles.cardBody, className, 'flex-1')}>
-            <h3 className={styles.cardTitle}>{title}</h3>
-
+            <H3 as={H2} className={styles.cardTitle}>
+                {title}
+            </H3>
             <p className="d-flex flex-column text-muted m-0">{children}</p>
         </CardBody>
     )
@@ -121,7 +119,8 @@ export const ExtensionInsightsCard: React.FunctionComponent<InsightCardProps> = 
 
         <InsightCardBody title="Based on Sourcegraph extensions">
             Enable the extension and go to the README.md to learn how to set up code insights for selected Sourcegraph
-            extensions. <Link to="/extensions?query=category:Insights&experimental=true">Explore the extensions</Link>
+            extensions.
+            <Link to="/extensions?query=category:Insights&experimental=true">Explore the extensions</Link>
         </InsightCardBody>
     </InsightCard>
 )

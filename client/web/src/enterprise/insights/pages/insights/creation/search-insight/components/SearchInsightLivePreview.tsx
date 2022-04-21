@@ -3,52 +3,69 @@ import React, { useContext, useMemo } from 'react'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useDeepMemo } from '@sourcegraph/wildcard'
 
+import { SeriesBasedChartTypes, SeriesChart } from '../../../../../components'
 import {
     getSanitizedRepositories,
     useLivePreview,
     StateStatus,
-    LivePreviewUpdateButton,
     LivePreviewCard,
     LivePreviewLoading,
     LivePreviewChart,
     LivePreviewBlurBackdrop,
     LivePreviewBanner,
     LivePreviewLegend,
-} from '../../../../../../components/creation-ui-kit'
-import { SeriesBasedChartTypes, SeriesChart } from '../../../../../../components/views'
-import { CodeInsightsBackendContext, SeriesChartContent } from '../../../../../../core'
-import { InsightStep } from '../../../search-insight'
-import { getSanitizedCaptureQuery } from '../../utils/capture-group-insight-sanitizer'
+    LivePreviewUpdateButton,
+    SERIES_MOCK_CHART,
+} from '../../../../../components/creation-ui-kit'
+import { CodeInsightsBackendContext, SeriesChartContent, SearchBasedInsightSeries } from '../../../../../core'
+import { EditableDataSeries, InsightStep } from '../types'
+import { getSanitizedLine } from '../utils/insight-sanitizer'
 
-import { MOCK_CHART_CONTENT } from './constants'
-
-interface CaptureGroupCreationLivePreviewProps {
+export interface SearchInsightLivePreviewProps {
+    /**
+     * Disable prop to disable live preview.
+     * Used in a consumer of this component when some required fields
+     * for live preview are invalid.
+     */
     disabled: boolean
     repositories: string
-    query: string
+    series: EditableDataSeries[]
     stepValue: string
     step: InsightStep
     isAllReposMode: boolean
+
     className?: string
 }
 
-export const CaptureGroupCreationLivePreview: React.FunctionComponent<CaptureGroupCreationLivePreviewProps> = props => {
-    const { disabled, repositories, query, stepValue, step, isAllReposMode, className } = props
-    const { getCaptureInsightContent } = useContext(CodeInsightsBackendContext)
+/**
+ * Displays live preview chart for creation UI with the latest insights settings
+ * from creation UI form.
+ */
+export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLivePreviewProps> = props => {
+    const { series, repositories, step, stepValue, disabled = false, isAllReposMode, className } = props
 
+    const { getSearchInsightContent } = useContext(CodeInsightsBackendContext)
+
+    // Compare live insight settings with deep check to avoid unnecessary
+    // search insight content fetching
     const settings = useDeepMemo({
-        disabled,
-        query: getSanitizedCaptureQuery(query.trim()),
+        series: series
+            .filter(series => series.valid)
+            // Cut off all unnecessary for live preview fields in order to
+            // not trigger live preview update if any of unnecessary has been updated
+            // Example: edit true => false - chart shouldn't re-fetch data
+            .map<SearchBasedInsightSeries>(getSanitizedLine),
         repositories: getSanitizedRepositories(repositories),
         step: { [step]: stepValue },
+        disabled,
     })
 
     const getLivePreviewContent = useMemo(
         () => ({
             disabled: settings.disabled,
-            fetcher: () => getCaptureInsightContent(settings),
+            fetcher: () => getSearchInsightContent(settings),
         }),
-        [settings, getCaptureInsightContent]
+        [settings, getSearchInsightContent]
     )
 
     const { state, update } = useLivePreview(getLivePreviewContent)
@@ -82,7 +99,7 @@ export const CaptureGroupCreationLivePreview: React.FunctionComponent<CaptureGro
                                         height={parent.height}
                                         // We cast to unknown here because ForwardReferenceComponent
                                         // doesn't support inferring as component with generic.
-                                        {...(MOCK_CHART_CONTENT as SeriesChartContent<unknown>)}
+                                        {...(SERIES_MOCK_CHART as SeriesChartContent<unknown>)}
                                     />
                                     <LivePreviewBanner>
                                         {isAllReposMode
@@ -97,7 +114,6 @@ export const CaptureGroupCreationLivePreview: React.FunctionComponent<CaptureGro
 
                 {state.status === StateStatus.Data && <LivePreviewLegend series={state.data.series} />}
             </LivePreviewCard>
-
             {isAllReposMode && (
                 <p className="mt-2">Previews are only displayed if you individually list up to 50 repositories.</p>
             )}

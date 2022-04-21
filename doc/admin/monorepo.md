@@ -32,7 +32,7 @@ You can help the Sourcegraph developers understand the scale of your monorepo by
 Example output on the Sourcegraph repository:
 
 ``` shellsession
-$ wget https://github.com/sourcegraph/sourcegraph/blob/main/dev/git-stats
+$ wget https://github.com/sourcegraph/sourcegraph/raw/main/dev/git-stats
 $ chmod +x git-stats
 $ ./git-stats
 725M	. gitdir

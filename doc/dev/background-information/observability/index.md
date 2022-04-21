@@ -24,7 +24,7 @@ Observability at Sourcegraph includes:
 - [How to find monitoring](../../how-to/find_monitoring.md)
 - [How to add monitoring](../../how-to/add_monitoring.md)
 - [Set up local monitoring development](../../how-to/monitoring_local_dev.md)
-- How to add debugging (coming soon)
+- [How to add and use logging](../../how-to/add_and_use_logging.md)
 
 ## Components
 
