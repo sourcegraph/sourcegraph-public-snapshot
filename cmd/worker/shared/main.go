@@ -43,6 +43,7 @@ func Start(additionalJobs map[string]job.Job, registerEnterpriseMigrations func(
 		"webhook-log-janitor":                   webhooks.NewJanitor(),
 		"out-of-band-migrations":                migrations.NewMigrator(registerMigrations),
 		"codeintel-autoindexing-scheduler":      codeintel.NewAutoindexingSchedulerJob(),
+		"codeintel-dependencies-indexer":        codeintel.NewDependenciesIndexerJob(),
 		"codeintel-policies-repository-matcher": codeintel.NewPoliciesRepositoryMatcherJob(),
 	}
 
