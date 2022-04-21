@@ -26,8 +26,8 @@ func GetService(db database.DB, syncer dependencies.Syncer) *dependencies.Servic
 
 // TestService creates a fresh dependencies service with the given database handle and syncer
 // instance. If the given syncer is nil, then ErrorSyncer will be used instead.
-func TestService(db database.DB, _ dependencies.Syncer) *dependencies.Service {
-	return dependencies.TestService(db, NewGitService(db), &errorSyncer{})
+func TestService(db database.DB, syncer dependencies.Syncer) *dependencies.Service {
+	return dependencies.TestService(db, NewGitService(db), syncer)
 }
 
 // ErrorSyncer should be used from gitserver and repoupdater code/tests.
