@@ -129,7 +129,7 @@ func runRevParse(ctx context.Context, cmd *gitserver.Cmd, spec string) (api.Comm
 			// repository.
 			return "", &gitdomain.RevisionNotFoundError{Repo: cmd.Repo, Spec: spec}
 		}
-		return "", gitdomain.BadCommitError{Spec: spec, Commit: commit, Repo: cmd.Repo}
+		return "", &gitdomain.BadCommitError{Spec: spec, Commit: commit, Repo: cmd.Repo}
 	}
 	return commit, nil
 }

@@ -33,7 +33,7 @@ func TestRevisionValidation(t *testing.T) {
 	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
 		// trigger errors
 		if spec == "bad_commit" {
-			return "", gitdomain.BadCommitError{}
+			return "", &gitdomain.BadCommitError{}
 		}
 		if spec == "deadline_exceeded" {
 			return "", context.DeadlineExceeded
@@ -124,13 +124,13 @@ func TestRevisionValidation(t *testing.T) {
 			repoFilters:              []string{"repoFoo@revBar:bad_commit"},
 			wantRepoRevs:             nil,
 			wantMissingRepoRevisions: nil,
-			wantErr:                  gitdomain.BadCommitError{},
+			wantErr:                  &gitdomain.BadCommitError{},
 		},
 		{
 			repoFilters:              []string{"repoFoo@revBar:^bad_commit"},
 			wantRepoRevs:             nil,
 			wantMissingRepoRevisions: nil,
-			wantErr:                  gitdomain.BadCommitError{},
+			wantErr:                  &gitdomain.BadCommitError{},
 		},
 		{
 			repoFilters:              []string{"repoFoo@revBar:deadline_exceeded"},
