@@ -1,3 +1,5 @@
+package com.sourcegraph.action;
+
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationInfo;
@@ -13,41 +15,46 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Optional;
 
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
+import com.sourcegraph.project.CommitViewUriBuilder;
+import com.sourcegraph.project.RepoInfo;
+import com.sourcegraph.project.RevisionContext;
+import com.sourcegraph.util.SourcegraphUtil;
+
 import org.jetbrains.annotations.NotNull;
+import com.intellij.openapi.diagnostic.Logger;
 
 /**
  * Jetbrains IDE action to open a selected revision in Sourcegraph.
  */
 public class OpenRevisionAction extends AnAction implements DumbAware {
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
+  private final Logger logger = Logger.getInstance(this.getClass());
 
-    private Optional<RevisionContext> getHistoryRevision(AnActionEvent e) {
-        VcsFileRevision revision = e.getDataContext().getData(VcsDataKeys.VCS_FILE_REVISION);
-        Project project = e.getProject();
+  private Optional<RevisionContext> getHistoryRevision(AnActionEvent e) {
+    VcsFileRevision revision = e.getDataContext().getData(VcsDataKeys.VCS_FILE_REVISION);
+    Project project = e.getProject();
 
-        if (project == null) {
-            return Optional.empty();
-        }
-        if (revision == null) {
-            return Optional.empty();
-        }
-
-        String rev = revision.getRevisionNumber().toString();
-        return Optional.of(new RevisionContext(project, rev));
+    if (project == null) {
+      return Optional.empty();
+    }
+    if (revision == null) {
+      return Optional.empty();
     }
 
-    private Optional<RevisionContext> getLogRevision(AnActionEvent e) {
-        VcsLog log = e.getDataContext().getData(VcsLogDataKeys.VCS_LOG);
-        Project project = e.getProject();
+    String rev = revision.getRevisionNumber().toString();
+    return Optional.of(new RevisionContext(project, rev));
+  }
 
-        if (project == null) {
-            return Optional.empty();
-        }
-        if (log == null || log.getSelectedCommits().isEmpty()) {
-            return Optional.empty();
-        }
+  private Optional<RevisionContext> getLogRevision(AnActionEvent e) {
+    VcsLog log = e.getDataContext().getData(VcsLogDataKeys.VCS_LOG);
+    Project project = e.getProject();
+
+    if (project == null) {
+      return Optional.empty();
+    }
+    if (log == null || log.getSelectedCommits().isEmpty()) {
+      return Optional.empty();
+    }
+
 
         String rev = log.getSelectedCommits().get(0).getHash().asString();
         return Optional.of(new RevisionContext(project, rev));
@@ -62,10 +69,10 @@ public class OpenRevisionAction extends AnAction implements DumbAware {
         try {
             String productName = ApplicationInfo.getInstance().getVersionName();
             String productVersion = ApplicationInfo.getInstance().getFullVersion();
-            RepoInfo repoInfo = Util.repoInfo(context.getProject().getProjectFilePath(), context.getProject());
+            RepoInfo repoInfo = SourcegraphUtil.repoInfo(context.getProject().getProjectFilePath(), context.getProject());
 
             CommitViewUriBuilder builder = new CommitViewUriBuilder();
-            URI uri = builder.build(Util.sourcegraphURL(context.getProject()), context.getRevisionNumber(), repoInfo, productName, productVersion);
+            URI uri = builder.build(SourcegraphUtil.sourcegraphURL(context.getProject()), context.getRevisionNumber(), repoInfo, productName, productVersion);
 
             // Open the URL in the browser.
             Desktop.getDesktop().browse(uri);

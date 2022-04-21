@@ -1,3 +1,5 @@
+package com.sourcegraph.action;
+
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.editor.Document;
@@ -9,8 +11,10 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.application.ApplicationInfo;
+import com.sourcegraph.project.RepoInfo;
+import com.sourcegraph.util.SourcegraphUtil;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.io.*;
 import java.awt.Desktop;
 import java.net.URI;
@@ -38,7 +42,7 @@ public abstract class SearchActionBase extends AnAction {
         SelectionModel sel = editor.getSelectionModel();
 
         // Get repo information.
-        RepoInfo repoInfo = Util.repoInfo(currentFile.getPath(), project);
+        RepoInfo repoInfo = SourcegraphUtil.repoInfo(currentFile.getPath(), project);
 
         String q = sel.getSelectedText();
         if (q == null || q.equals("")) {
@@ -50,9 +54,9 @@ public abstract class SearchActionBase extends AnAction {
         String productName = ApplicationInfo.getInstance().getVersionName();
         String productVersion = ApplicationInfo.getInstance().getFullVersion();
 
-        uri = Util.sourcegraphURL(project)+"-/editor"
+        uri = SourcegraphUtil.sourcegraphURL(project)+"-/editor"
                 + "?editor=" + URLEncoder.encode("JetBrains", StandardCharsets.UTF_8)
-                + "&version=" + URLEncoder.encode(Util.VERSION, StandardCharsets.UTF_8)
+                + "&version=" + URLEncoder.encode(SourcegraphUtil.VERSION, StandardCharsets.UTF_8)
                 + "&utm_product_name=" + URLEncoder.encode(productName, StandardCharsets.UTF_8)
                 + "&utm_product_version=" + URLEncoder.encode(productVersion, StandardCharsets.UTF_8)
                 + "&search=" + URLEncoder.encode(q, StandardCharsets.UTF_8);

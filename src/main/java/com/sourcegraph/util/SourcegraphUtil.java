@@ -1,12 +1,15 @@
+package com.sourcegraph.util;
+
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.sourcegraph.project.*;
 
 import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
 
-public class Util {
+public class SourcegraphUtil {
     public static String VERSION = "v1.2.2";
 
     // gitRemoteURL returns the remote URL for the given remote name.
@@ -52,7 +55,7 @@ public class Util {
     }
 
     public static String sourcegraphURL(Project project) {
-        String url = Config.getInstance(project).getUrl();
+        String url = SourcegraphConfig.getInstance(project).getUrl();
         if (url == null || url.length() == 0) {
             Properties props = readProps();
             url = props.getProperty("url", "https://sourcegraph.com/");
@@ -62,7 +65,7 @@ public class Util {
 
     // get defaultBranch configuration option
     public static String setDefaultBranch(Project project) {
-        String defaultBranch = Config.getInstance(project).getDefaultBranch();
+        String defaultBranch = SourcegraphConfig.getInstance(project).getDefaultBranch();
         if (defaultBranch == null || defaultBranch.length() == 0) {
             Properties props = readProps();
             defaultBranch = props.getProperty("defaultBranch", null);
@@ -72,7 +75,7 @@ public class Util {
 
     // get remoteUrlReplacements configuration option
     public static String setRemoteUrlReplacements(Project project) {
-        String replacements = Config.getInstance(project).getRemoteUrlReplacements();
+        String replacements = SourcegraphConfig.getInstance(project).getRemoteUrlReplacements();
         if (replacements == null || replacements.length() == 0) {
             Properties props = readProps();
             replacements = props.getProperty("remoteUrlReplacements", null);
@@ -125,17 +128,17 @@ public class Util {
             // Determine file path, relative to repository root.
             fileRel = fileName.substring(repoRoot.length()+1);
             remoteURL = configuredGitRemoteURL(repoRoot);
-            branch = Util.setDefaultBranch(project)!=null ? Util.setDefaultBranch(project) : gitBranch(repoRoot);
+            branch = SourcegraphUtil.setDefaultBranch(project)!=null ? SourcegraphUtil.setDefaultBranch(project) : gitBranch(repoRoot);
 
             // If on a branch that does not exist on the remote and no defaultBranch is configured
             // use "master" instead.
             // This allows users to check out a branch that does not exist in origin remote by setting defaultBranch
-            if (!isRemoteBranch(branch, repoRoot) && Util.setDefaultBranch(project)==null) {
+            if (!isRemoteBranch(branch, repoRoot) && SourcegraphUtil.setDefaultBranch(project)==null) {
                 branch = "master";
             }
 
             // replace remoteURL if config option is not null
-            String r = Util.setRemoteUrlReplacements(project);
+            String r = SourcegraphUtil.setRemoteUrlReplacements(project);
             if(r!=null) {
                 String[] replacements = r.trim().split("\\s*,\\s*");
                 // Check if the entered values are pairs
@@ -144,7 +147,7 @@ public class Util {
                 }
             }
         } catch (Exception err) {
-            Logger.getInstance(Util.class).info(err);
+            Logger.getInstance(SourcegraphUtil.class).info(err);
             err.printStackTrace();
         }
         return new RepoInfo(fileRel, remoteURL, branch);
@@ -153,7 +156,7 @@ public class Util {
     // exec executes the given command in the specified directory and returns
     // its stdout. Any stderr output is logged.
     public static String exec(String cmd, String dir) throws IOException {
-        Logger.getInstance(Util.class).debug("exec cmd='" + cmd + "' dir="+dir);
+        Logger.getInstance(SourcegraphUtil.class).debug("exec cmd='" + cmd + "' dir="+dir);
 
         // Create the process.
         Process p = Runtime.getRuntime().exec(cmd, null, new File(dir));
@@ -161,7 +164,7 @@ public class Util {
         BufferedReader stderr = new BufferedReader(new InputStreamReader(p.getErrorStream()));
 
         // Log any stderr output.
-        Logger logger = Logger.getInstance(Util.class);
+        Logger logger = Logger.getInstance(SourcegraphUtil.class);
         String s;
         while ((s = stderr.readLine()) != null) {
             logger.debug(s);

@@ -7,6 +7,9 @@
 # User local IDEA configuration files
 .idea/
 
+#IntelliJ project
+*.iml
+
 # Build output & caches for IntelliJ plugin development
 build/
 idea-sandbox/

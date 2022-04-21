@@ -46,11 +46,11 @@ You may also choose to configure it _per repository_ using a `.idea/sourcegraph.
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-    <component name="Config">
-        <option name="url" value="https://sourcegraph.example.com" />
-        <option name="defaultBranch" value="example-branch" />
-        <option name="remoteUrlReplacements" value="git.example.com, git-web.example.com" />
-    </component>
+  <component name="com.sourcegraph.project.SourcegraphConfig">
+    <option name="url" value="https://sourcegraph.example.com"/>
+    <option name="defaultBranch" value="example-branch"/>
+    <option name="remoteUrlReplacements" value="git.example.com, git-web.example.com"/>
+  </component>
 </project>
 ```
 

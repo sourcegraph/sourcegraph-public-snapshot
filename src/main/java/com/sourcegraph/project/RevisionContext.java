@@ -1,3 +1,5 @@
+package com.sourcegraph.project;
+
 import com.intellij.openapi.project.Project;
 
 public class RevisionContext {

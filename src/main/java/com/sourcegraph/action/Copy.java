@@ -1,3 +1,5 @@
+package com.sourcegraph.action;
+
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;

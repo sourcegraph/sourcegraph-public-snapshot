@@ -1,3 +1,5 @@
+package com.sourcegraph.action;
+
 import com.intellij.openapi.diagnostic.Logger;
 
 import java.awt.*;

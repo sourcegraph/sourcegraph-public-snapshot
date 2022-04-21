@@ -1,3 +1,5 @@
+package com.sourcegraph.project;
+
 public class RepoInfo {
     public String fileRel;
     public String remoteURL;

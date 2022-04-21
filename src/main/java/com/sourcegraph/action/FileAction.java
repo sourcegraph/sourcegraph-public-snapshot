@@ -1,11 +1,17 @@
+package com.sourcegraph.action;
+
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationInfo;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.*;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.sourcegraph.project.RepoInfo;
+import com.sourcegraph.util.SourcegraphUtil;
+
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -34,7 +40,7 @@ public abstract class FileAction extends AnAction {
         SelectionModel sel = editor.getSelectionModel();
 
         // Get repo information.
-        RepoInfo repoInfo = Util.repoInfo(currentFile.getPath(), project);
+        RepoInfo repoInfo = SourcegraphUtil.repoInfo(currentFile.getPath(), project);
         if (Objects.equals(repoInfo.remoteURL, "")) {
             return;
         }
@@ -48,12 +54,12 @@ public abstract class FileAction extends AnAction {
         VisualPosition selectionEndPosition = sel.getSelectionEndPosition();
         LogicalPosition start = selectionStartPosition != null ? editor.visualToLogicalPosition(selectionStartPosition) : null;
         LogicalPosition end = selectionEndPosition != null ? editor.visualToLogicalPosition(selectionEndPosition) : null;
-        uri = Util.sourcegraphURL(project)+"-/editor"
+        uri = SourcegraphUtil.sourcegraphURL(project)+"-/editor"
                 + "?remote_url=" + URLEncoder.encode(repoInfo.remoteURL, StandardCharsets.UTF_8)
                 + "&branch=" + URLEncoder.encode(repoInfo.branch, StandardCharsets.UTF_8)
                 + "&file=" + URLEncoder.encode(repoInfo.fileRel, StandardCharsets.UTF_8)
                 + "&editor=" + URLEncoder.encode("JetBrains", StandardCharsets.UTF_8)
-                + "&version=" + URLEncoder.encode(Util.VERSION, StandardCharsets.UTF_8)
+                + "&version=" + URLEncoder.encode(SourcegraphUtil.VERSION, StandardCharsets.UTF_8)
                 + (start != null ? ("&start_row=" + URLEncoder.encode(Integer.toString(start.line), StandardCharsets.UTF_8)
                 + "&start_col=" + URLEncoder.encode(Integer.toString(start.column), StandardCharsets.UTF_8)) : "")
                 + (end != null ? ("&end_row=" + URLEncoder.encode(Integer.toString(end.line), StandardCharsets.UTF_8)
