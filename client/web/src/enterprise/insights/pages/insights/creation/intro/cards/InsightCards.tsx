@@ -95,7 +95,7 @@ export const CaptureGroupInsightCard: React.FunctionComponent<InsightCardProps> 
 )
 
 export const ExtensionInsightsCard: React.FunctionComponent<InsightCardProps> = props => (
-    <InsightCard {...props} className={classNames(styles.cardExtensionCard)}>
+    <InsightCard {...props} className={styles.cardExtensionCard}>
         <div className={styles.images}>
             <img
                 className={styles.image}
