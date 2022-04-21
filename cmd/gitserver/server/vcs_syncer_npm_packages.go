@@ -12,10 +12,9 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/unpack"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -38,23 +37,24 @@ var (
 type NpmPackagesSyncer struct {
 	// Configuration object describing the connection to the npm registry.
 	connection schema.NpmPackagesConnection
-	depsStore  repos.DependenciesStore
+	depsSvc    *dependencies.Service
 	// The client to use for making queries against npm.
 	client npm.Client
 }
 
-// Create a new NpmPackagesSyncer. If customClient is nil, the client
-// for the syncer is configured based on the connection parameter.
+// NewNpmPackagesSyncer create a new NpmPackageSyncer. If customClient is nil,
+// the client for the syncer is configured based on the connection parameter.
 func NewNpmPackagesSyncer(
 	connection schema.NpmPackagesConnection,
-	dbStore repos.DependenciesStore,
+	depsSvc *dependencies.Service,
 	customClient npm.Client,
+	urn string,
 ) *NpmPackagesSyncer {
 	var client = customClient
 	if client == nil {
-		client = npm.NewHTTPClient(connection.Registry, connection.RateLimit, connection.Credentials)
+		client = npm.NewHTTPClient(urn, connection.Registry, connection.Credentials)
 	}
-	return &NpmPackagesSyncer{connection, dbStore, client}
+	return &NpmPackagesSyncer{connection, depsSvc, client}
 }
 
 var _ VCSSyncer = &NpmPackagesSyncer{}
@@ -70,8 +70,8 @@ func (s *NpmPackagesSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL)
 	return nil
 }
 
-// Similar to CloneCommand for JVMPackagesSyncer; it handles cloning itself
-// instead of returning a command that does the cloning.
+// CloneCommand is similar to CloneCommand for JVMPackagesSyncer; it handles
+// cloning itself instead of returning a command that does the cloning.
 func (s *NpmPackagesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, bareGitDirectory string) (*exec.Cmd, error) {
 	err := os.MkdirAll(bareGitDirectory, 0755)
 	if err != nil {
@@ -185,8 +185,8 @@ func (s *NpmPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 		}
 	}
 
-	dbDeps, err := s.depsStore.ListDependencyRepos(ctx, dependenciesStore.ListDependencyReposOpts{
-		Scheme:      dependenciesStore.NpmPackagesScheme,
+	dbDeps, err := s.depsSvc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
+		Scheme:      dependencies.NpmPackagesScheme,
 		Name:        repoPackage.PackageSyntax(),
 		NewestFirst: true,
 	})

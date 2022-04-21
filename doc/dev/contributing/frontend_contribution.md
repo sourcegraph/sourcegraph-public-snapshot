@@ -27,10 +27,10 @@ To work on most frontend issues, it is necessary to run three applications local
 2. Linters.
 
     ```sh
-    yarn all:eslint
-    yarn prettier-check
-    yarn all:stylelint
-    yarn graphql-lint
+    yarn lint:js:all
+    yarn lint:css:all
+    yarn lint:graphql
+    yarn format:check
     ```
 
 3. Unit tests

@@ -77,7 +77,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	const minimumUpgradeableVersion = "3.38.0"
+	const minimumUpgradeableVersion = "3.39.0"
 
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
@@ -93,9 +93,16 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
 				triggerAsync(buildOptions)))
 
-			ops.Append(prPreview())
+			// Do not create client PR preview if Go or GraphQL is changed to avoid confusing
+			// preview behavior, because only Client code is used to deploy application preview.
+			if !c.Diff.Has(changed.Go) && !c.Diff.Has(changed.GraphQL) {
+				ops.Append(prPreview())
+			}
 		}
-		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
+		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{
+			MinimumUpgradeableVersion:  minimumUpgradeableVersion,
+			ClientLintOnlyChangedFiles: c.RunType.Is(runtype.PullRequest),
+		}))
 
 	case runtype.ReleaseNightly:
 		ops.Append(triggerReleaseBranchHealthchecks(minimumUpgradeableVersion))
@@ -116,8 +123,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
 		ops = operations.NewSet(
-			addClientLinters,
-			addBrowserExt,
+			addClientLintersForAllFiles,
+			addBrowserExtensionUnitTests,
+			addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
 			frontendTests,
 			wait,
 			addBrowserExtensionReleaseSteps)
@@ -126,8 +134,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
 		ops = operations.NewSet(
-			addClientLinters,
-			addBrowserExt,
+			addClientLintersForAllFiles,
+			addBrowserExtensionUnitTests,
+			recordBrowserExtensionIntegrationTests,
 			frontendTests,
 			wait,
 			addBrowserExtensionE2ESteps)
@@ -267,7 +276,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	ops.Apply(pipeline)
 
 	// Validate generated pipeline have unique keys
-	if err := pipeline.EnsureUniqueKeys(); err != nil {
+	if err := pipeline.EnsureUniqueKeys(make(map[string]int)); err != nil {
 		return nil, err
 	}
 

@@ -8,10 +8,10 @@ tar -xf client.tar.gz -C .
 
 echo "--- Yarn install in root"
 # mutex is necessary since CI runs various yarn installs in parallel
-yarn --mutex network --frozen-lockfile --network-timeout 60000
+yarn --mutex network --frozen-lockfile --network-timeout 60000 --silent
 
 echo "--- Run integration test suite"
-yarn percy exec --parallel yarn cover-integration:base "$@"
+yarn percy exec yarn _cover-integration "$@"
 
 echo "--- Process NYC report"
 yarn nyc report -r json

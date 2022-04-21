@@ -138,13 +138,11 @@ func (s *Syncer) TriggerExternalServiceSync(ctx context.Context, id int64) error
 	return s.Store.EnqueueSingleSyncJob(ctx, id)
 }
 
-type externalServiceOwnerType string
-
 const (
-	ownerUndefined externalServiceOwnerType = ""
-	ownerSite      externalServiceOwnerType = "site"
-	ownerUser      externalServiceOwnerType = "user"
-	ownerOrg       externalServiceOwnerType = "org"
+	ownerUndefined = ""
+	ownerSite      = "site"
+	ownerUser      = "user"
+	ownerOrg       = "org"
 )
 
 type ErrUnauthorized struct{}
@@ -251,6 +249,7 @@ func (d Diff) Len() int {
 // SyncRepo syncs a single repository by name and associates it with an external service.
 //
 // It works for repos from:
+//
 // 1. Public "cloud_default" code hosts since we don't sync them in the background
 //    (which would delete lazy synced repos).
 // 2. Any package hosts (i.e. npm, Maven, etc) since callers are expected to store
@@ -289,7 +288,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 
 	if background && repo != nil {
 		go func() {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 			defer cancel()
 
 			// We don't care about the return value here, but we still want to ensure that
@@ -297,7 +296,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 			_, _, _ = s.syncGroup.Do(string(name), func() (interface{}, error) {
 				updatedRepo, err := s.syncRepo(ctx, codehost, name, repo)
 				if err != nil {
-					log15.Error("Error syncing repo in the background", "name", name, "error", err)
+					log15.Error("SyncRepo", "name", name, "error", err, "background", background)
 				}
 				return updatedRepo, nil
 			})
@@ -309,6 +308,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 		return s.syncRepo(ctx, codehost, name, repo)
 	})
 	if err != nil {
+		log15.Error("SyncRepo", "name", name, "error", err, "background", background)
 		return nil, err
 	}
 	return updatedRepo.(*types.Repo), nil
@@ -327,7 +327,7 @@ func (s *Syncer) syncRepo(
 	svcs, err := s.Store.ExternalServiceStore.List(ctx, database.ExternalServicesListOptions{
 		Kinds: []string{extsvc.TypeToKind(codehost.ServiceType)},
 		// Since package host external services have the set of repositories to sync in
-		// the lsif_dependency_repos table, we can lazy-sync individual repos wihout wiping them
+		// the lsif_dependency_repos table, we can lazy-sync individual repos without wiping them
 		// out in the next full background sync as long as we add them to that table.
 		//
 		// This permits lazy-syncing of package repos in on-prem instances as well as in cloud.
@@ -820,13 +820,13 @@ func (s *Syncer) observeSync(
 	return ctx, func(svc *types.ExternalService, err error) {
 		var owner string
 		if svc == nil {
-			owner = string(ownerUndefined)
+			owner = ownerUndefined
 		} else if svc.NamespaceUserID > 0 {
-			owner = string(ownerUser)
+			owner = ownerUser
 		} else if svc.NamespaceOrgID > 0 {
-			owner = string(ownerOrg)
+			owner = ownerOrg
 		} else {
-			owner = string(ownerSite)
+			owner = ownerSite
 		}
 
 		syncStarted.WithLabelValues(family, owner).Inc()
@@ -841,9 +841,26 @@ func (s *Syncer) observeSync(
 
 		if !success {
 			tr.SetError(err)
-			syncErrors.WithLabelValues(family, owner).Add(1)
+			syncErrors.WithLabelValues(family, owner, syncErrorReason(err)).Inc()
 		}
 
 		tr.Finish()
+	}
+}
+
+func syncErrorReason(err error) string {
+	switch {
+	case err == nil:
+		return ""
+	case errcode.IsNotFound(err):
+		return "not_found"
+	case errcode.IsUnauthorized(err):
+		return "unauthorized"
+	case errcode.IsForbidden(err):
+		return "forbidden"
+	case errcode.IsTemporary(err):
+		return "temporary"
+	default:
+		return "unknown"
 	}
 }

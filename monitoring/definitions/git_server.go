@@ -258,6 +258,8 @@ func GitServer() *monitoring.Container {
 					},
 				},
 			},
+			shared.GitServer.NewAPIGroup(containerName),
+			shared.GitServer.NewBatchLogSemaphoreWait(containerName),
 			{
 				Title:  "Gitservice for internal cloning",
 				Hidden: true,

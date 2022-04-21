@@ -1,40 +1,38 @@
 package main
 
 import (
+	"bytes"
 	"context"
-	"flag"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"runtime"
 	"strings"
 
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var (
-	updateFlags = flag.NewFlagSet("sg update", flag.ExitOnError)
-	// TODO: These are deprecated flags and can be removed May 1st 2022
-	_ = updateFlags.Bool("local", false, "Update to local copy of 'dev/sg'")
-	_ = updateFlags.Bool("download", true, "Download a prebuilt binary of 'sg' instead of compiling it locally")
-)
-
-var updateCommand = &ffcli.Command{
-	Name:       "update",
-	FlagSet:    updateFlags,
-	ShortUsage: "sg update",
-	ShortHelp:  "Update sg.",
-	LongHelp: `Update local sg installation with the latest changes. To see what's new, run:
+var updateCommand = &cli.Command{
+	Name:  "update",
+	Usage: "Update local sg installation",
+	Description: `Update local sg installation with the latest changes. To see what's new, run:
 
   sg version changelog -next
 
 Requires a local copy of the 'sourcegraph/sourcegraph' codebase.`,
-	Exec: func(ctx context.Context, args []string) error {
-		_, err := updateToPrebuiltSG(ctx)
-		return err
+	Category: CategoryUtil,
+	Action: func(cmd *cli.Context) error {
+		if _, err := updateToPrebuiltSG(cmd.Context); err != nil {
+			return err
+		}
+		writeSuccessLinef("sg has been updated!")
+		stdout.Out.Write("To see what's new, run 'sg version changelog'.")
+		return nil
 	},
 }
 
@@ -73,19 +71,8 @@ func updateToPrebuiltSG(ctx context.Context) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	tmpSgPath := tmpDir + "/sg"
-	f, err := os.Create(tmpSgPath)
-	if err != nil {
-		return "", err
-	}
-
-	_, err = io.Copy(f, resp.Body)
-	if err != nil {
-		return "", err
-	}
-	err = os.Chmod(tmpSgPath, 0755)
-	if err != nil {
-		return "", err
+	if resp.StatusCode != http.StatusOK {
+		return "", errors.Newf("downloading sg: status %d", resp.StatusCode)
 	}
 
 	currentExecPath, err := os.Executable()
@@ -93,5 +80,17 @@ func updateToPrebuiltSG(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	return currentExecPath, os.Rename(tmpSgPath, currentExecPath)
+	content := &bytes.Buffer{}
+	content.ReadFrom(resp.Body)
+
+	ok, err := fileutil.UpdateFileIfDifferent(currentExecPath, content.Bytes())
+	if err != nil {
+		return "", err
+	}
+	if !ok {
+		return currentExecPath, nil
+	}
+
+	err = exec.Command("chmod", "+x", currentExecPath).Run()
+	return currentExecPath, err
 }

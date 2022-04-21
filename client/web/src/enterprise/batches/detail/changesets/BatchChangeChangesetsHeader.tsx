@@ -1,5 +1,7 @@
 import React from 'react'
 
+import { H3, H5 } from '@sourcegraph/wildcard'
+
 import { InputTooltip } from '../../../../components/InputTooltip'
 
 export interface BatchChangeChangesetsHeaderProps {
@@ -30,10 +32,20 @@ export const BatchChangeChangesetsHeader: React.FunctionComponent<BatchChangeCha
                 }
             />
         )}
-        <h5 className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">Status</h5>
-        <h5 className="p-2 d-none d-md-block text-uppercase text-nowrap">Changeset information</h5>
-        <h5 className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">Check state</h5>
-        <h5 className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">Review state</h5>
-        <h5 className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">Changes</h5>
+        <H5 as={H3} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">
+            Status
+        </H5>
+        <H5 as={H3} className="p-2 d-none d-md-block text-uppercase text-nowrap">
+            Changeset information
+        </H5>
+        <H5 as={H3} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">
+            Check state
+        </H5>
+        <H5 as={H3} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">
+            Review state
+        </H5>
+        <H5 as={H3} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">
+            Changes
+        </H5>
     </>
 )

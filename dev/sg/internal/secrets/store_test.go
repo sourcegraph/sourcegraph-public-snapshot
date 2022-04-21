@@ -15,7 +15,7 @@ type mySecrets struct {
 func TestSecrets(t *testing.T) {
 	t.Run("Put and Get", func(t *testing.T) {
 		data := mySecrets{ID: "foo", Secret: "bar"}
-		store := New("")
+		store := newStore("")
 		err := store.Put("foo", data)
 		if err != nil {
 			t.Fatalf("want no error, got %v", err)
@@ -45,7 +45,7 @@ func TestSecrets(t *testing.T) {
 		})
 
 		// Assign a secret and save it
-		s, err := LoadFile(filepath)
+		s, err := LoadFromFile(filepath)
 		if err != nil {
 			t.Fatalf("%v", err)
 		}
@@ -57,7 +57,7 @@ func TestSecrets(t *testing.T) {
 		}
 
 		// Fetch it back and compare
-		got, err := LoadFile(filepath)
+		got, err := LoadFromFile(filepath)
 		if err != nil {
 			t.Fatalf("%v", err)
 		}

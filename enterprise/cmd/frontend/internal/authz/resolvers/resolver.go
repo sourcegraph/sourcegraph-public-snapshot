@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/RoaringBitmap/roaring"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 
@@ -102,7 +101,7 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 	p := &authz.RepoPermissions{
 		RepoID:  int32(repoID),
 		Perm:    authz.Read, // Note: We currently only support read for repository permissions.
-		UserIDs: roaring.NewBitmap(),
+		UserIDs: map[int32]struct{}{},
 	}
 	cfg := globals.PermissionsUserMapping()
 	switch cfg.BindID {
@@ -113,7 +112,7 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		}
 
 		for i := range emails {
-			p.UserIDs.Add(uint32(emails[i].UserID))
+			p.UserIDs[emails[i].UserID] = struct{}{}
 			delete(bindIDSet, emails[i].Email)
 		}
 
@@ -124,7 +123,7 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		}
 
 		for i := range users {
-			p.UserIDs.Add(uint32(users[i].ID))
+			p.UserIDs[users[i].ID] = struct{}{}
 			delete(bindIDSet, users[i].Username)
 		}
 
@@ -302,7 +301,7 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 		return nil, err
 	}
 
-	var ids *roaring.Bitmap
+	var ids []int32
 	if user != nil {
 		p := &authz.UserPermissions{
 			UserID: user.ID,
@@ -310,7 +309,7 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 			Type:   authz.PermRepos,
 		}
 		err = r.db.Perms().LoadUserPermissions(ctx, p)
-		ids = p.IDs
+		ids = p.GenerateSortedIDsSlice()
 	} else {
 		p := &authz.UserPendingPermissions{
 			ServiceType: authz.SourcegraphServiceType,
@@ -320,14 +319,14 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 			Type:        authz.PermRepos,
 		}
 		err = r.db.Perms().LoadUserPendingPermissions(ctx, p)
-		ids = p.IDs
+		ids = p.GenerateSortedIDsSlice()
 	}
 	if err != nil && err != authz.ErrPermsNotFound {
 		return nil, err
 	}
 	// If no row is found, we return an empty list to the consumer.
 	if err == authz.ErrPermsNotFound {
-		ids = roaring.NewBitmap()
+		ids = []int32{}
 	}
 
 	return &repositoryConnectionResolver{
@@ -372,12 +371,12 @@ func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.Rep
 	}
 	// If no row is found, we return an empty list to the consumer.
 	if err == authz.ErrPermsNotFound {
-		p.UserIDs = roaring.NewBitmap()
+		p.UserIDs = map[int32]struct{}{}
 	}
 
 	return &userConnectionResolver{
 		db:    r.db,
-		ids:   p.UserIDs,
+		ids:   p.GenerateSortedIDsSlice(),
 		first: args.First,
 		after: args.After,
 	}, nil

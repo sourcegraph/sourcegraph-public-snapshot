@@ -17,14 +17,18 @@ import (
 
 	"github.com/inconshreveable/log15"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tidwall/gjson"
+	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -54,12 +58,13 @@ import (
 )
 
 var (
-	reposDir                     = env.Get("SRC_REPOS_DIR", "/data/repos", "Root dir containing repos.")
-	wantPctFree                  = env.MustGetInt("SRC_REPOS_DESIRED_PERCENT_FREE", 10, "Target percentage of free space on disk.")
-	janitorInterval              = env.MustGetDuration("SRC_REPOS_JANITOR_INTERVAL", 1*time.Minute, "Interval between cleanup runs")
-	syncRepoStateInterval        = env.MustGetDuration("SRC_REPOS_SYNC_STATE_INTERVAL", 10*time.Minute, "Interval between state syncs")
-	syncRepoStateBatchSize       = env.MustGetInt("SRC_REPOS_SYNC_STATE_BATCH_SIZE", 500, "Number of upserts to perform per batch")
-	syncRepoStateUpsertPerSecond = env.MustGetInt("SRC_REPOS_SYNC_STATE_UPSERT_PER_SEC", 500, "The number of upserted rows allowed per second across all gitserver instances")
+	reposDir                       = env.Get("SRC_REPOS_DIR", "/data/repos", "Root dir containing repos.")
+	wantPctFree                    = env.MustGetInt("SRC_REPOS_DESIRED_PERCENT_FREE", 10, "Target percentage of free space on disk.")
+	janitorInterval                = env.MustGetDuration("SRC_REPOS_JANITOR_INTERVAL", 1*time.Minute, "Interval between cleanup runs")
+	syncRepoStateInterval          = env.MustGetDuration("SRC_REPOS_SYNC_STATE_INTERVAL", 10*time.Minute, "Interval between state syncs")
+	syncRepoStateBatchSize         = env.MustGetInt("SRC_REPOS_SYNC_STATE_BATCH_SIZE", 500, "Number of upserts to perform per batch")
+	syncRepoStateUpsertPerSecond   = env.MustGetInt("SRC_REPOS_SYNC_STATE_UPSERT_PER_SEC", 500, "The number of upserted rows allowed per second across all gitserver instances")
+	batchLogGlobalConcurrencyLimit = env.MustGetInt("SRC_BATCH_LOG_GLOBAL_CONCURRENCY_LIMIT", 256, "The maximum number of in-flight Git commands from all /batch-log requests combined")
 )
 
 func main() {
@@ -97,7 +102,7 @@ func main() {
 	db := database.NewDB(sqlDB)
 
 	repoStore := database.Repos(db)
-	codeintelDB := dependenciesStore.GetStore(db)
+	depsSvc := livedependencies.GetService(db, nil)
 	externalServiceStore := database.ExternalServices(db)
 
 	err = keyring.Init(ctx)
@@ -112,13 +117,20 @@ func main() {
 			return getRemoteURLFunc(ctx, externalServiceStore, repoStore, nil, repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
-			return getVCSSyncer(ctx, externalServiceStore, repoStore, codeintelDB, repo)
+			return getVCSSyncer(ctx, externalServiceStore, repoStore, depsSvc, repo)
 		},
-		Hostname:   hostname.Get(),
-		DB:         db,
-		CloneQueue: server.NewCloneQueue(list.New()),
+		Hostname:                hostname.Get(),
+		DB:                      db,
+		CloneQueue:              server.NewCloneQueue(list.New()),
+		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(batchLogGlobalConcurrencyLimit)),
 	}
-	gitserver.RegisterMetrics(db)
+
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+	gitserver.RegisterMetrics(db, observationContext)
 
 	if tmpDir, err := gitserver.SetupAndClearTmp(); err != nil {
 		log.Fatalf("failed to setup temporary directory: %s", err)
@@ -360,8 +372,13 @@ func editGitHubAppExternalServiceConfigToken(
 	return config, nil
 }
 
-func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalServiceStore, repoStore database.RepoStore,
-	codeintelDB *dependenciesStore.Store, repo api.RepoName) (server.VCSSyncer, error) {
+func getVCSSyncer(
+	ctx context.Context,
+	externalServiceStore database.ExternalServiceStore,
+	repoStore database.RepoStore,
+	depsSvc *dependencies.Service,
+	repo api.RepoName,
+) (server.VCSSyncer, error) {
 	// We need an internal actor in case we are trying to access a private repo. We
 	// only need access in order to find out the type of code host we're using, so
 	// it's safe.
@@ -370,28 +387,28 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 		return nil, errors.Wrap(err, "get repository")
 	}
 
-	extractOptions := func(connection interface{}) error {
+	extractOptions := func(connection interface{}) (string, error) {
 		for _, info := range r.Sources {
 			extSvc, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
 			if err != nil {
-				return errors.Wrap(err, "get external service")
+				return "", errors.Wrap(err, "get external service")
 			}
 			normalized, err := jsonc.Parse(extSvc.Config)
 			if err != nil {
-				return errors.Wrap(err, "normalize JSON")
+				return "", errors.Wrap(err, "normalize JSON")
 			}
 			if err = jsoniter.Unmarshal(normalized, connection); err != nil {
-				return errors.Wrap(err, "unmarshal JSON")
+				return "", errors.Wrap(err, "unmarshal JSON")
 			}
-			return nil
+			return extSvc.URN(), nil
 		}
-		return errors.Errorf("unexpected empty Sources map in %v", r)
+		return "", errors.Errorf("unexpected empty Sources map in %v", r)
 	}
 
 	switch r.ExternalRepo.ServiceType {
 	case extsvc.TypePerforce:
 		var c schema.PerforceConnection
-		if err := extractOptions(&c); err != nil {
+		if _, err := extractOptions(&c); err != nil {
 			return nil, err
 		}
 		return &server.PerforceDepotSyncer{
@@ -401,23 +418,25 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 		}, nil
 	case extsvc.TypeJVMPackages:
 		var c schema.JVMPackagesConnection
-		if err := extractOptions(&c); err != nil {
+		if _, err := extractOptions(&c); err != nil {
 			return nil, err
 		}
-		return &server.JVMPackagesSyncer{Config: &c, DepsStore: codeintelDB}, nil
+		return &server.JVMPackagesSyncer{Config: &c, DepsSvc: depsSvc}, nil
 	case extsvc.TypeNpmPackages:
 		var c schema.NpmPackagesConnection
-		if err := extractOptions(&c); err != nil {
+		urn, err := extractOptions(&c)
+		if err != nil {
 			return nil, err
 		}
-		return server.NewNpmPackagesSyncer(c, codeintelDB, nil), nil
+		return server.NewNpmPackagesSyncer(c, depsSvc, nil, urn), nil
 	case extsvc.TypeGoModules:
 		var c schema.GoModulesConnection
-		if err := extractOptions(&c); err != nil {
+		urn, err := extractOptions(&c)
+		if err != nil {
 			return nil, err
 		}
-		cli := gomodproxy.NewClient(&c, httpcli.ExternalDoer)
-		return server.NewGoModulesSyncer(&c, codeintelDB, cli), nil
+		cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternalDoer)
+		return server.NewGoModulesSyncer(&c, depsSvc, cli), nil
 	}
 	return &server.GitRepoSyncer{}, nil
 }

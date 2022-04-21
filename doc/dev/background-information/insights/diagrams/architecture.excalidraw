@@ -205,7 +205,7 @@
       ],
       "fontSize": 20,
       "fontFamily": 3,
-      "text": "codeinsights-db\n(TimescaleDB)",
+      "text": "codeinsights-db\n(Postgres)",
       "baseline": 44,
       "textAlign": "center",
       "verticalAlign": "top"
@@ -489,7 +489,7 @@
       "boundElementIds": [],
       "fontSize": 20,
       "fontFamily": 3,
-      "text": "Timeseries data",
+      "text": "Series data",
       "baseline": 20,
       "textAlign": "center",
       "verticalAlign": "top"
@@ -1210,7 +1210,7 @@
       ],
       "fontSize": 20,
       "fontFamily": 3,
-      "text": "codeinsights-db\n(TimescaleDB)",
+      "text": "codeinsights-db\n(Postgres)",
       "baseline": 44,
       "textAlign": "center",
       "verticalAlign": "top"

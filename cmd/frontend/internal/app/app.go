@@ -2,6 +2,7 @@ package app
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/NYTimes/gziphandler"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -49,10 +51,17 @@ func NewHandler(db database.DB, githubAppCloudSetupHandler http.Handler) http.Ha
 
 	r.Get(router.UI).Handler(ui.Router())
 
+	lockoutOptions := conf.AuthLockout()
+	lockoutStore := userpasswd.NewLockoutStore(
+		lockoutOptions.FailedAttemptThreshold,
+		time.Duration(lockoutOptions.LockoutPeriod)*time.Second,
+		time.Duration(lockoutOptions.ConsecutivePeriod)*time.Second,
+	)
 	r.Get(router.SignUp).Handler(trace.Route(userpasswd.HandleSignUp(db)))
 	r.Get(router.SiteInit).Handler(trace.Route(userpasswd.HandleSiteInit(db)))
-	r.Get(router.SignIn).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleSignIn(db))))
+	r.Get(router.SignIn).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleSignIn(db, lockoutStore))))
 	r.Get(router.SignOut).Handler(trace.Route(http.HandlerFunc(serveSignOutHandler(db))))
+	r.Get(router.UnlockAccount).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleUnlockAccount(db, lockoutStore))))
 	r.Get(router.ResetPasswordInit).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleResetPasswordInit(db))))
 	r.Get(router.ResetPasswordCode).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleResetPasswordCode(db))))
 	r.Get(router.VerifyEmail).Handler(trace.Route(http.HandlerFunc(serveVerifyEmail(db))))

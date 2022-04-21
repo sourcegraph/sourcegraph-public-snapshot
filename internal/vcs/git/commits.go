@@ -8,9 +8,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
-
-	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -18,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -189,8 +189,7 @@ func CommitsUniqueToBranch(ctx context.Context, db database.DB, repo api.RepoNam
 		args = append(args, branchName, "^HEAD")
 	}
 
-	cmd := gitserver.NewClient(db).Command("git", args...)
-	cmd.Repo = repo
+	cmd := gitserver.NewClient(db).GitCommand(repo, args...)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		return nil, err
@@ -304,10 +303,9 @@ func getWrappedCommits(ctx context.Context, db database.DB, repo api.RepoName, o
 		return nil, err
 	}
 
-	cmd := gitserver.NewClient(db).Command("git", args...)
-	cmd.Repo = repo
+	cmd := gitserver.NewClient(db).GitCommand(repo, args...)
 	if !opt.NoEnsureRevision {
-		cmd.EnsureRevision = opt.Range
+		cmd.SetEnsureRevision(opt.Range)
 	}
 	wrappedCommits, err := runCommitLog(ctx, cmd, opt)
 	if err != nil {
@@ -380,19 +378,23 @@ func joinCommits(previous, next []*gitdomain.Commit, desiredTotal uint) []*gitdo
 // runCommitLog sends the git command to gitserver. It interprets missing
 // revision responses and converts them into RevisionNotFoundError.
 // It is declared as a variable so that we can swap it out in tests
-var runCommitLog = func(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOptions) ([]*wrappedCommit, error) {
+var runCommitLog = func(ctx context.Context, cmd gitserver.GitCommand, opt CommitsOptions) ([]*wrappedCommit, error) {
 	data, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		data = bytes.TrimSpace(data)
 		if isBadObjectErr(string(stderr), opt.Range) {
-			return nil, &gitdomain.RevisionNotFoundError{Repo: cmd.Repo, Spec: opt.Range}
+			return nil, &gitdomain.RevisionNotFoundError{Repo: cmd.Repo(), Spec: opt.Range}
 		}
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, data))
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), data))
 	}
 
+	return parseCommitLogOutput(data, opt.NameOnly)
+}
+
+func parseCommitLogOutput(data []byte, nameOnly bool) ([]*wrappedCommit, error) {
 	allParts := bytes.Split(data, []byte{'\x00'})
 	partsPerCommit := partsPerCommitBasic
-	if opt.NameOnly {
+	if nameOnly {
 		partsPerCommit = partsPerCommitWithFileNames
 	}
 	numCommits := len(allParts) / partsPerCommit
@@ -471,15 +473,14 @@ func commitCount(ctx context.Context, db database.DB, repo api.RepoName, opt Com
 		return 0, err
 	}
 
-	cmd := gitserver.NewClient(db).Command("git", args...)
-	cmd.Repo = repo
 	if opt.Path != "" {
 		// This doesn't include --follow flag because rev-list doesn't support it, so the number may be slightly off.
-		cmd.Args = append(cmd.Args, "--", opt.Path)
+		args = append(args, "--", opt.Path)
 	}
+	cmd := gitserver.NewClient(db).GitCommand(repo, args...)
 	out, err := cmd.Output(ctx)
 	if err != nil {
-		return 0, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, out))
+		return 0, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
 	}
 
 	out = bytes.TrimSpace(out)
@@ -493,8 +494,7 @@ func FirstEverCommit(ctx context.Context, db database.DB, repo api.RepoName, che
 	defer span.Finish()
 
 	args := []string{"rev-list", "--reverse", "--date-order", "--max-parents=0", "HEAD"}
-	cmd := gitserver.NewClient(db).Command("git", args...)
-	cmd.Repo = repo
+	cmd := gitserver.NewClient(db).GitCommand(repo, args...)
 	out, err := cmd.Output(ctx)
 	if err != nil {
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", args, out))
@@ -521,13 +521,122 @@ func CommitExists(ctx context.Context, db database.DB, repo api.RepoName, id api
 	return c != nil, nil
 }
 
+// CommitsExist determines if the given commits exists in the given repositories. This function returns
+// a slice of the same size as the input slice, true indicating that the commit at the symmetric index
+// exists.
+func CommitsExist(ctx context.Context, db database.DB, repoCommits []api.RepoCommit, checker authz.SubRepoPermissionChecker) ([]bool, error) {
+	commits, err := getCommits(ctx, db, repoCommits, true, checker)
+	if err != nil {
+		return nil, err
+	}
+
+	exists := make([]bool, len(commits))
+	for i, commit := range commits {
+		exists[i] = commit != nil
+	}
+
+	return exists, nil
+}
+
+// getCommits returns a git commit object describing each of the give repository and commit pairs. This
+// function returns a slice of the same size as the input slice. Values in the output slice may be nil if
+// their associated repository or commit are unresolvable.
+//
+// If ignoreErrors is true, then errors arising from any single failed git log operation will cause the
+// resulting commit to be nil, but not fail the entire operation.
+func getCommits(ctx context.Context, db database.DB, repoCommits []api.RepoCommit, ignoreErrors bool, checker authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: getCommits")
+	span.SetTag("numRepoCommits", len(repoCommits))
+	defer span.Finish()
+
+	indexesByRepoCommit := make(map[api.RepoCommit]int, len(repoCommits))
+	for i, repoCommit := range repoCommits {
+		if err := checkSpecArgSafety(string(repoCommit.CommitID)); err != nil {
+			return nil, err
+		}
+
+		// Ensure repository names are normalized. If do this in a lower layer, then we may
+		// not be able to compare the RepoCommit parameter in the callback below with the
+		// input values.
+		repoCommits[i].Repo = protocol.NormalizeRepo(repoCommit.Repo)
+
+		// Make it easy to look up the index to populate for a particular RepoCommit value.
+		// Note that we use the slice-indexed version as the key, not the local variable, which
+		// was not updated in the normalization phase above
+		indexesByRepoCommit[repoCommits[i]] = i
+	}
+
+	// Create a slice with values populated in the callback defined below. Since the callback
+	// may be invoked concurrently inside BatchLog, we need to synchronize writes to this slice
+	// with this local mutex.
+	commits := make([]*gitdomain.Commit, len(repoCommits))
+	var mu sync.Mutex
+
+	callback := func(repoCommit api.RepoCommit, rawResult gitserver.RawBatchLogResult) error {
+		if err := rawResult.Error; err != nil {
+			if ignoreErrors {
+				// Treat as not-found
+				return nil
+			}
+			return errors.Wrap(err, "failed to perform git log")
+		}
+
+		wrappedCommits, err := parseCommitLogOutput([]byte(rawResult.Stdout), true)
+		if err != nil {
+			if ignoreErrors {
+				// Treat as not-found
+				return nil
+			}
+			return errors.Wrap(err, "parseCommitLogOutput")
+		}
+		if len(wrappedCommits) > 1 {
+			// Check this prior to filtering commits so that we still log an issue
+			// if the user happens to have access one but not the other; a rev being
+			// ambiguous here should be a visible issue regardless of permissions.
+			return errors.Errorf("git log: expected 1 commit, got %d", len(commits))
+		}
+
+		// Enforce sub-repository permissions
+		filteredCommits, err := filterCommits(ctx, wrappedCommits, repoCommit.Repo, checker)
+		if err != nil {
+			// Note that we don't check ignoreErrors on this condition. When we
+			// ignore errors it's to hide an issue with a single git log request on a
+			// single shard, which could return an error if that repo is missing, the
+			// supplied commit does not exist in the clone, or if the repo is malformed.
+			//
+			// We don't want to hide unrelated infrastructure errors caused by this
+			// method call.
+			return errors.Wrap(err, "filterCommits")
+		}
+		if len(filteredCommits) == 0 {
+			// Not found
+			return nil
+		}
+
+		mu.Lock()
+		defer mu.Unlock()
+		index := indexesByRepoCommit[repoCommit]
+		commits[index] = filteredCommits[0]
+		return nil
+	}
+
+	opts := gitserver.BatchLogOptions{
+		RepoCommits: repoCommits,
+		Format:      logFormatWithoutRefs,
+	}
+	if err := gitserver.NewClient(db).BatchLog(ctx, opts, callback); err != nil {
+		return nil, errors.Wrap(err, "gitserver.BatchLog")
+	}
+
+	return commits, nil
+}
+
 // Head determines the tip commit of the default branch for the given repository.
 // If no HEAD revision exists for the given repository (which occurs with empty
 // repositories), a false-valued flag is returned along with a nil error and
 // empty revision.
 func Head(ctx context.Context, db database.DB, repo api.RepoName, checker authz.SubRepoPermissionChecker) (_ string, revisionExists bool, err error) {
-	cmd := gitserver.NewClient(db).Command("git", "rev-parse", "HEAD")
-	cmd.Repo = repo
+	cmd := gitserver.NewClient(db).GitCommand(repo, "rev-parse", "HEAD")
 
 	out, err := cmd.Output(ctx)
 	if err != nil {
@@ -644,8 +753,7 @@ func BranchesContaining(ctx context.Context, db database.DB, repo api.RepoName, 
 			return nil, err
 		}
 	}
-	cmd := gitserver.NewClient(db).Command("git", "branch", "--contains", string(commit), "--format", "%(refname)")
-	cmd.Repo = repo
+	cmd := gitserver.NewClient(db).GitCommand(repo, "branch", "--contains", string(commit), "--format", "%(refname)")
 
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
@@ -690,8 +798,7 @@ func RefDescriptions(ctx context.Context, db database.DB, repo api.RepoName, che
 			args = append(args, "--points-at="+obj)
 		}
 
-		cmd := gitserver.NewClient(db).Command("git", args...)
-		cmd.Repo = repo
+		cmd := gitserver.NewClient(db).GitCommand(repo, args...)
 
 		out, err := cmd.CombinedOutput(ctx)
 		if err != nil {
@@ -782,9 +889,18 @@ lineLoop:
 			return nil, errors.Errorf(`unexpected output from git for-each-ref "%s"`, line)
 		}
 
-		createdDate, err := time.Parse(time.RFC3339, string(parts[3]))
-		if err != nil {
-			return nil, errors.Errorf(`unexpected output from git for-each-ref (bad date format) "%s"`, line)
+		var (
+			createdDatePart = string(parts[3])
+			createdDatePtr  *time.Time
+		)
+		// Some repositories attach tags to non-commit objects, such as trees. In such a situation, one
+		// cannot deference the tag to obtain the commit it points to, and there is no associated creatordate.
+		if createdDatePart != "" {
+			createdDate, err := time.Parse(time.RFC3339, createdDatePart)
+			if err != nil {
+				return nil, errors.Errorf(`unexpected output from git for-each-ref (bad date format) "%s"`, line)
+			}
+			createdDatePtr = &createdDate
 		}
 
 		// Check for duplicates before adding it to the slice
@@ -798,7 +914,7 @@ lineLoop:
 			Name:            name,
 			Type:            refType,
 			IsDefaultBranch: isDefaultBranch,
-			CreatedDate:     createdDate,
+			CreatedDate:     createdDatePtr,
 		})
 	}
 
@@ -816,8 +932,7 @@ func CommitDate(ctx context.Context, db database.DB, repo api.RepoName, commit a
 		}
 	}
 
-	cmd := gitserver.NewClient(db).Command("git", "show", "-s", "--format=%H:%cI", string(commit))
-	cmd.Repo = repo
+	cmd := gitserver.NewClient(db).GitCommand(repo, "show", "-s", "--format=%H:%cI", string(commit))
 
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
@@ -844,63 +959,6 @@ func CommitDate(ctx context.Context, db database.DB, repo api.RepoName, commit a
 	}
 
 	return parts[0], duration, true, nil
-}
-
-type CommitGraphOptions struct {
-	Commit  string
-	AllRefs bool
-	Limit   int
-	Since   *time.Time
-} // please update LogFields if you add a field here
-
-func stableTimeRepr(t time.Time) string {
-	s, _ := t.MarshalText()
-	return string(s)
-}
-
-var unixEpoch = stableTimeRepr(time.Unix(0, 0))
-
-func (opts *CommitGraphOptions) LogFields() []log.Field {
-	since := unixEpoch
-	if opts.Since != nil {
-		since = stableTimeRepr(*opts.Since)
-	}
-	return []log.Field{
-		log.String("commit", opts.Commit),
-		log.Int("limit", opts.Limit),
-		log.Bool("allrefs", opts.AllRefs),
-		log.String("since", since),
-	}
-}
-
-// CommitGraph returns the commit graph for the given repository as a mapping
-// from a commit to its parents. If a commit is supplied, the returned graph will
-// be rooted at the given commit. If a non-zero limit is supplied, at most that
-// many commits will be returned.
-func CommitGraph(ctx context.Context, db database.DB, repo api.RepoName, opts CommitGraphOptions) (_ *gitdomain.CommitGraph, err error) {
-	args := []string{"log", "--pretty=%H %P", "--topo-order"}
-	if opts.AllRefs {
-		args = append(args, "--all")
-	}
-	if opts.Commit != "" {
-		args = append(args, opts.Commit)
-	}
-	if opts.Since != nil {
-		args = append(args, fmt.Sprintf("--since=%s", opts.Since.Format(time.RFC3339)))
-	}
-	if opts.Limit > 0 {
-		args = append(args, fmt.Sprintf("-%d", opts.Limit))
-	}
-
-	cmd := gitserver.NewClient(db).Command("git", args...)
-	cmd.Repo = repo
-
-	out, err := cmd.CombinedOutput(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return gitdomain.ParseCommitGraph(strings.Split(string(out), "\n")), nil
 }
 
 func addNameOnly(opt CommitsOptions, checker authz.SubRepoPermissionChecker) CommitsOptions {

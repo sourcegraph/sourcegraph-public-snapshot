@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { Badge } from '@sourcegraph/wildcard'
 
-import truncatedStyles from '../trancated-text/TruncatedText.module.scss'
+import truncatedStyles from '../../../../../../../components/trancated-text/TruncatedText.module.scss'
 import styles from './InsightsBadge.module.scss'
 
 interface BadgeProps {

@@ -80,17 +80,32 @@ const staticExtensions: Extension[] = [
 ]
 
 function focusInput(editor: EditorView): void {
-    editor.focus()
-    editor.dispatch({
-        selection: { anchor: editor.state.doc.length },
-        scrollIntoView: true,
-    })
+    if (!editor.hasFocus) {
+        editor.focus()
+        editor.dispatch({
+            selection: { anchor: editor.state.doc.length },
+            scrollIntoView: true,
+        })
+    }
 }
 
-interface NotebookMarkdownBlockProps extends BlockProps<MarkdownBlock>, ThemeProps {}
+interface NotebookMarkdownBlockProps extends BlockProps<MarkdownBlock>, ThemeProps {
+    isEmbedded?: boolean
+}
 
 export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBlockProps> = React.memo(
-    ({ id, input, output, isSelected, isLightTheme, isReadOnly, onBlockInputChange, onRunBlock, ...props }) => {
+    ({
+        id,
+        input,
+        output,
+        isSelected,
+        isLightTheme,
+        isReadOnly,
+        isEmbedded,
+        onBlockInputChange,
+        onRunBlock,
+        ...props
+    }) => {
         const [isEditing, setIsEditing] = useState(!isReadOnly && input.initialFocusInput)
         const [container, setContainer] = useState<HTMLDivElement | null>(null)
 
@@ -183,7 +198,7 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
         if (!isEditing) {
             return (
                 <NotebookBlock {...notebookBlockProps} onDoubleClick={editMarkdown}>
-                    <div className={styles.output} data-testid="output">
+                    <div className={classNames(styles.output, isEmbedded && styles.isEmbedded)} data-testid="output">
                         <Markdown className={styles.markdown} dangerousInnerHTML={output ?? ''} />
                     </div>
                 </NotebookBlock>

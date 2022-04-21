@@ -108,7 +108,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	progress := progressAggregator{
 		Start:        start,
 		Limit:        inputs.MaxResults(),
-		Trace:        trace.URL(trace.ID(ctx), conf.ExternalURL()),
+		Trace:        trace.URL(trace.ID(ctx), conf.ExternalURL(), conf.Tracer()),
 		DisplayLimit: displayLimit,
 		RepoNamer:    repoNamer(ctx, h.db),
 	}

@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
+	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	codeintelTypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -63,20 +63,14 @@ type Resolver struct {
 	Opts search.RepoOptions
 }
 
-func (r *Resolver) Paginate(ctx context.Context, op *search.RepoOptions, handle func(*Resolved) error) (err error) {
+func (r *Resolver) Paginate(ctx context.Context, handle func(*Resolved) error) (err error) {
 	tr, ctx := trace.New(ctx, "searchrepos.Paginate", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	var opts search.RepoOptions
-	if op != nil {
-		opts = *op
-	} else {
-		opts = r.Opts
-	}
-
+	opts := r.Opts
 	if opts.Limit == 0 {
 		opts.Limit = 500
 	}
@@ -407,19 +401,15 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 	return res.Resolved, err
 }
 
-// Excluded computes the ExcludedRepos that the given RepoOptions would not match. This is
+// computeExcludedRepos computes the ExcludedRepos that the given RepoOptions would not match. This is
 // used to show in the search UI what repos are excluded precisely.
-func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex ExcludedRepos, err error) {
+func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOptions) (ex ExcludedRepos, err error) {
 	tr, ctx := trace.New(ctx, "searchrepos.Excluded", op.String())
 	defer func() {
 		tr.LazyPrintf("excluded repos: %+v", ex)
 		tr.SetError(err)
 		tr.Finish()
 	}()
-
-	if op.Query == nil {
-		return ExcludedRepos{}, nil
-	}
 
 	includePatterns := op.RepoFilters
 	if includePatterns != nil {
@@ -441,7 +431,14 @@ func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex Excl
 		return ExcludedRepos{}, err
 	}
 
-	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.DB, op.SearchContextSpec)
+	if len(op.Dependencies) > 0 {
+		// Dependency search only operates on package repos. Since package repos
+		// cannot be archives or forks, there will never be any excluded repos for
+		// dependency search, so we can avoid doing extra work here.
+		return ExcludedRepos{}, nil
+	}
+
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, db, op.SearchContextSpec)
 	if err != nil {
 		return ExcludedRepos{}, err
 	}
@@ -470,14 +467,14 @@ func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex Excl
 		ExcludedRepos
 	}
 
-	if op.Query.Fork() == nil && !ExactlyOneRepo(includePatterns) {
+	if !op.ForkSet && !ExactlyOneRepo(includePatterns) {
 		g.Go(func() error {
 			// 'fork:...' was not specified and Forks are excluded, find out
 			// which repos are excluded.
 			selectForks := options
 			selectForks.OnlyForks = true
 			selectForks.NoForks = false
-			numExcludedForks, err := r.DB.Repos().Count(ctx, selectForks)
+			numExcludedForks, err := db.Repos().Count(ctx, selectForks)
 			if err != nil {
 				return err
 			}
@@ -490,14 +487,14 @@ func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex Excl
 		})
 	}
 
-	if op.Query.Archived() == nil && !ExactlyOneRepo(includePatterns) {
+	if !op.ArchivedSet && !ExactlyOneRepo(includePatterns) {
 		g.Go(func() error {
 			// Archived...: was not specified and archives are excluded,
 			// find out which repos are excluded.
 			selectArchived := options
 			selectArchived.OnlyArchived = true
 			selectArchived.NoArchived = false
-			numExcludedArchived, err := r.DB.Repos().Count(ctx, selectArchived)
+			numExcludedArchived, err := db.Repos().Count(ctx, selectArchived)
 			if err != nil {
 				return err
 			}
@@ -565,7 +562,7 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		}
 	}
 
-	depsSvc := codeintel.GetDependenciesService(
+	depsSvc := livedependencies.GetService(
 		r.DB,
 		&packageRepoSyncer{cli: repoupdater.DefaultClient},
 	)

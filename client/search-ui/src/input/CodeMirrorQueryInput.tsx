@@ -1,41 +1,38 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import {
-    autocompletion,
-    CompletionResult,
-    Completion,
-    snippet,
-    completionKeymap,
-    closeCompletion,
-    startCompletion,
-} from '@codemirror/autocomplete'
+import { startCompletion } from '@codemirror/autocomplete'
 import { RangeSetBuilder } from '@codemirror/rangeset'
 import { EditorSelection, EditorState, Extension, Facet, StateEffect, StateField, Prec } from '@codemirror/state'
 import { hoverTooltip, TooltipView } from '@codemirror/tooltip'
-import { EditorView, ViewUpdate, keymap, Decoration, placeholder as placeholderExtension } from '@codemirror/view'
+import {
+    EditorView,
+    ViewUpdate,
+    keymap,
+    Decoration,
+    placeholder as placeholderExtension,
+    ViewPlugin,
+} from '@codemirror/view'
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
-import { editor as Monaco, MarkerSeverity, languages } from 'monaco-editor'
-import { Observable, of } from 'rxjs'
-import { delay, map, switchMap } from 'rxjs/operators'
+import { editor as Monaco, MarkerSeverity } from 'monaco-editor'
 
 import { renderMarkdown } from '@sourcegraph/common'
-import { QueryChangeSource, SearchPatternType, SearchPatternTypeProps } from '@sourcegraph/search'
+import { QueryChangeSource, SearchPatternTypeProps } from '@sourcegraph/search'
 import { useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
-import { getCompletionItems } from '@sourcegraph/shared/src/search/query/completion'
-import { decorate, DecoratedToken } from '@sourcegraph/shared/src/search/query/decoratedToken'
+import { DecoratedToken } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
 import { resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { toHover } from '@sourcegraph/shared/src/search/query/hover'
-import { getSuggestionQuery } from '@sourcegraph/shared/src/search/query/providers'
-import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
+import { createCancelableFetchSuggestions } from '@sourcegraph/shared/src/search/query/providers'
+import { Filter } from '@sourcegraph/shared/src/search/query/token'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
+import { searchQueryAutocompletion, createDefaultSuggestionSources } from './extensions/completion'
+import { decoratedTokens, parsedQuery, parseInputAsQuery, setQueryParseOptions } from './extensions/parsedQuery'
 import { MonacoQueryInputProps } from './MonacoQueryInput'
 
 import styles from './CodeMirrorQueryInput.module.scss'
@@ -92,10 +89,15 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<MonacoQueryInputPro
 
     const autocompletion = useMemo(
         () =>
-            autocomplete(query => fetchStreamSuggestions(appendContextFilter(query, selectedSearchContextSpec)), {
-                globbing,
-                isSourcegraphDotCom,
-            }),
+            searchQueryAutocompletion(
+                createDefaultSuggestionSources({
+                    fetchSuggestions: createCancelableFetchSuggestions(query =>
+                        fetchStreamSuggestions(appendContextFilter(query, selectedSearchContextSpec))
+                    ),
+                    globbing,
+                    isSourcegraphDotCom,
+                })
+            ),
         [selectedSearchContextSpec, globbing, isSourcegraphDotCom]
     )
 
@@ -213,11 +215,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<MonacoQueryInputPro
     // It looks like <Shortcut ... /> needs a stable onMatch callback, hence we
     // are storing the editor in a ref so that `globalFocus` is stable.
     const globalFocus = useCallback(() => {
-        if (
-            editorReference.current &&
-            !!document.activeElement &&
-            !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)
-        ) {
+        if (editorReference.current && !!document.activeElement && !isInputElement(document.activeElement)) {
             editorReference.current.focus()
         }
     }, [editorReference])
@@ -266,9 +264,7 @@ const CodeMirrorQueryInput: React.FunctionComponent<CodeMirrorQueryInputProps> =
             useMemo(
                 () => [
                     EditorView.darkTheme.of(isLightTheme === false),
-                    queryParsingOptions,
-                    computeParsedQuery,
-                    computeDecoratedTokens,
+                    parseInputAsQuery(),
                     tokenHighlight,
                     queryDiagnostic,
                     tokenInfo(),
@@ -290,7 +286,7 @@ const CodeMirrorQueryInput: React.FunctionComponent<CodeMirrorQueryInputProps> =
 
         // Update pattern type and/or interpretComments when changed
         useEffect(() => {
-            editor?.dispatch({ effects: [setQueryOptions.of({ patternType, interpretComments })] })
+            editor?.dispatch({ effects: [setQueryParseOptions.of({ patternType, interpretComments })] })
         }, [editor, patternType, interpretComments])
 
         return <div ref={setContainer} className={classNames(styles.root, className)} id="monaco-query-input" />
@@ -379,7 +375,7 @@ const tokenDecorators: { [key: string]: Decoration } = Object.fromEntries(
 const emptyDecorator = Decoration.mark({})
 const focusedFilterDeco = Decoration.mark({ class: styles.focusedFilter })
 
-// Chooses the correct decorator for the decorated token. Copied (and adapated)
+// Chooses the correct decorator for the decorated token. Copied (and adapted)
 // from decoratedToMonaco (decoratedToken.ts).
 const decoratedToDecoration = (token: DecoratedToken): Decoration => {
     let cssClass = 'identifier'
@@ -408,58 +404,6 @@ const decoratedToDecoration = (token: DecoratedToken): Decoration => {
     return tokenDecorators[cssClass] ?? emptyDecorator
 }
 
-// Editor state to keep information about how to parse the query. Can be updated
-// with the `setQueryOptions` effect.
-const queryParsingOptions = StateField.define<{ patternType: SearchPatternType; interpretComments?: boolean }>({
-    create() {
-        return {
-            patternType: SearchPatternType.literal,
-        }
-    },
-    update(value, transaction) {
-        for (const effect of transaction.effects) {
-            if (effect.is(setQueryOptions)) {
-                return { ...value, ...effect.value }
-            }
-        }
-        return value
-    },
-})
-const setQueryOptions = StateEffect.define<{ patternType: SearchPatternType; interpretComments?: boolean }>()
-
-interface ParsedQuery {
-    patternType: SearchPatternType
-    tokens: Token[]
-}
-// Facet which parses the query using our existing parser. It depends on the
-// current input (obviously) and the selected pattern type. It gets recomputed
-// whenever one of those values changes.
-// The parsed query is used for syntax highlighting and hover information.
-const parsedQuery = Facet.define<ParsedQuery, ParsedQuery>({
-    combine(input) {
-        // There will always only be one extension which parses this query
-        return input[0] ?? { patternType: SearchPatternType.literal, tokens: [] }
-    },
-})
-const computeParsedQuery = parsedQuery.compute(['doc', queryParsingOptions], state => {
-    const { patternType, interpretComments } = state.field(queryParsingOptions)
-    // Looks like Text overwrites toString somehow
-    // eslint-disable-next-line @typescript-eslint/no-base-to-string
-    const result = scanSearchQuery(state.doc.toString(), interpretComments, patternType)
-    return {
-        patternType,
-        tokens: result.type === 'success' ? result.term : [],
-    }
-})
-const decoratedTokens = Facet.define<DecoratedToken[], DecoratedToken[]>({
-    combine(input) {
-        return input[0] ?? []
-    },
-})
-const computeDecoratedTokens = decoratedTokens.compute([parsedQuery], state =>
-    state.facet(parsedQuery).tokens.flatMap(decorate)
-)
-
 // This provides syntax highlighting. This is a custom solution so that we an
 // use our existing query parser (instead of using codemirrors language
 // support). That's not to say that we couldn't properly intergate with
@@ -475,23 +419,29 @@ const tokenHighlight = EditorView.decorations.compute([decoratedTokens], state =
 
 // Determines whether the cursor is over a filter and if yes, decorates that
 // filter.
-const highlightFocusedFilter = EditorView.decorations.compute(
-    ['selection', EditorView.editable, parsedQuery],
-    state => {
-        // No need to highlight anything if the input is "disabled"
-        if (!state.facet(EditorView.editable)) {
-            return Decoration.none
-        }
-
-        const query = state.facet(parsedQuery)
-        const position = state.selection.main.head
-        const focusedFilter = query.tokens.find(
-            (token): token is Filter =>
-                token.type === 'filter' && token.range.start <= position && token.range.end >= position
-        )
-        return focusedFilter
-            ? Decoration.set(focusedFilterDeco.range(focusedFilter.range.start, focusedFilter.range.end))
-            : Decoration.none
+const highlightFocusedFilter = ViewPlugin.define(
+    () => ({
+        decorations: Decoration.none,
+        update(update) {
+            if (update.focusChanged && !update.view.hasFocus) {
+                this.decorations = Decoration.none
+            } else if (update.docChanged || update.selectionSet || update.focusChanged) {
+                const query = update.state.facet(parsedQuery)
+                const position = update.state.selection.main.head
+                const focusedFilter = query.tokens.find(
+                    (token): token is Filter =>
+                        // Inclusive end so that the filter is highlighed when
+                        // the cursor is positioned directly after the value
+                        token.type === 'filter' && token.range.start <= position && token.range.end >= position
+                )
+                this.decorations = focusedFilter
+                    ? Decoration.set(focusedFilterDeco.range(focusedFilter.range.start, focusedFilter.range.end))
+                    : Decoration.none
+            }
+        },
+    }),
+    {
+        decorations: plugin => plugin.decorations,
     }
 )
 
@@ -676,100 +626,6 @@ const queryDiagnostic: Extension[] = [
         { hoverTime: 100 }
     ),
 ]
-
-// Hook up autocompletion
-const autocomplete = (
-    fetchSuggestions: (query: string) => Observable<SearchMatch[]>,
-    options: { globbing: boolean; isSourcegraphDotCom: boolean }
-): Extension[] => [
-    // Uses the default keymapping but changes accepting suggestions from Enter
-    // to Tab
-    Prec.highest(
-        keymap.of(
-            completionKeymap.map(keybinding =>
-                keybinding.key === 'Enter' ? { ...keybinding, key: 'Tab' } : keybinding
-            )
-        )
-    ),
-    EditorView.updateListener.of(update => {
-        // We want the completion list to be hidden when the editor looses focus
-        if (update.focusChanged && !update.view.hasFocus) {
-            closeCompletion(update.view)
-        }
-        // Show the completion list again if a filter was completed
-        if (update.transactions.some(transaction => transaction.isUserEvent('input.complete'))) {
-            const query = update.state.facet(parsedQuery)
-            const token = query.tokens.find(token => isTokenInRange(update.state.selection.main.anchor - 1, token))
-            if (token) {
-                startCompletion(update.view)
-            }
-        }
-    }),
-    autocompletion({
-        defaultKeymap: false,
-        override: [
-            context => {
-                const query = context.state.facet(parsedQuery)
-                const token = query.tokens.find(token => isTokenInRange(context.pos - 1, token))
-                if (!token) {
-                    return null
-                }
-                return of(getSuggestionQuery(query.tokens, token))
-                    .pipe(
-                        // We use a delay here to implement a custom debounce. In the
-                        // next step we check if the current completion request was
-                        // cancelled in the meantime (`context.aborted`).
-                        // This prevents us from needlessly running multiple suggestion
-                        // queries.
-                        delay(200),
-                        switchMap(query =>
-                            context.aborted
-                                ? Promise.resolve(null)
-                                : getCompletionItems(
-                                      token,
-                                      { column: context.pos + 1 },
-                                      fetchSuggestions(query),
-                                      options.globbing,
-                                      options.isSourcegraphDotCom
-                                  )
-                        ),
-                        map((completionList): CompletionResult | null => {
-                            if (completionList === null || completionList.suggestions.length === 0) {
-                                return null
-                            }
-                            return {
-                                from:
-                                    token.type === 'filter'
-                                        ? token.value?.range.start ?? context.pos
-                                        : token.range.start,
-                                options: toCMCompletions(completionList),
-                            }
-                        })
-                    )
-                    .toPromise()
-            },
-        ],
-    }),
-]
-
-function toCMCompletions(completionList: languages.CompletionList): Completion[] {
-    // Boost suggestions by position because it appears they are already orderd.
-    let boost = 99
-    return completionList.suggestions.map(
-        (item): Completion => ({
-            type: languages.CompletionItemKind[item.kind].toLowerCase(),
-            label: typeof item.label === 'string' ? item.label : item.label.name,
-            apply:
-                ((item.insertTextRules ?? 0) & languages.CompletionItemInsertTextRule.InsertAsSnippet) ===
-                languages.CompletionItemInsertTextRule.InsertAsSnippet
-                    ? snippet(item.insertText)
-                    : item.insertText,
-            detail: item.detail,
-            info: item.documentation?.toString(),
-            boost: boost--,
-        })
-    )
-}
 
 // Looks like there might be a bug with how the end range for a field is
 // computed? Need to add 1 to make this work properly.

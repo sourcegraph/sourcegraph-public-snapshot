@@ -24,3 +24,4 @@
 - [How to run postgres queries in your Sourcegraph instance](run-psql.md)
 - [How to remove a repository from Sourcegraph](remove-repo.md)
 - [How to address common monorepo problems](monorepo-issues.md)
+- [How to Set a password for Redis using a ConfigMap](redis_configmap.md)

@@ -99,6 +99,7 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                             value={enabled}
                             className="mr-3"
                             disabled={toggleMonitorOrError === LOADING}
+                            aria-label="Toggle code monitoring"
                         />
                     </div>
                     <Button

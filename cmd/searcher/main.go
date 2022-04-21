@@ -17,7 +17,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/search"
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -90,6 +90,17 @@ func main() {
 				return git.Archive(ctx, repo, gitserver.ArchiveOptions{
 					Treeish: string(commit),
 					Format:  "tar",
+				})
+			},
+			FetchTarPaths: func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
+				pathspecs := make([]gitserver.Pathspec, len(paths))
+				for i, p := range paths {
+					pathspecs[i] = gitserver.PathspecLiteral(p)
+				}
+				return git.Archive(ctx, repo, gitserver.ArchiveOptions{
+					Treeish:   string(commit),
+					Format:    "tar",
+					Pathspecs: pathspecs,
 				})
 			},
 			FilterTar:         search.NewFilter,

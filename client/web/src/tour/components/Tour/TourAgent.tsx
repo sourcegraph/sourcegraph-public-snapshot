@@ -18,6 +18,20 @@ interface TourAgentProps extends TelemetryProps {
     onStepComplete: (step: TourTaskStepType) => void
 }
 
+export function useTourQueryParameters(): ReturnType<typeof parseURIMarkers> | undefined {
+    const location = useLocation()
+    const [data, setData] = useState<ReturnType<typeof parseURIMarkers> | undefined>()
+    useEffect(() => {
+        const { isTour, stepId } = parseURIMarkers(location.search)
+        if (!isTour || !stepId) {
+            return
+        }
+        setData({ isTour, stepId })
+    }, [location])
+
+    return data
+}
+
 /**
  * Component to track TourTaskStepType.completeAfterEvents and show info box for steps.
  */
@@ -37,19 +51,14 @@ export const TourAgent: React.FunctionComponent<TourAgentProps> = React.memo(
         // Agent 2: Track info panel
         const [info, setInfo] = useState<TourTaskStepType['info'] | undefined>()
 
-        const location = useLocation()
+        const tourQueryParameters = useTourQueryParameters()
 
         useEffect(() => {
-            const { isTour, stepId } = parseURIMarkers(location.search)
-            if (!isTour || !stepId) {
-                return
-            }
-
-            const info = tasks.flatMap(task => task.steps).find(step => stepId === step.id)?.info
+            const info = tasks.flatMap(task => task.steps).find(step => tourQueryParameters?.stepId === step.id)?.info
             if (info) {
                 setInfo(info)
             }
-        }, [tasks, location])
+        }, [tasks, tourQueryParameters?.stepId])
 
         if (!info) {
             return null

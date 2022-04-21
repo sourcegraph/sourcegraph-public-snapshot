@@ -10,9 +10,10 @@ import (
 type Config struct {
 	env.BaseConfig
 
-	LSIFUploadStoreConfig   *lsifuploadstore.Config
-	AutoIndexEnqueuerConfig *enqueuer.Config
-	HunkCacheSize           int
+	LSIFUploadStoreConfig          *lsifuploadstore.Config
+	AutoIndexEnqueuerConfig        *enqueuer.Config
+	HunkCacheSize                  int
+	MaximumIndexesPerMonikerSearch int
 }
 
 func (c *Config) Load() {
@@ -24,6 +25,7 @@ func (c *Config) Load() {
 	c.LSIFUploadStoreConfig.Load()
 
 	c.HunkCacheSize = c.GetInt("PRECISE_CODE_INTEL_HUNK_CACHE_SIZE", "1000", "The capacity of the git diff hunk cache.")
+	c.MaximumIndexesPerMonikerSearch = c.GetInt("PRECISE_CODE_INTEL_MAXIMUM_INDEXES_PER_MONIKER_SEARCH", "50", "The maximum number of indexes to search at once when doing cross-index code navigation.")
 }
 
 func (c *Config) Validate() error {

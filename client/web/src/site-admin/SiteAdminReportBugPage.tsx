@@ -11,6 +11,7 @@ import { LoadingSpinner, useObservable, Alert, Link } from '@sourcegraph/wildcar
 import awsCodeCommitJSON from '../../../../schema/aws_codecommit.schema.json'
 import bitbucketCloudSchemaJSON from '../../../../schema/bitbucket_cloud.schema.json'
 import bitbucketServerSchemaJSON from '../../../../schema/bitbucket_server.schema.json'
+import gerritSchemaJSON from '../../../../schema/gerrit.schema.json'
 import githubSchemaJSON from '../../../../schema/github.schema.json'
 import gitlabSchemaJSON from '../../../../schema/gitlab.schema.json'
 import gitoliteSchemaJSON from '../../../../schema/gitolite.schema.json'
@@ -41,6 +42,7 @@ const externalServices: Record<ExternalServiceKind, JSONSchema> = {
     AWSCODECOMMIT: awsCodeCommitJSON,
     BITBUCKETCLOUD: bitbucketCloudSchemaJSON,
     BITBUCKETSERVER: bitbucketServerSchemaJSON,
+    GERRIT: gerritSchemaJSON,
     GITHUB: githubSchemaJSON,
     GITLAB: gitlabSchemaJSON,
     GITOLITE: gitoliteSchemaJSON,

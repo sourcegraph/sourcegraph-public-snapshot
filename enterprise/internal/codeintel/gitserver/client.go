@@ -75,22 +75,51 @@ func (c *Client) CommitsExist(ctx context.Context, commits []RepositoryCommit) (
 		return nil, err
 	}
 
-	exists := make([]bool, len(commits))
+	// Build the batch request to send to gitserver. Because we only add repo/commit
+	// pairs that are resolvable to a repo name, we may skip some of the inputs here.
+	// We track the indexes we're sending to gitserver so we can spread the response
+	// back to the correct indexes the caller is expecting. Anything not resolvable
+	// to a repository name will implicity have a false value in the returned slice.
+
+	repoCommits := make([]api.RepoCommit, 0, len(commits))
+	originalIndexes := make([]int, 0, len(commits))
+
 	for i, rc := range commits {
-		name, ok := repositoryNames[rc.RepositoryID]
+		repoName, ok := repositoryNames[rc.RepositoryID]
 		if !ok {
 			continue
 		}
 
-		e, err := git.CommitExists(ctx, c.db, name, api.CommitID(rc.Commit), authz.DefaultSubRepoPermsChecker)
-		if err != nil {
-			return nil, err
-		}
+		repoCommits = append(repoCommits, api.RepoCommit{
+			Repo:     repoName,
+			CommitID: api.CommitID(rc.Commit),
+		})
 
-		exists[i] = e
+		originalIndexes = append(originalIndexes, i)
 	}
 
-	return exists, nil
+	exists, err := git.CommitsExist(ctx, c.db, repoCommits, authz.DefaultSubRepoPermsChecker)
+	if err != nil {
+		return nil, err
+	}
+	if len(exists) != len(repoCommits) {
+		// Add assertion here so that the blast radius of new or newly discovered errors southbound
+		// from the internal/vcs/git package does not leak into code intelligence. The existing callers
+		// of this method panic when this assertion is not met. Describing the error in more detail here
+		// will not cause destruction outside of the particular user-request in which this assertion
+		// was not true.
+		return nil, errors.Newf("expected slice returned from git.CommitsExist to have len %d, but has len %d", len(repoCommits), len(exists))
+	}
+
+	// Spread the response back to the correct indexes the caller is expecting. Each value in the
+	// response from gitserver belongs to some index in the original commits slice. We re-map these
+	// values and leave all other values implicitly false (these repo name were not resolvable).
+	out := make([]bool, len(commits))
+	for i, e := range exists {
+		out[originalIndexes[i]] = e
+	}
+
+	return out, nil
 }
 
 // Head determines the tip commit of the default branch for the given repository. If no HEAD revision exists
@@ -163,7 +192,7 @@ func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (_ map[api
 // CommitGraph returns the commit graph for the given repository as a mapping from a commit
 // to its parents. If a commit is supplied, the returned graph will be rooted at the given
 // commit. If a non-zero limit is supplied, at most that many commits will be returned.
-func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts git.CommitGraphOptions) (_ *gitdomain.CommitGraph, err error) {
+func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts gitserver.CommitGraphOptions) (_ *gitdomain.CommitGraph, err error) {
 	ctx, endObservation := c.operations.commitGraph.With(ctx, &err, observation.Args{
 		LogFields: append([]log.Field{log.Int("repositoryID", repositoryID)}, opts.LogFields()...),
 	})
@@ -174,7 +203,7 @@ func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts git.Com
 		return nil, err
 	}
 
-	g, err := git.CommitGraph(ctx, c.db, repo, opts)
+	g, err := gitserver.NewClient(c.db).CommitGraph(ctx, repo, opts)
 	if err == nil {
 		return g, nil
 	}
@@ -290,7 +319,7 @@ func (c *Client) RawContents(ctx context.Context, repositoryID int, commit, file
 	}
 
 	db := c.db
-	out, err := git.ReadFile(ctx, db, repo, api.CommitID(commit), file, 0, authz.DefaultSubRepoPermsChecker)
+	out, err := git.ReadFile(ctx, db, repo, api.CommitID(commit), file, authz.DefaultSubRepoPermsChecker)
 	if err == nil {
 		return out, nil
 	}

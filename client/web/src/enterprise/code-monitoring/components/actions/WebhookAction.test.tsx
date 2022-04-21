@@ -37,12 +37,14 @@ describe('WebhookAction', () => {
         userEvent.type(getByTestId('webhook-url'), 'https://example.com')
         expect(getByTestId('submit-action-webhook')).toBeEnabled()
 
+        userEvent.click(getByTestId('include-results-toggle-webhook'))
+
         userEvent.click(getByTestId('submit-action-webhook'))
 
         sinon.assert.calledOnceWithExactly(setActionSpy, {
             __typename: 'MonitorWebhook',
             enabled: true,
-            includeResults: false,
+            includeResults: true,
             id: '',
             url: 'https://example.com',
         })
