@@ -177,7 +177,10 @@ func TestDeleteDashboard(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		client.UpdateDashboard(dashboard.Id, gqltestutil.DashboardInputArgs{})
+		_, err = client.UpdateDashboard(dashboard.Id, gqltestutil.DashboardInputArgs{})
+		if err == nil || !strings.Contains(err.Error(), "got nil for non-null") {
+			t.Fatal(err)
+		}
 		err = client.DeleteDashboard(dashboard.Id)
 		if !strings.Contains(err.Error(), "dashboard not found") {
 			t.Fatal("Should have thrown an error")
@@ -203,7 +206,10 @@ func getTitles(t *testing.T, args gqltestutil.GetDashboardArgs) []string {
 		// Sometimes the LAM dashboard will be present since the service is running. We do not want to count it in the test,
 		// so we hide the LAM dashboard and query the dashboards again.
 		if dashboard.Title == "Limited Access Mode Dashboard" {
-			client.UpdateDashboard(dashboard.Id, gqltestutil.DashboardInputArgs{Title: "Limited Access Mode Dashboard"})
+			_, err = client.UpdateDashboard(dashboard.Id, gqltestutil.DashboardInputArgs{Title: "Limited Access Mode Dashboard"})
+			if err == nil || !strings.Contains(err.Error(), "got nil for non-null") {
+				t.Fatal(err)
+			}
 			retry = true
 		}
 		resultTitles = append(resultTitles, dashboard.Title)
