@@ -67,7 +67,6 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 				// since we are using uncompressed plans (to avoid this problem and others) right now, each execution is standalone
 				continue
 			}
-			log15.Info("find last commit before", "before", execution.RecordingTime)
 			commits, err := git.Commits(ctx, c.db, api.RepoName(repository), git.CommitsOptions{N: 1, Before: execution.RecordingTime.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
 			if err != nil {
 				return nil, errors.Wrap(err, "git.Commits")
@@ -86,11 +85,7 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 			}
 
 			if len(streamErrs) > 0 {
-				var err error
-				for _, streamErr := range streamErrs {
-					err = errors.Append(err, errors.New(streamErr))
-				}
-				return nil, err
+				log15.Error("streaming errors", "errors", streamErrs)
 			}
 
 			points[execution.RecordingTime] += *countPtr
