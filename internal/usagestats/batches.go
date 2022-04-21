@@ -79,6 +79,14 @@ WHERE name IN ('BatchSpecCreated', 'ViewBatchChangeApplyPage', 'ViewBatchChangeD
 		return nil, err
 	}
 
+	const activeExecutorsCountQuery = `SELECT COUNT(id) FROM executor_heartbeats WHERE last_seen_at >= (NOW() - interval '15 seconds');`
+
+	if err := db.QueryRowContext(ctx, activeExecutorsCountQuery).Scan(
+		&stats.ActiveExectutorsCount,
+	); err != nil {
+		return nil, err
+	}
+
 	queryUniqueEventLogUsersCurrentMonth := func(events []*sqlf.Query) *sql.Row {
 		q := sqlf.Sprintf(
 			`SELECT COUNT(DISTINCT user_id) FROM event_logs WHERE name IN (%s) AND timestamp >= date_trunc('month', CURRENT_DATE);`,

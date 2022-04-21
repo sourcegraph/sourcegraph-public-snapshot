@@ -845,6 +845,10 @@ type BatchChangesUsageStatistics struct {
 	CurrentMonthUsersCount int64
 
 	BatchChangesCohorts []*BatchChangesCohort
+
+	// ActiveExecutorsCount is the count of executors that have had a heartbeat in the last
+	// 15 seconds.
+	ActiveExectutorsCount int16
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
