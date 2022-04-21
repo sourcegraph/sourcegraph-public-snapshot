@@ -2,13 +2,12 @@ name: codenotify
 on:
   pull_request:
     types: [opened, synchronize, ready_for_review]
-    branches-ignore:
-      - 'contractors/**'
 
 jobs:
   codenotify:
     runs-on: ubuntu-latest
     name: codenotify
+    if: ${{ !startsWith(github.head_ref, 'contractors/' )}}
     steps:
       - uses: actions/checkout@v2
         with:
