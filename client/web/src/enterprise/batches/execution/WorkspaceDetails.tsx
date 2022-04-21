@@ -378,8 +378,8 @@ const ChangesetSpecNode: React.FunctionComponent<{ node: BatchSpecWorkspaceChang
                 </div>
             }
             titleClassName="flex-grow-1"
-            // TODO: fix me
-            defaultExpanded={1 === 1}
+            // TODO: Under what conditions should this be auto-expanded?
+            defaultExpanded={true}
         >
             <Card className={classNames('mt-2', styles.resultCard)}>
                 <CardBody>
