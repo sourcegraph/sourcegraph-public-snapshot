@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/grafana/regexp"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
@@ -89,7 +88,7 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 			if len(streamErrs) > 0 {
 				var err error
 				for _, streamErr := range streamErrs {
-					err = multierror.Append(err, errors.New(streamErr))
+					err = errors.Append(err, errors.New(streamErr))
 				}
 				return nil, err
 			}
