@@ -43,8 +43,10 @@ func Start(additionalJobs map[string]job.Job, registerEnterpriseMigrations func(
 		"webhook-log-janitor":                   webhooks.NewJanitor(),
 		"out-of-band-migrations":                migrations.NewMigrator(registerMigrations),
 		"codeintel-documents-indexer":           codeintel.NewDocumentsIndexerJob(),
+		"codeintel-autoindexing-scheduler":      codeintel.NewAutoindexingSchedulerJob(),
 		"codeintel-dependencies-indexer":        codeintel.NewDependenciesIndexerJob(),
 		"codeintel-policies-repository-matcher": codeintel.NewPoliciesRepositoryMatcherJob(),
+	}
 
 	jobs := map[string]job.Job{}
 	for name, job := range builtins {
