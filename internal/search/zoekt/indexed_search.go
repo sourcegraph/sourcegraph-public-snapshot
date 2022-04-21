@@ -249,9 +249,6 @@ func DoZoektSearchGlobal(ctx context.Context, client zoekt.Streamer, args *searc
 		return nil
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
 	k := ResultCountFactor(0, args.FileMatchLimit, true)
 	searchOpts := SearchOpts(ctx, k, args.FileMatchLimit, args.Select)
 
