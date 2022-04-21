@@ -3866,10 +3866,10 @@
   dependencies:
     prop-types "^15.6.2"
 
-"@sourcegraph/eslint-config@^0.27.0":
-  version "0.27.0"
-  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.27.0.tgz#f892b5ad8c6d975bbeb97dfc40b31d0c41e4f70b"
-  integrity sha512-WEU77N93mfZB29R9UtFJfGGJ28nMB0gHCM2SqS0jUZDnkSMzJQGARAS7vGRZSrKo+pCUsNxANO4gvwRFvg26xA==
+"@sourcegraph/eslint-config@^0.27.1":
+  version "0.27.1"
+  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.27.1.tgz#e09faeef5a027a8d26f76fc9b7963efe58ac1bc2"
+  integrity sha512-pcnsVJdH7q2CmNC7HCW/rNlSZe/rY9cBpWdclao9znqcDlHhIcSwo97eETiIwCzZgsatvYrGsz6prTJGwoh5kw==
   dependencies:
     "@sourcegraph/prettierrc" "^3.0.3"
     "@typescript-eslint/eslint-plugin" "^4.28.3"
