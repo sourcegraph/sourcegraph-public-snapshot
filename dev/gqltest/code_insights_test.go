@@ -206,7 +206,7 @@ func getTitles(t *testing.T, args gqltestutil.GetDashboardArgs) []string {
 		// Sometimes the LAM dashboard will be present since the service is running. We do not want to count it in the test,
 		// so we hide the LAM dashboard and query the dashboards again.
 		if dashboard.Title == "Limited Access Mode Dashboard" {
-			client.UpdateDashboard(dashboard.Id, gqltestutil.DashboardInputArgs{Title: "Limited Access Mode Dashboard"})
+			_, err = client.UpdateDashboard(dashboard.Id, gqltestutil.DashboardInputArgs{Title: "Limited Access Mode Dashboard"})
 			if err == nil || !strings.Contains(err.Error(), "got nil for non-null") {
 				t.Fatal(err)
 			}
