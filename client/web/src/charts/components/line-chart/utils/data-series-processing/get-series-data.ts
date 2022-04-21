@@ -1,15 +1,12 @@
 import { Series } from '../../../../types'
-import { isValidNumber } from '../data-guards'
 
 import { getStackedSeriesData } from './get-stacked-series-data'
 import { getFilteredSeriesData } from './helpers'
 import { IndependentSeries, SeriesType, SeriesWithData, StandardSeriesDatum } from './types'
 
 interface Input<Datum> {
-    data: Datum[]
     series: Series<Datum>[]
     stacked: boolean
-    getXValue: (datum: Datum) => Date
 }
 
 /**
@@ -29,17 +26,19 @@ interface Input<Datum> {
  * ```
  */
 export function getSeriesData<Datum>(input: Input<Datum>): SeriesWithData<Datum>[] {
-    const { data, series, stacked, getXValue } = input
+    const { series, stacked } = input
 
     if (!stacked) {
         return (
             series
                 // Separate datum object by series lines
                 .map<IndependentSeries<Datum>>(line => {
+                    const { data, getXValue, getYValue } = line
+
                     const lineData = data.map<StandardSeriesDatum<Datum>>(datum => ({
                         datum,
                         x: getXValue(datum),
-                        y: isValidNumber(datum[line.dataKey]) ? +datum[line.dataKey] : null,
+                        y: getYValue(datum),
                     }))
 
                     return {
@@ -52,5 +51,5 @@ export function getSeriesData<Datum>(input: Input<Datum>): SeriesWithData<Datum>
         )
     }
 
-    return getStackedSeriesData(input)
+    return getStackedSeriesData(series)
 }

@@ -22,6 +22,10 @@ This job will eventually (and partially) replace `codeintel-janitor`
 
 This job will eventually replace `codeintel-commitgraph`.
 
+#### `codeintel-policies-repository-matcher`
+
+This job periodically updates an index of policy repository patterns to matching repository names.
+
 #### `codeintel-commitgraph`
 
 This job periodically updates the set of precise code intelligence indexes that are visible from each relevant commit for a repository. The commit graph for a repository is marked as stale (to be recalculated) after repository updates and precise code intelligence uploads and updated asynchronously by this job.

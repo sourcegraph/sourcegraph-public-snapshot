@@ -9,16 +9,16 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
 import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 
-import { useSearchStackState } from '../stores'
-import { addSearchStackEntry, SearchStackEntry } from '../stores/searchStack'
+import { useNotepadState } from '../stores'
+import { addNotepadEntry, NotepadEntry } from '../stores/notepad'
 
-import { SearchStackContainer, SearchStackProps } from './SearchStack'
+import { NotepadContainer, NotepadProps } from './Notepad'
 
 describe('Search Stack', () => {
-    const renderSearchStack = (props?: Partial<SearchStackProps>, enabled = true): RenderWithBrandedContextResult =>
+    const renderNotepad = (props?: Partial<NotepadProps>, enabled = true): RenderWithBrandedContextResult =>
         renderWithBrandedContext(
             <MockTemporarySettings settings={{ 'search.notepad.enabled': enabled }}>
-                <SearchStackContainer onCreateNotebook={noop} {...props} />
+                <NotepadContainer onCreateNotebook={noop} {...props} />
             </MockTemporarySettings>
         )
 
@@ -28,22 +28,22 @@ describe('Search Stack', () => {
 
     afterEach(cleanup)
 
-    const mockEntries: SearchStackEntry[] = [
+    const mockEntries: NotepadEntry[] = [
         { id: 0, type: 'search', query: 'TODO', caseSensitive: false, patternType: SearchPatternType.literal },
         { id: 1, type: 'file', path: 'path/to/file', repo: 'test', revision: 'master', lineRange: null },
     ]
 
     describe('closed state', () => {
         it('does not render anything if feature is disabled dand there are no notes', () => {
-            renderSearchStack({}, false)
+            renderNotepad({}, false)
 
             expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
         })
 
         it('shows button to open notepad', () => {
-            useSearchStackState.setState({ entries: mockEntries })
+            useNotepadState.setState({ entries: mockEntries })
 
-            renderSearchStack()
+            renderNotepad()
 
             expect(screen.queryByRole('button', { name: 'Open Notepad' })).toBeInTheDocument()
         })
@@ -51,23 +51,23 @@ describe('Search Stack', () => {
 
     describe('restore previous session', () => {
         it('restores the previous session', () => {
-            useSearchStackState.setState({
+            useNotepadState.setState({
                 entries: [],
                 previousEntries: mockEntries,
                 canRestoreSession: true,
                 addableEntry: mockEntries[0],
             })
-            renderSearchStack()
+            renderNotepad()
             userEvent.click(screen.getByRole('button', { name: 'Open Notepad' }))
 
             userEvent.click(screen.getByRole('button', { name: 'Restore last session' }))
-            expect(useSearchStackState.getState().entries).toEqual(mockEntries)
+            expect(useNotepadState.getState().entries).toEqual(mockEntries)
         })
     })
 
     describe('with notes', () => {
         beforeEach(() => {
-            useSearchStackState.setState({
+            useNotepadState.setState({
                 entries: [
                     {
                         id: 0,
@@ -82,7 +82,7 @@ describe('Search Stack', () => {
         })
 
         it('opens and closes', () => {
-            renderSearchStack()
+            renderNotepad()
 
             userEvent.click(screen.getByRole('button', { name: 'Open Notepad' }))
             userEvent.click(screen.getByRole('button', { name: 'Close Notepad' }))
@@ -91,7 +91,7 @@ describe('Search Stack', () => {
         })
 
         it('redirects to notes', () => {
-            renderSearchStack()
+            renderNotepad()
             open()
 
             const entryLinks = screen.queryAllByRole('link')
@@ -103,7 +103,7 @@ describe('Search Stack', () => {
 
         it('creates notebooks', () => {
             const onCreateNotebook = sinon.spy()
-            renderSearchStack({ onCreateNotebook })
+            renderNotepad({ onCreateNotebook })
             open()
 
             userEvent.click(screen.getByRole('button', { name: 'Create Notebook' }))
@@ -112,7 +112,7 @@ describe('Search Stack', () => {
         })
 
         it('allows to delete notes', () => {
-            renderSearchStack()
+            renderNotepad()
             open()
 
             userEvent.click(screen.getAllByRole('button', { name: 'Remove note' })[0])
@@ -121,7 +121,7 @@ describe('Search Stack', () => {
         })
 
         it('opens the text annotation input', () => {
-            renderSearchStack()
+            renderNotepad()
             open()
 
             userEvent.click(screen.getAllByRole('button', { name: 'Add annotation' })[0])
@@ -129,7 +129,7 @@ describe('Search Stack', () => {
         })
 
         it('closes annotation input on Meta+Enter', () => {
-            renderSearchStack()
+            renderNotepad()
             open()
 
             userEvent.click(screen.getAllByRole('button', { name: 'Add annotation' })[0])
@@ -142,7 +142,7 @@ describe('Search Stack', () => {
 
     describe('selection', () => {
         beforeEach(() => {
-            useSearchStackState.setState({
+            useNotepadState.setState({
                 entries: [
                     {
                         id: 1,
@@ -171,7 +171,7 @@ describe('Search Stack', () => {
         })
 
         it('selects an item on click or space', () => {
-            renderSearchStack()
+            renderNotepad()
             open()
 
             const item = screen.getAllByRole('option')
@@ -198,7 +198,7 @@ describe('Search Stack', () => {
         })
 
         it('selects multiple items on ctrl/meta+click/space', () => {
-            renderSearchStack()
+            renderNotepad()
             open()
 
             const item = screen.getAllByRole('option')
@@ -225,7 +225,7 @@ describe('Search Stack', () => {
         })
 
         it('selects a range of items on shift+click', () => {
-            renderSearchStack()
+            renderNotepad()
             open()
 
             const item = screen.getAllByRole('option')
@@ -244,7 +244,7 @@ describe('Search Stack', () => {
         })
 
         it('extends the range of items on shift+click', () => {
-            renderSearchStack()
+            renderNotepad()
             open()
 
             const item = screen.getAllByRole('option')
@@ -269,7 +269,7 @@ describe('Search Stack', () => {
         })
 
         it('selects a range of items on shift+space', () => {
-            renderSearchStack()
+            renderNotepad()
             open()
 
             const item = screen.getAllByRole('option')
@@ -290,7 +290,7 @@ describe('Search Stack', () => {
         })
 
         it('extends the range of items on shift+space', () => {
-            renderSearchStack()
+            renderNotepad()
             open()
 
             const item = screen.getAllByRole('option')
@@ -318,7 +318,7 @@ describe('Search Stack', () => {
         })
 
         it('selects all items on ctrl+a', () => {
-            renderSearchStack()
+            renderNotepad()
             open()
 
             const list = screen.getByRole('listbox')
@@ -330,7 +330,7 @@ describe('Search Stack', () => {
         })
 
         it('selects the next item on arrow-down', () => {
-            renderSearchStack()
+            renderNotepad()
             open()
 
             const list = screen.getByRole('listbox')
@@ -345,7 +345,7 @@ describe('Search Stack', () => {
         })
 
         it('selects the previous item on arrow-up', () => {
-            renderSearchStack()
+            renderNotepad()
             open()
 
             const list = screen.getByRole('listbox')
@@ -360,7 +360,7 @@ describe('Search Stack', () => {
         })
 
         it('extends/shrinks selection on shift+arrow-down/up', () => {
-            renderSearchStack()
+            renderNotepad()
             open()
 
             const list = screen.getByRole('listbox')
@@ -376,7 +376,7 @@ describe('Search Stack', () => {
         })
 
         it('skips over selected notes using shift+arrow-down', () => {
-            renderSearchStack()
+            renderNotepad()
             open()
 
             const items = screen.getAllByRole('option')
@@ -396,7 +396,7 @@ describe('Search Stack', () => {
         })
 
         it('skips over selected notes using shift+arrow-up', () => {
-            renderSearchStack()
+            renderNotepad()
             open()
 
             const items = screen.getAllByRole('option')
@@ -416,7 +416,7 @@ describe('Search Stack', () => {
         })
 
         it('extends/shrinks selection on shift+arrow-up/down', () => {
-            renderSearchStack()
+            renderNotepad()
             open()
 
             const list = screen.getByRole('listbox')
@@ -432,7 +432,7 @@ describe('Search Stack', () => {
         })
 
         it('maintains the right selected items when non-selected items get removed', () => {
-            renderSearchStack()
+            renderNotepad()
             open()
 
             const items = screen.getAllByRole('option')
@@ -445,7 +445,7 @@ describe('Search Stack', () => {
         })
 
         it('selectes the newly added item', () => {
-            renderSearchStack()
+            renderNotepad()
             open()
 
             let items = screen.getAllByRole('option')
@@ -454,7 +454,7 @@ describe('Search Stack', () => {
             userEvent.click(items[1])
 
             act(() => {
-                addSearchStackEntry({
+                addNotepadEntry({
                     type: 'search',
                     patternType: SearchPatternType.literal,
                     query: 'new TODO',
@@ -469,7 +469,7 @@ describe('Search Stack', () => {
         })
 
         it('deletes all selected notes', () => {
-            renderSearchStack()
+            renderNotepad()
             open()
 
             const item = screen.getAllByRole('option')
@@ -481,7 +481,7 @@ describe('Search Stack', () => {
         })
 
         it('deletes all selected notes when Delete is pressed', () => {
-            renderSearchStack()
+            renderNotepad()
             open()
 
             const item = screen.getAllByRole('option')
@@ -493,7 +493,7 @@ describe('Search Stack', () => {
         })
 
         it('clears selection on ESC', () => {
-            renderSearchStack()
+            renderNotepad()
             open()
 
             const item = screen.getAllByRole('option')
@@ -505,7 +505,7 @@ describe('Search Stack', () => {
         })
 
         it('does not select entry on toggle annotion click', () => {
-            renderSearchStack()
+            renderNotepad()
             open()
 
             userEvent.click(screen.queryAllByRole('button', { name: 'Add annotation' })[0])
@@ -514,7 +514,7 @@ describe('Search Stack', () => {
         })
 
         it('does not select note on typing space into the annotation area', () => {
-            renderSearchStack()
+            renderNotepad()
             open()
 
             userEvent.click(screen.queryAllByRole('button', { name: 'Add annotation' })[0])

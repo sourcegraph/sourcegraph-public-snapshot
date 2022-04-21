@@ -83,19 +83,12 @@ func (s *RepoSearch) reposContainingPath(ctx context.Context, clients job.Runtim
 			return nil, err
 		}
 
-		zoektArgs := search.ZoektParameters{
-			Query:          zoektQuery,
-			Typ:            typ,
-			FileMatchLimit: p.FileMatchLimit,
-			Select:         p.Select,
-		}
-
 		zoektJob := &zoektutil.ZoektRepoSubsetSearch{
 			Repos:          indexed,
-			Query:          zoektArgs.Query,
+			Query:          zoektQuery,
 			Typ:            search.TextRequest,
-			FileMatchLimit: zoektArgs.FileMatchLimit,
-			Select:         zoektArgs.Select,
+			FileMatchLimit: p.FileMatchLimit,
+			Select:         p.Select,
 			Since:          nil,
 		}
 
