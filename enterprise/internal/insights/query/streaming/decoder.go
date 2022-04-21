@@ -31,6 +31,8 @@ func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *int, map[string]*Se
 			if !progress.Done {
 				return
 			}
+			// Skipped elements are built progressively for a Progress update until it is Done, so
+			// we want to register its contents only once it is done.
 			for _, skipped := range progress.Skipped {
 				skippedReasons = append(skippedReasons, fmt.Sprintf("%s: %s", skipped.Reason, skipped.Message))
 			}
