@@ -305,10 +305,10 @@ var addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "Number of times gitserver.AddrForRepo was invoked",
 }, []string{"user_agent"})
 
-// addrForRepoCounter is used to track the number of times AddrForRepo is called
+// AddrForRepoCounter is used to track the number of times AddrForRepo is called
 // and is used to determine if we can read the gitserver location from the database.
 // See AddrForRepo for more details.
-var addrForRepoCounter uint64
+var AddrForRepoCounter uint64
 
 // AddrForRepo returns the gitserver address to use for the given repo name.
 // It should never be called with a nil addresses pointer.
@@ -337,7 +337,7 @@ func AddrForRepo(ctx context.Context, userAgent string, db database.DB, repo api
 			mod = 100 / rate
 		}
 
-		if rate != 0 && atomic.AddUint64(&addrForRepoCounter, 1)%mod == 0 {
+		if rate != 0 && atomic.AddUint64(&AddrForRepoCounter, 1)%mod == 0 {
 			gr, err := database.GitserverRepos(db).GetByName(ctx, repo)
 			if err == nil {
 				return gr.ShardID, nil

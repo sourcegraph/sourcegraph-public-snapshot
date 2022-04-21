@@ -515,6 +515,8 @@ func TestAddrForRepoFromDBRates(t *testing.T) {
 		t.Skip()
 	}
 
+	gitserver.AddrForRepoCounter = 0
+
 	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
