@@ -3,10 +3,10 @@ import React, { useEffect, useMemo, useState } from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 import { capitalize } from 'lodash'
+import ArrowCollapseRightIcon from 'mdi-react/ArrowCollapseRightIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import CloseIcon from 'mdi-react/CloseIcon'
-import OpenInAppIcon from 'mdi-react/OpenInAppIcon'
+import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import { MemoryRouter, useHistory, useLocation } from 'react-router'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
@@ -15,6 +15,7 @@ import {
     ErrorLike,
     formatSearchParameters,
     lprToRange,
+    pluralize,
     toPositionOrRangeQueryParameter,
     toViewStateHash,
 } from '@sourcegraph/common'
@@ -45,6 +46,7 @@ import {
     Collapse,
     CollapseHeader,
     CollapsePanel,
+    Code,
 } from '@sourcegraph/wildcard'
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
@@ -54,7 +56,7 @@ import { parseBrowserRepoURL } from '../util/url'
 
 import { findLanguageSpec } from './language-specs/languages'
 import { LanguageSpec } from './language-specs/languagespec'
-import { Location, LocationGroup, locationGroupQuality, buildRepoLocationGroups } from './location'
+import { Location, LocationGroup, locationGroupQuality, buildRepoLocationGroups, RepoLocationGroup } from './location'
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
 import { newSettingsGetter } from './settings'
 import { findSearchToken } from './token'
@@ -194,21 +196,23 @@ const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWith
 
     return (
         <>
-            <CardHeader className={styles.referencesToken}>
-                <code>{tokenResult.searchToken}</code>{' '}
-                <span className="text-muted ml-2">
-                    <code>
-                        {props.token.repoName}:{props.token.filePath}
-                    </code>
-                </span>
+            <CardHeader className={styles.cardHeader}>
+                <Code size="base" weight="bold">
+                    {tokenResult.searchToken}
+                </Code>
             </CardHeader>
-            <Input
-                className={classNames('py-0 my-0', styles.referencesFilter)}
-                type="text"
-                placeholder="Filter by filename..."
-                value={filter === undefined ? '' : filter}
-                onChange={event => setFilter(event.target.value)}
-            />
+            <div className={classNames('d-flex justify-content-start', styles.filter)}>
+                <small>
+                    <Icon as={FilterOutlineIcon} size="sm" className={styles.filterIcon} />
+                </small>
+                <Input
+                    className={classNames('py-0 my-0 w-100 text-small')}
+                    type="text"
+                    placeholder="Type to filter by filename"
+                    value={filter === undefined ? '' : filter}
+                    onChange={event => setFilter(event.target.value)}
+                />
+            </div>
             <ReferencesList
                 {...props}
                 token={props.token}
@@ -285,6 +289,8 @@ export const ReferencesList: React.FunctionComponent<
     // activeLocation is the location that is selected/clicked in the list of
     // definitions/references/implementations.
     const [activeLocation, setActiveLocation] = useState<Location>()
+    const isActiveLocation = (location: Location): boolean =>
+        activeLocation !== undefined && activeLocation.url === location.url
     // We create an in-memory history here so we don't modify the browser
     // location. This panel is detached from the URL state.
     const blobMemoryHistory = useMemo(() => H.createMemoryHistory(), [])
@@ -348,6 +354,17 @@ export const ReferencesList: React.FunctionComponent<
         props.externalHistory.push(url)
     }
 
+    // Manual management of the open/closed state of collapsible lists so they
+    // stay open/closed across re-renders and re-mounts.
+    const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
+    const handleOpenChange = (id: string, isOpen: boolean): void =>
+        setCollapsed(previous => ({ ...previous, [id]: isOpen }))
+    const isOpen = (id: string): boolean | undefined => collapsed[id]
+    // But when the input changes, we reset the collapse state
+    useEffect(() => {
+        setCollapsed({})
+    }, [props.token])
+
     if (loading && !data) {
         return <LoadingCodeIntel />
     }
@@ -378,10 +395,12 @@ export const ReferencesList: React.FunctionComponent<
                         locations={definitions}
                         hasMore={false}
                         loadingMore={false}
-                        setActiveLocation={onReferenceClick}
                         filter={props.filter}
-                        activeLocation={activeLocation}
                         navigateToUrl={navigateToUrl}
+                        isActiveLocation={isActiveLocation}
+                        setActiveLocation={onReferenceClick}
+                        handleOpenChange={handleOpenChange}
+                        isOpen={isOpen}
                     />
                     <CollapsibleLocationList
                         {...props}
@@ -390,10 +409,12 @@ export const ReferencesList: React.FunctionComponent<
                         hasMore={referencesHasNextPage}
                         fetchMore={fetchMoreReferences}
                         loadingMore={fetchMoreReferencesLoading}
-                        setActiveLocation={onReferenceClick}
                         filter={props.filter}
-                        activeLocation={activeLocation}
                         navigateToUrl={navigateToUrl}
+                        setActiveLocation={onReferenceClick}
+                        isActiveLocation={isActiveLocation}
+                        handleOpenChange={handleOpenChange}
+                        isOpen={isOpen}
                     />
                     {implementations.length > 0 && (
                         <CollapsibleLocationList
@@ -405,36 +426,38 @@ export const ReferencesList: React.FunctionComponent<
                             loadingMore={fetchMoreImplementationsLoading}
                             setActiveLocation={onReferenceClick}
                             filter={props.filter}
-                            activeLocation={activeLocation}
+                            isActiveLocation={isActiveLocation}
                             navigateToUrl={navigateToUrl}
+                            handleOpenChange={handleOpenChange}
+                            isOpen={isOpen}
                         />
                     )}
                 </div>
                 {activeLocation !== undefined && (
                     <div className={classNames('px-0 border-left', styles.referencesSideBlob)}>
-                        <CardHeader className={classNames('pl-1 pr-3 py-1 d-flex justify-content-between')}>
-                            <h4 className="mb-0">
-                                {activeLocation.file}{' '}
+                        <CardHeader className={classNames('d-flex', styles.cardHeader)}>
+                            <small>
+                                <Button
+                                    onClick={() => setActiveLocation(undefined)}
+                                    className={classNames('btn-icon p-0', styles.referencesSideBlobCollapseButton)}
+                                    title="Close panel"
+                                    data-tooltip="Close panel"
+                                    data-placement="left"
+                                    size="sm"
+                                >
+                                    <Icon size="sm" as={ArrowCollapseRightIcon} className="border-0" />
+                                </Button>
                                 <Link
                                     to={activeLocation.url}
                                     onClick={event => {
                                         event.preventDefault()
                                         navigateToUrl(activeLocation.url)
                                     }}
+                                    className={styles.referencesSideBlobFilename}
                                 >
-                                    <Icon as={OpenInAppIcon} />
+                                    {activeLocation.file}{' '}
                                 </Link>
-                            </h4>
-
-                            <Button
-                                onClick={() => setActiveLocation(undefined)}
-                                className={classNames('btn-icon p-0', styles.dismissButton)}
-                                title="Close panel"
-                                data-tooltip="Close panel"
-                                data-placement="left"
-                            >
-                                <Icon as={CloseIcon} />
-                            </Button>
+                            </small>
                         </CardHeader>
                         <SideBlob
                             {...props}
@@ -450,11 +473,19 @@ export const ReferencesList: React.FunctionComponent<
     )
 }
 
-interface CollapsibleLocationListProps {
+interface CollapseProps {
+    isOpen: (id: string) => boolean | undefined
+    handleOpenChange: (id: string, isOpen: boolean) => void
+}
+
+interface ActiveLocationProps {
+    isActiveLocation: (location: Location) => boolean
+    setActiveLocation: (reference: Location | undefined) => void
+}
+
+interface CollapsibleLocationListProps extends ActiveLocationProps, CollapseProps {
     name: string
     locations: Location[]
-    setActiveLocation: (location: Location | undefined) => void
-    activeLocation: Location | undefined
     filter: string | undefined
     hasMore: boolean
     fetchMore?: () => void
@@ -462,41 +493,41 @@ interface CollapsibleLocationListProps {
     navigateToUrl: (url: string) => void
 }
 
-const CollapsibleLocationList: React.FunctionComponent<CollapsibleLocationListProps> = props => (
-    <Collapse openByDefault={true}>
-        {({ isOpen }) => (
+const CollapsibleLocationList: React.FunctionComponent<CollapsibleLocationListProps> = props => {
+    const isOpen = props.isOpen(props.name) ?? true
+
+    return (
+        <Collapse isOpen={isOpen} onOpenChange={isOpen => props.handleOpenChange(props.name, isOpen)}>
             <>
-                <CardHeader className="p-0">
+                <CardHeader className={styles.cardHeaderBig}>
                     <CollapseHeader
                         as={Button}
-                        aria-expanded={isOpen}
+                        aria-expanded={props.isOpen(props.name)}
                         type="button"
-                        className="bg-transparent py-1 px-0 border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
+                        className="d-flex p-0 justify-content-start w-100"
                     >
-                        <h4 className="px-1 py-0 mb-0">
-                            {' '}
-                            {isOpen ? (
-                                <Icon aria-label="Close" as={ChevronDownIcon} />
-                            ) : (
-                                <Icon aria-label="Expand" as={ChevronRightIcon} />
-                            )}{' '}
-                            {capitalize(props.name)}
-                            <Badge pill={true} variant="secondary" className="ml-2">
-                                {props.locations.length}
-                                {props.hasMore && '+'}
-                            </Badge>
-                        </h4>
+                        {isOpen ? (
+                            <Icon aria-label="Close" as={ChevronDownIcon} />
+                        ) : (
+                            <Icon aria-label="Expand" as={ChevronRightIcon} />
+                        )}{' '}
+                        <h4 className="mb-0">{capitalize(props.name)}</h4>
+                        <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
+                            ({props.locations.length} displayed{props.hasMore ? ', more available)' : ')'}
+                        </span>
                     </CollapseHeader>
                 </CardHeader>
 
-                <CollapsePanel id="references">
+                <CollapsePanel id={props.name}>
                     {props.locations.length > 0 ? (
                         <LocationsList
                             locations={props.locations}
-                            activeLocation={props.activeLocation}
+                            isActiveLocation={props.isActiveLocation}
                             setActiveLocation={props.setActiveLocation}
                             filter={props.filter}
                             navigateToUrl={props.navigateToUrl}
+                            handleOpenChange={(id, isOpen) => props.handleOpenChange(props.name + id, isOpen)}
+                            isOpen={id => props.isOpen(props.name + id)}
                         />
                     ) : (
                         <p className="text-muted pl-2">
@@ -526,9 +557,9 @@ const CollapsibleLocationList: React.FunctionComponent<CollapsibleLocationListPr
                         ))}
                 </CollapsePanel>
             </>
-        )}
-    </Collapse>
-)
+        </Collapse>
+    )
+}
 
 const SideBlob: React.FunctionComponent<
     ReferencesPanelProps & {
@@ -618,166 +649,201 @@ const SideBlob: React.FunctionComponent<
     )
 }
 
-const getLineContent = (location: Location): string => {
-    const range = location.range
-    if (range !== undefined) {
-        return location.lines[range.start?.line].trim()
-    }
-    return ''
-}
-
-interface LocationsListProps {
+interface LocationsListProps extends ActiveLocationProps, CollapseProps {
     locations: Location[]
-    activeLocation?: Location
-    setActiveLocation: (reference: Location | undefined) => void
     filter: string | undefined
     navigateToUrl: (url: string) => void
 }
 
 const LocationsList: React.FunctionComponent<LocationsListProps> = ({
     locations,
-    activeLocation,
+    isActiveLocation,
     setActiveLocation,
     filter,
     navigateToUrl,
+    handleOpenChange,
+    isOpen,
 }) => {
     const repoLocationGroups = useMemo(() => buildRepoLocationGroups(locations), [locations])
+    const openByDefault = repoLocationGroups.length === 1
 
     return (
         <>
-            {repoLocationGroups.map(repoLocationGroup => {
-                const repoUrl = `/${repoLocationGroup.repoName}`
-                return (
-                    <Collapse key={repoLocationGroup.repoName} openByDefault={true}>
-                        {({ isOpen }) => (
-                            <>
-                                <CollapseHeader
-                                    as={Button}
-                                    aria-expanded={isOpen}
-                                    type="button"
-                                    className="bg-transparent py-1 border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
-                                >
-                                    <span className="p-0 mb-0">
-                                        {isOpen ? (
-                                            <Icon aria-label="Close" as={ChevronDownIcon} />
-                                        ) : (
-                                            <Icon aria-label="Expand" as={ChevronRightIcon} />
-                                        )}
-
-                                        <Link
-                                            to={repoUrl}
-                                            onClick={event => {
-                                                event.preventDefault()
-                                                navigateToUrl(repoUrl)
-                                            }}
-                                        >
-                                            {displayRepoName(repoLocationGroup.repoName)}
-                                        </Link>
-                                    </span>
-                                </CollapseHeader>
-
-                                <CollapsePanel id={repoLocationGroup.repoName}>
-                                    {repoLocationGroup.referenceGroups.map(group => (
-                                        <ReferenceGroup
-                                            key={group.path + group.repoName}
-                                            group={group}
-                                            activeLocation={activeLocation}
-                                            setActiveLocation={setActiveLocation}
-                                            getLineContent={getLineContent}
-                                            filter={filter}
-                                        />
-                                    ))}
-                                </CollapsePanel>
-                            </>
-                        )}
-                    </Collapse>
-                )
-            })}
+            {repoLocationGroups.map(group => (
+                <CollapsibleRepoLocationGroup
+                    key={group.repoName}
+                    repoLocationGroup={group}
+                    openByDefault={openByDefault}
+                    isActiveLocation={isActiveLocation}
+                    setActiveLocation={setActiveLocation}
+                    filter={filter}
+                    navigateToUrl={navigateToUrl}
+                    handleOpenChange={handleOpenChange}
+                    isOpen={isOpen}
+                />
+            ))}
         </>
     )
 }
 
-const ReferenceGroup: React.FunctionComponent<{
-    group: LocationGroup
-    activeLocation?: Location
-    setActiveLocation: (reference: Location | undefined) => void
-    getLineContent: (reference: Location) => string
-    filter: string | undefined
-}> = ({ group, setActiveLocation: setActiveLocation, getLineContent, activeLocation, filter }) => {
+const CollapsibleRepoLocationGroup: React.FunctionComponent<
+    ActiveLocationProps &
+        CollapseProps & {
+            filter: string | undefined
+            navigateToUrl: (url: string) => void
+            repoLocationGroup: RepoLocationGroup
+            openByDefault: boolean
+        }
+> = ({
+    repoLocationGroup,
+    isActiveLocation,
+    setActiveLocation,
+    navigateToUrl,
+    filter,
+    openByDefault,
+    isOpen,
+    handleOpenChange,
+}) => {
+    const repoUrl = `/${repoLocationGroup.repoName}`
+    const open = isOpen(repoLocationGroup.repoName) ?? openByDefault
+
+    return (
+        <Collapse isOpen={open} onOpenChange={isOpen => handleOpenChange(repoLocationGroup.repoName, isOpen)}>
+            <>
+                <CollapseHeader
+                    as={Button}
+                    aria-expanded={open}
+                    type="button"
+                    className={classNames('d-flex justify-content-start w-100', styles.repoLocationGroup)}
+                >
+                    {open ? (
+                        <Icon aria-label="Close" as={ChevronDownIcon} />
+                    ) : (
+                        <Icon aria-label="Expand" as={ChevronRightIcon} />
+                    )}
+                    <small>
+                        <Link
+                            to={repoUrl}
+                            onClick={event => {
+                                event.preventDefault()
+                                navigateToUrl(repoUrl)
+                            }}
+                            className={classNames('text-small', styles.repoLocationGroupRepoName)}
+                        >
+                            {displayRepoName(repoLocationGroup.repoName)}
+                        </Link>
+                    </small>
+                </CollapseHeader>
+
+                <CollapsePanel id={repoLocationGroup.repoName}>
+                    {repoLocationGroup.referenceGroups.map(group => (
+                        <CollapsibleLocationGroup
+                            key={group.path + group.repoName}
+                            group={group}
+                            isActiveLocation={isActiveLocation}
+                            setActiveLocation={setActiveLocation}
+                            filter={filter}
+                            handleOpenChange={(id, isOpen) => handleOpenChange(repoLocationGroup.repoName + id, isOpen)}
+                            isOpen={id => isOpen(repoLocationGroup.repoName + id)}
+                        />
+                    ))}
+                </CollapsePanel>
+            </>
+        </Collapse>
+    )
+}
+
+const CollapsibleLocationGroup: React.FunctionComponent<
+    ActiveLocationProps &
+        CollapseProps & {
+            group: LocationGroup
+            filter: string | undefined
+        }
+> = ({ group, setActiveLocation, isActiveLocation, filter, isOpen, handleOpenChange }) => {
     let highlighted = [group.path]
     if (filter !== undefined) {
         highlighted = group.path.split(filter)
     }
 
+    const open = isOpen(group.path) ?? true
+
     return (
-        <div className="ml-4">
-            <Collapse openByDefault={true}>
-                {({ isOpen }) => (
-                    <>
-                        <CollapseHeader
-                            as={Button}
-                            aria-expanded={isOpen}
-                            type="button"
-                            className="bg-transparent py-1 border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
-                        >
-                            <span className={styles.referenceFilename}>
-                                {isOpen ? (
-                                    <Icon aria-label="Close" as={ChevronDownIcon} />
-                                ) : (
-                                    <Icon aria-label="Expand" as={ChevronRightIcon} />
-                                )}
-                                {highlighted.length === 2 ? (
-                                    <span>
-                                        {highlighted[0]}
-                                        <mark>{filter}</mark>
-                                        {highlighted[1]}
-                                    </span>
-                                ) : (
-                                    group.path
-                                )}{' '}
-                                ({group.locations.length} references)
-                                <Badge pill={true} small={true} variant="secondary" className="ml-2">
-                                    {locationGroupQuality(group)}
-                                </Badge>
+        <Collapse isOpen={open} onOpenChange={isOpen => handleOpenChange(group.path, isOpen)}>
+            <>
+                <CollapseHeader
+                    as={Button}
+                    aria-expanded={open}
+                    type="button"
+                    className={classNames(
+                        'bg-transparent border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100',
+                        styles.locationGroup
+                    )}
+                >
+                    {open ? (
+                        <Icon aria-label="Close" as={ChevronDownIcon} />
+                    ) : (
+                        <Icon aria-label="Expand" as={ChevronRightIcon} />
+                    )}
+                    <small className={styles.locationGroupFilename}>
+                        {highlighted.length === 2 ? (
+                            <span>
+                                {highlighted[0]}
+                                <mark>{filter}</mark>
+                                {highlighted[1]}
                             </span>
-                        </CollapseHeader>
+                        ) : (
+                            group.path
+                        )}{' '}
+                        <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
+                            ({group.locations.length} {pluralize('reference', group.locations.length, 'references')})
+                        </span>
+                        <Badge small={true} variant="secondary" className="ml-4">
+                            {locationGroupQuality(group)}
+                        </Badge>
+                    </small>
+                </CollapseHeader>
 
-                        <CollapsePanel id={group.repoName + group.path} className="ml-2">
-                            <ul className="list-unstyled pl-3 py-1 mb-0">
-                                {group.locations.map(reference => {
-                                    const className =
-                                        activeLocation && activeLocation.url === reference.url
-                                            ? styles.referenceActive
-                                            : ''
+                <CollapsePanel id={group.repoName + group.path} className="ml-0">
+                    <ul className="list-unstyled mb-0">
+                        {group.locations.map(reference => {
+                            const className = isActiveLocation(reference) ? styles.locationActive : ''
 
-                                    return (
-                                        <li key={reference.url} className={classNames('border-0 rounded-0', className)}>
-                                            <div>
-                                                <Link
-                                                    onClick={event => {
-                                                        event.preventDefault()
-                                                        setActiveLocation(reference)
-                                                    }}
-                                                    to={reference.url}
-                                                    className={styles.referenceLink}
-                                                >
-                                                    <span className={styles.referenceLinkLineNumber}>
-                                                        {(reference.range?.start?.line ?? 0) + 1}
-                                                        {': '}
-                                                    </span>
-                                                    <code>{getLineContent(reference)}</code>
-                                                </Link>
-                                            </div>
-                                        </li>
-                                    )
-                                })}
-                            </ul>
-                        </CollapsePanel>
-                    </>
-                )}
-            </Collapse>
-        </div>
+                            return (
+                                <li
+                                    key={reference.url}
+                                    className={classNames('border-0 rounded-0 mb-0', styles.location, className)}
+                                >
+                                    <Link
+                                        as={Button}
+                                        onClick={event => {
+                                            event.preventDefault()
+                                            setActiveLocation(reference)
+                                        }}
+                                        to={reference.url}
+                                        className={styles.locationLink}
+                                    >
+                                        <span className={styles.locationLinkLineNumber}>
+                                            {(reference.range?.start?.line ?? 0) + 1}
+                                            {': '}
+                                        </span>
+                                        <code>{getLineContent(reference)}</code>
+                                    </Link>
+                                </li>
+                            )
+                        })}
+                    </ul>
+                </CollapsePanel>
+            </>
+        </Collapse>
     )
+}
+
+const getLineContent = (location: Location): string => {
+    const range = location.range
+    if (range !== undefined) {
+        return location.lines[range.start?.line].trim()
+    }
+    return ''
 }
 
 const LoadingCodeIntel: React.FunctionComponent<{}> = () => (

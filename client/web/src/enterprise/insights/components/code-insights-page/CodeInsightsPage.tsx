@@ -2,7 +2,8 @@ import React from 'react'
 
 import { Page } from '../../../../components/Page'
 import { useUiFeatures } from '../../hooks/use-ui-features'
-import { CodeInsightsLimitAccessBanner } from '../limit-access-banner/CodeInsightsLimitAccessBanner'
+
+import { CodeInsightsLimitAccessBanner } from './limit-access-banner/CodeInsightsLimitAccessBanner'
 
 interface CodeInsightsPageProps extends React.HTMLAttributes<HTMLDivElement> {}
 

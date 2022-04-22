@@ -222,12 +222,7 @@ func (r *Resolver) batchSpecByID(ctx context.Context, id graphql.ID) (graphqlbac
 		return nil, nil
 	}
 
-	opts := store.GetBatchSpecOpts{RandID: batchSpecRandID}
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
-		opts.ExcludeCreatedFromRawNotOwnedByUser = actor.FromContext(ctx).UID
-	}
-
-	batchSpec, err := r.store.GetBatchSpec(ctx, opts)
+	batchSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: batchSpecRandID})
 	if err != nil {
 		if err == store.ErrNoResults {
 			return nil, nil
@@ -235,6 +230,7 @@ func (r *Resolver) batchSpecByID(ctx context.Context, id graphql.ID) (graphqlbac
 		return nil, err
 	}
 
+	// Everyone can see batch specs, if they have the ID.
 	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
 }
 
@@ -373,21 +369,12 @@ func (r *Resolver) batchSpecWorkspaceByID(ctx context.Context, gqlID graphql.ID)
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Check that the requesting user is either an admin or created the spec.
-	//
-	// TODO: Once we introduce finer-grained permissions, this needs to be
-	// changed to check for namespace access and then check repository
-	// permissions and return hidden/visible workspaces accordingly.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), spec.UserID); err != nil {
-		return nil, err
-	}
-
 	ex, err := r.store.GetBatchSpecWorkspaceExecutionJob(ctx, store.GetBatchSpecWorkspaceExecutionJobOpts{BatchSpecWorkspaceID: w.ID})
 	if err != nil && err != store.ErrNoResults {
 		return nil, err
 	}
 
-	return &batchSpecWorkspaceResolver{store: r.store, workspace: w, execution: ex, batchSpec: spec.Spec}, nil
+	return newBatchSpecWorkspaceResolver(ctx, r.store, w, ex, spec.Spec)
 }
 
 func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.CreateBatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
@@ -1072,13 +1059,13 @@ func (r *Resolver) CreateBatchChangesCredential(ctx context.Context, args *graph
 	}
 
 	if userID != 0 {
-		return r.createBatchChangesUserCredential(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), userID, args.Credential)
+		return r.createBatchChangesUserCredential(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), userID, args.Credential, args.Username)
 	}
 
-	return r.createBatchChangesSiteCredential(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), args.Credential)
+	return r.createBatchChangesSiteCredential(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), args.Credential, args.Username)
 }
 
-func (r *Resolver) createBatchChangesUserCredential(ctx context.Context, externalServiceURL, externalServiceType string, userID int32, credential string) (graphqlbackend.BatchChangesCredentialResolver, error) {
+func (r *Resolver) createBatchChangesUserCredential(ctx context.Context, externalServiceURL, externalServiceType string, userID int32, credential string, username *string) (graphqlbackend.BatchChangesCredentialResolver, error) {
 	// 🚨 SECURITY: Check that the requesting user can create the credential.
 	if err := backend.CheckSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), userID); err != nil {
 		return nil, err
@@ -1099,7 +1086,7 @@ func (r *Resolver) createBatchChangesUserCredential(ctx context.Context, externa
 		return nil, ErrDuplicateCredential{}
 	}
 
-	a, err := r.generateAuthenticatorForCredential(ctx, externalServiceType, externalServiceURL, credential)
+	a, err := r.generateAuthenticatorForCredential(ctx, externalServiceType, externalServiceURL, credential, username)
 	if err != nil {
 		return nil, err
 	}
@@ -1111,7 +1098,7 @@ func (r *Resolver) createBatchChangesUserCredential(ctx context.Context, externa
 	return &batchChangesUserCredentialResolver{credential: cred}, nil
 }
 
-func (r *Resolver) createBatchChangesSiteCredential(ctx context.Context, externalServiceURL, externalServiceType string, credential string) (graphqlbackend.BatchChangesCredentialResolver, error) {
+func (r *Resolver) createBatchChangesSiteCredential(ctx context.Context, externalServiceURL, externalServiceType string, credential string, username *string) (graphqlbackend.BatchChangesCredentialResolver, error) {
 	// 🚨 SECURITY: Check that a site credential can only be created
 	// by a site-admin.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
@@ -1130,7 +1117,7 @@ func (r *Resolver) createBatchChangesSiteCredential(ctx context.Context, externa
 		return nil, ErrDuplicateCredential{}
 	}
 
-	a, err := r.generateAuthenticatorForCredential(ctx, externalServiceType, externalServiceURL, credential)
+	a, err := r.generateAuthenticatorForCredential(ctx, externalServiceType, externalServiceURL, credential, username)
 	if err != nil {
 		return nil, err
 	}
@@ -1145,7 +1132,7 @@ func (r *Resolver) createBatchChangesSiteCredential(ctx context.Context, externa
 	return &batchChangesSiteCredentialResolver{credential: cred}, nil
 }
 
-func (r *Resolver) generateAuthenticatorForCredential(ctx context.Context, externalServiceType, externalServiceURL, credential string) (auth.Authenticator, error) {
+func (r *Resolver) generateAuthenticatorForCredential(ctx context.Context, externalServiceType, externalServiceURL, credential string, username *string) (auth.Authenticator, error) {
 	svc := service.New(r.store)
 
 	var a auth.Authenticator
@@ -1164,6 +1151,13 @@ func (r *Resolver) generateAuthenticatorForCredential(ctx context.Context, exter
 		}
 		a = &auth.BasicAuthWithSSH{
 			BasicAuth:  auth.BasicAuth{Username: username, Password: credential},
+			PrivateKey: keypair.PrivateKey,
+			PublicKey:  keypair.PublicKey,
+			Passphrase: keypair.Passphrase,
+		}
+	} else if externalServiceType == extsvc.TypeBitbucketCloud {
+		a = &auth.BasicAuthWithSSH{
+			BasicAuth:  auth.BasicAuth{Username: *username, Password: credential},
 			PrivateKey: keypair.PrivateKey,
 			PublicKey:  keypair.PublicKey,
 			Passphrase: keypair.Passphrase,

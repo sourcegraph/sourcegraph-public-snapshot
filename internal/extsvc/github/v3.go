@@ -132,18 +132,6 @@ func (c *V3Client) RateLimitMonitor() *ratelimit.Monitor {
 	return c.rateLimitMonitor
 }
 
-// getConditional sends a conditional request to the GitHub API which does not count against the
-// rate limits. If the resource has not changed since based on teh value of etag, the
-// httpResponseState.status_code will be set to 304 otherwise it will be 200 (HTTP request errors
-// are handled by the underlying doRequest method). It is the caller's responsibility to ensure that
-// they take appropriate decisions based on the value of the status code.
-//
-// GitHub supports conditional requests by allowing us to set either If-None-Match (etag) or
-// If-Modified-Since (time) in the request header. At the moment, getConditional only supports
-// If-None-Match.
-//
-// See: https://docs.github.com/en/rest/overview/resources-in-the-rest-api#conditional-request
-
 func (c *V3Client) get(ctx context.Context, requestURI string, result interface{}) (*httpResponseState, error) {
 	req, err := http.NewRequest("GET", requestURI, nil)
 	if err != nil {
@@ -487,6 +475,11 @@ func (c *V3Client) GetOrganization(ctx context.Context, login string) (org *OrgD
 // orgs, nextSince, err := ListOrganizations(ctx, nextSince)
 //
 // Repeat this in a for-loop until nextSince is a non-positive integer.
+//
+// 🚀🚀🚀
+//
+// This API supports conditional requests and the underlying httpcache transport can leverage this
+// to use the cache to return responses.
 func (c *V3Client) ListOrganizations(ctx context.Context, since int) (orgs []*Org, nextSince int, err error) {
 	path := fmt.Sprintf("/organizations?since=%d&per_page=100", since)
 

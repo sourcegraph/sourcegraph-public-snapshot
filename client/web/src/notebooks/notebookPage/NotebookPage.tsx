@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
+import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { catchError, delay, startWith, switchMap } from 'rxjs/operators'
@@ -198,8 +198,7 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
                             <PageHeader
                                 className="mt-2"
                                 path={[
-                                    { icon: MagnifyIcon, to: '/search', ariaLabel: 'Code search' },
-                                    { to: '/notebooks', text: 'Notebooks' },
+                                    { to: '/notebooks', icon: BookOutlineIcon, ariaLabel: 'Notebooks' },
                                     {
                                         text: (
                                             <NotebookTitle

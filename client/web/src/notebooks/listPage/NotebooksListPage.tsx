@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
-import MagnifyIcon from 'mdi-react/MagnifyIcon'
+import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
 import { Redirect, useHistory, useLocation } from 'react-router'
 import { Observable } from 'rxjs'
@@ -19,10 +19,11 @@ import { FilteredConnectionFilter } from '../../components/FilteredConnection'
 import { Page } from '../../components/Page'
 import { CreateNotebookVariables, NotebooksOrderBy } from '../../graphql-operations'
 import { PageRoutes } from '../../routes.constants'
-import { NotepadIcon } from '../../search/SearchStack'
+import { NotepadIcon } from '../../search/Notepad'
 import { fetchNotebooks as _fetchNotebooks, createNotebook as _createNotebook } from '../backend'
 
 import { ImportMarkdownNotebookButton } from './ImportMarkdownNotebookButton'
+import { NotebooksGettingStartedTab } from './NotebooksGettingStartedTab'
 import { NotebooksList } from './NotebooksList'
 import { NotepadCTA, NOTEPAD_CTA_ID } from './NotepadCta'
 
@@ -39,12 +40,13 @@ type NotebooksTab =
     | { type: 'explore' }
     | { type: 'starred' }
     | { type: 'org'; name: string; id: string }
+    | { type: 'getting-started' }
 
 type Tabs = { tab: NotebooksTab; title: string; isActive: boolean; logName: string }[]
 
 function getSelectedTabFromLocation(locationSearch: string, authenticatedUser: AuthenticatedUser | null): NotebooksTab {
     if (!authenticatedUser) {
-        return { type: 'explore' }
+        return { type: 'getting-started' }
     }
 
     const urlParameters = new URLSearchParams(locationSearch)
@@ -55,6 +57,8 @@ function getSelectedTabFromLocation(locationSearch: string, authenticatedUser: A
             return { type: 'explore' }
         case 'starred':
             return { type: 'starred' }
+        case 'getting-started':
+            return { type: 'getting-started' }
     }
 
     const orgName = urlParameters.get('org')
@@ -102,6 +106,14 @@ export const NotebooksListPage: React.FunctionComponent<NotebooksListPageProps> 
     const [selectedTab, setSelectedTab] = useState<NotebooksTab>(
         getSelectedTabFromLocation(location.search, authenticatedUser)
     )
+
+    const [hasSeenGettingStartedTab] = useTemporarySetting('search.notebooks.gettingStartedTabSeen', false)
+
+    useEffect(() => {
+        if (typeof hasSeenGettingStartedTab !== 'undefined' && !hasSeenGettingStartedTab) {
+            setSelectedTab({ type: 'getting-started' })
+        }
+    }, [hasSeenGettingStartedTab, setSelectedTab])
 
     const onSelectTab = useCallback(
         (tab: NotebooksTab, logName: string) => {
@@ -203,6 +215,12 @@ export const NotebooksListPage: React.FunctionComponent<NotebooksListPageProps> 
                 isActive: selectedTab.type === 'explore',
                 logName: 'ExploreNotebooks',
             },
+            {
+                tab: { type: 'getting-started' },
+                title: 'Getting Started',
+                isActive: selectedTab.type === 'getting-started',
+                logName: 'GettingStarted',
+            },
         ],
         [selectedTab, orgTabs]
     )
@@ -234,7 +252,7 @@ export const NotebooksListPage: React.FunctionComponent<NotebooksListPageProps> 
         <div className="w-100">
             <Page>
                 <PageHeader
-                    path={[{ icon: MagnifyIcon, to: '/search', ariaLabel: 'Code search' }, { text: 'Notebooks' }]}
+                    path={[{ icon: BookOutlineIcon, text: 'Notebooks' }]}
                     actions={
                         authenticatedUser && (
                             <>
@@ -328,6 +346,9 @@ export const NotebooksListPage: React.FunctionComponent<NotebooksListPageProps> 
                         filters={filters}
                         telemetryService={telemetryService}
                     />
+                )}
+                {selectedTab.type === 'getting-started' && (
+                    <NotebooksGettingStartedTab telemetryService={telemetryService} />
                 )}
             </Page>
         </div>

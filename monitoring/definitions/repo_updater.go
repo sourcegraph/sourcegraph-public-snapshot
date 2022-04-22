@@ -137,7 +137,7 @@ func RepoUpdater() *monitoring.Container {
 							Critical:          monitoring.Alert().GreaterOrEqual(800000 * 0.9).For(5 * time.Minute),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
 							Owner:             monitoring.ObservableOwnerCoreApplication,
-							PossibleSolutions: "Check for unusual spikes in user added repos. Each user is only allowed to add 2000 and we have a site wide limit of 400k.",
+							PossibleSolutions: "Check for unusual spikes in user added repos. Each user is only allowed to add 2000 and we have a site wide limit of 800k.",
 						},
 					},
 					{

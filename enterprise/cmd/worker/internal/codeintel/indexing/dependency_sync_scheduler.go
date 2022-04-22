@@ -9,7 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -21,8 +21,8 @@ import (
 )
 
 var schemeToExternalService = map[string]string{
-	dependenciesStore.JVMPackagesScheme: extsvc.KindJVMPackages,
-	dependenciesStore.NpmPackagesScheme: extsvc.KindNpmPackages,
+	dependencies.JVMPackagesScheme: extsvc.KindJVMPackages,
+	dependencies.NpmPackagesScheme: extsvc.KindNpmPackages,
 }
 
 // NewDependencySyncScheduler returns a new worker instance that processes

@@ -38,7 +38,7 @@ import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import {
     useExperimentalFeatures,
     useNavbarQueryState,
-    useSearchStack,
+    useNotepad,
     buildSearchURLQueryFromQueryState,
 } from '../../stores'
 import { useTourQueryParameters } from '../../tour/components/Tour/TourAgent'
@@ -276,7 +276,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         }
     }, [results, telemetryService])
 
-    useSearchStack(
+    useNotepad(
         useMemo(
             () =>
                 results?.state === 'complete'

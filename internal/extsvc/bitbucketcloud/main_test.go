@@ -4,8 +4,9 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
-	"regexp"
 	"testing"
+
+	"github.com/grafana/regexp"
 
 	bbtest "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud/testing"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"

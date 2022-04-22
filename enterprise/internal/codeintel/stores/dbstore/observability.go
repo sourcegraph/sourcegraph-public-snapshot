@@ -17,6 +17,7 @@ type operations struct {
 	deleteConfigurationPolicyByID               *observation.Operation
 	deleteIndexByID                             *observation.Operation
 	deleteIndexesWithoutRepository              *observation.Operation
+	deleteOldAuditLogs                          *observation.Operation
 	deleteOverlappingDumps                      *observation.Operation
 	deleteSourcedCommits                        *observation.Operation
 	deleteUploadByID                            *observation.Operation
@@ -120,6 +121,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.RED
 		deleteConfigurationPolicyByID:        op("DeleteConfigurationPolicyByID"),
 		deleteIndexByID:                      op("DeleteIndexByID"),
 		deleteIndexesWithoutRepository:       op("DeleteIndexesWithoutRepository"),
+		deleteOldAuditLogs:                   op("DeleteOldAuditLogs"),
 		deleteOverlappingDumps:               op("DeleteOverlappingDumps"),
 		deleteSourcedCommits:                 op("DeleteSourcedCommits"),
 		deleteUploadByID:                     op("DeleteUploadByID"),

@@ -24,3 +24,26 @@ export const getProvidePlugin = (): webpack.ProvidePlugin =>
     })
 
 export const getStatoscopePlugin = (): StatoscopeWebpackPlugin => new StatoscopeWebpackPlugin()
+
+export const STATOSCOPE_STATS = {
+    all: false, // disable all the stats
+    hash: true, // compilation hash
+    entrypoints: true,
+    chunks: true,
+    chunkModules: true, // modules
+    reasons: true, // modules reasons
+    ids: true, // IDs of modules and chunks (webpack 5)
+    dependentModules: true, // dependent modules of chunks (webpack 5)
+    chunkRelations: true, // chunk parents, children and siblings (webpack 5)
+    cachedAssets: true, // information about the cached assets (webpack 5)
+
+    nestedModules: true, // concatenated modules
+    usedExports: true,
+    providedExports: true, // provided imports
+    assets: true,
+    chunkOrigins: true, // chunks origins stats (to find out which modules require a chunk)
+    version: true, // webpack version
+    builtAt: true, // build at time
+    timings: true, // modules timing information
+    performance: true, // info about oversized assets
+}

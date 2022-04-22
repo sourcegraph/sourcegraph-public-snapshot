@@ -1053,7 +1053,7 @@ WHERE
 func (s *store) fetchDebugInformationForJob(ctx context.Context, recordID int) (debug string, err error) {
 	debug, ok, err := basestore.ScanFirstNullString(s.Query(ctx, s.formatQuery(
 		fetchDebugInformationForJob,
-		quote(s.options.TableName),
+		quote(extractTableName(s.options.TableName)),
 		quote(s.options.TableName),
 		recordID,
 	)))
@@ -1141,8 +1141,8 @@ func matchModifiedColumnExpressions(viewName string, columnExpressions []*sqlf.Q
 
 // makeColumnPrefixes returns the set of prefixes of a column to indicate that the column belongs to a
 // particular table or aliased table. The given name should be the table name  or the aliased table
-// reference: `TableName` or `TableName alias`. The return slice always  includes an empty string for a
-// bare column reference.
+// reference: `TableName` or `TableName alias`. The return slice always  includes an empty string for
+// a bare column reference.
 func makeColumnPrefixes(name string) []string {
 	parts := strings.Split(name, " ")
 
@@ -1159,4 +1159,14 @@ func makeColumnPrefixes(name string) []string {
 	default:
 		return []string{""}
 	}
+}
+
+// extractTableName returns the alias if supplied (`Tablename alias`) and the tablename otherwise.
+func extractTableName(name string) string {
+	parts := strings.Split(name, " ")
+	if len(parts) == 2 {
+		return parts[1]
+	}
+
+	return parts[0]
 }

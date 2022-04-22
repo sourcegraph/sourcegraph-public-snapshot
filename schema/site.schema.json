@@ -55,6 +55,11 @@
       "type": "boolean",
       "default": false
     },
+    "defaultRateLimit": {
+      "description": "The rate limit (in requests per hour) for the default rate limiter in the rate limiters registry. By default this is disabled and the default rate limit is infinity.",
+      "type": "number",
+      "default": -1
+    },
     "experimentalFeatures": {
       "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
       "type": "object",
@@ -166,6 +171,12 @@
         },
         "pagure": {
           "description": "Allow adding Pagure code host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
+        "gerrit": {
+          "description": "Allow adding Gerrit code host connections",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
@@ -1195,6 +1206,13 @@
       "default": 60,
       "examples": [120]
     },
+    "insights.commit.indexer.windowDuration": {
+      "description": "The number of days of commits the insights commit indexer will pull during each request (0 is no limit).",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 0,
+      "examples": [30]
+    },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",
       "type": "string",
@@ -1313,6 +1331,28 @@
       "description": "The duration (in seconds) that a password reset link is considered valid.",
       "type": "integer",
       "default": 14400,
+      "group": "Authentication"
+    },
+    "auth.lockout": {
+      "description": "The config options for account lockout",
+      "type": "object",
+      "properties": {
+        "failedAttemptThreshold": {
+          "description": "The threshold of failed sign-in attempts in a consecutive period",
+          "type": "integer",
+          "default": 5
+        },
+        "lockoutPeriod": {
+          "description": "The number of seconds for the lockout period",
+          "type": "integer",
+          "default": 1800
+        },
+        "consecutivePeriod": {
+          "description": "The number of seconds to be considered as a consecutive period",
+          "type": "integer",
+          "default": 3600
+        }
+      },
       "group": "Authentication"
     },
     "auth.unlockAccountLinkSigningKey": {

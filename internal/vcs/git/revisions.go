@@ -98,7 +98,7 @@ func ResolveRevision(ctx context.Context, db database.DB, repo api.RepoName, spe
 
 // runRevParse sends the git rev-parse command to gitserver. It interprets
 // missing revision responses and converts them into RevisionNotFoundError.
-func runRevParse(ctx context.Context, cmd *gitserver.Cmd, spec string) (api.CommitID, error) {
+func runRevParse(ctx context.Context, cmd gitserver.GitCommand, spec string) (api.CommitID, error) {
 	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		if gitdomain.IsRepoNotExist(err) {

@@ -49,7 +49,9 @@ const recordTests = async () => {
     .filter(Boolean)
     .map(matchArray => matchArray[2])
 
-  await Promise.all(testNames.map(testName => recordSnapshot(testName)))
+  for (const testName of testNames) {
+    await recordSnapshot(testName)
+  }
 }
 
 // eslint-disable-next-line no-void

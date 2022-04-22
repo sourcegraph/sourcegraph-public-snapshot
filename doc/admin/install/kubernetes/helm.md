@@ -211,11 +211,13 @@ The [using your own Redis](https://github.com/sourcegraph/deploy-sourcegraph-hel
 
 #### Using external Object Storage
 
-To use an external Object Storage service (S3-compatible services, or GCS), first review our [general recommendations](https://docs.sourcegraph.com/admin/external_services/object_storage). Then add the below code snippet to your override file.
+To use an external Object Storage service (S3-compatible services, or GCS), first review our [general recommendations](https://docs.sourcegraph.com/admin/external_services/object_storage). Then review the following example and adjust to your use case.
 
-Prior to installing the chart, you should store these sensitive environment variables in [Secrets].
+> See [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/external-object-storage/override.yaml) for an example override file.
+>
+> The example assumes the use of AWS S3. You may configure the environment variables accordingly for your own use case based on our [general recommendations](https://docs.sourcegraph.com/admin/external_services/object_storage).
 
-> The example override assumes the use of AWS S3. You may configure the environment variables accordingly for your own use case based on our [general recommendations](https://docs.sourcegraph.com/admin/external_services/object_storage).
+If you provide credentials with an access key / secret key, we recommend storing the credentials in [Secrets] created outside of the helm chart and managed in a secure manner. An example Secret is shown here:
 
 ```yaml
 apiVersion: v1
@@ -228,7 +230,8 @@ data:
   PRECISE_CODE_INTEL_UPLOAD_AWS_SECRET_ACCESS_KEY: ""
 ```
 
-[override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/external-object-storage/override.yaml)
+In your [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/external-object-storage/override.yaml), reference this Secret and the necessary environment variables:
+
 ```yaml
 
 minio:
@@ -278,7 +281,7 @@ Alternatively, you may manually create the secret from a manifest file.
 
 > WARNING: Do NOT commit the secret manifest into your Git repository unless you are okay with storing sensitive information in plaintext and your repository is private.
 
-`gitserver-ssh.Secret.yaml`
+Create a file with the following and save it as `gitserver-ssh.Secret.yaml`
 ```sh
 apiVersion: v1
 kind: Secret
@@ -355,7 +358,7 @@ helm repo add sourcegraph https://sourcegraph.github.io/deploy-sourcegraph-helm/
 
 Add into your override file the below values to configure both your ingress hostname and your storage class. We recommend configuring Ingress to use [Container-native load balancing] to expose Sourcegraph publicly on a domain of your choosing and setting the Storage Class to use [Compute Engine persistent disk]. (For an example file see [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/gcp/override.yaml))
 
-[override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/gcp/override.yaml)
+<!--[override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/gcp/override.yaml)-->
 ```yaml
 frontend:
   serviceType: ClusterIP
@@ -426,7 +429,7 @@ frontend:
 
 If using your own certificate, you can do so with [TLS Secrets](https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets).
 
-`sourcegraph-frontend-tls.Secret.yaml`
+Create a file with the following and save it as `sourcegraph-frontend-tls.Secret.yaml`
 ```yaml
 apiVersion: v1
 kind: Secret
@@ -487,9 +490,9 @@ helm repo add sourcegraph https://sourcegraph.github.io/deploy-sourcegraph-helm/
 
 **1** – Create your override file and add in any configuration override settings you need - see [configuration](#configuration) for more information on override files and the options around what can be configured.
 
-We recommend adding the following values into your override file to configure Ingress to use [AWS Load Balancer Controller] to expose Sourcegraph publicly on a domain of your choosing, and to configure the Storage Class to use [AWS EBS CSI driver].
+We recommend adding the following values into your override file to configure Ingress to use [AWS Load Balancer Controller] to expose Sourcegraph publicly on a domain of your choosing, and to configure the Storage Class to use [AWS EBS CSI driver]. For an example, see [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/aws/override.yaml).
 
-[override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/aws/override.yaml)
+<!--[override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/aws/override.yaml)-->
 ```yaml
 frontend:
   ingress:
@@ -569,9 +572,9 @@ helm repo add sourcegraph https://sourcegraph.github.io/deploy-sourcegraph-helm/
 
 **1** – Create your override file and add in any configuration override settings you need - see [configuration](#configuration) for more information on override files and the options around what can be configured.
 
-Add into your override file the below values to configure both your ingress hostname and your storage class. We recommend configuring Ingress to use [Application Gateway](https://azure.microsoft.com/en-us/services/application-gateway) to expose Sourcegraph publicly on a domain of your choosing and Storage Class to use [Azure Disk CSI driver](https://docs.microsoft.com/en-us/azure/aks/azure-disk-csi).
+Add into your override file the below values to configure both your ingress hostname and your storage class. We recommend configuring Ingress to use [Application Gateway](https://azure.microsoft.com/en-us/services/application-gateway) to expose Sourcegraph publicly on a domain of your choosing and Storage Class to use [Azure Disk CSI driver](https://docs.microsoft.com/en-us/azure/aks/azure-disk-csi). For an example see [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/azure/override.yaml).
 
-[override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/azure/override.yaml)
+<!--[override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/azure/override.yaml)-->
 ```yaml
 frontend:
   ingress:
@@ -716,7 +719,7 @@ frontend:
 
 You also have the option to manually configure TLS certificate via [TLS Secrets](https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets).
 
-`sourcegraph-frontend-tls.Secret.yaml`
+Create a file with the following and save it as `sourcegraph-frontend-tls.Secret.yaml`
 ```yaml
 apiVersion: v1
 kind: Secret

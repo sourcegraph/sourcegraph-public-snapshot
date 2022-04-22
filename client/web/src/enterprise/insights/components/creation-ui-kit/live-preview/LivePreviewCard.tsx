@@ -61,7 +61,7 @@ const LivePreviewLegend: React.FunctionComponent<LivePreviewLegendProps> = props
     return (
         <LegendList className="mt-3">
             {series.map(series => (
-                <LegendItem key={series.dataKey} color={getLineColor(series)} name={series.name} />
+                <LegendItem key={series.id} color={getLineColor(series)} name={series.name} />
             ))}
         </LegendList>
     )

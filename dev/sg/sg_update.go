@@ -1,17 +1,19 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"runtime"
 	"strings"
 
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -73,25 +75,22 @@ func updateToPrebuiltSG(ctx context.Context) (string, error) {
 		return "", errors.Newf("downloading sg: status %d", resp.StatusCode)
 	}
 
-	tmpSgPath := tmpDir + "/sg"
-	f, err := os.Create(tmpSgPath)
-	if err != nil {
-		return "", err
-	}
-
-	_, err = io.Copy(f, resp.Body)
-	if err != nil {
-		return "", err
-	}
-	err = os.Chmod(tmpSgPath, 0755)
-	if err != nil {
-		return "", err
-	}
-
 	currentExecPath, err := os.Executable()
 	if err != nil {
 		return "", err
 	}
 
-	return currentExecPath, os.Rename(tmpSgPath, currentExecPath)
+	content := &bytes.Buffer{}
+	content.ReadFrom(resp.Body)
+
+	ok, err := fileutil.UpdateFileIfDifferent(currentExecPath, content.Bytes())
+	if err != nil {
+		return "", err
+	}
+	if !ok {
+		return currentExecPath, nil
+	}
+
+	err = exec.Command("chmod", "+x", currentExecPath).Run()
+	return currentExecPath, err
 }

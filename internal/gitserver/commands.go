@@ -158,7 +158,7 @@ func (c *ClientImplementor) execReader(ctx context.Context, repo api.RepoName, a
 		return nil, errors.Errorf("command failed: %v is not a allowed git command", args)
 	}
 	cmd := c.GitCommand(repo, args...)
-	return StdoutReader(ctx, cmd)
+	return cmd.StdoutReader(ctx)
 }
 
 // logEntryPattern is the regexp pattern that matches entries in the output of the `git shortlog
@@ -507,7 +507,7 @@ func lsTreeUncached(ctx context.Context, db database.DB, repo api.RepoName, comm
 		if bytes.Contains(out, []byte("exists on disk, but not in")) {
 			return nil, &os.PathError{Op: "ls-tree", Path: filepath.ToSlash(path), Err: os.ErrNotExist}
 		}
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.args, out))
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
 	}
 
 	if len(out) == 0 {
@@ -634,7 +634,7 @@ func (c *ClientImplementor) LogReverseEach(repo string, commit string, n int, on
 	// We run a single `git log` command and stream the output while the repo is being processed, which
 	// can take much longer than 1 minute (the default timeout).
 	command.DisableTimeout()
-	stdout, err := StdoutReader(ctx, command)
+	stdout, err := command.StdoutReader(ctx)
 	if err != nil {
 		return err
 	}
