@@ -461,6 +461,9 @@ func (i *imageRepository) checkLegacy(rawImage string) bool {
 // 	$ curl -H "Authorization: Bearer $token" https://index.docker.io/v2/sourcegraph/server/tags/list
 //
 func (i *imageRepository) fetchDigest(tag string) (digest.Digest, error) {
+	if tag == "" {
+		return "", fmt.Errorf("tag is empty for %s", i.imageRef.String())
+	}
 	req, err := http.NewRequest("GET", fmt.Sprintf("https://index.docker.io/v2/%s/manifests/%s", i.name, tag), nil)
 	if err != nil {
 		return "", err
@@ -475,7 +478,10 @@ func (i *imageRepository) fetchDigest(tag string) (digest.Digest, error) {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		data, _ := io.ReadAll(resp.Body)
+		data, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return "", err
+		}
 		return "", errors.Newf("GET https://index.docker.io/v2/%s/manifests/%s %s: %s", i.name, tag, resp.Status, string(data))
 	}
 
