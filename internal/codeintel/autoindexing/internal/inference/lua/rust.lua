@@ -1,4 +1,4 @@
-local path_patterns = require("sg.path_patterns")
+local patterns = require("sg.patterns")
 local recognizers = require("sg.recognizers")
 
 local indexer = "sourcegraph/lsif-rust"
@@ -6,7 +6,7 @@ local outfile = "dump.lsif"
 
 return recognizers.path_recognizer {
     patterns = {
-        path_patterns.basename("Cargo.toml"),
+        patterns.path_basename("Cargo.toml"),
     },
 
     -- Invoked when Cargo.toml exists anywhere in repository

@@ -1,4 +1,4 @@
-local path_patterns = require("sg.path_patterns")
+local patterns = require("sg.patterns")
 local recognizers = require("sg.recognizers")
 
 local indexer = "sourcegraph/lsif-java"
@@ -6,19 +6,19 @@ local outfile = "dump.lsif"
 
 return recognizers.path_recognizer {
     patterns = {
-        path_patterns.literal("lsif-java.json"),
+        patterns.path_literal("lsif-java.json"),
     },
 
     -- Invoked when lsif-java.json exists in root of repository
     generate = function(api)
         api:callback(recognizers.path_recognizer {
             patterns = {
-                path_patterns.basename("pom.xml"),
-                path_patterns.basename("build.gradle"),
-                path_patterns.basename("build.gradle.kts"),
-                path_patterns.extension("java"),
-                path_patterns.extension("scala"),
-                path_patterns.extension("kt"),
+                patterns.path_basename("pom.xml"),
+                patterns.path_basename("build.gradle"),
+                patterns.path_basename("build.gradle.kts"),
+                patterns.path_extension("java"),
+                patterns.path_extension("scala"),
+                patterns.path_extension("kt"),
             },
 
             -- Invoked when filenames/extensions exist

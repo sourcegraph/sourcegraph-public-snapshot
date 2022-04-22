@@ -14,7 +14,7 @@ var Patterns = patternAPI{}
 type patternAPI struct{}
 
 func (api patternAPI) LuaAPI() map[string]lua.LGFunction {
-	newPatternConstructor := func(prefix, suffix string) func(*lua.LState) error {
+	newPathPatternConstructor := func(prefix, suffix string) func(*lua.LState) error {
 		return func(state *lua.LState) error {
 			pattern := regexp.QuoteMeta(state.CheckString(1))
 			state.Push(luar.New(state, luatypes.NewPattern(prefix+pattern+suffix)))
@@ -22,7 +22,7 @@ func (api patternAPI) LuaAPI() map[string]lua.LGFunction {
 		}
 	}
 
-	newPatternCombineConstructor := func(combine func([]*luatypes.PathPattern) *luatypes.PathPattern) func(*lua.LState) error {
+	newPathPatternCombineConstructor := func(combine func([]*luatypes.PathPattern) *luatypes.PathPattern) func(*lua.LState) error {
 		return func(state *lua.LState) error {
 			var patterns []*luatypes.PathPattern
 			for i := 1; i <= state.GetTop(); i++ {
@@ -40,11 +40,11 @@ func (api patternAPI) LuaAPI() map[string]lua.LGFunction {
 	}
 
 	return map[string]lua.LGFunction{
-		"literal":   util.WrapLuaFunction(newPatternConstructor("^", "$")),
-		"segment":   util.WrapLuaFunction(newPatternConstructor("(^|/)", "(/|$)")),
-		"basename":  util.WrapLuaFunction(newPatternConstructor("(^|/)", "$")),
-		"extension": util.WrapLuaFunction(newPatternConstructor("(^|/)[^/]+.", "$")),
-		"combine":   util.WrapLuaFunction(newPatternCombineConstructor(luatypes.NewCombinedPattern)),
-		"exclude":   util.WrapLuaFunction(newPatternCombineConstructor(luatypes.NewExcludePattern)),
+		"path_literal":   util.WrapLuaFunction(newPathPatternConstructor("^", "$")),
+		"path_segment":   util.WrapLuaFunction(newPathPatternConstructor("(^|/)", "(/|$)")),
+		"path_basename":  util.WrapLuaFunction(newPathPatternConstructor("(^|/)", "$")),
+		"path_extension": util.WrapLuaFunction(newPathPatternConstructor("(^|/)[^/]+.", "$")),
+		"path_combine":   util.WrapLuaFunction(newPathPatternCombineConstructor(luatypes.NewCombinedPattern)),
+		"path_exclude":   util.WrapLuaFunction(newPathPatternCombineConstructor(luatypes.NewExcludePattern)),
 	}
 }

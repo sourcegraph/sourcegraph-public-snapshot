@@ -1,19 +1,19 @@
 local path = require("path")
-local path_patterns = require("sg.path_patterns")
+local patterns = require("sg.patterns")
 local recognizers = require("sg.recognizers")
 
 local shared = loadfile("shared.lua")()
 
 local indexer = "sourcegraph/lsif-go:latest"
 
-local exclude_paths = path_patterns.combine(shared.exclude_paths, {
-    path_patterns.segment("vendor"),
+local exclude_paths = patterns.path_combine(shared.exclude_paths, {
+    patterns.path_segment("vendor"),
 })
 
 local gomod_recognizer = recognizers.path_recognizer {
     patterns = {
-        path_patterns.basename("go.mod"),
-        path_patterns.exclude(exclude_paths),
+        patterns.path_basename("go.mod"),
+        patterns.path_exclude(exclude_paths),
     },
 
     -- Invoked when go.mod files exist
@@ -43,8 +43,8 @@ local gomod_recognizer = recognizers.path_recognizer {
 
 local goext_recognizer = recognizers.path_recognizer {
     patterns = {
-        path_patterns.extension("go"),
-        path_patterns.exclude(exclude_paths),
+        patterns.path_extension("go"),
+        patterns.path_exclude(exclude_paths),
     },
 
     -- Invoked when no go.mod files exist but go extensions exist somewhere

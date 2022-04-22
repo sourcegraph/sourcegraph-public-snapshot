@@ -1,7 +1,7 @@
 
 local json = require("json")
 local path = require("path")
-local path_patterns = require("sg.path_patterns")
+local patterns = require("sg.patterns")
 local recognizers = require("sg.recognizers")
 
 local shared = loadfile("shared.lua")()
@@ -10,8 +10,8 @@ local util = loadfile("util.lua")()
 local indexer = "sourcegraph/lsif-typescript:autoindex"
 local typescript_nmusl_command = "N_NODE_MIRROR=https://unofficial-builds.nodejs.org/download/release n --arch x64-musl auto"
 
-local exclude_paths = path_patterns.combine(shared.exclude_paths, {
-    path_patterns.segment("node_modules"),
+local exclude_paths = patterns.path_combine(shared.exclude_paths, {
+    patterns.path_segment("node_modules"),
 })
 
 local check_lerna_file = function(root, contents_by_path)
@@ -57,21 +57,21 @@ local infer_typescript_job = function(api, tsconfig_path, should_infer_config)
     api:callback(recognizers.path_recognizer {
         patterns = {
             -- To disambiguate installation steps
-            path_patterns.basename("yarn.lock"),
+            patterns.path_basename("yarn.lock"),
             -- Try to determine version
-            path_patterns.basename(".n-node-version"),
-            path_patterns.basename(".node-version"),
-            path_patterns.basename(".nvmrc"),
+            patterns.path_basename(".n-node-version"),
+            patterns.path_basename(".node-version"),
+            patterns.path_basename(".nvmrc"),
             -- To reinvoke simple cases with no other files
-            path_patterns.basename("tsconfig.json"),
-            path_patterns.exclude(exclude_paths),
+            patterns.path_basename("tsconfig.json"),
+            patterns.path_exclude(exclude_paths),
         },
 
         patterns_for_content = {
             -- To read explicitly configured engines and npm client
-            path_patterns.basename("package.json"),
-            path_patterns.basename("lerna.json"),
-            path_patterns.exclude(exclude_paths),
+            patterns.path_basename("package.json"),
+            patterns.path_basename("lerna.json"),
+            patterns.path_exclude(exclude_paths),
         },
 
         -- Invoked when any of the files listed in the patterns above exist.
@@ -133,9 +133,9 @@ end
 
 return recognizers.path_recognizer {
     patterns = {
-        path_patterns.basename("package.json"),
-        path_patterns.basename("tsconfig.json"),
-        path_patterns.exclude(exclude_paths),
+        patterns.path_basename("package.json"),
+        patterns.path_basename("tsconfig.json"),
+        patterns.path_exclude(exclude_paths),
     },
 
     -- Invoked when package.json or tsconfig.json files exist
