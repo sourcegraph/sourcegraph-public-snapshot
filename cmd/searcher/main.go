@@ -59,7 +59,7 @@ func frontendDB() (database.DB, error) {
 	return database.NewDB(sqlDB), nil
 }
 
-func shutdownOnSignal(server *http.Server) error {
+func shutdownOnSignal(ctx context.Context, server *http.Server) error {
 	// Listen for shutdown signals. When we receive one attempt to clean up,
 	// but do an insta-shutdown if we receive more than one signal.
 	c := make(chan os.Signal, 2)
@@ -67,7 +67,11 @@ func shutdownOnSignal(server *http.Server) error {
 
 	// Once we receive one of the signals from above, continues with the shutdown
 	// process.
-	<-c
+	select {
+	case <-c:
+	case <-ctx.Done(): // still call shutdown below
+	}
+
 	go func() {
 		// If a second signal is received, exit immediately.
 		<-c
@@ -75,7 +79,7 @@ func shutdownOnSignal(server *http.Server) error {
 	}()
 
 	// Wait for at most for the configured shutdown timeout.
-	ctx, cancel := context.WithTimeout(context.Background(), goroutine.GracefulShutdownTimeout)
+	ctx, cancel := context.WithTimeout(ctx, goroutine.GracefulShutdownTimeout)
 	defer cancel()
 	// Stop accepting requests.
 	return server.Shutdown(ctx)
@@ -133,6 +137,10 @@ func run() error {
 	handler = trace.HTTPMiddleware(handler, conf.DefaultClient())
 	handler = ot.HTTPMiddleware(handler)
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	g, ctx := errgroup.WithContext(ctx)
+
 	host := ""
 	if env.InsecureDev {
 		host = "127.0.0.1"
@@ -142,6 +150,9 @@ func run() error {
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
 		Addr:         addr,
+		BaseContext: func(_ net.Listener) context.Context {
+			return ctx
+		},
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// For cluster liveness and readiness probes
 			if r.URL.Path == "/healthz" {
@@ -152,8 +163,6 @@ func run() error {
 			handler.ServeHTTP(w, r)
 		}),
 	}
-
-	var g errgroup.Group
 
 	// Listen
 	g.Go(func() error {
@@ -166,7 +175,7 @@ func run() error {
 
 	// Shutdown
 	g.Go(func() error {
-		return shutdownOnSignal(server)
+		return shutdownOnSignal(ctx, server)
 	})
 
 	return g.Wait()
