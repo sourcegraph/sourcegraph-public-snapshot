@@ -7,7 +7,7 @@ import (
 
 	"github.com/grafana/regexp"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/inference/luatypes"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference/luatypes"
 )
 
 // partitionPatterns flattens the given recognizers, then extracts and categorizes the path

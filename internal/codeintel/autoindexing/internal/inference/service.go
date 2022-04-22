@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/inference/lua"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/inference/luatypes"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference/lua"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference/luatypes"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/luasandbox"
 	"github.com/sourcegraph/sourcegraph/internal/observation"

@@ -5,7 +5,7 @@ import (
 	lua "github.com/yuin/gopher-lua"
 	luar "layeh.com/gopher-luar"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/inference/luatypes"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference/luatypes"
 	"github.com/sourcegraph/sourcegraph/internal/luasandbox/util"
 )
 

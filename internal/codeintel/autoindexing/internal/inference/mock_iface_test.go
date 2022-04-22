@@ -15,7 +15,7 @@ import (
 
 // MockGitService is a mock implementation of the GitService interface (from
 // the package
-// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/inference)
+// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference)
 // used for unit testing.
 type MockGitService struct {
 	// ArchiveFunc is an instance of a mock function object controlling the
@@ -300,7 +300,7 @@ func (c GitServiceListFilesFuncCall) Results() []interface{} {
 
 // MockSandboxService is a mock implementation of the SandboxService
 // interface (from the package
-// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/inference)
+// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference)
 // used for unit testing.
 type MockSandboxService struct {
 	// CreateSandboxFunc is an instance of a mock function object

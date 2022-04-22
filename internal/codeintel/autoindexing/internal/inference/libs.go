@@ -3,7 +3,7 @@ package inference
 import (
 	lua "github.com/yuin/gopher-lua"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/inference/libs"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference/libs"
 	"github.com/sourcegraph/sourcegraph/internal/luasandbox"
 	"github.com/sourcegraph/sourcegraph/internal/luasandbox/util"
 )

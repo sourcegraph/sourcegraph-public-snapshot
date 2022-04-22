@@ -18,12 +18,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
+type RecognizerTest struct {
+	description        string
+	repositoryContents map[string]string
+	expected           []config.IndexJob
+}
+
 func TestRecognizers(t *testing.T) {
-	testCases := []struct {
-		description        string
-		repositoryContents map[string]string
-		expected           []config.IndexJob
-	}{
+	testCases := []RecognizerTest{
 		{
 			description:        "empty",
 			repositoryContents: nil,
