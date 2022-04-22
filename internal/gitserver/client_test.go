@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/migration"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -397,9 +396,6 @@ func TestAddrForRepoFromDB(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t)
-	ctx := context.Background()
-
 	// enable feature flag
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
@@ -416,39 +412,6 @@ func TestAddrForRepoFromDB(t *testing.T) {
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(false)
 
-	repos := types.Repos{
-		&types.Repo{
-			Name:         "github.com/sourcegraph/repo1",
-			URI:          "github.com/sourcegraph/repo1",
-			Description:  "",
-			ExternalRepo: api.ExternalRepoSpec{},
-			Sources:      nil,
-		},
-		&types.Repo{
-			Name:         "github.com/sourcegraph/repo2",
-			URI:          "github.com/sourcegraph/repo2",
-			Description:  "",
-			ExternalRepo: api.ExternalRepoSpec{},
-			Sources:      nil,
-		},
-	}
-	err := database.Repos(db).Create(ctx, repos...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	gitserverRepo := &types.GitserverRepo{
-		RepoID:        repos[0].ID,
-		ShardID:       "gitserver-1",
-		CloneStatus:   types.CloneStatusNotCloned,
-		RepoSizeBytes: 100,
-	}
-
-	// Create one GitServerRepo
-	if err := database.GitserverRepos(db).Upsert(ctx, gitserverRepo); err != nil {
-		t.Fatal(err)
-	}
-
 	addrs := []string{"gitserver-1", "gitserver-2", "gitserver-3"}
 	pinned := map[string]string{
 		"github.com/sourcegraph/repo2": "gitserver-1",
@@ -459,16 +422,17 @@ func TestAddrForRepoFromDB(t *testing.T) {
 		repo           api.RepoName
 		want           string
 		dotComDisabled bool
+		dbNotCalled    bool
 	}{
 		{
 			name: "repo1",
 			repo: api.RepoName("github.com/sourcegraph/repo1"),
-			want: "gitserver-1",
+			want: "gitserver-2",
 		},
 		{
 			name: "normalisation",
 			repo: api.RepoName("github.com/sourcegraph/repo1.git"),
-			want: "gitserver-1",
+			want: "gitserver-2",
 		},
 		{
 			name: "repo not in the DB",
@@ -476,15 +440,17 @@ func TestAddrForRepoFromDB(t *testing.T) {
 			want: "gitserver-2",
 		},
 		{
-			name: "pinned repo", // different server address that the hashing function would normally yield
-			repo: api.RepoName("github.com/sourcegraph/repo2"),
-			want: "gitserver-1",
+			name:        "pinned repo", // different server address that the hashing function would normally yield
+			repo:        api.RepoName("github.com/sourcegraph/repo2"),
+			want:        "gitserver-1",
+			dbNotCalled: true,
 		},
 		{
 			name:           "repo1",
 			repo:           api.RepoName("github.com/sourcegraph/repo1"),
 			want:           "gitserver-2",
 			dotComDisabled: true,
+			dbNotCalled:    true,
 		},
 	}
 
@@ -496,7 +462,18 @@ func TestAddrForRepoFromDB(t *testing.T) {
 				envvar.MockSourcegraphDotComMode(true)
 			}
 
-			got, err := gitserver.AddrForRepo(context.Background(), "gitserver", database.NewDB(db), tc.repo, gitserver.GitServerAddresses{
+			db := database.NewMockDB()
+
+			store := database.NewMockGitserverRepoStore()
+			store.GetByNameFunc.SetDefaultReturn(&types.GitserverRepo{
+				RepoID:        1,
+				ShardID:       "gitserver-1",
+				CloneStatus:   types.CloneStatusNotCloned,
+				RepoSizeBytes: 100,
+			}, nil)
+			db.GitserverReposFunc.SetDefaultReturn(store)
+
+			got, err := gitserver.AddrForRepo(context.Background(), "gitserver", db, tc.repo, gitserver.GitServerAddresses{
 				Addresses:     addrs,
 				PinnedServers: pinned,
 			})
@@ -505,6 +482,11 @@ func TestAddrForRepoFromDB(t *testing.T) {
 			}
 			if got != tc.want {
 				t.Fatalf("Want %q, got %q", tc.want, got)
+			}
+			if tc.dbNotCalled && len(db.GitserverReposFunc.History()) > 0 {
+				t.Fatalf("Should not have called the database")
+			} else if !tc.dbNotCalled && len(db.GitserverReposFunc.History()) == 0 {
+				t.Fatalf("Should have called the database")
 			}
 		})
 	}
@@ -517,38 +499,9 @@ func TestAddrForRepoFromDBRates(t *testing.T) {
 
 	gitserver.AddrForRepoCounter = 0
 
-	db := dbtest.NewDB(t)
-	ctx := context.Background()
-
 	// enable dotCom mode
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(false)
-
-	repos := types.Repos{
-		&types.Repo{
-			Name:         "github.com/sourcegraph/repo1",
-			URI:          "github.com/sourcegraph/repo1",
-			Description:  "",
-			ExternalRepo: api.ExternalRepoSpec{},
-			Sources:      nil,
-		},
-	}
-	err := database.Repos(db).Create(ctx, repos...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	gitserverRepo := &types.GitserverRepo{
-		RepoID:        repos[0].ID,
-		ShardID:       "gitserver-1",
-		CloneStatus:   types.CloneStatusNotCloned,
-		RepoSizeBytes: 100,
-	}
-
-	// Create one GitServerRepo
-	if err := database.GitserverRepos(db).Upsert(ctx, gitserverRepo); err != nil {
-		t.Fatal(err)
-	}
 
 	addrs := []string{"gitserver-1", "gitserver-2", "gitserver-3"}
 	pinned := map[string]string{
@@ -567,30 +520,44 @@ func TestAddrForRepoFromDBRates(t *testing.T) {
 		},
 	})
 
-	check := func(repo string, want string) {
-		got, err := gitserver.AddrForRepo(context.Background(), "gitserver", database.NewDB(db), api.RepoName(repo), gitserver.GitServerAddresses{
+	check := func(repo string, dbCalled bool) {
+		t.Helper()
+
+		db := database.NewMockDB()
+		store := database.NewMockGitserverRepoStore()
+		store.GetByNameFunc.SetDefaultReturn(&types.GitserverRepo{
+			RepoID:        1,
+			ShardID:       "gitserver-1",
+			CloneStatus:   types.CloneStatusNotCloned,
+			RepoSizeBytes: 100,
+		}, nil)
+		db.GitserverReposFunc.SetDefaultReturn(store)
+
+		_, err := gitserver.AddrForRepo(context.Background(), "gitserver", db, api.RepoName(repo), gitserver.GitServerAddresses{
 			Addresses:     addrs,
 			PinnedServers: pinned,
 		})
 		if err != nil {
 			t.Fatal("Error during getting gitserver address")
 		}
-		if got != want {
-			t.Fatalf("Want %q, got %q", want, got)
+		if dbCalled && len(db.GitserverReposFunc.History()) == 0 {
+			t.Fatalf("Should have called the database")
+		} else if !dbCalled && len(db.GitserverReposFunc.History()) > 0 {
+			t.Fatalf("Should not have called the database")
 		}
 	}
 
 	// first request should be served from the hash
 	// Rate: 50%, Counter: 1, Mod: 100 / 50 = 2, Result: 1 % 2 = 1
-	check("github.com/sourcegraph/repo1", "gitserver-2")
+	check("github.com/sourcegraph/repo1", false)
 
 	// second request should be served from the DB
 	// Rate: 50%, Counter: 2, Mod: 100 / 50 = 2, Result: 2 % 2 = 0
-	check("github.com/sourcegraph/repo1", "gitserver-1")
+	check("github.com/sourcegraph/repo1", true)
 
 	// third request should be served from the hash
 	// Rate: 50%, Counter: 3, Mod: 100 / 50 = 2, Result: 3 % 2 = 1
-	check("github.com/sourcegraph/repo1", "gitserver-2")
+	check("github.com/sourcegraph/repo1", false)
 
 	// Let's change the rate to 30%
 	conf.Mock(&conf.Unified{
@@ -604,15 +571,15 @@ func TestAddrForRepoFromDBRates(t *testing.T) {
 
 	// next request should be served from the hash
 	// Rate: 30%, Counter: 4, Mod: 100 / 30 = 3, Result: 4 % 3 = 1
-	check("github.com/sourcegraph/repo1", "gitserver-2")
+	check("github.com/sourcegraph/repo1", false)
 
 	// next request should be served from the hash
 	// Rate: 30%, Counter: 5, Mod: 100 / 30 = 3, Result: 5 % 3 = 2
-	check("github.com/sourcegraph/repo1", "gitserver-2")
+	check("github.com/sourcegraph/repo1", false)
 
 	// next request should be served from the DB
 	// Rate: 30%, Counter: 6, Mod: 100 / 30 = 3, Result: 6 % 3 = 0
-	check("github.com/sourcegraph/repo1", "gitserver-1")
+	check("github.com/sourcegraph/repo1", true)
 }
 
 func TestRendezvousAddrForRepo(t *testing.T) {
