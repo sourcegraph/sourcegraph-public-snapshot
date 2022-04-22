@@ -51,10 +51,6 @@ type Logger interface {
 	// Error logs are high-priority. If an application is running smoothly, it shouldn't
 	// generate any error-level logs.
 	Error(string, ...Field)
-
-	// Sync flushes any buffered log entries. Applications should take care to call Sync
-	// before exiting.
-	Sync() error
 }
 
 // Scoped returns the global logger and sets it up with the given scope and OpenTelemetry

@@ -28,11 +28,13 @@ func Get(safe bool) *zap.Logger {
 	return globalLogger
 }
 
-// Init initializes the global logger once. Subsequent calls are no-op.
-func Init(r otfields.Resource, level zap.AtomicLevel, format encoders.OutputFormat, development bool) {
+// Init initializes the global logger once. Subsequent calls are no-op. Returns the
+// callback to sync the root core.
+func Init(r otfields.Resource, level zap.AtomicLevel, format encoders.OutputFormat, development bool) func() error {
 	globalLoggerInit.Do(func() {
 		globalLogger = initLogger(r, level, format, development)
 	})
+	return globalLogger.Sync
 }
 
 // IsInitialized indicates if the global logger is initialized.
