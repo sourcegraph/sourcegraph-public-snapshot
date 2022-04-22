@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.2.4]
+
+- Fixed an issue that prevent the latest version of the plugin to work with JetBrains 2022.1 products.
+
 ## [1.2.3]
 
 - Upgrade JetBrains IntelliJ shell to 1.3.1 and modernize the build and release pipeline.

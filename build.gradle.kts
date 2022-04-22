@@ -6,7 +6,7 @@ fun properties(key: String) = project.findProperty(key).toString()
 plugins {
     id("java")
     id("org.jetbrains.kotlin.jvm") version "1.6.10"
-    id("org.jetbrains.intellij") version "1.3.1"
+    id("org.jetbrains.intellij") version "1.5.3"
     id("org.jetbrains.changelog") version "1.3.1"
 }
 
@@ -50,7 +50,6 @@ tasks {
     patchPluginXml {
         version.set(properties("pluginVersion"))
         sinceBuild.set(properties("pluginSinceBuild"))
-        untilBuild.set(properties("pluginUntilBuild"))
 
         // Extract the <!-- Plugin description --> section from README.md and provide for the plugin's manifest
         pluginDescription.set(
