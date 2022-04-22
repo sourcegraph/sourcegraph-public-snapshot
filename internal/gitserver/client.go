@@ -442,7 +442,7 @@ func PathspecLiteral(s string) Pathspec { return Pathspec(":(literal)" + s) }
 func PathspecSuffix(s string) Pathspec { return Pathspec("*" + s) }
 
 // archiveReader wraps the StdoutReader yielded by gitserver's
-// Cmd.StdoutReader with one that knows how to report a repository-not-found
+// RemoteGitCommand.StdoutReader with one that knows how to report a repository-not-found
 // error more carefully.
 type archiveReader struct {
 	base io.ReadCloser
@@ -556,7 +556,7 @@ type badRequestError struct{ error }
 
 func (e badRequestError) BadRequest() bool { return true }
 
-func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, errRes error) {
+func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, errRes error) {
 	repoName := protocol.NormalizeRepo(c.repo)
 
 	span, ctx := ot.StartSpanFromContext(ctx, "Client.sendExec")
@@ -942,8 +942,8 @@ type GitCommand interface {
 	StdoutReader(ctx context.Context) (io.ReadCloser, error)
 }
 
-// Cmd represents a command to be executed remotely.
-type Cmd struct {
+// RemoteGitCommand represents a command to be executed remotely.
+type RemoteGitCommand struct {
 	repo           api.RepoName // the repository to execute the command in
 	ensureRevision string
 	args           []string
@@ -953,7 +953,7 @@ type Cmd struct {
 }
 
 // DividedOutput runs the command and returns its standard output and standard error.
-func (c *Cmd) DividedOutput(ctx context.Context) ([]byte, []byte, error) {
+func (c *RemoteGitCommand) DividedOutput(ctx context.Context) ([]byte, []byte, error) {
 	rc, trailer, err := c.sendExec(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -979,37 +979,37 @@ func (c *Cmd) DividedOutput(ctx context.Context) ([]byte, []byte, error) {
 }
 
 // Output runs the command and returns its standard output.
-func (c *Cmd) Output(ctx context.Context) ([]byte, error) {
+func (c *RemoteGitCommand) Output(ctx context.Context) ([]byte, error) {
 	stdout, _, err := c.DividedOutput(ctx)
 	return stdout, err
 }
 
 // CombinedOutput runs the command and returns its combined standard output and standard error.
-func (c *Cmd) CombinedOutput(ctx context.Context) ([]byte, error) {
+func (c *RemoteGitCommand) CombinedOutput(ctx context.Context) ([]byte, error) {
 	stdout, stderr, err := c.DividedOutput(ctx)
 	return append(stdout, stderr...), err
 }
 
-func (c *Cmd) DisableTimeout() {
+func (c *RemoteGitCommand) DisableTimeout() {
 	c.noTimeout = true
 }
 
-func (c *Cmd) Repo() api.RepoName { return c.repo }
+func (c *RemoteGitCommand) Repo() api.RepoName { return c.repo }
 
-func (c *Cmd) Args() []string { return c.args }
+func (c *RemoteGitCommand) Args() []string { return c.args }
 
-func (c *Cmd) ExitStatus() int { return c.exitStatus }
+func (c *RemoteGitCommand) ExitStatus() int { return c.exitStatus }
 
-func (c *Cmd) SetEnsureRevision(r string) { c.ensureRevision = r }
+func (c *RemoteGitCommand) SetEnsureRevision(r string) { c.ensureRevision = r }
 
-func (c *Cmd) EnsureRevision() string { return c.ensureRevision }
+func (c *RemoteGitCommand) EnsureRevision() string { return c.ensureRevision }
 
-func (c *Cmd) String() string { return fmt.Sprintf("%q", c.args) }
+func (c *RemoteGitCommand) String() string { return fmt.Sprintf("%q", c.args) }
 
 // StdoutReader returns an io.ReadCloser of stdout of c. If the command has a
 // non-zero return value, Read returns a non io.EOF error. Do not pass in a
 // started command.
-func (c *Cmd) StdoutReader(ctx context.Context) (io.ReadCloser, error) {
+func (c *RemoteGitCommand) StdoutReader(ctx context.Context) (io.ReadCloser, error) {
 	rc, trailer, err := c.sendExec(ctx)
 	if err != nil {
 		return nil, err
@@ -1023,13 +1023,13 @@ func (c *Cmd) StdoutReader(ctx context.Context) (io.ReadCloser, error) {
 
 // LocalGitCommand is a GitCommand interface implementation which runs git commands against local file system.
 //
-// This struct uses composition with exec.Cmd which already provides all necessary means to run commands against
+// This struct uses composition with exec.RemoteGitCommand which already provides all necessary means to run commands against
 // local system.
 type LocalGitCommand struct {
 	command *exec.Cmd
 
-	// ReposDir is needed in order to LocalGitCommand be used like Cmd (providing only repo name without its full path)
-	// Unlike Cmd, which is run against server who knows the directory where repos are located, LocalGitCommand is
+	// ReposDir is needed in order to LocalGitCommand be used like RemoteGitCommand (providing only repo name without its full path)
+	// Unlike RemoteGitCommand, which is run against server who knows the directory where repos are located, LocalGitCommand is
 	// run locally, therefore the knowledge about repos location should be provided explicitly by setting this field
 	ReposDir       string
 	repo           api.RepoName
@@ -1138,7 +1138,7 @@ func (c *cmdReader) Close() error {
 }
 
 func (c *ClientImplementor) GitCommand(repo api.RepoName, arg ...string) GitCommand {
-	return &Cmd{
+	return &RemoteGitCommand{
 		repo:   repo,
 		execFn: c.httpPost,
 		args:   append([]string{git}, arg...),
