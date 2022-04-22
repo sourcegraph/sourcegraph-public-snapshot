@@ -1,6 +1,7 @@
 package images
 
 import (
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"reflect"
 	"testing"
 
@@ -8,7 +9,9 @@ import (
 )
 
 func TestParseTag(t *testing.T) {
-	stdout.Out.SetVerbose()
+	if testing.Verbose() {
+		stdout.Out.SetVerbose()
+	}
 	tests := []struct {
 		name    string
 		tag     string
@@ -48,27 +51,50 @@ func TestParseTag(t *testing.T) {
 }
 
 func Test_findLatestTag(t *testing.T) {
-	stdout.Out.SetVerbose()
+	if testing.Verbose() {
+		stdout.Out.SetVerbose()
+	}
 
 	tests := []struct {
-		name string
-		tags []string
-		want string
+		name    string
+		tags    []string
+		want    string
+		wantErr *error
 	}{
 		{
 			"base",
 			[]string{"v3.25.2", "12345_2022-01-01_abcdefghijkl"},
 			"12345_2022-01-01_abcdefghijkl",
+			nil,
 		},
 		{
 			"higher_build_first",
 			[]string{"99981_2022-01-15_999999a", "99982_2022-01-29_abcdefghijkl"},
 			"99982_2022-01-29_abcdefghijkl",
+			nil,
+		},
+		{
+			"zoekt tag unsupported",
+			[]string{"0.0.0-20200504095446-118acdf7aa8f", "0.0.0-20200505130024-763a9ca9b37c", "latest", "insiders"},
+			"",
+			&ErrUnsupportedTag,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := findLatestTag(tt.tags); got != tt.want {
+			got, err := findLatestTag(tt.tags)
+			if err != nil {
+				if tt.wantErr == nil {
+					t.Errorf("got findLatestTag() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if !errors.Is(err, *tt.wantErr) {
+					t.Errorf("findLatestTag() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				return
+			}
+			if got != tt.want {
 				t.Errorf("findLatestTag() = %v, want %v", got, tt.want)
 			}
 		})
@@ -76,7 +102,9 @@ func Test_findLatestTag(t *testing.T) {
 }
 
 func TestParseRawImgString(t *testing.T) {
-	stdout.Out.SetVerbose()
+	if testing.Verbose() {
+		stdout.Out.SetVerbose()
+	}
 
 	tests := []struct {
 		name string

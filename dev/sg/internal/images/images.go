@@ -155,8 +155,8 @@ var _ kio.Filter = &imageFilter{}
 // Analogous to http://www.linfo.org/filters.html
 func (filter imageFilter) Filter(in []*yaml.RNode) ([]*yaml.RNode, error) {
 	for _, r := range in {
-		if err := findImage(r, *filter.credentials, filter.pinTag); err != nil {
-			if errors.As(err, &ErrNoImage{}) || errors.Is(err, ErrNoUpdateNeeded) {
+		if err := parseYamlForImage(r, *filter.credentials, filter.pinTag); err != nil {
+			if errors.As(err, &ErrNoImage{}) || errors.Is(err, ErrNoUpdateNeeded) || errors.As(err, &ErrUnsupportedRepository{}) || errors.Is(err, ErrUnsupportedTag) {
 				stdout.Out.Verbosef("Encountered expected err: %v\n", err)
 				continue
 			}
@@ -171,7 +171,7 @@ var conventionalInitContainerPaths = [][]string{
 	{"spec", "template", "spec", "initContainers"},
 }
 
-func findImage(r *yaml.RNode, credential credentials.Credentials, pinTag string) error {
+func parseYamlForImage(r *yaml.RNode, credential credentials.Credentials, pinTag string) error {
 	containers, err := r.Pipe(yaml.LookupFirstMatch(yaml.ConventionalContainerPaths))
 	if err != nil {
 		return errors.Newf("%v: %s", err, r.GetName())
@@ -235,6 +235,13 @@ func (image ImageReference) String() string {
 	return fmt.Sprintf("%s/%s:%s@%s", image.Registry, image.Name, image.Tag, image.Digest)
 }
 
+func (image ImageReference) Repository() string {
+	if s := strings.Split(image.Name, "/"); len(s) > 1 {
+		return s[0]
+	}
+	return ""
+}
+
 func parseImgString(rawImg string) (*ImageReference, error) {
 	ref, err := reference.ParseNormalizedNamed(strings.TrimSpace(rawImg))
 	if err != nil {
@@ -264,11 +271,23 @@ func parseImgString(rawImg string) (*ImageReference, error) {
 	return imgRef, nil
 }
 
+func isImageRepoSupported(ref ImageReference) bool {
+	name := ref.Repository()
+	if name != "sourcegraph" {
+		return false
+	}
+	return true
+}
+
 func updateImage(rawImage string, credential credentials.Credentials, pinTag string) (string, error) {
 	imgRef, err := parseImgString(rawImage)
 	if err != nil {
 		return "", err
 	}
+	if !isImageRepoSupported(*imgRef) {
+		return imgRef.String(), ErrUnsupportedRepository{imgRef.Repository()}
+	}
+
 	imgRef.Credentials = &credential
 
 	if prevRepo, ok := seenImageRepos[imgRef.Name]; ok {
@@ -288,7 +307,7 @@ func updateImage(rawImage string, credential credentials.Credentials, pinTag str
 		if errors.Is(err, ErrNoUpdateNeeded) {
 			return imgRef.String(), ErrNoUpdateNeeded
 		}
-		return "", err
+		return "", errors.Wrapf(err, "failed to create image repository %s", imgRef.String())
 	}
 
 	seenImageRepos[imgRef.Name] = *repo
@@ -314,6 +333,14 @@ type ErrNoImage struct {
 
 func (m ErrNoImage) Error() string {
 	return fmt.Sprintf("no images found for resource: %s of kind: %s", m.Name, m.Kind)
+}
+
+type ErrUnsupportedRepository struct {
+	Name string
+}
+
+func (m ErrUnsupportedRepository) Error() string {
+	return fmt.Sprintf("unsupported repository: %s", m.Name)
 }
 
 var ErrUnsupportedRegistry = errors.New("unsupported registry")
@@ -376,7 +403,10 @@ func createAndFillImageRepository(ref *ImageReference, pinTag string) (repo *ima
 	var targetTag string
 	isDevTag := pinTag == ""
 	if isDevTag {
-		targetTag = findLatestTag(tags)
+		targetTag, err = findLatestTag(tags)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		targetTag = pinTag
 	}
@@ -426,8 +456,13 @@ func ParseTag(t string) (*SgImageTag, error) {
 	return &s, nil
 }
 
-// Assume we use 'sourcegraph' tag format of :[build_number]_[date]_[short SHA1]
-func findLatestTag(tags []string) string {
+var ErrUnsupportedTag = errors.New("unsupported tag format")
+
+// findLatestTag finds the latest tag in the format of SgImageTag
+func findLatestTag(tags []string) (string, error) {
+	if tags == nil || len(tags) == 0 {
+		return "", errors.New("no tags found")
+	}
 	maxBuildID := 0
 	targetTag := ""
 
@@ -442,7 +477,11 @@ func findLatestTag(tags []string) string {
 			targetTag = tag
 		}
 	}
-	return targetTag
+	if targetTag == "" {
+		return "", ErrUnsupportedTag
+	}
+
+	return targetTag, nil
 }
 
 // CheckLegacy prevents changing the registry if they are equivalent, internally legacyDockerhub is resolved to dockerhub
