@@ -43,11 +43,9 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
     const {
         width: outerWidth,
         height: outerHeight,
-        data,
         series,
         stacked = false,
         zeroYAxisMin = false,
-        getXValue,
         onDatumClick = noop,
         className,
         ...attributes
@@ -72,12 +70,7 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
         [yAxisElement, xAxisReference, outerWidth, outerHeight]
     )
 
-    const dataSeries = useMemo(() => getSeriesData({ data, series, stacked, getXValue }), [
-        data,
-        series,
-        stacked,
-        getXValue,
-    ])
+    const dataSeries = useMemo(() => getSeriesData({ series, stacked }), [series, stacked])
 
     const { minX, maxX, minY, maxY } = useMemo(() => getMinMaxBoundaries({ dataSeries, zeroYAxisMin }), [
         dataSeries,
@@ -106,12 +99,7 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
         [minY, maxY, margin.top, height]
     )
 
-    const points = useMemo(() => generatePointsField({ dataSeries, getXValue, yScale, xScale }), [
-        dataSeries,
-        getXValue,
-        yScale,
-        xScale,
-    ])
+    const points = useMemo(() => generatePointsField({ dataSeries, yScale, xScale }), [dataSeries, yScale, xScale])
 
     const voronoiLayout = useMemo(
         () =>
@@ -164,23 +152,23 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
                 {stacked && <StackedArea dataSeries={dataSeries} xScale={xScale} yScale={yScale} />}
 
                 {[...dataSeries]
-                    .sort(series => sortByDataKey(series.dataKey, activePoint?.seriesKey || ''))
+                    .sort(series => sortByDataKey(series.id, activePoint?.seriesId || ''))
                     .map(line => (
                         <LinePath
-                            key={line.dataKey as string}
+                            key={line.id}
                             data={line.data as SeriesDatum<D>[]}
-                            curve={curveLinear}
                             defined={isDatumWithValidNumber}
                             x={data => xScale(data.x)}
                             y={data => yScale(getDatumValue(data))}
                             stroke={line.color}
-                            strokeWidth={2}
+                            curve={curveLinear}
                             strokeLinecap="round"
+                            strokeWidth={2}
                         />
                     ))}
 
                 {[...points]
-                    .sort(point => sortByDataKey(point.seriesKey, activePoint?.seriesKey || ''))
+                    .sort(point => sortByDataKey(point.seriesId, activePoint?.seriesId || ''))
                     .map(point => (
                         <PointGlyph
                             key={point.id}

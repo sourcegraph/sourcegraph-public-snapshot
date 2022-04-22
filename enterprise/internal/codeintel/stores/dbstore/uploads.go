@@ -369,13 +369,21 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 
 		cteDefinitions = append(cteDefinitions, cteDefinition{
 			name:       "ranked_dependents",
-			definition: sqlf.Sprintf(rankedDependencyCandidateCTEQuery, cteCondition),
+			definition: sqlf.Sprintf(rankedDependentCandidateCTEQuery, cteCondition),
 		})
 
 		// Limit results to the set of uploads that reference the target upload if it canonically provides the
 		// matching package. If the target upload does not canonically provide a package, the results will contain
 		// no dependent uploads.
-		conds = append(conds, sqlf.Sprintf(`u.id IN (SELECT rd.ref_id FROM ranked_dependents rd WHERE rd.pkg_id = %s AND rd.rank = 1)`, opts.DependentOf))
+		conds = append(conds, sqlf.Sprintf(`u.id IN (
+			SELECT r.dump_id
+			FROM ranked_dependents rd
+			JOIN lsif_references r ON r.scheme = rd.scheme
+				AND r.name = rd.name
+				AND r.version = rd.version
+				AND r.dump_id != rd.pkg_id
+			WHERE rd.pkg_id = %s AND rd.rank = 1
+		)`, opts.DependentOf))
 	}
 	if opts.UploadedBefore != nil {
 		conds = append(conds, sqlf.Sprintf("u.uploaded_at < %s", *opts.UploadedBefore))
@@ -506,11 +514,29 @@ SELECT
 	` + packageRankingQueryFragment + ` AS rank
 FROM lsif_uploads u
 JOIN lsif_packages p ON p.dump_id = u.id
-JOIN lsif_references r ON
-	r.scheme = p.scheme AND
-	r.name = p.name AND
-	r.version = p.version AND
-	r.dump_id != p.dump_id
+JOIN lsif_references r ON r.scheme = p.scheme
+	AND r.name = p.name
+	AND r.version = p.version
+	AND r.dump_id != p.dump_id
+WHERE
+	-- Don't match deleted uploads
+	u.state = 'completed' AND
+	%s
+`
+
+var rankedDependentCandidateCTEQuery = `
+SELECT
+	p.dump_id as pkg_id,
+	p.scheme as scheme,
+	p.name as name,
+	p.version as version,
+	-- Rank each upload providing the same package from the same directory
+	-- within a repository by commit date. We'll choose the oldest commit
+	-- date as the canonical choice and ignore the uploads for younger
+	-- commits providing the same package.
+	` + packageRankingQueryFragment + ` AS rank
+FROM lsif_uploads u
+JOIN lsif_packages p ON p.dump_id = u.id
 WHERE
 	-- Don't match deleted uploads
 	u.state = 'completed' AND

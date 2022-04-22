@@ -43,30 +43,19 @@ function StackedAreaInternal<Datum>(props: StackedAreaProps<Datum>): React.React
         <g>
             <defs>
                 {seriesPaths.map(series => (
-                    <path
-                        key={`stack-path-${id}-${series.dataKey as string}`}
-                        id={`stack-path-${id}-${series.dataKey as string}`}
-                        d={series.path}
-                    />
+                    <path key={`stack-path-${id}-${series.id}`} id={`stack-path-${id}-${series.id}`} d={series.path} />
                 ))}
                 {seriesPaths
                     .filter((series, index) => index > 0)
                     .map((series, index) => (
-                        <mask
-                            key={`mask-stack-${id}-${series.dataKey as string}`}
-                            id={`mask-stack-${id}-${series.dataKey as string}`}
-                        >
+                        <mask key={`mask-stack-${id}-${series.id}`} id={`mask-stack-${id}-${series.id}`}>
                             <rect width="100%" height="100%" fill="white" />
 
                             {
                                 // This is safe because we filtered out the first elements
                                 // of original seriesPaths array
                                 seriesPaths.slice(0, index + 1).map(series => (
-                                    <use
-                                        key={series.dataKey as string}
-                                        href={`#stack-path-${id}-${series.dataKey as string}`}
-                                        fill="black"
-                                    />
+                                    <use key={series.id} href={`#stack-path-${id}-${series.id}`} fill="black" />
                                 ))
                             }
                         </mask>
@@ -75,12 +64,12 @@ function StackedAreaInternal<Datum>(props: StackedAreaProps<Datum>): React.React
 
             {seriesPaths.map(series => (
                 <use
-                    key={`stack-path-${id}-${series.dataKey as string}`}
-                    href={`#stack-path-${id}-${series.dataKey as string}`}
+                    key={`stack-path-${id}-${series.id}`}
+                    href={`#stack-path-${id}-${series.id}`}
                     stroke="transparent"
                     opacity={0.5}
                     fill={series.color}
-                    mask={`url(#mask-stack-${id}-${series.dataKey as string})`}
+                    mask={`url(#mask-stack-${id}-${series.id})`}
                 />
             ))}
         </g>

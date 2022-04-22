@@ -37,6 +37,7 @@ env:
   JAEGER_SERVER_URL: http://localhost:16686
   ZOEKT_HOST: localhost:3070
 
+  SRC_DEVELOPMENT: 'true'
   SRC_PROF_HTTP: ''
   SRC_PROF_SERVICES: |
     [

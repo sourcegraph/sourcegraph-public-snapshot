@@ -86,7 +86,7 @@ const InsightCardLegend: React.FunctionComponent<InsightCardLegendProps> = props
     return (
         <LegendList {...attributes}>
             {series.map(series => (
-                <LegendItem key={series.dataKey as string} color={getLineColor(series)} name={series.name} />
+                <LegendItem key={series.id} color={getLineColor(series)} name={series.name} />
             ))}
         </LegendList>
     )

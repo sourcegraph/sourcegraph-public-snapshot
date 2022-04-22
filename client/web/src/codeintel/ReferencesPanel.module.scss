@@ -1,17 +1,50 @@
-.reference {
-    code {
-        overflow: hidden;
-        color: var(--body-color);
+$filter-input-height: 1.5rem;
+.filter {
+    height: $filter-input-height;
+    padding-left: 1rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+
+    input {
+        height: 1rem;
+        font-size: 0.75rem;
+        padding-left: 0.5rem;
+        padding-top: 0;
+        padding-bottom: 0;
+        border: none;
     }
 
-    &--active {
-        background-color: var(--secondary-2);
-        color: var(--primary);
-        font-weight: bold;
+    &--icon {
+        color: var(--icon-muted);
     }
+}
+
+.repo-location-group {
+    padding-top: 0.2rem;
+    padding-bottom: 0.2rem;
+    padding-left: 2.3rem;
+    width: 100%;
+    text-align: left;
+
+    font-weight: 400;
+
+    &--repo-name {
+        padding-left: 0.6rem;
+    }
+}
+
+.location-group {
+    padding-left: 3.75rem;
+    padding-top: 0.2rem;
+    padding-bottom: 0.2rem;
+    width: 100%;
+    text-align: left;
+
+    transition: none !important;
 
     &--filename {
-        color: var(--body-color);
+        padding-left: 0.6rem;
+        font-weight: 400;
 
         mark {
             padding-left: 0;
@@ -19,37 +52,81 @@
             font-weight: bold;
         }
     }
+}
+
+.location {
+    button {
+        padding-left: 3.9rem;
+        padding-top: 0;
+        padding-bottom: 0;
+        width: 100%;
+        text-align: left;
+
+        transition: none !important;
+    }
+
+    button:hover {
+        background-color: var(--color-bg-2);
+    }
+
+    code {
+        overflow: hidden;
+        color: var(--body-color);
+    }
+
+    &--active {
+        background-color: var(--color-bg-2);
+    }
 
     &--link {
         color: inherit;
 
         &--line-number {
             font-family: monospace;
-            color: var(--primary);
+            font-weight: 400;
+            color: var(--link-color);
         }
     }
 }
 
-.dismiss-button {
-    color: var(--icon-color);
+$card-header-height: 1.5rem;
+.card-header {
+    padding-top: 0.1rem;
+    padding-bottom: 0.1rem;
+    padding-left: 1rem;
+
+    border: none;
+
+    height: $card-header-height;
+
+    background-color: var(--body-bg);
+
+    &--big {
+        padding-top: 0.3rem;
+        padding-bottom: 0.3rem;
+        padding-left: 1rem;
+
+        border: none;
+
+        height: 1.8rem;
+
+        background-color: var(--body-bg);
+
+        h4 {
+            padding-left: 0.6rem;
+        }
+    }
+
+    &--small-text {
+        font-weight: 400;
+    }
 }
 
 .references {
-    $references-token-height: 2rem;
-    $references-filter-height: 2rem;
-
-    &--token {
-        height: $references-token-height;
-    }
-
-    &--filter {
-        height: $references-filter-height;
-    }
-
     &--list {
         display: flex;
         // Ensure list spans entire height of panel, and that the scrollable area does not include the filter height
-        height: calc(100% - #{$references-filter-height + $references-token-height});
+        height: calc(100% - #{$filter-input-height + $card-header-height});
     }
 
     // Left side of the panel: hover & list of references/definition/...
@@ -65,9 +142,18 @@
         overflow: auto;
     }
 
+    &--side-blob-filename {
+        height: 1rem;
+        vertical-align: middle;
+    }
+
+    &--side-blob-collapse-button {
+        margin-right: 0.5rem;
+    }
+
     // Code needs to be smaller than 100% so it scrolls correctly
     &--side-blob-code {
         // Subtract the space taken up by the filename
-        height: calc(100% - #{$references-filter-height});
+        height: calc(100% - #{$filter-input-height});
     }
 }
