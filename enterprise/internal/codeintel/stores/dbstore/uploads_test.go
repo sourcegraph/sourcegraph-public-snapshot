@@ -310,7 +310,7 @@ func TestGetUploads(t *testing.T) {
 		Upload{ID: 14, Commit: makeCommit(3333), UploadedAt: t3, FinishedAt: &t2, Root: "sub2/", State: "deleted"},
 
 		// deleted repo
-		Upload{ID: 15, Commit: makeCommit(3334), UploadedAt: t4, State: "deleted"},
+		Upload{ID: 15, Commit: makeCommit(3334), UploadedAt: t4, State: "deleted", RepositoryID: 53, RepositoryName: "DELETED-barfoo"},
 	)
 	insertVisibleAtTip(t, db, 50, 2, 5, 7, 8)
 
