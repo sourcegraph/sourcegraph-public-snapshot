@@ -183,6 +183,7 @@ export class Driver {
                                             .includes('Warning: componentWillReceiveProps has been renamed') &&
                                         !message.text().includes('Download the Apollo DevTools') &&
                                         !message.text().includes('debug') &&
+                                        !message.text().includes('Downloading Chromium') &&
                                         // These requests are expected to fail, we use them to check if the browser extension is installed.
                                         message.location().url !== 'chrome-extension://invalid/'
                                 ),
