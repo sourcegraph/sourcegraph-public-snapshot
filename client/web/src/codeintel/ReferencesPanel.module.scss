@@ -65,6 +65,9 @@ $filter-input-height: 1.5rem;
         text-align: left;
 
         transition: none !important;
+
+        // Avoid line number and filename getting put on different lines
+        white-space: nowrap;
     }
 
     button:hover {
