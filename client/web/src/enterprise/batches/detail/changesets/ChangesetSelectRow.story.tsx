@@ -2,7 +2,8 @@ import { number } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import { of } from 'rxjs'
 
-import { BulkOperationType } from '../../../../../../shared/src/graphql-operations'
+import { BulkOperationType } from '@sourcegraph/shared/src/graphql-operations'
+
 import { WebStory } from '../../../../components/WebStory'
 import { MultiSelectContextProvider } from '../../MultiSelectContext'
 import {
