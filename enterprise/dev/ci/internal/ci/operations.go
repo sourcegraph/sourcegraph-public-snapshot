@@ -72,6 +72,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 			frontendTests,                // ~4.5m
 			addWebApp,                    // ~5.5m
 			addBrowserExtensionUnitTests, // ~4.5m
+			addVSCExtIntegrationTests,    // ~5.5m
 			addTypescriptCheck,           // ~4m
 		)
 
@@ -235,6 +236,18 @@ var browsers = []string{"chrome"}
 
 func getParallelTestCount(webParallelTestCount int) int {
 	return webParallelTestCount + len(browsers)
+}
+
+// Builds and tests the VS Code extensions.
+func addVSCExtIntegrationTests(pipeline *bk.Pipeline) {
+	pipeline.AddStep(
+		":vscode: Puppeteer tests for VS Code extension",
+		withYarnCache(),
+		bk.Cmd("yarn generate"),
+		bk.Cmd("yarn --cwd client/vscode -s build:test"),
+		bk.Cmd("yarn --cwd client/vscode -s test-integration --verbose"),
+		bk.AutomaticRetry(1),
+	)
 }
 
 func addBrowserExtensionIntegrationTests(parallelTestCount int) operations.Operation {

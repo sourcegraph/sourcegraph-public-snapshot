@@ -141,6 +141,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			wait,
 			addBrowserExtensionE2ESteps)
 
+	case runtype.VsceNightly:
+		// If this is a VS Code extension nightly build, run the vsce-extension integration tests
+		ops = operations.NewSet(
+			addClientLintersForAllFiles,
+			addVSCExtIntegrationTests)
+
 	case runtype.ImagePatch:
 		// only build image for the specified image in the branch name
 		// see https://handbook.sourcegraph.com/engineering/deployments#building-docker-images-for-a-specific-branch
