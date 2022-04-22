@@ -1,4 +1,8 @@
-package main
+// Package okay provides a client to submit custom events to the OkayHQ API.
+//
+// To ease local development, using a blank token will log a warning and flushing
+// the client will result in logging events at the DEBUG level.
+package okay
 
 import (
 	"bytes"
@@ -14,16 +18,16 @@ import (
 
 var okayhqAPIEndpoint = "https://app.okayhq.com/api/events/v1"
 
-// OkayMetric represents a particular metric attached to an event.
-type OkayMetric struct {
+// Metric represents a particular metric attached to an event.
+type Metric struct {
 	// Type is either "count", "durationMs" or "number".
 	Type string `json:"type"`
 	// Value is the actual value reported for this metric in a given event.
 	Value float64 `json:"value"`
 }
 
-// okayEvent represents a custom event sent to the OkayHQ API.
-type okayEvent struct {
+// customEvent represents a custom event sent to the OkayHQ API.
+type customEvent struct {
 	// Event is the event type, should be always set to "custom".
 	Event string `json:"event"`
 	// Name is the custom event name, used to select those events amonst others to build dashboards.
@@ -31,32 +35,38 @@ type okayEvent struct {
 	// Timestamp is the time at which this event occured.
 	Timestamp time.Time `json:"timestamp"`
 	// Identity ties this specific event to a particular user, enabling to filter events on various group predicates
-	// such as teams, organizations, etc ...
-	Identity okayEventIdentity `json:"identity"`
+	// such as teams, organizations, etc ... (optional).
+	Identity *eventIdentity `json:"identity,omitempty"`
 	// UniqueKey lists the property keys that are used to uniquely identify this event (optional).
 	//
 	// Sending another event with the same UniqueKey results in overwritting the previous event,
 	// enabling to replay events with historical data or to correct incorrect events that were previously sent.
 	UniqueKey []string `json:"uniqueKey,omitempty"`
 	// Metrics are a map of okayMetric whose keys are the metric name.
-	Metrics map[string]OkayMetric `json:"metrics"`
+	Metrics map[string]Metric `json:"metrics"`
 	// Properties are a map of additonal metadata (optional).
-	Properties map[string]interface{} `json:"properties,omitempty"`
+	Properties map[string]string `json:"properties,omitempty"`
+	// Labels are a list of strings used to tag the event.
+	Labels []string `json:"labels,omitempty"`
 }
 
-type okayEventIdentity struct {
+// eventIdentity represents the identity to attach to an event.
+type eventIdentity struct {
 	// Type represents from where this identity is registered, should always be "sourceControlLogin".
 	Type string `json:"type"`
 	// User is the unique identifier to reference this identity amongst its Type.
 	User string `json:"user"`
 }
 
-type OkayEvent struct {
+// Event represents a custom Event to be sent to OkayHQ.
+type Event struct {
 	// Name is the custom event name, used to select those events amonst others to build dashboards.
 	Name string
 	// Timestamp is the time at which this event occured.
 	Timestamp time.Time
-	// GitHub login this event is attached to
+	// OkayURL is used to generate a clickable link in OkayHQ's UI when browsing this event.
+	OkayURL string
+	// GitHub login this event is attached to (optional).
 	GitHubLogin string
 	// UniqueKey lists the property keys that are used to uniquely identify this event (optional).
 	//
@@ -64,43 +74,48 @@ type OkayEvent struct {
 	// enabling to replay events with historical data or to correct incorrect events that were previously sent.
 	UniqueKey []string
 	// Properties are a map of additonal metadata (optional).
-	Properties map[string]interface{}
+	Properties map[string]string
 	// Metrics are a map of okayMetric whose keys are the metric name.
-	Metrics map[string]OkayMetric
+	Metrics map[string]Metric
+	// Labels are a list of strings used to tag the event.
+	Labels []string
 }
 
-// OkayMetricsClient collects and submit metrics to the OkayHQ custom events API.
+// Client collects and submit metrics to the OkayHQ custom events API and is safe to use
+// concurrently.
 //
 // See https://app.okayhq.com/help/_api/events
-//
-// TODO: If we were to extract this into a package:
-//       - Flush should take a context.Context
-//       - Flush should check if the context is cancelled in between making requests.
-//       - Add some tests.
-type OkayMetricsClient struct {
-	token  string
-	cli    *http.Client
-	events []*okayEvent
-	mu     sync.Mutex
+type Client struct {
+	token    string
+	cli      *http.Client
+	events   []*customEvent
+	endpoint string
+
+	mu sync.Mutex
 }
 
-// NewOkayMetricsClient returns a new OkayMetricsClient, using the provided http.Client.
-func NewOkayMetricsClient(client *http.Client, token string) *OkayMetricsClient {
-	return &OkayMetricsClient{
+// NewClient returns a new OkayMetricsClient, using the provided http.Client.
+func NewClient(client *http.Client, token string) *Client {
+	return &Client{
 		cli:   client,
 		token: token,
+
+		endpoint: okayhqAPIEndpoint,
 	}
 }
 
+func (o *Client) SetEndpoint(url string) {
+	o.endpoint = url
+}
+
 // post submits an individual event to the API.
-func (o *OkayMetricsClient) post(event *okayEvent) error {
-	fmt.Println(okayhqAPIEndpoint)
+func (o *Client) post(event *customEvent) error {
 	b, err := json.Marshal(event)
 	if err != nil {
 		return err
 	}
 	buf := bytes.NewReader(b)
-	req, err := http.NewRequest(http.MethodPost, okayhqAPIEndpoint, buf)
+	req, err := http.NewRequest(http.MethodPost, o.endpoint, buf)
 	if err != nil {
 		return err
 	}
@@ -116,45 +131,56 @@ func (o *OkayMetricsClient) post(event *okayEvent) error {
 			body = []byte("can't read response body")
 		}
 		defer resp.Body.Close()
-		return errors.Newf("failed to submit custom metric to OkayHQ: %q", string(body))
+		return errors.Newf("okayhq: failed to submit custom metric %s to OkayHQ: %q", event.Name, string(body))
 	}
-	fmt.Println(resp.StatusCode)
 	return nil
 }
 
 // Push stores a new custom event to be submitted to OkayHQ once Flush is called.
-func (o *OkayMetricsClient) Push(name string, event *OkayEvent) error {
-	if name == "" {
-		return errors.New("Okay event name can't be blank")
+func (o *Client) Push(event *Event) error {
+	if event.Name == "" {
+		return errors.New("okayhq: event name can't be blank")
 	}
 	if event.Timestamp.IsZero() {
-		return errors.New("Okay event timestamp name can't be zero")
+		return errors.New("okayhq: event timestamp name can't be zero")
 	}
 	if len(event.Metrics) == 0 {
-		return errors.New("Okay event must have metrics")
+		return errors.New("okayhq: event must have metrics")
+	}
+	for _, k := range event.UniqueKey {
+		if _, ok := event.Properties[k]; !ok {
+			return errors.Newf("okayhq: event proprety %s is marked as unique, but absent from the properties")
+		}
 	}
 
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
-	o.events = append(o.events, &okayEvent{
-		Event:     "custom",
-		Name:      name,
-		Timestamp: event.Timestamp,
-		UniqueKey: event.UniqueKey,
-		Identity: okayEventIdentity{
-			Type: "sourceControlLogin",
-			User: event.GitHubLogin,
-		},
+	ce := &customEvent{
+		Event:      "custom",
+		Name:       event.Name,
+		Timestamp:  event.Timestamp,
+		UniqueKey:  event.UniqueKey,
 		Metrics:    event.Metrics,
 		Properties: event.Properties,
-	})
+		Labels:     event.Labels,
+	}
+	if event.GitHubLogin != "" {
+		ce.Identity = &eventIdentity{
+			Type: "sourceControlLogin",
+			User: event.GitHubLogin,
+		}
+	}
+	if event.OkayURL != "" {
+		ce.Properties["okay.url"] = event.OkayURL
+	}
+	o.events = append(o.events, ce)
 
 	return nil
 }
 
 // Flush empties the list of events accumulated by the client.
-func (o *OkayMetricsClient) Flush() error {
+func (o *Client) Flush() error {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
@@ -162,10 +188,11 @@ func (o *OkayMetricsClient) Flush() error {
 	for _, event := range o.events {
 		err := o.post(event)
 		if err != nil {
-			errs = errors.Append(err)
+			errs = errors.Append(errs, err)
 		}
 	}
 	// Reset the internal events buffer
 	o.events = nil
+
 	return errs
 }

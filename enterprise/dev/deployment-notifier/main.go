@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/slack-go/slack"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/sourcegraph/dev/okay"
 	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -173,32 +175,33 @@ func reportDeploymentMetrics(report *DeploymentReport, token string, dryRun bool
 		return errors.Wrap(err, "r.DeployedAt")
 	}
 
-	okayCli := NewOkayMetricsClient(http.DefaultClient, token)
+	okayCli := okay.NewClient(http.DefaultClient, token)
 
 	for _, pr := range report.PullRequests {
 		elapsed := deployTime.Sub(pr.GetMergedAt())
-		event := OkayEvent{
+		event := okay.Event{
 			Name:        "deployment",
 			Timestamp:   deployTime,
 			GitHubLogin: pr.GetUser().GetLogin(),
-			UniqueKey:   []string{"environment", "pull_request.number", "services"},
-			Properties: map[string]interface{}{
+			UniqueKey:   []string{"unique_key"},
+			OkayURL:     pr.GetHTMLURL(),
+			Properties: map[string]string{
 				"environment":           report.Environment,
-				"pull_request.number":   pr.GetNumber(),
+				"pull_request.number":   strconv.Itoa(pr.GetNumber()),
 				"pull_request.title":    pr.GetTitle(),
 				"pull_request.revision": pr.GetMergeCommitSHA(),
-				"pull_request.url":      pr.GetHTMLURL(),
-				"services":              report.Services,
+				"unique_key":            fmt.Sprintf("%s,%d,%s", report.Environment, pr.GetNumber(), strings.Join(report.Services, ",")),
 			},
-			Metrics: map[string]OkayMetric{
+			Metrics: map[string]okay.Metric{
 				"elapsed": {
 					Type:  "durationMs",
 					Value: float64(elapsed / time.Millisecond),
 				},
 			},
+			Labels: report.Services,
 		}
 
-		err := okayCli.Push("qa.deployment", &event)
+		err := okayCli.Push(&event)
 		if err != nil {
 			return err
 		}
