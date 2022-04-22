@@ -8,14 +8,14 @@ import (
 )
 
 // TabulationDecoder will tabulate the result counts per repository.
-func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *StreamingResult) {
-	var sr = &StreamingResult{
+func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *TabulationResult) {
+	var tr = &TabulationResult{
 		RepoCounts: make(map[string]*SearchMatch),
 	}
 
 	addCount := func(repo string, repoId int32, count int) {
-		if forRepo, ok := sr.RepoCounts[repo]; !ok {
-			sr.RepoCounts[repo] = &SearchMatch{
+		if forRepo, ok := tr.RepoCounts[repo]; !ok {
+			tr.RepoCounts[repo] = &SearchMatch{
 				RepositoryID:   repoId,
 				RepositoryName: repo,
 				MatchCount:     count,
@@ -34,7 +34,7 @@ func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *StreamingResult) {
 			// Skipped elements are built progressively for a Progress update until it is Done, so
 			// we want to register its contents only once it is done.
 			for _, skipped := range progress.Skipped {
-				sr.SkippedReasons = append(sr.SkippedReasons, fmt.Sprintf("%s: %s", skipped.Reason, skipped.Message))
+				tr.SkippedReasons = append(tr.SkippedReasons, fmt.Sprintf("%s: %s", skipped.Reason, skipped.Message))
 			}
 		},
 		OnMatches: func(matches []streamhttp.EventMatch) {
@@ -45,33 +45,37 @@ func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *StreamingResult) {
 					for _, lineMatch := range match.LineMatches {
 						count += len(lineMatch.OffsetAndLengths)
 					}
-					sr.TotalCount += count
+					tr.TotalCount += count
 					addCount(match.Repository, match.RepositoryID, count)
 				case *streamhttp.EventPathMatch:
-					sr.TotalCount += 1
+					tr.TotalCount += 1
 					addCount(match.Repository, match.RepositoryID, 1)
 				case *streamhttp.EventRepoMatch:
-					sr.TotalCount += 1
+					tr.TotalCount += 1
 					addCount(match.Repository, match.RepositoryID, 1)
 				case *streamhttp.EventCommitMatch:
-					sr.TotalCount += 1
+					tr.TotalCount += 1
 					addCount(match.Repository, match.RepositoryID, 1)
 				case *streamhttp.EventSymbolMatch:
 					count := len(match.Symbols)
-					sr.TotalCount += count
+					tr.TotalCount += count
 					addCount(match.Repository, match.RepositoryID, count)
 				}
 			}
 		},
 		OnError: func(eventError *streamhttp.EventError) {
-			sr.Errors = append(sr.Errors, eventError.Message)
+			tr.Errors = append(tr.Errors, eventError.Message)
 		},
-	}, sr
+	}, tr
 }
 
-type StreamingResult struct {
-	RepoCounts     map[string]*SearchMatch
-	TotalCount     int
+type TabulationResult struct {
+	StreamDecoderEvents
+	RepoCounts map[string]*SearchMatch
+	TotalCount int
+}
+
+type StreamDecoderEvents struct {
 	SkippedReasons []string
 	Errors         []string
 }
