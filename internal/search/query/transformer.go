@@ -417,6 +417,71 @@ func distribute(prefixes [][]Node, nodes []Node) [][]Node {
 	return prefixes
 }
 
+func distributeBasics(prefixes []Basic, nodes []Node) []Basic {
+	for _, node := range nodes {
+		switch v := node.(type) {
+		case Operator:
+			// If the node is all pattern expressions,
+			// we can add it to the existing patterns as-is.
+			if isPatternExpression(v.Operands) {
+				prefixes = productBasics(prefixes, Basic{Pattern: v})
+				continue
+			}
+
+			switch v.Kind {
+			case Or:
+				result := make([]Basic, 0, len(prefixes)*len(v.Operands))
+				for _, o := range v.Operands {
+					newBasics := distributeBasics([]Basic{}, []Node{o})
+					for _, newBasic := range newBasics {
+						result = append(result, productBasics(prefixes, newBasic)...)
+					}
+				}
+				prefixes = result
+			case And, Concat:
+				prefixes = distributeBasics(prefixes, v.Operands)
+			}
+		case Parameter:
+			prefixes = productBasics(prefixes, Basic{Parameters: []Parameter{v}})
+		case Pattern:
+			prefixes = productBasics(prefixes, Basic{Pattern: v})
+		}
+	}
+	return prefixes
+}
+
+// productBasics produces the "product" of one set of Basic queries
+// with another basic query. This
+func productBasics(basics []Basic, toMerge Basic) []Basic {
+	if len(basics) == 0 {
+		return []Basic{toMerge}
+	}
+	result := make([]Basic, len(basics))
+	for i, basic := range basics {
+		result[i] = basicConjunction(basic, toMerge)
+	}
+	return result
+}
+
+// basicConjunction returns a new Basic query that is equivalent to the
+// conjunction of the two inputs. The equivalent of combining
+// `(repo:a b) and (repo:c d)` into `repo:a repo:c b and d`
+func basicConjunction(left, right Basic) Basic {
+	var pattern Node
+	if left.Pattern == nil {
+		pattern = right.Pattern
+	} else if right.Pattern == nil {
+		pattern = left.Pattern
+	} else if left.Pattern != nil && right.Pattern != nil {
+		pattern = newOperator([]Node{left.Pattern, right.Pattern}, And)[0]
+	}
+	return Basic{
+		// Full copy of parameters to avoid future appends to same backing
+		Parameters: append(append([]Parameter{}, left.Parameters...), right.Parameters...),
+		Pattern:    pattern,
+	}
+}
+
 // Dnf returns the Disjunctive Normal Form of a query (a flat sequence of
 // or-expressions) by applying the distributive property on (possibly nested)
 // or-expressions. For example, the query:
@@ -432,6 +497,10 @@ func distribute(prefixes [][]Node, nodes []Node) [][]Node {
 // separate from this general transformation.
 func Dnf(query []Node) [][]Node {
 	return distribute([][]Node{}, query)
+}
+
+func DnfBasics(query []Node) []Basic {
+	return distributeBasics([]Basic{}, query)
 }
 
 func substituteOrForRegexp(nodes []Node) []Node {

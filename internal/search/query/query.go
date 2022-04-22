@@ -141,6 +141,15 @@ func Validate(disjuncts [][]Node) error {
 	return nil
 }
 
+func ValidatePlan(disjuncts Plan) error {
+	for _, disjunct := range disjuncts {
+		if err := validate(disjunct.ToParseTree()); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // A BasicPass is a transformation on Basic queries.
 type BasicPass func(Basic) Basic
 
@@ -174,13 +183,8 @@ func Pipeline(steps ...step) (Plan, error) {
 		return nil, err
 	}
 
-	disjuncts := Dnf(nodes)
-	if err := Validate(disjuncts); err != nil {
-		return nil, err
-	}
-
-	plan, err := ToPlan(disjuncts)
-	if err != nil {
+	plan := DnfBasics(nodes)
+	if err := ValidatePlan(plan); err != nil {
 		return nil, err
 	}
 	plan = MapPlan(plan, ConcatRevFilters)
