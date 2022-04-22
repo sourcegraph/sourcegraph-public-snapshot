@@ -99,10 +99,6 @@ export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageP
 
                     <Tab index={CodeInsightsRootPageTab.GettingStarted}>Getting started</Tab>
                 </TabList>
-                {/* 
-                    To fix Rule: "aria-valid-attr-value" (ARIA attributes must conform to valid values)
-                    Invalid ARIA attribute value: aria-controls="tabs--1--panel--0"
-                 */}
                 <TabPanels className="mt-3">
                     <TabPanel>
                         <DashboardsContentPage telemetryService={telemetryService} dashboardID={params?.dashboardId} />

@@ -93,9 +93,6 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const addRemovePermissions = dashboardPermission.getAddRemoveInsightsPermission(currentDashboard)
 
     return (
-        // To fix Rule: "landmark-main-is-top-level", "landmark-no-duplicate-main", "landmark-unique"
-        // We use div here instead of main element
-        // Since the main element is set in AppRouterContainer component
         <div className="pb-4">
             <DashboardHeader className="d-flex flex-wrap align-items-center mb-3">
                 <span className={styles.dashboardSelectLabel}>Dashboard:</span>
