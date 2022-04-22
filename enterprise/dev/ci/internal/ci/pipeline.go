@@ -363,4 +363,9 @@ func withAgentLostRetries(s *bk.Step) {
 		Limit:      1,
 		ExitStatus: -1,
 	})
+	// Testing purposes
+	s.Retry.Automatic = append(s.Retry.Automatic, bk.AutomaticRetryOptions{
+		Limit:      1,
+		ExitStatus: 255,
+	})
 }
