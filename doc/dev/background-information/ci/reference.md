@@ -86,6 +86,18 @@ Base pipeline (more steps might be included based on branch changes):
 - E2E for chrome extension
 - Upload build trace
 
+
+### VS Code extension nightly build
+
+The run type for environment including `{"VSCE_NIGHTLY":"true"}`.
+
+Base pipeline (more steps might be included based on branch changes):
+
+- ESLint (all)
+- Stylelint (all)
+- Puppeteer tests for VS Code extension
+- Upload build trace
+
 ### Tagged release
 
 The run type for tags starting with `v`.
