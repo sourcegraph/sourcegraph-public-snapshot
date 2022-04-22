@@ -10,7 +10,6 @@ Sourcegraph Cloud allows individuals to search their personal code as well as mo
 - [Access tokens on Sourcegraph Cloud](access_tokens_on_cloud.md)
 
 ## Sourcegraph Cloud for Teams
-Sourcegraph Cloud for Teams allows small teams to experience the best of Sourcegraph, without self-hosting. Sourcegraph Cloud for Teams is in Private Beta. Learn more [here](https://about.sourcegraph.com/cloud-beta/) and [join our waitlist](https://share.hsforms.com/14OQ3RoPpQTOXvZlUpgx6-A1n7ku?utm_medium=direct-traffic&utm_source=docs&utm_content=cloud-product-beta-teams) to get access today!
 
 - [Getting Started on Cloud](./organizations/get_started_with_orgs_cloud.md)
 - [Creating an Organization on Sourcegraph Cloud](./organizations/creating_your_org_on_cloud.md)

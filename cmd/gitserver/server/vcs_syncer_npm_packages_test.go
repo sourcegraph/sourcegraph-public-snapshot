@@ -19,8 +19,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmtest"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -54,7 +57,7 @@ func TestNoMaliciousFilesNpm(t *testing.T) {
 
 	s := NewNpmPackagesSyncer(
 		schema.NpmPackagesConnection{Dependencies: []string{}},
-		NewMockDependenciesStore(),
+		live.TestService(database.NewDB(dbtest.NewDB(t)), nil),
 		nil,
 		"urn",
 	)
@@ -116,9 +119,12 @@ func TestNpmCloneCommand(t *testing.T) {
 			exampleNpmVersion2: tgz2,
 		},
 	}
+
+	depsSvc := live.TestService(database.NewDB(dbtest.NewDB(t)), nil)
+
 	s := NewNpmPackagesSyncer(
 		schema.NpmPackagesConnection{Dependencies: []string{}},
-		NewMockDependenciesStore(),
+		depsSvc,
 		&client,
 		"urn",
 	)
@@ -173,25 +179,36 @@ func TestNpmCloneCommand(t *testing.T) {
 	checkTagRemoved()
 
 	// Now run the same tests with the database output instead.
-	mockStore := NewStrictMockDependenciesStore()
-	s.depsStore = mockStore
 
-	mockStore.ListDependencyReposFunc.PushReturn([]dependenciesStore.DependencyRepo{
-		{ID: 0, Name: "example", Version: exampleNpmVersion},
-	}, nil)
+	if _, err := depsSvc.UpsertDependencyRepos(context.Background(), []dependencies.Repo{
+		{
+			ID:      1,
+			Scheme:  dependencies.NpmPackagesScheme,
+			Name:    "example",
+			Version: exampleNpmVersion,
+		},
+	}); err != nil {
+		t.Fatalf(err.Error())
+	}
 	s.runCloneCommand(t, bareGitDirectory, []string{})
 	checkSingleTag()
 
-	mockStore.ListDependencyReposFunc.PushReturn([]dependenciesStore.DependencyRepo{
-		{ID: 0, Name: "example", Version: exampleNpmVersion},
-		{ID: 1, Name: "example", Version: exampleNpmVersion2},
-	}, nil)
+	if _, err := depsSvc.UpsertDependencyRepos(context.Background(), []dependencies.Repo{
+		{
+			ID:      2,
+			Scheme:  dependencies.NpmPackagesScheme,
+			Name:    "example",
+			Version: exampleNpmVersion2,
+		},
+	}); err != nil {
+		t.Fatalf(err.Error())
+	}
 	s.runCloneCommand(t, bareGitDirectory, []string{})
 	checkTagAdded()
 
-	mockStore.ListDependencyReposFunc.PushReturn([]dependenciesStore.DependencyRepo{
-		{ID: 0, Name: "example", Version: "1.0.0"},
-	}, nil)
+	if err := depsSvc.DeleteDependencyReposByID(context.Background(), 2); err != nil {
+		t.Fatalf(err.Error())
+	}
 	s.runCloneCommand(t, bareGitDirectory, []string{})
 	checkTagRemoved()
 }

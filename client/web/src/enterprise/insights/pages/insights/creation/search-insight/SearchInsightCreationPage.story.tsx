@@ -2,14 +2,14 @@ import React from 'react'
 
 import { Meta, Story } from '@storybook/react'
 import delay from 'delay'
-import { noop } from 'lodash'
+import { noop, random } from 'lodash'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../../components/WebStory'
 import { CodeInsightsBackendStoryMock } from '../../../../CodeInsightsBackendStoryMock'
+import { SERIES_MOCK_CHART } from '../../../../components/creation-ui-kit'
 
-import { DEFAULT_MOCK_CHART_CONTENT, getRandomDataForMock } from './components/live-preview-chart/constant'
 import { SearchInsightCreationPage as SearchInsightCreationPageComponent } from './SearchInsightCreationPage'
 
 const defaultStory: Meta = {
@@ -29,6 +29,13 @@ function sleep(delay: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, delay))
 }
 
+const getRandomDataForMock = (): unknown[] =>
+    new Array(6).fill(null).map((item, index) => ({
+        x: 1588965700286 - index * 24 * 60 * 60 * 1000,
+        a: random(20, 200),
+        b: random(10, 200),
+    }))
+
 const fakeAPIRequest = async () => {
     await delay(1000)
 
@@ -40,7 +47,7 @@ const codeInsightsBackend = {
         await sleep(2000)
 
         return {
-            ...DEFAULT_MOCK_CHART_CONTENT,
+            ...SERIES_MOCK_CHART,
             data: getRandomDataForMock(),
         }
     },

@@ -72,7 +72,6 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 			frontendTests,                // ~4.5m
 			addWebApp,                    // ~5.5m
 			addBrowserExtensionUnitTests, // ~4.5m
-			addVSCExt,                    // ~5.5m
 			addTypescriptCheck,           // ~4m
 		)
 
@@ -294,20 +293,6 @@ func addBrowserExtensionUnitTests(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
-// Builds and tests the VS Code extensions.
-func addVSCExt(pipeline *bk.Pipeline) {
-	pipeline.AddStep(
-		":vscode: Puppeteer tests for VS Code extension",
-		withYarnCache(),
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn generate"),
-		bk.Cmd("yarn --cwd client/vscode -s build"),
-		bk.Cmd("yarn --cwd client/vscode -s package"),
-		bk.Cmd("yarn --cwd client/vscode -s test --verbose"),
-		bk.AutomaticRetry(1),
-	)
-}
-
 func clientIntegrationTests(pipeline *bk.Pipeline) {
 	chunkSize := 2
 	prepStepKey := "puppeteer:prep"
@@ -345,7 +330,6 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 			// https://docs.percy.io/docs/parallel-test-suites#how-it-works
 			bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(parallelTestCount)),
 			bk.Cmd(fmt.Sprintf(`dev/ci/yarn-web-integration.sh "%s"`, chunkTestFiles)),
-			bk.AutomaticRetry(1), // Temporary
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
 }
@@ -355,7 +339,7 @@ func clientChromaticTests(autoAcceptChanges bool) operations.Operation {
 		stepOpts := []bk.StepOpt{
 			withYarnCache(),
 			bk.AutomaticRetry(3),
-			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000 --silent"),
 			bk.Cmd("yarn gulp generate"),
 			bk.Env("MINIFY", "1"),
 		}
@@ -368,6 +352,7 @@ func clientChromaticTests(autoAcceptChanges bool) operations.Operation {
 			// Unless we plan on automatically accepting these changes, we only run this
 			// step on ready-for-review pull requests.
 			stepOpts = append(stepOpts, bk.IfReadyForReview())
+			chromaticCommand += " | ./dev/ci/post-chromatic.sh"
 		}
 
 		pipeline.AddStep(":chromatic: Upload Storybook to Chromatic",

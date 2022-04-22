@@ -5,10 +5,10 @@ import { noop } from 'rxjs'
 
 import { styles } from '../../../../../../components/creation-ui-kit'
 import { FormChangeEvent, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
-import { Insight } from '../../../../../../core/types'
+import { Insight } from '../../../../../../core'
 import { CreateInsightFormFields } from '../../types'
-import { SearchInsightLivePreview } from '../live-preview-chart'
-import { SearchInsightCreationForm } from '../search-insight-creation-form/SearchInsightCreationForm'
+import { SearchInsightCreationForm } from '../SearchInsightCreationForm'
+import { SearchInsightLivePreview } from '../SearchInsightLivePreview'
 
 import { useEditableSeries, createDefaultEditSeries } from './hooks/use-editable-series'
 import { useInsightCreationForm } from './hooks/use-insight-creation-form/use-insight-creation-form'

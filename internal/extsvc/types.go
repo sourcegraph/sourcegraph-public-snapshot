@@ -77,6 +77,7 @@ const (
 	KindAWSCodeCommit   = "AWSCODECOMMIT"
 	KindBitbucketServer = "BITBUCKETSERVER"
 	KindBitbucketCloud  = "BITBUCKETCLOUD"
+	KindGerrit          = "GERRIT"
 	KindGitHub          = "GITHUB"
 	KindGitLab          = "GITLAB"
 	KindGitolite        = "GITOLITE"
@@ -104,6 +105,9 @@ const (
 	// TypeBitbucketCloud is the (api.ExternalRepoSpec).ServiceType value for Bitbucket Cloud projects. The
 	// ServiceID value is the base URL to the Bitbucket Cloud.
 	TypeBitbucketCloud = "bitbucketCloud"
+
+	// TypeGerrit is the (api.ExternalRepoSpec).ServiceType value for Gerrit projects.
+	TypeGerrit = "gerrit"
 
 	// TypeGitHub is the (api.ExternalRepoSpec).ServiceType value for GitHub repositories. The ServiceID value
 	// is the base URL to the GitHub instance (https://github.com or the GitHub Enterprise URL).
@@ -148,6 +152,8 @@ func KindToType(kind string) string {
 		return TypeBitbucketServer
 	case KindBitbucketCloud:
 		return TypeBitbucketCloud
+	case KindGerrit:
+		return TypeGerrit
 	case KindGitHub:
 		return TypeGitHub
 	case KindGitLab:
@@ -181,6 +187,8 @@ func TypeToKind(t string) string {
 		return KindBitbucketServer
 	case TypeBitbucketCloud:
 		return KindBitbucketCloud
+	case TypeGerrit:
+		return KindGerrit
 	case TypeGitHub:
 		return KindGitHub
 	case TypeGitLab:
@@ -225,6 +233,8 @@ func ParseServiceType(s string) (string, bool) {
 		return TypeBitbucketServer, true
 	case bbcLower:
 		return TypeBitbucketCloud, true
+	case TypeGerrit:
+		return TypeGerrit, true
 	case TypeGitHub:
 		return TypeGitHub, true
 	case TypeGitLab:
@@ -260,6 +270,8 @@ func ParseServiceKind(s string) (string, bool) {
 		return KindBitbucketServer, true
 	case KindBitbucketCloud:
 		return KindBitbucketCloud, true
+	case KindGerrit:
+		return KindGerrit, true
 	case KindGitHub:
 		return KindGitHub, true
 	case KindGitLab:
@@ -305,6 +317,8 @@ func ParseConfig(kind, config string) (cfg interface{}, _ error) {
 		cfg = &schema.BitbucketServerConnection{}
 	case KindBitbucketCloud:
 		cfg = &schema.BitbucketCloudConnection{}
+	case KindGerrit:
+		cfg = &schema.GerritConnection{}
 	case KindGitHub:
 		cfg = &schema.GitHubConnection{}
 	case KindGitLab:
@@ -436,20 +450,15 @@ func GetLimitFromConfig(kind string, config interface{}) (rate.Limit, error) {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.NpmPackagesConnection:
-		// Unlike the GitHub or GitLab APIs, the public npm registry (i.e. https://registry.npmjs.org)
-		// doesn't document an enforced req/s rate limit AND we do a lot more individual
-		// requests in comparison since they don't offer enough batch APIs. For private registries,
-		// site-admins can manually configure their desired rate limits if needed.
-		limit = rate.Inf
+		limit = rate.Limit(3000 / 3600.0) // Same as the default in npm-packages.schema.json
 		if c != nil && c.RateLimit != nil {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.GoModulesConnection:
 		// Unlike the GitHub or GitLab APIs, the public npm registry (i.e. https://proxy.golang.org)
 		// doesn't document an enforced req/s rate limit AND we do a lot more individual
-		// requests in comparison since they don't offer enough batch APIs. For private proxies,
-		// site-admins can manually configure their desired rate limits if needed.
-		limit = rate.Inf
+		// requests in comparison since they don't offer enough batch APIs.
+		limit = rate.Limit(57600.0 / 3600.0) // Same as default in go-modules.schema.json
 		if c != nil && c.RateLimit != nil {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
@@ -534,6 +543,8 @@ func UniqueCodeHostIdentifier(kind, config string) (string, error) {
 	case *schema.BitbucketServerConnection:
 		rawURL = c.Url
 	case *schema.BitbucketCloudConnection:
+		rawURL = c.Url
+	case *schema.GerritConnection:
 		rawURL = c.Url
 	case *schema.PhabricatorConnection:
 		rawURL = c.Url

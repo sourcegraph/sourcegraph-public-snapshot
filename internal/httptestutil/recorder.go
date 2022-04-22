@@ -27,13 +27,8 @@ func NewRecorder(file string, record bool, filters ...cassette.Filter) (*recorde
 		return nil, err
 	}
 
-	filters = append(filters, func(i *cassette.Interaction) error {
-		delete(i.Request.Headers, "Authorization")
-		// This is used for GitLab.
-		delete(i.Request.Headers, "Private-Token")
-		delete(i.Response.Headers, "Set-Cookie")
-		return nil
-	})
+	// Remove headers that might include secrets.
+	filters = append(filters, riskyHeaderFilter)
 
 	for _, f := range filters {
 		rec.AddFilter(f)
@@ -77,7 +72,7 @@ func NewGitHubRecorderFactory(t testing.TB, update bool, name string) (*httpcli.
 
 	mw := httpcli.NewMiddleware(httpcli.GitHubProxyRedirectMiddleware)
 
-	hc := httpcli.NewFactory(mw, NewRecorderOpt(rec))
+	hc := httpcli.NewFactory(mw, httpcli.CachedTransportOpt, NewRecorderOpt(rec))
 
 	return hc, func() {
 		if err := rec.Stop(); err != nil {
@@ -103,11 +98,52 @@ func NewRecorderFactory(t testing.TB, update bool, name string) (*httpcli.Factor
 		t.Fatal(err)
 	}
 
-	hc := httpcli.NewFactory(nil, NewRecorderOpt(rec))
+	hc := httpcli.NewFactory(nil, httpcli.CachedTransportOpt, NewRecorderOpt(rec))
 
 	return hc, func() {
 		if err := rec.Stop(); err != nil {
 			t.Errorf("failed to update test data: %s", err)
 		}
 	}
+}
+
+// riskyHeaderFilter deletes anything that looks risky in request and response
+// headers.
+func riskyHeaderFilter(i *cassette.Interaction) error {
+	riskyHeaderKeys := []string{
+		"auth", "cookie", "token",
+	}
+	riskyHeaderValues := []string{
+		"bearer", "ghp_", "glpat-",
+	}
+
+	isRiskyKey := func(key string) bool {
+		lowerKey := strings.ToLower(key)
+		for _, riskyKey := range riskyHeaderKeys {
+			if strings.Contains(lowerKey, riskyKey) {
+				return true
+			}
+		}
+		return false
+	}
+	hasRiskyValue := func(values []string) bool {
+		for _, value := range values {
+			lowerValue := strings.ToLower(value)
+			for _, riskyValue := range riskyHeaderValues {
+				if strings.Contains(lowerValue, riskyValue) {
+					return true
+				}
+			}
+		}
+		return false
+	}
+
+	for _, headers := range []http.Header{i.Request.Headers, i.Response.Headers} {
+		for k, values := range headers {
+			if isRiskyKey(k) || hasRiskyValue(values) {
+				delete(headers, k)
+			}
+		}
+	}
+	return nil
 }

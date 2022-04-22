@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -774,4 +775,217 @@ func newEnterpriseV4Client(t testing.TB, name string) (*V4Client, func()) {
 	}
 
 	return NewV4Client("Test", uri, gheToken, doer), save
+}
+
+func TestClient_GetReposByNameWithOwner(t *testing.T) {
+	namesWithOwners := []string{
+		"sourcegraph/grapher-tutorial",
+		"sourcegraph/clojure-grapher",
+	}
+
+	grapherTutorialRepo := &Repository{
+		ID:               "MDEwOlJlcG9zaXRvcnkxNDYwMTc5OA==",
+		DatabaseID:       14601798,
+		NameWithOwner:    "sourcegraph/grapher-tutorial",
+		Description:      "monkey language",
+		URL:              "https://github.com/sourcegraph/grapher-tutorial",
+		IsPrivate:        true,
+		IsFork:           false,
+		IsArchived:       true,
+		IsLocked:         true,
+		ViewerPermission: "ADMIN",
+		Visibility:       "internal",
+	}
+
+	clojureGrapherRepo := &Repository{
+		ID:               "MDEwOlJlcG9zaXRvcnkxNTc1NjkwOA==",
+		DatabaseID:       15756908,
+		NameWithOwner:    "sourcegraph/clojure-grapher",
+		Description:      "clojure grapher",
+		URL:              "https://github.com/sourcegraph/clojure-grapher",
+		IsPrivate:        true,
+		IsFork:           false,
+		IsArchived:       true,
+		IsDisabled:       true,
+		ViewerPermission: "ADMIN",
+		Visibility:       "private",
+	}
+
+	testCases := []struct {
+		name             string
+		mockResponseBody string
+		wantRepos        []*Repository
+		err              string
+	}{
+
+		{
+			name: "found",
+			mockResponseBody: `
+{
+  "data": {
+    "repo_sourcegraph_grapher_tutorial": {
+      "id": "MDEwOlJlcG9zaXRvcnkxNDYwMTc5OA==",
+      "databaseId": 14601798,
+      "nameWithOwner": "sourcegraph/grapher-tutorial",
+      "description": "monkey language",
+      "url": "https://github.com/sourcegraph/grapher-tutorial",
+      "isPrivate": true,
+      "isFork": false,
+      "isArchived": true,
+      "isLocked": true,
+      "viewerPermission": "ADMIN",
+      "visibility": "internal"
+    },
+    "repo_sourcegraph_clojure_grapher": {
+      "id": "MDEwOlJlcG9zaXRvcnkxNTc1NjkwOA==",
+	  "databaseId": 15756908,
+      "nameWithOwner": "sourcegraph/clojure-grapher",
+      "description": "clojure grapher",
+      "url": "https://github.com/sourcegraph/clojure-grapher",
+      "isPrivate": true,
+      "isFork": false,
+      "isArchived": true,
+      "isDisabled": true,
+      "viewerPermission": "ADMIN",
+      "visibility": "private"
+    }
+  }
+}
+`,
+			wantRepos: []*Repository{grapherTutorialRepo, clojureGrapherRepo},
+		},
+		{
+			name: "not found",
+			mockResponseBody: `
+{
+  "data": {
+    "repo_sourcegraph_grapher_tutorial": {
+      "id": "MDEwOlJlcG9zaXRvcnkxNDYwMTc5OA==",
+      "databaseId": 14601798,
+      "nameWithOwner": "sourcegraph/grapher-tutorial",
+      "description": "monkey language",
+      "url": "https://github.com/sourcegraph/grapher-tutorial",
+      "isPrivate": true,
+      "isFork": false,
+      "isArchived": true,
+      "isLocked": true,
+      "viewerPermission": "ADMIN",
+      "visibility": "internal"
+    },
+    "repo_sourcegraph_clojure_grapher": null
+  },
+  "errors": [
+    {
+      "type": "NOT_FOUND",
+      "path": [
+        "repo_sourcegraph_clojure_grapher"
+      ],
+      "locations": [
+        {
+          "line": 13,
+          "column": 3
+        }
+      ],
+      "message": "Could not resolve to a Repository with the name 'clojure-grapher'."
+    }
+  ]
+}
+`,
+			wantRepos: []*Repository{grapherTutorialRepo},
+		},
+		{
+			name: "error",
+			mockResponseBody: `
+{
+  "errors": [
+    {
+      "path": [
+        "fragment RepositoryFields",
+        "foobar"
+      ],
+      "extensions": {
+        "code": "undefinedField",
+        "typeName": "Repository",
+        "fieldName": "foobar"
+      },
+      "locations": [
+        {
+          "line": 10,
+          "column": 3
+        }
+      ],
+      "message": "Field 'foobar' doesn't exist on type 'Repository'"
+    }
+  ]
+}
+`,
+			wantRepos: []*Repository{},
+			err:       "error in GraphQL response: Field 'foobar' doesn't exist on type 'Repository'",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			mock := mockHTTPResponseBody{responseBody: tc.mockResponseBody}
+			apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
+			c := NewV4Client("Test", apiURL, nil, &mock)
+
+			repos, err := c.GetReposByNameWithOwner(context.Background(), namesWithOwners...)
+			if have, want := fmt.Sprint(err), fmt.Sprint(tc.err); tc.err != "" && have != want {
+				t.Errorf("error:\nhave: %v\nwant: %v", have, want)
+			}
+
+			if want, have := len(tc.wantRepos), len(repos); want != have {
+				t.Errorf("wrong number of repos. want=%d, have=%d", want, have)
+			}
+
+			newSortFunc := func(s []*Repository) func(int, int) bool {
+				return func(i, j int) bool { return s[i].ID < s[j].ID }
+			}
+
+			sort.Slice(tc.wantRepos, newSortFunc(tc.wantRepos))
+			sort.Slice(repos, newSortFunc(repos))
+
+			if !repoListsAreEqual(repos, tc.wantRepos) {
+				t.Errorf("got repositories:\n%s\nwant:\n%s", stringForRepoList(repos), stringForRepoList(tc.wantRepos))
+			}
+		})
+	}
+}
+
+func TestClient_buildGetRepositoriesBatchQuery(t *testing.T) {
+	repos := []string{
+		"sourcegraph/grapher-tutorial",
+		"sourcegraph/clojure-grapher",
+		"sourcegraph/programming-challenge",
+		"sourcegraph/annotate",
+		"sourcegraph/sourcegraph-sublime-old",
+		"sourcegraph/makex",
+		"sourcegraph/pydep",
+		"sourcegraph/vcsstore",
+		"sourcegraph/contains.dot",
+	}
+
+	wantIncluded := `
+repo0: repository(owner: "sourcegraph", name: "grapher-tutorial") { ... on Repository { ...RepositoryFields } }
+repo1: repository(owner: "sourcegraph", name: "clojure-grapher") { ... on Repository { ...RepositoryFields } }
+repo2: repository(owner: "sourcegraph", name: "programming-challenge") { ... on Repository { ...RepositoryFields } }
+repo3: repository(owner: "sourcegraph", name: "annotate") { ... on Repository { ...RepositoryFields } }
+repo4: repository(owner: "sourcegraph", name: "sourcegraph-sublime-old") { ... on Repository { ...RepositoryFields } }
+repo5: repository(owner: "sourcegraph", name: "makex") { ... on Repository { ...RepositoryFields } }
+repo6: repository(owner: "sourcegraph", name: "pydep") { ... on Repository { ...RepositoryFields } }
+repo7: repository(owner: "sourcegraph", name: "vcsstore") { ... on Repository { ...RepositoryFields } }
+repo8: repository(owner: "sourcegraph", name: "contains.dot") { ... on Repository { ...RepositoryFields } }`
+
+	mock := mockHTTPResponseBody{responseBody: ""}
+	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
+	c := NewV4Client("Test", apiURL, nil, &mock)
+	query, err := c.buildGetReposBatchQuery(context.Background(), repos)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !strings.Contains(query, wantIncluded) {
+		t.Fatalf("query does not contain repository query. query=%q, want=%q", query, wantIncluded)
+	}
 }

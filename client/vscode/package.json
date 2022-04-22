@@ -150,6 +150,14 @@
             }
           ],
           "description": "Each value pair will be added to the request headers made to your instance."
+        },
+        "sourcegraph.basePath": {
+          "description": "The file path on the machine to the folder that is expected to contain all repositories.",
+          "type": "string",
+          "default": null,
+          "examples": ["/Users/USERNAME/Documents/"],
+          "format": "regex",
+          "pattern": "^[^~]+\/"
         }
       }
     },
@@ -207,7 +215,7 @@
     }
   },
   "scripts": {
-    "lint:js": "eslint --cache '**/*.[jt]s?(x)'",
+    "eslint": "eslint --cache '**/*.[jt]s?(x)'",
     "test": "ts-node ./tests/runTests.ts",
     "package": "ts-node ./scripts/package.ts",
     "task:gulp": "cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",

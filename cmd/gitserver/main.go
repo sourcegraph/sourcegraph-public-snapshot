@@ -27,7 +27,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -46,7 +47,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -62,7 +62,6 @@ var (
 	wantPctFree                    = env.MustGetInt("SRC_REPOS_DESIRED_PERCENT_FREE", 10, "Target percentage of free space on disk.")
 	janitorInterval                = env.MustGetDuration("SRC_REPOS_JANITOR_INTERVAL", 1*time.Minute, "Interval between cleanup runs")
 	syncRepoStateInterval          = env.MustGetDuration("SRC_REPOS_SYNC_STATE_INTERVAL", 10*time.Minute, "Interval between state syncs")
-	rateLimitSyncInterval          = env.MustGetDuration("SRC_REPOS_SYNC_RATE_LIMIT_INTERVAL", 5*time.Minute, "Interval between rate limit syncs")
 	syncRepoStateBatchSize         = env.MustGetInt("SRC_REPOS_SYNC_STATE_BATCH_SIZE", 500, "Number of upserts to perform per batch")
 	syncRepoStateUpsertPerSecond   = env.MustGetInt("SRC_REPOS_SYNC_STATE_UPSERT_PER_SEC", 500, "The number of upserted rows allowed per second across all gitserver instances")
 	batchLogGlobalConcurrencyLimit = env.MustGetInt("SRC_BATCH_LOG_GLOBAL_CONCURRENCY_LIMIT", 256, "The maximum number of in-flight Git commands from all /batch-log requests combined")
@@ -103,7 +102,7 @@ func main() {
 	db := database.NewDB(sqlDB)
 
 	repoStore := database.Repos(db)
-	codeintelDB := dependenciesStore.GetStore(db)
+	depsSvc := livedependencies.GetService(db, nil)
 	externalServiceStore := database.ExternalServices(db)
 
 	err = keyring.Init(ctx)
@@ -118,7 +117,7 @@ func main() {
 			return getRemoteURLFunc(ctx, externalServiceStore, repoStore, nil, repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
-			return getVCSSyncer(ctx, externalServiceStore, repoStore, codeintelDB, repo)
+			return getVCSSyncer(ctx, externalServiceStore, repoStore, depsSvc, repo)
 		},
 		Hostname:                hostname.Get(),
 		DB:                      db,
@@ -150,22 +149,12 @@ func main() {
 	// Ready immediately
 	ready := make(chan struct{})
 	close(ready)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// Best effort attempt to sync rate limiters early on. If it fails, we'll try
-	// again in the background sync below
-	rateLimitSyncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, externalServiceStore)
-	if err := rateLimitSyncer.SyncRateLimiters(ctx); err != nil {
-		log15.Warn("error performing initial rate limit sync", "error", err)
-	}
-
-	go syncRateLimiters(ctx, rateLimitSyncer, rateLimitSyncInterval)
 	go debugserver.NewServerRoutine(ready).Start()
 	go gitserver.Janitor(janitorInterval)
 	go gitserver.SyncRepoState(syncRepoStateInterval, syncRepoStateBatchSize, syncRepoStateUpsertPerSecond)
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	gitserver.StartClonePipeline(ctx)
 
 	addr := os.Getenv("GITSERVER_ADDR")
@@ -383,8 +372,13 @@ func editGitHubAppExternalServiceConfigToken(
 	return config, nil
 }
 
-func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalServiceStore, repoStore database.RepoStore,
-	codeintelDB *dependenciesStore.Store, repo api.RepoName) (server.VCSSyncer, error) {
+func getVCSSyncer(
+	ctx context.Context,
+	externalServiceStore database.ExternalServiceStore,
+	repoStore database.RepoStore,
+	depsSvc *dependencies.Service,
+	repo api.RepoName,
+) (server.VCSSyncer, error) {
 	// We need an internal actor in case we are trying to access a private repo. We
 	// only need access in order to find out the type of code host we're using, so
 	// it's safe.
@@ -427,14 +421,14 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 		if _, err := extractOptions(&c); err != nil {
 			return nil, err
 		}
-		return &server.JVMPackagesSyncer{Config: &c, DepsStore: codeintelDB}, nil
+		return &server.JVMPackagesSyncer{Config: &c, DepsSvc: depsSvc}, nil
 	case extsvc.TypeNpmPackages:
 		var c schema.NpmPackagesConnection
 		urn, err := extractOptions(&c)
 		if err != nil {
 			return nil, err
 		}
-		return server.NewNpmPackagesSyncer(c, codeintelDB, nil, urn), nil
+		return server.NewNpmPackagesSyncer(c, depsSvc, nil, urn), nil
 	case extsvc.TypeGoModules:
 		var c schema.GoModulesConnection
 		urn, err := extractOptions(&c)
@@ -442,30 +436,7 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 			return nil, err
 		}
 		cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternalDoer)
-		return server.NewGoModulesSyncer(&c, codeintelDB, cli), nil
+		return server.NewGoModulesSyncer(&c, depsSvc, cli), nil
 	}
 	return &server.GitRepoSyncer{}, nil
-}
-
-// Sync rate limiters from config. Since we don't have a trigger that watches for
-// changes to rate limits we'll run this periodically in the background.
-func syncRateLimiters(ctx context.Context, syncer *repos.RateLimitSyncer, interval time.Duration) {
-	for {
-		sleep(ctx, interval)
-		if err := ctx.Err(); err != nil {
-			log15.Warn("context error in syncRateLimiters, terminating", "error", err)
-			return
-		}
-		if err := syncer.SyncRateLimiters(ctx); err != nil {
-			log15.Warn("error syncing rate limits", "error", err)
-		}
-	}
-}
-
-// sleep is a context aware time.Sleep
-func sleep(ctx context.Context, d time.Duration) {
-	select {
-	case <-ctx.Done():
-	case <-time.After(d):
-	}
 }

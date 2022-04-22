@@ -2,7 +2,7 @@ import React from 'react'
 
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CancelIcon from 'mdi-react/CancelIcon'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
+import CheckBoldIcon from 'mdi-react/CheckBoldIcon'
 import ContentSaveIcon from 'mdi-react/ContentSaveIcon'
 import LinkVariantRemoveIcon from 'mdi-react/LinkVariantRemoveIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
@@ -76,7 +76,7 @@ export const WorkspaceStateIcon: React.FunctionComponent<WorkspaceStateIconProps
                 <Icon
                     className="text-success"
                     data-tooltip="Execution for this workspace succeeded."
-                    as={CheckCircleIcon}
+                    as={CheckBoldIcon}
                 />
             )
     }
