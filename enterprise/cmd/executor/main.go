@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
+	"os"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -20,7 +20,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func main() {
@@ -33,8 +35,15 @@ func main() {
 	logging.Init()
 	trace.Init()
 
+	log.Init(log.Resource{
+		Name:    env.MyName,
+		Version: version.Version(),
+	})
+	logger := log.Scoped("executor", "the executor service polls the public frontend API for work to perform")
+
 	if err := config.Validate(); err != nil {
-		log.Fatalf("failed to read config: %s", err)
+		logger.Error("failed to read config", log.Error(err))
+		os.Exit(1)
 	}
 
 	// Initialize tracing/metrics
@@ -57,7 +66,7 @@ func main() {
 
 		return apiclient.NewTelemetryOptions(ctx)
 	}()
-	log15.Info("Telemetry information gathered", "info", fmt.Sprintf("%+v", telemetryOptions))
+	logger.Info("Telemetry information gathered", log.String("info", fmt.Sprintf("%+v", telemetryOptions)))
 
 	nameSet := janitor.NewNameSet()
 	ctx, cancel := context.WithCancel(context.Background())
