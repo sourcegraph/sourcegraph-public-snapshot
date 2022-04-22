@@ -125,8 +125,8 @@ $card-header-height: 1.5rem;
 .references {
     &--list {
         display: flex;
-        // Ensure list spans entire height of panel, and that the scrollable area does not include the filter height
-        height: calc(100% - #{$filter-input-height + $card-header-height});
+        // Ensure list spans entire height of panel
+        height: 100%;
     }
 
     // Left side of the panel: hover & list of references/definition/...
