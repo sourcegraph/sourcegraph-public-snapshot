@@ -554,7 +554,7 @@ func makeSearchCondition(term string) *sqlf.Query {
 		"u.root",
 		"(u.state)::text",
 		"u.failure_message",
-		`repo.name`,
+		"repo.name",
 		"u.indexer",
 		"u.indexer_version",
 	}
@@ -709,7 +709,7 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.num_resets"),
 	sqlf.Sprintf("u.num_failures"),
 	sqlf.Sprintf("u.repository_id"),
-	sqlf.Sprintf(`u.repository_name`),
+	sqlf.Sprintf("u.repository_name"),
 	sqlf.Sprintf("u.indexer"),
 	sqlf.Sprintf("u.indexer_version"),
 	sqlf.Sprintf("u.num_parts"),
