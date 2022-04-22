@@ -124,38 +124,47 @@ $card-header-height: 1.5rem;
     }
 }
 
+// Complete panel
+.panel {
+    display: flex;
+    // Ensure panel spans entire height of enclosing panel
+    height: 100%;
+}
+
+// Left side of the panel, including token name, filter, list of locations
+.left-sub-panel {
+    flex: 1;
+    overflow: auto;
+    height: 100%;
+}
+
+// Right side of the panel
+.right-sub-panel {
+    flex: 1;
+    overflow: auto;
+}
+
 .references {
-    &--list {
-        display: flex;
-        // Ensure list spans entire height of panel
-        height: 100%;
+    // Left side of the panel: only list
+    &--side-references-list {
+        // height: calc(100% - #{$filter-input-height} - #{$card-header-height});
+        // overflow-y: auto;
+        // overflow-x: hidden;
     }
 
-    // Left side of the panel: hover & list of references/definition/...
-    &--side-references {
-        flex: 1;
-        overflow: auto;
-        height: 100%;
-    }
+}
 
-    // Right side of the panel
-    &--side-blob {
-        flex: 1;
-        overflow: auto;
-    }
-
-    &--side-blob-filename {
+.side-blob {
+    &--filename {
         height: 1rem;
         vertical-align: middle;
     }
 
-    &--side-blob-collapse-button {
+    &--collapse-button {
         margin-right: 0.5rem;
     }
 
-    // Code needs to be smaller than 100% so it scrolls correctly
-    &--side-blob-code {
-        // Subtract the space taken up by the filename
-        height: calc(100% - #{$filter-input-height});
+    &--code {
+        height: 100%;
     }
 }

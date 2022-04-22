@@ -359,8 +359,8 @@ export const ReferencesList: React.FunctionComponent<
     }
 
     return (
-        <div className={classNames('align-items-stretch', styles.referencesList)}>
-            <div className={classNames('px-0', styles.referencesSideReferences)}>
+        <div className={classNames('align-items-stretch', styles.panel)}>
+            <div className={classNames('px-0', styles.leftSubPanel)}>
                 <CardHeader className={classNames('d-flex align-items-center', styles.cardHeader)}>
                     <Code size="base" weight="bold">
                         {props.searchToken}
@@ -429,12 +429,12 @@ export const ReferencesList: React.FunctionComponent<
                 )}
             </div>
             {activeLocation !== undefined && (
-                <div className={classNames('px-0 border-left', styles.referencesSideBlob)}>
+                <div className={classNames('px-0 border-left', styles.rightSubPanel)}>
                     <CardHeader className={classNames('d-flex', styles.cardHeader)}>
                         <small>
                             <Button
                                 onClick={() => setActiveLocation(undefined)}
-                                className={classNames('btn-icon p-0', styles.referencesSideBlobCollapseButton)}
+                                className={classNames('btn-icon p-0', styles.sideBlobCollapseButton)}
                                 title="Close panel"
                                 data-tooltip="Close panel"
                                 data-placement="left"
@@ -448,7 +448,7 @@ export const ReferencesList: React.FunctionComponent<
                                     event.preventDefault()
                                     navigateToUrl(activeLocation.url)
                                 }}
-                                className={styles.referencesSideBlobFilename}
+                                className={styles.sideBlobFilename}
                             >
                                 {activeLocation.file}{' '}
                             </Link>
@@ -629,7 +629,7 @@ const SideBlob: React.FunctionComponent<
             location={props.location}
             disableStatusBar={true}
             wrapCode={true}
-            className={styles.referencesSideBlobCode}
+            className={styles.sideBlobCode}
             blobInfo={{
                 html,
                 content: props.activeLocation.content,
