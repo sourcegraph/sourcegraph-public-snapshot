@@ -361,14 +361,14 @@ export const ReferencesList: React.FunctionComponent<
     return (
         <div className={classNames('align-items-stretch', styles.referencesList)}>
             <div className={classNames('px-0', styles.referencesSideReferences)}>
-                <CardHeader className={styles.cardHeader}>
+                <CardHeader className={classNames('d-flex align-items-center', styles.cardHeader)}>
                     <Code size="base" weight="bold">
                         {props.searchToken}
                     </Code>
                     {canShowSpinner && (
-                        <small className="ml-2 text-muted">
-                            <Icon as={LoadingSpinner} size="sm" inline={true} />
-                            Loading...
+                        <small className="ml-3 text-muted d-flex align-items-center">
+                            <Icon as={LoadingSpinner} size="sm" inline={true} className="mr-1" />
+                            <i>Loading...</i>
                         </small>
                     )}
                 </CardHeader>

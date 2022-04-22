@@ -5,6 +5,8 @@ $filter-input-height: 1.5rem;
     padding-top: 0.25rem;
     padding-bottom: 0.25rem;
 
+    border-bottom: 1px solid var(--body-bg);
+
     input {
         height: 1rem;
         font-size: 0.75rem;
