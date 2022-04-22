@@ -205,7 +205,7 @@ func parseBitbucketServerBuildState(s string) btypes.ChangesetCheckState {
 	}
 }
 
-func computeBitbucketCloudBuildState(_ time.Time, apr *bbcs.AnnotatedPullRequest, events []*btypes.ChangesetEvent) btypes.ChangesetCheckState {
+func computeBitbucketCloudBuildState(_ time.Time, apr *bbcs.AnnotatedPullRequest, _ []*btypes.ChangesetEvent) btypes.ChangesetCheckState {
 	states := make([]btypes.ChangesetCheckState, len(apr.Statuses))
 	for i, status := range apr.Statuses {
 		states[i] = parseBitbucketCloudBuildState(status.State)
