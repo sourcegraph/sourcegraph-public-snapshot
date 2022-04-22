@@ -1,7 +1,9 @@
 import { ErrorInfo } from 'react'
 
-// Ensures consistent `ErrorContext` across `addError` calls.
-// https://docs.datadoghq.com/real_user_monitoring/browser/modifying_data_and_context/?tab=npm#enrich-and-control-rum-data
+/**
+ * Ensures consistent `ErrorContext` across `addError` calls.
+ * https://docs.datadoghq.com/real_user_monitoring/browser/modifying_data_and_context/?tab=npm#enrich-and-control-rum-data
+ */
 interface ErrorContext {
     // Used to ignore some errors in the `beforeSend` hook.
     originalException: unknown
