@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"strings"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/luasandbox"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Service struct {
@@ -105,7 +105,7 @@ func (s *Service) setupRecognizers(ctx context.Context, sandbox *luasandbox.Sand
 	if overrideScript != "" {
 		// TODO - run this script and merge recognizer results
 		// See https://github.com/sourcegraph/sourcegraph/issues/33046
-		return nil, fmt.Errorf("unimplemented")
+		return nil, errors.Newf("unimplemented")
 	}
 
 	return recognizers, nil
