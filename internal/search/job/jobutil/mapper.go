@@ -38,12 +38,13 @@ type Mapper struct {
 	MapOrJob  func(children []job.Job) []job.Job
 
 	// Combinator Jobs
-	MapParallelJob func(children []job.Job) []job.Job
-	MapPriorityJob func(required, optional job.Job) (job.Job, job.Job)
-	MapTimeoutJob  func(timeout time.Duration, child job.Job) (time.Duration, job.Job)
-	MapLimitJob    func(limit int, child job.Job) (int, job.Job)
-	MapSelectJob   func(path filter.SelectPath, child job.Job) (filter.SelectPath, job.Job)
-	MapAlertJob    func(inputs *run.SearchInputs, child job.Job) (*run.SearchInputs, job.Job)
+	MapParallelJob   func(children []job.Job) []job.Job
+	MapSequentialJob func(children []job.Job) []job.Job
+	MapPriorityJob   func(required, optional job.Job) (job.Job, job.Job)
+	MapTimeoutJob    func(timeout time.Duration, child job.Job) (time.Duration, job.Job)
+	MapLimitJob      func(limit int, child job.Job) (int, job.Job)
+	MapSelectJob     func(path filter.SelectPath, child job.Job) (filter.SelectPath, job.Job)
+	MapAlertJob      func(inputs *run.SearchInputs, child job.Job) (*run.SearchInputs, job.Job)
 
 	// Filter Jobs
 	MapSubRepoPermsFilterJob func(child job.Job) job.Job
@@ -156,6 +157,16 @@ func (m *Mapper) Map(j job.Job) job.Job {
 			children = m.MapParallelJob(children)
 		}
 		return NewParallelJob(children...)
+
+	case *SequentialJob:
+		children := make([]job.Job, 0, len(j.children))
+		for _, child := range j.children {
+			children = append(children, m.Map(child))
+		}
+		if m.MapSequentialJob != nil {
+			children = m.MapSequentialJob(children)
+		}
+		return NewSequentialJob(children...)
 
 	case *PriorityJob:
 		required := m.Map(j.required)
