@@ -69,7 +69,7 @@ func (r *RateLimitSyncer) SyncRateLimiters(ctx context.Context, ids ...int64) er
 }
 
 // SyncLimitersSince is the same as SyncRateLimiters but will only sync rate limiters
-// for external service that have been update after t.
+// for external service that have been update after `updateAfter`.
 func (r *RateLimitSyncer) SyncLimitersSince(ctx context.Context, updateAfter time.Time, ids ...int64) error {
 	cursor := database.LimitOffset{
 		Limit: r.pageSize,
