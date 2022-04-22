@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { MockedResponse } from '@apollo/client/testing'
 import { render, RenderResult } from '@testing-library/react'
 import * as H from 'history'
