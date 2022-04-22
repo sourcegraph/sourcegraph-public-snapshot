@@ -74,7 +74,7 @@ export const createWebIntegrationTestContext = async ({
     const runtimeChunkScriptTag = isHotReloadEnabled ? `<script src=${getRuntimeAppBundle()}></script>` : ''
 
     // Serve all requests for index.html (everything that does not match the handlers above) the same index.html
-    let jsContext = createJsContext({ sourcegraphBaseUrl: sharedTestContext.driver.sourcegraphBaseUrl })
+    let jsContext = createJsContext({ sourcegraphBaseUrl: driver.sourcegraphBaseUrl })
     sharedTestContext.server
         .get(new URL('/*path', driver.sourcegraphBaseUrl).href)
         .filter(request => !request.pathname.startsWith('/-/'))
