@@ -337,6 +337,7 @@ func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterpri
 		schema,
 		db,
 		enterprise.NewCodeIntelUploadHandler,
+		enterprise.NewComputeStreamHandler,
 		rateLimiter,
 	)
 	httpServer := &http.Server{
