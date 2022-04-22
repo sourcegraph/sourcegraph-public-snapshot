@@ -1637,6 +1637,32 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
+## postgres: usage_connections_percentage
+
+<p class="subtitle">connection in use</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> postgres: 80%+ connection in use for 5m0s
+- <span class="badge badge-critical">critical</span> postgres: 100%+ connection in use for 5m0s
+
+**Possible solutions**
+
+- Consider increasing [max_connections](https://www.postgresql.org/docs/current/runtime-config-connection.html#GUC-MAX-CONNECTIONS) of the database instance, [learn more](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-usage-connections-percentage).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_postgres_usage_connections_percentage",
+  "critical_postgres_usage_connections_percentage"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+
+<br />
+
 ## postgres: transaction_durations
 
 <p class="subtitle">maximum transaction durations</p>
