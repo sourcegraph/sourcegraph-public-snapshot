@@ -62,11 +62,6 @@ func Start(additionalJobs map[string]job.Job, registerEnterpriseMigrations func(
 	// Setup environment variables
 	loadConfigs(jobs)
 
-	// Set up Google Cloud Profiler when running in Cloud
-	if err := profiler.Init(); err != nil {
-		log.Fatalf("Failed to start profiler: %v", err)
-	}
-
 	env.Lock()
 	env.HandleHelpFlag()
 	conf.Init()
@@ -74,6 +69,8 @@ func Start(additionalJobs map[string]job.Job, registerEnterpriseMigrations func(
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
+	profiler.Init()
+
 	if err := keyring.Init(context.Background()); err != nil {
 		log.Fatalf("Failed to intialise keyring: %v", err)
 	}
