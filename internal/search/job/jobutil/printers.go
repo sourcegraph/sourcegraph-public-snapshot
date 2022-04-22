@@ -108,6 +108,15 @@ func SexpFormat(j job.Job, sep, indent string) string {
 			}
 			depth--
 			b.WriteString(")")
+		case *SequentialJob:
+			b.WriteString("(SEQUENTIAL")
+			depth++
+			for _, child := range j.children {
+				writeSep(b, sep, indent, depth)
+				writeSexp(child)
+			}
+			depth--
+			b.WriteString(")")
 		case *TimeoutJob:
 			b.WriteString("(TIMEOUT")
 			depth++
@@ -275,6 +284,15 @@ func PrettyMermaid(j job.Job) string {
 				writeMermaid(child)
 			}
 			depth--
+		case *SequentialJob:
+			srcId := id
+			depth++
+			writeNode(b, depth, RoundedStyle, &id, "SEQUENTIAL")
+			for _, child := range j.children {
+				writeEdge(b, depth, srcId, id)
+				writeMermaid(child)
+			}
+			depth--
 		case *TimeoutJob:
 			srcId := id
 			depth++
@@ -405,6 +423,17 @@ func toJSON(j job.Job, verbose bool) interface{} {
 				Parallel interface{} `json:"PARALLEL"`
 			}{
 				Parallel: children,
+			}
+
+		case *SequentialJob:
+			children := make([]interface{}, 0, len(j.children))
+			for _, child := range j.children {
+				children = append(children, emitJSON(child))
+			}
+			return struct {
+				Sequential interface{} `json:"SEQUENTIAL"`
+			}{
+				Sequential: children,
 			}
 
 		case *TimeoutJob:
