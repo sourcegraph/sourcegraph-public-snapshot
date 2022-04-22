@@ -8,7 +8,7 @@ import (
 
 func TestRecognizersTypescript(t *testing.T) {
 	testRecognizers(t,
-		RecognizerTestCase{
+		recognizerTestCase{
 			description: "javascript project with no tsconfig",
 			repositoryContents: map[string]string{
 				"package.json": "",
@@ -30,7 +30,7 @@ func TestRecognizersTypescript(t *testing.T) {
 				},
 			},
 		},
-		RecognizerTestCase{
+		recognizerTestCase{
 			description: "javascript project with no tsconfig",
 			repositoryContents: map[string]string{
 				"package.json": "",
@@ -53,7 +53,7 @@ func TestRecognizersTypescript(t *testing.T) {
 				},
 			},
 		},
-		RecognizerTestCase{
+		recognizerTestCase{
 			description: "simple tsconfig",
 			repositoryContents: map[string]string{
 				"tsconfig.json": "",
@@ -69,7 +69,7 @@ func TestRecognizersTypescript(t *testing.T) {
 				},
 			},
 		},
-		RecognizerTestCase{
+		recognizerTestCase{
 			description: "tsconfig in subdirectories",
 			repositoryContents: map[string]string{
 				"a/tsconfig.json": "",
@@ -103,7 +103,7 @@ func TestRecognizersTypescript(t *testing.T) {
 				},
 			},
 		},
-		RecognizerTestCase{
+		recognizerTestCase{
 			description: "typescript installation steps",
 			repositoryContents: map[string]string{
 				"tsconfig.json":              "",
@@ -189,7 +189,7 @@ func TestRecognizersTypescript(t *testing.T) {
 				},
 			},
 		},
-		RecognizerTestCase{
+		recognizerTestCase{
 			description: "typescript with lerna configuration",
 			repositoryContents: map[string]string{
 				"package.json":  "",
@@ -213,7 +213,7 @@ func TestRecognizersTypescript(t *testing.T) {
 				},
 			},
 		},
-		RecognizerTestCase{
+		recognizerTestCase{
 			description: "typescript with node version",
 			repositoryContents: map[string]string{
 				"package.json":  `{"engines": {"node": "42"}}`,

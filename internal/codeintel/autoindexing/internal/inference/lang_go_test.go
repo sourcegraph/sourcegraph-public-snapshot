@@ -8,7 +8,7 @@ import (
 
 func TestRecognizersGo(t *testing.T) {
 	testRecognizers(t,
-		RecognizerTestCase{
+		recognizerTestCase{
 			description: "go modules",
 			repositoryContents: map[string]string{
 				"foo/bar/go.mod": "",
@@ -45,7 +45,7 @@ func TestRecognizersGo(t *testing.T) {
 				},
 			},
 		},
-		RecognizerTestCase{
+		recognizerTestCase{
 			description: "go files in root",
 			repositoryContents: map[string]string{
 				"main.go":       "",
@@ -63,7 +63,7 @@ func TestRecognizersGo(t *testing.T) {
 				},
 			},
 		},
-		RecognizerTestCase{
+		recognizerTestCase{
 			description: "go files in non-root (no match)",
 			repositoryContents: map[string]string{
 				"cmd/src/main.go": "",

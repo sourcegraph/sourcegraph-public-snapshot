@@ -8,7 +8,7 @@ import (
 
 func TestRecognizersJava(t *testing.T) {
 	testRecognizers(t,
-		RecognizerTestCase{
+		recognizerTestCase{
 			description: "java project with lsif-java.json",
 			repositoryContents: map[string]string{
 				"lsif-java.json": "",
@@ -26,7 +26,7 @@ func TestRecognizersJava(t *testing.T) {
 				},
 			},
 		},
-		RecognizerTestCase{
+		recognizerTestCase{
 			description: "java project without lsif-java.json (no match)",
 			repositoryContents: map[string]string{
 				"src/java/com/sourcegraph/codeintel/dumb.java": "",

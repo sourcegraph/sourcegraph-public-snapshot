@@ -8,7 +8,7 @@ import (
 
 func TestRecognizersRust(t *testing.T) {
 	testRecognizers(t,
-		RecognizerTestCase{
+		recognizerTestCase{
 			description: "rust-analyzer",
 			repositoryContents: map[string]string{
 				"foo/bar/Cargo.toml": "",
