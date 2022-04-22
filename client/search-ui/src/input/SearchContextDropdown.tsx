@@ -144,6 +144,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
             {/*
                a11y-ignore
                Rule: "aria-required-children" (Certain ARIA roles must contain particular children)
+               GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/34348
              */}
             <DropdownMenu positionFixed={true} className={classNames('a11y-ignore', styles.menu)}>
                 <SearchContextMenu
