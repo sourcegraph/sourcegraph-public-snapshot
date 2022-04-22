@@ -54,7 +54,7 @@ local infer_typescript_job = function(api, tsconfig_path, should_infer_config)
     local root = path.dirname(tsconfig_path)
     local reverse_ancestors = util.reverse(path.ancestors(tsconfig_path))
 
-    api:callback(recognizers.path_recognizer {
+    api:register(recognizers.path_recognizer {
         patterns = {
             -- To disambiguate installation steps
             patterns.path_basename("yarn.lock"),

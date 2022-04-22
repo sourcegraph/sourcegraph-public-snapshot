@@ -229,7 +229,7 @@ type registrationAPI struct {
 	recognizers []*luatypes.Recognizer
 }
 
-func (api *registrationAPI) Callback(recognizer *luatypes.Recognizer) {
+func (api *registrationAPI) Register(recognizer *luatypes.Recognizer) {
 	api.recognizers = append(api.recognizers, recognizer)
 }
 

@@ -17,7 +17,7 @@ local gomod_recognizer = recognizers.path_recognizer {
     },
 
     -- Invoked when go.mod files exist
-    generate = function(api, paths)
+    generate = function(_, paths)
         local jobs = {}
         for i = 1, #paths do
             local root = path.dirname(paths[i])
@@ -50,7 +50,7 @@ local goext_recognizer = recognizers.path_recognizer {
     -- Invoked when no go.mod files exist but go extensions exist somewhere
     -- in the repository. Within this function we filter out files that are
     -- not directly in the root of the repository (the simple pre-mod libs).
-    generate = function(api, paths)
+    generate = function(_, paths)
         for i = 1, #paths do
             if path.dirname(paths[i]) == "" then
                 return {

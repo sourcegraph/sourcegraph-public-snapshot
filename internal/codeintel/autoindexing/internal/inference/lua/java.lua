@@ -11,7 +11,7 @@ return recognizers.path_recognizer {
 
     -- Invoked when lsif-java.json exists in root of repository
     generate = function(api)
-        api:callback(recognizers.path_recognizer {
+        api:register(recognizers.path_recognizer {
             patterns = {
                 patterns.path_basename("pom.xml"),
                 patterns.path_basename("build.gradle"),
