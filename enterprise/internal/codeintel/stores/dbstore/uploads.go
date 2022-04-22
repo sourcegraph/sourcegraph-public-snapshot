@@ -186,7 +186,7 @@ SELECT
 FROM lsif_uploads_with_repository_name u
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
-JOIN repo ON repo.id = u.repository_id
+JOIN repo r ON r.id = u.repository_id
 WHERE u.state != 'deleted' AND u.id = %s AND %s
 `
 
@@ -244,7 +244,7 @@ SELECT
 FROM lsif_uploads_with_repository_name u
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
-JOIN repo ON repo.id = u.repository_id
+JOIN repo r ON r.id = u.repository_id
 WHERE u.state != 'deleted' AND u.id IN (%s) AND %s
 `
 
@@ -402,7 +402,7 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 		conds = append(conds, sqlf.Sprintf("NOT u.expired"))
 	}
 	if !opts.AllowDeletedRepo {
-		conds = append(conds, sqlf.Sprintf("repo.deleted_at IS NULL"))
+		conds = append(conds, sqlf.Sprintf("r.deleted_at IS NULL"))
 	}
 
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(tx.Store.Handle().DB()))
@@ -471,7 +471,7 @@ const getUploadsCountQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:GetUploads
 %s -- Dynamic CTE definitions for use in the WHERE clause
 SELECT COUNT(*) FROM lsif_uploads u
-JOIN repo ON repo.id = u.repository_id
+JOIN repo r ON r.id = u.repository_id
 WHERE %s
 `
 
@@ -492,7 +492,7 @@ SELECT
 	u.num_resets,
 	u.num_failures,
 	u.repository_id,
-	repo.name,
+	r.name,
 	u.indexer,
 	u.indexer_version,
 	u.num_parts,
@@ -503,7 +503,7 @@ SELECT
 FROM lsif_uploads u
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
-JOIN repo ON repo.id = u.repository_id
+JOIN repo r ON r.id = u.repository_id
 WHERE %s ORDER BY %s LIMIT %d OFFSET %d
 `
 
@@ -554,7 +554,7 @@ func makeSearchCondition(term string) *sqlf.Query {
 		"u.root",
 		"(u.state)::text",
 		"u.failure_message",
-		`repo.name`,
+		`r.name`,
 		"u.indexer",
 		"u.indexer_version",
 	}
