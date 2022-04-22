@@ -28,7 +28,7 @@ The `upto` command ensures a given migration has been applied, and may apply dep
 
 Usage: **`downto -db=<schema> -target=<target>,<target>,...`**
 
-The `downto` command revert any applied migrations that are children of the given targets - this effectively "resets" the schmea to the target version. The `-db` flag signifies the target schema to modify. The `-target` flag signifies a set of targets whose proper ancestors should be reverted. Comma-separated values are accepted.
+The `downto` command revert any applied migrations that are children of the given targets - this effectively "resets" the schema to the target version. The `-db` flag signifies the target schema to modify. The `-target` flag signifies a set of targets whose proper ancestors should be reverted. Comma-separated values are accepted.
 
 ### validate
 
