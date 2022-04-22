@@ -384,49 +384,51 @@ export const ReferencesList: React.FunctionComponent<
                         onChange={event => setFilter(event.target.value)}
                     />
                 </div>
-                <CollapsibleLocationList
-                    {...props}
-                    name="definitions"
-                    locations={definitions}
-                    hasMore={false}
-                    loadingMore={false}
-                    filter={debouncedFilter}
-                    navigateToUrl={navigateToUrl}
-                    isActiveLocation={isActiveLocation}
-                    setActiveLocation={onReferenceClick}
-                    handleOpenChange={handleOpenChange}
-                    isOpen={isOpen}
-                />
-                <CollapsibleLocationList
-                    {...props}
-                    name="references"
-                    locations={references}
-                    hasMore={referencesHasNextPage}
-                    fetchMore={fetchMoreReferences}
-                    loadingMore={fetchMoreReferencesLoading}
-                    filter={debouncedFilter}
-                    navigateToUrl={navigateToUrl}
-                    setActiveLocation={onReferenceClick}
-                    isActiveLocation={isActiveLocation}
-                    handleOpenChange={handleOpenChange}
-                    isOpen={isOpen}
-                />
-                {implementations.length > 0 && (
+                <div className={styles.locationLists}>
                     <CollapsibleLocationList
                         {...props}
-                        name="implementations"
-                        locations={implementations}
-                        hasMore={implementationsHasNextPage}
-                        fetchMore={fetchMoreImplementations}
-                        loadingMore={fetchMoreImplementationsLoading}
-                        setActiveLocation={onReferenceClick}
+                        name="definitions"
+                        locations={definitions}
+                        hasMore={false}
+                        loadingMore={false}
                         filter={debouncedFilter}
-                        isActiveLocation={isActiveLocation}
                         navigateToUrl={navigateToUrl}
+                        isActiveLocation={isActiveLocation}
+                        setActiveLocation={onReferenceClick}
                         handleOpenChange={handleOpenChange}
                         isOpen={isOpen}
                     />
-                )}
+                    <CollapsibleLocationList
+                        {...props}
+                        name="references"
+                        locations={references}
+                        hasMore={referencesHasNextPage}
+                        fetchMore={fetchMoreReferences}
+                        loadingMore={fetchMoreReferencesLoading}
+                        filter={debouncedFilter}
+                        navigateToUrl={navigateToUrl}
+                        setActiveLocation={onReferenceClick}
+                        isActiveLocation={isActiveLocation}
+                        handleOpenChange={handleOpenChange}
+                        isOpen={isOpen}
+                    />
+                    {implementations.length > 0 && (
+                        <CollapsibleLocationList
+                            {...props}
+                            name="implementations"
+                            locations={implementations}
+                            hasMore={implementationsHasNextPage}
+                            fetchMore={fetchMoreImplementations}
+                            loadingMore={fetchMoreImplementationsLoading}
+                            setActiveLocation={onReferenceClick}
+                            filter={debouncedFilter}
+                            isActiveLocation={isActiveLocation}
+                            navigateToUrl={navigateToUrl}
+                            handleOpenChange={handleOpenChange}
+                            isOpen={isOpen}
+                        />
+                    )}
+                </div>
             </div>
             {activeLocation !== undefined && (
                 <div className={classNames('px-0 border-left', styles.rightSubPanel)}>

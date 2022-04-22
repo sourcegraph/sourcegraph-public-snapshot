@@ -147,14 +147,10 @@ $card-header-height: 1.5rem;
     overflow: auto;
 }
 
-.references {
-    // Left side of the panel: only list
-    &--side-references-list {
-        // height: calc(100% - #{$filter-input-height} - #{$card-header-height});
-        // overflow-y: auto;
-        // overflow-x: hidden;
-    }
-
+// Lists of locations (definitions, references, implementations) on the left
+.location-lists {
+    height: calc(100% - #{$filter-input-height} - #{$card-header-height});
+    overflow: auto;
 }
 
 .side-blob {
@@ -168,6 +164,8 @@ $card-header-height: 1.5rem;
     }
 
     &--code {
-        height: 100%;
+        // The code view needs to be scrollable.
+        // Its height needs to be "100% - <size-of-header-that-has-filename>"
+        height: calc(100% - #{$card-header-height});
     }
 }
