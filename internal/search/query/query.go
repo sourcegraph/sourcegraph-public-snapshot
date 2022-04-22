@@ -132,9 +132,9 @@ func Run(step step) ([]Node, error) {
 	return step(nil)
 }
 
-func ValidatePlan(disjuncts Plan) error {
-	for _, disjunct := range disjuncts {
-		if err := validate(disjunct.ToParseTree()); err != nil {
+func ValidatePlan(plan Plan) error {
+	for _, basic := range plan {
+		if err := validate(basic.ToParseTree()); err != nil {
 			return err
 		}
 	}
