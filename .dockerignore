@@ -1,7 +1,5 @@
 .git/
 
-**/node_modules
-
 # Vim
 *.swp
 
@@ -45,7 +43,10 @@ yarn-error.log
 
 .tmp/*.jar
 
+/cmd/frontend/internal/graphqlbackend/node_modules
+
 /ui/artifacts
+/ui/node_modules
 /ui/assets/_goTemplates.js
 /ui/assets/analytics.js
 /ui/assets/bundle.js
@@ -90,8 +91,13 @@ cmd/indexer/debug
 /.gtm/
 
 # Web
+node_modules/
 /client/web
-client/browser/build
+
+# Browser
+/client/browser/build
+/client/browser/node_modules
+/client/browser/code-intel-extensions/node_modules
 
 # Extensions
 /extension-api/dist
