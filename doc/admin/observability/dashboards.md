@@ -5894,7 +5894,7 @@ To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100001`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(pg_stat_activity_count) by (job) / (sum(pg_settings_max_connections) by (job) - sum(pg_settings_superuser_reserved_connections) by (job))`
+Query: `sum(pg_stat_activity_count) by (job) / (sum(pg_settings_max_connections) by (job) - sum(pg_settings_superuser_reserved_connections) by (job)) * 100`
 
 </details>
 

@@ -39,7 +39,7 @@ func Postgres() *monitoring.Container {
 						Description:   "connection in use",
 						Owner:         monitoring.ObservableOwnerDevOps,
 						DataMustExist: false,
-						Query:         `sum(pg_stat_activity_count) by (job) / (sum(pg_settings_max_connections) by (job) - sum(pg_settings_superuser_reserved_connections) by (job))`,
+						Query:         `sum(pg_stat_activity_count) by (job) / (sum(pg_settings_max_connections) by (job) - sum(pg_settings_superuser_reserved_connections) by (job)) * 100`,
 						Panel:         monitoring.Panel().LegendFormat("{{job}}").Unit(monitoring.Percentage).Max(100).Min(0),
 						Warning:       monitoring.Alert().GreaterOrEqual(80).For(5 * time.Minute),
 						Critical:      monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
