@@ -32,6 +32,10 @@ type insightsQueryRunnerJob struct {
 
 var insightsQueryRunnerConfigInst = &insightsQueryRunnerBaseConfig{}
 
+func (s *insightsQueryRunnerJob) Description() string {
+	return "TODO"
+}
+
 func (s *insightsQueryRunnerJob) Config() []env.Config {
 	return []env.Config{insightsQueryRunnerConfigInst}
 }

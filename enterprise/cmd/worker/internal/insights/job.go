@@ -18,6 +18,10 @@ import (
 
 type insightsJob struct{}
 
+func (s *insightsJob) Description() string {
+	return "TODO"
+}
+
 func (s *insightsJob) Config() []env.Config {
 	return nil
 }
