@@ -149,11 +149,7 @@ func TestClient_Remove(t *testing.T) {
 }
 
 func TestClient_Archive(t *testing.T) {
-	root, err := os.MkdirTemp("", t.Name())
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(root)
+	root := gitserver.CreateRepoDir(t)
 
 	tests := map[api.RepoName]struct {
 		remote string
@@ -623,12 +619,7 @@ func TestRendezvousAddrForRepo(t *testing.T) {
 }
 
 func TestClient_P4Exec(t *testing.T) {
-	root, err := os.MkdirTemp("", t.Name())
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = os.RemoveAll(root) }()
-
+	_ = gitserver.CreateRepoDir(t)
 	tests := []struct {
 		name     string
 		host     string
@@ -931,11 +922,7 @@ func TestClient_BatchLog(t *testing.T) {
 
 func TestLocalGitCommand(t *testing.T) {
 	// creating a repo with 1 committed file
-	root, err := os.MkdirTemp("", t.Name())
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(root)
+	root := gitserver.CreateRepoDir(t)
 
 	for _, cmd := range []string{
 		"git init",
