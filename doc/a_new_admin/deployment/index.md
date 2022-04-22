@@ -64,6 +64,7 @@ By default, Sourcegraph provides versions of services it needs to operate, inclu
 ### External services guides
 See the following guides to use an external or managed version of each service type.
 
+- [PostgreSQL Guide](../postgres.md)
 - See [Using your PostgreSQL server](../external_services/postgres.md) to replace the bundled PostgreSQL instances.
 - See [Using your Redis server](../external_services/redis.md) to replace the bundled Redis instances.
 - See [Using a managed object storage service (S3 or GCS)](../external_services/object_storage.md) to replace the bundled MinIO instance.
@@ -99,3 +100,11 @@ Sourcegraph uses "migration" to refer to different, yet related activities. This
 It also refers to migration from one deployment type to the other, for example moving from Docker Single Container to Docker Compose.
 
 More details on both cases are provided in our [Migration docs](TBD)
+
+## Federation
+
+Federation refers to using multiple Sourcegraph servers together, each of which is responsible for a subset of repositories.
+
+Currently the only supported federation use case is [redirecting your Sourcegraph instance's users to Sourcegraph.com for _public_ repositories](public_repositories.md) (instead of mirroring, analyzing, and indexing public repositories on your Sourcegraph instance).
+
+> NOTE: We plan to enhance federation in the future to support merging data (such as cross-references) from multiple Sourcegraph instances, sharing user accounts, etc. [Post an issue](https://github.com/sourcegraph/sourcegraph/issues) if you have a specific feature request for federation.

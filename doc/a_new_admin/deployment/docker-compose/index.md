@@ -29,19 +29,21 @@ Our Docker Compose support also has the following requirements:
 
 ### Reference Repository
 
-Sourcegraph for Docker Compose is deployed using our [`sourcegraph/deploy-sourcegraph-docker` reference repository](https://github.com/sourcegraph/deploy-sourcegraph-docker/). This repository contains everything you need to [spin up](#installation) and [configure](./operations.md#configure) a Docker Compose Sourcegraph instance.
+We **strongly** recommend that you create and run Sourcegraph from your own fork of the [`sourcegraph/deploy-sourcegraph-docker` reference repository](https://github.com/sourcegraph/deploy-sourcegraph-docker/) to track customizations to the [Sourcegraph Docker Compose YAML](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml). 
 
-We **strongly** recommend that you create and run Sourcegraph from your own fork of the [reference repository](./index.md#reference-repository) to track customizations to the [Sourcegraph Docker Compose YAML](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml). **This will make [upgrades](#upgrade) far easier.**
+This repository contains everything you need to install and [configure](#configuration) a Docker Compose Sourcegraph instance, and will make [upgrades](#upgrade-and-migration) far easier.
+
+The sections below cover the process to [create a fork](#create-a-fork), [clone](#clone-your-fork), [configure a release branch](#configure-release-branch), and [make YAML customizations](#make-yaml-customizations). Once completed you'll be ready to [run](#run-sourcegraph) Sourcegrah
 
 #### Create a fork
 
-- [Create a fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo#forking-a-repository) of the [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) [reference repository](./index.md#reference-repository).
+[Create a fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo#forking-a-repository) of the [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) [reference repository](#reference-repository).
 
     > WARNING: Set your fork to **private** if you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository.
 
 #### Clone your fork
 
-- Clone your fork using the repository's URL.
+Clone your fork using the repository's URL.
 
     > NOTE: The `docker-compose.yaml` file currently depends on configuration files which live in the repository, so you must have the entire repository cloned onto your server.
 
@@ -51,13 +53,13 @@ We **strongly** recommend that you create and run Sourcegraph from your own fork
 
 #### Configure release branch
 
-- Add the [reference repository](./index.md#reference-repository) as an `upstream` remote so that you can [get updates](#upgrade).
+Add the [reference repository](#reference-repository)  as an `upstream` remote so that you can [get updates](#upgrade-and-migration).
 
   ```bash
   git remote add upstream https://github.com/sourcegraph/deploy-sourcegraph-docker
   ```
 
-- Create a `release` branch to track all of your customizations to Sourcegraph. This branch will be used to [upgrade Sourcegraph](#upgrade) and [install your Sourcegraph instance](./index.md#installation).
+Create a `release` branch to track all of your customizations to Sourcegraph. This branch will be used to [upgrade Sourcegraph](#upgrade-and-migration) and install your Sourcegraph instance.
 
   ```bash
   # Specify the version you want to install
@@ -82,6 +84,8 @@ docker-compose up -d
 Once the server is ready (the `sourcegraph-frontend-0` service is healthy when running `docker ps`), navigate to the hostname or IP address on port `80`.  Create the admin account, then you'll be guided through setting up Sourcegraph for code searching and navigation.
 
 ## Configuration
+
+The following section represents a number of key configuration items for your deployment. For more detailed configuration, see Sourcegraph's [configuration](../../config/index.md) docs.
 
 #### Enable tracing
 
@@ -121,7 +125,7 @@ Otherwise, follow the steps above for mounting SSH configuration to mount a host
 
 #### Expose debug port
 
-To [generate pprof profiling data](../../pprof.md), you must [configure your deployment](#configure) to expose port 6060 on one of your frontend containers, for example:
+To [generate pprof profiling data](../../pprof.md), you must configure your deployment to expose port 6060 on one of your frontend containers, for example:
 
 ```diff
   sourcegraph-frontend-0:
@@ -131,11 +135,13 @@ To [generate pprof profiling data](../../pprof.md), you must [configure your dep
 +     - '0.0.0.0:6060:6060'
 ```
 
-Also see [debug ports](../../pprof.md#debug-ports) for specific ports that can be exposed.
+For specific ports that can be exposed, see the [debug ports section](../../pprof.md#debug-ports) of Sourcegraphs's [generate pprof profiling data](../../pprof.md) docs.
 
 #### Use an external database
 
-The Docker Compose configuration has its own internal PostgreSQL and Redis databases. To preserve this data when you kill and recreate the containers, you can [use external services](../../external_services/index.md) for persistence.
+The Docker Compose configuration has its own internal PostgreSQL and Redis databases. 
+
+To preserve this data when you kill and recreate the containers, review Sourcegraph's External Services for additional information on how you can [use external services](../../external_services/index.md) for persistence.
 
 ### Set environment variables
 
@@ -152,15 +158,7 @@ sourcegraph-frontend-0:
 
 See ["Environment variables in Compose"](https://docs.docker.com/compose/environment-variables/) for other ways to pass these environment variables to the relevant services (including from the command line, a .env file, etc.).
 
-## Operation
-
-### Monitoring
-
-You can monitor the health of a deployment in several ways:
-
-- Using [Sourcegraph's built-in observability suite](../../observability/index.md), which includes dashboards and alerting for Sourcegraph services.
-- Using [`docker ps`](https://docs.docker.com/engine/reference/commandline/ps/) to check on the status of containers within the deployment (any tooling designed to work with Docker containers and/or Docker Compose will work too).
-  - This requires direct access to your instance's host machine.
+## Operations
 
 ### Manage storage
 
@@ -180,8 +178,15 @@ The following command allows a user to shell into a Sourcegraph database contain
 docker exec -it pgsql psql -U sg #access pgsql container and run psql
 docker exec -it codeintel-db psql -U sg #access codeintel-db container and run psql
 ```
+### Database Migrations
 
-## Backup and restore
+> NOTE: The `migrator` service is only available in versions `3.37` and later.
+
+The `frontend` container in the `docker-compose.yaml` file will automatically run on startup and migrate the databases if any changes are required, however administrators may wish to migrate their databases before upgrading the rest of the system when working with large databases. Sourcegraph guarantees database backward compatibility to the most recent minor point release so the database can safely be upgraded before the application code.
+
+To execute the database migrations independently, follow the [docker-compose instructions on how to manually run database migrations](../../how-to/manual_database_migrations.md#docker-compose). Running the `up` (default) command on the `migrator` of the *version you are upgrading to* will apply all migrations required by the next version of Sourcegraph.
+
+### Backup and restore
 
 The following instructions are specific to backing up and restoring the sourcegraph databases in a Docker Compose deployment. These do not apply to other deployment types.
 
@@ -194,7 +199,7 @@ The following instructions are specific to backing up and restoring the sourcegr
 >
 > The above may take a while if you have a lot of repositories. In the meantime, searches may be slow or return incomplete results. This process rarely takes longer than 6 hours and is usually **much** faster.
 
-### Back up sourcegraph databases
+#### Back up sourcegraph databases
 
 These instructions will back up the primary `sourcegraph` database and the [codeintel](../../../code_intelligence/index.md) database.
 
@@ -246,7 +251,7 @@ docker exec codeintel-db -c 'pg_dump -C --username sg sg' > codeintel_db.out
 
 6. Ensure the `sourcegraph_db.out` and `codeintel_db.out` files are moved to a safe and secure location. 
 
-### Restoring sourcegraph databases into a new environment
+#### Restoring sourcegraph databases into a new environment
 
 The following instructions apply **only if you are restoring your databases into a new deployment•• of sourcegraph ie: a new virtual machine 
 
@@ -313,7 +318,7 @@ zoekt-webserver-0           /sbin/tini -- /bin/sh -c z ...   Up (healthy)> docke
 7. Browse to your sourcegraph deployment, login and verify your existing configuration has been restored
 
 
-### Restoring sourcegraph databases into an existing environment
+#### Restoring sourcegraph databases into an existing environment
 
 1. `cd` to the `deploy-sourcegraph-docker/docker-compose` and stop the previous deployment and remove any existing volumes
 ```bash
@@ -380,13 +385,17 @@ zoekt-webserver-0           /sbin/tini -- /bin/sh -c z ...   Up (healthy)> docke
 
 7. Browse to your sourcegraph deployment, login and verify your existing configuration has been restored
 
-## Upgrade and migration
+## Monitoring
 
-First, view the [Sourcegraph changelog](../../../CHANGELOG.md) to see what's changed from your current version of Sourcegraph. You will also want to check the [Upgrade Notes](TBD) for any specific related to your particular upgrade scenario. Finally, if your upgrade includes migration to/from another deployment type, review our [Migration guides](TBD) prior to moving forward.
+You can monitor the health of a deployment in several ways:
 
-### Upgrade using release branch
+- Using [Sourcegraph's built-in observability suite](../../observability/index.md), which includes dashboards and alerting for Sourcegraph services.
+- Using [`docker ps`](https://docs.docker.com/engine/reference/commandline/ps/) to check on the status of containers within the deployment (any tooling designed to work with Docker containers and/or Docker Compose will work too).
+  - This requires direct access to your instance's host machine.
 
-If you [configured Docker Compose with a release branch](#configure-release-branch), when you upgrade, you can merge the corresponding upstream release tag into your `release` branch.
+## Upgrade
+
+If you [configured Docker Compose with a release branch](#configure-release-branch), when you upgrade you can merge the corresponding upstream release tag into your `release` branch.
 
 ```bash
 # fetch updates
@@ -422,158 +431,6 @@ docker-compose down --remove-orphans
 ```bash
 docker-compose up -d
 ```
-
-### Database migration
-
-For Sourcegraph **version `3.36` and later**, the `frontend` container in the `docker-compose.yaml` file will automatically run on startup and migrate the databases if any changes are required, however administrators may wish to migrate their databases before upgrading the rest of the system when working with large databases. Sourcegraph guarantees database backward compatibility to the most recent minor point release so the database can safely be upgraded before the application code.
-
-> NOTE: These values will work for a standard docker-compose deployment of Sourcegraph. If you've customized your deployment (e.g., using an external database service), you will have to modify the environment variables accordingly.
-
-To execute the database migrations independently, run the following commands:
-
-1. Check the current migration versions of all three databases:
-    ```bash
-    # This will output the current migration version for the frontend db
-    docker exec -it pgsql psql -U sg -c "SELECT * FROM schema_migrations;" 
-
-    # This will output the current migration version for the codeintel db
-    docker exec -it codeintel-db psql -U sg -c "SELECT * FROM codeintel_schema_migrations;"
-
-    # This will output the current migration version for the codeinsights db
-    docker exec -it codeinsights-db psql -U postgres -c "SELECT * FROM codeinsights_schema_migrations;"
-    ```
-
-    Verify all databases return `f` for `dirty` and note the current version.
-
-2. Start the migrations:
-
-    > NOTE: This script makes the assumption that the environment has all three databases enabled. If the configuration flag `DISABLE_CODE_INSIGHTS` is set and the `codeinsights-db` is unavailable, the `migrator` container will fail. Please see the [Migrating Without Code Insights](#migrating-without-code-insights) section below for more info.
-
-    ```bash
-    export SOURCEGRAPH_VERSION="The version you are upgrading to"
-    docker run --rm --name migrator_$SOURCEGRAPH_VERSION \
-        -e PGHOST='pgsql' \
-        -e PGPORT='5432' \
-        -e PGUSER='sg' \
-        -e PGPASSWORD='sg' \
-        -e PGDATABASE='sg' \
-        -e PGSSLMODE='disable' \
-        -e CODEINTEL_PGHOST='codeintel-db' \
-        -e CODEINTEL_PGPORT='5432' \
-        -e CODEINTEL_PGUSER='sg' \
-        -e CODEINTEL_PGPASSWORD='sg' \
-        -e CODEINTEL_PGDATABASE='sg' \
-        -e CODEINTEL_PGSSLMODE='disable' \
-        -e CODEINSIGHTS_PGHOST='codeinsights-db' \
-        -e CODEINSIGHTS_PGPORT='5432' \
-        -e CODEINSIGHTS_PGUSER='postgres' \
-        -e CODEINSIGHTS_PGPASSWORD='password' \
-        -e CODEINSIGHTS_PGDATABASE='postgres' \
-        -e CODEINSIGHTS_PGSSLMODE='disable' \
-        --network=docker-compose_sourcegraph \
-        sourcegraph/migrator:$SOURCEGRAPH_VERSION \
-        up
-    ```
-
-3. Observe the output:
-
-    Run:
-    ```bash
-    docker logs migrator_$SOURCEGRAPH_VERSION
-    ```
-
-    You should see output similar to:
-
-    ```text
-    migrator | t=2022-01-26T03:14:35+0000 lvl=info msg="Checked current version" schema=frontend version=1528395964 dirty=false
-    migrator | t=2022-01-26T03:14:35+0000 lvl=info msg="Checked current version" schema=codeintel version=1000000030 dirty=false
-    migrator | t=2022-01-26T03:14:35+0000 lvl=info msg="Checked current version" schema=codeinsights version=1000000024 dirty=false
-    migrator | t=2022-01-26T03:14:35+0000 lvl=info msg="Checked current version" schema=frontend version=1528395964 dirty=false
-    migrator | t=2022-01-26T03:14:35+0000 lvl=info msg="Upgrading schema" schema=frontend
-    migrator | t=2022-01-26T03:14:35+0000 lvl=info msg="Running up migration" schema=frontend migrationID=1528395965
-    migrator | t=2022-01-26T03:14:35+0000 lvl=info msg="Running up migration" schema=frontend migrationID=1528395966
-    migrator | t=2022-01-26T03:14:35+0000 lvl=info msg="Running up migration" schema=frontend migrationID=1528395967
-    migrator | t=2022-01-26T03:14:35+0000 lvl=info msg="Running up migration" schema=frontend migrationID=1528395968
-    migrator | t=2022-01-26T03:14:35+0000 lvl=info msg="Checked current version" schema=codeintel version=1000000030 dirty=false
-    migrator | t=2022-01-26T03:14:35+0000 lvl=info msg="Upgrading schema" schema=codeintel
-    migrator | t=2022-01-26T03:14:35+0000 lvl=info msg="Checked current version" schema=codeinsights version=1000000024 dirty=false
-    migrator | t=2022-01-26T03:14:35+0000 lvl=info msg="Upgrading schema" schema=codeinsights
-    migrator | t=2022-01-26T03:14:35+0000 lvl=info msg="Running up migration" schema=codeinsights migrationID=1000000025
-    migrator exited with code 0
-    ```
-
-If you see an error message or any of the databases have been flagged as "dirty", please follow ["How to troubleshoot a dirty database"](../../../admin/how-to/dirty_database.md). A dirty database will not affect your ability to use Sourcegraph however it will need to be resolved to upgrade further. If you are unable to resolve the issues, contact support at <mailto:support@sourcegraph.com> for further assistance and provide the output of the three `psql` commands. Otherwise, you are now safe to upgrade Sourcegraph.
-
-
-### Migrating without Code Insights
-
-If the `DISABLE_CODE_INSIGHTS=true` feature flag is set in Sourcegraph and the `codeinsights-db` is unavailable to the `migrator` container, the standard migration process will fail. Follow these steps to execute migrations to the `frontend` and `codeintel` databases:
-
-1. Run the following `psql` commands in the containers to log the current migration state of the database:
-
-    ```bash
-    # This will output the current migration version for the frontend db
-    docker exec -it pgsql psql -U sg -c "SELECT * FROM schema_migrations;" 
-
-    # This will output the current migration version for the codeintel db
-    docker exec -it codeintel-db psql -U sg -c "SELECT * FROM codeintel_schema_migrations;"
-    ```
-
-    The output should look something like (version numbers likely will not match):
-    ```text
-
-    version   | dirty
-    ------------+-------
-    1000000024 | f
-    (1 row)
-    ```
-
-    Verify all databases return `f` for `dirty` and note the current verison.
-
-1. Run the `migrator` container to migrate the `frontend` database:
-
-    ```bash
-    export SOURCEGRAPH_VERSION="The version you are upgrading to"
-    docker run --rm --name migrator_$SOURCEGRAPH_VERSION_frontend \
-        -e PGHOST='pgsql' \
-        -e PGPORT='5432' \
-        -e PGUSER='sg' \
-        -e PGPASSWORD='sg' \
-        -e PGDATABASE='sg' \
-        -e PGSSLMODE='disable' \
-        -e CODEINTEL_PGHOST='codeintel-db' \
-        -e CODEINTEL_PGPORT='5432' \
-        -e CODEINTEL_PGUSER='sg' \
-        -e CODEINTEL_PGPASSWORD='sg' \
-        -e CODEINTEL_PGDATABASE='sg' \
-        -e CODEINTEL_PGSSLMODE='disable' \
-        --network=docker-compose_sourcegraph \
-        sourcegraph/migrator:$SOURCEGRAPH_VERSION \
-        up -db frontend
-    ```
-
-    Run the `migrator` container to migrate the `codeintel` database:
-    ```bash
-    export SOURCEGRAPH_VERSION="The version you are upgrading to"
-    docker run --rm --name migrator_$SOURCEGRAPH_VERSION_codeintel \
-        -e PGHOST='pgsql' \
-        -e PGPORT='5432' \
-        -e PGUSER='sg' \
-        -e PGPASSWORD='sg' \
-        -e PGDATABASE='sg' \
-        -e PGSSLMODE='disable' \
-        -e CODEINTEL_PGHOST='codeintel-db' \
-        -e CODEINTEL_PGPORT='5432' \
-        -e CODEINTEL_PGUSER='sg' \
-        -e CODEINTEL_PGPASSWORD='sg' \
-        -e CODEINTEL_PGDATABASE='sg' \
-        -e CODEINTEL_PGSSLMODE='disable' \
-        --network=docker-compose_sourcegraph \
-        sourcegraph/migrator:$SOURCEGRAPH_VERSION \
-        up -db codeintel
-    ```
-
-If you see an error message or any of the databases have been flagged as "dirty", please follow ["How to troubleshoot a dirty database"](../../../admin/how-to/dirty_database.md). A dirty database will not affect your ability to use Sourcegraph however it will need to be resolved to upgrade further. If you are unable to resolve the issues, contact support at <mailto:support@sourcegraph.com> for further assistance and provide the output of the three `psql` commands. Otherwise, you are now safe to upgrade Sourcegraph.
 
 ## Reference
 

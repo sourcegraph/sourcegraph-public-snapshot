@@ -16,7 +16,7 @@ It takes less than a minute to run and install Sourcegraph using Docker:
 
 Once the server is ready (logo is displayed in the terminal), navigate to the hostname or IP address on port `7080`.  Create the admin account, then you'll be guided through setting up Sourcegraph for code searching and navigation.
 
-For next steps and further configuration options, visit the [site administration documentation](../../index.md).
+For next steps and further configuration options, review the high-level configuration items below, or visit the [detailed configuration documentation](../../config/index.md).
 
 > WARNING: **We do not recommend using this method for a production instance.** If deploying a production instance, see [our recommendations](../index.md) for how to choose a deployment type that suits your needs. We recommend [Docker Compose](../docker-compose/index.md) for most initial production deployments.
 
@@ -26,7 +26,7 @@ For next steps and further configuration options, visit the [site administration
 
 Change the `docker` `--publish` argument to make it listen on the specific interface and port on your host machine. For example, `docker run ... --publish 0.0.0.0:80:7080 ...` would make it accessible on port 80 of your machine. For more information, see "[Publish or expose port](https://docs.docker.com/engine/reference/commandline/run/#publish-or-expose-port--p---expose)" in the Docker documentation.
 
-The other option is to deploy and run Sourcegraph on a cloud provider. For an example, see documentation to [deploy to Google Cloud](./google_cloud.md).
+The other option is to deploy and run Sourcegraph on a cloud provider. For an example, see the [cloud installation section](#cloud-installation-guides).
 
 ### Git configuration and authentication
 
@@ -134,11 +134,11 @@ SELECT * FROM users;
 
 ## Upgrade
 
-Before upgrading, refer to the [update notes for single-container Sourcegraph with Docker](../../updates/pure_docker.md).
+Before upgrading, refer to the [update notes for single-container Sourcegraph with Docker](../../deployment/upgrade/server.md).
 
 To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.N.N` is the version number) in place of the older one, using the same Docker volumes. Your server's data will be migrated automatically if needed.
 
-You can always find the version number of the latest release at [docs.sourcegraph.com](https://docs.sourcegraph.com) in the `docker run` command's image tag.
+You can always find the version number details of the latest release via the [changelog](https://docs.sourcegraph.com/changelog).
 
 - As a precaution, before updating, we recommend backing up the contents of the Docker volumes used by Sourcegraph.
 - If you need a HA deployment, use the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph).

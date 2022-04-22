@@ -1,20 +1,12 @@
 # Upgrades and Migration
 
-The [changelog](../../CHANGELOG.md) provides all information related to any changes that are/were part of a release.
+A new version of Sourcegraph is released every month (with patch releases in between as needed). We actively maintain the two most recent, monthly releases of Sourcegraph. The [changelog](../../CHANGELOG.md) provides all information related to any changes that are/were in a release.
  
 This, in combination with [Upgrade notes](#upgrade-notes) will help you prepare your instance for an upgrade. 
 
-In parallel or independent of your upgrade activities, migration of data may be required as well. This can be true when upgrading to a specific version, or when you are looking to migrate from one deployment type to the other (for example moving from Docker Single Container to Docker Compose.
-
-As part of any upgrade activity you should review the [Migration](#migration) section below, inlcuding any specific Migration instructions specific provided as part of your deployment type (see specific deployment docs for deployment type migration instruction).
+In parallel or independent of your upgrade activities, migration of data may be required as well. This can be true when upgrading to a specific version, or when you are looking to migrate from one deployment typeAs part of this activity you should review the [Migration](#migration) section below as well as the Migration instructions specific to your deployment type.
 
 ## Upgrades
-
-Upgrading refers to the specific action of moving from an older to newer release. 
-
-As part of any upgrade activity, make sure you have verified our [Upgrade policy](#upgrade-policy) below. You will also want to check with the Upgrade notes which vary by deployment type.
-
-Finally, in some cases your upgrade may be limited by migration constraints. For additional details, review the [out-of-band migrations section](#out-of-band-migrations) as well.
 
 ### Upgrade policy
 
@@ -43,7 +35,7 @@ For product update notes, please refer to the [changelog](../../CHANGELOG.md).
 For Sourcegraph versions 3.37 and later the migrator service runs as an initial step of the upgrade process for Kubernetes and Docker-compose instance deployments. This service is also designed to be invokable directly by a site administrator to perform common tasks dealing with database state. For more information on the service, view our [migration docs](TBD).
 
 
-### Migrating to a new deployment type
+## Migrating to a new deployment type
 
 See [this page](../install/index.md) to get advice on which deployment type you should be running.
 
