@@ -231,21 +231,11 @@ type ListDependencyReposOpts struct {
 }
 
 func (s *Service) ListDependencyRepos(ctx context.Context, opts ListDependencyReposOpts) ([]Repo, error) {
-	drs, err := s.dependenciesStore.ListDependencyRepos(ctx, store.ListDependencyReposOpts(opts))
-	if err != nil {
-		return nil, err
-	}
-
-	return drs, nil
+	return s.dependenciesStore.ListDependencyRepos(ctx, store.ListDependencyReposOpts(opts))
 }
 
 func (s *Service) UpsertDependencyRepos(ctx context.Context, deps []Repo) ([]Repo, error) {
-	drs, err := s.dependenciesStore.UpsertDependencyRepos(ctx, deps)
-	if err != nil {
-		return nil, err
-	}
-
-	return drs, nil
+	return s.dependenciesStore.UpsertDependencyRepos(ctx, deps)
 }
 
 func (s *Service) DeleteDependencyReposByID(ctx context.Context, ids ...int) error {

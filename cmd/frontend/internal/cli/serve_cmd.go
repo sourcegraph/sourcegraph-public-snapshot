@@ -118,10 +118,6 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	log.SetFlags(0)
 	log.SetPrefix("")
 
-	if err := profiler.Init(); err != nil {
-		log.Fatalf("failed to initialize profiling: %v", err)
-	}
-
 	ready := make(chan struct{})
 	go debugserver.NewServerRoutine(ready).Start()
 
@@ -175,6 +171,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
+	profiler.Init()
 
 	// Run enterprise setup hook
 	enterprise := enterpriseSetupHook(db, conf.DefaultClient())

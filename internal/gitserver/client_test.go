@@ -22,12 +22,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/migration"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -389,6 +391,197 @@ func TestAddrForRepo(t *testing.T) {
 	}
 }
 
+func TestAddrForRepoFromDB(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	// enable feature flag
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				EnableGitserverClientLookupTable: true,
+				// Set the rate at 100% for this test
+				GitserverClientLookupTableRate: 100,
+			},
+		},
+	})
+	defer conf.Mock(nil)
+
+	// enable dotCom mode
+	envvar.MockSourcegraphDotComMode(true)
+	defer envvar.MockSourcegraphDotComMode(false)
+
+	addrs := []string{"gitserver-1", "gitserver-2", "gitserver-3"}
+	pinned := map[string]string{
+		"github.com/sourcegraph/repo2": "gitserver-1",
+	}
+
+	testCases := []struct {
+		name           string
+		repo           api.RepoName
+		want           string
+		dotComDisabled bool
+		dbNotCalled    bool
+	}{
+		{
+			name: "repo1",
+			repo: api.RepoName("github.com/sourcegraph/repo1"),
+			want: "gitserver-2",
+		},
+		{
+			name: "normalisation",
+			repo: api.RepoName("github.com/sourcegraph/repo1.git"),
+			want: "gitserver-2",
+		},
+		{
+			name: "repo not in the DB",
+			repo: api.RepoName("github.com/sourcegraph/sourcegraph.git"),
+			want: "gitserver-2",
+		},
+		{
+			name:        "pinned repo", // different server address that the hashing function would normally yield
+			repo:        api.RepoName("github.com/sourcegraph/repo2"),
+			want:        "gitserver-1",
+			dbNotCalled: true,
+		},
+		{
+			name:           "repo1",
+			repo:           api.RepoName("github.com/sourcegraph/repo1"),
+			want:           "gitserver-2",
+			dotComDisabled: true,
+			dbNotCalled:    true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.dotComDisabled {
+				envvar.MockSourcegraphDotComMode(false)
+			} else {
+				envvar.MockSourcegraphDotComMode(true)
+			}
+
+			db := database.NewMockDB()
+
+			store := database.NewMockGitserverRepoStore()
+			store.GetByNameFunc.SetDefaultReturn(&types.GitserverRepo{
+				RepoID:        1,
+				ShardID:       "gitserver-1",
+				CloneStatus:   types.CloneStatusNotCloned,
+				RepoSizeBytes: 100,
+			}, nil)
+			db.GitserverReposFunc.SetDefaultReturn(store)
+
+			got, err := gitserver.AddrForRepo(context.Background(), "gitserver", db, tc.repo, gitserver.GitServerAddresses{
+				Addresses:     addrs,
+				PinnedServers: pinned,
+			})
+			if err != nil {
+				t.Fatal("Error during getting gitserver address")
+			}
+			if got != tc.want {
+				t.Fatalf("Want %q, got %q", tc.want, got)
+			}
+			if tc.dbNotCalled && len(db.GitserverReposFunc.History()) > 0 {
+				t.Fatalf("Should not have called the database")
+			} else if !tc.dbNotCalled && len(db.GitserverReposFunc.History()) == 0 {
+				t.Fatalf("Should have called the database")
+			}
+		})
+	}
+}
+
+func TestAddrForRepoFromDBRates(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	gitserver.AddrForRepoCounter = 0
+
+	// enable dotCom mode
+	envvar.MockSourcegraphDotComMode(true)
+	defer envvar.MockSourcegraphDotComMode(false)
+
+	addrs := []string{"gitserver-1", "gitserver-2", "gitserver-3"}
+	pinned := map[string]string{
+		"github.com/sourcegraph/repo2": "gitserver-1",
+	}
+
+	defer conf.Mock(nil)
+
+	// enable feature flag with 50% rate
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				EnableGitserverClientLookupTable: true,
+				GitserverClientLookupTableRate:   50,
+			},
+		},
+	})
+
+	check := func(repo string, dbCalled bool) {
+		t.Helper()
+
+		db := database.NewMockDB()
+		store := database.NewMockGitserverRepoStore()
+		store.GetByNameFunc.SetDefaultReturn(&types.GitserverRepo{
+			RepoID:        1,
+			ShardID:       "gitserver-1",
+			CloneStatus:   types.CloneStatusNotCloned,
+			RepoSizeBytes: 100,
+		}, nil)
+		db.GitserverReposFunc.SetDefaultReturn(store)
+
+		_, err := gitserver.AddrForRepo(context.Background(), "gitserver", db, api.RepoName(repo), gitserver.GitServerAddresses{
+			Addresses:     addrs,
+			PinnedServers: pinned,
+		})
+		if err != nil {
+			t.Fatal("Error during getting gitserver address")
+		}
+		if dbCalled && len(db.GitserverReposFunc.History()) == 0 {
+			t.Fatalf("Should have called the database")
+		} else if !dbCalled && len(db.GitserverReposFunc.History()) > 0 {
+			t.Fatalf("Should not have called the database")
+		}
+	}
+
+	// first request should be served from the hash
+	// Rate: 50%, Counter: 1, Mod: 100 / 50 = 2, Result: 1 % 2 = 1
+	check("github.com/sourcegraph/repo1", false)
+
+	// second request should be served from the DB
+	// Rate: 50%, Counter: 2, Mod: 100 / 50 = 2, Result: 2 % 2 = 0
+	check("github.com/sourcegraph/repo1", true)
+
+	// third request should be served from the hash
+	// Rate: 50%, Counter: 3, Mod: 100 / 50 = 2, Result: 3 % 2 = 1
+	check("github.com/sourcegraph/repo1", false)
+
+	// Let's change the rate to 30%
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				EnableGitserverClientLookupTable: true,
+				GitserverClientLookupTableRate:   30,
+			},
+		},
+	})
+
+	// next request should be served from the hash
+	// Rate: 30%, Counter: 4, Mod: 100 / 30 = 3, Result: 4 % 3 = 1
+	check("github.com/sourcegraph/repo1", false)
+
+	// next request should be served from the hash
+	// Rate: 30%, Counter: 5, Mod: 100 / 30 = 3, Result: 5 % 3 = 2
+	check("github.com/sourcegraph/repo1", false)
+
+	// next request should be served from the DB
+	// Rate: 30%, Counter: 6, Mod: 100 / 30 = 3, Result: 6 % 3 = 0
+	check("github.com/sourcegraph/repo1", true)
+}
+
 func TestRendezvousAddrForRepo(t *testing.T) {
 	addrs := []string{"gitserver-1", "gitserver-2", "gitserver-3"}
 
@@ -733,5 +926,49 @@ func TestClient_BatchLog(t *testing.T) {
 	}
 	if diff := cmp.Diff(expectedResults, results); diff != "" {
 		t.Errorf("unexpected results (-want +got):\n%s", diff)
+	}
+}
+
+func TestLocalGitCommand(t *testing.T) {
+	// creating a repo with 1 committed file
+	root, err := os.MkdirTemp("", t.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(root)
+
+	for _, cmd := range []string{
+		"git init",
+		"echo -n infile1 > file1",
+		"touch --date=2006-01-02T15:04:05Z file1 || touch -t 200601021704.05 file1",
+		"git add file1",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_AUTHOR_DATE=2006-01-02T15:04:05Z GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	} {
+		c := exec.Command("bash", "-c", `GIT_CONFIG_GLOBAL="" GIT_CONFIG_SYSTEM="" `+cmd)
+		c.Dir = root
+		out, err := c.CombinedOutput()
+		if err != nil {
+			t.Fatalf("Command %q failed. Output was:\n\n%s", cmd, out)
+		}
+	}
+
+	ctx := context.Background()
+	command := gitserver.NewLocalGitCommand(api.RepoName(filepath.Base(root)), "log")
+	command.ReposDir = filepath.Dir(root)
+
+	stdout, stderr, err := command.DividedOutput(ctx)
+	if err != nil {
+		t.Fatalf("Local git command run failed. Command: %q Error:\n\n%s", command, err)
+	}
+	if len(stderr) > 0 {
+		t.Fatalf("Local git command run failed. Command: %q Error:\n\n%s", command, stderr)
+	}
+
+	stringOutput := string(stdout)
+	if !strings.Contains(stringOutput, "commit1") {
+		t.Fatalf("No commit message in git log output. Output: %s", stringOutput)
+	}
+	if command.ExitStatus() != 0 {
+		t.Fatalf("Local git command finished with non-zero status. Status: %d", command.ExitStatus())
 	}
 }
