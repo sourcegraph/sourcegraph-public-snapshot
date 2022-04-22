@@ -54,10 +54,7 @@ func main() {
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
-
-	if err := profiler.Init(); err != nil {
-		log.Fatalf("Failed to start profiler: %v", err)
-	}
+	profiler.Init()
 
 	if err := config.Validate(); err != nil {
 		log.Fatalf("Failed to load config: %s", err)

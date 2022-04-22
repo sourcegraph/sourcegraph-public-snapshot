@@ -22,9 +22,7 @@ export interface CategoricalChartContent<Datum> {
 }
 
 export interface SeriesChartContent<Datum> {
-    data: Datum[]
     series: Series<Datum>[]
-    getXValue: (datum: Datum) => Date
 }
 
 export interface InsightCategoricalContent<Datum> {
@@ -116,8 +114,9 @@ export interface AccessibleInsightInfo {
 }
 
 export interface BackendInsightDatum {
-    dateTime: number
-    [seriesKey: string]: number | string
+    dateTime: Date
+    value: number | null
+    link?: string
 }
 
 export interface BackendInsightData {

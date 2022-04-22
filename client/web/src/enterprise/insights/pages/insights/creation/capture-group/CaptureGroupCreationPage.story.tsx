@@ -6,7 +6,6 @@ import { noop } from 'lodash'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../../components/WebStory'
-import { LINE_CHART_WITH_HUGE_NUMBER_OF_LINES } from '../../../../../../views/mocks/charts-content'
 import { CodeInsightsBackendContext, SeriesChartContent, CodeInsightsGqlBackend } from '../../../../core'
 
 import { CaptureGroupCreationPage as CaptureGroupCreationPageComponent } from './CaptureGroupCreationPage'
@@ -31,21 +30,7 @@ class CodeInsightExampleBackend extends CodeInsightsGqlBackend {
             { id: '4', name: 'github.com/another-example/sub-repo-2' },
         ])
 
-    public getCaptureInsightContent = (): Promise<SeriesChartContent<any>> =>
-        Promise.resolve(LINE_CHART_WITH_HUGE_NUMBER_OF_LINES).then(data => {
-            const { data: datumList, series, xAxis } = data
-
-            // TODO: Remove this when the dashboard page has new chart fetchers
-            return {
-                data: datumList,
-                series: series.map(series => ({
-                    dataKey: series.dataKey,
-                    name: series.name ?? '',
-                    color: series.stroke,
-                })),
-                getXValue: datum => new Date(+datum[xAxis.dataKey]),
-            }
-        })
+    public getCaptureInsightContent = (): Promise<SeriesChartContent<any>> => Promise.resolve({ series: [] })
 }
 
 const api = new CodeInsightExampleBackend({} as any)
