@@ -64,10 +64,7 @@ func main() {
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
-
-	if err := profiler.Init(); err != nil {
-		log.Fatalf("failed to start Google Cloud profiler: %s", err)
-	}
+	profiler.Init()
 
 	// Ready immediately
 	ready := make(chan struct{})

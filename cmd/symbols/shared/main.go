@@ -37,11 +37,6 @@ type SetupFunc func(observationContext *observation.Context, gitserverClient git
 func Main(setup SetupFunc) {
 	routines := []goroutine.BackgroundRoutine{}
 
-	// Set up Google Cloud Profiler when running in Cloud
-	if err := profiler.Init(); err != nil {
-		log.Fatalf("Failed to start profiler: %v", err)
-	}
-
 	// Initialize tracing/metrics
 	observationContext := &observation.Context{
 		Logger:     log15.Root(),
@@ -71,6 +66,7 @@ func Main(setup SetupFunc) {
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
+	profiler.Init()
 
 	// Start debug server
 	ready := make(chan struct{})
