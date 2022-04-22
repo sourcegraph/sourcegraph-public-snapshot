@@ -383,7 +383,7 @@ func TestConvertEmptyGroupsToLiteral(t *testing.T) {
 	}
 }
 
-func TestDnfBasics(t *testing.T) {
+func TestPipeline(t *testing.T) {
 	cases := []struct {
 		input string
 		want  string
@@ -417,12 +417,16 @@ func TestDnfBasics(t *testing.T) {
 	}, {
 		input: `(repo:a b) or (repo:c d)`,
 		want:  `(or (and "repo:a" "b") (and "repo:c" "d"))`,
-	// }, {
+		// Bug. See: https://github.com/sourcegraph/sourcegraph/issues/34018
+		// }, {
 		// 	input: `repo:a b or repo:c d`,
 		// 	want:  `(or (and "repo:a" "b") (and "repo:c" "d"))`,
 	}, {
 		input: `(repo:a b) and (repo:c d)`,
 		want:  `(and "repo:a" "repo:c" "b" "d")`,
+	}, {
+		input: `(repo:a or repo:b) (c or d)`,
+		want:  `(or (and "repo:a" (or "c" "d")) (and "repo:b" (or "c" "d")))`,
 	}, {
 		input: `(repo:a (b or c)) or (repo:d e f)`,
 		want:  `(or (and "repo:a" (or "b" "c")) (and "repo:d" "e f"))`,

@@ -132,15 +132,6 @@ func Run(step step) ([]Node, error) {
 	return step(nil)
 }
 
-func Validate(disjuncts [][]Node) error {
-	for _, disjunct := range disjuncts {
-		if err := validate(disjunct); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func ValidatePlan(disjuncts Plan) error {
 	for _, disjunct := range disjuncts {
 		if err := validate(disjunct.ToParseTree()); err != nil {
@@ -183,7 +174,7 @@ func Pipeline(steps ...step) (Plan, error) {
 		return nil, err
 	}
 
-	plan := DnfBasics(nodes)
+	plan := BuildPlan(nodes)
 	if err := ValidatePlan(plan); err != nil {
 		return nil, err
 	}
