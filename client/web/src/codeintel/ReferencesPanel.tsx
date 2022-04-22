@@ -70,7 +70,7 @@ type Token = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisio
 
 interface ReferencesPanelProps
     extends SettingsCascadeProps,
-        PlatformContextProps,
+        PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings' | 'forceUpdateTooltip'>,
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
