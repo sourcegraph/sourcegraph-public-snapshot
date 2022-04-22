@@ -7,8 +7,6 @@ import '@sourcegraph/shared/src/polyfills'
 
 import './monitoring/initMonitoring'
 
-import React from 'react'
-
 import { render } from 'react-dom'
 
 import { OpenSourceWebApp } from './OpenSourceWebApp'

@@ -1,4 +1,4 @@
-import React, { useRef, forwardRef, InputHTMLAttributes, ReactNode } from 'react'
+import { useRef, forwardRef, InputHTMLAttributes, ReactNode } from 'react'
 
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'

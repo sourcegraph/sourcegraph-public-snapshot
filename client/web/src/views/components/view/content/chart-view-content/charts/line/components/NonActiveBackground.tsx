@@ -1,4 +1,4 @@
-import React, { ReactElement, useContext, useMemo } from 'react'
+import { ReactElement, useContext, useMemo } from 'react'
 
 import { PatternLines } from '@visx/pattern'
 import { DataContext } from '@visx/xychart'

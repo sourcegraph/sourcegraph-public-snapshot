@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { storiesOf } from '@storybook/react'
 import { subMinutes } from 'date-fns/esm'
 import { noop } from 'lodash'

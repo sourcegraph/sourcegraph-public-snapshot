@@ -15,7 +15,7 @@
     "paths": {
       "*": ["src/types/*", "../shared/src/types/*", "../common/src/types/*", "*"],
     },
-    "jsx": "react",
+    "jsx": "react-jsx",
     "resolveJsonModule": true,
     "rootDir": ".",
     "outDir": "out",
