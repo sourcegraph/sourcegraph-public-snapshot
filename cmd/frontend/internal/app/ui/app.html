@@ -40,7 +40,15 @@
 	'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 	})(window,document,'script','dataLayer','GTM-TB4NLS7');</script>
 	<!-- End Google Tag Manager -->
+	<!-- Sentry -->
 	<script src='https://js.sentry-cdn.com/ae2f74442b154faf90b5ff0f7cd1c618.min.js' crossorigin="anonymous"></script>
+	<!-- End Sentry -->
+	<!-- Datadog RUM -->
+    <script ignore-csp>(function(h,o,u,n,d) { h=h[d]=h[d]||{q:[],onReady:function(c){h.q.push(c)}}
+    d=o.createElement(u);d.async=1;d.src=n;n=o.getElementsByTagName(u)[0];
+    n.parentNode.insertBefore(d,n)})(window,document,'script',
+    'https://www.datadoghq-browser-agent.com/datadog-rum-v4.js','DD_RUM');</script>
+	<!-- End Datadog RUM -->
 	{{ end }}
 	<script ignore-csp>
 		window.context = {{.Context }}

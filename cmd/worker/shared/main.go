@@ -13,6 +13,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations/migrators"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks"
@@ -39,8 +40,15 @@ func Start(additionalJobs map[string]job.Job, registerEnterpriseMigrations func(
 	registerMigrations := composeRegisterMigrations(migrators.RegisterOSSMigrations, registerEnterpriseMigrations)
 
 	builtins := map[string]job.Job{
-		"webhook-log-janitor":    webhooks.NewJanitor(),
-		"out-of-band-migrations": migrations.NewMigrator(registerMigrations),
+		"webhook-log-janitor":                   webhooks.NewJanitor(),
+		"out-of-band-migrations":                migrations.NewMigrator(registerMigrations),
+		"codeintel-upload-janitor":              codeintel.NewUploadJanitorJob(),
+		"codeintel-upload-expirer":              codeintel.NewUploadExpirerJob(),
+		"codeintel-commitgraph-updater":         codeintel.NewCommitGraphUpdaterJob(),
+		"codeintel-documents-indexer":           codeintel.NewDocumentsIndexerJob(),
+		"codeintel-autoindexing-scheduler":      codeintel.NewAutoindexingSchedulerJob(),
+		"codeintel-dependencies-indexer":        codeintel.NewDependenciesIndexerJob(),
+		"codeintel-policies-repository-matcher": codeintel.NewPoliciesRepositoryMatcherJob(),
 	}
 
 	jobs := map[string]job.Job{}
@@ -54,11 +62,6 @@ func Start(additionalJobs map[string]job.Job, registerEnterpriseMigrations func(
 	// Setup environment variables
 	loadConfigs(jobs)
 
-	// Set up Google Cloud Profiler when running in Cloud
-	if err := profiler.Init(); err != nil {
-		log.Fatalf("Failed to start profiler: %v", err)
-	}
-
 	env.Lock()
 	env.HandleHelpFlag()
 	conf.Init()
@@ -66,6 +69,8 @@ func Start(additionalJobs map[string]job.Job, registerEnterpriseMigrations func(
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
+	profiler.Init()
+
 	if err := keyring.Init(context.Background()); err != nil {
 		log.Fatalf("Failed to intialise keyring: %v", err)
 	}

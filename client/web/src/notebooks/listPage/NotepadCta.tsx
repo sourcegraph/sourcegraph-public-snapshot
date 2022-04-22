@@ -2,7 +2,7 @@ import React from 'react'
 
 import { ProductStatusBadge, Button } from '@sourcegraph/wildcard'
 
-import { NotepadIcon } from '../../search/SearchStack'
+import { NotepadIcon } from '../../search/Notepad'
 import { ThemePreference } from '../../stores/themeState'
 import { useTheme } from '../../theme'
 

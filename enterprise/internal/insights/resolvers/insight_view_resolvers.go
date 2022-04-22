@@ -106,14 +106,20 @@ func (i *insightViewResolver) registerDataSeriesGenerators() {
 		recordedSeries,
 	)
 
+	jitStreamingGenerator := newSeriesResolverGenerator(
+		func(series types.InsightViewSeries) bool {
+			return series.JustInTime && !series.GeneratedFromCaptureGroups
+		},
+		streamingSeriesJustInTime,
+	)
+
 	// build the chain of generators
 	jitCaptureGroupGenerator.SetNext(recordedCaptureGroupGenerator)
 	recordedCaptureGroupGenerator.SetNext(recordedGenerator)
+	recordedGenerator.SetNext(jitStreamingGenerator)
 
-	// set the local variable to the first generator in the chain
+	// set the struct variable to the first generator in the chain
 	i.dataSeriesGenerator = jitCaptureGroupGenerator
-
-	return
 }
 
 func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.InsightSeriesResolver, error) {
@@ -457,8 +463,7 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 		return nil, errors.New("No insight view found with this id")
 	}
 
-	var filters types.InsightViewFilters
-	filters = filtersFromInput(&args.Input.ViewControls.Filters)
+	filters := filtersFromInput(&args.Input.ViewControls.Filters)
 
 	view, err := tx.UpdateView(ctx, types.InsightView{
 		UniqueID:         insightViewId,

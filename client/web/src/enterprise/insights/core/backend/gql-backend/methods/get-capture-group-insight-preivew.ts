@@ -5,7 +5,7 @@ import {
     GetCaptureGroupInsightPreviewVariables,
 } from '../../../../../../graphql-operations'
 import { CaptureInsightSettings, SeriesChartContent } from '../../code-insights-backend-types'
-import { getDataPoints, getLinkKey, InsightDataSeriesData } from '../../utils/create-line-chart-content'
+import { generateLinkURL, InsightDataSeriesData } from '../../utils/create-line-chart-content'
 import { getStepInterval } from '../utils/get-step-interval'
 
 import { DATA_SERIES_COLORS_LIST, MAX_NUMBER_OF_SERIES } from './get-backend-insight-data/deserializators'
@@ -22,8 +22,9 @@ const GET_CAPTURE_GROUP_INSIGHT_PREVIEW_GQL = gql`
     }
 `
 export interface CaptureGroupInsightDatum {
-    dateTime: number
-    [seriesKey: string]: number | string
+    dateTime: Date
+    value: number | null
+    link?: string
 }
 
 export const getCaptureGroupInsightsPreview = (
@@ -76,19 +77,23 @@ export const getCaptureGroupInsightsPreview = (
             )
 
             return {
-                data: getDataPoints({
-                    series: indexedSeries,
-                    seriesDefinitionMap,
-                    includeRepoRegexp: '',
-                    excludeRepoRegexp: '',
-                }),
                 series: indexedSeries.map((line, index) => ({
-                    dataKey: line.seriesId,
+                    id: line.seriesId,
+                    data: line.points.map(point => ({
+                        value: point.value,
+                        dateTime: new Date(point.dateTime),
+                        link: generateLinkURL({
+                            previousPoint: line.points[index - 1],
+                            series: seriesDefinitionMap[line.seriesId],
+                            point,
+                        }),
+                    })),
                     name: line.label,
                     color: DATA_SERIES_COLORS_LIST[index % DATA_SERIES_COLORS_LIST.length],
-                    getLinkURL: datum => `${datum[getLinkKey(line.seriesId)]}`,
+                    getLinkURL: datum => datum.link,
+                    getYValue: datum => datum.value,
+                    getXValue: datum => datum.dateTime,
                 })),
-                getXValue: datum => new Date(datum.dateTime),
             }
         })
 }

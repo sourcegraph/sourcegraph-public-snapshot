@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -145,7 +146,7 @@ func (s *Server) handleRepoDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.deleteRepo(req.Repo); err != nil {
+	if err := s.deleteRepo(r.Context(), req.Repo); err != nil {
 		log15.Error("failed to delete repository", "repo", req.Repo, "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -153,6 +154,14 @@ func (s *Server) handleRepoDelete(w http.ResponseWriter, r *http.Request) {
 	log15.Info("deleted repository", "repo", req.Repo)
 }
 
-func (s *Server) deleteRepo(repo api.RepoName) error {
-	return s.removeRepoDirectory(s.dir(repo))
+func (s *Server) deleteRepo(ctx context.Context, repo api.RepoName) error {
+	err := s.removeRepoDirectory(s.dir(repo))
+	if err != nil {
+		return errors.Wrap(err, "removing repo directory")
+	}
+	err = s.setCloneStatus(ctx, repo, types.CloneStatusNotCloned)
+	if err != nil {
+		return errors.Wrap(err, "setting clone status after delete")
+	}
+	return nil
 }
