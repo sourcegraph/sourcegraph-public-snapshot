@@ -5,7 +5,7 @@
 
 import '@sourcegraph/shared/src/polyfills'
 
-import './sentry/init'
+import './monitoring/initMonitoring'
 
 import React from 'react'
 
