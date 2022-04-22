@@ -99,7 +99,7 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                 {savedSearches
                     ?.filter(search => (showAllSearches ? true : search.namespace.id === authenticatedUser?.id))
                     .map(search => (
-                        <li key={search.id} className="text-monospace test-saved-search-entry mb-2">
+                        <li key={search.id} className="text-monospace test-saved-search-entry d-block mb-2">
                             <div className="d-flex justify-content-between">
                                 <small>
                                     <Link
