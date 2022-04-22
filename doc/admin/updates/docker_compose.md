@@ -12,7 +12,7 @@ Each section comprehensively describes the steps needed to upgrade, and any manu
 
 ## Unreleased
 A fix that corrects the default behavior of the `migrator` service is included in this release. An attempt to standardize CLI packages in v3.39.0 unintentionally 
-broke the default behavior. In order to guard againt this, all command line arguments are explictly set in the deployment manifest.
+broke the default behavior. In order to guard against this, all command line arguments are explicitly set in the deployment manifest.
 
 ## 3.38 -> 3.39
 
