@@ -25,7 +25,7 @@ func TestNewBitbucketCloudSource(t *testing.T) {
 	t.Run("invalid", func(t *testing.T) {
 		for name, input := range map[string]string{
 			"invalid JSON":    "invalid JSON",
-			"unparsable JSON": `{"appPassword": ["not a string"]}`,
+			"invalid schema": `{"appPassword": ["not a string"]}`,
 			"bad URN":         `{"apiURL": "http://[::1]:namedport"}`,
 		} {
 			t.Run(name, func(t *testing.T) {
