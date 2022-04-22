@@ -18,14 +18,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
-type RecognizerTest struct {
+type RecognizerTestCase struct {
 	description        string
 	repositoryContents map[string]string
 	expected           []config.IndexJob
 }
 
 func TestRecognizers(t *testing.T) {
-	testCases := []RecognizerTest{
+	testCases := []RecognizerTestCase{
 		{
 			description:        "empty",
 			repositoryContents: nil,
@@ -379,47 +379,55 @@ func TestRecognizers(t *testing.T) {
 		},
 	}
 
+	testRecognizers(t, testCases)
+}
+
+func testRecognizers(t *testing.T, testCases []RecognizerTestCase) {
 	for _, testCase := range testCases {
-		t.Run(testCase.description, func(t *testing.T) {
-			// Real deal
-			sandboxService := luasandbox.GetService()
-
-			// Fake deal
-			gitService := NewMockGitService()
-			gitService.ListFilesFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit string, pattern *regexp.Regexp) (paths []string, _ error) {
-				for path := range testCase.repositoryContents {
-					if pattern.MatchString(path) {
-						paths = append(paths, path)
-					}
-				}
-
-				return
-			})
-			gitService.ArchiveFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
-				files := map[string]io.Reader{}
-				for _, spec := range opts.Pathspecs {
-					if contents, ok := testCase.repositoryContents[strings.TrimPrefix(string(spec), ":(literal)")]; ok {
-						files[string(spec)] = strings.NewReader(contents)
-					}
-				}
-
-				return unpacktest.CreateZipArchive(t, files)
-			})
-
-			jobs, err := newService(sandboxService, gitService, &observation.TestContext).InferIndexJobs(
-				context.Background(),
-				api.RepoName("github.com/test/test"),
-				"HEAD",
-				"", // TODO
-			)
-			if err != nil {
-				t.Fatalf("unexpected error inferring jobs: %s", err)
-			}
-			if diff := cmp.Diff(sortIndexJobs(testCase.expected), sortIndexJobs(jobs)); diff != "" {
-				t.Errorf("unexpected index jobs (-want +got):\n%s", diff)
-			}
-		})
+		testRecognizer(t, testCase)
 	}
+}
+
+func testRecognizer(t *testing.T, testCase RecognizerTestCase) {
+	t.Run(testCase.description, func(t *testing.T) {
+		// Real deal
+		sandboxService := luasandbox.GetService()
+
+		// Fake deal
+		gitService := NewMockGitService()
+		gitService.ListFilesFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit string, pattern *regexp.Regexp) (paths []string, _ error) {
+			for path := range testCase.repositoryContents {
+				if pattern.MatchString(path) {
+					paths = append(paths, path)
+				}
+			}
+
+			return
+		})
+		gitService.ArchiveFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
+			files := map[string]io.Reader{}
+			for _, spec := range opts.Pathspecs {
+				if contents, ok := testCase.repositoryContents[strings.TrimPrefix(string(spec), ":(literal)")]; ok {
+					files[string(spec)] = strings.NewReader(contents)
+				}
+			}
+
+			return unpacktest.CreateZipArchive(t, files)
+		})
+
+		jobs, err := newService(sandboxService, gitService, &observation.TestContext).InferIndexJobs(
+			context.Background(),
+			api.RepoName("github.com/test/test"),
+			"HEAD",
+			"", // TODO
+		)
+		if err != nil {
+			t.Fatalf("unexpected error inferring jobs: %s", err)
+		}
+		if diff := cmp.Diff(sortIndexJobs(testCase.expected), sortIndexJobs(jobs)); diff != "" {
+			t.Errorf("unexpected index jobs (-want +got):\n%s", diff)
+		}
+	})
 }
 
 func sortIndexJobs(s []config.IndexJob) []config.IndexJob {
