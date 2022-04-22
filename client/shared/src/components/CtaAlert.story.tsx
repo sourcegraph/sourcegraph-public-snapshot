@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 // eslint-disable-next-line no-restricted-imports

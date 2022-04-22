@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { boolean, select } from '@storybook/addon-knobs'
 import { Meta, Story } from '@storybook/react'
 import SearchIcon from 'mdi-react/SearchIcon'

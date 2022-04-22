@@ -3,6 +3,7 @@ import expect from 'expect'
 import { range } from 'lodash'
 import { test } from 'mocha'
 
+import { highlightFileResult, mixedSearchStreamEvents } from '@sourcegraph/search'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
@@ -14,7 +15,6 @@ import { WebIntegrationTestContext, createWebIntegrationTestContext } from './co
 import { createRepositoryRedirectResult } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteGQLID, siteID } from './jscontext'
-import { highlightFileResult, mixedSearchStreamEvents } from './streaming-search-mocks'
 import { percySnapshotWithVariants } from './utils'
 
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {

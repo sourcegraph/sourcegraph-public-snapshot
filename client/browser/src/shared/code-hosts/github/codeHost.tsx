@@ -1,5 +1,3 @@
-import React from 'react'
-
 import classNames from 'classnames'
 import { trimStart } from 'lodash'
 import { render } from 'react-dom'

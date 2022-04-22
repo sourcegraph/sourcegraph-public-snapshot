@@ -1722,6 +1722,26 @@
   dependencies:
     "@cspotcode/source-map-consumer" "0.8.0"
 
+"@datadog/browser-core@4.7.1":
+  version "4.7.1"
+  resolved "https://registry.npmjs.org/@datadog/browser-core/-/browser-core-4.7.1.tgz#5c78028217df455ad2fc981b51035144c25ac7ab"
+  integrity sha512-PmHrTFYGvegheaub4sdbHmcFxwoCy2Ot/PBblSIJjfRddpbElBiSvBAOfFi3Wx8AK50a2yq0/YX9Nd/oL3Q0Dw==
+
+"@datadog/browser-rum-core@4.7.1":
+  version "4.7.1"
+  resolved "https://registry.npmjs.org/@datadog/browser-rum-core/-/browser-rum-core-4.7.1.tgz#252dfc7c72a8aa5157d27c0427c22bd28d7bc281"
+  integrity sha512-USlAHIvMpNczCbtpwLkn6D41GnewuP6X2D+Rn34F3PzQ16CeCXEvXrC+8cJvjy/pcsYUeDK06ATRfK0gInd0tA==
+  dependencies:
+    "@datadog/browser-core" "4.7.1"
+
+"@datadog/browser-rum-slim@^4.7.1":
+  version "4.7.1"
+  resolved "https://registry.npmjs.org/@datadog/browser-rum-slim/-/browser-rum-slim-4.7.1.tgz#d8ff6e103085615d69a0124d585b0723dc645654"
+  integrity sha512-EmRIEu0LW698hnX707lwlORRgH1nsI3wtyuo/zqBDLR6rUrntIb4rNE9SL5fC6pZTg9eCb9V21sndDgIRxXn9w==
+  dependencies:
+    "@datadog/browser-core" "4.7.1"
+    "@datadog/browser-rum-core" "4.7.1"
+
 "@devicefarmer/adbkit-logcat@^1.1.0":
   version "1.1.0"
   resolved "https://registry.npmjs.org/@devicefarmer/adbkit-logcat/-/adbkit-logcat-1.1.0.tgz#866d3406dc9f3791446adfe3ae622ffc48607db4"

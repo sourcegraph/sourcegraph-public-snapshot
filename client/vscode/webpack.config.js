@@ -91,6 +91,15 @@ function getExtensionCoreConfiguration(targetType) {
         Buffer: ['buffer', 'Buffer'],
         process: 'process/browser', // provide a shim for the global `process` variable
       }),
+      ...(process.env.IS_TEST
+        ? [
+            new webpack.DefinePlugin({
+              'process.env': {
+                IS_TEST: true,
+              },
+            }),
+          ]
+        : []),
     ],
   }
 }

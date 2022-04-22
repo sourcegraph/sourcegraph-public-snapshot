@@ -2,7 +2,16 @@ import expect from 'expect'
 import { test } from 'mocha'
 import { Key } from 'ts-key-enum'
 
-import { SearchGraphQlOperations } from '@sourcegraph/search'
+import {
+    SearchGraphQlOperations,
+    commitHighlightResult,
+    commitSearchStreamEvents,
+    diffSearchStreamEvents,
+    diffHighlightResult,
+    mixedSearchStreamEvents,
+    highlightFileResult,
+    symbolSearchStreamEvents,
+} from '@sourcegraph/search'
 import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
@@ -12,15 +21,6 @@ import { WebGraphQlOperations } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
-import {
-    commitHighlightResult,
-    commitSearchStreamEvents,
-    diffSearchStreamEvents,
-    diffHighlightResult,
-    mixedSearchStreamEvents,
-    highlightFileResult,
-    symbolSearchStreamEvents,
-} from './streaming-search-mocks'
 import { percySnapshotWithVariants } from './utils'
 
 const mockDefaultStreamEvents: SearchEvent[] = [

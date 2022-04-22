@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { storiesOf } from '@storybook/react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'

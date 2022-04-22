@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { storiesOf } from '@storybook/react'
 import { NEVER } from 'rxjs'
 import sinon from 'sinon'

@@ -93,7 +93,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const addRemovePermissions = dashboardPermission.getAddRemoveInsightsPermission(currentDashboard)
 
     return (
-        <main className="pb-4">
+        <div className="pb-4">
             <DashboardHeader className="d-flex flex-wrap align-items-center mb-3">
                 <span className={styles.dashboardSelectLabel}>Dashboard:</span>
 
@@ -153,6 +153,6 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
             {isDeleteDashboardActive && isDashboardConfigurable(currentDashboard) && (
                 <DeleteDashboardModal dashboard={currentDashboard} onClose={() => setDeleteDashboardActive(false)} />
             )}
-        </main>
+        </div>
     )
 }

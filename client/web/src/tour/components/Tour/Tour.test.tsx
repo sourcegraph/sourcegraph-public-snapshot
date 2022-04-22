@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { render, cleanup, RenderResult, fireEvent, act } from '@testing-library/react'
 import { renderHook, RenderHookResult } from '@testing-library/react-hooks'
 import { MemoryRouter } from 'react-router'
