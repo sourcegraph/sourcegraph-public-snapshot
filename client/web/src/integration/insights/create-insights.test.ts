@@ -214,7 +214,7 @@ describe('Code insight create insight page', () => {
         })
 
         // With two filled data series our mock for live preview should work - render line chart with two lines
-        await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
+        await driver.page.waitForSelector('[data-testid="code-search-insight-live-preview"] circle')
 
         const addToUserConfigRequest = await testContext.waitForGraphQLRequest(async () => {
             await driver.page.click('[data-testid="insight-save-button"]')

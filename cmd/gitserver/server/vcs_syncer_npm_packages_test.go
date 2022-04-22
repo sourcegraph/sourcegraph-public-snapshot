@@ -56,6 +56,7 @@ func TestNoMaliciousFilesNpm(t *testing.T) {
 		schema.NpmPackagesConnection{Dependencies: []string{}},
 		NewMockDependenciesStore(),
 		nil,
+		"urn",
 	)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cancel now  to prevent any network IO
@@ -119,6 +120,7 @@ func TestNpmCloneCommand(t *testing.T) {
 		schema.NpmPackagesConnection{Dependencies: []string{}},
 		NewMockDependenciesStore(),
 		&client,
+		"urn",
 	)
 	bareGitDirectory := path.Join(dir, "git")
 	s.runCloneCommand(t, bareGitDirectory, []string{exampleNpmVersionedPackage})

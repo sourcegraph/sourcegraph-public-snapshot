@@ -1,0 +1,20 @@
+.container {
+    background-color: var(--vscode-editorWidget-background) !important;
+    padding: 0.5rem;
+}
+
+.checkbox {
+    margin-right: 0.25rem;
+}
+
+.label {
+    font-weight: bold;
+}
+
+// Hide icon in alert
+.code-monitoring-alert {
+    &::before,
+    &::after {
+        display: none;
+    }
+}

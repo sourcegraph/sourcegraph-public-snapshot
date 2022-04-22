@@ -15,16 +15,21 @@ export type RepositoryMenuContentProps = SettingsCascadeProps & {
 
 export type RepositoryMenuProps = RepositoryMenuContentProps & {
     content: typeof RepositoryMenuContent
+    isOpen?: boolean
 }
 
-export const RepositoryMenu: React.FunctionComponent<RepositoryMenuProps> = ({ content: Content, ...props }) => (
+export const RepositoryMenu: React.FunctionComponent<RepositoryMenuProps> = ({
+    content: Content,
+    isOpen,
+    ...props
+}) => (
     <Menu className="btn-icon">
         <>
             <MenuButton className="text-decoration-none">
                 <Icon as={BrainIcon} />
             </MenuButton>
 
-            <MenuList position={Position.bottomEnd} className={styles.dropdownMenu}>
+            <MenuList position={Position.bottomEnd} className={styles.dropdownMenu} isOpen={isOpen}>
                 <MenuHeader>Code intelligence</MenuHeader>
                 <MenuDivider />
                 <Content {...props} />

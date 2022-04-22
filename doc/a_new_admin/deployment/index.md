@@ -42,6 +42,12 @@ Finally, if you're just starting out, you can [try Sourcegraph Cloud](https://so
 
 > NOTE: The Single container option is provided for local proofs-of-concept and is not intended for testing or deployed at a pre-production/production level. Some features, such as Code Insights, are not available when using this deployment type. If you're just starting out and want the absolute quickest setup time, [try Sourcegraph Cloud](https://sourcegraph.com).
 
+## Reference repositories
+
+For Docker Compose and Kubernetes deployments, Sourcegraph provides reference repositories with branches corresponding to the version of Sourcegraph you wish to deploy. The reference repository contains everything you need to spin up and configure your instance depending on your deployment type, which also assists in your upgrade process going forward. 
+
+For more information, follow the install and configuration docs for your specific deployment type: [Docker Compose](https://github.com/sourcegraph/deploy-sourcegraph-docker/) or [Kubernetes](https://github.com/sourcegraph/deploy-sourcegraph/).
+
 ## External services
 
 By default, Sourcegraph provides versions of services it needs to operate, including:
@@ -55,8 +61,10 @@ By default, Sourcegraph provides versions of services it needs to operate, inclu
 
 > NOTE: As a best practice, configure your Sourcegraph instance to use an external or managed version of these services. Using a managed version of PostgreSQL can make backups and recovery easier to manage and perform. Using a managed object storage service may decrease hosting costs as persistent volumes are often more expensive than object storage space.
 
+### External services guides
 See the following guides to use an external or managed version of each service type.
 
+- [PostgreSQL Guide](../postgres.md)
 - See [Using your PostgreSQL server](../external_services/postgres.md) to replace the bundled PostgreSQL instances.
 - See [Using your Redis server](../external_services/redis.md) to replace the bundled Redis instances.
 - See [Using a managed object storage service (S3 or GCS)](../external_services/object_storage.md) to replace the bundled MinIO instance.
@@ -70,45 +78,33 @@ See the following guides to use an external or managed version of each service t
 - Google Cloud: [Cloud SQL for PostgreSQL](https://cloud.google.com/sql/docs/postgres/), [Cloud Memorystore](https://cloud.google.com/memorystore/), and [Cloud Storage](https://cloud.google.com/storage) for storing user uploads.
 - Digital Ocean: [Digital Ocean Managed Databases](https://www.digitalocean.com/products/managed-databases/) for [Postgres](https://www.digitalocean.com/products/managed-databases-postgresql/), [Redis](https://www.digitalocean.com/products/managed-databases-redis/), and [Spaces](https://www.digitalocean.com/products/spaces/) for storing user uploads.
 
-## Configuration (TBD)
+## Configuration
 
 Configuration at the deployment level focuses on ensuring your Sourcegraph runs optimally, based on the size of your repositories and the number of users. Configuration options will vary based on the type of deployment you choose, so you will want to consult the specific configuration guides for additional information.
 
-If you're looking for configuration at the Administration level, check out the [customization section TBD](TBD.
+## Customization
+
+We refer to configuration at the Administration level as Customization, check out the [customization section TBD](TBD).
 
 
-## Upgrades and migration
+## Upgrades
 
-A new version of Sourcegraph is released every month (with patch releases in between as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) or the site admin updates page to learn about updates. We actively maintain the two most recent monthly releases of Sourcegraph.
+A new version of Sourcegraph is released every month (with patch releases in between as needed). We actively maintain the two most recent monthly releases of Sourcegraph. The [changelog](../../CHANGELOG.md) provides all information related to any changes that are/were in a release.
 
-**Regardless of your deployment type**, the following rules apply:
+Depending on your current version and the version you are looking to upgrade rules, there may be specific upgrade instruction and requirements. Checkout the [Upgrade docs](TBD) for additional information and instructions.
 
-- **Upgrade one minor version at a time**, e.g. v3.26 --> v3.27 --> v3.28.
-  - Patches (e.g. vX.X.4 vs. vX.X.5) do not have to be adopted when moving between vX.X versions.
-- **Check the [update notes for your deployment type](#update-notes) for any required manual actions** before updating.
-- Check your [out of band migration status](../migration/index.md) before an upgrade to avoid a necessary rollback while the migration finishes.
+## Migration
 
-### Upgrade notes
+Sourcegraph uses "migration" to refer to different, yet related activities. This includes normal database migrations which are an automatic part of the upgrade process and the [migrator service](TBD)
 
-Please see the instructions for your deployment type:
+It also refers to migration from one deployment type to the other, for example moving from Docker Single Container to Docker Compose.
 
-- [Sourcegraph with Docker Compose](docker_compose.md)
-- [Sourcegraph with Kubernetes](kubernetes.md)
-- [Single-container Sourcegraph with Docker](server.md)
-- [Pure-Docker custom deployments](pure_docker.md)
+More details on both cases are provided in our [Migration docs](TBD)
 
-### Migrating to a new deployment type
+## Federation
 
-You may need to migrate from one deployment type to another. Most commonly, this will be [from a Docker Single Container deployment to Docker Compose](../install/docker-compose/migrate.md), or from [Docker Compose to Kubernetes](LINK TBD).
+Federation refers to using multiple Sourcegraph servers together, each of which is responsible for a subset of repositories.
 
-You may also want to check out our [Migration Docs area](../migration/index.md) for other scenarios and associated guides, including specific migration requirements and when to upgrade from/to particular versions.
+Currently the only supported federation use case is [redirecting your Sourcegraph instance's users to Sourcegraph.com for _public_ repositories](public_repositories.md) (instead of mirroring, analyzing, and indexing public repositories on your Sourcegraph instance).
 
-### Changelog
-
-For product update notes, please refer to the [changelog](../../CHANGELOG.md).
-
-## Reference repositories
-
-For Docker Compose and Kubernetes deployments, Sourcegraph provides reference repositories with branches corresponding to the version of Sourcegraph you wish to deploy. The reference repository contains everything you need to spin up and configure your instance depending on your deployment type, which also assists in your upgrade process going forward. 
-
-For more information, follow the install and configuration docs for your specific deployment type: [Docker Compose](https://github.com/sourcegraph/deploy-sourcegraph-docker/) or [Kubernetes](https://github.com/sourcegraph/deploy-sourcegraph/).
+> NOTE: We plan to enhance federation in the future to support merging data (such as cross-references) from multiple Sourcegraph instances, sharing user accounts, etc. [Post an issue](https://github.com/sourcegraph/sourcegraph/issues) if you have a specific feature request for federation.

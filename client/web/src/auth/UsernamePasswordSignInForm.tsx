@@ -76,6 +76,8 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({
                         }
                     } else if (response.status === 401) {
                         throw new Error('User or password was incorrect')
+                    } else if (response.status === 422) {
+                        throw new Error('The account has been locked out')
                     } else {
                         throw new Error('Unknown Error')
                     }

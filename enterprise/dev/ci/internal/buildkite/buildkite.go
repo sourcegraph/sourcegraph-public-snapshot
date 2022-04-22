@@ -21,8 +21,10 @@ import (
 
 type Pipeline struct {
 	Env    map[string]string `json:"env,omitempty"`
-	Steps  []interface{}     `json:"steps"`
 	Notify []slackNotifier   `json:"notify,omitempty"`
+
+	// Steps are *Step or *Pipeline with Group set.
+	Steps []interface{} `json:"steps"`
 
 	// Group, if provided, indicates this Pipeline is actually a group of steps.
 	// See: https://buildkite.com/docs/pipelines/group-step
@@ -39,14 +41,23 @@ type Pipeline struct {
 
 var nonAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
 
-func (p *Pipeline) EnsureUniqueKeys() error {
-	occurences := map[string]int{}
+// EnsureUniqueKeys validates generated pipeline have unique keys, and provides a key
+// based on the label if not available.
+func (p *Pipeline) EnsureUniqueKeys(occurences map[string]int) error {
 	for _, step := range p.Steps {
 		if s, ok := step.(*Step); ok {
 			if s.Key == "" {
 				s.Key = nonAlphaNumeric.ReplaceAllString(s.Label, "")
 			}
 			occurences[s.Key] += 1
+		}
+		if p, ok := step.(*Pipeline); ok {
+			if p.Group.Key == "" || p.Group.Group == "" {
+				return errors.Newf("group %+v must have key and group name", p)
+			}
+			if err := p.EnsureUniqueKeys(occurences); err != nil {
+				return err
+			}
 		}
 	}
 	for k, count := range occurences {

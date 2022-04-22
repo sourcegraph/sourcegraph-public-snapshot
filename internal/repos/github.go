@@ -259,15 +259,17 @@ func newGithubSource(
 			"graphql": v4Client.RateLimitMonitor(),
 			"search":  searchClient.RateLimitMonitor(),
 		} {
-			// Need to copy the resource or func will use the last one seen while iterating
+			// Copy the resource or funcs below will use the last one seen while iterating
 			// the map
 			resource := resource
+			// Copy displayName so that the funcs below don't capture the svc pointer
+			displayName := svc.DisplayName
 			monitor.SetCollector(&ratelimit.MetricsCollector{
 				Remaining: func(n float64) {
-					githubRemainingGauge.WithLabelValues(resource, svc.DisplayName).Set(n)
+					githubRemainingGauge.WithLabelValues(resource, displayName).Set(n)
 				},
 				WaitDuration: func(n time.Duration) {
-					githubRatelimitWaitCounter.WithLabelValues(resource, svc.DisplayName).Add(n.Seconds())
+					githubRatelimitWaitCounter.WithLabelValues(resource, displayName).Add(n.Seconds())
 				},
 			})
 		}

@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/lint"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
@@ -18,27 +18,31 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-var (
-	lintFlagSet             = flag.NewFlagSet("sg lint", flag.ExitOnError)
-	lintGenerateAnnotations = lintFlagSet.Bool("annotations", false, "Write helpful output to annotations directory")
-)
+var lintGenerateAnnotations bool
 
-var lintCommand = &ffcli.Command{
-	Name:       "lint",
-	ShortUsage: "sg lint [target]",
-	ShortHelp:  "Run all or specified linter on the codebase.",
-	LongHelp:   `Run all or specified linter on the codebase and display failures, if any. To run all checks, don't provide an argument.`,
-	FlagSet:    lintFlagSet,
-	Exec: func(ctx context.Context, args []string) error {
-		if len(args) > 0 {
-			writeFailureLinef("unrecognized command %q provided", args[0])
+var lintCommand = &cli.Command{
+	Name:        "lint",
+	ArgsUsage:   "[target]",
+	Usage:       "Run all or specified linter on the codebase",
+	Description: `Run all or specified linter on the codebase and display failures, if any. To run all checks, don't provide an argument.`,
+	Category:    CategoryDev,
+	Flags: []cli.Flag{
+		&cli.BoolFlag{
+			Name:        "annotations",
+			Usage:       "Write helpful output to annotations directory",
+			Destination: &lintGenerateAnnotations,
+		},
+	},
+	Action: func(cmd *cli.Context) error {
+		if cmd.NArg() > 0 {
+			writeFailureLinef("unrecognized command %q provided", cmd.Args().First())
 			return flag.ErrHelp
 		}
 		var fns []lint.Runner
 		for _, c := range allLintTargets {
 			fns = append(fns, c.Linters...)
 		}
-		return runCheckScriptsAndReport(ctx, fns...)
+		return runCheckScriptsAndReport(cmd.Context, fns...)
 	},
 	Subcommands: allLintTargets.Commands(),
 }
@@ -102,7 +106,7 @@ func printLintReport(pending output.Pending, report *lint.Report) {
 	if report.Err != nil {
 		pending.VerboseLine(output.Linef(output.EmojiFailure, output.StyleWarning, msg))
 		pending.Verbose(report.Output)
-		if *lintGenerateAnnotations {
+		if lintGenerateAnnotations {
 			repoRoot, err := root.RepositoryRoot()
 			if err != nil {
 				return // do nothing
@@ -121,24 +125,19 @@ func printLintReport(pending output.Pending, report *lint.Report) {
 type lintTargets []lint.Target
 
 // Commands converts all lint targets to CLI commands
-func (lt lintTargets) Commands() (cmds []*ffcli.Command) {
-	execFactory := func(c lint.Target) func(context.Context, []string) error {
-		return func(ctx context.Context, args []string) error {
-			if len(args) > 0 {
-				writeFailureLinef("unexpected argument %q provided", args[0])
-				return flag.ErrHelp
-			}
-			return runCheckScriptsAndReport(ctx, c.Linters...)
-		}
-	}
+func (lt lintTargets) Commands() (cmds []*cli.Command) {
 	for _, c := range lt {
-		cmds = append(cmds, &ffcli.Command{
-			Name:       c.Name,
-			ShortUsage: fmt.Sprintf("sg lint %s", c.Name),
-			ShortHelp:  c.Help,
-			LongHelp:   c.Help,
-			FlagSet:    c.FlagSet,
-			Exec:       execFactory(c)})
+		cmds = append(cmds, &cli.Command{
+			Name:  c.Name,
+			Usage: c.Help,
+			Action: func(cmd *cli.Context) error {
+				if cmd.NArg() > 0 {
+					writeFailureLinef("unrecognized argument %q provided", cmd.Args().First())
+					return flag.ErrHelp
+				}
+				return runCheckScriptsAndReport(cmd.Context, c.Linters...)
+			},
+		})
 	}
 	return cmds
 }

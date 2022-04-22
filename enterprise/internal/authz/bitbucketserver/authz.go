@@ -45,7 +45,7 @@ func newAuthzProvider(
 
 	var errs error
 
-	cli, err := bitbucketserver.NewClient(c.BitbucketServerConnection, nil)
+	cli, err := bitbucketserver.NewClient(c.URN, c.BitbucketServerConnection, nil)
 	if err != nil {
 		errs = errors.Append(errs, err)
 		return nil, errs

@@ -12,14 +12,14 @@ import React, {
 
 import classNames from 'classnames'
 import { LocationDescriptor } from 'history'
-import CloseIcon from 'mdi-react/CloseIcon'
+import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
+import DeleteIcon from 'mdi-react/DeleteIcon'
 import FileDocumentOutlineIcon from 'mdi-react/FileDocumentOutlineIcon'
 import NotebookPlusIcon from 'mdi-react/NotebookPlusIcon'
-import PencilIcon from 'mdi-react/PencilIcon'
+import PenIcon from 'mdi-react/PenIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import TextBoxIcon from 'mdi-react/TextBoxIcon'
-import TrashIcon from 'mdi-react/TrashCanIcon'
 
 import { isMacPlatform } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
@@ -47,6 +47,14 @@ import {
 import styles from './SearchStack.module.scss'
 
 const SEARCH_STACK_ID = 'search:search-stack'
+
+function isMacMetaKey(event: KeyboardEvent, isMacPlatform: boolean): boolean {
+    return isMacPlatform && event.metaKey
+}
+
+function isMetaKey(event: KeyboardEvent, isMacPlatform: boolean): boolean {
+    return isMacMetaKey(event, isMacPlatform) || (!isMacPlatform && event.ctrlKey)
+}
 
 /**
  * This handler is used on mousedown to prevent text selection when multiple
@@ -187,8 +195,8 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({ initial
     // Handles key events on the whole list
     const handleKey = useCallback(
         (event: KeyboardEvent): void => {
-            const hasMacMeta = isMacPlatform_ && event.metaKey
-            const hasMeta = hasMacMeta || (!isMacPlatform_ && event.ctrlKey)
+            const hasMacMeta = isMacMetaKey(event, isMacPlatform_)
+            const hasMeta = isMetaKey(event, isMacPlatform_)
 
             if (document.activeElement && document.activeElement.tagName === 'TEXTAREA') {
                 // Ignore any events originating from an annotations input
@@ -270,146 +278,122 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({ initial
         return null
     }
 
-    if (open) {
-        return (
-            <section className={classNames(styles.root, { [styles.open]: open })} id={SEARCH_STACK_ID} role="dialog">
-                <div className={classNames(styles.header, 'd-flex align-items-center justify-content-between')}>
-                    <Button
-                        aria-label="Close search session"
-                        variant="icon"
-                        className="p-2"
-                        onClick={toggleOpen}
-                        aria-controls={SEARCH_STACK_ID}
-                        aria-expanded="true"
-                    >
-                        <Icon as={PencilIcon} />
-                        <h4 className={classNames(styles.openVisible, 'px-1')}>Notepad</h4>
-                        <small>
-                            ({reversedEntries.length} item{reversedEntries.length === 1 ? '' : 's'})
-                        </small>
-                    </Button>
-                    <Button
-                        aria-label="Close search session"
-                        variant="icon"
-                        className={classNames('pr-2', styles.closeButton, styles.openVisible)}
-                        onClick={toggleOpen}
-                        aria-controls={SEARCH_STACK_ID}
-                        aria-expanded="true"
-                    >
-                        <Icon as={CloseIcon} />
-                    </Button>
-                </div>
-                <ul role="listbox" aria-multiselectable={true} onKeyDown={handleKey} tabIndex={0}>
-                    <li className="d-flex flex-column">{addableEntry && <AddEntryButton entry={addableEntry} />}</li>
-                    {reversedEntries.map((entry, index) => {
-                        const selected = selectedEntries.includes(index)
-                        return (
-                            <li
-                                key={entry.id}
-                                role="option"
-                                onClick={event => toggleSelectedEntry(index, event)}
-                                onKeyDown={event => {
-                                    if (document.activeElement === event.currentTarget && event.key === ' ') {
-                                        event.stopPropagation()
-                                        toggleSelectedEntry(index, event)
-                                    }
-                                }}
-                                aria-selected={selected}
-                                aria-label={getLabel(entry)}
-                                onMouseDown={preventTextSelection}
-                                tabIndex={0}
-                            >
-                                <SearchStackEntryComponent
-                                    entry={entry}
-                                    focus={hasNewEntry && index === 0}
-                                    selected={selected}
-                                    onDelete={selected ? deleteSelectedEntries : deleteEntry}
-                                />
-                            </li>
-                        )
-                    })}
-                </ul>
-                {confirmRemoveAll && (
+    return (
+        <section className={classNames(styles.root, { [styles.open]: open })} id={SEARCH_STACK_ID} role="dialog">
+            <Button
+                aria-label={(open ? 'Close' : 'Open') + ' Notepad'}
+                variant="icon"
+                className={classNames(styles.header, 'p-2 d-flex align-items-center justify-content-between')}
+                onClick={toggleOpen}
+                aria-controls={SEARCH_STACK_ID}
+                aria-expanded="true"
+            >
+                <span>
+                    <Icon as={PenIcon} />
+                    <h2 className="px-1 d-inline">Notepad</h2>
+                    <small>
+                        ({reversedEntries.length} note{reversedEntries.length === 1 ? '' : 's'})
+                    </small>
+                </span>
+                <span className={styles.toggleIcon}>
+                    <Icon as={ChevronUpIcon} />
+                </span>
+            </Button>
+            {open && (
+                <>
+                    {addableEntry && (
+                        <div className={classNames(styles.newNote, 'p-2')}>
+                            <h3>Create new note from current {addableEntry.type === 'file' ? 'file' : 'search'}:</h3>
+                            <AddEntryButton entry={addableEntry} />
+                        </div>
+                    )}
+                    <h3 className="p-2">
+                        Notes <small>({reversedEntries.length})</small>
+                    </h3>
+                    <ul role="listbox" aria-multiselectable={true} onKeyDown={handleKey} tabIndex={0}>
+                        {reversedEntries.map((entry, index) => {
+                            const selected = selectedEntries.includes(index)
+                            return (
+                                <li
+                                    key={entry.id}
+                                    role="option"
+                                    onClick={event => toggleSelectedEntry(index, event)}
+                                    onKeyDown={event => {
+                                        if (document.activeElement === event.currentTarget && event.key === ' ') {
+                                            event.stopPropagation()
+                                            toggleSelectedEntry(index, event)
+                                        }
+                                    }}
+                                    aria-selected={selected}
+                                    aria-label={getLabel(entry)}
+                                    onMouseDown={preventTextSelection}
+                                    tabIndex={0}
+                                >
+                                    <SearchStackEntryComponent
+                                        entry={entry}
+                                        focus={hasNewEntry && index === 0}
+                                        selected={selected}
+                                        onDelete={selected ? deleteSelectedEntries : deleteEntry}
+                                    />
+                                </li>
+                            )
+                        })}
+                    </ul>
+                    {confirmRemoveAll && (
+                        <div className="p-2">
+                            <p>Are you sure you want to delete all entries?</p>
+                            <div className="d-flex justify-content-between">
+                                <Button variant="secondary" onClick={() => setConfirmRemoveAll(false)}>
+                                    Cancel
+                                </Button>
+                                <Button
+                                    variant="danger"
+                                    onClick={() => {
+                                        removeAllSearchStackEntries()
+                                        setConfirmRemoveAll(false)
+                                    }}
+                                >
+                                    Yes, delete
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                     <div className="p-2">
-                        <p>Are you sure you want to delete all entries?</p>
-                        <div className="d-flex justify-content-between">
-                            <Button variant="secondary" onClick={() => setConfirmRemoveAll(false)}>
-                                Cancel
+                        {canRestore && (
+                            <Button
+                                className="w-100 mb-1"
+                                onClick={restorePreviousSession}
+                                outline={true}
+                                variant="secondary"
+                                size="sm"
+                            >
+                                Restore previous session
+                            </Button>
+                        )}
+                        <div className="d-flex align-items-center">
+                            <Button
+                                onClick={createNotebook}
+                                variant="primary"
+                                size="sm"
+                                disabled={entries.length === 0}
+                                className="flex-1"
+                            >
+                                <Icon as={NotebookPlusIcon} /> Create Notebook
                             </Button>
                             <Button
-                                variant="danger"
-                                onClick={() => {
-                                    removeAllSearchStackEntries()
-                                    setConfirmRemoveAll(false)
-                                }}
+                                aria-label="Remove all notes"
+                                title="Remove all notes"
+                                variant="icon"
+                                className="text-muted ml-2"
+                                disabled={entries.length === 0}
+                                onClick={() => setConfirmRemoveAll(true)}
                             >
-                                Yes, delete
+                                <Icon as={DeleteIcon} />
                             </Button>
                         </div>
                     </div>
-                )}
-                <div className="p-2">
-                    {canRestore && (
-                        <Button
-                            className="w-100 mb-1"
-                            onClick={restorePreviousSession}
-                            outline={true}
-                            variant="secondary"
-                            size="sm"
-                        >
-                            Restore previous session
-                        </Button>
-                    )}
-                    <div className="d-flex justify-content-between align-items-center">
-                        <Button onClick={createNotebook} variant="primary" size="sm" disabled={entries.length === 0}>
-                            <Icon as={NotebookPlusIcon} /> Create Notebook
-                        </Button>
-                        <Button
-                            aria-label="Remove all entries"
-                            title="Remove all entries"
-                            variant="icon"
-                            className="text-muted"
-                            disabled={entries.length === 0}
-                            onClick={() => setConfirmRemoveAll(true)}
-                        >
-                            <Icon as={TrashIcon} />
-                        </Button>
-                    </div>
-                </div>
-            </section>
-        )
-    }
-
-    const handleEnterKey = (event: KeyboardEvent<HTMLDivElement>): void => {
-        if (event.key === 'enter') {
-            toggleOpen()
-        }
-    }
-
-    return (
-        <section id={SEARCH_STACK_ID} className={classNames(styles.root)} aria-label="Notepad">
-            <div
-                role="button"
-                aria-expanded="false"
-                aria-controls={SEARCH_STACK_ID}
-                onClick={toggleOpen}
-                onKeyUp={handleEnterKey}
-                aria-label="Open search session"
-                tabIndex={0}
-            >
-                {reversedEntries.length === 0 && addableEntry && <AddEntryButton entry={addableEntry} />}
-                {reversedEntries.length > 0 ? (
-                    // `key` is necessary here to force new elemments being created
-                    // when the top entry is deleted. Otherwise the annotations
-                    // input isn't rendered correctly.
-                    <SearchStackEntryComponent
-                        key={reversedEntries[0].id}
-                        entry={reversedEntries[0]}
-                        focus={hasNewEntry}
-                        onDelete={() => removeFromSearchStack(reversedEntries[0].id)}
-                    />
-                ) : null}
-            </div>
+                </>
+            )}
         </section>
     )
 }
@@ -419,55 +403,68 @@ interface AddEntryButtonProps {
 }
 
 const AddEntryButton: React.FunctionComponent<AddEntryButtonProps> = ({ entry }) => {
+    let button: React.ReactElement
     switch (entry.type) {
         case 'search':
-            return (
+            button = (
                 <Button
+                    outline={true}
                     variant="primary"
                     size="sm"
                     title="Add search"
-                    className={styles.button}
+                    className="w-100"
                     onClick={event => {
                         event.stopPropagation()
                         addSearchStackEntry(entry)
                     }}
                 >
-                    + <Icon as={SearchIcon} /> Search
+                    <Icon as={SearchIcon} /> Add search
                 </Button>
             )
+            break
         case 'file':
-            return (
-                <span className={classNames(styles.button, 'd-flex mx-0')}>
+            button = (
+                <span className="d-flex mx-0">
                     <Button
+                        outline={true}
                         variant="primary"
                         size="sm"
                         title="Add file"
-                        className="flex-1 mx-1"
+                        className={classNames({ 'flex-1': true, 'mr-1': !!entry.lineRange })}
                         onClick={event => {
                             event.stopPropagation()
                             addSearchStackEntry(entry, 'file')
                         }}
                     >
-                        + <Icon as={FileDocumentOutlineIcon} /> File
+                        <Icon as={FileDocumentOutlineIcon} /> Add as file
                     </Button>
                     {entry.lineRange && (
                         <Button
+                            outline={true}
                             variant="primary"
                             size="sm"
                             title="Add line range"
-                            className="flex-1 mx-1"
+                            className="flex-1 ml-1"
                             onClick={event => {
                                 event.stopPropagation()
                                 addSearchStackEntry(entry, 'range')
                             }}
                         >
-                            + <Icon as={CodeBracketsIcon} /> Range (
-                            {entry.lineRange.endLine - entry.lineRange.startLine + 1})
+                            <Icon as={CodeBracketsIcon} /> Add as range {formatLineRange(entry.lineRange)}
                         </Button>
                     )}
                 </span>
             )
     }
+
+    const { title } = getUIComponentsForEntry(entry)
+
+    return (
+        <>
+            <div className={classNames(styles.entry, 'p-0 py-2')}>{title}</div>
+            {button}
+        </>
+    )
 }
 
 function stopPropagation(event: SyntheticEvent): void {
@@ -479,8 +476,8 @@ interface SearchStackEntryComponentProps {
     /**
      * If set to true, show and focus the annotations input.
      */
-    focus?: boolean
-    selected?: boolean
+    focus: boolean
+    selected: boolean
     onDelete: (entry: SearchStackEntry) => void
 }
 
@@ -495,11 +492,14 @@ const SearchStackEntryComponent: React.FunctionComponent<SearchStackEntryCompone
     const [showAnnotationInput, setShowAnnotationInput] = useState(focus)
     const textarea = useRef<HTMLTextAreaElement | null>(null)
 
+    // Focus annotation input when the whenever it is opened.
     useEffect(() => {
-        textarea.current?.focus()
-    }, [focus])
+        if (showAnnotationInput) {
+            textarea.current?.focus()
+        }
+    }, [showAnnotationInput])
 
-    const deletionLabel = selected ? 'Remove all selected entries' : 'Remove entry'
+    const deletionLabel = selected ? 'Remove all selected notes' : 'Remove note'
 
     return (
         <div className={classNames(styles.entry, { [styles.selected]: selected })}>
@@ -533,7 +533,7 @@ const SearchStackEntryComponent: React.FunctionComponent<SearchStackEntryCompone
                             onDelete(entry)
                         }}
                     >
-                        <Icon as={CloseIcon} />
+                        <Icon as={DeleteIcon} />
                     </Button>
                 </span>
             </div>
@@ -547,8 +547,15 @@ const SearchStackEntryComponent: React.FunctionComponent<SearchStackEntryCompone
                     onChange={event => setAnnotation(event.currentTarget.value)}
                     onClick={stopPropagation}
                     onKeyDown={event => {
-                        if (event.key === 'Escape') {
-                            event.currentTarget.blur()
+                        switch (event.key) {
+                            case 'Escape':
+                                event.currentTarget.blur()
+                                break
+                            case 'Enter':
+                                if (isMetaKey(event, isMacPlatform())) {
+                                    setShowAnnotationInput(false)
+                                }
+                                break
                         }
                     }}
                 />
@@ -558,7 +565,7 @@ const SearchStackEntryComponent: React.FunctionComponent<SearchStackEntryCompone
 }
 
 function getUIComponentsForEntry(
-    entry: SearchStackEntry
+    entry: SearchStackEntry | SearchStackEntryInput
 ): { icon: React.ReactElement; title: React.ReactElement; location: LocationDescriptor; body?: React.ReactElement } {
     switch (entry.type) {
         case 'search':
@@ -584,13 +591,17 @@ function getUIComponentsForEntry(
                         {entry.lineRange ? ` ${formatLineRange(entry.lineRange)}` : ''}
                     </span>
                 ),
-                location: {
-                    pathname: toPrettyBlobURL({
-                        repoName: entry.repo,
-                        revision: entry.revision,
-                        filePath: entry.path,
-                    }),
-                },
+                location: toPrettyBlobURL({
+                    repoName: entry.repo,
+                    revision: entry.revision,
+                    filePath: entry.path,
+                    range: entry.lineRange
+                        ? {
+                              start: { line: entry.lineRange.startLine + 1, character: 0 },
+                              end: { line: entry.lineRange.endLine + 1, character: 0 },
+                          }
+                        : undefined,
+                }),
             }
     }
 }

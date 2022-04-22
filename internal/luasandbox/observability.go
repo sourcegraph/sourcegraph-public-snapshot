@@ -8,7 +8,11 @@ import (
 )
 
 type operations struct {
-	run *observation.Operation
+	call          *observation.Operation
+	callGenerator *observation.Operation
+	createSandbox *observation.Operation
+	runGoCallback *observation.Operation
+	runScript     *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -28,6 +32,10 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		run: op("Run"),
+		call:          op("Call"),
+		callGenerator: op("CallGenerator"),
+		createSandbox: op("CreateSandbox"),
+		runGoCallback: op("RunGoCallback"),
+		runScript:     op("RunScript"),
 	}
 }

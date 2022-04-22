@@ -55,7 +55,7 @@ Choose a deployment option and follow the instructions. When you've signed into 
 Sourcegraph and Oracle OpenGrok differ in how they access repositories:
 
 - **"Passive":** OpenGrok reads all repositories underneath the `SRC_ROOT` path on disk. You place repositories there and configure the [sync.py tool](https://github.com/oracle/opengrok/wiki/Repository-synchronization) to fetch updates.
-- **"Active":** Sourcegraph automatically handles cloning and updating repositories from [code hosts (GitHub, GitLab, Bitbucket Server, AWS CodeCommit, etc.](../repo/add.md).
+- **"Active":** Sourcegraph automatically handles cloning and updating repositories from [code hosts (GitHub, GitLab, Bitbucket Server / Bitbucket Data Center, AWS CodeCommit, etc.](../repo/add.md).
 
 Sourcegraph's "active" model lets it:
 
