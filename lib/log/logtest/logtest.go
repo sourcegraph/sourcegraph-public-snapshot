@@ -68,6 +68,9 @@ func Scoped(t testing.TB) log.Logger {
 	// already been done. We allow this in testing for convenience.
 	Init(nil)
 
+	// On cleanup, flush the global logger.
+	t.Cleanup(func() { globallogger.Get(true).Sync() })
+
 	return log.Scoped(t.Name(), "")
 }
 
@@ -88,7 +91,6 @@ func Captured(t testing.TB) (logger log.Logger, exportLogs func() []CapturedLog)
 	}))
 
 	return logger, func() []CapturedLog {
-		logger.Sync()
 		entries := entries.TakeAll()
 		logs := make([]CapturedLog, len(entries))
 		for i, e := range entries {

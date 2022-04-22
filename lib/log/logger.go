@@ -51,10 +51,9 @@ type Logger interface {
 	// Error logs are high-priority. If an application is running smoothly, it shouldn't
 	// generate any error-level logs.
 	Error(string, ...Field)
-
-	// Sync flushes any buffered log entries. Applications should take care to call Sync
-	// before exiting.
-	Sync() error
+	// Fatal logs a fatal error message, including any fields accumulated on the Logger.
+	// The logger then calls os.Exit(1), flushing the logger before doing so. Use sparingly.
+	Fatal(string, ...Field)
 }
 
 // Scoped returns the global logger and sets it up with the given scope and OpenTelemetry
