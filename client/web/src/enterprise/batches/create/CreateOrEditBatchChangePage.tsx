@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
 import { ApolloQueryResult } from '@apollo/client'
 import classNames from 'classnames'
@@ -6,7 +6,7 @@ import { compact, noop } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import LockIcon from 'mdi-react/LockIcon'
-import { useHistory, useLocation } from 'react-router'
+import { useHistory } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -53,7 +53,7 @@ import { DownloadSpecModal } from './DownloadSpecModal'
 import { EditorFeedbackPanel } from './editor/EditorFeedbackPanel'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
 import { ExecutionOptions, ExecutionOptionsDropdown } from './ExecutionOptions'
-import { getTemplate } from './go-checker-templates'
+import { getTemplateFn } from './go-checker-templates'
 import { LibraryPane } from './library/LibraryPane'
 import { NamespaceSelector } from './NamespaceSelector'
 import { useBatchSpecCode } from './useBatchSpecCode'
@@ -138,8 +138,9 @@ interface CreatePageProps extends SettingsCascadeProps<Settings> {
     namespaceID?: Scalars['ID']
 }
 
+const parameters = new URLSearchParams(location.search)
+
 function getTitle(): string {
-    const parameters = new URLSearchParams(location.search)
     if (parameters.has('title')) {
         return `Create batch change for ${parameters.get('title') ?? ''}`
     }
@@ -147,9 +148,6 @@ function getTitle(): string {
 }
 
 const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, settingsCascade }) => {
-    const [template, setTemplate] = useState<string | undefined>()
-    const location = useLocation()
-
     const [createEmptyBatchChange, { loading: batchChangeLoading, error: batchChangeError }] = useMutation<
         CreateEmptyBatchChangeResult,
         CreateEmptyBatchChangeVariables
@@ -172,14 +170,6 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
     const [nameInput, setNameInput] = useState('')
     const [isNameValid, setIsNameValid] = useState<boolean>()
 
-    useEffect(() => {
-        const parameters = new URLSearchParams(location.search)
-        const goTemplate = getTemplate(parameters.get('kind'))
-        if (goTemplate) {
-            setTemplate(goTemplate(nameInput))
-        }
-    }, [location.search, nameInput])
-
     const onNameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setNameInput(event.target.value)
         setIsNameValid(NAME_PATTERN.test(event.target.value))
@@ -191,13 +181,16 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
         createEmptyBatchChange({
             variables: { namespace: selectedNamespace.id, name: nameInput },
         })
-            .then(args =>
-                args.data?.createEmptyBatchChange.id && template
+            .then(args => {
+                const getTemplate = getTemplateFn(parameters.get('kind'))
+                const template = getTemplate?.(nameInput)
+
+                return args.data?.createEmptyBatchChange.id && template
                     ? createBatchSpecFromRaw({
                           variables: { namespace: selectedNamespace.id, spec: template, noCache: false },
                       }).then(() => Promise.resolve(args))
                     : Promise.resolve(args)
-            )
+            })
             .then(({ data }) => (data ? history.push(`${data.createEmptyBatchChange.url}/edit`) : noop()))
             // We destructure and surface the error from `useMutation` instead.
             .catch(noop)

@@ -638,9 +638,9 @@ changesetTemplate:
 `
 }
 
-export function getTemplate(kind: string | null): ((name: string) => string) | undefined {
+export function getTemplateFn(kind: string | null): ((name: string) => string) | undefined {
     if (!kind) {
-        return undefined
+        return goCheckerS1039Template
     }
 
     switch (kind) {
@@ -686,5 +686,5 @@ export function getTemplate(kind: string | null): ((name: string) => string) | u
             return goCheckerS1039Template
     }
 
-    return undefined
+    return goCheckerS1039Template
 }
