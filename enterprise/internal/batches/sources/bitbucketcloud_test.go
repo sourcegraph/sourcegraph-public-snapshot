@@ -346,6 +346,200 @@ func TestBitbucketCloudSource_CloseChangeset(t *testing.T) {
 	})
 }
 
+func TestBitbucketCloudSource_UpdateChangeset(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("error updating pull request", func(t *testing.T) {
+		cs, _, bbRepo := mockBitbucketCloudChangeset()
+		s, client := mockBitbucketCloudSource()
+
+		pr := mockBitbucketCloudPullRequest(bbRepo)
+		want := errors.New("error")
+		client.UpdatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r *bitbucketcloud.Repo, i int64, pri bitbucketcloud.PullRequestInput) (*bitbucketcloud.PullRequest, error) {
+			assert.Same(t, bbRepo, r)
+			assert.EqualValues(t, 420, i)
+			assert.Equal(t, cs.Title, pri.Title)
+			return nil, want
+		})
+
+		annotateChangesetWithPullRequest(cs, pr)
+		err := s.UpdateChangeset(ctx, cs)
+		assert.NotNil(t, err)
+		assert.ErrorIs(t, err, want)
+	})
+
+	t.Run("error setting changeset metadata", func(t *testing.T) {
+		cs, _, bbRepo := mockBitbucketCloudChangeset()
+		s, client := mockBitbucketCloudSource()
+		want := mockAnnotatePullRequestError(client)
+
+		pr := mockBitbucketCloudPullRequest(bbRepo)
+		client.UpdatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r *bitbucketcloud.Repo, i int64, pri bitbucketcloud.PullRequestInput) (*bitbucketcloud.PullRequest, error) {
+			assert.Same(t, bbRepo, r)
+			assert.EqualValues(t, 420, i)
+			assert.Equal(t, cs.Title, pri.Title)
+			return pr, nil
+		})
+
+		annotateChangesetWithPullRequest(cs, pr)
+		err := s.UpdateChangeset(ctx, cs)
+		assert.NotNil(t, err)
+		assert.ErrorIs(t, err, want)
+	})
+
+	t.Run("success", func(t *testing.T) {
+		cs, _, bbRepo := mockBitbucketCloudChangeset()
+		s, client := mockBitbucketCloudSource()
+		mockAnnotatePullRequestSuccess(client)
+
+		pr := mockBitbucketCloudPullRequest(bbRepo)
+		client.UpdatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r *bitbucketcloud.Repo, i int64, pri bitbucketcloud.PullRequestInput) (*bitbucketcloud.PullRequest, error) {
+			assert.Same(t, bbRepo, r)
+			assert.EqualValues(t, 420, i)
+			assert.Equal(t, cs.Title, pri.Title)
+			return pr, nil
+		})
+
+		annotateChangesetWithPullRequest(cs, pr)
+		err := s.UpdateChangeset(ctx, cs)
+		assert.Nil(t, err)
+		assertChangesetMatchesPullRequest(t, cs, pr)
+	})
+}
+
+func TestBitbucketCloudSource_CreateComment(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("error creating comment", func(t *testing.T) {
+		cs, _, bbRepo := mockBitbucketCloudChangeset()
+		s, client := mockBitbucketCloudSource()
+
+		pr := mockBitbucketCloudPullRequest(bbRepo)
+		want := errors.New("error")
+		client.CreatePullRequestCommentFunc.SetDefaultHook(func(ctx context.Context, r *bitbucketcloud.Repo, i int64, ci bitbucketcloud.CommentInput) (*bitbucketcloud.Comment, error) {
+			assert.Same(t, bbRepo, r)
+			assert.EqualValues(t, 420, i)
+			assert.Equal(t, "comment", ci.Content)
+			return nil, want
+		})
+
+		annotateChangesetWithPullRequest(cs, pr)
+		err := s.CreateComment(ctx, cs, "comment")
+		assert.NotNil(t, err)
+		assert.ErrorIs(t, err, want)
+	})
+
+	t.Run("success", func(t *testing.T) {
+		cs, _, bbRepo := mockBitbucketCloudChangeset()
+		s, client := mockBitbucketCloudSource()
+
+		pr := mockBitbucketCloudPullRequest(bbRepo)
+		client.CreatePullRequestCommentFunc.SetDefaultHook(func(ctx context.Context, r *bitbucketcloud.Repo, i int64, ci bitbucketcloud.CommentInput) (*bitbucketcloud.Comment, error) {
+			assert.Same(t, bbRepo, r)
+			assert.EqualValues(t, 420, i)
+			assert.Equal(t, "comment", ci.Content)
+			return &bitbucketcloud.Comment{}, nil
+		})
+
+		annotateChangesetWithPullRequest(cs, pr)
+		err := s.CreateComment(ctx, cs, "comment")
+		assert.Nil(t, err)
+	})
+}
+
+func TestBitbucketCloudSource_MergeChangeset(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("error merging pull request", func(t *testing.T) {
+		cs, _, bbRepo := mockBitbucketCloudChangeset()
+		s, client := mockBitbucketCloudSource()
+
+		pr := mockBitbucketCloudPullRequest(bbRepo)
+		want := errors.New("error")
+		client.MergePullRequestFunc.SetDefaultHook(func(ctx context.Context, r *bitbucketcloud.Repo, i int64, mpro bitbucketcloud.MergePullRequestOpts) (*bitbucketcloud.PullRequest, error) {
+			assert.Same(t, bbRepo, r)
+			assert.EqualValues(t, 420, i)
+			assert.Nil(t, mpro.MergeStrategy)
+			return nil, want
+		})
+
+		annotateChangesetWithPullRequest(cs, pr)
+		err := s.MergeChangeset(ctx, cs, false)
+		assert.NotNil(t, err)
+		target := ChangesetNotMergeableError{}
+		assert.ErrorAs(t, err, &target)
+		assert.Equal(t, want.Error(), target.ErrorMsg)
+	})
+
+	t.Run("pull request not found", func(t *testing.T) {
+		cs, _, bbRepo := mockBitbucketCloudChangeset()
+		s, client := mockBitbucketCloudSource()
+
+		pr := mockBitbucketCloudPullRequest(bbRepo)
+		want := &notFoundError{}
+		client.MergePullRequestFunc.SetDefaultHook(func(ctx context.Context, r *bitbucketcloud.Repo, i int64, mpro bitbucketcloud.MergePullRequestOpts) (*bitbucketcloud.PullRequest, error) {
+			assert.Same(t, bbRepo, r)
+			assert.EqualValues(t, 420, i)
+			assert.Nil(t, mpro.MergeStrategy)
+			return nil, want
+		})
+
+		annotateChangesetWithPullRequest(cs, pr)
+		err := s.MergeChangeset(ctx, cs, false)
+		assert.NotNil(t, err)
+		assert.ErrorIs(t, err, want)
+	})
+
+	t.Run("error setting changeset metadata", func(t *testing.T) {
+		cs, _, bbRepo := mockBitbucketCloudChangeset()
+		s, client := mockBitbucketCloudSource()
+		want := mockAnnotatePullRequestError(client)
+
+		pr := mockBitbucketCloudPullRequest(bbRepo)
+		client.MergePullRequestFunc.SetDefaultHook(func(ctx context.Context, r *bitbucketcloud.Repo, i int64, mpro bitbucketcloud.MergePullRequestOpts) (*bitbucketcloud.PullRequest, error) {
+			assert.Same(t, bbRepo, r)
+			assert.EqualValues(t, 420, i)
+			assert.Nil(t, mpro.MergeStrategy)
+			return pr, nil
+		})
+
+		annotateChangesetWithPullRequest(cs, pr)
+		err := s.MergeChangeset(ctx, cs, false)
+		assert.NotNil(t, err)
+		assert.ErrorIs(t, err, want)
+	})
+
+	t.Run("success", func(t *testing.T) {
+		squash := bitbucketcloud.MergeStrategySquash
+		for name, tc := range map[string]struct {
+			squash bool
+			want   *bitbucketcloud.MergeStrategy
+		}{
+			"no squash": {false, nil},
+			"squash":    {true, &squash},
+		} {
+			t.Run(name, func(t *testing.T) {
+				cs, _, bbRepo := mockBitbucketCloudChangeset()
+				s, client := mockBitbucketCloudSource()
+				mockAnnotatePullRequestSuccess(client)
+
+				pr := mockBitbucketCloudPullRequest(bbRepo)
+				client.MergePullRequestFunc.SetDefaultHook(func(ctx context.Context, r *bitbucketcloud.Repo, i int64, mpro bitbucketcloud.MergePullRequestOpts) (*bitbucketcloud.PullRequest, error) {
+					assert.Same(t, bbRepo, r)
+					assert.EqualValues(t, 420, i)
+					assert.Equal(t, tc.want, mpro.MergeStrategy)
+					return pr, nil
+				})
+
+				annotateChangesetWithPullRequest(cs, pr)
+				err := s.MergeChangeset(ctx, cs, tc.squash)
+				assert.Nil(t, err)
+				assertChangesetMatchesPullRequest(t, cs, pr)
+			})
+		}
+	})
+}
+
 // TODO: annotatePullRequest and setChangesetMetadata need explicit unit tests.
 
 func assertChangesetMatchesPullRequest(t *testing.T, cs *Changeset, pr *bitbucketcloud.PullRequest) {
