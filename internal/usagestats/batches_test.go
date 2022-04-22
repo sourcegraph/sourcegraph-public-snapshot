@@ -166,13 +166,13 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 			(id, hostname, queue_name,os,architecture,docker_version,executor_version,git_version,ignite_version,src_cli_version,first_seen_at,last_seen_at)
 		VALUES
 			-- inactive
-			(83505,'test-hostname-1','batches','darwin','arm64','20.10.12','0.0.0+dev','2.35.1','','dev','2022-04-20 17:09:18.010637+02',$1::timestamp),
-			(83595,'test-hostname-2','batches','darwin','arm64','20.10.12','0.0.0+dev','2.35.1','','dev','2022-04-20 17:16:51.252115+02',$2::timestamp),
-			(83603,'test-hostname-3','batches','darwin','arm64','20.10.12','0.0.0+dev','2.35.1','','dev','2022-04-20 17:18:08.288158+02', $3::timestamp),
+			(83505,'test-hostname-1.0','batches','darwin','arm64','20.10.12','0.0.0+dev','2.35.1','','dev','2022-04-20 17:09:18.010637+02',$1::timestamp),
+			(83595,'test-hostname-2.0','batches','darwin','arm64','20.10.12','0.0.0+dev','2.35.1','','dev','2022-04-20 17:16:51.252115+02',$2::timestamp),
+			(83603,'test-hostname-3.0','batches','darwin','arm64','20.10.12','0.0.0+dev','2.35.1','','dev','2022-04-20 17:18:08.288158+02', $3::timestamp),
 
 			-- active
-			(8450, 'test-hostname-1', 'batches', 'darwin', 'arm64', '20.10.12', '0.0.0+dev','2.35.1','','dev','2022-04-20 17:09:18.010637+02', $4::timestamp),
-			(8451, 'test-hostname-4', 'batches', 'darwin', 'arm64', '20.10.12', '0.0.0+dev','2.35.1','','dev','2022-04-20 17:09:18.010637+02', $5::timestamp)
+			(8450, 'test-hostname-1.1', 'batches', 'darwin', 'arm64', '20.10.12', '0.0.0+dev','2.35.1','','dev','2022-04-20 17:09:18.010637+02', $4::timestamp),
+			(8451, 'test-hostname-4.0', 'batches', 'darwin', 'arm64', '20.10.12', '0.0.0+dev','2.35.1','','dev','2022-04-20 17:09:18.010637+02', $5::timestamp)
 	`, executorHeartbeatDate1, executorHeartbeatDate2, executorHeartbeatDate3, executorHeartbeatDate4, executorHeartbeatDate5)
 	if err != nil {
 		t.Fatal(err)
