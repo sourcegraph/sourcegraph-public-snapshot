@@ -10,6 +10,18 @@ The following jobs are defined by the `worker` service.
 
 This job runs [out of band migrations](migration.md#mout-of-band-migrations), which perform large data migrations in the background over time instead of synchronously during Sourcegraph instance updates.
 
+#### `codeintel-upload-janitor`
+
+This job will eventually (and partially) replace `codeintel-janitor`.
+
+#### `codeintel-upload-expirer`
+
+This job will eventually (and partially) replace `codeintel-janitor`
+
+#### `codeintel-commitgraph-updater`
+
+This job will eventually replace `codeintel-commitgraph`.
+
 #### `codeintel-documents-indexer`
 
 This job periodically indexes file contents at a syntactic level to build an index of search-based code intelligence.

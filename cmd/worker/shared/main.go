@@ -42,6 +42,9 @@ func Start(additionalJobs map[string]job.Job, registerEnterpriseMigrations func(
 	builtins := map[string]job.Job{
 		"webhook-log-janitor":                   webhooks.NewJanitor(),
 		"out-of-band-migrations":                migrations.NewMigrator(registerMigrations),
+		"codeintel-upload-janitor":              codeintel.NewUploadJanitorJob(),
+		"codeintel-upload-expirer":              codeintel.NewUploadExpirerJob(),
+		"codeintel-commitgraph-updater":         codeintel.NewCommitGraphUpdaterJob(),
 		"codeintel-documents-indexer":           codeintel.NewDocumentsIndexerJob(),
 		"codeintel-autoindexing-scheduler":      codeintel.NewAutoindexingSchedulerJob(),
 		"codeintel-dependencies-indexer":        codeintel.NewDependenciesIndexerJob(),
