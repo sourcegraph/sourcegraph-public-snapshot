@@ -148,7 +148,7 @@ export const RevisionResolvingReferencesList: React.FunctionComponent<
     }
 
     return (
-        <FilterableReferencesList
+        <SearchTokenFindingReferencesList
             {...props}
             token={token}
             isFork={data.isFork}
@@ -165,14 +165,7 @@ interface ReferencesPanelPropsWithToken extends ReferencesPanelProps {
     fileContent: string
 }
 
-const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWithToken> = props => {
-    const [filter, setFilter] = useState<string>()
-    const debouncedFilter = useDebounce(filter, 150)
-
-    useEffect(() => {
-        setFilter(undefined)
-    }, [props.token])
-
+const SearchTokenFindingReferencesList: React.FunctionComponent<ReferencesPanelPropsWithToken> = props => {
     const languageId = getModeFromPath(props.token.filePath)
     const spec = findLanguageSpec(languageId)
     const tokenResult = findSearchToken({
@@ -195,35 +188,15 @@ const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWith
     }
 
     return (
-        <>
-            <CardHeader className={styles.cardHeader}>
-                <Code size="base" weight="bold">
-                    {tokenResult.searchToken}
-                </Code>
-            </CardHeader>
-            <div className={classNames('d-flex justify-content-start', styles.filter)}>
-                <small>
-                    <Icon as={FilterOutlineIcon} size="sm" className={styles.filterIcon} />
-                </small>
-                <Input
-                    className={classNames('py-0 my-0 w-100 text-small')}
-                    type="text"
-                    placeholder="Type to filter by filename"
-                    value={filter === undefined ? '' : filter}
-                    onChange={event => setFilter(event.target.value)}
-                />
-            </div>
-            <ReferencesList
-                {...props}
-                token={props.token}
-                filter={debouncedFilter}
-                searchToken={tokenResult?.searchToken}
-                spec={spec}
-                fileContent={props.fileContent}
-                isFork={props.isFork}
-                isArchived={props.isArchived}
-            />
-        </>
+        <ReferencesList
+            {...props}
+            token={props.token}
+            searchToken={tokenResult?.searchToken}
+            spec={spec}
+            fileContent={props.fileContent}
+            isFork={props.isFork}
+            isArchived={props.isArchived}
+        />
     )
 }
 
@@ -231,12 +204,18 @@ const SHOW_SPINNER_DELAY_MS = 100
 
 export const ReferencesList: React.FunctionComponent<
     ReferencesPanelPropsWithToken & {
-        filter?: string
         searchToken: string
         spec: LanguageSpec
         fileContent: string
     }
 > = props => {
+    const [filter, setFilter] = useState<string>()
+    const debouncedFilter = useDebounce(filter, 150)
+
+    useEffect(() => {
+        setFilter(undefined)
+    }, [props.token])
+
     const getSetting = newSettingsGetter(props.settingsCascade)
 
     const {
@@ -258,7 +237,7 @@ export const ReferencesList: React.FunctionComponent<
             // get from hoverifier is 1-indexed.
             line: props.token.line - 1,
             character: props.token.character - 1,
-            filter: props.filter || null,
+            filter: debouncedFilter || null,
             firstReferences: 100,
             afterReferences: null,
             firstImplementations: 100,
@@ -380,22 +359,39 @@ export const ReferencesList: React.FunctionComponent<
     }
 
     return (
-        <>
-            <div className={classNames('align-items-stretch', styles.referencesList)}>
-                <div className={classNames('px-0', styles.referencesSideReferences)}>
+        <div className={classNames('align-items-stretch', styles.panel)}>
+            <div className={classNames('px-0', styles.leftSubPanel)}>
+                <CardHeader className={classNames('d-flex align-items-center', styles.cardHeader)}>
+                    <Code size="base" weight="bold">
+                        {props.searchToken}
+                    </Code>
                     {canShowSpinner && (
-                        <div className="text-muted">
-                            <LoadingSpinner inline={true} />
+                        <small className="ml-3 text-muted d-flex align-items-center">
+                            <Icon as={LoadingSpinner} size="sm" inline={true} className="mr-1" />
                             <i>Loading...</i>
-                        </div>
+                        </small>
                     )}
+                </CardHeader>
+                <div className={classNames('d-flex justify-content-start', styles.filter)}>
+                    <small>
+                        <Icon as={FilterOutlineIcon} size="sm" className={styles.filterIcon} />
+                    </small>
+                    <Input
+                        className={classNames('py-0 my-0 w-100 text-small')}
+                        type="text"
+                        placeholder="Type to filter by filename"
+                        value={filter === undefined ? '' : filter}
+                        onChange={event => setFilter(event.target.value)}
+                    />
+                </div>
+                <div className={styles.locationLists}>
                     <CollapsibleLocationList
                         {...props}
                         name="definitions"
                         locations={definitions}
                         hasMore={false}
                         loadingMore={false}
-                        filter={props.filter}
+                        filter={debouncedFilter}
                         navigateToUrl={navigateToUrl}
                         isActiveLocation={isActiveLocation}
                         setActiveLocation={onReferenceClick}
@@ -409,7 +405,7 @@ export const ReferencesList: React.FunctionComponent<
                         hasMore={referencesHasNextPage}
                         fetchMore={fetchMoreReferences}
                         loadingMore={fetchMoreReferencesLoading}
-                        filter={props.filter}
+                        filter={debouncedFilter}
                         navigateToUrl={navigateToUrl}
                         setActiveLocation={onReferenceClick}
                         isActiveLocation={isActiveLocation}
@@ -425,7 +421,7 @@ export const ReferencesList: React.FunctionComponent<
                             fetchMore={fetchMoreImplementations}
                             loadingMore={fetchMoreImplementationsLoading}
                             setActiveLocation={onReferenceClick}
-                            filter={props.filter}
+                            filter={debouncedFilter}
                             isActiveLocation={isActiveLocation}
                             navigateToUrl={navigateToUrl}
                             handleOpenChange={handleOpenChange}
@@ -433,43 +429,43 @@ export const ReferencesList: React.FunctionComponent<
                         />
                     )}
                 </div>
-                {activeLocation !== undefined && (
-                    <div className={classNames('px-0 border-left', styles.referencesSideBlob)}>
-                        <CardHeader className={classNames('d-flex', styles.cardHeader)}>
-                            <small>
-                                <Button
-                                    onClick={() => setActiveLocation(undefined)}
-                                    className={classNames('btn-icon p-0', styles.referencesSideBlobCollapseButton)}
-                                    title="Close panel"
-                                    data-tooltip="Close panel"
-                                    data-placement="left"
-                                    size="sm"
-                                >
-                                    <Icon size="sm" as={ArrowCollapseRightIcon} className="border-0" />
-                                </Button>
-                                <Link
-                                    to={activeLocation.url}
-                                    onClick={event => {
-                                        event.preventDefault()
-                                        navigateToUrl(activeLocation.url)
-                                    }}
-                                    className={styles.referencesSideBlobFilename}
-                                >
-                                    {activeLocation.file}{' '}
-                                </Link>
-                            </small>
-                        </CardHeader>
-                        <SideBlob
-                            {...props}
-                            blobNav={onBlobNav}
-                            history={blobMemoryHistory}
-                            location={blobMemoryHistory.location}
-                            activeLocation={activeLocation}
-                        />
-                    </div>
-                )}
             </div>
-        </>
+            {activeLocation !== undefined && (
+                <div className={classNames('px-0 border-left', styles.rightSubPanel)}>
+                    <CardHeader className={classNames('d-flex', styles.cardHeader)}>
+                        <small>
+                            <Button
+                                onClick={() => setActiveLocation(undefined)}
+                                className={classNames('btn-icon p-0', styles.sideBlobCollapseButton)}
+                                title="Close panel"
+                                data-tooltip="Close panel"
+                                data-placement="left"
+                                size="sm"
+                            >
+                                <Icon size="sm" as={ArrowCollapseRightIcon} className="border-0" />
+                            </Button>
+                            <Link
+                                to={activeLocation.url}
+                                onClick={event => {
+                                    event.preventDefault()
+                                    navigateToUrl(activeLocation.url)
+                                }}
+                                className={styles.sideBlobFilename}
+                            >
+                                {activeLocation.file}{' '}
+                            </Link>
+                        </small>
+                    </CardHeader>
+                    <SideBlob
+                        {...props}
+                        blobNav={onBlobNav}
+                        history={blobMemoryHistory}
+                        location={blobMemoryHistory.location}
+                        activeLocation={activeLocation}
+                    />
+                </div>
+            )}
+        </div>
     )
 }
 
@@ -635,7 +631,7 @@ const SideBlob: React.FunctionComponent<
             location={props.location}
             disableStatusBar={true}
             wrapCode={true}
-            className={styles.referencesSideBlobCode}
+            className={styles.sideBlobCode}
             blobInfo={{
                 html,
                 content: props.activeLocation.content,
