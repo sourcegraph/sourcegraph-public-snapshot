@@ -15,7 +15,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -46,32 +48,40 @@ var (
 
 const port = "3181"
 
-func ensureFrontendDB() database.DB {
+func frontendDB() (database.DB, error) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
 	sqlDB, err := connections.EnsureNewFrontendDB(dsn, "searcher", &observation.TestContext)
 	if err != nil {
-		log.Fatalf("Failed to connect to frontend database: %s", err)
+		return nil, err
 	}
-	return database.NewDB(sqlDB)
+	return database.NewDB(sqlDB), nil
 }
 
-func main() {
-	env.Lock()
-	env.HandleHelpFlag()
-	log.SetFlags(0)
-	conf.Init()
-	logging.Init()
-	sglog.Init(sglog.Resource{
-		Name:    env.MyName,
-		Version: version.Version(),
-	})
-	tracer.Init(conf.DefaultClient())
-	sentry.Init(conf.DefaultClient())
-	trace.Init()
-	profiler.Init()
+func shutdownOnSignal(server *http.Server) error {
+	// Listen for shutdown signals. When we receive one attempt to clean up,
+	// but do an insta-shutdown if we receive more than one signal.
+	c := make(chan os.Signal, 2)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
 
+	// Once we receive one of the signals from above, continues with the shutdown
+	// process.
+	<-c
+	go func() {
+		// If a second signal is received, exit immediately.
+		<-c
+		os.Exit(1)
+	}()
+
+	// Wait for at most for the configured shutdown timeout.
+	ctx, cancel := context.WithTimeout(context.Background(), goroutine.GracefulShutdownTimeout)
+	defer cancel()
+	// Stop accepting requests.
+	return server.Shutdown(ctx)
+}
+
+func run() error {
 	// Ready immediately
 	ready := make(chan struct{})
 	close(ready)
@@ -79,12 +89,15 @@ func main() {
 
 	var cacheSizeBytes int64
 	if i, err := strconv.ParseInt(cacheSizeMB, 10, 64); err != nil {
-		log.Fatalf("invalid int %q for SEARCHER_CACHE_SIZE_MB: %s", cacheSizeMB, err)
+		return errors.Wrapf(err, "invalid int %q for SEARCHER_CACHE_SIZE_MB", cacheSizeMB)
 	} else {
 		cacheSizeBytes = i * 1000 * 1000
 	}
 
-	db := ensureFrontendDB()
+	db, err := frontendDB()
+	if err != nil {
+		return errors.Wrap(err, "failed to connect to frontend database")
+	}
 	git := gitserver.NewClient(db)
 
 	service := &search.Service{
@@ -140,32 +153,42 @@ func main() {
 		}),
 	}
 
-	go func() {
+	var g errgroup.Group
+
+	// Listen
+	g.Go(func() error {
 		log15.Info("searcher: listening", "addr", server.Addr)
 		if err := server.ListenAndServe(); err != http.ErrServerClosed {
-			log.Fatal(err)
+			return err
 		}
-	}()
+		return nil
+	})
 
-	// Listen for shutdown signals. When we receive one attempt to clean up,
-	// but do an insta-shutdown if we receive more than one signal.
-	c := make(chan os.Signal, 2)
-	signal.Notify(c, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
+	// Shutdown
+	g.Go(func() error {
+		return shutdownOnSignal(server)
+	})
 
-	// Once we receive one of the signals from above, continues with the shutdown
-	// process.
-	<-c
-	go func() {
-		// If a second signal is received, exit immediately.
-		<-c
-		os.Exit(0)
-	}()
+	return g.Wait()
+}
 
-	// Wait for at most for the configured shutdown timeout.
-	ctx, cancel := context.WithTimeout(context.Background(), goroutine.GracefulShutdownTimeout)
-	defer cancel()
-	// Stop accepting requests.
-	if err := server.Shutdown(ctx); err != nil {
-		log15.Error("shutting down http server", "error", err)
+func main() {
+	env.Lock()
+	env.HandleHelpFlag()
+	log.SetFlags(0)
+	conf.Init()
+	logging.Init()
+	sglog.Init(sglog.Resource{
+		Name:    env.MyName,
+		Version: version.Version(),
+	})
+	tracer.Init(conf.DefaultClient())
+	sentry.Init(conf.DefaultClient())
+	trace.Init()
+	profiler.Init()
+
+	err := run()
+	if err != nil {
+		log.Fatal(err)
 	}
 }
