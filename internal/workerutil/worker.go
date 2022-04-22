@@ -291,7 +291,8 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 
 	if hook, ok := w.handler.(WithHooks); ok {
 		preCtx, endObservation := w.options.Metrics.operations.preHandle.With(handleCtx, nil, observation.Args{})
-		hook.PreHandle(preCtx, processLog, record)
+		// Open namespace for logger to avoid key collisions on fields
+		hook.PreHandle(preCtx, processLog.With(log.Namespace("prehandle")), record)
 		endObservation(1, observation.Args{})
 	}
 
@@ -306,7 +307,8 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 				// workerCtxWithSpan
 				postCtx, endObservation := w.options.Metrics.operations.postHandle.With(workerCtxWithSpan, nil, observation.Args{})
 				defer endObservation(1, observation.Args{})
-				hook.PostHandle(postCtx, processLog, record)
+				// Open namespace for logger to avoid key collisions on fields
+				hook.PostHandle(postCtx, processLog.With(log.Namespace("posthandle")), record)
 			}
 
 			// Remove the record from the set of running jobs, so it is not included
@@ -341,7 +343,8 @@ func (w *Worker) handle(ctx, workerContext context.Context, processLog log.Logge
 		defer cancel()
 	}
 
-	handleErr := w.handler.Handle(ctx, recordLog, record)
+	// Open namespace for logger to avoid key collisions on fields
+	handleErr := w.handler.Handle(ctx, recordLog.With(log.Namespace("handle")), record)
 
 	if w.options.MaximumRuntimePerJob > 0 && errors.Is(handleErr, context.DeadlineExceeded) {
 		handleErr = errors.Wrap(handleErr, fmt.Sprintf("job exceeded maximum execution time of %s", w.options.MaximumRuntimePerJob))
