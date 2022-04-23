@@ -13,11 +13,8 @@ USER root
 ARG VERSION="unknown"
 ENV VERSION $VERSION
 
-ARG exe
-ENV exe=$exe
-
-ARG pkg
-ENV pkg=$pkg
+ARG PKG
+ENV PKG=$PKG
 
 ENV GO111MODULE on
 ENV GOARCH amd64
@@ -38,8 +35,8 @@ RUN \
   -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION  -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" \
   -buildmode exe \
   -tags dist \
-  -o /$exe \
-  $pkg
+  -o /symbols \
+  $PKG
 
 FROM sourcegraph/alpine-3.12:142406_2022-04-14_8836ac3499f4@sha256:4681a48d1fb9a73fef1b540c08b3411f797351bbeda749f5dca21213a1e71526 AS symbols
 
@@ -53,9 +50,6 @@ ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
 ARG VERSION="unknown"
 
-ARG exe
-ENV exe=$exe
-
 LABEL org.opencontainers.image.revision=${COMMIT_SHA}
 LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
@@ -66,11 +60,11 @@ RUN apk add --no-cache bind-tools ca-certificates mailcap tini jansson
 
 COPY --from=ctags /usr/local/bin/universal-ctags /usr/local/bin/universal-ctags
 
-COPY --from=build /$exe /usr/local/bin/$exe
+COPY --from=build /symbols /usr/local/bin/symbols
 
-RUN env SANITY_CHECK=true /usr/local/bin/$exe
+RUN env SANITY_CHECK=true /usr/local/bin/symbols
 
-ENV CACHE_DIR=/mnt/cache/$exe
+ENV CACHE_DIR=/mnt/cache/symbols
 RUN mkdir -p ${CACHE_DIR}
 EXPOSE 3184
-ENTRYPOINT /sbin/tini -- /usr/local/bin/$exe
+ENTRYPOINT /sbin/tini -- /usr/local/bin/symbols

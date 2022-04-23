@@ -11,5 +11,4 @@ docker build -f cmd/symbols/Dockerfile -t "$IMAGE" "$(pwd)" \
   --build-arg COMMIT_SHA \
   --build-arg DATE \
   --build-arg VERSION \
-  --build-arg exe=symbols \
-  --build-arg pkg=github.com/sourcegraph/sourcegraph/cmd/symbols
+  --build-arg PKG="${PKG:-github.com/sourcegraph/sourcegraph/cmd/symbols}"
