@@ -29,20 +29,20 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
     const apiURL = `${GRAPHQL_URI}${nameMatch ? '?' + nameMatch[1] : ''}`
     // load custom headers from user setting if any
     const customHeaders = endpointRequestHeadersSetting()
-    // return empty array if no custom header is provided in configuration
-    const headers: HeadersInit = Object.entries(customHeaders)
+    // create a headers container based on the custom headers configuration if there are any
+    const headers = new Headers(customHeaders as HeadersInit)
     const sourcegraphURL = overrideSourcegraphURL || endpointSetting()
     const accessToken = accessTokenSetting()
 
     // Add Access Token to request header
     // Used to validate access token.
     if (overrideAccessToken) {
-        headers.push(['Authorization', `token ${overrideAccessToken}`])
+        headers.set('Authorization', `token ${overrideAccessToken}`)
     } else if (accessToken) {
-        headers.push(['Authorization', `token ${accessToken}`])
-    } else {
-        headers.push(['Content-Type', 'application/json'])
+        headers.set('Authorization', `token ${accessToken}`)
     }
+
+    headers.set('Content-Type', 'application/json')
 
     try {
         const url = new URL(apiURL, sourcegraphURL).href
