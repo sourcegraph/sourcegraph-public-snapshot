@@ -10,11 +10,16 @@ import (
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+type ComputeEvent struct {
+	Results []compute.Result // TODO(rvantonder): hydrate repo information in this Event type.
+}
 
 // maxRequestDuration clamps any compute queries to run for at most 1 minute.
 // It's possible to trigger longer-running queries with expensive operations,
@@ -82,7 +87,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer flushTicker.Stop()
 
 	first := true
-	handleEvent := func(event Event) {
+	handleEvent := func(event ComputeEvent) {
 		for _, result := range event.Results {
 			_ = matchesBuf.Append(result)
 		}
@@ -157,8 +162,8 @@ func parseURLQuery(q url.Values) (*args, error) {
 
 // batchEvents takes an event stream and merges events that come through close in time into a single event.
 // This makes downstream database and network operations more efficient by enabling batch reads.
-func batchEvents(source <-chan Event, delay time.Duration) <-chan Event {
-	results := make(chan Event)
+func batchEvents(source <-chan ComputeEvent, delay time.Duration) <-chan ComputeEvent {
+	results := make(chan ComputeEvent)
 	go func() {
 		defer close(results)
 

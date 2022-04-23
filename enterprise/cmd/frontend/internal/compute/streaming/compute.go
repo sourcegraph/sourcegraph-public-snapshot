@@ -24,7 +24,7 @@ func toComputeResultStream(ctx context.Context, db database.DB, cmd compute.Comm
 	return nil
 }
 
-func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan Event, func() error) {
+func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan ComputeEvent, func() error) {
 	computeQuery, err := compute.Parse(query)
 	if err != nil {
 		return nil, func() error { return err }
@@ -35,11 +35,11 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 		return nil, func() error { return err }
 	}
 
-	eventsC := make(chan Event)
+	eventsC := make(chan ComputeEvent)
 	stream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		if len(event.Results) > 0 {
 			callback := func(result compute.Result) {
-				eventsC <- Event{Results: []compute.Result{result}}
+				eventsC <- ComputeEvent{Results: []compute.Result{result}}
 			}
 			_ = toComputeResultStream(ctx, db, computeQuery.Command, event.Results, callback)
 			// TODO(rvantonder): compute err is currently ignored. Process it and send alerts/errors as needed.
