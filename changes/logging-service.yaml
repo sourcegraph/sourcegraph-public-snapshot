@@ -9,7 +9,7 @@ on:
 
 steps:
   # Run Comby (https://comby.dev) to replace the Go statements...
-  - run: comby -in-place 'log.Printf(":[u]", :[v])' 'logsvc.Logf("info", ":[u]", :[v])' .go -matcher .go -exclude-dir .,vendor
+  - run: comby -in-place 'log.Printf(":[u]", :[v])' 'logsvc.Logf("info", ":[u]", :[v])' .go -matcher .go -exclude-dir .,vendor,logsvc
     container: comby/comby
   # ... and then run goimports to make sure logsvc is imported
   - run: goimports -w $(find . -type f -name '*.go' -not -path "./vendor/*")
