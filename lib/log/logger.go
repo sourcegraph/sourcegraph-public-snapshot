@@ -4,10 +4,11 @@ import (
 	"strings"
 	"sync"
 
+	"go.uber.org/zap"
+
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/encoders"
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/globallogger"
 	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
-	"go.uber.org/zap"
 )
 
 type TraceContext = otfields.TraceContext
@@ -62,7 +63,9 @@ type Logger interface {
 //
 // Scopes should be static values, NOT dynamic values like identifiers or parameters.
 func Scoped(scope string, description string) Logger {
-	adapted := &zapAdapter{Logger: globallogger.Get(development)}
+	safeGet := !development // do not panic in prod
+	adapted := &zapAdapter{Logger: globallogger.Get(safeGet)}
+
 	return adapted.Scoped(scope, description).With(otfields.AttributesNamespace)
 }
 
