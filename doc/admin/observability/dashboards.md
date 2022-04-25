@@ -2791,7 +2791,7 @@ Query: ` sum by (code)(irate(src_http_request_duration_seconds_count{route="sign
 
 #### frontend: account_failed_sign_in_attempts
 
-<p class="subtitle">Rate of failed sign_in attempts</p>
+<p class="subtitle">Rate of failed sign-in attempts</p>
 
 Failed sign-in attempts per minute
 
@@ -2805,6 +2805,27 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101930`
 <summary>Technical details</summary>
 
 Query: `sum(rate(src_frontend_account_failed_sign_in_attempts_total[1m]))`
+
+</details>
+
+<br />
+
+#### frontend: account_lockouts
+
+<p class="subtitle">Rate of account lockouts</p>
+
+Account lockouts per minute
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101931` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud Software-as-a-Service team](https://handbook.sourcegraph.com/engineering/cloud/saas).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(src_frontend_account_lockouts_total[1m]))`
 
 </details>
 
