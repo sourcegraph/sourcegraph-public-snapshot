@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"os"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
@@ -28,10 +27,11 @@ import (
 )
 
 func main() {
-	log.Init(log.Resource{
+	syncLogs := log.Init(log.Resource{
 		Name:    env.MyName,
 		Version: version.Version(),
 	})
+	defer syncLogs()
 
 	logger := log.Scoped("worker", "worker enterprise edition")
 
@@ -54,8 +54,7 @@ func main() {
 	}
 
 	if err := shared.Start(logger, additionalJobs, registerEnterpriseMigrations); err != nil {
-		logger.Error(err.Error())
-		os.Exit(1)
+		logger.Fatal(err.Error())
 	}
 }
 

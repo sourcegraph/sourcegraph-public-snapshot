@@ -11,10 +11,12 @@ import (
 )
 
 func main() {
-	log.Init(log.Resource{
+	syncLogs := log.Init(log.Resource{
 		Name:    env.MyName,
 		Version: version.Version(),
 	})
+	defer syncLogs()
+
 	logger := log.Scoped("worker", "worker oss edition")
 
 	authz.SetProviders(true, []authz.Provider{})
