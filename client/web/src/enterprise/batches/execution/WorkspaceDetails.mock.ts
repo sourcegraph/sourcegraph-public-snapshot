@@ -10,21 +10,25 @@ import {
 
 const now = new Date()
 
-export const mockStep = (number: number): BatchSpecWorkspaceStepFields => ({
+export const mockStep = (
+    number: number,
+    step?: Partial<BatchSpecWorkspaceStepFields>
+): BatchSpecWorkspaceStepFields => ({
+    __typename: 'BatchSpecWorkspaceStep',
     cachedResultFound: false,
     container: 'ubuntu:18.04',
-    diffStat: null,
+    diffStat: { __typename: 'DiffStat', added: 10, changed: 5, deleted: 5 },
     environment: [],
-    exitCode: null,
-    finishedAt: null,
+    exitCode: 0,
+    finishedAt: subMinutes(now, 1).toISOString(),
     ifCondition: null,
     number,
-    outputLines: [],
-    outputVariables: null,
+    outputLines: ['stdout: Hello World', 'stdout: '],
+    outputVariables: [],
     run: `echo Hello World Step ${number} | tee -a $(find -name README.md)`,
     skipped: false,
-    startedAt: null,
-    __typename: 'BatchSpecWorkspaceStep',
+    startedAt: subMinutes(now, 2).toISOString(),
+    ...step,
 })
 
 export const mockWorkspace = (
@@ -186,3 +190,23 @@ export const HIDDEN_WORKSPACE: HiddenBatchSpecWorkspaceFields = {
     unsupported: false,
     cachedResultFound: false,
 }
+
+export const FAILED_WORKSPACE = mockWorkspace(1, {
+    state: BatchSpecWorkspaceState.FAILED,
+    failureMessage: 'failed to perform src-cli step: command failed',
+    steps: [mockStep(1), mockStep(2, { exitCode: 1, diffStat: null })],
+})
+
+export const CANCELING_WORKSPACE = mockWorkspace(1, {
+    state: BatchSpecWorkspaceState.CANCELING,
+    finishedAt: null,
+    diffStat: null,
+    changesetSpecs: [],
+})
+
+export const CANCELED_WORKSPACE = mockWorkspace(1, {
+    state: BatchSpecWorkspaceState.CANCELED,
+    finishedAt: null,
+    diffStat: null,
+    changesetSpecs: [],
+})

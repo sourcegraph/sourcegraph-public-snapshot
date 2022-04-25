@@ -1,8 +1,9 @@
+import { MutationTuple } from '@apollo/client'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { asError, ErrorLike } from '@sourcegraph/common'
-import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql, useMutation, useQuery } from '@sourcegraph/http-client'
 
 import { fileDiffFields } from '../../../backend/diff'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -26,6 +27,8 @@ import {
     HiddenBatchSpecWorkspaceFields,
     VisibleBatchSpecWorkspaceListFields,
     HiddenBatchSpecWorkspaceListFields,
+    RetryWorkspaceExecutionResult,
+    RetryWorkspaceExecutionVariables,
 } from '../../../graphql-operations'
 
 const batchSpecWorkspaceFieldsFragment = gql`
@@ -311,6 +314,8 @@ const batchSpecWorkspaceStepFileDiffsFields = gql`
     ${fileDiffFields}
 `
 
+// TODO: `FileDiffConnection` is implemented with observables and expects this query to be
+// provided as one, so we can't migrate this to Apollo Client yet.
 export const queryBatchSpecWorkspaceStepFileDiffs = ({
     node: nodeID,
     step,
@@ -466,27 +471,17 @@ export const useWorkspacesListConnection = (
         },
     })
 
-export const RETRY_WORKSPACE_EXECUTION = gql`
+const RETRY_WORKSPACE_EXECUTION = gql`
     mutation RetryWorkspaceExecution($id: ID!) {
         retryBatchSpecWorkspaceExecution(batchSpecWorkspaces: [$id]) {
             alwaysNil
         }
     }
 `
-
-// export async function retryWorkspaceExecution(id: Scalars['ID']): Promise<void> {
-//     const result = await requestGraphQL<RetryWorkspaceExecutionResult, RetryWorkspaceExecutionVariables>(
-//         gql`
-//             mutation RetryWorkspaceExecution($id: ID!) {
-//                 retryBatchSpecWorkspaceExecution(batchSpecWorkspaces: [$id]) {
-//                     alwaysNil
-//                 }
-//             }
-//         `,
-//         { id }
-//     ).toPromise()
-//     dataOrThrowErrors(result)
-// }
+export const useRetryWorkspaceExecution = (
+    workspaceID: Scalars['ID']
+): MutationTuple<RetryWorkspaceExecutionResult, RetryWorkspaceExecutionVariables> =>
+    useMutation(RETRY_WORKSPACE_EXECUTION, { variables: { id: workspaceID } })
 
 export async function retryBatchSpecExecution(id: Scalars['ID']): Promise<BatchSpecExecutionFields> {
     return requestGraphQL<RetryBatchSpecExecutionResult, RetryBatchSpecExecutionVariables>(
