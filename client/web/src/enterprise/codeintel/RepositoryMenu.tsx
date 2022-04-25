@@ -31,8 +31,8 @@ import { CodeIntelUploadOrIndexRoot } from './shared/components/CodeIntelUploadO
 import {
     useCodeIntelStatus as defaultUseCodeIntelStatus,
     UseCodeIntelStatusPayload,
-    useRequestedLanguageSupportQuery,
-    useRequestLanguageSupportQuery,
+    useRequestedLanguageSupportQuery as defaultUseRequestedLanguageSupportQuery,
+    useRequestLanguageSupportQuery as defaultUseRequestLanguageSupportQuery,
 } from './useCodeIntelStatus'
 
 import styles from './RepositoryMenu.module.scss'
@@ -40,9 +40,17 @@ import styles from './RepositoryMenu.module.scss'
 export const RepositoryMenuContent: React.FunctionComponent<
     RepositoryMenuContentProps & {
         useCodeIntelStatus?: typeof defaultUseCodeIntelStatus
+        useRequestedLanguageSupportQuery?: typeof defaultUseRequestedLanguageSupportQuery
+        useRequestLanguageSupportQuery?: typeof defaultUseRequestLanguageSupportQuery
         now?: () => Date
     }
-> = ({ useCodeIntelStatus = defaultUseCodeIntelStatus, now, ...props }) => {
+> = ({
+    useCodeIntelStatus = defaultUseCodeIntelStatus,
+    useRequestedLanguageSupportQuery = defaultUseRequestedLanguageSupportQuery,
+    useRequestLanguageSupportQuery = defaultUseRequestLanguageSupportQuery,
+    now,
+    ...props
+}) => {
     const { data, loading, error } = useCodeIntelStatus({
         variables: {
             repository: props.repoName,
@@ -65,7 +73,13 @@ export const RepositoryMenuContent: React.FunctionComponent<
         </div>
     ) : data ? (
         <>
-            <UserFacingRepositoryMenuContent repoName={props.repoName} data={data} now={now} />
+            <UserFacingRepositoryMenuContent
+                repoName={props.repoName}
+                data={data}
+                useRequestedLanguageSupportQuery={useRequestedLanguageSupportQuery}
+                useRequestLanguageSupportQuery={useRequestLanguageSupportQuery}
+                now={now}
+            />
 
             {forNerds && (
                 <>
@@ -92,8 +106,10 @@ const getIndexerName = (uploadOrIndexer: LsifUploadFields | LsifIndexFields): st
 const UserFacingRepositoryMenuContent: React.FunctionComponent<{
     repoName: string
     data: UseCodeIntelStatusPayload
+    useRequestedLanguageSupportQuery: typeof defaultUseRequestedLanguageSupportQuery
+    useRequestLanguageSupportQuery: typeof defaultUseRequestLanguageSupportQuery
     now?: () => Date
-}> = ({ repoName, data, now }) => {
+}> = ({ repoName, data, useRequestedLanguageSupportQuery, useRequestLanguageSupportQuery, now }) => {
     const allUploads = data.recentUploads.flatMap(uploads => uploads.uploads)
     const uploadsByIndexerName = groupBy(allUploads, getIndexerName)
     const allIndexes = data.recentIndexes.flatMap(indexes => indexes.indexes)
@@ -156,6 +172,8 @@ const UserFacingRepositoryMenuContent: React.FunctionComponent<{
                             indexer: allIndexers.find(candidate => candidate.name === name),
                         }}
                         className={className}
+                        useRequestedLanguageSupportQuery={useRequestedLanguageSupportQuery}
+                        useRequestLanguageSupportQuery={useRequestLanguageSupportQuery}
                         now={now}
                     />
                 </React.Fragment>
@@ -176,8 +194,10 @@ const IndexerSummary: React.FunctionComponent<{
         indexer?: CodeIntelIndexerFields
     }
     className?: string
+    useRequestedLanguageSupportQuery: typeof defaultUseRequestedLanguageSupportQuery
+    useRequestLanguageSupportQuery: typeof defaultUseRequestLanguageSupportQuery
     now?: () => Date
-}> = ({ repoName, summary, className, now }) => {
+}> = ({ repoName, summary, className, useRequestedLanguageSupportQuery, useRequestLanguageSupportQuery, now }) => {
     const failedUploads = summary.uploads.filter(upload => upload.state === LSIFUploadState.ERRORED)
     const failedIndexes = summary.indexes.filter(index => index.state === LSIFIndexState.ERRORED)
     const finishedAtTimes = summary.uploads.map(upload => upload.finishedAt || undefined).filter(isDefined)
@@ -215,7 +235,11 @@ const IndexerSummary: React.FunctionComponent<{
                         summary.indexer?.url ? (
                             <Link to={summary.indexer?.url}>Set up for this repository</Link>
                         ) : (
-                            <RequestLink indexerName={summary.name} />
+                            <RequestLink
+                                indexerName={summary.name}
+                                useRequestedLanguageSupportQuery={useRequestedLanguageSupportQuery}
+                                useRequestLanguageSupportQuery={useRequestLanguageSupportQuery}
+                            />
                         )
                     ) : (
                         <>
@@ -414,7 +438,11 @@ const UploadOrIndexMeta: React.FunctionComponent<{ data: LsifUploadFields | Lsif
 //
 //
 
-const RequestLink: React.FunctionComponent<{ indexerName: string }> = ({ indexerName }) => {
+const RequestLink: React.FunctionComponent<{
+    indexerName: string
+    useRequestedLanguageSupportQuery: typeof defaultUseRequestedLanguageSupportQuery
+    useRequestLanguageSupportQuery: typeof defaultUseRequestLanguageSupportQuery
+}> = ({ indexerName, useRequestedLanguageSupportQuery, useRequestLanguageSupportQuery }) => {
     const language = indexerName.startsWith('lsif-') ? indexerName.slice('lsif-'.length) : indexerName
 
     const { data, loading: loadingSupport, error } = useRequestedLanguageSupportQuery({
@@ -428,39 +456,31 @@ const RequestLink: React.FunctionComponent<{ indexerName: string }> = ({ indexer
         onCompleted: () => setRequested(true),
     })
 
-    return (
-        <>
-            {loadingSupport || requesting ? (
-                <div className="px-2 py-1">
-                    <LoadingSpinner />
-                </div>
-            ) : error ? (
-                <div className="px-2 py-1">
-                    <ErrorAlert prefix="Error loading repository summary" error={error} />
-                </div>
-            ) : requestError ? (
-                <div className="px-2 py-1">
-                    <ErrorAlert prefix="Error requesting language support" error={requestError} />
-                </div>
-            ) : data ? (
-                data.languages.includes(language) || requested ? (
-                    <span className="text-muted">
-                        Received your request{' '}
-                        <InfoCircleOutlineIcon
-                            size={16}
-                            data-tooltip="Requests are documented and contribute to our precise support roadmap"
-                        />
-                    </span>
-                ) : (
-                    <Button
-                        variant="link"
-                        className={classNames('m-0 p-0', styles.languageRequest)}
-                        onClick={requestSupport}
-                    >
-                        I want precise support!
-                    </Button>
-                )
-            ) : null}
-        </>
-    )
+    return loadingSupport || requesting ? (
+        <div className="px-2 py-1">
+            <LoadingSpinner />
+        </div>
+    ) : error ? (
+        <div className="px-2 py-1">
+            <ErrorAlert prefix="Error loading repository summary" error={error} />
+        </div>
+    ) : requestError ? (
+        <div className="px-2 py-1">
+            <ErrorAlert prefix="Error requesting language support" error={requestError} />
+        </div>
+    ) : data ? (
+        data.languages.includes(language) || requested ? (
+            <span className="text-muted">
+                Received your request{' '}
+                <InfoCircleOutlineIcon
+                    size={16}
+                    data-tooltip="Requests are documented and contribute to our precise support roadmap"
+                />
+            </span>
+        ) : (
+            <Button variant="link" className={classNames('m-0 p-0', styles.languageRequest)} onClick={requestSupport}>
+                I want precise support!
+            </Button>
+        )
+    ) : null
 }

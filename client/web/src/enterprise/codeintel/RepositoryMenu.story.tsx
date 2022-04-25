@@ -229,6 +229,11 @@ const defaultProps = {
     filePath: 'foo/bar/baz.bonk',
     settingsCascade: { subjects: null, final: null },
     useCodeIntelStatus: () => ({ data: emptyPayload, loading: false }),
+    useRequestedLanguageSupportQuery: () => ({ data: { languages: ['ocaml'] }, loading: false, error: undefined }),
+    useRequestLanguageSupportQuery: ({ onCompleted }: { onCompleted?: () => void }) => [
+        () => Promise.resolve({ data: {} }).then(onCompleted),
+        {},
+    ],
     now,
 }
 const { add } = storiesOf('web/codeintel/enterprise/RepositoryMenu', module).addDecorator(story => (
@@ -242,21 +247,14 @@ const withPayload = (payload: Partial<UseCodeIntelStatusPayload>): typeof defaul
 
 add('Unsupported', () => <RepositoryMenu {...defaultProps} content={RepositoryMenuContent} />)
 
-add('Unavailable', () => (
-    <RepositoryMenu {...defaultProps} content={RepositoryMenuContent} {...withPayload({ searchBasedSupport })} />
-))
+add('Unavailable', () => <RepositoryMenu content={RepositoryMenuContent} {...withPayload({ searchBasedSupport })} />)
 
 add('Multiple projects', () => (
-    <RepositoryMenu
-        {...defaultProps}
-        content={RepositoryMenuContent}
-        {...withPayload({ preciseSupport: multiplePreciseSupport })}
-    />
+    <RepositoryMenu content={RepositoryMenuContent} {...withPayload({ preciseSupport: multiplePreciseSupport })} />
 ))
 
 add('Multiple projects, one enabled', () => (
     <RepositoryMenu
-        {...defaultProps}
         content={RepositoryMenuContent}
         {...withPayload({ recentUploads: [completedUpload], preciseSupport })}
     />
@@ -264,7 +262,6 @@ add('Multiple projects, one enabled', () => (
 
 add('Processing error', () => (
     <RepositoryMenu
-        {...defaultProps}
         content={RepositoryMenuContent}
         {...withPayload({ recentUploads: [completedUpload, failingUpload] })}
     />
@@ -272,7 +269,6 @@ add('Processing error', () => (
 
 add('Indexing error', () => (
     <RepositoryMenu
-        {...defaultProps}
         content={RepositoryMenuContent}
         {...withPayload({ recentUploads: [completedUpload], recentIndexes: [failingIndex] })}
     />
@@ -280,7 +276,6 @@ add('Indexing error', () => (
 
 add('Multiple errors', () => (
     <RepositoryMenu
-        {...defaultProps}
         content={RepositoryMenuContent}
         {...withPayload({ recentUploads: [completedUpload, failingUpload], recentIndexes: [failingIndex] })}
     />
