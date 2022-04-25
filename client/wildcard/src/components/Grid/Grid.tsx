@@ -1,6 +1,7 @@
 import React, { CSSProperties } from 'react'
 
 export interface GridProps {
+    children: React.ReactNode
     className?: string
     /**
      * The number of grid columns to render.

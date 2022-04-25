@@ -5,7 +5,6 @@ import React, { useMemo } from 'react'
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react'
 import * as Comlink from 'comlink'
-import { render } from 'react-dom'
 import { MemoryRouter } from 'react-router'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
@@ -30,6 +29,7 @@ import { SearchHomeView } from './SearchHomeView'
 import { SearchResultsView } from './SearchResultsView'
 
 import './index.module.scss'
+import { createRoot } from 'react-dom/client'
 
 const vsCodeApi = window.acquireVsCodeApi()
 
@@ -117,7 +117,8 @@ const Main: React.FC = () => {
     )
 }
 
-render(
+const root = createRoot(document.querySelector('#root')!)
+root.render(
     <ShortcutProvider>
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
             {/* Required for shared components that depend on `location`. */}
@@ -126,6 +127,5 @@ render(
             </MemoryRouter>
             <Tooltip key={1} className="sourcegraph-tooltip" />
         </WildcardThemeContext.Provider>
-    </ShortcutProvider>,
-    document.querySelector('#root')
+    </ShortcutProvider>
 )

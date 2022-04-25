@@ -1,7 +1,8 @@
-import React from 'react'
+import React, { ReactNode } from 'react'
 
 export interface FormFieldMessageProps {
     isValid?: boolean
+    children?: ReactNode
 }
 
 /**

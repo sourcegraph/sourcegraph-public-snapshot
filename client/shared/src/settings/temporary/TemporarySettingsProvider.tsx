@@ -14,6 +14,7 @@ TemporarySettingsContext.displayName = 'TemporarySettingsContext'
  */
 export const TemporarySettingsProvider: React.FunctionComponent<{
     temporarySettingsStorage: TemporarySettingsStorage
+    children?: React.ReactNode
 }> = ({ children, temporarySettingsStorage }) => {
     // On first run, migrate the settings from the local storage to the temporary storage.
     useEffect(() => {

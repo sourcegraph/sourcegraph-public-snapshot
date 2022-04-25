@@ -39,7 +39,7 @@ export interface Props {
     /**
      * The title component.
      */
-    title: React.ReactFragment
+    title: JSX.Element
 
     /**
      * CSS class name to apply to the title element.
@@ -47,19 +47,19 @@ export interface Props {
     titleClassName?: string
 
     /** The content to display next to the title. */
-    description?: React.ReactFragment
+    description?: JSX.Element
 
     /**
      * The content of the result displayed underneath the result container's
      * header when collapsed.
      */
-    collapsedChildren?: React.ReactFragment
+    collapsedChildren?: JSX.Element
 
     /**
      * The content of the result displayed underneath the result container's
      * header when expanded.
      */
-    expandedChildren?: React.ReactFragment
+    expandedChildren?: JSX.Element
 
     /**
      * The label to display next to the collapse button

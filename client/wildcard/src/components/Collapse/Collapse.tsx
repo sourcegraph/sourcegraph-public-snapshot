@@ -38,7 +38,7 @@ export const Collapse: React.FunctionComponent<CollapseProps> = React.memo(props
     const collapseContent = ChildrenComponent ? <ChildrenComponent isOpen={isCollapseOpen} /> : children
 
     const setOpen = useCallback(
-        opened => {
+        (opened: boolean) => {
             if (!isControlled) {
                 setInternalOpen(opened)
                 return

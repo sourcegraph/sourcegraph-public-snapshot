@@ -5,7 +5,6 @@ import React, { useMemo, useState } from 'react'
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react'
 import * as Comlink from 'comlink'
-import { render } from 'react-dom'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
@@ -22,6 +21,7 @@ import { HistoryHomeSidebar } from '../history/HistorySidebarView'
 import { createSearchSidebarAPI } from './api'
 import { ContextInvalidatedSidebarView } from './ContextInvalidatedSidebarView'
 import { SearchSidebarView } from './SearchSidebarView'
+import { createRoot } from 'react-dom/client'
 
 const vsCodeApi = window.acquireVsCodeApi()
 
@@ -117,13 +117,13 @@ const Main: React.FC = () => {
         </>
     )
 }
+const root = createRoot(document.querySelector('#root')!)
 
-render(
+root.render(
     <ShortcutProvider>
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
             <Main />
             <Tooltip key={1} className="sourcegraph-tooltip" />
         </WildcardThemeContext.Provider>
-    </ShortcutProvider>,
-    document.querySelector('#root')
+    </ShortcutProvider>
 )
