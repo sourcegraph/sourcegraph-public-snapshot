@@ -1,4 +1,4 @@
-import { getExtensionVersion } from '../shared/util/context'
+import { IsProductionVersion } from './util';
 
 /**
  * The "browser action" is the name for the icon/button which is shown in the
@@ -18,7 +18,6 @@ interface BrowserActionIconPaths {
     '128': string
 }
 
-const IsProductionVersion = !getExtensionVersion().startsWith('0.0.0')
 
 const browserActionIconPaths: Record<BrowserActionIconState, BrowserActionIconPaths> = IsProductionVersion
     ? {
