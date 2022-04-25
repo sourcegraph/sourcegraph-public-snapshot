@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 
+import classNames from 'classnames'
 import AlertIcon from 'mdi-react/AlertIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
@@ -124,13 +125,16 @@ const UserFacingRepositoryMenuContent: React.FunctionComponent<{
     const indexerNames = [...new Set(allIndexers.map(indexer => indexer.name).concat(fakeIndexerNames))].sort()
 
     // Expand badges to be as large as the maximum badge when we are displaying
-    // badges of different types. This condition checks that there's at least one
-    // ENABLED and one CONFIGURABLE badge each in the following rendered component.
+    // badges of different types. This condition checks that there's at least
+    // two distinct states being displayed in the following rendered component.
     const className =
         new Set(
-            indexerNames.map(
-                name =>
-                    uploadsByIndexerName.get(name)?.length || 0 > 0 || indexesByIndexerName.get(name)?.length || 0 > 0
+            indexerNames.map(name =>
+                (uploadsByIndexerName.get(name)?.length || 0) + (indexesByIndexerName.get(name)?.length || 0) > 0
+                    ? 'enabled'
+                    : allIndexers.find(candidate => candidate.name === name) !== undefined
+                    ? 'configurable'
+                    : 'unavailable'
             )
         ).size > 1
             ? styles.badgeMultiple
@@ -192,7 +196,9 @@ const IndexerSummary: React.FunctionComponent<{
                             Configurable
                         </Badge>
                     ) : (
-                        <Badge variant="outlineSecondary">Unavailable</Badge>
+                        <Badge variant="outlineSecondary" className={className}>
+                            Unavailable
+                        </Badge>
                     )}
                 </div>
 
@@ -439,10 +445,18 @@ const RequestLink: React.FunctionComponent<{ indexerName: string }> = ({ indexer
             ) : data ? (
                 data.languages.includes(language) || requested ? (
                     <span className="text-muted">
-                        Received your request <InfoCircleOutlineIcon size={16} />
+                        Received your request{' '}
+                        <InfoCircleOutlineIcon
+                            size={16}
+                            data-tooltip="Requests are documented and contribute to our precise support roadmap"
+                        />
                     </span>
                 ) : (
-                    <Button variant="link" className="m-0 p-0" onClick={requestSupport}>
+                    <Button
+                        variant="link"
+                        className={classNames('m-0 p-0', styles.languageRequest)}
+                        onClick={requestSupport}
+                    >
                         I want precise support!
                     </Button>
                 )
