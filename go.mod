@@ -3,6 +3,7 @@ module github.com/sourcegraph/sourcegraph
 go 1.17
 
 require (
+	bitbucket.org/creachadair/shell v0.0.7
 	cloud.google.com/go/kms v1.1.0
 	cloud.google.com/go/monitoring v1.2.0
 	cloud.google.com/go/profiler v0.2.0
@@ -23,6 +24,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.24.1
 	github.com/aws/smithy-go v1.11.0
 	github.com/beevik/etree v1.1.0
+	github.com/bitfield/script v0.20.0
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/buildkite/go-buildkite/v3 v3.0.1
 	github.com/cespare/xxhash v1.1.0
@@ -183,7 +185,6 @@ require (
 )
 
 require (
-	bitbucket.org/creachadair/shell v0.0.7 // indirect
 	cloud.google.com/go/compute v1.5.0 // indirect
 	cloud.google.com/go/iam v0.1.1 // indirect
 	github.com/BurntSushi/toml v0.4.1 // indirect
@@ -195,7 +196,6 @@ require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
 	github.com/alecthomas/chroma v0.10.0 // indirect
-	github.com/bitfield/script v0.20.0 // indirect
 	github.com/cockroachdb/errors v1.8.9 // indirect
 	github.com/containerd/typeurl v1.0.2 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
