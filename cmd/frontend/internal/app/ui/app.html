@@ -103,12 +103,9 @@
 
                     return true;
                 }
-                window.canRunSourceGraph = canRunSourceGraph();
-                if (!canRunSourceGraph) {
+                if (!canRunSourceGraph()) {
                     var element = document.getElementById("please-upgrade-browser");
                     element.classList.remove("d-none");
-                } else {
-                    document.querySelector('#please-upgrade-browser').remove()
                 }
             </script>
         {{ end }}
