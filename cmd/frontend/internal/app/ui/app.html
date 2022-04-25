@@ -2,7 +2,9 @@
 <html lang="en" class="base">
 
 <head>
-
+    <script>
+        console.log('wakka2')
+    </script>
 	{{.Injected.HeadTop}}
 	<meta charset="utf-8">
 	<meta http-equiv="x-ua-compatible" content="ie=edge">
@@ -93,6 +95,24 @@
 		<br>
 		You need to enable JavaScript to run this app.
 	</noscript>
+
+    <script>
+        function canRunSourceGraph() {
+             "use strict";
+
+             if (typeof Symbol == "undefined") return false;
+             try {
+                 eval("class Foo {}");
+                 eval("var bar = (x) => x+1");
+             } catch (e) { return false; }
+
+             return true;
+         }
+         window.canRunSourceGraph = window.check();
+         if (!canRunSourceGraph) {
+             throw new Error('wakka');
+         }
+    </script>
 	{{if .Manifest.AppJSRuntimeBundlePath}}<script src="{{.Manifest.AppJSRuntimeBundlePath}}"></script>{{end}}
 	<script src="{{.Manifest.ReactJSBundlePath}}" {{if .Manifest.IsModule}}type="module"{{end}}></script>
 	<script src="{{.Manifest.AppJSBundlePath}}" {{if .Manifest.IsModule}}type="module"{{end}}></script>
