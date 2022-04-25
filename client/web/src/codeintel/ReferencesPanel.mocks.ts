@@ -194,7 +194,6 @@ const MOCK_REFERENCES: LocationFields[] = [
         start: { line: 15, character: 1 },
         end: { line: 15, character: 9 },
     }),
-
     buildMockLocation({
         repo: 'github.com/sourcegraph/go-diff',
         commit: '9d1f353a285b3094bc33bdae277a19aedabe8b71',
