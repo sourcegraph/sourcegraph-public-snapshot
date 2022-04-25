@@ -267,7 +267,7 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
                             outline={true}
                             variant="danger"
                         >
-                            {isCancelLoading ? <LoadingSpinner /> : 'Cancel'}
+                            {isCancelLoading && <LoadingSpinner />}Cancel
                         </Button>
                     )}
                     {!location.pathname.endsWith('preview') &&
@@ -287,7 +287,7 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
                             outline={true}
                             variant="secondary"
                         >
-                            {isRetryLoading ? <LoadingSpinner /> : 'Retry'}
+                            {isRetryLoading && <LoadingSpinner />}Retry
                         </Button>
                     )}
                     {!location.pathname.endsWith('preview') &&
