@@ -172,7 +172,7 @@ func (s *GoModulesSource) makeRepo(dep *reposource.GoDependency) *types.Repo {
 				CloneURL: string(repoName),
 			},
 		},
-		Metadata: struct{}{},
+		Metadata: &struct{}{},
 	}
 }
 

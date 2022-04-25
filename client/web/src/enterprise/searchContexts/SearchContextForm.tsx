@@ -89,7 +89,12 @@ function getVisibilityRadioButtons(selectedNamespaceType: SelectedNamespaceType)
 function getSearchContextSpecPreview(selectedNamespace: SelectedNamespace, searchContextName: string): JSX.Element {
     return (
         <code className={styles.searchContextFormPreview} data-testid="search-context-preview">
-            <span className="search-filter-keyword">context:</span>
+            {/*
+                a11y-ignore
+                Rule: "color-contrast" (Elements must have sufficient color contrast)
+                GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+            */}
+            <span className="search-filter-keyword a11y-ignore">context:</span>
             {selectedNamespace.name.length > 0 && (
                 <>
                     <span className="search-keyword">@</span>
@@ -331,9 +336,12 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                         />
                     </div>
                     <div className="flex-1">
-                        <div className="mb-2">Context name</div>
+                        <div id="context-name-label" className="mb-2">
+                            Context name
+                        </div>
                         <input
                             className={classNames('w-100', 'form-control', styles.searchContextFormNameInput)}
+                            aria-labelledby="context-name-label"
                             data-testid="search-context-name-input"
                             value={name}
                             type="text"

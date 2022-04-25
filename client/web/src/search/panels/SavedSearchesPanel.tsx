@@ -99,12 +99,12 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                 {savedSearches
                     ?.filter(search => (showAllSearches ? true : search.namespace.id === authenticatedUser?.id))
                     .map(search => (
-                        <li key={search.id} className="text-monospace test-saved-search-entry mb-2 d-block">
+                        <li key={search.id} className="text-monospace test-saved-search-entry d-block mb-2">
                             <div className="d-flex justify-content-between">
                                 <small>
                                     <Link
                                         to={'/search?' + buildSearchURLQueryFromQueryState({ query: search.query })}
-                                        className=" p-0"
+                                        className="p-0"
                                         onClick={logEvent('SavedSearchesPanelSearchClicked')}
                                     >
                                         {search.description}
@@ -136,13 +136,12 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                 <FooterPanel className="p-1">
                     <small>
                         {/*
-                            a11y-ignore
-                            Rule: "color-contrast" (Elements must have sufficient color contrast)
-                            GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                           a11y-ignore
+                           Rule: "color-contrast" (Elements must have sufficient color contrast)
                         */}
                         <Link
                             to={`/users/${authenticatedUser.username}/searches`}
-                            className="a11y-ignore text-left"
+                            className="text-left a11y-ignore"
                             onClick={logEvent('SavedSearchesPanelViewAllClicked')}
                         >
                             View saved searches
