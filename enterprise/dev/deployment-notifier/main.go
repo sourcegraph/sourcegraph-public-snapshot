@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -21,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/okay"
 	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type Flags struct {
@@ -45,35 +45,40 @@ func (f *Flags) Parse() {
 	flag.Parse()
 }
 
+var logger log.Logger
+
 func main() {
 	ctx := context.Background()
+	sync := log.Init(log.Resource{Name: "deployment-notifier"})
+	defer sync()
+	logger = log.Scoped("main", "a script that checks for deployment notifications")
 
 	flags := &Flags{}
 	flags.Parse()
 	if flags.Environment == "" {
-		log.Fatalf("-environment must be specified: preprod or production.")
+		logger.Fatal("-environment must be specified: preprod or production.")
 	}
 
 	ghc := github.NewClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: flags.GitHubToken},
 	)))
 	if flags.GitHubToken == "" {
-		log.Println("warning: using unauthenticated github client")
+		logger.Warn("using unauthenticated github client")
 		ghc = github.NewClient(http.DefaultClient)
 	}
 
 	changedFiles, err := getChangedFiles()
 	if err != nil {
-		log.Fatal(err)
+		logger.Error("cannot get changed files", log.Error(err))
 	}
 	if len(changedFiles) == 0 {
-		fmt.Println(":warning: No relevant changes, skipping notifications and exiting normally.")
+		logger.Info("No relevant changes, skipping notifications and exiting normally.")
 		return
 	}
 
 	manifestRevision, err := getRevision()
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal("cannot get revision", log.Error(err))
 	}
 
 	dd := NewManifestDeploymentDiffer(changedFiles)
@@ -87,10 +92,10 @@ func main() {
 	report, err := dn.Report(ctx)
 	if err != nil {
 		if errors.Is(err, ErrNoRelevantChanges) {
-			fmt.Println(":warning: No relevant changes, skipping notifications and exiting normally.")
+			logger.Info("No relevant changes, skipping notifications and exiting normally.")
 			return
 		}
-		log.Fatal(err)
+		logger.Fatal("failed to generate report", log.Error(err))
 	}
 
 	// Tracing
@@ -98,46 +103,43 @@ func main() {
 	if flags.HoneycombToken != "" {
 		traceURL, err = reportDeployTrace(report, flags.HoneycombToken, flags.DryRun)
 		if err != nil {
-			log.Fatal("trace: ", err.Error())
+			logger.Fatal("failed to generate a trace", log.Error(err))
 		}
 	}
 
-	// Metrics
-	if flags.OkayHQToken != "" {
-		err := reportDeploymentMetrics(report, flags.OkayHQToken, flags.DryRun)
-		if err != nil {
-			log.Fatal("metrics: ", err.Error())
-		}
-		fmt.Println("okayhq")
+	// Metrics, if token is empty, metrics will be logged at DEBUG level
+	err = reportDeploymentMetrics(report, flags.OkayHQToken, flags.DryRun)
+	if err != nil {
+		logger.Fatal("failed to generate metrics", log.Error(err))
 	}
 
 	// Notifcations
 	slc := slack.New(flags.SlackToken)
 	teammates := team.NewTeammateResolver(ghc, slc)
-	if flags.DryRun {
+	if !flags.DryRun {
 		fmt.Println("Github\n---")
 		for _, pr := range report.PullRequests {
 			fmt.Println("-", pr.GetNumber())
 		}
 		out, err := renderComment(report, traceURL)
 		if err != nil {
-			log.Fatalf("can't render GitHub comment %q", err)
+			logger.Fatal("can't render GitHub comment", log.Error(err))
 		}
 		fmt.Println(out)
 		fmt.Println("Slack\n---")
 		out, err = slackSummary(ctx, teammates, report, traceURL)
 		if err != nil {
-			log.Fatalf("can't render Slack post %q", err)
+			logger.Fatal("can't render Slack post", log.Error(err))
 		}
 		fmt.Println(out)
 	} else {
 		out, err := slackSummary(ctx, teammates, report, traceURL)
 		if err != nil {
-			log.Fatalf("can't render Slack post %q", err)
+			logger.Fatal("can't render Slack post", log.Error(err))
 		}
 		err = postSlackUpdate(flags.SlackAnnounceWebhook, out)
 		if err != nil {
-			log.Fatalf("can't post Slack update %q", err)
+			logger.Fatal("can't post Slack update", log.Error(err))
 		}
 	}
 }
@@ -240,9 +242,9 @@ func reportDeployTrace(report *DeploymentReport, token string, dryRun bool) (str
 	}
 	traceURL, err := buildTraceURL(&honeyConfig, trace.ID, trace.Root.Timestamp.Unix())
 	if err != nil {
-		log.Println("warning: buildTraceURL: ", err.Error())
+		logger.Warn("failed to generate buildTraceURL", log.Error(err))
 	} else {
-		log.Println("trace: ", traceURL)
+		logger.Info("generated trace", log.String("trace", traceURL))
 	}
 	return traceURL, nil
 }
