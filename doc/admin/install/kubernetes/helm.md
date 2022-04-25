@@ -41,7 +41,7 @@ helm repo add sourcegraph https://helm.sourcegraph.com/release
 Install the Sourcegraph chart using default values:
 
 ```sh
-helm install --version 0.7.0 sourcegraph sourcegraph/sourcegraph
+helm install --version 3.39.0 sourcegraph sourcegraph/sourcegraph
 ```
 
 Sourcegraph should now be available via the address set. Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account.
@@ -68,7 +68,7 @@ Example overrides can be found in the [examples](https://github.com/sourcegraph/
 
 Providing the override file to Helm is done with the inclusion of the values flag and the name of the file:
 ```sh
-helm upgrade --install --values ./override.yaml --version 0.7.0 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 3.39.0 sourcegraph sourcegraph/sourcegraph
 ```
 When making configuration changes, it's recommended to review the changes that will be applied - see [Reviewing Changes](#reviewing-changes).
 
@@ -403,7 +403,7 @@ The override file includes a [BackendConfig] CRD. This is necessary to instruct 
 **2** – Install the chart
 
 ```sh
-helm upgrade --install --values ./override.yaml --version 0.7.0 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 3.39.0 sourcegraph sourcegraph/sourcegraph
 ```
 
 It will take around 10 minutes for the load balancer to be fully ready, you may check on the status and obtain the load balancer IP using the following command:
@@ -516,7 +516,7 @@ storageClass:
 **2** – Install the chart
 
 ```sh
-helm upgrade --install --values ./override.yaml --version 0.7.0 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 3.39.0 sourcegraph sourcegraph/sourcegraph
 ```
 
 It will take some time for the load balancer to be fully ready, use the following to check on the status and obtain the load balancer address (once available):
@@ -601,7 +601,7 @@ storageClass:
 **2** – Install the chart
 
 ```sh
-helm upgrade --install --values ./override.yaml --version 0.7.0 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 3.39.0 sourcegraph sourcegraph/sourcegraph
 ```
 
 It will take some time for the load balancer to be fully ready, you can check on the status and obtain the load balancer address (when ready) using:
@@ -687,7 +687,7 @@ storageClass:
 **2** – Install the chart
 
 ```sh
-helm upgrade --install --values ./override.yaml --version 0.7.0 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 3.39.0 sourcegraph sourcegraph/sourcegraph
 ```
 
 It may take some time before your ingress is up and ready to proceed. Depending on how your Ingress Controller works, you may be able to check on its status and obtain the public address of your Ingress using:
@@ -785,7 +785,7 @@ A new version of Sourcegraph is released every month (with patch releases in bet
 1.  Install the new version:
 
    ```bash
-      helm upgrade --install -f override.yaml --version 0.7.0 sourcegraph sourcegraph/sourcegraph
+      helm upgrade --install -f override.yaml --version 3.39.0 sourcegraph sourcegraph/sourcegraph
    ```
 
 1.  Verify the installation has started:
@@ -827,14 +827,14 @@ For example:
 1. Render the initial manifests from your existing deployment setup to an output file:
 
    ```bash
-      CHART_VERSION=0.6.0 # Currently deployed version
+      CHART_VERSION=0.7.0 # Currently deployed version
       helm template sourcegraph -f override.yaml --version $CHART_VERSION sourcegraph sourcegraph/sourcegraph > original_manifests
    ```
 
 1. Make changes to your override file, and/or update the chart version, then render that output:
 
    ```bash
-      CHART_VERSION=0.7.0 # Not yet deployed version
+      CHART_VERSION=3.39.0 # Not yet deployed version
       helm template sourcegraph -f override.yaml --version $CHART_VERSION sourcegraph sourcegraph/sourcegraph > new_manifests
    ```
 
