@@ -1,10 +1,8 @@
-import { MockedResponse } from '@apollo/client/testing'
 import { render, RenderResult, within, fireEvent } from '@testing-library/react'
 import * as H from 'history'
 import { EMPTY, NEVER, noop, of, Subscription } from 'rxjs'
 import { HoverThresholdProps } from 'src/repo/RepoContainer'
 
-import { getDocumentNode } from '@sourcegraph/http-client'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src/api/util'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
@@ -16,64 +14,8 @@ import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shar
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { ReferencesPanelWithMemoryRouter } from './ReferencesPanel'
-import {
-    USE_PRECISE_CODE_INTEL_MOCK,
-    RESOLVE_REPO_REVISION_BLOB_MOCK,
-    HIGHLIGHTED_FILE_MOCK,
-} from './ReferencesPanel.mocks'
-import {
-    USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY,
-    RESOLVE_REPO_REVISION_BLOB_QUERY,
-    FETCH_HIGHLIGHTED_BLOB,
-} from './ReferencesPanelQueries'
-
-const url = '/github.com/sourcegraph/go-diff/-/blob/diff/diff.go?L16:2&subtree=true#tab=references'
-const repoName = 'github.com/sourcegraph/go-diff'
-const commit = '9d1f353a285b3094bc33bdae277a19aedabe8b71'
-const filePath = 'diff/diff.go'
-
-const mocks: readonly MockedResponse[] = [
-    {
-        request: {
-            query: getDocumentNode(USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY),
-            variables: {
-                repository: repoName,
-                commit,
-                path: filePath,
-                line: 15,
-                character: 1,
-                filter: null,
-                firstReferences: 100,
-                afterReferences: null,
-                firstImplementations: 100,
-                afterImplementations: null,
-            },
-        },
-        result: USE_PRECISE_CODE_INTEL_MOCK,
-    },
-    {
-        request: {
-            query: getDocumentNode(RESOLVE_REPO_REVISION_BLOB_QUERY),
-            variables: {
-                repoName,
-                filePath,
-                revision: '',
-            },
-        },
-        result: RESOLVE_REPO_REVISION_BLOB_MOCK,
-    },
-    {
-        request: {
-            query: getDocumentNode(FETCH_HIGHLIGHTED_BLOB),
-            variables: {
-                commit,
-                path: filePath,
-                repository: repoName,
-            },
-        },
-        result: HIGHLIGHTED_FILE_MOCK,
-    },
-]
+import { buildReferencePanelMocks } from './ReferencesPanel.mocks'
+import {} from './ReferencesPanelQueries'
 
 const NOOP_SETTINGS_CASCADE = {
     subjects: null,
@@ -126,11 +68,13 @@ const defaultProps: SettingsCascadeProps &
 
 describe('ReferencesPanel', () => {
     async function renderReferencesPanel() {
+        const { url, requestMocks } = buildReferencePanelMocks()
+
         const fakeExternalHistory = H.createMemoryHistory()
         fakeExternalHistory.push(url)
 
         const result: RenderResult = render(
-            <MockedTestProvider mocks={mocks}>
+            <MockedTestProvider mocks={requestMocks}>
                 <ReferencesPanelWithMemoryRouter
                     {...defaultProps}
                     externalHistory={fakeExternalHistory}
