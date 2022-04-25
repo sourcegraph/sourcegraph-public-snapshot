@@ -389,10 +389,14 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 		// For every series that we want to potentially gather historical data for, try.
 		for _, seriesID := range sortedSeriesIDs {
 			series := uniqueSeries[seriesID]
+			truncateDuration := time.Hour * 24
+			if series.SampleIntervalUnit == string(itypes.Hour) {
+				truncateDuration = time.Hour
+			}
 			frames := query.BuildFrames(12, timeseries.TimeInterval{
 				Unit:  itypes.IntervalUnit(series.SampleIntervalUnit),
 				Value: series.SampleIntervalValue,
-			}, series.CreatedAt.Truncate(time.Hour*24))
+			}, series.CreatedAt.Truncate(truncateDuration))
 
 			log15.Debug("insights: starting frames", "repo_id", id, "series_id", series.SeriesID, "frames", frames)
 			plan := h.frameFilter.FilterFrames(ctx, frames, id)

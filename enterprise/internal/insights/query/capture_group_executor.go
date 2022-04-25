@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -46,7 +47,12 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 	}
 	log15.Debug("Generated repoIds", "repoids", repoIds)
 
-	frames := BuildFrames(7, interval, c.clock().Truncate(time.Hour*24))
+	truncateDuration := time.Hour * 24
+	if interval.Unit == types.Hour {
+		truncateDuration = time.Hour
+	}
+
+	frames := BuildFrames(7, interval, c.clock().Truncate(truncateDuration))
 	pivoted := make(map[string]timeCounts)
 
 	for _, repository := range repositories {
