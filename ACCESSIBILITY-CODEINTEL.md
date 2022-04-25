@@ -330,3 +330,26 @@ Follow the instructions here: [Auditing a user journey](https://docs.sourcegraph
 ### How to raise discovered problems
 
 Follow the instructions here: [Raising an accessibility bug](https://docs.sourcegraph.com/dev/background-information/web/accessibility/how-to-audit#raising-a-bug)
+
+# 14
+
+[Accessibility Audit] Code Intel: Read file content
+
+### Steps to replicate journey
+
+Taken from the [user journey list document](https://docs.google.com/document/d/1kA6aVOAgID_uPm-d6uEC1DG6WHjJ8fPT0UAXQcML_KQ/edit?usp=sharing). Use this for further context.
+
+Note: This is primarily aimed to assess the _consumption_ of content. As in, it should be possible to read the content of a file without any issues, irrelevant of if a user has a screen reader, magnifier, etc.
+
+- Navigate to a file in Sourcegraph
+- Read file contents
+
+### How to audit
+
+Follow the instructions here: [Auditing a user journey](https://docs.sourcegraph.com/dev/background-information/web/accessibility/how-to-audit#auditing-a-user-journey)
+
+**Note:** We are planning on arranging thorough third-party audit in the future, so our focus here is just to find the _majority_ of accessibility issues. Don't worry if you feel you haven't found 100% of potential issues, it is better to focus on the core essentials to complete the journey rather than spending lots of time going through every possible problem.
+
+### How to raise discovered problems
+
+Follow the instructions here: [Raising an accessibility bug](https://docs.sourcegraph.com/dev/background-information/web/accessibility/how-to-audit#raising-a-bug)
