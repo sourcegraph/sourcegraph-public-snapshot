@@ -7,7 +7,7 @@
 # User local IDEA configuration files
 .idea/
 
-#IntelliJ project
+# IntelliJ project
 *.iml
 
 # Build output & caches for IntelliJ plugin development
@@ -32,3 +32,6 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 fabric.properties
+
+# JavaScript resources
+src/main/resources/dist/*
