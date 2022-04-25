@@ -1,6 +1,6 @@
 import { ApolloError } from '@apollo/client'
 
-import { useQuery } from '@sourcegraph/http-client'
+import { useMutation, useQuery } from '@sourcegraph/http-client'
 
 import {
     CodeIntelStatusResult,
@@ -10,10 +10,14 @@ import {
     LsifUploadFields,
     LSIFUploadsWithRepositoryNamespaceFields,
     PreciseSupportFields,
+    RequestedLanguageSupportResult,
+    RequestedLanguageSupportVariables,
+    RequestLanguageSupportResult,
+    RequestLanguageSupportVariables,
     SearchBasedCodeIntelSupportFields,
 } from '../../graphql-operations'
 
-import { codeIntelStatusQuery } from './queries'
+import { codeIntelStatusQuery, requestedLanguageSupportQuery, requestLanguageSupportQuery } from './queries'
 
 export interface UseCodeIntelStatusParameters {
     variables: CodeIntelStatusVariables
@@ -97,3 +101,51 @@ export const useCodeIntelStatus = ({ variables }: UseCodeIntelStatusParameters):
             return { data: undefined, error, loading }
     }
 }
+
+export interface UseRequestedLanguageSupportParameters {
+    variables: RequestedLanguageSupportVariables
+}
+
+export interface UseRequestedLanguageSupportResult {
+    data?: {
+        languages: string[]
+    }
+    error?: ApolloError
+    loading: boolean
+}
+
+export const useRequestedLanguageSupportQuery = ({
+    variables,
+}: UseRequestedLanguageSupportParameters): UseRequestedLanguageSupportResult => {
+    const { data: rawData, error, loading } = useQuery<
+        RequestedLanguageSupportResult,
+        RequestedLanguageSupportVariables
+    >(requestedLanguageSupportQuery, {
+        variables,
+        notifyOnNetworkStatusChange: false,
+        fetchPolicy: 'no-cache',
+    })
+
+    return { data: rawData && { languages: rawData.requestedLanguageSupport }, error, loading }
+}
+
+export interface UseRequestLanguageSupportParameters {
+    variables: RequestLanguageSupportVariables
+    onCompleted?: () => void
+}
+
+export interface UseRequestLanguageSupportResult {
+    error?: ApolloError
+    loading: boolean
+}
+
+export const useRequestLanguageSupportQuery = ({
+    variables,
+    onCompleted,
+}: UseRequestLanguageSupportParameters): [() => Promise<{}>, UseRequestLanguageSupportResult] =>
+    useMutation<RequestLanguageSupportResult, RequestLanguageSupportVariables>(requestLanguageSupportQuery, {
+        variables,
+        onCompleted,
+        notifyOnNetworkStatusChange: false,
+        fetchPolicy: 'no-cache',
+    })

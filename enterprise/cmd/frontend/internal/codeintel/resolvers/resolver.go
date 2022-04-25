@@ -61,6 +61,9 @@ type Resolver interface {
 	QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (QueryResolver, error)
 	RepositorySummary(ctx context.Context, repositoryID int) (RepositorySummary, error)
 
+	RequestLanguageSupport(ctx context.Context, userID int, language string) error
+	RequestedLanguageSupport(ctx context.Context, userID int) ([]string, error)
+
 	ExecutorResolver() executor.Resolver
 }
 
