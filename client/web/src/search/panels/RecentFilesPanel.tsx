@@ -111,17 +111,19 @@ export const RecentFilesPanel: React.FunctionComponent<Props> = ({
             <div className="mb-1 mt-2">
                 <small>File</small>
             </div>
-            <ul className="list-group-flush list-group mb-2">
-                {processedResults?.map((recentFile, index) => (
-                    <li key={index} className="text-monospace mb-2 d-block">
-                        <small>
-                            <Link to={recentFile.url} onClick={logFileClicked} data-testid="recent-files-item">
-                                {recentFile.repoName} › {recentFile.filePath}
-                            </Link>
-                        </small>
-                    </li>
-                ))}
-            </ul>
+            {processedResults?.length && (
+                <ul className="list-group-flush list-group mb-2">
+                    {processedResults.map((recentFile, index) => (
+                        <li key={index} className="text-monospace mb-2 d-block">
+                            <small>
+                                <Link to={recentFile.url} onClick={logFileClicked} data-testid="recent-files-item">
+                                    {recentFile.repoName} › {recentFile.filePath}
+                                </Link>
+                            </small>
+                        </li>
+                    ))}
+                </ul>
+            )}
             {recentFiles?.pageInfo.hasNextPage && (
                 <div>
                     <ShowMoreButton onClick={loadMoreItems} dataTestid="recent-files-panel-show-more" />

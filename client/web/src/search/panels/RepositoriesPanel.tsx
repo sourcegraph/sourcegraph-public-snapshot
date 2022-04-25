@@ -174,10 +174,8 @@ function processRepositories(eventLogResult: EventLogResult): string[] | null {
             const scannedQuery = scanSearchQuery(queryFromURL || '')
             if (scannedQuery.type === 'success') {
                 for (const token of scannedQuery.term) {
-                    if (isRepoFilter(token)) {
-                        if (token.value && !recentlySearchedRepos.includes(token.value.value)) {
-                            recentlySearchedRepos.push(token.value.value)
-                        }
+                    if (isRepoFilter(token) && token.value && !recentlySearchedRepos.includes(token.value.value)) {
+                        recentlySearchedRepos.push(token.value.value)
                     }
                 }
             }
