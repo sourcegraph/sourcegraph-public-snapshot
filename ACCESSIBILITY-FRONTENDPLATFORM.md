@@ -622,3 +622,61 @@ Follow the instructions here: [Auditing a user journey](https://docs.sourcegraph
 ### How to raise discovered problems
 
 Follow the instructions here: [Raising an accessibility bug](https://docs.sourcegraph.com/dev/background-information/web/accessibility/how-to-audit#raising-a-bug)
+
+# 21
+
+[Accessibility Audit] Frontend Platform: User settings - Product research page
+
+### Steps to replicate journey
+
+Taken from the [user journey list document](https://docs.google.com/document/d/1rSp77P0UDY6ewHq6iXmW0nuilBtkMW05n1ciMB8gQ3w/edit?usp=sharing). Use this for further context.
+
+Signing up for product research
+
+- Access settings page
+- Navigate to “Product research”
+- Click “Sign up now” and fill out the form
+
+### How to audit
+
+Follow the instructions here: [Auditing a user journey](https://docs.sourcegraph.com/dev/background-information/web/accessibility/how-to-audit#auditing-a-user-journey)
+
+**Note:** We are planning on arranging thorough third-party audit in the future, so our focus here is just to find the _majority_ of accessibility issues. Don't worry if you feel you haven't found 100% of potential issues, it is better to focus on the core essentials to complete the journey rather than spending lots of time going through every possible problem.
+
+### How to raise discovered problems
+
+Follow the instructions here: [Raising an accessibility bug](https://docs.sourcegraph.com/dev/background-information/web/accessibility/how-to-audit#raising-a-bug)
+
+# 22
+
+[Accessibility Audit] Frontend Platform: Code panel - File history view
+
+### Steps to replicate journey
+
+Taken from the [user journey list document](https://docs.google.com/document/d/1rSp77P0UDY6ewHq6iXmW0nuilBtkMW05n1ciMB8gQ3w/edit?usp=sharing). Use this for further context.
+
+Example: https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/wildcard/src/components/Button/Button.tsx?L52:14#tab=history
+
+Viewing code history:
+
+- Navigate to reference in file
+- Activate panel on reference (e.g. click find references)
+- Navigate to “History” tab in panel
+- Click a commit message OR the commit hash to navigate to the the diff view for that commit
+- Click the file icon to load the current code view for this file and the relevant commit revision.
+
+Signing up for product research
+
+- Access settings page
+- Navigate to “Product research”
+- Click “Sign up now” and fill out the form
+
+### How to audit
+
+Follow the instructions here: [Auditing a user journey](https://docs.sourcegraph.com/dev/background-information/web/accessibility/how-to-audit#auditing-a-user-journey)
+
+**Note:** We are planning on arranging thorough third-party audit in the future, so our focus here is just to find the _majority_ of accessibility issues. Don't worry if you feel you haven't found 100% of potential issues, it is better to focus on the core essentials to complete the journey rather than spending lots of time going through every possible problem.
+
+### How to raise discovered problems
+
+Follow the instructions here: [Raising an accessibility bug](https://docs.sourcegraph.com/dev/background-information/web/accessibility/how-to-audit#raising-a-bug)
