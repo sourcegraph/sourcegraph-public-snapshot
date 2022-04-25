@@ -2,7 +2,8 @@
 
 .search-notebook-page {
     background: var(--color-bg-1);
-    overflow: auto;
+    overflow: hidden;
+    display: flex;
 }
 
 .spacer {
@@ -17,39 +18,26 @@
     height: 1rem !important;
 }
 
-.columns {
-    display: flex;
-}
-
 .side-column {
-    flex: 2;
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    margin-right: 1rem;
 
     @media (--lg-breakpoint-down) {
         display: none;
     }
 }
 
-.right-column {
-    // Reduce the size of the right column if screen size is max calc($viewport-xl + 20rem) = 1520px,
-    // to give more space to the outline and the notebook.
-    @media (max-width: 1520px) {
-        flex: 1;
-    }
-}
-
-.left-column {
-    position: sticky;
-    top: 0;
-    // Subtract the height of the navbar
-    height: calc(100vh - 2.5rem);
-    margin-right: 1rem;
-}
-
 .center-column {
     flex: 3;
+    overflow: hidden auto;
     min-width: #{$viewport-lg};
-    max-width: #{$viewport-xl};
-    padding: 0 1rem;
+
+    .content {
+        max-width: #{$viewport-xl};
+        padding: 0 1rem;
+    }
 
     @media (--lg-breakpoint-down) {
         min-width: 0;
