@@ -108,8 +108,9 @@ func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpr
 	// Respond positively to ready checks
 	close(ready)
 
+	// This method blocks while the app is live - the following return is only to appease
+	// the type checker.
 	goroutine.MonitorBackgroundRoutines(context.Background(), allRoutines...)
-
 	return nil
 }
 
