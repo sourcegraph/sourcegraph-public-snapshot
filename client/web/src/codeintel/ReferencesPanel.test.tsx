@@ -1,5 +1,5 @@
 import { MockedResponse } from '@apollo/client/testing'
-import { render, RenderResult } from '@testing-library/react'
+import { render, RenderResult, within } from '@testing-library/react'
 import * as H from 'history'
 import { EMPTY, of } from 'rxjs'
 import { HoverThresholdProps } from 'src/repo/RepoContainer'
@@ -86,10 +86,6 @@ const defaultProps: SettingsCascadeProps &
 }
 
 describe('ReferencesPanel', () => {
-    beforeAll(() => {
-        window.context = { sourcegraphDotComMode: false } as any
-    })
-
     async function renderReferencesPanel() {
         const fakeExternalHistory = H.createMemoryHistory()
         fakeExternalHistory.push(url)
@@ -108,14 +104,33 @@ describe('ReferencesPanel', () => {
         return result
     }
 
+    it('renders definitions correctly', async () => {
+        const result = await renderReferencesPanel()
+
+        expect(result.getByText('Definitions')).toBeVisible()
+
+        const definitions = ['OrigName string']
+
+        const definitionsList = result.getByTestId('definitions')
+        for (const line of definitions) {
+            expect(within(definitionsList).getByText(line)).toBeVisible()
+        }
+    })
+
     it('renders references correctly', async () => {
         const result = await renderReferencesPanel()
-        const heading = result.getByText('References')
-        expect(heading).toBeVisible()
 
-        expect(result.getByText('label = fmt.Sprintf("orig(%s) new(%s)", fdiff.OrigName, fdiff.NewName)')).toBeVisible()
-        expect(
-            result.getByText('if err := printFileHeader(&buf, "--- ", d.OrigName, d.OrigTime); err != nil {')
-        ).toBeVisible()
+        expect(result.getByText('References')).toBeVisible()
+
+        const references = [
+            'OrigName string',
+            'label = fmt.Sprintf("orig(%s) new(%s)", fdiff.OrigName, fdiff.NewName)',
+            'if err := printFileHeader(&buf, "--- ", d.OrigName, d.OrigTime); err != nil {',
+        ]
+
+        const referencesList = result.getByTestId('references')
+        for (const line of references) {
+            expect(within(referencesList).getByText(line)).toBeVisible()
+        }
     })
 })

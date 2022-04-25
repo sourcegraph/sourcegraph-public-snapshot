@@ -514,7 +514,7 @@ const CollapsibleLocationList: React.FunctionComponent<CollapsibleLocationListPr
                     </CollapseHeader>
                 </CardHeader>
 
-                <CollapsePanel id={props.name}>
+                <CollapsePanel id={props.name} data-testid={props.name}>
                     {props.locations.length > 0 ? (
                         <LocationsList
                             locations={props.locations}
@@ -791,7 +791,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                             group.path
                         )}{' '}
                         <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
-                            ({group.locations.length} {pluralize('reference', group.locations.length, 'references')})
+                            ({group.locations.length} {pluralize('occurrence', group.locations.length, 'occurences')})
                         </span>
                         <Badge small={true} variant="secondary" className="ml-4">
                             {locationGroupQuality(group)}
