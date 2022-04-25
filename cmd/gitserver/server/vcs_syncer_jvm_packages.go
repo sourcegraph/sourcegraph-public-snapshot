@@ -31,13 +31,7 @@ const (
 	jvmMajorVersion0 = 44
 )
 
-func NewJVMPackagesSyncer(
-	connection *schema.JVMPackagesConnection,
-	svc *dependencies.Service,
-) VCSSyncer {
-	// placeholder is used to set GIT_AUTHOR_NAME for git commands
-	// that don't create commits or tags. The name of this dependency should never
-	// be publicly visible so it can have any random value.
+func NewJVMPackagesSyncer(connection *schema.JVMPackagesConnection, svc *dependencies.Service) VCSSyncer {
 	placeholder, err := reposource.ParseMavenDependency("com.sourcegraph:sourcegraph:1.0.0")
 	if err != nil {
 		panic(fmt.Sprintf("expected placeholder package to parse but got %v", err))

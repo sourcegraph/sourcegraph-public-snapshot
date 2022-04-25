@@ -16,10 +16,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// vcsDependenciesSyncer implements the VCSSyncer interface for dependency repos of different types.
+// vcsDependenciesSyncer implements the VCSSyncer interface for dependency repos
+// of different types.
 type vcsDependenciesSyncer struct {
-	typ         string
-	scheme      string
+	typ    string
+	scheme string
+
+	// placeholder is used to set GIT_AUTHOR_NAME for git commands that don't create
+	// commits or tags. The name of this dependency should never be publicly visible,
+	// so it can have any random value.
 	placeholder reposource.PackageDependency
 	configDeps  []string
 	syncer      dependenciesSyncer
@@ -28,11 +33,12 @@ type vcsDependenciesSyncer struct {
 
 var _ VCSSyncer = &vcsDependenciesSyncer{}
 
-// dependenciesSyncer encapsulates the methods required to implement a syncer
-// of package dependencies e.g. npm, go modules, jvm, python.
+// dependenciesSyncer encapsulates the methods required to implement a syncer of
+// package dependencies e.g. npm, go modules, jvm, python.
 type dependenciesSyncer interface {
-	// Get verifies that a dependency at a specific version exists in the package host and
-	// returns it if so. Otherwise it returns an error that passes errcode.IsNotFound() test.
+	// Get verifies that a dependency at a specific version exists in the package
+	// host and returns it if so. Otherwise it returns an error that passes
+	// errcode.IsNotFound() test.
 	Get(ctx context.Context, name, version string) (reposource.PackageDependency, error)
 	Download(ctx context.Context, dir string, dep reposource.PackageDependency) error
 
@@ -143,8 +149,10 @@ func (ps *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, 
 // gitPushDependencyTag downloads the dependency dep and updates
 // bareGitDirectory. If successful, bareGitDirectory will contain a new tag based
 // on dep. If isLatestVersion==true, the default branch will be updated to point
-// to the new tag. gitPushDependencyTag is responsible for cleaning up temporary
-// directories created in the process.
+// to the new tag.
+//
+// gitPushDependencyTag is responsible for cleaning up temporary directories
+// created in the process.
 func (ps *vcsDependenciesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dep reposource.PackageDependency, isLatestVersion bool) error {
 	workDir, err := os.MkdirTemp("", ps.Type())
 	if err != nil {
