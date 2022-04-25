@@ -29,12 +29,15 @@ type vcsDependenciesSyncer struct {
 var _ VCSSyncer = &vcsDependenciesSyncer{}
 
 // dependenciesSyncer encapsulates the methods required to implement a syncer
-// of package dependencies e.g. npm, go modules, jvm, python
+// of package dependencies e.g. npm, go modules, jvm, python.
 type dependenciesSyncer interface {
 	// Get verifies that a dependency at a specific version exists in the package host and
 	// returns it if so. Otherwise it returns an error that passes errcode.IsNotFound() test.
 	Get(ctx context.Context, name, version string) (reposource.PackageDependency, error)
 	Download(ctx context.Context, dir string, dep reposource.PackageDependency) error
+
+	// ParseDependency parses a package-version string from the external service
+	// configuration. The format of the string varies between external services.
 	ParseDependency(dep string) (reposource.PackageDependency, error)
 	ParseDependencyFromRepoName(repoName string) (reposource.PackageDependency, error)
 }
@@ -96,39 +99,39 @@ func (ps *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, 
 		cloneable = append(cloneable, d)
 	}
 
+	// Create set of existing tags. We want to skip the download of a package if the
+	// tag already exists.
 	out, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "tag"), string(dir), ps.placeholder)
 	if err != nil {
 		return err
 	}
-
-	tags := map[string]bool{}
+	tags := map[string]struct{}{}
 	for _, line := range strings.Split(out, "\n") {
 		if len(line) == 0 {
 			continue
 		}
-		tags[line] = true
+		tags[line] = struct{}{}
 	}
 
 	for i, dependency := range cloneable {
-		if tags[dependency.GitTagFromVersion()] {
+		if _, tagExists := tags[dependency.GitTagFromVersion()]; tagExists {
 			continue
 		}
-		// the gitPushDependencyTag method is responsible for cleaning up temporary directories.
 		if err := ps.gitPushDependencyTag(ctx, string(dir), dependency, i == 0); err != nil {
 			return errors.Wrapf(err, "error pushing dependency %q", dependency.PackageManagerSyntax())
 		}
 	}
 
+	// Delete tags for versions we no longer track.
 	dependencyTags := make(map[string]struct{}, len(cloneable))
 	for _, dependency := range cloneable {
 		dependencyTags[dependency.GitTagFromVersion()] = struct{}{}
 	}
-
 	for tag := range tags {
 		if _, isDependencyTag := dependencyTags[tag]; !isDependencyTag {
 			cmd := exec.CommandContext(ctx, "git", "tag", "-d", tag)
 			if _, err := runCommandInDirectory(ctx, cmd, string(dir), ps.placeholder); err != nil {
-				log15.Error("Failed to delete git tag", "error", err, "tag", tag)
+				log15.Error("failed to delete git tag", "error", err, "tag", tag)
 				continue
 			}
 		}
@@ -137,6 +140,11 @@ func (ps *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, 
 	return nil
 }
 
+// gitPushDependencyTag downloads the dependency dep and updates
+// bareGitDirectory. If successful, bareGitDirectory will contain a new tag based
+// on dep. If isLatestVersion==true, the default branch will be updated to point
+// to the new tag. gitPushDependencyTag is responsible for cleaning up temporary
+// directories created in the process.
 func (ps *vcsDependenciesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dep reposource.PackageDependency, isLatestVersion bool) error {
 	workDir, err := os.MkdirTemp("", ps.Type())
 	if err != nil {
