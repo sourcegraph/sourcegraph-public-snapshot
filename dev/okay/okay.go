@@ -111,30 +111,31 @@ func NewClient(client *http.Client, token string) *Client {
 	}
 }
 
-func (o *Client) SetEndpoint(url string) {
-	o.endpoint = url
+// SetEndpoint replace the default endpoint to OkayHQ API.
+func (c *Client) SetEndpoint(url string) {
+	c.endpoint = url
 }
 
 // post submits an individual event to the API.
-func (o *Client) post(event *customEvent) error {
+func (c *Client) post(event *customEvent) error {
 	b, err := json.Marshal(event)
 	if err != nil {
 		return err
 	}
 
-	if o.token == "" {
+	if c.token == "" {
 		// If the token is empty, just log the events
-		o.logger.Debug("pretending to send event", log.String("event", string(b)))
+		c.logger.Debug("pretending to send event", log.String("event", string(b)))
 	}
 
 	buf := bytes.NewReader(b)
-	req, err := http.NewRequest(http.MethodPost, o.endpoint, buf)
+	req, err := http.NewRequest(http.MethodPost, c.endpoint, buf)
 	if err != nil {
 		return err
 	}
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", o.token))
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", c.token))
 	req.Header.Add("Content-Type", "application/json")
-	resp, err := o.cli.Do(req)
+	resp, err := c.cli.Do(req)
 	if err != nil {
 		return err
 	}
@@ -150,7 +151,7 @@ func (o *Client) post(event *customEvent) error {
 }
 
 // Push stores a new custom event to be submitted to OkayHQ once Flush is called.
-func (o *Client) Push(event *Event) error {
+func (c *Client) Push(event *Event) error {
 	if event.Name == "" {
 		return errors.New("okayhq: event name can't be blank")
 	}
@@ -166,8 +167,8 @@ func (o *Client) Push(event *Event) error {
 		}
 	}
 
-	o.mu.Lock()
-	defer o.mu.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	ce := &customEvent{
 		Event:      "custom",
@@ -187,25 +188,25 @@ func (o *Client) Push(event *Event) error {
 	if event.OkayURL != "" {
 		ce.Properties["okay.url"] = event.OkayURL
 	}
-	o.events = append(o.events, ce)
+	c.events = append(c.events, ce)
 
 	return nil
 }
 
 // Flush empties the list of events accumulated by the client.
-func (o *Client) Flush() error {
-	o.mu.Lock()
-	defer o.mu.Unlock()
+func (c *Client) Flush() error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	var errs error
-	for _, event := range o.events {
-		err := o.post(event)
+	for _, event := range c.events {
+		err := c.post(event)
 		if err != nil {
 			errs = errors.Append(errs, err)
 		}
 	}
 	// Reset the internal events buffer
-	o.events = nil
+	c.events = nil
 
 	return errs
 }
