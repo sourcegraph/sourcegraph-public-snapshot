@@ -11,21 +11,19 @@ export interface RunServerSideModalProps {
     name: string
     originalInput: string
     isLightTheme: boolean
-    // setIsDownloadSpecModalOpen: (condition: boolean) => void
-    // setDownloadSpecModalDismissed: (condition: boolean) => void
+    setIsRunServerSideModalOpen: (condition: boolean) => void
 }
 
 export const RunServerSideModal: React.FunctionComponent<RunServerSideModalProps> = ({
     name,
     originalInput,
     isLightTheme,
-    // setIsDownloadSpecModalOpen,
-    // setDownloadSpecModalDismissed,
+    setIsRunServerSideModalOpen,
 }) => (
     <Modal
-        // onDismiss={() => {
-        //     setIsDownloadSpecModalOpen(false)
-        // }}
+        onDismiss={() => {
+            setIsRunServerSideModalOpen(false)
+        }}
         aria-labelledby={MODAL_LABEL_ID}
         className={styles.modal}
     >
@@ -33,9 +31,9 @@ export const RunServerSideModal: React.FunctionComponent<RunServerSideModalProps
             <h3 id={MODAL_LABEL_ID}>Running batch changes server side is not enabled</h3>
             <Button
                 className={styles.close}
-                // onClick={() => {
-                //     setIsDownloadSpecModalOpen(false)
-                // }}
+                onClick={() => {
+                    setIsRunServerSideModalOpen(false)
+                }}
             >
                 <VisuallyHidden>Close</VisuallyHidden>
                 <CloseIcon className={styles.icon} />
@@ -74,7 +72,6 @@ export const RunServerSideModal: React.FunctionComponent<RunServerSideModalProps
                         outline={true}
                         variant="primary"
                         // onClick={() => {
-                        //     setIsDownloadSpecModalOpen(false)
                         // }}
                     >
                         Request Demo

@@ -57,11 +57,25 @@ export const BatchSpec: React.FunctionComponent<BatchSpecProps> = ({
 
 interface BatchSpecDownloadLinkProps extends BatchSpecProps, Pick<BatchChangeFields, 'name'> {
     className?: string
+    asButton: boolean
 }
 
 export const BatchSpecDownloadLink: React.FunctionComponent<BatchSpecDownloadLinkProps> = React.memo(
-    function BatchSpecDownloadLink({ children, className, name, originalInput }) {
-        return (
+    function BatchSpecDownloadLink({ children, className, name, originalInput, asButton }) {
+        return asButton ? (
+            <Button
+                variant="primary"
+                as="a"
+                download={getFileName(name)}
+                href={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={className}
+                data-tooltip={`Download ${getFileName(name)}`}
+            >
+                {children}
+            </Button>
+        ) : (
             <Link
                 download={getFileName(name)}
                 to={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}

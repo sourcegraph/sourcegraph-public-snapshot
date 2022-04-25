@@ -43,6 +43,8 @@ import {
     CreateEmptyBatchChangeResult,
     Scalars,
     BatchSpecWorkspaceResolutionState,
+    GetExecutorsTotalCountResult,
+    GetExecutorsTotalCountVariables,
 } from '../../../graphql-operations'
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
@@ -63,6 +65,8 @@ import { useWorkspaces, WorkspacePreviewFilters } from './workspaces-preview/use
 import { WorkspacesPreview } from './workspaces-preview/WorkspacesPreview'
 
 import styles from './CreateOrEditBatchChangePage.module.scss'
+import { isNull } from 'util'
+import { RunServerSideModal } from './RunServerSideModal'
 
 export interface CreateOrEditBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Settings> {
     /**
@@ -256,7 +260,7 @@ const INVALID_BATCH_SPEC_TOOLTIP = "There's a problem with your batch spec."
 const WORKSPACES_PREVIEW_SIZE = 'batch-changes.ssbc-workspaces-preview-size'
 
 const EXECUTORS = gql`
-    query Executors {
+    query GetExecutorsTotalCount {
         executors {
             totalCount
         }
@@ -269,6 +273,8 @@ interface EditPageProps extends ThemeProps {
 }
 
 const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetchBatchChange, isLightTheme }) => {
+    const { data } = useQuery<GetExecutorsTotalCountResult, GetExecutorsTotalCountVariables>(EXECUTORS, {})
+
     // Get the latest batch spec for the batch change.
     const { batchSpec, isApplied: isLatestBatchSpecApplied, initialCode: initialBatchSpecCode } = useInitialBatchSpec(
         batchChange
@@ -282,6 +288,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
 
     const [filters, setFilters] = useState<WorkspacePreviewFilters>()
     const [isDownloadSpecModalOpen, setIsDownloadSpecModalOpen] = useState(false)
+    const [isRunServerSideModalOpen, setIsRunServerSideModalOpen] = useState(false)
     const [downloadSpecModalDismissed, setDownloadSpecModalDismissed] = useTemporarySetting(
         'batches.downloadSpecModalDismissed',
         false
@@ -387,50 +394,60 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
         resolutionState,
     ])
 
-    const actionButtons =
-        EXECUTORS.length > 0 ? (
-            <>
-                <ExecutionOptionsDropdown
-                    execute={executeBatchSpec}
-                    isExecutionDisabled={isExecutionDisabled}
-                    executionTooltip={executionTooltip}
-                    options={executionOptions}
-                    onChangeOptions={setExecutionOptions}
-                />
+    const activeExecutors = (
+        <>
+            <ExecutionOptionsDropdown
+                execute={executeBatchSpec}
+                isExecutionDisabled={isExecutionDisabled}
+                executionTooltip={executionTooltip}
+                options={executionOptions}
+                onChangeOptions={setExecutionOptions}
+            />
 
-                {downloadSpecModalDismissed ? (
-                    <BatchSpecDownloadLink name={batchChange.name} originalInput={code} isLightTheme={isLightTheme}>
-                        Download for src-cli
-                    </BatchSpecDownloadLink>
-                ) : (
-                    <Button
-                        className={styles.downloadLink}
-                        variant="link"
-                        onClick={() => setIsDownloadSpecModalOpen(true)}
-                    >
-                        Download for src-cli
-                    </Button>
-                )}
-            </>
-        ) : (
-            <>
-                {downloadSpecModalDismissed ? (
-                    <BatchSpecDownloadLink name={batchChange.name} originalInput={code} isLightTheme={isLightTheme}>
-                        Download for src-cli
-                    </BatchSpecDownloadLink>
-                ) : (
-                    <Button onClick={() => setIsDownloadSpecModalOpen(true)}>Download for src-cli</Button>
-                )}
+            {downloadSpecModalDismissed ? (
+                <BatchSpecDownloadLink
+                    name={batchChange.name}
+                    originalInput={code}
+                    isLightTheme={isLightTheme}
+                    asButton={false}
+                >
+                    or download for src-cli
+                </BatchSpecDownloadLink>
+            ) : (
+                <Button className={styles.downloadLink} variant="link" onClick={() => setIsDownloadSpecModalOpen(true)}>
+                    or download for src-cli
+                </Button>
+            )}
+        </>
+    )
 
-                <ExecutionOptionsDropdown
-                    execute={executeBatchSpec}
-                    isExecutionDisabled={isExecutionDisabled}
-                    executionTooltip={executionTooltip}
-                    options={executionOptions}
-                    onChangeOptions={setExecutionOptions}
-                />
-            </>
-        )
+    const noActiveExecutors = (
+        <>
+            {downloadSpecModalDismissed ? (
+                <BatchSpecDownloadLink
+                    name={batchChange.name}
+                    originalInput={code}
+                    isLightTheme={isLightTheme}
+                    asButton={true}
+                    className="mb-2"
+                >
+                    Download for src-cli
+                </BatchSpecDownloadLink>
+            ) : (
+                <Button className="mb-2" variant="primary" onClick={() => setIsDownloadSpecModalOpen(true)}>
+                    Download for src-cli
+                </Button>
+            )}
+
+            <Button className={styles.downloadLink} variant="link" onClick={() => setIsRunServerSideModalOpen(true)}>
+                or run server-side
+            </Button>
+        </>
+    )
+
+    // When graphql query is completed, check if the data from the query meets this condition and render approriate buttons
+    // Until the query is complete, this variable will be undefined and no buttons will not show
+    const actionButtons = data ? (data.executors.totalCount > 0 ? activeExecutors : noActiveExecutors) : undefined
 
     return (
         <BatchChangePage
@@ -461,6 +478,15 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
                             isLightTheme={isLightTheme}
                             setDownloadSpecModalDismissed={setDownloadSpecModalDismissed}
                             setIsDownloadSpecModalOpen={setIsDownloadSpecModalOpen}
+                        />
+                    ) : null}
+
+                    {isRunServerSideModalOpen ? (
+                        <RunServerSideModal
+                            name={batchChange.name}
+                            originalInput={code}
+                            isLightTheme={isLightTheme}
+                            setIsRunServerSideModalOpen={setIsRunServerSideModalOpen}
                         />
                     ) : null}
                 </div>

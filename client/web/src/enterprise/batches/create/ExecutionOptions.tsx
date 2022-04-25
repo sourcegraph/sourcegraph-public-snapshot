@@ -52,7 +52,7 @@ export const ExecutionOptionsDropdown: React.FunctionComponent<ExecutionOptionsD
                     disabled={isExecutionDisabled}
                     data-tooltip={executionTooltip}
                 >
-                    run server-side
+                    Run batch spec
                 </Button>
                 <PopoverTrigger
                     as={Button}
