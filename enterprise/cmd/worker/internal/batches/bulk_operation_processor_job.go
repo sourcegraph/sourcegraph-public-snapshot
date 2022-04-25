@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type bulkOperationProcessorJob struct{}
@@ -24,11 +25,15 @@ func NewBulkOperationProcessorJob() job.Job {
 	return &bulkOperationProcessorJob{}
 }
 
+func (j *bulkOperationProcessorJob) Description() string {
+	return ""
+}
+
 func (j *bulkOperationProcessorJob) Config() []env.Config {
 	return []env.Config{}
 }
 
-func (j *bulkOperationProcessorJob) Routines(_ context.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *bulkOperationProcessorJob) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	observationContext := &observation.Context{
 		Logger:     log15.Root(),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
