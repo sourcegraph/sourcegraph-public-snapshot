@@ -483,22 +483,17 @@ export const useRetryWorkspaceExecution = (
 ): MutationTuple<RetryWorkspaceExecutionResult, RetryWorkspaceExecutionVariables> =>
     useMutation(RETRY_WORKSPACE_EXECUTION, { variables: { id: workspaceID } })
 
-export async function retryBatchSpecExecution(id: Scalars['ID']): Promise<BatchSpecExecutionFields> {
-    return requestGraphQL<RetryBatchSpecExecutionResult, RetryBatchSpecExecutionVariables>(
-        gql`
-            mutation RetryBatchSpecExecution($id: ID!) {
-                retryBatchSpecExecution(batchSpec: $id) {
-                    ...BatchSpecExecutionFields
-                }
-            }
+const RETRY_BATCH_SPEC_EXECUTION = gql`
+    mutation RetryBatchSpecExecution($id: ID!) {
+        retryBatchSpecExecution(batchSpec: $id) {
+            ...BatchSpecExecutionFields
+        }
+    }
 
-            ${batchSpecExecutionFieldsFragment}
-        `,
-        { id }
-    )
-        .pipe(
-            map(dataOrThrowErrors),
-            map(({ retryBatchSpecExecution }) => retryBatchSpecExecution)
-        )
-        .toPromise()
-}
+    ${batchSpecExecutionFieldsFragment}
+`
+
+export const useRetryBatchSpecExecution = (
+    batchSpecID: Scalars['ID']
+): MutationTuple<RetryBatchSpecExecutionResult, RetryBatchSpecExecutionVariables> =>
+    useMutation(RETRY_BATCH_SPEC_EXECUTION, { variables: { id: batchSpecID } })

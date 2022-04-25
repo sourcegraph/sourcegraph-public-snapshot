@@ -46,7 +46,7 @@ import {
 import { BatchSpec } from '../BatchSpec'
 import { NewBatchChangePreviewPage } from '../preview/BatchChangePreviewPage'
 
-import { cancelBatchSpecExecution, FETCH_BATCH_SPEC_EXECUTION, retryBatchSpecExecution } from './backend'
+import { cancelBatchSpecExecution, FETCH_BATCH_SPEC_EXECUTION, useRetryBatchSpecExecution } from './backend'
 import { BatchSpecStateBadge } from './BatchSpecStateBadge'
 import { WorkspaceDetails } from './WorkspaceDetails'
 import { Workspaces } from './workspaces/Workspaces'
@@ -224,16 +224,9 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
         }
     }, [batchSpec.id])
 
-    const [isRetrying, setIsRetrying] = useState<boolean | Error>(false)
-    const retryExecution = useCallback(async () => {
-        try {
-            // This reloads all the fields so apollo will rerender the parent component with new details too.
-            // TODO: Actually use apollo here.
-            await retryBatchSpecExecution(batchSpec.id)
-        } catch (error) {
-            setIsRetrying(asError(error))
-        }
-    }, [batchSpec.id])
+    const [retryBatchSpecExecution, { loading: retryLoading, error: retryError }] = useRetryBatchSpecExecution(
+        batchSpec.id
+    )
 
     const workspacesStats = batchSpec.workspaceResolution?.workspaces.stats
 
@@ -300,18 +293,13 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
                         // TODO: Add a second button to allow retrying an entire batch spec,
                         // including completed jobs.
                         <Button
-                            onClick={retryExecution}
-                            disabled={isRetrying === true}
-                            data-tooltip={isRetrying !== true ? 'Retry all failed workspaces' : undefined}
+                            onClick={() => retryBatchSpecExecution()}
+                            disabled={retryLoading}
+                            data-tooltip={retryLoading ? undefined : 'Retry all failed workspaces'}
                             outline={true}
                             variant="secondary"
                         >
-                            {isRetrying !== true && <>Retry</>}
-                            {isRetrying === true && (
-                                <>
-                                    <LoadingSpinner /> Retrying
-                                </>
-                            )}
+                            {retryLoading ? <LoadingSpinner /> : 'Retry'}
                         </Button>
                     )}
                     {!location.pathname.endsWith('preview') &&
@@ -331,7 +319,7 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
                 </ButtonGroup>
                 {/* TODO: Move me out to main page */}
                 {isErrorLike(isCanceling) && <ErrorAlert error={isCanceling} />}
-                {isErrorLike(isRetrying) && <ErrorAlert error={isRetrying} />}
+                {retryError && <ErrorAlert error={retryError} />}
             </span>
         </div>
     )
