@@ -28,7 +28,7 @@ If you're just starting out, you can [**try Sourcegraph Cloud**](https://sourceg
 
 ### Tips
 
-* **We recommend Kubernetes with Helm for most  production deployments**.
+* **We recommend Kubernetes with Helm for most production deployments**.
    *  Kubernetes provides resource isolation (from other services or applications), automated-healing, and far greater ability to scale.
    *  Helm provides a simple mechanism for deployment customizations, as well as a much simpler upgrade experience.
 * If you are unable to use Helm to deploy, but still want to use Kubernetes, see the [Kubernetes guide](kubernetes/index.md). 
