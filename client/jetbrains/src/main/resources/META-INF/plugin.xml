@@ -27,7 +27,6 @@
       <keyboard-shortcut first-keystroke="alt c" keymap="$default"/>
     </action>
     <group id="SourcegraphEditor" icon="/icons/icon.png" popup="true" text="Sourcegraph">
-      <reference ref="sourcegraph.openSearch"/>
       <reference ref="sourcegraph.searchSelection"/>
       <reference ref="sourcegraph.searchRepository"/>
       <reference ref="sourcegraph.openFile"/>
