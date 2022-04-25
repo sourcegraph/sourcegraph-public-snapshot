@@ -47,6 +47,6 @@ class SourcegraphConfig implements PersistentStateComponent<SourcegraphConfig> {
 
     @Nullable
     public static SourcegraphConfig getInstance(Project project) {
-        return ServiceManager.getService(project, SourcegraphConfig.class);
+        return project.getService(SourcegraphConfig.class);
     }
 }

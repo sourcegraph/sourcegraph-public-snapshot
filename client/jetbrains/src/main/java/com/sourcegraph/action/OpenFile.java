@@ -6,7 +6,7 @@ import java.awt.*;
 import java.io.IOException;
 import java.net.URI;
 
-public class Open extends FileAction {
+public class OpenFile extends FileAction {
 
     @Override
     void handleFileUri(String uri) {
