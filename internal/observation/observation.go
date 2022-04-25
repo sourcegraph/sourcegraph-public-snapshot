@@ -56,24 +56,26 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/opentracing/opentracing-go/log"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.uber.org/zap"
 
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
-	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	sglog "github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
 )
 
 // Context carries context about where to send logs, trace spans, and register
 // metrics. It should be created once on service startup, and passed around to
 // any location that wants to use it for observing operations.
 type Context struct {
-	Logger       logging.ErrorLogger
+	Logger       sglog.Logger
 	Tracer       *trace.Tracer
 	Registerer   prometheus.Registerer
 	HoneyDataset *honey.Dataset
@@ -107,10 +109,12 @@ type Op struct {
 	// format {GroupName}.{OperationName}, where both sections are title cased
 	// (e.g. Store.GetRepoByID).
 	Name string
+	// Description is a simple description for this Op.
+	Description string
 	// MetricLabelValues that apply for every invocation of this operation.
 	MetricLabelValues []string
 	// LogFields that apply for for every invocation of this operation.
-	LogFields []log.Field
+	LogFields []otlog.Field
 	// ErrorFilter returns true for any error that should be converted to nil
 	// for the purposes of metrics and tracing. If this field is not set then
 	// error values are unaltered.
@@ -125,6 +129,14 @@ type Op struct {
 // Operation combines the state of the parent context to create a new operation. This value
 // should be owned and used by the code that performs the operation it represents.
 func (c *Context) Operation(args Op) *Operation {
+	var logger sglog.Logger
+	if c.Logger != nil {
+		// Create a child logger, if a parent is provided.
+		logger = c.Logger.Scoped(args.Name, args.Description)
+	} else {
+		// Create a new logger.
+		logger = sglog.Scoped(args.Name, args.Description)
+	}
 	return &Operation{
 		context:      c,
 		metrics:      args.Metrics,
@@ -133,10 +145,13 @@ func (c *Context) Operation(args Op) *Operation {
 		metricLabels: args.MetricLabelValues,
 		logFields:    args.LogFields,
 		errorFilter:  args.ErrorFilter,
+
+		Logger: logger.With(toLogFields(args.LogFields)...),
 	}
 }
 
-// Operation represents an interesting section of code that can be invoked.
+// Operation represents an interesting section of code that can be invoked. It has an
+// embedded Logger that can be used directly.
 type Operation struct {
 	context      *Context
 	metrics      *metrics.REDMetrics
@@ -144,14 +159,28 @@ type Operation struct {
 	name         string
 	kebabName    string
 	metricLabels []string
-	logFields    []log.Field
+	logFields    []otlog.Field
+
+	// Logger is a logger scoped to this operation. Must not be nil.
+	sglog.Logger
 }
 
 // TraceLogger is returned from WithAndLogger and can be used to add timestamped key and
-// value pairs into a related opentracing span.
+// value pairs into a related opentracing span. It has an embedded Logger that can be used
+// directly to log messages in the context of a trace.
 type TraceLogger interface {
-	Log(fields ...log.Field)
-	Tag(fields ...log.Field)
+	// Log logs fields to the opentracing.Span as well as the nettrace.Trace.
+	//
+	// Log will also add fields to the underlying logger.
+	Log(fields ...otlog.Field)
+
+	// Tag adds fields to the opentracing.Span as tags as well as as logs to the nettrace.Trace.
+	//
+	// Tag will add fields to the underlying logger.
+	Tag(fields ...otlog.Field)
+
+	// Logger is a logger scoped to this trace.
+	sglog.Logger
 }
 
 var TestTraceLogger = &traceLogger{}
@@ -160,20 +189,13 @@ type traceLogger struct {
 	opName string
 	event  honey.Event
 	trace  *trace.Trace
+
+	sglog.Logger
 }
 
-func (t traceLogger) Log(fields ...log.Field) {
-	if honey.Enabled() {
-		for _, field := range fields {
-			t.event.AddField(t.opName+"."+toSnakeCase(field.Key()), field.Value())
-		}
-	}
-	if t.trace != nil {
-		t.trace.LogFields(fields...)
-	}
-}
-
-func (t traceLogger) Tag(fields ...log.Field) {
+// initWithTags adds tags to everything except the underlying Logger, which should have
+// already have init fields due to being spawned from a parent Logger.
+func (t *traceLogger) initWithTags(fields ...otlog.Field) {
 	if honey.Enabled() {
 		for _, field := range fields {
 			t.event.AddField(t.opName+"."+toSnakeCase(field.Key()), field.Value())
@@ -182,6 +204,30 @@ func (t traceLogger) Tag(fields ...log.Field) {
 	if t.trace != nil {
 		t.trace.TagFields(fields...)
 	}
+}
+
+func (t *traceLogger) Log(fields ...otlog.Field) {
+	if honey.Enabled() {
+		for _, field := range fields {
+			t.event.AddField(t.opName+"."+toSnakeCase(field.Key()), field.Value())
+		}
+	}
+	if t.trace != nil {
+		t.trace.LogFields(fields...)
+	}
+	t.Logger = t.Logger.With(toLogFields(fields)...)
+}
+
+func (t *traceLogger) Tag(fields ...otlog.Field) {
+	if honey.Enabled() {
+		for _, field := range fields {
+			t.event.AddField(t.opName+"."+toSnakeCase(field.Key()), field.Value())
+		}
+	}
+	if t.trace != nil {
+		t.trace.TagFields(fields...)
+	}
+	t.Logger = t.Logger.With(toLogFields(fields)...)
 }
 
 // FinishFunc is the shape of the function returned by With and should be invoked within
@@ -203,12 +249,12 @@ func (f FinishFunc) OnCancel(ctx context.Context, count float64, args Args) {
 // ErrCollector represents multiple errors and additional log fields that arose from those errors.
 type ErrCollector struct {
 	errs        error
-	extraFields []log.Field
+	extraFields []otlog.Field
 }
 
 func NewErrorCollector() *ErrCollector { return &ErrCollector{errs: nil} }
 
-func (e *ErrCollector) Collect(err *error, fields ...log.Field) {
+func (e *ErrCollector) Collect(err *error, fields ...otlog.Field) {
 	if err != nil && *err != nil {
 		e.errs = errors.Append(e.errs, *err)
 		e.extraFields = append(e.extraFields, fields...)
@@ -227,22 +273,14 @@ type Args struct {
 	// MetricLabelValues that apply only to this invocation of the operation.
 	MetricLabelValues []string
 	// LogFields that apply only to this invocation of the operation.
-	LogFields []log.Field
-}
-
-// LogFieldMap returns a string-to-interface map containing the contents of this Arg value's
-// log fields.
-func (args Args) LogFieldMap() map[string]interface{} {
-	fields := make(map[string]interface{}, len(args.LogFields))
-	for _, field := range args.LogFields {
-		fields[field.Key()] = field.Value()
-	}
-
-	return fields
+	LogFields []otlog.Field
 }
 
 // LogFieldPairs returns a slice of key, value, key, value, ... pairs containing the contents
 // of this Arg value's log fields.
+//
+// Deprecated: use the Logger that comes with TraceLogger instead, which includes the
+// fields in Args.
 func (args Args) LogFieldPairs() []interface{} {
 	pairs := make([]interface{}, 0, len(args.LogFields)*2)
 	for _, field := range args.LogFields {
@@ -309,25 +347,31 @@ func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (
 		})
 	}
 
-	logFields := traceLogger{
-		opName: snakecaseOpName,
-		event:  event,
-		trace:  tr,
-	}
-
-	if mergedFields := mergeLogFields(op.logFields, args.LogFields); len(mergedFields) > 0 {
-		logFields.Tag(mergedFields...)
-	}
+	logger := op.Logger.With(toLogFields(args.LogFields)...)
 
 	if traceID := trace.ID(ctx); traceID != "" {
 		event.AddField("traceID", traceID)
+		logger = logger.WithTrace(otfields.TraceContext{
+			TraceID: traceID,
+		})
 	}
 
-	return ctx, logFields, func(count float64, finishArgs Args) {
+	trLogger := traceLogger{
+		opName: snakecaseOpName,
+		event:  event,
+		trace:  tr,
+		Logger: logger,
+	}
+
+	if mergedFields := mergeLogFields(op.logFields, args.LogFields); len(mergedFields) > 0 {
+		trLogger.initWithTags(mergedFields...)
+	}
+
+	return ctx, &trLogger, func(count float64, finishArgs Args) {
 		since := time.Since(start)
 		elapsed := since.Seconds()
 		elapsedMs := since.Milliseconds()
-		defaultFinishFields := []log.Field{log.Float64("count", count), log.Float64("elapsed", elapsed)}
+		defaultFinishFields := []otlog.Field{otlog.Float64("count", count), otlog.Float64("elapsed", elapsed)}
 		logFields := mergeLogFields(defaultFinishFields, finishArgs.LogFields, args.LogFields)
 		metricLabels := mergeLabels(op.metricLabels, args.MetricLabelValues, finishArgs.MetricLabelValues)
 
@@ -368,20 +412,16 @@ func (op *Operation) startTrace(ctx context.Context) (*trace.Trace, context.Cont
 // as well as all of the log fields attached ot the operation, the args to With, and the args
 // to the finish function. This does nothing if the no logger was supplied on the observation
 // context.
-func (op *Operation) emitErrorLogs(err *error, logFields []log.Field) {
-	if op.context.Logger == nil {
+func (op *Operation) emitErrorLogs(err *error, logFields []otlog.Field) {
+	if op.Logger == nil || err == nil || *err == nil {
 		return
 	}
 
-	var kvs []interface{}
-	for _, field := range logFields {
-		kvs = append(kvs, field.Key(), field.Value())
-	}
-
-	logging.Log(op.context.Logger, op.name, err, kvs...)
+	fields := append(toLogFields(logFields), zap.Error(*err))
+	op.Logger.Error(op.name, fields...)
 }
 
-func (op *Operation) emitHoneyEvent(err *error, opName string, event honey.Event, logFields []log.Field, duration int64) {
+func (op *Operation) emitHoneyEvent(err *error, opName string, event honey.Event, logFields []otlog.Field, duration int64) {
 	if err != nil && *err != nil {
 		event.AddField("error", (*err).Error())
 	}
@@ -396,7 +436,7 @@ func (op *Operation) emitHoneyEvent(err *error, opName string, event honey.Event
 }
 
 // emitSentryError will send errors to Sentry.
-func (op *Operation) emitSentryError(err *error, logFields []log.Field) {
+func (op *Operation) emitSentryError(err *error, logFields []otlog.Field) {
 	if err == nil || *err == nil {
 		return
 	}
@@ -428,7 +468,7 @@ func (op *Operation) emitMetrics(err *error, count, elapsed float64, labels []st
 // finishTrace will set the error value, log additional fields supplied after the operation's
 // execution, and finalize the trace span. This does nothing if no trace was constructed at
 // the start of the operation.
-func (op *Operation) finishTrace(err *error, tr *trace.Trace, logFields []log.Field) {
+func (op *Operation) finishTrace(err *error, tr *trace.Trace, logFields []otlog.Field) {
 	if tr == nil {
 		return
 	}
@@ -467,13 +507,13 @@ func mergeLabels(groups ...[]string) []string {
 }
 
 // mergeLogFields flattens slices of slices of log fields.
-func mergeLogFields(groups ...[]log.Field) []log.Field {
+func mergeLogFields(groups ...[]otlog.Field) []otlog.Field {
 	size := 0
 	for _, group := range groups {
 		size += len(group)
 	}
 
-	logFields := make([]log.Field, 0, size)
+	logFields := make([]otlog.Field, 0, size)
 	for _, group := range groups {
 		logFields = append(logFields, group...)
 	}
