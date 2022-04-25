@@ -328,12 +328,6 @@ func withAgentQueueDefaults(s *bk.Step) {
 	if len(s.Agents) == 0 || s.Agents["queue"] == "" {
 		s.Agents["queue"] = bk.AgentQueueStateless
 	}
-
-	if s.Agents["queue"] != bk.AgentQueueBaremetal {
-		// Use athens proxy for go modules downloads, falling back to direct
-		// https://github.com/sourcegraph/infrastructure/blob/main/buildkite/kubernetes/athens-proxy/athens-athens-proxy.Deployment.yaml
-		s.Env["GOPROXY"] = "http://athens-athens-proxy,direct"
-	}
 }
 
 // withProfiling wraps "time -v" around each command for CPU/RAM utilization information
