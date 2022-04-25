@@ -11,10 +11,10 @@ Sourcegraph is a code search and intelligence tool for developers. It lets you s
 Sourcegraph's main features are:
 
 - [Code search](#code-search): fast, up-to-date, and scalable, with regexp support on any branch or commit without an indexing delay (and diff search)
+- [Code intelligence](#code-intelligence): jump-to-definition, find references, and other smart, IDE-like code browsing features on any branch, commit, or PR/code review
 - [Code Insights](../code_insights): reveal high-level information about your codebase at it's current state and over time
 - [Batch Changes](../batch_changes): make large-scale code changes across many repositories and code hosts 
 - [Notebooks](../notebooks): pair code and markdown to create powerful live–and persistent–documentation
-- [Code intelligence](#code-intelligence): jump-to-definition, find references, and other smart, IDE-like code browsing features on any branch, commit, or PR/code review
 - Easy and secure self-hosted installation (your code never touches our servers)
 - [Integrations](#integrations) with code hosts, code review tools, editors, web browsers, etc.
 
