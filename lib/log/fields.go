@@ -1,6 +1,7 @@
 package log
 
 import (
+	"github.com/sourcegraph/sourcegraph/lib/log/internal/encoders"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -54,3 +55,11 @@ var (
 	// third-party libraries.
 	Namespace = zap.Namespace
 )
+
+type fieldsObject struct{ Fields []Field }
+
+// Object constructs a field that places all the given fields within the given key's
+// namespace.
+func Object(key string, fields ...Field) Field {
+	return zap.Object(key, encoders.FieldsObjectEncoder(fields))
+}
