@@ -2,8 +2,9 @@
 
 **Version requirements**: We support any version *starting from 5.0*.
 
-Generally, there is no reason to do this as Sourcegraph only stores ephemeral cache and session data in Redis. However, if you want to use an external Redis server with Sourcegraph, you can do the following:
+Generally, there is no reason to do this as Sourcegraph only stores ephemeral cache and session data in Redis. However, if you want to use an external Redis server with Sourcegraph, you can follow the deployment specific guidance below:
 
+## Single-container
 Add the `REDIS_ENDPOINT` environment variable to your `docker run` command and Sourcegraph will use that Redis server instead of its built-in one. The string must either have the format `$HOST:PORT`
 or follow the [IANA specification for Redis URLs](https://www.iana.org/assignments/uri-schemes/prov/redis) (e.g., `redis://:mypassword@host:6379/2`). For example:
 
@@ -18,6 +19,11 @@ or follow the [IANA specification for Redis URLs](https://www.iana.org/assignmen
 
 If using Docker for Desktop, `host.docker.internal` will resolve to the host IP address.
 
-## Kubernetes Redis
- - See our documentation for Kubernetes [here](../install/kubernetes/configure.md#configure-custom-redis)
+## Kubernetes
+
+### Kubernetes with Helm
+[See the Helm Redis guidance here](../install/kubernetes/helm.md#using-external-redis-instances)
+
+### Kubernetes without Helm
+- See our documentation for Kubernetes [here](../install/kubernetes/configure.md#configure-custom-redis)
  - **Related:** [How to Set a Password for Redis using a ConfigMap](../how-to/redis_configmap.md)
