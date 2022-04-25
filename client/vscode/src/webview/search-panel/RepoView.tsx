@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 
-import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react'
+import { VSCodeButton, VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 import ArrowLeftIcon from 'mdi-react/ArrowLeftIcon'
 import FileDocumentOutlineIcon from 'mdi-react/FileDocumentOutlineIcon'
@@ -79,6 +79,12 @@ export const RepoView: React.FunctionComponent<RepoViewProps> = ({
         }
     }
 
+    const onClickWeb = (): void => {
+        extensionCoreAPI.openLink(`${instanceURL}/${repositoryMatch.repository}`).catch(error => {
+            console.error('Error opening Sourcegraph file', error)
+        })
+    }
+
     return (
         <section className="mb-3 p-2">
             <button
@@ -99,13 +105,18 @@ export const RepoView: React.FunctionComponent<RepoViewProps> = ({
                     Back to previous directory
                 </button>
             )}
-            <PageHeader
-                path={[{ icon: SourceRepositoryIcon, text: displayRepoName(repositoryMatch.repository) }]}
-                className="mb-1 mt-3 test-tree-page-title"
-            />
+            <div className="d-flex justify-content-between align-items-center">
+                <PageHeader
+                    path={[{ icon: SourceRepositoryIcon, text: displayRepoName(repositoryMatch.repository) }]}
+                    className="mb-1 mt-3 test-tree-page-title"
+                />
+                <VSCodeButton type="button" onClick={onClickWeb}>
+                    View Repository on Web
+                </VSCodeButton>
+            </div>
             {repositoryMatch.description && <p className="mt-0 text-muted">{repositoryMatch.description}</p>}
             <div className={classNames(styles.section)}>
-                <h4>Files and directories</h4>
+                <h4 className="my-3">Files and directories</h4>
                 {treeEntries === undefined ? (
                     <VSCodeProgressRing />
                 ) : (
