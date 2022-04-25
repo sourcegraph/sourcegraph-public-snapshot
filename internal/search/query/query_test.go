@@ -43,7 +43,7 @@ func TestPipeline_equivalence(t *testing.T) {
 	autogold.Want("equivalent or-expression", "equivalent").Equal(t, test("(repo:bob or repo:jim) ((rev:olga or rev:ham) demo123232)"))
 }
 
-func TestPipeline(t *testing.T) {
+func TestPipelineStructural(t *testing.T) {
 	test := func(input string) string {
 		pipelinePlan, _ := Pipeline(InitStructural(input))
 		return planToString(Dnf(pipelinePlan.ToParseTree()))
