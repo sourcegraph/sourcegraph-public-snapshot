@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var okayhqAPIEndpoint = "https://app.okayhq.com/api/events/v1"
@@ -90,15 +91,21 @@ type Client struct {
 	cli      *http.Client
 	events   []*customEvent
 	endpoint string
+	logger   log.Logger
 
 	mu sync.Mutex
 }
 
 // NewClient returns a new OkayMetricsClient, using the provided http.Client.
 func NewClient(client *http.Client, token string) *Client {
+	logger := log.Scoped("okayhq", "OkayHQ Metrics")
+	if token == "" {
+		logger.Warn("empty token, will log events at DEBUG level instead of submitting them to the API")
+	}
 	return &Client{
-		cli:   client,
-		token: token,
+		cli:    client,
+		token:  token,
+		logger: logger,
 
 		endpoint: okayhqAPIEndpoint,
 	}
@@ -114,6 +121,12 @@ func (o *Client) post(event *customEvent) error {
 	if err != nil {
 		return err
 	}
+
+	if o.token == "" {
+		// If the token is empty, just log the events
+		o.logger.Debug("pretending to send event", log.String("event", string(b)))
+	}
+
 	buf := bytes.NewReader(b)
 	req, err := http.NewRequest(http.MethodPost, o.endpoint, buf)
 	if err != nil {

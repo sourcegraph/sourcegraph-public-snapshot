@@ -9,8 +9,14 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/okay"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestMain(m *testing.M) {
+	logtest.Init(m)
+	m.Run()
+}
 
 func TestPush(t *testing.T) {
 	t.Run("serialization", func(t *testing.T) {
