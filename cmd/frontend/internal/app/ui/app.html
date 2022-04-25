@@ -86,7 +86,31 @@
 
 	{{ end }}
 	{{.Injected.BodyTop}}
-	<div id="root"></div>
+	<div id="root">
+        <div id="please-upgrade-browser" class="d-none">
+            It looks like your current browser does not support Sourcegraph, Please upgrade to a modern browser such as <a href="https://www.google.com/chrome/downloads">Chrome</a> or <a href="https://www.mozilla.org/en-US/firefox/new/">Firefox</a>
+        </div>
+        <script>
+            function canRunSourceGraph() {
+                 "use strict";
+
+                 if (typeof Symbol == "undefined") return false;
+                 try {
+                     eval("class Foo {}");
+                     eval("var bar = (x) => x+1");
+                 } catch (e) { return false; }
+
+                 return true;
+             }
+             window.canRunSourceGraph = canRunSourceGraph();
+             if (!canRunSourceGraph) {
+                var element = document.getElementById("please-upgrade-browser");
+                element.classList.remove("d-none");
+             } else {
+                document.querySelector('#please-upgrade-browser').remove()
+             }
+        </script>
+    </div>
 	<noscript>
 		<p>Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers.</p>
 
@@ -95,24 +119,6 @@
 		<br>
 		You need to enable JavaScript to run this app.
 	</noscript>
-
-    <script>
-        function canRunSourceGraph() {
-             "use strict";
-
-             if (typeof Symbol == "undefined") return false;
-             try {
-                 eval("class Foo {}");
-                 eval("var bar = (x) => x+1");
-             } catch (e) { return false; }
-
-             return true;
-         }
-         window.canRunSourceGraph = window.check();
-         if (!canRunSourceGraph) {
-             throw new Error('wakka');
-         }
-    </script>
 	{{if .Manifest.AppJSRuntimeBundlePath}}<script src="{{.Manifest.AppJSRuntimeBundlePath}}"></script>{{end}}
 	<script src="{{.Manifest.ReactJSBundlePath}}" {{if .Manifest.IsModule}}type="module"{{end}}></script>
 	<script src="{{.Manifest.AppJSBundlePath}}" {{if .Manifest.IsModule}}type="module"{{end}}></script>
