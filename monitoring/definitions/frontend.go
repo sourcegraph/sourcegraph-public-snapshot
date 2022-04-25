@@ -564,6 +564,26 @@ func Frontend() *monitoring.Container {
 							Interpretation: `Percentage of sign-out requests grouped by http code`,
 						},
 					},
+					{
+						{
+							Name:           "account_failed_sign_in_attempts",
+							Description:    "rate of failed sign-in attempts",
+							Query:          `sum(rate(src_frontend_account_failed_sign_in_attempts_total[1m]))`,
+							NoAlert:        true,
+							Panel:          monitoring.Panel().Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerCloudSaaS,
+							Interpretation: `Failed sign-in attempts per minute`,
+						},
+						{
+							Name:           "account_lockouts",
+							Description:    "rate of account lockouts",
+							Query:          `sum(rate(src_frontend_account_lockouts_total[1m]))`,
+							NoAlert:        true,
+							Panel:          monitoring.Panel().Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerCloudSaaS,
+							Interpretation: `Account lockouts per minute`,
+						},
+					},
 				}},
 			{
 				Title:  "Organisation GraphQL API requests",
