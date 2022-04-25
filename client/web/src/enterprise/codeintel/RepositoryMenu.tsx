@@ -1,11 +1,12 @@
-import React from 'react'
+import React, { useState } from 'react'
 
 import AlertIcon from 'mdi-react/AlertIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
+import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isDefined, isErrorLike } from '@sourcegraph/common'
-import { Badge, Link, LoadingSpinner, MenuDivider } from '@sourcegraph/wildcard'
+import { Badge, Button, Link, LoadingSpinner, MenuDivider } from '@sourcegraph/wildcard'
 
 import { RepositoryMenuContentProps } from '../../codeintel/RepositoryMenu'
 import { Collapsible } from '../../components/Collapsible'
@@ -17,6 +18,7 @@ import {
     PreciseSupportLevel,
     LSIFUploadState,
     LSIFIndexState,
+    SearchBasedSupportLevel,
 } from '../../graphql-operations'
 
 import { CodeIntelIndexer } from './shared/components/CodeIntelIndexer'
@@ -25,7 +27,12 @@ import { CodeIntelUploadOrIndexCommit } from './shared/components/CodeIntelUploa
 import { CodeIntelUploadOrIndexIndexer } from './shared/components/CodeIntelUploadOrIndexIndexer'
 import { CodeIntelUploadOrIndexLastActivity } from './shared/components/CodeIntelUploadOrIndexLastActivity'
 import { CodeIntelUploadOrIndexRoot } from './shared/components/CodeIntelUploadOrIndexRoot'
-import { useCodeIntelStatus as defaultUseCodeIntelStatus, UseCodeIntelStatusPayload } from './useCodeIntelStatus'
+import {
+    useCodeIntelStatus as defaultUseCodeIntelStatus,
+    UseCodeIntelStatusPayload,
+    useRequestedLanguageSupportQuery,
+    useRequestLanguageSupportQuery,
+} from './useCodeIntelStatus'
 
 import styles from './RepositoryMenu.module.scss'
 
@@ -106,7 +113,15 @@ const UserFacingRepositoryMenuContent: React.FunctionComponent<{
         ).values(),
     ].map(indexers => indexers[0])
 
-    const indexerNames = allIndexers.map(indexer => indexer.name).sort()
+    const languages = [
+        ...new Set(
+            data.searchBasedSupport
+                ?.filter(support => support.supportLevel === SearchBasedSupportLevel.BASIC)
+                .map(support => support.language)
+        ),
+    ].sort()
+    const fakeIndexerNames = languages.map(name => `lsif-${name.toLowerCase()}`)
+    const indexerNames = [...new Set(allIndexers.map(indexer => indexer.name).concat(fakeIndexerNames))].sort()
 
     // Expand badges to be as large as the maximum badge when we are displaying
     // badges of different types. This condition checks that there's at least one
@@ -164,7 +179,7 @@ const IndexerSummary: React.FunctionComponent<{
     const finishedAtTimes = summary.uploads.map(upload => upload.finishedAt || undefined).filter(isDefined)
     const lastUpdated = finishedAtTimes.length === 0 ? undefined : finishedAtTimes.sort().reverse()[0]
 
-    return summary.indexer ? (
+    return (
         <div className="px-2 py-1">
             <div className="d-flex align-items-center">
                 <div className="px-2 py-1 text-uppercase">
@@ -172,15 +187,17 @@ const IndexerSummary: React.FunctionComponent<{
                         <Badge variant="success" className={className}>
                             Enabled
                         </Badge>
-                    ) : (
+                    ) : summary.indexer?.url ? (
                         <Badge variant="secondary" className={className}>
                             Configurable
                         </Badge>
+                    ) : (
+                        <Badge variant="outlineSecondary">Unavailable</Badge>
                     )}
                 </div>
 
                 <div className="px-2 py-1">
-                    <p className="mb-1">{summary.indexer.name} precise intelligence</p>
+                    <p className="mb-1">{summary.indexer?.name || summary.name} precise intelligence</p>
 
                     {lastUpdated && (
                         <p className="mb-1 text-muted">
@@ -189,7 +206,11 @@ const IndexerSummary: React.FunctionComponent<{
                     )}
 
                     {summary.uploads.length + summary.indexes.length === 0 ? (
-                        <Link to={summary.indexer.url}>Set up for this repository</Link>
+                        summary.indexer?.url ? (
+                            <Link to={summary.indexer?.url}>Set up for this repository</Link>
+                        ) : (
+                            <RequestLink indexerName={summary.name} />
+                        )
                     ) : (
                         <>
                             {failedUploads.length === 0 && failedIndexes.length === 0 && (
@@ -220,7 +241,7 @@ const IndexerSummary: React.FunctionComponent<{
                 </div>
             </div>
         </div>
-    ) : null
+    )
 }
 
 //
@@ -230,10 +251,10 @@ const Unsupported: React.FunctionComponent<{}> = () => (
     <div className="px-2 py-1">
         <div className="d-flex align-items-center">
             <div className="px-2 py-1 text-uppercase">
-                <Badge variant="outlineSecondary">Unavailable</Badge>
+                <Badge variant="outlineSecondary">Unsupported</Badge>
             </div>
             <div className="px-2 py-1">
-                <p className="mb-0">Precise code intelligence </p>
+                <p className="mb-0">No language detected</p>
             </div>
         </div>
     </div>
@@ -383,3 +404,49 @@ const UploadOrIndexMeta: React.FunctionComponent<{ data: LsifUploadFields | Lsif
         </td>
     </tr>
 )
+
+//
+//
+
+const RequestLink: React.FunctionComponent<{ indexerName: string }> = ({ indexerName }) => {
+    const language = indexerName.startsWith('lsif-') ? indexerName.slice('lsif-'.length) : indexerName
+
+    const { data, loading: loadingSupport, error } = useRequestedLanguageSupportQuery({
+        variables: {},
+    })
+
+    const [requested, setRequested] = useState(false)
+
+    const [requestSupport, { loading: requesting, error: requestError }] = useRequestLanguageSupportQuery({
+        variables: { language },
+        onCompleted: () => setRequested(true),
+    })
+
+    return (
+        <>
+            {loadingSupport || requesting ? (
+                <div className="px-2 py-1">
+                    <LoadingSpinner />
+                </div>
+            ) : error ? (
+                <div className="px-2 py-1">
+                    <ErrorAlert prefix="Error loading repository summary" error={error} />
+                </div>
+            ) : requestError ? (
+                <div className="px-2 py-1">
+                    <ErrorAlert prefix="Error requesting language support" error={requestError} />
+                </div>
+            ) : data ? (
+                data.languages.includes(language) || requested ? (
+                    <span className="text-muted">
+                        Received your request <InfoCircleOutlineIcon size={16} />
+                    </span>
+                ) : (
+                    <Button variant="link" className="m-0 p-0" onClick={requestSupport}>
+                        I want precise support!
+                    </Button>
+                )
+            ) : null}
+        </>
+    )
+}
