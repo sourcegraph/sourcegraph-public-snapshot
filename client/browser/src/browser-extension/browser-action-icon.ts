@@ -1,4 +1,4 @@
-import { IsProductionVersion } from './util';
+import { IsProductionVersion } from './util'
 
 /**
  * The "browser action" is the name for the icon/button which is shown in the
@@ -17,7 +17,6 @@ interface BrowserActionIconPaths {
     '48': string
     '128': string
 }
-
 
 const browserActionIconPaths: Record<BrowserActionIconState, BrowserActionIconPaths> = IsProductionVersion
     ? {
