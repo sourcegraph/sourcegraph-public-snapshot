@@ -5,7 +5,7 @@ package main
 import (
 	"context"
 	"io"
-	"log"
+	stdlog "log"
 	"net"
 	"net/http"
 	"os"
@@ -14,8 +14,6 @@ import (
 	"strconv"
 	"syscall"
 	"time"
-
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -28,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
@@ -36,7 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
-	sglog "github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var (
@@ -46,13 +45,13 @@ var (
 
 const port = "3181"
 
-func ensureFrontendDB() database.DB {
+func ensureFrontendDB(logger log.Logger) database.DB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
 	sqlDB, err := connections.EnsureNewFrontendDB(dsn, "searcher", &observation.TestContext)
 	if err != nil {
-		log.Fatalf("Failed to connect to frontend database: %s", err)
+		logger.Fatal("Failed to connect to frontend database", log.Error(err))
 	}
 	return database.NewDB(sqlDB)
 }
@@ -60,17 +59,21 @@ func ensureFrontendDB() database.DB {
 func main() {
 	env.Lock()
 	env.HandleHelpFlag()
-	log.SetFlags(0)
+	stdlog.SetFlags(0)
 	conf.Init()
 	logging.Init()
-	sglog.Init(sglog.Resource{
-		Name:    env.MyName,
-		Version: version.Version(),
+	syncLogs := log.Init(log.Resource{
+		Name:       env.MyName,
+		Version:    version.Version(),
+		InstanceID: hostname.Get(),
 	})
+	defer syncLogs()
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
 	profiler.Init()
+
+	logger := log.Scoped("service", "the searcher service")
 
 	// Ready immediately
 	ready := make(chan struct{})
@@ -79,12 +82,14 @@ func main() {
 
 	var cacheSizeBytes int64
 	if i, err := strconv.ParseInt(cacheSizeMB, 10, 64); err != nil {
-		log.Fatalf("invalid int %q for SEARCHER_CACHE_SIZE_MB: %s", cacheSizeMB, err)
+		logger.Fatal("invalid int for SEARCHER_CACHE_SIZE_MB",
+			log.String("SEARCHER_CACHE_SIZE_MB", cacheSizeMB),
+			log.Error(err))
 	} else {
 		cacheSizeBytes = i * 1000 * 1000
 	}
 
-	db := ensureFrontendDB()
+	db := ensureFrontendDB(logger)
 	git := gitserver.NewClient(db)
 
 	service := &search.Service{
@@ -111,7 +116,7 @@ func main() {
 			MaxCacheSizeBytes: cacheSizeBytes,
 			DB:                db,
 		},
-		Log: sglog.Scoped("service", "the searcher service"),
+		Log: logger,
 	}
 	service.Store.Start()
 
@@ -141,9 +146,9 @@ func main() {
 	}
 
 	go func() {
-		log15.Info("searcher: listening", "addr", server.Addr)
+		logger.Info("searcher: listening", log.String("addr", server.Addr))
 		if err := server.ListenAndServe(); err != http.ErrServerClosed {
-			log.Fatal(err)
+			logger.Fatal(err.Error())
 		}
 	}()
 
@@ -166,6 +171,6 @@ func main() {
 	defer cancel()
 	// Stop accepting requests.
 	if err := server.Shutdown(ctx); err != nil {
-		log15.Error("shutting down http server", "error", err)
+		logger.Error("shutting down http server", log.Error(err))
 	}
 }
