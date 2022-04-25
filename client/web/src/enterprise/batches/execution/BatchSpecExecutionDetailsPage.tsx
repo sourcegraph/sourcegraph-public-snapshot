@@ -213,11 +213,11 @@ interface BatchSpecActionsProps {
 const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batchSpec, executionURL }) => {
     const location = useLocation()
 
-    const [cancelBatchSpecExecution, { loading: cancelLoading, error: cancelError }] = useCancelBatchSpecExecution(
+    const [cancelBatchSpecExecution, { loading: isCancelLoading, error: cancelError }] = useCancelBatchSpecExecution(
         batchSpec.id
     )
 
-    const [retryBatchSpecExecution, { loading: retryLoading, error: retryError }] = useRetryBatchSpecExecution(
+    const [retryBatchSpecExecution, { loading: isRetryLoading, error: retryError }] = useRetryBatchSpecExecution(
         batchSpec.id
     )
 
@@ -263,11 +263,11 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
                     {(batchSpec.state === BatchSpecState.QUEUED || batchSpec.state === BatchSpecState.PROCESSING) && (
                         <Button
                             onClick={() => cancelBatchSpecExecution()}
-                            disabled={cancelLoading}
+                            disabled={isCancelLoading}
                             outline={true}
                             variant="danger"
                         >
-                            {cancelLoading ? <LoadingSpinner /> : 'Cancel'}
+                            {isCancelLoading ? <LoadingSpinner /> : 'Cancel'}
                         </Button>
                     )}
                     {!location.pathname.endsWith('preview') &&
@@ -282,12 +282,12 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
                         // including completed jobs.
                         <Button
                             onClick={() => retryBatchSpecExecution()}
-                            disabled={retryLoading}
-                            data-tooltip={retryLoading ? undefined : 'Retry all failed workspaces'}
+                            disabled={isRetryLoading}
+                            data-tooltip={isRetryLoading ? undefined : 'Retry all failed workspaces'}
                             outline={true}
                             variant="secondary"
                         >
-                            {retryLoading ? <LoadingSpinner /> : 'Retry'}
+                            {isRetryLoading ? <LoadingSpinner /> : 'Retry'}
                         </Button>
                     )}
                     {!location.pathname.endsWith('preview') &&
