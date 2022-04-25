@@ -98,6 +98,7 @@ export const BatchSpecDownloadButton: React.FunctionComponent<
             variant="secondary"
             outline={true}
             as={BatchSpecDownloadLink}
+            asButton={false}
         >
             <Icon as={FileDownloadIcon} /> Download YAML
         </Button>

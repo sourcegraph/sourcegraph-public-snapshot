@@ -11,5 +11,16 @@ const { add } = storiesOf('web/batches/create/RunServerSideModal', module).addDe
 ))
 
 add('Download Spec Modal', () => (
-    <WebStory>{props => <RunServerSideModal name="" originalInput="" {...props} />}</WebStory>
+    <WebStory>
+        {props => (
+            <RunServerSideModal
+                setIsRunServerSideModalOpen={function (condition: boolean): void {
+                    throw new Error('Function not implemented.')
+                }}
+                name=""
+                originalInput=""
+                {...props}
+            />
+        )}
+    </WebStory>
 ))
