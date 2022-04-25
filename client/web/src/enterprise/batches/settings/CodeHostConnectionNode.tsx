@@ -29,6 +29,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
     userID,
 }) => {
     const ExternalServiceIcon = defaultExternalServices[node.externalServiceKind].icon
+    const codeHostDisplayName = defaultExternalServices[node.externalServiceKind].defaultDisplayName
 
     const [openModal, setOpenModal] = useState<OpenModal | undefined>()
     const onClickAdd = useCallback(() => {
@@ -66,22 +67,30 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                         'd-flex justify-content-between align-items-center flex-wrap mb-0'
                     )}
                 >
-                    <h3 className="text-nowrap mb-0">
+                    <h3
+                        className="text-nowrap mb-0"
+                        aria-label={`Sourcegraph ${
+                            isEnabled ? 'has credentials configured' : 'does not have credentials configured'
+                        } for ${codeHostDisplayName} (${node.externalServiceURL})`}
+                    >
                         {isEnabled && (
                             <Icon
                                 className="text-success test-code-host-connection-node-enabled"
-                                data-tooltip="Connected"
+                                data-tooltip="This code host has credentials connected."
+                                aria-label="This code host has credentials connected."
                                 as={CheckCircleOutlineIcon}
                             />
                         )}
                         {!isEnabled && (
                             <Icon
                                 className="text-danger test-code-host-connection-node-disabled"
-                                data-tooltip="No token set"
+                                data-tooltip="This code host does not have credentials configured."
+                                aria-label="This code host does not have credentials configured."
                                 as={CheckboxBlankCircleOutlineIcon}
                             />
                         )}
-                        <Icon className="mx-2" as={ExternalServiceIcon} /> {node.externalServiceURL}{' '}
+                        <Icon className="mx-2" role="img" aria-hidden={true} as={ExternalServiceIcon} />{' '}
+                        {node.externalServiceURL}{' '}
                         {!isEnabled && node.credential?.isSiteCredential && (
                             <Badge
                                 variant="secondary"
@@ -99,6 +108,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                                     className="text-danger text-nowrap test-code-host-connection-node-btn-remove"
                                     onClick={onClickRemove}
                                     variant="link"
+                                    aria-label={`Remove credentials for ${codeHostDisplayName}`}
                                 >
                                     Remove
                                 </Button>
@@ -118,6 +128,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                             <Button
                                 className="a11y-ignore text-nowrap test-code-host-connection-node-btn-add"
                                 onClick={onClickAdd}
+                                aria-label={`Add credentials for ${codeHostDisplayName}`}
                                 variant="success"
                             >
                                 Add credentials

@@ -18,12 +18,13 @@ export interface IconProps extends Omit<MdiReactIconProps, 'children'> {
 }
 
 export const Icon = React.forwardRef((props, reference) => {
-    const { children, inline = true, className, size, as: Component = 'svg', ...attributes } = props
+    const { children, inline = true, className, size, as: Component = 'svg', role = 'img', ...attributes } = props
 
     return (
         <Component
             className={classNames(styles.iconInline, size === 'md' && styles.iconInlineMd, className)}
             ref={reference}
+            role={role}
             {...attributes}
         >
             {children}
