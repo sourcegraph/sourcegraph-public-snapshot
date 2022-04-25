@@ -12,6 +12,7 @@ interface ConnectionListProps {
     className?: string
 
     compact?: boolean
+    ['aria-label']?: string
 }
 
 /**
@@ -23,10 +24,12 @@ export const ConnectionList: React.FunctionComponent<ConnectionListProps> = ({
     className,
     children,
     compact,
+    'aria-label': ariaLabel,
 }) => (
     <ListComponent
         className={classNames(styles.normal, compact && styles.compact, className)}
         data-testid="filtered-connection-nodes"
+        aria-label={ariaLabel}
     >
         {children}
     </ListComponent>

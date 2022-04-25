@@ -53,6 +53,14 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
 
     const isEnabled = node.credential !== null && (userID === null || !node.credential.isSiteCredential)
 
+    const headingAriaLabel = `Sourcegraph ${
+        isEnabled ? 'has credentials configured' : 'does not have credentials configured'
+    } for ${codeHostDisplayName} (${node.externalServiceURL}).${
+        !isEnabled && node.credential?.isSiteCredential
+            ? ' Changesets on this code host will be created with a global token until a personal access token is added.'
+            : ''
+    }`
+
     return (
         <>
             <li
@@ -67,12 +75,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                         'd-flex justify-content-between align-items-center flex-wrap mb-0'
                     )}
                 >
-                    <h3
-                        className="text-nowrap mb-0"
-                        aria-label={`Sourcegraph ${
-                            isEnabled ? 'has credentials configured' : 'does not have credentials configured'
-                        } for ${codeHostDisplayName} (${node.externalServiceURL})`}
-                    >
+                    <h3 className="text-nowrap mb-0" aria-label={headingAriaLabel}>
                         {isEnabled && (
                             <Icon
                                 className="text-success test-code-host-connection-node-enabled"
@@ -95,6 +98,8 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                             <Badge
                                 variant="secondary"
                                 tooltip="Changesets on this code host will
+                            be created with a global token until a personal access token is added."
+                                aria-label="Changesets on this code host will
                             be created with a global token until a personal access token is added."
                             >
                                 Global token
