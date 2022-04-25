@@ -25,9 +25,9 @@ A comparison table of supported self-hosted deployment methodologies can be [fou
 
 Kubernetes deployments may be customized in a variety of ways, we consider the following best practice:
 
-- Users should configure and deploy using Helm, as covered in our guide to [using Helm with Sourcegraph](/install/kubernetes/helm.md).
-  -  If Helm cannot be used, [Kustomize can be used to apply configuration changes](/install/kubernetes/kustomize.md).
-  -  As a last resort, the [manifests can be edited in a forked copy of the Sourcegraph repository](/install/kubernetes/index.md).
+- Users should configure and deploy using Helm, as covered in our guide to [using Helm with Sourcegraph](./install/kubernetes/helm.md).
+  -  If Helm cannot be used, [Kustomize can be used to apply configuration changes](./install/kubernetes/kustomize.md).
+  -  As a last resort, the [manifests can be edited in a forked copy of the Sourcegraph repository](./install/kubernetes/index.md).
 - The suggested Kubernetes version is the current [GKE Stable release version](https://cloud.google.com/kubernetes-engine/docs/release-notes-stable)
 - We attempt to support new versions of Kubernetes 2-3 months after their release.
 - Users are expected to run a compliant Kubernetes version ([a CNCF certified Kubernetes distribution](https://github.com/cncf/k8s-conformance))
