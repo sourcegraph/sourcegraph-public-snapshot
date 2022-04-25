@@ -83,7 +83,6 @@ public class SchemeHandler extends CefResourceHandlerAdapter {
 
     private boolean loadContent(String resName) {
         InputStream inStream = getClass().getResourceAsStream(resName);
-        System.out.println(resName);
         if (inStream != null) {
             try {
                 ByteArrayOutputStream outFile = new ByteArrayOutputStream();
