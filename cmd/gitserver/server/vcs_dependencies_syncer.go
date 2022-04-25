@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"sort"
 	"strings"
 
 	"github.com/inconshreveable/log15"
@@ -104,6 +105,11 @@ func (ps *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, 
 		}
 		cloneable = append(cloneable, d)
 	}
+
+	// We sort in descending order, so that the latest version is in the first position.
+	sort.SliceStable(cloneable, func(i, j int) bool {
+		return cloneable[i].Less(cloneable[j])
+	})
 
 	// Create set of existing tags. We want to skip the download of a package if the
 	// tag already exists.

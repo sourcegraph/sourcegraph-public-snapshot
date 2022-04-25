@@ -3,7 +3,6 @@ package reposource
 import (
 	"encoding/json"
 	"fmt"
-	"sort"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -204,24 +203,25 @@ func (d *NpmDependency) GitTagFromVersion() string {
 	return "v" + d.Version
 }
 
-func (d *NpmDependency) Equal(other *NpmDependency) bool {
-	return d == other || (d != nil && other != nil &&
-		d.NpmPackage.Equal(other.NpmPackage) &&
-		d.Version == other.Version)
+func (d *NpmDependency) Equal(o *NpmDependency) bool {
+	return d == o || (d != nil && o != nil &&
+		d.NpmPackage.Equal(o.NpmPackage) &&
+		d.Version == o.Version)
 }
 
-// SortDependencies sorts the dependencies by the semantic version in descending
-// order. The latest version of a dependency becomes the first element of the
-// slice.
-func SortNpmDependencies(dependencies []*NpmDependency) {
-	sort.Slice(dependencies, func(i, j int) bool {
-		iPkg, jPkg := dependencies[i].NpmPackage, dependencies[j].NpmPackage
-		if iPkg.Equal(jPkg) {
-			return versionGreaterThan(dependencies[i].Version, dependencies[j].Version)
-		}
-		if iPkg.scope == jPkg.scope {
-			return iPkg.name > jPkg.name
-		}
-		return iPkg.scope > jPkg.scope
-	})
+// Less implements the Less method of the sort.Interface. It sorts
+// dependencies by the semantic version in descending order.
+// The latest version of a dependency becomes the first element of the slice.
+func (d *NpmDependency) Less(other PackageDependency) bool {
+	o := other.(*NpmDependency)
+
+	if d.NpmPackage.Equal(o.NpmPackage) {
+		return versionGreaterThan(d.Version, o.Version)
+	}
+
+	if d.scope == o.scope {
+		return d.name > o.name
+	}
+
+	return d.scope > o.scope
 }

@@ -39,6 +39,9 @@ type PackageDependency interface {
 	// Returns the git tag associated with the given dependency version, used
 	// rev: or repo:foo@rev
 	GitTagFromVersion() string
+
+	// Less implements a comparison method with another PackageDependency for sorting.
+	Less(PackageDependency) bool
 }
 
 var (
