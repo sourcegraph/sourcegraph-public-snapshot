@@ -26,6 +26,7 @@ If you're deploying a new Enterprise instance, this page covers our most frequen
 - [Google Cloud installlation](../admin/install/docker-compose/google_cloud.md)
 
 ### Kubernetes admin
+- [All Kubernetes with Helm guidance](../admin/install/kubernetes/helm.md)
 - [Basic installation guide](../admin/install/kubernetes/index.md)
 - [Provisioning a Kubernetes cluster](../admin/install/kubernetes/configure.md#configuring-sourcegraph)
 - [Amazon EKS](../admin/install/kubernetes/eks.md)
