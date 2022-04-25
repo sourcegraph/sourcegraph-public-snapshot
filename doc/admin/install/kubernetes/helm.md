@@ -39,31 +39,31 @@ Our Helm chart has a lot of sensible defaults baked into the values.yaml. Not on
 
 1. Add the Sourcegraph helm repository (on the machine used to interact with your cluster):
 
-    ```sh
+    ```
     helm repo add sourcegraph https://helm.sourcegraph.com/release
     ```
 
 1. Install the Sourcegraph chart using default values:
 
-    ```sh
+    ```
     helm install --version 3.39.0 sourcegraph sourcegraph/sourcegraph
     ```
 
-> NOTE: The default values assume a deployment to GKE running an nginx Ingress controller. The [Cloud Provider Guides](#cloud-providers-guides) demonstrate how to configure Sourcegraph for other environment configurations.
+    > NOTE: The default values assume a deployment to GKE running an nginx Ingress controller. The [Cloud Provider Guides](#cloud-providers-guides) demonstrate how to configure Sourcegraph for other environment configurations.
 
-1. Monitor the deployment until all pods are healthy:
+1.  Monitor the deployment until all pods are healthy:
 
-    ```sh
+    ```
       kubectl get pods -o wide --watch
     ```
 
 1. You can temporarily access Sourcegraph by port-forwarding to the frontend service:
 
-    ```sh
+    ```
       kubectl port-forward svc/sourcegraph-frontend 3080:30080
     ```
 
-1. Open [http://localhost:3080]() in your browser and you will see a setup page which can be used to create the initial admin account. Congratulations, you have Sourcegraph up and running! 🎉
+1. Open [http://localhost:3080](http://localhost:3080) in your browser and you will see a setup page which can be used to create the initial admin account. Congratulations, you have Sourcegraph up and running! 🎉
 
 More information on configuring the Sourcegraph application can be found here:
 [Configuring Sourcegraph](../../config/index.md)
