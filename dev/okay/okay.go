@@ -126,6 +126,7 @@ func (c *Client) post(event *customEvent) error {
 	if c.token == "" {
 		// If the token is empty, just log the events
 		c.logger.Debug("pretending to send event", log.String("event", string(b)))
+		return nil
 	}
 
 	buf := bytes.NewReader(b)
