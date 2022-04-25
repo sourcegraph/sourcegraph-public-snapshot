@@ -35,7 +35,7 @@
 To use the Helm chart, add the Sourcegraph helm repository (on the machine used to interact with your cluster):
 
 ```sh
-helm repo add sourcegraph https://sourcegraph.github.io/deploy-sourcegraph-helm/
+helm repo add sourcegraph https://helm.sourcegraph.com/release
 ```
 
 Install the Sourcegraph chart using default values:
@@ -349,7 +349,7 @@ This section is aimed at providing high-level guidance on deploying Sourcegraph 
 1. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository (on the machine used to interact with your cluster):
 
 ```sh
-helm repo add sourcegraph https://sourcegraph.github.io/deploy-sourcegraph-helm/
+helm repo add sourcegraph https://helm.sourcegraph.com/release
 ```
 
 #### Steps {#gke-steps}
@@ -483,7 +483,7 @@ Now the deployment is complete, more information on configuring the Sourcegraph 
 1. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository (on the machine used to interact with your cluster):
 
 ```sh
-helm repo add sourcegraph https://sourcegraph.github.io/deploy-sourcegraph-helm/
+helm repo add sourcegraph https://helm.sourcegraph.com/release
 ```
 
 #### Steps {#eks-steps}
@@ -565,7 +565,7 @@ Now the deployment is complete, more information on configuring the Sourcegraph 
 1. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository (on the machine used to interact with your cluster):
 
 ```sh
-helm repo add sourcegraph https://sourcegraph.github.io/deploy-sourcegraph-helm/
+helm repo add sourcegraph https://helm.sourcegraph.com/release
 ```
 
 #### Steps {#aks-steps}
@@ -651,7 +651,7 @@ Now the deployment is complete, more information on configuring the Sourcegraph 
 1. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository (on the machine used to interact with your cluster):
 
 ```sh
-helm repo add sourcegraph https://sourcegraph.github.io/deploy-sourcegraph-helm/
+helm repo add sourcegraph https://helm.sourcegraph.com/release
 ```
 
 #### Steps {#others-steps}

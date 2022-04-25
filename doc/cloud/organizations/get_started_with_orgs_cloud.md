@@ -1,7 +1,5 @@
 # Getting Your Organization Setup on Sourcegraph Cloud
 
-Note: During our private beta period, these steps require you to start with [joining our waitlist](https://share.hsforms.com/14OQ3RoPpQTOXvZlUpgx6-A1n7ku?utm_medium=direct-traffic&utm_source=docs&utm_content=cloud-product-beta-teams) and being qualified by the Sourcegraph Cloud team. 
-
 1. [Create your organization on Cloud](./creating_your_org_on_cloud.md)
 2. [Add your organizational repositories to Sourcegraph Cloud](./adding_your_org_repos_to_cloud.md)
 3. Verify your repositories are added by [running a quick search](./searching_org_repo_sourcegraph_cloud.md)

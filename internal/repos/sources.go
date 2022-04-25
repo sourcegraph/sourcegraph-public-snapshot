@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -92,17 +92,17 @@ type RepoGetter interface {
 	GetRepo(context.Context, string) (*types.Repo, error)
 }
 
-type DBSource interface {
+type DependenciesServiceSource interface {
 	Source
-	SetDB(dbutil.DB)
+	SetDependenciesService(depsSvc *dependencies.Service)
 }
 
-// WithDB returns a decorator used in NewSourcer that calls SetDB on Sources that
-// can be upgraded to it.
-func WithDB(db dbutil.DB) func(Source) Source {
+// WithDependenciesService returns a decorator used in NewSourcer that calls SetDB on
+// Sources that can be upgraded to it.
+func WithDependenciesService(depsSvc *dependencies.Service) func(Source) Source {
 	return func(src Source) Source {
-		if s, ok := src.(DBSource); ok {
-			s.SetDB(db)
+		if s, ok := src.(DependenciesServiceSource); ok {
+			s.SetDependenciesService(depsSvc)
 			return s
 		}
 		return src

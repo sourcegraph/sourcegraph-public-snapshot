@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
+	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	codeintelTypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -63,20 +63,14 @@ type Resolver struct {
 	Opts search.RepoOptions
 }
 
-func (r *Resolver) Paginate(ctx context.Context, op *search.RepoOptions, handle func(*Resolved) error) (err error) {
+func (r *Resolver) Paginate(ctx context.Context, handle func(*Resolved) error) (err error) {
 	tr, ctx := trace.New(ctx, "searchrepos.Paginate", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	var opts search.RepoOptions
-	if op != nil {
-		opts = *op
-	} else {
-		opts = r.Opts
-	}
-
+	opts := r.Opts
 	if opts.Limit == 0 {
 		opts.Limit = 500
 	}
@@ -568,7 +562,7 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		}
 	}
 
-	depsSvc := codeintel.GetDependenciesService(
+	depsSvc := livedependencies.GetService(
 		r.DB,
 		&packageRepoSyncer{cli: repoupdater.DefaultClient},
 	)

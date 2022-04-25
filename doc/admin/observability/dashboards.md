@@ -5881,13 +5881,32 @@ Query: `sum by (job) (pg_stat_activity_count{datname!~"template.*|postgres|cloud
 
 <br />
 
+#### postgres: usage_connections_percentage
+
+<p class="subtitle">Connection in use</p>
+
+Refer to the [alert solutions reference](./alert_solutions.md#postgres-usage-connections-percentage) for 2 alerts related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100001` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(pg_stat_activity_count) by (job) / (sum(pg_settings_max_connections) by (job) - sum(pg_settings_superuser_reserved_connections) by (job)) * 100`
+
+</details>
+
+<br />
+
 #### postgres: transaction_durations
 
 <p class="subtitle">Maximum transaction durations</p>
 
 Refer to the [alert solutions reference](./alert_solutions.md#postgres-transaction-durations) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100001` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100002` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
@@ -14333,48 +14352,6 @@ Query: `sum by (instance) (index_num_assigned{instance=~`${instance:regex}`})`
 
 <br />
 
-#### zoekt: repo_index_success_speed
-
-<p class="subtitle">Successful indexing durations</p>
-
-Latency increases can indicate bottlenecks in the indexserver.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100010` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum by (le, state) (increase(index_repo_seconds_bucket{state="success"}[$__rate_interval]))`
-
-</details>
-
-<br />
-
-#### zoekt: repo_index_fail_speed
-
-<p class="subtitle">Failed indexing durations</p>
-
-Failures happening after a long time indicates timeouts.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100011` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum by (le, state) (increase(index_repo_seconds_bucket{state="fail"}[$__rate_interval]))`
-
-</details>
-
-<br />
-
 #### zoekt: repos_stopped_tracking_total_aggregate
 
 <p class="subtitle">The number of repositories we stopped tracking over 5m (aggregate)</p>
@@ -14383,7 +14360,7 @@ Repositories we stop tracking are soft-deleted during the next cleanup job.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100020` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100010` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -14404,7 +14381,7 @@ Repositories we stop tracking are soft-deleted during the next cleanup job.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100021` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100011` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -14423,7 +14400,7 @@ Query: `sum by (instance) (increase(index_num_stopped_tracking_total{instance=~`
 
 Refer to the [alert solutions reference](./alert_solutions.md#zoekt-average-resolve-revision-duration) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100030` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100020` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -14450,7 +14427,7 @@ this indicates repositories will not get updated indexes.
 
 Refer to the [alert solutions reference](./alert_solutions.md#zoekt-get-index-options-error-increase) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100031` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100021` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -14592,6 +14569,324 @@ Query: `sum by (instance, state) (increase(index_repo_seconds_count{instance=~`$
 
 <br />
 
+#### zoekt: repo_index_success_speed_heatmap
+
+<p class="subtitle">Successful indexing durations</p>
+
+Latency increases can indicate bottlenecks in the indexserver.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100310` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (le, state) (increase(index_repo_seconds_bucket{state="success"}[$__rate_interval]))`
+
+</details>
+
+<br />
+
+#### zoekt: repo_index_fail_speed_heatmap
+
+<p class="subtitle">Failed indexing durations</p>
+
+Failures happening after a long time indicates timeouts.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100311` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (le, state) (increase(index_repo_seconds_bucket{state="fail"}[$__rate_interval]))`
+
+</details>
+
+<br />
+
+#### zoekt: repo_index_success_speed_p99
+
+<p class="subtitle">99th percentile successful indexing durations over 5m (aggregate)</p>
+
+This dashboard shows the p99 duration of successful indexing jobs aggregated across all Zoekt instances.
+
+Latency increases can indicate bottlenecks in the indexserver.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100320` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum by (le, name)(rate(index_repo_seconds_bucket{state="success"}[5m])))`
+
+</details>
+
+<br />
+
+#### zoekt: repo_index_success_speed_p90
+
+<p class="subtitle">90th percentile successful indexing durations over 5m (aggregate)</p>
+
+This dashboard shows the p90 duration of successful indexing jobs aggregated across all Zoekt instances.
+
+Latency increases can indicate bottlenecks in the indexserver.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100321` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name)(rate(index_repo_seconds_bucket{state="success"}[5m])))`
+
+</details>
+
+<br />
+
+#### zoekt: repo_index_success_speed_p75
+
+<p class="subtitle">75th percentile successful indexing durations over 5m (aggregate)</p>
+
+This dashboard shows the p75 duration of successful indexing jobs aggregated across all Zoekt instances.
+
+Latency increases can indicate bottlenecks in the indexserver.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100322` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name)(rate(index_repo_seconds_bucket{state="success"}[5m])))`
+
+</details>
+
+<br />
+
+#### zoekt: repo_index_success_speed_p99_per_instance
+
+<p class="subtitle">99th percentile successful indexing durations over 5m (per instance)</p>
+
+This dashboard shows the p99 duration of successful indexing jobs broken out per Zoekt instance.
+
+Latency increases can indicate bottlenecks in the indexserver.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100330` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum by (le, instance)(rate(index_repo_seconds_bucket{state="success",instance=~`${instance:regex}`}[5m])))`
+
+</details>
+
+<br />
+
+#### zoekt: repo_index_success_speed_p90_per_instance
+
+<p class="subtitle">90th percentile successful indexing durations over 5m (per instance)</p>
+
+This dashboard shows the p90 duration of successful indexing jobs broken out per Zoekt instance.
+
+Latency increases can indicate bottlenecks in the indexserver.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100331` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, instance)(rate(index_repo_seconds_bucket{state="success",instance=~`${instance:regex}`}[5m])))`
+
+</details>
+
+<br />
+
+#### zoekt: repo_index_success_speed_p75_per_instance
+
+<p class="subtitle">75th percentile successful indexing durations over 5m (per instance)</p>
+
+This dashboard shows the p75 duration of successful indexing jobs broken out per Zoekt instance.
+
+Latency increases can indicate bottlenecks in the indexserver.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100332` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, instance)(rate(index_repo_seconds_bucket{state="success",instance=~`${instance:regex}`}[5m])))`
+
+</details>
+
+<br />
+
+#### zoekt: repo_index_failed_speed_p99
+
+<p class="subtitle">99th percentile failed indexing durations over 5m (aggregate)</p>
+
+This dashboard shows the p99 duration of failed indexing jobs aggregated across all Zoekt instances.
+
+Failures happening after a long time indicates timeouts.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100340` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum by (le, name)(rate(index_repo_seconds_bucket{state="fail"}[5m])))`
+
+</details>
+
+<br />
+
+#### zoekt: repo_index_failed_speed_p90
+
+<p class="subtitle">90th percentile failed indexing durations over 5m (aggregate)</p>
+
+This dashboard shows the p90 duration of failed indexing jobs aggregated across all Zoekt instances.
+
+Failures happening after a long time indicates timeouts.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100341` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name)(rate(index_repo_seconds_bucket{state="fail"}[5m])))`
+
+</details>
+
+<br />
+
+#### zoekt: repo_index_failed_speed_p75
+
+<p class="subtitle">75th percentile failed indexing durations over 5m (aggregate)</p>
+
+This dashboard shows the p75 duration of failed indexing jobs aggregated across all Zoekt instances.
+
+Failures happening after a long time indicates timeouts.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100342` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name)(rate(index_repo_seconds_bucket{state="fail"}[5m])))`
+
+</details>
+
+<br />
+
+#### zoekt: repo_index_failed_speed_p99_per_instance
+
+<p class="subtitle">99th percentile failed indexing durations over 5m (per instance)</p>
+
+This dashboard shows the p99 duration of failed indexing jobs broken out per Zoekt instance.
+
+Failures happening after a long time indicates timeouts.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100350` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum by (le, instance)(rate(index_repo_seconds_bucket{state="fail",instance=~`${instance:regex}`}[5m])))`
+
+</details>
+
+<br />
+
+#### zoekt: repo_index_failed_speed_p90_per_instance
+
+<p class="subtitle">90th percentile failed indexing durations over 5m (per instance)</p>
+
+This dashboard shows the p90 duration of failed indexing jobs broken out per Zoekt instance.
+
+Failures happening after a long time indicates timeouts.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100351` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, instance)(rate(index_repo_seconds_bucket{state="fail",instance=~`${instance:regex}`}[5m])))`
+
+</details>
+
+<br />
+
+#### zoekt: repo_index_failed_speed_p75_per_instance
+
+<p class="subtitle">75th percentile failed indexing durations over 5m (per instance)</p>
+
+This dashboard shows the p75 duration of failed indexing jobs broken out per Zoekt instance.
+
+Failures happening after a long time indicates timeouts.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100352` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, instance)(rate(index_repo_seconds_bucket{state="fail",instance=~`${instance:regex}`}[5m])))`
+
+</details>
+
+<br />
+
 ### Zoekt: Indexing queue statistics
 
 #### zoekt: indexed_num_scheduled_jobs_aggregate
@@ -14661,9 +14956,11 @@ Query: `sum by (le) (increase(index_queue_age_seconds_bucket[$__rate_interval]))
 
 <br />
 
-#### zoekt: indexed_queueing_delay_p99_9
+#### zoekt: indexed_queueing_delay_p99_9_aggregate
 
-<p class="subtitle">99.9th percentile job queuing delay over 5m</p>
+<p class="subtitle">99.9th percentile job queuing delay over 5m (aggregate)</p>
+
+This dashboard shows the p99.9 job queueing delay aggregated across all Zoekt instances.
 
 The queueing delay represents the amount of time an indexing job spent in the queue before it was processed.
 
@@ -14688,9 +14985,11 @@ Query: `histogram_quantile(0.999, sum by (le, name)(rate(index_queue_age_seconds
 
 <br />
 
-#### zoekt: indexed_queueing_delay_p90
+#### zoekt: indexed_queueing_delay_p90_aggregate
 
-<p class="subtitle">90th percentile job queueing delay over 5m</p>
+<p class="subtitle">90th percentile job queueing delay over 5m (aggregate)</p>
+
+This dashboard shows the p90 job queueing delay aggregated across all Zoekt instances.
 
 The queueing delay represents the amount of time an indexing job spent in the queue before it was processed.
 
@@ -14713,9 +15012,11 @@ Query: `histogram_quantile(0.90, sum by (le, name)(rate(index_queue_age_seconds_
 
 <br />
 
-#### zoekt: indexed_queueing_delay_p75
+#### zoekt: indexed_queueing_delay_p75_aggregate
 
-<p class="subtitle">75th percentile job queueing delay over 5m</p>
+<p class="subtitle">75th percentile job queueing delay over 5m (aggregate)</p>
+
+This dashboard shows the p75 job queueing delay aggregated across all Zoekt instances.
 
 The queueing delay represents the amount of time an indexing job spent in the queue before it was processed.
 
@@ -14733,6 +15034,89 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100422` on yo
 <summary>Technical details</summary>
 
 Query: `histogram_quantile(0.75, sum by (le, name)(rate(index_queue_age_seconds_bucket[5m])))`
+
+</details>
+
+<br />
+
+#### zoekt: indexed_queueing_delay_p99_9_per_instance
+
+<p class="subtitle">99.9th percentile job queuing delay over 5m (per instance)</p>
+
+This dashboard shows the p99.9 job queueing delay, broken out per Zoekt instance.
+
+The queueing delay represents the amount of time an indexing job spent in the queue before it was processed.
+
+Large queueing delays can be an indicator of:
+	- resource saturation
+	- each Zoekt replica has too many jobs for it to be able to process all of them promptly. In this scenario, consider adding additional Zoekt replicas to distribute the work better.
+
+The 99.9 percentile dashboard is useful for capturing the long tail of queueing delays (on the order of 24+ hours, etc.).
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100430` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.999, sum by (le, instance)(rate(index_queue_age_seconds_bucket{instance=~`${instance:regex}`}[5m])))`
+
+</details>
+
+<br />
+
+#### zoekt: indexed_queueing_delay_p90_per_instance
+
+<p class="subtitle">90th percentile job queueing delay over 5m (per instance)</p>
+
+This dashboard shows the p90 job queueing delay, broken out per Zoekt instance.
+
+The queueing delay represents the amount of time an indexing job spent in the queue before it was processed.
+
+Large queueing delays can be an indicator of:
+	- resource saturation
+	- each Zoekt replica has too many jobs for it to be able to process all of them promptly. In this scenario, consider adding additional Zoekt replicas to distribute the work better.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100431` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, instance)(rate(index_queue_age_seconds_bucket{instance=~`${instance:regex}`}[5m])))`
+
+</details>
+
+<br />
+
+#### zoekt: indexed_queueing_delay_p75_per_instance
+
+<p class="subtitle">75th percentile job queueing delay over 5m (per instance)</p>
+
+This dashboard shows the p75 job queueing delay, broken out per Zoekt instance.
+
+The queueing delay represents the amount of time an indexing job spent in the queue before it was processed.
+
+Large queueing delays can be an indicator of:
+	- resource saturation
+	- each Zoekt replica has too many jobs for it to be able to process all of them promptly. In this scenario, consider adding additional Zoekt replicas to distribute the work better.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100432` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, instance)(rate(index_queue_age_seconds_bucket{instance=~`${instance:regex}`}[5m])))`
 
 </details>
 

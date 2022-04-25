@@ -84,7 +84,7 @@ echo "--- comby install"
 ./dev/comby-install-or-upgrade.sh
 
 # Temporary fix to keep the backcompat test operational until the next release.
-# This is needed because the go-test.sh is protected and the backcompat tests are 
+# This is needed because the go-test.sh is protected and the backcompat tests are
 # not checking out the old version when the tests with the old code against the latest
 # commit database schema.
 # TODO @jhchabran remove this when we release the next version.
@@ -107,7 +107,7 @@ declare -A IGNORED_DIRS=(
 )
 
 # We have multiple go.mod files and go list doesn't recurse into them.
-find . -name go.mod -exec dirname '{}' \; | while read -r d; do
+find . -name go.mod -type f -exec dirname '{}' \; | while read -r d; do
 
   # Skip any ignored directories.
   if [ -v "IGNORED_DIRS[$d]" ]; then

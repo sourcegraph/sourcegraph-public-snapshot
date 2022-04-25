@@ -308,6 +308,9 @@ func TestGetUploads(t *testing.T) {
 		Upload{ID: 12, Commit: makeCommit(3331), UploadedAt: t1, FinishedAt: &t1, Root: "sub1/", State: "deleted"},
 		Upload{ID: 13, UploadedAt: t2, FinishedAt: &t1, State: "deleted", FailureMessage: &failureMessage, Indexer: "lsif-tsc"},
 		Upload{ID: 14, Commit: makeCommit(3333), UploadedAt: t3, FinishedAt: &t2, Root: "sub2/", State: "deleted"},
+
+		// deleted repo
+		Upload{ID: 15, Commit: makeCommit(3334), UploadedAt: t4, State: "deleted", RepositoryID: 53, RepositoryName: "DELETED-barfoo"},
 	)
 	insertVisibleAtTip(t, db, 50, 2, 5, 7, 8)
 
@@ -332,17 +335,18 @@ func TestGetUploads(t *testing.T) {
 	}
 
 	type testCase struct {
-		repositoryID   int
-		state          string
-		term           string
-		visibleAtTip   bool
-		dependencyOf   int
-		dependentOf    int
-		uploadedBefore *time.Time
-		uploadedAfter  *time.Time
-		inCommitGraph  bool
-		oldestFirst    bool
-		expectedIDs    []int
+		repositoryID     int
+		state            string
+		term             string
+		visibleAtTip     bool
+		dependencyOf     int
+		dependentOf      int
+		uploadedBefore   *time.Time
+		uploadedAfter    *time.Time
+		inCommitGraph    bool
+		oldestFirst      bool
+		allowDeletedRepo bool
+		expectedIDs      []int
 	}
 	testCases := []testCase{
 		{expectedIDs: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}},
@@ -368,6 +372,7 @@ func TestGetUploads(t *testing.T) {
 		{dependentOf: 10, expectedIDs: []int{}},
 		{dependencyOf: 11, expectedIDs: []int{8}},
 		{dependentOf: 11, expectedIDs: []int{}},
+		{allowDeletedRepo: true, state: "deleted", expectedIDs: []int{12, 13, 14, 15}},
 	}
 
 	runTest := func(testCase testCase, lo, hi int) (errors int) {
@@ -384,18 +389,19 @@ func TestGetUploads(t *testing.T) {
 
 		t.Run(name, func(t *testing.T) {
 			uploads, totalCount, err := store.GetUploads(ctx, GetUploadsOptions{
-				RepositoryID:   testCase.repositoryID,
-				State:          testCase.state,
-				Term:           testCase.term,
-				VisibleAtTip:   testCase.visibleAtTip,
-				DependencyOf:   testCase.dependencyOf,
-				DependentOf:    testCase.dependentOf,
-				UploadedBefore: testCase.uploadedBefore,
-				UploadedAfter:  testCase.uploadedAfter,
-				InCommitGraph:  testCase.inCommitGraph,
-				OldestFirst:    testCase.oldestFirst,
-				Limit:          3,
-				Offset:         lo,
+				RepositoryID:     testCase.repositoryID,
+				State:            testCase.state,
+				Term:             testCase.term,
+				VisibleAtTip:     testCase.visibleAtTip,
+				DependencyOf:     testCase.dependencyOf,
+				DependentOf:      testCase.dependentOf,
+				UploadedBefore:   testCase.uploadedBefore,
+				UploadedAfter:    testCase.uploadedAfter,
+				InCommitGraph:    testCase.inCommitGraph,
+				OldestFirst:      testCase.oldestFirst,
+				AllowDeletedRepo: testCase.allowDeletedRepo,
+				Limit:            3,
+				Offset:           lo,
 			})
 			if err != nil {
 				t.Fatalf("unexpected error getting uploads for repo: %s", err)
@@ -411,7 +417,7 @@ func TestGetUploads(t *testing.T) {
 					ids = append(ids, upload.ID)
 				}
 				if diff := cmp.Diff(testCase.expectedIDs[lo:hi], ids); diff != "" {
-					t.Errorf("unexpected upload ids at offset %d (-want +got):\n%s", lo, diff)
+					t.Errorf("unexpected upload ids at offset %d-%d (-want +got):\n%s", lo, hi, diff)
 					errors++
 				}
 			}

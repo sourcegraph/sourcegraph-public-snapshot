@@ -163,7 +163,7 @@ func (s *StructuralSearch) Run(ctx context.Context, clients job.RuntimeClients, 
 	defer func() { finish(alert, err) }()
 
 	repos := &searchrepos.Resolver{DB: clients.DB, Opts: s.RepoOpts}
-	return nil, repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
+	return nil, repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
 		indexed, unindexed, err := zoektutil.PartitionRepos(
 			ctx,
 			page.RepoRevs,

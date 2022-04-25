@@ -3,10 +3,10 @@ import React, { useEffect, useMemo, useState } from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 import { capitalize } from 'lodash'
+import ArrowCollapseRightIcon from 'mdi-react/ArrowCollapseRightIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import CloseIcon from 'mdi-react/CloseIcon'
-import OpenInAppIcon from 'mdi-react/OpenInAppIcon'
+import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import { MemoryRouter, useHistory, useLocation } from 'react-router'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
@@ -15,6 +15,7 @@ import {
     ErrorLike,
     formatSearchParameters,
     lprToRange,
+    pluralize,
     toPositionOrRangeQueryParameter,
     toViewStateHash,
 } from '@sourcegraph/common'
@@ -45,6 +46,7 @@ import {
     Collapse,
     CollapseHeader,
     CollapsePanel,
+    Code,
 } from '@sourcegraph/wildcard'
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
@@ -68,7 +70,7 @@ type Token = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisio
 
 interface ReferencesPanelProps
     extends SettingsCascadeProps,
-        PlatformContextProps,
+        PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings' | 'forceUpdateTooltip'>,
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
@@ -146,7 +148,7 @@ export const RevisionResolvingReferencesList: React.FunctionComponent<
     }
 
     return (
-        <FilterableReferencesList
+        <SearchTokenFindingReferencesList
             {...props}
             token={token}
             isFork={data.isFork}
@@ -163,14 +165,7 @@ interface ReferencesPanelPropsWithToken extends ReferencesPanelProps {
     fileContent: string
 }
 
-const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWithToken> = props => {
-    const [filter, setFilter] = useState<string>()
-    const debouncedFilter = useDebounce(filter, 150)
-
-    useEffect(() => {
-        setFilter(undefined)
-    }, [props.token])
-
+const SearchTokenFindingReferencesList: React.FunctionComponent<ReferencesPanelPropsWithToken> = props => {
     const languageId = getModeFromPath(props.token.filePath)
     const spec = findLanguageSpec(languageId)
     const tokenResult = findSearchToken({
@@ -193,33 +188,15 @@ const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWith
     }
 
     return (
-        <>
-            <CardHeader className={styles.referencesToken}>
-                <code>{tokenResult.searchToken}</code>{' '}
-                <span className="text-muted ml-2">
-                    <code>
-                        {props.token.repoName}:{props.token.filePath}
-                    </code>
-                </span>
-            </CardHeader>
-            <Input
-                className={classNames('py-0 my-0', styles.referencesFilter)}
-                type="text"
-                placeholder="Filter by filename..."
-                value={filter === undefined ? '' : filter}
-                onChange={event => setFilter(event.target.value)}
-            />
-            <ReferencesList
-                {...props}
-                token={props.token}
-                filter={debouncedFilter}
-                searchToken={tokenResult?.searchToken}
-                spec={spec}
-                fileContent={props.fileContent}
-                isFork={props.isFork}
-                isArchived={props.isArchived}
-            />
-        </>
+        <ReferencesList
+            {...props}
+            token={props.token}
+            searchToken={tokenResult?.searchToken}
+            spec={spec}
+            fileContent={props.fileContent}
+            isFork={props.isFork}
+            isArchived={props.isArchived}
+        />
     )
 }
 
@@ -227,12 +204,18 @@ const SHOW_SPINNER_DELAY_MS = 100
 
 export const ReferencesList: React.FunctionComponent<
     ReferencesPanelPropsWithToken & {
-        filter?: string
         searchToken: string
         spec: LanguageSpec
         fileContent: string
     }
 > = props => {
+    const [filter, setFilter] = useState<string>()
+    const debouncedFilter = useDebounce(filter, 150)
+
+    useEffect(() => {
+        setFilter(undefined)
+    }, [props.token])
+
     const getSetting = newSettingsGetter(props.settingsCascade)
 
     const {
@@ -254,7 +237,7 @@ export const ReferencesList: React.FunctionComponent<
             // get from hoverifier is 1-indexed.
             line: props.token.line - 1,
             character: props.token.character - 1,
-            filter: props.filter || null,
+            filter: debouncedFilter || null,
             firstReferences: 100,
             afterReferences: null,
             firstImplementations: 100,
@@ -376,22 +359,39 @@ export const ReferencesList: React.FunctionComponent<
     }
 
     return (
-        <>
-            <div className={classNames('align-items-stretch', styles.referencesList)}>
-                <div className={classNames('px-0', styles.referencesSideReferences)}>
+        <div className={classNames('align-items-stretch', styles.panel)}>
+            <div className={classNames('px-0', styles.leftSubPanel)}>
+                <CardHeader className={classNames('d-flex align-items-center', styles.cardHeader)}>
+                    <Code size="base" weight="bold">
+                        {props.searchToken}
+                    </Code>
                     {canShowSpinner && (
-                        <div className="text-muted">
-                            <LoadingSpinner inline={true} />
+                        <small className="ml-3 text-muted d-flex align-items-center">
+                            <Icon as={LoadingSpinner} size="sm" inline={true} className="mr-1" />
                             <i>Loading...</i>
-                        </div>
+                        </small>
                     )}
+                </CardHeader>
+                <div className={classNames('d-flex justify-content-start', styles.filter)}>
+                    <small>
+                        <Icon as={FilterOutlineIcon} size="sm" className={styles.filterIcon} />
+                    </small>
+                    <Input
+                        className={classNames('py-0 my-0 w-100 text-small')}
+                        type="text"
+                        placeholder="Type to filter by filename"
+                        value={filter === undefined ? '' : filter}
+                        onChange={event => setFilter(event.target.value)}
+                    />
+                </div>
+                <div className={styles.locationLists}>
                     <CollapsibleLocationList
                         {...props}
                         name="definitions"
                         locations={definitions}
                         hasMore={false}
                         loadingMore={false}
-                        filter={props.filter}
+                        filter={debouncedFilter}
                         navigateToUrl={navigateToUrl}
                         isActiveLocation={isActiveLocation}
                         setActiveLocation={onReferenceClick}
@@ -405,7 +405,7 @@ export const ReferencesList: React.FunctionComponent<
                         hasMore={referencesHasNextPage}
                         fetchMore={fetchMoreReferences}
                         loadingMore={fetchMoreReferencesLoading}
-                        filter={props.filter}
+                        filter={debouncedFilter}
                         navigateToUrl={navigateToUrl}
                         setActiveLocation={onReferenceClick}
                         isActiveLocation={isActiveLocation}
@@ -421,7 +421,7 @@ export const ReferencesList: React.FunctionComponent<
                             fetchMore={fetchMoreImplementations}
                             loadingMore={fetchMoreImplementationsLoading}
                             setActiveLocation={onReferenceClick}
-                            filter={props.filter}
+                            filter={debouncedFilter}
                             isActiveLocation={isActiveLocation}
                             navigateToUrl={navigateToUrl}
                             handleOpenChange={handleOpenChange}
@@ -429,43 +429,43 @@ export const ReferencesList: React.FunctionComponent<
                         />
                     )}
                 </div>
-                {activeLocation !== undefined && (
-                    <div className={classNames('px-0 border-left', styles.referencesSideBlob)}>
-                        <CardHeader className={classNames('pl-1 pr-3 py-1 d-flex justify-content-between')}>
-                            <h4 className="mb-0">
-                                {activeLocation.file}{' '}
-                                <Link
-                                    to={activeLocation.url}
-                                    onClick={event => {
-                                        event.preventDefault()
-                                        navigateToUrl(activeLocation.url)
-                                    }}
-                                >
-                                    <Icon as={OpenInAppIcon} />
-                                </Link>
-                            </h4>
-
+            </div>
+            {activeLocation !== undefined && (
+                <div className={classNames('px-0 border-left', styles.rightSubPanel)}>
+                    <CardHeader className={classNames('d-flex', styles.cardHeader)}>
+                        <small>
                             <Button
                                 onClick={() => setActiveLocation(undefined)}
-                                className={classNames('btn-icon p-0', styles.dismissButton)}
+                                className={classNames('btn-icon p-0', styles.sideBlobCollapseButton)}
                                 title="Close panel"
                                 data-tooltip="Close panel"
                                 data-placement="left"
+                                size="sm"
                             >
-                                <Icon as={CloseIcon} />
+                                <Icon size="sm" as={ArrowCollapseRightIcon} className="border-0" />
                             </Button>
-                        </CardHeader>
-                        <SideBlob
-                            {...props}
-                            blobNav={onBlobNav}
-                            history={blobMemoryHistory}
-                            location={blobMemoryHistory.location}
-                            activeLocation={activeLocation}
-                        />
-                    </div>
-                )}
-            </div>
-        </>
+                            <Link
+                                to={activeLocation.url}
+                                onClick={event => {
+                                    event.preventDefault()
+                                    navigateToUrl(activeLocation.url)
+                                }}
+                                className={styles.sideBlobFilename}
+                            >
+                                {activeLocation.file}{' '}
+                            </Link>
+                        </small>
+                    </CardHeader>
+                    <SideBlob
+                        {...props}
+                        blobNav={onBlobNav}
+                        history={blobMemoryHistory}
+                        location={blobMemoryHistory.location}
+                        activeLocation={activeLocation}
+                    />
+                </div>
+            )}
+        </div>
     )
 }
 
@@ -489,76 +489,73 @@ interface CollapsibleLocationListProps extends ActiveLocationProps, CollapseProp
     navigateToUrl: (url: string) => void
 }
 
-const CollapsibleLocationList: React.FunctionComponent<CollapsibleLocationListProps> = props => (
-    <Collapse
-        isOpen={props.isOpen(props.name) ?? true}
-        onOpenChange={isOpen => props.handleOpenChange(props.name, isOpen)}
-    >
-        <>
-            <CardHeader className="p-0">
-                <CollapseHeader
-                    as={Button}
-                    aria-expanded={props.isOpen(props.name)}
-                    type="button"
-                    className="bg-transparent py-1 px-0 border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
-                >
-                    <h4 className="px-1 py-0 mb-0">
-                        {' '}
-                        {props.isOpen(props.name) ? (
+const CollapsibleLocationList: React.FunctionComponent<CollapsibleLocationListProps> = props => {
+    const isOpen = props.isOpen(props.name) ?? true
+
+    return (
+        <Collapse isOpen={isOpen} onOpenChange={isOpen => props.handleOpenChange(props.name, isOpen)}>
+            <>
+                <CardHeader className={styles.cardHeaderBig}>
+                    <CollapseHeader
+                        as={Button}
+                        aria-expanded={props.isOpen(props.name)}
+                        type="button"
+                        className="d-flex p-0 justify-content-start w-100"
+                    >
+                        {isOpen ? (
                             <Icon aria-label="Close" as={ChevronDownIcon} />
                         ) : (
                             <Icon aria-label="Expand" as={ChevronRightIcon} />
                         )}{' '}
-                        {capitalize(props.name)}
-                        <Badge pill={true} variant="secondary" className="ml-2">
-                            {props.locations.length}
-                            {props.hasMore && '+'}
-                        </Badge>
-                    </h4>
-                </CollapseHeader>
-            </CardHeader>
+                        <h4 className="mb-0">{capitalize(props.name)}</h4>
+                        <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
+                            ({props.locations.length} displayed{props.hasMore ? ', more available)' : ')'}
+                        </span>
+                    </CollapseHeader>
+                </CardHeader>
 
-            <CollapsePanel id="references">
-                {props.locations.length > 0 ? (
-                    <LocationsList
-                        locations={props.locations}
-                        isActiveLocation={props.isActiveLocation}
-                        setActiveLocation={props.setActiveLocation}
-                        filter={props.filter}
-                        navigateToUrl={props.navigateToUrl}
-                        handleOpenChange={(id, isOpen) => props.handleOpenChange(props.name + id, isOpen)}
-                        isOpen={id => props.isOpen(props.name + id)}
-                    />
-                ) : (
-                    <p className="text-muted pl-2">
-                        {props.filter ? (
-                            <i>
-                                No {props.name} matching <strong>{props.filter}</strong> found
-                            </i>
-                        ) : (
-                            <i>No {props.name} found</i>
-                        )}
-                    </p>
-                )}
-
-                {props.hasMore &&
-                    props.fetchMore !== undefined &&
-                    (props.loadingMore ? (
-                        <div className="text-center mb-1">
-                            <em>Loading more {props.name}...</em>
-                            <LoadingSpinner inline={true} />
-                        </div>
+                <CollapsePanel id={props.name}>
+                    {props.locations.length > 0 ? (
+                        <LocationsList
+                            locations={props.locations}
+                            isActiveLocation={props.isActiveLocation}
+                            setActiveLocation={props.setActiveLocation}
+                            filter={props.filter}
+                            navigateToUrl={props.navigateToUrl}
+                            handleOpenChange={(id, isOpen) => props.handleOpenChange(props.name + id, isOpen)}
+                            isOpen={id => props.isOpen(props.name + id)}
+                        />
                     ) : (
-                        <div className="text-center mb-1">
-                            <Button variant="secondary" onClick={props.fetchMore}>
-                                Load more {props.name}
-                            </Button>
-                        </div>
-                    ))}
-            </CollapsePanel>
-        </>
-    </Collapse>
-)
+                        <p className="text-muted pl-2">
+                            {props.filter ? (
+                                <i>
+                                    No {props.name} matching <strong>{props.filter}</strong> found
+                                </i>
+                            ) : (
+                                <i>No {props.name} found</i>
+                            )}
+                        </p>
+                    )}
+
+                    {props.hasMore &&
+                        props.fetchMore !== undefined &&
+                        (props.loadingMore ? (
+                            <div className="text-center mb-1">
+                                <em>Loading more {props.name}...</em>
+                                <LoadingSpinner inline={true} />
+                            </div>
+                        ) : (
+                            <div className="text-center mb-1">
+                                <Button variant="secondary" onClick={props.fetchMore}>
+                                    Load more {props.name}
+                                </Button>
+                            </div>
+                        ))}
+                </CollapsePanel>
+            </>
+        </Collapse>
+    )
+}
 
 const SideBlob: React.FunctionComponent<
     ReferencesPanelProps & {
@@ -634,7 +631,7 @@ const SideBlob: React.FunctionComponent<
             location={props.location}
             disableStatusBar={true}
             wrapCode={true}
-            className={styles.referencesSideBlobCode}
+            className={styles.sideBlobCode}
             blobInfo={{
                 html,
                 content: props.activeLocation.content,
@@ -713,25 +710,25 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
                     as={Button}
                     aria-expanded={open}
                     type="button"
-                    className="bg-transparent py-1 border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
+                    className={classNames('d-flex justify-content-start w-100', styles.repoLocationGroup)}
                 >
-                    <span className="p-0 mb-0">
-                        {open ? (
-                            <Icon aria-label="Close" as={ChevronDownIcon} />
-                        ) : (
-                            <Icon aria-label="Expand" as={ChevronRightIcon} />
-                        )}
-
+                    {open ? (
+                        <Icon aria-label="Close" as={ChevronDownIcon} />
+                    ) : (
+                        <Icon aria-label="Expand" as={ChevronRightIcon} />
+                    )}
+                    <small>
                         <Link
                             to={repoUrl}
                             onClick={event => {
                                 event.preventDefault()
                                 navigateToUrl(repoUrl)
                             }}
+                            className={classNames('text-small', styles.repoLocationGroupRepoName)}
                         >
                             {displayRepoName(repoLocationGroup.repoName)}
                         </Link>
-                    </span>
+                    </small>
                 </CollapseHeader>
 
                 <CollapsePanel id={repoLocationGroup.repoName}>
@@ -767,68 +764,73 @@ const CollapsibleLocationGroup: React.FunctionComponent<
     const open = isOpen(group.path) ?? true
 
     return (
-        <div className="ml-4">
-            <Collapse isOpen={open} onOpenChange={isOpen => handleOpenChange(group.path, isOpen)}>
-                <>
-                    <CollapseHeader
-                        as={Button}
-                        aria-expanded={open}
-                        type="button"
-                        className="bg-transparent py-1 border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
-                    >
-                        <span className={styles.referenceFilename}>
-                            {open ? (
-                                <Icon aria-label="Close" as={ChevronDownIcon} />
-                            ) : (
-                                <Icon aria-label="Expand" as={ChevronRightIcon} />
-                            )}
-                            {highlighted.length === 2 ? (
-                                <span>
-                                    {highlighted[0]}
-                                    <mark>{filter}</mark>
-                                    {highlighted[1]}
-                                </span>
-                            ) : (
-                                group.path
-                            )}{' '}
-                            ({group.locations.length} references)
-                            <Badge pill={true} small={true} variant="secondary" className="ml-2">
-                                {locationGroupQuality(group)}
-                            </Badge>
+        <Collapse isOpen={open} onOpenChange={isOpen => handleOpenChange(group.path, isOpen)}>
+            <>
+                <CollapseHeader
+                    as={Button}
+                    aria-expanded={open}
+                    type="button"
+                    className={classNames(
+                        'bg-transparent border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100',
+                        styles.locationGroup
+                    )}
+                >
+                    {open ? (
+                        <Icon aria-label="Close" as={ChevronDownIcon} />
+                    ) : (
+                        <Icon aria-label="Expand" as={ChevronRightIcon} />
+                    )}
+                    <small className={styles.locationGroupFilename}>
+                        {highlighted.length === 2 ? (
+                            <span>
+                                {highlighted[0]}
+                                <mark>{filter}</mark>
+                                {highlighted[1]}
+                            </span>
+                        ) : (
+                            group.path
+                        )}{' '}
+                        <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
+                            ({group.locations.length} {pluralize('reference', group.locations.length, 'references')})
                         </span>
-                    </CollapseHeader>
+                        <Badge small={true} variant="secondary" className="ml-4">
+                            {locationGroupQuality(group)}
+                        </Badge>
+                    </small>
+                </CollapseHeader>
 
-                    <CollapsePanel id={group.repoName + group.path} className="ml-2">
-                        <ul className="list-unstyled pl-3 py-1 mb-0">
-                            {group.locations.map(reference => {
-                                const className = isActiveLocation(reference) ? styles.referenceActive : ''
+                <CollapsePanel id={group.repoName + group.path} className="ml-0">
+                    <ul className="list-unstyled mb-0">
+                        {group.locations.map(reference => {
+                            const className = isActiveLocation(reference) ? styles.locationActive : ''
 
-                                return (
-                                    <li key={reference.url} className={classNames('border-0 rounded-0', className)}>
-                                        <div>
-                                            <Link
-                                                onClick={event => {
-                                                    event.preventDefault()
-                                                    setActiveLocation(reference)
-                                                }}
-                                                to={reference.url}
-                                                className={styles.referenceLink}
-                                            >
-                                                <span className={styles.referenceLinkLineNumber}>
-                                                    {(reference.range?.start?.line ?? 0) + 1}
-                                                    {': '}
-                                                </span>
-                                                <code>{getLineContent(reference)}</code>
-                                            </Link>
-                                        </div>
-                                    </li>
-                                )
-                            })}
-                        </ul>
-                    </CollapsePanel>
-                </>
-            </Collapse>
-        </div>
+                            return (
+                                <li
+                                    key={reference.url}
+                                    className={classNames('border-0 rounded-0 mb-0', styles.location, className)}
+                                >
+                                    <Link
+                                        as={Button}
+                                        onClick={event => {
+                                            event.preventDefault()
+                                            setActiveLocation(reference)
+                                        }}
+                                        to={reference.url}
+                                        className={styles.locationLink}
+                                    >
+                                        <span className={styles.locationLinkLineNumber}>
+                                            {(reference.range?.start?.line ?? 0) + 1}
+                                            {': '}
+                                        </span>
+                                        <code>{getLineContent(reference)}</code>
+                                    </Link>
+                                </li>
+                            )
+                        })}
+                    </ul>
+                </CollapsePanel>
+            </>
+        </Collapse>
     )
 }
 

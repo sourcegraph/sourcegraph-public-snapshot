@@ -11,7 +11,7 @@ echo "--- yarn root"
 # mutex is necessary since frontend and the management-console can
 # run concurrent "yarn" installs
 # TODO: This is no longer needed since the management console was removed.
-yarn --mutex network --frozen-lockfile --network-timeout 60000
+yarn --mutex network --frozen-lockfile --network-timeout 60000 --silent
 
 MAYBE_TIME_PREFIX=""
 if [[ "${CI_DEBUG_PROFILE:-"false"}" == "true" ]]; then

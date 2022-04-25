@@ -22,6 +22,7 @@ func testStoreBatchSpecResolutionJobs(t *testing.T, ctx context.Context, s *Stor
 	for i := 0; i < cap(jobs); i++ {
 		job := &btypes.BatchSpecResolutionJob{
 			BatchSpecID: int64(i + 567),
+			InitiatorID: int32(i + 123),
 		}
 
 		switch i {
@@ -167,12 +168,18 @@ func TestBatchSpecResolutionJobs_BatchSpecIDUnique(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	job1 := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
+	job1 := &btypes.BatchSpecResolutionJob{
+		BatchSpecID: batchSpec.ID,
+		InitiatorID: user.ID,
+	}
 	if err := s.CreateBatchSpecResolutionJob(ctx, job1); err != nil {
 		t.Fatal(err)
 	}
 
-	job2 := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
+	job2 := &btypes.BatchSpecResolutionJob{
+		BatchSpecID: batchSpec.ID,
+		InitiatorID: user.ID,
+	}
 	err := s.CreateBatchSpecResolutionJob(ctx, job2)
 	wantErr := ErrResolutionJobAlreadyExists{BatchSpecID: batchSpec.ID}
 	if err != wantErr {

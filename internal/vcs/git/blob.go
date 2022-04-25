@@ -76,7 +76,7 @@ type blobReader struct {
 	repo   api.RepoName
 	commit api.CommitID
 	name   string
-	cmd    *gitserver.Cmd
+	cmd    gitserver.GitCommand
 	rc     io.ReadCloser
 }
 
@@ -86,7 +86,7 @@ func newBlobReader(ctx context.Context, db database.DB, repo api.RepoName, commi
 	}
 
 	cmd := gitserver.NewClient(db).GitCommand(repo, "show", string(commit)+":"+name)
-	stdout, err := gitserver.StdoutReader(ctx, cmd)
+	stdout, err := cmd.StdoutReader(ctx)
 	if err != nil {
 		return nil, err
 	}

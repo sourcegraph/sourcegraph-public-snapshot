@@ -6,10 +6,8 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmpackages"
@@ -24,7 +22,7 @@ import (
 type NpmPackagesSource struct {
 	svc        *types.ExternalService
 	connection schema.NpmPackagesConnection
-	depsStore  DependenciesStore
+	depsSvc    *dependencies.Service
 	client     npm.Client
 }
 
@@ -38,7 +36,7 @@ func NewNpmPackagesSource(svc *types.ExternalService) (*NpmPackagesSource, error
 	return &NpmPackagesSource{
 		svc:        svc,
 		connection: c,
-		/* dbStore initialized in SetDB */
+		/* depsSvc initialized in SetDependenciesService */
 		client: npm.NewHTTPClient(svc.URN(), c.Registry, c.Credentials),
 	}, nil
 }
@@ -74,8 +72,8 @@ func (s *NpmPackagesSource) ListRepos(ctx context.Context, results chan SourceRe
 	totalDBFetched, totalDBResolved, lastID := 0, 0, 0
 	pkgVersions := map[string]*npm.PackageInfo{}
 	for {
-		dbDeps, err := s.depsStore.ListDependencyRepos(ctx, dependenciesStore.ListDependencyReposOpts{
-			Scheme:      dependenciesStore.NpmPackagesScheme,
+		dbDeps, err := s.depsSvc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
+			Scheme:      dependencies.NpmPackagesScheme,
 			After:       lastID,
 			Limit:       100,
 			NewestFirst: true,
@@ -167,8 +165,8 @@ func (s *NpmPackagesSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }
 
-func (s *NpmPackagesSource) SetDB(db dbutil.DB) {
-	s.depsStore = dependenciesStore.GetStore(database.NewDB(db))
+func (s *NpmPackagesSource) SetDependenciesService(depsSvc *dependencies.Service) {
+	s.depsSvc = depsSvc
 }
 
 // npmPackages gets the list of applicable packages by de-duplicating dependencies
@@ -198,8 +196,4 @@ func npmDependencies(connection schema.NpmPackagesConnection) (dependencies []*r
 		dependencies = append(dependencies, dependency)
 	}
 	return dependencies, nil
-}
-
-type DependenciesStore interface {
-	ListDependencyRepos(ctx context.Context, opts dependenciesStore.ListDependencyReposOpts) ([]dependenciesStore.DependencyRepo, error)
 }

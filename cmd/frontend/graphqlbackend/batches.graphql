@@ -1923,6 +1923,8 @@ type BatchSpecWorkspaceResolution {
         Search for workspaces matching this query. Queries may include quoted substrings
         to match phrases, and words may be preceded by - to negate them.
         Currently, this supports searching repository names only.
+        Repos that are not visible to the viewer will be omitted entirely when
+        this argument is passed.
         """
         search: String
         """
@@ -2052,13 +2054,85 @@ enum BatchSpecWorkspaceState {
 }
 
 """
-A workspace in Batch Changes to run in.
+The common interface for a batch spec workspace. Depending on access to the repository,
+either a HiddenBatchSpecWorkspace or a VisibleBatchSpecWorkspace will be serving this
+interface.
 """
-type BatchSpecWorkspace implements Node {
+interface BatchSpecWorkspace {
     """
     The unique ID for the workspace.
     """
     id: ID!
+
+    """
+    Used for reverse querying.
+    """
+    batchSpec: BatchSpec!
+
+    """
+    If true, only the files within the workspace will be fetched.
+    """
+    onlyFetchWorkspace: Boolean!
+
+    """
+    If true, this workspace has been skipped, because some rule forced this.
+    For now, the only one is a .batchignore file existing in the repository.
+    """
+    ignored: Boolean!
+
+    """
+    If true, this workspace has been skipped, because the code host on which
+    the repository is hosted is not supported.
+    """
+    unsupported: Boolean!
+
+    """
+    Whether we found a task cache result.
+    """
+    cachedResultFound: Boolean!
+
+    """
+    The time when the workspace was enqueued for processing. Null, if not yet enqueued.
+    """
+    queuedAt: DateTime
+
+    """
+    The time when the workspace started processing. Null, if not yet started.
+    """
+    startedAt: DateTime
+
+    """
+    The time when the workspace finished processing. Null, if not yet finished.
+    """
+    finishedAt: DateTime
+
+    """
+    The current state the workspace is in.
+    """
+    state: BatchSpecWorkspaceState!
+
+    """
+    The rank of this execution in the queue. The value of this field is null if the
+    execution has started.
+    """
+    placeInQueue: Int
+
+    """
+    The diff stat over all created changeset specs. Null, if not yet finished or
+    failed.
+    """
+    diffStat: DiffStat
+}
+
+"""
+A workspace to which the requesting user has access.
+"""
+type VisibleBatchSpecWorkspace implements BatchSpecWorkspace & Node {
+    """
+    The unique ID for the workspace.
+    """
+    id: ID!
+
     """
     The repository to run over.
     """
@@ -2098,8 +2172,6 @@ type BatchSpecWorkspace implements Node {
 
     """
     Whether we found a task cache result.
-
-    TODO: Not implemented yet.
     """
     cachedResultFound: Boolean!
 
@@ -2154,7 +2226,7 @@ type BatchSpecWorkspace implements Node {
     Populated, when the execution is finished. This is where you get the combined
     diffs.
     """
-    changesetSpecs: [ChangesetSpec!]
+    changesetSpecs: [VisibleChangesetSpec!]
 
     """
     The rank of this execution in the queue. The value of this field is null if the
@@ -2174,6 +2246,75 @@ type BatchSpecWorkspace implements Node {
     Only available to site-admins.
     """
     executor: Executor
+}
+
+"""
+A workspace to which the requesting user does not have access.
+"""
+type HiddenBatchSpecWorkspace implements BatchSpecWorkspace & Node {
+    """
+    The unique ID for the workspace.
+    """
+    id: ID!
+
+    """
+    Used for reverse querying.
+    """
+    batchSpec: BatchSpec!
+
+    """
+    If true, only the files within the workspace will be fetched.
+    """
+    onlyFetchWorkspace: Boolean!
+
+    """
+    If true, this workspace has been skipped, because some rule forced this.
+    For now, the only one is a .batchignore file existing in the repository.
+    """
+    ignored: Boolean!
+
+    """
+    If true, this workspace has been skipped, because the code host on which
+    the repository is hosted is not supported.
+    """
+    unsupported: Boolean!
+
+    """
+    Whether we found a task cache result.
+    """
+    cachedResultFound: Boolean!
+
+    """
+    The time when the workspace was enqueued for processing. Null, if not yet enqueued.
+    """
+    queuedAt: DateTime
+
+    """
+    The time when the workspace started processing. Null, if not yet started.
+    """
+    startedAt: DateTime
+
+    """
+    The time when the workspace finished processing. Null, if not yet finished.
+    """
+    finishedAt: DateTime
+
+    """
+    The current state the workspace is in.
+    """
+    state: BatchSpecWorkspaceState!
+
+    """
+    The rank of this execution in the queue. The value of this field is null if the
+    execution has started.
+    """
+    placeInQueue: Int
+
+    """
+    The diff stat over all created changeset specs. Null, if not yet finished or
+    failed.
+    """
+    diffStat: DiffStat
 }
 
 """
@@ -2202,8 +2343,6 @@ type BatchSpecWorkspaceStep {
 
     """
     True, if a cached result has been found.
-
-    TODO: Not yet implemented.
     """
     cachedResultFound: Boolean!
 
@@ -2860,7 +2999,8 @@ type BatchSpec implements Node {
     applyURL: String
 
     """
-    When true, the viewing user can apply this spec.
+    When true, the viewing user can apply this spec, modify it, and run workspace
+    resolution jobs.
     """
     viewerCanAdminister: Boolean!
 

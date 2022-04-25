@@ -19,3 +19,4 @@ A Sourcegraph service's log output format is configured via the environment vari
 * `condensed`: Optimized for human readability.
 * `json`: Machine-readable JSON format.
 * `logfmt`: The [logfmt](https://github.com/kr/logfmt) format.
+  * Note that `logfmt` is no longer supported with [Sourcegraph's new internal logging standards](../../dev/how-to/add_and_use_logging.md) - if you need structured logs, we recommend using `json` instead. If set to `logfmt`, log output from new loggers will be in `condensed` format.

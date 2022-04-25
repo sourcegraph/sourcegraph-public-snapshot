@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 
 import { ApolloQueryResult } from '@apollo/client'
 import classNames from 'classnames'
-import { compact, noop } from 'lodash'
+import { noop } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import LockIcon from 'mdi-react/LockIcon'
@@ -290,6 +290,7 @@ const BatchConfigurationPage: React.FunctionComponent<BatchConfigurationPageProp
                     namespaces={namespaces}
                     selectedNamespace={selectedNamespace.id}
                     onSelect={setSelectedNamespace}
+                    disabled={isReadOnly}
                 />
                 <Input
                     label="Batch change name"
@@ -526,7 +527,12 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
                         onChange={clearErrorsAndHandleCodeChange}
                     />
                     <EditorFeedbackPanel
-                        errors={compact([codeErrors.update, codeErrors.validation, previewError, executeError])}
+                        errors={{
+                            codeUpdate: codeErrors.update,
+                            codeValidation: codeErrors.validation,
+                            preview: previewError,
+                            execute: executeError,
+                        }}
                     />
 
                     {isDownloadSpecModalOpen && !downloadSpecModalDismissed ? (
@@ -540,28 +546,31 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
                     ) : null}
                 </div>
                 <Panel
+                    className="d-flex"
                     defaultSize={500}
                     minSize={405}
                     maxSize={1400}
                     position="right"
                     storageKey={WORKSPACES_PREVIEW_SIZE}
                 >
-                    <div className={styles.workspacesPreviewContainer}>
-                        <WorkspacesPreview
-                            previewDisabled={previewDisabled}
-                            preview={() => previewBatchSpec(debouncedCode)}
-                            batchSpecStale={
-                                isBatchSpecStale || isWorkspacesPreviewInProgress || resolutionState === 'CANCELED'
-                            }
-                            hasPreviewed={hasPreviewed}
-                            excludeRepo={excludeRepo}
-                            cancel={cancel}
-                            isWorkspacesPreviewInProgress={isWorkspacesPreviewInProgress}
-                            resolutionState={resolutionState}
-                            workspacesConnection={workspacesConnection}
-                            importingChangesetsConnection={importingChangesetsConnection}
-                            setFilters={setFilters}
-                        />
+                    <div className="overflow-auto">
+                        <div className={styles.workspacesPreviewContainer}>
+                            <WorkspacesPreview
+                                previewDisabled={previewDisabled}
+                                preview={() => previewBatchSpec(debouncedCode)}
+                                batchSpecStale={
+                                    isBatchSpecStale || isWorkspacesPreviewInProgress || resolutionState === 'CANCELED'
+                                }
+                                hasPreviewed={hasPreviewed}
+                                excludeRepo={excludeRepo}
+                                cancel={cancel}
+                                isWorkspacesPreviewInProgress={isWorkspacesPreviewInProgress}
+                                resolutionState={resolutionState}
+                                workspacesConnection={workspacesConnection}
+                                importingChangesetsConnection={importingChangesetsConnection}
+                                setFilters={setFilters}
+                            />
+                        </div>
                     </div>
                 </Panel>
             </div>

@@ -146,7 +146,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		GitCommandFunc: &ClientGitCommandFunc{
-			defaultHook: func(api.RepoName, ...string) *Cmd {
+			defaultHook: func(api.RepoName, ...string) GitCommand {
 				return nil
 			},
 		},
@@ -278,7 +278,7 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		GitCommandFunc: &ClientGitCommandFunc{
-			defaultHook: func(api.RepoName, ...string) *Cmd {
+			defaultHook: func(api.RepoName, ...string) GitCommand {
 				panic("unexpected invocation of MockClient.GitCommand")
 			},
 		},
@@ -1320,15 +1320,15 @@ func (c ClientGetObjectFuncCall) Results() []interface{} {
 // ClientGitCommandFunc describes the behavior when the GitCommand method of
 // the parent MockClient instance is invoked.
 type ClientGitCommandFunc struct {
-	defaultHook func(api.RepoName, ...string) *Cmd
-	hooks       []func(api.RepoName, ...string) *Cmd
+	defaultHook func(api.RepoName, ...string) GitCommand
+	hooks       []func(api.RepoName, ...string) GitCommand
 	history     []ClientGitCommandFuncCall
 	mutex       sync.Mutex
 }
 
 // GitCommand delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockClient) GitCommand(v0 api.RepoName, v1 ...string) *Cmd {
+func (m *MockClient) GitCommand(v0 api.RepoName, v1 ...string) GitCommand {
 	r0 := m.GitCommandFunc.nextHook()(v0, v1...)
 	m.GitCommandFunc.appendCall(ClientGitCommandFuncCall{v0, v1, r0})
 	return r0
@@ -1336,7 +1336,7 @@ func (m *MockClient) GitCommand(v0 api.RepoName, v1 ...string) *Cmd {
 
 // SetDefaultHook sets function that is called when the GitCommand method of
 // the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientGitCommandFunc) SetDefaultHook(hook func(api.RepoName, ...string) *Cmd) {
+func (f *ClientGitCommandFunc) SetDefaultHook(hook func(api.RepoName, ...string) GitCommand) {
 	f.defaultHook = hook
 }
 
@@ -1344,7 +1344,7 @@ func (f *ClientGitCommandFunc) SetDefaultHook(hook func(api.RepoName, ...string)
 // GitCommand method of the parent MockClient instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ClientGitCommandFunc) PushHook(hook func(api.RepoName, ...string) *Cmd) {
+func (f *ClientGitCommandFunc) PushHook(hook func(api.RepoName, ...string) GitCommand) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1352,20 +1352,20 @@ func (f *ClientGitCommandFunc) PushHook(hook func(api.RepoName, ...string) *Cmd)
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ClientGitCommandFunc) SetDefaultReturn(r0 *Cmd) {
-	f.SetDefaultHook(func(api.RepoName, ...string) *Cmd {
+func (f *ClientGitCommandFunc) SetDefaultReturn(r0 GitCommand) {
+	f.SetDefaultHook(func(api.RepoName, ...string) GitCommand {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientGitCommandFunc) PushReturn(r0 *Cmd) {
-	f.PushHook(func(api.RepoName, ...string) *Cmd {
+func (f *ClientGitCommandFunc) PushReturn(r0 GitCommand) {
+	f.PushHook(func(api.RepoName, ...string) GitCommand {
 		return r0
 	})
 }
 
-func (f *ClientGitCommandFunc) nextHook() func(api.RepoName, ...string) *Cmd {
+func (f *ClientGitCommandFunc) nextHook() func(api.RepoName, ...string) GitCommand {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1406,7 +1406,7 @@ type ClientGitCommandFuncCall struct {
 	Arg1 []string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *Cmd
+	Result0 GitCommand
 }
 
 // Args returns an interface slice containing the arguments of this

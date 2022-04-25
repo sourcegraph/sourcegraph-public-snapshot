@@ -28,6 +28,8 @@ export const GET_BATCH_CHANGE_TO_EDIT = gql`
         }
         description
 
+        viewerCanAdminister
+
         currentSpec {
             id
             originalInput
@@ -123,7 +125,13 @@ export const WORKSPACES = gql`
                             endCursor
                         }
                         nodes {
-                            ...PreviewBatchSpecWorkspaceFields
+                            __typename
+                            ... on HiddenBatchSpecWorkspace {
+                                ...PreviewHiddenBatchSpecWorkspaceFields
+                            }
+                            ... on VisibleBatchSpecWorkspace {
+                                ...PreviewVisibleBatchSpecWorkspaceFields
+                            }
                         }
                     }
                 }
@@ -133,14 +141,21 @@ export const WORKSPACES = gql`
 
     fragment PreviewBatchSpecWorkspaceFields on BatchSpecWorkspace {
         __typename
+        id
+        ignored
+        unsupported
+        cachedResultFound
+    }
+
+    fragment PreviewVisibleBatchSpecWorkspaceFields on VisibleBatchSpecWorkspace {
+        __typename
+        ...PreviewBatchSpecWorkspaceFields
         repository {
             __typename
             id
             name
             url
         }
-        ignored
-        unsupported
         branch {
             __typename
             id
@@ -153,7 +168,11 @@ export const WORKSPACES = gql`
         }
         path
         searchResultPaths
-        cachedResultFound
+    }
+
+    fragment PreviewHiddenBatchSpecWorkspaceFields on HiddenBatchSpecWorkspace {
+        __typename
+        ...PreviewBatchSpecWorkspaceFields
     }
 `
 
