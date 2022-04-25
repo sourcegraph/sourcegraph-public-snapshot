@@ -64,6 +64,39 @@ Site configuration example:
 }
 ```
 
+### Account lockout
+
+<span class="badge badge-note">Sourcegraph 3.39+</span>
+
+Account will be lockout for 30 minutes after 5 consecutive failed sign-in attempts within one hour for builtin authentication provider. The threshold and duration of periods can be customized via `"auth.lockout"` in the site configuration:
+
+```json
+{
+  // ...
+  "auth.lockout": {
+    // The number of seconds to be considered as a consecutive period
+    "consecutivePeriod": 3600,
+    // The threshold of failed sign-in attempts in a consecutive period
+    "failedAttemptThreshold": 5,
+    // The number of seconds for the lockout period
+    "lockoutPeriod": 1800
+  }
+}
+```
+
+To enabled self-serve account unlock through emails, add the following lines to your site configuration:
+
+```json
+{
+  // Validity expressed in minutes of the unlock account token
+  "auth.unlockAccountLinkExpiry": 30,
+  // Base64 encoded HMAC Signing key to sign a JWT token, which is attached to each invitation URL
+  "auth.unlockAccountLinkSigningKey": "your-signing-key",
+}
+```
+
+To generate the signing key, TODO
+
 ## GitHub
 
 [Create a GitHub OAuth
