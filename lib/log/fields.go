@@ -57,8 +57,6 @@ var (
 	Namespace = zap.Namespace
 )
 
-type fieldsObject struct{ Fields []Field }
-
 // Object constructs a field that places all the given fields within the given key's
 // namespace.
 func Object(key string, fields ...Field) Field {
