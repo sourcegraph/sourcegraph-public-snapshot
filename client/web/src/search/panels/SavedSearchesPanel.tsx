@@ -95,11 +95,11 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                 <small>Search</small>
                 <small>Edit</small>
             </div>
-            <dl className="list-group-flush flex-grow-1">
+            <ul className="list-group-flush flex-grow-1 list-group mb-3">
                 {savedSearches
                     ?.filter(search => (showAllSearches ? true : search.namespace.id === authenticatedUser?.id))
                     .map(search => (
-                        <dd key={search.id} className="text-monospace test-saved-search-entry">
+                        <li key={search.id} className="text-monospace test-saved-search-entry mb-2 d-block">
                             <div className="d-flex justify-content-between">
                                 <small>
                                     <Link
@@ -115,6 +115,7 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                                         <Link
                                             to={`/users/${search.namespace.namespaceName}/searches/${search.id}`}
                                             onClick={logEvent('SavedSearchesPanelEditClicked')}
+                                            aria-label={`Edit saved search ${search.description}`}
                                         >
                                             <Icon as={PencilOutlineIcon} />
                                         </Link>
@@ -122,20 +123,26 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                                         <Link
                                             to={`/organizations/${search.namespace.namespaceName}/searches/${search.id}`}
                                             onClick={logEvent('SavedSearchesPanelEditClicked')}
+                                            aria-label={`Edit saved search ${search.description}`}
                                         >
                                             <Icon as={PencilOutlineIcon} />
                                         </Link>
                                     ))}
                             </div>
-                        </dd>
+                        </li>
                     ))}
-            </dl>
+            </ul>
             {authenticatedUser && (
                 <FooterPanel className="p-1">
                     <small>
+                        {/*
+                            a11y-ignore
+                            Rule: "color-contrast" (Elements must have sufficient color contrast)
+                            GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                        */}
                         <Link
                             to={`/users/${authenticatedUser.username}/searches`}
-                            className=" text-left"
+                            className="a11y-ignore text-left"
                             onClick={logEvent('SavedSearchesPanelViewAllClicked')}
                         >
                             View saved searches
