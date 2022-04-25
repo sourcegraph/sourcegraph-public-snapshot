@@ -76,8 +76,6 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
     // Fetch and poll latest workspace information.
     const { loading, error, data } = useBatchSpecWorkspace(id)
 
-    console.log({ data })
-
     // If we're loading and haven't received any data yet
     if (loading && !data) {
         return <LoadingSpinner />
