@@ -14,12 +14,12 @@ If you're just starting out, you can [**try Sourcegraph Cloud**](https://sourceg
 
 ## Self-hosted
 
-| Deployment Type                                                        | Suggested for                                                    | Setup time        | Resource isolation	| Auto-healing	| Multi-machine	| Complexity	|
-| ---------------------------------------------------------------------- | ---------------------------------------------------------------- | ----------------- | :----------------:	| :----------:	| :-----------:	| :--------:	|
-| [**★ Kubernetes with Helm **](../install/kubernetes/helm.md)           | Production deployments of any size                               | 5 - 90 minutes      |         ✅			|      ✅		|      ✅		|	🟢 - 🔴		|
-| [** Docker Compose**](../install/docker-compose/index.md)              | Production deployments where Kubernetes with Helm is not viable  | 5 - 30 minutes    |         ✅			|      ✅		|      ❌		|	🟢 - 🟠		|
-| [** Kubernetes without Helm **](../install/kubernetes/index.md)         | Production deployments of any size                               | 30 - 90 minutes     |         ✅			|      ✅		|      ✅		|	🟠 - 🔴		|
-| [Single-container](../install/docker/index.md)                         | Local testing (Not recommended for production)					| 1 minute          |         ❌			|      ❌		|      ❌		|	🟢			|
+| Deployment Type | Suggested for | Setup time | Resource isolation | Auto-healing | Multi-machine | Complexity |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------- | ----------------- | :----------------: | :----------: | :-----------: | :--------: |
+| [**★ Kubernetes with Helm **](../install/kubernetes/helm.md) | Production deployments of any size | 5 - 90 minutes | ✅ | ✅ | ✅ | 🟢 - 🔴 |
+| [** Docker Compose**](../install/docker-compose/index.md) | Production deployments where Kubernetes with Helm is not viable | 5 - 30 minutes | ✅ | ✅ | ❌ | 🟢 - 🟠 |
+| [** Kubernetes without Helm **](../install/kubernetes/index.md) | Production deployments of any size | 30 - 90 minutes | ✅ | ✅ | ✅ | 🟠 - 🔴 |
+| [Single-container](../install/docker/index.md) | Local testing (Not recommended for production) | 1 minute | ❌ | ❌ | ❌ | 🟢 |
 
 <span class="virtual-br"></span>
 
