@@ -27,10 +27,10 @@ If you're deploying a new Enterprise instance, this page covers our most frequen
 
 ### Kubernetes admin
 - [All Kubernetes with Helm guidance](../admin/install/kubernetes/helm.md)
-- [Amazon EKS](../admin/install/kubernetes/helm#configure-sourcegraph-on-elastic-kubernetes-service-eks)
-- [Google GKE](../admin/install/kubernetes/helm#configure-sourcegraph-on-google-kubernetes-engine-gke)
-- [Azure](../admin/install/kubernetes/helm#configure-sourcegraph-on-azure-managed-kubernetes-service-aks)
-- [Configure Sourcegraph on other Cloud providers or on-prem](../admin/install/kubernetes/helm#configure-sourcegraph-on-other-cloud-providers-or-on-prem)
+- [Amazon EKS](../admin/install/kubernetes/helm.md#configure-sourcegraph-on-elastic-kubernetes-service-eks)
+- [Google GKE](../admin/install/kubernetes/helm.md#configure-sourcegraph-on-google-kubernetes-engine-gke)
+- [Azure](../admin/install/kubernetes/helm.md#configure-sourcegraph-on-azure-managed-kubernetes-service-aks)
+- [Configure Sourcegraph on other Cloud providers or on-prem](../admin/install/kubernetes/helm.md#configure-sourcegraph-on-other-cloud-providers-or-on-prem)
 
 ## User articles
 - [Search syntax](../code_search/reference/queries.md)

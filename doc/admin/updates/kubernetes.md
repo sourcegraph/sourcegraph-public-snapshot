@@ -5,7 +5,7 @@
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
 2. Find the relevant entry for your update in the update notes on this page.
 3. After checking the relevant update notes, to upgrade your instance refer to either:
-    * [Kubernetes with Helm upgrade guide](../install/kubernetes/helm#upgrading-sourcegraph)
+    * [Kubernetes with Helm upgrade guide](../install/kubernetes/helm.md#upgrading-sourcegraph)
     * [Kubernetes without Helm upgrade guide](../install/kubernetes/update.md)
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
@@ -17,7 +17,7 @@ The`codeinsights-db` container no longer uses TimescaleDB and is now based on th
 **CAUTION** If you use a custom Code Insights postgres config, you must update the `shared_preload_libraries` list to remove timescaledb. The [above PR](https://github.com/sourcegraph/deploy-sourcegraph/pull/4103/files#diff-e5f8d6e46f8c9335c489c0d8e9ae9be4f4655f878f3ac569c73ebb3865b0eeeeL695-R688) demonstrates this change.
 
 To upgrade your deployment follow either:
-  * [Kubernetes with Helm upgrade guide](../install/kubernetes/helm#upgrading-sourcegraph)
+  * [Kubernetes with Helm upgrade guide](../install/kubernetes/helm.md#upgrading-sourcegraph)
   * [Kubernetes without Helm upgrade guide](../install/kubernetes/update.md) to upgrade your instance.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.39).*
