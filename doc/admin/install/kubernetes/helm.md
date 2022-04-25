@@ -37,19 +37,33 @@ Our Helm chart has a lot of sensible defaults baked into the values.yaml. Not on
 
 > ℹ️ This quickstart guide is useful to those already familiar with Helm who have a good understanding of how to use Helm in the environment they want to deploy into, and who just want to quickly deploy Sourcegraph with Helm with the default configuration. If this doesn't cover what you need to know, see the links above for platform-specific guides.
 
-To use the Helm chart, add the Sourcegraph helm repository (on the machine used to interact with your cluster):
+1. Add the Sourcegraph helm repository (on the machine used to interact with your cluster):
 
-```sh
-helm repo add sourcegraph https://helm.sourcegraph.com/release
-```
+    ```sh
+    helm repo add sourcegraph https://helm.sourcegraph.com/release
+    ```
 
-Install the Sourcegraph chart using default values:
+1. Install the Sourcegraph chart using default values:
 
-```sh
-helm install --version 3.39.0 sourcegraph sourcegraph/sourcegraph
-```
+    ```sh
+    helm install --version 3.39.0 sourcegraph sourcegraph/sourcegraph
+    ```
 
-Sourcegraph should now be available via the address set. Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account.
+> NOTE: The default values assume a deployment to GKE running an nginx Ingress controller. The [Cloud Provider Guides](#cloud-providers-guides) demonstrate how to configure Sourcegraph for other environment configurations.
+
+1. Monitor the deployment until all pods are healthy:
+
+    ```sh
+      kubectl get pods -o wide --watch
+    ```
+
+1. You can temporarily access Sourcegraph by port-forwarding to the frontend service:
+
+    ```sh
+      kubectl port-forward svc/sourcegraph-frontend 3080:30080
+    ```
+
+1. Open [http://localhost:3080]() in your browser and you will see a setup page which can be used to create the initial admin account. Congratulations, you have Sourcegraph up and running! 🎉
 
 More information on configuring the Sourcegraph application can be found here:
 [Configuring Sourcegraph](../../config/index.md)
