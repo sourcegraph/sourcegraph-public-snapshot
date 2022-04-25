@@ -9,7 +9,6 @@ import { fileDiffFields } from '../../../backend/diff'
 import { requestGraphQL } from '../../../backend/graphql'
 import { useConnection, UseConnectionResult } from '../../../components/FilteredConnection/hooks/useConnection'
 import {
-    BatchSpecExecutionFields,
     BatchSpecWorkspaceByIDResult,
     BatchSpecWorkspaceByIDVariables,
     BatchSpecWorkspacesResult,
@@ -273,21 +272,20 @@ export const useBatchSpecWorkspace = (id: Scalars['ID']): BatchSpecWorkspaceHook
     return result
 }
 
-export async function cancelBatchSpecExecution(id: Scalars['ID']): Promise<BatchSpecExecutionFields> {
-    const result = await requestGraphQL<CancelBatchSpecExecutionResult, CancelBatchSpecExecutionVariables>(
-        gql`
-            mutation CancelBatchSpecExecution($id: ID!) {
-                cancelBatchSpecExecution(batchSpec: $id) {
-                    ...BatchSpecExecutionFields
-                }
-            }
+const CANCEL_BATCH_SPEC_EXECUTION = gql`
+    mutation CancelBatchSpecExecution($id: ID!) {
+        cancelBatchSpecExecution(batchSpec: $id) {
+            ...BatchSpecExecutionFields
+        }
+    }
 
-            ${batchSpecExecutionFieldsFragment}
-        `,
-        { id }
-    ).toPromise()
-    return dataOrThrowErrors(result).cancelBatchSpecExecution
-}
+    ${batchSpecExecutionFieldsFragment}
+`
+
+export const useCancelBatchSpecExecution = (
+    batchSpecID: Scalars['ID']
+): MutationTuple<CancelBatchSpecExecutionResult, CancelBatchSpecExecutionVariables> =>
+    useMutation(CANCEL_BATCH_SPEC_EXECUTION, { variables: { id: batchSpecID } })
 
 const batchSpecWorkspaceStepFileDiffsFields = gql`
     fragment BatchSpecWorkspaceStepFileDiffsFields on VisibleBatchSpecWorkspace {
