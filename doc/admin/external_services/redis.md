@@ -21,7 +21,7 @@ If using Docker for Desktop, `host.docker.internal` will resolve to the host IP 
 
 ## Kubernetes
 
-## Kubernetes with Helm
+### Kubernetes with Helm
 [See the Helm Redis guidance here](../install/kubernetes/helm#using-external-redis-instances)
 
 ### Kebernetes without Helm
