@@ -52,3 +52,7 @@ var orgSchema string
 // notebooksSchema is the Notebooks raw graqhql schema.
 //go:embed notebooks.graphql
 var notebooksSchema string
+
+// batchesCodeMonitorsSchema is the BatchChanges <-> Code Monitors integration raw graqhql schema.
+//go:embed batchescodemonitors.graphql
+var batchesCodeMonitorsSchema string

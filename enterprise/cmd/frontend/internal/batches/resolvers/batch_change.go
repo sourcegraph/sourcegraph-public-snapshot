@@ -11,6 +11,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -19,6 +20,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+func BatchChangeByID(ctx context.Context, s *store.Store, batchChangeID int64) (graphqlbackend.BatchChangeResolver, error) {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, s.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	if batchChangeID == 0 {
+		return nil, nil
+	}
+
+	batchChange, err := s.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: batchChangeID})
+	if err != nil {
+		if err == store.ErrNoResults {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &batchChangeResolver{store: s, batchChange: batchChange}, nil
+}
 
 var _ graphqlbackend.BatchChangeResolver = &batchChangeResolver{}
 

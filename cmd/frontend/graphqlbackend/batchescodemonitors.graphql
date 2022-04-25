@@ -1,0 +1,7 @@
+extend type BatchChange {
+    codeMonitor: Monitor
+}
+
+extend type Monitor {
+    batchChange: BatchChange
+}

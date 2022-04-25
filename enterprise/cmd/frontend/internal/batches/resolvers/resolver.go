@@ -161,28 +161,12 @@ func (r *Resolver) changesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 }
 
 func (r *Resolver) batchChangeByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchChangeResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
-		return nil, err
-	}
-
 	batchChangeID, err := unmarshalBatchChangeID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	if batchChangeID == 0 {
-		return nil, nil
-	}
-
-	batchChange, err := r.store.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: batchChangeID})
-	if err != nil {
-		if err == store.ErrNoResults {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	return &batchChangeResolver{store: r.store, batchChange: batchChange}, nil
+	return BatchChangeByID(ctx, r.store, batchChangeID)
 }
 
 func (r *Resolver) BatchChange(ctx context.Context, args *graphqlbackend.BatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {

@@ -252,6 +252,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		enterprise.OrgRepositoryResolver,
 		enterprise.NotebooksResolver,
 		enterprise.ComputeResolver,
+		enterprise.BatchChangesCodeMonitorsResolver,
 	)
 	if err != nil {
 		return err

@@ -355,6 +355,7 @@ func NewSchema(
 	orgRepositoryResolver OrgRepositoryResolver,
 	notebooks NotebooksResolver,
 	compute ComputeResolver,
+	batchesCodeMonitors BatchesCodeMonitorsResolver,
 ) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db)
 	schemas := []string{mainSchema}
@@ -450,6 +451,12 @@ func NewSchema(
 		schemas = append(schemas, computeSchema)
 	}
 
+	if batchesCodeMonitors != nil {
+		EnterpriseResolvers.batchesCodeMonitorsResolver = batchesCodeMonitors
+		resolver.BatchesCodeMonitorsResolver = batchesCodeMonitors
+		schemas = append(schemas, batchesCodeMonitorsSchema)
+	}
+
 	return graphql.ParseSchema(
 		strings.Join(schemas, "\n"),
 		resolver,
@@ -463,6 +470,7 @@ func NewSchema(
 // to a field of EnterpriseResolvers.
 type schemaResolver struct {
 	BatchChangesResolver
+	BatchesCodeMonitorsResolver
 	AuthzResolver
 	CodeIntelResolver
 	ComputeResolver
@@ -539,17 +547,18 @@ func newSchemaResolver(db database.DB) *schemaResolver {
 // EnterpriseResolvers holds the instances of resolvers which are enabled only
 // in enterprise mode. These resolver instances are nil when running as OSS.
 var EnterpriseResolvers = struct {
-	codeIntelResolver      CodeIntelResolver
-	computeResolver        ComputeResolver
-	insightsResolver       InsightsResolver
-	authzResolver          AuthzResolver
-	batchChangesResolver   BatchChangesResolver
-	codeMonitorsResolver   CodeMonitorsResolver
-	licenseResolver        LicenseResolver
-	dotcomResolver         DotcomRootResolver
-	searchContextsResolver SearchContextsResolver
-	orgRepositoryResolver  OrgRepositoryResolver
-	notebooksResolver      NotebooksResolver
+	codeIntelResolver           CodeIntelResolver
+	computeResolver             ComputeResolver
+	insightsResolver            InsightsResolver
+	authzResolver               AuthzResolver
+	batchChangesResolver        BatchChangesResolver
+	codeMonitorsResolver        CodeMonitorsResolver
+	licenseResolver             LicenseResolver
+	dotcomResolver              DotcomRootResolver
+	searchContextsResolver      SearchContextsResolver
+	orgRepositoryResolver       OrgRepositoryResolver
+	notebooksResolver           NotebooksResolver
+	batchesCodeMonitorsResolver BatchesCodeMonitorsResolver
 }{}
 
 // DEPRECATED
