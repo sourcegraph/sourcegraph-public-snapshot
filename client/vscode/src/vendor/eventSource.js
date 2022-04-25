@@ -188,7 +188,9 @@ function EventSource(url, eventSourceInitDict) {
         return
       }
 
-      if (res.statusCode !== 200) {
+      // Debt: make an exception for the invalid status code of 0.
+      // All VS Code requests intercepted by Polly.js result in 0 status codes.
+      if (res.statusCode !== 200 && res.statusCode !== 0) {
         _emit('error', new Event('error', { status: res.statusCode, message: res.statusMessage }))
         return self.close()
       }

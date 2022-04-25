@@ -26,6 +26,9 @@ var (
 	// is represented is encoder-dependent, so marshaling is necessarily lazy.
 	Float64 = zap.Float64
 
+	// Bool constructs a field that carries a bool.
+	Bool = zap.Bool
+
 	// Duration constructs a field with the given key and value. The encoder controls how
 	// the duration is serialized.
 	Duration = zap.Duration

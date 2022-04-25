@@ -35,6 +35,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/version"
+	sglog "github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var (
@@ -61,13 +63,14 @@ func main() {
 	log.SetFlags(0)
 	conf.Init()
 	logging.Init()
+	sglog.Init(sglog.Resource{
+		Name:    env.MyName,
+		Version: version.Version(),
+	})
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
-
-	if err := profiler.Init(); err != nil {
-		log.Fatalf("failed to start Google Cloud profiler: %s", err)
-	}
+	profiler.Init()
 
 	// Ready immediately
 	ready := make(chan struct{})
@@ -108,7 +111,7 @@ func main() {
 			MaxCacheSizeBytes: cacheSizeBytes,
 			DB:                db,
 		},
-		Log: log15.Root(),
+		Log: sglog.Scoped("service", "the searcher service"),
 	}
 	service.Store.Start()
 

@@ -102,17 +102,17 @@ func Context(ctx context.Context) (context.Context, error) {
 // changes added by various checks to be run. This negates the new to ask the
 // user to restart sg for many checks.
 func Cmd(ctx context.Context, cmd string) *exec.Cmd {
-	if os.Getenv("SG_DEV_NO_RELOAD_ENV") != "" {
+	var wrapped *exec.Cmd
+
+	switch {
+	case os.Getenv("SG_DEV_NO_RELOAD_ENV") != "":
 		// If the user does not want the auto env reloading mechanism, just
 		// perform a standard command.
-		return exec.CommandContext(ctx, ShellPath(ctx), "-c", cmd)
-	}
-
-	if ShellType(ctx) == FishShell {
+		wrapped = exec.CommandContext(ctx, ShellPath(ctx), "-c", cmd)
+	case ShellType(ctx) == FishShell:
 		command := fmt.Sprintf("fish || true; %s", cmd)
-		return exec.CommandContext(ctx, ShellPath(ctx), "-c", command)
-	}
-	if runtime.GOOS == "linux" {
+		wrapped = exec.CommandContext(ctx, ShellPath(ctx), "-c", command)
+	case runtime.GOOS == "linux":
 		// The default Ubuntu bashrc comes with a caveat that prevents the bashrc to be
 		// reloaded unless the shell is interactive. Therefore, we need to request for an
 		// interactive one.
@@ -121,14 +121,23 @@ func Cmd(ctx context.Context, cmd string) *exec.Cmd {
 		// To avoid messing up with the output checking that depends on this function,
 		// we silence the exit commands, which otherwise, prints "exit".
 		command := fmt.Sprintf("%s; \nexit $? 2>/dev/null", strings.TrimSpace(cmd))
-		return exec.CommandContext(ctx, ShellPath(ctx), "-c", "-i", command)
-	} else {
+		wrapped = exec.CommandContext(ctx, ShellPath(ctx), "-c", "-i", command)
+	default:
 		// The above interactive shell approach fails on OSX because the default shell configuration
 		// prints sessions restoration informations that will mess with the output. So we fall back
 		// to manually reloading the shell configuration.
 		command := fmt.Sprintf("source %s || true; %s", ShellConfigPath(ctx), cmd)
-		return exec.CommandContext(ctx, ShellPath(ctx), "-c", command)
+		wrapped = exec.CommandContext(ctx, ShellPath(ctx), "-c", command)
 	}
+
+	if ShellType(ctx) == ZshShell {
+		// Set this env var for oh-my-zsh users so that oh-my-zsh does not try to
+		// auto-update itself when we're restarting the shell.
+		wrapped.Env = os.Environ()
+		wrapped.Env = append(wrapped.Env, "DISABLE_AUTO_UPDATE=true")
+	}
+
+	return wrapped
 }
 
 // CombinedExec runs a command in a fresh shell environment, and returns

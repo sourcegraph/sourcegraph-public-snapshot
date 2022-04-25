@@ -95,16 +95,16 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                 <small>Search</small>
                 <small>Edit</small>
             </div>
-            <dl className="list-group-flush flex-grow-1">
+            <ul className="list-group-flush flex-grow-1 list-group mb-3">
                 {savedSearches
                     ?.filter(search => (showAllSearches ? true : search.namespace.id === authenticatedUser?.id))
                     .map(search => (
-                        <dd key={search.id} className="text-monospace test-saved-search-entry">
+                        <li key={search.id} className="text-monospace test-saved-search-entry d-block mb-2">
                             <div className="d-flex justify-content-between">
                                 <small>
                                     <Link
                                         to={'/search?' + buildSearchURLQueryFromQueryState({ query: search.query })}
-                                        className=" p-0"
+                                        className="p-0"
                                         onClick={logEvent('SavedSearchesPanelSearchClicked')}
                                     >
                                         {search.description}
@@ -115,6 +115,7 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                                         <Link
                                             to={`/users/${search.namespace.namespaceName}/searches/${search.id}`}
                                             onClick={logEvent('SavedSearchesPanelEditClicked')}
+                                            aria-label={`Edit saved search ${search.description}`}
                                         >
                                             <Icon as={PencilOutlineIcon} />
                                         </Link>
@@ -122,20 +123,25 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                                         <Link
                                             to={`/organizations/${search.namespace.namespaceName}/searches/${search.id}`}
                                             onClick={logEvent('SavedSearchesPanelEditClicked')}
+                                            aria-label={`Edit saved search ${search.description}`}
                                         >
                                             <Icon as={PencilOutlineIcon} />
                                         </Link>
                                     ))}
                             </div>
-                        </dd>
+                        </li>
                     ))}
-            </dl>
+            </ul>
             {authenticatedUser && (
                 <FooterPanel className="p-1">
                     <small>
+                        {/*
+                           a11y-ignore
+                           Rule: "color-contrast" (Elements must have sufficient color contrast)
+                        */}
                         <Link
                             to={`/users/${authenticatedUser.username}/searches`}
-                            className=" text-left"
+                            className="text-left a11y-ignore"
                             onClick={logEvent('SavedSearchesPanelViewAllClicked')}
                         >
                             View saved searches

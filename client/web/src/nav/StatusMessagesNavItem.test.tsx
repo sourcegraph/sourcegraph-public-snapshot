@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { createMemoryHistory } from 'history'
 import { of, Observable } from 'rxjs'
 

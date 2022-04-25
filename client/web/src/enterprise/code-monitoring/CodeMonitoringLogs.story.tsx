@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { MockedResponse } from '@apollo/client/testing'
 import { storiesOf } from '@storybook/react'
 import { parseISO } from 'date-fns'

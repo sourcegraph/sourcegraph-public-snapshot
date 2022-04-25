@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { MockedProviderProps } from '@apollo/client/testing'
 import { cleanup, fireEvent, within, waitFor } from '@testing-library/react'
 import { createMemoryHistory } from 'history'

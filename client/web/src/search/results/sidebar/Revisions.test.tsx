@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { cleanup, within, fireEvent } from '@testing-library/react'
 
 import { RevisionsProps } from '@sourcegraph/search-ui'

@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
 
 import { Tour, TourProps } from './components/Tour/Tour'

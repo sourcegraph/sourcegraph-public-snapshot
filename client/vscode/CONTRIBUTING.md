@@ -29,9 +29,8 @@ New issues and feature requests can be filed through our [issue tracker](https:/
    1. `yarn`
    2. `yarn generate`
 2. In the `client/vscode` directory:
-   1. `yarn build`
-   2. `yarn package`
-   3. `yarn test`
+   1. `yarn build:test` or `yarn watch:test`
+   2. `yarn test-integration`
 
 ### Debugging
 

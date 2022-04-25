@@ -26,15 +26,11 @@ If you're deploying a new Enterprise instance, this page covers our most frequen
 - [Google Cloud installlation](../admin/install/docker-compose/google_cloud.md)
 
 ### Kubernetes admin
-- [Basic installation guide](../admin/install/kubernetes/index.md)
-- [Provisioning a Kubernetes cluster](../admin/install/kubernetes/configure.md#configuring-sourcegraph)
-- [Amazon EKS](../admin/install/kubernetes/eks.md)
-- [Amazon EC2](https://kubernetes.io/docs/setup/)
-- [Google Kubernetes Engine](https://cloud.google.com/kubernetes-engine/docs/quickstart)
-- [Azure](../admin/install/kubernetes/azure.md)
-- [Scaling](../admin/install/kubernetes/scale.md#improving-performance-with-a-large-number-of-repositories) 
-- [Ingress controller](../admin/install/kubernetes/configure.md#ingress-controller-recommended)
-- [Common configuration](../admin/install/kubernetes/configure.md#common-configuration)
+- [All Kubernetes with Helm guidance](../admin/install/kubernetes/helm.md)
+- [Amazon EKS](../admin/install/kubernetes/helm.md#configure-sourcegraph-on-elastic-kubernetes-service-eks)
+- [Google GKE](../admin/install/kubernetes/helm.md#configure-sourcegraph-on-google-kubernetes-engine-gke)
+- [Azure](../admin/install/kubernetes/helm.md#configure-sourcegraph-on-azure-managed-kubernetes-service-aks)
+- [Configure Sourcegraph on other Cloud providers or on-prem](../admin/install/kubernetes/helm.md#configure-sourcegraph-on-other-cloud-providers-or-on-prem)
 
 ## User articles
 - [Search syntax](../code_search/reference/queries.md)

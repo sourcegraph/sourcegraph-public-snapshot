@@ -296,6 +296,7 @@ type GetUploadsOptions struct {
 	UploadedAfter           *time.Time
 	LastRetentionScanBefore *time.Time
 	AllowExpired            bool
+	AllowDeletedRepo        bool
 	OldestFirst             bool
 	Limit                   int
 	Offset                  int
@@ -400,6 +401,9 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	if !opts.AllowExpired {
 		conds = append(conds, sqlf.Sprintf("NOT u.expired"))
 	}
+	if !opts.AllowDeletedRepo {
+		conds = append(conds, sqlf.Sprintf("repo.deleted_at IS NULL"))
+	}
 
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(tx.Store.Handle().DB()))
 	if err != nil {
@@ -466,7 +470,7 @@ func buildCTEPrefix(cteDefinitions []cteDefinition) *sqlf.Query {
 const getUploadsCountQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:GetUploads
 %s -- Dynamic CTE definitions for use in the WHERE clause
-SELECT COUNT(*) FROM lsif_uploads_with_repository_name u
+SELECT COUNT(*) FROM lsif_uploads u
 JOIN repo ON repo.id = u.repository_id
 WHERE %s
 `
@@ -488,7 +492,7 @@ SELECT
 	u.num_resets,
 	u.num_failures,
 	u.repository_id,
-	u.repository_name,
+	repo.name,
 	u.indexer,
 	u.indexer_version,
 	u.num_parts,
@@ -496,7 +500,7 @@ SELECT
 	u.upload_size,
 	u.associated_index_id,
 	s.rank
-FROM lsif_uploads_with_repository_name u
+FROM lsif_uploads u
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
@@ -550,7 +554,7 @@ func makeSearchCondition(term string) *sqlf.Query {
 		"u.root",
 		"(u.state)::text",
 		"u.failure_message",
-		`u.repository_name`,
+		"repo.name",
 		"u.indexer",
 		"u.indexer_version",
 	}
@@ -705,7 +709,7 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.num_resets"),
 	sqlf.Sprintf("u.num_failures"),
 	sqlf.Sprintf("u.repository_id"),
-	sqlf.Sprintf(`u.repository_name`),
+	sqlf.Sprintf("u.repository_name"),
 	sqlf.Sprintf("u.indexer"),
 	sqlf.Sprintf("u.indexer_version"),
 	sqlf.Sprintf("u.num_parts"),
