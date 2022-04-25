@@ -2,9 +2,7 @@
   "extends": ["../../.stylelintrc.json"],
   "overrides": [
     {
-      "files": [
-        "./webview/index.scss"
-      ],
+      "files": ["./webview/index.scss"],
       "rules": {
         "filenames/match-regex": null
       }
