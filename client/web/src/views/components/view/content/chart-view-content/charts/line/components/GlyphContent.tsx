@@ -1,4 +1,4 @@
-import React, { MouseEventHandler, PointerEventHandler, ReactElement } from 'react'
+import { MouseEventHandler, PointerEventHandler, ReactElement } from 'react'
 
 import { GlyphDot as Glyph } from '@visx/glyph'
 import { EventHandlerParams, GlyphProps } from '@visx/xychart/lib/types'

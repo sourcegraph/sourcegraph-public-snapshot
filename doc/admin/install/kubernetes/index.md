@@ -4,6 +4,9 @@
 Deploying Sourcegraph on Kubernetes is for organizations that need highly scalable and available code search and code intelligence.
 </p>
 
+> NOTE: Sourcegraph recommends [using Helm to deploy Sourcegraph](helm.md) if possible.
+> This page covers a more manual Kubernetes deployment, using `kubectl` to deploy manifests. This is only recommended if Helm cannot be used in your Kubernetes enviroment. See the Helm guide for more information on why Helm is preferable.
+
 <div class="cta-group">
 <a class="btn btn-primary" href="#installation">★ Installation</a>
 <a class="btn" href="operations">Operations guides</a>

@@ -1,7 +1,7 @@
 /**
  * This file contains utility functions for the search onboarding tour.
  */
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'

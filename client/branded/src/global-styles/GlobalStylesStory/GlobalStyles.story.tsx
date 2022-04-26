@@ -2,7 +2,7 @@
 // documentation of all the Bootstrap classes we have available in our app, please see refer to the Bootstrap
 // documentation for that. Its primary purpose is to show what Bootstrap's componenents look like with our styling
 // customizations.
-import React, { useState } from 'react'
+import { useState } from 'react'
 
 import { action } from '@storybook/addon-actions'
 import { number } from '@storybook/addon-knobs'

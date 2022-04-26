@@ -1,5 +1,8 @@
 # Sourcegraph with Kubernetes on Azure
 
+> WARNING: This guide applies exclusively to a Kubernetes deployment **without** Helm.
+> If you have not deployed Sourcegraph yet, it is higly recommended to use Helm as it simplifies the configuration and greatly simplifies the later upgrade process. See our guidance on [using Helm to deploy to Azure AKS](helm.md#configure-sourcegraph-on-azure-managed-kubernetes-service-aks).
+
 Install the [Azure CLI tool](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest) and log in:
 
 ```

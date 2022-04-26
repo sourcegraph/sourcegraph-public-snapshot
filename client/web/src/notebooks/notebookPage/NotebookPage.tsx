@@ -85,7 +85,7 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
     extensionsController,
     match,
 }) => {
-    useEffect(() => telemetryService.logViewEvent('SearchNotebookPage'), [telemetryService])
+    useEffect(() => telemetryService.logPageView('SearchNotebookPage'), [telemetryService])
 
     const notebookId = match.params.id
     const [notebookTitle, setNotebookTitle] = useState('')
@@ -175,9 +175,9 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
     return (
         <div className={classNames('w-100', styles.searchNotebookPage)}>
             <PageTitle title={notebookTitle || 'Notebook'} />
-            <div className={styles.columns}>
-                <div className={classNames(styles.sideColumn, styles.leftColumn)} ref={outlineContainerElement} />
-                <div className={styles.centerColumn}>
+            <div className={styles.sideColumn} ref={outlineContainerElement} />
+            <div className={styles.centerColumn}>
+                <div className={styles.content}>
                     {isErrorLike(notebookOrError) && (
                         <Alert variant="danger">
                             Error while loading the notebook: <strong>{notebookOrError.message}</strong>
@@ -293,7 +293,6 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
                         </>
                     )}
                 </div>
-                <div className={classNames(styles.sideColumn, styles.rightColumn)} />
             </div>
         </div>
     )

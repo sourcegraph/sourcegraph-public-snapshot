@@ -66,7 +66,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                         {parent => (
                             <>
                                 <BackendAlertOverlay
-                                    hasNoData={content.data.length === 0}
+                                    hasNoData={content.series.every(series => series.data.length === 0)}
                                     isFetchingHistoricalData={isFetchingHistoricalData}
                                     className={styles.alertOverlay}
                                 />
@@ -87,7 +87,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                         <LegendList className={styles.legendList}>
                             {content.series.map(series => (
                                 <LegendItem
-                                    key={series.dataKey as string}
+                                    key={series.id as string}
                                     color={getLineColor(series)}
                                     name={series.name}
                                     className={styles.legendListItem}

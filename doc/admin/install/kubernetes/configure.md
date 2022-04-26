@@ -1,6 +1,9 @@
 # Configure Sourcegraph with Kubernetes
 
-Configuring a [Sourcegraph Kubernetes cluster](./index.md) is done by applying manifest files and with simple
+> WARNING: This guide applies exclusively to a Kubernetes deployment **without** Helm. If using Helm, please go to [Configuration in the Helm guide](helm.md#configuration). 
+> If you have not deployed Sourcegraph yet, it is higly recommended to use Helm as it simplifies the configuration and greatly simplifies the later upgrade process. See our [Helm guide](helm.md) for more information.
+
+Configuring a [Sourcegraph Kubernetes cluster](./index.md) without Helm is done by applying manifest files and with simple
 `kubectl` commands. You can configure Sourcegraph as flexibly as you need to meet the requirements
 of your deployment environment.
 

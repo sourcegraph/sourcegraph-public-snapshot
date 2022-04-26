@@ -28,8 +28,8 @@ var out = output.NewOutput(os.Stdout, output.OutputOpts{
 })
 
 func main() {
-	args := os.Args[1:]
-	if len(args) == 0 {
+	args := os.Args[:]
+	if len(args) == 1 {
 		args = append(args, "up")
 	}
 
@@ -54,7 +54,7 @@ func mainErr(ctx context.Context, args []string) error {
 		},
 	}
 
-	return command.RunContext(ctx, os.Args)
+	return command.RunContext(ctx, args)
 }
 
 func newRunnerFactory() func(ctx context.Context, schemaNames []string) (cliutil.Runner, error) {

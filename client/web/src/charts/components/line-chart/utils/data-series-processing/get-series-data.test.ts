@@ -5,115 +5,148 @@ import { SeriesType } from './types'
 
 interface Datum {
     x: Date
-    a: number | null
-    b: number | null
-    c: number | null
+    value: number | null
 }
 
-const testDataList: Datum[] = [
-    { x: new Date(2022, 2, 2), a: null, b: null, c: null },
-    { x: new Date(2022, 2, 3), a: null, b: 2, c: 3 },
-    { x: new Date(2022, 2, 4), a: 1, b: 2, c: 3 },
-    { x: new Date(2022, 2, 5), a: null, b: null, c: 3 },
-    { x: new Date(2022, 2, 6), a: 2, b: 2, c: null },
-]
+const getXValue = (datum: Datum): Date => datum.x
+const getYValue = (datum: Datum): number | null => datum.value
 
 const testSeries: Series<Datum>[] = [
-    { dataKey: 'a', name: 'Series a' },
-    { dataKey: 'b', name: 'Series b' },
-    { dataKey: 'c', name: 'Series c' },
+    {
+        id: 'series_001',
+        data: [
+            { x: new Date(2022, 2, 2), value: null },
+            { x: new Date(2022, 2, 3), value: null },
+            { x: new Date(2022, 2, 4), value: 1 },
+            { x: new Date(2022, 2, 5), value: null },
+            { x: new Date(2022, 2, 6), value: 2 },
+        ],
+        name: 'Series a',
+        getXValue,
+        getYValue,
+    },
+    {
+        id: 'series_002',
+        data: [
+            { x: new Date(2022, 2, 2), value: null },
+            { x: new Date(2022, 2, 3), value: 2 },
+            { x: new Date(2022, 2, 4), value: 2 },
+            { x: new Date(2022, 2, 5), value: null },
+            { x: new Date(2022, 2, 6), value: 2 },
+        ],
+        name: 'Series b',
+        getXValue,
+        getYValue,
+    },
+    {
+        id: 'series_003',
+        data: [
+            { x: new Date(2022, 2, 2), value: null },
+            { x: new Date(2022, 2, 3), value: 3 },
+            { x: new Date(2022, 2, 4), value: 3 },
+            { x: new Date(2022, 2, 5), value: 3 },
+            { x: new Date(2022, 2, 6), value: null },
+        ],
+        name: 'Series c',
+        getXValue,
+        getYValue,
+    },
 ]
 
 describe('getSeriesData', () => {
     it('should generate series with standard (non-stacked) datum list for each series', () => {
         expect(
             getSeriesData({
-                data: testDataList,
                 series: testSeries,
                 stacked: false,
-                getXValue: datum => datum.x,
             })
         ).toStrictEqual([
             {
                 type: SeriesType.Independent,
-                dataKey: 'a',
+                id: 'series_001',
                 name: 'Series a',
                 data: [
                     {
                         y: null,
                         x: new Date(2022, 2, 2),
-                        datum: { x: new Date(2022, 2, 2), a: null, b: null, c: null },
+                        datum: { x: new Date(2022, 2, 2), value: null },
                     },
                     {
                         y: null,
                         x: new Date(2022, 2, 3),
-                        datum: { x: new Date(2022, 2, 3), a: null, b: 2, c: 3 },
+                        datum: { x: new Date(2022, 2, 3), value: null },
                     },
                     {
                         y: 1,
                         x: new Date(2022, 2, 4),
-                        datum: { x: new Date(2022, 2, 4), a: 1, b: 2, c: 3 },
+                        datum: { x: new Date(2022, 2, 4), value: 1 },
                     },
                     {
                         y: 2,
                         x: new Date(2022, 2, 6),
-                        datum: { x: new Date(2022, 2, 6), a: 2, b: 2, c: null },
+                        datum: { x: new Date(2022, 2, 6), value: 2 },
                     },
                 ],
+                getXValue,
+                getYValue,
             },
             {
                 type: SeriesType.Independent,
-                dataKey: 'b',
+                id: 'series_002',
                 name: 'Series b',
                 data: [
                     {
                         y: null,
                         x: new Date(2022, 2, 2),
-                        datum: { x: new Date(2022, 2, 2), a: null, b: null, c: null },
+                        datum: { x: new Date(2022, 2, 2), value: null },
                     },
                     {
                         y: 2,
                         x: new Date(2022, 2, 3),
-                        datum: { x: new Date(2022, 2, 3), a: null, b: 2, c: 3 },
+                        datum: { x: new Date(2022, 2, 3), value: 2 },
                     },
                     {
                         y: 2,
                         x: new Date(2022, 2, 4),
-                        datum: { x: new Date(2022, 2, 4), a: 1, b: 2, c: 3 },
+                        datum: { x: new Date(2022, 2, 4), value: 2 },
                     },
                     {
                         y: 2,
                         x: new Date(2022, 2, 6),
-                        datum: { x: new Date(2022, 2, 6), a: 2, b: 2, c: null },
+                        datum: { x: new Date(2022, 2, 6), value: 2 },
                     },
                 ],
+                getXValue,
+                getYValue,
             },
             {
                 type: SeriesType.Independent,
-                dataKey: 'c',
+                id: 'series_003',
                 name: 'Series c',
                 data: [
                     {
                         y: null,
                         x: new Date(2022, 2, 2),
-                        datum: { x: new Date(2022, 2, 2), a: null, b: null, c: null },
+                        datum: { x: new Date(2022, 2, 2), value: null },
                     },
                     {
                         y: 3,
                         x: new Date(2022, 2, 3),
-                        datum: { x: new Date(2022, 2, 3), a: null, b: 2, c: 3 },
+                        datum: { x: new Date(2022, 2, 3), value: 3 },
                     },
                     {
                         y: 3,
                         x: new Date(2022, 2, 4),
-                        datum: { x: new Date(2022, 2, 4), a: 1, b: 2, c: 3 },
+                        datum: { x: new Date(2022, 2, 4), value: 3 },
                     },
                     {
                         y: 3,
                         x: new Date(2022, 2, 5),
-                        datum: { x: new Date(2022, 2, 5), a: null, b: null, c: 3 },
+                        datum: { x: new Date(2022, 2, 5), value: 3 },
                     },
                 ],
+                getXValue,
+                getYValue,
             },
         ])
     })
@@ -121,102 +154,106 @@ describe('getSeriesData', () => {
     it('should generate series with stacked datum list for each stacked series', () => {
         expect(
             getSeriesData({
-                data: testDataList,
                 series: testSeries,
                 stacked: true,
-                getXValue: datum => datum.x,
             })
         ).toStrictEqual([
             {
                 type: SeriesType.Stacked,
-                dataKey: 'a',
+                id: 'series_001',
                 name: 'Series a',
+                getXValue,
+                getYValue,
                 data: [
                     {
                         y0: null,
                         y1: null,
                         x: new Date(2022, 2, 2),
-                        datum: { x: new Date(2022, 2, 2), a: null, b: null, c: null },
+                        datum: { x: new Date(2022, 2, 2), value: null },
                     },
                     {
                         y0: null,
                         y1: null,
                         x: new Date(2022, 2, 3),
-                        datum: { x: new Date(2022, 2, 3), a: null, b: 2, c: 3 },
+                        datum: { x: new Date(2022, 2, 3), value: null },
                     },
                     {
                         y0: 0,
                         y1: 1,
                         x: new Date(2022, 2, 4),
-                        datum: { x: new Date(2022, 2, 4), a: 1, b: 2, c: 3 },
+                        datum: { x: new Date(2022, 2, 4), value: 1 },
                     },
                     {
                         y0: 0,
                         y1: 2,
                         x: new Date(2022, 2, 6),
-                        datum: { x: new Date(2022, 2, 6), a: 2, b: 2, c: null },
+                        datum: { x: new Date(2022, 2, 6), value: 2 },
                     },
                 ],
             },
             {
                 type: SeriesType.Stacked,
-                dataKey: 'b',
+                id: 'series_002',
                 name: 'Series b',
+                getXValue,
+                getYValue,
                 data: [
                     {
                         y0: null,
                         y1: null,
                         x: new Date(2022, 2, 2),
-                        datum: { x: new Date(2022, 2, 2), a: null, b: null, c: null },
+                        datum: { x: new Date(2022, 2, 2), value: null },
                     },
                     {
                         y0: 0,
                         y1: 2,
                         x: new Date(2022, 2, 3),
-                        datum: { x: new Date(2022, 2, 3), a: null, b: 2, c: 3 },
+                        datum: { x: new Date(2022, 2, 3), value: 2 },
                     },
                     {
                         y0: 1,
                         y1: 3,
                         x: new Date(2022, 2, 4),
-                        datum: { x: new Date(2022, 2, 4), a: 1, b: 2, c: 3 },
+                        datum: { x: new Date(2022, 2, 4), value: 2 },
                     },
                     {
                         y0: 2,
                         y1: 4,
                         x: new Date(2022, 2, 6),
-                        datum: { x: new Date(2022, 2, 6), a: 2, b: 2, c: null },
+                        datum: { x: new Date(2022, 2, 6), value: 2 },
                     },
                 ],
             },
             {
                 type: SeriesType.Stacked,
-                dataKey: 'c',
+                id: 'series_003',
                 name: 'Series c',
+                getXValue,
+                getYValue,
                 data: [
                     {
                         y0: null,
                         y1: null,
                         x: new Date(2022, 2, 2),
-                        datum: { x: new Date(2022, 2, 2), a: null, b: null, c: null },
+                        datum: { x: new Date(2022, 2, 2), value: null },
                     },
                     {
                         y0: 2,
                         y1: 5,
                         x: new Date(2022, 2, 3),
-                        datum: { x: new Date(2022, 2, 3), a: null, b: 2, c: 3 },
+                        datum: { x: new Date(2022, 2, 3), value: 3 },
                     },
                     {
                         y0: 3,
                         y1: 6,
                         x: new Date(2022, 2, 4),
-                        datum: { x: new Date(2022, 2, 4), a: 1, b: 2, c: 3 },
+                        datum: { x: new Date(2022, 2, 4), value: 3 },
                     },
                     {
                         y0: 3.5,
                         y1: 6.5,
                         x: new Date(2022, 2, 5),
-                        datum: { x: new Date(2022, 2, 5), a: null, b: null, c: 3 },
+                        datum: { x: new Date(2022, 2, 5), value: 3 },
                     },
                 ],
             },

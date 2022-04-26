@@ -3,6 +3,7 @@ module github.com/sourcegraph/sourcegraph
 go 1.17
 
 require (
+	bitbucket.org/creachadair/shell v0.0.7
 	cloud.google.com/go/kms v1.1.0
 	cloud.google.com/go/monitoring v1.2.0
 	cloud.google.com/go/profiler v0.2.0
@@ -23,6 +24,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.24.1
 	github.com/aws/smithy-go v1.11.0
 	github.com/beevik/etree v1.1.0
+	github.com/bitfield/script v0.20.0
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/buildkite/go-buildkite/v3 v3.0.1
 	github.com/cespare/xxhash v1.1.0
@@ -204,6 +206,8 @@ require (
 	github.com/envoyproxy/protoc-gen-validate v0.6.3 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
+	github.com/itchyny/gojq v0.12.7 // indirect
+	github.com/itchyny/timefmt-go v0.1.3 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
@@ -232,7 +236,7 @@ require (
 	github.com/spf13/cobra v1.2.1 // indirect
 	github.com/twitchtv/twirp v8.1.1+incompatible // indirect
 	go.uber.org/multierr v1.7.0 // indirect
-	go.uber.org/zap v1.20.0 // indirect
+	go.uber.org/zap v1.21.0 // indirect
 )
 
 require (
@@ -409,7 +413,7 @@ require (
 // or intentional forks.
 replace (
 	// We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20220415201645-48d1beaad294
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20220422165357-6e37d7b567a1
 	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
 	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b

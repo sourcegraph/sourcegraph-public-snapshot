@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { fireEvent, getByRole, screen } from '@testing-library/react'
 import { createMemoryHistory, createLocation } from 'history'
 import { NEVER } from 'rxjs'

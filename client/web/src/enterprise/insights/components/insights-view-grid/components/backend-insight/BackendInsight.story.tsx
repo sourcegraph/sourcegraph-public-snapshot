@@ -40,48 +40,66 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBackendBasedInsight = {
 
 interface BackendInsightDatum {
     x: number
-    a: number
-    b: number
-    linkA: string
+    value: number
+    link?: string
 }
 
+const getXValue = (datum: BackendInsightDatum): Date => new Date(datum.x)
+const getYValue = (datum: BackendInsightDatum): number => datum.value
+const getLinkURL = (datum: BackendInsightDatum): string | undefined => datum.link
+
 const LINE_CHART_CONTENT_MOCK: SeriesChartContent<BackendInsightDatum> = {
-    data: [
-        { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: 4000, b: 15000, linkA: '#A:1st_data_point' },
-        { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: 4000, b: 26000, linkA: '#A:2st_data_point' },
-        { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 5600, b: 20000, linkA: '#A:3rd_data_point' },
-        { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, a: 9800, b: 19000, linkA: '#A:4th_data_point' },
-        { x: 1588965700286, a: 12300, b: 17000, linkA: '#A:5th_data_point' },
-    ],
-    getXValue: datum => new Date(datum.x),
     series: [
         {
-            dataKey: 'a',
+            id: 'series_001',
+            data: [
+                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 4000, link: '#A:1st_data_point' },
+                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 4000, link: '#A:2st_data_point' },
+                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 5600, link: '#A:3rd_data_point' },
+                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 9800, link: '#A:4th_data_point' },
+                { x: 1588965700286, value: 12300, link: '#A:5th_data_point' },
+            ],
             name: 'A metric',
             color: 'var(--warning)',
-            getLinkURL: datum => datum.linkA,
+            getXValue,
+            getYValue,
+            getLinkURL,
         },
         {
-            dataKey: 'b',
+            id: 'series_002',
+            data: [
+                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 15000 },
+                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 26000 },
+                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 20000 },
+                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 19000 },
+                { x: 1588965700286, value: 17000 },
+            ],
             name: 'B metric',
             color: 'var(--warning)',
+            getXValue,
+            getYValue,
+            getLinkURL,
         },
     ],
 }
 
 const LINE_CHART_CONTENT_MOCK_EMPTY: SeriesChartContent<BackendInsightDatum> = {
-    data: [],
-    getXValue: datum => new Date(datum.x),
     series: [
         {
-            dataKey: 'a',
+            id: 'series_001',
+            data: [],
             name: 'A metric',
             color: 'var(--warning)',
+            getXValue,
+            getYValue,
         },
         {
-            dataKey: 'b',
+            id: 'series_002',
+            data: [],
             name: 'B metric',
             color: 'var(--warning)',
+            getXValue,
+            getYValue,
         },
     ],
 }

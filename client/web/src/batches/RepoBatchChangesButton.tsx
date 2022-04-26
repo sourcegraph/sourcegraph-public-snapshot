@@ -1,4 +1,4 @@
-import React, { FC, useMemo } from 'react'
+import { FC, useMemo } from 'react'
 
 import { encodeURIPathComponent } from '@sourcegraph/common'
 import { Badge, useObservable, Button, Link, Icon } from '@sourcegraph/wildcard'

@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { MockedResponse } from '@apollo/client/testing'
 import { fireEvent } from '@testing-library/react'
 

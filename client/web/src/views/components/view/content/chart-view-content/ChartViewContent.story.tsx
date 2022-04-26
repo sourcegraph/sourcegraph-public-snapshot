@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { storiesOf } from '@storybook/react'
 import isChromatic from 'chromatic/isChromatic'
 import { createMemoryHistory } from 'history'

@@ -4,8 +4,9 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
-	"regexp"
 	"testing"
+
+	"github.com/grafana/regexp"
 
 	bbtest "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud/testing"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -41,7 +42,7 @@ func assertGolden(t testing.TB, expected interface{}) {
 
 // newTestClient returns a bitbucketcloud.Client that records its interactions
 // to testdata/vcr/.
-func newTestClient(t testing.TB) (*Client, func()) {
+func newTestClient(t testing.TB) (*client, func()) {
 	t.Helper()
 
 	cassette := filepath.Join("testdata/vcr/", normalize(t.Name()))
@@ -55,7 +56,7 @@ func newTestClient(t testing.TB) (*Client, func()) {
 		t.Fatal(err)
 	}
 
-	cli, err := NewClient("urn", &schema.BitbucketCloudConnection{
+	cli, err := newClient("urn", &schema.BitbucketCloudConnection{
 		ApiURL:      "https://api.bitbucket.org",
 		Username:    bbtest.GetenvTestBitbucketCloudUsername(),
 		AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),

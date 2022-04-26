@@ -120,18 +120,18 @@ func TestBitbucketCloudSource_makeRepo(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		schmea *schema.BitbucketCloudConnection
+		schema *schema.BitbucketCloudConnection
 	}{
 		{
 			name: "simple",
-			schmea: &schema.BitbucketCloudConnection{
+			schema: &schema.BitbucketCloudConnection{
 				Url:         "https://bitbucket.org",
 				Username:    "alice",
 				AppPassword: "secret",
 			},
 		}, {
 			name: "ssh",
-			schmea: &schema.BitbucketCloudConnection{
+			schema: &schema.BitbucketCloudConnection{
 				Url:         "https://bitbucket.org",
 				Username:    "alice",
 				AppPassword: "secret",
@@ -139,7 +139,7 @@ func TestBitbucketCloudSource_makeRepo(t *testing.T) {
 			},
 		}, {
 			name: "path-pattern",
-			schmea: &schema.BitbucketCloudConnection{
+			schema: &schema.BitbucketCloudConnection{
 				Url:                   "https://bitbucket.org",
 				Username:              "alice",
 				AppPassword:           "secret",
@@ -150,7 +150,7 @@ func TestBitbucketCloudSource_makeRepo(t *testing.T) {
 	for _, test := range tests {
 		test.name = "BitbucketCloudSource_makeRepo_" + test.name
 		t.Run(test.name, func(t *testing.T) {
-			s, err := newBitbucketCloudSource(&svc, test.schmea, nil)
+			s, err := newBitbucketCloudSource(&svc, test.schema, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
