@@ -10,7 +10,7 @@ import {
     DrillDownFiltersFormValues,
     DrillDownFiltersForm,
 } from './components/drill-down-filters-form/DrillDownFiltersForm'
-import { DrillDownInsightCreationForm } from './components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
+import { DrillDownInsightCreationForm } from './components/DrillDownInsightCreationForm'
 
 const fakeAPIRequest = async () => {
     await delay(1000)

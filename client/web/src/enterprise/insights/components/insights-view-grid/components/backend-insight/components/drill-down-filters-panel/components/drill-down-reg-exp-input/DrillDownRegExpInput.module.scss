@@ -1,7 +1,6 @@
 .prefix-text {
     flex-shrink: 0;
     padding: 0.25rem 0.5rem;
-    height: 100%;
     border: 1px solid var(--input-border-color);
     background: var(--input-border-color);
     border-top-left-radius: var(--border-radius);
@@ -13,6 +12,7 @@
 }
 
 .input {
+    font-size: inherit;
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
 }

@@ -8,7 +8,7 @@ import { Button, createRectangle, Popover, PopoverContent, PopoverTrigger, Posit
 import { InsightFilters } from '../../../../../../core'
 import { SubmissionResult } from '../../../../../form/hooks/useForm'
 import { hasActiveFilters } from '../drill-down-filters-panel/components/drill-down-filters-form/DrillDownFiltersForm'
-import { DrillDownInsightCreationFormValues } from '../drill-down-filters-panel/components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
+import { DrillDownInsightCreationFormValues } from '../drill-down-filters-panel/components/DrillDownInsightCreationForm'
 import { DrillDownFiltersPanel } from '../drill-down-filters-panel/DrillDownFiltersPanel'
 
 import styles from './DrillDownFiltersPopover.module.scss'

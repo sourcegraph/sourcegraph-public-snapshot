@@ -11,12 +11,12 @@ import { LoaderButton } from '../../../../../../../../../../components/LoaderBut
 import { getDefaultInputProps } from '../../../../../../../form/getDefaultInputProps'
 import { useField } from '../../../../../../../form/hooks/useField'
 import { FORM_ERROR, FormChangeEvent, SubmissionResult, useForm } from '../../../../../../../form/hooks/useForm'
-
 import {
     DrillDownContextInput,
     DrillDownRegExpInput,
     LabelWithReset,
-} from './components/drill-down-reg-exp-input/DrillDownRegExpInput'
+} from '../drill-down-reg-exp-input/DrillDownRegExpInput'
+
 import { validRegexp } from './validators'
 
 import styles from './DrillDownFiltersForm.module.scss'

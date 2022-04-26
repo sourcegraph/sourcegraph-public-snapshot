@@ -10,7 +10,7 @@ import {
 import {
     DrillDownInsightCreationForm,
     DrillDownInsightCreationFormValues,
-} from './components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
+} from './components/DrillDownInsightCreationForm'
 
 import styles from './DrillDownFiltersPanel.module.scss'
 
