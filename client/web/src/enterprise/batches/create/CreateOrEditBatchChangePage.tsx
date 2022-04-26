@@ -524,24 +524,22 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
                     position="right"
                     storageKey={WORKSPACES_PREVIEW_SIZE}
                 >
-                    <div className="overflow-auto">
-                        <div className={styles.workspacesPreviewContainer}>
-                            <WorkspacesPreview
-                                previewDisabled={previewDisabled}
-                                preview={() => previewBatchSpec(debouncedCode)}
-                                batchSpecStale={
-                                    isBatchSpecStale || isWorkspacesPreviewInProgress || resolutionState === 'CANCELED'
-                                }
-                                hasPreviewed={hasPreviewed}
-                                excludeRepo={excludeRepo}
-                                cancel={cancel}
-                                isWorkspacesPreviewInProgress={isWorkspacesPreviewInProgress}
-                                resolutionState={resolutionState}
-                                workspacesConnection={workspacesConnection}
-                                importingChangesetsConnection={importingChangesetsConnection}
-                                setFilters={setFilters}
-                            />
-                        </div>
+                    <div className={styles.workspacesPreviewContainer}>
+                        <WorkspacesPreview
+                            previewDisabled={previewDisabled}
+                            preview={() => previewBatchSpec(debouncedCode)}
+                            batchSpecStale={
+                                isBatchSpecStale || isWorkspacesPreviewInProgress || resolutionState === 'CANCELED'
+                            }
+                            hasPreviewed={hasPreviewed}
+                            excludeRepo={excludeRepo}
+                            cancel={cancel}
+                            isWorkspacesPreviewInProgress={isWorkspacesPreviewInProgress}
+                            resolutionState={resolutionState}
+                            workspacesConnection={workspacesConnection}
+                            importingChangesetsConnection={importingChangesetsConnection}
+                            setFilters={setFilters}
+                        />
                     </div>
                 </Panel>
             </div>

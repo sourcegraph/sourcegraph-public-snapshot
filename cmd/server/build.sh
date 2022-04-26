@@ -30,7 +30,7 @@ export CGO_ENABLED=0
 # enterprise build scripts.
 additional_images=()
 if [ $# -eq 0 ]; then
-  additional_images+=("github.com/sourcegraph/sourcegraph/cmd/frontend" "github.com/sourcegraph/sourcegraph/cmd/worker" "github.com/sourcegraph/sourcegraph/cmd/repo-updater")
+  additional_images+=("github.com/sourcegraph/sourcegraph/cmd/frontend" "github.com/sourcegraph/sourcegraph/cmd/worker" "github.com/sourcegraph/sourcegraph/cmd/repo-updater" "github.com/sourcegraph/sourcegraph/cmd/symbols")
 else
   additional_images+=("$@")
 fi
@@ -61,7 +61,6 @@ PACKAGES=(
   github.com/sourcegraph/sourcegraph/cmd/github-proxy
   github.com/sourcegraph/sourcegraph/cmd/gitserver
   github.com/sourcegraph/sourcegraph/cmd/searcher
-  github.com/sourcegraph/sourcegraph/cmd/symbols
   github.com/sourcegraph/sourcegraph/cmd/migrator
   github.com/google/zoekt/cmd/zoekt-archive-index
   github.com/google/zoekt/cmd/zoekt-git-index

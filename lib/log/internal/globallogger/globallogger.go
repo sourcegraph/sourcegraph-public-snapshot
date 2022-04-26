@@ -71,8 +71,8 @@ func initLogger(r otfields.Resource, level zap.AtomicLevel, format encoders.Outp
 	// to uniquely identify this resource.
 	//
 	// See examples: https://opentelemetry.io/docs/reference/specification/logs/data-model/#example-log-records
-	return logger.With(zap.Object("Resource", &encoders.ResourceEncoder{
-		Resource:   r,
-		InstanceID: uuid.New().String(),
-	}))
+	if r.InstanceID == "" {
+		r.InstanceID = uuid.New().String()
+	}
+	return logger.With(zap.Object("Resource", &encoders.ResourceEncoder{Resource: r}))
 }

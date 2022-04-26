@@ -14,8 +14,14 @@ import (
 )
 
 func TestLocalCodeIntel(t *testing.T) {
-	path := types.RepoCommitPath{Repo: "foo", Commit: "bar", Path: "test.java"}
-	contents := `
+	type pathContents struct {
+		path     string
+		contents string
+	}
+
+	tests := []pathContents{{
+		path: "test.java",
+		contents: `
 class Foo {
 
     //             v f1.p def
@@ -38,45 +44,340 @@ class Foo {
         String x = p;
     }
 }
-`
+`}, {
+		path: "test.go",
+		contents: `
+//      v f1.p def
+//      v f1.p ref
+func f1(p int) {
 
-	want := collectAnnotations(path, contents)
+	//  v f1.x def
+	//  v f1.x ref
+	var x int
 
-	payload := getLocalCodeIntel(t, path, contents)
-	got := []annotation{}
-	for _, symbol := range payload.Symbols {
-		got = append(got, annotation{
-			repoCommitPathPoint: types.RepoCommitPathPoint{
-				RepoCommitPath: path,
-				Point: types.Point{
-					Row:    symbol.Def.Row,
-					Column: symbol.Def.Column,
-				},
-			},
-			symbol: "(unused)",
-			kind:   "def",
-		})
+	// v f1.y def
+	// v f1.y ref
+	_, y := g() // < "_" f1.y def < "_" f1.y ref
 
-		for _, ref := range symbol.Refs {
+	//  v f1.i def
+	//  v f1.i ref
+	//     v f1.j def
+	//     v f1.j ref
+	for i, j := range z {
+
+		//          v f1.p ref
+		//             v f1.i ref
+		//                v f1.j ref
+		//                   v f1.x ref
+		//                      v f1.y ref
+		fmt.Println(p, i, j, x, y)
+	}
+
+	//     v f1.x ref
+	switch x {
+	case 3:
+		//  v f1.switch1.x def
+		//  v f1.switch1.x ref
+		var x int
+	}
+
+	select {
+	//   v f1.switch2.x def
+	//   v f1.switch2.x ref
+	case x := <-ch:
+	}
+}
+`}, {
+		path: "test.cs",
+		contents: `
+namespace Foo {
+    class Bar {
+
+        //                  v Baz.p def
+        //                  v Baz.p ref
+        static void Baz(int p) {
+
+            //  v Baz.x def
+            //  v Baz.x ref
+            int x = 5;
+
+            //                       v Baz.p ref
+            //                          v Baz.x ref
+            System.Console.WriteLine(p, x);
+
+            //       v Baz.i def
+            //       v Baz.i ref
+            for (int i = 0; ; ) { }
+
+			//           v Baz.e def
+			//           v Baz.e ref
+			foreach (int e in es) { }
+
+            //         v Baz.r def
+            //         v Baz.r ref
+            using (var r = new StringReader("foo")) { }
+
+			try { }
+			//               v Baz.e def
+			//               v Baz.e ref
+			catch (Exception e) { }
+        }
+    }
+}
+`}, {
+		path: "test.py",
+		contents: `
+#     vv f.p1 def
+#     vv f.p1 ref
+#         vv f.p2 def
+#         vv f.p2 ref
+#                   vv f.p3 def
+#                   vv f.p3 ref
+#                               vv f.p4 def
+#                               vv f.p4 ref
+def f(p1, p2: bool, p3 = False, p4: bool = False):
+	#     vv f.p1 ref
+	#         vv f.p2 ref
+	#             vv f.p3 ref
+	#                 vv f.p4 ref
+	print(p1, p2, p3, p4)
+
+	x = 5 # < "x" f.x def < "x" f.x ref
+
+	#     v f.x ref
+	print(x)
+
+	#   v f.i def
+	#   v f.i ref
+	for i in range(10):
+		#     v f.i ref
+		print(i)
+
+	try:
+		pass
+	#                   v f.e def
+	#                   v f.e ref
+	except Exception as e:
+		#     v f.e ref
+		print(e)
+
+	#     v f.j ref
+	#           v f.j def
+	#           v f.j ref
+	print(j for j in range(10))
+
+	#      v f.k ref
+	#            v f.k def
+	#            v f.k ref
+	print([k for k in range(10)])
+`}, {
+		path: "test.js",
+		contents: `
+//    v f def
+//    v f ref
+//         vv f.p1 def
+//         vv f.p1 ref
+//             vv f.p2 def
+//             vv f.p2 ref
+//                        vv f.p3 def
+//                        vv f.p3 ref
+const f = (p1, p2 = 3, ...p3) => {
+	//          vv f.p1 ref
+	//              vv f.p2 ref
+	//                  vv f.p3 ref
+	console.log(p1, p2, p3)
+
+	//    v f.x def
+	//    v f.x ref
+	const x = 5
+
+	//       v f.g def
+	//       v f.g ref
+	function g() {}
+
+	// "g" here should be a reference to the function, but the way locals are modeled isn't sophisticated
+	// enough (yet?) to express bindings that also escape their lexical scope.
+
+	//          v f.x ref
+	console.log(x, g)
+
+	//       v f.i def
+	//       v f.i ref
+	for (let i = 0; ; ) {
+		//          v f.i ref
+		console.log(i)
+	}
+
+	try { }
+	//     v f.e def
+	//     v f.e ref
+	catch (e) {
+		//          v f.e ref
+		console.log(e)
+	}
+}
+`}, {
+		path: "test.ts",
+		contents: `
+//    v f def
+//    v f ref
+//         vv f.p1 def
+//         vv f.p1 ref
+//                      vv f.p2 def
+//                      vv f.p2 ref
+//                                 vv f.p3 def
+//                                 vv f.p3 ref
+const f = (p1?: number, p2 = 3, ...p3) => {
+	//          vv f.p1 ref
+	//              vv f.p2 ref
+	//                  vv f.p3 ref
+	console.log(p1, p2, p3)
+
+	//    v f.x def
+	//    v f.x ref
+	const x: number = 5
+
+	//       v f.g def
+	//       v f.g ref
+	function g() {}
+
+	// "g" here should be a reference to the function, but the way locals are modeled isn't sophisticated
+	// enough (yet?) to express bindings that also escape their lexical scope.
+
+	//          v f.x ref
+	console.log(x, g)
+
+	//       v f.i def
+	//       v f.i ref
+	for (let i = 0; ; ) {
+		//          v f.i ref
+		console.log(i)
+	}
+
+	try { }
+	//     v f.e def
+	//     v f.e ref
+	catch (e) {
+		//          v f.e ref
+		console.log(e)
+	}
+}
+`}, {
+		path: "test.cpp",
+		contents: `
+//         vv f.p1 def
+//         vv f.p1 ref
+//                 vv f.p2 def
+//                 vv f.p2 ref
+//                              vv f.p3 def
+//                              vv f.p3 ref
+//                                       vv f.p4 def
+//                                       vv f.p4 ref
+void f(int p1, int p2 = 3, int& p3, int* p4)
+{
+	//  v f.x def
+	//  v f.x ref
+    int x;
+
+	//  v f.y def
+	//  v f.y ref
+    int y = 5;
+
+	//       v f.i def
+	//       v f.i ref
+    for (int i = 0; ; ) { }
+
+	//       v f.j def
+	//       v f.j ref
+    for (int j : 3) { }
+
+	//   v f.g def
+	//   v f.g ref
+	//              v f.a def
+	//              v f.a ref
+	auto g = [](int a) { };
+
+	//                                   v f.e def
+	//                                   v f.e ref
+    try { } catch (const std::exception& e) { }
+}
+`}, {
+		path: "test.rb",
+		contents: `
+//    vv f.p1 def
+//    vv f.p1 ref
+//        vv f.p2 def
+//        vv f.p2 ref
+//                 vv f.p3 def
+//                 vv f.p3 ref
+//                       vv f.p4 def
+//                       vv f.p4 ref
+def f(p1, p2 = 3, *p3, **p4)
+	x = 5 # < "x" f.x ref < "x" f.x def
+
+	#         v f.x2 def
+	#         v f.x2 ref
+	lambda { |x| 5 }
+
+	#          v f.x3 def
+	#          v f.x3 ref
+	lambda do |x| 5 end
+
+	#   v f.i def
+	#   v f.i ref
+	for i in 1..5 do end
+
+	begin
+		raise ArgumentError
+		#                   v f.e def
+		#                   v f.e ref
+	rescue ArgumentError => e
+		#    v f.e ref
+		puts e
+	end
+end
+`},
+	}
+
+	for _, test := range tests {
+		path := types.RepoCommitPath{Repo: "foo", Commit: "bar", Path: test.path}
+		want := collectAnnotations(path, test.contents)
+		payload := getLocalCodeIntel(t, path, test.contents)
+		got := []annotation{}
+		for _, symbol := range payload.Symbols {
 			got = append(got, annotation{
 				repoCommitPathPoint: types.RepoCommitPathPoint{
 					RepoCommitPath: path,
 					Point: types.Point{
-						Row:    ref.Row,
-						Column: ref.Column,
+						Row:    symbol.Def.Row,
+						Column: symbol.Def.Column,
 					},
 				},
 				symbol: "(unused)",
-				kind:   "ref",
+				kind:   "def",
 			})
+
+			for _, ref := range symbol.Refs {
+				got = append(got, annotation{
+					repoCommitPathPoint: types.RepoCommitPathPoint{
+						RepoCommitPath: path,
+						Point: types.Point{
+							Row:    ref.Row,
+							Column: ref.Column,
+						},
+					},
+					symbol: "(unused)",
+					kind:   "ref",
+				})
+			}
 		}
-	}
 
-	sortAnnotations(want)
-	sortAnnotations(got)
+		sortAnnotations(want)
+		sortAnnotations(got)
 
-	if diff := cmp.Diff(want, got, compareAnnotations); diff != "" {
-		t.Fatalf("unexpected annotations (-want +got):\n%s", diff)
+		if diff := cmp.Diff(want, got, compareAnnotations); diff != "" {
+			t.Fatalf("unexpected annotations (-want +got):\n%s", diff)
+		}
 	}
 }
 
@@ -107,24 +408,26 @@ func collectAnnotations(repoCommitPath types.RepoCommitPath, contents string) []
 
 	// Annotation at the end of the line
 	for i, line := range lines {
-		matches := regexp.MustCompile(`^([^<]+)< "([^"]+)" ([a-zA-Z0-9_.-]+) (def|ref)`).FindStringSubmatch(line)
-		if matches == nil {
+		matchess := regexp.MustCompile(`([^<]+)< "([^"]+)" ([a-zA-Z0-9_.-]+) (def|ref)`).FindAllStringSubmatch(line, -1)
+		if matchess == nil {
 			continue
 		}
 
-		substr, symbol, kind := matches[2], matches[3], matches[4]
+		for _, matches := range matchess {
+			substr, symbol, kind := matches[2], matches[3], matches[4]
 
-		annotations = append(annotations, annotation{
-			repoCommitPathPoint: types.RepoCommitPathPoint{
-				RepoCommitPath: repoCommitPath,
-				Point: types.Point{
-					Row:    i,
-					Column: strings.Index(line, substr),
+			annotations = append(annotations, annotation{
+				repoCommitPathPoint: types.RepoCommitPathPoint{
+					RepoCommitPath: repoCommitPath,
+					Point: types.Point{
+						Row:    i,
+						Column: strings.Index(line, substr),
+					},
 				},
-			},
-			symbol: symbol,
-			kind:   kind,
-		})
+				symbol: symbol,
+				kind:   kind,
+			})
+		}
 	}
 
 	// Annotations below source lines

@@ -60,7 +60,7 @@ func testSyncRateLimiters(store *repos.Store) func(*testing.T) {
 			}
 
 			registry := ratelimit.NewRegistry()
-			syncer := repos.NewRateLimitSyncer(registry, tx.ExternalServiceStore)
+			syncer := repos.NewRateLimitSyncer(registry, tx.ExternalServiceStore, repos.RateLimitSyncerOpts{})
 			err := syncer.SyncRateLimiters(ctx)
 			if err != nil {
 				t.Fatal(err)

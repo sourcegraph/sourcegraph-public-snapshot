@@ -60,6 +60,8 @@ type DBStore interface {
 	RecentIndexesSummary(ctx context.Context, repositoryID int) ([]dbstore.IndexesWithRepositoryNamespace, error)
 	LastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error)
 	LastIndexScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error)
+	RequestLanguageSupport(ctx context.Context, userID int, language string) error
+	LanguagesRequestedBy(ctx context.Context, userID int) ([]string, error)
 }
 
 type LSIFStore interface {
