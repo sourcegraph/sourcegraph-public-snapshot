@@ -340,7 +340,7 @@ PGPASSWORD=secret
 PGDATABASE=sourcegraph
 ```
 
-The SQL script below is intended to be run from by a database administrator with `SUPERUSER` priviledges against the Frontend Database. It creates a database, user, and configures necesasry permissions for use by the Sourcegraph _frontend_ services.
+The SQL script below is intended to be run from by a database administrator with `SUPERUSER` privileges against the Frontend Database. It creates a database, user, and configures necesasry permissions for use by the Sourcegraph _frontend_ services.
 
 ```sql
 # Create the application database
@@ -396,7 +396,7 @@ CODEINTEL_PGDATABASE=sourcegraph-codeintel
 CODEINTEL_PGSSLMODE=require
 ```
 
-The SQL script below is intended to be run from by a database administrator with `SUPERUSER` priviledges against the CodeIntel Database. It creates a database, user, and configures necesasry permissions for use by the Sourcegraph _frontend_ services.
+The SQL script below is intended to be run from by a database administrator with `SUPERUSER` privileges against the CodeIntel Database. It creates a database, user, and configures necesasry permissions for use by the Sourcegraph _frontend_ services.
 
 ```sql
 # Create the CodeIntel database
