@@ -28,7 +28,7 @@ export const RunServerSideModal: React.FunctionComponent<RunServerSideModalProps
         className={styles.modal}
     >
         <div>
-            <h3 id={MODAL_LABEL_ID}>Running batch changes server side is not enabled</h3>
+            <h3 id={MODAL_LABEL_ID}>Running batch changes server-side is not enabled</h3>
             <Button
                 className={styles.close}
                 onClick={() => {
@@ -42,7 +42,7 @@ export const RunServerSideModal: React.FunctionComponent<RunServerSideModalProps
 
         <div className={styles.content}>
             <div className={styles.left}>
-                <div className={styles.heading}>
+                <div>
                     <p>
                         Install executors to enable running batch changes server-side instead of locally. Executors can
                         also be autoscaled to speed up creating large-scale batch changes.
@@ -56,7 +56,7 @@ export const RunServerSideModal: React.FunctionComponent<RunServerSideModalProps
                     <h4>Resources</h4>
                     <ul>
                         <Link to="https://docs.sourcegraph.com/batch_changes/explanations/server_side">
-                            <li>Running batch changes server side</li>
+                            <li>Running batch changes server-side</li>
                         </Link>
                         <Link to="https://docs.sourcegraph.com/admin/executors">
                             <li>Deploying executors</li>

@@ -31,18 +31,14 @@
     width: 72%;
 }
 
-.heading {
-    height: 15%;
-    font-size: small;
-}
-
 .video-container {
     height: 85%;
     background-color: var(--body-bg);
 }
 
 .right {
-    width: 25%;
+    margin-left: 1.5rem;
+    flex: 1;
     display: flex;
     flex-direction: column;
 }
@@ -61,5 +57,5 @@
 }
 
 ul {
-    padding-left: 0.5rem;
+    padding-left: 1.5rem;
 }

@@ -10,7 +10,7 @@ import { useHistory } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { useMutation, useQuery, gql } from '@sourcegraph/http-client'
+import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import {
     SettingsCascadeProps,
@@ -48,7 +48,7 @@ import {
 } from '../../../graphql-operations'
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
-import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE } from './backend'
+import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE, EXECUTORS } from './backend'
 import { DownloadSpecModal } from './DownloadSpecModal'
 import { EditorFeedbackPanel } from './editor/EditorFeedbackPanel'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
@@ -258,20 +258,13 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
 const INVALID_BATCH_SPEC_TOOLTIP = "There's a problem with your batch spec."
 const WORKSPACES_PREVIEW_SIZE = 'batch-changes.ssbc-workspaces-preview-size'
 
-const EXECUTORS = gql`
-    query GetExecutorsTotalCount {
-        executors {
-            totalCount
-        }
-    }
-`
-
 interface EditPageProps extends ThemeProps {
     batchChange: EditBatchChangeFields
     refetchBatchChange: () => Promise<ApolloQueryResult<GetBatchChangeToEditResult>>
 }
 
 const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetchBatchChange, isLightTheme }) => {
+    // Check for active executors to tell if we are able to run batch changes server-side.
     const { data } = useQuery<GetExecutorsTotalCountResult, GetExecutorsTotalCountVariables>(EXECUTORS, {})
 
     // Get the latest batch spec for the batch change.
@@ -445,8 +438,10 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
     )
 
     // When graphql query is completed, check if the data from the query meets this condition and render approriate buttons
-    // Until the query is complete, this variable will be undefined and no buttons will not show
-    const actionButtons = data ? (data.executors.totalCount > 0 ? activeExecutors : noActiveExecutors) : undefined
+    // Until the query is complete, this variable will be undefined and no buttons will show
+    // const actionButtons = data ? (data.executors.totalCount > 0 ? activeExecutors : noActiveExecutors) : undefined
+
+    const actionButtons = noActiveExecutors
 
     return (
         <BatchChangePage
