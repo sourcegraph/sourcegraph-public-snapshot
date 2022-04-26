@@ -12,11 +12,7 @@ import {
 } from '../../graphql-operations'
 
 import { RepositoryMenu, RepositoryMenuProps } from './RepositoryMenu'
-import {
-    UseCodeIntelStatusPayload,
-    UseRequestLanguageSupportParameters,
-    useCodeIntelStatus as defaultUseCodeIntelStatus,
-} from './useCodeIntelStatus'
+import { UseCodeIntelStatusPayload, UseRequestLanguageSupportParameters } from './useCodeIntelStatus'
 
 const uploadPrototype: Omit<LsifUploadFields, 'id' | 'state' | 'uploadedAt'> = {
     __typename: 'LSIFUpload',
