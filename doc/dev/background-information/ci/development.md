@@ -85,7 +85,7 @@ For caching artefacts in steps to speed up steps, see [How to cache CI artefacts
 
 > NOTE: Sourcegraph teammates should refer to the [CI incidents playbook](https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/incidents/playbooks/ci#scenarios) for help managing issues with [pipeline health](./index.md#pipeline-health).
 
-### Pipeline command tracing
+#### Pipeline command tracing
 
 Every successful build of the `sourcegraph/sourcegraph` repository comes with an annotation pointing at the full trace of the build on [Honeycomb.io](https://honeycomb.io).
 See the [Buildkite board on Honeycomb](https://ui.honeycomb.io/sourcegraph/board/sqPvYj5BXNy/Buildkite) for an overview.
