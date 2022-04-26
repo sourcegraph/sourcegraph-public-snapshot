@@ -215,7 +215,7 @@ D. Generate the database dumps
 
 ```bash
 kubectl exec -it $pgsql_POD_NAME -- bash -c 'pg_dump -C --username sg sg' > sourcegraph_db.out
-kubectl exec -it $codeintel-db_POD_NAME -- bash -c 'pg_dump -C --username sg sg' > codeintel_db.out
+kubectl exec -it $codeintel_db_POD_NAME -- bash -c 'pg_dump -C --username sg sg' > codeintel_db.out
 ```
 
 Ensure the `sourcegraph_db.out` and `codeintel_db.out` files are moved to a safe and secure location.
@@ -241,14 +241,14 @@ C. Copy the database files into the pods by running the following command from t
 
 ```bash
 kubectl cp sourcegraph_db.out $NAMESPACE/$pgsql_POD_NAME:/tmp/sourcegraph_db.out
-kubectl cp codeintel_db.out $NAMESPACE/$codeintel-db_POD_NAME:/tmp/codeintel_db.out
+kubectl cp codeintel_db.out $NAMESPACE/$codeintel_db_POD_NAME:/tmp/codeintel_db.out
 ```
 
 D. Restore the databases
 
 ```bash
 kubectl exec -it $pgsql_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/sourcegraph_db.out sg'
-kubectl exec -it $codeintel-db_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/codeintel_db.out sg'
+kubectl exec -it $codeintel_db_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/codeintel_db.out sg'
 ```
 
 E. Check for corrupt database indexes.  If amcheck returns errors, please reach out to [support@sourcegraph.com](mailto:support@sourcegraph.com)
@@ -287,7 +287,7 @@ B. Remove any existing volumes for the databases in the existing deployment
 kubectl delete pvc pgsql
 kubectl delete pvc codeintel-db
 kubectl delete pv $pgsql_PV_NAME --force
-kubectl delete pv $codeintel-db_PV_NAME --force
+kubectl delete pv $codeintel_db_PV_NAME --force
 ```
 
 C. Copy the database dump files (eg. `sourcegraph_db.out` and `codeintel_db.out`) into the root of the `deploy-sourcegraph` directory
@@ -303,14 +303,14 @@ E. Copy the database files into the pods by running the following command from t
 
 ```bash
 kubectl cp sourcegraph_db.out $NAMESPACE/$pgsql_POD_NAME:/tmp/sourcegraph_db.out
-kubectl cp codeintel_db.out $NAMESPACE/$codeintel-db_POD_NAME:/tmp/codeintel_db.out
+kubectl cp codeintel_db.out $NAMESPACE/$codeintel_db_POD_NAME:/tmp/codeintel_db.out
 ```
 
 F. Restore the databases
 
 ```bash
 kubectl exec -it $pgsql_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/sourcegraph_db.out sg'
-kubectl exec -it $codeintel-db_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/codeintel_db.out sg'
+kubectl exec -it $codeintel_db_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/codeintel_db.out sg'
 ```
 
 G. Check for corrupt database indexes.  If amcheck returns errors, please reach out to [support@sourcegraph.com](mailto:support@sourcegraph.com)
