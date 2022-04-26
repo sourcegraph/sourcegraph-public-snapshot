@@ -44,3 +44,14 @@ func (t *TraceContextEncoder) MarshalLogObject(enc zapcore.ObjectEncoder) error 
 	}
 	return nil
 }
+
+type FieldsObjectEncoder []zapcore.Field
+
+var _ zapcore.ObjectMarshaler = &FieldsObjectEncoder{}
+
+func (fields FieldsObjectEncoder) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	for _, f := range fields {
+		f.AddTo(enc)
+	}
+	return nil
+}
