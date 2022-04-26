@@ -130,6 +130,15 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			wait,
 			addBrowserExtensionReleaseSteps)
 
+	case runtype.VsceReleaseBranch:
+		// If this is a vs code extension release branch, run the vscode-extension tests and release
+		ops = operations.NewSet(
+			addClientLintersForAllFiles,
+			addBrowserExtensionUnitTests,
+			addVSCExtIntegrationTests,
+			wait,
+			addVSCodeExtensionReleaseSteps)
+
 	case runtype.BextNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.

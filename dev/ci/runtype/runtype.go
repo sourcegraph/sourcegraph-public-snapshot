@@ -26,6 +26,7 @@ const (
 	TaggedRelease     // semver-tagged release
 	ReleaseBranch     // release branch build
 	BextReleaseBranch // browser extension release build
+	VsceReleaseBranch // vs code extension release build
 
 	// Main branches
 
@@ -92,12 +93,19 @@ func (t RunType) Matcher() *RunTypeMatcher {
 				"BEXT_NIGHTLY": "true",
 			},
 		}
+
 	case VsceNightly:
 		return &RunTypeMatcher{
 			EnvIncludes: map[string]string{
 				"VSCE_NIGHTLY": "true",
 			},
 		}
+	case VsceReleaseBranch:
+		return &RunTypeMatcher{
+			Branch:      "bext/release",
+			BranchExact: true,
+		}
+
 	case TaggedRelease:
 		return &RunTypeMatcher{
 			TagPrefix: "v",
@@ -168,6 +176,8 @@ func (t RunType) String() string {
 		return "Release branch"
 	case BextReleaseBranch:
 		return "Browser extension release build"
+	case VsceReleaseBranch:
+		return "VS Code extension release build"
 
 	case MainBranch:
 		return "Main branch"

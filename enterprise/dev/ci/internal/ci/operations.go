@@ -243,6 +243,7 @@ func addVSCExtIntegrationTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(
 		":vscode: Puppeteer tests for VS Code extension",
 		withYarnCache(),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn generate"),
 		bk.Cmd("yarn --cwd client/vscode -s build:test"),
 		bk.Cmd("yarn --cwd client/vscode -s test-integration --verbose"),
@@ -514,6 +515,20 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
 		bk.Cmd("yarn workspace @sourcegraph/browser release:npm"))
+}
+
+// Release the browser extension.
+func addVSCodeExtensionReleaseSteps(pipeline *bk.Pipeline) {
+	addVSCExtIntegrationTests(pipeline)
+
+	pipeline.AddWait()
+
+	// Release to the VS Code Marketplace
+	pipeline.AddStep(":vscode: Extension release",
+		withYarnCache(),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("yarn generate"),
+		bk.Cmd("yarn --cwd client/vscode -s run release"))
 }
 
 // Adds a Buildkite pipeline "Wait".
