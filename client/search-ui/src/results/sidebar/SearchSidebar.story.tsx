@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { storiesOf } from '@storybook/react'
 // We need to import `create` to make a mock store just for this story.
 // eslint-disable-next-line no-restricted-imports

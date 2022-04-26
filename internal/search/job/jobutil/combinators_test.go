@@ -221,3 +221,36 @@ func TestPriorityJob(t *testing.T) {
 		})
 	})
 }
+
+func TestSequentialJob(t *testing.T) {
+	// Setup: A child job that sends up to 10 results.
+	mockJob := mockjob.NewMockJob()
+	mockJob.RunFunc.SetDefaultHook(func(ctx context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
+		for i := 0; i < 10; i++ {
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			default:
+			}
+			s.Send(streaming.SearchEvent{
+				Results: []result.Match{&result.FileMatch{}},
+			})
+		}
+		return nil, nil
+	})
+
+	var sent []result.Match
+	stream := streaming.StreamFunc(func(e streaming.SearchEvent) {
+		sent = append(sent, e.Results...)
+	})
+
+	// Setup: A child job that panics.
+	neverJob := mockjob.NewStrictMockJob()
+	t.Run("sequential job returns early after cancellation when limit job sees 5 events", func(t *testing.T) {
+		limitedSequentialJob := NewLimitJob(5, NewSequentialJob(mockJob, neverJob))
+		require.NotPanics(t, func() {
+			limitedSequentialJob.Run(context.Background(), job.RuntimeClients{}, stream)
+		})
+		require.Equal(t, 5, len(sent))
+	})
+}

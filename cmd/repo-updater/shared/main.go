@@ -73,15 +73,12 @@ func Main(enterpriseInit EnterpriseInit) {
 	env.Lock()
 	env.HandleHelpFlag()
 
-	if err := profiler.Init(); err != nil {
-		log.Fatalf("failed to start profiler: %v", err)
-	}
-
 	conf.Init()
 	logging.Init()
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
+	profiler.Init()
 
 	// Signals health of startup
 	ready := make(chan struct{})
@@ -138,7 +135,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		Scheduler:             updateScheduler,
 		GitserverClient:       gitserver.NewClient(db),
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
-		RateLimitSyncer:       repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store.ExternalServiceStore),
+		RateLimitSyncer:       repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store.ExternalServiceStore, repos.RateLimitSyncerOpts{}),
 	}
 
 	// Attempt to perform an initial sync with all external services

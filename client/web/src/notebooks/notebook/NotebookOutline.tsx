@@ -178,15 +178,13 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
                             )}
                             aria-current={highlightedHeading === heading.id}
                         >
-                            <Link
-                                className={classNames(styles.headingLink)}
-                                to={`#${heading.id}`}
-                                data-tooltip={heading.text}
-                            >
+                            <Link className={classNames(styles.headingLink)} to={`#${heading.id}`}>
                                 {highlightedHeading === heading.id && (
                                     <span className={styles.highlightDot}>&middot;</span>
                                 )}
-                                <span>{heading.text}</span>
+                                <span data-tooltip={heading.text} className={classNames(styles.headingLinkText)}>
+                                    {heading.text}
+                                </span>
                             </Link>
                         </li>
                     ))}

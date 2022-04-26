@@ -35,12 +35,16 @@ const addr = ":3184"
 type SetupFunc func(observationContext *observation.Context, gitserverClient gitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error)
 
 func Main(setup SetupFunc) {
-	routines := []goroutine.BackgroundRoutine{}
+	// Initialization
+	env.HandleHelpFlag()
+	conf.Init()
+	logging.Init()
+	tracer.Init(conf.DefaultClient())
+	sentry.Init(conf.DefaultClient())
+	trace.Init()
+	profiler.Init()
 
-	// Set up Google Cloud Profiler when running in Cloud
-	if err := profiler.Init(); err != nil {
-		log.Fatalf("Failed to start profiler: %v", err)
-	}
+	routines := []goroutine.BackgroundRoutine{}
 
 	// Initialize tracing/metrics
 	observationContext := &observation.Context{
@@ -53,9 +57,6 @@ func Main(setup SetupFunc) {
 		},
 	}
 
-	// Conf package must be initialized prior to Rockskip init
-	conf.Init()
-
 	// Run setup
 	gitserverClient := gitserver.NewClient(observationContext)
 	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, types.LoadRepositoryFetcherConfig(env.BaseConfig{}).MaxTotalPathsLength, observationContext)
@@ -64,13 +65,6 @@ func Main(setup SetupFunc) {
 		log.Fatalf("Failed to setup: %v", err)
 	}
 	routines = append(routines, newRoutines...)
-
-	// Initialization
-	env.HandleHelpFlag()
-	logging.Init()
-	tracer.Init(conf.DefaultClient())
-	sentry.Init(conf.DefaultClient())
-	trace.Init()
 
 	// Start debug server
 	ready := make(chan struct{})

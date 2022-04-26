@@ -45,11 +45,11 @@ func initGlobal(level zapcore.Level) {
 	globallogger.Init(otfields.Resource{}, zap.NewAtomicLevelAt(level), encoders.OutputConsole, true)
 }
 
-// configurableAdapter exposes internal APIs on zapAdapter
+// configurableAdapter exposes internal APIs on zapAdapter.
 type configurableAdapter interface {
 	log.Logger
 
-	WithOptions(options ...zap.Option) log.Logger
+	WithAdditionalCore(core zapcore.Core) log.Logger
 }
 
 type CapturedLog struct {
@@ -68,6 +68,9 @@ func Scoped(t testing.TB) log.Logger {
 	// already been done. We allow this in testing for convenience.
 	Init(nil)
 
+	// On cleanup, flush the global logger.
+	t.Cleanup(func() { globallogger.Get(true).Sync() })
+
 	return log.Scoped(t.Name(), "")
 }
 
@@ -80,15 +83,9 @@ func Captured(t testing.TB) (logger log.Logger, exportLogs func() []CapturedLog)
 	configurable := root.(configurableAdapter)
 
 	observerCore, entries := observer.New(zap.DebugLevel) // capture all levels
-	logger = configurable.WithOptions(zap.WrapCore(func(c zapcore.Core) zapcore.Core {
-		// Set up AttributesNamespace to mirror the underlying core created by log.Get()
-		observerCore = observerCore.With([]zapcore.Field{otfields.AttributesNamespace})
-		// Tee to both the underlying core, and our observer core
-		return zapcore.NewTee(observerCore, c)
-	}))
+	logger = configurable.WithAdditionalCore(observerCore)
 
 	return logger, func() []CapturedLog {
-		logger.Sync()
 		entries := entries.TakeAll()
 		logs := make([]CapturedLog, len(entries))
 		for i, e := range entries {

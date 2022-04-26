@@ -37,18 +37,21 @@ import (
   "github.com/sourcegraph/sourcegraph/lib/log"
   "github.com/sourcegraph/sourcegraph/internal/env"
   "github.com/sourcegraph/sourcegraph/internal/version"
+  "github.com/sourcegraph/sourcegraph/internal/hostname"
 )
 
 func main() {
   // If unintialized, calls to `log.Scoped` will return a no-op logger in production, or
-  // panic in development.
+  // panic in development. It returns a callback to flush the logger buffer, if any, that
+  // you should make sure to call before application exit (namely via `defer`)
   //
   // Repeated calls to `log.Init` will panic. Make sure to call this exactly once in `main`!
-  log.Init(log.Resource{
-    Name: env.MyName,
-    /* ... optional fields */
-    Version: version.Version(),
+  syncLogs := sglog.Init(sglog.Resource{
+    Name:       env.MyName,
+    Version:    version.Version(),
+    InstanceID: hostname.Get(),
   })
+  defer syncLogs()
 
   service.Start(/* ... */)
 }

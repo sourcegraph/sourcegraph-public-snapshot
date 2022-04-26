@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
@@ -12,7 +12,7 @@ import { Redirect, Route, RouteComponentProps, Switch, useHistory, useLocation }
 import { NavLink as RouterLink } from 'react-router-dom'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
+import { pluralize } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
@@ -46,7 +46,7 @@ import {
 import { BatchSpec } from '../BatchSpec'
 import { NewBatchChangePreviewPage } from '../preview/BatchChangePreviewPage'
 
-import { cancelBatchSpecExecution, FETCH_BATCH_SPEC_EXECUTION, retryBatchSpecExecution } from './backend'
+import { useCancelBatchSpecExecution, FETCH_BATCH_SPEC_EXECUTION, useRetryBatchSpecExecution } from './backend'
 import { BatchSpecStateBadge } from './BatchSpecStateBadge'
 import { WorkspaceDetails } from './WorkspaceDetails'
 import { Workspaces } from './workspaces/Workspaces'
@@ -213,27 +213,13 @@ interface BatchSpecActionsProps {
 const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batchSpec, executionURL }) => {
     const location = useLocation()
 
-    const [isCanceling, setIsCanceling] = useState<boolean | Error>(false)
-    const cancelExecution = useCallback(async () => {
-        try {
-            // This reloads all the fields so apollo will rerender the parent component with new details too.
-            // TODO: Actually use apollo here.
-            await cancelBatchSpecExecution(batchSpec.id)
-        } catch (error) {
-            setIsCanceling(asError(error))
-        }
-    }, [batchSpec.id])
+    const [cancelBatchSpecExecution, { loading: isCancelLoading, error: cancelError }] = useCancelBatchSpecExecution(
+        batchSpec.id
+    )
 
-    const [isRetrying, setIsRetrying] = useState<boolean | Error>(false)
-    const retryExecution = useCallback(async () => {
-        try {
-            // This reloads all the fields so apollo will rerender the parent component with new details too.
-            // TODO: Actually use apollo here.
-            await retryBatchSpecExecution(batchSpec.id)
-        } catch (error) {
-            setIsRetrying(asError(error))
-        }
-    }, [batchSpec.id])
+    const [retryBatchSpecExecution, { loading: isRetryLoading, error: retryError }] = useRetryBatchSpecExecution(
+        batchSpec.id
+    )
 
     const workspacesStats = batchSpec.workspaceResolution?.workspaces.stats
 
@@ -276,17 +262,12 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
                 <ButtonGroup direction="vertical" className="ml-2">
                     {(batchSpec.state === BatchSpecState.QUEUED || batchSpec.state === BatchSpecState.PROCESSING) && (
                         <Button
-                            onClick={cancelExecution}
-                            disabled={isCanceling === true}
+                            onClick={() => cancelBatchSpecExecution()}
+                            disabled={isCancelLoading}
                             outline={true}
                             variant="danger"
                         >
-                            {isCanceling !== true && <>Cancel</>}
-                            {isCanceling === true && (
-                                <>
-                                    <LoadingSpinner /> Canceling
-                                </>
-                            )}
+                            {isCancelLoading && <LoadingSpinner />}Cancel
                         </Button>
                     )}
                     {!location.pathname.endsWith('preview') &&
@@ -300,18 +281,13 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
                         // TODO: Add a second button to allow retrying an entire batch spec,
                         // including completed jobs.
                         <Button
-                            onClick={retryExecution}
-                            disabled={isRetrying === true}
-                            data-tooltip={isRetrying !== true ? 'Retry all failed workspaces' : undefined}
+                            onClick={() => retryBatchSpecExecution()}
+                            disabled={isRetryLoading}
+                            data-tooltip={isRetryLoading ? undefined : 'Retry all failed workspaces'}
                             outline={true}
                             variant="secondary"
                         >
-                            {isRetrying !== true && <>Retry</>}
-                            {isRetrying === true && (
-                                <>
-                                    <LoadingSpinner /> Retrying
-                                </>
-                            )}
+                            {isRetryLoading && <LoadingSpinner />}Retry
                         </Button>
                     )}
                     {!location.pathname.endsWith('preview') &&
@@ -330,8 +306,8 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
                         )}
                 </ButtonGroup>
                 {/* TODO: Move me out to main page */}
-                {isErrorLike(isCanceling) && <ErrorAlert error={isCanceling} />}
-                {isErrorLike(isRetrying) && <ErrorAlert error={isRetrying} />}
+                {cancelError && <ErrorAlert error={cancelError} />}
+                {retryError && <ErrorAlert error={retryError} />}
             </span>
         </div>
     )

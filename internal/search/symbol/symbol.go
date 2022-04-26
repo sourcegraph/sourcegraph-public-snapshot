@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -30,10 +31,10 @@ const DefaultSymbolLimit = 100
 // repository at a specific commit. If it has it returns the branch name (for
 // use when querying zoekt). Otherwise an empty string is returned.
 func indexedSymbolsBranch(ctx context.Context, repo *types.MinimalRepo, commit string) string {
-	z := search.Indexed()
-	if z == nil {
+	if !conf.SearchIndexEnabled() {
 		return ""
 	}
+	z := search.Indexed()
 
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()

@@ -285,14 +285,20 @@ func (r *workHandler) computeHandler(ctx context.Context, job *Job, series *type
 }
 
 func (r *workHandler) searchStreamHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) (err error) {
-	decoder, countPtr, streamRepoCounts, streamErrs := streaming.TabulationDecoder()
+	decoder, tabulationResult := streaming.TabulationDecoder()
 	err = streaming.Search(ctx, job.SearchQuery, decoder)
 	if err != nil {
 		return errors.Wrap(err, "streaming.Search")
 	}
-	log15.Info("Search Counts", "streaming", *countPtr)
-	if len(streamErrs) > 0 {
-		log15.Error("streaming errors", "errors", streamErrs)
+
+	tr := *tabulationResult
+
+	log15.Info("Search Counts", "streaming", tr.TotalCount)
+	if len(tr.SkippedReasons) > 0 {
+		log15.Error("insights query issue", "reasons", tr.SkippedReasons, "query", job.SearchQuery)
+	}
+	if len(tr.Errors) > 0 {
+		log15.Error("streaming errors", "errors", tr.Errors)
 	}
 
 	tx, err := r.insightsStore.Transact(ctx)
@@ -310,7 +316,7 @@ func (r *workHandler) searchStreamHandler(ctx context.Context, job *Job, series 
 	}
 
 	checker := authz.DefaultSubRepoPermsChecker
-	for _, match := range streamRepoCounts {
+	for _, match := range tr.RepoCounts {
 		// sub-repo permissions filtering. If the repo supports it, then it should be excluded from search results
 		var subRepoEnabled bool
 		repoID := api.RepoID(match.RepositoryID)

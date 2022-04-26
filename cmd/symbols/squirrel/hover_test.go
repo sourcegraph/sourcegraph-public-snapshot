@@ -22,12 +22,38 @@ class C {
 }
 `
 
+	golang := `
+func main() {
+	// not a comment line
+
+	// comment line 1
+	// comment line 2
+	var x int
+}
+`
+
+	csharp := `
+namespace Foo {
+    class Bar {
+        static void Baz(int p) {
+			// not a comment line
+
+			// comment line 1
+			// comment line 2
+			var x = 5;
+		}
+	}
+}
+`
+
 	tests := []struct {
 		path     string
 		contents string
 		want     string
 	}{
 		{"test.java", java, "comment line 1\ncomment line 2\n"},
+		{"test.go", golang, "comment line 1\ncomment line 2\n"},
+		{"test.cs", csharp, "comment line 1\ncomment line 2\n"},
 	}
 
 	readFile := func(ctx context.Context, path types.RepoCommitPath) ([]byte, error) {

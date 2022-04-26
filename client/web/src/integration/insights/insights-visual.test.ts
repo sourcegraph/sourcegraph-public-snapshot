@@ -1,5 +1,6 @@
 import delay from 'delay'
 
+import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -50,6 +51,7 @@ describe.skip('[VISUAL] Code insights page', () => {
         await driver.page.waitForSelector('svg circle')
         await delay(500)
         await percySnapshotWithVariants(driver.page, name)
+        await accessibilityAudit(driver.page)
     }
 
     it('is styled correctly with back-end insights', async () => {
@@ -118,6 +120,7 @@ describe.skip('[VISUAL] Code insights page', () => {
 
         await delay(500)
         await percySnapshotWithVariants(driver.page, 'Code insights page with search-based errored insight')
+        await accessibilityAudit(driver.page)
     })
 
     it('is styled correctly with all types of insight', async () => {
@@ -203,6 +206,7 @@ describe.skip('[VISUAL] Code insights page', () => {
             await driver.page.waitForSelector('input[name="name"]')
 
             await percySnapshotWithVariants(driver.page, 'Code insights add new dashboard page')
+            await accessibilityAudit(driver.page)
         })
     })
 })

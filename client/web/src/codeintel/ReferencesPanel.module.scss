@@ -5,6 +5,8 @@ $filter-input-height: 1.5rem;
     padding-top: 0.25rem;
     padding-bottom: 0.25rem;
 
+    border-bottom: 1px solid var(--body-bg);
+
     input {
         height: 1rem;
         font-size: 0.75rem;
@@ -63,6 +65,9 @@ $filter-input-height: 1.5rem;
         text-align: left;
 
         transition: none !important;
+
+        // Avoid line number and filename getting put on different lines
+        white-space: nowrap;
     }
 
     button:hover {
@@ -122,38 +127,45 @@ $card-header-height: 1.5rem;
     }
 }
 
-.references {
-    &--list {
-        display: flex;
-        // Ensure list spans entire height of panel, and that the scrollable area does not include the filter height
-        height: calc(100% - #{$filter-input-height + $card-header-height});
-    }
+// Complete panel
+.panel {
+    display: flex;
+    // Ensure panel spans entire height of enclosing panel
+    height: 100%;
+}
 
-    // Left side of the panel: hover & list of references/definition/...
-    &--side-references {
-        flex: 1;
-        overflow: auto;
-        height: 100%;
-    }
+// Left side of the panel, including token name, filter, list of locations
+.left-sub-panel {
+    flex: 1;
+    overflow: auto;
+    height: 100%;
+}
 
-    // Right side of the panel
-    &--side-blob {
-        flex: 1;
-        overflow: auto;
-    }
+// Right side of the panel
+.right-sub-panel {
+    flex: 1;
+    overflow: auto;
+}
 
-    &--side-blob-filename {
+// Lists of locations (definitions, references, implementations) on the left
+.location-lists {
+    height: calc(100% - #{$filter-input-height} - #{$card-header-height});
+    overflow: auto;
+}
+
+.side-blob {
+    &--filename {
         height: 1rem;
         vertical-align: middle;
     }
 
-    &--side-blob-collapse-button {
+    &--collapse-button {
         margin-right: 0.5rem;
     }
 
-    // Code needs to be smaller than 100% so it scrolls correctly
-    &--side-blob-code {
-        // Subtract the space taken up by the filename
-        height: calc(100% - #{$filter-input-height});
+    &--code {
+        // The code view needs to be scrollable.
+        // Its height needs to be "100% - <size-of-header-that-has-filename>"
+        height: calc(100% - #{$card-header-height});
     }
 }

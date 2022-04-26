@@ -11,7 +11,7 @@ import (
 )
 
 // Repo returns a single repository, based on its namespace and slug.
-func (c *Client) Repo(ctx context.Context, namespace, slug string) (*Repo, error) {
+func (c *client) Repo(ctx context.Context, namespace, slug string) (*Repo, error) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("/2.0/repositories/%s/%s", namespace, slug), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating request")
@@ -31,7 +31,7 @@ func (c *Client) Repo(ctx context.Context, namespace, slug string) (*Repo, error
 // If the argument pageToken.Next is not empty, it will be used directly as the URL to make
 // the request. The PageToken it returns may also contain the URL to the next page for
 // succeeding requests if any.
-func (c *Client) Repos(ctx context.Context, pageToken *PageToken, accountName string) ([]*Repo, *PageToken, error) {
+func (c *client) Repos(ctx context.Context, pageToken *PageToken, accountName string) ([]*Repo, *PageToken, error) {
 	var repos []*Repo
 	var next *PageToken
 	var err error
@@ -66,7 +66,7 @@ type ForkInput struct {
 }
 
 // ForkRepository forks the given upstream repository.
-func (c *Client) ForkRepository(ctx context.Context, upstream *Repo, input ForkInput) (*Repo, error) {
+func (c *client) ForkRepository(ctx context.Context, upstream *Repo, input ForkInput) (*Repo, error) {
 	data, err := json.Marshal(&input)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshalling request")

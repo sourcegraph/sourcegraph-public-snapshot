@@ -1,4 +1,4 @@
-import React, { ReactElement, useMemo, useState, SVGProps } from 'react'
+import { ReactElement, useMemo, useState, SVGProps } from 'react'
 
 import { curveLinear } from '@visx/curve'
 import { Group } from '@visx/group'

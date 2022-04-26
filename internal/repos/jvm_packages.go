@@ -78,7 +78,6 @@ func (s *JVMPackagesSource) listDependentRepos(ctx context.Context, results chan
 		totalDBFetched  int
 		totalDBResolved int
 		lastID          int
-		timedOut        int
 	)
 	for {
 		dbDeps, err := s.depsSvc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
@@ -112,12 +111,9 @@ func (s *JVMPackagesSource) listDependentRepos(ctx context.Context, results chan
 			// should be hit much less frequently than gitservers attempts to get packages, so there should be less
 			// logspam. This may no longer hold true if the extsvc syncs more often than gitserver would, but I
 			// don't foresee that happening (not soon at least).
-			if exists, err := coursier.Exists(ctx, s.config, mavenDependency); !exists {
-				if errors.Is(err, context.DeadlineExceeded) {
-					timedOut++
-				} else {
-					log15.Warn("jvm package not resolvable from coursier", "package", mavenDependency.PackageManagerSyntax())
-				}
+			err = coursier.Exists(ctx, s.config, mavenDependency)
+			if err != nil {
+				log15.Warn("jvm package not resolvable from coursier", "package", mavenDependency.PackageManagerSyntax())
 				continue
 			}
 
@@ -130,7 +126,7 @@ func (s *JVMPackagesSource) listDependentRepos(ctx context.Context, results chan
 		}
 	}
 
-	log15.Info("finished listing resolvable maven artifacts", "totalDB", totalDBFetched, "resolvedDB", totalDBResolved, "totalConfig", len(modules), "timedout", timedOut)
+	log15.Info("finished listing resolvable maven artifacts", "totalDB", totalDBFetched, "resolvedDB", totalDBResolved, "totalConfig", len(modules))
 }
 
 func (s *JVMPackagesSource) makeRepo(module *reposource.MavenModule) *types.Repo {

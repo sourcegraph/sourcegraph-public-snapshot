@@ -26,6 +26,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Code Insights: Fixed line chart data series hover effect. Now the active line will be rendered on top of the others.
+- Unverified primary emails no longer breaks the Emails-page for users and Users-page for Site Admin. [#34312](https://github.com/sourcegraph/sourcegraph/pull/34312)
 
 ### Removed
 

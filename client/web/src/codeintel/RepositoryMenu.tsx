@@ -1,47 +1,14 @@
 import React from 'react'
 
-import BrainIcon from 'mdi-react/BrainIcon'
-
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Icon, Menu, MenuButton, MenuDivider, MenuHeader, MenuList, Position } from '@sourcegraph/wildcard'
 
-import styles from './RepositoryMenu.module.scss'
-
-export type RepositoryMenuContentProps = SettingsCascadeProps & {
+export type RepositoryMenuProps = SettingsCascadeProps & {
     repoName: string
     revision: string
     filePath: string
 }
 
-export type RepositoryMenuProps = RepositoryMenuContentProps & {
-    content: typeof RepositoryMenuContent
-    isOpen?: boolean
-}
-
-export const RepositoryMenu: React.FunctionComponent<RepositoryMenuProps> = ({
-    content: Content,
-    isOpen,
-    ...props
-}) => (
-    <Menu className="btn-icon">
-        <>
-            <MenuButton className="text-decoration-none">
-                <Icon as={BrainIcon} />
-            </MenuButton>
-
-            <MenuList position={Position.bottomEnd} className={styles.dropdownMenu} isOpen={isOpen}>
-                <MenuHeader>Code intelligence</MenuHeader>
-                <MenuDivider />
-                <Content {...props} />
-            </MenuList>
-        </>
-    </Menu>
-)
-
-export const RepositoryMenuContent: React.FunctionComponent<RepositoryMenuContentProps> = () => (
-    <div className="px-2 py-1">
-        <h2>Unimplemented</h2>
-
-        <p className="text-muted">Unimplemented (OSS version).</p>
-    </div>
-)
+// This component is only a stub (hence the null body) that we overwrite in the enterprise
+// app. We define this here so we have a stable type to provide on initialization. The OSS
+// version simply never renders the code intel repository menu.
+export const RepositoryMenu: React.FunctionComponent<RepositoryMenuProps> = () => null

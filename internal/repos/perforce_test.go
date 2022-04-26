@@ -96,18 +96,18 @@ func TestPerforceSource_makeRepo(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		schmea *schema.PerforceConnection
+		schema *schema.PerforceConnection
 	}{
 		{
 			name: "simple",
-			schmea: &schema.PerforceConnection{
+			schema: &schema.PerforceConnection{
 				P4Port:   "ssl:111.222.333.444:1666",
 				P4User:   "admin",
 				P4Passwd: "pa$$word",
 			},
 		}, {
 			name: "path-pattern",
-			schmea: &schema.PerforceConnection{
+			schema: &schema.PerforceConnection{
 				P4Port:                "ssl:111.222.333.444:1666",
 				P4User:                "admin",
 				P4Passwd:              "pa$$word",
@@ -118,7 +118,7 @@ func TestPerforceSource_makeRepo(t *testing.T) {
 	for _, test := range tests {
 		test.name = "PerforceSource_makeRepo_" + test.name
 		t.Run(test.name, func(t *testing.T) {
-			s, err := newPerforceSource(&svc, test.schmea)
+			s, err := newPerforceSource(&svc, test.schema)
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -4,6 +4,7 @@ import path from 'path'
 import { subDays } from 'date-fns'
 import expect from 'expect'
 
+import { highlightFileResult, mixedSearchStreamEvents } from '@sourcegraph/search'
 import { NotebookBlockType, SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { NotebookBlock, SymbolKind } from '@sourcegraph/shared/src/schema'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
@@ -18,7 +19,6 @@ import { WebIntegrationTestContext, createWebIntegrationTestContext } from './co
 import { createRepositoryRedirectResult, createResolveRevisionResult } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteGQLID, siteID } from './jscontext'
-import { highlightFileResult, mixedSearchStreamEvents } from './streaming-search-mocks'
 import { percySnapshotWithVariants } from './utils'
 
 const viewerSettings: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {

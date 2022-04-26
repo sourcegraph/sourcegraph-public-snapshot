@@ -1,12 +1,14 @@
 .outline {
-    position: absolute;
+    flex: 1;
     padding: 0.5rem 1rem 1rem 0.5rem;
     width: 100%;
     max-width: 20rem;
-    height: 100%;
     background-color: var(--subtle-bg-2);
     border-right: 1px solid var(--border-color);
     transition: max-width 0.3s ease;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .outline-closed {
@@ -23,6 +25,7 @@
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+    flex-shrink: 0;
 }
 
 .toggle-outline-button {
@@ -31,9 +34,9 @@
 }
 
 .scrollable-container {
-    position: relative;
-    height: 95%;
     overflow: hidden;
+    margin: 0;
+    flex: 1;
 
     &:hover {
         overflow: auto;
@@ -43,7 +46,6 @@
 .heading {
     overflow: hidden;
     white-space: nowrap;
-    text-overflow: ellipsis;
     color: var(--text-muted);
     font-size: 0.75rem;
 }
@@ -71,12 +73,23 @@
 }
 
 .heading-link {
+    display: block;
     position: relative;
     color: inherit;
 
     &:hover {
         color: inherit;
     }
+}
+
+// Together display: block, width: and max-width: have the effect of properly
+// positioning the tooltip text to right (or top) of the _visible_ text.
+.heading-link__text {
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .highlight {
