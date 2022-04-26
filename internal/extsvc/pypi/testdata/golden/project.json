@@ -1,0 +1,12 @@
+{
+  "info": {
+   "name": "tiny",
+   "version": "0.1.3"
+  },
+  "urls": [
+   {
+    "url": "https://files.pythonhosted.org/packages/e6/12/02c9293620ab8001d9fa71d8945de29c04fc374a11679bd6601649f3451e/tiny-0.1.3.tar.gz",
+    "packagetype": "sdist"
+   }
+  ]
+ }

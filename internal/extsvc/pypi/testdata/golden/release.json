@@ -1,0 +1,16 @@
+{
+  "info": {
+   "name": "hsf",
+   "version": "1.1.0"
+  },
+  "urls": [
+   {
+    "url": "https://files.pythonhosted.org/packages/9a/e4/2fc35384138868ec4c75bf368d5fd669ad7ff8f1fa8c09ad0c759b69ab88/HSF-1.1.0-py3-none-any.whl",
+    "packagetype": "bdist_wheel"
+   },
+   {
+    "url": "https://files.pythonhosted.org/packages/b5/a8/8f7872a2c4b0a5fffc6ec109cd76e500f2bf4d8ad0151f95610022d5bf52/HSF-1.1.0.tar.gz",
+    "packagetype": "sdist"
+   }
+  ]
+ }

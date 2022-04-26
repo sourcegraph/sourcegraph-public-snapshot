@@ -1,0 +1,72 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://pypi.org/pypi/tiny/json
+    method: GET
+  response:
+    body: '{"info":{"author":"Jim Shields","author_email":"jim.j.shields@gmail.com","bugtrack_url":null,"classifiers":[],"description":"UNKNOWN","description_content_type":null,"docs_url":null,"download_url":"UNKNOWN","downloads":{"last_day":-1,"last_month":-1,"last_week":-1},"home_page":"https://github.com/jimjshields/tiny","keywords":null,"license":"MIT","maintainer":null,"maintainer_email":null,"name":"tiny","package_url":"https://pypi.org/project/tiny/","platform":"UNKNOWN","project_url":"https://pypi.org/project/tiny/","project_urls":{"Download":"UNKNOWN","Homepage":"https://github.com/jimjshields/tiny"},"release_url":"https://pypi.org/project/tiny/0.1.3/","requires_dist":null,"requires_python":null,"summary":"A
+      small web framework for learning about web frameworks.","version":"0.1.3","yanked":false,"yanked_reason":null},"last_serial":1436712,"releases":{"0.1":[{"comment_text":"","digests":{"md5":"64da06c37dd029c05e27ed1d3928582b","sha256":"c3a4449e900392d90a42d42839be92b34d45962eea3d1293f240f83ab511283f"},"downloads":-1,"filename":"tiny-0.1.tar.gz","has_sig":false,"md5_digest":"64da06c37dd029c05e27ed1d3928582b","packagetype":"sdist","python_version":"source","requires_python":null,"size":2865,"upload_time":"2015-02-11T15:21:06","upload_time_iso_8601":"2015-02-11T15:21:06.675565Z","url":"https://files.pythonhosted.org/packages/43/6c/18df5e37f7e151c2344e7a96547f76db70aa243c696eb4273569eb597592/tiny-0.1.tar.gz","yanked":false,"yanked_reason":null}],"0.1.1":[{"comment_text":"","digests":{"md5":"8899fa61ab28bef541cf5cbda938cf81","sha256":"c416fcdc1818a9c7db935802313f88b1b88c303029f0beccd92c7dd8fa14e523"},"downloads":-1,"filename":"tiny-0.1.1.tar.gz","has_sig":false,"md5_digest":"8899fa61ab28bef541cf5cbda938cf81","packagetype":"sdist","python_version":"source","requires_python":null,"size":2896,"upload_time":"2015-02-11T15:56:17","upload_time_iso_8601":"2015-02-11T15:56:17.647930Z","url":"https://files.pythonhosted.org/packages/10/7e/f0b7e49d56304ee56318c9c1970222647b2b576132740eb24ba75be0fbd2/tiny-0.1.1.tar.gz","yanked":false,"yanked_reason":null}],"0.1.2":[{"comment_text":"","digests":{"md5":"f05daf24117b9af00cc6e0730ae0bd43","sha256":"d40a2b6e9714acdbfc59b1e0948fc8d0e116bb0cb26c4d782f2c646cadc4975c"},"downloads":-1,"filename":"tiny-0.1.2.tar.gz","has_sig":false,"md5_digest":"f05daf24117b9af00cc6e0730ae0bd43","packagetype":"sdist","python_version":"source","requires_python":null,"size":2902,"upload_time":"2015-02-11T16:03:07","upload_time_iso_8601":"2015-02-11T16:03:07.614601Z","url":"https://files.pythonhosted.org/packages/0e/fc/e069715b73121a8656e4b34cb555472797cd84c8dd8663ffe262ddccaa26/tiny-0.1.2.tar.gz","yanked":false,"yanked_reason":null}],"0.1.3":[{"comment_text":"","digests":{"md5":"6f86d66874efcc11cc28c776dabe4fd0","sha256":"a4961cca9774b9e5b8fd752c67e7657926d78f8591575d3a449555fdd95808dd"},"downloads":-1,"filename":"tiny-0.1.3.tar.gz","has_sig":false,"md5_digest":"6f86d66874efcc11cc28c776dabe4fd0","packagetype":"sdist","python_version":"source","requires_python":null,"size":4406,"upload_time":"2015-02-24T22:01:04","upload_time_iso_8601":"2015-02-24T22:01:04.860501Z","url":"https://files.pythonhosted.org/packages/e6/12/02c9293620ab8001d9fa71d8945de29c04fc374a11679bd6601649f3451e/tiny-0.1.3.tar.gz","yanked":false,"yanked_reason":null}]},"urls":[{"comment_text":"","digests":{"md5":"6f86d66874efcc11cc28c776dabe4fd0","sha256":"a4961cca9774b9e5b8fd752c67e7657926d78f8591575d3a449555fdd95808dd"},"downloads":-1,"filename":"tiny-0.1.3.tar.gz","has_sig":false,"md5_digest":"6f86d66874efcc11cc28c776dabe4fd0","packagetype":"sdist","python_version":"source","requires_python":null,"size":4406,"upload_time":"2015-02-24T22:01:04","upload_time_iso_8601":"2015-02-24T22:01:04.860501Z","url":"https://files.pythonhosted.org/packages/e6/12/02c9293620ab8001d9fa71d8945de29c04fc374a11679bd6601649f3451e/tiny-0.1.3.tar.gz","yanked":false,"yanked_reason":null}],"vulnerabilities":[]}'
+    headers:
+      Accept-Ranges:
+      - bytes
+      Access-Control-Allow-Headers:
+      - Content-Type, If-Match, If-Modified-Since, If-None-Match, If-Unmodified-Since
+      Access-Control-Allow-Methods:
+      - GET
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - X-PyPI-Last-Serial
+      Access-Control-Max-Age:
+      - "86400"
+      Cache-Control:
+      - max-age=900, public
+      Content-Security-Policy:
+      - base-uri 'self'; block-all-mixed-content; connect-src 'self' https://api.github.com/repos/
+        fastly-insights.com *.fastly-insights.com *.ethicalads.io https://api.pwnedpasswords.com
+        https://2p66nmmycsj3.statuspage.io; default-src 'none'; font-src 'self' fonts.gstatic.com;
+        form-action 'self'; frame-ancestors 'none'; frame-src 'none'; img-src 'self'
+        https://warehouse-camo.ingress.cmh1.psfhosted.org/ www.google-analytics.com
+        *.fastly-insights.com *.ethicalads.io; script-src 'self' www.googletagmanager.com
+        www.google-analytics.com *.fastly-insights.com *.ethicalads.io 'sha256-U3hKDidudIaxBDEzwGJApJgPEf2mWk6cfMWghrAa6i0=';
+        style-src 'self' fonts.googleapis.com *.ethicalads.io 'sha256-2YHqZokjiizkHi1Zt+6ar0XJ0OeEy/egBnlm+MDMtrM='
+        'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU='; worker-src *.fastly-insights.com
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 26 Apr 2022 13:02:46 GMT
+      Etag:
+      - '"PXlEPpGDLPN0FW2AfOuNRQ"'
+      Referrer-Policy:
+      - origin-when-cross-origin
+      Server:
+      - nginx/1.13.9
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Vary:
+      - Accept-Encoding
+      X-Cache:
+      - HIT, MISS
+      X-Cache-Hits:
+      - 1, 0
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Permitted-Cross-Domain-Policies:
+      - none
+      X-Pypi-Last-Serial:
+      - "1436712"
+      X-Served-By:
+      - cache-iad-kiad7000048-IAD, cache-fra19174-FRA
+      X-Timer:
+      - S1650978166.453998,VS0,VE106
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 200 OK
+    code: 200
+    duration: ""

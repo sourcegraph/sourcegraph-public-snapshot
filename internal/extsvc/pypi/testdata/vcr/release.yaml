@@ -1,0 +1,204 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://pypi.org/pypi/hsf/1.1.0/json
+    method: GET
+  response:
+    body: '{"info":{"author":"Cl\u00e9ment POIRET","author_email":"poiret.clement@outlook.fr","bugtrack_url":null,"classifiers":["Development
+      Status :: 5 - Production/Stable","License :: OSI Approved :: MIT License","Programming
+      Language :: Python :: 3","Programming Language :: Python :: 3.8","Programming
+      Language :: Python :: 3.9","Programming Language :: Python :: 3.10","Topic ::
+      Scientific/Engineering :: Bio-Informatics","Topic :: Scientific/Engineering
+      :: Image Processing"],"description":"======================================\nHippocampal
+      Segmentation Factory (HSF)\n======================================\n\nExhaustive
+      documentation available at: `hsf.rtfd.io <https://hsf.rtfd.io/>`_\n\n**Current
+      Models version:** 3.0.0\n\n.. list-table::\n    :header-rows: 1\n\n    * - Python
+      Package\n      - Code Quality\n      - Misc\n    * - .. image:: https://github.com/clementpoiret/HSF/actions/workflows/python-app.yml/badge.svg?branch=master\n        ..
+      image:: https://badge.fury.io/py/hsf.svg\n           :target: https://badge.fury.io/py/hsf\n        ..
+      image:: https://img.shields.io/pypi/dm/hsf\n           :alt: PyPI - Downloads\n      -
+      .. image:: https://app.codacy.com/project/badge/Grade/cf02d1f84739401ba695e24f333c23b7\n           :target:
+      https://www.codacy.com/gh/clementpoiret/HSF/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=clementpoiret/HSF&amp;utm_campaign=Badge_Grade\n        ..
+      image:: https://app.codacy.com/project/badge/Coverage/cf02d1f84739401ba695e24f333c23b7\n           :target:
+      https://www.codacy.com/gh/clementpoiret/HSF/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=clementpoiret/HSF&amp;utm_campaign=Badge_Grade\n        ..
+      image:: https://api.codeclimate.com/v1/badges/e0bf481dcbf3eecebefd/maintainability\n           :target:
+      https://codeclimate.com/github/clementpoiret/HSF/maintainability\n           :alt:
+      Maintainability\n      - .. image:: https://readthedocs.org/projects/hsf/badge/?version=latest\n           :target:
+      https://hsf.readthedocs.io/en/latest/?badge=latest\n           :alt: Documentation
+      Status\n        .. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.5527122.svg\n           :target:
+      https://doi.org/10.5281/zenodo.5527122\n\n\nThe Hippocampal Segmentation Factory
+      (HSF) is a Python package for\nthe segmentation of the hippocampal subfields
+      in raw MRI volumes.\n\n.. image:: https://raw.githubusercontent.com/clementpoiret/HSF/master/docs/resources/header.svg\n\nThe
+      main idea is to have a one-liner tool that allows the user to\nsegment the hippocampal
+      subfields in a given raw image (T1w or T2w), while keeping\nas much modularity
+      and customization options as possible.\n\nHSF will be able to segment the following
+      subfields:\n\n- Dentate gyrus (DG),\n- Cornu Ammonis (CA1, CA2 & CA3) in a flexible
+      way (e.g. you can ask to combine CA2 and CA3),\n- Subiculum (SUB).\n\nHSF will
+      segment the hippocampus from head to tail: it will produce\nan homogeneous segmentation
+      from the anterior hippocampus (head), to\nthe posterior hippocampus (tail),
+      without assigning a specific head\nor tail class.\n\nHSF results from a collaborative
+      effort:\n\n1. We are continuously working on improving the segmentation of the
+      subfields,\n   mainly by adding new manually segmented MRIs (feel free to send
+      us yours if you can, thanks!)\n2. HSF proposes a \"Model Hub\", meaning that
+      anyone can distribute their own ONNX segmentation\n   model. Just send us a
+      small `*.yaml` config file, and the end-user will effortlessly be able to\n   use
+      HSF with your model.\n\nPlease note that the tool is still under development
+      and is not yet\nready for production use. It uses multiple expert deep learning
+      models\ntrained on 700+ manually segmented hippocampi which are not yet fully
+      polished.\n\nHSF uses inference sessions provided by `ONNXRuntime <https://onnxruntime.ai>`_,\nwhich
+      means that it can be used *theoretically* on Windows, MacOS and Linux,\nand
+      the following hardware accelerations: CPU, CUDA, DirectML, OneDNN,\nOpenVINO,
+      TensorRT, NUPHAR, Vitis AI, ACL, ArmNN, MIGraphX, and Rockchip NPU.\nPlease
+      be aware that we do not tested all possible configurations, as HSF\nhas been
+      tested only on CPU and CUDA on Linux (Debian-based and Arch-based distros).\n\nSince
+      v1.0.0, HSF also provides a `DeepSparse backend <https://neuralmagic.com/technology/>`_\nwhich
+      can be used in conjunction with pruned and int8 quantized models\nto deliver
+      a much faster CPU inference speed (see [Hardware Acceleration](user-guide/configuration.md)\nsection).\n\n\nTable
+      of Contents...\n====================\n\n.. contents:: ...To guide you in the
+      challenging world of hippocampal subfields segmentation :)\n\n\nInstallation\n============\n\nTo
+      install the package, first setup an environment suitable for your backend (e.g.
+      `ONNX Runtime <https://onnxruntime.ai>`_).\n\nIf the environment isn''t properly
+      configured, you might be stuck running inference sessions on CPU, which is not
+      optimal unless you use the DeepSparse backend.\n\nThen, simply run:\n\n``pip
+      install hsf``.\n\n\nQuick start\n===========\n\nOnce installed, HSF can be used
+      simply by running the ``hsf`` command.\n\nFor example, to segment a set of T2w
+      MRIs of 0.3*0.3*1.2, run:\n\n``hsf files.path=\"~/Dataset/MRIs/\" files.pattern=\"*T2w.nii\"
+      roiloc.contrast=\"t2\" roiloc.margin=[10,2,10] segmentation=bagging_accurate
+      segmentation.ca_mode=\"1/2/3\"``\n\nNow, let''s dive into the details.\n\n``files.path``
+      and ``files.pattern`` are mandatory parameters.\nThey specify the path to the
+      dataset (or MRI) and the pattern to find the files.\n\nAll parameters starting
+      with ``roiloc.`` are directly linked to our home-made ROI location algorithm.\nYou
+      can find more information about it in the `related GitHub repository <https://github.com/clementpoiret/ROILoc>`_.\n\nTo
+      date, we propose 4 different segmentation algorithms (from the fastest to the
+      most accurate):\n\n- ``single_fast``: a segmentation is performed on the whole
+      volume by only one model,\n- ``single_accurate``: a single model segments the
+      same volume that has been augmented 20 times through TTA,\n- ``single_sq``:
+      like ``single_accurate``, but using int8-quantized sparse models for a fast
+      and efficient inference,\n- ``bagging_fast``: a bagging ensemble of 5 models
+      is used to segment the volume without TTA,\n- ``bagging_accurate``: a bagging
+      ensemble of 5 models is used to segment the volume with TTA,\n- ``bagging_sq``:
+      like ``bagging_accurate``, but using int8-quantized sparse models for a fast
+      and efficient inference.\n\nFinally, ``segmentation.ca_mode`` is a parameter
+      that allows to combine CA1, CA2 and CA3 subfields.\nIt is particularly useful
+      when you want to segment low-resolution images where it makes no sense to\ndistinguish
+      between CA''s subfields.\n\n\nConfiguration\n=============\n\nAs HSF is pretty
+      modular, you can easily configure it to your needs thanks to Hydra.\n\nCompose
+      your configuration from those groups (group=option)\n\n* augmentation: default\n*
+      files: default\n* hardware: deepsparse, onnxruntime\n* multispectrality: default\n*
+      roiloc: default_corot2, default_t2iso\n* segmentation: bagging_accurate, bagging_fast,
+      bagging_sq, single_accurate, single_fast, single_sq\n\nOverride anything in
+      the config (e.g. hsf roiloc.margin=[16,2,16])\n\nYou can also add specific configs
+      absent from the default yaml files\n(e.g. hsf +augmentation.elastic.image_interpolation=sitkBSpline)\n\nFields
+      set with ??? are mandatory.\n\n   files:\n\n   * path: ???\n   * pattern: ???\n   *
+      mask_pattern: ``*mask.nii.gz``\n   * output_dir: hsf_outputs\n\n   roiloc:\n\n   *
+      contrast: t2\n   * roi: hippocampus\n   * bet: false\n   * transform_type: AffineFast\n   *
+      margin: [8, 8, 8]\n   * rightoffset: [0, 0, 0]\n   * leftoffset: [0, 0, 0]\n\n   segmentation:\n\n   *
+      ca_mode: 1/2/3\n   * models_path: ~/.hsf/models\n   * models:\n      *  arunet_bag_0.onnx:\n      *  url:
+      https://zenodo.org/record/5524594/files/arunet_bag0.onnx?download=1\n      *  xxh3_64:
+      d0de65baa81d9382\n      * segmentation:\n         * test_time_augmentation:
+      true\n         * test_time_num_aug: 20\n\n   augmentation:\n\n   * flip:\n      *
+      axes:\n         * LR\n      * flip_probability: 0.5\n      * affine_probability:
+      0.75\n      * affine:\n         * scales: 0.2\n         * degrees: 15\n         *
+      translation: 3\n         * isotropic: false\n      * elastic_probability: 0.25\n      *
+      elastic:\n         * num_control_points: 4\n         * max_displacement: 4\n         *
+      locked_borders: 0\n\n   multispectrality:\n   \n   * pattern: null\n   * same_space:
+      true\n   * registration:\n     * type_of_transform: Affine\n\n   hardware:\n  \n   *
+      engine: onnxruntime\n   * engine_settings:\n     * execution_providers: [\"CUDAExecutionProvider\",\"CPUExecutionProvider\"]\n     *
+      batch_size: 1\n\n\nChangelogs\n==========\n\nHSF\n---\n\n**Version 1.1.0**\n\n*
+      New optional multispectral mode de segment from both T1 AND T2 images\n* Bug
+      fixes and optimizations\n\n**Version 1.0.1**\n\n* Fix batch size issue\n\n**Version
+      1.0.0**\n\n* Added Uncertainty Maps for post-hoc analysis of segmentation results,\n*
+      Support for DeepSparse backend (CPU inference only),\n* Introduced **HSF''s
+      Model Hub**,\n* Support for batch inference (all backends),\n* Check for updates
+      at startup,\n* Bug fixes and optimizations.\n\n**Version 0.1.2**\n\n* Added
+      build-in support for offsets to recenter the hippocampus in ROILoc,\n* Added
+      support for the customization of Hardware Execution Providers.\n\n**Version
+      0.1.1**\n\n* Fixed CUDA Execution Provider.\n\n**Version 0.1.0**\n\n* Initial
+      release.\n\n\nModels\n------\n\n**Version 3.0.0**\n\n* More data (coming from
+      the Human Connectome Project),\n* New sparse and int8-quantized models.\n\n**Version
+      2.1.1**\n\n* Fixed some tails in 3T CoroT2w images (MemoDev)\n\n**Version 2.1.0**\n\n*
+      Corrected incorrect T1w labels used for training,\n* Trained on slightly more
+      data (T1w @1.5T & 3T, T2w; Healthy, Epilepsy & Alzheimer)\n\n**Version 2.0.0**\n\n*
+      Trained with more T1w and T2w MRIs,\n* Trained on more hippocampal sclerosis
+      and Alzheimer''s disease cases,\n* Updated training pipeline (hyperparameter
+      tuning),\n* `single` models are now independant from bags.\n\n**Version 1.0.0**\n\n*
+      Initial release.\n\n\nDocumentation\n==========================\n\nFor more
+      details about HSF''s configuration and internal parameters, please refer to\nour
+      `documentation <https://hsf.rtfd.io/>`_.\n\n\nAuthorship, Affiliations and Citations\n======================================\n\nAuthorship:\n\n*
+      C Poiret, UNIACT-NeuroSpin, CEA, Saclay University, France,\n* A Bouyeure, UNIACT-NeuroSpin,
+      CEA, Saclay University, France,\n* S Patil, UNIACT-NeuroSpin, CEA, Saclay University,
+      France,\n* C Boniteau, UNIACT-NeuroSpin, CEA, Saclay University, France,\n*
+      M Noulhiane, UNIACT-NeuroSpin, CEA, Saclay University, France.\n\nIf you use
+      this work, please cite it as follows:\n\n``C. Poiret, et al. (2021). clementpoiret/HSF.
+      Zenodo. https://doi.org/10.5281/zenodo.5527122``\n\nThis work licensed under
+      MIT license was supported in part by the Fondation de France and the IDRIS/GENCI
+      for the HPE Supercomputer Jean Zay.\n","description_content_type":"text/x-rst","docs_url":null,"download_url":"","downloads":{"last_day":-1,"last_month":-1,"last_week":-1},"home_page":"https://hippomnesis.dev","keywords":"mri,brain,hippocampus,segmentation,deep
+      learning","license":"MIT","maintainer":"","maintainer_email":"","name":"hsf","package_url":"https://pypi.org/project/hsf/","platform":null,"project_url":"https://pypi.org/project/hsf/","project_urls":{"Homepage":"https://hippomnesis.dev","Repository":"https://github.com/clementpoiret/HSF"},"release_url":"https://pypi.org/project/hsf/1.1.0/","requires_dist":["torchio
+      (>=0.18.56,<0.19.0)","roiloc (>0.2.8)","onnxruntime (>=1.8.1,<2.0.0)","hydra-core
+      (>=1.1.1,<2.0.0)","wget (>=3.2,<4.0)","antspyx (>0.2.9)","xxhash (>=2.0.2,<3.0.0)","rich
+      (>11.0.0)","deepsparse (>0.8.0,<1.0.0)"],"requires_python":">=3.7.1,<4.0.0","summary":"A
+      simple yet exhaustive segmentation tool of the Hippocampal Subfields in T1w
+      and T2w MRIs.","version":"1.1.0","yanked":false,"yanked_reason":null},"last_serial":13627493,"releases":{"0.1.0":[{"comment_text":"","digests":{"md5":"a5998a1bbdff362a22e2a65719fab3e9","sha256":"3cb29c8d760de272ba0dc527e2daa88b95fc6c195ce4c434d1c17b9c7422ba89"},"downloads":-1,"filename":"HSF-0.1.0-py3-none-any.whl","has_sig":false,"md5_digest":"a5998a1bbdff362a22e2a65719fab3e9","packagetype":"bdist_wheel","python_version":"py3","requires_python":">=3.9,<4.0","size":15394,"upload_time":"2021-09-24T18:49:34","upload_time_iso_8601":"2021-09-24T18:49:34.005584Z","url":"https://files.pythonhosted.org/packages/b5/da/1c5a00bcdd5bf18ca49f40f372528b81aa455d8bc32729d8f078c49ffb5a/HSF-0.1.0-py3-none-any.whl","yanked":false,"yanked_reason":null},{"comment_text":"","digests":{"md5":"5fe1d3e06ce17899375a90da3418c40d","sha256":"5e18b59b79636875ab7e963311654bfb075e8329815bcbf774d5d280b452c5e2"},"downloads":-1,"filename":"HSF-0.1.0.tar.gz","has_sig":false,"md5_digest":"5fe1d3e06ce17899375a90da3418c40d","packagetype":"sdist","python_version":"source","requires_python":">=3.9,<4.0","size":14693,"upload_time":"2021-09-24T18:49:35","upload_time_iso_8601":"2021-09-24T18:49:35.772247Z","url":"https://files.pythonhosted.org/packages/5f/f3/3359e7a7c7f1ffc9de16ade5ac139d43512832a1be3350fcecd37d3cd61b/HSF-0.1.0.tar.gz","yanked":false,"yanked_reason":null}],"0.1.1":[{"comment_text":"","digests":{"md5":"4fb0e81f1a1924ffc610ab1443d0bde0","sha256":"b67a79b64d87d7b442618083d65022187fc0057a1ddbaa9e1ed6c6e20b0d955c"},"downloads":-1,"filename":"HSF-0.1.1-py3-none-any.whl","has_sig":false,"md5_digest":"4fb0e81f1a1924ffc610ab1443d0bde0","packagetype":"bdist_wheel","python_version":"py3","requires_python":">=3.9,<4.0","size":15690,"upload_time":"2021-09-25T19:06:51","upload_time_iso_8601":"2021-09-25T19:06:51.728771Z","url":"https://files.pythonhosted.org/packages/17/8d/6737124807d880c2bad6765e38f67967ddbda851980f98f85cfd9625f7ba/HSF-0.1.1-py3-none-any.whl","yanked":false,"yanked_reason":null},{"comment_text":"","digests":{"md5":"ca0a4432f09decd97109e95273fbde7d","sha256":"55be6032604b9040d80a5a15e8880f2669c15b8f82977743ffc54b7608f0868c"},"downloads":-1,"filename":"HSF-0.1.1.tar.gz","has_sig":false,"md5_digest":"ca0a4432f09decd97109e95273fbde7d","packagetype":"sdist","python_version":"source","requires_python":">=3.9,<4.0","size":15256,"upload_time":"2021-09-25T19:06:53","upload_time_iso_8601":"2021-09-25T19:06:53.575324Z","url":"https://files.pythonhosted.org/packages/bc/30/bd41780fdec4f249ac43c48fd8b721d33b051dae73d3e1ad68164c5cde95/HSF-0.1.1.tar.gz","yanked":false,"yanked_reason":null}],"0.1.2":[{"comment_text":"","digests":{"md5":"377dd79a36f0883e6f292ab0dee7ebf8","sha256":"1bf98ea1010b690e09b3beb869607c416594ef10e698cf8a9a24eda6d99f0e65"},"downloads":-1,"filename":"HSF-0.1.2-py3-none-any.whl","has_sig":false,"md5_digest":"377dd79a36f0883e6f292ab0dee7ebf8","packagetype":"bdist_wheel","python_version":"py3","requires_python":">=3.9,<4.0","size":16589,"upload_time":"2021-09-27T12:39:29","upload_time_iso_8601":"2021-09-27T12:39:29.090648Z","url":"https://files.pythonhosted.org/packages/f1/e0/a7c5ad8e3472626c665a480a91f2e04d010080d4bdb5c59588b458f5c13e/HSF-0.1.2-py3-none-any.whl","yanked":false,"yanked_reason":null},{"comment_text":"","digests":{"md5":"22878d48fa19b77dd35634aa9348b02a","sha256":"305ce247af6eb0eca495937032d2cfbea2fa3448ff8cb73e31b7579135d64ae2"},"downloads":-1,"filename":"HSF-0.1.2.tar.gz","has_sig":false,"md5_digest":"22878d48fa19b77dd35634aa9348b02a","packagetype":"sdist","python_version":"source","requires_python":">=3.9,<4.0","size":16661,"upload_time":"2021-09-27T12:39:30","upload_time_iso_8601":"2021-09-27T12:39:30.958576Z","url":"https://files.pythonhosted.org/packages/5e/ce/6cd3767a9c53c32a73af487818c4c7928a56b495da22e5a78a61eba71f59/HSF-0.1.2.tar.gz","yanked":false,"yanked_reason":null}],"1.0.0":[{"comment_text":"","digests":{"md5":"78ecffe0e37813eca30205947a62f1fb","sha256":"e99fea83a9a96cda07245c44b1bf616b1c1ea0ac86c72dbd55aef053b7f6486e"},"downloads":-1,"filename":"HSF-1.0.0-py3-none-any.whl","has_sig":false,"md5_digest":"78ecffe0e37813eca30205947a62f1fb","packagetype":"bdist_wheel","python_version":"py3","requires_python":">=3.7.1,<4.0.0","size":20942,"upload_time":"2021-11-12T11:47:07","upload_time_iso_8601":"2021-11-12T11:47:07.465725Z","url":"https://files.pythonhosted.org/packages/4e/8a/6cfbd33e66ce34ee97f45ac117927aa38fa16477f6f42933bf2faaba9fa6/HSF-1.0.0-py3-none-any.whl","yanked":false,"yanked_reason":null},{"comment_text":"","digests":{"md5":"9eb70b281078e227c17e4467a1cc0b29","sha256":"0c09bd49216b1422b5c7969f50acecd829ddc4ee2632e98b72ed7aafaaf400ab"},"downloads":-1,"filename":"HSF-1.0.0.tar.gz","has_sig":false,"md5_digest":"9eb70b281078e227c17e4467a1cc0b29","packagetype":"sdist","python_version":"source","requires_python":">=3.7.1,<4.0.0","size":19455,"upload_time":"2021-11-12T11:47:08","upload_time_iso_8601":"2021-11-12T11:47:08.840016Z","url":"https://files.pythonhosted.org/packages/7a/a8/7c999242c8f3237547bc8084ebd030dd8fb21b36ae2e3a4855ae6ad8ee12/HSF-1.0.0.tar.gz","yanked":false,"yanked_reason":null}],"1.0.1":[{"comment_text":"","digests":{"md5":"7ed9f96ee30edbe7095e7c2c7727e56e","sha256":"7c0c91fcb0572a907a95bbbaf2e7bf91fb1da7d65587b11fa7443b99efd0b640"},"downloads":-1,"filename":"HSF-1.0.1-py3-none-any.whl","has_sig":false,"md5_digest":"7ed9f96ee30edbe7095e7c2c7727e56e","packagetype":"bdist_wheel","python_version":"py3","requires_python":">=3.7.1,<4.0.0","size":21108,"upload_time":"2021-12-07T19:39:18","upload_time_iso_8601":"2021-12-07T19:39:18.480197Z","url":"https://files.pythonhosted.org/packages/97/a3/f28fabc6a0d709b878514fdeb4506a91113f4a0ef8f850cf2d7b9c11ca63/HSF-1.0.1-py3-none-any.whl","yanked":false,"yanked_reason":null},{"comment_text":"","digests":{"md5":"cfb048d977911a6bd0b7f22b1ce9fbb9","sha256":"69ab5f86ba492699ffc85efe2ebb56deadb82a297be14da3e4efe63328b0b43a"},"downloads":-1,"filename":"HSF-1.0.1.tar.gz","has_sig":false,"md5_digest":"cfb048d977911a6bd0b7f22b1ce9fbb9","packagetype":"sdist","python_version":"source","requires_python":">=3.7.1,<4.0.0","size":19587,"upload_time":"2021-12-07T19:39:20","upload_time_iso_8601":"2021-12-07T19:39:20.477263Z","url":"https://files.pythonhosted.org/packages/52/d6/6785b6c670c036cf497bca1eb849a0d3e9073c6672e02ddd11e3bafb566f/HSF-1.0.1.tar.gz","yanked":false,"yanked_reason":null}],"1.1.0":[{"comment_text":"","digests":{"md5":"ae53819f38a735762a46518b498f5469","sha256":"05028d3de037d739e7a358c569787b6842597bdef3ef659d2822d13631f4406a"},"downloads":-1,"filename":"HSF-1.1.0-py3-none-any.whl","has_sig":false,"md5_digest":"ae53819f38a735762a46518b498f5469","packagetype":"bdist_wheel","python_version":"py3","requires_python":">=3.7.1,<4.0.0","size":27767,"upload_time":"2022-04-26T13:04:15","upload_time_iso_8601":"2022-04-26T13:04:15.151209Z","url":"https://files.pythonhosted.org/packages/9a/e4/2fc35384138868ec4c75bf368d5fd669ad7ff8f1fa8c09ad0c759b69ab88/HSF-1.1.0-py3-none-any.whl","yanked":false,"yanked_reason":null},{"comment_text":"","digests":{"md5":"be4d8add7306f9f005f7fda731503e3d","sha256":"18b1bd608f2bf5c96d8c0498258c5cd92da81790c48fb5753df9751b38390da8"},"downloads":-1,"filename":"HSF-1.1.0.tar.gz","has_sig":false,"md5_digest":"be4d8add7306f9f005f7fda731503e3d","packagetype":"sdist","python_version":"source","requires_python":">=3.7.1,<4.0.0","size":23856,"upload_time":"2022-04-26T13:04:17","upload_time_iso_8601":"2022-04-26T13:04:17.306372Z","url":"https://files.pythonhosted.org/packages/b5/a8/8f7872a2c4b0a5fffc6ec109cd76e500f2bf4d8ad0151f95610022d5bf52/HSF-1.1.0.tar.gz","yanked":false,"yanked_reason":null}]},"urls":[{"comment_text":"","digests":{"md5":"ae53819f38a735762a46518b498f5469","sha256":"05028d3de037d739e7a358c569787b6842597bdef3ef659d2822d13631f4406a"},"downloads":-1,"filename":"HSF-1.1.0-py3-none-any.whl","has_sig":false,"md5_digest":"ae53819f38a735762a46518b498f5469","packagetype":"bdist_wheel","python_version":"py3","requires_python":">=3.7.1,<4.0.0","size":27767,"upload_time":"2022-04-26T13:04:15","upload_time_iso_8601":"2022-04-26T13:04:15.151209Z","url":"https://files.pythonhosted.org/packages/9a/e4/2fc35384138868ec4c75bf368d5fd669ad7ff8f1fa8c09ad0c759b69ab88/HSF-1.1.0-py3-none-any.whl","yanked":false,"yanked_reason":null},{"comment_text":"","digests":{"md5":"be4d8add7306f9f005f7fda731503e3d","sha256":"18b1bd608f2bf5c96d8c0498258c5cd92da81790c48fb5753df9751b38390da8"},"downloads":-1,"filename":"HSF-1.1.0.tar.gz","has_sig":false,"md5_digest":"be4d8add7306f9f005f7fda731503e3d","packagetype":"sdist","python_version":"source","requires_python":">=3.7.1,<4.0.0","size":23856,"upload_time":"2022-04-26T13:04:17","upload_time_iso_8601":"2022-04-26T13:04:17.306372Z","url":"https://files.pythonhosted.org/packages/b5/a8/8f7872a2c4b0a5fffc6ec109cd76e500f2bf4d8ad0151f95610022d5bf52/HSF-1.1.0.tar.gz","yanked":false,"yanked_reason":null}],"vulnerabilities":[]}'
+    headers:
+      Accept-Ranges:
+      - bytes
+      Access-Control-Allow-Headers:
+      - Content-Type, If-Match, If-Modified-Since, If-None-Match, If-Unmodified-Since
+      Access-Control-Allow-Methods:
+      - GET
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - X-PyPI-Last-Serial
+      Access-Control-Max-Age:
+      - "86400"
+      Cache-Control:
+      - max-age=900, public
+      Content-Security-Policy:
+      - base-uri 'self'; block-all-mixed-content; connect-src 'self' https://api.github.com/repos/
+        fastly-insights.com *.fastly-insights.com *.ethicalads.io https://api.pwnedpasswords.com
+        https://2p66nmmycsj3.statuspage.io; default-src 'none'; font-src 'self' fonts.gstatic.com;
+        form-action 'self'; frame-ancestors 'none'; frame-src 'none'; img-src 'self'
+        https://warehouse-camo.ingress.cmh1.psfhosted.org/ www.google-analytics.com
+        *.fastly-insights.com *.ethicalads.io; script-src 'self' www.googletagmanager.com
+        www.google-analytics.com *.fastly-insights.com *.ethicalads.io 'sha256-U3hKDidudIaxBDEzwGJApJgPEf2mWk6cfMWghrAa6i0=';
+        style-src 'self' fonts.googleapis.com *.ethicalads.io 'sha256-2YHqZokjiizkHi1Zt+6ar0XJ0OeEy/egBnlm+MDMtrM='
+        'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU='; worker-src *.fastly-insights.com
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 26 Apr 2022 13:05:35 GMT
+      Etag:
+      - '"f/91zf43IW/1qa+AHjEZww"'
+      Referrer-Policy:
+      - origin-when-cross-origin
+      Server:
+      - nginx/1.13.9
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Vary:
+      - Accept-Encoding
+      X-Cache:
+      - HIT, MISS
+      X-Cache-Hits:
+      - 1, 0
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Permitted-Cross-Domain-Policies:
+      - none
+      X-Pypi-Last-Serial:
+      - "13627493"
+      X-Served-By:
+      - cache-iad-kiad7000162-IAD, cache-hhn4035-HHN
+      X-Timer:
+      - S1650978336.836136,VS0,VE102
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 200 OK
+    code: 200
+    duration: ""

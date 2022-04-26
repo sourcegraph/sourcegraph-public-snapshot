@@ -1,0 +1,716 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://pypi.org/pypi/hsf/1.1.0/json
+    method: GET
+  response:
+    body: '{"info":{"author":"Cl\u00e9ment POIRET","author_email":"poiret.clement@outlook.fr","bugtrack_url":null,"classifiers":["Development
+      Status :: 5 - Production/Stable","License :: OSI Approved :: MIT License","Programming
+      Language :: Python :: 3","Programming Language :: Python :: 3.8","Programming
+      Language :: Python :: 3.9","Programming Language :: Python :: 3.10","Topic ::
+      Scientific/Engineering :: Bio-Informatics","Topic :: Scientific/Engineering
+      :: Image Processing"],"description":"======================================\nHippocampal
+      Segmentation Factory (HSF)\n======================================\n\nExhaustive
+      documentation available at: `hsf.rtfd.io <https://hsf.rtfd.io/>`_\n\n**Current
+      Models version:** 3.0.0\n\n.. list-table::\n    :header-rows: 1\n\n    * - Python
+      Package\n      - Code Quality\n      - Misc\n    * - .. image:: https://github.com/clementpoiret/HSF/actions/workflows/python-app.yml/badge.svg?branch=master\n        ..
+      image:: https://badge.fury.io/py/hsf.svg\n           :target: https://badge.fury.io/py/hsf\n        ..
+      image:: https://img.shields.io/pypi/dm/hsf\n           :alt: PyPI - Downloads\n      -
+      .. image:: https://app.codacy.com/project/badge/Grade/cf02d1f84739401ba695e24f333c23b7\n           :target:
+      https://www.codacy.com/gh/clementpoiret/HSF/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=clementpoiret/HSF&amp;utm_campaign=Badge_Grade\n        ..
+      image:: https://app.codacy.com/project/badge/Coverage/cf02d1f84739401ba695e24f333c23b7\n           :target:
+      https://www.codacy.com/gh/clementpoiret/HSF/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=clementpoiret/HSF&amp;utm_campaign=Badge_Grade\n        ..
+      image:: https://api.codeclimate.com/v1/badges/e0bf481dcbf3eecebefd/maintainability\n           :target:
+      https://codeclimate.com/github/clementpoiret/HSF/maintainability\n           :alt:
+      Maintainability\n      - .. image:: https://readthedocs.org/projects/hsf/badge/?version=latest\n           :target:
+      https://hsf.readthedocs.io/en/latest/?badge=latest\n           :alt: Documentation
+      Status\n        .. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.5527122.svg\n           :target:
+      https://doi.org/10.5281/zenodo.5527122\n\n\nThe Hippocampal Segmentation Factory
+      (HSF) is a Python package for\nthe segmentation of the hippocampal subfields
+      in raw MRI volumes.\n\n.. image:: https://raw.githubusercontent.com/clementpoiret/HSF/master/docs/resources/header.svg\n\nThe
+      main idea is to have a one-liner tool that allows the user to\nsegment the hippocampal
+      subfields in a given raw image (T1w or T2w), while keeping\nas much modularity
+      and customization options as possible.\n\nHSF will be able to segment the following
+      subfields:\n\n- Dentate gyrus (DG),\n- Cornu Ammonis (CA1, CA2 & CA3) in a flexible
+      way (e.g. you can ask to combine CA2 and CA3),\n- Subiculum (SUB).\n\nHSF will
+      segment the hippocampus from head to tail: it will produce\nan homogeneous segmentation
+      from the anterior hippocampus (head), to\nthe posterior hippocampus (tail),
+      without assigning a specific head\nor tail class.\n\nHSF results from a collaborative
+      effort:\n\n1. We are continuously working on improving the segmentation of the
+      subfields,\n   mainly by adding new manually segmented MRIs (feel free to send
+      us yours if you can, thanks!)\n2. HSF proposes a \"Model Hub\", meaning that
+      anyone can distribute their own ONNX segmentation\n   model. Just send us a
+      small `*.yaml` config file, and the end-user will effortlessly be able to\n   use
+      HSF with your model.\n\nPlease note that the tool is still under development
+      and is not yet\nready for production use. It uses multiple expert deep learning
+      models\ntrained on 700+ manually segmented hippocampi which are not yet fully
+      polished.\n\nHSF uses inference sessions provided by `ONNXRuntime <https://onnxruntime.ai>`_,\nwhich
+      means that it can be used *theoretically* on Windows, MacOS and Linux,\nand
+      the following hardware accelerations: CPU, CUDA, DirectML, OneDNN,\nOpenVINO,
+      TensorRT, NUPHAR, Vitis AI, ACL, ArmNN, MIGraphX, and Rockchip NPU.\nPlease
+      be aware that we do not tested all possible configurations, as HSF\nhas been
+      tested only on CPU and CUDA on Linux (Debian-based and Arch-based distros).\n\nSince
+      v1.0.0, HSF also provides a `DeepSparse backend <https://neuralmagic.com/technology/>`_\nwhich
+      can be used in conjunction with pruned and int8 quantized models\nto deliver
+      a much faster CPU inference speed (see [Hardware Acceleration](user-guide/configuration.md)\nsection).\n\n\nTable
+      of Contents...\n====================\n\n.. contents:: ...To guide you in the
+      challenging world of hippocampal subfields segmentation :)\n\n\nInstallation\n============\n\nTo
+      install the package, first setup an environment suitable for your backend (e.g.
+      `ONNX Runtime <https://onnxruntime.ai>`_).\n\nIf the environment isn''t properly
+      configured, you might be stuck running inference sessions on CPU, which is not
+      optimal unless you use the DeepSparse backend.\n\nThen, simply run:\n\n``pip
+      install hsf``.\n\n\nQuick start\n===========\n\nOnce installed, HSF can be used
+      simply by running the ``hsf`` command.\n\nFor example, to segment a set of T2w
+      MRIs of 0.3*0.3*1.2, run:\n\n``hsf files.path=\"~/Dataset/MRIs/\" files.pattern=\"*T2w.nii\"
+      roiloc.contrast=\"t2\" roiloc.margin=[10,2,10] segmentation=bagging_accurate
+      segmentation.ca_mode=\"1/2/3\"``\n\nNow, let''s dive into the details.\n\n``files.path``
+      and ``files.pattern`` are mandatory parameters.\nThey specify the path to the
+      dataset (or MRI) and the pattern to find the files.\n\nAll parameters starting
+      with ``roiloc.`` are directly linked to our home-made ROI location algorithm.\nYou
+      can find more information about it in the `related GitHub repository <https://github.com/clementpoiret/ROILoc>`_.\n\nTo
+      date, we propose 4 different segmentation algorithms (from the fastest to the
+      most accurate):\n\n- ``single_fast``: a segmentation is performed on the whole
+      volume by only one model,\n- ``single_accurate``: a single model segments the
+      same volume that has been augmented 20 times through TTA,\n- ``single_sq``:
+      like ``single_accurate``, but using int8-quantized sparse models for a fast
+      and efficient inference,\n- ``bagging_fast``: a bagging ensemble of 5 models
+      is used to segment the volume without TTA,\n- ``bagging_accurate``: a bagging
+      ensemble of 5 models is used to segment the volume with TTA,\n- ``bagging_sq``:
+      like ``bagging_accurate``, but using int8-quantized sparse models for a fast
+      and efficient inference.\n\nFinally, ``segmentation.ca_mode`` is a parameter
+      that allows to combine CA1, CA2 and CA3 subfields.\nIt is particularly useful
+      when you want to segment low-resolution images where it makes no sense to\ndistinguish
+      between CA''s subfields.\n\n\nConfiguration\n=============\n\nAs HSF is pretty
+      modular, you can easily configure it to your needs thanks to Hydra.\n\nCompose
+      your configuration from those groups (group=option)\n\n* augmentation: default\n*
+      files: default\n* hardware: deepsparse, onnxruntime\n* multispectrality: default\n*
+      roiloc: default_corot2, default_t2iso\n* segmentation: bagging_accurate, bagging_fast,
+      bagging_sq, single_accurate, single_fast, single_sq\n\nOverride anything in
+      the config (e.g. hsf roiloc.margin=[16,2,16])\n\nYou can also add specific configs
+      absent from the default yaml files\n(e.g. hsf +augmentation.elastic.image_interpolation=sitkBSpline)\n\nFields
+      set with ??? are mandatory.\n\n   files:\n\n   * path: ???\n   * pattern: ???\n   *
+      mask_pattern: ``*mask.nii.gz``\n   * output_dir: hsf_outputs\n\n   roiloc:\n\n   *
+      contrast: t2\n   * roi: hippocampus\n   * bet: false\n   * transform_type: AffineFast\n   *
+      margin: [8, 8, 8]\n   * rightoffset: [0, 0, 0]\n   * leftoffset: [0, 0, 0]\n\n   segmentation:\n\n   *
+      ca_mode: 1/2/3\n   * models_path: ~/.hsf/models\n   * models:\n      *  arunet_bag_0.onnx:\n      *  url:
+      https://zenodo.org/record/5524594/files/arunet_bag0.onnx?download=1\n      *  xxh3_64:
+      d0de65baa81d9382\n      * segmentation:\n         * test_time_augmentation:
+      true\n         * test_time_num_aug: 20\n\n   augmentation:\n\n   * flip:\n      *
+      axes:\n         * LR\n      * flip_probability: 0.5\n      * affine_probability:
+      0.75\n      * affine:\n         * scales: 0.2\n         * degrees: 15\n         *
+      translation: 3\n         * isotropic: false\n      * elastic_probability: 0.25\n      *
+      elastic:\n         * num_control_points: 4\n         * max_displacement: 4\n         *
+      locked_borders: 0\n\n   multispectrality:\n   \n   * pattern: null\n   * same_space:
+      true\n   * registration:\n     * type_of_transform: Affine\n\n   hardware:\n  \n   *
+      engine: onnxruntime\n   * engine_settings:\n     * execution_providers: [\"CUDAExecutionProvider\",\"CPUExecutionProvider\"]\n     *
+      batch_size: 1\n\n\nChangelogs\n==========\n\nHSF\n---\n\n**Version 1.1.0**\n\n*
+      New optional multispectral mode de segment from both T1 AND T2 images\n* Bug
+      fixes and optimizations\n\n**Version 1.0.1**\n\n* Fix batch size issue\n\n**Version
+      1.0.0**\n\n* Added Uncertainty Maps for post-hoc analysis of segmentation results,\n*
+      Support for DeepSparse backend (CPU inference only),\n* Introduced **HSF''s
+      Model Hub**,\n* Support for batch inference (all backends),\n* Check for updates
+      at startup,\n* Bug fixes and optimizations.\n\n**Version 0.1.2**\n\n* Added
+      build-in support for offsets to recenter the hippocampus in ROILoc,\n* Added
+      support for the customization of Hardware Execution Providers.\n\n**Version
+      0.1.1**\n\n* Fixed CUDA Execution Provider.\n\n**Version 0.1.0**\n\n* Initial
+      release.\n\n\nModels\n------\n\n**Version 3.0.0**\n\n* More data (coming from
+      the Human Connectome Project),\n* New sparse and int8-quantized models.\n\n**Version
+      2.1.1**\n\n* Fixed some tails in 3T CoroT2w images (MemoDev)\n\n**Version 2.1.0**\n\n*
+      Corrected incorrect T1w labels used for training,\n* Trained on slightly more
+      data (T1w @1.5T & 3T, T2w; Healthy, Epilepsy & Alzheimer)\n\n**Version 2.0.0**\n\n*
+      Trained with more T1w and T2w MRIs,\n* Trained on more hippocampal sclerosis
+      and Alzheimer''s disease cases,\n* Updated training pipeline (hyperparameter
+      tuning),\n* `single` models are now independant from bags.\n\n**Version 1.0.0**\n\n*
+      Initial release.\n\n\nDocumentation\n==========================\n\nFor more
+      details about HSF''s configuration and internal parameters, please refer to\nour
+      `documentation <https://hsf.rtfd.io/>`_.\n\n\nAuthorship, Affiliations and Citations\n======================================\n\nAuthorship:\n\n*
+      C Poiret, UNIACT-NeuroSpin, CEA, Saclay University, France,\n* A Bouyeure, UNIACT-NeuroSpin,
+      CEA, Saclay University, France,\n* S Patil, UNIACT-NeuroSpin, CEA, Saclay University,
+      France,\n* C Boniteau, UNIACT-NeuroSpin, CEA, Saclay University, France,\n*
+      M Noulhiane, UNIACT-NeuroSpin, CEA, Saclay University, France.\n\nIf you use
+      this work, please cite it as follows:\n\n``C. Poiret, et al. (2021). clementpoiret/HSF.
+      Zenodo. https://doi.org/10.5281/zenodo.5527122``\n\nThis work licensed under
+      MIT license was supported in part by the Fondation de France and the IDRIS/GENCI
+      for the HPE Supercomputer Jean Zay.\n","description_content_type":"text/x-rst","docs_url":null,"download_url":"","downloads":{"last_day":-1,"last_month":-1,"last_week":-1},"home_page":"https://hippomnesis.dev","keywords":"mri,brain,hippocampus,segmentation,deep
+      learning","license":"MIT","maintainer":"","maintainer_email":"","name":"hsf","package_url":"https://pypi.org/project/hsf/","platform":null,"project_url":"https://pypi.org/project/hsf/","project_urls":{"Homepage":"https://hippomnesis.dev","Repository":"https://github.com/clementpoiret/HSF"},"release_url":"https://pypi.org/project/hsf/1.1.0/","requires_dist":["torchio
+      (>=0.18.56,<0.19.0)","roiloc (>0.2.8)","onnxruntime (>=1.8.1,<2.0.0)","hydra-core
+      (>=1.1.1,<2.0.0)","wget (>=3.2,<4.0)","antspyx (>0.2.9)","xxhash (>=2.0.2,<3.0.0)","rich
+      (>11.0.0)","deepsparse (>0.8.0,<1.0.0)"],"requires_python":">=3.7.1,<4.0.0","summary":"A
+      simple yet exhaustive segmentation tool of the Hippocampal Subfields in T1w
+      and T2w MRIs.","version":"1.1.0","yanked":false,"yanked_reason":null},"last_serial":13627493,"releases":{"0.1.0":[{"comment_text":"","digests":{"md5":"a5998a1bbdff362a22e2a65719fab3e9","sha256":"3cb29c8d760de272ba0dc527e2daa88b95fc6c195ce4c434d1c17b9c7422ba89"},"downloads":-1,"filename":"HSF-0.1.0-py3-none-any.whl","has_sig":false,"md5_digest":"a5998a1bbdff362a22e2a65719fab3e9","packagetype":"bdist_wheel","python_version":"py3","requires_python":">=3.9,<4.0","size":15394,"upload_time":"2021-09-24T18:49:34","upload_time_iso_8601":"2021-09-24T18:49:34.005584Z","url":"https://files.pythonhosted.org/packages/b5/da/1c5a00bcdd5bf18ca49f40f372528b81aa455d8bc32729d8f078c49ffb5a/HSF-0.1.0-py3-none-any.whl","yanked":false,"yanked_reason":null},{"comment_text":"","digests":{"md5":"5fe1d3e06ce17899375a90da3418c40d","sha256":"5e18b59b79636875ab7e963311654bfb075e8329815bcbf774d5d280b452c5e2"},"downloads":-1,"filename":"HSF-0.1.0.tar.gz","has_sig":false,"md5_digest":"5fe1d3e06ce17899375a90da3418c40d","packagetype":"sdist","python_version":"source","requires_python":">=3.9,<4.0","size":14693,"upload_time":"2021-09-24T18:49:35","upload_time_iso_8601":"2021-09-24T18:49:35.772247Z","url":"https://files.pythonhosted.org/packages/5f/f3/3359e7a7c7f1ffc9de16ade5ac139d43512832a1be3350fcecd37d3cd61b/HSF-0.1.0.tar.gz","yanked":false,"yanked_reason":null}],"0.1.1":[{"comment_text":"","digests":{"md5":"4fb0e81f1a1924ffc610ab1443d0bde0","sha256":"b67a79b64d87d7b442618083d65022187fc0057a1ddbaa9e1ed6c6e20b0d955c"},"downloads":-1,"filename":"HSF-0.1.1-py3-none-any.whl","has_sig":false,"md5_digest":"4fb0e81f1a1924ffc610ab1443d0bde0","packagetype":"bdist_wheel","python_version":"py3","requires_python":">=3.9,<4.0","size":15690,"upload_time":"2021-09-25T19:06:51","upload_time_iso_8601":"2021-09-25T19:06:51.728771Z","url":"https://files.pythonhosted.org/packages/17/8d/6737124807d880c2bad6765e38f67967ddbda851980f98f85cfd9625f7ba/HSF-0.1.1-py3-none-any.whl","yanked":false,"yanked_reason":null},{"comment_text":"","digests":{"md5":"ca0a4432f09decd97109e95273fbde7d","sha256":"55be6032604b9040d80a5a15e8880f2669c15b8f82977743ffc54b7608f0868c"},"downloads":-1,"filename":"HSF-0.1.1.tar.gz","has_sig":false,"md5_digest":"ca0a4432f09decd97109e95273fbde7d","packagetype":"sdist","python_version":"source","requires_python":">=3.9,<4.0","size":15256,"upload_time":"2021-09-25T19:06:53","upload_time_iso_8601":"2021-09-25T19:06:53.575324Z","url":"https://files.pythonhosted.org/packages/bc/30/bd41780fdec4f249ac43c48fd8b721d33b051dae73d3e1ad68164c5cde95/HSF-0.1.1.tar.gz","yanked":false,"yanked_reason":null}],"0.1.2":[{"comment_text":"","digests":{"md5":"377dd79a36f0883e6f292ab0dee7ebf8","sha256":"1bf98ea1010b690e09b3beb869607c416594ef10e698cf8a9a24eda6d99f0e65"},"downloads":-1,"filename":"HSF-0.1.2-py3-none-any.whl","has_sig":false,"md5_digest":"377dd79a36f0883e6f292ab0dee7ebf8","packagetype":"bdist_wheel","python_version":"py3","requires_python":">=3.9,<4.0","size":16589,"upload_time":"2021-09-27T12:39:29","upload_time_iso_8601":"2021-09-27T12:39:29.090648Z","url":"https://files.pythonhosted.org/packages/f1/e0/a7c5ad8e3472626c665a480a91f2e04d010080d4bdb5c59588b458f5c13e/HSF-0.1.2-py3-none-any.whl","yanked":false,"yanked_reason":null},{"comment_text":"","digests":{"md5":"22878d48fa19b77dd35634aa9348b02a","sha256":"305ce247af6eb0eca495937032d2cfbea2fa3448ff8cb73e31b7579135d64ae2"},"downloads":-1,"filename":"HSF-0.1.2.tar.gz","has_sig":false,"md5_digest":"22878d48fa19b77dd35634aa9348b02a","packagetype":"sdist","python_version":"source","requires_python":">=3.9,<4.0","size":16661,"upload_time":"2021-09-27T12:39:30","upload_time_iso_8601":"2021-09-27T12:39:30.958576Z","url":"https://files.pythonhosted.org/packages/5e/ce/6cd3767a9c53c32a73af487818c4c7928a56b495da22e5a78a61eba71f59/HSF-0.1.2.tar.gz","yanked":false,"yanked_reason":null}],"1.0.0":[{"comment_text":"","digests":{"md5":"78ecffe0e37813eca30205947a62f1fb","sha256":"e99fea83a9a96cda07245c44b1bf616b1c1ea0ac86c72dbd55aef053b7f6486e"},"downloads":-1,"filename":"HSF-1.0.0-py3-none-any.whl","has_sig":false,"md5_digest":"78ecffe0e37813eca30205947a62f1fb","packagetype":"bdist_wheel","python_version":"py3","requires_python":">=3.7.1,<4.0.0","size":20942,"upload_time":"2021-11-12T11:47:07","upload_time_iso_8601":"2021-11-12T11:47:07.465725Z","url":"https://files.pythonhosted.org/packages/4e/8a/6cfbd33e66ce34ee97f45ac117927aa38fa16477f6f42933bf2faaba9fa6/HSF-1.0.0-py3-none-any.whl","yanked":false,"yanked_reason":null},{"comment_text":"","digests":{"md5":"9eb70b281078e227c17e4467a1cc0b29","sha256":"0c09bd49216b1422b5c7969f50acecd829ddc4ee2632e98b72ed7aafaaf400ab"},"downloads":-1,"filename":"HSF-1.0.0.tar.gz","has_sig":false,"md5_digest":"9eb70b281078e227c17e4467a1cc0b29","packagetype":"sdist","python_version":"source","requires_python":">=3.7.1,<4.0.0","size":19455,"upload_time":"2021-11-12T11:47:08","upload_time_iso_8601":"2021-11-12T11:47:08.840016Z","url":"https://files.pythonhosted.org/packages/7a/a8/7c999242c8f3237547bc8084ebd030dd8fb21b36ae2e3a4855ae6ad8ee12/HSF-1.0.0.tar.gz","yanked":false,"yanked_reason":null}],"1.0.1":[{"comment_text":"","digests":{"md5":"7ed9f96ee30edbe7095e7c2c7727e56e","sha256":"7c0c91fcb0572a907a95bbbaf2e7bf91fb1da7d65587b11fa7443b99efd0b640"},"downloads":-1,"filename":"HSF-1.0.1-py3-none-any.whl","has_sig":false,"md5_digest":"7ed9f96ee30edbe7095e7c2c7727e56e","packagetype":"bdist_wheel","python_version":"py3","requires_python":">=3.7.1,<4.0.0","size":21108,"upload_time":"2021-12-07T19:39:18","upload_time_iso_8601":"2021-12-07T19:39:18.480197Z","url":"https://files.pythonhosted.org/packages/97/a3/f28fabc6a0d709b878514fdeb4506a91113f4a0ef8f850cf2d7b9c11ca63/HSF-1.0.1-py3-none-any.whl","yanked":false,"yanked_reason":null},{"comment_text":"","digests":{"md5":"cfb048d977911a6bd0b7f22b1ce9fbb9","sha256":"69ab5f86ba492699ffc85efe2ebb56deadb82a297be14da3e4efe63328b0b43a"},"downloads":-1,"filename":"HSF-1.0.1.tar.gz","has_sig":false,"md5_digest":"cfb048d977911a6bd0b7f22b1ce9fbb9","packagetype":"sdist","python_version":"source","requires_python":">=3.7.1,<4.0.0","size":19587,"upload_time":"2021-12-07T19:39:20","upload_time_iso_8601":"2021-12-07T19:39:20.477263Z","url":"https://files.pythonhosted.org/packages/52/d6/6785b6c670c036cf497bca1eb849a0d3e9073c6672e02ddd11e3bafb566f/HSF-1.0.1.tar.gz","yanked":false,"yanked_reason":null}],"1.1.0":[{"comment_text":"","digests":{"md5":"ae53819f38a735762a46518b498f5469","sha256":"05028d3de037d739e7a358c569787b6842597bdef3ef659d2822d13631f4406a"},"downloads":-1,"filename":"HSF-1.1.0-py3-none-any.whl","has_sig":false,"md5_digest":"ae53819f38a735762a46518b498f5469","packagetype":"bdist_wheel","python_version":"py3","requires_python":">=3.7.1,<4.0.0","size":27767,"upload_time":"2022-04-26T13:04:15","upload_time_iso_8601":"2022-04-26T13:04:15.151209Z","url":"https://files.pythonhosted.org/packages/9a/e4/2fc35384138868ec4c75bf368d5fd669ad7ff8f1fa8c09ad0c759b69ab88/HSF-1.1.0-py3-none-any.whl","yanked":false,"yanked_reason":null},{"comment_text":"","digests":{"md5":"be4d8add7306f9f005f7fda731503e3d","sha256":"18b1bd608f2bf5c96d8c0498258c5cd92da81790c48fb5753df9751b38390da8"},"downloads":-1,"filename":"HSF-1.1.0.tar.gz","has_sig":false,"md5_digest":"be4d8add7306f9f005f7fda731503e3d","packagetype":"sdist","python_version":"source","requires_python":">=3.7.1,<4.0.0","size":23856,"upload_time":"2022-04-26T13:04:17","upload_time_iso_8601":"2022-04-26T13:04:17.306372Z","url":"https://files.pythonhosted.org/packages/b5/a8/8f7872a2c4b0a5fffc6ec109cd76e500f2bf4d8ad0151f95610022d5bf52/HSF-1.1.0.tar.gz","yanked":false,"yanked_reason":null}]},"urls":[{"comment_text":"","digests":{"md5":"ae53819f38a735762a46518b498f5469","sha256":"05028d3de037d739e7a358c569787b6842597bdef3ef659d2822d13631f4406a"},"downloads":-1,"filename":"HSF-1.1.0-py3-none-any.whl","has_sig":false,"md5_digest":"ae53819f38a735762a46518b498f5469","packagetype":"bdist_wheel","python_version":"py3","requires_python":">=3.7.1,<4.0.0","size":27767,"upload_time":"2022-04-26T13:04:15","upload_time_iso_8601":"2022-04-26T13:04:15.151209Z","url":"https://files.pythonhosted.org/packages/9a/e4/2fc35384138868ec4c75bf368d5fd669ad7ff8f1fa8c09ad0c759b69ab88/HSF-1.1.0-py3-none-any.whl","yanked":false,"yanked_reason":null},{"comment_text":"","digests":{"md5":"be4d8add7306f9f005f7fda731503e3d","sha256":"18b1bd608f2bf5c96d8c0498258c5cd92da81790c48fb5753df9751b38390da8"},"downloads":-1,"filename":"HSF-1.1.0.tar.gz","has_sig":false,"md5_digest":"be4d8add7306f9f005f7fda731503e3d","packagetype":"sdist","python_version":"source","requires_python":">=3.7.1,<4.0.0","size":23856,"upload_time":"2022-04-26T13:04:17","upload_time_iso_8601":"2022-04-26T13:04:17.306372Z","url":"https://files.pythonhosted.org/packages/b5/a8/8f7872a2c4b0a5fffc6ec109cd76e500f2bf4d8ad0151f95610022d5bf52/HSF-1.1.0.tar.gz","yanked":false,"yanked_reason":null}],"vulnerabilities":[]}'
+    headers:
+      Accept-Ranges:
+      - bytes
+      Access-Control-Allow-Headers:
+      - Content-Type, If-Match, If-Modified-Since, If-None-Match, If-Unmodified-Since
+      Access-Control-Allow-Methods:
+      - GET
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - X-PyPI-Last-Serial
+      Access-Control-Max-Age:
+      - "86400"
+      Cache-Control:
+      - max-age=900, public
+      Content-Security-Policy:
+      - base-uri 'self'; block-all-mixed-content; connect-src 'self' https://api.github.com/repos/
+        fastly-insights.com *.fastly-insights.com *.ethicalads.io https://api.pwnedpasswords.com
+        https://2p66nmmycsj3.statuspage.io; default-src 'none'; font-src 'self' fonts.gstatic.com;
+        form-action 'self'; frame-ancestors 'none'; frame-src 'none'; img-src 'self'
+        https://warehouse-camo.ingress.cmh1.psfhosted.org/ www.google-analytics.com
+        *.fastly-insights.com *.ethicalads.io; script-src 'self' www.googletagmanager.com
+        www.google-analytics.com *.fastly-insights.com *.ethicalads.io 'sha256-U3hKDidudIaxBDEzwGJApJgPEf2mWk6cfMWghrAa6i0=';
+        style-src 'self' fonts.googleapis.com *.ethicalads.io 'sha256-2YHqZokjiizkHi1Zt+6ar0XJ0OeEy/egBnlm+MDMtrM='
+        'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU='; worker-src *.fastly-insights.com
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 26 Apr 2022 13:06:11 GMT
+      Etag:
+      - '"f/91zf43IW/1qa+AHjEZww"'
+      Referrer-Policy:
+      - origin-when-cross-origin
+      Server:
+      - nginx/1.13.9
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Vary:
+      - Accept-Encoding
+      X-Cache:
+      - HIT, MISS
+      X-Cache-Hits:
+      - 1, 0
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Permitted-Cross-Domain-Policies:
+      - none
+      X-Pypi-Last-Serial:
+      - "13627493"
+      X-Served-By:
+      - cache-iad-kiad7000137-IAD, cache-fra19156-FRA
+      X-Timer:
+      - S1650978371.010267,VS0,VE101
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://files.pythonhosted.org/packages/b5/a8/8f7872a2c4b0a5fffc6ec109cd76e500f2bf4d8ad0151f95610022d5bf52/HSF-1.1.0.tar.gz
+    method: GET
+  response:
+    body: !!binary |
+      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
+      tTXZGXVavDX6LBH0wWDdL492xu22s9nrbm92AbzxZ8mjDwbrXuF00na2QI3Z7O10Ojstp/
+      OrM1BWny/6qeT/Sv6v5P9K/l8l/6MI5vHPOv6/1/9vc8n/b6vTre5//NXK/zYTVCHl+Sc4
+      +Bf9PY5cvrHV2+6VyU6ik3stnG0+5s5Oq92ebE26rd5vXGCq9v9q/1/e/zdg/6/8/6v9P9
+      3/P+f49wH7/+ZS/H9rq9r/fyP7/xMd/K6WAbSN+9cvBHz5I71q/6/Wf7X/V5/H3P8/5/jv
+      3v1/a6uY/3OzXeX//p3o/7+Jg7+Uyh9JvNjeAYTdez7zQFljp7u9NbadrjNybHubP67Bod
+      r/q/2/2v+r/V/s/+Lmh8iaLx57/d+x/291t4r+P208Eqj2/yf40G6Pe6Lnjpg7mwdhzE7g
+      pwkiQOTe4ldDpLddzCmRrigiUwMHoWHIJ9oFYvKJlqaa2RGDR6KlYMavbJQ0rbHrxDIlr6
+      yzD09EJt9iWc+NCmVfwhNZ1jDGfKKBMIySOZapN9j6NyyKQ7Fx12pic92bcucdcyeUs3fv
+      5DWTxaNc7muGWYdn7i8qETVVPeVxEvqRaA8/2DjmBCeQzmDnTaJcX/b1bYcNNNgsZ57gf0
+      N8M8RE4tDByOP1hiq/0V5dA94t17n2fbe8Br7Jl6cKMHR8k40CxEAcLEiBmOEbxTGWiWNH
+      R2m5kIbPapPE88T4uAeNCcD05nZ/+DsO45pj+ndoENCUOJTkGdMYYydoUoSm4Z3Mjr7UCQ
+      wldu1CP8VeVvYReZgoHFNt+xKapQ5mro9jVh1EXG/7KKDmmzgMaP6Ho6NDJKZTN3qH6cqx
+      +Qx2Ju+nz7dPyb0FafBxTVLpPAT0DstoNU+kJ1hOp8gClVm50tRqPYWgplU71shY1mV1Of
+      S+QOE/mcR1X03cPxlOcfoTR9/o18y0gzL4G3KEVyDuppgZyj2lnpO/U+YCKoa4bUhcJABT
+      mPWx/CneTKTxC1rpKVvKo1IuWi0R/4Hc6MRy2A2vtBWtAcrqKaCNPvFFzCOPXEMUsowCZH
+      RZQh1GAcWP8HsgmIx4bbE9IMYRZzWNN9aQumoZPmtLjarhsro23L4cg0rHv5JBIZu8SEcu
+      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
+      jCoqovpUn+rzO/n8f05cM+kAMAIA
+    headers:
+      Accept-Ranges:
+      - bytes
+      Access-Control-Allow-Headers:
+      - Range
+      Access-Control-Allow-Methods:
+      - GET, OPTIONS
+      Access-Control-Allow-Origin:
+      - '*'
+      Age:
+      - "108"
+      Cache-Control:
+      - max-age=365000000, immutable, public
+      Content-Length:
+      - "23856"
+      Content-Type:
+      - application/x-tar
+      Date:
+      - Tue, 26 Apr 2022 13:06:12 GMT
+      Etag:
+      - '"be4d8add7306f9f005f7fda731503e3d"'
+      Last-Modified:
+      - Tue, 26 Apr 2022 13:04:18 GMT
+      Server:
+      - UploadServer
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Cache:
+      - HIT, MISS
+      X-Cache-Hits:
+      - 1, 0
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Goog-Hash:
+      - crc32c=v9i0DQ==
+      - md5=vk2K3XMG+fAF9/2nMVA+PQ==
+      X-Robots-Header:
+      - noindex
+      X-Served-By:
+      - cache-sea4444-SEA, cache-hhn4047-HHN
+      X-Timer:
+      - S1650978372.273421,VS0,VE148
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 200 OK
+    code: 200
+    duration: ""
