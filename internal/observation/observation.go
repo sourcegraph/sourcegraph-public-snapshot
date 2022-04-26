@@ -78,7 +78,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
-	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
 )
 
 // Context carries context about where to send logs, trace spans, and register
@@ -339,11 +338,9 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 
 	logger := op.Logger.With(toLogFields(args.LogFields)...)
 
-	if traceID := trace.ID(ctx); traceID != "" {
-		event.AddField("traceID", traceID)
-		logger = logger.WithTrace(otfields.TraceContext{
-			TraceID: traceID,
-		})
+	if traceContext := trace.Context(ctx); traceContext != nil {
+		event.AddField("traceID", traceContext.TraceID)
+		logger = logger.WithTrace(*traceContext)
 	}
 
 	trLogger := traceLogger{
