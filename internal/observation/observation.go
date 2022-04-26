@@ -77,7 +77,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	sglog "github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
 )
 
@@ -85,7 +85,7 @@ import (
 // metrics. It should be created once on service startup, and passed around to
 // any location that wants to use it for observing operations.
 type Context struct {
-	Logger       sglog.Logger
+	Logger       log.Logger
 	Tracer       *trace.Tracer
 	Registerer   prometheus.Registerer
 	HoneyDataset *honey.Dataset
@@ -137,13 +137,13 @@ type Op struct {
 // Operation combines the state of the parent context to create a new operation. This value
 // should be owned and used by the code that performs the operation it represents.
 func (c *Context) Operation(args Op) *Operation {
-	var logger sglog.Logger
+	var logger log.Logger
 	if c.Logger != nil {
 		// Create a child logger, if a parent is provided.
 		logger = c.Logger.Scoped(args.Name, args.Description)
 	} else {
 		// Create a new logger.
-		logger = sglog.Scoped(args.Name, args.Description)
+		logger = log.Scoped(args.Name, args.Description)
 	}
 	return &Operation{
 		context:      c,
@@ -170,7 +170,7 @@ type Operation struct {
 	logFields    []otlog.Field
 
 	// Logger is a logger scoped to this operation. Must not be nil.
-	sglog.Logger
+	log.Logger
 }
 
 // TraceLogger is returned from With and can be used to add timestamped key and
@@ -188,12 +188,12 @@ type TraceLogger interface {
 	Tag(fields ...otlog.Field)
 
 	// Logger is a logger scoped to this trace.
-	sglog.Logger
+	log.Logger
 }
 
 // TestTraceLogger creates an empty TraceLogger that can be used for testing. The logger
 // should be 'logtest.Scoped(t)'.
-func TestTraceLogger(logger sglog.Logger) TraceLogger {
+func TestTraceLogger(logger log.Logger) TraceLogger {
 	return &traceLogger{Logger: logger}
 }
 
@@ -202,7 +202,7 @@ type traceLogger struct {
 	event  honey.Event
 	trace  *trace.Trace
 
-	sglog.Logger
+	log.Logger
 }
 
 // initWithTags adds tags to everything except the underlying Logger, which should have
