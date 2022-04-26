@@ -105,19 +105,15 @@ export const RepositoryMenu: React.FunctionComponent<RepositoryMenuProps> = ({
         !isErrorLike(props.settingsCascade.final) &&
         props.settingsCascade.final?.experimentalFeatures?.codeIntelRepositoryBadge?.forNerds
 
+    const showDotError = hasUploadErrors || hasIndexErrors
+    const showDotAttention = needsAttention || isNew
+    const dotStyle = showDotError ? styles.braindotError : showDotAttention ? styles.braindotAttention : ''
+
     return (
         <Menu className="btn-icon">
             <>
                 <MenuButton
-                    className={classNames(
-                        'text-decoration-none',
-                        styles.braindot,
-                        hasUploadErrors || hasIndexErrors
-                            ? styles.braindotError
-                            : needsAttention || isNew
-                            ? styles.braindotAttention
-                            : ''
-                    )}
+                    className={classNames('text-decoration-none', styles.braindot, dotStyle)}
                     onClick={() => setBadgeUsed(true)}
                 >
                     <Icon as={BrainIcon} />
