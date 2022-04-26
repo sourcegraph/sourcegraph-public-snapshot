@@ -43,7 +43,7 @@ func init() {
 func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenDependency) (sourceCodeJarPath string, err error) {
 	operations := getOperations()
 
-	ctx, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+	ctx, _, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("dependency", dependency.PackageManagerSyntax()),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -98,7 +98,7 @@ func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dep
 func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenDependency) (byteCodeJarPath string, err error) {
 	operations := getOperations()
 
-	ctx, endObservation := operations.fetchByteCode.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := operations.fetchByteCode.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	paths, err := runCoursierCommand(
@@ -127,7 +127,7 @@ func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, de
 func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenDependency) (err error) {
 	operations := getOperations()
 
-	ctx, endObservation := operations.exists.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+	ctx, _, endObservation := operations.exists.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("dependency", dependency.PackageManagerSyntax()),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -161,7 +161,7 @@ func runCoursierCommand(ctx context.Context, config *schema.JVMPackagesConnectio
 	ctx, cancel := context.WithTimeout(ctx, invocTimeout)
 	defer cancel()
 
-	ctx, trace, endObservation := operations.runCommand.WithAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
+	ctx, trace, endObservation := operations.runCommand.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("repositories", strings.Join(config.Maven.Repositories, "|")),
 		otlog.String("args", strings.Join(args, ", ")),
 	}})

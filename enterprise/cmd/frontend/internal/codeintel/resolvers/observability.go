@@ -87,7 +87,7 @@ func observeResolver(
 	observationArgs observation.Args,
 ) (context.Context, observation.TraceLogger, func()) {
 	start := time.Now()
-	ctx, trace, endObservation := operation.WithAndLogger(ctx, err, observationArgs)
+	ctx, trace, endObservation := operation.With(ctx, err, observationArgs)
 
 	return ctx, trace, func() {
 		duration := time.Since(start)

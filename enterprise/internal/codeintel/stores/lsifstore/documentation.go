@@ -22,7 +22,7 @@ import (
 
 // DocumentationPage returns the documentation page with the given PathID.
 func (s *Store) DocumentationPage(ctx context.Context, bundleID int, pathID string) (_ *precise.DocumentationPageData, err error) {
-	ctx, _, endObservation := s.operations.documentationPage.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.documentationPage.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("pathID", pathID),
 	}})
@@ -81,7 +81,7 @@ func (s *Store) scanFirstDocumentationPageData(rows *sql.Rows, queryErr error) (
 
 // DocumentationPathInfo returns info describing what is at the given pathID.
 func (s *Store) DocumentationPathInfo(ctx context.Context, bundleID int, pathID string) (_ *precise.DocumentationPathInfoData, err error) {
-	ctx, _, endObservation := s.operations.documentationPathInfo.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.documentationPathInfo.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("pathID", pathID),
 	}})
@@ -141,7 +141,7 @@ func (s *Store) scanFirstDocumentationPathInfoData(rows *sql.Rows, queryErr erro
 // documentationIDsToPathIDs returns a mapping of the given documentationResult IDs to their
 // associative path IDs. Empty result IDs ("") are ignored.
 func (s *Store) documentationIDsToPathIDs(ctx context.Context, bundleID int, ids []precise.ID) (_ map[precise.ID]string, err error) {
-	ctx, _, endObservation := s.operations.documentationIDsToPathIDs.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.documentationIDsToPathIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("ids", fmt.Sprint(ids)),
 	}})
@@ -202,7 +202,7 @@ WHERE
 `
 
 func (s *Store) documentationPathIDToID(ctx context.Context, bundleID int, pathID string) (_ precise.ID, err error) {
-	ctx, _, endObservation := s.operations.documentationPathIDToID.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.documentationPathIDToID.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("pathID", pathID),
 	}})
@@ -252,7 +252,7 @@ func (s *Store) scanFirstDocumentationResultID(rows *sql.Rows, queryErr error) (
 // e.g. the file where the documented symbol is located - if the path ID is describing such a
 // symbol, or nil otherwise.
 func (s *Store) documentationPathIDToFilePath(ctx context.Context, bundleID int, pathID string) (_ *string, err error) {
-	ctx, _, endObservation := s.operations.documentationPathIDToFilePath.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.documentationPathIDToFilePath.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("pathID", pathID),
 	}})
@@ -312,7 +312,7 @@ func (s *Store) documentationDefinitions(
 	limit,
 	offset int,
 ) (_ []Location, _ int, err error) {
-	ctx, trace, endObservation := operation.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := operation.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("resultID", string(resultID)),
 	}})
@@ -371,7 +371,7 @@ func (s *Store) documentationDefinitions(
 // enforce that the user only has the ability to view results that are from repositories they have
 // access to.
 func (s *Store) documentationSearchRepoNameIDs(ctx context.Context, tableSuffix string, possibleRepos []string) (_ []int64, err error) {
-	ctx, _, endObservation := s.operations.documentationSearchRepoNameIDs.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.documentationSearchRepoNameIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("table", tableSuffix),
 		log.String("possibleRepos", fmt.Sprint(possibleRepos)),
 	}})
@@ -408,7 +408,7 @@ var debugAPIDocsSearchCandidates, _ = strconv.ParseInt(env.Get("DEBUG_API_DOCS_S
 // enforce that the user only has the ability to view results that are from repositories they have
 // access to.
 func (s *Store) DocumentationSearch(ctx context.Context, tableSuffix, query string, repos []string) (_ []precise.DocumentationSearchResult, err error) {
-	ctx, _, endObservation := s.operations.documentationSearch.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.documentationSearch.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("table", tableSuffix),
 		log.String("query", query),
 		log.String("repos", fmt.Sprint(repos)),

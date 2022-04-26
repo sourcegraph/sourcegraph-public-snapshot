@@ -27,7 +27,7 @@ type SymbolOpts struct {
 }
 
 func (s *Service) Symbol(ctx context.Context, opts SymbolOpts) (symbols []Symbol, err error) {
-	ctx, endObservation := s.operations.symbol.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.symbol.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33374

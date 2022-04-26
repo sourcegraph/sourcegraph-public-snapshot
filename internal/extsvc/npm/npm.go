@@ -48,7 +48,7 @@ func init() {
 func FetchSources(ctx context.Context, client Client, dependency *reposource.NpmDependency) (tarball io.ReadCloser, err error) {
 	operations := getOperations()
 
-	ctx, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+	ctx, _, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("dependency", dependency.PackageManagerSyntax()),
 	}})
 	defer endObservation(1, observation.Args{})

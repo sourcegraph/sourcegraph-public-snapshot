@@ -10,7 +10,7 @@ import (
 )
 
 func (s *Store) RequestLanguageSupport(ctx context.Context, userID int, language string) (err error) {
-	ctx, endObservation := s.operations.requestLanguageSupport.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.requestLanguageSupport.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	return s.Exec(ctx, sqlf.Sprintf(requestLanguageSupportQuery, userID, language))
@@ -24,7 +24,7 @@ ON CONFLICT DO NOTHING
 `
 
 func (s *Store) LanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error) {
-	ctx, endObservation := s.operations.languagesRequestedBy.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.languagesRequestedBy.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	return basestore.ScanStrings(s.Query(ctx, sqlf.Sprintf(languagesRequestedByQuery, userID)))

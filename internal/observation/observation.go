@@ -16,11 +16,11 @@
 //
 // Sample usage:
 //
-//     observationContext := observation.NewContex(
-//         log15.Root(),
+//     observationContext := observation.Context{
+//         Logger: log.Scoped("my-scope", "a simple description"),
 //         &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 //         prometheus.DefaultRegisterer,
-//     )
+//     }
 //
 //     metrics := metrics.NewREDMetrics(
 //         observationContext.Registerer,
@@ -34,13 +34,23 @@
 //         Metrics:      metrics,
 //     })
 //
+//     // You can log some logs directly using operation - these logs will be structured
+//     // with context about your operation.
+//     operation.Info("something happened!", log.String("additional", "context"))
+//
 //     function SomeOperation(ctx context.Context) (err error) {
 //         // logs and metrics may be available before or after the operation, so they
 //         // can be supplied either at the start of the operation, or after in the
 //         // defer of endObservation.
 //
-//         ctx, endObservation := operation.With(ctx, &err, observation.Args{ /* logs and metrics */ })
+//         ctx, trace, endObservation := operation.With(ctx, &err, observation.Args{ /* logs and metrics */ })
 //         defer func() { endObservation(1, observation.Args{ /* additional logs and metrics */ }) }()
+//
+//         // ...
+//
+//         // You can log some logs directly from the returned trace - these logs will be
+//         // structured with the trace ID, trace fields, and observation context.
+//         trace.Info("I did the thing!", log.Int("things", 3))
 //
 //         // ...
 //     }
@@ -163,13 +173,13 @@ type Operation struct {
 	sglog.Logger
 }
 
-// TraceLogger is returned from WithAndLogger and can be used to add timestamped key and
+// TraceLogger is returned from With and can be used to add timestamped key and
 // value pairs into a related opentracing span. It has an embedded Logger that can be used
 // directly to log messages in the context of a trace.
 type TraceLogger interface {
-	// Log logs fields to the opentracing.Span as well as the nettrace.Trace.
-	//
-	// Log will also add fields to the underlying logger.
+	// Log logs and event with fields to the opentracing.Span as well as the nettrace.Trace,
+	// and also logs an 'trace.event' log entry at INFO level with the fields, including
+	// any existing tags and parent observation context.
 	Log(fields ...otlog.Field)
 
 	// Tag adds fields to the opentracing.Span as tags as well as as logs to the nettrace.Trace.
@@ -213,7 +223,7 @@ func (t *traceLogger) Log(fields ...otlog.Field) {
 	if t.trace != nil {
 		t.trace.LogFields(fields...)
 	}
-	t.Logger = t.Logger.With(toLogFields(fields)...)
+	t.Logger.Info("trace.event", toLogFields(fields)...)
 }
 
 func (t *traceLogger) Tag(fields ...otlog.Field) {
@@ -304,7 +314,7 @@ func (op *Operation) WithErrorsAndLogger(ctx context.Context, root *error, args 
 	errTracer := NewErrorCollector()
 	err := error(errTracer)
 
-	ctx, traceLogger, endObservation := op.WithAndLogger(ctx, &err, args)
+	ctx, traceLogger, endObservation := op.With(ctx, &err, args)
 
 	// to avoid recursion stack overflow, we need a new binding
 	endFunc := endObservation
@@ -320,18 +330,10 @@ func (op *Operation) WithErrorsAndLogger(ctx context.Context, root *error, args 
 	return ctx, errTracer, traceLogger, endFunc
 }
 
-// With prepares the necessary timers, loggers, and metrics to observe the invocation of an
-// operation. This method returns a modified context and a function to be deferred until the
-// end of the operation.
-func (op *Operation) With(ctx context.Context, err *error, args Args) (context.Context, FinishFunc) {
-	ctx, _, endObservation := op.WithAndLogger(ctx, err, args)
-	return ctx, endObservation
-}
-
-// WithAndLogger prepares the necessary timers, loggers, and metrics to observe the invocation
+// With prepares the necessary timers, loggers, and metrics to observe the invocation
 // of an operation. This method returns a modified context, a function that will add a log field
 // to the active trace, and a function to be deferred until the end of the operation.
-func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (context.Context, TraceLogger, FinishFunc) {
+func (op *Operation) With(ctx context.Context, err *error, args Args) (context.Context, TraceLogger, FinishFunc) {
 	start := time.Now()
 	tr, ctx := op.startTrace(ctx)
 

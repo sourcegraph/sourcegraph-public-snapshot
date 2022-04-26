@@ -47,7 +47,7 @@ func NewIndexEnqueuer(
 // InferIndexConfiguration looks at the repository contents at the lastest commit on the default branch of the given
 // repository and determines an index configuration that is likely to succeed.
 func (s *IndexEnqueuer) InferIndexConfiguration(ctx context.Context, repositoryID int, commit string) (_ *config.IndexConfiguration, hints []config.IndexJobHint, err error) {
-	ctx, trace, endObservation := s.operations.InferIndexConfiguration.WithAndLogger(ctx, &err, observation.Args{
+	ctx, trace, endObservation := s.operations.InferIndexConfiguration.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", repositoryID),
 		},
@@ -102,7 +102,7 @@ func (s *IndexEnqueuer) InferIndexConfiguration(ctx context.Context, repositoryI
 // will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
 // when the flag is false.
 func (s *IndexEnqueuer) QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force bool) (_ []store.Index, err error) {
-	ctx, trace, endObservation := s.operations.QueueIndex.WithAndLogger(ctx, &err, observation.Args{
+	ctx, trace, endObservation := s.operations.QueueIndex.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", repositoryID),
 		},
@@ -122,7 +122,7 @@ func (s *IndexEnqueuer) QueueIndexes(ctx context.Context, repositoryID int, rev,
 // QueueIndexesForPackage enqueues index jobs for a dependency of a recently-processed precise code
 // intelligence index.
 func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error) {
-	ctx, trace, endObservation := s.operations.QueueIndexForPackage.WithAndLogger(ctx, &err, observation.Args{
+	ctx, trace, endObservation := s.operations.QueueIndexForPackage.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.String("scheme", pkg.Scheme),
 			log.String("name", pkg.Name),

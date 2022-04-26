@@ -83,7 +83,7 @@ func (r *preciseCodeIntelSupportResolver) Indexers() *[]gql.CodeIntelIndexerReso
 }
 
 func (r *Resolver) RequestLanguageSupport(ctx context.Context, args *gql.RequestLanguageSupportArgs) (_ *gql.EmptyResponse, err error) {
-	ctx, endObservation := r.observationContext.requestLanguageSupport.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := r.observationContext.requestLanguageSupport.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	userID := int(actor.FromContext(ctx).UID)
@@ -99,7 +99,7 @@ func (r *Resolver) RequestLanguageSupport(ctx context.Context, args *gql.Request
 }
 
 func (r *Resolver) RequestedLanguageSupport(ctx context.Context) (_ []string, err error) {
-	ctx, endObservation := r.observationContext.requestedLanguageSupport.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := r.observationContext.requestedLanguageSupport.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	userID := int(actor.FromContext(ctx).UID)
