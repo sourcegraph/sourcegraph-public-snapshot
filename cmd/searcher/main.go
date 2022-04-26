@@ -15,8 +15,6 @@ import (
 	"syscall"
 	"time"
 
-	"golang.org/x/sync/errgroup"
-
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -37,7 +35,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
@@ -48,44 +45,36 @@ var (
 
 const port = "3181"
 
-func frontendDB() (database.DB, error) {
+func ensureFrontendDB(logger log.Logger) database.DB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
 	sqlDB, err := connections.EnsureNewFrontendDB(dsn, "searcher", &observation.TestContext)
 	if err != nil {
-		return nil, err
+		logger.Fatal("Failed to connect to frontend database", log.Error(err))
 	}
 	return database.NewDB(sqlDB), nil
 }
 
-func shutdownOnSignal(ctx context.Context, server *http.Server) error {
-	// Listen for shutdown signals. When we receive one attempt to clean up,
-	// but do an insta-shutdown if we receive more than one signal.
-	c := make(chan os.Signal, 2)
-	signal.Notify(c, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
+func main() {
+	env.Lock()
+	env.HandleHelpFlag()
+	stdlog.SetFlags(0)
+	conf.Init()
+	logging.Init()
+	syncLogs := log.Init(log.Resource{
+		Name:       env.MyName,
+		Version:    version.Version(),
+		InstanceID: hostname.Get(),
+	})
+	defer syncLogs()
+	tracer.Init(conf.DefaultClient())
+	sentry.Init(conf.DefaultClient())
+	trace.Init()
+	profiler.Init()
 
-	// Once we receive one of the signals from above, continues with the shutdown
-	// process.
-	select {
-	case <-c:
-	case <-ctx.Done(): // still call shutdown below
-	}
+	logger := log.Scoped("service", "the searcher service")
 
-	go func() {
-		// If a second signal is received, exit immediately.
-		<-c
-		os.Exit(1)
-	}()
-
-	// Wait for at most for the configured shutdown timeout.
-	ctx, cancel := context.WithTimeout(ctx, goroutine.GracefulShutdownTimeout)
-	defer cancel()
-	// Stop accepting requests.
-	return server.Shutdown(ctx)
-}
-
-func run(logger log.Logger) error {
 	// Ready immediately
 	ready := make(chan struct{})
 	close(ready)
@@ -93,15 +82,14 @@ func run(logger log.Logger) error {
 
 	var cacheSizeBytes int64
 	if i, err := strconv.ParseInt(cacheSizeMB, 10, 64); err != nil {
-		return errors.Wrapf(err, "invalid int %q for SEARCHER_CACHE_SIZE_MB", cacheSizeMB)
+		logger.Fatal("invalid int for SEARCHER_CACHE_SIZE_MB",
+			log.String("SEARCHER_CACHE_SIZE_MB", cacheSizeMB),
+			log.Error(err))
 	} else {
 		cacheSizeBytes = i * 1000 * 1000
 	}
 
-	db, err := frontendDB()
-	if err != nil {
-		return errors.Wrap(err, "failed to connect to frontend database")
-	}
+	db := ensureFrontendDB(logger)
 	git := gitserver.NewClient(db)
 
 	service := &search.Service{
@@ -164,14 +152,13 @@ func run(logger log.Logger) error {
 		}),
 	}
 
-	// Listen
-	g.Go(func() error {
-		logger.Info("listening", log.String("addr", server.Addr))
+	go func() {
+		logger.Info("searcher: listening", log.String("addr", server.Addr))
 		if err := server.ListenAndServe(); err != http.ErrServerClosed {
-			return err
+			logger.Fatal(err.Error())
 		}
 		return nil
-	})
+	}()
 
 	// Shutdown
 	g.Go(func() error {
@@ -181,27 +168,11 @@ func run(logger log.Logger) error {
 	return g.Wait()
 }
 
-func main() {
-	env.Lock()
-	env.HandleHelpFlag()
-	stdlog.SetFlags(0)
-	conf.Init()
-	logging.Init()
-	syncLogs := log.Init(log.Resource{
-		Name:       env.MyName,
-		Version:    version.Version(),
-		InstanceID: hostname.Get(),
-	})
-	defer syncLogs()
-	tracer.Init(conf.DefaultClient())
-	sentry.Init(conf.DefaultClient())
-	trace.Init()
-	profiler.Init()
-
-	logger := log.Scoped("service", "the searcher service")
-
-	err := run(logger)
-	if err != nil {
-		logger.Fatal("searcher failed", log.Error(err))
+	// Wait for at most for the configured shutdown timeout.
+	ctx, cancel := context.WithTimeout(context.Background(), goroutine.GracefulShutdownTimeout)
+	defer cancel()
+	// Stop accepting requests.
+	if err := server.Shutdown(ctx); err != nil {
+		logger.Error("shutting down http server", log.Error(err))
 	}
 }
