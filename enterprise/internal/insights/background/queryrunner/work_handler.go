@@ -285,6 +285,7 @@ func (r *workHandler) computeHandler(ctx context.Context, job *Job, series *type
 			return err
 		}
 	}
+
 	recordings, err := r.generateComputeRecordings(ctx, job, recordTime)
 	if err != nil {
 		return err
