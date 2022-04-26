@@ -104,8 +104,8 @@ The `tsx` extension makes certain generic syntax impossible and also enables emm
 
 ### `index.*` files
 
-Index files should not never contain declarations on their own.
-Their purpose is to reexport symbols from a number of other files to make imports easier and define the the public API.
+Index files should never contain their own declarations .
+Their purpose is to re-export symbols from a number of other files to make imports easier and define the public API.
 
 ## Components
 
