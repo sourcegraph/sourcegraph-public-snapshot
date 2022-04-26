@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
+	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -28,6 +29,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/version"
+	sglog "github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 const addr = ":3184"
@@ -39,6 +42,12 @@ func Main(setup SetupFunc) {
 	env.HandleHelpFlag()
 	conf.Init()
 	logging.Init()
+	syncLogs := sglog.Init(sglog.Resource{
+		Name:       env.MyName,
+		Version:    version.Version(),
+		InstanceID: hostname.Get(),
+	})
+	defer syncLogs()
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()

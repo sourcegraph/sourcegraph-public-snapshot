@@ -54,6 +54,8 @@ func ApplyDevConfig(cfg zapcore.EncoderConfig) zapcore.EncoderConfig {
 
 		enc.AppendString(color.New(color.Faint).Sprint(link))
 	}
+	// Keep output condensed
+	cfg.ConsoleSeparator = " "
 	// Disabled for now due to verbosity, but we might want to introduce some config for
 	// enabling these in the future.
 	cfg.FunctionKey = zapcore.OmitKey

@@ -43,12 +43,14 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	depsService.Add("foo@0.0.1")
 	depsSource.Add("foo@0.0.1")
 
+	remoteURL := &vcs.URL{URL: url.URL{Path: "fake/foo"}}
+
 	dir := GitDir(t.TempDir())
-	_, err := s.CloneCommand(ctx, makeRemoteURL("fake/foo"), string(dir))
+	_, err := s.CloneCommand(ctx, remoteURL, string(dir))
 	require.NoError(t, err)
 
 	t.Run("one version from service", func(t *testing.T) {
-		err := s.Fetch(ctx, makeRemoteURL("fake/foo"), dir)
+		err := s.Fetch(ctx, remoteURL, dir)
 		require.NoError(t, err)
 
 		s.assertRefs(t, dir, map[string]string{
@@ -62,7 +64,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	depsSource.Add("foo@0.0.2")
 
 	t.Run("two versions, service and config", func(t *testing.T) {
-		err := s.Fetch(ctx, makeRemoteURL("fake/foo"), dir)
+		err := s.Fetch(ctx, remoteURL, dir)
 		require.NoError(t, err)
 
 		s.assertRefs(t, dir, map[string]string{
@@ -77,7 +79,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	depsSource.Delete("foo@0.0.2")
 
 	t.Run("one version missing in source", func(t *testing.T) {
-		err := s.Fetch(ctx, makeRemoteURL("fake/foo"), dir)
+		err := s.Fetch(ctx, remoteURL, dir)
 		require.NoError(t, err)
 
 		s.assertRefs(t, dir, map[string]string{
@@ -91,7 +93,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	depsSource.get["foo@0.0.1"] = errors.New("401 unauthorized")
 
 	t.Run("error tolerance", func(t *testing.T) {
-		err := s.Fetch(ctx, makeRemoteURL("fake/foo"), dir)
+		err := s.Fetch(ctx, remoteURL, dir)
 		require.ErrorContains(t, err, "401 unauthorized")
 		// When any fatal error is returned by source.Get, we add other new versions
 		// that didn't return an error and delete no versions since we can't know
@@ -109,7 +111,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	depsService.Delete("foo@0.0.1")
 
 	t.Run("service version deleted", func(t *testing.T) {
-		err := s.Fetch(ctx, makeRemoteURL("fake/foo"), dir)
+		err := s.Fetch(ctx, remoteURL, dir)
 		require.NoError(t, err)
 
 		s.assertRefs(t, dir, map[string]string{
@@ -122,15 +124,11 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	s.configDeps = []string{}
 
 	t.Run("all versions deleted", func(t *testing.T) {
-		err := s.Fetch(ctx, makeRemoteURL("fake/foo"), dir)
+		err := s.Fetch(ctx, remoteURL, dir)
 		require.NoError(t, err)
 
 		s.assertRefs(t, dir, map[string]string{})
 	})
-}
-
-func makeRemoteURL(path string) *vcs.URL {
-	return &vcs.URL{URL: url.URL{Path: path}}
 }
 
 type fakeDepsService struct {

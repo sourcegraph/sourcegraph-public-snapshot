@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type workspaceResolverJob struct{}
@@ -22,11 +23,15 @@ func NewWorkspaceResolverJob() job.Job {
 	return &workspaceResolverJob{}
 }
 
+func (j *workspaceResolverJob) Description() string {
+	return ""
+}
+
 func (j *workspaceResolverJob) Config() []env.Config {
 	return []env.Config{}
 }
 
-func (j *workspaceResolverJob) Routines(_ context.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *workspaceResolverJob) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	observationContext := &observation.Context{
 		Logger:     log15.Root(),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},

@@ -15,8 +15,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/version"
+	sglog "github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -40,6 +44,13 @@ func main() {
 }
 
 func mainErr(ctx context.Context, args []string) error {
+	syncLogs := sglog.Init(sglog.Resource{
+		Name:       env.MyName,
+		Version:    version.Version(),
+		InstanceID: hostname.Get(),
+	})
+	defer syncLogs()
+
 	runnerFactory := newRunnerFactory()
 	command := &cli.App{
 		Name:   appName,

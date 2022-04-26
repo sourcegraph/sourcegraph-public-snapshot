@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -33,12 +34,14 @@ func main() {
 	env.HandleHelpFlag()
 
 	logging.Init()
+	syncLogs := log.Init(log.Resource{
+		Name:       env.MyName,
+		Version:    version.Version(),
+		InstanceID: hostname.Get(),
+	})
+	defer syncLogs()
 	trace.Init()
 
-	log.Init(log.Resource{
-		Name:    env.MyName,
-		Version: version.Version(),
-	})
 	logger := log.Scoped("executor", "the executor service polls the public frontend API for work to perform")
 
 	if err := config.Validate(); err != nil {
