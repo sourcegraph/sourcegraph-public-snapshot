@@ -4,10 +4,11 @@ import (
 	"strings"
 	"sync"
 
+	"go.uber.org/zap"
+
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/encoders"
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/globallogger"
 	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
-	"go.uber.org/zap"
 )
 
 type TraceContext = otfields.TraceContext
@@ -51,10 +52,9 @@ type Logger interface {
 	// Error logs are high-priority. If an application is running smoothly, it shouldn't
 	// generate any error-level logs.
 	Error(string, ...Field)
-
-	// Sync flushes any buffered log entries. Applications should take care to call Sync
-	// before exiting.
-	Sync() error
+	// Fatal logs a fatal error message, including any fields accumulated on the Logger.
+	// The logger then calls os.Exit(1), flushing the logger before doing so. Use sparingly.
+	Fatal(string, ...Field)
 }
 
 // Scoped returns the global logger and sets it up with the given scope and OpenTelemetry
@@ -63,7 +63,9 @@ type Logger interface {
 //
 // Scopes should be static values, NOT dynamic values like identifiers or parameters.
 func Scoped(scope string, description string) Logger {
-	adapted := &zapAdapter{Logger: globallogger.Get(development)}
+	safeGet := !development // do not panic in prod
+	adapted := &zapAdapter{Logger: globallogger.Get(safeGet)}
+
 	return adapted.Scoped(scope, description).With(otfields.AttributesNamespace)
 }
 

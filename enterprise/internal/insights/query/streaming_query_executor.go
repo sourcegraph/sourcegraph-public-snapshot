@@ -78,17 +78,19 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 			modifiedQuery := withCountUnlimited(query)
 			modifiedQuery = fmt.Sprintf("%s repo:^%s$@%s", modifiedQuery, regexp.QuoteMeta(repository), commits[0].ID)
 
-			decoder, countPtr, _, streamErrs := streaming.TabulationDecoder()
+			decoder, tabulationResult := streaming.TabulationDecoder()
 			err = streaming.Search(ctx, modifiedQuery, decoder)
 			if err != nil {
 				return nil, errors.Wrap(err, "streaming.Search")
 			}
 
-			if len(streamErrs) > 0 {
-				log15.Error("streaming errors", "errors", streamErrs)
+			tr := *tabulationResult
+
+			if len(tr.Errors) > 0 {
+				log15.Error("streaming errors", "errors", tr.Errors)
 			}
 
-			points[execution.RecordingTime] += *countPtr
+			points[execution.RecordingTime] += tr.TotalCount
 		}
 	}
 

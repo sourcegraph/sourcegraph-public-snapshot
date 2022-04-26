@@ -85,7 +85,7 @@ const toPortalID = (line: number): string => `line-decoration-attachment-${line}
 
 export interface BlobProps
     extends SettingsCascadeProps,
-        PlatformContextProps,
+        PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings' | 'forceUpdateTooltip'>,
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,

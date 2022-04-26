@@ -1,3 +1,5 @@
+import { IsProductionVersion } from './util'
+
 /**
  * The "browser action" is the name for the icon/button which is shown in the
  * browser UI (in the toolbar).
@@ -16,23 +18,41 @@ interface BrowserActionIconPaths {
     '128': string
 }
 
-const browserActionIconPaths: Record<BrowserActionIconState, BrowserActionIconPaths> = {
-    active: {
-        '32': 'img/icon-32.png',
-        '48': 'img/icon-48.png',
-        '128': 'img/icon-128.png',
-    },
-    'active-with-alert': {
-        '32': 'img/icon-active-with-alert-32.png',
-        '48': 'img/icon-active-with-alert-48.png',
-        '128': 'img/icon-active-with-alert-128.png',
-    },
-    inactive: {
-        '32': 'img/icon-inactive-32.png',
-        '48': 'img/icon-inactive-48.png',
-        '128': 'img/icon-inactive-128.png',
-    },
-}
+const browserActionIconPaths: Record<BrowserActionIconState, BrowserActionIconPaths> = IsProductionVersion
+    ? {
+          active: {
+              '32': 'img/icon-32.png',
+              '48': 'img/icon-48.png',
+              '128': 'img/icon-128.png',
+          },
+          'active-with-alert': {
+              '32': 'img/icon-active-with-alert-32.png',
+              '48': 'img/icon-active-with-alert-48.png',
+              '128': 'img/icon-active-with-alert-128.png',
+          },
+          inactive: {
+              '32': 'img/icon-inactive-32.png',
+              '48': 'img/icon-inactive-48.png',
+              '128': 'img/icon-inactive-128.png',
+          },
+      }
+    : {
+          active: {
+              '32': 'img/dev/icon-32.png',
+              '48': 'img/dev/icon-48.png',
+              '128': 'img/dev/icon-128.png',
+          },
+          'active-with-alert': {
+              '32': 'img/dev/icon-active-with-alert-32.png',
+              '48': 'img/dev/icon-active-with-alert-48.png',
+              '128': 'img/dev/icon-active-with-alert-128.png',
+          },
+          inactive: {
+              '32': 'img/dev/icon-inactive-32.png',
+              '48': 'img/dev/icon-inactive-48.png',
+              '128': 'img/dev/icon-inactive-128.png',
+          },
+      }
 
 /**
  * Update the browser action icon to the given state.

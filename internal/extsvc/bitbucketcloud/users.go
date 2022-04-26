@@ -8,7 +8,7 @@ import (
 )
 
 // CurrentUser returns the user associated with the authenticator in use.
-func (c *Client) CurrentUser(ctx context.Context) (*User, error) {
+func (c *client) CurrentUser(ctx context.Context) (*User, error) {
 	req, err := http.NewRequest("GET", "/2.0/user", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating request")
