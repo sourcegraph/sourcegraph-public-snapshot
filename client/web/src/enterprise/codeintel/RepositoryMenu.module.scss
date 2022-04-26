@@ -14,7 +14,7 @@
     position: relative;
 }
 
-.braindot:after {
+.braindot::after {
     content: '';
     position: absolute;
     bottom: 0.20rem;
@@ -25,10 +25,10 @@
     border: 2px solid var(--body-bg);
 }
 
-.braindot-error:after {
+.braindot-error::after {
     background-color: var(--red);
 }
 
-.braindot-attention:after {
+.braindot-attention::after {
     background-color: var(--purple);
 }
