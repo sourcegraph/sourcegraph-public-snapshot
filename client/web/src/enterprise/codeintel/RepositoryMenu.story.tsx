@@ -1,6 +1,5 @@
 import { storiesOf } from '@storybook/react'
 
-import { RepositoryMenu } from '../../codeintel/RepositoryMenu'
 import { WebStory } from '../../components/WebStory'
 import {
     ExecutionLogEntryFields,
@@ -12,8 +11,8 @@ import {
     SearchBasedSupportLevel,
 } from '../../graphql-operations'
 
-import { RepositoryMenuContent } from './RepositoryMenu'
-import { UseCodeIntelStatusPayload } from './useCodeIntelStatus'
+import { RepositoryMenu, RepositoryMenuProps } from './RepositoryMenu'
+import { UseCodeIntelStatusPayload, UseRequestLanguageSupportParameters } from './useCodeIntelStatus'
 
 const uploadPrototype: Omit<LsifUploadFields, 'id' | 'state' | 'uploadedAt'> = {
     __typename: 'LSIFUpload',
@@ -222,19 +221,30 @@ const emptyPayload: UseCodeIntelStatusPayload = {
 
 const now = () => new Date('2020-06-15T15:25:00+00:00')
 
-const defaultProps = {
-    isOpen: true,
+const defaultProps: RepositoryMenuProps = {
     repoName: 'repoName',
     revision: 'commitID',
     filePath: 'foo/bar/baz.bonk',
     settingsCascade: { subjects: null, final: null },
-    useCodeIntelStatus: () => ({ data: emptyPayload, loading: false }),
-    useRequestedLanguageSupportQuery: () => ({ data: { languages: ['ocaml'] }, loading: false, error: undefined }),
-    useRequestLanguageSupportQuery: ({ onCompleted }: { onCompleted?: () => void }) => [
-        () => Promise.resolve({ data: {} }).then(onCompleted),
-        {},
-    ],
+    isOpen: true,
     now,
+    showBadgeCta: false,
+    useCodeIntelStatus: () => ({ data: emptyPayload, loading: false }),
+    useRequestedLanguageSupportQuery: () => ({
+        data: { languages: ['ocaml'] },
+        loading: false,
+        error: undefined,
+    }),
+    useRequestLanguageSupportQuery: ({ onCompleted }: UseRequestLanguageSupportParameters) => [
+        () =>
+            Promise.resolve({ data: {}, loading: false }).then(value => {
+                if (onCompleted) {
+                    onCompleted()
+                }
+                return value
+            }),
+        { loading: false },
+    ],
 }
 const { add } = storiesOf('web/codeintel/enterprise/RepositoryMenu', module).addDecorator(story => (
     <WebStory>{() => story()}</WebStory>
@@ -245,38 +255,24 @@ const withPayload = (payload: Partial<UseCodeIntelStatusPayload>): typeof defaul
     useCodeIntelStatus: () => ({ data: { ...emptyPayload, ...payload }, loading: false }),
 })
 
-add('Unsupported', () => <RepositoryMenu {...defaultProps} content={RepositoryMenuContent} />)
+add('Unsupported', () => <RepositoryMenu {...defaultProps} />)
 
-add('Unavailable', () => <RepositoryMenu content={RepositoryMenuContent} {...withPayload({ searchBasedSupport })} />)
+add('Unavailable', () => <RepositoryMenu {...withPayload({ searchBasedSupport })} />)
 
-add('Multiple projects', () => (
-    <RepositoryMenu content={RepositoryMenuContent} {...withPayload({ preciseSupport: multiplePreciseSupport })} />
-))
+add('Multiple projects', () => <RepositoryMenu {...withPayload({ preciseSupport: multiplePreciseSupport })} />)
 
 add('Multiple projects, one enabled', () => (
-    <RepositoryMenu
-        content={RepositoryMenuContent}
-        {...withPayload({ recentUploads: [completedUpload], preciseSupport })}
-    />
+    <RepositoryMenu {...withPayload({ recentUploads: [completedUpload], preciseSupport })} />
 ))
 
-add('Processing error', () => (
-    <RepositoryMenu
-        content={RepositoryMenuContent}
-        {...withPayload({ recentUploads: [completedUpload, failingUpload] })}
-    />
-))
+add('Processing error', () => <RepositoryMenu {...withPayload({ recentUploads: [completedUpload, failingUpload] })} />)
 
 add('Indexing error', () => (
-    <RepositoryMenu
-        content={RepositoryMenuContent}
-        {...withPayload({ recentUploads: [completedUpload], recentIndexes: [failingIndex] })}
-    />
+    <RepositoryMenu {...withPayload({ recentUploads: [completedUpload], recentIndexes: [failingIndex] })} />
 ))
 
 add('Multiple errors', () => (
     <RepositoryMenu
-        content={RepositoryMenuContent}
         {...withPayload({ recentUploads: [completedUpload, failingUpload], recentIndexes: [failingIndex] })}
     />
 ))
