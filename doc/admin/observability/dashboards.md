@@ -5955,7 +5955,7 @@ To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100002`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (datname) (pg_stat_activity_max_tx_duration{datname!~"template.*|postgres|cloudsqladmin"}) OR sum by (datname) (pg_stat_activity_max_tx_duration{job="codeinsights-db", datname!~"template.*|cloudsqladmin"})`
+Query: `sum by (job) (pg_stat_activity_max_tx_duration{datname!~"template.*|postgres|cloudsqladmin"}) OR sum by (job) (pg_stat_activity_max_tx_duration{job="codeinsights-db", datname!~"template.*|cloudsqladmin"})`
 
 </details>
 
