@@ -21,6 +21,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tidwall/gjson"
 	"golang.org/x/sync/semaphore"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
@@ -47,6 +48,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -65,6 +67,9 @@ var (
 	syncRepoStateBatchSize         = env.MustGetInt("SRC_REPOS_SYNC_STATE_BATCH_SIZE", 500, "Number of upserts to perform per batch")
 	syncRepoStateUpsertPerSecond   = env.MustGetInt("SRC_REPOS_SYNC_STATE_UPSERT_PER_SEC", 500, "The number of upserted rows allowed per second across all gitserver instances")
 	batchLogGlobalConcurrencyLimit = env.MustGetInt("SRC_BATCH_LOG_GLOBAL_CONCURRENCY_LIMIT", 256, "The maximum number of in-flight Git commands from all /batch-log requests combined")
+
+	// 80 per second (4800 per minute) is well below our alert threshold of 30k per minute.
+	rateLimitSyncerLimitPerSecond = env.MustGetInt("SRC_REPOS_SYNC_RATE_LIMIT_RATE_PER_SECOND", 80, "Rate limit applied to rate limit syncing")
 )
 
 func main() {
@@ -146,12 +151,21 @@ func main() {
 	// Ready immediately
 	ready := make(chan struct{})
 	close(ready)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Best effort attempt to sync rate limiters for site level external services
+	// early on. If it fails, we'll try again in the background sync below.
+	if err := syncSiteLevelExternalServiceRateLimiters(ctx, externalServiceStore); err != nil {
+		log15.Warn("error performing initial site level rate limit sync", "error", err)
+	}
+
+	go syncRateLimiters(ctx, externalServiceStore, rateLimitSyncerLimitPerSecond)
 	go debugserver.NewServerRoutine(ready).Start()
 	go gitserver.Janitor(janitorInterval)
 	go gitserver.SyncRepoState(syncRepoStateInterval, syncRepoStateBatchSize, syncRepoStateUpsertPerSecond)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	gitserver.StartClonePipeline(ctx)
 
 	addr := os.Getenv("GITSERVER_ADDR")
@@ -436,4 +450,55 @@ func getVCSSyncer(
 		return server.NewGoModulesSyncer(&c, depsSvc, cli), nil
 	}
 	return &server.GitRepoSyncer{}, nil
+}
+
+func syncSiteLevelExternalServiceRateLimiters(ctx context.Context, store database.ExternalServiceStore) error {
+	svcs, err := store.List(ctx, database.ExternalServicesListOptions{NoNamespace: true})
+	if err != nil {
+		return errors.Wrap(err, "listing external services")
+	}
+	syncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store, repos.RateLimitSyncerOpts{})
+	return syncer.SyncServices(svcs)
+}
+
+// Sync rate limiters from config. Since we don't have a trigger that watches for
+// changes to rate limits we'll run this periodically in the background.
+func syncRateLimiters(ctx context.Context, store database.ExternalServiceStore, perSecond int) {
+	backoff := 5 * time.Second
+	batchSize := 50
+
+	// perSecond should be spread across all gitserver instances and we want to wait
+	// until we know about at least one instance.
+	var instanceCount int
+	for {
+		instanceCount = len(conf.Get().ServiceConnectionConfig.GitServers)
+		if instanceCount > 0 {
+			break
+		}
+		log15.Warn("found zero gitserver instance, trying again in %s", backoff)
+		time.Sleep(backoff)
+	}
+
+	limiter := rate.NewLimiter(rate.Limit(float64(perSecond)/float64(instanceCount)), batchSize)
+	syncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store, repos.RateLimitSyncerOpts{
+		PageSize: batchSize,
+		Limiter:  limiter,
+	})
+
+	var lastSuccessfulSync time.Time
+	ticker := time.NewTicker(1 * time.Minute)
+	for {
+		start := time.Now()
+		if err := syncer.SyncLimitersSince(ctx, lastSuccessfulSync); err != nil {
+			log15.Warn("syncRateLimiters: error syncing rate limits", "error", err)
+		} else {
+			lastSuccessfulSync = start
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
 }

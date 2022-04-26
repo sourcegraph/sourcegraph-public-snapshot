@@ -135,7 +135,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		Scheduler:             updateScheduler,
 		GitserverClient:       gitserver.NewClient(db),
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
-		RateLimitSyncer:       repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store.ExternalServiceStore),
+		RateLimitSyncer:       repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store.ExternalServiceStore, repos.RateLimitSyncerOpts{}),
 	}
 
 	// Attempt to perform an initial sync with all external services
