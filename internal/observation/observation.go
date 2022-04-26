@@ -191,7 +191,11 @@ type TraceLogger interface {
 	sglog.Logger
 }
 
-var TestTraceLogger = &traceLogger{}
+// TestTraceLogger creates an empty TraceLogger that can be used for testing. The logger
+// should be 'logtest.Scoped(t)'.
+func TestTraceLogger(logger sglog.Logger) TraceLogger {
+	return &traceLogger{Logger: logger}
+}
 
 type traceLogger struct {
 	opName string
