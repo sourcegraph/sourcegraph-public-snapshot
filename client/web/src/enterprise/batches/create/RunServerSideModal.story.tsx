@@ -17,8 +17,6 @@ add('Run Server-Side Modal', () => (
                 setIsRunServerSideModalOpen={function (condition: boolean): void {
                     throw new Error('Function not implemented.')
                 }}
-                name="my-batch-change"
-                originalInput="name: my-batch-change"
                 {...props}
             />
         )}
