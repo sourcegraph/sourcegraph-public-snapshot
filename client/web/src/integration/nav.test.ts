@@ -1,3 +1,4 @@
+import { subDays } from 'date-fns'
 import expect from 'expect'
 import { test } from 'mocha'
 
@@ -7,7 +8,7 @@ import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operati
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { WebGraphQlOperations } from '../graphql-operations'
+import { NotebookFields, WebGraphQlOperations } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import {
@@ -42,7 +43,32 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
         ),
     TreeEntries: () => createTreeEntriesResult('/github.com/sourcegraph/sourcegraph', ['README.md']),
     Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}\nsecond line\nthird line`),
+    ListNotebooks: () => ({
+        notebooks: {
+            totalCount: 1,
+            nodes: [notebookFixture('id', 'Title', [])],
+            pageInfo: { endCursor: null, hasNextPage: false },
+        },
+    }),
 }
+
+const now = new Date()
+
+const notebookFixture = (id: string, title: string, blocks: NotebookFields['blocks']): NotebookFields => ({
+    __typename: 'Notebook',
+    id,
+    title,
+    createdAt: subDays(now, 5).toISOString(),
+    updatedAt: subDays(now, 5).toISOString(),
+    public: true,
+    viewerCanManage: true,
+    viewerHasStarred: true,
+    namespace: { __typename: 'User', id: '1', namespaceName: 'user1' },
+    stars: { totalCount: 123 },
+    creator: { __typename: 'User', username: 'user1' },
+    updater: { __typename: 'User', username: 'user1' },
+    blocks,
+})
 
 describe('GlobalNavbar', () => {
     describe('Code Search Dropdown', () => {
@@ -98,8 +124,8 @@ describe('GlobalNavbar', () => {
             expect(active).toEqual('true')
         })
 
-        test('is not highlighted on batch changes page', async () => {
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/batch-changes')
+        test('is not highlighted on /notebooks page', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks')
 
             const active = await driver.page.evaluate(() =>
                 document.querySelector('[data-test-id="/search"]')?.getAttribute('data-test-active')
