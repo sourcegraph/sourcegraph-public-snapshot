@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
+	"github.com/sourcegraph/sourcegraph/internal/unpack"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -134,7 +135,7 @@ func unzipJarFile(jarPath, destination string) (err error) {
 
 	for _, file := range reader.File {
 		cleanedOutputPath, isPotentiallyMalicious :=
-			isPotentiallyMaliciousFilepathInArchive(file.Name, destinationDirectory)
+			unpack.IsPotentiallyMaliciousFilepathInArchive(file.Name, destinationDirectory)
 		if isPotentiallyMalicious {
 			continue
 		}

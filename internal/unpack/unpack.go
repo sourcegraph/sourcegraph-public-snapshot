@@ -23,8 +23,11 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -295,4 +298,105 @@ func withDir(path string, fn func() error) error {
 	}
 
 	return fn()
+}
+
+func IsPotentiallyMaliciousFilepathInArchive(filepath, destinationDir string) (outputPath string, _ bool) {
+	if strings.HasSuffix(filepath, "/") {
+		// Skip directory entries. Directory entries must end
+		// with a forward slash (even on Windows) according to
+		// `file.Name` docstring.
+		return "", true
+	}
+
+	if strings.HasPrefix(filepath, "/") {
+		// Skip absolute paths. While they are extracted relative to `destination`,
+		// they should be unimportant. Related issue https://github.com/golang/go/issues/48085#issuecomment-912659635
+		return "", true
+	}
+
+	for _, dirEntry := range strings.Split(filepath, string(os.PathSeparator)) {
+		if dirEntry == ".git" {
+			// For security reasons, don't unzip files under any `.git/`
+			// directory. See https://github.com/sourcegraph/security-issues/issues/163
+			return "", true
+		}
+	}
+
+	cleanedOutputPath := path.Join(destinationDir, filepath)
+	if !strings.HasPrefix(cleanedOutputPath, destinationDir) {
+		// For security reasons, skip file if it's not a child
+		// of the target directory. See "Zip Slip Vulnerability".
+		return "", true
+	}
+
+	return cleanedOutputPath, false
+}
+
+// Decompress a tarball at tgzPath, putting the files under destination.
+//
+// Additionally, if all the files in the tarball have paths of the form
+// dir/<blah> for the same directory 'dir', the 'dir' will be stripped.
+func DecompressTgz(tgz io.Reader, destination string) error {
+	err := Tgz(tgz, destination, Opts{
+		SkipInvalid: true,
+		Filter: func(path string, file fs.FileInfo) bool {
+			size := file.Size()
+
+			const sizeLimit = 15 * 1024 * 1024
+			if size >= sizeLimit {
+				log15.Warn("skipping large file",
+					"path", file.Name(),
+					"size", size,
+					"limit", sizeLimit,
+				)
+				return false
+			}
+
+			_, malicious := IsPotentiallyMaliciousFilepathInArchive(path, destination)
+			return !malicious
+		},
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return stripSingleOutermostDirectory(destination)
+}
+
+// stripSingleOutermostDirectory strips a single outermost directory in dir
+// if it has no sibling files or directories.
+//
+// In practice, npm tarballs seem to contain a superfluous directory which
+// contains the files. For example, if you extract react's tarball,
+// all files will be under a package/ directory, and if you extract
+// @types/lodash's files, all files are under lodash/.
+//
+// However, this additional directory has no meaning. Moreover, it makes
+// the UX slightly worse, as when you navigate to a repo, you would see
+// that it contains just 1 folder, and you'd need to click again to drill
+// down further. So we strip the superfluous directory if we detect one.
+//
+// https://github.com/sourcegraph/sourcegraph/pull/28057#issuecomment-987890718
+func stripSingleOutermostDirectory(dir string) error {
+	dirEntries, err := os.ReadDir(dir)
+	if err != nil {
+		return err
+	}
+
+	if len(dirEntries) != 1 || !dirEntries[0].IsDir() {
+		return nil
+	}
+
+	outermostDir := dirEntries[0].Name()
+	tmpDir := dir + ".tmp"
+
+	// mv $dir $tmpDir
+	err = os.Rename(dir, tmpDir)
+	if err != nil {
+		return err
+	}
+
+	// mv $tmpDir/$(basename $outermostDir) $dir
+	return os.Rename(path.Join(tmpDir, outermostDir), dir)
 }

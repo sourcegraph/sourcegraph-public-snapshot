@@ -11,7 +11,6 @@ import (
 	"os/exec"
 	"path"
 	"reflect"
-	"strconv"
 	"testing"
 	"time"
 
@@ -24,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmtest"
+	"github.com/sourcegraph/sourcegraph/internal/unpack"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -37,8 +37,6 @@ const (
 	exampleNpmVersion2          = "2.0.0-abc"
 	exampleNpmVersionedPackage  = "example@1.0.0"
 	exampleNpmVersionedPackage2 = "example@2.0.0-abc"
-	exampleTgz                  = "example-1.0.0.tgz"
-	exampleTgz2                 = "example-2.0.0-abc.tgz"
 	exampleNpmPackageURL        = "npm/example"
 )
 
@@ -52,7 +50,7 @@ func TestNoMaliciousFilesNpm(t *testing.T) {
 
 	tgz := bytes.NewReader(createMaliciousTgz(t))
 
-	err = decompressTgz(tgz, extractPath)
+	err = unpack.DecompressTgz(tgz, extractPath)
 	assert.Nil(t, err) // Malicious files are skipped
 
 	dirEntries, err := os.ReadDir(extractPath)
@@ -244,87 +242,3 @@ func (info *fileInfo) Mode() fs.FileMode  { return 0600 }
 func (info *fileInfo) ModTime() time.Time { return time.Unix(0, 0) }
 func (info *fileInfo) IsDir() bool        { return false }
 func (info *fileInfo) Sys() interface{}   { return nil }
-
-func TestDecompressTgz(t *testing.T) {
-	table := []struct {
-		paths  []string
-		expect []string
-	}{
-		// Check that stripping the outermost shared directory works if all
-		// paths have a common outermost directory.
-		{[]string{"d/f1", "d/f2"}, []string{"f1", "f2"}},
-		{[]string{"d1/d2/f1", "d1/d2/f2"}, []string{"d2"}},
-		{[]string{"d1/f1", "d2/f2", "d3/f3"}, []string{"d1", "d2", "d3"}},
-		{[]string{"f1", "d1/f2", "d1/f3"}, []string{"d1", "f1"}},
-	}
-
-	for i, testData := range table {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			dir, err := os.MkdirTemp("", "")
-			require.NoError(t, err)
-			t.Cleanup(func() { require.NoError(t, os.RemoveAll(dir)) })
-
-			var fileInfos []fileInfo
-			for _, path := range testData.paths {
-				fileInfos = append(fileInfos, fileInfo{path: path, contents: []byte("x")})
-			}
-
-			tgz := bytes.NewReader(createTgz(t, fileInfos))
-
-			require.NoError(t, decompressTgz(tgz, dir))
-
-			have, err := fs.Glob(os.DirFS(dir), "*")
-			require.NoError(t, err)
-
-			require.Equal(t, testData.expect, have)
-		})
-	}
-}
-
-// Regression test for: https://github.com/sourcegraph/sourcegraph/issues/30554
-func TestDecompressTgzNoOOB(t *testing.T) {
-	testCases := [][]tar.Header{
-		{
-			{Typeflag: tar.TypeDir, Name: "non-empty"},
-			{Typeflag: tar.TypeReg, Name: "non-empty/f1"},
-		},
-		{
-			{Typeflag: tar.TypeDir, Name: "empty"},
-			{Typeflag: tar.TypeReg, Name: "non-empty/f1"},
-		},
-		{
-			{Typeflag: tar.TypeDir, Name: "empty"},
-			{Typeflag: tar.TypeDir, Name: "non-empty/"},
-			{Typeflag: tar.TypeReg, Name: "non-empty/f1"},
-		},
-	}
-
-	for _, testCase := range testCases {
-		testDecompressTgzNoOOBImpl(t, testCase)
-	}
-}
-
-func testDecompressTgzNoOOBImpl(t *testing.T, entries []tar.Header) {
-	buffer := bytes.NewBuffer([]byte{})
-
-	gzipWriter := gzip.NewWriter(buffer)
-	tarWriter := tar.NewWriter(gzipWriter)
-	for _, entry := range entries {
-		tarWriter.WriteHeader(&entry)
-		if entry.Typeflag == tar.TypeReg {
-			tarWriter.Write([]byte("filler"))
-		}
-	}
-	tarWriter.Close()
-	gzipWriter.Close()
-
-	reader := bytes.NewReader(buffer.Bytes())
-
-	outDir, err := os.MkdirTemp("", "decompress-oobfix-")
-	require.Nil(t, err)
-	defer os.RemoveAll(outDir)
-
-	require.NotPanics(t, func() {
-		decompressTgz(reader, outDir)
-	})
-}

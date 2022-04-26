@@ -11,11 +11,15 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestTgzFallback(t *testing.T) {
@@ -358,3 +362,118 @@ func (f *fileInfo) Mode() fs.FileMode  { return f.mode }
 func (f *fileInfo) ModTime() time.Time { return f.modtime }
 func (f *fileInfo) IsDir() bool        { return f.mode.IsDir() }
 func (f *fileInfo) Sys() interface{}   { return nil }
+
+func TestDecompressTgz(t *testing.T) {
+	table := []struct {
+		paths  []string
+		expect []string
+	}{
+		// Check that stripping the outermost shared directory works if all
+		// paths have a common outermost directory.
+		{[]string{"d/f1", "d/f2"}, []string{"f1", "f2"}},
+		{[]string{"d1/d2/f1", "d1/d2/f2"}, []string{"d2"}},
+		{[]string{"d1/f1", "d2/f2", "d3/f3"}, []string{"d1", "d2", "d3"}},
+		{[]string{"f1", "d1/f2", "d1/f3"}, []string{"d1", "f1"}},
+	}
+
+	for i, testData := range table {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			dir, err := os.MkdirTemp("", "")
+			require.NoError(t, err)
+			t.Cleanup(func() { require.NoError(t, os.RemoveAll(dir)) })
+
+			var fileInfos []fileInfo
+			for _, path := range testData.paths {
+				fileInfos = append(fileInfos, fileInfo{path: path, contents: "x"})
+			}
+
+			tgz := bytes.NewReader(createTgz(t, fileInfos))
+
+			require.NoError(t, DecompressTgz(tgz, dir))
+
+			have, err := fs.Glob(os.DirFS(dir), "*")
+			require.NoError(t, err)
+
+			require.Equal(t, testData.expect, have)
+		})
+	}
+}
+
+// Regression test for: https://github.com/sourcegraph/sourcegraph/issues/30554
+func TestDecompressTgzNoOOB(t *testing.T) {
+	testCases := [][]tar.Header{
+		{
+			{Typeflag: tar.TypeDir, Name: "non-empty"},
+			{Typeflag: tar.TypeReg, Name: "non-empty/f1"},
+		},
+		{
+			{Typeflag: tar.TypeDir, Name: "empty"},
+			{Typeflag: tar.TypeReg, Name: "non-empty/f1"},
+		},
+		{
+			{Typeflag: tar.TypeDir, Name: "empty"},
+			{Typeflag: tar.TypeDir, Name: "non-empty/"},
+			{Typeflag: tar.TypeReg, Name: "non-empty/f1"},
+		},
+	}
+
+	for _, testCase := range testCases {
+		testDecompressTgzNoOOBImpl(t, testCase)
+	}
+}
+
+func testDecompressTgzNoOOBImpl(t *testing.T, entries []tar.Header) {
+	buffer := bytes.NewBuffer([]byte{})
+
+	gzipWriter := gzip.NewWriter(buffer)
+	tarWriter := tar.NewWriter(gzipWriter)
+	for _, entry := range entries {
+		tarWriter.WriteHeader(&entry)
+		if entry.Typeflag == tar.TypeReg {
+			tarWriter.Write([]byte("filler"))
+		}
+	}
+	tarWriter.Close()
+	gzipWriter.Close()
+
+	reader := bytes.NewReader(buffer.Bytes())
+
+	outDir, err := os.MkdirTemp("", "decompress-oobfix-")
+	require.Nil(t, err)
+	defer os.RemoveAll(outDir)
+
+	require.NotPanics(t, func() {
+		DecompressTgz(reader, outDir)
+	})
+}
+
+func createTgz(t *testing.T, fileInfos []fileInfo) []byte {
+	t.Helper()
+
+	var buf bytes.Buffer
+	gzipWriter := gzip.NewWriter(&buf)
+	tarWriter := tar.NewWriter(gzipWriter)
+
+	for _, fileinfo := range fileInfos {
+		require.NoError(t, addFileToTarball(t, tarWriter, fileinfo))
+	}
+
+	require.NoError(t, tarWriter.Close())
+	require.NoError(t, gzipWriter.Close())
+
+	return buf.Bytes()
+}
+
+func addFileToTarball(t *testing.T, tarWriter *tar.Writer, info fileInfo) error {
+	t.Helper()
+	header, err := tar.FileInfoHeader(&info, "")
+	if err != nil {
+		return err
+	}
+	header.Name = info.path
+	if err = tarWriter.WriteHeader(header); err != nil {
+		return errors.Wrapf(err, "failed to write header for %s", info.path)
+	}
+	_, err = tarWriter.Write([]byte(info.contents))
+	return err
+}

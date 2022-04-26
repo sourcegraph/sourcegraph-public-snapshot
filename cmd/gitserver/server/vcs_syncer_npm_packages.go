@@ -3,12 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"io"
-	"io/fs"
-	"os"
-	"path"
-
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -85,78 +79,9 @@ func (s *npmPackagesSyncer) Download(ctx context.Context, dir string, dep reposo
 	}
 	defer tgz.Close()
 
-	if err = decompressTgz(tgz, dir); err != nil {
+	if err = unpack.DecompressTgz(tgz, dir); err != nil {
 		return errors.Wrapf(err, "failed to decompress gzipped tarball for %s", dep.PackageManagerSyntax())
 	}
 
 	return nil
-}
-
-// Decompress a tarball at tgzPath, putting the files under destination.
-//
-// Additionally, if all the files in the tarball have paths of the form
-// dir/<blah> for the same directory 'dir', the 'dir' will be stripped.
-func decompressTgz(tgz io.Reader, destination string) error {
-	err := unpack.Tgz(tgz, destination, unpack.Opts{
-		SkipInvalid: true,
-		Filter: func(path string, file fs.FileInfo) bool {
-			size := file.Size()
-
-			const sizeLimit = 15 * 1024 * 1024
-			if size >= sizeLimit {
-				log15.Warn("skipping large file in npm package",
-					"path", file.Name(),
-					"size", size,
-					"limit", sizeLimit,
-				)
-				return false
-			}
-
-			_, malicious := isPotentiallyMaliciousFilepathInArchive(path, destination)
-			return !malicious
-		},
-	})
-
-	if err != nil {
-		return err
-	}
-
-	return stripSingleOutermostDirectory(destination)
-}
-
-// stripSingleOutermostDirectory strips a single outermost directory in dir
-// if it has no sibling files or directories.
-//
-// In practice, npm tarballs seem to contain a superfluous directory which
-// contains the files. For example, if you extract react's tarball,
-// all files will be under a package/ directory, and if you extract
-// @types/lodash's files, all files are under lodash/.
-//
-// However, this additional directory has no meaning. Moreover, it makes
-// the UX slightly worse, as when you navigate to a repo, you would see
-// that it contains just 1 folder, and you'd need to click again to drill
-// down further. So we strip the superfluous directory if we detect one.
-//
-// https://github.com/sourcegraph/sourcegraph/pull/28057#issuecomment-987890718
-func stripSingleOutermostDirectory(dir string) error {
-	dirEntries, err := os.ReadDir(dir)
-	if err != nil {
-		return err
-	}
-
-	if len(dirEntries) != 1 || !dirEntries[0].IsDir() {
-		return nil
-	}
-
-	outermostDir := dirEntries[0].Name()
-	tmpDir := dir + ".tmp"
-
-	// mv $dir $tmpDir
-	err = os.Rename(dir, tmpDir)
-	if err != nil {
-		return err
-	}
-
-	// mv $tmpDir/$(basename $outermostDir) $dir
-	return os.Rename(path.Join(tmpDir, outermostDir), dir)
 }
