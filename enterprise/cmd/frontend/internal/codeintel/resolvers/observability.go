@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"go.uber.org/zap"
 
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type operations struct {
@@ -81,7 +82,6 @@ func newOperations(observationContext *observation.Context) *operations {
 func observeResolver(
 	ctx context.Context,
 	err *error,
-	name string,
 	operation *observation.Operation,
 	threshold time.Duration,
 	observationArgs observation.Args,
@@ -94,20 +94,16 @@ func observeResolver(
 		endObservation(1, observation.Args{})
 
 		if duration >= threshold {
-			lowSlowRequest(name, duration, err, observationArgs)
+			// use trace logger which includes all relevant fields
+			lowSlowRequest(trace, duration, err)
 		}
 	}
 }
 
-func lowSlowRequest(name string, duration time.Duration, err *error, observationArgs observation.Args) {
-	pairs := append(
-		observationArgs.LogFieldPairs(),
-		"type", name,
-		"duration_ms", duration.Milliseconds(),
-	)
+func lowSlowRequest(logger log.Logger, duration time.Duration, err *error) {
+	fields := []log.Field{zap.Duration("duration", duration)}
 	if err != nil && *err != nil {
-		pairs = append(pairs, "error", (*err).Error())
+		fields = append(fields, log.Error(*err))
 	}
-
-	log15.Warn("Slow codeintel request", pairs...)
+	logger.Warn("Slow codeintel request", fields...)
 }

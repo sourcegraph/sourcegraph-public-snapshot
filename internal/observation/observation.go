@@ -284,20 +284,6 @@ type Args struct {
 	LogFields []otlog.Field
 }
 
-// LogFieldPairs returns a slice of key, value, key, value, ... pairs containing the contents
-// of this Arg value's log fields.
-//
-// Deprecated: use the Logger that comes with TraceLogger instead, which includes the
-// fields in Args.
-func (args Args) LogFieldPairs() []interface{} {
-	pairs := make([]interface{}, 0, len(args.LogFields)*2)
-	for _, field := range args.LogFields {
-		pairs = append(pairs, field.Key(), field.Value())
-	}
-
-	return pairs
-}
-
 // WithErrors prepares the necessary timers, loggers, and metrics to observe the invocation of an
 // operation. This method returns a modified context, an multi-error capturing type and a function to be deferred until the
 // end of the operation. It can be used with FinishFunc.OnCancel to capture multiple async errors.
