@@ -52,7 +52,7 @@ func Postgres() *monitoring.Container {
 						Description:       "maximum transaction durations",
 						Owner:             monitoring.ObservableOwnerDevOps,
 						DataMustExist:     false, // not deployed on docker-compose
-						Query:             `sum by (datname) (pg_stat_activity_max_tx_duration{datname!~"template.*|postgres|cloudsqladmin"}) OR sum by (datname) (pg_stat_activity_max_tx_duration{job="codeinsights-db", datname!~"template.*|cloudsqladmin"})`,
+						Query:             `sum by (job) (pg_stat_activity_max_tx_duration{datname!~"template.*|postgres|cloudsqladmin"}) OR sum by (job) (pg_stat_activity_max_tx_duration{job="codeinsights-db", datname!~"template.*|cloudsqladmin"})`,
 						Panel:             monitoring.Panel().LegendFormat("{{datname}}").Unit(monitoring.Seconds),
 						Warning:           monitoring.Alert().GreaterOrEqual(0.3).For(5 * time.Minute),
 						Critical:          monitoring.Alert().GreaterOrEqual(0.5).For(10 * time.Minute),
