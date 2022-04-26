@@ -34,10 +34,10 @@ func GitHubProxy() *monitoring.Container {
 				},
 			},
 
-			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerRepoManagement, nil),
-			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerRepoManagement, nil),
-			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerRepoManagement, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerRepoManagement, nil),
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
+			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
 		},
 	}
 }
