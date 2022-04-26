@@ -85,8 +85,6 @@ type Context struct {
 // TestContext is a behaviorless Context usable for unit tests.
 var TestContext = Context{Registerer: metrics.TestRegisterer}
 
-var TestOperation *Operation
-
 type ErrorFilterBehaviour uint8
 
 const (

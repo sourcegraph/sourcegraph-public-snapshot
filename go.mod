@@ -221,8 +221,6 @@ require (
 	github.com/tinylib/msgp v1.1.6 // indirect
 	github.com/yuin/goldmark v1.4.4 // indirect
 	github.com/yuin/goldmark-emoji v1.0.1 // indirect
-	go.opentelemetry.io/otel v1.6.3 // indirect
-	go.opentelemetry.io/otel/trace v1.6.3 // indirect
 	sigs.k8s.io/json v0.0.0-20211208200746-9f7c6b3444d2 // indirect
 )
 
@@ -238,7 +236,7 @@ require (
 	github.com/spf13/cobra v1.2.1 // indirect
 	github.com/twitchtv/twirp v8.1.1+incompatible // indirect
 	go.uber.org/multierr v1.7.0 // indirect
-	go.uber.org/zap v1.21.0 // indirect
+	go.uber.org/zap v1.21.0
 )
 
 require (

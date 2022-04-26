@@ -23,7 +23,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsiftyped"
@@ -39,18 +38,6 @@ var (
 
 func init() {
 	client = gosyntect.New(syntectServer)
-
-	obsvCtx := observation.Context{
-		HoneyDataset: &honey.Dataset{
-			Name:       "codeintel-syntax-highlighting",
-			SampleRate: 10, // 1 in 10
-		},
-	}
-	highlightOp = obsvCtx.Operation(observation.Op{
-		Name:        "codeintel.syntax-highlight.Code",
-		LogFields:   []otlog.Field{},
-		ErrorFilter: func(err error) observation.ErrorFilterBehaviour { return observation.EmitForHoney },
-	})
 }
 
 // IsBinary is a helper to tell if the content of a file is binary or not.
