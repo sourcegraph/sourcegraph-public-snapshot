@@ -109,6 +109,11 @@
         [{ "name": "myorg/myrepo" }, { "uuid": "{fceb73c7-cef6-4abe-956d-e471281126bc}" }],
         [{ "name": "myorg/myrepo" }, { "name": "myorg/myotherrepo" }, { "pattern": "^topsecretproject/.*" }]
       ]
+    },
+    "webhookSecret": {
+      "description": "A shared secret used to authenticate incoming webhooks (minimum 12 characters).",
+      "type": "string",
+      "minLength": 12
     }
   }
 }

@@ -221,6 +221,8 @@ type BitbucketCloudConnection struct {
 	Url string `json:"url"`
 	// Username description: The username to use when authenticating to the Bitbucket Cloud. Also set the corresponding "appPassword" field.
 	Username string `json:"username"`
+	// WebhookSecret description: A shared secret used to authenticate incoming webhooks (minimum 12 characters).
+	WebhookSecret string `json:"webhookSecret,omitempty"`
 }
 
 // BitbucketCloudRateLimit description: Rate limit applied when making background API requests to Bitbucket Cloud.
