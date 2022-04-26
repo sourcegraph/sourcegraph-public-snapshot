@@ -639,6 +639,7 @@ var dependencyCategoryAdditionalSgConfiguration = dependencyCategory{
 				autocompletePath := usershell.AutocompleteScriptPath(sgHome, shell)
 				commands = append(commands,
 					fmt.Sprintf(`echo "Writing autocomplete script to %s"`, autocompletePath),
+					fmt.Sprintf("mkdir -p %s", sgHome), // make sghome just in case
 					fmt.Sprintf(`echo '%s' > %s`, autocompleteScript, autocompletePath))
 
 				shellConfig := usershell.ShellConfigPath(ctx)
