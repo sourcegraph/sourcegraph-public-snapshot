@@ -439,8 +439,8 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                     {...repoHeaderContributionsLifecycleProps}
                 >
                     {({ actionType }) =>
-                        props.codeIntelligenceRepositoryMenu && actionType === 'nav' ? (
-                            <props.codeIntelligenceRepositoryMenu
+                        props.codeIntelBadge && actionType === 'nav' ? (
+                            <props.codeIntelBadge
                                 key="code-intelligence-status"
                                 repoName={repoName}
                                 revision={rawRevision || 'HEAD'}

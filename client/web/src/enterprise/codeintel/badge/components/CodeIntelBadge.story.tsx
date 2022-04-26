@@ -1,6 +1,6 @@
 import { storiesOf } from '@storybook/react'
 
-import { WebStory } from '../../components/WebStory'
+import { WebStory } from '../../../../components/WebStory'
 import {
     ExecutionLogEntryFields,
     LsifIndexFields,
@@ -9,10 +9,10 @@ import {
     LSIFUploadState,
     PreciseSupportLevel,
     SearchBasedSupportLevel,
-} from '../../graphql-operations'
+} from '../../../../graphql-operations'
+import { UseCodeIntelStatusPayload, UseRequestLanguageSupportParameters } from '../hooks/useCodeIntelStatus'
 
-import { RepositoryMenu, RepositoryMenuProps } from './RepositoryMenu'
-import { UseCodeIntelStatusPayload, UseRequestLanguageSupportParameters } from './useCodeIntelStatus'
+import { CodeIntelBadge, CodeIntelBadgeProps } from './CodeIntelBadge'
 
 const uploadPrototype: Omit<LsifUploadFields, 'id' | 'state' | 'uploadedAt'> = {
     __typename: 'LSIFUpload',
@@ -221,7 +221,7 @@ const emptyPayload: UseCodeIntelStatusPayload = {
 
 const now = () => new Date('2020-06-15T15:25:00+00:00')
 
-const defaultProps: RepositoryMenuProps = {
+const defaultProps: CodeIntelBadgeProps = {
     repoName: 'repoName',
     revision: 'commitID',
     filePath: 'foo/bar/baz.bonk',
@@ -246,7 +246,7 @@ const defaultProps: RepositoryMenuProps = {
         { loading: false },
     ],
 }
-const { add } = storiesOf('web/codeintel/enterprise/RepositoryMenu', module).addDecorator(story => (
+const { add } = storiesOf('web/codeintel/enterprise/CodeIntelBadge', module).addDecorator(story => (
     <WebStory>{() => story()}</WebStory>
 ))
 
@@ -255,24 +255,24 @@ const withPayload = (payload: Partial<UseCodeIntelStatusPayload>): typeof defaul
     useCodeIntelStatus: () => ({ data: { ...emptyPayload, ...payload }, loading: false }),
 })
 
-add('Unsupported', () => <RepositoryMenu {...defaultProps} />)
+add('Unsupported', () => <CodeIntelBadge {...defaultProps} />)
 
-add('Unavailable', () => <RepositoryMenu {...withPayload({ searchBasedSupport })} />)
+add('Unavailable', () => <CodeIntelBadge {...withPayload({ searchBasedSupport })} />)
 
-add('Multiple projects', () => <RepositoryMenu {...withPayload({ preciseSupport: multiplePreciseSupport })} />)
+add('Multiple projects', () => <CodeIntelBadge {...withPayload({ preciseSupport: multiplePreciseSupport })} />)
 
 add('Multiple projects, one enabled', () => (
-    <RepositoryMenu {...withPayload({ recentUploads: [completedUpload], preciseSupport })} />
+    <CodeIntelBadge {...withPayload({ recentUploads: [completedUpload], preciseSupport })} />
 ))
 
-add('Processing error', () => <RepositoryMenu {...withPayload({ recentUploads: [completedUpload, failingUpload] })} />)
+add('Processing error', () => <CodeIntelBadge {...withPayload({ recentUploads: [completedUpload, failingUpload] })} />)
 
 add('Indexing error', () => (
-    <RepositoryMenu {...withPayload({ recentUploads: [completedUpload], recentIndexes: [failingIndex] })} />
+    <CodeIntelBadge {...withPayload({ recentUploads: [completedUpload], recentIndexes: [failingIndex] })} />
 ))
 
 add('Multiple errors', () => (
-    <RepositoryMenu
+    <CodeIntelBadge
         {...withPayload({ recentUploads: [completedUpload, failingUpload], recentIndexes: [failingIndex] })}
     />
 ))
