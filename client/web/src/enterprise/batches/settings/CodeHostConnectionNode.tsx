@@ -85,6 +85,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                                 data-tooltip="This code host has credentials connected."
                                 aria-label="This code host has credentials connected."
                                 as={CheckCircleOutlineIcon}
+                                role="img"
                             />
                         )}
                         {!isEnabled && (
@@ -93,6 +94,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                                 data-tooltip="This code host does not have credentials configured."
                                 aria-label="This code host does not have credentials configured."
                                 as={CheckboxBlankCircleOutlineIcon}
+                                role="img"
                             />
                         )}
                         <Icon className="mx-2" role="img" aria-hidden={true} as={ExternalServiceIcon} />{' '}
