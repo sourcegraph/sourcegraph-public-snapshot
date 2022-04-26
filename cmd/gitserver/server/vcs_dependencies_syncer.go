@@ -49,31 +49,31 @@ type dependenciesSyncer interface {
 	ParseDependencyFromRepoName(repoName string) (reposource.PackageDependency, error)
 }
 
-func (ps *vcsDependenciesSyncer) IsCloneable(ctx context.Context, repoUrl *vcs.URL) error {
+func (s *vcsDependenciesSyncer) IsCloneable(ctx context.Context, repoUrl *vcs.URL) error {
 	return nil
 }
 
-func (ps *vcsDependenciesSyncer) Type() string {
-	return ps.typ
+func (s *vcsDependenciesSyncer) Type() string {
+	return s.typ
 }
 
-func (ps *vcsDependenciesSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error) {
+func (s *vcsDependenciesSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error) {
 	return exec.CommandContext(ctx, "git", "remote", "show", "./"), nil
 }
 
-func (ps *vcsDependenciesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, bareGitDirectory string) (*exec.Cmd, error) {
+func (s *vcsDependenciesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, bareGitDirectory string) (*exec.Cmd, error) {
 	err := os.MkdirAll(bareGitDirectory, 0755)
 	if err != nil {
 		return nil, err
 	}
 
 	cmd := exec.CommandContext(ctx, "git", "--bare", "init")
-	if _, err := runCommandInDirectory(ctx, cmd, bareGitDirectory, ps.placeholder); err != nil {
+	if _, err := runCommandInDirectory(ctx, cmd, bareGitDirectory, s.placeholder); err != nil {
 		return nil, err
 	}
 
 	// The Fetch method is responsible for cleaning up temporary directories.
-	if err := ps.Fetch(ctx, remoteURL, GitDir(bareGitDirectory)); err != nil {
+	if err := s.Fetch(ctx, remoteURL, GitDir(bareGitDirectory)); err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch repo for %s", remoteURL)
 	}
 
@@ -81,30 +81,44 @@ func (ps *vcsDependenciesSyncer) CloneCommand(ctx context.Context, remoteURL *vc
 	return exec.CommandContext(ctx, "git", "--version"), nil
 }
 
-func (ps *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir) error {
-	dep, err := ps.syncer.ParseDependencyFromRepoName(remoteURL.Path)
+func (s *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir) (err error) {
+	var dep reposource.PackageDependency
+	dep, err = s.syncer.ParseDependencyFromRepoName(remoteURL.Path)
 	if err != nil {
 		return err
 	}
 
 	depName := dep.PackageSyntax()
-	versions, err := ps.versions(ctx, depName)
+
+	var versions []string
+	versions, err = s.versions(ctx, depName)
 	if err != nil {
 		return err
 	}
 
+	var errs errors.MultiError
 	cloneable := make([]reposource.PackageDependency, 0, len(versions))
 	for _, version := range versions {
-		d, err := ps.syncer.Get(ctx, depName, version)
-		if err != nil {
+		if d, err := s.syncer.Get(ctx, depName, version); err != nil {
 			if errcode.IsNotFound(err) {
-				log15.Warn("skipping missing dependency", "dep", depName, "version", version, "type", ps.typ)
-				continue
+				log15.Warn("skipping missing dependency", "dep", depName, "version", version, "type", s.typ)
+			} else {
+				errs = errors.Append(errs, err)
 			}
-			return err
+		} else {
+			cloneable = append(cloneable, d)
 		}
-		cloneable = append(cloneable, d)
 	}
+
+	// If there are no cloneable versions, early return with any aggregated errors.
+	if len(cloneable) == 0 {
+		return errs
+	}
+
+	// Otherwise, proceed to clone cloneable versions but return aggregated errors at the end.
+	defer func() {
+		err = errors.Append(errs, err)
+	}()
 
 	// We sort in descending order, so that the latest version is in the first position.
 	sort.SliceStable(cloneable, func(i, j int) bool {
@@ -113,7 +127,7 @@ func (ps *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, 
 
 	// Create set of existing tags. We want to skip the download of a package if the
 	// tag already exists.
-	out, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "tag"), string(dir), ps.placeholder)
+	out, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "tag"), string(dir), s.placeholder)
 	if err != nil {
 		return err
 	}
@@ -129,7 +143,7 @@ func (ps *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, 
 		if _, tagExists := tags[dependency.GitTagFromVersion()]; tagExists {
 			continue
 		}
-		if err := ps.gitPushDependencyTag(ctx, string(dir), dependency, i == 0); err != nil {
+		if err := s.gitPushDependencyTag(ctx, string(dir), dependency, i == 0); err != nil {
 			return errors.Wrapf(err, "error pushing dependency %q", dependency.PackageManagerSyntax())
 		}
 	}
@@ -139,10 +153,11 @@ func (ps *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, 
 	for _, dependency := range cloneable {
 		dependencyTags[dependency.GitTagFromVersion()] = struct{}{}
 	}
+
 	for tag := range tags {
 		if _, isDependencyTag := dependencyTags[tag]; !isDependencyTag {
 			cmd := exec.CommandContext(ctx, "git", "tag", "-d", tag)
-			if _, err := runCommandInDirectory(ctx, cmd, string(dir), ps.placeholder); err != nil {
+			if _, err := runCommandInDirectory(ctx, cmd, string(dir), s.placeholder); err != nil {
 				log15.Error("failed to delete git tag", "error", err, "tag", tag)
 				continue
 			}
@@ -159,14 +174,14 @@ func (ps *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, 
 //
 // gitPushDependencyTag is responsible for cleaning up temporary directories
 // created in the process.
-func (ps *vcsDependenciesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dep reposource.PackageDependency, isLatestVersion bool) error {
-	workDir, err := os.MkdirTemp("", ps.Type())
+func (s *vcsDependenciesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dep reposource.PackageDependency, isLatestVersion bool) error {
+	workDir, err := os.MkdirTemp("", s.Type())
 	if err != nil {
 		return err
 	}
 	defer os.RemoveAll(workDir)
 
-	err = ps.syncer.Download(ctx, workDir, dep)
+	err = s.syncer.Download(ctx, workDir, dep)
 	if err != nil {
 		return err
 	}
@@ -220,10 +235,10 @@ func (ps *vcsDependenciesSyncer) gitPushDependencyTag(ctx context.Context, bareG
 	return nil
 }
 
-func (ps *vcsDependenciesSyncer) versions(ctx context.Context, packageName string) ([]string, error) {
+func (s *vcsDependenciesSyncer) versions(ctx context.Context, packageName string) ([]string, error) {
 	var versions []string
-	for _, d := range ps.configDeps {
-		dep, err := ps.syncer.ParseDependency(d)
+	for _, d := range s.configDeps {
+		dep, err := s.syncer.ParseDependency(d)
 		if err != nil {
 			log15.Warn("skipping malformed dependency", "dep", d, "error", err)
 			continue
@@ -234,8 +249,8 @@ func (ps *vcsDependenciesSyncer) versions(ctx context.Context, packageName strin
 		}
 	}
 
-	depRepos, err := ps.svc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
-		Scheme:      ps.scheme,
+	depRepos, err := s.svc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
+		Scheme:      s.scheme,
 		Name:        packageName,
 		NewestFirst: true,
 	})

@@ -151,7 +151,7 @@ func (n npmError) Error() string {
 }
 
 func (n npmError) NotFound() bool {
-	return n.statusCode >= 400 && n.statusCode < 500
+	return n.statusCode == http.StatusNotFound
 }
 
 func (client *HTTPClient) makeGetRequest(ctx context.Context, url string) (io.ReadCloser, error) {
