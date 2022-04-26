@@ -39,7 +39,7 @@ export const RemoveCredentialModal: React.FunctionComponent<RemoveCredentialModa
                     externalServiceURL={codeHost.externalServiceURL}
                 />
 
-                <h3 className="text-danger mb-4">Removing credentials is irreversible</h3>
+                <strong className="d-block text-danger my-3">Removing credentials is irreversible.</strong>
 
                 {error && <ErrorAlert error={error} />}
 
