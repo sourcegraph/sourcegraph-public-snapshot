@@ -1,15 +1,29 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import AlertIcon from 'mdi-react/AlertIcon'
+import BrainIcon from 'mdi-react/BrainIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isDefined, isErrorLike } from '@sourcegraph/common'
-import { Badge, Button, Link, LoadingSpinner, MenuDivider } from '@sourcegraph/wildcard'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import {
+    Badge,
+    Button,
+    Icon,
+    Link,
+    LoadingSpinner,
+    Menu,
+    MenuButton,
+    MenuDivider,
+    MenuHeader,
+    MenuList,
+    Position,
+} from '@sourcegraph/wildcard'
 
-import { RepositoryMenuContentProps } from '../../codeintel/RepositoryMenu'
+import { RepositoryMenuProps as DefaultRepositoryMenuProps } from '../../codeintel/RepositoryMenu'
 import { Collapsible } from '../../components/Collapsible'
 import { Timestamp } from '../../components/time/Timestamp'
 import {
@@ -37,18 +51,22 @@ import {
 
 import styles from './RepositoryMenu.module.scss'
 
-export const RepositoryMenuContent: React.FunctionComponent<
-    RepositoryMenuContentProps & {
-        useCodeIntelStatus?: typeof defaultUseCodeIntelStatus
-        useRequestedLanguageSupportQuery?: typeof defaultUseRequestedLanguageSupportQuery
-        useRequestLanguageSupportQuery?: typeof defaultUseRequestLanguageSupportQuery
-        now?: () => Date
-    }
-> = ({
+export type RepositoryMenuProps = DefaultRepositoryMenuProps & {
+    isOpen?: boolean
+    now?: () => Date
+    showBadgeCta?: boolean
+    useCodeIntelStatus?: typeof defaultUseCodeIntelStatus
+    useRequestedLanguageSupportQuery?: typeof defaultUseRequestedLanguageSupportQuery
+    useRequestLanguageSupportQuery?: typeof defaultUseRequestLanguageSupportQuery
+}
+
+export const RepositoryMenu: React.FunctionComponent<RepositoryMenuProps> = ({
+    isOpen,
+    now,
+    showBadgeCta,
     useCodeIntelStatus = defaultUseCodeIntelStatus,
     useRequestedLanguageSupportQuery = defaultUseRequestedLanguageSupportQuery,
     useRequestLanguageSupportQuery = defaultUseRequestLanguageSupportQuery,
-    now,
     ...props
 }) => {
     const { data, loading, error } = useCodeIntelStatus({
@@ -59,36 +77,95 @@ export const RepositoryMenuContent: React.FunctionComponent<
         },
     })
 
+    const hasUploadErrors =
+        (data?.recentUploads || [])
+            .flatMap(uploads => uploads.uploads)
+            .filter(upload => upload.state === LSIFUploadState.ERRORED).length > 0
+
+    const hasIndexErrors =
+        (data?.recentIndexes || [])
+            .flatMap(indexes => indexes.indexes)
+            .filter(index => index.state === LSIFIndexState.ERRORED).length > 0
+
+    // TODO - need to inline UserFacingRepositoryMenuContent here
+    const needsAttention = false
+
+    const [badgeUsed, setBadgeUsed] = useTemporarySetting('codeintel.badge.used', false)
+    const [isNew, setNew] = useState<boolean | undefined>(showBadgeCta)
+
+    useEffect(() => {
+        setNew(oldValue =>
+            // Don't update if old value is already set (either way)
+            // or if the temporary settings has not yet been loaded.
+            badgeUsed === undefined || oldValue !== undefined ? oldValue : !badgeUsed
+        )
+    }, [setNew, badgeUsed])
+
     const forNerds =
         !isErrorLike(props.settingsCascade.final) &&
         props.settingsCascade.final?.experimentalFeatures?.codeIntelRepositoryBadge?.forNerds
 
-    return loading ? (
-        <div className="px-2 py-1">
-            <LoadingSpinner />
-        </div>
-    ) : error ? (
-        <div className="px-2 py-1">
-            <ErrorAlert prefix="Error loading repository summary" error={error} />
-        </div>
-    ) : data ? (
-        <>
-            <UserFacingRepositoryMenuContent
-                repoName={props.repoName}
-                data={data}
-                useRequestedLanguageSupportQuery={useRequestedLanguageSupportQuery}
-                useRequestLanguageSupportQuery={useRequestLanguageSupportQuery}
-                now={now}
-            />
+    return (
+        <Menu className="btn-icon">
+            <>
+                <MenuButton
+                    className={classNames(
+                        'text-decoration-none',
+                        styles.braindot,
+                        hasUploadErrors || hasIndexErrors
+                            ? styles.braindotError
+                            : needsAttention || isNew
+                            ? styles.braindotAttention
+                            : ''
+                    )}
+                    onClick={() => setBadgeUsed(true)}
+                >
+                    <Icon as={BrainIcon} />
+                </MenuButton>
 
-            {forNerds && (
-                <>
+                <MenuList position={Position.bottomEnd} className={styles.dropdownMenu} isOpen={isOpen}>
+                    <MenuHeader>
+                        Code intelligence{' '}
+                        {isNew && (
+                            <Badge variant="info" className="text-uppercase mx-2">
+                                NEW
+                            </Badge>
+                        )}
+                    </MenuHeader>
+
                     <MenuDivider />
-                    <InternalFacingRepositoryMenuContent data={data} now={now} />
-                </>
-            )}
-        </>
-    ) : null
+
+                    {loading ? (
+                        <div className="px-2 py-1">
+                            <LoadingSpinner />
+                        </div>
+                    ) : error ? (
+                        <div className="px-2 py-1">
+                            <ErrorAlert prefix="Error loading repository summary" error={error} />
+                        </div>
+                    ) : data ? (
+                        <>
+                            <UserFacingRepositoryMenuContent
+                                repoName={props.repoName}
+                                data={data}
+                                now={now}
+                                onClose={() => setNew(false)}
+                                useRequestedLanguageSupportQuery={useRequestedLanguageSupportQuery}
+                                useRequestLanguageSupportQuery={useRequestLanguageSupportQuery}
+                            />
+
+                            {forNerds && (
+                                <>
+                                    <MenuDivider />
+                                    <InternalFacingRepositoryMenuContent data={data} now={now} />
+                                </>
+                            )}
+                        </>
+                    ) : null}
+                </MenuList>
+            </>
+        </Menu>
+    )
 }
 
 //
@@ -106,10 +183,14 @@ const getIndexerName = (uploadOrIndexer: LsifUploadFields | LsifIndexFields): st
 const UserFacingRepositoryMenuContent: React.FunctionComponent<{
     repoName: string
     data: UseCodeIntelStatusPayload
+    now?: () => Date
+    onClose?: () => void
     useRequestedLanguageSupportQuery: typeof defaultUseRequestedLanguageSupportQuery
     useRequestLanguageSupportQuery: typeof defaultUseRequestLanguageSupportQuery
-    now?: () => Date
-}> = ({ repoName, data, useRequestedLanguageSupportQuery, useRequestLanguageSupportQuery, now }) => {
+}> = ({ repoName, data, onClose, now, useRequestedLanguageSupportQuery, useRequestLanguageSupportQuery }) => {
+    // Call onClose when this component unmounts
+    useEffect(() => () => onClose?.())
+
     const allUploads = data.recentUploads.flatMap(uploads => uploads.uploads)
     const uploadsByIndexerName = groupBy(allUploads, getIndexerName)
     const allIndexes = data.recentIndexes.flatMap(indexes => indexes.indexes)
