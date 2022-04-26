@@ -568,7 +568,6 @@ var (
 		handbookSlug:     "code-graph/search/product",
 		handbookTeamName: "Search",
 	}
-
 	ObservableOwnerSearchCore = ObservableOwner{
 		identifier:       "search-core",
 		handbookSlug:     "code-graph/search/core",
@@ -579,13 +578,11 @@ var (
 		handbookSlug:     "code-graph/batch-changes",
 		handbookTeamName: "Batch Changes",
 	}
-
 	ObservableOwnerCodeIntel = ObservableOwner{
 		identifier:       "code-intel",
 		handbookSlug:     "code-graph/code-intelligence",
 		handbookTeamName: "Code intelligence",
 	}
-
 	ObservableOwnerSecurity = ObservableOwner{
 		identifier:       "security",
 		handbookSlug:     "cloud/security",
